@@ -1,0 +1,42 @@
+_protocol: "theme/v1"
+name: "Dark Tech"
+version: "1.0.0"
+
+colors:
+  background: "#1A1A2E"
+  surface: "#16213E"
+  primary: "#E94560"
+  secondary: "#3D9EE4"
+  text: "#FFFFFF"
+  text_muted: "#8892A4"
+  border: "#2A2A4A"
+  palette:
+    indigo_900: "#1A1A2E"
+    red_500: "#E94560"
+
+typography:
+  scale:
+    display: { size: 96, weight: 800, line_height: 1.0 }
+    h1: { size: 72, weight: 700, line_height: 1.1 }
+    h2: { size: 48, weight: 700, line_height: 1.2 }
+    body: { size: 18, weight: 400, line_height: 1.6 }
+  families:
+    heading: "Inter"
+    body: "Inter"
+    mono: "JetBrains Mono"
+
+spacing:
+  unit: 8
+  scale: [0, 4, 8, 16, 24, 32, 48, 64, 80, 96, 128]
+
+effects:
+  shadow_card: "0 4px 24px rgba(0,0,0,0.4)"
+  shadow_glow: "0 0 32px rgba(233,69,96,0.3)"
+  blur_glass: 12
+
+radii:
+  sm: 4
+  md: 8
+  lg: 16
+  xl: 24
+  full: 9999
