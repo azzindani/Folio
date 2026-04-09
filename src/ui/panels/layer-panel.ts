@@ -9,6 +9,10 @@ const Z_BANDS = [
   { label: 'Background', min: 0, max: 9 },
 ];
 
+const ROW_HEIGHT = 32; // px per row
+const HEADER_HEIGHT = 24; // px per band header
+const BUFFER_ROWS = 2;
+
 function getLayerIcon(type: string): string {
   const icons: Record<string, string> = {
     rect: '\u25A1', circle: '\u25CB', path: '\u2712', polygon: '\u2B21',
@@ -19,19 +23,31 @@ function getLayerIcon(type: string): string {
   return icons[type] ?? '?';
 }
 
+// Virtual scroll row: either a band header or a layer row
+type VRow =
+  | { kind: 'header'; label: string; height: number }
+  | { kind: 'layer'; layer: Layer; height: number };
+
 export class LayerPanelManager {
   private container: HTMLElement;
   private state: StateManager;
   private content!: HTMLElement;
+  private rows: VRow[] = [];
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
     this.state = state;
     this.content = container.querySelector('.layer-panel-content') ?? container;
+    this.buildVirtualScroll();
     this.state.subscribe(this.onStateChange.bind(this));
   }
 
-  private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
+  private buildVirtualScroll(): void {
+    this.content.style.cssText = 'position:relative;overflow-y:auto;height:100%';
+    this.content.addEventListener('scroll', this.onScroll.bind(this));
+  }
+
+  private onStateChange(_state: EditorState, changedKeys: (keyof EditorState)[]): void {
     if (changedKeys.some(k => ['design', 'currentPageIndex', 'selectedLayerIds'].includes(k))) {
       this.render();
     }
@@ -39,47 +55,84 @@ export class LayerPanelManager {
 
   render(): void {
     const layers = this.state.getCurrentLayers();
-    const selectedIds = this.state.get().selectedLayerIds;
+    this.rows = this.buildRows(layers);
+    this.paintViewport();
+  }
 
-    if (layers.length === 0) {
-      this.content.innerHTML = '<div style="color:var(--color-text-muted);padding:16px;font-size:12px">No layers</div>';
-      return;
-    }
-
-    let html = '<div class="layer-list" style="display:flex;flex-direction:column;gap:2px">';
-
+  private buildRows(layers: Layer[]): VRow[] {
+    const rows: VRow[] = [];
     for (const band of Z_BANDS) {
       const bandLayers = layers
         .filter(l => l.z >= band.min && l.z <= band.max)
         .sort((a, b) => b.z - a.z);
-
       if (bandLayers.length === 0) continue;
-
-      html += `<div class="layer-band">
-        <div class="layer-band-header" style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);padding:4px 8px;margin-top:4px">${band.label} (z:${band.min}-${band.max})</div>`;
-
+      rows.push({ kind: 'header', label: `${band.label} (z:${band.min}-${band.max})`, height: HEADER_HEIGHT });
       for (const layer of bandLayers) {
+        rows.push({ kind: 'layer', layer, height: ROW_HEIGHT });
+      }
+    }
+    return rows;
+  }
+
+  private paintViewport(): void {
+    if (this.rows.length === 0) {
+      this.content.innerHTML = '<div style="color:var(--color-text-muted);padding:16px;font-size:12px">No layers</div>';
+      return;
+    }
+
+    const selectedIds = this.state.get().selectedLayerIds;
+    const totalHeight = this.rows.reduce((s, r) => s + r.height, 0);
+    const panelHeight = this.content.clientHeight || 200;
+    const scrollTop = this.content.scrollTop;
+
+    // Compute cumulative offsets
+    const offsets: number[] = [];
+    let acc = 0;
+    for (const row of this.rows) {
+      offsets.push(acc);
+      acc += row.height;
+    }
+
+    // Find visible range
+    let startIdx = offsets.findIndex(o => o + this.rows[offsets.indexOf(o)]?.height > scrollTop);
+    if (startIdx < 0) startIdx = 0;
+    startIdx = Math.max(0, startIdx - BUFFER_ROWS);
+
+    let endIdx = startIdx;
+    while (endIdx < this.rows.length && offsets[endIdx] < scrollTop + panelHeight) {
+      endIdx++;
+    }
+    endIdx = Math.min(this.rows.length, endIdx + BUFFER_ROWS);
+
+    // Render: spacer top + visible rows + spacer bottom
+    const topSpace = offsets[startIdx] ?? 0;
+    const bottomSpace = totalHeight - (offsets[endIdx - 1] ?? totalHeight) - (this.rows[endIdx - 1]?.height ?? 0);
+
+    let html = `<div class="layer-vscroll-inner" style="position:relative">`;
+    html += `<div style="height:${topSpace}px"></div>`;
+
+    for (let i = startIdx; i < endIdx; i++) {
+      const row = this.rows[i];
+      if (row.kind === 'header') {
+        html += `<div class="layer-band-header" style="height:${HEADER_HEIGHT}px;line-height:${HEADER_HEIGHT}px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);padding:0 8px">${row.label}</div>`;
+      } else {
+        const layer = row.layer;
         const selected = selectedIds.includes(layer.id);
         const hidden = layer.visible === false;
         const locked = layer.locked === true;
-
-        html += `<div class="layer-row ${selected ? 'selected' : ''}"
-          data-layer-id="${layer.id}"
-          style="display:flex;align-items:center;gap:6px;padding:4px 8px;cursor:pointer;
-                 border-radius:4px;font-size:12px;
-                 ${selected ? 'background:var(--color-primary);color:white' : ''}
-                 ${hidden ? 'opacity:0.4' : ''}">
+        html += `<div class="layer-row${selected ? ' selected' : ''}" data-layer-id="${layer.id}"
+          style="height:${ROW_HEIGHT}px;display:flex;align-items:center;gap:6px;padding:0 8px;cursor:pointer;border-radius:4px;font-size:12px;${selected ? 'background:var(--color-primary);color:white;' : ''}${hidden ? 'opacity:0.4;' : ''}">
           <span style="width:16px;text-align:center;font-size:14px">${getLayerIcon(layer.type)}</span>
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${layer.id}</span>
           <span style="font-size:10px;color:${selected ? 'rgba(255,255,255,0.7)' : 'var(--color-text-muted)'}">${layer.z}</span>
           ${locked ? '<span title="Locked" style="font-size:10px">&#x1F512;</span>' : ''}
         </div>`;
       }
-
-      html += '</div>';
     }
 
-    html += '</div>';
+    html += `<div style="height:${Math.max(0, bottomSpace)}px"></div>`;
+    html += `</div>`;
+
     this.content.innerHTML = html;
 
     // Bind click events
@@ -99,6 +152,10 @@ export class LayerPanelManager {
         }
       });
     });
+  }
+
+  private onScroll(): void {
+    this.paintViewport();
   }
 
   getLayersByBand(layers: Layer[]): Map<string, Layer[]> {

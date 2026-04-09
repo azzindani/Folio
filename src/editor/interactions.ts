@@ -29,7 +29,25 @@ export class InteractionManager {
     this.enable();
   }
 
+  private getLayerSnapTargets(draggedId: string): { x: number; y: number }[] {
+    const points: { x: number; y: number }[] = [];
+    const layers = this.state.getCurrentLayers();
+    for (const layer of layers) {
+      if (layer.id === draggedId) continue;
+      const x = layer.x ?? 0;
+      const y = layer.y ?? 0;
+      const w = typeof layer.width === 'number' ? layer.width : 0;
+      const h = typeof layer.height === 'number' ? layer.height : 0;
+      // Edges and centers
+      points.push({ x, y }, { x: x + w, y }, { x, y: y + h }, { x: x + w, y: y + h });
+      points.push({ x: x + w / 2, y: y + h / 2 }); // center
+    }
+    return points;
+  }
+
   private setupDraggable(): void {
+    let draggedId = '';
+
     const interactable = interact('[data-layer-id]', {
       context: this.svgContainer,
     }).draggable({
@@ -39,6 +57,7 @@ export class InteractionManager {
           if (!layerId) return;
           const layer = this.findLayer(layerId);
           if (layer?.locked) return;
+          draggedId = layerId;
           this.state.set('selectedLayerIds', [layerId]);
         },
         move: (event) => {
@@ -57,10 +76,27 @@ export class InteractionManager {
             y: Math.round((layer.y ?? 0) + dy),
           });
         },
+        end: () => { draggedId = ''; },
       },
       modifiers: [
         interact.modifiers.snap({
-          targets: [interact.snappers.grid({ x: 8, y: 8 })],
+          targets: [
+            interact.snappers.grid({ x: 8, y: 8 }),
+            // Layer edge/center snap targets (computed lazily on each move)
+            (x: number, y: number) => {
+              if (!draggedId) return null;
+              const snapPoints = this.getLayerSnapTargets(draggedId);
+              const SNAP_RANGE = 8;
+              let best: { x: number; y: number; range: number } | null = null;
+              for (const pt of snapPoints) {
+                const dist = Math.sqrt((x - pt.x) ** 2 + (y - pt.y) ** 2);
+                if (dist < SNAP_RANGE && (!best || dist < best.range)) {
+                  best = { x: pt.x, y: pt.y, range: dist };
+                }
+              }
+              return best;
+            },
+          ],
           range: 12,
           relativePoints: [{ x: 0, y: 0 }],
           enabled: this.state.get().gridVisible,

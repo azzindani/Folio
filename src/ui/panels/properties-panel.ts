@@ -1,5 +1,9 @@
 import { type StateManager, type EditorState } from '../../editor/state';
-import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer } from '../../schema/types';
+import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, LinearGradientFill, RadialGradientFill, GradientStop } from '../../schema/types';
+
+function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj)) as T;
+}
 
 export class PropertiesPanelManager {
   private container: HTMLElement;
@@ -92,9 +96,7 @@ export class PropertiesPanelManager {
 
   private renderRectFields(layer: RectLayer): string {
     let html = '';
-    if (layer.fill?.type === 'solid') {
-      html += this.renderColorField('fill.color', 'Fill', layer.fill.color);
-    }
+    html += this.renderFillFields(layer.fill);
     if (typeof layer.radius === 'number') {
       html += this.renderNumberField('radius', 'Radius', layer.radius, 0, 500, 1);
     }
@@ -102,11 +104,67 @@ export class PropertiesPanelManager {
   }
 
   private renderCircleFields(layer: CircleLayer): string {
-    let html = '';
-    if (layer.fill?.type === 'solid') {
-      html += this.renderColorField('fill.color', 'Fill', layer.fill.color);
+    return this.renderFillFields(layer.fill);
+  }
+
+  private renderFillFields(fill: (RectLayer | CircleLayer)['fill']): string {
+    if (!fill || fill.type === 'none') return '';
+    if (fill.type === 'solid') {
+      return this.renderColorField('fill.color', 'Fill', fill.color);
     }
+    if (fill.type === 'linear') {
+      return this.renderLinearGradientFields(fill);
+    }
+    if (fill.type === 'radial') {
+      return this.renderRadialGradientFields(fill);
+    }
+    return '';
+  }
+
+  private renderLinearGradientFields(fill: LinearGradientFill): string {
+    let html = `
+      <div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Linear Gradient</div>
+        ${this.renderNumberField('fill.angle', 'Angle (deg)', fill.angle, 0, 360, 1)}
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;margin-top:8px">Stops</div>
+    `;
+    fill.stops.forEach((stop, i) => {
+      html += this.renderGradientStop(stop, i);
+    });
+    html += '</div>';
     return html;
+  }
+
+  private renderRadialGradientFields(fill: RadialGradientFill): string {
+    let html = `
+      <div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Radial Gradient</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          ${this.renderNumberInput('fill.cx', 'CX (%)', fill.cx)}
+          ${this.renderNumberInput('fill.cy', 'CY (%)', fill.cy)}
+        </div>
+        ${this.renderNumberField('fill.radius', 'Radius (%)', fill.radius, 0, 200, 1)}
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;margin-top:8px">Stops</div>
+    `;
+    fill.stops.forEach((stop, i) => {
+      html += this.renderGradientStop(stop, i);
+    });
+    html += '</div>';
+    return html;
+  }
+
+  private renderGradientStop(stop: GradientStop, index: number): string {
+    return `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <input type="color" class="prop-input" data-prop="fill.stops.${index}.color" value="${stop.color}"
+          style="width:28px;height:24px;border:none;background:none;cursor:pointer;flex-shrink:0">
+        <input type="text" class="prop-input" data-prop="fill.stops.${index}.color" value="${stop.color}"
+          style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px;font-family:var(--font-mono)">
+        <input type="number" class="prop-input" data-prop="fill.stops.${index}.position" value="${stop.position}"
+          min="0" max="100" step="1"
+          style="width:48px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px"
+          title="Position (0–100)">
+      </div>`;
   }
 
   private renderTextFields(layer: TextLayer): string {
@@ -200,21 +258,29 @@ export class PropertiesPanelManager {
       return;
     }
 
-    // Nested property updates
+    // Nested property updates (supports array indices, e.g. fill.stops.0.color)
     const layers = this.state.getCurrentLayers();
     const layer = layers.find(l => l.id === layerId);
     if (!layer) return;
 
-    const update = { ...layer } as Record<string, unknown>;
+    const update = deepClone(layer) as unknown as Record<string, unknown>;
     let current = update;
     for (let i = 0; i < parts.length - 1; i++) {
-      const existing = current[parts[i]];
-      current[parts[i]] = typeof existing === 'object' && existing !== null
-        ? { ...existing as Record<string, unknown> }
-        : {};
-      current = current[parts[i]] as Record<string, unknown>;
+      const key = parts[i];
+      const nextKey = parts[i + 1];
+      const isNextNumeric = /^\d+$/.test(nextKey);
+      const existing = (current as Record<string, unknown>)[key];
+      if (isNextNumeric) {
+        // Next level is an array index — ensure current[key] is an array
+        (current as Record<string, unknown>)[key] = Array.isArray(existing) ? [...existing] : [];
+      } else {
+        (current as Record<string, unknown>)[key] = typeof existing === 'object' && existing !== null && !Array.isArray(existing)
+          ? { ...existing as Record<string, unknown> }
+          : {};
+      }
+      current = (current as Record<string, unknown>)[key] as Record<string, unknown>;
     }
-    current[parts[parts.length - 1]] = value;
+    (current as Record<string, unknown>)[parts[parts.length - 1]] = value;
 
     this.state.updateLayer(layerId, update as Partial<Layer>);
   }
