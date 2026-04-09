@@ -73,7 +73,8 @@ export class CanvasManager {
     let svg: SVGSVGElement;
 
     if (pages && pages.length > 0) {
-      const page = pages[currentPageIndex];
+      const pageIdx = Math.min(currentPageIndex, pages.length - 1);
+      const page = pages[pageIdx];
       const layers = page?.layers ?? [];
       svg = renderPage(layers, width, height, { theme: theme ?? undefined });
     } else {

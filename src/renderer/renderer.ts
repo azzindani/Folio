@@ -69,6 +69,7 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'group': return renderGroup(layer, svg, renderLayer);
     case 'component': return renderComponentLayer(layer as ComponentLayer, svg);
     case 'component_list': return renderComponentListLayer(layer as ComponentListLayer, svg);
+    default: return renderPlaceholder(layer, svg);
   }
 }
 
