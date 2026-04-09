@@ -4,19 +4,25 @@
   "private": true,
   "type": "module",
   "description": "Local-first graphic design engine with YAML payloads",
+  "bin": {
+    "folio-mcp": "./dist/mcp-server.js"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:analyze": "vite build --mode analyze",
+    "build:analyze": "ANALYZE=true vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts --max-warnings 0",
     "lint:fix": "eslint src --ext .ts --fix",
-    "test": "npm run test:unit",
+    "test": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
+    "test:unit:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:bench": "vitest bench",
+    "mcp": "node --loader ts-node/esm src/mcp/server.ts",
     "clean": "rm -rf dist node_modules .vite"
   },
   "repository": {
@@ -32,6 +38,7 @@
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
     "@vitest/coverage-v8": "^4.1.3",
+    "esbuild": "^0.28.0",
     "eslint": "^10.2.0",
     "jsdom": "^29.0.2",
     "typescript": "^6.0.2",

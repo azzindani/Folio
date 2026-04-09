@@ -33,6 +33,35 @@ export function validateLayer(layer: Partial<BaseLayer>, path: string): Validati
     errors.push({ severity: 'error', path: `${path}.z`, message: 'Layer z-index is required' });
   }
 
+  // Validate pos shorthand array length
+  if (layer.pos && Array.isArray(layer.pos) && layer.pos.length !== 4) {
+    errors.push({ severity: 'error', path: `${path}.pos`, message: `pos array must have exactly 4 values [x, y, w, h], got ${layer.pos.length}` });
+  }
+
+  // Check text layer has content
+  if (layer.type === 'text') {
+    const textLayer = layer as unknown as { content?: { type: string; value?: string } };
+    if (!textLayer.content) {
+      errors.push({ severity: 'error', path: `${path}.content`, message: 'Text layer requires content' });
+    }
+  }
+
+  // Check component layer has ref
+  if (layer.type === 'component') {
+    const compLayer = layer as unknown as { ref?: string };
+    if (!compLayer.ref) {
+      errors.push({ severity: 'error', path: `${path}.ref`, message: 'Component layer requires ref' });
+    }
+  }
+
+  // Check line layer has coordinates
+  if (layer.type === 'line') {
+    const lineLayer = layer as unknown as { x1?: number; y1?: number; x2?: number; y2?: number };
+    if (lineLayer.x1 === undefined || lineLayer.y1 === undefined || lineLayer.x2 === undefined || lineLayer.y2 === undefined) {
+      errors.push({ severity: 'warning', path: `${path}`, message: 'Line layer should have x1, y1, x2, y2' });
+    }
+  }
+
   return errors;
 }
 
