@@ -225,14 +225,16 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     div.style.color = style.color ?? '#000';
     div.style.lineHeight = String(style.line_height ?? 1.5);
 
-    // Lazy load marked.js and parse markdown
+    // Lazy load marked.js and parse markdown (set innerHTML only once, after parse)
     const mdValue = (layer.content as { value: string }).value;
     import('marked').then(({ marked }) => {
       div.innerHTML = marked.parse(mdValue) as string;
     }).catch(() => {
-      div.textContent = mdValue;
+      // marked.js failed to load — render as plain text
+      if (!div.innerHTML) div.textContent = mdValue;
     });
-    div.textContent = mdValue; // Initial render before async completes
+    // Show plain text immediately while marked loads to avoid blank flash
+    div.textContent = mdValue;
     fo.appendChild(div);
     g.appendChild(fo);
   } else if (layer.content.type === 'rich') {
