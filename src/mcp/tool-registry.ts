@@ -182,4 +182,64 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ['project_path', 'template_id', 'slots_array'],
     },
   },
+
+  // ── DESIGN MANAGEMENT ─────────────────────────────────────
+  {
+    name: 'duplicate_design',
+    description: 'Copy an existing design file with a new name and UUID. Registers the copy in project.yaml.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path: { type: 'string', description: 'Path to source .design.yaml file' },
+        new_name: { type: 'string', description: 'Name for the duplicated design' },
+        project_path: { type: 'string', description: 'Path to project directory (for registry update)' },
+      },
+      required: ['design_path', 'new_name'],
+    },
+  },
+  {
+    name: 'resume_design',
+    description: 'Resume incremental generation of an in-progress carousel design. Returns generation state so the LLM can continue appending pages.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path: { type: 'string', description: 'Path to .design.yaml file' },
+      },
+      required: ['design_path'],
+    },
+  },
+
+  // ── COMPONENT MANAGEMENT ──────────────────────────────────
+  {
+    name: 'save_as_component',
+    description: 'Extract specified layers from a design into a reusable .component.yaml file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path: { type: 'string', description: 'Path to source .design.yaml file' },
+        layer_ids: {
+          type: 'object',
+          description: 'Array of layer IDs to extract',
+          items: { type: 'string' },
+        },
+        component_name: { type: 'string', description: 'Name for the new component' },
+        project_path: { type: 'string', description: 'Path to project directory' },
+      },
+      required: ['design_path', 'layer_ids', 'component_name', 'project_path'],
+    },
+  },
+
+  // ── THEME ─────────────────────────────────────────────────
+  {
+    name: 'apply_theme',
+    description: 'Set the active theme for a project. Updates project.yaml default_theme.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path: { type: 'string', description: 'Path to project directory' },
+        theme_id: { type: 'string', description: 'Theme ID to activate' },
+      },
+      required: ['project_path', 'theme_id'],
+    },
+  },
 ];

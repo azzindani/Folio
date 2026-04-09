@@ -21,6 +21,9 @@
     "test:unit:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test tests/e2e/",
+    "test:visual": "playwright test tests/visual/",
+    "test:update-snapshots": "playwright test --update-snapshots",
     "test:bench": "vitest bench",
     "mcp": "node --loader ts-node/esm src/mcp/server.ts",
     "clean": "rm -rf dist node_modules .vite"
@@ -33,8 +36,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@playwright/test": "1.56.1",
     "@types/js-yaml": "^4.0.9",
+    "@types/katex": "^0.16.7",
     "@types/node": "^25.5.2",
+    "@types/prismjs": "^1.26.5",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.58.1",
     "@vitest/coverage-v8": "^4.1.3",
@@ -48,8 +54,17 @@
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
     "interactjs": "^1.10.27",
+    "jspdf": "^2.5.2",
     "js-yaml": "^4.1.1",
+    "katex": "^0.16.11",
     "marked": "^18.0.0",
-    "monaco-editor": "^0.55.1"
+    "mermaid": "^11.4.1",
+    "monaco-editor": "^0.55.1",
+    "prismjs": "^1.29.0",
+    "vega-embed": "^6.26.0"
+  },
+  "overrides": {
+    "vega-lite": "^5.20.1",
+    "vega": "^5.30.0"
   }
 }

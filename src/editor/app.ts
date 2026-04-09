@@ -10,6 +10,7 @@ import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
 import type { DesignSpec, ThemeSpec } from '../schema/types';
+import { fileWatcher } from '../fs/file-watcher';
 
 const DEFAULT_THEME: ThemeSpec = {
   _protocol: 'theme/v1',
@@ -213,6 +214,7 @@ export class EditorApp {
   private pageStrip!: PageStrip;
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
+  private activeFileHandle: FileSystemFileHandle | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -263,6 +265,15 @@ export class EditorApp {
     // Load default theme + sample design
     this.state.set('theme', DEFAULT_THEME);
     this.loadDesign(SAMPLE_DESIGN);
+
+    // File watcher: reload design when YAML is modified externally
+    fileWatcher.onChange((_name, content) => {
+      try {
+        this.loadFromYAML(content);
+      } catch {
+        // Invalid YAML from external editor — ignore until it's valid
+      }
+    });
   }
 
   private buildLayout(): void {
@@ -284,6 +295,18 @@ export class EditorApp {
         <div class="layer-panel-content"></div>
       </div>
     `;
+  }
+
+  /**
+   * Called after a file is opened via the FSA picker.
+   * Registers the handle with the file watcher so external edits are detected.
+   */
+  setActiveFileHandle(handle: FileSystemFileHandle, content: string): void {
+    if (this.activeFileHandle) {
+      fileWatcher.unwatch(this.activeFileHandle.name);
+    }
+    this.activeFileHandle = handle;
+    fileWatcher.watch(handle, content);
   }
 
   loadDesign(spec: DesignSpec): void {

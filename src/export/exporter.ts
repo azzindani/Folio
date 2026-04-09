@@ -51,6 +51,52 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   });
 }
 
+export async function exportToPDF(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
+  // Lazy load jsPDF — kept out of initial bundle
+  const { jsPDF } = await import('jspdf');
+  const scale = options.scale ?? 2;
+
+  const { width, height } = spec.document;
+
+  // Convert px → mm (at 96 dpi: 1px = 25.4/96 mm)
+  const pxToMm = (px: number): number => (px / 96) * 25.4;
+  const pdfW = pxToMm(width);
+  const pdfH = pxToMm(height);
+
+  const pdf = new jsPDF({
+    orientation: width >= height ? 'landscape' : 'portrait',
+    unit: 'mm',
+    format: [pdfW, pdfH],
+    compress: true,
+  });
+
+  if (spec.pages && spec.pages.length > 0) {
+    // Carousel: one PDF page per design page
+    for (let i = 0; i < spec.pages.length; i++) {
+      if (i > 0) pdf.addPage([pdfW, pdfH], width >= height ? 'landscape' : 'portrait');
+      const blob = await exportToPNG(spec, { ...options, pageIndex: i, scale });
+      const dataUrl = await blobToDataURL(blob);
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+    }
+  } else {
+    // Single poster
+    const blob = await exportToPNG(spec, { ...options, scale });
+    const dataUrl = await blobToDataURL(blob);
+    pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+  }
+
+  return pdf.output('blob');
+}
+
+function blobToDataURL(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Failed to read blob'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 export function exportToHTML(spec: DesignSpec, options: ExportOptions): string {
   const svgString = exportToSVG(spec, options);
 
@@ -126,9 +172,8 @@ export async function exportDesign(spec: DesignSpec, options: ExportOptions): Pr
       break;
     }
     case 'pdf': {
-      // PDF export uses the PNG pipeline + jsPDF (lazy loaded)
-      const blob = await exportToPNG(spec, { ...options, scale: options.scale ?? 2 });
-      downloadBlob(blob, `${name}-print.png`);
+      const blob = await exportToPDF(spec, options);
+      downloadBlob(blob, `${name}.pdf`);
       break;
     }
   }
