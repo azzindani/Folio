@@ -1,8 +1,11 @@
 import { StateManager } from './state';
 import { CanvasManager } from './canvas';
+import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
+import { PageStrip } from '../ui/panels/page-strip';
+import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
@@ -203,9 +206,12 @@ export class EditorApp {
   private container: HTMLElement;
   state: StateManager;
   canvas!: CanvasManager;
+  payloadEditor!: PayloadEditor;
   private toolbar!: ToolbarManager;
   private layerPanel!: LayerPanelManager;
   private propertiesPanel!: PropertiesPanelManager;
+  private pageStrip!: PageStrip;
+  private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
 
   constructor(container: HTMLElement) {
@@ -213,7 +219,7 @@ export class EditorApp {
     this.state = new StateManager();
   }
 
-  init(): void {
+  async init(): Promise<void> {
     this.buildLayout();
 
     this.canvas = new CanvasManager(
@@ -237,7 +243,22 @@ export class EditorApp {
       this.state,
     );
 
+    this.pageStrip = new PageStrip(
+      this.container.querySelector('.layer-panel')!,
+      this.state,
+    );
+
     this.keyboard = new KeyboardManager(this.state, this);
+
+    // Command palette
+    this.commandPalette = new CommandPalette(this.container, this.state, this);
+
+    // Initialize Monaco payload editor (lazy loaded)
+    const monacoContainer = this.container.querySelector('.monaco-container') as HTMLElement;
+    this.payloadEditor = new PayloadEditor(monacoContainer, this.state);
+    this.payloadEditor.init().catch(() => {
+      // Monaco failed to load — non-critical, visual mode still works
+    });
 
     // Load default theme + sample design
     this.state.set('theme', DEFAULT_THEME);
@@ -251,7 +272,9 @@ export class EditorApp {
         <div class="panel-header">Files</div>
         <div class="file-tree-content"></div>
       </div>
-      <div class="canvas-area"></div>
+      <div class="canvas-area">
+        <div class="monaco-container" style="display:none"></div>
+      </div>
       <div class="properties-panel">
         <div class="panel-header">Properties</div>
         <div class="properties-content"></div>
