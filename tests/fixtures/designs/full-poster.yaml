@@ -1,0 +1,209 @@
+_protocol: "design/v1"
+_mode: complete
+
+meta:
+  id: "full-poster-001"
+  name: "Full Feature Poster"
+  type: poster
+  created: "2026-04-09"
+  modified: "2026-04-09"
+  generator: "human"
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#3D9EE4"
+
+layers:
+  # Background band (z: 0-9)
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1080
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: bg-circle
+    type: circle
+    z: 2
+    x: 700
+    y: -100
+    width: 600
+    height: 600
+    fill:
+      type: solid
+      color: "$primary"
+      opacity: 0.1
+
+  # Structural band (z: 10-19)
+  - id: card
+    type: rect
+    z: 10
+    x: 80
+    y: 280
+    width: 920
+    height: 520
+    fill:
+      type: solid
+      color: "$surface"
+    radius: 16
+    effects:
+      shadows:
+        - { x: 0, y: 4, blur: 24, color: "rgba(0,0,0,0.4)" }
+        - { x: 0, y: 1, blur: 4, color: "rgba(0,0,0,0.2)" }
+
+  - id: divider-line
+    type: line
+    z: 15
+    x1: 120
+    y1: 540
+    x2: 400
+    y2: 540
+    stroke:
+      color: "$primary"
+      width: 3
+
+  # Content band (z: 20-49)
+  - id: headline
+    type: text
+    z: 20
+    x: 120
+    y: 340
+    width: 840
+    height: auto
+    content:
+      type: plain
+      value: "Design Engine v1.0"
+    style:
+      font_family: "$heading"
+      font_size: 64
+      font_weight: 800
+      color: "$text"
+      line_height: 1.1
+
+  - id: subtitle
+    type: text
+    z: 21
+    x: 120
+    y: 430
+    width: 840
+    height: auto
+    content:
+      type: plain
+      value: "YAML-powered graphic design with LLM integration"
+    style:
+      font_family: "$body"
+      font_size: 22
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.5
+
+  - id: body-text
+    type: text
+    z: 22
+    x: 120
+    y: 570
+    width: 840
+    height: auto
+    content:
+      type: plain
+      value: "Local-first, file-based design engine where designs are stored\nas human-readable YAML payload files.\nNo cloud, no subscriptions, no internet."
+    style:
+      font_family: "$body"
+      font_size: 18
+      font_weight: 400
+      color: "$text"
+      line_height: 1.6
+
+  - id: badge
+    type: rect
+    z: 25
+    x: 120
+    y: 700
+    width: 140
+    height: 36
+    fill:
+      type: solid
+      color: "$primary"
+    radius: 18
+
+  - id: badge-label
+    type: text
+    z: 26
+    x: 120
+    y: 708
+    width: 140
+    height: 36
+    content:
+      type: plain
+      value: "Phase 1"
+    style:
+      font_family: "$heading"
+      font_size: 14
+      font_weight: 600
+      color: "#FFFFFF"
+      align: center
+
+  - id: icon-download
+    type: icon
+    z: 30
+    x: 900
+    y: 340
+    name: download
+    size: 48
+    color: "$primary"
+
+  - id: hex-shape
+    type: polygon
+    z: 31
+    x: 850
+    y: 500
+    width: 120
+    height: 120
+    sides: 6
+    fill:
+      type: solid
+      color: "$primary"
+      opacity: 0.2
+    stroke:
+      color: "$primary"
+      width: 1
+
+  - id: arrow-path
+    type: path
+    z: 32
+    d: "M 120 750 L 200 750 L 190 740 M 200 750 L 190 760"
+    stroke:
+      color: "$text_muted"
+      width: 2
+
+  # Foreground band (z: 70-89)
+  - id: footer
+    type: text
+    z: 70
+    x: 80
+    y: 1020
+    width: 920
+    height: auto
+    content:
+      type: plain
+      value: "folio v1.0.0 — local-first design engine"
+    style:
+      font_family: "$mono"
+      font_size: 12
+      font_weight: 400
+      color: "$text_muted"
+      align: right
