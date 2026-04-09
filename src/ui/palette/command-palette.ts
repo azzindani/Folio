@@ -1,6 +1,9 @@
 import type { StateManager } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
 import { alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV } from '../../editor/interactions';
+import { exportToHTML } from '../../export/exporter';
+
+let paletteLayerCounter = 0;
 
 export interface Command {
   id: string;
@@ -48,16 +51,16 @@ export class CommandPalette {
 
       // Layer
       { id: 'add-rect', label: 'Add Rectangle', category: 'Layer', shortcut: 'R', action: () => {
-        state.addLayer({ id: `rect-${Date.now()}`, type: 'rect', z: 20, x: 100, y: 100, width: 200, height: 150, fill: { type: 'solid', color: '#3D9EE4' }, radius: 8 });
+        state.addLayer({ id: `rect-${++paletteLayerCounter}`, type: 'rect', z: 20, x: 100, y: 100, width: 200, height: 150, fill: { type: 'solid', color: '#3D9EE4' }, radius: 8 });
       }},
       { id: 'add-circle', label: 'Add Circle', category: 'Layer', shortcut: 'C', action: () => {
-        state.addLayer({ id: `circle-${Date.now()}`, type: 'circle', z: 20, x: 200, y: 200, width: 150, height: 150, fill: { type: 'solid', color: '#E94560' } });
+        state.addLayer({ id: `circle-${++paletteLayerCounter}`, type: 'circle', z: 20, x: 200, y: 200, width: 150, height: 150, fill: { type: 'solid', color: '#E94560' } });
       }},
       { id: 'add-text', label: 'Add Text', category: 'Layer', shortcut: 'T', action: () => {
-        state.addLayer({ id: `text-${Date.now()}`, type: 'text', z: 25, x: 100, y: 100, width: 400, height: 'auto', content: { type: 'plain', value: 'New text' }, style: { font_size: 24, font_weight: 400, color: '#FFFFFF' } });
+        state.addLayer({ id: `text-${++paletteLayerCounter}`, type: 'text', z: 25, x: 100, y: 100, width: 400, height: 'auto', content: { type: 'plain', value: 'New text' }, style: { font_size: 24, font_weight: 400, color: '#FFFFFF' } });
       }},
       { id: 'add-line', label: 'Add Line', category: 'Layer', shortcut: 'L', action: () => {
-        state.addLayer({ id: `line-${Date.now()}`, type: 'line', z: 15, x1: 100, y1: 300, x2: 500, y2: 300, stroke: { color: '#E94560', width: 2 } });
+        state.addLayer({ id: `line-${++paletteLayerCounter}`, type: 'line', z: 15, x1: 100, y1: 300, x2: 500, y2: 300, stroke: { color: '#E94560', width: 2 } });
       }},
       { id: 'delete-selected', label: 'Delete Selected Layers', category: 'Layer', shortcut: 'Del', action: () => {
         for (const id of state.get().selectedLayerIds) state.removeLayer(id);
@@ -87,8 +90,7 @@ export class CommandPalette {
           URL.revokeObjectURL(url);
         }
       }},
-      { id: 'export-html', label: 'Export as HTML', category: 'Export', action: async () => {
-        const { exportToHTML } = await import('../../export/exporter');
+      { id: 'export-html', label: 'Export as HTML', category: 'Export', action: () => {
         const design = state.get().design;
         const theme = state.get().theme;
         if (design) {
@@ -160,9 +162,14 @@ export class CommandPalette {
 
   private bindGlobalShortcut(): void {
     document.addEventListener('keydown', (e) => {
-      if (e.key === '/' && !this.visible) {
-        const target = e.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      const target = e.target as HTMLElement;
+      const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      // Ctrl+K or / opens the palette (Ctrl+K avoids browser Quick Find in Firefox)
+      const isSlash = e.key === '/' && !inInput;
+      const isCtrlK = e.key === 'k' && (e.ctrlKey || e.metaKey);
+
+      if ((isSlash || isCtrlK) && !this.visible) {
         e.preventDefault();
         this.open();
       }

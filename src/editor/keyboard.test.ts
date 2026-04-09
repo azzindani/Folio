@@ -192,3 +192,76 @@ describe('KeyboardManager — adjustZ', () => {
     expect(state.getCurrentLayers()[0].z).toBe(20);
   });
 });
+
+describe('KeyboardManager — group / ungroup', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+G groups selected layers into a group', () => {
+    state.set('design', makeDesign([makeRect('a', 0, 0, 20), makeRect('b', 50, 50, 25)]));
+    state.set('selectedLayerIds', ['a', 'b']);
+    fireKey('g', { ctrl: true });
+
+    const layers = state.getCurrentLayers();
+    expect(layers).toHaveLength(1);
+    expect(layers[0].type).toBe('group');
+    expect(state.get().selectedLayerIds).toEqual([layers[0].id]);
+  });
+
+  it('Ctrl+G with single selection is a no-op', () => {
+    state.set('design', makeDesign([makeRect('a')]));
+    state.set('selectedLayerIds', ['a']);
+    fireKey('g', { ctrl: true });
+    expect(state.getCurrentLayers()).toHaveLength(1);
+    expect(state.getCurrentLayers()[0].type).toBe('rect');
+  });
+
+  it('Ctrl+Shift+G ungroups a group layer', () => {
+    // First group two layers
+    state.set('design', makeDesign([makeRect('a', 0, 0, 20), makeRect('b', 50, 50, 25)]));
+    state.set('selectedLayerIds', ['a', 'b']);
+    fireKey('g', { ctrl: true });
+
+    // Verify grouped
+    const grouped = state.getCurrentLayers();
+    expect(grouped).toHaveLength(1);
+    const groupId = grouped[0].id;
+    state.set('selectedLayerIds', [groupId]);
+
+    // Ungroup
+    fireKey('g', { ctrl: true, shift: true });
+
+    const ungrouped = state.getCurrentLayers();
+    expect(ungrouped).toHaveLength(2);
+    expect(ungrouped.map(l => l.type)).not.toContain('group');
+  });
+});
+
+describe('KeyboardManager — copy (no clipboard API in jsdom)', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+C does not throw when no layers selected', () => {
+    state.set('design', makeDesign([]));
+    state.set('selectedLayerIds', []);
+    expect(() => fireKey('c', { ctrl: true })).not.toThrow();
+  });
+
+  it('Ctrl+C does not throw with layers selected', () => {
+    state.set('design', makeDesign([makeRect('a')]));
+    state.set('selectedLayerIds', ['a']);
+    expect(() => fireKey('c', { ctrl: true })).not.toThrow();
+  });
+});
