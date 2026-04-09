@@ -1,0 +1,46 @@
+_protocol: "design/v1"
+_mode: complete
+
+meta:
+  id: "test-poster-001"
+  name: "Test Poster"
+  type: poster
+  created: "2026-04-09"
+  modified: "2026-04-09"
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1080
+    fill:
+      type: solid
+      color: "$background"
+
+  - id: headline
+    type: text
+    z: 20
+    x: 80
+    y: 200
+    width: 920
+    height: auto
+    content:
+      type: plain
+      value: "Hello World"
+    style:
+      font_family: "$heading"
+      font_size: 72
+      font_weight: 800
+      color: "$text"

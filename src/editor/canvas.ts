@@ -1,0 +1,236 @@
+import { StateManager, type EditorState } from './state';
+import { renderDesign, renderPage } from '../renderer/renderer';
+
+export class CanvasManager {
+  private container: HTMLElement;
+  private state: StateManager;
+  private viewport!: HTMLDivElement;
+  private svgContainer!: HTMLDivElement;
+  private selectionOverlay!: HTMLDivElement;
+  private currentSVG: SVGSVGElement | null = null;
+
+  constructor(container: HTMLElement, state: StateManager) {
+    this.container = container;
+    this.state = state;
+    this.buildCanvas();
+    this.bindEvents();
+    this.state.subscribe(this.onStateChange.bind(this));
+  }
+
+  private buildCanvas(): void {
+    this.viewport = document.createElement('div');
+    this.viewport.className = 'canvas-viewport';
+
+    this.svgContainer = document.createElement('div');
+    this.svgContainer.className = 'canvas-svg-container';
+    this.svgContainer.style.position = 'relative';
+
+    this.selectionOverlay = document.createElement('div');
+    this.selectionOverlay.className = 'canvas-selection-overlay';
+    this.selectionOverlay.style.position = 'absolute';
+    this.selectionOverlay.style.inset = '0';
+    this.selectionOverlay.style.pointerEvents = 'none';
+    this.selectionOverlay.style.zIndex = '90';
+
+    this.viewport.appendChild(this.svgContainer);
+    this.viewport.appendChild(this.selectionOverlay);
+    this.container.appendChild(this.viewport);
+  }
+
+  private bindEvents(): void {
+    this.svgContainer.addEventListener('pointerdown', this.onPointerDown.bind(this));
+    this.container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+  }
+
+  private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
+    const needsRender = changedKeys.some(k =>
+      ['design', 'theme', 'currentPageIndex'].includes(k),
+    );
+
+    if (needsRender) {
+      this.render();
+    }
+
+    if (changedKeys.includes('selectedLayerIds')) {
+      this.updateSelectionOverlay();
+    }
+
+    if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
+      this.updateTransform();
+    }
+  }
+
+  render(): void {
+    const { design, theme } = this.state.get();
+    if (!design) return;
+
+    const { width, height } = design.document;
+
+    // Check if we're in paged mode
+    const pages = design.pages;
+    const currentPageIndex = this.state.get().currentPageIndex;
+
+    let svg: SVGSVGElement;
+
+    if (pages && pages.length > 0) {
+      const page = pages[currentPageIndex];
+      const layers = page?.layers ?? [];
+      svg = renderPage(layers, width, height, { theme: theme ?? undefined });
+    } else {
+      svg = renderDesign(design, { theme: theme ?? undefined });
+    }
+
+    // Replace SVG
+    this.svgContainer.innerHTML = '';
+    this.svgContainer.appendChild(svg);
+    this.currentSVG = svg;
+
+    // Size viewport
+    this.viewport.style.width = `${width}px`;
+    this.viewport.style.height = `${height}px`;
+    this.updateTransform();
+  }
+
+  private updateTransform(): void {
+    const { zoom, panX, panY } = this.state.get();
+    this.viewport.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    this.viewport.style.transformOrigin = 'center center';
+  }
+
+  private updateSelectionOverlay(): void {
+    this.selectionOverlay.innerHTML = '';
+    const { selectedLayerIds, design } = this.state.get();
+
+    if (!design || selectedLayerIds.length === 0) return;
+
+    for (const id of selectedLayerIds) {
+      const el = this.svgContainer.querySelector(`[data-layer-id="${id}"]`);
+      if (!el) continue;
+
+      const bbox = (el as SVGGraphicsElement).getBBox?.();
+      if (!bbox) continue;
+
+      // Selection box
+      const box = document.createElement('div');
+      box.className = 'selection-box';
+      box.style.left = `${bbox.x}px`;
+      box.style.top = `${bbox.y}px`;
+      box.style.width = `${bbox.width}px`;
+      box.style.height = `${bbox.height}px`;
+      this.selectionOverlay.appendChild(box);
+
+      // Resize handles
+      const positions = [
+        { cls: 'nw', x: bbox.x - 4, y: bbox.y - 4, cursor: 'nw-resize' },
+        { cls: 'ne', x: bbox.x + bbox.width - 4, y: bbox.y - 4, cursor: 'ne-resize' },
+        { cls: 'sw', x: bbox.x - 4, y: bbox.y + bbox.height - 4, cursor: 'sw-resize' },
+        { cls: 'se', x: bbox.x + bbox.width - 4, y: bbox.y + bbox.height - 4, cursor: 'se-resize' },
+      ];
+
+      for (const pos of positions) {
+        const handle = document.createElement('div');
+        handle.className = `selection-handle handle-${pos.cls}`;
+        handle.style.left = `${pos.x}px`;
+        handle.style.top = `${pos.y}px`;
+        handle.style.cursor = pos.cursor;
+        handle.style.pointerEvents = 'auto';
+        handle.dataset.handle = pos.cls;
+        handle.dataset.layerId = id;
+        this.selectionOverlay.appendChild(handle);
+      }
+    }
+  }
+
+  private onPointerDown(e: PointerEvent): void {
+    const target = e.target as SVGElement;
+    const layerEl = target.closest('[data-layer-id]') as SVGElement | null;
+
+    if (!layerEl) {
+      // Click on empty canvas
+      this.state.set('selectedLayerIds', []);
+      return;
+    }
+
+    const layerId = layerEl.getAttribute('data-layer-id')!;
+
+    if (e.shiftKey) {
+      // Multi-select toggle
+      const current = this.state.get().selectedLayerIds;
+      if (current.includes(layerId)) {
+        this.state.set('selectedLayerIds', current.filter(id => id !== layerId));
+      } else {
+        this.state.set('selectedLayerIds', [...current, layerId]);
+      }
+    } else {
+      this.state.set('selectedLayerIds', [layerId]);
+      this.startDrag(e, layerId);
+    }
+  }
+
+  private startDrag(e: PointerEvent, layerId: string): void {
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    if (!layer || layer.locked) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origX = layer.x ?? 0;
+    const origY = layer.y ?? 0;
+    const zoom = this.state.get().zoom;
+
+    const onMove = (me: PointerEvent) => {
+      const dx = (me.clientX - startX) / zoom;
+      const dy = (me.clientY - startY) / zoom;
+      this.state.updateLayer(layerId, {
+        x: Math.round(origX + dx),
+        y: Math.round(origY + dy),
+      });
+    };
+
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private onWheel(e: WheelEvent): void {
+    e.preventDefault();
+
+    if (e.ctrlKey || e.metaKey) {
+      // Zoom
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(5, Math.max(0.1, this.state.get().zoom * delta));
+      this.state.set('zoom', newZoom, false);
+    } else {
+      // Pan
+      const { panX, panY } = this.state.get();
+      this.state.batch(() => {
+        this.state.set('panX', panX - e.deltaX, false);
+        this.state.set('panY', panY - e.deltaY, false);
+      });
+    }
+  }
+
+  exportSVG(): string {
+    if (!this.currentSVG) return '';
+    return new XMLSerializer().serializeToString(this.currentSVG);
+  }
+
+  fitToScreen(): void {
+    const { design } = this.state.get();
+    if (!design) return;
+
+    const containerRect = this.container.getBoundingClientRect();
+    const scaleX = (containerRect.width - 80) / design.document.width;
+    const scaleY = (containerRect.height - 80) / design.document.height;
+    const zoom = Math.min(scaleX, scaleY, 1);
+
+    this.state.batch(() => {
+      this.state.set('zoom', zoom, false);
+      this.state.set('panX', 0, false);
+      this.state.set('panY', 0, false);
+    });
+  }
+}

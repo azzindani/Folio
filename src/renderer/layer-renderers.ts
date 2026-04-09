@@ -1,0 +1,463 @@
+import type {
+  Layer, RectLayer, CircleLayer, PathLayer, PolygonLayer,
+  LineLayer, TextLayer, ImageLayer, IconLayer,
+  MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
+  Radius,
+} from '../schema/types';
+import { createSVGElement } from './svg-utils';
+import { applyFill } from './fill-renderer';
+import { applyEffects } from './effects-renderer';
+
+function applyCommonAttributes(
+  el: SVGElement,
+  layer: Layer,
+): void {
+  el.setAttribute('data-layer-id', layer.id);
+  if (layer.rotation) {
+    const cx = (layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2);
+    const cy = (layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2);
+    el.setAttribute('transform', `rotate(${layer.rotation} ${cx} ${cy})`);
+  }
+  if (layer.visible === false) {
+    el.setAttribute('display', 'none');
+  }
+  if (layer.opacity !== undefined) {
+    el.setAttribute('opacity', String(layer.opacity));
+  }
+}
+
+function applyStroke(el: SVGElement, stroke: { color: string; width: number; dash?: number[]; linecap?: string; linejoin?: string }): void {
+  el.setAttribute('stroke', stroke.color);
+  el.setAttribute('stroke-width', String(stroke.width));
+  if (stroke.dash) {
+    el.setAttribute('stroke-dasharray', stroke.dash.join(' '));
+  }
+  if (stroke.linecap) {
+    el.setAttribute('stroke-linecap', stroke.linecap);
+  }
+  if (stroke.linejoin) {
+    el.setAttribute('stroke-linejoin', stroke.linejoin);
+  }
+}
+
+function getRadiusValues(radius: Radius): { rx: string; ry?: string } | { tl: number; tr: number; br: number; bl: number } {
+  if (typeof radius === 'number') {
+    return { rx: String(radius) };
+  }
+  return radius;
+}
+
+// ── Rect ────────────────────────────────────────────────────
+export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
+  const el = createSVGElement('rect', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: typeof layer.width === 'number' ? layer.width : 0,
+    height: typeof layer.height === 'number' ? layer.height : 0,
+  });
+
+  if (layer.radius !== undefined) {
+    const rv = getRadiusValues(layer.radius);
+    if ('rx' in rv) {
+      el.setAttribute('rx', rv.rx);
+      if (rv.ry) el.setAttribute('ry', rv.ry);
+    } else {
+      // SVG rect doesn't support per-corner radius natively
+      // Use the average as approximation; for full support use path
+      const avg = (rv.tl + rv.tr + rv.br + rv.bl) / 4;
+      el.setAttribute('rx', String(avg));
+    }
+  }
+
+  if (layer.fill) {
+    const fillResult = applyFill(layer.fill, svg, {
+      width: typeof layer.width === 'number' ? layer.width : 0,
+      height: typeof layer.height === 'number' ? layer.height : 0,
+    });
+    el.setAttribute('fill', fillResult.fill);
+    if (fillResult.opacity !== undefined) {
+      el.setAttribute('fill-opacity', String(fillResult.opacity));
+    }
+  } else {
+    el.setAttribute('fill', 'none');
+  }
+
+  if (layer.stroke) {
+    applyStroke(el, layer.stroke);
+  }
+
+  applyCommonAttributes(el, layer);
+
+  if (layer.effects) {
+    applyEffects(el, layer.effects, svg);
+  }
+
+  return el;
+}
+
+// ── Circle ──────────────────────────────────────────────────
+export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement {
+  const cx = layer.cx ?? ((layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2));
+  const cy = layer.cy ?? ((layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2));
+  const rx = layer.rx ?? ((typeof layer.width === 'number' ? layer.width : 0) / 2);
+  const ry = layer.ry ?? ((typeof layer.height === 'number' ? layer.height : 0) / 2);
+
+  const el = createSVGElement('ellipse', { cx, cy, rx, ry });
+
+  if (layer.fill) {
+    const fillResult = applyFill(layer.fill, svg, { width: rx * 2, height: ry * 2 });
+    el.setAttribute('fill', fillResult.fill);
+    if (fillResult.opacity !== undefined) {
+      el.setAttribute('fill-opacity', String(fillResult.opacity));
+    }
+  } else {
+    el.setAttribute('fill', 'none');
+  }
+
+  if (layer.stroke) applyStroke(el, layer.stroke);
+  applyCommonAttributes(el, layer);
+  if (layer.effects) applyEffects(el, layer.effects, svg);
+
+  return el;
+}
+
+// ── Path ────────────────────────────────────────────────────
+export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
+  const el = createSVGElement('path', { d: layer.d });
+
+  if (layer.fill) {
+    const fillResult = applyFill(layer.fill, svg, {
+      width: typeof layer.width === 'number' ? layer.width : 100,
+      height: typeof layer.height === 'number' ? layer.height : 100,
+    });
+    el.setAttribute('fill', fillResult.fill);
+  } else {
+    el.setAttribute('fill', 'none');
+  }
+
+  if (layer.stroke) applyStroke(el, layer.stroke);
+  applyCommonAttributes(el, layer);
+  if (layer.effects) applyEffects(el, layer.effects, svg);
+
+  return el;
+}
+
+// ── Polygon ─────────────────────────────────────────────────
+export function renderPolygon(layer: PolygonLayer, svg: SVGSVGElement): SVGElement {
+  let points = layer.points ?? '';
+
+  if (!points && layer.sides && layer.sides >= 3) {
+    const cx = (layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2);
+    const cy = (layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2);
+    const r = Math.min(
+      typeof layer.width === 'number' ? layer.width : 0,
+      typeof layer.height === 'number' ? layer.height : 0,
+    ) / 2;
+    const pts: string[] = [];
+    for (let i = 0; i < layer.sides; i++) {
+      const angle = (2 * Math.PI * i) / layer.sides - Math.PI / 2;
+      pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
+    }
+    points = pts.join(' ');
+  }
+
+  const el = createSVGElement('polygon', { points });
+
+  if (layer.fill) {
+    const fillResult = applyFill(layer.fill, svg, {
+      width: typeof layer.width === 'number' ? layer.width : 0,
+      height: typeof layer.height === 'number' ? layer.height : 0,
+    });
+    el.setAttribute('fill', fillResult.fill);
+  } else {
+    el.setAttribute('fill', 'none');
+  }
+
+  if (layer.stroke) applyStroke(el, layer.stroke);
+  applyCommonAttributes(el, layer);
+  if (layer.effects) applyEffects(el, layer.effects, svg);
+
+  return el;
+}
+
+// ── Line ────────────────────────────────────────────────────
+export function renderLine(layer: LineLayer, svg: SVGSVGElement): SVGElement {
+  const el = createSVGElement('line', {
+    x1: layer.x1,
+    y1: layer.y1,
+    x2: layer.x2,
+    y2: layer.y2,
+  });
+
+  el.setAttribute('fill', 'none');
+  if (layer.stroke) {
+    applyStroke(el, layer.stroke);
+  } else {
+    el.setAttribute('stroke', '#000');
+    el.setAttribute('stroke-width', '1');
+  }
+
+  applyCommonAttributes(el, layer);
+  if (layer.effects) applyEffects(el, layer.effects, svg);
+
+  return el;
+}
+
+// ── Text ────────────────────────────────────────────────────
+export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
+  const g = createSVGElement('g');
+  const style = layer.style ?? {};
+
+  if (layer.content.type === 'markdown') {
+    // Use foreignObject for HTML rendering
+    const fo = createSVGElement('foreignObject', {
+      x: layer.x ?? 0,
+      y: layer.y ?? 0,
+      width: typeof layer.width === 'number' ? layer.width : 400,
+      height: typeof layer.height === 'number' ? layer.height : 200,
+    });
+
+    const div = document.createElement('div');
+    div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    div.style.fontFamily = style.font_family ?? 'Inter, sans-serif';
+    div.style.fontSize = `${style.font_size ?? 16}px`;
+    div.style.fontWeight = String(style.font_weight ?? 400);
+    div.style.color = style.color ?? '#000';
+    div.style.lineHeight = String(style.line_height ?? 1.5);
+    div.innerHTML = layer.content.value; // Will be parsed by marked.js later
+    fo.appendChild(div);
+    g.appendChild(fo);
+  } else if (layer.content.type === 'rich') {
+    const textEl = createSVGElement('text', {
+      x: layer.x ?? 0,
+      y: (layer.y ?? 0) + (style.font_size ?? 16),
+    });
+    textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
+    textEl.setAttribute('font-size', String(style.font_size ?? 16));
+
+    for (const span of layer.content.spans) {
+      const tspan = createSVGElement('tspan');
+      tspan.textContent = span.text;
+      if (span.bold) tspan.setAttribute('font-weight', 'bold');
+      if (span.italic) tspan.setAttribute('font-style', 'italic');
+      if (span.color) tspan.setAttribute('fill', span.color);
+      if (span.size) tspan.setAttribute('font-size', String(span.size));
+      textEl.appendChild(tspan);
+    }
+
+    g.appendChild(textEl);
+  } else {
+    // Plain text
+    const textEl = createSVGElement('text', {
+      x: layer.x ?? 0,
+      y: (layer.y ?? 0) + (style.font_size ?? 16),
+    });
+    textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
+    textEl.setAttribute('font-size', String(style.font_size ?? 16));
+    textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
+    textEl.setAttribute('fill', style.color ?? '#000');
+
+    if (style.line_height) {
+      textEl.setAttribute('line-height', String(style.line_height));
+    }
+    if (style.letter_spacing) {
+      textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+    }
+    if (style.align) {
+      const anchor = style.align === 'center' ? 'middle' : style.align === 'right' ? 'end' : 'start';
+      textEl.setAttribute('text-anchor', anchor);
+      if (style.align === 'center' && typeof layer.width === 'number') {
+        textEl.setAttribute('x', String((layer.x ?? 0) + layer.width / 2));
+      } else if (style.align === 'right' && typeof layer.width === 'number') {
+        textEl.setAttribute('x', String((layer.x ?? 0) + layer.width));
+      }
+    }
+
+    // Handle multiline text
+    const value = layer.content.type === 'expression' ? layer.content.value : layer.content.value;
+    const lines = value.split('\n');
+    if (lines.length > 1) {
+      const lineH = (style.font_size ?? 16) * (style.line_height ?? 1.5);
+      for (let i = 0; i < lines.length; i++) {
+        const tspan = createSVGElement('tspan', {
+          x: textEl.getAttribute('x') ?? String(layer.x ?? 0),
+          dy: i === 0 ? '0' : String(lineH),
+        });
+        tspan.textContent = lines[i];
+        textEl.appendChild(tspan);
+      }
+    } else {
+      textEl.textContent = value;
+    }
+
+    g.appendChild(textEl);
+  }
+
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, svg);
+
+  return g;
+}
+
+// ── Image ───────────────────────────────────────────────────
+export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
+  const el = createSVGElement('image', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: typeof layer.width === 'number' ? layer.width : 100,
+    height: typeof layer.height === 'number' ? layer.height : 100,
+    href: layer.src,
+  });
+
+  if (layer.fit === 'cover' || layer.fit === 'contain') {
+    el.setAttribute('preserveAspectRatio', layer.fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet');
+  }
+
+  applyCommonAttributes(el, layer);
+  if (layer.effects) applyEffects(el, layer.effects, svg);
+
+  return el;
+}
+
+// ── Icon ────────────────────────────────────────────────────
+export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
+  const size = layer.size ?? 24;
+  const color = layer.color ?? '#000';
+
+  // Render as a placeholder rect + text showing icon name
+  // In production, this would resolve from Lucide SVG sprite
+  const g = createSVGElement('g');
+
+  const rect = createSVGElement('rect', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: size,
+    height: size,
+    rx: '4',
+    fill: 'none',
+    stroke: color,
+    'stroke-width': '1.5',
+  });
+
+  const label = createSVGElement('text', {
+    x: (layer.x ?? 0) + size / 2,
+    y: (layer.y ?? 0) + size / 2 + 4,
+    'text-anchor': 'middle',
+    'font-size': String(Math.max(8, size / 4)),
+    fill: color,
+  });
+  label.textContent = layer.name;
+
+  g.appendChild(rect);
+  g.appendChild(label);
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, svg);
+
+  return g;
+}
+
+// ── Mermaid (placeholder) ───────────────────────────────────
+export function renderMermaid(layer: MermaidLayer, svg: SVGSVGElement): SVGElement {
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: typeof layer.width === 'number' ? layer.width : 400,
+    height: typeof layer.height === 'number' ? layer.height : 300,
+  });
+
+  const div = document.createElement('div');
+  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  div.className = 'mermaid';
+  div.textContent = layer.definition;
+  fo.appendChild(div);
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Chart (placeholder) ─────────────────────────────────────
+export function renderChart(layer: ChartLayer, svg: SVGSVGElement): SVGElement {
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: typeof layer.width === 'number' ? layer.width : 400,
+    height: typeof layer.height === 'number' ? layer.height : 300,
+  });
+
+  const div = document.createElement('div');
+  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  div.dataset.vegaLite = JSON.stringify(layer.spec);
+  div.textContent = '[Chart: vega-lite]';
+  fo.appendChild(div);
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Code (placeholder) ──────────────────────────────────────
+export function renderCode(layer: CodeLayer, svg: SVGSVGElement): SVGElement {
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: typeof layer.width === 'number' ? layer.width : 400,
+    height: typeof layer.height === 'number' ? layer.height : 200,
+  });
+
+  const pre = document.createElement('pre');
+  pre.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  pre.style.fontFamily = 'JetBrains Mono, monospace';
+  pre.style.fontSize = '14px';
+  pre.style.margin = '0';
+  pre.style.padding = '16px';
+  pre.style.background = '#1a1a2e';
+  pre.style.color = '#e0e0e8';
+  pre.style.borderRadius = '8px';
+  pre.style.overflow = 'auto';
+
+  const code = document.createElement('code');
+  code.className = `language-${layer.language}`;
+  code.textContent = layer.code;
+  pre.appendChild(code);
+  fo.appendChild(pre);
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Math (placeholder) ──────────────────────────────────────
+export function renderMath(layer: MathLayer, svg: SVGSVGElement): SVGElement {
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: typeof layer.width === 'number' ? layer.width : 300,
+    height: typeof layer.height === 'number' ? layer.height : 100,
+  });
+
+  const div = document.createElement('div');
+  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  div.className = 'katex-container';
+  div.textContent = layer.expression;
+  fo.appendChild(div);
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Group ───────────────────────────────────────────────────
+export function renderGroup(
+  layer: GroupLayer,
+  svg: SVGSVGElement,
+  renderLayerFn: (layer: Layer, svg: SVGSVGElement) => SVGElement,
+): SVGElement {
+  const g = createSVGElement('g');
+
+  const sorted = [...layer.layers].sort((a, b) => a.z - b.z);
+  for (const child of sorted) {
+    g.appendChild(renderLayerFn(child, svg));
+  }
+
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, svg);
+
+  return g;
+}
