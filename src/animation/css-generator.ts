@@ -1,6 +1,6 @@
 import type {
-  AnimationSpec, EnterAnimation, ExitAnimation, LoopAnimation,
-  EnterAnimationType, ExitAnimationType, LoopAnimationType, EasingFunction,
+  AnimationSpec, LoopAnimation,
+  EnterAnimationType, ExitAnimationType,
 } from './types';
 
 // ── Enter Animation CSS Keyframes ───────────────────────────
