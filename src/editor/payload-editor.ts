@@ -1,8 +1,6 @@
 import { StateManager, type EditorState } from './state';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
-import type { DesignSpec } from '../schema/types';
-
 type MonacoEditor = import('monaco-editor').editor.IStandaloneCodeEditor;
 type MonacoModule = typeof import('monaco-editor');
 

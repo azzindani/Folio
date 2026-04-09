@@ -365,7 +365,7 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
 }
 
 // ── Mermaid (placeholder) ───────────────────────────────────
-export function renderMermaid(layer: MermaidLayer, svg: SVGSVGElement): SVGElement {
+export function renderMermaid(layer: MermaidLayer, _svg: SVGSVGElement): SVGElement {
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
@@ -384,7 +384,7 @@ export function renderMermaid(layer: MermaidLayer, svg: SVGSVGElement): SVGEleme
 }
 
 // ── Chart (placeholder) ─────────────────────────────────────
-export function renderChart(layer: ChartLayer, svg: SVGSVGElement): SVGElement {
+export function renderChart(layer: ChartLayer, _svg: SVGSVGElement): SVGElement {
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
@@ -403,7 +403,7 @@ export function renderChart(layer: ChartLayer, svg: SVGSVGElement): SVGElement {
 }
 
 // ── Code (placeholder) ──────────────────────────────────────
-export function renderCode(layer: CodeLayer, svg: SVGSVGElement): SVGElement {
+export function renderCode(layer: CodeLayer, _svg: SVGSVGElement): SVGElement {
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
@@ -433,7 +433,7 @@ export function renderCode(layer: CodeLayer, svg: SVGSVGElement): SVGElement {
 }
 
 // ── Math (placeholder) ──────────────────────────────────────
-export function renderMath(layer: MathLayer, svg: SVGSVGElement): SVGElement {
+export function renderMath(layer: MathLayer, _svg: SVGSVGElement): SVGElement {
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
