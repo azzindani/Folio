@@ -45,6 +45,22 @@ export class LayerPanelManager {
   private buildVirtualScroll(): void {
     this.content.style.cssText = 'position:relative;overflow-y:auto;height:100%';
     this.content.addEventListener('scroll', this.onScroll.bind(this));
+    // Single delegated click listener — no per-row addEventListener needed
+    this.content.addEventListener('click', (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
+      if (!row) return;
+      const id = row.dataset.layerId!;
+      if ((e as MouseEvent).shiftKey) {
+        const current = this.state.get().selectedLayerIds;
+        if (current.includes(id)) {
+          this.state.set('selectedLayerIds', current.filter(i => i !== id));
+        } else {
+          this.state.set('selectedLayerIds', [...current, id]);
+        }
+      } else {
+        this.state.set('selectedLayerIds', [id]);
+      }
+    });
   }
 
   private onStateChange(_state: EditorState, changedKeys: (keyof EditorState)[]): void {
@@ -85,7 +101,7 @@ export class LayerPanelManager {
     const panelHeight = this.content.clientHeight || 200;
     const scrollTop = this.content.scrollTop;
 
-    // Compute cumulative offsets
+    // Compute cumulative offsets once
     const offsets: number[] = [];
     let acc = 0;
     for (const row of this.rows) {
@@ -93,8 +109,8 @@ export class LayerPanelManager {
       acc += row.height;
     }
 
-    // Find visible range
-    let startIdx = offsets.findIndex(o => o + this.rows[offsets.indexOf(o)]?.height > scrollTop);
+    // Find first row whose bottom edge is visible — use index param, not indexOf
+    let startIdx = offsets.findIndex((o, idx) => o + this.rows[idx].height > scrollTop);
     if (startIdx < 0) startIdx = 0;
     startIdx = Math.max(0, startIdx - BUFFER_ROWS);
 
@@ -134,24 +150,6 @@ export class LayerPanelManager {
     html += `</div>`;
 
     this.content.innerHTML = html;
-
-    // Bind click events
-    this.content.querySelectorAll('.layer-row').forEach(row => {
-      row.addEventListener('click', (e) => {
-        const id = (row as HTMLElement).dataset.layerId!;
-        const ev = e as MouseEvent;
-        if (ev.shiftKey) {
-          const current = this.state.get().selectedLayerIds;
-          if (current.includes(id)) {
-            this.state.set('selectedLayerIds', current.filter(i => i !== id));
-          } else {
-            this.state.set('selectedLayerIds', [...current, id]);
-          }
-        } else {
-          this.state.set('selectedLayerIds', [id]);
-        }
-      });
-    });
   }
 
   private onScroll(): void {

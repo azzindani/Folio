@@ -1,6 +1,8 @@
 import { StateManager } from './state';
 import type { EditorApp } from './app';
 
+let duplicateCounter = 0;
+
 interface ShortcutDef {
   key: string;
   ctrl?: boolean;
@@ -118,7 +120,7 @@ export class KeyboardManager {
     for (const layer of layers) {
       const clone = {
         ...layer,
-        id: `${layer.id}-copy-${Date.now()}`,
+        id: `${layer.id}-copy-${++duplicateCounter}`,
         x: (layer.x ?? 0) + 20,
         y: (layer.y ?? 0) + 20,
         z: layer.z + 1,
