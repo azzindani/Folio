@@ -23,6 +23,7 @@
   --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.5);
 
   --panel-width: 260px;
+  --tools-width: 48px;
   --toolbar-height: 48px;
   --layer-panel-height: 200px;
 }
@@ -50,11 +51,18 @@ html, body {
   height: 100%;
   display: grid;
   grid-template-rows: var(--toolbar-height) 1fr var(--layer-panel-height);
-  grid-template-columns: var(--panel-width) 1fr var(--panel-width);
+  grid-template-columns: var(--tools-width) var(--panel-width) 1fr var(--panel-width);
   grid-template-areas:
-    "toolbar toolbar toolbar"
-    "filetree canvas properties"
-    "layers layers layers";
+    "toolbar  toolbar   toolbar   toolbar"
+    "tools    filetree  canvas    properties"
+    "tools    layers    layers    layers";
+}
+
+.tools-panel {
+  grid-area: tools;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
 }
 
 .toolbar {
@@ -214,6 +222,47 @@ html, body {
   z-index: 89;
 }
 
+/* Alignment toolbar (floats above canvas when multi-select active) */
+.align-toolbar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  z-index: 95;
+}
+
+.align-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, color 0.1s;
+}
+
+.align-btn:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+/* Drawing crosshair cursor when a draw tool is active */
+.canvas-area.tool-draw {
+  cursor: crosshair;
+}
+
 /* Toast/notification */
 .toast {
   position: fixed;
@@ -237,11 +286,11 @@ html, body {
 /* Responsive: tablet */
 @media (max-width: 1023px) {
   #app {
-    grid-template-columns: 1fr;
+    grid-template-columns: var(--tools-width) 1fr;
     grid-template-areas:
-      "toolbar"
-      "canvas"
-      "layers";
+      "toolbar  toolbar"
+      "tools    canvas"
+      "tools    layers";
   }
   .file-tree, .properties-panel { display: none; }
 }
@@ -255,5 +304,5 @@ html, body {
       "toolbar"
       "canvas";
   }
-  .file-tree, .properties-panel, .layer-panel { display: none; }
+  .file-tree, .properties-panel, .layer-panel, .tools-panel { display: none; }
 }

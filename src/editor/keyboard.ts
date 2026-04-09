@@ -84,6 +84,12 @@ export class KeyboardManager {
         action: () => this.adjustZ(1),
         description: 'Bring forward',
       },
+      // Tool shortcuts
+      { key: 'v', action: () => this.state.set('activeTool', 'select', false), description: 'Select tool' },
+      { key: 'r', action: () => this.state.set('activeTool', 'rect',   false), description: 'Rectangle tool' },
+      { key: 'c', action: () => this.state.set('activeTool', 'circle', false), description: 'Circle tool' },
+      { key: 't', action: () => this.state.set('activeTool', 'text',   false), description: 'Text tool' },
+      { key: 'l', action: () => this.state.set('activeTool', 'line',   false), description: 'Line tool' },
     ];
   }
 

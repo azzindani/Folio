@@ -1,5 +1,7 @@
 import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
 
+export type ToolId = 'select' | 'text' | 'rect' | 'circle' | 'line';
+
 export interface EditorState {
   design: DesignSpec | null;
   theme: ThemeSpec | null;
@@ -12,6 +14,7 @@ export interface EditorState {
   gridVisible: boolean;
   yamlSource: string;
   dirty: boolean;
+  activeTool: ToolId;
 }
 
 export type StateChangeListener = (state: EditorState, changedKeys: (keyof EditorState)[]) => void;
@@ -39,6 +42,7 @@ export class StateManager {
       gridVisible: false,
       yamlSource: '',
       dirty: false,
+      activeTool: 'select',
     };
   }
 

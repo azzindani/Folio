@@ -1,5 +1,8 @@
-import { StateManager, type EditorState } from './state';
+import { StateManager, type EditorState, type ToolId } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
+import type { Layer } from '../schema/types';
+
+let layerCounter = 0;
 
 export class CanvasManager {
   private container: HTMLElement;
@@ -57,6 +60,11 @@ export class CanvasManager {
 
     if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
       this.updateTransform();
+    }
+
+    if (changedKeys.includes('activeTool')) {
+      const isDraw = state.activeTool !== 'select';
+      this.container.classList.toggle('tool-draw', isDraw);
     }
   }
 
@@ -192,11 +200,21 @@ export class CanvasManager {
   }
 
   private onPointerDown(e: PointerEvent): void {
+    const { activeTool } = this.state.get();
+
+    // Drawing tool — create a new layer at click position
+    if (activeTool !== 'select') {
+      this.createLayerAt(e, activeTool);
+      // Switch back to select after placing
+      this.state.set('activeTool', 'select', false);
+      return;
+    }
+
     const target = e.target as SVGElement;
     const layerEl = target.closest('[data-layer-id]') as SVGElement | null;
 
     if (!layerEl) {
-      // Click on empty canvas
+      // Click on empty canvas — deselect
       this.state.set('selectedLayerIds', []);
       return;
     }
@@ -204,7 +222,6 @@ export class CanvasManager {
     const layerId = layerEl.getAttribute('data-layer-id')!;
 
     if (e.shiftKey) {
-      // Multi-select toggle
       const current = this.state.get().selectedLayerIds;
       if (current.includes(layerId)) {
         this.state.set('selectedLayerIds', current.filter(id => id !== layerId));
@@ -215,6 +232,42 @@ export class CanvasManager {
       this.state.set('selectedLayerIds', [layerId]);
       this.startDrag(e, layerId);
     }
+  }
+
+  private createLayerAt(e: PointerEvent, tool: Exclude<ToolId, 'select'>): void {
+    const vpRect = this.viewport.getBoundingClientRect();
+    const zoom = this.state.get().zoom;
+    const canvasX = Math.round((e.clientX - vpRect.left) / zoom);
+    const canvasY = Math.round((e.clientY - vpRect.top) / zoom);
+    const id = `${tool}-${++layerCounter}`;
+
+    const base = { id, z: 20 + layerCounter };
+
+    const newLayer: Layer = (() => {
+      switch (tool) {
+        case 'rect': return {
+          ...base, type: 'rect', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
+          fill: { type: 'solid', color: '#6c5ce7' },
+        } as Layer;
+        case 'circle': return {
+          ...base, type: 'circle', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
+          fill: { type: 'solid', color: '#6c5ce7' },
+        } as Layer;
+        case 'line': return {
+          ...base, type: 'line', x: canvasX, y: canvasY, x1: canvasX, y1: canvasY,
+          x2: canvasX + 100, y2: canvasY, width: 100, height: 0,
+          stroke: { color: '#6c5ce7', width: 2 },
+        } as Layer;
+        case 'text': return {
+          ...base, type: 'text', x: canvasX - 75, y: canvasY - 12, width: 150, height: 'auto',
+          content: { type: 'plain', value: 'Text' },
+          style: { font_family: 'Inter', font_size: 24, font_weight: 400, color: '#FFFFFF' },
+        } as Layer;
+      }
+    })();
+
+    this.state.addLayer(newLayer);
+    this.state.set('selectedLayerIds', [id]);
   }
 
   private startDrag(e: PointerEvent, layerId: string): void {

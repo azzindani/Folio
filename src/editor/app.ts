@@ -4,7 +4,10 @@ import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
+import { ProblemsPanelManager } from '../ui/panels/problems-panel';
 import { PageStrip } from '../ui/panels/page-strip';
+import { AlignToolbar } from '../ui/tools/align-toolbar';
+import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
@@ -209,8 +212,11 @@ export class EditorApp {
   canvas!: CanvasManager;
   payloadEditor!: PayloadEditor;
   private toolbar!: ToolbarManager;
+  private toolbox!: ToolboxManager;
+  private alignToolbar!: AlignToolbar;
   private layerPanel!: LayerPanelManager;
   private propertiesPanel!: PropertiesPanelManager;
+  private problemsPanel!: ProblemsPanelManager;
   private pageStrip!: PageStrip;
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
@@ -235,12 +241,27 @@ export class EditorApp {
       this,
     );
 
+    this.toolbox = new ToolboxManager(
+      this.container.querySelector('.tools-panel')!,
+      this.state,
+    );
+
+    this.alignToolbar = new AlignToolbar(
+      this.container.querySelector('.canvas-area')!,
+      this.state,
+    );
+
     this.layerPanel = new LayerPanelManager(
       this.container.querySelector('.layer-panel')!,
       this.state,
     );
 
     this.propertiesPanel = new PropertiesPanelManager(
+      this.container.querySelector('.properties-panel')!,
+      this.state,
+    );
+
+    this.problemsPanel = new ProblemsPanelManager(
       this.container.querySelector('.properties-panel')!,
       this.state,
     );
@@ -279,6 +300,7 @@ export class EditorApp {
   private buildLayout(): void {
     this.container.innerHTML = `
       <div class="toolbar"></div>
+      <div class="tools-panel"></div>
       <div class="file-tree">
         <div class="panel-header">Files</div>
         <div class="file-tree-content"></div>
@@ -287,8 +309,11 @@ export class EditorApp {
         <div class="monaco-container" style="display:none"></div>
       </div>
       <div class="properties-panel">
-        <div class="panel-header">Properties</div>
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Properties</span>
+        </div>
         <div class="properties-content"></div>
+        <div class="panel-header" style="margin-top:8px;border-top:1px solid var(--color-border);padding-top:8px">Problems</div>
       </div>
       <div class="layer-panel">
         <div class="panel-header">Layers</div>
