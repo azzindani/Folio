@@ -282,7 +282,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     }
 
     // Handle multiline text
-    const value = layer.content.type === 'expression' ? layer.content.value : layer.content.value;
+    const value = layer.content.value;
     const lines = value.split('\n');
     if (lines.length > 1) {
       const lineH = (style.font_size ?? 16) * (style.line_height ?? 1.5);
@@ -442,7 +442,7 @@ export function renderChart(layer: ChartLayer, _svg: SVGSVGElement): SVGElement 
 
   import('vega-embed').then(({ default: embed }) => {
     container.innerHTML = '';
-    return embed(container, spec as Parameters<typeof embed>[1], {
+    return embed(container, spec as unknown as Parameters<typeof embed>[1], {
       renderer: 'svg',
       actions: false,
       theme: 'dark',
@@ -494,8 +494,8 @@ export function renderCode(layer: CodeLayer, _svg: SVGSVGElement): SVGElement {
   fo.appendChild(pre);
 
   // Lazy-load Prism and apply syntax highlighting
-  import('prismjs').then(mod => {
-    const Prism = mod.default;
+  // prismjs uses `export =` so the dynamic import resolves to Prism directly
+  import('prismjs').then(Prism => {
     // Dynamically load the language component if not already present
     const grammar = Prism.languages[layer.language];
     if (grammar) {
