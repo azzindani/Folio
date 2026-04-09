@@ -47,7 +47,7 @@ export class CanvasManager {
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
     const needsRender = changedKeys.some(k =>
-      ['design', 'theme', 'currentPageIndex'].includes(k),
+      ['design', 'theme', 'currentPageIndex', 'gridVisible'].includes(k),
     );
 
     if (needsRender) {
@@ -84,9 +84,9 @@ export class CanvasManager {
       const pageIdx = Math.min(currentPageIndex, pages.length - 1);
       const page = pages[pageIdx];
       const layers = page?.layers ?? [];
-      svg = renderPage(layers, width, height, { theme: theme ?? undefined });
+      svg = renderPage(layers, width, height, { theme: theme ?? undefined, showGrid: this.state.get().gridVisible });
     } else {
-      svg = renderDesign(design, { theme: theme ?? undefined });
+      svg = renderDesign(design, { theme: theme ?? undefined, showGrid: this.state.get().gridVisible });
     }
 
     // Replace SVG
@@ -283,19 +283,95 @@ export class CanvasManager {
     const onMove = (me: PointerEvent) => {
       const dx = (me.clientX - startX) / zoom;
       const dy = (me.clientY - startY) / zoom;
-      this.state.updateLayer(layerId, {
-        x: Math.round(origX + dx),
-        y: Math.round(origY + dy),
-      });
+      const newX = Math.round(origX + dx);
+      const newY = Math.round(origY + dy);
+      this.state.updateLayer(layerId, { x: newX, y: newY });
+      this.drawSmartGuides(layerId, newX, newY, layer);
     };
 
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+      this.clearSmartGuides();
     };
 
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+  }
+
+  private drawSmartGuides(
+    draggedId: string,
+    x: number,
+    y: number,
+    layer: Layer,
+  ): void {
+    this.clearSmartGuides();
+    const w = typeof layer.width === 'number' ? layer.width : 0;
+    const h = typeof layer.height === 'number' ? layer.height : 0;
+    const others = this.state.getCurrentLayers().filter(l => l.id !== draggedId);
+    const TOLERANCE = 4;
+
+    const guides: { x1: number; y1: number; x2: number; y2: number }[] = [];
+    const doc = this.state.get().design?.document;
+    const cw = doc?.width ?? 1080;
+    const ch = doc?.height ?? 1080;
+
+    for (const other of others) {
+      const ox = other.x ?? 0;
+      const oy = other.y ?? 0;
+      const ow = typeof other.width === 'number' ? other.width : 0;
+      const oh = typeof other.height === 'number' ? other.height : 0;
+
+      // Horizontal edge alignments
+      const hChecks = [
+        [y, oy], [y, oy + oh], [y + h, oy], [y + h, oy + oh],
+        [y + h / 2, oy + oh / 2],
+      ];
+      for (const [a, b] of hChecks) {
+        if (Math.abs(a - b) < TOLERANCE) {
+          guides.push({ x1: 0, y1: b, x2: cw, y2: b });
+          break;
+        }
+      }
+
+      // Vertical edge alignments
+      const vChecks = [
+        [x, ox], [x, ox + ow], [x + w, ox], [x + w, ox + ow],
+        [x + w / 2, ox + ow / 2],
+      ];
+      for (const [a, b] of vChecks) {
+        if (Math.abs(a - b) < TOLERANCE) {
+          guides.push({ x1: b, y1: 0, x2: b, y2: ch });
+          break;
+        }
+      }
+    }
+
+    if (guides.length === 0) return;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'smart-guides');
+    svg.setAttribute('width', String(cw));
+    svg.setAttribute('height', String(ch));
+    svg.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:91;overflow:visible';
+    for (const g of guides) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', String(g.x1));
+      line.setAttribute('y1', String(g.y1));
+      line.setAttribute('x2', String(g.x2));
+      line.setAttribute('y2', String(g.y2));
+      line.setAttribute('stroke', '#e94560');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '4 3');
+      line.setAttribute('opacity', '0.8');
+      svg.appendChild(line);
+    }
+    this.selectionOverlay.appendChild(svg);
+  }
+
+  private clearSmartGuides(): void {
+    const el = this.selectionOverlay.querySelector('.smart-guides');
+    if (el) el.remove();
   }
 
   private onWheel(e: WheelEvent): void {

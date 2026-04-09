@@ -84,6 +84,9 @@ export class KeyboardManager {
         action: () => this.adjustZ(1),
         description: 'Bring forward',
       },
+      // File shortcuts
+      { key: 'o', ctrl: true, action: () => this.app.fileTree?.triggerOpen(), description: 'Open file' },
+      { key: 's', ctrl: true, action: () => this.app.fileTree?.triggerSave(), description: 'Save file' },
       // Tool shortcuts
       { key: 'v', action: () => this.state.set('activeTool', 'select', false), description: 'Select tool' },
       { key: 'r', action: () => this.state.set('activeTool', 'rect',   false), description: 'Rectangle tool' },

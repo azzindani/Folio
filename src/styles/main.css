@@ -283,6 +283,23 @@ html, body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* Export menu items */
+.export-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.export-item:last-child { border-bottom: none; }
+.export-item:hover { background: var(--color-border); }
+
 /* Responsive: tablet */
 @media (max-width: 1023px) {
   #app {
