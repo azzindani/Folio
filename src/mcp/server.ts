@@ -5,6 +5,8 @@ import {
   appendPage, patchDesign, sealDesign,
   addLayer, updateLayer, removeLayer,
   listThemes, exportDesignTool,
+  batchCreate, duplicateDesign, resumeDesign,
+  saveAsComponent, applyTheme,
 } from './tool-handlers';
 import type { MCPRequest, MCPResponse, ToolCallResult } from './types';
 
@@ -20,6 +22,11 @@ const TOOL_HANDLERS: Record<string, (args: Record<string, unknown>) => ToolCallR
   remove_layer: (a) => removeLayer(a as Parameters<typeof removeLayer>[0]),
   list_themes: (a) => listThemes(a as Parameters<typeof listThemes>[0]),
   export_design: (a) => exportDesignTool(a as Parameters<typeof exportDesignTool>[0]),
+  batch_create: (a) => batchCreate(a as Parameters<typeof batchCreate>[0]),
+  duplicate_design: (a) => duplicateDesign(a as Parameters<typeof duplicateDesign>[0]),
+  resume_design: (a) => resumeDesign(a as Parameters<typeof resumeDesign>[0]),
+  save_as_component: (a) => saveAsComponent(a as Parameters<typeof saveAsComponent>[0]),
+  apply_theme: (a) => applyTheme(a as Parameters<typeof applyTheme>[0]),
 };
 
 function sendResponse(response: MCPResponse): void {

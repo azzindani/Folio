@@ -364,88 +364,189 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
   return g;
 }
 
-// ── Mermaid (placeholder) ───────────────────────────────────
+// ── Mermaid ─────────────────────────────────────────────────
+// Lazy-loads mermaid on first use; renders asynchronously into
+// a foreignObject container and updates the DOM once done.
 export function renderMermaid(layer: MermaidLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
-    width: typeof layer.width === 'number' ? layer.width : 400,
-    height: typeof layer.height === 'number' ? layer.height : 300,
+    width: w,
+    height: h,
   });
 
-  const div = document.createElement('div');
-  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  div.className = 'mermaid';
-  div.textContent = layer.definition;
-  fo.appendChild(div);
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.style.width = '100%';
+  container.style.height = '100%';
+  container.style.overflow = 'hidden';
+
+  // Placeholder until async render completes
+  const placeholder = document.createElement('div');
+  placeholder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  placeholder.style.cssText = 'font-family:monospace;font-size:12px;color:#8892A4;padding:8px;white-space:pre;';
+  placeholder.textContent = layer.definition;
+  container.appendChild(placeholder);
+  fo.appendChild(container);
+
+  // Stable ID derived from layer.id to avoid mermaid ID collisions
+  const diagramId = `mermaid-${layer.id.replace(/[^a-zA-Z0-9]/g, '-')}`;
+
+  import('mermaid').then(mod => {
+    const mermaid = mod.default;
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+    return mermaid.render(diagramId, layer.definition);
+  }).then(({ svg }) => {
+    container.innerHTML = svg;
+  }).catch(() => {
+    // Leave placeholder on error
+  });
 
   applyCommonAttributes(fo, layer);
   return fo;
 }
 
-// ── Chart (placeholder) ─────────────────────────────────────
+// ── Chart (vega-embed) ───────────────────────────────────────
+// Lazy-loads vega-embed on first use; renders a Vega-Lite spec
+// into a foreignObject container and updates the DOM once done.
 export function renderChart(layer: ChartLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
-    width: typeof layer.width === 'number' ? layer.width : 400,
-    height: typeof layer.height === 'number' ? layer.height : 300,
+    width: w,
+    height: h,
   });
 
-  const div = document.createElement('div');
-  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  div.dataset.vegaLite = JSON.stringify(layer.spec);
-  div.textContent = '[Chart: vega-lite]';
-  fo.appendChild(div);
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.style.width = `${w}px`;
+  container.style.height = `${h}px`;
+  container.style.overflow = 'hidden';
+
+  // Placeholder
+  const placeholder = document.createElement('div');
+  placeholder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#8892A4;font-family:monospace;font-size:12px;';
+  placeholder.textContent = '[Chart loading…]';
+  container.appendChild(placeholder);
+  fo.appendChild(container);
+
+  // Merge layer dimensions into spec so vega-embed respects them
+  const spec = { width: w - 20, height: h - 20, ...layer.spec };
+
+  import('vega-embed').then(({ default: embed }) => {
+    container.innerHTML = '';
+    return embed(container, spec as Parameters<typeof embed>[1], {
+      renderer: 'svg',
+      actions: false,
+      theme: 'dark',
+    });
+  }).catch(() => {
+    container.innerHTML = '';
+    placeholder.textContent = '[Chart render failed]';
+    container.appendChild(placeholder);
+  });
 
   applyCommonAttributes(fo, layer);
   return fo;
 }
 
-// ── Code (placeholder) ──────────────────────────────────────
+// ── Code (Prism.js) ──────────────────────────────────────────
+// Lazy-loads Prism on first use for syntax highlighting.
 export function renderCode(layer: CodeLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 200;
+
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
-    width: typeof layer.width === 'number' ? layer.width : 400,
-    height: typeof layer.height === 'number' ? layer.height : 200,
+    width: w,
+    height: h,
   });
 
   const pre = document.createElement('pre');
   pre.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  pre.style.fontFamily = 'JetBrains Mono, monospace';
-  pre.style.fontSize = '14px';
-  pre.style.margin = '0';
-  pre.style.padding = '16px';
-  pre.style.background = '#1a1a2e';
-  pre.style.color = '#e0e0e8';
-  pre.style.borderRadius = '8px';
-  pre.style.overflow = 'auto';
+  pre.style.cssText = [
+    'font-family:JetBrains Mono,monospace',
+    'font-size:13px',
+    'margin:0',
+    'padding:16px',
+    'background:#1a1a2e',
+    'color:#e0e0e8',
+    'border-radius:8px',
+    'overflow:auto',
+    `width:${w}px`,
+    `height:${h}px`,
+    'box-sizing:border-box',
+  ].join(';');
 
   const code = document.createElement('code');
   code.className = `language-${layer.language}`;
+  // Escape HTML entities for initial plain render
   code.textContent = layer.code;
   pre.appendChild(code);
   fo.appendChild(pre);
+
+  // Lazy-load Prism and apply syntax highlighting
+  import('prismjs').then(mod => {
+    const Prism = mod.default;
+    // Dynamically load the language component if not already present
+    const grammar = Prism.languages[layer.language];
+    if (grammar) {
+      code.innerHTML = Prism.highlight(layer.code, grammar, layer.language);
+    } else {
+      import(`prismjs/components/prism-${layer.language}.js`).then(() => {
+        const g = Prism.languages[layer.language];
+        if (g) code.innerHTML = Prism.highlight(layer.code, g, layer.language);
+      }).catch(() => {
+        // Language not available — plain text is fine
+      });
+    }
+  }).catch(() => {
+    // Prism unavailable — plain text remains
+  });
 
   applyCommonAttributes(fo, layer);
   return fo;
 }
 
-// ── Math (placeholder) ──────────────────────────────────────
+// ── Math (KaTeX) ─────────────────────────────────────────────
+// Lazy-loads KaTeX on first use; renders LaTeX into HTML inside
+// a foreignObject. Falls back to raw expression string on error.
 export function renderMath(layer: MathLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 300;
+  const h = typeof layer.height === 'number' ? layer.height : 100;
+
   const fo = createSVGElement('foreignObject', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
-    width: typeof layer.width === 'number' ? layer.width : 300,
-    height: typeof layer.height === 'number' ? layer.height : 100,
+    width: w,
+    height: h,
   });
 
-  const div = document.createElement('div');
-  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  div.className = 'katex-container';
-  div.textContent = layer.expression;
-  fo.appendChild(div);
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.style.cssText = `display:flex;align-items:center;justify-content:center;width:${w}px;height:${h}px;`;
+  // Plain-text placeholder
+  container.textContent = layer.expression;
+  fo.appendChild(container);
+
+  import('katex').then(mod => {
+    const katex = mod.default;
+    container.innerHTML = katex.renderToString(layer.expression, {
+      throwOnError: false,
+      displayMode: true,
+      output: 'html',
+    });
+  }).catch(() => {
+    // Leave plain text fallback
+  });
 
   applyCommonAttributes(fo, layer);
   return fo;
