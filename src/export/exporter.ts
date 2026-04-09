@@ -1,13 +1,16 @@
 import type { DesignSpec, ThemeSpec } from '../schema/types';
+import type { AnimationSpec } from '../animation/types';
+import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderDesign, renderPage } from '../renderer/renderer';
 
-export type ExportFormat = 'svg' | 'png' | 'html' | 'pdf';
+export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'pdf';
 
 export interface ExportOptions {
   format: ExportFormat;
   scale?: number;
   theme?: ThemeSpec;
   pageIndex?: number;
+  animations?: Map<string, AnimationSpec>;
 }
 
 export function exportToSVG(spec: DesignSpec, options: ExportOptions): string {
@@ -50,7 +53,10 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
 
 export function exportToHTML(spec: DesignSpec, options: ExportOptions): string {
   const svgString = exportToSVG(spec, options);
-  const { width, height } = spec.document;
+
+  const animationCSS = options.animations
+    ? generateDesignAnimationCSS(options.animations)
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -62,6 +68,7 @@ export function exportToHTML(spec: DesignSpec, options: ExportOptions): string {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; display: flex; align-items: center; justify-content: center; background: #111; }
     svg { max-width: 100vw; max-height: 100vh; }
+${animationCSS ? `    /* Design Animations */\n${animationCSS}` : ''}
   </style>
 </head>
 <body>
@@ -112,7 +119,8 @@ export async function exportDesign(spec: DesignSpec, options: ExportOptions): Pr
       downloadBlob(blob, `${name}.png`);
       break;
     }
-    case 'html': {
+    case 'html':
+    case 'html-animated': {
       const html = exportToHTML(spec, options);
       downloadText(html, `${name}.html`, 'text/html');
       break;
