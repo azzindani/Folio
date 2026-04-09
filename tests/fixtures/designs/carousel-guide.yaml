@@ -1,0 +1,176 @@
+_protocol: "design/v1"
+_mode: complete
+
+meta:
+  id: "carousel-001"
+  name: "MCP Setup Guide"
+  type: carousel
+  created: "2026-04-09"
+  modified: "2026-04-09"
+  generator: "mcp"
+  generation:
+    status: complete
+    total_pages: 3
+    completed_pages: 3
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+pages:
+  - id: page_1
+    label: "Cover"
+    layers:
+      - id: cover-bg
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1080
+        height: 1080
+        fill:
+          type: linear
+          angle: 135
+          stops:
+            - { color: "$background", position: 0 }
+            - { color: "$surface", position: 100 }
+      - id: cover-title
+        type: text
+        z: 20
+        x: 80
+        y: 400
+        width: 920
+        height: auto
+        content:
+          type: plain
+          value: "Setting Up a Local MCP Server"
+        style:
+          font_family: "$heading"
+          font_size: 56
+          font_weight: 800
+          color: "$text"
+      - id: cover-subtitle
+        type: text
+        z: 21
+        x: 80
+        y: 500
+        width: 920
+        height: auto
+        content:
+          type: plain
+          value: "A step-by-step developer guide"
+        style:
+          font_family: "$body"
+          font_size: 24
+          font_weight: 400
+          color: "$text_muted"
+
+  - id: page_2
+    label: "Step 1"
+    layers:
+      - id: step1-bg
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1080
+        height: 1080
+        fill:
+          type: solid
+          color: "$background"
+      - id: step1-number
+        type: text
+        z: 20
+        x: 80
+        y: 100
+        width: 200
+        height: auto
+        content:
+          type: plain
+          value: "01"
+        style:
+          font_family: "$heading"
+          font_size: 120
+          font_weight: 800
+          color: "$primary"
+          line_height: 1.0
+      - id: step1-title
+        type: text
+        z: 21
+        x: 80
+        y: 280
+        width: 920
+        height: auto
+        content:
+          type: plain
+          value: "Install Node.js"
+        style:
+          font_family: "$heading"
+          font_size: 48
+          font_weight: 700
+          color: "$text"
+      - id: step1-body
+        type: text
+        z: 22
+        x: 80
+        y: 370
+        width: 920
+        height: auto
+        content:
+          type: plain
+          value: "Download LTS version from nodejs.org and follow the installer."
+        style:
+          font_family: "$body"
+          font_size: 20
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.6
+
+  - id: page_3
+    label: "Step 2"
+    layers:
+      - id: step2-bg
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1080
+        height: 1080
+        fill:
+          type: solid
+          color: "$background"
+      - id: step2-number
+        type: text
+        z: 20
+        x: 80
+        y: 100
+        width: 200
+        height: auto
+        content:
+          type: plain
+          value: "02"
+        style:
+          font_family: "$heading"
+          font_size: 120
+          font_weight: 800
+          color: "$primary"
+      - id: step2-title
+        type: text
+        z: 21
+        x: 80
+        y: 280
+        width: 920
+        height: auto
+        content:
+          type: plain
+          value: "Configure YAML"
+        style:
+          font_family: "$heading"
+          font_size: 48
+          font_weight: 700
+          color: "$text"

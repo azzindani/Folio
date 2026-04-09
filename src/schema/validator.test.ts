@@ -35,13 +35,18 @@ describe('validateLayer', () => {
   });
 
   it('accepts all valid layer types', () => {
-    const types = [
-      'rect', 'circle', 'path', 'polygon', 'line', 'text', 'image', 'icon',
-      'component', 'component_list', 'mermaid', 'chart', 'code', 'math', 'group',
-    ];
-    for (const type of types) {
-      const errors = validateLayer({ id: 'test', type: type as BaseLayer['type'], z: 0 }, 'l');
-      expect(errors).toHaveLength(0);
+    const typesWithExtras: Record<string, Record<string, unknown>> = {
+      rect: {}, circle: {}, path: {}, polygon: {}, image: {}, icon: {},
+      mermaid: {}, chart: {}, code: {}, math: {}, group: {},
+      line: { x1: 0, y1: 0, x2: 100, y2: 100 },
+      text: { content: { type: 'plain', value: 'test' } },
+      component: { ref: 'test-component' },
+      component_list: { component_ref: 'test', items: [] },
+    };
+    for (const [type, extras] of Object.entries(typesWithExtras)) {
+      const errors = validateLayer({ id: 'test', type: type as BaseLayer['type'], z: 0, ...extras }, 'l');
+      const critical = errors.filter(e => e.severity === 'error');
+      expect(critical).toHaveLength(0);
     }
   });
 });

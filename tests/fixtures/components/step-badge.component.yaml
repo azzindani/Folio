@@ -1,0 +1,45 @@
+_protocol: "component/v1"
+name: "step-badge"
+version: "1.0.0"
+description: "A numbered step badge with accent color"
+
+props:
+  number:
+    type: string
+    default: "01"
+  label:
+    type: string
+    default: "Step"
+  accent:
+    type: color
+    default: "#E94560"
+
+layers:
+  - id: badge-bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 64
+    height: 64
+    fill:
+      type: solid
+      color: "{{accent}}"
+    radius: 32
+
+  - id: badge-number
+    type: text
+    z: 1
+    x: 0
+    y: 16
+    width: 64
+    height: 32
+    content:
+      type: plain
+      value: "{{number}}"
+    style:
+      font_family: "Inter"
+      font_size: 24
+      font_weight: 700
+      color: "#FFFFFF"
+      align: center

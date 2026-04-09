@@ -209,7 +209,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
   const style = layer.style ?? {};
 
   if (layer.content.type === 'markdown') {
-    // Use foreignObject for HTML rendering
+    // Use foreignObject for HTML rendering via marked.js
     const fo = createSVGElement('foreignObject', {
       x: layer.x ?? 0,
       y: layer.y ?? 0,
@@ -224,7 +224,15 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     div.style.fontWeight = String(style.font_weight ?? 400);
     div.style.color = style.color ?? '#000';
     div.style.lineHeight = String(style.line_height ?? 1.5);
-    div.innerHTML = layer.content.value; // Will be parsed by marked.js later
+
+    // Lazy load marked.js and parse markdown
+    const mdValue = (layer.content as { value: string }).value;
+    import('marked').then(({ marked }) => {
+      div.innerHTML = marked.parse(mdValue) as string;
+    }).catch(() => {
+      div.textContent = mdValue;
+    });
+    div.textContent = mdValue; // Initial render before async completes
     fo.appendChild(div);
     g.appendChild(fo);
   } else if (layer.content.type === 'rich') {
