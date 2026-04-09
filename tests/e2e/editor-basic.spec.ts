@@ -44,18 +44,20 @@ test.describe('Editor — canvas interactions', () => {
   });
 
   test('clicking a layer selects it', async ({ page }) => {
-    // Click the first rect in the SVG (background layer)
+    // Click near the top-left of the canvas area (well within its bounds).
+    // Layout: toolbar=48px, canvas=1fr (≥300px), layer-panel=200px in 720px viewport.
+    // Using x:100, y:100 keeps the click safely within the canvas grid cell.
     const canvas = page.locator('.canvas-area');
-    await canvas.click({ position: { x: 540, y: 540 } });
+    await canvas.click({ position: { x: 100, y: 100 } });
 
-    // After click, properties panel should show something
+    // After click, properties panel should still be visible (no crash)
     const props = page.locator('.properties-panel');
     await expect(props).toBeVisible();
   });
 
   test('Escape clears selection', async ({ page }) => {
     const canvas = page.locator('.canvas-area');
-    await canvas.click({ position: { x: 540, y: 400 } });
+    await canvas.click({ position: { x: 100, y: 100 } });
     await page.keyboard.press('Escape');
 
     // Selection handles should not be visible after Escape
@@ -65,15 +67,16 @@ test.describe('Editor — canvas interactions', () => {
 
   test('command palette opens with slash', async ({ page }) => {
     await page.keyboard.press('/');
-    const palette = page.locator('.command-palette');
+    // The command palette overlay uses class "command-palette-overlay"
+    const palette = page.locator('.command-palette-overlay');
     await expect(palette).toBeVisible({ timeout: 3_000 });
   });
 
   test('command palette closes with Escape', async ({ page }) => {
     await page.keyboard.press('/');
-    await page.waitForSelector('.command-palette');
+    await page.waitForSelector('.command-palette-overlay');
     await page.keyboard.press('Escape');
-    const palette = page.locator('.command-palette');
+    const palette = page.locator('.command-palette-overlay');
     await expect(palette).not.toBeVisible();
   });
 });

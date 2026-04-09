@@ -45,8 +45,8 @@ test.describe('Visual Regression — layer selection', () => {
   });
 
   test('selected layer shows handles', async ({ page }) => {
-    // Click somewhere on the canvas to select a layer
-    await page.locator('.canvas-area').click({ position: { x: 540, y: 540 } });
+    // Click near top-left of canvas area (stays within the grid cell bounds)
+    await page.locator('.canvas-area').click({ position: { x: 100, y: 100 } });
     await page.waitForTimeout(100);
 
     const canvas = page.locator('.canvas-area');
