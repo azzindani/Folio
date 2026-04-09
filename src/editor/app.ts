@@ -258,7 +258,10 @@ export class EditorApp {
     const monacoContainer = this.container.querySelector('.monaco-container') as HTMLElement;
     this.payloadEditor = new PayloadEditor(monacoContainer, this.state);
     this.payloadEditor.init().catch(() => {
-      // Monaco failed to load — non-critical, visual mode still works
+      // Monaco failed to load — payload mode unavailable but visual mode still works
+      import('../utils/toast').then(({ showToast }) => {
+        showToast('Payload editor unavailable — visual mode only', 'warning');
+      });
     });
 
     // Load default theme + sample design

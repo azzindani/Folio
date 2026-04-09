@@ -146,7 +146,16 @@ export class FileTreeManager {
   triggerSave(): void {
     const yaml = this.onSave();
     const name = (this.state.get().design?.meta.name ?? 'design').replace(/\s+/g, '-').toLowerCase() + '.design.yaml';
-    saveFile(yaml, name).catch(() => {});
-    this.state.set('dirty', false);
+    saveFile(yaml, name)
+      .then(() => {
+        this.state.set('dirty', false);
+        import('../../utils/toast').then(({ showToast }) => showToast('Saved', 'success'));
+      })
+      .catch((err: unknown) => {
+        import('../../utils/toast').then(({ showToast }) => {
+          const msg = err instanceof Error ? err.message : 'Save failed';
+          showToast(msg, 'error');
+        });
+      });
   }
 }

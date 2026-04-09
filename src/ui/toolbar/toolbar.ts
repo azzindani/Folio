@@ -1,6 +1,7 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
 import { exportDesign } from '../../export/exporter';
+import { showToast } from '../../utils/toast';
 
 export class ToolbarManager {
   private container: HTMLElement;
@@ -120,7 +121,13 @@ export class ToolbarManager {
   private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html'): Promise<void> {
     const { design, theme } = this.state.get();
     if (!design) return;
-    await exportDesign(design, { format, theme: theme ?? undefined, scale: 2 });
+    try {
+      await exportDesign(design, { format, theme: theme ?? undefined, scale: 2 });
+      showToast(`Exported as ${format.toUpperCase()}`, 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Export failed';
+      showToast(msg, 'error');
+    }
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
