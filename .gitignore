@@ -6,4 +6,6 @@ dist/
 coverage/
 tests/visual/diffs/
 tests/e2e/artifacts/
+test-results/
+tests/playwright-report/
 *.tgz

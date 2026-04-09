@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ── VALIDATE TAG ─────────────────────────────────────────────
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Verify tag matches package.json version
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "ERROR: Tag v${TAG_VERSION} does not match package.json v${PKG_VERSION}"
+            exit 1
+          fi
+          echo "Version OK: v${PKG_VERSION}"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+
+  # ── BUILD ALL PLATFORMS ───────────────────────────────────────
+  build:
+    name: Build (${{ matrix.platform }})
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: folio-linux
+          - os: macos-latest
+            platform: mac
+            artifact: folio-mac
+          - os: windows-latest
+            platform: windows
+            artifact: folio-windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+
+      - name: Package release (Linux/Mac)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          ARTIFACT="${{ matrix.artifact }}-v${VERSION}"
+          mkdir -p "release/${ARTIFACT}"
+          cp -r dist/ "release/${ARTIFACT}/"
+          cp scripts/install.sh scripts/uninstall.sh scripts/dev.sh \
+             scripts/build.sh scripts/test.sh scripts/update.sh \
+             scripts/health-check.sh "release/${ARTIFACT}/"
+          cp README.md CHANGELOG.md "release/${ARTIFACT}/"
+          cd release && tar -czf "${ARTIFACT}.tar.gz" "${ARTIFACT}/"
+          echo "ARTIFACT_PATH=release/${ARTIFACT}.tar.gz" >> "$GITHUB_ENV"
+
+      - name: Package release (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $VERSION = "$env:GITHUB_REF" -replace 'refs/tags/v', ''
+          $ARTIFACT = "${{ matrix.artifact }}-v$VERSION"
+          New-Item -ItemType Directory -Path "release/$ARTIFACT" -Force | Out-Null
+          Copy-Item -Recurse dist/ "release/$ARTIFACT/"
+          Copy-Item scripts/install.ps1, scripts/uninstall.ps1 "release/$ARTIFACT/"
+          Copy-Item README.md, CHANGELOG.md "release/$ARTIFACT/"
+          Compress-Archive -Path "release/$ARTIFACT" -DestinationPath "release/$ARTIFACT.zip"
+          echo "ARTIFACT_PATH=release/$ARTIFACT.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ env.ARTIFACT_PATH }}
+          retention-days: 7
+
+  # ── E2E TESTS AGAINST RELEASE BUILD ──────────────────────────
+  e2e-release:
+    name: E2E Tests (release build)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- --project=chromium
+      - name: Upload E2E artifacts on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-release-artifacts
+          path: tests/playwright-report/
+          retention-days: 7
+
+  # ── GITHUB RELEASE ────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build, e2e-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts/
+      - name: Extract changelog section for this version
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          # Extract the section between this version header and the next
+          awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" \
+            CHANGELOG.md > release-notes.md || echo "See CHANGELOG.md" > release-notes.md
+          echo "Version: ${VERSION}"
+          cat release-notes.md
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') || contains(github.ref, '-rc') }}
+          files: |
+            release-artifacts/folio-linux/*.tar.gz
+            release-artifacts/folio-mac/*.tar.gz
+            release-artifacts/folio-windows/*.zip
+          generate_release_notes: false

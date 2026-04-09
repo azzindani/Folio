@@ -356,6 +356,234 @@ export function exportDesignTool(args: {
   return textResult(JSON.stringify({ format: args.format, status: 'requires_puppeteer', message: 'PNG/PDF export requires Puppeteer (future)' }));
 }
 
+// ── batch_create ────────────────────────────────────────────
+export function batchCreate(args: {
+  project_path: string;
+  template_id: string;
+  slots_array: Record<string, unknown>[];
+}): ToolCallResult {
+  const created: { design_id: string; path: string }[] = [];
+
+  for (let i = 0; i < args.slots_array.length; i++) {
+    const slots = args.slots_array[i];
+    const name = (slots['name'] as string | undefined) ?? `${args.template_id}-${i + 1}`;
+    const result = createDesign({
+      project_path: args.project_path,
+      name,
+      type: 'poster',
+    });
+
+    if (result.isError) {
+      return errorResult(`Failed to create design ${i + 1}: ${result.content[0]?.text}`);
+    }
+
+    const parsed = JSON.parse(result.content[0]?.text ?? '{}') as { design_id: string; path: string };
+
+    // Patch slots into the design
+    if (Object.keys(slots).length > 0) {
+      const selectors = Object.entries(slots)
+        .filter(([k]) => k !== 'name')
+        .map(([k, v]) => ({ path: k, value: v }));
+
+      if (selectors.length > 0) {
+        patchDesign({ design_path: parsed.path, selectors });
+      }
+    }
+
+    created.push({ design_id: parsed.design_id, path: parsed.path });
+  }
+
+  return textResult(JSON.stringify({ created, count: created.length }));
+}
+
+// ── duplicate_design ────────────────────────────────────────
+export function duplicateDesign(args: {
+  design_path: string;
+  new_name: string;
+  project_path?: string;
+}): ToolCallResult {
+  if (!fs.existsSync(args.design_path)) {
+    return errorResult(`Design not found: ${args.design_path}`);
+  }
+
+  const spec = readYAML<DesignSpec>(args.design_path);
+  const newId = args.new_name.toLowerCase().replace(/\s+/g, '-');
+  const dir = path.dirname(args.design_path);
+  const newPath = path.join(dir, `${newId}.design.yaml`);
+
+  if (fs.existsSync(newPath)) {
+    return errorResult(`Design already exists: ${newPath}`);
+  }
+
+  spec.meta.id = generateId();
+  spec.meta.name = args.new_name;
+  spec.meta.created = new Date().toISOString().split('T')[0];
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+
+  writeYAML(newPath, spec);
+
+  // Register in project.yaml if project_path provided
+  if (args.project_path) {
+    const projectPath = path.join(args.project_path, 'project.yaml');
+    if (fs.existsSync(projectPath)) {
+      const project = readYAML<{ designs: unknown[] }>(projectPath);
+      project.designs = project.designs ?? [];
+      project.designs.push({
+        id: newId,
+        path: `designs/${newId}.design.yaml`,
+        type: spec.meta.type,
+        status: 'draft',
+      });
+      writeYAML(projectPath, project);
+    }
+  }
+
+  return textResult(JSON.stringify({ design_id: spec.meta.id, path: newPath }));
+}
+
+// ── resume_design ───────────────────────────────────────────
+export function resumeDesign(args: { design_path: string }): ToolCallResult {
+  if (!fs.existsSync(args.design_path)) {
+    return errorResult(`Design not found: ${args.design_path}`);
+  }
+
+  const spec = readYAML<DesignSpec>(args.design_path);
+
+  if (spec._mode === 'complete') {
+    return textResult(JSON.stringify({
+      status: 'complete',
+      message: 'Design is already sealed. Use patch_design to make changes.',
+    }));
+  }
+
+  const gen = spec.meta.generation;
+  const completedPages = gen?.completed_pages ?? 0;
+  const totalPages = gen?.total_pages ?? 0;
+  const remaining = Math.max(0, totalPages - completedPages);
+
+  const existingPageIds = (spec.pages ?? []).map((p: Page) => p.id);
+
+  return textResult(JSON.stringify({
+    status: 'in_progress',
+    design_id: spec.meta.id,
+    design_path: args.design_path,
+    theme: spec.theme,
+    document: spec.document,
+    completed_pages: completedPages,
+    total_pages: totalPages,
+    remaining_pages: remaining,
+    existing_page_ids: existingPageIds,
+    last_operation: gen?.last_operation ?? null,
+    context: `Design "${spec.meta.name}" is in progress. ${completedPages}/${totalPages} pages done. Resume by calling append_page for pages ${completedPages + 1} to ${totalPages}, then seal_design.`,
+  }));
+}
+
+// ── save_as_component ────────────────────────────────────────
+export function saveAsComponent(args: {
+  design_path: string;
+  layer_ids: string[];
+  component_name: string;
+  project_path: string;
+}): ToolCallResult {
+  if (!fs.existsSync(args.design_path)) {
+    return errorResult(`Design not found: ${args.design_path}`);
+  }
+
+  const spec = readYAML<DesignSpec>(args.design_path);
+  const allLayers = spec.layers ?? [];
+
+  const extracted = allLayers.filter(l => args.layer_ids.includes(l.id));
+  if (extracted.length === 0) {
+    return errorResult(`No matching layers found for IDs: ${args.layer_ids.join(', ')}`);
+  }
+
+  const componentId = args.component_name.toLowerCase().replace(/\s+/g, '-');
+  const componentPath = path.join(args.project_path, `components/${componentId}.component.yaml`);
+
+  const component = {
+    _protocol: 'component/v1',
+    name: args.component_name,
+    id: componentId,
+    version: '1.0.0',
+    props: {},
+    layers: extracted,
+  };
+
+  writeYAML(componentPath, component);
+
+  // Update components/index.yaml
+  const indexPath = path.join(args.project_path, 'components/index.yaml');
+  const index = fs.existsSync(indexPath)
+    ? readYAML<{ components: unknown[] }>(indexPath)
+    : { components: [] };
+  index.components = index.components ?? [];
+  index.components.push({ id: componentId, path: `components/${componentId}.component.yaml`, name: args.component_name });
+  writeYAML(indexPath, index);
+
+  // Replace extracted layers in design with a component instance
+  const remainingLayers = allLayers.filter(l => !args.layer_ids.includes(l.id));
+  const firstExtracted = extracted[0];
+  const componentInstance: Layer = {
+    id: `${componentId}-instance`,
+    type: 'component',
+    z: firstExtracted.z,
+    x: firstExtracted.x ?? 0,
+    y: firstExtracted.y ?? 0,
+    width: firstExtracted.width ?? 0,
+    height: firstExtracted.height ?? 0,
+    ref: componentId,
+    slots: {},
+  } as unknown as Layer;
+
+  spec.layers = [...remainingLayers, componentInstance].sort((a, b) => a.z - b.z);
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(args.design_path, spec);
+
+  return textResult(JSON.stringify({
+    component_id: componentId,
+    component_path: componentPath,
+    layers_extracted: extracted.length,
+    instance_id: componentInstance.id,
+  }));
+}
+
+// ── apply_theme ─────────────────────────────────────────────
+export function applyTheme(args: {
+  project_path: string;
+  theme_id: string;
+}): ToolCallResult {
+  const projectPath = path.join(args.project_path, 'project.yaml');
+  if (!fs.existsSync(projectPath)) {
+    return errorResult(`Project not found: ${projectPath}`);
+  }
+
+  const project = readYAML<{
+    config: { default_theme: string };
+    themes: { id: string; active: boolean }[];
+    designs: unknown[];
+  }>(projectPath);
+
+  // Verify theme exists
+  const themes: { id: string; active: boolean }[] = project.themes ?? [];
+  const themeEntry = themes.find(t => t.id === args.theme_id);
+  if (!themeEntry) {
+    return errorResult(`Theme not found: ${args.theme_id}. Available: ${themes.map(t => t.id).join(', ')}`);
+  }
+
+  // Update active flags
+  for (const t of themes) {
+    t.active = t.id === args.theme_id;
+  }
+  project.config.default_theme = args.theme_id;
+
+  writeYAML(projectPath, project);
+
+  return textResult(JSON.stringify({
+    active_theme: args.theme_id,
+    affected_designs: (project.designs ?? []).length,
+  }));
+}
+
 // ── Utilities ───────────────────────────────────────────────
 function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: unknown): void {
   // Handle array index notation: pages[id=page_1].slots.title
