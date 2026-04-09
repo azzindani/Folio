@@ -45,7 +45,9 @@ describe('expandShorthand', () => {
     expect(result.type).toBe('text');
     if (result.type === 'text') {
       expect(result.content.type).toBe('plain');
-      expect(result.content.value).toBe('Hello World');
+      if (result.content.type === 'plain') {
+        expect(result.content.value).toBe('Hello World');
+      }
       expect(result.style?.font_family).toBe('$heading');
       expect(result.style?.font_size).toBe(72);
       expect(result.style?.font_weight).toBe(800);
