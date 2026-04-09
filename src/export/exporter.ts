@@ -35,15 +35,23 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   const url = URL.createObjectURL(svgBlob);
 
   return new Promise((resolve, reject) => {
+    const TIMEOUT_MS = 15_000;
+    const timer = setTimeout(() => {
+      URL.revokeObjectURL(url);
+      reject(new Error('PNG export timed out — SVG image failed to load'));
+    }, TIMEOUT_MS);
+
     img.onload = () => {
+      clearTimeout(timer);
       ctx.drawImage(img, 0, 0);
       URL.revokeObjectURL(url);
       canvas.toBlob(blob => {
         if (blob) resolve(blob);
-        else reject(new Error('PNG export failed'));
+        else reject(new Error('PNG export failed: canvas.toBlob returned null'));
       }, 'image/png');
     };
     img.onerror = () => {
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
       reject(new Error('SVG to PNG conversion failed'));
     };

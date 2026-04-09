@@ -1,5 +1,7 @@
 import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
 
+export type ToolId = 'select' | 'text' | 'rect' | 'circle' | 'line';
+
 export interface EditorState {
   design: DesignSpec | null;
   theme: ThemeSpec | null;
@@ -12,6 +14,7 @@ export interface EditorState {
   gridVisible: boolean;
   yamlSource: string;
   dirty: boolean;
+  activeTool: ToolId;
 }
 
 export type StateChangeListener = (state: EditorState, changedKeys: (keyof EditorState)[]) => void;
@@ -39,6 +42,7 @@ export class StateManager {
       gridVisible: false,
       yamlSource: '',
       dirty: false,
+      activeTool: 'select',
     };
   }
 
@@ -181,6 +185,41 @@ export class StateManager {
         ...this.state.design,
         layers: [...(this.state.design.layers ?? []), layer],
       }, false);
+    }
+  }
+
+  renameLayer(layerId: string, newId: string): void {
+    if (!this.state.design) return;
+    this.pushUndo();
+
+    const renameInArray = (layers: Layer[]): Layer[] =>
+      layers.map(l => {
+        if (l.id === layerId) return { ...l, id: newId } as Layer;
+        if (l.type === 'group' && 'layers' in l) {
+          return { ...l, layers: renameInArray(l.layers) } as Layer;
+        }
+        return l;
+      });
+
+    const selectedLayerIds = this.state.selectedLayerIds.map(id => id === layerId ? newId : id);
+
+    if (this.state.design.pages && this.state.design.pages.length > 0) {
+      const pages = this.state.design.pages.map((page, i) => {
+        if (i === this.state.currentPageIndex && page.layers) {
+          return { ...page, layers: renameInArray(page.layers) };
+        }
+        return page;
+      });
+      this.batch(() => {
+        this.set('design', { ...this.state.design!, pages }, false);
+        this.set('selectedLayerIds', selectedLayerIds);
+      });
+    } else if (this.state.design.layers) {
+      const layers = renameInArray(this.state.design.layers);
+      this.batch(() => {
+        this.set('design', { ...this.state.design!, layers }, false);
+        this.set('selectedLayerIds', selectedLayerIds);
+      });
     }
   }
 

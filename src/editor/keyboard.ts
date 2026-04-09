@@ -1,5 +1,10 @@
 import { StateManager } from './state';
 import type { EditorApp } from './app';
+import type { Layer } from '../schema/types';
+import { serializeYAML, parseYAML } from '../schema/parser';
+
+let duplicateCounter = 0;
+let groupCounter = 0;
 
 interface ShortcutDef {
   key: string;
@@ -82,6 +87,21 @@ export class KeyboardManager {
         action: () => this.adjustZ(1),
         description: 'Bring forward',
       },
+      // File shortcuts
+      { key: 'o', ctrl: true, action: () => this.app.fileTree?.triggerOpen(), description: 'Open file' },
+      { key: 's', ctrl: true, action: () => this.app.fileTree?.triggerSave(), description: 'Save file' },
+      // Clipboard
+      { key: 'c', ctrl: true, action: () => this.copySelected(), description: 'Copy selected layers' },
+      { key: 'v', ctrl: true, action: () => this.pasteFromClipboard(), description: 'Paste layers' },
+      // Group
+      { key: 'g', ctrl: true, action: () => this.groupSelected(), description: 'Group selected layers' },
+      { key: 'g', ctrl: true, shift: true, action: () => this.ungroupSelected(), description: 'Ungroup selected' },
+      // Tool shortcuts
+      { key: 'v', action: () => this.state.set('activeTool', 'select', false), description: 'Select tool' },
+      { key: 'r', action: () => this.state.set('activeTool', 'rect',   false), description: 'Rectangle tool' },
+      { key: 'c', action: () => this.state.set('activeTool', 'circle', false), description: 'Circle tool' },
+      { key: 't', action: () => this.state.set('activeTool', 'text',   false), description: 'Text tool' },
+      { key: 'l', action: () => this.state.set('activeTool', 'line',   false), description: 'Line tool' },
     ];
   }
 
@@ -118,7 +138,7 @@ export class KeyboardManager {
     for (const layer of layers) {
       const clone = {
         ...layer,
-        id: `${layer.id}-copy-${Date.now()}`,
+        id: `${layer.id}-copy-${++duplicateCounter}`,
         x: (layer.x ?? 0) + 20,
         y: (layer.y ?? 0) + 20,
         z: layer.z + 1,
@@ -135,6 +155,69 @@ export class KeyboardManager {
       if (layer) {
         this.state.updateLayer(id, { z: layer.z + delta * 10 });
       }
+    }
+  }
+
+  private copySelected(): void {
+    const layers = this.state.getSelectedLayers();
+    if (layers.length === 0) return;
+    // Serialize as YAML array so paste can read it back
+    const snippet = serializeYAML(layers.length === 1 ? layers[0] : layers);
+    navigator.clipboard?.writeText(snippet).catch(() => {/* clipboard not available */});
+  }
+
+  private pasteFromClipboard(): void {
+    navigator.clipboard?.readText().then(text => {
+      try {
+        // Clipboard content can be either a layers array or a single layer object
+        const parsed = parseYAML<Layer[] | Layer>(text);
+        const rawLayers: Layer[] = Array.isArray(parsed) ? parsed : [parsed];
+        const newIds: string[] = [];
+        for (const layer of rawLayers) {
+          if (typeof layer !== 'object' || !layer || !('type' in layer)) continue;
+          const newId = `${layer.id}-paste-${++duplicateCounter}`;
+          newIds.push(newId);
+          this.state.addLayer({ ...layer, id: newId, x: (layer.x ?? 0) + 20, y: (layer.y ?? 0) + 20 } as Layer);
+        }
+        if (newIds.length > 0) this.state.set('selectedLayerIds', newIds);
+      } catch {
+        // Invalid clipboard content — ignore
+      }
+    }).catch(() => {/* clipboard not available */});
+  }
+
+  private groupSelected(): void {
+    const layers = this.state.getSelectedLayers();
+    if (layers.length < 2) return;
+    const maxZ = Math.max(...layers.map(l => l.z));
+    const groupId = `group-${++groupCounter}`;
+    const groupLayer: Layer = {
+      id: groupId,
+      type: 'group',
+      z: maxZ,
+      x: Math.min(...layers.map(l => l.x ?? 0)),
+      y: Math.min(...layers.map(l => l.y ?? 0)),
+      width: 0,
+      height: 0,
+      layers: layers,
+    } as unknown as Layer;
+
+    for (const l of layers) this.state.removeLayer(l.id);
+    this.state.addLayer(groupLayer);
+    this.state.set('selectedLayerIds', [groupId]);
+  }
+
+  private ungroupSelected(): void {
+    const selected = this.state.getSelectedLayers();
+    const groups = selected.filter(l => l.type === 'group');
+    for (const group of groups) {
+      const children: Layer[] = (group as unknown as { layers: Layer[] }).layers ?? [];
+      this.state.removeLayer(group.id);
+      for (const child of children) this.state.addLayer(child);
+    }
+    if (groups.length > 0) {
+      const childIds = groups.flatMap(g => ((g as unknown as { layers: Layer[] }).layers ?? []).map((l: Layer) => l.id));
+      this.state.set('selectedLayerIds', childIds);
     }
   }
 
