@@ -5,6 +5,7 @@ import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
+import { FileTreeManager } from '../ui/panels/file-tree';
 import { PageStrip } from '../ui/panels/page-strip';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
 import { ToolboxManager } from '../ui/tools/toolbox';
@@ -12,46 +13,9 @@ import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
-import type { DesignSpec, ThemeSpec } from '../schema/types';
+import type { DesignSpec } from '../schema/types';
 import { fileWatcher } from '../fs/file-watcher';
-
-const DEFAULT_THEME: ThemeSpec = {
-  _protocol: 'theme/v1',
-  name: 'Dark Tech',
-  version: '1.0.0',
-  colors: {
-    background: '#1A1A2E',
-    surface: '#16213E',
-    primary: '#E94560',
-    secondary: '#3D9EE4',
-    text: '#FFFFFF',
-    text_muted: '#8892A4',
-    border: '#2A2A4A',
-  },
-  typography: {
-    scale: {
-      display: { size: 96, weight: 800, line_height: 1.0 },
-      h1: { size: 72, weight: 700, line_height: 1.1 },
-      h2: { size: 48, weight: 700, line_height: 1.2 },
-      h3: { size: 32, weight: 600, line_height: 1.3 },
-      body: { size: 18, weight: 400, line_height: 1.6 },
-      caption: { size: 14, weight: 400, line_height: 1.5 },
-      label: { size: 12, weight: 600, line_height: 1.0 },
-    },
-    families: {
-      heading: 'Inter',
-      body: 'Inter',
-      mono: 'JetBrains Mono',
-    },
-  },
-  spacing: { unit: 8, scale: [0, 4, 8, 16, 24, 32, 48, 64, 80, 96, 128] },
-  effects: {
-    shadow_card: '0 4px 24px rgba(0,0,0,0.4)',
-    shadow_glow: '0 0 32px rgba(233,69,96,0.3)',
-    blur_glass: 12,
-  },
-  radii: { sm: 4, md: 8, lg: 16, xl: 24, full: 9999 },
-};
+import { BUILTIN_THEMES } from '../themes/builtin';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -214,6 +178,7 @@ export class EditorApp {
   private toolbar!: ToolbarManager;
   private toolbox!: ToolboxManager;
   private alignToolbar!: AlignToolbar;
+  fileTree!: FileTreeManager;
   private layerPanel!: LayerPanelManager;
   private propertiesPanel!: PropertiesPanelManager;
   private problemsPanel!: ProblemsPanelManager;
@@ -251,6 +216,19 @@ export class EditorApp {
       this.state,
     );
 
+    this.fileTree = new FileTreeManager(
+      this.container.querySelector('.file-tree-content')!,
+      this.state,
+      {
+        onOpen: (yaml, name, handle) => {
+          this.loadFromYAML(yaml);
+          if (handle) this.setActiveFileHandle(handle as FileSystemFileHandle, yaml);
+          this.state.get().design && (this.state.get().design!.meta.name = name.replace(/\..*$/, ''));
+        },
+        onSave: () => this.getYAML(),
+      },
+    );
+
     this.layerPanel = new LayerPanelManager(
       this.container.querySelector('.layer-panel')!,
       this.state,
@@ -284,7 +262,7 @@ export class EditorApp {
     });
 
     // Load default theme + sample design
-    this.state.set('theme', DEFAULT_THEME);
+    this.state.set('theme', BUILTIN_THEMES['dark-tech']);
     this.loadDesign(SAMPLE_DESIGN);
 
     // File watcher: reload design when YAML is modified externally
@@ -365,5 +343,10 @@ export class EditorApp {
 
   exportSVG(): string {
     return this.canvas.exportSVG();
+  }
+
+  applyTheme(themeId: string): void {
+    const theme = BUILTIN_THEMES[themeId];
+    if (theme) this.state.set('theme', theme);
   }
 }
