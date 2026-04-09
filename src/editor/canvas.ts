@@ -119,7 +119,7 @@ export class CanvasManager {
       box.style.height = `${bbox.height}px`;
       this.selectionOverlay.appendChild(box);
 
-      // Resize handles
+      // Resize handles (corners)
       const positions = [
         { cls: 'nw', x: bbox.x - 4, y: bbox.y - 4, cursor: 'nw-resize' },
         { cls: 'ne', x: bbox.x + bbox.width - 4, y: bbox.y - 4, cursor: 'ne-resize' },
@@ -138,7 +138,56 @@ export class CanvasManager {
         handle.dataset.layerId = id;
         this.selectionOverlay.appendChild(handle);
       }
+
+      // Rotate handle — centered above the top edge
+      const rotateHandle = document.createElement('div');
+      rotateHandle.className = 'selection-handle handle-rotate';
+      rotateHandle.style.left = `${bbox.x + bbox.width / 2 - 4}px`;
+      rotateHandle.style.top = `${bbox.y - 28}px`;
+      rotateHandle.style.cursor = 'crosshair';
+      rotateHandle.style.pointerEvents = 'auto';
+      rotateHandle.style.borderRadius = '50%';
+      rotateHandle.style.background = 'var(--color-primary)';
+      rotateHandle.dataset.handle = 'rotate';
+      rotateHandle.dataset.layerId = id;
+      rotateHandle.title = 'Rotate';
+      rotateHandle.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        this.startRotate(e, id, bbox);
+      });
+      this.selectionOverlay.appendChild(rotateHandle);
     }
+  }
+
+  private startRotate(
+    e: PointerEvent,
+    layerId: string,
+    bbox: DOMRect | SVGRect,
+  ): void {
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    if (!layer || layer.locked) return;
+
+    // Center of the bounding box in viewport coordinates
+    const zoom = this.state.get().zoom;
+    const vpRect = this.viewport.getBoundingClientRect();
+    const cx = vpRect.left + (bbox.x + bbox.width / 2) * zoom;
+    const cy = vpRect.top + (bbox.y + bbox.height / 2) * zoom;
+
+    const onMove = (me: PointerEvent) => {
+      const dx = me.clientX - cx;
+      const dy = me.clientY - cy;
+      const angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
+      const normalized = ((angle % 360) + 360) % 360;
+      this.state.updateLayer(layerId, { rotation: normalized });
+    };
+
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   }
 
   private onPointerDown(e: PointerEvent): void {
