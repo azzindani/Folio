@@ -33,6 +33,7 @@ export class LayerPanelManager {
   private state: StateManager;
   private content!: HTMLElement;
   private rows: VRow[] = [];
+  private editingLayerId: string | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
@@ -45,10 +46,12 @@ export class LayerPanelManager {
   private buildVirtualScroll(): void {
     this.content.style.cssText = 'position:relative;overflow-y:auto;height:100%';
     this.content.addEventListener('scroll', this.onScroll.bind(this));
-    // Single delegated click listener — no per-row addEventListener needed
+
+    // Single delegated click listener
     this.content.addEventListener('click', (e) => {
       const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
       if (!row) return;
+      if ((e.target as HTMLElement).tagName === 'INPUT') return; // editing
       const id = row.dataset.layerId!;
       if ((e as MouseEvent).shiftKey) {
         const current = this.state.get().selectedLayerIds;
@@ -61,6 +64,49 @@ export class LayerPanelManager {
         this.state.set('selectedLayerIds', [id]);
       }
     });
+
+    // Double-click to rename layer
+    this.content.addEventListener('dblclick', (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
+      if (!row) return;
+      const id = row.dataset.layerId!;
+      this.startRename(row, id);
+    });
+  }
+
+  private startRename(row: HTMLElement, layerId: string): void {
+    const nameSpan = row.querySelector<HTMLElement>('.layer-name');
+    if (!nameSpan) return;
+
+    this.editingLayerId = layerId;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = layerId;
+    input.style.cssText = `
+      background: var(--color-surface-2); border: 1px solid var(--color-primary);
+      color: var(--color-text); font-size: 12px; padding: 0 4px;
+      border-radius: 3px; width: 100%; outline: none;
+    `;
+
+    const commitRename = (): void => {
+      const newId = input.value.trim();
+      this.editingLayerId = null;
+      if (newId && newId !== layerId) {
+        this.state.renameLayer(layerId, newId);
+      } else {
+        this.render(); // restore original display
+      }
+    };
+
+    input.addEventListener('blur', commitRename);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { this.editingLayerId = null; this.render(); }
+    });
+
+    nameSpan.replaceWith(input);
+    input.select();
+    input.focus();
   }
 
   private onStateChange(_state: EditorState, changedKeys: (keyof EditorState)[]): void {
@@ -139,7 +185,7 @@ export class LayerPanelManager {
         html += `<div class="layer-row${selected ? ' selected' : ''}" data-layer-id="${layer.id}"
           style="height:${ROW_HEIGHT}px;display:flex;align-items:center;gap:6px;padding:0 8px;cursor:pointer;border-radius:4px;font-size:12px;${selected ? 'background:var(--color-primary);color:white;' : ''}${hidden ? 'opacity:0.4;' : ''}">
           <span style="width:16px;text-align:center;font-size:14px">${getLayerIcon(layer.type)}</span>
-          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${layer.id}</span>
+          <span class="layer-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${layer.id}</span>
           <span style="font-size:10px;color:${selected ? 'rgba(255,255,255,0.7)' : 'var(--color-text-muted)'}">${layer.z}</span>
           ${locked ? '<span title="Locked" style="font-size:10px">&#x1F512;</span>' : ''}
         </div>`;
