@@ -6,8 +6,11 @@ import {
   createProject, listDesigns, createDesign,
   appendPage, patchDesign, sealDesign,
   addLayer, updateLayer, removeLayer,
-  listThemes,
+  listThemes, batchCreate, duplicateDesign,
+  resumeDesign, saveAsComponent, applyTheme,
+  exportDesignTool,
 } from './tool-handlers';
+import type { Layer } from '../schema/types';
 
 let tmpDir: string;
 
@@ -196,5 +199,369 @@ describe('listThemes', () => {
     const themes = JSON.parse(result.content[0].text);
     expect(themes).toHaveLength(1);
     expect(themes[0].id).toBe('dark-tech');
+  });
+});
+
+// ── Error path tests ─────────────────────────────────────────
+
+describe('error paths — missing files', () => {
+  it('patchDesign returns error for missing file', () => {
+    const result = patchDesign({
+      design_path: path.join(tmpDir, 'nonexistent.design.yaml'),
+      selectors: [{ path: 'meta.name', value: 'New Name' }],
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it('sealDesign returns error for missing file', () => {
+    const result = sealDesign({ design_path: path.join(tmpDir, 'no.yaml') });
+    expect(result.isError).toBe(true);
+  });
+
+  it('addLayer returns error for missing file', () => {
+    const result = addLayer({
+      design_path: path.join(tmpDir, 'no.yaml'),
+      layer: { id: 'x', type: 'rect', z: 0, x: 0, y: 0, width: 1, height: 1 } as Layer,
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it('updateLayer returns error for missing file', () => {
+    const result = updateLayer({ design_path: path.join(tmpDir, 'no.yaml'), layer_id: 'x', props: {} });
+    expect(result.isError).toBe(true);
+  });
+
+  it('updateLayer returns error for missing layer_id', () => {
+    const projectPath = path.join(tmpDir, 'proj-err');
+    createProject({ name: 'P', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'D' });
+    const designPath = path.join(projectPath, 'designs/d.design.yaml');
+    const result = updateLayer({ design_path: designPath, layer_id: 'ghost-id', props: { x: 50 } });
+    expect(result.isError).toBe(true);
+  });
+
+  it('removeLayer returns error for missing file', () => {
+    const result = removeLayer({ design_path: path.join(tmpDir, 'no.yaml'), layer_id: 'x' });
+    expect(result.isError).toBe(true);
+  });
+
+  it('duplicateDesign returns error for missing source', () => {
+    const result = duplicateDesign({ design_path: path.join(tmpDir, 'no.yaml'), new_name: 'Copy' });
+    expect(result.isError).toBe(true);
+  });
+
+  it('resumeDesign returns error for missing file', () => {
+    const result = resumeDesign({ design_path: path.join(tmpDir, 'no.yaml') });
+    expect(result.isError).toBe(true);
+  });
+});
+
+// ── patchDesign — multiple selectors ────────────────────────
+
+describe('patchDesign — advanced', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'patch-proj');
+    createProject({ name: 'Patch Test', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Patch Me', type: 'poster' });
+    designPath = path.join(projectPath, 'designs/patch-me.design.yaml');
+  });
+
+  it('patches multiple selectors in one call', () => {
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [
+        { path: 'meta.name', value: 'Patched Name' },
+        { path: 'document.width', value: 1920 },
+      ],
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.patched_paths).toContain('meta.name');
+    expect(parsed.patched_paths).toContain('document.width');
+
+    // Verify the file was actually updated
+    const content = fs.readFileSync(designPath, 'utf-8');
+    expect(content).toContain('Patched Name');
+  });
+});
+
+// ── addLayer in carousel page ────────────────────────────────
+
+describe('addLayer in carousel page', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'carousel-proj');
+    createProject({ name: 'Carousel', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'My Carousel', type: 'carousel' });
+    designPath = path.join(projectPath, 'designs/my-carousel.design.yaml');
+
+    appendPage({
+      design_path: designPath,
+      page_id: 'page_1',
+      label: 'Page One',
+      layers: [{
+        id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080,
+        fill: { type: 'solid', color: '#000' },
+      } as Layer],
+    });
+  });
+
+  it('adds a layer to a specific page', () => {
+    const result = addLayer({
+      design_path: designPath,
+      page_id: 'page_1',
+      layer: { id: 'extra', type: 'rect', z: 30, x: 100, y: 100, width: 200, height: 200 } as Layer,
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.layer_id).toBe('extra');
+  });
+
+  it('returns error for missing page_id', () => {
+    const result = addLayer({
+      design_path: designPath,
+      page_id: 'nonexistent-page',
+      layer: { id: 'x', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as Layer,
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it('updates a layer inside a carousel page', () => {
+    const result = updateLayer({
+      design_path: designPath,
+      layer_id: 'bg',
+      props: { x: 10 },
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.updated).toBe('bg');
+  });
+
+  it('removes a layer from a carousel page', () => {
+    addLayer({
+      design_path: designPath,
+      page_id: 'page_1',
+      layer: { id: 'temp', type: 'rect', z: 40, x: 0, y: 0, width: 10, height: 10 } as Layer,
+    });
+    const result = removeLayer({ design_path: designPath, layer_id: 'temp' });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.removed).toBe('temp');
+  });
+});
+
+// ── batchCreate ─────────────────────────────────────────────
+
+describe('batchCreate', () => {
+  let projectPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'batch-proj');
+    createProject({ name: 'Batch', path: projectPath });
+  });
+
+  it('creates N designs from N slot arrays', () => {
+    const result = batchCreate({
+      project_path: projectPath,
+      template_id: 'my-template',
+      slots_array: [
+        { name: 'Design Alpha', title: 'Alpha Title' },
+        { name: 'Design Beta', title: 'Beta Title' },
+        { name: 'Design Gamma', title: 'Gamma Title' },
+      ],
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.count).toBe(3);
+    expect(parsed.created).toHaveLength(3);
+  });
+
+  it('creates designs with auto-generated names when no name slot', () => {
+    const result = batchCreate({
+      project_path: projectPath,
+      template_id: 'hero-card',
+      slots_array: [{ title: 'Item 1' }, { title: 'Item 2' }],
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.count).toBe(2);
+  });
+});
+
+// ── duplicateDesign ─────────────────────────────────────────
+
+describe('duplicateDesign', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'dup-proj');
+    createProject({ name: 'Dup Test', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Original Design' });
+    designPath = path.join(projectPath, 'designs/original-design.design.yaml');
+  });
+
+  it('creates a copy with a new name', () => {
+    const result = duplicateDesign({ design_path: designPath, new_name: 'Copy Of Design' });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.design_id).toBeTruthy();
+    expect(fs.existsSync(path.join(path.dirname(designPath), 'copy-of-design.design.yaml'))).toBe(true);
+  });
+
+  it('returns error if duplicate name already exists', () => {
+    duplicateDesign({ design_path: designPath, new_name: 'Copy' });
+    const result = duplicateDesign({ design_path: designPath, new_name: 'Copy' });
+    expect(result.isError).toBe(true);
+  });
+
+  it('registers in project.yaml when project_path provided', () => {
+    duplicateDesign({ design_path: designPath, new_name: 'Registered Copy', project_path: projectPath });
+    const projectYaml = fs.readFileSync(path.join(projectPath, 'project.yaml'), 'utf-8');
+    expect(projectYaml).toContain('registered-copy');
+  });
+});
+
+// ── resumeDesign ─────────────────────────────────────────────
+
+describe('resumeDesign', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'resume-proj');
+    createProject({ name: 'Resume Test', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'In Progress', type: 'carousel' });
+    designPath = path.join(projectPath, 'designs/in-progress.design.yaml');
+  });
+
+  it('reports in_progress status for unsealed design', () => {
+    const result = resumeDesign({ design_path: designPath });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.status).toBe('in_progress');
+  });
+
+  it('reports complete status for sealed design', () => {
+    sealDesign({ design_path: designPath });
+    const result = resumeDesign({ design_path: designPath });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.status).toBe('complete');
+  });
+
+  it('reports completed pages count', () => {
+    for (let i = 1; i <= 3; i++) {
+      appendPage({
+        design_path: designPath,
+        page_id: `page_${i}`, label: `Page ${i}`,
+        layers: [{ id: `bg-${i}`, type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080 } as Layer],
+      });
+    }
+    const result = resumeDesign({ design_path: designPath });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.completed_pages).toBe(3);
+  });
+});
+
+// ── saveAsComponent ──────────────────────────────────────────
+
+describe('saveAsComponent', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'comp-proj');
+    createProject({ name: 'Component Test', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Source Design' });
+    designPath = path.join(projectPath, 'designs/source-design.design.yaml');
+
+    addLayer({ design_path: designPath, layer: { id: 'hero', type: 'rect', z: 10, x: 0, y: 0, width: 400, height: 200 } as Layer });
+    addLayer({ design_path: designPath, layer: { id: 'title', type: 'text', z: 20, x: 10, y: 10, width: 380, content: { type: 'plain', value: 'Hero Title' }, style: {} } as Layer });
+  });
+
+  it('extracts layers to a component file', () => {
+    const result = saveAsComponent({
+      design_path: designPath,
+      layer_ids: ['hero', 'title'],
+      component_name: 'Hero Card',
+      project_path: projectPath,
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.component_id).toBe('hero-card');
+    expect(parsed.layers_extracted).toBe(2);
+    expect(fs.existsSync(path.join(projectPath, 'components/hero-card.component.yaml'))).toBe(true);
+  });
+
+  it('returns error when no matching layers found', () => {
+    const result = saveAsComponent({
+      design_path: designPath,
+      layer_ids: ['nonexistent-layer'],
+      component_name: 'Ghost Component',
+      project_path: projectPath,
+    });
+    expect(result.isError).toBe(true);
+  });
+});
+
+// ── applyTheme ───────────────────────────────────────────────
+
+describe('applyTheme', () => {
+  let projectPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'theme-proj');
+    createProject({ name: 'Theme Test', path: projectPath });
+  });
+
+  it('applies an existing theme', () => {
+    const result = applyTheme({ project_path: projectPath, theme_id: 'dark-tech' });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.active_theme).toBe('dark-tech');
+  });
+
+  it('returns error for unknown theme', () => {
+    const result = applyTheme({ project_path: projectPath, theme_id: 'nonexistent-theme' });
+    expect(result.isError).toBe(true);
+  });
+
+  it('returns error when project.yaml not found', () => {
+    const result = applyTheme({ project_path: path.join(tmpDir, 'no-project'), theme_id: 'dark-tech' });
+    expect(result.isError).toBe(true);
+  });
+});
+
+// ── exportDesignTool ─────────────────────────────────────────
+
+describe('exportDesignTool', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'export-proj');
+    createProject({ name: 'Export', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Export Me' });
+    designPath = path.join(projectPath, 'designs/export-me.design.yaml');
+  });
+
+  it('returns queued status for SVG format', () => {
+    const result = exportDesignTool({ design_path: designPath, format: 'svg' });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.format).toBe('svg');
+    expect(parsed.status).toBe('queued');
+  });
+
+  it('returns queued status for HTML format', () => {
+    const result = exportDesignTool({ design_path: designPath, format: 'html' });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.format).toBe('html');
+    expect(parsed.status).toBe('queued');
+  });
+
+  it('returns requires_puppeteer for PNG format', () => {
+    const result = exportDesignTool({ design_path: designPath, format: 'png' });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.status).toBe('requires_puppeteer');
+  });
+
+  it('returns error when design not found', () => {
+    const result = exportDesignTool({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
+    expect(result.isError).toBe(true);
   });
 });
