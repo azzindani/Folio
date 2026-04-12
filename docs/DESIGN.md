@@ -1420,7 +1420,7 @@ Week 10: release pipeline, coverage reporting, perf benchmarks, bundle size gate
 ```
 - MCP stdio server scaffold (Node.js + TypeScript)
 - Semantic shorthand parser (L1/L2 → L3 expansion)
-- Full tool surface (16+ tools, see ARCHITECT.md §6)
+- Full tool surface (16+ tools, see ARCHITECTURE.md §6)
 - Incremental generation protocol (create → append → seal → export)
 - Puppeteer integration (high-fidelity PDF export)
 - Context compression for local LLM

@@ -1,4 +1,4 @@
-# ARCHITECT.md — Folio Design Engine
+# ARCHITECTURE.md — Folio Design Engine
 # System Architecture Reference
 # v1.0.0 | Updated 2026-04-12
 

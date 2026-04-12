@@ -2,7 +2,7 @@
 # Local-first YAML graphic design engine | LLM-first architecture
 # v2.0.0 | Phase 1 ~90% complete
 
-> Full specs live in docs/ARCHITECT.md (architecture) and docs/DESIGN.md (design system + payload format).
+> Full specs live in docs/ARCHITECTURE.md (architecture) and docs/DESIGN.md (design system + payload format).
 
 ---
 
@@ -87,7 +87,7 @@ MCP    = tool surface        → LLM ↔ engine bridge
 ```
 
 Design file IS the product. HTML canvas = view only.
-Full spec: docs/DESIGN.md. Full architecture: docs/ARCHITECT.md.
+Full spec: docs/DESIGN.md. Full architecture: docs/ARCHITECTURE.md.
 
 ### Use Cases
 1. How-to posters — template + slots, LLM fills content
