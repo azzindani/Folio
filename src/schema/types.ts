@@ -184,6 +184,18 @@ export interface GridPosition {
 
 export type PositionShorthand = [number, number, number, number] | GridPosition;
 
+// ── Responsive Constraints ──────────────────────────────────
+export interface PinConstraints {
+  /** Which edges are pinned to the parent/canvas edge */
+  left?:   boolean;
+  right?:  boolean;
+  top?:    boolean;
+  bottom?: boolean;
+  /** Fix width/height regardless of parent resize */
+  fix_width?:  boolean;
+  fix_height?: boolean;
+}
+
 // ── Base Layer ──────────────────────────────────────────────
 export interface BaseLayer {
   id: string;
@@ -202,6 +214,10 @@ export interface BaseLayer {
   effects?: Effects;
   interaction?: Interaction;
   meta?: Record<string, unknown>;
+  /** Conditional visibility — plain JS expression string evaluated at render */
+  show_if?: string;
+  /** Responsive pin constraints */
+  constraints?: PinConstraints;
 }
 
 // ── Concrete Layer Types ────────────────────────────────────

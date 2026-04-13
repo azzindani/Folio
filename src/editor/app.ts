@@ -9,6 +9,9 @@ import { FileTreeManager } from '../ui/panels/file-tree';
 import { PageStrip } from '../ui/panels/page-strip';
 import { IconBrowserManager } from '../ui/panels/icon-browser';
 import { FindReplaceManager } from '../ui/panels/find-replace';
+import { PresentationMode } from '../ui/presentation/presentation-mode';
+import { MinimapManager } from '../ui/panels/minimap';
+import { openPrintWindow } from '../export/print-mode';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
 import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
@@ -186,6 +189,8 @@ export class EditorApp {
   private problemsPanel!: ProblemsPanelManager;
   private iconBrowser!: IconBrowserManager;
   private findReplace!: FindReplaceManager;
+  presentation!: PresentationMode;
+  private minimap!: MinimapManager;
   private pageStrip!: PageStrip;
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
@@ -255,6 +260,13 @@ export class EditorApp {
 
     this.findReplace = new FindReplaceManager(
       this.container.querySelector('.find-replace-content')!,
+      this.state,
+    );
+
+    this.presentation = new PresentationMode(this.state);
+
+    this.minimap = new MinimapManager(
+      this.container.querySelector('.minimap-container')!,
       this.state,
     );
 
@@ -367,6 +379,7 @@ export class EditorApp {
             <div class="problems-content"></div>
           </div>
         </div>
+        <div class="minimap-container"></div>
       </div>
 
       <div class="status-bar">
@@ -473,17 +486,8 @@ export class EditorApp {
       q('#toggle-snap')?.classList.toggle('active', v);
     });
 
-    // Preview mode
-    q('#status-preview')?.addEventListener('click', () => {
-      const svg = this.canvas?.exportSVG?.() ?? '';
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(
-          `<html><body style="margin:0;background:#000;display:flex;align-items:center;` +
-          `justify-content:center;min-height:100vh">${svg}</body></html>`,
-        );
-      }
-    });
+    // Presentation mode (F5)
+    q('#status-preview')?.addEventListener('click', () => this.presentation.open());
 
     // Sync zoom display
     this.state.subscribe((state, keys) => {
@@ -572,6 +576,10 @@ export class EditorApp {
     const design = this.state.get().design;
     if (!design) return '';
     return serializeYAML(design);
+  }
+
+  printDesign(bleed = 0): void {
+    openPrintWindow(this.state, { bleed, cropMarks: bleed > 0 });
   }
 
   exportSVG(): string {
