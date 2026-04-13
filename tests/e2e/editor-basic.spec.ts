@@ -39,6 +39,7 @@ test.describe('Editor — basic load', () => {
   });
 
   test('file tree panel is visible', async ({ page }) => {
+    await page.locator('.act-btn[data-panel="files"]').click();
     await expect(page.locator('.file-tree')).toBeVisible();
   });
 
