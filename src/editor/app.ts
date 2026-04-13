@@ -11,6 +11,7 @@ import { IconBrowserManager } from '../ui/panels/icon-browser';
 import { FindReplaceManager } from '../ui/panels/find-replace';
 import { PresentationMode } from '../ui/presentation/presentation-mode';
 import { MinimapManager } from '../ui/panels/minimap';
+import { AccessibilityChecker } from '../ui/panels/accessibility-checker';
 import { openPrintWindow } from '../export/print-mode';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
 import { ToolboxManager } from '../ui/tools/toolbox';
@@ -191,6 +192,7 @@ export class EditorApp {
   private findReplace!: FindReplaceManager;
   presentation!: PresentationMode;
   private minimap!: MinimapManager;
+  private a11y!: AccessibilityChecker;
   private pageStrip!: PageStrip;
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
@@ -267,6 +269,11 @@ export class EditorApp {
 
     this.minimap = new MinimapManager(
       this.container.querySelector('.minimap-container')!,
+      this.state,
+    );
+
+    this.a11y = new AccessibilityChecker(
+      this.container.querySelector('.a11y-content')!,
       this.state,
     );
 
@@ -370,6 +377,7 @@ export class EditorApp {
         <div class="rpanel-tabs">
           <button class="rpanel-tab active" data-tab="properties">Properties</button>
           <button class="rpanel-tab" data-tab="problems">Problems</button>
+          <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
         <div class="rpanel-body">
           <div class="tab-pane active" data-tab="properties">
@@ -377,6 +385,9 @@ export class EditorApp {
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
+          </div>
+          <div class="tab-pane" data-tab="a11y" style="height:100%">
+            <div class="a11y-content" style="height:100%"></div>
           </div>
         </div>
         <div class="minimap-container"></div>

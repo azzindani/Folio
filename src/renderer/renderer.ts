@@ -107,7 +107,7 @@ function renderComponentLayer(layer: ComponentLayer, svg: SVGSVGElement): SVGEle
     return renderPlaceholder(layer, svg);
   }
 
-  const resolvedLayers = resolveComponent(spec, layer.slots ?? {}, layer.overrides ?? {});
+  const resolvedLayers = resolveComponent(spec, layer.slots ?? {}, layer.overrides ?? {}, layer.variant);
   const g = createSVGElement('g');
   g.setAttribute('data-layer-id', layer.id);
   g.setAttribute('data-component-ref', layer.ref);

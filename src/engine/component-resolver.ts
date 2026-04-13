@@ -57,6 +57,7 @@ export function resolveComponent(
   componentSpec: ComponentSpec,
   slots: Record<string, unknown>,
   overrides: Record<string, unknown> = {},
+  variantName?: string,
 ): Layer[] {
   // Merge defaults with provided slots
   const props: Record<string, unknown> = {};
@@ -64,12 +65,29 @@ export function resolveComponent(
     props[key] = slots[key] ?? def.default ?? '';
   }
 
-  // Apply overrides
+  // Apply variant props (before slot overrides so slots can still win)
+  let variantLayerOverrides: Record<string, Partial<Layer>> = {};
+  if (variantName && componentSpec.variants) {
+    const variant = componentSpec.variants.find(v => v.name === variantName);
+    if (variant) {
+      Object.assign(props, variant.props);
+      variantLayerOverrides = variant.overrides ?? {};
+    }
+  }
+
+  // Apply slot-level overrides (highest priority)
   for (const [key, value] of Object.entries(overrides)) {
     props[key] = value;
   }
 
-  return componentSpec.layers.map(layer => resolveLayerProps(layer, props));
+  return componentSpec.layers.map(layer => {
+    let resolved = resolveLayerProps(layer, props);
+    // Apply per-layer variant overrides
+    if (variantLayerOverrides[layer.id]) {
+      resolved = { ...resolved, ...variantLayerOverrides[layer.id] } as Layer;
+    }
+    return resolved;
+  });
 }
 
 export function resolveTemplate(

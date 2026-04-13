@@ -287,6 +287,8 @@ export interface ComponentLayer extends BaseLayer {
   ref: string;
   slots?: Record<string, unknown>;
   overrides?: Record<string, unknown>;
+  /** Name of a variant defined in ComponentSpec.variants */
+  variant?: string;
 }
 
 export interface ComponentListLayer extends BaseLayer {
@@ -444,6 +446,19 @@ export interface ComponentProp {
   description?: string;
 }
 
+/**
+ * A named variant overrides a subset of a component's props.
+ * e.g. { name: 'primary', props: { color: '#6c5ce7' } }
+ */
+export interface ComponentVariant {
+  name: string;
+  description?: string;
+  /** Prop values to merge over the component defaults when this variant is active */
+  props: Record<string, unknown>;
+  /** Optional layer-level overrides (keyed by layer id) */
+  overrides?: Record<string, Partial<Layer>>;
+}
+
 export interface ComponentSpec {
   _protocol: 'component/v1';
   name: string;
@@ -452,6 +467,8 @@ export interface ComponentSpec {
   props: Record<string, ComponentProp>;
   locked_props?: string[];
   layers: Layer[];
+  /** Named variants — select one via ComponentLayer.variant */
+  variants?: ComponentVariant[];
 }
 
 // ── Template Definition ─────────────────────────────────────
