@@ -397,7 +397,7 @@ export class EditorApp {
         <div class="status-pages"></div>
         <div class="status-sep"></div>
         <button class="sb-btn" id="zoom-out" title="Zoom out (−)">−</button>
-        <span class="sb-zoom-val">100%</span>
+        <span class="sb-zoom-val toolbar-zoom">100%</span>
         <button class="sb-btn" id="zoom-in" title="Zoom in (+)">+</button>
         <button class="sb-btn" id="zoom-fit" title="Fit to screen (⌘0)">&#8862;</button>
         <div class="status-sep"></div>
