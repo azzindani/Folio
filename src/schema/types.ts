@@ -14,7 +14,9 @@ export type LayerType =
   | 'chart'
   | 'code'
   | 'math'
-  | 'group';
+  | 'group'
+  | 'qrcode'
+  | 'auto_layout';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -182,6 +184,18 @@ export interface GridPosition {
 
 export type PositionShorthand = [number, number, number, number] | GridPosition;
 
+// ── Responsive Constraints ──────────────────────────────────
+export interface PinConstraints {
+  /** Which edges are pinned to the parent/canvas edge */
+  left?:   boolean;
+  right?:  boolean;
+  top?:    boolean;
+  bottom?: boolean;
+  /** Fix width/height regardless of parent resize */
+  fix_width?:  boolean;
+  fix_height?: boolean;
+}
+
 // ── Base Layer ──────────────────────────────────────────────
 export interface BaseLayer {
   id: string;
@@ -200,6 +214,10 @@ export interface BaseLayer {
   effects?: Effects;
   interaction?: Interaction;
   meta?: Record<string, unknown>;
+  /** Conditional visibility — plain JS expression string evaluated at render */
+  show_if?: string;
+  /** Responsive pin constraints */
+  constraints?: PinConstraints;
 }
 
 // ── Concrete Layer Types ────────────────────────────────────
@@ -269,6 +287,8 @@ export interface ComponentLayer extends BaseLayer {
   ref: string;
   slots?: Record<string, unknown>;
   overrides?: Record<string, unknown>;
+  /** Name of a variant defined in ComponentSpec.variants */
+  variant?: string;
 }
 
 export interface ComponentListLayer extends BaseLayer {
@@ -305,6 +325,28 @@ export interface GroupLayer extends BaseLayer {
   layers: Layer[];
 }
 
+export interface QRCodeLayer extends BaseLayer {
+  type: 'qrcode';
+  value: string;
+  error_correction?: 'L' | 'M' | 'Q' | 'H';
+  fill?: string;          // module color (default: '#000000')
+  background?: string;   // background color (default: 'transparent')
+}
+
+export interface AutoLayoutLayer extends BaseLayer {
+  type: 'auto_layout';
+  direction: 'row' | 'column';
+  gap?: number;
+  padding?: number | { top: number; right: number; bottom: number; left: number };
+  align_items?: 'start' | 'center' | 'end' | 'stretch';
+  justify_content?: 'start' | 'center' | 'end' | 'space-between' | 'space-around';
+  wrap?: boolean;
+  fill?: Fill;
+  stroke?: Stroke;
+  radius?: Radius;
+  layers: Layer[];
+}
+
 export type Layer =
   | RectLayer
   | CircleLayer
@@ -320,7 +362,9 @@ export type Layer =
   | ChartLayer
   | CodeLayer
   | MathLayer
-  | GroupLayer;
+  | GroupLayer
+  | QRCodeLayer
+  | AutoLayoutLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {
@@ -402,6 +446,19 @@ export interface ComponentProp {
   description?: string;
 }
 
+/**
+ * A named variant overrides a subset of a component's props.
+ * e.g. { name: 'primary', props: { color: '#6c5ce7' } }
+ */
+export interface ComponentVariant {
+  name: string;
+  description?: string;
+  /** Prop values to merge over the component defaults when this variant is active */
+  props: Record<string, unknown>;
+  /** Optional layer-level overrides (keyed by layer id) */
+  overrides?: Record<string, Partial<Layer>>;
+}
+
 export interface ComponentSpec {
   _protocol: 'component/v1';
   name: string;
@@ -410,6 +467,8 @@ export interface ComponentSpec {
   props: Record<string, ComponentProp>;
   locked_props?: string[];
   layers: Layer[];
+  /** Named variants — select one via ComponentLayer.variant */
+  variants?: ComponentVariant[];
 }
 
 // ── Template Definition ─────────────────────────────────────

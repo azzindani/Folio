@@ -1,5 +1,6 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, LinearGradientFill, RadialGradientFill, GradientStop } from '../../schema/types';
+import { colorPicker } from '../color-picker/color-picker';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -47,46 +48,64 @@ export class PropertiesPanelManager {
   }
 
   private renderLayerProperties(layer: Layer): void {
+    // Layer identity strip
     let html = `
-      <div class="prop-section" style="padding:8px;display:flex;flex-direction:column;gap:12px">
-        <div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">ID</div>
-          <div style="font-size:13px;font-family:var(--font-mono)">${layer.id}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Type</div>
-          <div style="font-size:13px">${layer.type}</div>
-        </div>
+      <div style="padding:8px 10px;border-bottom:1px solid var(--color-border);
+                  display:flex;gap:8px;align-items:center">
+        <span style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+                     color:var(--color-text-muted)">${layer.type}</span>
+        <span style="font-size:11px;font-family:var(--font-mono);color:var(--color-text);
+                     overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${layer.id}</span>
+      </div>
     `;
 
-    // Position fields
-    html += this.renderPositionFields(layer);
+    // Position section
+    html += this.section('Position & Size', this.renderPositionFields(layer));
 
-    // Type-specific fields
+    // Appearance section
+    let appearance = '';
     switch (layer.type) {
-      case 'rect': html += this.renderRectFields(layer); break;
-      case 'circle': html += this.renderCircleFields(layer); break;
-      case 'text': html += this.renderTextFields(layer); break;
-      case 'line': html += this.renderLineFields(layer); break;
+      case 'rect':   appearance = this.renderRectFields(layer); break;
+      case 'circle': appearance = this.renderCircleFields(layer); break;
+      case 'text':   appearance = this.renderTextFields(layer); break;
+      case 'line':   appearance = this.renderLineFields(layer); break;
     }
+    if (appearance) html += this.section('Appearance', appearance);
 
-    // Z-index
-    html += this.renderNumberField('z', 'Z-Index', layer.z);
+    // Transform section
+    const transform = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        ${this.renderNumberInput('z', 'Z', layer.z)}
+        ${this.renderNumberInput('opacity', 'Opacity', layer.opacity ?? 1)}
+        ${this.renderNumberInput('rotation', 'Rotate°', layer.rotation ?? 0)}
+      </div>`;
+    html += this.section('Transform', transform);
 
-    // Opacity
-    html += this.renderNumberField('opacity', 'Opacity', layer.opacity ?? 1, 0, 1, 0.05);
-
-    // Rotation
-    html += this.renderNumberField('rotation', 'Rotation', layer.rotation ?? 0, 0, 360, 1);
-
-    html += '</div>';
     this.content.innerHTML = html;
     this.bindInputs(layer);
+    this.bindColorWells(layer);
+    this.bindGradientEditor(layer);
+    this.bindAccordions();
+  }
+
+  private section(title: string, body: string, collapsed = false): string {
+    return `
+      <div class="prop-section${collapsed ? ' collapsed' : ''}">
+        <div class="prop-section-header">${title}</div>
+        <div class="prop-section-body">${body}</div>
+      </div>`;
+  }
+
+  private bindAccordions(): void {
+    this.content.querySelectorAll<HTMLElement>('.prop-section-header').forEach(header => {
+      header.addEventListener('click', () => {
+        header.closest('.prop-section')?.classList.toggle('collapsed');
+      });
+    });
   }
 
   private renderPositionFields(layer: Layer): string {
-    return `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
         ${this.renderNumberInput('x', 'X', layer.x ?? 0)}
         ${this.renderNumberInput('y', 'Y', layer.y ?? 0)}
         ${this.renderNumberInput('width', 'W', typeof layer.width === 'number' ? layer.width : 0)}
@@ -122,11 +141,26 @@ export class PropertiesPanelManager {
   }
 
   private renderLinearGradientFields(fill: LinearGradientFill): string {
+    const stopCss = fill.stops.map(s => `${s.color} ${s.position}%`).join(', ');
+    const previewBg = `linear-gradient(to right, ${stopCss})`;
+    const thumbs = fill.stops.map((s, i) => this.renderGradientThumb(s.color, s.position, i)).join('');
+
     let html = `
       <div>
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Linear Gradient</div>
-        ${this.renderNumberField('fill.angle', 'Angle (deg)', fill.angle, 0, 360, 1)}
-        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;margin-top:8px">Stops</div>
+        <div class="grad-bar-wrap" style="position:relative;margin-bottom:4px">
+          <div class="grad-preview" data-fill-type="linear"
+            style="height:20px;border-radius:4px;
+              background:${previewBg};border:1px solid var(--color-border);
+              cursor:crosshair">
+          </div>
+          <div class="grad-thumbs" style="position:relative;height:14px">${thumbs}</div>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:6px">
+          Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
+        </div>
+        ${this.renderNumberField('fill.angle', 'Angle °', fill.angle, 0, 360, 1)}
+        <div style="font-size:11px;color:var(--color-text-muted);margin:6px 0 4px">Stops</div>
     `;
     fill.stops.forEach((stop, i) => {
       html += this.renderGradientStop(stop, i);
@@ -153,16 +187,30 @@ export class PropertiesPanelManager {
     return html;
   }
 
+  private renderGradientThumb(color: string, position: number, index: number): string {
+    const safe = color.startsWith('#') ? color : '#6c5ce7';
+    return `<div class="grad-thumb" data-stop-index="${index}"
+      style="position:absolute;left:${position}%;transform:translateX(-50%);
+             width:12px;height:12px;background:${safe};
+             border:2px solid #fff;border-radius:2px;cursor:ew-resize;
+             box-shadow:0 1px 3px rgba(0,0,0,.5);top:1px"></div>`;
+  }
+
   private renderGradientStop(stop: GradientStop, index: number): string {
+    const safe = stop.color.startsWith('#') ? stop.color : '#6c5ce7';
     return `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-        <input type="color" class="prop-input" data-prop="fill.stops.${index}.color" value="${stop.color}"
-          style="width:28px;height:24px;border:none;background:none;cursor:pointer;flex-shrink:0">
+        <div class="color-well cp-trigger" data-prop="fill.stops.${index}.color"
+          style="background:${safe};width:24px;height:20px;border-radius:3px;
+                 border:1px solid var(--color-border);cursor:pointer;flex-shrink:0"></div>
         <input type="text" class="prop-input" data-prop="fill.stops.${index}.color" value="${stop.color}"
-          style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px;font-family:var(--font-mono)">
-        <input type="number" class="prop-input" data-prop="fill.stops.${index}.position" value="${stop.position}"
-          min="0" max="100" step="1"
-          style="width:48px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px"
+          style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px;
+                 font-family:var(--font-mono)">
+        <input type="number" class="prop-input" data-prop="fill.stops.${index}.position"
+          value="${stop.position}" min="0" max="100" step="1"
+          style="width:44px;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px"
           title="Position (0–100)">
       </div>`;
   }
@@ -222,17 +270,105 @@ export class PropertiesPanelManager {
   }
 
   private renderColorField(prop: string, label: string, value: string): string {
+    const safeVal = value.startsWith('#') ? value : '#6c5ce7';
     return `
       <div>
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">${label}</div>
         <div style="display:flex;align-items:center;gap:6px">
-          <input type="color" class="prop-input" data-prop="${prop}" value="${value}"
-            style="width:32px;height:28px;border:none;background:none;cursor:pointer">
+          <div class="color-well cp-trigger" data-prop="${prop}"
+            style="background:${safeVal};width:28px;height:22px;border-radius:4px;
+                   border:1px solid var(--color-border);cursor:pointer;flex-shrink:0"></div>
           <input type="text" class="prop-input" data-prop="${prop}" value="${value}"
             style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);
-                   border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;font-family:var(--font-mono)">
+                   border-radius:4px;padding:3px 6px;color:var(--color-text);font-size:11px;
+                   font-family:var(--font-mono);outline:none">
         </div>
       </div>`;
+  }
+
+  private bindColorWells(layer: Layer): void {
+    this.content.querySelectorAll<HTMLElement>('.cp-trigger').forEach(well => {
+      well.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const prop = well.dataset.prop!;
+        const currentHex = well.style.background || '#6c5ce7';
+        colorPicker.open(well, currentHex, (hex) => {
+          well.style.background = hex;
+          // Sync matching text input
+          const textInput = this.content.querySelector<HTMLInputElement>(
+            `input[type="text"][data-prop="${prop}"]`,
+          );
+          if (textInput) textInput.value = hex;
+          this.applyPropertyChange(layer.id, prop, hex);
+        });
+      });
+    });
+  }
+
+  private bindGradientEditor(layer: Layer): void {
+    const preview = this.content.querySelector<HTMLElement>('.grad-preview');
+    const thumbsContainer = this.content.querySelector<HTMLElement>('.grad-thumbs');
+    if (!preview || !thumbsContainer) return;
+
+    // Click on bar → add new stop at that position
+    preview.addEventListener('click', (e) => {
+      const rect = preview.getBoundingClientRect();
+      const pos = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      this.addGradientStop(layer.id, pos);
+    });
+
+    // Drag existing thumbs
+    thumbsContainer.querySelectorAll<HTMLElement>('.grad-thumb').forEach(thumb => {
+      const idx = parseInt(thumb.dataset.stopIndex ?? '0', 10);
+
+      thumb.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.removeGradientStop(layer.id, idx);
+      });
+
+      const onMove = (e: MouseEvent) => {
+        const rect = thumbsContainer.getBoundingClientRect();
+        const pos = Math.round(
+          Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 100,
+        );
+        thumb.style.left = `${pos}%`;
+        this.applyPropertyChange(layer.id, `fill.stops.${idx}.position`, pos);
+      };
+
+      thumb.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', () => {
+          document.removeEventListener('mousemove', onMove);
+        }, { once: true });
+      });
+    });
+  }
+
+  private addGradientStop(layerId: string, position: number): void {
+    const layers = this.state.getCurrentLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer || !('fill' in layer)) return;
+    const fill = (layer as { fill?: { type: string; stops?: unknown[] } }).fill;
+    if (!fill || (fill.type !== 'linear' && fill.type !== 'radial')) return;
+
+    const stops = [...(fill.stops ?? [])] as Array<{ color: string; position: number }>;
+    stops.push({ color: '#ffffff', position });
+    stops.sort((a, b) => a.position - b.position);
+    this.applyPropertyChange(layerId, 'fill.stops', stops);
+  }
+
+  private removeGradientStop(layerId: string, index: number): void {
+    const layers = this.state.getCurrentLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer || !('fill' in layer)) return;
+    const fill = (layer as { fill?: { type: string; stops?: unknown[] } }).fill;
+    if (!fill || !fill.stops || fill.stops.length <= 2) return; // keep ≥ 2 stops
+
+    const stops = [...fill.stops];
+    stops.splice(index, 1);
+    this.applyPropertyChange(layerId, 'fill.stops', stops);
   }
 
   private bindInputs(layer: Layer): void {

@@ -154,5 +154,39 @@ describe('StateManager', () => {
       expect(sm.get().design?.layers).toHaveLength(1);
       expect(sm.get().design?.layers?.[0].id).toBe('b');
     });
+
+    it('removeLayer works on a paged design', () => {
+      const sm = new StateManager();
+      sm.set('design', {
+        _protocol: 'design/v1',
+        meta: { id: 't', name: 'T', type: 'carousel', created: '', modified: '' },
+        document: { width: 100, height: 100, unit: 'px', dpi: 96 },
+        pages: [
+          { id: 'p1', label: 'P1', layers: [
+            { id: 'a', type: 'rect', z: 0 } as Layer,
+            { id: 'b', type: 'rect', z: 1 } as Layer,
+          ] },
+          { id: 'p2', label: 'P2', layers: [{ id: 'c', type: 'rect', z: 0 } as Layer] },
+        ],
+      } as unknown as import('../schema/types').DesignSpec);
+      sm.set('currentPageIndex', 0, false);
+      sm.removeLayer('a');
+      const pages = sm.get().design?.pages;
+      expect(pages?.[0].layers).toHaveLength(1);
+      expect(pages?.[1].layers).toHaveLength(1); // other page untouched
+    });
+
+    it('removeLayer removes nested child from a group', () => {
+      const sm = new StateManager();
+      const groupLayer: Layer = {
+        id: 'grp', type: 'group', z: 0,
+        layers: [{ id: 'child', type: 'rect', z: 0 } as Layer],
+      } as unknown as Layer;
+      sm.set('design', makeDesign([groupLayer]));
+      sm.removeLayer('child');
+      const topLayers = sm.get().design?.layers ?? [];
+      const grp = topLayers.find(l => l.id === 'grp') as { layers: Layer[] };
+      expect(grp?.layers).toHaveLength(0);
+    });
   });
 });

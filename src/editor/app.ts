@@ -7,6 +7,12 @@ import { PropertiesPanelManager } from '../ui/panels/properties-panel';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
 import { FileTreeManager } from '../ui/panels/file-tree';
 import { PageStrip } from '../ui/panels/page-strip';
+import { IconBrowserManager } from '../ui/panels/icon-browser';
+import { FindReplaceManager } from '../ui/panels/find-replace';
+import { PresentationMode } from '../ui/presentation/presentation-mode';
+import { MinimapManager } from '../ui/panels/minimap';
+import { AccessibilityChecker } from '../ui/panels/accessibility-checker';
+import { openPrintWindow } from '../export/print-mode';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
 import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
@@ -182,6 +188,11 @@ export class EditorApp {
   private layerPanel!: LayerPanelManager;
   private propertiesPanel!: PropertiesPanelManager;
   private problemsPanel!: ProblemsPanelManager;
+  private iconBrowser!: IconBrowserManager;
+  private findReplace!: FindReplaceManager;
+  presentation!: PresentationMode;
+  private minimap!: MinimapManager;
+  private a11y!: AccessibilityChecker;
   private pageStrip!: PageStrip;
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
@@ -235,19 +246,44 @@ export class EditorApp {
     );
 
     this.propertiesPanel = new PropertiesPanelManager(
-      this.container.querySelector('.properties-panel')!,
+      this.container.querySelector('.properties-content')!,
       this.state,
     );
 
     this.problemsPanel = new ProblemsPanelManager(
-      this.container.querySelector('.properties-panel')!,
+      this.container.querySelector('.problems-content')!,
       this.state,
     );
 
-    this.pageStrip = new PageStrip(
-      this.container.querySelector('.layer-panel')!,
+    this.iconBrowser = new IconBrowserManager(
+      this.container.querySelector('.icon-browser-content')!,
       this.state,
     );
+
+    this.findReplace = new FindReplaceManager(
+      this.container.querySelector('.find-replace-content')!,
+      this.state,
+    );
+
+    this.presentation = new PresentationMode(this.state);
+
+    this.minimap = new MinimapManager(
+      this.container.querySelector('.minimap-container')!,
+      this.state,
+    );
+
+    this.a11y = new AccessibilityChecker(
+      this.container.querySelector('.a11y-content')!,
+      this.state,
+    );
+
+    // Page strip lives in the status bar (compact mode)
+    this.pageStrip = new PageStrip(
+      this.container.querySelector('.status-pages')!,
+      this.state,
+    );
+
+    this.wireStatusBar();
 
     this.keyboard = new KeyboardManager(this.state, this);
 
@@ -281,26 +317,232 @@ export class EditorApp {
   private buildLayout(): void {
     this.container.innerHTML = `
       <div class="toolbar"></div>
-      <div class="tools-panel"></div>
-      <div class="file-tree">
-        <div class="panel-header">Files</div>
-        <div class="file-tree-content"></div>
+
+      <div class="formula-bar">
+        <span class="fb-layer-id">—</span>
+        <span class="fb-prefix">ƒ=</span>
+        <input class="fb-input" type="text" placeholder="Select a layer to inspect…" spellcheck="false">
       </div>
+
+      <div class="activity-bar">
+        <button class="act-btn active" data-panel="layers" title="Layers (⌘⇧L)">&#9776;</button>
+        <button class="act-btn" data-panel="files" title="Files (⌘⇧E)">&#128193;</button>
+        <button class="act-btn" data-panel="components" title="Components (⌘⇧K)">&#11041;</button>
+        <button class="act-btn" data-panel="icons" title="Icons (⌘⇧I)">&#11088;</button>
+        <button class="act-btn" data-panel="find" title="Find &amp; Replace (⌘H)">&#128269;</button>
+        <div class="act-spacer"></div>
+        <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">&#9790;</button>
+      </div>
+
+      <div class="left-panel">
+
+        <div class="left-panel-view active" data-panel="layers">
+          <div class="tools-panel"></div>
+          <div class="layer-panel">
+            <div class="panel-header">Layers</div>
+          </div>
+        </div>
+
+        <div class="left-panel-view" data-panel="files">
+          <div class="file-tree">
+            <div class="panel-header">Files</div>
+            <div class="file-tree-content"></div>
+          </div>
+        </div>
+
+        <div class="left-panel-view" data-panel="components">
+          <div class="panel-header">Components</div>
+          <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">
+            No components in this project yet.<br>
+            Save a layer group as a component to reuse it.
+          </div>
+        </div>
+
+        <div class="left-panel-view" data-panel="icons">
+          <div class="panel-header">Icons</div>
+          <div class="icon-browser-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
+        </div>
+
+        <div class="left-panel-view" data-panel="find">
+          <div class="find-replace-content" style="flex:1;overflow:hidden;height:100%"></div>
+        </div>
+
+      </div>
+
       <div class="canvas-area">
         <div class="monaco-container" style="display:none"></div>
       </div>
+
       <div class="properties-panel">
-        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between">
-          <span>Properties</span>
+        <div class="rpanel-tabs">
+          <button class="rpanel-tab active" data-tab="properties">Properties</button>
+          <button class="rpanel-tab" data-tab="problems">Problems</button>
+          <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
-        <div class="properties-content"></div>
-        <div class="panel-header" style="margin-top:8px;border-top:1px solid var(--color-border);padding-top:8px">Problems</div>
+        <div class="rpanel-body">
+          <div class="tab-pane active" data-tab="properties">
+            <div class="properties-content"></div>
+          </div>
+          <div class="tab-pane" data-tab="problems">
+            <div class="problems-content"></div>
+          </div>
+          <div class="tab-pane" data-tab="a11y" style="height:100%">
+            <div class="a11y-content" style="height:100%"></div>
+          </div>
+        </div>
+        <div class="minimap-container"></div>
       </div>
-      <div class="layer-panel">
-        <div class="panel-header">Layers</div>
-        <div class="layer-panel-content"></div>
+
+      <div class="status-bar">
+        <div class="status-pages"></div>
+        <div class="status-sep"></div>
+        <button class="sb-btn" id="zoom-out" title="Zoom out (−)">−</button>
+        <span class="sb-zoom-val toolbar-zoom">100%</span>
+        <button class="sb-btn" id="zoom-in" title="Zoom in (+)">+</button>
+        <button class="sb-btn" id="zoom-fit" title="Fit to screen (⌘0)">&#8862;</button>
+        <div class="status-sep"></div>
+        <button class="sb-btn" id="toggle-grid" title="Grid (G)">&#8862;</button>
+        <button class="sb-btn" id="toggle-snap" title="Snap">&#8859;</button>
+        <div class="status-sep"></div>
+        <button class="sb-btn" id="status-preview" title="Preview (F5)">&#9654;</button>
+        <div class="status-spacer"></div>
+        <span class="sb-info" id="sb-info"></span>
       </div>
     `;
+
+    this.wireActivityBar();
+    this.wireRpanelTabs();
+    this.wireThemeToggle();
+  }
+
+  private wireActivityBar(): void {
+    const actBtns = this.container.querySelectorAll<HTMLElement>('.act-btn[data-panel]');
+    const panelViews = this.container.querySelectorAll<HTMLElement>('.left-panel-view');
+    const leftPanel = this.container.querySelector<HTMLElement>('.left-panel')!;
+
+    let currentPanel = 'layers';
+
+    actBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panelId = btn.dataset.panel!;
+
+        if (panelId === currentPanel) {
+          // Toggle collapse
+          leftPanel.closest('#app')?.classList.toggle('panel-collapsed');
+          return;
+        }
+
+        currentPanel = panelId;
+        actBtns.forEach(b => b.classList.toggle('active', b.dataset.panel === panelId));
+        panelViews.forEach(v => v.classList.toggle('active', v.dataset.panel === panelId));
+        leftPanel.closest('#app')?.classList.remove('panel-collapsed');
+      });
+    });
+  }
+
+  private wireRpanelTabs(): void {
+    const tabs = this.container.querySelectorAll<HTMLElement>('.rpanel-tab');
+    const panes = this.container.querySelectorAll<HTMLElement>('.rpanel-body .tab-pane');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab!;
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+        panes.forEach(p => p.classList.toggle('active', p.dataset.tab === tabId));
+      });
+    });
+  }
+
+  private wireThemeToggle(): void {
+    const btn = this.container.querySelector<HTMLElement>('#theme-toggle');
+    if (!btn) return;
+    const root = document.documentElement;
+    btn.addEventListener('click', () => {
+      const isLight = root.getAttribute('data-theme') === 'light';
+      root.setAttribute('data-theme', isLight ? 'dark' : 'light');
+      btn.innerHTML = isLight ? '&#9790;' : '&#9788;';
+      btn.title = isLight ? 'Switch to light theme' : 'Switch to dark theme';
+    });
+  }
+
+  private wireStatusBar(): void {
+    const q = <T extends HTMLElement>(sel: string) =>
+      this.container.querySelector<T>(sel);
+
+    // Zoom controls
+    q('#zoom-out')?.addEventListener('click', () => {
+      const z = Math.max(0.1, (this.state.get().zoom ?? 1) - 0.1);
+      this.state.set('zoom', parseFloat(z.toFixed(2)));
+    });
+    q('#zoom-in')?.addEventListener('click', () => {
+      const z = Math.min(4, (this.state.get().zoom ?? 1) + 0.1);
+      this.state.set('zoom', parseFloat(z.toFixed(2)));
+    });
+    q('#zoom-fit')?.addEventListener('click', () => {
+      this.canvas?.fitToScreen?.();
+    });
+
+    // Grid / snap toggles
+    q('#toggle-grid')?.addEventListener('click', () => {
+      const v = !this.state.get().gridVisible;
+      this.state.set('gridVisible', v);
+      q('#toggle-grid')?.classList.toggle('active', v);
+    });
+    q('#toggle-snap')?.addEventListener('click', () => {
+      const v = !this.state.get().snapEnabled;
+      this.state.set('snapEnabled', v);
+      q('#toggle-snap')?.classList.toggle('active', v);
+    });
+
+    // Presentation mode (F5)
+    q('#status-preview')?.addEventListener('click', () => this.presentation.open());
+
+    // Sync zoom display
+    this.state.subscribe((state, keys) => {
+      if (keys.includes('zoom')) {
+        const val = q<HTMLSpanElement>('.sb-zoom-val');
+        if (val) val.textContent = `${Math.round((state.zoom ?? 1) * 100)}%`;
+      }
+      if (keys.includes('selectedLayerIds') || keys.includes('design')) {
+        this.updateFormulaBar();
+        const info = q<HTMLSpanElement>('#sb-info');
+        if (info) {
+          const n = state.selectedLayerIds?.length ?? 0;
+          info.textContent = n > 0 ? `${n} layer${n > 1 ? 's' : ''} selected` : '';
+        }
+      }
+    });
+  }
+
+  private updateFormulaBar(): void {
+    const state = this.state.get();
+    const layerId = state.selectedLayerIds?.[0];
+    const idEl = this.container.querySelector<HTMLElement>('.fb-layer-id');
+    const inputEl = this.container.querySelector<HTMLInputElement>('.fb-input');
+    if (!idEl || !inputEl) return;
+
+    if (!layerId) {
+      idEl.textContent = '—';
+      inputEl.value = '';
+      inputEl.placeholder = 'Select a layer to inspect…';
+      return;
+    }
+
+    const design = state.design;
+    const layers = design?.layers ?? design?.pages?.[state.currentPageIndex ?? 0]?.layers ?? [];
+    const layer = layers.find((l: { id: string }) => l.id === layerId);
+    if (!layer) return;
+
+    idEl.textContent = layer.id;
+    // Show primary property for layer type
+    const l = layer as unknown as Record<string, unknown> & { type?: string; content?: { value?: string }; fill?: { color?: string }; src?: string };
+    const primary =
+      l.type === 'text'  ? (l.content as { value?: string })?.value ?? '' :
+      l.type === 'image' ? String(l.src ?? '') :
+      l.type === 'rect' || l.type === 'circle' ? String((l.fill as { color?: string })?.color ?? '') :
+      '';
+    inputEl.value = primary;
+    inputEl.placeholder = `${layer.type} — edit value`;
   }
 
   /**
@@ -342,6 +584,10 @@ export class EditorApp {
     const design = this.state.get().design;
     if (!design) return '';
     return serializeYAML(design);
+  }
+
+  printDesign(bleed = 0): void {
+    openPrintWindow(this.state, { bleed, cropMarks: bleed > 0 });
   }
 
   exportSVG(): string {
