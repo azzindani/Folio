@@ -84,6 +84,7 @@ export class PropertiesPanelManager {
     this.content.innerHTML = html;
     this.bindInputs(layer);
     this.bindColorWells(layer);
+    this.bindGradientEditor(layer);
     this.bindAccordions();
   }
 
@@ -140,19 +141,26 @@ export class PropertiesPanelManager {
   }
 
   private renderLinearGradientFields(fill: LinearGradientFill): string {
-    const stopCss = fill.stops
-      .map(s => `${s.color} ${s.position}%`)
-      .join(', ');
+    const stopCss = fill.stops.map(s => `${s.color} ${s.position}%`).join(', ');
     const previewBg = `linear-gradient(to right, ${stopCss})`;
+    const thumbs = fill.stops.map((s, i) => this.renderGradientThumb(s.color, s.position, i)).join('');
 
     let html = `
       <div>
-        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:6px">Linear Gradient</div>
-        <div class="grad-preview" style="height:20px;border-radius:4px;margin-bottom:8px;
-          background:${previewBg};border:1px solid var(--color-border);position:relative;cursor:pointer">
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Linear Gradient</div>
+        <div class="grad-bar-wrap" style="position:relative;margin-bottom:4px">
+          <div class="grad-preview" data-fill-type="linear"
+            style="height:20px;border-radius:4px;
+              background:${previewBg};border:1px solid var(--color-border);
+              cursor:crosshair">
+          </div>
+          <div class="grad-thumbs" style="position:relative;height:14px">${thumbs}</div>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:6px">
+          Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
         </div>
         ${this.renderNumberField('fill.angle', 'Angle °', fill.angle, 0, 360, 1)}
-        <div style="font-size:11px;color:var(--color-text-muted);margin:8px 0 4px">Stops</div>
+        <div style="font-size:11px;color:var(--color-text-muted);margin:6px 0 4px">Stops</div>
     `;
     fill.stops.forEach((stop, i) => {
       html += this.renderGradientStop(stop, i);
@@ -179,16 +187,30 @@ export class PropertiesPanelManager {
     return html;
   }
 
+  private renderGradientThumb(color: string, position: number, index: number): string {
+    const safe = color.startsWith('#') ? color : '#6c5ce7';
+    return `<div class="grad-thumb" data-stop-index="${index}"
+      style="position:absolute;left:${position}%;transform:translateX(-50%);
+             width:12px;height:12px;background:${safe};
+             border:2px solid #fff;border-radius:2px;cursor:ew-resize;
+             box-shadow:0 1px 3px rgba(0,0,0,.5);top:1px"></div>`;
+  }
+
   private renderGradientStop(stop: GradientStop, index: number): string {
+    const safe = stop.color.startsWith('#') ? stop.color : '#6c5ce7';
     return `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-        <input type="color" class="prop-input" data-prop="fill.stops.${index}.color" value="${stop.color}"
-          style="width:28px;height:24px;border:none;background:none;cursor:pointer;flex-shrink:0">
+        <div class="color-well cp-trigger" data-prop="fill.stops.${index}.color"
+          style="background:${safe};width:24px;height:20px;border-radius:3px;
+                 border:1px solid var(--color-border);cursor:pointer;flex-shrink:0"></div>
         <input type="text" class="prop-input" data-prop="fill.stops.${index}.color" value="${stop.color}"
-          style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px;font-family:var(--font-mono)">
-        <input type="number" class="prop-input" data-prop="fill.stops.${index}.position" value="${stop.position}"
-          min="0" max="100" step="1"
-          style="width:48px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px"
+          style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px;
+                 font-family:var(--font-mono)">
+        <input type="number" class="prop-input" data-prop="fill.stops.${index}.position"
+          value="${stop.position}" min="0" max="100" step="1"
+          style="width:44px;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:3px 5px;color:var(--color-text);font-size:11px"
           title="Position (0–100)">
       </div>`;
   }
@@ -281,6 +303,72 @@ export class PropertiesPanelManager {
         });
       });
     });
+  }
+
+  private bindGradientEditor(layer: Layer): void {
+    const preview = this.content.querySelector<HTMLElement>('.grad-preview');
+    const thumbsContainer = this.content.querySelector<HTMLElement>('.grad-thumbs');
+    if (!preview || !thumbsContainer) return;
+
+    // Click on bar → add new stop at that position
+    preview.addEventListener('click', (e) => {
+      const rect = preview.getBoundingClientRect();
+      const pos = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      this.addGradientStop(layer.id, pos);
+    });
+
+    // Drag existing thumbs
+    thumbsContainer.querySelectorAll<HTMLElement>('.grad-thumb').forEach(thumb => {
+      const idx = parseInt(thumb.dataset.stopIndex ?? '0', 10);
+
+      thumb.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.removeGradientStop(layer.id, idx);
+      });
+
+      const onMove = (e: MouseEvent) => {
+        const rect = thumbsContainer.getBoundingClientRect();
+        const pos = Math.round(
+          Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 100,
+        );
+        thumb.style.left = `${pos}%`;
+        this.applyPropertyChange(layer.id, `fill.stops.${idx}.position`, pos);
+      };
+
+      thumb.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', () => {
+          document.removeEventListener('mousemove', onMove);
+        }, { once: true });
+      });
+    });
+  }
+
+  private addGradientStop(layerId: string, position: number): void {
+    const layers = this.state.getCurrentLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer || !('fill' in layer)) return;
+    const fill = (layer as { fill?: { type: string; stops?: unknown[] } }).fill;
+    if (!fill || (fill.type !== 'linear' && fill.type !== 'radial')) return;
+
+    const stops = [...(fill.stops ?? [])] as Array<{ color: string; position: number }>;
+    stops.push({ color: '#ffffff', position });
+    stops.sort((a, b) => a.position - b.position);
+    this.applyPropertyChange(layerId, 'fill.stops', stops);
+  }
+
+  private removeGradientStop(layerId: string, index: number): void {
+    const layers = this.state.getCurrentLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer || !('fill' in layer)) return;
+    const fill = (layer as { fill?: { type: string; stops?: unknown[] } }).fill;
+    if (!fill || !fill.stops || fill.stops.length <= 2) return; // keep ≥ 2 stops
+
+    const stops = [...fill.stops];
+    stops.splice(index, 1);
+    this.applyPropertyChange(layerId, 'fill.stops', stops);
   }
 
   private bindInputs(layer: Layer): void {

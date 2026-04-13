@@ -7,7 +7,7 @@ import {
   renderRect, renderCircle, renderPath, renderPolygon,
   renderLine, renderText, renderImage, renderIcon,
   renderMermaid, renderChart, renderCode, renderMath, renderGroup,
-  renderQRCode,
+  renderQRCode, renderAutoLayout,
 } from './layer-renderers';
 
 export interface RenderOptions {
@@ -71,6 +71,7 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'component': return renderComponentLayer(layer as ComponentLayer, svg);
     case 'component_list': return renderComponentListLayer(layer as ComponentListLayer, svg);
     case 'qrcode': return renderQRCode(layer, svg);
+    case 'auto_layout': return renderAutoLayout(layer, svg, renderLayer);
     default: return renderPlaceholder(layer, svg);
   }
 }

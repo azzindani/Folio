@@ -4,6 +4,8 @@ import type { Layer } from '../schema/types';
 
 let layerCounter = 0;
 
+const RULER_SIZE = 20; // px width/height of ruler strips
+
 export class CanvasManager {
   private container: HTMLElement;
   private state: StateManager;
@@ -11,6 +13,8 @@ export class CanvasManager {
   private svgContainer!: HTMLDivElement;
   private selectionOverlay!: HTMLDivElement;
   private currentSVG: SVGSVGElement | null = null;
+  private rulerH!: HTMLCanvasElement;
+  private rulerV!: HTMLCanvasElement;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
@@ -38,6 +42,59 @@ export class CanvasManager {
     this.viewport.appendChild(this.svgContainer);
     this.viewport.appendChild(this.selectionOverlay);
     this.container.appendChild(this.viewport);
+    this.buildRulers();
+  }
+
+  private buildRulers(): void {
+    // Corner box
+    const corner = document.createElement('div');
+    corner.className = 'ruler-corner';
+    corner.style.cssText =
+      `position:absolute;top:0;left:0;width:${RULER_SIZE}px;height:${RULER_SIZE}px;` +
+      `background:var(--color-surface);border-right:1px solid var(--color-border);` +
+      `border-bottom:1px solid var(--color-border);z-index:30;`;
+
+    this.rulerH = document.createElement('canvas');
+    this.rulerH.className = 'ruler-h';
+    this.rulerH.height = RULER_SIZE;
+    this.rulerH.style.cssText =
+      `position:absolute;top:0;left:${RULER_SIZE}px;right:0;height:${RULER_SIZE}px;` +
+      `z-index:29;cursor:default;`;
+
+    this.rulerV = document.createElement('canvas');
+    this.rulerV.className = 'ruler-v';
+    this.rulerV.width = RULER_SIZE;
+    this.rulerV.style.cssText =
+      `position:absolute;left:0;top:${RULER_SIZE}px;bottom:0;width:${RULER_SIZE}px;` +
+      `z-index:29;cursor:default;`;
+
+    this.container.appendChild(corner);
+    this.container.appendChild(this.rulerH);
+    this.container.appendChild(this.rulerV);
+
+    // Offset viewport to make room for rulers
+    this.viewport.style.marginTop  = `${RULER_SIZE}px`;
+    this.viewport.style.marginLeft = `${RULER_SIZE}px`;
+  }
+
+  private updateRulers(): void {
+    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const containerW = this.container.clientWidth  - RULER_SIZE;
+    const containerH = this.container.clientHeight - RULER_SIZE;
+
+    // ── Horizontal ruler ────────────────────────────────────
+    this.rulerH.width = Math.max(1, containerW);
+    const ctxH = this.rulerH.getContext('2d');
+    if (ctxH) {
+      drawRuler(ctxH, containerW, RULER_SIZE, zoom, panX, 'h');
+    }
+
+    // ── Vertical ruler ──────────────────────────────────────
+    this.rulerV.height = Math.max(1, containerH);
+    const ctxV = this.rulerV.getContext('2d');
+    if (ctxV) {
+      drawRuler(ctxV, containerH, RULER_SIZE, zoom, panY, 'v');
+    }
   }
 
   private bindEvents(): void {
@@ -60,6 +117,7 @@ export class CanvasManager {
 
     if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
       this.updateTransform();
+      this.updateRulers();
     }
 
     if (changedKeys.includes('activeTool')) {
@@ -98,6 +156,7 @@ export class CanvasManager {
     this.viewport.style.width = `${width}px`;
     this.viewport.style.height = `${height}px`;
     this.updateTransform();
+    this.updateRulers();
   }
 
   private updateTransform(): void {
@@ -419,5 +478,80 @@ export class CanvasManager {
       this.state.set('panX', 0, false);
       this.state.set('panY', 0, false);
     });
+  }
+}
+
+// ── Ruler drawing helper ─────────────────────────────────────
+function drawRuler(
+  ctx: CanvasRenderingContext2D,
+  length: number,
+  thickness: number,
+  zoom: number,
+  pan: number,
+  axis: 'h' | 'v',
+): void {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const bg      = isDark ? '#1e1e2e' : '#f0efee';
+  const border  = isDark ? '#2d2d4e' : '#d1cfc9';
+  const tickClr = isDark ? '#555577' : '#aaa9a5';
+  const textClr = isDark ? '#7a7a9a' : '#888682';
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0,
+    axis === 'h' ? length : thickness,
+    axis === 'h' ? thickness : length,
+  );
+
+  // Border line along the canvas edge
+  ctx.fillStyle = border;
+  if (axis === 'h') {
+    ctx.fillRect(0, thickness - 1, length, 1);
+  } else {
+    ctx.fillRect(thickness - 1, 0, 1, length);
+  }
+
+  // Determine a nice step at this zoom level
+  const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+  const minPxPerTick = 40;
+  const step = steps.find(s => s * zoom >= minPxPerTick) ?? 1000;
+
+  // Compute which design-unit values to draw
+  const start = Math.floor(-pan / zoom / step) * step;
+  const end   = Math.ceil((length / zoom - pan / zoom) / step) * step + step;
+
+  ctx.fillStyle = tickClr;
+  ctx.font = `9px sans-serif`;
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = textClr;
+
+  for (let v = start; v <= end; v += step) {
+    const px = Math.round(v * zoom + pan);
+    if (px < 0 || px > length) continue;
+
+    if (axis === 'h') {
+      ctx.fillStyle = tickClr;
+      ctx.fillRect(px, thickness - 6, 1, 6);
+      ctx.fillStyle = textClr;
+      ctx.fillText(String(v), px + 2, 2);
+    } else {
+      ctx.fillStyle = tickClr;
+      ctx.fillRect(thickness - 6, px, 6, 1);
+      ctx.save();
+      ctx.fillStyle = textClr;
+      ctx.translate(2, px - 1);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(String(v), 0, 0);
+      ctx.restore();
+    }
+
+    // Minor ticks (half step)
+    if (step > 1) {
+      const halfPx = Math.round((v + step / 2) * zoom + pan);
+      if (halfPx >= 0 && halfPx <= length) {
+        ctx.fillStyle = tickClr;
+        if (axis === 'h') ctx.fillRect(halfPx, thickness - 3, 1, 3);
+        else               ctx.fillRect(thickness - 3, halfPx, 3, 1);
+      }
+    }
   }
 }
