@@ -428,9 +428,6 @@ export class EditorApp {
 
         if (panelId === currentPanel) {
           // Toggle collapse
-          const isCollapsed = this.container.id === 'app'
-            ? this.container.classList.contains('panel-collapsed')
-            : false;
           leftPanel.closest('#app')?.classList.toggle('panel-collapsed');
           return;
         }

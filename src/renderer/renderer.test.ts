@@ -307,13 +307,15 @@ describe('renderLayer — icon', () => {
   let svg: SVGSVGElement;
   beforeEach(() => { svg = createSVGRoot(1080, 1080); });
 
-  it('renders icon placeholder with name', () => {
+  it('renders icon with real Lucide SVG for known icon', () => {
     const el = renderLayer({
       id: 'ico', type: 'icon', z: 25, x: 50, y: 50, name: 'download', size: 24, color: '#F00',
     } as IconLayer, svg);
     expect(el.getAttribute('data-layer-id')).toBe('ico');
-    const text = el.querySelector('text');
-    expect(text?.textContent).toBe('download');
+    // Known icon → nested <svg> element with correct stroke
+    const innerSvg = el.querySelector('svg');
+    expect(innerSvg).toBeTruthy();
+    expect(innerSvg!.getAttribute('stroke')).toBe('#F00');
   });
 });
 

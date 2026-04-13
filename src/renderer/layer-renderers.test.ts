@@ -227,7 +227,7 @@ describe('renderImage', () => {
 // ── Icon ────────────────────────────────────────────────────
 
 describe('renderIcon', () => {
-  it('renders a group with an icon placeholder', () => {
+  it('renders a group with a real Lucide SVG for known icons', () => {
     const layer: IconLayer = {
       id: 'ic', type: 'icon', z: 0,
       x: 10, y: 10,
@@ -236,24 +236,35 @@ describe('renderIcon', () => {
     const el = renderIcon(layer, makeSVG());
     expect(el.tagName).toBe('g');
     expect(el.getAttribute('data-layer-id')).toBe('ic');
-    // Should contain a rect + text
-    const rect = el.querySelector('rect');
-    expect(rect).toBeTruthy();
-    expect(rect!.getAttribute('stroke')).toBe('#E94560');
-    const text = el.querySelector('text');
-    expect(text).toBeTruthy();
-    expect(text!.textContent).toBe('download');
+    // Known icon → nested <svg> element
+    const innerSvg = el.querySelector('svg');
+    expect(innerSvg).toBeTruthy();
+    expect(innerSvg!.getAttribute('stroke')).toBe('#E94560');
+    expect(innerSvg!.getAttribute('width')).toBe('24');
   });
 
-  it('uses default size 24 and color #000 when not specified', () => {
+  it('uses default size 24 and color currentColor when not specified', () => {
     const layer: IconLayer = {
       id: 'ic2', type: 'icon', z: 0,
       x: 0, y: 0, name: 'star',
     };
     const el = renderIcon(layer, makeSVG());
+    const innerSvg = el.querySelector('svg');
+    expect(innerSvg!.getAttribute('width')).toBe('24');
+    expect(innerSvg!.getAttribute('stroke')).toBe('currentColor');
+  });
+
+  it('renders fallback rect+text for unknown icon names', () => {
+    const layer: IconLayer = {
+      id: 'ic3', type: 'icon', z: 0,
+      x: 0, y: 0, name: '__unknown_icon_xyz__', size: 32, color: '#abc',
+    };
+    const el = renderIcon(layer, makeSVG());
     const rect = el.querySelector('rect');
-    expect(rect!.getAttribute('width')).toBe('24');
-    expect(rect!.getAttribute('stroke')).toBe('#000');
+    expect(rect).toBeTruthy();
+    const text = el.querySelector('text');
+    expect(text).toBeTruthy();
+    expect(text!.textContent).toBe('__unknown_icon_xyz__');
   });
 });
 
