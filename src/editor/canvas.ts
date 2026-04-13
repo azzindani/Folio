@@ -263,6 +263,14 @@ export class CanvasManager {
           content: { type: 'plain', value: 'Text' },
           style: { font_family: 'Inter', font_size: 24, font_weight: 400, color: '#FFFFFF' },
         } as Layer;
+        case 'polygon': return {
+          ...base, type: 'polygon', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
+          sides: 6, fill: { type: 'solid', color: '#6c5ce7' },
+        } as Layer;
+        default: return {
+          ...base, type: 'rect', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
+          fill: { type: 'solid', color: '#6c5ce7' },
+        } as Layer;
       }
     })();
 
