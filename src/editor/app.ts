@@ -7,6 +7,8 @@ import { PropertiesPanelManager } from '../ui/panels/properties-panel';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
 import { FileTreeManager } from '../ui/panels/file-tree';
 import { PageStrip } from '../ui/panels/page-strip';
+import { IconBrowserManager } from '../ui/panels/icon-browser';
+import { FindReplaceManager } from '../ui/panels/find-replace';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
 import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
@@ -182,6 +184,8 @@ export class EditorApp {
   private layerPanel!: LayerPanelManager;
   private propertiesPanel!: PropertiesPanelManager;
   private problemsPanel!: ProblemsPanelManager;
+  private iconBrowser!: IconBrowserManager;
+  private findReplace!: FindReplaceManager;
   private pageStrip!: PageStrip;
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
@@ -244,6 +248,16 @@ export class EditorApp {
       this.state,
     );
 
+    this.iconBrowser = new IconBrowserManager(
+      this.container.querySelector('.icon-browser-content')!,
+      this.state,
+    );
+
+    this.findReplace = new FindReplaceManager(
+      this.container.querySelector('.find-replace-content')!,
+      this.state,
+    );
+
     // Page strip lives in the status bar (compact mode)
     this.pageStrip = new PageStrip(
       this.container.querySelector('.status-pages')!,
@@ -295,6 +309,8 @@ export class EditorApp {
         <button class="act-btn active" data-panel="layers" title="Layers (⌘⇧L)">&#9776;</button>
         <button class="act-btn" data-panel="files" title="Files (⌘⇧E)">&#128193;</button>
         <button class="act-btn" data-panel="components" title="Components (⌘⇧K)">&#11041;</button>
+        <button class="act-btn" data-panel="icons" title="Icons (⌘⇧I)">&#11088;</button>
+        <button class="act-btn" data-panel="find" title="Find &amp; Replace (⌘H)">&#128269;</button>
         <div class="act-spacer"></div>
         <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">&#9790;</button>
       </div>
@@ -321,6 +337,15 @@ export class EditorApp {
             No components in this project yet.<br>
             Save a layer group as a component to reuse it.
           </div>
+        </div>
+
+        <div class="left-panel-view" data-panel="icons">
+          <div class="panel-header">Icons</div>
+          <div class="icon-browser-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
+        </div>
+
+        <div class="left-panel-view" data-panel="find">
+          <div class="find-replace-content" style="flex:1;overflow:hidden;height:100%"></div>
         </div>
 
       </div>

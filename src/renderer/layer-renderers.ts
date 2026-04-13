@@ -2,11 +2,12 @@ import type {
   Layer, RectLayer, CircleLayer, PathLayer, PolygonLayer,
   LineLayer, TextLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
-  QRCodeLayer, Radius,
+  QRCodeLayer, AutoLayoutLayer, Radius,
 } from '../schema/types';
 import { createSVGElement } from './svg-utils';
 import { applyFill } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
+import { LUCIDE_ICONS } from './lucide-icons';
 
 function applyCommonAttributes(
   el: SVGElement,
@@ -332,37 +333,49 @@ export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
 // ── Icon ────────────────────────────────────────────────────
 export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
   const size = layer.size ?? 24;
-  const color = layer.color ?? '#000';
+  const color = layer.color ?? 'currentColor';
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
 
-  // Render as a placeholder rect + text showing icon name
-  // In production, this would resolve from Lucide SVG sprite
   const g = createSVGElement('g');
+  g.setAttribute('transform', `translate(${x}, ${y})`);
 
-  const rect = createSVGElement('rect', {
-    x: layer.x ?? 0,
-    y: layer.y ?? 0,
-    width: size,
-    height: size,
-    rx: '4',
-    fill: 'none',
-    stroke: color,
-    'stroke-width': '1.5',
-  });
+  const inner = LUCIDE_ICONS[layer.name];
 
-  const label = createSVGElement('text', {
-    x: (layer.x ?? 0) + size / 2,
-    y: (layer.y ?? 0) + size / 2 + 4,
-    'text-anchor': 'middle',
-    'font-size': String(Math.max(8, size / 4)),
-    fill: color,
-  });
-  label.textContent = layer.name;
+  if (inner) {
+    // Real Lucide icon — embed scaled SVG as nested <svg>
+    const ns = 'http://www.w3.org/2000/svg';
+    const iconSvg = document.createElementNS(ns, 'svg') as SVGSVGElement;
+    iconSvg.setAttribute('viewBox', '0 0 24 24');
+    iconSvg.setAttribute('width', String(size));
+    iconSvg.setAttribute('height', String(size));
+    iconSvg.setAttribute('stroke', color);
+    iconSvg.setAttribute('stroke-width', '2');
+    iconSvg.setAttribute('stroke-linecap', 'round');
+    iconSvg.setAttribute('stroke-linejoin', 'round');
+    iconSvg.setAttribute('fill', 'none');
+    iconSvg.innerHTML = inner;
+    g.appendChild(iconSvg);
+  } else {
+    // Fallback: dashed rect + name label for unknown icons
+    const rect = createSVGElement('rect', {
+      x: 0, y: 0, width: size, height: size,
+      rx: '3', fill: 'none', stroke: color,
+      'stroke-width': '1.5', 'stroke-dasharray': '4 3',
+    });
+    const label = createSVGElement('text', {
+      x: size / 2, y: size / 2 + 4,
+      'text-anchor': 'middle',
+      'font-size': String(Math.max(7, Math.floor(size / 4))),
+      fill: color,
+    });
+    label.textContent = layer.name;
+    g.appendChild(rect);
+    g.appendChild(label);
+  }
 
-  g.appendChild(rect);
-  g.appendChild(label);
   applyCommonAttributes(g, layer);
   if (layer.effects) applyEffects(g, layer.effects, svg);
-
   return g;
 }
 
@@ -643,4 +656,73 @@ export function renderQRCode(layer: QRCodeLayer, _svg: SVGSVGElement): SVGElemen
 
   if (layer.effects) applyEffects(g, layer.effects, _svg);
   return g;
+}
+
+// ── Auto Layout ──────────────────────────────────────────────
+export function renderAutoLayout(
+  layer: AutoLayoutLayer,
+  svg: SVGSVGElement,
+  renderChild: (l: Layer, s: SVGSVGElement) => SVGElement,
+): SVGElement {
+  const isRow = layer.direction === 'row';
+  const gap = layer.gap ?? 0;
+  const pad = normalizePadding(layer.padding);
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+
+  const g = createSVGElement('g');
+  g.setAttribute('data-layer-id', layer.id);
+
+  // Background rect if fill is present
+  if (layer.fill && layer.fill.type !== 'none') {
+    const w = typeof layer.width === 'number' ? layer.width : 0;
+    const h = typeof layer.height === 'number' ? layer.height : 0;
+    const bg = createSVGElement('rect', { x, y, width: w, height: h });
+    if (typeof layer.radius === 'number') {
+      bg.setAttribute('rx', String(layer.radius));
+      bg.setAttribute('ry', String(layer.radius));
+    }
+    const fillResult = applyFill(layer.fill, svg, { width: w, height: h });
+    bg.setAttribute('fill', fillResult.fill);
+    if (fillResult.opacity !== undefined) bg.setAttribute('opacity', String(fillResult.opacity));
+    fillResult.extraElements?.forEach(el => g.appendChild(el));
+    if (layer.stroke) {
+      bg.setAttribute('stroke', layer.stroke.color);
+      bg.setAttribute('stroke-width', String(layer.stroke.width));
+    }
+    g.appendChild(bg);
+  }
+
+  // Lay out children
+  const sorted = [...(layer.layers ?? [])].sort((a, b) => a.z - b.z);
+  let cursor = isRow
+    ? x + pad.left
+    : y + pad.top;
+
+  for (const child of sorted) {
+    // Override child position with computed layout position
+    const placed: Layer = isRow
+      ? { ...child, x: cursor, y: y + pad.top }
+      : { ...child, x: x + pad.left, y: cursor };
+
+    g.appendChild(renderChild(placed, svg));
+
+    // Advance cursor by child size
+    const childSize = isRow
+      ? (typeof child.width  === 'number' ? child.width  : 0)
+      : (typeof child.height === 'number' ? child.height : 0);
+    cursor += childSize + gap;
+  }
+
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, svg);
+  return g;
+}
+
+function normalizePadding(
+  p: AutoLayoutLayer['padding'],
+): { top: number; right: number; bottom: number; left: number } {
+  if (p === undefined || p === null) return { top: 0, right: 0, bottom: 0, left: 0 };
+  if (typeof p === 'number') return { top: p, right: p, bottom: p, left: p };
+  return p;
 }

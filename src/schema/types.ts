@@ -15,7 +15,8 @@ export type LayerType =
   | 'code'
   | 'math'
   | 'group'
-  | 'qrcode';
+  | 'qrcode'
+  | 'auto_layout';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -314,6 +315,20 @@ export interface QRCodeLayer extends BaseLayer {
   background?: string;   // background color (default: 'transparent')
 }
 
+export interface AutoLayoutLayer extends BaseLayer {
+  type: 'auto_layout';
+  direction: 'row' | 'column';
+  gap?: number;
+  padding?: number | { top: number; right: number; bottom: number; left: number };
+  align_items?: 'start' | 'center' | 'end' | 'stretch';
+  justify_content?: 'start' | 'center' | 'end' | 'space-between' | 'space-around';
+  wrap?: boolean;
+  fill?: Fill;
+  stroke?: Stroke;
+  radius?: Radius;
+  layers: Layer[];
+}
+
 export type Layer =
   | RectLayer
   | CircleLayer
@@ -330,7 +345,8 @@ export type Layer =
   | CodeLayer
   | MathLayer
   | GroupLayer
-  | QRCodeLayer;
+  | QRCodeLayer
+  | AutoLayoutLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {
