@@ -100,6 +100,123 @@ export class CanvasManager {
   private bindEvents(): void {
     this.svgContainer.addEventListener('pointerdown', this.onPointerDown.bind(this));
     this.container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
+    this.container.addEventListener('mousemove', this.onMouseMoveForAnnotations.bind(this));
+    this.container.addEventListener('mouseleave', () => this.clearAnnotations());
+  }
+
+  // ── Distance annotation overlay ─────────────────────────────
+  private annotationOverlay: HTMLCanvasElement | null = null;
+
+  private getOrCreateAnnotationOverlay(): HTMLCanvasElement {
+    if (!this.annotationOverlay) {
+      const cv = document.createElement('canvas');
+      cv.className = 'annotation-overlay';
+      cv.style.cssText =
+        'position:absolute;inset:0;pointer-events:none;z-index:80;';
+      this.container.appendChild(cv);
+      this.annotationOverlay = cv;
+    }
+    this.annotationOverlay.width  = this.container.clientWidth;
+    this.annotationOverlay.height = this.container.clientHeight;
+    return this.annotationOverlay;
+  }
+
+  private clearAnnotations(): void {
+    if (!this.annotationOverlay) return;
+    const ctx = this.annotationOverlay.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, this.annotationOverlay.width, this.annotationOverlay.height);
+  }
+
+  private onMouseMoveForAnnotations(e: MouseEvent): void {
+    if (!e.altKey) { this.clearAnnotations(); return; }
+
+    const { selectedLayerIds, zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    if (!selectedLayerIds.length || !this.currentSVG) { this.clearAnnotations(); return; }
+
+    // Get selected layer bbox in canvas-px
+    const selId = selectedLayerIds[0];
+    const selEl = this.svgContainer.querySelector<SVGGraphicsElement>(`[data-layer-id="${selId}"]`);
+    if (!selEl) { this.clearAnnotations(); return; }
+
+    const selBBox = selEl.getBBox();
+    const containerRect = this.container.getBoundingClientRect();
+
+    // Convert SVG coords → screen px within container
+    const toScreen = (sx: number, sy: number) => ({
+      x: sx * zoom + panX + RULER_SIZE,
+      y: sy * zoom + panY + RULER_SIZE,
+    });
+
+    // Find hovered element
+    const mx = e.clientX - containerRect.left - RULER_SIZE;
+    const my = e.clientY - containerRect.top  - RULER_SIZE;
+    // Convert to design coords
+    const dx = (mx - panX) / zoom;
+    const dy = (my - panY) / zoom;
+
+    // Find any layer bbox under cursor (excluding selected)
+    const layers = this.state.getCurrentLayers();
+    let hovBBox: SVGRect | null = null;
+    for (const l of layers) {
+      if (l.id === selId) continue;
+      const el = this.svgContainer.querySelector<SVGGraphicsElement>(`[data-layer-id="${l.id}"]`);
+      if (!el) continue;
+      const bb = el.getBBox();
+      if (dx >= bb.x && dx <= bb.x + bb.width && dy >= bb.y && dy <= bb.y + bb.height) {
+        hovBBox = bb;
+        break;
+      }
+    }
+
+    const cv = this.getOrCreateAnnotationOverlay();
+    const ctx = cv.getContext('2d')!;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+
+    const refBBox = hovBBox ?? ({ x: 0, y: 0, width: this.currentSVG.viewBox.baseVal.width, height: this.currentSVG.viewBox.baseVal.height } as SVGRect);
+
+    // Draw distance lines between selBBox and refBBox
+    ctx.strokeStyle = '#e94560';
+    ctx.fillStyle   = '#e94560';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([3, 3]);
+
+    const gaps = measureGaps(selBBox, refBBox);
+    const selS  = { x: toScreen(selBBox.x, selBBox.y), w: selBBox.width * zoom, h: selBBox.height * zoom };
+    const refS  = { x: toScreen(refBBox.x, refBBox.y), w: refBBox.width * zoom, h: refBBox.height * zoom };
+
+    // Left gap
+    if (gaps.left !== null) {
+      const y = selS.x.y + selS.h / 2;
+      const x1 = refS.x.x + refS.w;
+      const x2 = selS.x.x;
+      drawArrowLine(ctx, x1, y, x2, y);
+      drawLabel(ctx, (x1 + x2) / 2, y - 4, `${Math.round(gaps.left)}`);
+    }
+    // Right gap
+    if (gaps.right !== null) {
+      const y = selS.x.y + selS.h / 2;
+      const x1 = selS.x.x + selS.w;
+      const x2 = refS.x.x;
+      drawArrowLine(ctx, x1, y, x2, y);
+      drawLabel(ctx, (x1 + x2) / 2, y - 4, `${Math.round(gaps.right)}`);
+    }
+    // Top gap
+    if (gaps.top !== null) {
+      const x = selS.x.x + selS.w / 2;
+      const y1 = refS.x.y + refS.h;
+      const y2 = selS.x.y;
+      drawArrowLine(ctx, x, y1, x, y2);
+      drawLabel(ctx, x + 4, (y1 + y2) / 2, `${Math.round(gaps.top)}`);
+    }
+    // Bottom gap
+    if (gaps.bottom !== null) {
+      const x = selS.x.x + selS.w / 2;
+      const y1 = selS.x.y + selS.h;
+      const y2 = refS.x.y;
+      drawArrowLine(ctx, x, y1, x, y2);
+      drawLabel(ctx, x + 4, (y1 + y2) / 2, `${Math.round(gaps.bottom)}`);
+    }
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
@@ -554,4 +671,57 @@ function drawRuler(
       }
     }
   }
+}
+
+// ── Distance annotation helpers ──────────────────────────────
+
+function measureGaps(
+  sel: SVGRect,
+  ref: SVGRect,
+): { left: number | null; right: number | null; top: number | null; bottom: number | null } {
+  const left   = sel.x > ref.x + ref.width  ? sel.x - (ref.x + ref.width)  : null;
+  const right  = ref.x > sel.x + sel.width  ? ref.x - (sel.x + sel.width)  : null;
+  const top    = sel.y > ref.y + ref.height ? sel.y - (ref.y + ref.height) : null;
+  const bottom = ref.y > sel.y + sel.height ? ref.y - (sel.y + sel.height) : null;
+  return { left, right, top, bottom };
+}
+
+function drawArrowLine(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  x2: number, y2: number,
+): void {
+  if (Math.abs(x2 - x1) < 2 && Math.abs(y2 - y1) < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // Small end ticks
+  const isH = Math.abs(y2 - y1) < Math.abs(x2 - x1);
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  if (isH) {
+    ctx.moveTo(x1, y1 - 4); ctx.lineTo(x1, y1 + 4);
+    ctx.moveTo(x2, y2 - 4); ctx.lineTo(x2, y2 + 4);
+  } else {
+    ctx.moveTo(x1 - 4, y1); ctx.lineTo(x1 + 4, y1);
+    ctx.moveTo(x2 - 4, y2); ctx.lineTo(x2 + 4, y2);
+  }
+  ctx.stroke();
+  ctx.setLineDash([3, 3]);
+}
+
+function drawLabel(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  text: string,
+): void {
+  const w = ctx.measureText(text).width + 6;
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#e94560';
+  ctx.fillRect(x - w / 2, y - 10, w, 14);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(text, x - w / 2 + 3, y);
+  ctx.setLineDash([3, 3]);
+  ctx.fillStyle = '#e94560';
 }

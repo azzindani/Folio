@@ -38,6 +38,18 @@ export function invalidateCache(layerId?: string): void {
 let activeOptions: RenderOptions = {};
 
 export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
+  // Conditional visibility: evaluate show_if expression
+  if (layer.show_if !== undefined) {
+    const visible = evalShowIf(layer.show_if, layer);
+    if (!visible) {
+      const ns = 'http://www.w3.org/2000/svg';
+      const placeholder = document.createElementNS(ns, 'g') as SVGElement;
+      placeholder.setAttribute('data-layer-id', layer.id);
+      placeholder.setAttribute('data-hidden', 'show_if');
+      return placeholder;
+    }
+  }
+
   // Check render cache for dirty tracking
   const layerHash = hashLayer(layer);
   const cached = renderCache.get(layer.id);
@@ -51,6 +63,17 @@ export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
   renderCache.set(layer.id, { hash: layerHash, svg: el.cloneNode(true) as SVGElement });
 
   return el;
+}
+
+function evalShowIf(expr: string, layer: Layer): boolean {
+  try {
+    // Provide layer fields as local variables for the expression
+    // Uses Function constructor — safe for design-time evaluation (no user input sandbox needed)
+    const fn = new Function('layer', `"use strict"; with(layer) { return !!(${expr}); }`);
+    return fn(layer) as boolean;
+  } catch {
+    return true; // default to visible on error
+  }
 }
 
 function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {

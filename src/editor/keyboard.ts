@@ -96,6 +96,10 @@ export class KeyboardManager {
       // Group
       { key: 'g', ctrl: true, action: () => this.groupSelected(), description: 'Group selected layers' },
       { key: 'g', ctrl: true, shift: true, action: () => this.ungroupSelected(), description: 'Ungroup selected' },
+      // Presentation
+      { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },
+      // Print
+      { key: 'p', ctrl: true, action: () => this.app.printDesign?.(), description: 'Print design (Ctrl+P)' },
       // Tool shortcuts
       { key: 'v', action: () => this.state.set('activeTool', 'select', false), description: 'Select tool' },
       { key: 'r', action: () => this.state.set('activeTool', 'rect',   false), description: 'Rectangle tool' },
