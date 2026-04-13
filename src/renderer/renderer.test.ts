@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderDesign, renderPage, renderLayer, invalidateCache } from './renderer';
 import { createSVGRoot } from './svg-utils';
-import type { DesignSpec, Layer, RectLayer, CircleLayer, TextLayer, LineLayer, PathLayer, PolygonLayer, IconLayer, GroupLayer } from '../schema/types';
+import type { DesignSpec, Layer, RectLayer, CircleLayer, TextLayer, LineLayer, PathLayer, PolygonLayer, IconLayer, GroupLayer, ComponentSpec, ComponentLayer, ComponentListLayer } from '../schema/types';
 
 function makeDesign(layers: Layer[]): DesignSpec {
   return {
@@ -351,5 +351,157 @@ describe('deterministic rendering', () => {
     invalidateCache();
     const svg2 = new XMLSerializer().serializeToString(renderDesign(spec));
     expect(svg1).toBe(svg2);
+  });
+});
+
+describe('renderLayer — show_if', () => {
+  let svg: SVGSVGElement;
+  beforeEach(() => { svg = createSVGRoot(1080, 1080); invalidateCache(); });
+
+  it('hides layer when show_if evaluates to false', () => {
+    const el = renderLayer({
+      id: 'cond', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100,
+      show_if: 'false',
+    } as RectLayer, svg);
+    expect(el.tagName).toBe('g');
+    expect(el.getAttribute('data-hidden')).toBe('show_if');
+  });
+
+  it('shows layer when show_if evaluates to true', () => {
+    const el = renderLayer({
+      id: 'vis', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100,
+      show_if: 'true',
+    } as RectLayer, svg);
+    expect(el.tagName).toBe('rect');
+    expect(el.getAttribute('data-hidden')).toBeNull();
+  });
+
+  it('defaults to visible on invalid show_if expression', () => {
+    const el = renderLayer({
+      id: 'bad', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100,
+      show_if: 'not_a_valid_expression((((',
+    } as RectLayer, svg);
+    expect(el.getAttribute('data-hidden')).toBeNull();
+  });
+});
+
+describe('renderLayer — cache', () => {
+  let svg: SVGSVGElement;
+  beforeEach(() => { svg = createSVGRoot(1080, 1080); invalidateCache(); });
+
+  it('returns cached clone on second render of same layer', () => {
+    const layer: RectLayer = { id: 'cached', type: 'rect', z: 0, x: 5, y: 5, width: 50, height: 50 };
+    const el1 = renderLayer(layer, svg);
+    const el2 = renderLayer(layer, svg);
+    // Different DOM nodes (clones) but same structure
+    expect(el1).not.toBe(el2);
+    expect(el1.getAttribute('x')).toBe(el2.getAttribute('x'));
+  });
+
+  it('invalidateCache(id) removes specific entry — re-renders fresh', () => {
+    const layer: RectLayer = { id: 'inv', type: 'rect', z: 0, x: 0, y: 0, width: 40, height: 40 };
+    renderLayer(layer, svg);
+    invalidateCache('inv');
+    const el = renderLayer(layer, svg);
+    expect(el.getAttribute('width')).toBe('40');
+  });
+});
+
+describe('renderLayer — placeholder for unknown type', () => {
+  let svg: SVGSVGElement;
+  beforeEach(() => { svg = createSVGRoot(1080, 1080); invalidateCache(); });
+
+  it('renders dashed rect + label for unknown layer type', () => {
+    const layer = { id: 'unk', type: 'unknown_future_type', z: 0, x: 10, y: 20, width: 80, height: 60 } as unknown as Layer;
+    const el = renderLayer(layer, svg);
+    expect(el.tagName).toBe('g');
+    const rect = el.querySelector('rect');
+    expect(rect?.getAttribute('stroke-dasharray')).toBeTruthy();
+    const text = el.querySelector('text');
+    expect(text?.textContent).toContain('unk');
+  });
+});
+
+describe('renderLayer — component', () => {
+  let svg: SVGSVGElement;
+  beforeEach(() => { svg = createSVGRoot(1080, 1080); invalidateCache(); });
+
+  it('renders placeholder when no component registry', () => {
+    const layer: ComponentLayer = {
+      id: 'comp1', type: 'component', z: 0, x: 0, y: 0, width: 100, height: 100,
+      ref: 'missing-component',
+      slots: {},
+    } as unknown as ComponentLayer;
+    // renderLayer uses activeOptions from last renderDesign call — reset with empty design
+    renderDesign(makeDesign([]));
+    const el = renderLayer(layer, svg);
+    expect(el.tagName).toBe('g');
+    // Placeholder has dashed stroke
+    const rect = el.querySelector('rect');
+    expect(rect?.getAttribute('stroke-dasharray')).toBeTruthy();
+  });
+
+  it('renders component layers from registry', () => {
+    const spec: ComponentSpec = {
+      _protocol: 'component/v1',
+      name: 'Badge',
+      version: '1.0.0',
+      props: {
+        label: { type: 'string', default: 'Default' },
+      },
+      layers: [
+        { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 80, height: 30 } as RectLayer,
+      ],
+    };
+    const registry = new Map<string, ComponentSpec>([['badge', spec]]);
+    const design = makeDesign([
+      { id: 'c', type: 'component', z: 0, x: 10, y: 10, width: 80, height: 30,
+        ref: 'badge', slots: { label: 'Hi' } } as unknown as ComponentLayer,
+    ]);
+    const svg = renderDesign(design, { componentRegistry: registry });
+    const compG = svg.querySelector('[data-component-ref="badge"]');
+    expect(compG).toBeTruthy();
+  });
+
+  it('renders component_list from registry', () => {
+    const spec: ComponentSpec = {
+      _protocol: 'component/v1',
+      name: 'Row',
+      version: '1.0.0',
+      props: { text: { type: 'string', default: '' } },
+      layers: [
+        { id: 'lbl', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 40 } as RectLayer,
+      ],
+    };
+    const registry = new Map<string, ComponentSpec>([['row', spec]]);
+    const design = makeDesign([
+      { id: 'list1', type: 'component_list', z: 0, x: 0, y: 0,
+        component_ref: 'row',
+        items: [{ text: 'A' }, { text: 'B' }],
+        gap: 8 } as unknown as ComponentListLayer,
+    ]);
+    const svg = renderDesign(design, { componentRegistry: registry });
+    const listG = svg.querySelector('[data-layer-id="list1"]');
+    expect(listG?.children.length).toBe(2);
+  });
+});
+
+describe('renderDesign — grid overlay', () => {
+  it('renders grid overlay when showGrid=true', () => {
+    const svg = renderDesign(makeDesign([]), { showGrid: true });
+    const grid = svg.querySelector('[data-role="grid-overlay"]');
+    expect(grid).toBeTruthy();
+  });
+
+  it('renders grid overlay with custom config', () => {
+    const svg = renderDesign(makeDesign([]), {
+      showGrid: true,
+      gridConfig: { columns: 6, gutter: 16, margin: 40, baseline: 12 },
+    });
+    const grid = svg.querySelector('[data-role="grid-overlay"]');
+    expect(grid).toBeTruthy();
+    // 6 column rects
+    const rects = grid?.querySelectorAll('rect') ?? [];
+    expect(rects.length).toBe(6);
   });
 });

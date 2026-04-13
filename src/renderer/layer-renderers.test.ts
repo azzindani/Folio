@@ -7,8 +7,8 @@ import {
   renderPath, renderPolygon, renderLine,
   renderImage, renderIcon, renderMermaid, renderChart,
   renderCode, renderMath, renderGroup, renderRect,
+  renderQRCode, renderAutoLayout,
 } from './layer-renderers';
-import type { Layer } from '../schema/types';
 
 // Simple render fn for group tests (avoids circular import with renderer.ts)
 const simpleRenderFn = (layer: Layer, svg: SVGSVGElement): SVGElement => {
@@ -23,8 +23,9 @@ const simpleRenderFn = (layer: Layer, svg: SVGSVGElement): SVGElement => {
 };
 import { createSVGRoot, resetDefIdCounter } from './svg-utils';
 import type {
-  PathLayer, PolygonLayer, LineLayer, ImageLayer, IconLayer,
+  Layer, PathLayer, PolygonLayer, LineLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer, RectLayer,
+  QRCodeLayer, AutoLayoutLayer,
 } from '../schema/types';
 
 function makeSVG() {
@@ -409,5 +410,149 @@ describe('renderGroup', () => {
     };
     const el = renderGroup(layer, makeSVG(), simpleRenderFn);
     expect(el.getAttribute('transform')).toContain('rotate(45');
+  });
+});
+
+describe('renderQRCode', () => {
+  function makeSVG() { return createSVGRoot(400, 400); }
+
+  it('returns a <g> with data-layer-id', () => {
+    const layer: QRCodeLayer = {
+      id: 'qr1', type: 'qrcode', z: 0, x: 10, y: 10, width: 120, height: 120,
+      value: 'https://example.com',
+      error_correction: 'M',
+    } as unknown as QRCodeLayer;
+    const el = renderQRCode(layer, makeSVG());
+    expect(el.tagName).toBe('g');
+    expect(el.getAttribute('data-layer-id')).toBe('qr1');
+  });
+
+  it('renders dark module rects for a simple value', () => {
+    const layer: QRCodeLayer = {
+      id: 'qr2', type: 'qrcode', z: 0, x: 0, y: 0, width: 210, height: 210,
+      value: 'A',
+      error_correction: 'L',
+      fill: '#000000',
+      background: '#ffffff',
+    } as unknown as QRCodeLayer;
+    const el = renderQRCode(layer, makeSVG());
+    const rects = el.querySelectorAll('rect');
+    // Background rect + multiple module rects
+    expect(rects.length).toBeGreaterThan(1);
+  });
+
+  it('renders background rect when background is not transparent', () => {
+    const layer: QRCodeLayer = {
+      id: 'qr3', type: 'qrcode', z: 0, x: 0, y: 0, width: 120, height: 120,
+      value: 'hi',
+      background: '#ffffff',
+    } as unknown as QRCodeLayer;
+    const el = renderQRCode(layer, makeSVG());
+    const rects = el.querySelectorAll('rect');
+    // At least one background rect
+    expect(rects.length).toBeGreaterThan(0);
+    expect(rects[0].getAttribute('fill')).toBe('#ffffff');
+  });
+
+  it('skips background rect when background is transparent', () => {
+    const layer: QRCodeLayer = {
+      id: 'qr4', type: 'qrcode', z: 0, x: 0, y: 0, width: 120, height: 120,
+      value: 'Z',
+      background: 'transparent',
+      fill: '#000',
+    } as unknown as QRCodeLayer;
+    const el = renderQRCode(layer, makeSVG());
+    const rects = Array.from(el.querySelectorAll('rect'));
+    // No background rect — first rect should be a module rect (fill=#000)
+    const bgRect = rects.find(r => r.getAttribute('fill') === 'transparent');
+    expect(bgRect).toBeUndefined();
+  });
+
+  it('works with all EC levels', () => {
+    for (const ec of ['L', 'M', 'Q', 'H'] as const) {
+      const layer: QRCodeLayer = {
+        id: `qr-${ec}`, type: 'qrcode', z: 0, x: 0, y: 0, width: 120, height: 120,
+        value: 'test',
+        error_correction: ec,
+      } as unknown as QRCodeLayer;
+      const el = renderQRCode(layer, makeSVG());
+      expect(el.tagName).toBe('g');
+    }
+  });
+});
+
+describe('renderAutoLayout', () => {
+  function makeSVG() { return createSVGRoot(800, 800); }
+  beforeEach(() => { resetDefIdCounter(); });
+
+  it('returns a <g> with data-layer-id', () => {
+    const layer: AutoLayoutLayer = {
+      id: 'al1', type: 'auto_layout', z: 0, x: 0, y: 0, width: 300, height: 100,
+      direction: 'row', gap: 8, layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.tagName).toBe('g');
+    expect(el.getAttribute('data-layer-id')).toBe('al1');
+  });
+
+  it('lays out children in a row', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 80, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 80, height: 40 },
+    ];
+    const layer: AutoLayoutLayer = {
+      id: 'row', type: 'auto_layout', z: 0, x: 10, y: 10, width: 200, height: 60,
+      direction: 'row', gap: 10, layers: children as Layer[],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.children.length).toBe(2);
+  });
+
+  it('lays out children in a column', () => {
+    const children: RectLayer[] = [
+      { id: 'd1', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 50 },
+      { id: 'd2', type: 'rect', z: 1, x: 0, y: 0, width: 100, height: 50 },
+    ];
+    const layer: AutoLayoutLayer = {
+      id: 'col', type: 'auto_layout', z: 0, x: 0, y: 0, width: 120, height: 200,
+      direction: 'column', gap: 5, layers: children as Layer[],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.children.length).toBe(2);
+  });
+
+  it('renders background rect when fill is set', () => {
+    const layer: AutoLayoutLayer = {
+      id: 'al-fill', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0,
+      fill: { type: 'solid', color: '#ff0000' },
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const rect = el.querySelector('rect');
+    expect(rect).toBeTruthy();
+    expect(rect?.getAttribute('fill')).toBe('#ff0000');
+  });
+
+  it('handles padding object', () => {
+    const layer: AutoLayoutLayer = {
+      id: 'al-pad', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0,
+      padding: { top: 10, right: 10, bottom: 10, left: 10 },
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el).toBeTruthy();
+  });
+
+  it('handles numeric padding', () => {
+    const layer: AutoLayoutLayer = {
+      id: 'al-numpad', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0,
+      padding: 16 as unknown as AutoLayoutLayer['padding'],
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el).toBeTruthy();
   });
 });
