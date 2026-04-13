@@ -2,7 +2,7 @@ import type {
   Layer, RectLayer, CircleLayer, PathLayer, PolygonLayer,
   LineLayer, TextLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
-  Radius,
+  QRCodeLayer, Radius,
 } from '../schema/types';
 import { createSVGElement } from './svg-utils';
 import { applyFill } from './fill-renderer';
@@ -570,5 +570,77 @@ export function renderGroup(
   applyCommonAttributes(g, layer);
   if (layer.effects) applyEffects(g, layer.effects, svg);
 
+  return g;
+}
+
+// ── QR Code ─────────────────────────────────────────────────
+// Pure SVG QR code renderer (no external library).
+// Uses deterministic pseudo-random cells seeded by value string with
+// correct finder patterns. Replace with Reed-Solomon encoder for real QR.
+export function renderQRCode(layer: QRCodeLayer, _svg: SVGSVGElement): SVGElement {
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+  const w = typeof layer.width === 'number' ? layer.width : 120;
+  const h = typeof layer.height === 'number' ? layer.height : 120;
+  const fg = layer.fill ?? '#000000';
+  const bg = layer.background ?? 'transparent';
+
+  const g = createSVGElement('g');
+  g.setAttribute('data-layer-id', layer.id);
+
+  if (bg !== 'transparent') {
+    g.appendChild(createSVGElement('rect', { x, y, width: w, height: h, fill: bg }));
+  }
+
+  const MODULES = 21;
+  const cellSize = w / MODULES;
+
+  // Deterministic seed from value
+  let seed = 0;
+  for (let i = 0; i < layer.value.length; i++) {
+    seed = ((seed << 5) - seed) + layer.value.charCodeAt(i);
+    seed |= 0;
+  }
+  const rand = (): number => {
+    seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17;
+    return (seed >>> 0) / 0xFFFFFFFF;
+  };
+
+  for (let row = 0; row < MODULES; row++) {
+    for (let col = 0; col < MODULES; col++) {
+      const inFinder =
+        (row < 7 && col < 7) ||
+        (row < 7 && col >= MODULES - 7) ||
+        (row >= MODULES - 7 && col < 7);
+
+      const dark = inFinder
+        ? (row === 0 || row === 6 || col === 0 || col === 6 ||
+           (row >= 2 && row <= 4 && col >= 2 && col <= 4))
+        : rand() > 0.45;
+
+      if (dark) {
+        g.appendChild(createSVGElement('rect', {
+          x: x + col * cellSize,
+          y: y + row * cellSize,
+          width: cellSize,
+          height: cellSize,
+          fill: fg,
+        }));
+      }
+    }
+  }
+
+  // URL label
+  const label = createSVGElement('text');
+  label.setAttribute('x', String(x + w / 2));
+  label.setAttribute('y', String(y + h + 12));
+  label.setAttribute('text-anchor', 'middle');
+  label.setAttribute('font-size', '9');
+  label.setAttribute('fill', fg);
+  label.setAttribute('font-family', 'monospace');
+  label.textContent = layer.value.length > 32 ? layer.value.slice(0, 29) + '\u2026' : layer.value;
+  g.appendChild(label);
+
+  if (layer.effects) applyEffects(g, layer.effects, _svg);
   return g;
 }
