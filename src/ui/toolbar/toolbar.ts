@@ -38,7 +38,7 @@ export class ToolbarManager {
       </div>
 
       <div class="toolbar-right" style="display:flex;align-items:center;gap:8px">
-        <select class="toolbar-theme-select" title="Active theme"
+        <select class="toolbar-theme-select" title="Design theme"
           style="background:var(--color-surface-2);border:1px solid var(--color-border);
                  border-radius:var(--radius-sm);color:var(--color-text);font-size:12px;
                  padding:3px 6px;cursor:pointer">
@@ -46,8 +46,6 @@ export class ToolbarManager {
           <option value="light-clean">Light Clean</option>
           <option value="ocean-blue">Ocean Blue</option>
         </select>
-        <span class="toolbar-zoom" style="color:var(--color-text-muted);font-size:12px;min-width:48px;text-align:center">100%</span>
-        <button class="btn btn-sm" data-action="zoom-fit" title="Fit to screen (Ctrl+0)">Fit</button>
         <button class="btn btn-sm" data-action="undo" title="Undo (Ctrl+Z)">&#8617;</button>
         <button class="btn btn-sm" data-action="redo" title="Redo (Ctrl+Shift+Z)">&#8618;</button>
         <div class="export-group" style="position:relative">
@@ -55,7 +53,7 @@ export class ToolbarManager {
           <div class="export-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);
             background:var(--color-surface-2);border:1px solid var(--color-border);
             border-radius:var(--radius-md);box-shadow:var(--shadow-md);
-            min-width:130px;z-index:200;overflow:hidden">
+            min-width:140px;z-index:200;overflow:hidden">
             <button class="export-item" data-format="svg">SVG (vector)</button>
             <button class="export-item" data-format="png">PNG ×2</button>
             <button class="export-item" data-format="pdf">PDF</button>
@@ -93,7 +91,6 @@ export class ToolbarManager {
     const action = target.dataset.action;
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
-    if (action === 'zoom-fit') { this.app.canvas.fitToScreen(); return; }
 
     if (action === 'export') {
       e.stopPropagation();
@@ -131,11 +128,6 @@ export class ToolbarManager {
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
-    if (changedKeys.includes('zoom')) {
-      const zoomEl = this.container.querySelector('.toolbar-zoom');
-      if (zoomEl) zoomEl.textContent = `${Math.round(state.zoom * 100)}%`;
-    }
-
     if (changedKeys.includes('mode')) {
       const btns = this.container.querySelectorAll('.mode-btn');
       btns.forEach(btn => {
