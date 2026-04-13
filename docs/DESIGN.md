@@ -1444,3 +1444,490 @@ Week 10: release pipeline, coverage reporting, perf benchmarks, bundle size gate
 ---
 
 *DESIGN.md v2.0.0 — Recovered from CLAUDE.md v1.2.0 + codebase audit April 2026*
+
+---
+
+## 20. ADVANCED FEATURE PROPOSALS
+
+### 20.1 Must-Have (v1.x — blocks professional use without these)
+
+| Feature | Category | Effort | Notes |
+|---|---|---|---|
+| Color picker (HSL/HEX/RGB sliders + eyedropper) | Editor | M | Required for any fill editing |
+| Visual gradient editor (drag stops on bar) | Editor | M | Current: text-only YAML |
+| Rulers + drag-from-ruler guides | Editor | M | Industry standard |
+| Distance/spacing annotations (hover) | Editor | S | Show px gap between layers |
+| Find & Replace (layer content + properties) | Editor | M | Multi-page search |
+| Presentation / Preview mode (fullscreen F5) | Editor | S | Needed for carousel review |
+| Formula bar (expression input for selected property) | Editor | M | Enables dynamic values |
+| Light/dark editor theme | Editor | S | Power Apps light + current dark |
+| Color swatch palette panel | Editor | M | Theme colors + saved custom |
+| Auto-layout layer (flex container) | Schema | L | Rows/columns, gap, alignment |
+| Pen / Bézier path tool | Editor | L | Freeform shape creation |
+| Mask / clip layer type | Schema | M | Image or shape as mask |
+| Responsive constraints (pin edges, scale) | Schema | M | For multi-size export |
+| QR code layer type | Schema | S | Auto-renders from value string |
+| Paste Style / Copy Style | Editor | S | Transfer look without content |
+| Component variants (states: default/hover/disabled) | Schema | L | Needs state machine |
+| Conditional visibility (`show_if: expression`) | Schema | M | Dynamic designs |
+| Image library browser (project assets) | Editor | M | Navigate project assets folder |
+| Icon browser (Lucide 1400+ searchable) | Editor | M | Visual picker vs typing names |
+| Slice export (export selected layers as files) | Export | M | Designer workflow staple |
+| Print mode (CMYK sim, bleed/crop marks) | Export | M | A3/A4 professional print |
+| Accessibility checker (WCAG contrast + alt text) | Editor | M | Catches obvious issues |
+
+### 20.2 Nice-to-Have (v2.x — enhancement, not blocking)
+
+| Feature | Category | Effort | Notes |
+|---|---|---|---|
+| Variables system (typed: Text/Number/Bool/Color) | Schema | L | Like Power Apps global vars |
+| Data binding (CSV/JSON → component_list source) | Schema | L | Dynamic content injection |
+| Formula expressions on any numeric property | Schema | L | `width: "=container.width/2"` |
+| Text on path | Renderer | L | SVG textPath |
+| OpenType feature controls (liga, kern, smcp) | Renderer | M | For typography-heavy designs |
+| Character spacing / tracking controls | Properties | S | Add to text style spec |
+| Named paragraph styles | Schema | M | Like Word/InDesign styles |
+| Component nested support (deep slot trees) | Schema | M | Currently one level only |
+| Global design tokens (cross-file inheritance) | Schema | M | Brand token file shared |
+| Font manager (preview, install, subset) | Editor | L | Project-level font control |
+| Barcode layer type (CODE128, EAN) | Schema | S | JS barcode lib |
+| SVG import + parse into layers | Editor | L | Reverse-engineer SVG |
+| Layer search across all pages | Editor | S | Global layer filter |
+| Batch rename (regex on layer IDs) | Editor | S | Mass ID management |
+| Design linting rules (configurable .folio-lint) | Editor | M | Custom rules engine |
+| Version history (git blame overlay) | Editor | L | Integrate git log |
+| Social media size presets | Editor | S | Preset document sizes |
+| SVG optimization pass (SVGO) before export | Export | S | Reduce file size |
+| WebP export | Export | S | Modern image format |
+| Gradient mesh / complex gradients | Renderer | L | feMesh SVG filter |
+| Blend mode per layer (SVG mix-blend-mode) | Schema | S | Already partial in effects |
+| Pattern fill (tiling shape/image) | Schema | M | SVG `<pattern>` element |
+| Text wrap around shapes | Renderer | L | Complex polygon exclusion zones |
+| Collaborative annotations (local comment pins) | Editor | L | Review workflow |
+| Plugin / extension API | Platform | XL | Third-party integrations |
+
+### 20.3 New Layer Types to Add
+
+| Type | Description | Priority |
+|---|---|---|
+| `auto_layout` | Flex/grid container, children auto-positioned | High |
+| `mask` | Clips child layers to shape or image alpha | High |
+| `qrcode` | Auto-render QR from `value` string | Medium |
+| `barcode` | CODE128/EAN barcode from `value` | Low |
+| `table` | Data grid, rows from `data` array | Medium |
+| `embed` | Iframe embed (URL, sandboxed) | Low |
+| `lottie` | Lottie JSON animation player | Phase 3 |
+
+### 20.4 New Schema Fields to Add
+
+```yaml
+# Responsive constraints (any layer)
+constraints:
+  left: fixed       # fixed | scale | center | stretch
+  right: fixed
+  top: fixed
+  bottom: fixed
+  width: fixed      # fixed | fill | hug
+  height: hug
+
+# Conditional visibility
+visible:
+  type: expression
+  value: "state.step >= 2"
+
+# Blend mode (layer composite)
+blend_mode: multiply   # normal|multiply|screen|overlay|darken|lighten|
+                       # color-dodge|color-burn|hard-light|soft-light|
+                       # difference|exclusion|hue|saturation|color|luminosity
+
+# Variable binding on any string property
+content:
+  type: binding
+  variable: "userName"        # resolves from state/data
+
+# QR code layer
+- id: qr-cta
+  type: qrcode
+  z: 50
+  x: 880
+  y: 880
+  width: 160
+  height: 160
+  value: "https://example.com"
+  error_correction: M         # L | M | Q | H
+  fill: { type: solid, color: "$text" }
+  background: "$background"
+```
+
+---
+
+## 21. EDITOR UI REDESIGN
+
+### 21.1 Layout — IDE Style (Recommended)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  MENU BAR  [File][Edit][View][Insert][Design][Export]    [☀ ☾][?]   │
+├────────────────────────────────────────────────────────────────────  │
+│  FORMULA BAR: [layer id]  ƒ=  [expression / value input ........]   │
+├──┬─────────────────────────────────────────────────────┬────────────┤
+│  │                                                     │ PROPERTIES │
+│ A│           C A N V A S                               │ ──────────│
+│ C│     (scrollable viewport, infinite canvas)          │ [tabs]     │
+│ T│     centered art board with drop shadow             │ Position   │
+│ I│                                                     │ Fill       │
+│ V│                                                     │ Stroke     │
+│ I│     click → select                                  │ Text       │
+│ T│     drag → move                                     │ Effects    │
+│ Y│     handles → resize/rotate                         │ Anim       │
+│  │     dbl-click → enter group / edit text             │ Interact.  │
+│ B│                                                     │            │
+│ A│                                                     │            │
+│ R│                                                     │ ──────────│
+│  │                                                     │ COLOR      │
+│  │                                                     │ SWATCHES   │
+├──┴─────────────────────────────────────────────────────┴────────────┤
+│ [page thumbnails ◁ p1 p2 p3 ▷] │ [zoom 75% − +] │ [⊞grid][⊡snap] │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### 21.2 Activity Bar (left icon strip — like VS Code)
+
+Vertical icon buttons, click = open/close side panel:
+
+| Icon | Panel | Shortcut |
+|---|---|---|
+| ↖ pointer | Tools panel | T |
+| 📁 | File tree (project) | Cmd+Shift+E |
+| 📋 | Layers / outline | Cmd+Shift+L |
+| 🧩 | Component browser | Cmd+Shift+K |
+| 🖼 | Assets (images, icons, fonts) | Cmd+Shift+A |
+| 🔍 | Find & replace | Cmd+F |
+| ⚙️ | Settings | Cmd+, |
+
+Side panel slides in (280px wide) over left of canvas. Icon stays highlighted when panel open. Click same icon = close panel.
+
+### 21.3 Formula Bar
+
+Sits between menu and canvas. Like Power Apps / Excel:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  layer: headline       ƒ=  Design Engine v2.0                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- Left: layer ID (dropdown to switch to sibling layer)
+- `ƒ=` prefix: indicates editable formula/value
+- Right: current value of the **primary property** for selected layer type
+  - text → content.value
+  - rect → fill.color
+  - image → src
+  - component → slot map (JSON inline)
+- Supports: plain text, `$token`, `{{prop}}`, `=expression`
+- Enter = apply, Escape = cancel, Tab = advance to next layer
+
+### 21.4 Bottom Status Bar (thin — max 32px)
+
+```
+[◁] [pg1] [pg2] [pg3] [+] [▷]  │  [75%  −  +]  │  [⊞ Grid]  [⊡ Snap]  │  [▶ Preview]  │  2 layers selected  │  Saved ✓
+```
+
+- **Page strip**: clickable thumbnails or numbered tabs; drag to reorder; right-click for options
+- **Zoom**: click % to type exact value; `-`/`+` buttons; `Cmd+0` = fit; `Cmd+1` = 100%
+- **Grid / Snap** toggles
+- **Preview button**: enter fullscreen presentation mode
+- **Status**: selection count, save state, errors (red badge)
+
+### 21.5 Properties Panel — Tab Layout
+
+Two modes selectable via panel header toggle:
+
+**Tab mode (IDE-style):** narrow tabs at top of panel
+```
+[Position] [Fill] [Stroke] [Text] [Effects] [Anim] [Code]
+```
+
+**Accordion mode (Power Apps-style):** collapsible sections
+```
+▼ Position & Size
+▼ Fill
+▼ Stroke
+▼ Typography
+▼ Effects & Shadows
+▼ Animation
+▼ Interactions
+```
+
+Default: accordion (more scannable). Tab mode = opt-in for power users.
+
+### 21.6 Editor Themes
+
+#### Dark (current — default)
+```
+background:    #0D0D0D
+surface:       #1A1A1A
+surface2:      #242424
+border:        #333333
+text:          #E8E8E8
+text_muted:    #888888
+accent:        #6C5CE7   (purple)
+accent2:       #00D2D3   (cyan)
+canvas_bg:     #111111
+```
+
+#### Light (Power Apps-inspired)
+```
+background:    #FAF9F8
+surface:       #FFFFFF
+surface2:      #F3F2F1
+border:        #EDEBE9
+text:          #323130
+text_muted:    #605E5C
+accent:        #0078D4   (Power Apps blue)
+accent_hover:  #106EBE
+accent_active: #005A9E
+canvas_bg:     #F0EFEE
+success:       #107C10
+warning:       #797673
+error:         #A4262C
+```
+
+Toggle: sun/moon icon in top-right. Persisted to localStorage. OS preference auto-detected on first load.
+
+### 21.7 Canvas Viewport Controls
+
+```
+Scroll:           pan canvas
+Ctrl+scroll:      zoom in/out (centered on cursor)
+Space+drag:       pan (hand tool)
+Cmd+0:            fit artboard to window
+Cmd+1:            100% (1:1)
+Cmd+2:            200%
+Cmd+-/+:          step zoom (25% increments)
+Pinch (trackpad): zoom
+```
+
+Minimap (optional, collapsible): bottom-right corner, ~120×80px, shows artboard + viewport rectangle. Click to jump.
+
+### 21.8 Color Swatch Panel
+
+Embedded in properties panel below fill controls.
+
+```
+┌──────────────────────────────┐
+│  THEME COLORS                │
+│  ■ ■ ■ ■ ■ ■ ■ ■            │  ← $primary, $secondary... tokens
+│                              │
+│  RECENT                      │
+│  □ □ □ □ □ □ □ □            │  ← last 8 used
+│                              │
+│  PALETTE                     │
+│  □ □ □ □ □ □ □ □            │  ← saved project swatches
+│  [+] [import Figma tokens]   │
+└──────────────────────────────┘
+```
+
+Click swatch → apply to selected layer's active fill/stroke/color property.
+Hover swatch → shows token name or hex tooltip.
+
+### 21.9 Color Picker
+
+Triggered by clicking any color well in properties panel.
+
+```
+┌─────────────────────────────┐
+│       [ saturation box ]    │  ← H saturation/value picker
+│                             │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━  │  ← hue slider
+│  ━━━━━━━━━━━━━━━━━━━━━━━━  │  ← opacity slider
+│                             │
+│  [●] HEX [#6C5CE7........] │
+│      RGB [108, 92, 231, 1] │
+│      HSL [248°, 70%, 63%]  │
+│                             │
+│  [👁 eyedropper]            │
+│                             │
+│  ■■■■■■■■  theme swatches  │
+└─────────────────────────────┘
+```
+
+Eyedropper: uses EyeDropper API (Chrome 95+), graceful fallback to manual hex input.
+
+### 21.10 Gradient Editor (Visual)
+
+Shown when fill type = linear | radial | conic.
+
+```
+┌───────────────────────────────────────────┐
+│  ████████████████████████████████████     │  ← gradient preview bar
+│  ▲                              ▲          │  ← stop handles (drag)
+│  └ #0D0D0D 0%        $primary 100%┘       │
+│                                           │
+│  [linear ▾]  Angle: [135°  ↕]            │
+│  [+ add stop]  [× remove stop]           │
+└───────────────────────────────────────────┘
+```
+
+Click bar to add stop. Drag stop to reposition. Click stop → open color picker. Delete key removes selected stop.
+
+---
+
+## 22. GRAPHIC DESIGN TOOLSET
+
+### 22.1 Tool Categories
+
+Inspired by: Illustrator, CorelDRAW, Figma, Affinity Designer, Penpot.
+
+#### Selection & Transform Tools (must-have)
+| Tool | Key | Description |
+|---|---|---|
+| Select | V | Click/drag to select, transform handles |
+| Deep Select | A | Select inside group without entering |
+| Hand / Pan | H or Space+drag | Scroll canvas |
+| Zoom | Z | Click=zoom in, Alt+click=zoom out |
+
+#### Shape Tools (must-have)
+| Tool | Key | Description |
+|---|---|---|
+| Rectangle | R | Draw rect, Shift=square |
+| Circle / Ellipse | C | Draw ellipse, Shift=circle |
+| Line | L | Single line segment |
+| Arrow | — | Line with arrowhead |
+| Polygon | — | N-sided regular polygon |
+| Star | — | N-point star shape |
+| Triangle | — | 3-point polygon shortcut |
+
+#### Pen & Path Tools (nice-to-have)
+| Tool | Key | Description |
+|---|---|---|
+| Pen (Bézier) | P | Click=corner, drag=curve handle |
+| Pencil (freehand) | — | Freehand draw, auto-smooth |
+| Path Edit | Enter on path | Edit nodes: add, delete, convert |
+| Node types | — | Corner / smooth / symmetric |
+
+#### Text Tools (must-have)
+| Tool | Key | Description |
+|---|---|---|
+| Text | T | Click=single line, drag=text box |
+| Rich Text | — | Inline spans with mixed styles |
+| Markdown Text | — | Markdown block render |
+| Code Block | — | Prism.js highlighted code |
+
+#### Color Tools (must-have)
+| Tool | Key | Description |
+|---|---|---|
+| Eyedropper | I | Sample color from canvas |
+| Fill bucket | — | Change fill color of selected layer |
+| Gradient | G | Apply/edit gradient fill |
+
+#### View Tools
+| Tool | Key | Description |
+|---|---|---|
+| Ruler guides | Drag from ruler | Drag horizontal/vertical guide |
+| Guide manager | — | List, lock, delete guides |
+| Measure | Alt+hover | Show distance to nearby layers |
+| Crop handles | — | Image crop mode |
+
+### 22.2 Must-Have Toolbox Panel Layout
+
+```
+┌────────┐
+│  [↖]  │  Select (V)
+│  [⤢]  │  Deep Select (A)
+├────────┤
+│  [▭]  │  Rectangle (R)
+│  [○]  │  Circle (C)
+│  [╱]  │  Line (L)
+│  [▷]  │  Arrow
+│  [⬡]  │  Polygon
+│  [★]  │  Star
+├────────┤
+│  [✒]  │  Pen (P)
+│  [✏]  │  Pencil
+├────────┤
+│  [T]  │  Text (T)
+├────────┤
+│  [🖾]  │  Image
+│  [☰]  │  Icon
+├────────┤
+│  [💧]  │  Eyedropper (I)
+├────────┤
+│  [✋]  │  Hand (H)
+│  [🔍]  │  Zoom (Z)
+└────────┘
+```
+
+### 22.3 Keyboard Shortcuts — Full Reference
+
+**Tools:**
+`V` select · `A` deep select · `R` rect · `C` circle · `L` line · `P` pen · `T` text · `I` eyedropper · `H` hand · `Z` zoom
+
+**Selection:**
+`Shift+click` add to selection · `Esc` deselect · `Cmd+A` select all · `Cmd+Shift+A` select all on page · `Tab` cycle to next layer · `Shift+Tab` cycle previous
+
+**Transform:**
+`Arrow keys` nudge 1px · `Shift+Arrow` nudge 10px · `R` rotate mode · `Shift` constrain aspect on resize · `Alt+drag` resize from center · `Cmd+D` duplicate · `Alt+drag` duplicate in place
+
+**Layers:**
+`Cmd+G` group · `Cmd+Shift+G` ungroup · `Cmd+[` send back · `Cmd+]` bring forward · `Cmd+Shift+[` send to back · `Cmd+Shift+]` bring to front · `Cmd+L` lock/unlock
+
+**Edit:**
+`Cmd+Z` undo · `Cmd+Shift+Z` redo · `Cmd+C` copy · `Cmd+X` cut · `Cmd+V` paste · `Cmd+Shift+V` paste in place · `Alt+C` copy style · `Alt+V` paste style
+
+**View:**
+`Cmd+0` fit · `Cmd+1` 100% · `Cmd++/-` zoom · `Cmd+;` toggle guides · `Cmd+'` toggle grid · `G` toggle grid (design mode) · `F5` / `Cmd+Enter` preview mode
+
+**Canvas navigation:**
+`Space+drag` pan · `Ctrl+scroll` zoom · `Cmd+Shift+H` reset pan
+
+### 22.4 Smart Guides & Snapping
+
+Active while dragging:
+- **Edge snap**: layer edges align to other layer edges (pink guide line)
+- **Center snap**: layer center aligns to other layer center (purple guide line)
+- **Canvas center snap**: global center crosshair
+- **Grid snap**: snap to column/gutter/baseline grid
+- **Distance annotations**: Alt key shows px distance between selected and nearby layers (like Figma)
+- **Snap distance tolerance**: 6px (configurable in settings)
+
+### 22.5 Align & Distribute
+
+Multi-select → align toolbar (or right-click menu):
+
+```
+Align:       ⊢← left  ↕center-v  →⊣right  ⊤top  ↔center-h  ⊥bottom
+Distribute:  ↔↔ equal horizontal spacing  ↕↕ equal vertical spacing
+Match size:  ↔ match width  ↕ match height  ⊡ match both
+```
+
+Reference frame:
+- **Selection** (default): relative to bounding box of selection
+- **Canvas**: absolute to artboard
+- **Key object**: relative to last-clicked (bold outline)
+
+### 22.6 Context Menu (right-click on layer)
+
+```
+Select parent group
+Select same fill color        ← power user workflow
+Select same layer type
+──────────────────
+Copy               Cmd+C
+Cut                Cmd+X
+Paste style        Alt+V
+Duplicate          Cmd+D
+──────────────────
+Group              Cmd+G
+Flatten            ← merge group into single layer
+Create component   ← save as reusable component
+──────────────────
+Bring to front     Cmd+Shift+]
+Send to back       Cmd+Shift+[
+──────────────────
+Edit in Monaco     ← open YAML for this layer
+Copy as YAML
+Copy layer ID
+──────────────────
+Delete             Backspace
+```

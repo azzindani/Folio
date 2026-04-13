@@ -1,0 +1,2267 @@
+_protocol: design/v1
+_mode: complete
+
+# ─────────────────────────────────────────────────────────────────
+#  A3 TECH REPORT POSTER — "State of AI Infrastructure 2026"
+#  Format: A3 landscape (4961 × 3508 px @ 300 DPI, screen: 1587 × 1122 px)
+#  Complexity: 80+ layers | multi-column | data sections | decorative
+#  Purpose: demonstrate full schema depth on a single poster
+# ─────────────────────────────────────────────────────────────────
+
+meta:
+  id: a3-techreport-001
+  name: State of AI Infrastructure 2026 — A3 Poster
+  type: poster
+  created: "2026-04-13"
+  modified: "2026-04-13"
+  generator: folio-mcp
+  tags: [tech, report, infographic, a3, landscape]
+
+document:
+  width: 1587
+  height: 1122
+  unit: px
+  dpi: 150
+  print:
+    bleed: 9
+    crop_marks: true
+    color_mode: cmyk_simulation
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#00D4FF"
+    secondary: "#7B2FFF"
+    accent: "#FF6B35"
+    accent2: "#2ECC71"
+    background: "#06080F"
+    surface: "#0E1421"
+    surface2: "#151E30"
+    surface3: "#1C2640"
+    text: "#E8EDF5"
+    text_muted: "#7A8BA8"
+    text_dim: "#3D4E66"
+    heading: "Inter"
+    body: "Inter"
+    mono: "JetBrains Mono"
+    border: "#1F2E47"
+    border_accent: "#00D4FF"
+
+# ═══════════════════════════════════════════════════════════════
+#  BACKGROUND LAYER STACK  (z: 0–9)
+# ═══════════════════════════════════════════════════════════════
+
+layers:
+
+  # Base fill
+  - id: bg-base
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1587
+    height: 1122
+    fill:
+      type: linear
+      angle: 160
+      stops:
+        - { color: "#06080F", position: 0 }
+        - { color: "#0A0F1C", position: 50 }
+        - { color: "#060C18", position: 100 }
+
+  # Noise grain overlay
+  - id: bg-grain
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1587
+    height: 1122
+    fill:
+      type: noise
+      opacity: 0.025
+      frequency: 0.72
+      octaves: 4
+
+  # Top-left radial glow (primary)
+  - id: glow-topleft
+    type: rect
+    z: 2
+    x: -200
+    y: -200
+    width: 900
+    height: 900
+    fill:
+      type: radial
+      cx: 30
+      cy: 30
+      radius: 60
+      stops:
+        - { color: "#00D4FF", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.12
+
+  # Bottom-right radial glow (secondary)
+  - id: glow-bottomright
+    type: rect
+    z: 2
+    x: 900
+    y: 400
+    width: 900
+    height: 900
+    fill:
+      type: radial
+      cx: 70
+      cy: 70
+      radius: 60
+      stops:
+        - { color: "#7B2FFF", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.14
+
+  # Center accent glow (accent orange)
+  - id: glow-center
+    type: rect
+    z: 2
+    x: 600
+    y: 300
+    width: 600
+    height: 600
+    fill:
+      type: radial
+      cx: 50
+      cy: 50
+      radius: 50
+      stops:
+        - { color: "#FF6B35", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.06
+
+  # Grid dot pattern overlay
+  - id: bg-dots
+    type: rect
+    z: 3
+    x: 0
+    y: 0
+    width: 1587
+    height: 1122
+    fill:
+      type: noise
+      opacity: 0.015
+      frequency: 0.15
+      octaves: 1
+
+  # Diagonal rule line top
+  - id: deco-diag-top
+    type: line
+    z: 4
+    x1: 0
+    y1: 80
+    x2: 400
+    y2: 0
+    stroke: { color: "$primary", width: 0.5, opacity: 0.3 }
+
+  # Diagonal rule line bottom
+  - id: deco-diag-bottom
+    type: line
+    z: 4
+    x1: 1187
+    y1: 1122
+    x2: 1587
+    y2: 1042
+    stroke: { color: "$secondary", width: 0.5, opacity: 0.3 }
+
+# ═══════════════════════════════════════════════════════════════
+#  STRUCTURAL CHROME  (z: 10–19)
+# ═══════════════════════════════════════════════════════════════
+
+  # Full-width top header bar
+  - id: header-bg
+    type: rect
+    z: 10
+    x: 0
+    y: 0
+    width: 1587
+    height: 88
+    fill:
+      type: linear
+      angle: 90
+      stops:
+        - { color: "#0E1421", position: 0 }
+        - { color: "#06080F", position: 100 }
+    stroke: { color: "$border", width: 1 }
+
+  # Header top accent line
+  - id: header-accent-line
+    type: rect
+    z: 11
+    x: 0
+    y: 0
+    width: 1587
+    height: 3
+    fill:
+      type: linear
+      angle: 0
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 50 }
+        - { color: "$accent", position: 100 }
+
+  # Left column background
+  - id: col-left-bg
+    type: rect
+    z: 10
+    x: 0
+    y: 88
+    width: 380
+    height: 1034
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "#0E1421", position: 0 }
+        - { color: "#0A1019", position: 100 }
+    stroke: { color: "$border", width: 1 }
+
+  # Main content area separator line
+  - id: col-divider-1
+    type: line
+    z: 11
+    x1: 380
+    y1: 88
+    x2: 380
+    y2: 1034
+    stroke: { color: "$border_accent", width: 1, opacity: 0.4 }
+
+  # Right column separator
+  - id: col-divider-2
+    type: line
+    z: 11
+    x1: 1140
+    y1: 88
+    x2: 1140
+    y2: 1034
+    stroke: { color: "$border", width: 1, opacity: 0.3 }
+
+  # Right side panel background
+  - id: col-right-bg
+    type: rect
+    z: 10
+    x: 1140
+    y: 88
+    width: 447
+    height: 1034
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "#0E1421", position: 0 }
+        - { color: "#0A1019", position: 100 }
+
+  # Footer bar
+  - id: footer-bg
+    type: rect
+    z: 10
+    x: 0
+    y: 1034
+    width: 1587
+    height: 88
+    fill:
+      type: solid
+      color: "#0A0F1C"
+    stroke: { color: "$border", width: 1 }
+
+  # Footer bottom accent line
+  - id: footer-accent-line
+    type: rect
+    z: 11
+    x: 0
+    y: 1119
+    width: 1587
+    height: 3
+    fill:
+      type: linear
+      angle: 0
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "$secondary", position: 50 }
+        - { color: "$primary", position: 100 }
+
+# ═══════════════════════════════════════════════════════════════
+#  HEADER CONTENT  (z: 20–29)
+# ═══════════════════════════════════════════════════════════════
+
+  # Logo mark (geometric hexagon)
+  - id: logo-hex
+    type: polygon
+    z: 20
+    x: 24
+    y: 20
+    width: 48
+    height: 48
+    sides: 6
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+
+  # Logo text
+  - id: logo-text
+    type: text
+    z: 20
+    x: 82
+    y: 28
+    width: 200
+    height: auto
+    content: { type: plain, value: "FOLIO RESEARCH" }
+    style:
+      font_family: "$heading"
+      font_size: 13
+      font_weight: 700
+      color: "$text"
+      letter_spacing: 3
+
+  # Logo sub
+  - id: logo-sub
+    type: text
+    z: 20
+    x: 82
+    y: 48
+    width: 200
+    height: auto
+    content: { type: plain, value: "Infrastructure Intelligence" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      letter_spacing: 1.5
+
+  # Report label badge
+  - id: report-badge
+    type: rect
+    z: 20
+    x: 380
+    y: 28
+    width: 96
+    height: 22
+    fill: { type: solid, color: "$primary", opacity: 0.15 }
+    stroke: { color: "$primary", width: 1 }
+    radius: 4
+
+  - id: report-badge-text
+    type: text
+    z: 21
+    x: 388
+    y: 34
+    width: 80
+    height: auto
+    content: { type: plain, value: "ANNUAL REPORT" }
+    style:
+      font_family: "$heading"
+      font_size: 8
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 2
+
+  # Main report title (center header)
+  - id: header-title
+    type: text
+    z: 20
+    x: 490
+    y: 16
+    width: 600
+    height: auto
+    content: { type: plain, value: "STATE OF AI INFRASTRUCTURE" }
+    style:
+      font_family: "$heading"
+      font_size: 28
+      font_weight: 800
+      color: "$text"
+      letter_spacing: 1.5
+      text_align: center
+
+  - id: header-year
+    type: text
+    z: 20
+    x: 490
+    y: 50
+    width: 600
+    height: auto
+    content: { type: plain, value: "2026 GLOBAL BENCHMARK REPORT" }
+    style:
+      font_family: "$body"
+      font_size: 11
+      font_weight: 400
+      color: "$text_muted"
+      letter_spacing: 3
+      text_align: center
+
+  # Header right: date + issue
+  - id: header-meta-date
+    type: text
+    z: 20
+    x: 1340
+    y: 22
+    width: 200
+    height: auto
+    content: { type: plain, value: "Q1 — April 2026" }
+    style:
+      font_family: "$body"
+      font_size: 11
+      font_weight: 600
+      color: "$primary"
+      text_align: right
+
+  - id: header-meta-issue
+    type: text
+    z: 20
+    x: 1340
+    y: 42
+    width: 200
+    height: auto
+    content: { type: plain, value: "Issue 04 · Vol. 3" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      text_align: right
+
+  - id: header-meta-pages
+    type: text
+    z: 20
+    x: 1340
+    y: 60
+    width: 200
+    height: auto
+    content: { type: plain, value: "Global AI Survey · 4,200 respondents" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_dim"
+      text_align: right
+
+# ═══════════════════════════════════════════════════════════════
+#  LEFT COLUMN — KEY STATS SIDEBAR  (z: 30–39)
+#  x: 0–380, y: 88–1034
+# ═══════════════════════════════════════════════════════════════
+
+  - id: left-col-header
+    type: text
+    z: 30
+    x: 24
+    y: 108
+    width: 330
+    height: auto
+    content: { type: plain, value: "KEY FINDINGS" }
+    style:
+      font_family: "$heading"
+      font_size: 10
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 3
+
+  - id: left-col-divider
+    type: rect
+    z: 30
+    x: 24
+    y: 126
+    width: 48
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # Stat card 1 — GPU Adoption
+  - id: stat1-card
+    type: rect
+    z: 30
+    x: 16
+    y: 138
+    width: 348
+    height: 108
+    fill: { type: solid, color: "$surface2" }
+    radius: 8
+    stroke: { color: "$border", width: 1 }
+
+  - id: stat1-label
+    type: text
+    z: 31
+    x: 36
+    y: 154
+    width: 300
+    height: auto
+    content: { type: plain, value: "GPU Cluster Adoption" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 500
+      color: "$text_muted"
+      letter_spacing: 0.5
+
+  - id: stat1-value
+    type: text
+    z: 31
+    x: 36
+    y: 172
+    width: 300
+    height: auto
+    content: { type: plain, value: "78%" }
+    style:
+      font_family: "$heading"
+      font_size: 52
+      font_weight: 800
+      color: "$primary"
+      line_height: 1.0
+
+  - id: stat1-delta
+    type: text
+    z: 31
+    x: 110
+    y: 178
+    width: 200
+    height: auto
+    content: { type: plain, value: "↑ 23% YoY" }
+    style:
+      font_family: "$body"
+      font_size: 11
+      font_weight: 600
+      color: "$accent2"
+
+  - id: stat1-sublabel
+    type: text
+    z: 31
+    x: 36
+    y: 222
+    width: 300
+    height: auto
+    content: { type: plain, value: "of enterprise AI workloads now run on dedicated GPU clusters" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.5
+
+  # Stat card 2 — Model Training Cost
+  - id: stat2-card
+    type: rect
+    z: 30
+    x: 16
+    y: 258
+    width: 348
+    height: 108
+    fill: { type: solid, color: "$surface2" }
+    radius: 8
+    stroke: { color: "$border", width: 1 }
+
+  - id: stat2-label
+    type: text
+    z: 31
+    x: 36
+    y: 274
+    width: 300
+    height: auto
+    content: { type: plain, value: "Average Training Cost per Run" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 500
+      color: "$text_muted"
+
+  - id: stat2-value
+    type: text
+    z: 31
+    x: 36
+    y: 292
+    width: 300
+    height: auto
+    content: { type: plain, value: "$84K" }
+    style:
+      font_family: "$heading"
+      font_size: 52
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.0
+
+  - id: stat2-delta
+    type: text
+    z: 31
+    x: 122
+    y: 298
+    width: 200
+    height: auto
+    content: { type: plain, value: "↓ 41% YoY" }
+    style:
+      font_family: "$body"
+      font_size: 11
+      font_weight: 600
+      color: "$accent2"
+
+  - id: stat2-sublabel
+    type: text
+    z: 31
+    x: 36
+    y: 342
+    width: 300
+    height: auto
+    content: { type: plain, value: "median cost for frontier model fine-tuning run (7B params)" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.5
+
+  # Stat card 3 — Inference Latency
+  - id: stat3-card
+    type: rect
+    z: 30
+    x: 16
+    y: 378
+    width: 348
+    height: 108
+    fill: { type: solid, color: "$surface2" }
+    radius: 8
+    stroke: { color: "$border", width: 1 }
+
+  - id: stat3-label
+    type: text
+    z: 31
+    x: 36
+    y: 394
+    width: 300
+    height: auto
+    content: { type: plain, value: "Median Inference Latency" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 500
+      color: "$text_muted"
+
+  - id: stat3-value
+    type: text
+    z: 31
+    x: 36
+    y: 412
+    width: 300
+    height: auto
+    content: { type: plain, value: "38ms" }
+    style:
+      font_family: "$heading"
+      font_size: 52
+      font_weight: 800
+      color: "$secondary"
+      line_height: 1.0
+
+  - id: stat3-delta
+    type: text
+    z: 31
+    x: 120
+    y: 418
+    width: 200
+    height: auto
+    content: { type: plain, value: "↓ 62% YoY" }
+    style:
+      font_family: "$body"
+      font_size: 11
+      font_weight: 600
+      color: "$accent2"
+
+  - id: stat3-sublabel
+    type: text
+    z: 31
+    x: 36
+    y: 462
+    width: 300
+    height: auto
+    content: { type: plain, value: "p50 latency for 70B model token generation (cloud, optimized)" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.5
+
+  # Methodology note
+  - id: methodology-header
+    type: text
+    z: 30
+    x: 24
+    y: 502
+    width: 330
+    height: auto
+    content: { type: plain, value: "METHODOLOGY" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 2
+
+  - id: methodology-body
+    type: text
+    z: 30
+    x: 24
+    y: 518
+    width: 332
+    height: auto
+    content:
+      type: markdown
+      value: |
+        Data collected via **online survey** (Jan–Mar 2026).
+        Respondents: 4,200 practitioners across 67 countries.
+        Breakdown: 42% large enterprise, 31% startup/scaleup,
+        27% academic/research.
+
+        Margin of error: **±2.1%** at 95% confidence interval.
+        Infrastructure data cross-validated against public cloud
+        billing reports and provider API telemetry samples.
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.6
+
+  # Divider
+  - id: left-divider-2
+    type: line
+    z: 30
+    x1: 24
+    y1: 660
+    x2: 356
+    y2: 660
+    stroke: { color: "$border", width: 1 }
+
+  # About section
+  - id: about-header
+    type: text
+    z: 30
+    x: 24
+    y: 676
+    width: 330
+    height: auto
+    content: { type: plain, value: "ABOUT THIS REPORT" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 2
+
+  - id: about-body
+    type: text
+    z: 30
+    x: 24
+    y: 692
+    width: 332
+    height: auto
+    content:
+      type: plain
+      value: "The State of AI Infrastructure report is published annually by Folio Research Institute. This is the third edition, covering compute, networking, storage, and tooling adoption across enterprise and research contexts globally."
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.6
+
+  # Sponsor logos placeholder
+  - id: sponsors-header
+    type: text
+    z: 30
+    x: 24
+    y: 788
+    width: 330
+    height: auto
+    content: { type: plain, value: "RESEARCH PARTNERS" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 2
+
+  - id: sponsor-1
+    type: rect
+    z: 30
+    x: 24
+    y: 808
+    width: 88
+    height: 32
+    fill: { type: solid, color: "$surface3" }
+    radius: 4
+    stroke: { color: "$border", width: 1 }
+
+  - id: sponsor-1-text
+    type: text
+    z: 31
+    x: 24
+    y: 820
+    width: 88
+    height: auto
+    content: { type: plain, value: "CloudCo" }
+    style:
+      font_family: "$heading"
+      font_size: 10
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+
+  - id: sponsor-2
+    type: rect
+    z: 30
+    x: 124
+    y: 808
+    width: 88
+    height: 32
+    fill: { type: solid, color: "$surface3" }
+    radius: 4
+    stroke: { color: "$border", width: 1 }
+
+  - id: sponsor-2-text
+    type: text
+    z: 31
+    x: 124
+    y: 820
+    width: 88
+    height: auto
+    content: { type: plain, value: "NeuralOS" }
+    style:
+      font_family: "$heading"
+      font_size: 10
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+
+  - id: sponsor-3
+    type: rect
+    z: 30
+    x: 224
+    y: 808
+    width: 88
+    height: 32
+    fill: { type: solid, color: "$surface3" }
+    radius: 4
+    stroke: { color: "$border", width: 1 }
+
+  - id: sponsor-3-text
+    type: text
+    z: 31
+    x: 224
+    y: 820
+    width: 88
+    height: auto
+    content: { type: plain, value: "Tensor.io" }
+    style:
+      font_family: "$heading"
+      font_size: 10
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+
+  # QR Code
+  - id: qr-report
+    type: rect
+    z: 30
+    x: 24
+    y: 862
+    width: 80
+    height: 80
+    fill: { type: solid, color: "$surface3" }
+    radius: 4
+    stroke: { color: "$border_accent", width: 1 }
+
+  - id: qr-label
+    type: text
+    z: 31
+    x: 24
+    y: 948
+    width: 80
+    height: auto
+    content: { type: plain, value: "Full dataset" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: center
+
+  - id: qr-url
+    type: text
+    z: 31
+    x: 118
+    y: 870
+    width: 240
+    height: auto
+    content: { type: plain, value: "folio.research/ai-infra-2026" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 500
+      color: "$primary"
+
+  - id: qr-url-sub
+    type: text
+    z: 31
+    x: 118
+    y: 888
+    width: 240
+    height: auto
+    content: { type: plain, value: "Interactive charts · Raw data export · Methodology appendix" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.5
+
+# ═══════════════════════════════════════════════════════════════
+#  MAIN CONTENT — CENTRE COLUMN  (z: 40–59)
+#  x: 380–1140, y: 88–1034
+# ═══════════════════════════════════════════════════════════════
+
+  # Section: Hero statement
+  - id: hero-section-label
+    type: text
+    z: 40
+    x: 404
+    y: 108
+    width: 600
+    height: auto
+    content: { type: plain, value: "EXECUTIVE SUMMARY" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 3
+
+  - id: hero-headline
+    type: text
+    z: 40
+    x: 404
+    y: 126
+    width: 710
+    height: auto
+    content:
+      type: plain
+      value: "The Era of Distributed Intelligence Has Arrived"
+    style:
+      font_family: "$heading"
+      font_size: 38
+      font_weight: 800
+      color: "$text"
+      line_height: 1.15
+      letter_spacing: -0.5
+
+  - id: hero-accent-line
+    type: rect
+    z: 40
+    x: 404
+    y: 210
+    width: 64
+    height: 4
+    fill:
+      type: linear
+      angle: 0
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+    radius: 2
+
+  - id: hero-lede
+    type: text
+    z: 40
+    x: 404
+    y: 226
+    width: 710
+    height: auto
+    content:
+      type: plain
+      value: "2026 marks a structural inflection point. AI compute is no longer concentrated in a handful of hyperscaler data centres — it has fragmented across sovereign clouds, edge nodes, and on-premises clusters. Cost curves have inverted. The question is no longer whether to adopt AI infrastructure; it is how to govern the sprawl."
+    style:
+      font_family: "$body"
+      font_size: 13
+      font_weight: 400
+      color: "$text"
+      line_height: 1.7
+
+  # Pull quote
+  - id: pullquote-bar
+    type: rect
+    z: 40
+    x: 404
+    y: 332
+    width: 6
+    height: 72
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+    radius: 3
+
+  - id: pullquote-text
+    type: text
+    z: 41
+    x: 424
+    y: 336
+    width: 680
+    height: auto
+    content:
+      type: plain
+      value: "\"Infrastructure agility — not raw compute — is the primary differentiator between AI leaders and laggards in 2026.\""
+    style:
+      font_family: "$heading"
+      font_size: 16
+      font_weight: 600
+      color: "$text"
+      line_height: 1.5
+      font_style: italic
+
+  - id: pullquote-attr
+    type: text
+    z: 41
+    x: 424
+    y: 396
+    width: 400
+    height: auto
+    content: { type: plain, value: "— Folio Research Institute, AI Infrastructure Survey 2026" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  # ── Chart row separator
+  - id: chart-section-divider
+    type: line
+    z: 40
+    x1: 404
+    y1: 422
+    x2: 1116
+    y2: 422
+    stroke: { color: "$border", width: 1 }
+
+  - id: chart-section-label
+    type: text
+    z: 40
+    x: 404
+    y: 432
+    width: 400
+    height: auto
+    content: { type: plain, value: "INFRASTRUCTURE ADOPTION TRENDS" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 3
+
+  # Chart 1 — Compute type adoption (bar chart via vega-lite)
+  - id: chart-compute-title
+    type: text
+    z: 40
+    x: 404
+    y: 452
+    width: 350
+    height: auto
+    content: { type: plain, value: "Compute Platform Distribution" }
+    style:
+      font_family: "$heading"
+      font_size: 13
+      font_weight: 700
+      color: "$text"
+
+  - id: chart-compute-sub
+    type: text
+    z: 40
+    x: 404
+    y: 470
+    width: 350
+    height: auto
+    content: { type: plain, value: "% of total AI workload hours, 2024–2026" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: chart-compute
+    type: chart
+    z: 41
+    x: 404
+    y: 490
+    width: 350
+    height: 230
+    spec:
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json"
+      data:
+        values:
+          - { platform: "Public Cloud GPU", year: 2024, pct: 52 }
+          - { platform: "Public Cloud GPU", year: 2025, pct: 61 }
+          - { platform: "Public Cloud GPU", year: 2026, pct: 67 }
+          - { platform: "On-Premise GPU", year: 2024, pct: 28 }
+          - { platform: "On-Premise GPU", year: 2025, pct: 24 }
+          - { platform: "On-Premise GPU", year: 2026, pct: 21 }
+          - { platform: "Edge / Embedded", year: 2024, pct: 8 }
+          - { platform: "Edge / Embedded", year: 2025, pct: 11 }
+          - { platform: "Edge / Embedded", year: 2026, pct: 18 }
+          - { platform: "CPU Only", year: 2024, pct: 12 }
+          - { platform: "CPU Only", year: 2025, pct: 4 }
+          - { platform: "CPU Only", year: 2026, pct: 4 }
+      mark: { type: bar, cornerRadiusTopLeft: 2, cornerRadiusTopRight: 2 }
+      encoding:
+        x: { field: year, type: ordinal, axis: { labelColor: "#7A8BA8", tickColor: "#1F2E47", domainColor: "#1F2E47" } }
+        y: { field: pct, type: quantitative, title: "% workload hours", axis: { labelColor: "#7A8BA8", gridColor: "#1F2E47", domainColor: "#1F2E47" } }
+        color:
+          field: platform
+          type: nominal
+          scale:
+            domain: ["Public Cloud GPU", "On-Premise GPU", "Edge / Embedded", "CPU Only"]
+            range: ["#00D4FF", "#7B2FFF", "#FF6B35", "#3D4E66"]
+          legend: { labelColor: "#7A8BA8", titleColor: "#7A8BA8" }
+        xOffset: { field: platform, type: nominal }
+      config:
+        background: "transparent"
+        view: { stroke: null }
+
+  # Chart 2 — Stack breakdown (mermaid pie)
+  - id: chart-model-title
+    type: text
+    z: 40
+    x: 780
+    y: 452
+    width: 330
+    height: auto
+    content: { type: plain, value: "Model Size Distribution" }
+    style:
+      font_family: "$heading"
+      font_size: 13
+      font_weight: 700
+      color: "$text"
+
+  - id: chart-model-sub
+    type: text
+    z: 40
+    x: 780
+    y: 470
+    width: 330
+    height: auto
+    content: { type: plain, value: "by parameter count, enterprise deployments 2026" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: chart-model-size
+    type: chart
+    z: 41
+    x: 780
+    y: 490
+    width: 330
+    height: 230
+    spec:
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json"
+      data:
+        values:
+          - { range: "< 1B params", share: 8 }
+          - { range: "1B – 7B params", share: 31 }
+          - { range: "7B – 70B params", share: 39 }
+          - { range: "70B – 200B params", share: 16 }
+          - { range: "> 200B params", share: 6 }
+      mark: { type: arc, innerRadius: 60, outerRadius: 100 }
+      encoding:
+        theta: { field: share, type: quantitative }
+        color:
+          field: range
+          type: nominal
+          scale:
+            range: ["#3D4E66", "#7B2FFF", "#00D4FF", "#FF6B35", "#2ECC71"]
+          legend: { labelColor: "#7A8BA8", orient: bottom, columns: 2 }
+      config:
+        background: "transparent"
+        view: { stroke: null }
+
+  # ── Technology section
+  - id: tech-section-divider
+    type: line
+    z: 40
+    x1: 404
+    y1: 736
+    x2: 1116
+    y2: 736
+    stroke: { color: "$border", width: 1 }
+
+  - id: tech-section-label
+    type: text
+    z: 40
+    x: 404
+    y: 746
+    width: 400
+    height: auto
+    content: { type: plain, value: "TECHNOLOGY STACK ADOPTION" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$secondary"
+      letter_spacing: 3
+
+  # Tech stack bar rows (horizontal)
+  - id: stack-row-1-label
+    type: text
+    z: 40
+    x: 404
+    y: 770
+    width: 180
+    height: auto
+    content: { type: plain, value: "PyTorch / TorchScript" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 400
+      color: "$text"
+
+  - id: stack-row-1-bar-bg
+    type: rect
+    z: 40
+    x: 590
+    y: 770
+    width: 300
+    height: 12
+    fill: { type: solid, color: "$surface3" }
+    radius: 6
+
+  - id: stack-row-1-bar
+    type: rect
+    z: 41
+    x: 590
+    y: 770
+    width: 255
+    height: 12
+    fill:
+      type: linear
+      angle: 0
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+    radius: 6
+
+  - id: stack-row-1-pct
+    type: text
+    z: 41
+    x: 900
+    y: 768
+    width: 50
+    height: auto
+    content: { type: plain, value: "85%" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 600
+      color: "$primary"
+
+  - id: stack-row-2-label
+    type: text
+    z: 40
+    x: 404
+    y: 796
+    width: 180
+    height: auto
+    content: { type: plain, value: "Kubernetes / K3s" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 400
+      color: "$text"
+
+  - id: stack-row-2-bar-bg
+    type: rect
+    z: 40
+    x: 590
+    y: 796
+    width: 300
+    height: 12
+    fill: { type: solid, color: "$surface3" }
+    radius: 6
+
+  - id: stack-row-2-bar
+    type: rect
+    z: 41
+    x: 590
+    y: 796
+    width: 231
+    height: 12
+    fill: { type: solid, color: "$secondary" }
+    radius: 6
+
+  - id: stack-row-2-pct
+    type: text
+    z: 41
+    x: 900
+    y: 794
+    width: 50
+    height: auto
+    content: { type: plain, value: "77%" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 600
+      color: "$secondary"
+
+  - id: stack-row-3-label
+    type: text
+    z: 40
+    x: 404
+    y: 822
+    width: 180
+    height: auto
+    content: { type: plain, value: "Ray / Ray Serve" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 400
+      color: "$text"
+
+  - id: stack-row-3-bar-bg
+    type: rect
+    z: 40
+    x: 590
+    y: 822
+    width: 300
+    height: 12
+    fill: { type: solid, color: "$surface3" }
+    radius: 6
+
+  - id: stack-row-3-bar
+    type: rect
+    z: 41
+    x: 590
+    y: 822
+    width: 168
+    height: 12
+    fill: { type: solid, color: "$accent" }
+    radius: 6
+
+  - id: stack-row-3-pct
+    type: text
+    z: 41
+    x: 900
+    y: 820
+    width: 50
+    height: auto
+    content: { type: plain, value: "56%" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 600
+      color: "$accent"
+
+  - id: stack-row-4-label
+    type: text
+    z: 40
+    x: 404
+    y: 848
+    width: 180
+    height: auto
+    content: { type: plain, value: "vLLM / TGI" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 400
+      color: "$text"
+
+  - id: stack-row-4-bar-bg
+    type: rect
+    z: 40
+    x: 590
+    y: 848
+    width: 300
+    height: 12
+    fill: { type: solid, color: "$surface3" }
+    radius: 6
+
+  - id: stack-row-4-bar
+    type: rect
+    z: 41
+    x: 590
+    y: 848
+    width: 144
+    height: 12
+    fill: { type: solid, color: "$accent2" }
+    radius: 6
+
+  - id: stack-row-4-pct
+    type: text
+    z: 41
+    x: 900
+    y: 846
+    width: 50
+    height: auto
+    content: { type: plain, value: "48%" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 600
+      color: "$accent2"
+
+  - id: stack-row-5-label
+    type: text
+    z: 40
+    x: 404
+    y: 874
+    width: 180
+    height: auto
+    content: { type: plain, value: "MLflow / W&B" }
+    style:
+      font_family: "$body"
+      font_size: 10
+      font_weight: 400
+      color: "$text"
+
+  - id: stack-row-5-bar-bg
+    type: rect
+    z: 40
+    x: 590
+    y: 874
+    width: 300
+    height: 12
+    fill: { type: solid, color: "$surface3" }
+    radius: 6
+
+  - id: stack-row-5-bar
+    type: rect
+    z: 41
+    x: 590
+    y: 874
+    width: 126
+    height: 12
+    fill: { type: solid, color: "#00D4FF", opacity: 0.6 }
+    radius: 6
+
+  - id: stack-row-5-pct
+    type: text
+    z: 41
+    x: 900
+    y: 872
+    width: 50
+    height: auto
+    content: { type: plain, value: "42%" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 600
+      color: "$text_muted"
+
+  # Mermaid diagram — architecture overview
+  - id: arch-diagram-label
+    type: text
+    z: 40
+    x: 960
+    y: 760
+    width: 150
+    height: auto
+    content: { type: plain, value: "REFERENCE ARCH" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 2
+
+  - id: arch-diagram
+    type: mermaid
+    z: 41
+    x: 960
+    y: 778
+    width: 150
+    height: 120
+    content: |
+      graph TD
+        A[LLM Request] --> B{Router}
+        B --> C[GPU Cluster]
+        B --> D[Edge Node]
+        C --> E[Response]
+        D --> E
+    theme: dark
+
+# ═══════════════════════════════════════════════════════════════
+#  RIGHT COLUMN — INSIGHTS PANEL  (z: 50–59)
+#  x: 1140–1587, y: 88–1034
+# ═══════════════════════════════════════════════════════════════
+
+  - id: right-col-header
+    type: text
+    z: 50
+    x: 1160
+    y: 108
+    width: 400
+    height: auto
+    content: { type: plain, value: "REGIONAL BREAKDOWN" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$secondary"
+      letter_spacing: 3
+
+  - id: right-col-divider
+    type: rect
+    z: 50
+    x: 1160
+    y: 126
+    width: 48
+    height: 2
+    fill: { type: solid, color: "$secondary" }
+
+  # Region rows
+  - id: region-1-card
+    type: rect
+    z: 50
+    x: 1152
+    y: 140
+    width: 418
+    height: 56
+    fill: { type: solid, color: "$surface2" }
+    radius: 6
+    stroke: { color: "$border", width: 1 }
+
+  - id: region-1-flag
+    type: rect
+    z: 51
+    x: 1164
+    y: 154
+    width: 28
+    height: 20
+    fill: { type: solid, color: "$surface3" }
+    radius: 2
+
+  - id: region-1-name
+    type: text
+    z: 51
+    x: 1202
+    y: 150
+    width: 150
+    height: auto
+    content: { type: plain, value: "North America" }
+    style:
+      font_family: "$heading"
+      font_size: 12
+      font_weight: 700
+      color: "$text"
+
+  - id: region-1-pct
+    type: text
+    z: 51
+    x: 1202
+    y: 168
+    width: 150
+    height: auto
+    content: { type: plain, value: "34% of respondents" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: region-1-val
+    type: text
+    z: 51
+    x: 1480
+    y: 154
+    width: 80
+    height: auto
+    content: { type: plain, value: "91%" }
+    style:
+      font_family: "$heading"
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      text_align: right
+
+  - id: region-1-val-label
+    type: text
+    z: 51
+    x: 1460
+    y: 178
+    width: 100
+    height: auto
+    content: { type: plain, value: "GPU adoption" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: right
+
+  - id: region-2-card
+    type: rect
+    z: 50
+    x: 1152
+    y: 208
+    width: 418
+    height: 56
+    fill: { type: solid, color: "$surface2" }
+    radius: 6
+    stroke: { color: "$border", width: 1 }
+
+  - id: region-2-name
+    type: text
+    z: 51
+    x: 1202
+    y: 218
+    width: 150
+    height: auto
+    content: { type: plain, value: "Europe (EU+UK)" }
+    style:
+      font_family: "$heading"
+      font_size: 12
+      font_weight: 700
+      color: "$text"
+
+  - id: region-2-pct
+    type: text
+    z: 51
+    x: 1202
+    y: 236
+    width: 150
+    height: auto
+    content: { type: plain, value: "28% of respondents" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: region-2-val
+    type: text
+    z: 51
+    x: 1480
+    y: 222
+    width: 80
+    height: auto
+    content: { type: plain, value: "73%" }
+    style:
+      font_family: "$heading"
+      font_size: 22
+      font_weight: 800
+      color: "$secondary"
+      text_align: right
+
+  - id: region-2-val-label
+    type: text
+    z: 51
+    x: 1460
+    y: 246
+    width: 100
+    height: auto
+    content: { type: plain, value: "GPU adoption" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: right
+
+  - id: region-3-card
+    type: rect
+    z: 50
+    x: 1152
+    y: 276
+    width: 418
+    height: 56
+    fill: { type: solid, color: "$surface2" }
+    radius: 6
+    stroke: { color: "$border", width: 1 }
+
+  - id: region-3-name
+    type: text
+    z: 51
+    x: 1202
+    y: 286
+    width: 150
+    height: auto
+    content: { type: plain, value: "Asia Pacific" }
+    style:
+      font_family: "$heading"
+      font_size: 12
+      font_weight: 700
+      color: "$text"
+
+  - id: region-3-pct
+    type: text
+    z: 51
+    x: 1202
+    y: 304
+    width: 150
+    height: auto
+    content: { type: plain, value: "24% of respondents" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: region-3-val
+    type: text
+    z: 51
+    x: 1480
+    y: 290
+    width: 80
+    height: auto
+    content: { type: plain, value: "81%" }
+    style:
+      font_family: "$heading"
+      font_size: 22
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+
+  - id: region-3-val-label
+    type: text
+    z: 51
+    x: 1460
+    y: 314
+    width: 100
+    height: auto
+    content: { type: plain, value: "GPU adoption" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: right
+
+  - id: region-4-card
+    type: rect
+    z: 50
+    x: 1152
+    y: 344
+    width: 418
+    height: 56
+    fill: { type: solid, color: "$surface2" }
+    radius: 6
+    stroke: { color: "$border", width: 1 }
+
+  - id: region-4-name
+    type: text
+    z: 51
+    x: 1202
+    y: 354
+    width: 150
+    height: auto
+    content: { type: plain, value: "Rest of World" }
+    style:
+      font_family: "$heading"
+      font_size: 12
+      font_weight: 700
+      color: "$text"
+
+  - id: region-4-pct
+    type: text
+    z: 51
+    x: 1202
+    y: 372
+    width: 150
+    height: auto
+    content: { type: plain, value: "14% of respondents" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: region-4-val
+    type: text
+    z: 51
+    x: 1480
+    y: 358
+    width: 80
+    height: auto
+    content: { type: plain, value: "54%" }
+    style:
+      font_family: "$heading"
+      font_size: 22
+      font_weight: 800
+      color: "$accent2"
+      text_align: right
+
+  - id: region-4-val-label
+    type: text
+    z: 51
+    x: 1460
+    y: 382
+    width: 100
+    height: auto
+    content: { type: plain, value: "GPU adoption" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: right
+
+  # Right panel — Cost efficiency trend chart
+  - id: right-cost-divider
+    type: line
+    z: 50
+    x1: 1160
+    y1: 418
+    x2: 1562
+    y2: 418
+    stroke: { color: "$border", width: 1 }
+
+  - id: right-cost-header
+    type: text
+    z: 50
+    x: 1160
+    y: 428
+    width: 400
+    height: auto
+    content: { type: plain, value: "COST EFFICIENCY TREND" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$accent2"
+      letter_spacing: 3
+
+  - id: right-cost-sub
+    type: text
+    z: 50
+    x: 1160
+    y: 444
+    width: 400
+    height: auto
+    content: { type: plain, value: "$/million tokens (inference), rolling 12-month avg" }
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: chart-cost-trend
+    type: chart
+    z: 51
+    x: 1152
+    y: 462
+    width: 418
+    height: 200
+    spec:
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json"
+      data:
+        values:
+          - { month: "Apr 25", cost: 18.40 }
+          - { month: "May 25", cost: 17.20 }
+          - { month: "Jun 25", cost: 15.80 }
+          - { month: "Jul 25", cost: 14.60 }
+          - { month: "Aug 25", cost: 13.20 }
+          - { month: "Sep 25", cost: 11.40 }
+          - { month: "Oct 25", cost: 10.20 }
+          - { month: "Nov 25", cost: 9.60 }
+          - { month: "Dec 25", cost: 8.80 }
+          - { month: "Jan 26", cost: 7.40 }
+          - { month: "Feb 26", cost: 6.20 }
+          - { month: "Mar 26", cost: 5.10 }
+      mark:
+        type: area
+        line: { color: "#2ECC71", strokeWidth: 2 }
+        color:
+          x1: 1
+          y1: 1
+          x2: 1
+          y2: 0
+          gradient: linear
+          stops:
+            - { offset: 0, color: "transparent" }
+            - { offset: 1, color: "#2ECC71" }
+        opacity: 0.3
+      encoding:
+        x:
+          field: month
+          type: ordinal
+          axis: { labelColor: "#7A8BA8", tickColor: "#1F2E47", domainColor: "#1F2E47", labelAngle: -45 }
+        y:
+          field: cost
+          type: quantitative
+          title: "$/M tokens"
+          axis: { labelColor: "#7A8BA8", gridColor: "#1F2E47", domainColor: "#1F2E47" }
+      config:
+        background: "transparent"
+        view: { stroke: null }
+
+  # Insight cards row
+  - id: right-insight-divider
+    type: line
+    z: 50
+    x1: 1160
+    y1: 674
+    x2: 1562
+    y2: 674
+    stroke: { color: "$border", width: 1 }
+
+  - id: right-insight-header
+    type: text
+    z: 50
+    x: 1160
+    y: 684
+    width: 400
+    height: auto
+    content: { type: plain, value: "ANALYST INSIGHTS" }
+    style:
+      font_family: "$heading"
+      font_size: 9
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 3
+
+  - id: insight-1-card
+    type: rect
+    z: 50
+    x: 1152
+    y: 700
+    width: 200
+    height: 140
+    fill: { type: solid, color: "$surface2" }
+    radius: 8
+    stroke: { color: "$border", width: 1 }
+
+  - id: insight-1-icon-bg
+    type: circle
+    z: 51
+    x: 1166
+    y: 714
+    width: 32
+    height: 32
+    fill:
+      type: solid
+      color: "$primary"
+      opacity: 0.15
+
+  - id: insight-1-icon
+    type: icon
+    z: 52
+    x: 1174
+    y: 722
+    width: 16
+    height: 16
+    name: zap
+    color: "$primary"
+
+  - id: insight-1-title
+    type: text
+    z: 51
+    x: 1208
+    y: 716
+    width: 130
+    height: auto
+    content: { type: plain, value: "Spot Instance\nArbitrage" }
+    style:
+      font_family: "$heading"
+      font_size: 11
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: insight-1-body
+    type: text
+    z: 51
+    x: 1166
+    y: 754
+    width: 174
+    height: auto
+    content:
+      type: plain
+      value: "Teams using multi-cloud spot arbitrage report 58% lower inference costs vs single-provider committed contracts."
+    style:
+      font_family: "$body"
+      font_size: 8.5
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.6
+
+  - id: insight-2-card
+    type: rect
+    z: 50
+    x: 1364
+    y: 700
+    width: 206
+    height: 140
+    fill: { type: solid, color: "$surface2" }
+    radius: 8
+    stroke: { color: "$border", width: 1 }
+
+  - id: insight-2-icon-bg
+    type: circle
+    z: 51
+    x: 1378
+    y: 714
+    width: 32
+    height: 32
+    fill:
+      type: solid
+      color: "$secondary"
+      opacity: 0.15
+
+  - id: insight-2-icon
+    type: icon
+    z: 52
+    x: 1386
+    y: 722
+    width: 16
+    height: 16
+    name: brain
+    color: "$secondary"
+
+  - id: insight-2-title
+    type: text
+    z: 51
+    x: 1420
+    y: 716
+    width: 140
+    height: auto
+    content: { type: plain, value: "Fine-Tune vs\nRAG Breakeven" }
+    style:
+      font_family: "$heading"
+      font_size: 11
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: insight-2-body
+    type: text
+    z: 51
+    x: 1378
+    y: 754
+    width: 180
+    height: auto
+    content:
+      type: plain
+      value: "RAG outperforms fine-tuning for knowledge retrieval tasks below 500K query/day. Above that threshold, fine-tuned models become cost-competitive."
+    style:
+      font_family: "$body"
+      font_size: 8.5
+      font_weight: 400
+      color: "$text_muted"
+      line_height: 1.6
+
+  - id: insight-3-card
+    type: rect
+    z: 50
+    x: 1152
+    y: 852
+    width: 418
+    height: 88
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "#00D4FF", position: 0 }
+        - { color: "#7B2FFF", position: 100 }
+    radius: 8
+    opacity: 0.1
+    stroke: { color: "$primary", width: 1, opacity: 0.3 }
+
+  - id: insight-3-headline
+    type: text
+    z: 51
+    x: 1172
+    y: 866
+    width: 380
+    height: auto
+    content: { type: plain, value: "Key Takeaway for 2026" }
+    style:
+      font_family: "$heading"
+      font_size: 13
+      font_weight: 700
+      color: "$primary"
+
+  - id: insight-3-body
+    type: text
+    z: 51
+    x: 1172
+    y: 888
+    width: 380
+    height: auto
+    content:
+      type: plain
+      value: "Organizations investing in infrastructure observability see 2.4× faster incident resolution and 31% lower total AI operating cost. Observability is the highest-ROI investment in 2026."
+    style:
+      font_family: "$body"
+      font_size: 9
+      font_weight: 400
+      color: "$text"
+      line_height: 1.5
+
+# ═══════════════════════════════════════════════════════════════
+#  DECORATIVE ELEMENTS  (z: 60–69)
+# ═══════════════════════════════════════════════════════════════
+
+  # Corner bracket — top left
+  - id: deco-corner-tl-h
+    type: line
+    z: 60
+    x1: 0
+    y1: 88
+    x2: 32
+    y2: 88
+    stroke: { color: "$primary", width: 2, opacity: 0.5 }
+
+  - id: deco-corner-tl-v
+    type: line
+    z: 60
+    x1: 0
+    y1: 88
+    x2: 0
+    y2: 120
+    stroke: { color: "$primary", width: 2, opacity: 0.5 }
+
+  # Corner bracket — bottom right
+  - id: deco-corner-br-h
+    type: line
+    z: 60
+    x1: 1555
+    y1: 1034
+    x2: 1587
+    y2: 1034
+    stroke: { color: "$secondary", width: 2, opacity: 0.5 }
+
+  - id: deco-corner-br-v
+    type: line
+    z: 60
+    x1: 1587
+    y1: 1002
+    x2: 1587
+    y2: 1034
+    stroke: { color: "$secondary", width: 2, opacity: 0.5 }
+
+  # Section number badges
+  - id: badge-section-1
+    type: text
+    z: 60
+    x: 380
+    y: 108
+    width: 20
+    height: auto
+    content: { type: plain, value: "01" }
+    style:
+      font_family: "$mono"
+      font_size: 8
+      font_weight: 700
+      color: "$primary"
+      opacity: 0.4
+
+  - id: badge-section-2
+    type: text
+    z: 60
+    x: 1140
+    y: 108
+    width: 20
+    height: auto
+    content: { type: plain, value: "03" }
+    style:
+      font_family: "$mono"
+      font_size: 8
+      font_weight: 700
+      color: "$secondary"
+      opacity: 0.4
+
+# ═══════════════════════════════════════════════════════════════
+#  FOOTER CONTENT  (z: 70–79)
+# ═══════════════════════════════════════════════════════════════
+
+  - id: footer-copyright
+    type: text
+    z: 70
+    x: 24
+    y: 1052
+    width: 400
+    height: auto
+    content: { type: plain, value: "© 2026 Folio Research Institute. All rights reserved. CC BY-NC 4.0." }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+
+  - id: footer-disclaimer
+    type: text
+    z: 70
+    x: 24
+    y: 1068
+    width: 600
+    height: auto
+    content: { type: plain, value: "This report is for informational purposes only. Data represents survey-based estimates and does not constitute investment or procurement advice." }
+    style:
+      font_family: "$body"
+      font_size: 7.5
+      font_weight: 400
+      color: "$text_dim"
+      line_height: 1.4
+
+  - id: footer-page-num
+    type: text
+    z: 70
+    x: 740
+    y: 1058
+    width: 100
+    height: auto
+    content: { type: plain, value: "Page 1 of 1" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: center
+
+  - id: footer-url
+    type: text
+    z: 70
+    x: 1160
+    y: 1052
+    width: 400
+    height: auto
+    content: { type: plain, value: "folio.research/ai-infra-2026" }
+    style:
+      font_family: "$mono"
+      font_size: 10
+      font_weight: 600
+      color: "$primary"
+      text_align: right
+
+  - id: footer-social
+    type: text
+    z: 70
+    x: 1160
+    y: 1070
+    width: 400
+    height: auto
+    content: { type: plain, value: "@folioResearch · #AIInfra2026 · ISSN 2891-4472" }
+    style:
+      font_family: "$body"
+      font_size: 8
+      font_weight: 400
+      color: "$text_muted"
+      text_align: right
+
+  - id: footer-center-logo
+    type: text
+    z: 70
+    x: 694
+    y: 1078
+    width: 200
+    height: auto
+    content: { type: plain, value: "Made with Folio Design Engine" }
+    style:
+      font_family: "$body"
+      font_size: 7.5
+      font_weight: 400
+      color: "$text_dim"
+      text_align: center
