@@ -104,4 +104,30 @@ describe('PageStrip', () => {
     // Should not throw
     expect(() => strip.render()).not.toThrow();
   });
+
+  it('thumbnail uses numeric index when page has no label', () => {
+    const strip = new PageStrip(container, state);
+    const unlabeledDesign = {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'X', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      pages: [
+        { id: 'p1', layers: [] },  // no label
+      ],
+    } as unknown as DesignSpec;
+    state.set('design', unlabeledDesign);
+    strip.render();
+    const el = container.querySelector('.page-strip') as HTMLElement;
+    const thumb = el.children[0] as HTMLElement;
+    // Falls back to `${index + 1}` = "1"
+    expect(thumb.textContent).toBe('1');
+  });
+
+  it('reacts to design state change via subscribe', () => {
+    new PageStrip(container, state);
+    // Setting design triggers onStateChange → render
+    state.set('design', pagedDesign(2));
+    const el = container.querySelector('.page-strip') as HTMLElement;
+    expect(el.style.display).toBe('flex');
+  });
 });
