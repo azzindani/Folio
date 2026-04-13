@@ -142,4 +142,38 @@ describe('generateDesignAnimationCSS', () => {
     const css = generateDesignAnimationCSS(new Map());
     expect(css).toBe('');
   });
+
+  it('includes stagger CSS when sequence is present', () => {
+    const animations = new Map<string, AnimationSpec>([
+      ['lyr', {
+        enter: { type: 'fade_up', duration: 600 },
+        sequence: {
+          stagger: 100,
+          items: [
+            { ref: 'a', animate: 'fade_up' },
+            { ref: 'b', animate: 'fade_up' },
+          ],
+        },
+      }],
+    ]);
+    const css = generateDesignAnimationCSS(animations);
+    expect(css).toContain('stagger');
+  });
+});
+
+describe('generateLayerCSS — loop types shake/bounce/breathe', () => {
+  it('generates shake loop CSS', () => {
+    const css = generateLayerCSS('el', { loop: { type: 'shake', duration: 800, amplitude: 5 } });
+    expect(css).toContain('translateX');
+  });
+
+  it('generates bounce loop CSS', () => {
+    const css = generateLayerCSS('el', { loop: { type: 'bounce', duration: 1000, amplitude: 10 } });
+    expect(css).toContain('translateY');
+  });
+
+  it('generates breathe loop CSS', () => {
+    const css = generateLayerCSS('el', { loop: { type: 'breathe', duration: 2000, amplitude: 1 } });
+    expect(css).toContain('opacity');
+  });
 });

@@ -69,7 +69,7 @@ function evalShowIf(expr: string, layer: Layer): boolean {
   try {
     // Provide layer fields as local variables for the expression
     // Uses Function constructor — safe for design-time evaluation (no user input sandbox needed)
-    const fn = new Function('layer', `"use strict"; with(layer) { return !!(${expr}); }`);
+    const fn = new Function('layer', `with(layer) { return !!(${expr}); }`);
     return fn(layer) as boolean;
   } catch {
     return true; // default to visible on error
