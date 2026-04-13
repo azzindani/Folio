@@ -14,7 +14,8 @@ export type LayerType =
   | 'chart'
   | 'code'
   | 'math'
-  | 'group';
+  | 'group'
+  | 'qrcode';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -305,6 +306,14 @@ export interface GroupLayer extends BaseLayer {
   layers: Layer[];
 }
 
+export interface QRCodeLayer extends BaseLayer {
+  type: 'qrcode';
+  value: string;
+  error_correction?: 'L' | 'M' | 'Q' | 'H';
+  fill?: string;          // module color (default: '#000000')
+  background?: string;   // background color (default: 'transparent')
+}
+
 export type Layer =
   | RectLayer
   | CircleLayer
@@ -320,7 +329,8 @@ export type Layer =
   | ChartLayer
   | CodeLayer
   | MathLayer
-  | GroupLayer;
+  | GroupLayer
+  | QRCodeLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {
