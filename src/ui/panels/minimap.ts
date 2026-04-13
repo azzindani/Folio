@@ -99,7 +99,7 @@ export class MinimapManager {
     const { zoom = 1, panX = 0, panY = 0, design } = this.state.get();
     if (!design || !this.mapW) return;
 
-    const { width, height } = design.document;
+    const { width } = design.document;
     const scale = this.mapW / width;
 
     // Canvas area (approximate; no direct access to container size here)
