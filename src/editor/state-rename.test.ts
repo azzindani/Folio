@@ -98,4 +98,29 @@ describe('StateManager.renameLayer — carousel', () => {
     const layers = state.getCurrentLayers();
     expect(layers.find(l => l.id === 'background')).toBeDefined();
   });
+
+  it('leaves other pages unchanged in multi-page design', () => {
+    // Set design with 2 pages — cover the "return page" branch for non-current pages
+    state.set('design', {
+      _protocol: 'design/v1',
+      _mode: 'complete',
+      meta: { id: 'test', name: 'Test', type: 'carousel', created: '2026-01-01', modified: '2026-01-01', generator: 'human' },
+      document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+      pages: [
+        { id: 'p1', label: 'Page 1', layers: [
+          { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#000' } },
+        ] },
+        { id: 'p2', label: 'Page 2', layers: [
+          { id: 'other', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080 },
+        ] },
+      ],
+    } as unknown as DesignSpec);
+    state.set('currentPageIndex', 0, false);
+    state.renameLayer('bg', 'background');
+    // Page 1: id renamed
+    const pages = state.get().design?.pages;
+    expect(pages?.[0].layers?.find(l => l.id === 'background')).toBeDefined();
+    // Page 2: untouched
+    expect(pages?.[1].layers?.find(l => l.id === 'other')).toBeDefined();
+  });
 });

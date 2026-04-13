@@ -7,6 +7,7 @@ import {
   renderRect, renderCircle, renderPath, renderPolygon,
   renderLine, renderText, renderImage, renderIcon,
   renderMermaid, renderChart, renderCode, renderMath, renderGroup,
+  renderQRCode, renderAutoLayout,
 } from './layer-renderers';
 
 export interface RenderOptions {
@@ -37,6 +38,18 @@ export function invalidateCache(layerId?: string): void {
 let activeOptions: RenderOptions = {};
 
 export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
+  // Conditional visibility: evaluate show_if expression
+  if (layer.show_if !== undefined) {
+    const visible = evalShowIf(layer.show_if, layer);
+    if (!visible) {
+      const ns = 'http://www.w3.org/2000/svg';
+      const placeholder = document.createElementNS(ns, 'g') as SVGElement;
+      placeholder.setAttribute('data-layer-id', layer.id);
+      placeholder.setAttribute('data-hidden', 'show_if');
+      return placeholder;
+    }
+  }
+
   // Check render cache for dirty tracking
   const layerHash = hashLayer(layer);
   const cached = renderCache.get(layer.id);
@@ -50,6 +63,17 @@ export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
   renderCache.set(layer.id, { hash: layerHash, svg: el.cloneNode(true) as SVGElement });
 
   return el;
+}
+
+function evalShowIf(expr: string, layer: Layer): boolean {
+  try {
+    // Provide layer fields as local variables for the expression
+    // Uses Function constructor — safe for design-time evaluation (no user input sandbox needed)
+    const fn = new Function('layer', `with(layer) { return !!(${expr}); }`);
+    return fn(layer) as boolean;
+  } catch {
+    return true; // default to visible on error
+  }
 }
 
 function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
@@ -69,6 +93,8 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'group': return renderGroup(layer, svg, renderLayer);
     case 'component': return renderComponentLayer(layer as ComponentLayer, svg);
     case 'component_list': return renderComponentListLayer(layer as ComponentListLayer, svg);
+    case 'qrcode': return renderQRCode(layer, svg);
+    case 'auto_layout': return renderAutoLayout(layer, svg, renderLayer);
     default: return renderPlaceholder(layer, svg);
   }
 }
@@ -81,7 +107,7 @@ function renderComponentLayer(layer: ComponentLayer, svg: SVGSVGElement): SVGEle
     return renderPlaceholder(layer, svg);
   }
 
-  const resolvedLayers = resolveComponent(spec, layer.slots ?? {}, layer.overrides ?? {});
+  const resolvedLayers = resolveComponent(spec, layer.slots ?? {}, layer.overrides ?? {}, layer.variant);
   const g = createSVGElement('g');
   g.setAttribute('data-layer-id', layer.id);
   g.setAttribute('data-component-ref', layer.ref);

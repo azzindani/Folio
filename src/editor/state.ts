@@ -1,6 +1,8 @@
 import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
 
-export type ToolId = 'select' | 'text' | 'rect' | 'circle' | 'line';
+export type ToolId =
+  | 'select' | 'text' | 'rect' | 'circle' | 'line'
+  | 'polygon' | 'star' | 'arrow' | 'pen' | 'image' | 'eyedropper' | 'hand';
 
 export interface EditorState {
   design: DesignSpec | null;
@@ -12,6 +14,7 @@ export interface EditorState {
   mode: 'visual' | 'payload';
   currentPageIndex: number;
   gridVisible: boolean;
+  snapEnabled: boolean;
   yamlSource: string;
   dirty: boolean;
   activeTool: ToolId;
@@ -40,6 +43,7 @@ export class StateManager {
       mode: 'visual',
       currentPageIndex: 0,
       gridVisible: false,
+      snapEnabled: true,
       yamlSource: '',
       dirty: false,
       activeTool: 'select',
