@@ -770,6 +770,24 @@ html, body {
   z-index: 89;
 }
 
+/* ── COMPONENT LIBRARY ────────────────────────────────────── */
+.comp-panel { display:flex;flex-direction:column;height:100% }
+.comp-toolbar { display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--color-border) }
+.comp-toolbar-title { font-size:12px;font-weight:600;color:var(--color-text-muted) }
+.comp-save-btn { font-size:11px;padding:2px 6px }
+.comp-empty { padding:16px 8px;font-size:11px;color:var(--color-text-muted);text-align:center;line-height:1.6 }
+.comp-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px }
+.comp-card { border:1px solid var(--color-border);border-radius:var(--radius-sm);overflow:hidden;cursor:default;background:var(--color-surface-2) }
+.comp-card:hover { border-color:var(--color-primary) }
+.comp-thumb { width:100%;aspect-ratio:1;overflow:hidden;background:var(--color-surface);display:flex;align-items:center;justify-content:center }
+.comp-thumb svg { max-width:100%;max-height:100% }
+.comp-thumb-empty { font-size:28px;color:var(--color-text-muted) }
+.comp-card-name { font-size:10px;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--color-text) }
+.comp-card-actions { display:flex;gap:2px;padding:2px 4px 4px;justify-content:space-between }
+.comp-insert { flex:1;font-size:10px;padding:2px 4px;border:none;background:var(--color-primary);color:#fff;border-radius:var(--radius-sm);cursor:pointer }
+.comp-delete { font-size:12px;padding:2px 5px;border:none;background:transparent;color:var(--color-text-muted);cursor:pointer;border-radius:var(--radius-sm) }
+.comp-delete:hover { background:var(--color-danger,#e94560);color:#fff }
+
 /* ── INLINE TEXT EDITOR ───────────────────────────────────── */
 .inline-text-editor {
   position: absolute;

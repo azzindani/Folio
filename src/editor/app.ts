@@ -28,6 +28,7 @@ import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
 import { AutoSaveManager } from './auto-save';
 import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
+import { ComponentLibraryManager } from '../ui/panels/component-library';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -208,6 +209,7 @@ export class EditorApp {
   private resizers: PanelResizer[] = [];
   private autoSave!: AutoSaveManager;
   private colorPalette!: ColorPaletteManager;
+  private componentLibrary!: ComponentLibraryManager;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -316,6 +318,12 @@ export class EditorApp {
       },
     );
 
+    // Component library panel
+    const compContainer = this.container.querySelector<HTMLElement>('.comp-library-content');
+    if (compContainer) {
+      this.componentLibrary = new ComponentLibraryManager(compContainer, this.state);
+    }
+
     // Page strip lives in the status bar (compact mode)
     this.pageStrip = new PageStrip(
       this.container.querySelector('.status-pages')!,
@@ -389,11 +397,7 @@ export class EditorApp {
         </div>
 
         <div class="left-panel-view" data-panel="components">
-          <div class="panel-header">Components</div>
-          <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">
-            No components in this project yet.<br>
-            Save a layer group as a component to reuse it.
-          </div>
+          <div class="comp-library-content" style="height:100%;overflow-y:auto"></div>
         </div>
 
         <div class="left-panel-view" data-panel="icons">
