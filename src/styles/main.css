@@ -386,7 +386,7 @@ html, body {
 }
 
 /* ── CANVAS AREA ──────────────────────────────────────────── */
-.canvas-area {
+.canvas-section {
   grid-area: canvas;
   position: relative;
   overflow: hidden;

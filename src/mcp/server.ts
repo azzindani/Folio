@@ -7,6 +7,7 @@ import {
   listThemes, exportDesignTool,
   batchCreate, duplicateDesign, resumeDesign,
   saveAsComponent, applyTheme,
+  exportTemplateTool, injectTemplateTool, listTemplateSlots,
 } from './tool-handlers';
 import type { MCPRequest, MCPResponse, ToolCallResult } from './types';
 
@@ -27,6 +28,9 @@ const TOOL_HANDLERS: Record<string, (args: Record<string, unknown>) => ToolCallR
   resume_design: (a) => resumeDesign(a as Parameters<typeof resumeDesign>[0]),
   save_as_component: (a) => saveAsComponent(a as Parameters<typeof saveAsComponent>[0]),
   apply_theme: (a) => applyTheme(a as Parameters<typeof applyTheme>[0]),
+  export_template: (a) => exportTemplateTool(a as Parameters<typeof exportTemplateTool>[0]),
+  inject_template: (a) => injectTemplateTool(a as Parameters<typeof injectTemplateTool>[0]),
+  list_template_slots: (a) => listTemplateSlots(a as Parameters<typeof listTemplateSlots>[0]),
 };
 
 function sendResponse(response: MCPResponse): void {

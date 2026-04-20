@@ -2,10 +2,10 @@ import type {
   Layer, RectLayer, CircleLayer, PathLayer, PolygonLayer,
   LineLayer, TextLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
-  QRCodeLayer, AutoLayoutLayer, Radius,
+  QRCodeLayer, AutoLayoutLayer, Radius, ColorOrGradient,
 } from '../schema/types';
-import { createSVGElement } from './svg-utils';
-import { applyFill } from './fill-renderer';
+import { createSVGElement, getOrCreateDefs } from './svg-utils';
+import { applyFill, resolveColorOrGradient } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS } from './lucide-icons';
 import { encodeQR } from './qr/encode';
@@ -28,8 +28,11 @@ function applyCommonAttributes(
   }
 }
 
-function applyStroke(el: SVGElement, stroke: { color: string; width: number; dash?: number[]; linecap?: string; linejoin?: string }): void {
-  el.setAttribute('stroke', stroke.color);
+function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; width: number; dash?: number[]; linecap?: string; linejoin?: string }, svg?: SVGSVGElement): void {
+  const strokeColor = typeof stroke.color === 'string'
+    ? stroke.color
+    : resolveColorOrGradient(stroke.color, getOrCreateDefs(svg ?? el.ownerSVGElement as SVGSVGElement));
+  el.setAttribute('stroke', strokeColor);
   el.setAttribute('stroke-width', String(stroke.width));
   if (stroke.dash) {
     el.setAttribute('stroke-dasharray', stroke.dash.join(' '));
@@ -85,7 +88,7 @@ export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
   }
 
   if (layer.stroke) {
-    applyStroke(el, layer.stroke);
+    applyStroke(el, layer.stroke, svg);
   }
 
   applyCommonAttributes(el, layer);
@@ -116,7 +119,7 @@ export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke);
+  if (layer.stroke) applyStroke(el, layer.stroke, svg);
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
@@ -137,7 +140,7 @@ export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke);
+  if (layer.stroke) applyStroke(el, layer.stroke, svg);
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
@@ -175,7 +178,7 @@ export function renderPolygon(layer: PolygonLayer, svg: SVGSVGElement): SVGEleme
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke);
+  if (layer.stroke) applyStroke(el, layer.stroke, svg);
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
@@ -193,7 +196,7 @@ export function renderLine(layer: LineLayer, svg: SVGSVGElement): SVGElement {
 
   el.setAttribute('fill', 'none');
   if (layer.stroke) {
-    applyStroke(el, layer.stroke);
+    applyStroke(el, layer.stroke, svg);
   } else {
     el.setAttribute('stroke', '#000');
     el.setAttribute('stroke-width', '1');
@@ -224,7 +227,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     div.style.fontFamily = style.font_family ?? 'Inter, sans-serif';
     div.style.fontSize = `${style.font_size ?? 16}px`;
     div.style.fontWeight = String(style.font_weight ?? 400);
-    div.style.color = style.color ?? '#000';
+    div.style.color = typeof style.color === 'string' ? style.color : '#000';
     div.style.lineHeight = String(style.line_height ?? 1.5);
 
     // Lazy load marked.js and parse markdown (set innerHTML only once, after parse)
@@ -267,7 +270,10 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
     textEl.setAttribute('font-size', String(style.font_size ?? 16));
     textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
-    textEl.setAttribute('fill', style.color ?? '#000');
+    const textColor = style.color
+      ? resolveColorOrGradient(style.color, getOrCreateDefs(svg))
+      : '#000';
+    textEl.setAttribute('fill', textColor);
 
     if (style.line_height) {
       textEl.setAttribute('line-height', String(style.line_height));
@@ -667,8 +673,7 @@ export function renderAutoLayout(
     if (fillResult.opacity !== undefined) bg.setAttribute('opacity', String(fillResult.opacity));
     fillResult.extraElements?.forEach(el => g.appendChild(el));
     if (layer.stroke) {
-      bg.setAttribute('stroke', layer.stroke.color);
-      bg.setAttribute('stroke-width', String(layer.stroke.width));
+      applyStroke(bg, layer.stroke, svg);
     }
     g.appendChild(bg);
   }

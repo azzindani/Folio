@@ -157,7 +157,8 @@ export class PropertiesPanelManager {
 
   private renderStrokeFields(layer: Layer & { stroke?: import('../../schema/types').Stroke }): string {
     const s = layer.stroke;
-    const color = s?.color ?? '#000000';
+    const colorVal = s?.color ?? '#000000';
+    const color = typeof colorVal === 'string' ? colorVal : '#000000';
     const width = s?.width ?? 1;
     const safe = color.startsWith('#') ? color : '#000000';
     return `
@@ -393,7 +394,8 @@ export class PropertiesPanelManager {
       html += this.renderNumberField('style.font_size', 'Font Size', layer.style.font_size ?? 16, 1, 500, 1);
       html += this.renderNumberField('style.font_weight', 'Weight', layer.style.font_weight ?? 400, 100, 900, 100);
       if (layer.style.color) {
-        html += this.renderColorField('style.color', 'Color', layer.style.color);
+        const styleColor = typeof layer.style.color === 'string' ? layer.style.color : '#000000';
+        html += this.renderColorField('style.color', 'Color', styleColor);
       }
     }
     return html;

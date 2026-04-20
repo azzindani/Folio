@@ -41,7 +41,8 @@ function contrastRatio(hex1: string, hex2: string): number | null {
 
 // ── Rule checkers ────────────────────────────────────────────
 function checkTextContrast(layer: TextLayer, issues: A11yIssue[]): void {
-  const color   = layer.style?.color;
+  const rawColor = layer.style?.color;
+  const color = typeof rawColor === 'string' ? rawColor : undefined;
   const bgColor = (layer.meta?.background_color as string | undefined);
   if (!color || !bgColor) return;
 
