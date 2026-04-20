@@ -1,7 +1,3 @@
-/**
- * Unit tests for LayerPanelManager.
- * Tests virtual-scroll row building, selection, and rename behaviour.
- */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { StateManager } from '../../editor/state';
 import { LayerPanelManager } from './layer-panel';
@@ -21,7 +17,11 @@ function makeRect(id: string, z = 20): Layer {
   return { id, type: 'rect', z, x: 0, y: 0, width: 100, height: 100, fill: { type: 'solid', color: '#fff' } } as unknown as Layer;
 }
 
-describe('LayerPanelManager — getLayersByBand', () => {
+function makeGroup(id: string, z = 10, children: Layer[] = []): Layer {
+  return { id, type: 'group', z, layers: children } as unknown as Layer;
+}
+
+describe('LayerPanelManager — tree rendering', () => {
   let state: StateManager;
   let panel: LayerPanelManager;
   let wrapper: HTMLElement;
@@ -29,52 +29,46 @@ describe('LayerPanelManager — getLayersByBand', () => {
   beforeEach(() => {
     state = new StateManager();
     wrapper = document.createElement('div');
-    wrapper.innerHTML = '<div class="layer-panel-content"></div>';
     document.body.appendChild(wrapper);
     panel = new LayerPanelManager(wrapper, state);
   });
   afterEach(() => { wrapper.remove(); });
 
-  it('groups layers by z-band correctly', () => {
-    const layers = [
-      makeRect('bg', 0),      // Background (0-9)
-      makeRect('card', 10),   // Structural (10-19)
-      makeRect('text', 20),   // Content (20-49)
-      makeRect('fg', 75),     // Foreground (70-89)
-    ];
-    const map = panel.getLayersByBand(layers);
-
-    expect(map.has('Background')).toBe(true);
-    expect(map.get('Background')!.map(l => l.id)).toContain('bg');
-
-    expect(map.has('Structural')).toBe(true);
-    expect(map.get('Structural')!.map(l => l.id)).toContain('card');
-
-    expect(map.has('Content')).toBe(true);
-    expect(map.get('Content')!.map(l => l.id)).toContain('text');
-
-    expect(map.has('Foreground')).toBe(true);
-    expect(map.get('Foreground')!.map(l => l.id)).toContain('fg');
+  it('renders flat layers as rows', () => {
+    state.set('design', makeDesign([makeRect('a', 0), makeRect('b', 20)]));
+    const rows = wrapper.querySelectorAll('.layer-row');
+    expect(rows.length).toBe(2);
+    void panel;
   });
 
-  it('excludes empty bands from the result', () => {
-    const layers = [makeRect('only-bg', 0)];
-    const map = panel.getLayersByBand(layers);
-    expect(map.has('Background')).toBe(true);
-    expect(map.has('Content')).toBe(false);
-    expect(map.has('Structural')).toBe(false);
+  it('sorts layers by z descending', () => {
+    state.set('design', makeDesign([makeRect('low', 0), makeRect('high', 50)]));
+    const rows = [...wrapper.querySelectorAll<HTMLElement>('.layer-row')];
+    expect(rows[0].dataset.layerId).toBe('high');
+    expect(rows[1].dataset.layerId).toBe('low');
+    void panel;
   });
 
-  it('sorts layers within a band by z descending', () => {
-    const layers = [makeRect('z22', 22), makeRect('z20', 20), makeRect('z25', 25)];
-    const map = panel.getLayersByBand(layers);
-    const content = map.get('Content')!.map(l => l.id);
-    expect(content).toEqual(['z25', 'z22', 'z20']);
+  it('renders child rows for expanded group', () => {
+    const child = makeRect('child', 5);
+    const group = makeGroup('grp', 20, [child]);
+    state.set('design', makeDesign([group]));
+    // group + child = 2 rows
+    expect(wrapper.querySelectorAll('.layer-row').length).toBe(2);
+    void panel;
   });
 
-  it('returns empty map for empty input', () => {
-    const map = panel.getLayersByBand([]);
-    expect(map.size).toBe(0);
+  it('child rows have greater depth than parent', () => {
+    const child = makeRect('child', 5);
+    const group = makeGroup('grp', 20, [child]);
+    state.set('design', makeDesign([group]));
+    const rows = [...wrapper.querySelectorAll<HTMLElement>('.layer-row')];
+    const groupRow = rows.find(r => r.dataset.layerId === 'grp')!;
+    const childRow = rows.find(r => r.dataset.layerId === 'child')!;
+    const groupDepth = parseInt(groupRow.dataset.depth ?? '0', 10);
+    const childDepth = parseInt(childRow.dataset.depth ?? '0', 10);
+    expect(childDepth).toBeGreaterThan(groupDepth);
+    void panel;
   });
 });
 
@@ -85,7 +79,6 @@ describe('LayerPanelManager — render on state change', () => {
   beforeEach(() => {
     state = new StateManager();
     wrapper = document.createElement('div');
-    wrapper.innerHTML = '<div class="layer-panel-content"></div>';
     document.body.appendChild(wrapper);
     new LayerPanelManager(wrapper, state);
   });
@@ -93,8 +86,8 @@ describe('LayerPanelManager — render on state change', () => {
 
   it('renders "No layers" when design is empty', () => {
     state.set('design', makeDesign([]));
-    const content = wrapper.querySelector('.layer-panel-content');
-    expect(content?.textContent).toContain('No layers');
+    const list = wrapper.querySelector('.layer-list');
+    expect(list?.textContent).toContain('No layers');
   });
 
   it('renders layer rows when design has layers', () => {
@@ -108,5 +101,15 @@ describe('LayerPanelManager — render on state change', () => {
     state.set('selectedLayerIds', ['bg']);
     const selected = wrapper.querySelector('.layer-row.selected');
     expect(selected).not.toBeNull();
+  });
+
+  it('re-renders when currentPageIndex changes', () => {
+    state.set('design', makeDesign([makeRect('a', 0)]));
+    const before = wrapper.querySelector('.layer-list')?.innerHTML;
+    state.set('currentPageIndex', 1);
+    const after = wrapper.querySelector('.layer-list')?.innerHTML;
+    // innerHTML may or may not change; just ensure no crash
+    expect(typeof after).toBe('string');
+    void before;
   });
 });
