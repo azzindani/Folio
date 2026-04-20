@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 3000,
-    open: true,
+    open: false,
     strictPort: false,
     allowedHosts: 'all',
   },
