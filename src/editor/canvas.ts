@@ -477,6 +477,13 @@ export class CanvasManager {
           ...base, type: 'polygon', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
           sides: 6, fill: { type: 'solid', color: '#6c5ce7' },
         } as Layer;
+        case 'frame': return {
+          ...base, type: 'auto_layout', x: canvasX - 100, y: canvasY - 80, width: 200, height: 160,
+          direction: 'row', gap: 12, padding: 16,
+          align_items: 'center', justify_content: 'start',
+          fill: { type: 'solid', color: '#1e1e2e' },
+          layers: [],
+        } as unknown as Layer;
         default: return {
           ...base, type: 'rect', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
           fill: { type: 'solid', color: '#6c5ce7' },

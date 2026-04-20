@@ -25,7 +25,8 @@ const TOOLS: ToolDef[] = [
   { id: 'pen',        icon: '&#x270F;', label: 'Pen',         key: 'P', group: 'draw' },
 
   // Content
-  { id: 'text',       icon: 'T',        label: 'Text',        key: 'T', group: 'content' },
+  { id: 'frame',      icon: '&#x29C9;', label: 'Frame',       key: 'F', group: 'content' },
+  { id: 'text',       icon: 'T',        label: 'Text',        key: 'T' },
   { id: 'image',      icon: '&#x1F5BC;', label: 'Image',     key: '' },
 
   // Color

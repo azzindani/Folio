@@ -770,6 +770,18 @@ html, body {
   z-index: 89;
 }
 
+/* ── ANIMATION PANEL ──────────────────────────────────────── */
+.anim-panel { padding:8px;display:flex;flex-direction:column;gap:12px }
+.anim-section { display:flex;flex-direction:column;gap:6px }
+.anim-section-title { font-size:11px;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between }
+.anim-select, .anim-num { background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);color:var(--color-text);font-size:11px;padding:3px 5px;width:100% }
+.anim-label { font-size:10px;color:var(--color-text-muted);margin-bottom:2px }
+.anim-kf-row { display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--color-border);font-size:11px }
+.anim-kf-t { font-family:var(--font-mono);color:var(--color-primary);min-width:48px }
+.anim-kf-props { flex:1;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+.anim-kf-del { border:none;background:transparent;color:var(--color-text-muted);cursor:pointer;font-size:14px;padding:0 2px }
+.anim-kf-del:hover { color:var(--color-danger,#e94560) }
+
 /* ── COMPONENT LIBRARY ────────────────────────────────────── */
 .comp-panel { display:flex;flex-direction:column;height:100% }
 .comp-toolbar { display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--color-border) }

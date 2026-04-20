@@ -65,10 +65,11 @@ export class PropertiesPanelManager {
     // Appearance section
     let appearance = '';
     switch (layer.type) {
-      case 'rect':   appearance = this.renderRectFields(layer); break;
-      case 'circle': appearance = this.renderCircleFields(layer); break;
-      case 'text':   appearance = this.renderTextFields(layer); break;
-      case 'line':   appearance = this.renderLineFields(layer); break;
+      case 'rect':        appearance = this.renderRectFields(layer); break;
+      case 'circle':      appearance = this.renderCircleFields(layer); break;
+      case 'text':        appearance = this.renderTextFields(layer); break;
+      case 'line':        appearance = this.renderLineFields(layer); break;
+      case 'auto_layout': appearance = this.renderAutoLayoutFields(layer as import('../../schema/types').AutoLayoutLayer); break;
     }
     if (appearance) html += this.section('Appearance', appearance);
 
@@ -367,6 +368,45 @@ export class PropertiesPanelManager {
       </div>`;
   }
 
+  private renderAutoLayoutFields(layer: import('../../schema/types').AutoLayoutLayer): string {
+    const dir = layer.direction ?? 'row';
+    const gap = layer.gap ?? 0;
+    const pad = typeof layer.padding === 'number' ? layer.padding : (layer.padding?.top ?? 0);
+    const align = layer.align_items ?? 'start';
+    const justify = layer.justify_content ?? 'start';
+
+    const dirOpts = ['row', 'column'].map(v =>
+      `<option value="${v}"${v === dir ? ' selected' : ''}>${v}</option>`).join('');
+    const alignOpts = ['start', 'center', 'end', 'stretch'].map(v =>
+      `<option value="${v}"${v === align ? ' selected' : ''}>${v}</option>`).join('');
+    const justifyOpts = ['start', 'center', 'end', 'space-between', 'space-around'].map(v =>
+      `<option value="${v}"${v === justify ? ' selected' : ''}>${v}</option>`).join('');
+
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Direction</div>
+          <select class="prop-select" data-prop="direction" style="width:100%">${dirOpts}</select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Wrap</div>
+          <input type="checkbox" data-prop="wrap" ${layer.wrap ? 'checked' : ''} style="margin-top:8px">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        ${this.renderNumberInput('gap', 'Gap', gap)}
+        ${this.renderNumberInput('al-padding', 'Padding', pad)}
+      </div>
+      <div style="margin-top:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Align items</div>
+        <select class="prop-select" data-prop="align_items" style="width:100%">${alignOpts}</select>
+      </div>
+      <div style="margin-top:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Justify content</div>
+        <select class="prop-select" data-prop="justify_content" style="width:100%">${justifyOpts}</select>
+      </div>`;
+  }
+
   private renderNumberInput(prop: string, label: string, value: number): string {
     return `
       <div>
@@ -503,6 +543,28 @@ export class PropertiesPanelManager {
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
     });
+
+    // Auto-layout special inputs
+    const wrapCb = this.content.querySelector<HTMLInputElement>('input[data-prop="wrap"]');
+    if (wrapCb) {
+      wrapCb.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, 'wrap', wrapCb.checked);
+      });
+    }
+
+    const padInput = this.content.querySelector<HTMLInputElement>('input[data-prop="al-padding"]');
+    if (padInput) {
+      padInput.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, 'padding', parseFloat(padInput.value));
+      });
+    }
+
+    const gapInput = this.content.querySelector<HTMLInputElement>('input[data-prop="gap"]');
+    if (gapInput) {
+      gapInput.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, 'gap', parseFloat(gapInput.value));
+      });
+    }
   }
 
   private applyPropertyChange(layerId: string, path: string, value: unknown): void {
