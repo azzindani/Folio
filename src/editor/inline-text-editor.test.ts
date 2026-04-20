@@ -6,12 +6,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StateManager } from './state';
 import type { Guide } from './state';
 import { CanvasManager } from './canvas';
-import type { DesignSpec } from '../schema/types';
+import type { DesignSpec, Layer } from '../schema/types';
 
 // jsdom stubs for pointer capture
 HTMLElement.prototype.setPointerCapture = vi.fn();
 HTMLElement.prototype.releasePointerCapture = vi.fn();
-SVGElement.prototype.getBBox = vi.fn(() => ({ x: 10, y: 20, width: 200, height: 40 })) as unknown as () => SVGRect;
+(SVGElement.prototype as unknown as { getBBox: () => SVGRect }).getBBox = vi.fn(() => ({ x: 10, y: 20, width: 200, height: 40, toJSON: () => ({}) } as SVGRect));
 
 function makeDesign(layers: DesignSpec['layers']): DesignSpec {
   return {
@@ -86,7 +86,7 @@ describe('Inline text editor', () => {
 
   it('double-clicking a non-text layer does not open editor', () => {
     state.set('design', makeDesign([
-      { id: 'r1', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 100, fill: { type: 'solid', color: '#fff' } } as unknown as DesignSpec['layers'][0],
+      { id: 'r1', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 100, fill: { type: 'solid', color: '#fff' } } as unknown as Layer,
     ]));
     const svgEl = container.querySelector('[data-layer-id="r1"]');
     if (svgEl) svgEl.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
@@ -98,7 +98,7 @@ describe('Inline text editor', () => {
       { id: 'txt1', type: 'text', z: 20, x: 10, y: 20, width: 200, height: 40,
         content: { type: 'plain', value: 'Hello World' },
         style: { font_family: 'Inter', font_size: 24, font_weight: 400, color: '#fff' },
-      } as unknown as DesignSpec['layers'][0],
+      } as unknown as Layer,
     ]));
 
     const layerEl = container.querySelector('[data-layer-id="txt1"]');
@@ -115,7 +115,7 @@ describe('Inline text editor', () => {
       { id: 'txt2', type: 'text', z: 20, x: 0, y: 0, width: 150, height: 30,
         content: { type: 'plain', value: 'Original' },
         style: { font_size: 18 },
-      } as unknown as DesignSpec['layers'][0],
+      } as unknown as Layer,
     ]));
 
     container.querySelector('[data-layer-id="txt2"]')!
@@ -136,7 +136,7 @@ describe('Inline text editor', () => {
       { id: 'txt3', type: 'text', z: 20, x: 0, y: 0, width: 150, height: 30,
         content: { type: 'plain', value: 'Old text' },
         style: { font_size: 18 },
-      } as unknown as DesignSpec['layers'][0],
+      } as unknown as Layer,
     ]));
 
     container.querySelector('[data-layer-id="txt3"]')!
