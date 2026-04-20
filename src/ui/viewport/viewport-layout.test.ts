@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { ViewportLayoutManager, type ViewportMode } from './viewport-layout';
 
 function makeManager(): { mgr: ViewportLayoutManager; container: HTMLElement } {

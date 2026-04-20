@@ -305,19 +305,25 @@ export class CanvasManager {
       box.style.height = `${bbox.height}px`;
       this.selectionOverlay.appendChild(box);
 
-      // Resize handles (corners)
-      const positions = [
-        { cls: 'nw', x: bbox.x - 4, y: bbox.y - 4, cursor: 'nw-resize' },
-        { cls: 'ne', x: bbox.x + bbox.width - 4, y: bbox.y - 4, cursor: 'ne-resize' },
-        { cls: 'sw', x: bbox.x - 4, y: bbox.y + bbox.height - 4, cursor: 'sw-resize' },
-        { cls: 'se', x: bbox.x + bbox.width - 4, y: bbox.y + bbox.height - 4, cursor: 'se-resize' },
+      // 8 resize handles: 4 corners + 4 edge midpoints
+      const cx = bbox.x + bbox.width / 2;
+      const cy = bbox.y + bbox.height / 2;
+      const handles8 = [
+        { cls: 'nw', x: bbox.x,  y: bbox.y,  cursor: 'nw-resize' },
+        { cls: 'n',  x: cx,      y: bbox.y,  cursor: 'n-resize' },
+        { cls: 'ne', x: bbox.x + bbox.width, y: bbox.y,  cursor: 'ne-resize' },
+        { cls: 'e',  x: bbox.x + bbox.width, y: cy,      cursor: 'e-resize' },
+        { cls: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'se-resize' },
+        { cls: 's',  x: cx,      y: bbox.y + bbox.height, cursor: 's-resize' },
+        { cls: 'sw', x: bbox.x,  y: bbox.y + bbox.height, cursor: 'sw-resize' },
+        { cls: 'w',  x: bbox.x,  y: cy,      cursor: 'w-resize' },
       ];
 
-      for (const pos of positions) {
+      for (const pos of handles8) {
         const handle = document.createElement('div');
         handle.className = `selection-handle handle-${pos.cls}`;
-        handle.style.left = `${pos.x}px`;
-        handle.style.top = `${pos.y}px`;
+        handle.style.left = `${pos.x - 4}px`;
+        handle.style.top  = `${pos.y - 4}px`;
         handle.style.cursor = pos.cursor;
         handle.style.pointerEvents = 'auto';
         handle.dataset.handle = pos.cls;
@@ -325,18 +331,21 @@ export class CanvasManager {
         this.selectionOverlay.appendChild(handle);
       }
 
-      // Rotate handle — centered above the top edge
+      // Rotation handle — circular, above center-top, shows angle on hover
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
-      rotateHandle.style.left = `${bbox.x + bbox.width / 2 - 4}px`;
-      rotateHandle.style.top = `${bbox.y - 28}px`;
-      rotateHandle.style.cursor = 'crosshair';
+      rotateHandle.style.left = `${cx - 6}px`;
+      rotateHandle.style.top  = `${bbox.y - 32}px`;
+      rotateHandle.style.cursor = 'grab';
       rotateHandle.style.pointerEvents = 'auto';
+      rotateHandle.style.width = '12px';
+      rotateHandle.style.height = '12px';
       rotateHandle.style.borderRadius = '50%';
       rotateHandle.style.background = 'var(--color-primary)';
+      rotateHandle.style.border = '2px solid #fff';
       rotateHandle.dataset.handle = 'rotate';
       rotateHandle.dataset.layerId = id;
-      rotateHandle.title = 'Rotate';
+      rotateHandle.title = 'Rotate (Shift = 15° snap)';
       rotateHandle.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.startRotate(e, id, bbox);
@@ -353,21 +362,36 @@ export class CanvasManager {
     const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
     if (!layer || layer.locked) return;
 
-    // Center of the bounding box in viewport coordinates
     const zoom = this.state.get().zoom;
-    const vpRect = this.viewport.getBoundingClientRect();
-    const cx = vpRect.left + (bbox.x + bbox.width / 2) * zoom;
-    const cy = vpRect.top + (bbox.y + bbox.height / 2) * zoom;
+    const panX = this.state.get().panX;
+    const panY = this.state.get().panY;
+    const vpRect = this.container.getBoundingClientRect();
+
+    // Center in screen coordinates (accounting for ruler offset)
+    const cx = vpRect.left + RULER_SIZE + ((bbox.x + bbox.width / 2) * zoom + panX);
+    const cy = vpRect.top  + RULER_SIZE + ((bbox.y + bbox.height / 2) * zoom + panY);
+
+    // Angle tooltip
+    const tip = document.createElement('div');
+    tip.className = 'rotation-tip';
+    tip.style.cssText = `position:fixed;background:rgba(0,0,0,.75);color:#fff;font-size:11px;
+      padding:3px 8px;border-radius:4px;pointer-events:none;z-index:500;font-family:monospace`;
+    document.body.appendChild(tip);
 
     const onMove = (me: PointerEvent) => {
       const dx = me.clientX - cx;
       const dy = me.clientY - cy;
-      const angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
-      const normalized = ((angle % 360) + 360) % 360;
+      let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+      if (me.shiftKey) angle = Math.round(angle / 15) * 15;
+      const normalized = Math.round(((angle % 360) + 360) % 360);
       this.state.updateLayer(layerId, { rotation: normalized });
+      tip.textContent = `${normalized}°`;
+      tip.style.left = `${me.clientX + 14}px`;
+      tip.style.top  = `${me.clientY - 8}px`;
     };
 
     const onUp = () => {
+      tip.remove();
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
     };

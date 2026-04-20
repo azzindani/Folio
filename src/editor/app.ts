@@ -25,6 +25,9 @@ import { BUILTIN_THEMES } from '../themes/builtin';
 import { PanelResizer } from '../ui/resize/panel-resizer';
 import { TabBarManager } from '../ui/tabs/tab-bar';
 import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
+import { AutoSaveManager } from './auto-save';
+import { ColorPaletteManager } from '../ui/panels/color-palette';
+import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -203,6 +206,8 @@ export class EditorApp {
   tabBar!: TabBarManager;
   viewportLayout!: ViewportLayoutManager;
   private resizers: PanelResizer[] = [];
+  private autoSave!: AutoSaveManager;
+  private colorPalette!: ColorPaletteManager;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -211,6 +216,7 @@ export class EditorApp {
 
   async init(): Promise<void> {
     this.buildLayout();
+    this.initAutoSave();
 
     // Tab bar (Sprint 2 — file tabs)
     const tabBarContainer = this.container.querySelector<HTMLElement>('.tab-bar-container')!;
@@ -292,6 +298,22 @@ export class EditorApp {
     this.a11y = new AccessibilityChecker(
       this.container.querySelector('.a11y-content')!,
       this.state,
+    );
+
+    // Color palette — wires pick callback to active color property
+    this.colorPalette = new ColorPaletteManager(
+      this.container.querySelector('.color-palette-content')!,
+      this.state,
+      (hex) => {
+        // Apply to first selected layer's fill color (best-effort)
+        const sel = this.state.getSelectedLayers();
+        if (sel.length > 0) {
+          const l = sel[0] as unknown as { id: string; fill?: Record<string, unknown> };
+          if (l.fill && typeof l.fill === 'object') {
+            this.state.updateLayer(l.id, { fill: { ...l.fill, color: hex } } as Parameters<typeof this.state.updateLayer>[1]);
+          }
+        }
+      },
     );
 
     // Page strip lives in the status bar (compact mode)
@@ -396,13 +418,17 @@ export class EditorApp {
       <div class="properties-panel">
         <div class="right-panel-resize-handle" data-resize="right"></div>
         <div class="rpanel-tabs">
-          <button class="rpanel-tab active" data-tab="properties">Properties</button>
-          <button class="rpanel-tab" data-tab="problems">Problems</button>
+          <button class="rpanel-tab active" data-tab="properties">Props</button>
+          <button class="rpanel-tab" data-tab="colors">Colors</button>
+          <button class="rpanel-tab" data-tab="problems">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
         <div class="rpanel-body">
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
+          </div>
+          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden">
+            <div class="color-palette-content" style="height:100%;overflow-y:auto"></div>
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
@@ -426,6 +452,8 @@ export class EditorApp {
         <button class="sb-btn" id="toggle-snap" title="Snap">&#8859;</button>
         <div class="status-sep"></div>
         <span class="sb-ruler-unit" id="sb-ruler-unit" title="Click to change ruler units">px</span>
+        <div class="status-sep"></div>
+        <button class="sb-btn" id="canvas-resize" title="Resize canvas">⊞</button>
         <div class="status-sep"></div>
         <button class="sb-btn" id="status-preview" title="Preview (F5)">&#9654;</button>
         <div class="status-spacer"></div>
@@ -553,6 +581,20 @@ export class EditorApp {
       q('#toggle-snap')?.classList.toggle('active', v);
     });
 
+    // Canvas resize dialog
+    q('#canvas-resize')?.addEventListener('click', () => {
+      const doc = this.state.get().design?.document;
+      if (!doc) return;
+      canvasResizeDialog.open(
+        { width: doc.width, height: doc.height, dpi: doc.dpi ?? 96, unit: (doc.unit ?? 'px') as import('../ui/dialogs/canvas-resize').CanvasDocSpec['unit'] },
+        (spec) => {
+          const design = this.state.get().design;
+          if (!design) return;
+          this.state.set('design', { ...design, document: { ...design.document, ...spec } });
+        },
+      );
+    });
+
     // Presentation mode (F5)
     q('#status-preview')?.addEventListener('click', () => this.presentation.open());
 
@@ -619,16 +661,45 @@ export class EditorApp {
     inputEl.placeholder = `${layer.type} — edit value`;
   }
 
-  /**
-   * Called after a file is opened via the FSA picker.
-   * Registers the handle with the file watcher so external edits are detected.
-   */
   setActiveFileHandle(handle: FileSystemFileHandle, content: string): void {
     if (this.activeFileHandle) {
       fileWatcher.unwatch(this.activeFileHandle.name);
     }
     this.activeFileHandle = handle;
     fileWatcher.watch(handle, content);
+    this.autoSave.setFileHandle(handle);
+  }
+
+  private initAutoSave(): void {
+    this.autoSave = new AutoSaveManager(30_000, async () => {
+      if (!this.state.get().dirty) return null;
+      return this.getYAML();
+    });
+
+    this.autoSave.onSavedCallback(() => {
+      this.state.set('dirty', false, false);
+      if (this.activeFileHandle) {
+        this.tabBar?.markDirty(this.activeFileHandle.name, false);
+      }
+    });
+
+    this.autoSave.onErrorCallback(() => {
+      import('../utils/toast').then(({ showToast }) => {
+        showToast('Auto-save failed — check file permissions', 'error');
+      });
+    });
+
+    // Mark dirty on design changes
+    this.state.subscribe((_, keys) => {
+      if (keys.includes('design')) {
+        this.autoSave.markDirty();
+        if (this.activeFileHandle) {
+          this.tabBar?.markDirty(this.activeFileHandle.name, true);
+        }
+      }
+    });
+
+    this.autoSave.start();
   }
 
   loadDesign(spec: DesignSpec): void {
