@@ -22,6 +22,14 @@ import { validateDesignSpec } from '../schema/validator';
 import type { DesignSpec } from '../schema/types';
 import { fileWatcher } from '../fs/file-watcher';
 import { BUILTIN_THEMES } from '../themes/builtin';
+import { PanelResizer } from '../ui/resize/panel-resizer';
+import { TabBarManager } from '../ui/tabs/tab-bar';
+import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
+import { AutoSaveManager } from './auto-save';
+import { ColorPaletteManager } from '../ui/panels/color-palette';
+import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
+import { ComponentLibraryManager } from '../ui/panels/component-library';
+import { AnimationPanel } from '../ui/panels/animation-panel';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -197,6 +205,13 @@ export class EditorApp {
   private commandPalette!: CommandPalette;
   private keyboard!: KeyboardManager;
   private activeFileHandle: FileSystemFileHandle | null = null;
+  tabBar!: TabBarManager;
+  viewportLayout!: ViewportLayoutManager;
+  private resizers: PanelResizer[] = [];
+  private autoSave!: AutoSaveManager;
+  private colorPalette!: ColorPaletteManager;
+  private componentLibrary!: ComponentLibraryManager;
+  private animationPanel!: AnimationPanel;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -205,11 +220,26 @@ export class EditorApp {
 
   async init(): Promise<void> {
     this.buildLayout();
+    this.initAutoSave();
 
-    this.canvas = new CanvasManager(
-      this.container.querySelector('.canvas-area')!,
+    // Tab bar (Sprint 2 — file tabs)
+    const tabBarContainer = this.container.querySelector<HTMLElement>('.tab-bar-container')!;
+    this.tabBar = new TabBarManager(
+      tabBarContainer,
       this.state,
+      (tab) => this.loadFromYAML(tab.yamlSource),
+      (_tabId) => { /* handle close — open blank if last tab */ },
     );
+
+    // Viewport layout (Sprint 2 — split panes)
+    const viewportArea = this.container.querySelector<HTMLElement>('.viewport-area')!;
+    this.viewportLayout = new ViewportLayoutManager(viewportArea);
+
+    // Primary canvas mounts into the active pane
+    const primaryPane = this.viewportLayout.getActivePaneEl()
+      ?? this.container.querySelector('.canvas-section')!;
+
+    this.canvas = new CanvasManager(primaryPane, this.state);
 
     this.toolbar = new ToolbarManager(
       this.container.querySelector('.toolbar')!,
@@ -222,10 +252,7 @@ export class EditorApp {
       this.state,
     );
 
-    this.alignToolbar = new AlignToolbar(
-      this.container.querySelector('.canvas-area')!,
-      this.state,
-    );
+    this.alignToolbar = new AlignToolbar(primaryPane, this.state);
 
     this.fileTree = new FileTreeManager(
       this.container.querySelector('.file-tree-content')!,
@@ -276,6 +303,34 @@ export class EditorApp {
       this.container.querySelector('.a11y-content')!,
       this.state,
     );
+
+    // Color palette — wires pick callback to active color property
+    this.colorPalette = new ColorPaletteManager(
+      this.container.querySelector('.color-palette-content')!,
+      this.state,
+      (hex) => {
+        // Apply to first selected layer's fill color (best-effort)
+        const sel = this.state.getSelectedLayers();
+        if (sel.length > 0) {
+          const l = sel[0] as unknown as { id: string; fill?: Record<string, unknown> };
+          if (l.fill && typeof l.fill === 'object') {
+            this.state.updateLayer(l.id, { fill: { ...l.fill, color: hex } } as Parameters<typeof this.state.updateLayer>[1]);
+          }
+        }
+      },
+    );
+
+    // Animation panel
+    const animContainer = this.container.querySelector<HTMLElement>('.animate-content');
+    if (animContainer) {
+      this.animationPanel = new AnimationPanel(animContainer, this.state);
+    }
+
+    // Component library panel
+    const compContainer = this.container.querySelector<HTMLElement>('.comp-library-content');
+    if (compContainer) {
+      this.componentLibrary = new ComponentLibraryManager(compContainer, this.state);
+    }
 
     // Page strip lives in the status bar (compact mode)
     this.pageStrip = new PageStrip(
@@ -335,7 +390,6 @@ export class EditorApp {
       </div>
 
       <div class="left-panel">
-
         <div class="left-panel-view active" data-panel="layers">
           <div class="tools-panel"></div>
           <div class="layer-panel">
@@ -351,11 +405,7 @@ export class EditorApp {
         </div>
 
         <div class="left-panel-view" data-panel="components">
-          <div class="panel-header">Components</div>
-          <div style="padding:8px;font-size:11px;color:var(--color-text-muted)">
-            No components in this project yet.<br>
-            Save a layer group as a component to reuse it.
-          </div>
+          <div class="comp-library-content" style="height:100%;overflow-y:auto"></div>
         </div>
 
         <div class="left-panel-view" data-panel="icons">
@@ -367,24 +417,37 @@ export class EditorApp {
           <div class="find-replace-content" style="flex:1;overflow:hidden;height:100%"></div>
         </div>
 
+        <div class="left-panel-resize-handle" data-resize="left"></div>
       </div>
 
-      <div class="canvas-area">
-        <div class="monaco-container" style="display:none"></div>
+      <div class="canvas-section">
+        <div class="tab-bar-container"></div>
+        <div class="viewport-area">
+          <div class="monaco-container" style="display:none"></div>
+        </div>
       </div>
 
       <div class="properties-panel">
+        <div class="right-panel-resize-handle" data-resize="right"></div>
         <div class="rpanel-tabs">
-          <button class="rpanel-tab active" data-tab="properties">Properties</button>
-          <button class="rpanel-tab" data-tab="problems">Problems</button>
+          <button class="rpanel-tab active" data-tab="properties">Props</button>
+          <button class="rpanel-tab" data-tab="colors">Colors</button>
+          <button class="rpanel-tab" data-tab="animate">Animate</button>
+          <button class="rpanel-tab" data-tab="problems">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
         <div class="rpanel-body">
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
           </div>
+          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden">
+            <div class="color-palette-content" style="height:100%;overflow-y:auto"></div>
+          </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
+          </div>
+          <div class="tab-pane" data-tab="animate" style="height:100%;overflow-y:auto">
+            <div class="animate-content" style="height:100%"></div>
           </div>
           <div class="tab-pane" data-tab="a11y" style="height:100%">
             <div class="a11y-content" style="height:100%"></div>
@@ -404,6 +467,10 @@ export class EditorApp {
         <button class="sb-btn" id="toggle-grid" title="Grid (G)">&#8862;</button>
         <button class="sb-btn" id="toggle-snap" title="Snap">&#8859;</button>
         <div class="status-sep"></div>
+        <span class="sb-ruler-unit" id="sb-ruler-unit" title="Click to change ruler units">px</span>
+        <div class="status-sep"></div>
+        <button class="sb-btn" id="canvas-resize" title="Resize canvas">⊞</button>
+        <div class="status-sep"></div>
         <button class="sb-btn" id="status-preview" title="Preview (F5)">&#9654;</button>
         <div class="status-spacer"></div>
         <span class="sb-info" id="sb-info"></span>
@@ -413,6 +480,42 @@ export class EditorApp {
     this.wireActivityBar();
     this.wireRpanelTabs();
     this.wireThemeToggle();
+    this.wireResizers();
+  }
+
+  private wireResizers(): void {
+    const root = document.documentElement;
+
+    // Left panel resize (right edge of left-panel)
+    const leftHandle = this.container.querySelector<HTMLElement>('[data-resize="left"]');
+    if (leftHandle) {
+      const leftResizer = new PanelResizer({
+        cssVar: '--left-panel-width',
+        axis: 'x',
+        min: 160,
+        max: 600,
+        target: root,
+      });
+      const h = leftResizer.getHandle();
+      leftHandle.replaceWith(h);
+      this.resizers.push(leftResizer);
+    }
+
+    // Right panel resize (left edge of right-panel — dragging left grows the panel)
+    const rightHandle = this.container.querySelector<HTMLElement>('[data-resize="right"]');
+    if (rightHandle) {
+      const rightResizer = new PanelResizer({
+        cssVar: '--right-panel-width',
+        axis: 'x',
+        min: 200,
+        max: 600,
+        target: root,
+        invert: true,
+      });
+      const h = rightResizer.getHandle();
+      rightHandle.replaceWith(h);
+      this.resizers.push(rightResizer);
+    }
   }
 
   private wireActivityBar(): void {
@@ -494,14 +597,43 @@ export class EditorApp {
       q('#toggle-snap')?.classList.toggle('active', v);
     });
 
+    // Canvas resize dialog
+    q('#canvas-resize')?.addEventListener('click', () => {
+      const doc = this.state.get().design?.document;
+      if (!doc) return;
+      canvasResizeDialog.open(
+        { width: doc.width, height: doc.height, dpi: doc.dpi ?? 96, unit: (doc.unit ?? 'px') as import('../ui/dialogs/canvas-resize').CanvasDocSpec['unit'] },
+        (spec) => {
+          const design = this.state.get().design;
+          if (!design) return;
+          this.state.set('design', { ...design, document: { ...design.document, ...spec } });
+        },
+      );
+    });
+
     // Presentation mode (F5)
     q('#status-preview')?.addEventListener('click', () => this.presentation.open());
 
-    // Sync zoom display
+    // Ruler unit toggle (click cycles px → mm → cm → in → px)
+    const rulerUnitBtn = q<HTMLSpanElement>('#sb-ruler-unit');
+    if (rulerUnitBtn) {
+      import('../utils/ruler-units').then(({ nextRulerUnit }) => {
+        rulerUnitBtn.addEventListener('click', () => {
+          const next = nextRulerUnit(this.state.get().rulerUnit);
+          this.state.set('rulerUnit', next, false);
+        });
+      });
+    }
+
+    // Sync zoom display + ruler unit badge
     this.state.subscribe((state, keys) => {
       if (keys.includes('zoom')) {
         const val = q<HTMLSpanElement>('.sb-zoom-val');
         if (val) val.textContent = `${Math.round((state.zoom ?? 1) * 100)}%`;
+      }
+      if (keys.includes('rulerUnit')) {
+        const unitBtn = q<HTMLSpanElement>('#sb-ruler-unit');
+        if (unitBtn) unitBtn.textContent = state.rulerUnit;
       }
       if (keys.includes('selectedLayerIds') || keys.includes('design')) {
         this.updateFormulaBar();
@@ -545,16 +677,45 @@ export class EditorApp {
     inputEl.placeholder = `${layer.type} — edit value`;
   }
 
-  /**
-   * Called after a file is opened via the FSA picker.
-   * Registers the handle with the file watcher so external edits are detected.
-   */
   setActiveFileHandle(handle: FileSystemFileHandle, content: string): void {
     if (this.activeFileHandle) {
       fileWatcher.unwatch(this.activeFileHandle.name);
     }
     this.activeFileHandle = handle;
     fileWatcher.watch(handle, content);
+    this.autoSave.setFileHandle(handle);
+  }
+
+  private initAutoSave(): void {
+    this.autoSave = new AutoSaveManager(30_000, async () => {
+      if (!this.state.get().dirty) return null;
+      return this.getYAML();
+    });
+
+    this.autoSave.onSavedCallback(() => {
+      this.state.set('dirty', false, false);
+      if (this.activeFileHandle) {
+        this.tabBar?.markDirty(this.activeFileHandle.name, false);
+      }
+    });
+
+    this.autoSave.onErrorCallback(() => {
+      import('../utils/toast').then(({ showToast }) => {
+        showToast('Auto-save failed — check file permissions', 'error');
+      });
+    });
+
+    // Mark dirty on design changes
+    this.state.subscribe((_, keys) => {
+      if (keys.includes('design')) {
+        this.autoSave.markDirty();
+        if (this.activeFileHandle) {
+          this.tabBar?.markDirty(this.activeFileHandle.name, true);
+        }
+      }
+    });
+
+    this.autoSave.start();
   }
 
   loadDesign(spec: DesignSpec): void {

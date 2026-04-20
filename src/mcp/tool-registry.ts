@@ -229,6 +229,47 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
 
+  // ── TEMPLATE SYSTEM ───────────────────────────────────────
+  {
+    name: 'export_template',
+    description: 'Export a design as a skeleton .template.yaml with named slots. Local AI fills only the slots.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path: { type: 'string', description: 'Path to source .design.yaml file' },
+        output_path: { type: 'string', description: 'Output path for .template.yaml (auto-derived if omitted)' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'inject_template',
+    description: 'Inject slot values into a template to produce a complete .design.yaml. Slot keys are slot IDs or dot-notation paths.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        template_path: { type: 'string', description: 'Path to .template.yaml file' },
+        slots: {
+          type: 'object',
+          description: 'Map of slot_id → value. Keys are slot IDs from list_template_slots.',
+        },
+        output_path: { type: 'string', description: 'Output path for generated .design.yaml (auto-derived if omitted)' },
+      },
+      required: ['template_path', 'slots'],
+    },
+  },
+  {
+    name: 'list_template_slots',
+    description: 'List all injectable slots in a .template.yaml file with their paths, types, and hints.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        template_path: { type: 'string', description: 'Path to .template.yaml file' },
+      },
+      required: ['template_path'],
+    },
+  },
+
   // ── THEME ─────────────────────────────────────────────────
   {
     name: 'apply_theme',

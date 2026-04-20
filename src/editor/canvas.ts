@@ -1,6 +1,9 @@
-import { StateManager, type EditorState, type ToolId } from './state';
+import { StateManager, type EditorState, type ToolId, type RulerUnit, type Guide } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
-import type { Layer } from '../schema/types';
+import type { Layer, TextLayer } from '../schema/types';
+import { computeRulerTicks } from '../utils/ruler-units';
+
+let guideCounter = 0;
 
 let layerCounter = 0;
 
@@ -78,7 +81,7 @@ export class CanvasManager {
   }
 
   private updateRulers(): void {
-    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const { zoom = 1, panX = 0, panY = 0, rulerUnit = 'px' } = this.state.get();
     const containerW = this.container.clientWidth  - RULER_SIZE;
     const containerH = this.container.clientHeight - RULER_SIZE;
 
@@ -86,22 +89,25 @@ export class CanvasManager {
     this.rulerH.width = Math.max(1, containerW);
     const ctxH = this.rulerH.getContext('2d');
     if (ctxH) {
-      drawRuler(ctxH, containerW, RULER_SIZE, zoom, panX, 'h');
+      drawRuler(ctxH, containerW, RULER_SIZE, zoom, panX, 'h', rulerUnit);
     }
 
     // ── Vertical ruler ──────────────────────────────────────
     this.rulerV.height = Math.max(1, containerH);
     const ctxV = this.rulerV.getContext('2d');
     if (ctxV) {
-      drawRuler(ctxV, containerH, RULER_SIZE, zoom, panY, 'v');
+      drawRuler(ctxV, containerH, RULER_SIZE, zoom, panY, 'v', rulerUnit);
     }
   }
 
   private bindEvents(): void {
     this.svgContainer.addEventListener('pointerdown', this.onPointerDown.bind(this));
+    this.svgContainer.addEventListener('dblclick', this.onDblClick.bind(this));
     this.container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
     this.container.addEventListener('mousemove', this.onMouseMoveForAnnotations.bind(this));
     this.container.addEventListener('mouseleave', () => this.clearAnnotations());
+    this.rulerH.addEventListener('pointerdown', (e) => this.startGuide(e, 'h'));
+    this.rulerV.addEventListener('pointerdown', (e) => this.startGuide(e, 'v'));
   }
 
   // ── Distance annotation overlay ─────────────────────────────
@@ -232,9 +238,13 @@ export class CanvasManager {
       this.updateSelectionOverlay();
     }
 
-    if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
+    if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY') || changedKeys.includes('rulerUnit')) {
       this.updateTransform();
       this.updateRulers();
+    }
+
+    if (changedKeys.includes('guides') || changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
+      this.renderGuideLines();
     }
 
     if (changedKeys.includes('activeTool')) {
@@ -304,19 +314,25 @@ export class CanvasManager {
       box.style.height = `${bbox.height}px`;
       this.selectionOverlay.appendChild(box);
 
-      // Resize handles (corners)
-      const positions = [
-        { cls: 'nw', x: bbox.x - 4, y: bbox.y - 4, cursor: 'nw-resize' },
-        { cls: 'ne', x: bbox.x + bbox.width - 4, y: bbox.y - 4, cursor: 'ne-resize' },
-        { cls: 'sw', x: bbox.x - 4, y: bbox.y + bbox.height - 4, cursor: 'sw-resize' },
-        { cls: 'se', x: bbox.x + bbox.width - 4, y: bbox.y + bbox.height - 4, cursor: 'se-resize' },
+      // 8 resize handles: 4 corners + 4 edge midpoints
+      const cx = bbox.x + bbox.width / 2;
+      const cy = bbox.y + bbox.height / 2;
+      const handles8 = [
+        { cls: 'nw', x: bbox.x,  y: bbox.y,  cursor: 'nw-resize' },
+        { cls: 'n',  x: cx,      y: bbox.y,  cursor: 'n-resize' },
+        { cls: 'ne', x: bbox.x + bbox.width, y: bbox.y,  cursor: 'ne-resize' },
+        { cls: 'e',  x: bbox.x + bbox.width, y: cy,      cursor: 'e-resize' },
+        { cls: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'se-resize' },
+        { cls: 's',  x: cx,      y: bbox.y + bbox.height, cursor: 's-resize' },
+        { cls: 'sw', x: bbox.x,  y: bbox.y + bbox.height, cursor: 'sw-resize' },
+        { cls: 'w',  x: bbox.x,  y: cy,      cursor: 'w-resize' },
       ];
 
-      for (const pos of positions) {
+      for (const pos of handles8) {
         const handle = document.createElement('div');
         handle.className = `selection-handle handle-${pos.cls}`;
-        handle.style.left = `${pos.x}px`;
-        handle.style.top = `${pos.y}px`;
+        handle.style.left = `${pos.x - 4}px`;
+        handle.style.top  = `${pos.y - 4}px`;
         handle.style.cursor = pos.cursor;
         handle.style.pointerEvents = 'auto';
         handle.dataset.handle = pos.cls;
@@ -324,18 +340,21 @@ export class CanvasManager {
         this.selectionOverlay.appendChild(handle);
       }
 
-      // Rotate handle — centered above the top edge
+      // Rotation handle — circular, above center-top, shows angle on hover
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
-      rotateHandle.style.left = `${bbox.x + bbox.width / 2 - 4}px`;
-      rotateHandle.style.top = `${bbox.y - 28}px`;
-      rotateHandle.style.cursor = 'crosshair';
+      rotateHandle.style.left = `${cx - 6}px`;
+      rotateHandle.style.top  = `${bbox.y - 32}px`;
+      rotateHandle.style.cursor = 'grab';
       rotateHandle.style.pointerEvents = 'auto';
+      rotateHandle.style.width = '12px';
+      rotateHandle.style.height = '12px';
       rotateHandle.style.borderRadius = '50%';
       rotateHandle.style.background = 'var(--color-primary)';
+      rotateHandle.style.border = '2px solid #fff';
       rotateHandle.dataset.handle = 'rotate';
       rotateHandle.dataset.layerId = id;
-      rotateHandle.title = 'Rotate';
+      rotateHandle.title = 'Rotate (Shift = 15° snap)';
       rotateHandle.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.startRotate(e, id, bbox);
@@ -352,21 +371,36 @@ export class CanvasManager {
     const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
     if (!layer || layer.locked) return;
 
-    // Center of the bounding box in viewport coordinates
     const zoom = this.state.get().zoom;
-    const vpRect = this.viewport.getBoundingClientRect();
-    const cx = vpRect.left + (bbox.x + bbox.width / 2) * zoom;
-    const cy = vpRect.top + (bbox.y + bbox.height / 2) * zoom;
+    const panX = this.state.get().panX;
+    const panY = this.state.get().panY;
+    const vpRect = this.container.getBoundingClientRect();
+
+    // Center in screen coordinates (accounting for ruler offset)
+    const cx = vpRect.left + RULER_SIZE + ((bbox.x + bbox.width / 2) * zoom + panX);
+    const cy = vpRect.top  + RULER_SIZE + ((bbox.y + bbox.height / 2) * zoom + panY);
+
+    // Angle tooltip
+    const tip = document.createElement('div');
+    tip.className = 'rotation-tip';
+    tip.style.cssText = `position:fixed;background:rgba(0,0,0,.75);color:#fff;font-size:11px;
+      padding:3px 8px;border-radius:4px;pointer-events:none;z-index:500;font-family:monospace`;
+    document.body.appendChild(tip);
 
     const onMove = (me: PointerEvent) => {
       const dx = me.clientX - cx;
       const dy = me.clientY - cy;
-      const angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
-      const normalized = ((angle % 360) + 360) % 360;
+      let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+      if (me.shiftKey) angle = Math.round(angle / 15) * 15;
+      const normalized = Math.round(((angle % 360) + 360) % 360);
       this.state.updateLayer(layerId, { rotation: normalized });
+      tip.textContent = `${normalized}°`;
+      tip.style.left = `${me.clientX + 14}px`;
+      tip.style.top  = `${me.clientY - 8}px`;
     };
 
     const onUp = () => {
+      tip.remove();
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
     };
@@ -443,6 +477,13 @@ export class CanvasManager {
           ...base, type: 'polygon', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
           sides: 6, fill: { type: 'solid', color: '#6c5ce7' },
         } as Layer;
+        case 'frame': return {
+          ...base, type: 'auto_layout', x: canvasX - 100, y: canvasY - 80, width: 200, height: 160,
+          direction: 'row', gap: 12, padding: 16,
+          align_items: 'center', justify_content: 'start',
+          fill: { type: 'solid', color: '#1e1e2e' },
+          layers: [],
+        } as unknown as Layer;
         default: return {
           ...base, type: 'rect', x: canvasX - 50, y: canvasY - 50, width: 100, height: 100,
           fill: { type: 'solid', color: '#6c5ce7' },
@@ -467,8 +508,22 @@ export class CanvasManager {
     const onMove = (me: PointerEvent) => {
       const dx = (me.clientX - startX) / zoom;
       const dy = (me.clientY - startY) / zoom;
-      const newX = Math.round(origX + dx);
-      const newY = Math.round(origY + dy);
+      let newX = Math.round(origX + dx);
+      let newY = Math.round(origY + dy);
+
+      // Snap to ruler guides
+      if (this.state.get().snapEnabled) {
+        const { guides } = this.state.get();
+        const SNAP = 6;
+        for (const g of guides) {
+          if (g.axis === 'v') {
+            if (Math.abs(newX - g.position) < SNAP) newX = g.position;
+          } else {
+            if (Math.abs(newY - g.position) < SNAP) newY = g.position;
+          }
+        }
+      }
+
       this.state.updateLayer(layerId, { x: newX, y: newY });
       this.drawSmartGuides(layerId, newX, newY, layer);
     };
@@ -596,6 +651,173 @@ export class CanvasManager {
       this.state.set('panY', 0, false);
     });
   }
+
+  // ── Inline text editor ───────────────────────────────────────
+
+  private onDblClick(e: MouseEvent): void {
+    const target = e.target as SVGElement;
+    const layerEl = target.closest<SVGElement>('[data-layer-id]');
+    if (!layerEl) return;
+    const layerId = layerEl.getAttribute('data-layer-id');
+    if (!layerId) return;
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    if (!layer || layer.type !== 'text') return;
+    this.openInlineTextEditor(layer as TextLayer, layerEl);
+  }
+
+  private openInlineTextEditor(layer: TextLayer, svgEl: SVGElement): void {
+    const existing = this.container.querySelector('.inline-text-editor');
+    if (existing) (existing as HTMLElement).blur();
+
+    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const bbox = (svgEl as SVGGraphicsElement).getBBox?.() ?? { x: layer.x ?? 0, y: layer.y ?? 0, width: layer.width ?? 100, height: 24 };
+
+    const left = bbox.x * zoom + panX + RULER_SIZE;
+    const top  = bbox.y * zoom + panY + RULER_SIZE;
+    const w    = Math.max(bbox.width * zoom, 80);
+    const h    = Math.max(bbox.height * zoom, 24);
+
+    const rawText = layer.content.type === 'rich'
+      ? layer.content.spans.map(s => s.text).join('')
+      : (layer.content as { value: string }).value;
+
+    const ta = document.createElement('textarea');
+    ta.className = 'inline-text-editor';
+    ta.value = rawText;
+    ta.style.cssText = [
+      `position:absolute`,
+      `left:${left}px`, `top:${top}px`,
+      `width:${w}px`, `min-height:${h}px`,
+      `font-family:${layer.style?.font_family ?? 'Inter'},sans-serif`,
+      `font-size:${(layer.style?.font_size ?? 24) * zoom}px`,
+      `font-weight:${layer.style?.font_weight ?? 400}`,
+      `color:${layer.style?.color ?? '#ffffff'}`,
+      `background:rgba(0,0,0,0.6)`,
+      `border:2px solid var(--color-accent,#6c5ce7)`,
+      `outline:none`, `resize:none`,
+      `padding:2px 4px`, `z-index:200`,
+      `overflow:hidden`, `white-space:pre-wrap`,
+      `border-radius:2px`,
+    ].join(';');
+
+    this.container.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    const commit = () => {
+      const newText = ta.value;
+      ta.remove();
+      if (newText !== rawText) {
+        const content = layer.content.type === 'rich'
+          ? { type: 'plain' as const, value: newText }
+          : { ...layer.content, value: newText };
+        this.state.updateLayer(layer.id, { content });
+      }
+    };
+
+    ta.addEventListener('blur', commit, { once: true });
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        ta.removeEventListener('blur', commit);
+        ta.remove();
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        ta.removeEventListener('blur', commit);
+        commit();
+      }
+    });
+  }
+
+  // ── Ruler guide lines ────────────────────────────────────────
+
+  private startGuide(e: PointerEvent, axis: 'h' | 'v'): void {
+    e.preventDefault();
+    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const vpRect = this.viewport.getBoundingClientRect();
+
+    // Preview line element
+    const preview = document.createElement('div');
+    preview.className = 'guide-preview';
+    preview.style.cssText = axis === 'h'
+      ? `position:absolute;left:${RULER_SIZE}px;right:0;height:1px;background:#6c5ce7;pointer-events:none;z-index:150;top:${e.clientY - vpRect.top + RULER_SIZE}px`
+      : `position:absolute;top:${RULER_SIZE}px;bottom:0;width:1px;background:#6c5ce7;pointer-events:none;z-index:150;left:${e.clientX - vpRect.left + RULER_SIZE}px`;
+    this.container.appendChild(preview);
+
+    const onMove = (me: PointerEvent) => {
+      if (axis === 'h') {
+        preview.style.top = `${me.clientY - vpRect.top + RULER_SIZE}px`;
+      } else {
+        preview.style.left = `${me.clientX - vpRect.left + RULER_SIZE}px`;
+      }
+    };
+
+    const onUp = (me: PointerEvent) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      preview.remove();
+
+      // Only add if released inside canvas area
+      const vp = this.viewport.getBoundingClientRect();
+      if (me.clientX < vp.left || me.clientX > vp.right || me.clientY < vp.top || me.clientY > vp.bottom) return;
+
+      const position = axis === 'h'
+        ? Math.round((me.clientY - vp.top - panY) / zoom)
+        : Math.round((me.clientX - vp.left - panX) / zoom);
+
+      const guide: Guide = { id: `guide-${++guideCounter}`, axis, position };
+      this.state.set('guides', [...this.state.get().guides, guide], false);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private renderGuideLines(): void {
+    this.selectionOverlay.querySelectorAll('.ruler-guide').forEach(el => el.remove());
+
+    const { guides, zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    if (!guides.length) return;
+
+    const doc = this.state.get().design?.document;
+    const cw = doc?.width ?? 1080;
+    const ch = doc?.height ?? 1080;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'ruler-guide');
+    svg.setAttribute('width', String(cw));
+    svg.setAttribute('height', String(ch));
+    svg.style.cssText = 'position:absolute;inset:0;pointer-events:auto;z-index:89;overflow:visible';
+
+    for (const guide of guides) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      if (guide.axis === 'h') {
+        line.setAttribute('x1', '0'); line.setAttribute('x2', String(cw));
+        line.setAttribute('y1', String(guide.position)); line.setAttribute('y2', String(guide.position));
+      } else {
+        line.setAttribute('y1', '0'); line.setAttribute('y2', String(ch));
+        line.setAttribute('x1', String(guide.position)); line.setAttribute('x2', String(guide.position));
+      }
+      line.setAttribute('stroke', '#6c5ce7');
+      line.setAttribute('stroke-width', String(1 / zoom));
+      line.setAttribute('opacity', '0.7');
+      line.style.cursor = 'pointer';
+      line.setAttribute('data-guide-id', guide.id);
+
+      // Double-click to delete guide
+      line.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.state.set('guides', this.state.get().guides.filter(g => g.id !== guide.id), false);
+      });
+
+      svg.appendChild(line);
+    }
+
+    this.selectionOverlay.appendChild(svg);
+
+    // Apply the same transform as the main SVG
+    svg.style.transform = `scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`;
+    svg.style.transformOrigin = '0 0';
+  }
 }
 
 // ── Ruler drawing helper ─────────────────────────────────────
@@ -606,6 +828,7 @@ function drawRuler(
   zoom: number,
   pan: number,
   axis: 'h' | 'v',
+  unit: RulerUnit = 'px',
 ): void {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const bg      = isDark ? '#1e1e2e' : '#f0efee';
@@ -627,48 +850,33 @@ function drawRuler(
     ctx.fillRect(thickness - 1, 0, 1, length);
   }
 
-  // Determine a nice step at this zoom level
-  const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
-  const minPxPerTick = 40;
-  const step = steps.find(s => s * zoom >= minPxPerTick) ?? 1000;
-
-  // Compute which design-unit values to draw
-  const start = Math.floor(-pan / zoom / step) * step;
-  const end   = Math.ceil((length / zoom - pan / zoom) / step) * step + step;
-
-  ctx.fillStyle = tickClr;
   ctx.font = `9px sans-serif`;
   ctx.textBaseline = 'top';
-  ctx.fillStyle = textClr;
 
-  for (let v = start; v <= end; v += step) {
-    const px = Math.round(v * zoom + pan);
-    if (px < 0 || px > length) continue;
+  // Design-px range visible in the viewport
+  const startDesignPx = -pan / zoom;
+  const endDesignPx   = (length / zoom) - pan / zoom;
+
+  const ticks = computeRulerTicks(startDesignPx, endDesignPx, unit, zoom);
+
+  for (const tick of ticks) {
+    const screenPx = Math.round(tick.px * zoom + pan);
+    if (screenPx < 0 || screenPx > length) continue;
 
     if (axis === 'h') {
       ctx.fillStyle = tickClr;
-      ctx.fillRect(px, thickness - 6, 1, 6);
+      ctx.fillRect(screenPx, thickness - 6, 1, 6);
       ctx.fillStyle = textClr;
-      ctx.fillText(String(v), px + 2, 2);
+      ctx.fillText(tick.label, screenPx + 2, 2);
     } else {
       ctx.fillStyle = tickClr;
-      ctx.fillRect(thickness - 6, px, 6, 1);
+      ctx.fillRect(thickness - 6, screenPx, 6, 1);
       ctx.save();
       ctx.fillStyle = textClr;
-      ctx.translate(2, px - 1);
+      ctx.translate(2, screenPx - 1);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText(String(v), 0, 0);
+      ctx.fillText(tick.label, 0, 0);
       ctx.restore();
-    }
-
-    // Minor ticks (half step)
-    if (step > 1) {
-      const halfPx = Math.round((v + step / 2) * zoom + pan);
-      if (halfPx >= 0 && halfPx <= length) {
-        ctx.fillStyle = tickClr;
-        if (axis === 'h') ctx.fillRect(halfPx, thickness - 3, 1, 3);
-        else               ctx.fillRect(thickness - 3, halfPx, 3, 1);
-      }
     }
   }
 }

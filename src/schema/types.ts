@@ -76,9 +76,13 @@ export type Fill =
   | MultiFill
   | NoneFill;
 
+// ── Gradient Color (for text/stroke) ────────────────────────
+export type GradientColor = LinearGradientFill | RadialGradientFill;
+export type ColorOrGradient = string | GradientColor;
+
 // ── Stroke ──────────────────────────────────────────────────
 export interface Stroke {
-  color: string;
+  color: ColorOrGradient;
   width: number;
   dash?: number[];
   linecap?: 'butt' | 'round' | 'square';
@@ -126,7 +130,7 @@ export interface TextStyle {
   font_family?: string;
   font_size?: number;
   font_weight?: number;
-  color?: string;
+  color?: ColorOrGradient;
   line_height?: number;
   letter_spacing?: number;
   align?: 'left' | 'center' | 'right';
@@ -218,6 +222,8 @@ export interface BaseLayer {
   show_if?: string;
   /** Responsive pin constraints */
   constraints?: PinConstraints;
+  /** Layer id whose shape clips this layer (boolean mask / intersect) */
+  clip_path_ref?: string;
 }
 
 // ── Concrete Layer Types ────────────────────────────────────

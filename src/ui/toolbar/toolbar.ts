@@ -2,6 +2,8 @@ import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
 import { exportDesign } from '../../export/exporter';
 import { showToast } from '../../utils/toast';
+import { batchExportDialog } from '../dialogs/batch-export';
+import { exportAsTemplate } from '../../schema/template';
 
 export class ToolbarManager {
   private container: HTMLElement;
@@ -58,6 +60,9 @@ export class ToolbarManager {
             <button class="export-item" data-format="png">PNG ×2</button>
             <button class="export-item" data-format="pdf">PDF</button>
             <button class="export-item" data-format="html">HTML (self-contained)</button>
+            <div style="height:1px;background:var(--color-border);margin:2px 0"></div>
+            <button class="export-item" data-format="batch">Batch Export…</button>
+            <button class="export-item" data-format="template">Export as Template…</button>
           </div>
         </div>
       </div>
@@ -98,10 +103,19 @@ export class ToolbarManager {
       return;
     }
 
-    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | undefined;
+    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'batch' | 'template' | undefined;
     if (format) {
       this.closeExportMenu();
-      this.triggerExport(format);
+      if (format === 'batch') {
+        const { design, currentPageIndex } = this.state.get();
+        if (design) batchExportDialog.open(design, currentPageIndex);
+        return;
+      }
+      if (format === 'template') {
+        this.triggerTemplateExport();
+        return;
+      }
+      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html');
     }
   }
 
@@ -113,6 +127,21 @@ export class ToolbarManager {
   private closeExportMenu(): void {
     const menu = this.container.querySelector('.export-menu') as HTMLElement;
     if (menu) menu.style.display = 'none';
+  }
+
+  private triggerTemplateExport(): void {
+    const { design } = this.state.get();
+    if (!design) { showToast('No design open', 'error'); return; }
+    const template = exportAsTemplate(design);
+    const yaml = JSON.stringify(template, null, 2); // browser: download as JSON for now
+    const blob = new Blob([yaml], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${design.meta.name ?? 'design'}.template.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Template exported (${template.slots.length} slots)`, 'success');
   }
 
   private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html'): Promise<void> {
