@@ -2,6 +2,7 @@ import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
 import { exportDesign } from '../../export/exporter';
 import { showToast } from '../../utils/toast';
+import { batchExportDialog } from '../dialogs/batch-export';
 
 export class ToolbarManager {
   private container: HTMLElement;
@@ -58,6 +59,8 @@ export class ToolbarManager {
             <button class="export-item" data-format="png">PNG ×2</button>
             <button class="export-item" data-format="pdf">PDF</button>
             <button class="export-item" data-format="html">HTML (self-contained)</button>
+            <div style="height:1px;background:var(--color-border);margin:2px 0"></div>
+            <button class="export-item" data-format="batch">Batch Export…</button>
           </div>
         </div>
       </div>
@@ -98,10 +101,15 @@ export class ToolbarManager {
       return;
     }
 
-    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | undefined;
+    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'batch' | undefined;
     if (format) {
       this.closeExportMenu();
-      this.triggerExport(format);
+      if (format === 'batch') {
+        const { design, currentPageIndex } = this.state.get();
+        if (design) batchExportDialog.open(design, currentPageIndex);
+        return;
+      }
+      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html');
     }
   }
 
