@@ -14,7 +14,7 @@ test.describe('Editor — basic load', () => {
   });
 
   test('canvas area is visible', async ({ page }) => {
-    await expect(page.locator('.canvas-area')).toBeVisible();
+    await expect(page.locator('.canvas-area').first()).toBeVisible();
   });
 
   test('toolbar is visible', async ({ page }) => {
@@ -55,14 +55,14 @@ test.describe('Editor — canvas interactions', () => {
   });
 
   test('clicking a layer selects it', async ({ page }) => {
-    const canvas = page.locator('.canvas-area');
+    const canvas = page.locator('.canvas-area').first();
     await canvas.click({ position: { x: 100, y: 100 } });
     const props = page.locator('.properties-panel');
     await expect(props).toBeVisible();
   });
 
   test('Escape clears selection', async ({ page }) => {
-    const canvas = page.locator('.canvas-area');
+    const canvas = page.locator('.canvas-area').first();
     await canvas.click({ position: { x: 100, y: 100 } });
     await page.keyboard.press('Escape');
     const handles = page.locator('[data-handle]');
@@ -118,7 +118,7 @@ test.describe('Editor — toolbar', () => {
   test('export menu closes when clicking outside', async ({ page }) => {
     await page.locator('[data-action="export"]').click();
     await expect(page.locator('.export-menu')).toBeVisible();
-    await page.locator('.canvas-area').click({ position: { x: 50, y: 50 } });
+    await page.locator('.canvas-area').first().click({ position: { x: 50, y: 50 } });
     await expect(page.locator('.export-menu')).not.toBeVisible();
   });
 

@@ -237,7 +237,7 @@ export class EditorApp {
 
     // Primary canvas mounts into the active pane
     const primaryPane = this.viewportLayout.getActivePaneEl()
-      ?? this.container.querySelector('.canvas-area')!;
+      ?? this.container.querySelector('.canvas-section')!;
 
     this.canvas = new CanvasManager(primaryPane, this.state);
 
@@ -420,7 +420,7 @@ export class EditorApp {
         <div class="left-panel-resize-handle" data-resize="left"></div>
       </div>
 
-      <div class="canvas-area">
+      <div class="canvas-section">
         <div class="tab-bar-container"></div>
         <div class="viewport-area">
           <div class="monaco-container" style="display:none"></div>

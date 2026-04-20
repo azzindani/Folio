@@ -1,10 +1,16 @@
-import type { Fill, LinearGradientFill, RadialGradientFill, ConicGradientFill, NoiseFill } from '../schema/types';
+import type { Fill, LinearGradientFill, RadialGradientFill, ConicGradientFill, NoiseFill, ColorOrGradient } from '../schema/types';
 import { createSVGElement, uniqueDefId, getOrCreateDefs } from './svg-utils';
 
 export interface FillResult {
   fill: string;
   opacity?: number;
   extraElements?: SVGElement[];
+}
+
+export function resolveColorOrGradient(color: ColorOrGradient, defs: SVGDefsElement): string {
+  if (typeof color === 'string') return color;
+  if (color.type === 'linear') return renderLinearGradient(color, defs);
+  return renderRadialGradient(color, defs);
 }
 
 function renderLinearGradient(
