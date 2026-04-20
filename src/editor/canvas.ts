@@ -1,7 +1,9 @@
-import { StateManager, type EditorState, type ToolId, type RulerUnit } from './state';
+import { StateManager, type EditorState, type ToolId, type RulerUnit, type Guide } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
-import type { Layer } from '../schema/types';
+import type { Layer, TextLayer } from '../schema/types';
 import { computeRulerTicks } from '../utils/ruler-units';
+
+let guideCounter = 0;
 
 let layerCounter = 0;
 
@@ -100,9 +102,12 @@ export class CanvasManager {
 
   private bindEvents(): void {
     this.svgContainer.addEventListener('pointerdown', this.onPointerDown.bind(this));
+    this.svgContainer.addEventListener('dblclick', this.onDblClick.bind(this));
     this.container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
     this.container.addEventListener('mousemove', this.onMouseMoveForAnnotations.bind(this));
     this.container.addEventListener('mouseleave', () => this.clearAnnotations());
+    this.rulerH.addEventListener('pointerdown', (e) => this.startGuide(e, 'h'));
+    this.rulerV.addEventListener('pointerdown', (e) => this.startGuide(e, 'v'));
   }
 
   // ── Distance annotation overlay ─────────────────────────────
@@ -236,6 +241,10 @@ export class CanvasManager {
     if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY') || changedKeys.includes('rulerUnit')) {
       this.updateTransform();
       this.updateRulers();
+    }
+
+    if (changedKeys.includes('guides') || changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
+      this.renderGuideLines();
     }
 
     if (changedKeys.includes('activeTool')) {
@@ -492,8 +501,22 @@ export class CanvasManager {
     const onMove = (me: PointerEvent) => {
       const dx = (me.clientX - startX) / zoom;
       const dy = (me.clientY - startY) / zoom;
-      const newX = Math.round(origX + dx);
-      const newY = Math.round(origY + dy);
+      let newX = Math.round(origX + dx);
+      let newY = Math.round(origY + dy);
+
+      // Snap to ruler guides
+      if (this.state.get().snapEnabled) {
+        const { guides } = this.state.get();
+        const SNAP = 6;
+        for (const g of guides) {
+          if (g.axis === 'v') {
+            if (Math.abs(newX - g.position) < SNAP) newX = g.position;
+          } else {
+            if (Math.abs(newY - g.position) < SNAP) newY = g.position;
+          }
+        }
+      }
+
       this.state.updateLayer(layerId, { x: newX, y: newY });
       this.drawSmartGuides(layerId, newX, newY, layer);
     };
@@ -620,6 +643,173 @@ export class CanvasManager {
       this.state.set('panX', 0, false);
       this.state.set('panY', 0, false);
     });
+  }
+
+  // ── Inline text editor ───────────────────────────────────────
+
+  private onDblClick(e: MouseEvent): void {
+    const target = e.target as SVGElement;
+    const layerEl = target.closest<SVGElement>('[data-layer-id]');
+    if (!layerEl) return;
+    const layerId = layerEl.getAttribute('data-layer-id');
+    if (!layerId) return;
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    if (!layer || layer.type !== 'text') return;
+    this.openInlineTextEditor(layer as TextLayer, layerEl);
+  }
+
+  private openInlineTextEditor(layer: TextLayer, svgEl: SVGElement): void {
+    const existing = this.container.querySelector('.inline-text-editor');
+    if (existing) (existing as HTMLElement).blur();
+
+    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const bbox = (svgEl as SVGGraphicsElement).getBBox?.() ?? { x: layer.x ?? 0, y: layer.y ?? 0, width: layer.width ?? 100, height: 24 };
+
+    const left = bbox.x * zoom + panX + RULER_SIZE;
+    const top  = bbox.y * zoom + panY + RULER_SIZE;
+    const w    = Math.max(bbox.width * zoom, 80);
+    const h    = Math.max(bbox.height * zoom, 24);
+
+    const rawText = layer.content.type === 'rich'
+      ? layer.content.spans.map(s => s.text).join('')
+      : (layer.content as { value: string }).value;
+
+    const ta = document.createElement('textarea');
+    ta.className = 'inline-text-editor';
+    ta.value = rawText;
+    ta.style.cssText = [
+      `position:absolute`,
+      `left:${left}px`, `top:${top}px`,
+      `width:${w}px`, `min-height:${h}px`,
+      `font-family:${layer.style?.font_family ?? 'Inter'},sans-serif`,
+      `font-size:${(layer.style?.font_size ?? 24) * zoom}px`,
+      `font-weight:${layer.style?.font_weight ?? 400}`,
+      `color:${layer.style?.color ?? '#ffffff'}`,
+      `background:rgba(0,0,0,0.6)`,
+      `border:2px solid var(--color-accent,#6c5ce7)`,
+      `outline:none`, `resize:none`,
+      `padding:2px 4px`, `z-index:200`,
+      `overflow:hidden`, `white-space:pre-wrap`,
+      `border-radius:2px`,
+    ].join(';');
+
+    this.container.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    const commit = () => {
+      const newText = ta.value;
+      ta.remove();
+      if (newText !== rawText) {
+        const content = layer.content.type === 'rich'
+          ? { type: 'plain' as const, value: newText }
+          : { ...layer.content, value: newText };
+        this.state.updateLayer(layer.id, { content });
+      }
+    };
+
+    ta.addEventListener('blur', commit, { once: true });
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        ta.removeEventListener('blur', commit);
+        ta.remove();
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        ta.removeEventListener('blur', commit);
+        commit();
+      }
+    });
+  }
+
+  // ── Ruler guide lines ────────────────────────────────────────
+
+  private startGuide(e: PointerEvent, axis: 'h' | 'v'): void {
+    e.preventDefault();
+    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const vpRect = this.viewport.getBoundingClientRect();
+
+    // Preview line element
+    const preview = document.createElement('div');
+    preview.className = 'guide-preview';
+    preview.style.cssText = axis === 'h'
+      ? `position:absolute;left:${RULER_SIZE}px;right:0;height:1px;background:#6c5ce7;pointer-events:none;z-index:150;top:${e.clientY - vpRect.top + RULER_SIZE}px`
+      : `position:absolute;top:${RULER_SIZE}px;bottom:0;width:1px;background:#6c5ce7;pointer-events:none;z-index:150;left:${e.clientX - vpRect.left + RULER_SIZE}px`;
+    this.container.appendChild(preview);
+
+    const onMove = (me: PointerEvent) => {
+      if (axis === 'h') {
+        preview.style.top = `${me.clientY - vpRect.top + RULER_SIZE}px`;
+      } else {
+        preview.style.left = `${me.clientX - vpRect.left + RULER_SIZE}px`;
+      }
+    };
+
+    const onUp = (me: PointerEvent) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      preview.remove();
+
+      // Only add if released inside canvas area
+      const vp = this.viewport.getBoundingClientRect();
+      if (me.clientX < vp.left || me.clientX > vp.right || me.clientY < vp.top || me.clientY > vp.bottom) return;
+
+      const position = axis === 'h'
+        ? Math.round((me.clientY - vp.top - panY) / zoom)
+        : Math.round((me.clientX - vp.left - panX) / zoom);
+
+      const guide: Guide = { id: `guide-${++guideCounter}`, axis, position };
+      this.state.set('guides', [...this.state.get().guides, guide], false);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private renderGuideLines(): void {
+    this.selectionOverlay.querySelectorAll('.ruler-guide').forEach(el => el.remove());
+
+    const { guides, zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    if (!guides.length) return;
+
+    const doc = this.state.get().design?.document;
+    const cw = doc?.width ?? 1080;
+    const ch = doc?.height ?? 1080;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'ruler-guide');
+    svg.setAttribute('width', String(cw));
+    svg.setAttribute('height', String(ch));
+    svg.style.cssText = 'position:absolute;inset:0;pointer-events:auto;z-index:89;overflow:visible';
+
+    for (const guide of guides) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      if (guide.axis === 'h') {
+        line.setAttribute('x1', '0'); line.setAttribute('x2', String(cw));
+        line.setAttribute('y1', String(guide.position)); line.setAttribute('y2', String(guide.position));
+      } else {
+        line.setAttribute('y1', '0'); line.setAttribute('y2', String(ch));
+        line.setAttribute('x1', String(guide.position)); line.setAttribute('x2', String(guide.position));
+      }
+      line.setAttribute('stroke', '#6c5ce7');
+      line.setAttribute('stroke-width', String(1 / zoom));
+      line.setAttribute('opacity', '0.7');
+      line.style.cursor = 'pointer';
+      line.setAttribute('data-guide-id', guide.id);
+
+      // Double-click to delete guide
+      line.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.state.set('guides', this.state.get().guides.filter(g => g.id !== guide.id), false);
+      });
+
+      svg.appendChild(line);
+    }
+
+    this.selectionOverlay.appendChild(svg);
+
+    // Apply the same transform as the main SVG
+    svg.style.transform = `scale(${zoom}) translate(${panX / zoom}px, ${panY / zoom}px)`;
+    svg.style.transformOrigin = '0 0';
   }
 }
 

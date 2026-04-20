@@ -6,6 +6,12 @@ export type ToolId =
 
 export type RulerUnit = 'px' | 'mm' | 'cm' | 'in';
 
+export interface Guide {
+  id: string;
+  axis: 'h' | 'v'; // h = horizontal line at fixed y; v = vertical line at fixed x
+  position: number; // design-space px
+}
+
 export interface EditorState {
   design: DesignSpec | null;
   theme: ThemeSpec | null;
@@ -21,6 +27,7 @@ export interface EditorState {
   dirty: boolean;
   activeTool: ToolId;
   rulerUnit: RulerUnit;
+  guides: Guide[];
 }
 
 export type StateChangeListener = (state: EditorState, changedKeys: (keyof EditorState)[]) => void;
@@ -51,6 +58,7 @@ export class StateManager {
       dirty: false,
       activeTool: 'select',
       rulerUnit: 'px',
+      guides: [],
     };
   }
 
