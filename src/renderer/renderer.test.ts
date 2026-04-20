@@ -505,3 +505,78 @@ describe('renderDesign — grid overlay', () => {
     expect(rects.length).toBe(6);
   });
 });
+
+describe('renderDesign — carousel pages', () => {
+  it('renders pages when spec.layers is absent', () => {
+    const spec: DesignSpec = {
+      _protocol: 'design/v1',
+      meta: { id: 'carousel', name: 'C', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+      pages: [
+        { id: 'p1', label: 'Page 1', layers: [
+          { id: 'r1', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100 } as RectLayer,
+        ] },
+      ],
+    } as unknown as DesignSpec;
+    const svg = renderDesign(spec);
+    // spec.layers is undefined so renderDesign skips it — no layer children
+    expect(svg).toBeTruthy();
+    expect(svg.getAttribute('width')).toBe('1080');
+  });
+});
+
+describe('renderPage — direct layer list', () => {
+  it('renders layers onto a given canvas size', () => {
+    const layers: Layer[] = [
+      { id: 'r', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 } as RectLayer,
+    ];
+    const svg = renderPage(layers, 800, 600);
+    expect(svg.getAttribute('width')).toBe('800');
+    expect(svg.getAttribute('height')).toBe('600');
+    expect(svg.querySelector('[data-layer-id="r"]')).not.toBeNull();
+  });
+
+  it('sorts layers by z in renderPage', () => {
+    const layers: Layer[] = [
+      { id: 'top', type: 'rect', z: 10, x: 0, y: 0, width: 10, height: 10 } as RectLayer,
+      { id: 'bot', type: 'rect', z: 1, x: 0, y: 0, width: 10, height: 10 } as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const children = Array.from(svg.children).filter(c => c.tagName !== 'defs');
+    expect(children[0].getAttribute('data-layer-id')).toBe('bot');
+    expect(children[1].getAttribute('data-layer-id')).toBe('top');
+  });
+
+  it('applies clip-path defs in renderPage', () => {
+    const layers: Layer[] = [
+      { id: 'mask', type: 'rect', z: 2, x: 0, y: 0, width: 100, height: 100 } as RectLayer,
+      { id: 'clip-target', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'mask' } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('#cp-mask')).not.toBeNull();
+    expect(svg.querySelector('[data-layer-id="clip-target"]')?.getAttribute('clip-path')).toBe('url(#cp-mask)');
+  });
+});
+
+describe('renderLayer — show_if with layer field reference', () => {
+  it('uses layer fields in expression (width check)', () => {
+    const svg = createSVGRoot(400, 400);
+    invalidateCache();
+    const el = renderLayer({
+      id: 'expr', type: 'rect', z: 0, x: 0, y: 0, width: 200, height: 50,
+      show_if: 'width > 100',
+    } as RectLayer, svg);
+    expect(el.getAttribute('data-hidden')).toBeNull();
+  });
+
+  it('hides layer when field-based expression is false', () => {
+    const svg = createSVGRoot(400, 400);
+    invalidateCache();
+    const el = renderLayer({
+      id: 'hidden-expr', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50,
+      show_if: 'width > 100',
+    } as RectLayer, svg);
+    expect(el.getAttribute('data-hidden')).toBe('show_if');
+  });
+});

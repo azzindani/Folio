@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { exportAsTemplate, injectIntoTemplate, listSlots } from './template';
+import { exportAsTemplate, injectIntoTemplate, listSlots, getByPath, setByPath } from './template';
 import type { DesignSpec } from './types';
 
 function makeSpec(): DesignSpec {
@@ -187,5 +187,34 @@ describe('listSlots', () => {
   it('count matches slot count', () => {
     const t = exportAsTemplate(makeSpec());
     expect(listSlots(t).length).toBe(2); // title + hero
+  });
+});
+
+describe('getByPath / setByPath edge cases', () => {
+  it('getByPath returns undefined for non-existent path', () => {
+    const obj = { a: { b: 42 } };
+    expect(getByPath(obj, 'a.c.d')).toBeUndefined();
+  });
+
+  it('getByPath handles null intermediate value', () => {
+    const obj = { a: null };
+    expect(getByPath(obj, 'a.b')).toBeUndefined();
+  });
+
+  it('getByPath traverses array index', () => {
+    const obj = { items: ['x', 'y', 'z'] };
+    expect(getByPath(obj, 'items[1]')).toBe('y');
+  });
+
+  it('setByPath handles null intermediate (does not throw)', () => {
+    const obj: Record<string, unknown> = { a: null };
+    expect(() => setByPath(obj, 'a.b.c', 'val')).not.toThrow();
+  });
+
+  it('exportAsTemplate includes theme when present', () => {
+    const spec = makeSpec();
+    (spec as unknown as Record<string, unknown>)['theme'] = { tokens: {} };
+    const t = exportAsTemplate(spec);
+    expect(t.theme).toBeDefined();
   });
 });
