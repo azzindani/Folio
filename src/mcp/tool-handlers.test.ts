@@ -8,7 +8,7 @@ import {
   addLayer, updateLayer, removeLayer,
   listThemes, batchCreate, duplicateDesign,
   resumeDesign, saveAsComponent, applyTheme,
-  exportDesignTool,
+  exportDesignTool, exportTemplateTool, injectTemplateTool, listTemplateSlots,
 } from './tool-handlers';
 import type { Layer } from '../schema/types';
 
@@ -562,6 +562,116 @@ describe('exportDesignTool', () => {
 
   it('returns error when design not found', () => {
     const result = exportDesignTool({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
+    expect(result.isError).toBe(true);
+  });
+});
+
+// ── Template tools ─────────────────────────────────────────
+function makeDesignFile(dir: string): string {
+  const p = path.join(dir, 'test.design.yaml');
+  const spec = {
+    _protocol: 'design/v1',
+    meta: { id: 't1', name: 'Test', type: 'poster', created: '2026-01-01', modified: '2026-01-01' },
+    document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+    layers: [
+      { id: 'title', type: 'text', z: 10, x: 0, y: 0, width: 500, height: 80,
+        content: { type: 'plain', value: 'Hello World' }, style: { font_size: 48 } },
+      { id: 'hero', type: 'image', z: 5, x: 0, y: 100, width: 400, height: 300, src: 'https://example.com/img.jpg' },
+    ],
+  };
+  fs.writeFileSync(p, JSON.stringify(spec));
+  return p;
+}
+
+describe('exportTemplateTool', () => {
+  it('creates a .template file and returns slot info', () => {
+    const designPath = makeDesignFile(tmpDir);
+    const result = exportTemplateTool({ design_path: designPath });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.slot_count).toBe(2);
+    expect(parsed.template_path).toContain('.template.yaml');
+    expect(fs.existsSync(parsed.template_path)).toBe(true);
+  });
+
+  it('respects custom output_path', () => {
+    const designPath = makeDesignFile(tmpDir);
+    const outPath = path.join(tmpDir, 'custom.template.yaml');
+    const result = exportTemplateTool({ design_path: designPath, output_path: outPath });
+    expect(JSON.parse(result.content[0].text).template_path).toBe(outPath);
+    expect(fs.existsSync(outPath)).toBe(true);
+  });
+
+  it('returns error for missing design', () => {
+    const result = exportTemplateTool({ design_path: path.join(tmpDir, 'none.yaml') });
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe('injectTemplateTool', () => {
+  function makeTemplate(dir: string): string {
+    const designPath = makeDesignFile(dir);
+    const r = exportTemplateTool({ design_path: designPath });
+    return JSON.parse(r.content[0].text).template_path as string;
+  }
+
+  it('injects slots and writes design file', () => {
+    const tplPath = makeTemplate(tmpDir);
+    const outPath = path.join(tmpDir, 'injected.yaml');
+    const result = injectTemplateTool({
+      template_path: tplPath,
+      slots: { title_text: 'Injected Title', hero_src: '/local/photo.jpg' },
+      output_path: outPath,
+    });
+    expect(result.isError).toBeUndefined();
+    expect(fs.existsSync(outPath)).toBe(true);
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.slots_injected).toBe(2);
+  });
+
+  it('auto-derives output path when not specified', () => {
+    const tplPath = makeTemplate(tmpDir);
+    const result = injectTemplateTool({ template_path: tplPath, slots: {} });
+    expect(result.isError).toBeUndefined();
+    const outPath = JSON.parse(result.content[0].text).design_path as string;
+    expect(outPath).toContain('.design.yaml');
+    expect(fs.existsSync(outPath)).toBe(true);
+  });
+
+  it('returns error for missing template', () => {
+    const result = injectTemplateTool({ template_path: path.join(tmpDir, 'none.yaml'), slots: {} });
+    expect(result.isError).toBe(true);
+  });
+
+  it('returns error for non-template file', () => {
+    const designPath = makeDesignFile(tmpDir);
+    const result = injectTemplateTool({ template_path: designPath, slots: {} });
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe('listTemplateSlots', () => {
+  it('lists slots from a valid template', () => {
+    const designPath = makeDesignFile(tmpDir);
+    const r = exportTemplateTool({ design_path: designPath });
+    const tplPath = JSON.parse(r.content[0].text).template_path as string;
+    const result = listTemplateSlots({ template_path: tplPath });
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.count).toBe(2);
+    expect(parsed.slots[0]).toHaveProperty('id');
+    expect(parsed.slots[0]).toHaveProperty('path');
+    expect(parsed.slots[0]).toHaveProperty('type');
+  });
+
+  it('returns error for missing file', () => {
+    const result = listTemplateSlots({ template_path: path.join(tmpDir, 'none.yaml') });
+    expect(result.isError).toBe(true);
+  });
+
+  it('returns error for non-template file', () => {
+    const designPath = makeDesignFile(tmpDir);
+    const result = listTemplateSlots({ template_path: designPath });
     expect(result.isError).toBe(true);
   });
 });
