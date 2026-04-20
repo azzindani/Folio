@@ -29,6 +29,7 @@ import { AutoSaveManager } from './auto-save';
 import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
+import { AnimationPanel } from '../ui/panels/animation-panel';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -210,6 +211,7 @@ export class EditorApp {
   private autoSave!: AutoSaveManager;
   private colorPalette!: ColorPaletteManager;
   private componentLibrary!: ComponentLibraryManager;
+  private animationPanel!: AnimationPanel;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -318,6 +320,12 @@ export class EditorApp {
       },
     );
 
+    // Animation panel
+    const animContainer = this.container.querySelector<HTMLElement>('.animate-content');
+    if (animContainer) {
+      this.animationPanel = new AnimationPanel(animContainer, this.state);
+    }
+
     // Component library panel
     const compContainer = this.container.querySelector<HTMLElement>('.comp-library-content');
     if (compContainer) {
@@ -424,6 +432,7 @@ export class EditorApp {
         <div class="rpanel-tabs">
           <button class="rpanel-tab active" data-tab="properties">Props</button>
           <button class="rpanel-tab" data-tab="colors">Colors</button>
+          <button class="rpanel-tab" data-tab="animate">Animate</button>
           <button class="rpanel-tab" data-tab="problems">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
@@ -436,6 +445,9 @@ export class EditorApp {
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
+          </div>
+          <div class="tab-pane" data-tab="animate" style="height:100%;overflow-y:auto">
+            <div class="animate-content" style="height:100%"></div>
           </div>
           <div class="tab-pane" data-tab="a11y" style="height:100%">
             <div class="a11y-content" style="height:100%"></div>
