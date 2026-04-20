@@ -16,7 +16,7 @@ sleep 1
 
 # Start Vite preview
 cd "$FOLIO_DIR"
-nohup npm run preview -- --host 0.0.0.0 --port $PORT > /tmp/folio-vite.log 2>&1 &
+nohup npx vite preview --host 0.0.0.0 --port $PORT > /tmp/folio-vite.log 2>&1 &
 sleep 3
 
 # Start cloudflared tunnel
