@@ -22,10 +22,10 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     open: false,
     strictPort: false,
-    allowedHosts: 'all',
+    allowedHosts: true,
   },
   preview: {
     port: 4173,
-    allowedHosts: 'all',
+    allowedHosts: true,
   },
 }));
