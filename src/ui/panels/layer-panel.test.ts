@@ -232,21 +232,37 @@ describe('LayerPanelManager — collapse toggle', () => {
 describe('LayerPanelManager — move layer (drag-drop reorder)', () => {
   let state: StateManager;
   let wrapper: HTMLElement;
+  let panel: LayerPanelManager;
 
   beforeEach(() => {
     state = new StateManager();
+    const layers = [makeRect('a', 30), makeRect('b', 20), makeRect('c', 10)];
+    state.set('design', makeDesign(layers), false);
     wrapper = document.createElement('div');
     document.body.appendChild(wrapper);
-    new LayerPanelManager(wrapper, state);
+    panel = new LayerPanelManager(wrapper, state);
   });
   afterEach(() => { wrapper.remove(); });
 
   it('getLayersByBand returns "All" band containing all layers', () => {
-    const layers = [makeRect('a', 10), makeRect('b', 20)];
-    state.set('design', makeDesign(layers));
-    // Access via panel reference
-    const panel = new LayerPanelManager(document.createElement('div'), state);
+    const layers = [makeRect('x', 10), makeRect('y', 20)];
     const bands = panel.getLayersByBand(layers);
     expect(bands.get('All')).toHaveLength(2);
+  });
+
+  it('drag-drop: dragstart event fires without crash', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!;
+    expect(row).not.toBeNull();
+    // jsdom supports dragstart via Event (DragEvent not available in jsdom)
+    row.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    // No crash expected
+    expect(row).not.toBeNull();
+  });
+
+  it('drag-drop: dragend event fires without crash', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!;
+    row.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    row.dispatchEvent(new Event('dragend', { bubbles: true }));
+    expect(wrapper.querySelectorAll('.dragging').length).toBe(0);
   });
 });

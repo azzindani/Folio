@@ -322,6 +322,60 @@ describe('KeyboardManager — paste', () => {
     state.set('design', makeDesign([]));
     expect(() => fireKey('v', { ctrl: true })).not.toThrow();
   });
+
+  it('Ctrl+V with clipboard returning valid YAML pastes layer', async () => {
+    state.set('design', makeDesign([]));
+    // Mock clipboard to return a valid layer YAML
+    const yamlLayer = 'id: pasted\ntype: rect\nz: 5\nx: 0\ny: 0\nwidth: 100\nheight: 100';
+    const origClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve(yamlLayer) },
+      writable: true, configurable: true,
+    });
+    fireKey('v', { ctrl: true });
+    await new Promise(r => setTimeout(r, 50)); // let promise resolve
+    const layers = state.getCurrentLayers();
+    expect(layers.some(l => l.id.includes('pasted'))).toBe(true);
+    Object.defineProperty(navigator, 'clipboard', { value: origClipboard, writable: true, configurable: true });
+  });
+
+  it('Ctrl+V with invalid clipboard content is silently ignored', async () => {
+    state.set('design', makeDesign([]));
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve('not valid yaml: [[[') },
+      writable: true, configurable: true,
+    });
+    expect(() => fireKey('v', { ctrl: true })).not.toThrow();
+    await new Promise(r => setTimeout(r, 50));
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true, configurable: true });
+  });
+});
+
+describe('KeyboardManager — presentation and print shortcuts', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('F5 does not throw when presentation is not available', () => {
+    expect(() => fireKey('F5')).not.toThrow();
+  });
+
+  it('Ctrl+P does not throw when printDesign is not available', () => {
+    expect(() => fireKey('p', { ctrl: true })).not.toThrow();
+  });
+
+  it('Ctrl+O does not throw when fileTree is not available', () => {
+    expect(() => fireKey('o', { ctrl: true })).not.toThrow();
+  });
+
+  it('Ctrl+S does not throw when fileTree is not available', () => {
+    expect(() => fireKey('s', { ctrl: true })).not.toThrow();
+  });
 });
 
 describe('KeyboardManager — getShortcuts', () => {
