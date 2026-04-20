@@ -265,3 +265,74 @@ describe('KeyboardManager — copy (no clipboard API in jsdom)', () => {
     expect(() => fireKey('c', { ctrl: true })).not.toThrow();
   });
 });
+
+describe('KeyboardManager — tool shortcuts', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('v sets activeTool to select', () => {
+    state.set('activeTool', 'rect', false);
+    fireKey('v');
+    expect(state.get().activeTool).toBe('select');
+  });
+
+  it('r sets activeTool to rect', () => {
+    fireKey('r');
+    expect(state.get().activeTool).toBe('rect');
+  });
+
+  it('t sets activeTool to text', () => {
+    fireKey('t');
+    expect(state.get().activeTool).toBe('text');
+  });
+
+  it('l sets activeTool to line', () => {
+    fireKey('l');
+    expect(state.get().activeTool).toBe('line');
+  });
+
+  it('c (no ctrl) sets activeTool to circle', () => {
+    fireKey('c');
+    expect(state.get().activeTool).toBe('circle');
+  });
+
+  it('Ctrl+0 calls fitToScreen', () => {
+    fireKey('0', { ctrl: true });
+    expect(mockApp.canvas.fitToScreen).toHaveBeenCalled();
+  });
+});
+
+describe('KeyboardManager — paste', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+V does not throw when clipboard is unavailable', () => {
+    state.set('design', makeDesign([]));
+    expect(() => fireKey('v', { ctrl: true })).not.toThrow();
+  });
+});
+
+describe('KeyboardManager — getShortcuts', () => {
+  it('returns the registered shortcuts list', async () => {
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    const state = new StateManager();
+    const km = new KeyboardManager(state, mockApp);
+    const shortcuts = km.getShortcuts();
+    expect(Array.isArray(shortcuts)).toBe(true);
+    expect(shortcuts.length).toBeGreaterThan(0);
+    expect(shortcuts.every(s => typeof s.key === 'string' && typeof s.action === 'function')).toBe(true);
+  });
+});

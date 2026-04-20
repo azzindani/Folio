@@ -556,3 +556,142 @@ describe('renderAutoLayout', () => {
     expect(el).toBeTruthy();
   });
 });
+
+// ── Text ─────────────────────────────────────────────────────
+import { renderText } from './layer-renderers';
+import type { TextLayer } from '../schema/types';
+
+describe('renderText', () => {
+  it('renders plain text with fill color', () => {
+    const layer: TextLayer = {
+      id: 'tx1', type: 'text', z: 0, x: 10, y: 20, width: 300, height: 60,
+      content: { type: 'plain', value: 'Hello' },
+      style: { font_size: 24, color: '#ff0000' },
+    };
+    const el = renderText(layer, makeSVG());
+    const text = el.querySelector('text');
+    expect(text?.getAttribute('fill')).toBe('#ff0000');
+    expect(text?.getAttribute('font-size')).toBe('24');
+  });
+
+  it('renders multiline plain text with tspan elements', () => {
+    const layer: TextLayer = {
+      id: 'multi', type: 'text', z: 0, x: 0, y: 0, width: 300, height: 100,
+      content: { type: 'plain', value: 'Line1\nLine2\nLine3' },
+      style: {},
+    };
+    const el = renderText(layer, makeSVG());
+    const tspans = el.querySelectorAll('tspan');
+    expect(tspans.length).toBe(3);
+  });
+
+  it('renders plain text with text-anchor for center align', () => {
+    const layer: TextLayer = {
+      id: 'center', type: 'text', z: 0, x: 0, y: 0, width: 200, height: 50,
+      content: { type: 'plain', value: 'Centered' },
+      style: { align: 'center' },
+    };
+    const el = renderText(layer, makeSVG());
+    const text = el.querySelector('text');
+    expect(text?.getAttribute('text-anchor')).toBe('middle');
+  });
+
+  it('renders plain text with right text-anchor', () => {
+    const layer: TextLayer = {
+      id: 'right', type: 'text', z: 0, x: 0, y: 0, width: 200, height: 50,
+      content: { type: 'plain', value: 'Right' },
+      style: { align: 'right' },
+    };
+    const el = renderText(layer, makeSVG());
+    expect(el.querySelector('text')?.getAttribute('text-anchor')).toBe('end');
+  });
+
+  it('renders rich text with tspan spans', () => {
+    const layer: TextLayer = {
+      id: 'rich', type: 'text', z: 0, x: 0, y: 0, width: 300, height: 60,
+      content: { type: 'rich', spans: [
+        { text: 'Bold', bold: true, color: '#f00' },
+        { text: ' Normal', italic: true, size: 18 },
+      ] },
+      style: {},
+    };
+    const el = renderText(layer, makeSVG());
+    const tspans = el.querySelectorAll('tspan');
+    expect(tspans.length).toBe(2);
+    expect(tspans[0].getAttribute('font-weight')).toBe('bold');
+    expect(tspans[0].getAttribute('fill')).toBe('#f00');
+    expect(tspans[1].getAttribute('font-style')).toBe('italic');
+    expect(tspans[1].getAttribute('font-size')).toBe('18');
+  });
+
+  it('renders markdown as foreignObject div', () => {
+    const layer: TextLayer = {
+      id: 'md', type: 'text', z: 0, x: 0, y: 0, width: 400, height: 200,
+      content: { type: 'markdown', value: '# Hello\n\nWorld' },
+      style: { font_size: 16 },
+    };
+    const el = renderText(layer, makeSVG());
+    expect(el.querySelector('foreignObject')).not.toBeNull();
+  });
+
+  it('applies letter-spacing and line-height to plain text', () => {
+    const layer: TextLayer = {
+      id: 'spacing', type: 'text', z: 0, x: 0, y: 0, width: 200, height: 50,
+      content: { type: 'plain', value: 'Spaced' },
+      style: { letter_spacing: 2, line_height: 1.8 },
+    };
+    const el = renderText(layer, makeSVG());
+    expect(el.querySelector('text')?.getAttribute('letter-spacing')).toBe('2px');
+  });
+});
+
+// ── Circle ───────────────────────────────────────────────────
+import { renderCircle } from './layer-renderers';
+import type { CircleLayer } from '../schema/types';
+
+describe('renderCircle', () => {
+  it('renders an ellipse with correct cx/cy/rx/ry', () => {
+    const layer: CircleLayer = {
+      id: 'c1', type: 'circle', z: 0, x: 0, y: 0, width: 100, height: 80,
+    };
+    const el = renderCircle(layer, makeSVG());
+    expect(el.tagName).toBe('ellipse');
+    expect(el.getAttribute('rx')).toBe('50');
+    expect(el.getAttribute('ry')).toBe('40');
+  });
+
+  it('uses explicit cx/cy when provided', () => {
+    const layer: CircleLayer = {
+      id: 'c2', type: 'circle', z: 0, cx: 200, cy: 150, rx: 60, ry: 60,
+    } as unknown as CircleLayer;
+    const el = renderCircle(layer, makeSVG());
+    expect(el.getAttribute('cx')).toBe('200');
+    expect(el.getAttribute('cy')).toBe('150');
+  });
+
+  it('applies fill and stroke', () => {
+    const layer: CircleLayer = {
+      id: 'c3', type: 'circle', z: 0, x: 0, y: 0, width: 100, height: 100,
+      fill: { type: 'solid', color: '#00ff00' },
+      stroke: { color: '#ff0000', width: 3 },
+    };
+    const el = renderCircle(layer, makeSVG());
+    expect(el.getAttribute('fill')).toBe('#00ff00');
+    expect(el.getAttribute('stroke')).toBe('#ff0000');
+    expect(el.getAttribute('stroke-width')).toBe('3');
+  });
+});
+
+// ── Icon fallback ────────────────────────────────────────────
+describe('renderIcon — fallback for unknown icon', () => {
+  it('renders dashed rect and text label for unknown icon name', () => {
+    const layer: IconLayer = {
+      id: 'unk', type: 'icon', z: 0, name: '__nonexistent_icon__', size: 32,
+      x: 0, y: 0,
+    } as unknown as IconLayer;
+    const el = renderIcon(layer, makeSVG());
+    expect(el.querySelector('rect')).not.toBeNull();
+    const text = el.querySelector('text');
+    expect(text?.textContent).toBe('__nonexistent_icon__');
+  });
+});

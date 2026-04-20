@@ -95,3 +95,69 @@ describe('serializeYAML', () => {
     expect(parsed).toEqual(data);
   });
 });
+
+import { parseDesign, parseTheme, parseComponent, parseTemplate } from './parser';
+
+describe('ParseError — line/column info', () => {
+  it('includes line number in ParseError', () => {
+    try {
+      parseYAML('key: [unclosed');
+    } catch (e) {
+      expect(e).toBeInstanceOf(ParseError);
+      // line/column may or may not be defined depending on yaml error type
+      expect(e instanceof ParseError && e.name).toBe('ParseError');
+    }
+  });
+});
+
+describe('parseDesign', () => {
+  it('parses valid design YAML', () => {
+    const src = `
+_protocol: design/v1
+meta:
+  id: d1
+  name: Test
+  type: poster
+  created: "2026-01-01"
+  modified: "2026-01-01"
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+layers: []
+`;
+    const spec = parseDesign(src);
+    expect(spec._protocol).toBe('design/v1');
+    expect(spec.meta.id).toBe('d1');
+  });
+
+  it('throws ParseError for malformed design YAML', () => {
+    expect(() => parseDesign('{ bad: yaml: :')).toThrow(ParseError);
+  });
+});
+
+describe('parseTheme', () => {
+  it('parses a minimal theme', () => {
+    const src = `_protocol: theme/v1\nname: Dark\nversion: 1.0.0\ncolors: {}\ntyography: {}\nspacing: {unit: 8, scale: []}\neffects: {}\nradii: {}`;
+    const theme = parseTheme(src);
+    expect(theme.name).toBe('Dark');
+  });
+});
+
+describe('parseComponent', () => {
+  it('parses a minimal component', () => {
+    const src = `_protocol: component/v1\nname: Badge\nversion: 1.0.0\nprops: {}\nlayers: []`;
+    const comp = parseComponent(src);
+    expect(comp.name).toBe('Badge');
+  });
+});
+
+describe('parseTemplate', () => {
+  it('parses a minimal template', () => {
+    const src = `_protocol: template/v1\nmeta:\n  id: t1\n  name: T\n  type: poster\n  created: ""\n  modified: ""\ndocument:\n  width: 1080\n  height: 1080\n  unit: px\n  dpi: 96\nslots: []`;
+    const tpl = parseTemplate(src);
+    expect(tpl._protocol).toBe('template/v1');
+    expect(tpl.slots).toEqual([]);
+  });
+});

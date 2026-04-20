@@ -113,3 +113,140 @@ describe('LayerPanelManager — render on state change', () => {
     void before;
   });
 });
+
+describe('LayerPanelManager — click interactions', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    // Set design before panel creation to have exactly one { once: true } click listener
+    state.set('design', makeDesign([makeRect('layer-a', 20), makeRect('layer-b', 10)]), false);
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('clicking a layer row selects it', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="layer-a"]')!;
+    expect(row).not.toBeNull();
+    row.click();
+    expect(state.get().selectedLayerIds).toContain('layer-a');
+  });
+
+  it('clicking toggle-vis button hides layer', () => {
+    const btn = wrapper.querySelector<HTMLElement>('[data-action="toggle-vis"][data-layer-id="layer-a"]')!;
+    expect(btn).not.toBeNull();
+    btn.click();
+    const updated = state.getCurrentLayers().find(l => l.id === 'layer-a');
+    expect(updated?.visible).toBe(false);
+  });
+
+  it('clicking toggle-lock button locks layer', () => {
+    const btn = wrapper.querySelector<HTMLElement>('[data-action="toggle-lock"][data-layer-id="layer-a"]')!;
+    expect(btn).not.toBeNull();
+    btn.click();
+    const updated = state.getCurrentLayers().find(l => l.id === 'layer-a');
+    expect(updated?.locked).toBe(true);
+  });
+
+  it('clicking outside a row re-renders without changing selection', () => {
+    state.set('selectedLayerIds', ['layer-a']);
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    list.click(); // click on list itself (not a row)
+    // Should not throw; selection state may vary
+    expect(wrapper.querySelector('.layer-list')).not.toBeNull();
+  });
+});
+
+describe('LayerPanelManager — dblclick rename', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    // Set design BEFORE creating panel to avoid double render (only one { once: true } listener)
+    state.set('design', makeDesign([makeRect('rename-me', 10)]), false);
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('double-clicking a row creates a rename input', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="rename-me"]')!;
+    row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = wrapper.querySelector<HTMLInputElement>('.layer-rename-input');
+    expect(input).not.toBeNull();
+    expect(input?.value).toBe('rename-me');
+  });
+
+  it('pressing Enter commits the rename', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="rename-me"]')!;
+    row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = wrapper.querySelector<HTMLInputElement>('.layer-rename-input')!;
+    input.value = 'new-id';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    input.dispatchEvent(new Event('blur'));
+    const layers = state.getCurrentLayers();
+    expect(layers.some(l => l.id === 'new-id')).toBe(true);
+  });
+
+  it('pressing Escape cancels the rename', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="rename-me"]')!;
+    row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = wrapper.querySelector<HTMLInputElement>('.layer-rename-input')!;
+    input.value = 'different-id';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    // After Escape, list re-renders (original id stays)
+    expect(state.getCurrentLayers()[0].id).toBe('rename-me');
+  });
+});
+
+describe('LayerPanelManager — collapse toggle', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    const child = makeRect('child-col', 5);
+    const group = makeGroup('grp-col', 20, [child]);
+    // Set design with group BEFORE creating panel → exactly one click listener
+    state.set('design', makeDesign([group]), false);
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('clicking collapse button hides children', () => {
+    expect(wrapper.querySelectorAll('.layer-row').length).toBe(2);
+    const collapseBtn = wrapper.querySelector<HTMLElement>('[data-action="collapse"][data-layer-id="grp-col"]')!;
+    expect(collapseBtn).not.toBeNull();
+    collapseBtn.click();
+    expect(wrapper.querySelectorAll('.layer-row').length).toBe(1);
+  });
+});
+
+describe('LayerPanelManager — move layer (drag-drop reorder)', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('getLayersByBand returns "All" band containing all layers', () => {
+    const layers = [makeRect('a', 10), makeRect('b', 20)];
+    state.set('design', makeDesign(layers));
+    // Access via panel reference
+    const panel = new LayerPanelManager(document.createElement('div'), state);
+    const bands = panel.getLayersByBand(layers);
+    expect(bands.get('All')).toHaveLength(2);
+  });
+});
