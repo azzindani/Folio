@@ -41,7 +41,7 @@ describe('Frame tool creates auto_layout layer', () => {
       meta: { id: 't', name: 'T', type: 'poster', created: '', modified: '' },
       document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
       layers: [],
-    } as unknown as Parameters<typeof state.set>[1]);
+    } as unknown as import('../../schema/types').DesignSpec);
     state.addLayer(frame as unknown as Parameters<typeof state.addLayer>[0]);
     const layers = state.getCurrentLayers();
     expect(layers.length).toBe(1);

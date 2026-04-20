@@ -218,6 +218,8 @@ export interface BaseLayer {
   show_if?: string;
   /** Responsive pin constraints */
   constraints?: PinConstraints;
+  /** Layer id whose shape clips this layer (boolean mask / intersect) */
+  clip_path_ref?: string;
 }
 
 // ── Concrete Layer Types ────────────────────────────────────

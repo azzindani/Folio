@@ -77,26 +77,33 @@ function evalShowIf(expr: string, layer: Layer): boolean {
 }
 
 function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
+  let el: SVGElement;
   switch (layer.type) {
-    case 'rect': return renderRect(layer, svg);
-    case 'circle': return renderCircle(layer, svg);
-    case 'path': return renderPath(layer, svg);
-    case 'polygon': return renderPolygon(layer, svg);
-    case 'line': return renderLine(layer, svg);
-    case 'text': return renderText(layer, svg);
-    case 'image': return renderImage(layer, svg);
-    case 'icon': return renderIcon(layer, svg);
-    case 'mermaid': return renderMermaid(layer, svg);
-    case 'chart': return renderChart(layer, svg);
-    case 'code': return renderCode(layer, svg);
-    case 'math': return renderMath(layer, svg);
-    case 'group': return renderGroup(layer, svg, renderLayer);
-    case 'component': return renderComponentLayer(layer as ComponentLayer, svg);
-    case 'component_list': return renderComponentListLayer(layer as ComponentListLayer, svg);
-    case 'qrcode': return renderQRCode(layer, svg);
-    case 'auto_layout': return renderAutoLayout(layer, svg, renderLayer);
-    default: return renderPlaceholder(layer, svg);
+    case 'rect':          el = renderRect(layer, svg); break;
+    case 'circle':        el = renderCircle(layer, svg); break;
+    case 'path':          el = renderPath(layer, svg); break;
+    case 'polygon':       el = renderPolygon(layer, svg); break;
+    case 'line':          el = renderLine(layer, svg); break;
+    case 'text':          el = renderText(layer, svg); break;
+    case 'image':         el = renderImage(layer, svg); break;
+    case 'icon':          el = renderIcon(layer, svg); break;
+    case 'mermaid':       el = renderMermaid(layer, svg); break;
+    case 'chart':         el = renderChart(layer, svg); break;
+    case 'code':          el = renderCode(layer, svg); break;
+    case 'math':          el = renderMath(layer, svg); break;
+    case 'group':         el = renderGroup(layer, svg, renderLayer); break;
+    case 'component':     el = renderComponentLayer(layer as ComponentLayer, svg); break;
+    case 'component_list':el = renderComponentListLayer(layer as ComponentListLayer, svg); break;
+    case 'qrcode':        el = renderQRCode(layer, svg); break;
+    case 'auto_layout':   el = renderAutoLayout(layer, svg, renderLayer); break;
+    default:              el = renderPlaceholder(layer, svg); break;
   }
+
+  if (layer.clip_path_ref) {
+    el.setAttribute('clip-path', `url(#cp-${layer.clip_path_ref})`);
+  }
+
+  return el;
 }
 
 function renderComponentLayer(layer: ComponentLayer, svg: SVGSVGElement): SVGElement {
@@ -159,6 +166,102 @@ function renderComponentListLayer(layer: ComponentListLayer, svg: SVGSVGElement)
   return g;
 }
 
+// ── Clip Path / Boolean Mask support ─────────────────────────
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function shapeToClipElement(layer: Layer): SVGElement | null {
+  const l = layer as Layer & { x?: number; y?: number; width?: number; height?: number; radius?: unknown; sides?: number };
+  const x = l.x ?? 0;
+  const y = l.y ?? 0;
+  const w = typeof l.width === 'number' ? l.width : 100;
+  const h = typeof l.height === 'number' ? l.height : 100;
+
+  if (layer.type === 'rect') {
+    const rx = typeof l.radius === 'number' ? l.radius : 0;
+    const el = document.createElementNS(SVG_NS, 'rect');
+    el.setAttribute('x', String(x)); el.setAttribute('y', String(y));
+    el.setAttribute('width', String(w)); el.setAttribute('height', String(h));
+    if (rx) el.setAttribute('rx', String(rx));
+    return el;
+  }
+
+  if (layer.type === 'circle') {
+    const el = document.createElementNS(SVG_NS, 'ellipse');
+    el.setAttribute('cx', String(x + w / 2)); el.setAttribute('cy', String(y + h / 2));
+    el.setAttribute('rx', String(w / 2)); el.setAttribute('ry', String(h / 2));
+    return el;
+  }
+
+  if (layer.type === 'polygon') {
+    const sides = typeof l.sides === 'number' ? l.sides : 6;
+    const cx = x + w / 2, cy = y + h / 2, rx = w / 2, ry = h / 2;
+    const pts = Array.from({ length: sides }, (_, i) => {
+      const a = (i / sides) * Math.PI * 2 - Math.PI / 2;
+      return `${cx + rx * Math.cos(a)},${cy + ry * Math.sin(a)}`;
+    }).join(' ');
+    const el = document.createElementNS(SVG_NS, 'polygon');
+    el.setAttribute('points', pts);
+    return el;
+  }
+
+  // Fallback: bounding box rect
+  const el = document.createElementNS(SVG_NS, 'rect');
+  el.setAttribute('x', String(x)); el.setAttribute('y', String(y));
+  el.setAttribute('width', String(w)); el.setAttribute('height', String(h));
+  return el;
+}
+
+function buildClipDefs(layers: Layer[], svg: SVGSVGElement): void {
+  const refsNeeded = new Set<string>();
+  const collectRefs = (ls: Layer[]): void => {
+    for (const l of ls) {
+      if (l.clip_path_ref) refsNeeded.add(l.clip_path_ref);
+      if (l.type === 'group' && 'layers' in l) collectRefs((l as { layers: Layer[] }).layers);
+      if (l.type === 'auto_layout' && 'layers' in l) collectRefs((l as { layers: Layer[] }).layers);
+    }
+  };
+  collectRefs(layers);
+  if (!refsNeeded.size) return;
+
+  let defs = svg.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS(SVG_NS, 'defs') as SVGDefsElement;
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  const findLayer = (id: string, ls: Layer[]): Layer | null => {
+    for (const l of ls) {
+      if (l.id === id) return l;
+      if (l.type === 'group' && 'layers' in l) {
+        const found = findLayer(id, (l as { layers: Layer[] }).layers);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  for (const refId of refsNeeded) {
+    if (defs.querySelector(`#cp-${refId}`)) continue; // already built
+    const refLayer = findLayer(refId, layers);
+    if (!refLayer) continue;
+
+    const clipPath = document.createElementNS(SVG_NS, 'clipPath');
+    clipPath.setAttribute('id', `cp-${refId}`);
+    const shape = shapeToClipElement(refLayer);
+    if (shape) {
+      const rot = refLayer.rotation;
+      if (rot) {
+        const x = (refLayer.x ?? 0) + (typeof refLayer.width === 'number' ? refLayer.width : 0) / 2;
+        const y = (refLayer.y ?? 0) + (typeof refLayer.height === 'number' ? refLayer.height : 0) / 2;
+        shape.setAttribute('transform', `rotate(${rot},${x},${y})`);
+      }
+      clipPath.appendChild(shape);
+    }
+    defs.appendChild(clipPath);
+  }
+}
+
 function renderPlaceholder(layer: Layer, _svg: SVGSVGElement): SVGElement {
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   g.setAttribute('data-layer-id', layer.id);
@@ -212,6 +315,7 @@ export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVG
   // Render top-level layers (poster mode)
   if (spec.layers) {
     const layers = prepareLayers(spec.layers, ctx);
+    buildClipDefs(layers, svg);
     for (const layer of layers) {
       svg.appendChild(renderLayer(layer, svg));
     }
@@ -295,6 +399,7 @@ export function renderPage(
   }
 
   const prepared = prepareLayers(layers, ctx);
+  buildClipDefs(prepared, svg);
   for (const layer of prepared) {
     svg.appendChild(renderLayer(layer, svg));
   }
