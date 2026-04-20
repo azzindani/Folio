@@ -1,6 +1,7 @@
-import { StateManager, type EditorState, type ToolId } from './state';
+import { StateManager, type EditorState, type ToolId, type RulerUnit } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
 import type { Layer } from '../schema/types';
+import { computeRulerTicks } from '../utils/ruler-units';
 
 let layerCounter = 0;
 
@@ -78,7 +79,7 @@ export class CanvasManager {
   }
 
   private updateRulers(): void {
-    const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+    const { zoom = 1, panX = 0, panY = 0, rulerUnit = 'px' } = this.state.get();
     const containerW = this.container.clientWidth  - RULER_SIZE;
     const containerH = this.container.clientHeight - RULER_SIZE;
 
@@ -86,14 +87,14 @@ export class CanvasManager {
     this.rulerH.width = Math.max(1, containerW);
     const ctxH = this.rulerH.getContext('2d');
     if (ctxH) {
-      drawRuler(ctxH, containerW, RULER_SIZE, zoom, panX, 'h');
+      drawRuler(ctxH, containerW, RULER_SIZE, zoom, panX, 'h', rulerUnit);
     }
 
     // ── Vertical ruler ──────────────────────────────────────
     this.rulerV.height = Math.max(1, containerH);
     const ctxV = this.rulerV.getContext('2d');
     if (ctxV) {
-      drawRuler(ctxV, containerH, RULER_SIZE, zoom, panY, 'v');
+      drawRuler(ctxV, containerH, RULER_SIZE, zoom, panY, 'v', rulerUnit);
     }
   }
 
@@ -232,7 +233,7 @@ export class CanvasManager {
       this.updateSelectionOverlay();
     }
 
-    if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY')) {
+    if (changedKeys.includes('zoom') || changedKeys.includes('panX') || changedKeys.includes('panY') || changedKeys.includes('rulerUnit')) {
       this.updateTransform();
       this.updateRulers();
     }
@@ -606,6 +607,7 @@ function drawRuler(
   zoom: number,
   pan: number,
   axis: 'h' | 'v',
+  unit: RulerUnit = 'px',
 ): void {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const bg      = isDark ? '#1e1e2e' : '#f0efee';
@@ -627,48 +629,33 @@ function drawRuler(
     ctx.fillRect(thickness - 1, 0, 1, length);
   }
 
-  // Determine a nice step at this zoom level
-  const steps = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
-  const minPxPerTick = 40;
-  const step = steps.find(s => s * zoom >= minPxPerTick) ?? 1000;
-
-  // Compute which design-unit values to draw
-  const start = Math.floor(-pan / zoom / step) * step;
-  const end   = Math.ceil((length / zoom - pan / zoom) / step) * step + step;
-
-  ctx.fillStyle = tickClr;
   ctx.font = `9px sans-serif`;
   ctx.textBaseline = 'top';
-  ctx.fillStyle = textClr;
 
-  for (let v = start; v <= end; v += step) {
-    const px = Math.round(v * zoom + pan);
-    if (px < 0 || px > length) continue;
+  // Design-px range visible in the viewport
+  const startDesignPx = -pan / zoom;
+  const endDesignPx   = (length / zoom) - pan / zoom;
+
+  const ticks = computeRulerTicks(startDesignPx, endDesignPx, unit, zoom);
+
+  for (const tick of ticks) {
+    const screenPx = Math.round(tick.px * zoom + pan);
+    if (screenPx < 0 || screenPx > length) continue;
 
     if (axis === 'h') {
       ctx.fillStyle = tickClr;
-      ctx.fillRect(px, thickness - 6, 1, 6);
+      ctx.fillRect(screenPx, thickness - 6, 1, 6);
       ctx.fillStyle = textClr;
-      ctx.fillText(String(v), px + 2, 2);
+      ctx.fillText(tick.label, screenPx + 2, 2);
     } else {
       ctx.fillStyle = tickClr;
-      ctx.fillRect(thickness - 6, px, 6, 1);
+      ctx.fillRect(thickness - 6, screenPx, 6, 1);
       ctx.save();
       ctx.fillStyle = textClr;
-      ctx.translate(2, px - 1);
+      ctx.translate(2, screenPx - 1);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText(String(v), 0, 0);
+      ctx.fillText(tick.label, 0, 0);
       ctx.restore();
-    }
-
-    // Minor ticks (half step)
-    if (step > 1) {
-      const halfPx = Math.round((v + step / 2) * zoom + pan);
-      if (halfPx >= 0 && halfPx <= length) {
-        ctx.fillStyle = tickClr;
-        if (axis === 'h') ctx.fillRect(halfPx, thickness - 3, 1, 3);
-        else               ctx.fillRect(thickness - 3, halfPx, 3, 1);
-      }
     }
   }
 }

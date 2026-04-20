@@ -4,6 +4,8 @@ export type ToolId =
   | 'select' | 'text' | 'rect' | 'circle' | 'line'
   | 'polygon' | 'star' | 'arrow' | 'pen' | 'image' | 'eyedropper' | 'hand';
 
+export type RulerUnit = 'px' | 'mm' | 'cm' | 'in';
+
 export interface EditorState {
   design: DesignSpec | null;
   theme: ThemeSpec | null;
@@ -18,6 +20,7 @@ export interface EditorState {
   yamlSource: string;
   dirty: boolean;
   activeTool: ToolId;
+  rulerUnit: RulerUnit;
 }
 
 export type StateChangeListener = (state: EditorState, changedKeys: (keyof EditorState)[]) => void;
@@ -47,6 +50,7 @@ export class StateManager {
       yamlSource: '',
       dirty: false,
       activeTool: 'select',
+      rulerUnit: 'px',
     };
   }
 
