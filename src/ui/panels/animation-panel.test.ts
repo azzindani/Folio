@@ -9,7 +9,7 @@ function makeDesign(): DesignSpec {
     meta: { id: 't', name: 'T', type: 'poster', created: '', modified: '' },
     document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
     layers: [
-      { id: 'r1', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 100 } as DesignSpec['layers'][0],
+      { id: 'r1', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 100 } as unknown as import('../../schema/types').Layer,
     ],
   } as unknown as DesignSpec;
 }

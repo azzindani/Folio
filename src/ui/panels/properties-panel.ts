@@ -38,8 +38,10 @@ export class PropertiesPanelManager {
     if (selected.length > 1) {
       this.content.innerHTML = `
         <div style="padding:8px">
-          <div style="font-size:12px;color:var(--color-text-muted)">${selected.length} layers selected</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">${selected.length} layers selected</div>
+          ${selected.length === 2 ? this.renderBooleanOpsSection() : ''}
         </div>`;
+      if (selected.length === 2) this.bindBooleanOps(selected[0], selected[1]);
       return;
     }
 
@@ -97,6 +99,45 @@ export class PropertiesPanelManager {
     this.bindGradientEditor(layer);
     this.bindEffectsButtons(layer);
     this.bindAccordions();
+  }
+
+  private renderBooleanOpsSection(): string {
+    return `
+      <div style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">
+          Boolean / Mask
+        </div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:8px">
+          Top layer clips bottom layer.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="btn btn-sm bool-op-btn" data-op="clip-mask" style="width:100%;text-align:left">
+            ⊓ Clip Mask (intersect)
+          </button>
+          <button class="btn btn-sm bool-op-btn" data-op="release" style="width:100%;text-align:left">
+            ✕ Release Mask
+          </button>
+        </div>
+      </div>`;
+  }
+
+  private bindBooleanOps(layerA: Layer, layerB: Layer): void {
+    // Determine top (higher z) and bottom (lower z) layers
+    const [top, bottom] = layerA.z > layerB.z ? [layerA, layerB] : [layerB, layerA];
+
+    this.content.querySelectorAll<HTMLButtonElement>('.bool-op-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const op = btn.dataset.op;
+        if (op === 'clip-mask') {
+          // Bottom layer clips to top layer's shape; hide top layer
+          this.state.updateLayer(bottom.id, { clip_path_ref: top.id } as Partial<Layer>);
+          this.state.updateLayer(top.id, { visible: false } as Partial<Layer>);
+        } else if (op === 'release') {
+          this.state.updateLayer(bottom.id, { clip_path_ref: undefined } as Partial<Layer>);
+          this.state.updateLayer(top.id, { visible: true } as Partial<Layer>);
+        }
+      });
+    });
   }
 
   private renderBlendModeField(current?: string): string {
