@@ -1,8 +1,17 @@
 import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
+import type { AnimationSpec } from '../animation/types';
 
 export type ToolId =
   | 'select' | 'text' | 'rect' | 'circle' | 'line'
-  | 'polygon' | 'star' | 'arrow' | 'pen' | 'image' | 'eyedropper' | 'hand';
+  | 'polygon' | 'star' | 'arrow' | 'pen' | 'image' | 'eyedropper' | 'hand' | 'frame';
+
+export type RulerUnit = 'px' | 'mm' | 'cm' | 'in';
+
+export interface Guide {
+  id: string;
+  axis: 'h' | 'v'; // h = horizontal line at fixed y; v = vertical line at fixed x
+  position: number; // design-space px
+}
 
 export interface EditorState {
   design: DesignSpec | null;
@@ -18,6 +27,9 @@ export interface EditorState {
   yamlSource: string;
   dirty: boolean;
   activeTool: ToolId;
+  rulerUnit: RulerUnit;
+  guides: Guide[];
+  animations: Record<string, AnimationSpec>;
 }
 
 export type StateChangeListener = (state: EditorState, changedKeys: (keyof EditorState)[]) => void;
@@ -47,6 +59,9 @@ export class StateManager {
       yamlSource: '',
       dirty: false,
       activeTool: 'select',
+      rulerUnit: 'px',
+      guides: [],
+      animations: {},
     };
   }
 

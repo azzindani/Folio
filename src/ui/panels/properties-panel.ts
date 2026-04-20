@@ -38,8 +38,10 @@ export class PropertiesPanelManager {
     if (selected.length > 1) {
       this.content.innerHTML = `
         <div style="padding:8px">
-          <div style="font-size:12px;color:var(--color-text-muted)">${selected.length} layers selected</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">${selected.length} layers selected</div>
+          ${selected.length === 2 ? this.renderBooleanOpsSection() : ''}
         </div>`;
+      if (selected.length === 2) this.bindBooleanOps(selected[0], selected[1]);
       return;
     }
 
@@ -65,10 +67,11 @@ export class PropertiesPanelManager {
     // Appearance section
     let appearance = '';
     switch (layer.type) {
-      case 'rect':   appearance = this.renderRectFields(layer); break;
-      case 'circle': appearance = this.renderCircleFields(layer); break;
-      case 'text':   appearance = this.renderTextFields(layer); break;
-      case 'line':   appearance = this.renderLineFields(layer); break;
+      case 'rect':        appearance = this.renderRectFields(layer); break;
+      case 'circle':      appearance = this.renderCircleFields(layer); break;
+      case 'text':        appearance = this.renderTextFields(layer); break;
+      case 'line':        appearance = this.renderLineFields(layer); break;
+      case 'auto_layout': appearance = this.renderAutoLayoutFields(layer as import('../../schema/types').AutoLayoutLayer); break;
     }
     if (appearance) html += this.section('Appearance', appearance);
 
@@ -78,14 +81,173 @@ export class PropertiesPanelManager {
         ${this.renderNumberInput('z', 'Z', layer.z)}
         ${this.renderNumberInput('opacity', 'Opacity', layer.opacity ?? 1)}
         ${this.renderNumberInput('rotation', 'Rotate°', layer.rotation ?? 0)}
-      </div>`;
+      </div>
+      ${this.renderBlendModeField(layer.effects?.blend_mode)}`;
     html += this.section('Transform', transform);
+
+    // Stroke section (all layers that support stroke)
+    if ('stroke' in layer) {
+      html += this.section('Stroke', this.renderStrokeFields(layer as Layer & { stroke?: import('../../schema/types').Stroke }), true);
+    }
+
+    // Effects section — shadows + blur
+    html += this.section('Effects', this.renderEffectsFields(layer), true);
 
     this.content.innerHTML = html;
     this.bindInputs(layer);
     this.bindColorWells(layer);
     this.bindGradientEditor(layer);
+    this.bindEffectsButtons(layer);
     this.bindAccordions();
+  }
+
+  private renderBooleanOpsSection(): string {
+    return `
+      <div style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">
+          Boolean / Mask
+        </div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:8px">
+          Top layer clips bottom layer.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="btn btn-sm bool-op-btn" data-op="clip-mask" style="width:100%;text-align:left">
+            ⊓ Clip Mask (intersect)
+          </button>
+          <button class="btn btn-sm bool-op-btn" data-op="release" style="width:100%;text-align:left">
+            ✕ Release Mask
+          </button>
+        </div>
+      </div>`;
+  }
+
+  private bindBooleanOps(layerA: Layer, layerB: Layer): void {
+    // Determine top (higher z) and bottom (lower z) layers
+    const [top, bottom] = layerA.z > layerB.z ? [layerA, layerB] : [layerB, layerA];
+
+    this.content.querySelectorAll<HTMLButtonElement>('.bool-op-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const op = btn.dataset.op;
+        if (op === 'clip-mask') {
+          // Bottom layer clips to top layer's shape; hide top layer
+          this.state.updateLayer(bottom.id, { clip_path_ref: top.id } as Partial<Layer>);
+          this.state.updateLayer(top.id, { visible: false } as Partial<Layer>);
+        } else if (op === 'release') {
+          this.state.updateLayer(bottom.id, { clip_path_ref: undefined } as Partial<Layer>);
+          this.state.updateLayer(top.id, { visible: true } as Partial<Layer>);
+        }
+      });
+    });
+  }
+
+  private renderBlendModeField(current?: string): string {
+    const modes = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
+      'color-dodge', 'color-burn', 'hard-light', 'soft-light', 'difference',
+      'exclusion', 'hue', 'saturation', 'color', 'luminosity'];
+    const options = modes.map(m =>
+      `<option value="${m}"${m === (current ?? 'normal') ? ' selected' : ''}>${m}</option>`
+    ).join('');
+    return `<div style="margin-top:6px">
+      <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Blend</div>
+      <select class="prop-input prop-select" data-prop="effects.blend_mode" style="width:100%">
+        ${options}
+      </select>
+    </div>`;
+  }
+
+  private renderStrokeFields(layer: Layer & { stroke?: import('../../schema/types').Stroke }): string {
+    const s = layer.stroke;
+    const colorVal = s?.color ?? '#000000';
+    const color = typeof colorVal === 'string' ? colorVal : '#000000';
+    const width = s?.width ?? 1;
+    const safe = color.startsWith('#') ? color : '#000000';
+    return `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <div class="color-well cp-trigger" data-prop="stroke.color"
+          style="background:${safe};width:28px;height:22px;border-radius:4px;
+                 border:1px solid var(--color-border);cursor:pointer;flex-shrink:0"></div>
+        <input type="text" class="prop-input" data-prop="stroke.color" value="${color}"
+          style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:3px 6px;color:var(--color-text);font-size:11px;font-family:var(--font-mono)">
+        <input type="number" class="prop-input" data-prop="stroke.width" value="${width}" min="0" max="100" step="0.5"
+          style="width:52px;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:3px 6px;color:var(--color-text);font-size:11px">
+      </div>`;
+  }
+
+  private renderEffectsFields(layer: Layer): string {
+    const shadows = layer.effects?.shadows ?? [];
+    const blur = layer.effects?.blur ?? 0;
+    const backdropBlur = layer.effects?.backdrop_blur ?? 0;
+
+    let html = `
+      <div>
+        ${this.renderNumberField('effects.blur', 'Blur', blur, 0, 200, 1)}
+        ${this.renderNumberField('effects.backdrop_blur', 'Backdrop Blur', backdropBlur, 0, 200, 1)}
+        <div style="font-size:11px;color:var(--color-text-muted);margin:8px 0 4px;display:flex;align-items:center;justify-content:space-between">
+          Shadows
+          <button class="btn btn-sm" data-action="add-shadow" style="font-size:10px;padding:2px 6px">+ Add</button>
+        </div>`;
+
+    shadows.forEach((sh, i) => {
+      const sc = sh.color.startsWith('#') ? sh.color : '#000000';
+      html += `<div class="shadow-row" data-shadow-index="${i}" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:6px;padding:6px;background:var(--color-surface-2);border-radius:4px;position:relative">
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted)">X</div>
+          <input type="number" class="prop-input" data-prop="effects.shadows.${i}.x" value="${sh.x}" step="1"
+            style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted)">Y</div>
+          <input type="number" class="prop-input" data-prop="effects.shadows.${i}.y" value="${sh.y}" step="1"
+            style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted)">Blur</div>
+          <input type="number" class="prop-input" data-prop="effects.shadows.${i}.blur" value="${sh.blur}" min="0" step="1"
+            style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted)">Spread</div>
+          <input type="number" class="prop-input" data-prop="effects.shadows.${i}.spread" value="${sh.spread ?? 0}" step="1"
+            style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
+        </div>
+        <div style="grid-column:1/-1;display:flex;align-items:center;gap:6px;margin-top:4px">
+          <div class="color-well cp-trigger" data-prop="effects.shadows.${i}.color"
+            style="background:${sc};width:24px;height:20px;border-radius:3px;border:1px solid var(--color-border);cursor:pointer;flex-shrink:0"></div>
+          <input type="text" class="prop-input" data-prop="effects.shadows.${i}.color" value="${sh.color}"
+            style="flex:1;background:var(--color-bg);border:1px solid var(--color-border);border-radius:3px;padding:2px 5px;color:var(--color-text);font-size:11px;font-family:var(--font-mono)">
+          <button class="btn btn-sm" data-action="remove-shadow" data-shadow-index="${i}" style="font-size:10px;padding:2px 6px;color:var(--color-error)">✕</button>
+        </div>
+      </div>`;
+    });
+
+    html += '</div>';
+    return html;
+  }
+
+  private bindEffectsButtons(layer: Layer): void {
+    this.content.querySelector('[data-action="add-shadow"]')?.addEventListener('click', () => {
+      const shadows = [...(layer.effects?.shadows ?? [])];
+      shadows.push({ x: 0, y: 4, blur: 8, spread: 0, color: 'rgba(0,0,0,0.3)' });
+      this.applyPropertyChange(layer.id, 'effects.shadows', shadows);
+    });
+
+    this.content.querySelectorAll('[data-action="remove-shadow"]').forEach(btn => {
+      const idx = parseInt((btn as HTMLElement).dataset.shadowIndex ?? '0', 10);
+      btn.addEventListener('click', () => {
+        const shadows = [...(layer.effects?.shadows ?? [])];
+        shadows.splice(idx, 1);
+        this.applyPropertyChange(layer.id, 'effects.shadows', shadows);
+      });
+    });
+
+    // Blend mode select
+    this.content.querySelectorAll<HTMLSelectElement>('select[data-prop]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, sel.dataset.prop!, sel.value);
+      });
+    });
   }
 
   private section(title: string, body: string, collapsed = false): string {
@@ -232,7 +394,8 @@ export class PropertiesPanelManager {
       html += this.renderNumberField('style.font_size', 'Font Size', layer.style.font_size ?? 16, 1, 500, 1);
       html += this.renderNumberField('style.font_weight', 'Weight', layer.style.font_weight ?? 400, 100, 900, 100);
       if (layer.style.color) {
-        html += this.renderColorField('style.color', 'Color', layer.style.color);
+        const styleColor = typeof layer.style.color === 'string' ? layer.style.color : '#000000';
+        html += this.renderColorField('style.color', 'Color', styleColor);
       }
     }
     return html;
@@ -245,6 +408,45 @@ export class PropertiesPanelManager {
         ${this.renderNumberInput('y1', 'Y1', layer.y1)}
         ${this.renderNumberInput('x2', 'X2', layer.x2)}
         ${this.renderNumberInput('y2', 'Y2', layer.y2)}
+      </div>`;
+  }
+
+  private renderAutoLayoutFields(layer: import('../../schema/types').AutoLayoutLayer): string {
+    const dir = layer.direction ?? 'row';
+    const gap = layer.gap ?? 0;
+    const pad = typeof layer.padding === 'number' ? layer.padding : (layer.padding?.top ?? 0);
+    const align = layer.align_items ?? 'start';
+    const justify = layer.justify_content ?? 'start';
+
+    const dirOpts = ['row', 'column'].map(v =>
+      `<option value="${v}"${v === dir ? ' selected' : ''}>${v}</option>`).join('');
+    const alignOpts = ['start', 'center', 'end', 'stretch'].map(v =>
+      `<option value="${v}"${v === align ? ' selected' : ''}>${v}</option>`).join('');
+    const justifyOpts = ['start', 'center', 'end', 'space-between', 'space-around'].map(v =>
+      `<option value="${v}"${v === justify ? ' selected' : ''}>${v}</option>`).join('');
+
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Direction</div>
+          <select class="prop-select" data-prop="direction" style="width:100%">${dirOpts}</select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Wrap</div>
+          <input type="checkbox" data-prop="wrap" ${layer.wrap ? 'checked' : ''} style="margin-top:8px">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        ${this.renderNumberInput('gap', 'Gap', gap)}
+        ${this.renderNumberInput('al-padding', 'Padding', pad)}
+      </div>
+      <div style="margin-top:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Align items</div>
+        <select class="prop-select" data-prop="align_items" style="width:100%">${alignOpts}</select>
+      </div>
+      <div style="margin-top:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Justify content</div>
+        <select class="prop-select" data-prop="justify_content" style="width:100%">${justifyOpts}</select>
       </div>`;
   }
 
@@ -384,6 +586,28 @@ export class PropertiesPanelManager {
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
     });
+
+    // Auto-layout special inputs
+    const wrapCb = this.content.querySelector<HTMLInputElement>('input[data-prop="wrap"]');
+    if (wrapCb) {
+      wrapCb.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, 'wrap', wrapCb.checked);
+      });
+    }
+
+    const padInput = this.content.querySelector<HTMLInputElement>('input[data-prop="al-padding"]');
+    if (padInput) {
+      padInput.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, 'padding', parseFloat(padInput.value));
+      });
+    }
+
+    const gapInput = this.content.querySelector<HTMLInputElement>('input[data-prop="gap"]');
+    if (gapInput) {
+      gapInput.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, 'gap', parseFloat(gapInput.value));
+      });
+    }
   }
 
   private applyPropertyChange(layerId: string, path: string, value: unknown): void {

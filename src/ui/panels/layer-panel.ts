@@ -1,215 +1,242 @@
 import { type StateManager, type EditorState } from '../../editor/state';
-import type { Layer } from '../../schema/types';
+import type { Layer, GroupLayer } from '../../schema/types';
 
-const Z_BANDS = [
-  { label: 'Foreground', min: 70, max: 89 },
-  { label: 'Overlay', min: 50, max: 69 },
-  { label: 'Content', min: 20, max: 49 },
-  { label: 'Structural', min: 10, max: 19 },
-  { label: 'Background', min: 0, max: 9 },
-];
+const LAYER_ICONS: Record<string, string> = {
+  rect: '▭', circle: '◯', path: '✒', polygon: '⬡',
+  line: '—', text: 'T', image: '🖼', icon: '✦',
+  component: '⊞', mermaid: '➡', chart: '≡',
+  code: '<>', math: 'π', group: '▣', qrcode: '⊞',
+};
 
-const ROW_HEIGHT = 32; // px per row
-const HEADER_HEIGHT = 24; // px per band header
-const BUFFER_ROWS = 2;
-
-function getLayerIcon(type: string): string {
-  const icons: Record<string, string> = {
-    rect: '\u25A1', circle: '\u25CB', path: '\u2712', polygon: '\u2B21',
-    line: '\u2015', text: 'T', image: '\u{1F5BC}', icon: '\u272A',
-    component: '\u29C9', mermaid: '\u27A1', chart: '\u2261',
-    code: '<>', math: '\u03C0', group: '\u25A3',
-  };
-  return icons[type] ?? '?';
+interface TreeNode {
+  layer: Layer;
+  depth: number;
+  collapsed: boolean;
+  hasChildren: boolean;
 }
 
-// Virtual scroll row: either a band header or a layer row
-type VRow =
-  | { kind: 'header'; label: string; height: number }
-  | { kind: 'layer'; layer: Layer; height: number };
+function flattenTree(layers: Layer[], collapsed: Set<string>, depth = 0): TreeNode[] {
+  const nodes: TreeNode[] = [];
+  for (const layer of [...layers].sort((a, b) => b.z - a.z)) {
+    const isGroup = layer.type === 'group';
+    const children = isGroup ? (layer as GroupLayer).layers ?? [] : [];
+    const isCollapsed = collapsed.has(layer.id);
+    nodes.push({ layer, depth, collapsed: isCollapsed, hasChildren: children.length > 0 });
+    if (isGroup && !isCollapsed && children.length > 0) {
+      nodes.push(...flattenTree(children, collapsed, depth + 1));
+    }
+  }
+  return nodes;
+}
 
 export class LayerPanelManager {
   private container: HTMLElement;
   private state: StateManager;
-  private content!: HTMLElement;
-  private rows: VRow[] = [];
-  private editingLayerId: string | null = null;
+  private list!: HTMLElement;
+  private collapsed = new Set<string>();
+  private draggingId: string | null = null;
+  private dropTarget: string | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
     this.state = state;
-    this.content = container.querySelector('.layer-panel-content') ?? container;
-    this.buildVirtualScroll();
+    this.build();
     this.state.subscribe(this.onStateChange.bind(this));
   }
 
-  private buildVirtualScroll(): void {
-    this.content.style.cssText = 'position:relative;overflow-y:auto;height:100%';
-    this.content.addEventListener('scroll', this.onScroll.bind(this));
-
-    // Single delegated click listener
-    this.content.addEventListener('click', (e) => {
-      const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
-      if (!row) return;
-      if ((e.target as HTMLElement).tagName === 'INPUT') return; // editing
-      const id = row.dataset.layerId!;
-      if ((e as MouseEvent).shiftKey) {
-        const current = this.state.get().selectedLayerIds;
-        if (current.includes(id)) {
-          this.state.set('selectedLayerIds', current.filter(i => i !== id));
-        } else {
-          this.state.set('selectedLayerIds', [...current, id]);
-        }
-      } else {
-        this.state.set('selectedLayerIds', [id]);
-      }
-    });
-
-    // Double-click to rename layer
-    this.content.addEventListener('dblclick', (e) => {
-      const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
-      if (!row) return;
-      const id = row.dataset.layerId!;
-      this.startRename(row, id);
-    });
+  private build(): void {
+    this.list = document.createElement('div');
+    this.list.className = 'layer-list';
+    this.list.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;min-height:0';
+    this.container.appendChild(this.list);
+    this.render();
   }
 
-  private startRename(row: HTMLElement, layerId: string): void {
-    const nameSpan = row.querySelector<HTMLElement>('.layer-name');
-    if (!nameSpan) return;
-
-    this.editingLayerId = layerId;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = layerId;
-    input.style.cssText = `
-      background: var(--color-surface-2); border: 1px solid var(--color-primary);
-      color: var(--color-text); font-size: 12px; padding: 0 4px;
-      border-radius: 3px; width: 100%; outline: none;
-    `;
-
-    const commitRename = (): void => {
-      const newId = input.value.trim();
-      this.editingLayerId = null;
-      if (newId && newId !== layerId) {
-        this.state.renameLayer(layerId, newId);
-      } else {
-        this.render(); // restore original display
-      }
-    };
-
-    input.addEventListener('blur', commitRename);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-      if (e.key === 'Escape') { this.editingLayerId = null; this.render(); }
-    });
-
-    nameSpan.replaceWith(input);
-    input.select();
-    input.focus();
-  }
-
-  private onStateChange(_state: EditorState, changedKeys: (keyof EditorState)[]): void {
-    if (changedKeys.some(k => ['design', 'currentPageIndex', 'selectedLayerIds'].includes(k))) {
+  private onStateChange(_s: EditorState, keys: (keyof EditorState)[]): void {
+    if (keys.some(k => ['design', 'currentPageIndex', 'selectedLayerIds'].includes(k))) {
       this.render();
     }
   }
 
   render(): void {
     const layers = this.state.getCurrentLayers();
-    this.rows = this.buildRows(layers);
-    this.paintViewport();
-  }
+    const nodes = flattenTree(layers, this.collapsed);
+    const selected = this.state.get().selectedLayerIds;
 
-  private buildRows(layers: Layer[]): VRow[] {
-    const rows: VRow[] = [];
-    for (const band of Z_BANDS) {
-      const bandLayers = layers
-        .filter(l => l.z >= band.min && l.z <= band.max)
-        .sort((a, b) => b.z - a.z);
-      if (bandLayers.length === 0) continue;
-      rows.push({ kind: 'header', label: `${band.label} (z:${band.min}-${band.max})`, height: HEADER_HEIGHT });
-      for (const layer of bandLayers) {
-        rows.push({ kind: 'layer', layer, height: ROW_HEIGHT });
-      }
+    let html = '';
+    for (const node of nodes) {
+      html += this.renderRow(node, selected);
     }
-    return rows;
+    if (!html) {
+      html = '<div class="layer-empty">No layers</div>';
+    }
+    this.list.innerHTML = html;
+    this.bindRowEvents();
   }
 
-  private paintViewport(): void {
-    if (this.rows.length === 0) {
-      this.content.innerHTML = '<div style="color:var(--color-text-muted);padding:16px;font-size:12px">No layers</div>';
+  private renderRow(node: TreeNode, selected: string[]): string {
+    const { layer, depth, collapsed, hasChildren } = node;
+    const sel = selected.includes(layer.id);
+    const hidden = layer.visible === false;
+    const locked = layer.locked === true;
+    const icon = LAYER_ICONS[layer.type] ?? '?';
+    const indent = depth * 16;
+
+    return `<div class="layer-row${sel ? ' selected' : ''}${hidden ? ' layer-hidden' : ''}"
+      data-layer-id="${layer.id}" data-depth="${depth}"
+      draggable="true" tabindex="0">
+      <div class="layer-row-indent" style="width:${indent}px;flex-shrink:0"></div>
+      <button class="layer-collapse-btn${hasChildren ? '' : ' invisible'}"
+        data-action="collapse" data-layer-id="${layer.id}"
+        aria-label="${collapsed ? 'Expand' : 'Collapse'}" aria-expanded="${!collapsed}">
+        ${hasChildren ? (collapsed ? '▶' : '▼') : ''}
+      </button>
+      <span class="layer-icon">${icon}</span>
+      <span class="layer-name" title="${layer.id}">${layer.id}</span>
+      <span class="layer-z">${layer.z}</span>
+      <button class="layer-vis-btn" data-action="toggle-vis" data-layer-id="${layer.id}"
+        title="${hidden ? 'Show layer' : 'Hide layer'}" aria-pressed="${hidden}">
+        ${hidden ? '🙈' : '👁'}
+      </button>
+      <button class="layer-lock-btn${locked ? ' active' : ''}" data-action="toggle-lock"
+        data-layer-id="${layer.id}" title="${locked ? 'Unlock' : 'Lock'}" aria-pressed="${locked}">
+        ${locked ? '🔒' : '🔓'}
+      </button>
+    </div>`;
+  }
+
+  private bindRowEvents(): void {
+    // Selection + collapse via delegated listener
+    this.list.addEventListener('click', this.onClick.bind(this), { once: true });
+    this.list.addEventListener('dblclick', this.onDblClick.bind(this), { once: true });
+    this.bindDragDrop();
+  }
+
+  private onClick(e: MouseEvent): void {
+    const target = e.target as HTMLElement;
+    const btn = target.closest<HTMLElement>('[data-action]');
+    if (btn) {
+      e.stopPropagation();
+      this.handleAction(btn.dataset.action!, btn.dataset.layerId!);
       return;
     }
-
-    const selectedIds = this.state.get().selectedLayerIds;
-    const totalHeight = this.rows.reduce((s, r) => s + r.height, 0);
-    const panelHeight = this.content.clientHeight || 200;
-    const scrollTop = this.content.scrollTop;
-
-    // Compute cumulative offsets once
-    const offsets: number[] = [];
-    let acc = 0;
-    for (const row of this.rows) {
-      offsets.push(acc);
-      acc += row.height;
+    const row = target.closest<HTMLElement>('[data-layer-id]');
+    if (!row) { this.render(); return; }
+    const id = row.dataset.layerId!;
+    const cur = this.state.get().selectedLayerIds;
+    if (e.shiftKey) {
+      this.state.set('selectedLayerIds', cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
+    } else if (e.ctrlKey || e.metaKey) {
+      this.state.set('selectedLayerIds', cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
+    } else {
+      this.state.set('selectedLayerIds', [id]);
     }
-
-    // Find first row whose bottom edge is visible — use index param, not indexOf
-    let startIdx = offsets.findIndex((o, idx) => o + this.rows[idx].height > scrollTop);
-    if (startIdx < 0) startIdx = 0;
-    startIdx = Math.max(0, startIdx - BUFFER_ROWS);
-
-    let endIdx = startIdx;
-    while (endIdx < this.rows.length && offsets[endIdx] < scrollTop + panelHeight) {
-      endIdx++;
-    }
-    endIdx = Math.min(this.rows.length, endIdx + BUFFER_ROWS);
-
-    // Render: spacer top + visible rows + spacer bottom
-    const topSpace = offsets[startIdx] ?? 0;
-    const bottomSpace = totalHeight - (offsets[endIdx - 1] ?? totalHeight) - (this.rows[endIdx - 1]?.height ?? 0);
-
-    let html = `<div class="layer-vscroll-inner" style="position:relative">`;
-    html += `<div style="height:${topSpace}px"></div>`;
-
-    for (let i = startIdx; i < endIdx; i++) {
-      const row = this.rows[i];
-      if (row.kind === 'header') {
-        html += `<div class="layer-band-header" style="height:${HEADER_HEIGHT}px;line-height:${HEADER_HEIGHT}px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-text-muted);padding:0 8px">${row.label}</div>`;
-      } else {
-        const layer = row.layer;
-        const selected = selectedIds.includes(layer.id);
-        const hidden = layer.visible === false;
-        const locked = layer.locked === true;
-        html += `<div class="layer-row${selected ? ' selected' : ''}" data-layer-id="${layer.id}"
-          style="height:${ROW_HEIGHT}px;display:flex;align-items:center;gap:6px;padding:0 8px;cursor:pointer;border-radius:4px;font-size:12px;${selected ? 'background:var(--color-primary);color:white;' : ''}${hidden ? 'opacity:0.4;' : ''}">
-          <span style="width:16px;text-align:center;font-size:14px">${getLayerIcon(layer.type)}</span>
-          <span class="layer-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${layer.id}</span>
-          <span style="font-size:10px;color:${selected ? 'rgba(255,255,255,0.7)' : 'var(--color-text-muted)'}">${layer.z}</span>
-          ${locked ? '<span title="Locked" style="font-size:10px">&#x1F512;</span>' : ''}
-        </div>`;
-      }
-    }
-
-    html += `<div style="height:${Math.max(0, bottomSpace)}px"></div>`;
-    html += `</div>`;
-
-    this.content.innerHTML = html;
+    this.render();
   }
 
-  private onScroll(): void {
-    this.paintViewport();
+  private onDblClick(e: MouseEvent): void {
+    const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
+    if (!row) { this.render(); return; }
+    const id = row.dataset.layerId!;
+    const nameEl = row.querySelector<HTMLElement>('.layer-name');
+    if (!nameEl) { this.render(); return; }
+    this.startRename(nameEl, id);
+  }
+
+  private handleAction(action: string, layerId: string): void {
+    if (action === 'collapse') {
+      if (this.collapsed.has(layerId)) this.collapsed.delete(layerId);
+      else this.collapsed.add(layerId);
+      this.render();
+      return;
+    }
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    if (!layer) { this.render(); return; }
+
+    if (action === 'toggle-vis') {
+      this.state.updateLayer(layerId, { visible: layer.visible !== false ? false : true });
+    } else if (action === 'toggle-lock') {
+      this.state.updateLayer(layerId, { locked: !layer.locked });
+    }
+    this.render();
+  }
+
+  private startRename(el: HTMLElement, layerId: string): void {
+    const input = document.createElement('input');
+    input.className = 'layer-rename-input';
+    input.value = layerId;
+    const commit = (): void => {
+      const v = input.value.trim();
+      if (v && v !== layerId) this.state.renameLayer(layerId, v);
+      else this.render();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') this.render();
+    });
+    el.replaceWith(input);
+    input.select();
+    input.focus();
+  }
+
+  private bindDragDrop(): void {
+    this.list.querySelectorAll<HTMLElement>('.layer-row[draggable]').forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        this.draggingId = row.dataset.layerId ?? null;
+        e.dataTransfer?.setData('text/plain', this.draggingId ?? '');
+        row.classList.add('dragging');
+      });
+      row.addEventListener('dragend', () => {
+        this.draggingId = null;
+        this.dropTarget = null;
+        this.list.querySelectorAll('.drop-target').forEach(r => r.classList.remove('drop-target'));
+        row.classList.remove('dragging');
+      });
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (row.dataset.layerId === this.draggingId) return;
+        this.dropTarget = row.dataset.layerId ?? null;
+        this.list.querySelectorAll('.drop-target').forEach(r => r.classList.remove('drop-target'));
+        row.classList.add('drop-target');
+      });
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const fromId = this.draggingId;
+        const toId = row.dataset.layerId ?? null;
+        if (fromId && toId && fromId !== toId) {
+          this.moveLayerBefore(fromId, toId);
+        }
+      });
+    });
+  }
+
+  private moveLayerBefore(fromId: string, beforeId: string): void {
+    const layers = [...this.state.getCurrentLayers()];
+    const fromIdx = layers.findIndex(l => l.id === fromId);
+    const toIdx   = layers.findIndex(l => l.id === beforeId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const [moved] = layers.splice(fromIdx, 1);
+    const insertAt = fromIdx < toIdx ? toIdx - 1 : toIdx;
+    layers.splice(insertAt, 0, moved);
+    // Reassign z values to preserve display order
+    layers.forEach((l, i) => { l.z = layers.length - i; });
+    const design = this.state.get().design;
+    if (!design) return;
+    if (design.pages?.length) {
+      const pages = design.pages.map((p, i) => {
+        if (i === this.state.get().currentPageIndex) return { ...p, layers };
+        return p;
+      });
+      this.state.set('design', { ...design, pages });
+    } else {
+      this.state.set('design', { ...design, layers });
+    }
   }
 
   getLayersByBand(layers: Layer[]): Map<string, Layer[]> {
     const map = new Map<string, Layer[]>();
-    for (const band of Z_BANDS) {
-      const filtered = layers.filter(l => l.z >= band.min && l.z <= band.max);
-      if (filtered.length > 0) {
-        map.set(band.label, filtered.sort((a, b) => b.z - a.z));
-      }
-    }
+    map.set('All', layers);
     return map;
   }
 }

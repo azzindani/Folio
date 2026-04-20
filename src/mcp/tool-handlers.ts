@@ -4,6 +4,8 @@ import yaml from 'js-yaml';
 import type { DesignSpec, ThemeSpec, Layer, Page } from '../schema/types';
 import type { ToolCallResult } from './types';
 import { validateDesignSpec } from '../schema/validator';
+import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
+import type { TemplateSpec } from '../schema/template';
 
 function textResult(text: string): ToolCallResult {
   return { content: [{ type: 'text', text }] };
@@ -582,6 +584,72 @@ export function applyTheme(args: {
     active_theme: args.theme_id,
     affected_designs: (project.designs ?? []).length,
   }));
+}
+
+// ── export_template ─────────────────────────────────────────
+export function exportTemplateTool(args: {
+  design_path: string;
+  output_path?: string;
+}): ToolCallResult {
+  if (!fs.existsSync(args.design_path)) {
+    return errorResult(`Design not found: ${args.design_path}`);
+  }
+
+  const spec = readYAML<DesignSpec>(args.design_path);
+  const template = exportAsTemplate(spec);
+
+  const outPath = args.output_path ??
+    args.design_path.replace(/\.design\.yaml$/, '.template.yaml').replace(/\.yaml$/, '.template.yaml');
+  writeYAML(outPath, template);
+
+  return textResult(JSON.stringify({
+    template_path: outPath,
+    slot_count: template.slots.length,
+    slots: template.slots.map(s => ({ id: s.id, path: s.path, type: s.type, hint: s.hint })),
+  }));
+}
+
+// ── inject_template ─────────────────────────────────────────
+export function injectTemplateTool(args: {
+  template_path: string;
+  slots: Record<string, unknown>;
+  output_path?: string;
+}): ToolCallResult {
+  if (!fs.existsSync(args.template_path)) {
+    return errorResult(`Template not found: ${args.template_path}`);
+  }
+
+  const template = readYAML<TemplateSpec>(args.template_path);
+  if (template._protocol !== 'template/v1') {
+    return errorResult(`File is not a template (expected _protocol: template/v1)`);
+  }
+
+  const design = injectIntoTemplate(template, args.slots);
+  design.meta.modified = new Date().toISOString().split('T')[0];
+
+  const outPath = args.output_path ??
+    args.template_path.replace(/\.template\.yaml$/, `.${Date.now().toString(36)}.design.yaml`);
+  writeYAML(outPath, design);
+
+  return textResult(JSON.stringify({
+    design_path: outPath,
+    slots_injected: Object.keys(args.slots).length,
+  }));
+}
+
+// ── list_template_slots ──────────────────────────────────────
+export function listTemplateSlots(args: { template_path: string }): ToolCallResult {
+  if (!fs.existsSync(args.template_path)) {
+    return errorResult(`Template not found: ${args.template_path}`);
+  }
+
+  const template = readYAML<TemplateSpec>(args.template_path);
+  if (template._protocol !== 'template/v1') {
+    return errorResult(`File is not a template (expected _protocol: template/v1)`);
+  }
+
+  const slots = listSlots(template);
+  return textResult(JSON.stringify({ slots, count: slots.length }));
 }
 
 // ── Utilities ───────────────────────────────────────────────

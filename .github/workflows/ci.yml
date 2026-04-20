@@ -26,6 +26,15 @@ jobs:
       - run: npm run typecheck
 
   # ── UNIT TESTS ────────────────────────────────────────────────
+  # Covers all src/**/*.test.ts — including new modules:
+  #   src/utils/ruler-units.test.ts          (M9 ruler unit conversions)
+  #   src/ui/resize/panel-resizer.test.ts    (M3 resizable panels)
+  #   src/ui/tabs/tab-bar.test.ts            (M1 multi-file tabs)
+  #   src/ui/viewport/viewport-layout.test.ts (M2 split viewport)
+  #   src/editor/auto-save.test.ts           (S12 auto-save)
+  #   src/ui/panels/color-palette.test.ts    (M11 color palette)
+  #   src/ui/dialogs/canvas-resize.test.ts   (M8 canvas resize dialog)
+  #   src/editor/inline-text-editor.test.ts  (S6 inline text edit + N12 ruler guides)
   unit-tests:
     name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

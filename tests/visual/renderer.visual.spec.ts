@@ -16,7 +16,7 @@ test.describe('Visual Regression — renderer', () => {
   });
 
   test('default sample design renders correctly', async ({ page }) => {
-    const canvas = page.locator('.canvas-area');
+    const canvas = page.locator('.canvas-area').first();
     await expect(canvas).toHaveScreenshot('default-design.png', {
       maxDiffPixelRatio: 0.01,
     });
@@ -46,10 +46,10 @@ test.describe('Visual Regression — layer selection', () => {
 
   test('selected layer shows handles', async ({ page }) => {
     // Click near top-left of canvas area (stays within the grid cell bounds)
-    await page.locator('.canvas-area').click({ position: { x: 100, y: 100 } });
+    await page.locator('.canvas-area').first().click({ position: { x: 100, y: 100 } });
     await page.waitForTimeout(100);
 
-    const canvas = page.locator('.canvas-area');
+    const canvas = page.locator('.canvas-area').first();
     await expect(canvas).toHaveScreenshot('selected-layer.png', {
       maxDiffPixelRatio: 0.02,
     });
