@@ -26,6 +26,11 @@ jobs:
       - run: npm run typecheck
 
   # ── UNIT TESTS ────────────────────────────────────────────────
+  # Covers all src/**/*.test.ts — including Sprint 1 new modules:
+  #   src/utils/ruler-units.test.ts      (M9 ruler unit conversions)
+  #   src/ui/resize/panel-resizer.test.ts (M3 resizable panels)
+  #   src/ui/tabs/tab-bar.test.ts         (M1 multi-file tabs)
+  #   src/ui/viewport/viewport-layout.test.ts (M2 split viewport)
   unit-tests:
     name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
