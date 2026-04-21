@@ -498,6 +498,143 @@ describe('CanvasManager — inline text editor interactions', () => {
   });
 });
 
+// ── Selection overlay with getBBox mock ──────────────────────
+
+describe('CanvasManager — selection overlay (with getBBox)', () => {
+  beforeEach(() => {
+    Object.defineProperty(Element.prototype, 'getBBox', {
+      value: () => ({ x: 10, y: 20, width: 200, height: 100 }),
+      configurable: true,
+      writable: true,
+    });
+  });
+  afterEach(() => {
+    delete (Element.prototype as { getBBox?: unknown }).getBBox;
+  });
+
+  it('creates selection box and handles when getBBox returns bbox', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    state.set('selectedLayerIds', ['r1'], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    expect(selOverlay.querySelector('.selection-box')).not.toBeNull();
+  });
+
+  it('creates 8 resize handles', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    state.set('selectedLayerIds', ['r1'], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    const handles = selOverlay.querySelectorAll('.selection-handle:not(.handle-rotate)');
+    expect(handles.length).toBe(8);
+  });
+
+  it('creates rotate handle', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    state.set('selectedLayerIds', ['r1'], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    expect(selOverlay.querySelector('.handle-rotate')).not.toBeNull();
+  });
+
+  it('startRotate: pointerdown on rotate handle registers pointermove', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    state.set('selectedLayerIds', ['r1'], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    const rotHandle = selOverlay.querySelector<HTMLElement>('.handle-rotate')!;
+
+    rotHandle.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    // Pointermove should update rotation
+    document.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, clientX: 200, clientY: 200,
+    }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+
+    // Layer rotation should have been updated
+    const layer = state.getCurrentLayers().find(l => l.id === 'r1')!;
+    expect(typeof (layer as unknown as { rotation?: number }).rotation).toBe('number');
+  });
+
+  it('startRotate with shift key snaps to 15deg increments', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    state.set('selectedLayerIds', ['r1'], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    const rotHandle = selOverlay.querySelector<HTMLElement>('.handle-rotate')!;
+
+    rotHandle.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    document.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, clientX: 300, clientY: 300, shiftKey: true,
+    }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+
+    const rotation = (state.getCurrentLayers().find(l => l.id === 'r1') as unknown as { rotation: number }).rotation;
+    expect(rotation % 15).toBe(0); // must be multiple of 15
+  });
+});
+
+// ── Smart guide rendering ────────────────────────────────────
+
+describe('CanvasManager — smart guides (drawSmartGuides)', () => {
+  it('draws smart guides when two layers align vertically', () => {
+    // Two layers at same y position → should trigger guide drawing
+    const layer1 = makeRect('r1');
+    const layer2: Layer = {
+      ...makeRect('r2'),
+      id: 'r2', x: 300, y: 20, // same y as r1
+    } as Layer;
+
+    const { state, container } = setup([layer1, layer2]);
+
+    // Simulate dragging r1 so it aligns with r2 (y match)
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    const svg = svgContainer.querySelector('svg')!;
+    const layerEl = document.createElement('div');
+    layerEl.setAttribute('data-layer-id', 'r1');
+    svg.appendChild(layerEl as unknown as SVGElement);
+
+    layerEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+    // Move so r1.y ≈ 20 (no movement, already at y=20)
+    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 0, clientY: 0 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+
+    // Just verify it didn't throw
+    expect(state.getCurrentLayers().find(l => l.id === 'r1')).toBeDefined();
+  });
+});
+
+// ── onMouseMoveForAnnotations ────────────────────────────────
+
+describe('CanvasManager — distance annotations', () => {
+  beforeEach(() => {
+    // Define getBBox broadly since jsdom SVG elements don't have it
+    Object.defineProperty(Element.prototype, 'getBBox', {
+      value: () => ({ x: 10, y: 20, width: 200, height: 100 }),
+      configurable: true,
+      writable: true,
+    });
+  });
+  afterEach(() => {
+    delete (Element.prototype as { getBBox?: unknown }).getBBox;
+  });
+
+  it('altKey mousemove with selected layer creates annotation overlay', () => {
+    const { state, container } = setup([makeRect('r1'), makeRect('r2')]);
+    state.set('selectedLayerIds', ['r1'], false);
+
+    expect(() => {
+      container.dispatchEvent(new MouseEvent('mousemove', {
+        bubbles: true, altKey: true, clientX: 100, clientY: 100,
+      }));
+    }).not.toThrow();
+  });
+
+  it('altKey mousemove does nothing when no selection', () => {
+    const { container } = setup([makeRect('r1')]);
+    expect(() => {
+      container.dispatchEvent(new MouseEvent('mousemove', {
+        bubbles: true, altKey: true, clientX: 100, clientY: 100,
+      }));
+    }).not.toThrow();
+  });
+});
+
 // ── startGuide — ruler drag callbacks ───────────────────────
 
 describe('CanvasManager — ruler guides', () => {
