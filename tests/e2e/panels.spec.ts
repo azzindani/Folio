@@ -99,8 +99,8 @@ test.describe('Panels — payload editor', () => {
 
   test('payload mode switch shows code editor', async ({ page }) => {
     await page.locator('.mode-btn[data-mode="payload"]').click();
-    // Monaco or textarea should appear
-    const editor = page.locator('.payload-editor, .monaco-editor, [data-mode-panel="payload"]');
+    // Monaco container becomes visible on mode switch
+    const editor = page.locator('.monaco-container');
     await expect(editor.first()).toBeVisible({ timeout: 5_000 });
   });
 

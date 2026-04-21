@@ -159,7 +159,7 @@ test.describe('Layer operations — alignment toolbar', () => {
     page.on('pageerror', e => errors.push(e.message));
     // Select at least one layer
     await page.locator('.layer-row').first().click();
-    const btn = page.locator('[data-action="align-left"], button[title*="left" i]').first();
+    const btn = page.locator('.align-toolbar .align-btn').first();
     if (await btn.count() > 0) await btn.click();
     expect(errors).toHaveLength(0);
   });
