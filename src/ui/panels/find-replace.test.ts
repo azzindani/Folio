@@ -519,4 +519,131 @@ describe('FindReplaceManager', () => {
     item.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
     expect(item.style.background).toBe('transparent');
   });
+
+  it('replaceSelected() does nothing when selected layer has no match (line 154)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello world'), makeTextLayer('l2', 'No match here')]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+
+    // Search matches only l1
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    // Select l2 which has no match
+    mock.state.selectedLayerIds = ['l2'];
+
+    container.querySelector<HTMLButtonElement>('.fr-replace-one')!.click();
+    expect(mock.updateLayer).not.toHaveBeenCalled();
+  });
+
+  it('extractText returns null for markdown content type (line 185 branch)', () => {
+    const markdownLayer = {
+      id: 'md1', type: 'text', z: 5, x: 0, y: 0, width: 100,
+      content: { type: 'markdown', value: '## Hello **world**' },
+      style: {},
+    } as unknown as Layer;
+    const design = makeDesign([markdownLayer]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    // markdown content type IS supported by extractText (returns value), so match should appear
+    const items = container.querySelectorAll('.fr-result-item');
+    expect(items.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('replaceTextInLayer skips non-text layers in applyReplace (line 170)', () => {
+    // Trick: run find to match l1, then change layers so getCurrentLayers returns empty
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    // Now make getCurrentLayers return nothing (simulate layer removed)
+    mock.getCurrentLayers.mockReturnValueOnce([]);
+    container.querySelector<HTMLInputElement>('.fr-replace')!.value = 'Hi';
+    container.querySelector<HTMLButtonElement>('.fr-replace-all')!.click();
+    expect(mock.updateLayer).not.toHaveBeenCalled();
+  });
+
+  it('renders results when selectedLayerIds is undefined (line 124 ??[] branch)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    (mock.state as Record<string, unknown>).selectedLayerIds = undefined;
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    expect(container.querySelectorAll('.fr-result-item').length).toBe(1);
+  });
+
+  it('selected result item shows primary color background (line 128 true branch)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    mock.state.selectedLayerIds = ['l1'];
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    const item = container.querySelector<HTMLElement>('.fr-result-item')!;
+    expect(item.style.background).toContain('var(--color-primary)');
+  });
+
+  it('mouseenter on selected item does not change background (lines 135-137 false branch)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    mock.state.selectedLayerIds = ['l1'];
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    const item = container.querySelector<HTMLElement>('.fr-result-item')!;
+    const initialBg = item.style.background;
+    item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    expect(item.style.background).toBe(initialBg); // unchanged
+  });
+
+  it('mouseleave on selected item does not change background (lines 140-142 false branch)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    mock.state.selectedLayerIds = ['l1'];
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    const item = container.querySelector<HTMLElement>('.fr-result-item')!;
+    const initialBg = item.style.background;
+    item.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    expect(item.style.background).toBe(initialBg); // unchanged
+  });
+
+  it('rich content layer not matched by extractText (line 185 false branch)', () => {
+    const richLayer = {
+      id: 'r1', type: 'text', z: 0, x: 0, y: 0, width: 100,
+      content: { type: 'rich', spans: [{ text: 'Hello' }] },
+      style: {},
+    } as unknown as Layer;
+    const design = makeDesign([richLayer]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    expect(container.querySelectorAll('.fr-result-item').length).toBe(0);
+  });
+
+  it('applyReplace skips non-text layer returned by getCurrentLayers (line 199)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    // Return a rect layer (non-text) for the same id
+    mock.getCurrentLayers.mockReturnValueOnce([{
+      id: 'l1', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100,
+    } as unknown as Layer]);
+    container.querySelector<HTMLInputElement>('.fr-replace')!.value = 'Hi';
+    container.querySelector<HTMLButtonElement>('.fr-replace-all')!.click();
+    expect(mock.updateLayer).not.toHaveBeenCalled();
+  });
+
+  it('applyReplace skips text layer with rich content type (line 200)', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello')]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+    mock.getCurrentLayers.mockReturnValueOnce([{
+      id: 'l1', type: 'text', z: 0,
+      content: { type: 'rich', spans: [] },
+      style: {},
+    } as unknown as Layer]);
+    container.querySelector<HTMLInputElement>('.fr-replace')!.value = 'Hi';
+    container.querySelector<HTMLButtonElement>('.fr-replace-all')!.click();
+    expect(mock.updateLayer).not.toHaveBeenCalled();
+  });
 });

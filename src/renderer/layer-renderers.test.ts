@@ -318,6 +318,16 @@ describe('renderChart', () => {
     expect(el.getAttribute('height')).toBe('300');
     expect(el.getAttribute('data-layer-id')).toBe('ch');
   });
+
+  it('uses default 400x300 when width/height are non-numeric', () => {
+    const layer = {
+      id: 'ch2', type: 'chart', z: 0,
+      spec: { mark: 'point' },
+    } as unknown as ChartLayer;
+    const el = renderChart(layer, makeSVG());
+    expect(el.getAttribute('width')).toBe('400');
+    expect(el.getAttribute('height')).toBe('300');
+  });
 });
 
 // ── Code ────────────────────────────────────────────────────
@@ -349,6 +359,17 @@ describe('renderCode', () => {
     const el = renderCode(layer, makeSVG());
     const code = el.querySelector('code');
     expect(code!.className).toBe('language-python');
+  });
+
+  it('uses default 400x200 when width/height are non-numeric', () => {
+    const layer = {
+      id: 'co3', type: 'code', z: 0,
+      language: 'javascript',
+      code: 'let x;',
+    } as unknown as CodeLayer;
+    const el = renderCode(layer, makeSVG());
+    expect(el.getAttribute('width')).toBe('400');
+    expect(el.getAttribute('height')).toBe('200');
   });
 });
 
@@ -599,6 +620,33 @@ describe('renderAutoLayout', () => {
     const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
     const rect = el.querySelector('rect');
     expect(rect?.getAttribute('stroke')).toBe('#ff0000');
+  });
+
+  it('sets rx/ry on background rect when radius is a number (lines 667-669)', () => {
+    const layer = {
+      id: 'al-radius', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0,
+      fill: { type: 'solid', color: '#0000ff' },
+      radius: 8,
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const rect = el.querySelector('rect');
+    expect(rect?.getAttribute('rx')).toBe('8');
+    expect(rect?.getAttribute('ry')).toBe('8');
+  });
+
+  it('uses default 0 for width/height when non-numeric (line 664-665)', () => {
+    const layer = {
+      id: 'al-nosize', type: 'auto_layout', z: 0, x: 0, y: 0,
+      direction: 'row', gap: 0,
+      fill: { type: 'solid', color: '#ff0000' },
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const rect = el.querySelector('rect');
+    expect(rect?.getAttribute('width')).toBe('0');
+    expect(rect?.getAttribute('height')).toBe('0');
   });
 });
 

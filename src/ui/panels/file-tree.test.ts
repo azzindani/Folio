@@ -253,4 +253,63 @@ describe('FileTreeManager', () => {
     await new Promise(r => setTimeout(r, 20));
     expect(showToast).toHaveBeenCalledWith('Write failed', 'error');
   });
+
+  it('getRecent returns [] on malformed localStorage (line 10)', () => {
+    localStorage.setItem(RECENT_KEY, '{INVALID}');
+    const ft = new FileTreeManager(container, state, callbacks);
+    // Should not throw; renders without recent items
+    expect(container.querySelector('.filetree-recent')).not.toBeNull();
+    void ft;
+  });
+
+  it('mouseenter/mouseleave on recent items changes background (lines 127,130)', () => {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(['file1.yaml', 'file2.yaml']));
+    new FileTreeManager(container, state, callbacks);
+    const item = container.querySelector<HTMLElement>('.filetree-recent-item')!;
+    expect(item).not.toBeNull();
+    item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    expect(item.style.background).toBe('var(--color-surface-2)');
+    item.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    expect(item.style.background).toBe('');
+  });
+
+  it('refreshCurrent returns early when .filetree-current is removed (line 92)', () => {
+    new FileTreeManager(container, state, callbacks);
+    container.querySelector('.filetree-current')?.remove();
+    // State change fires refreshCurrent; el is null → returns early without crash
+    expect(() => state.set('design', makeDesign())).not.toThrow();
+  });
+
+  it('shows page count for carousel design (pages branch, line 103)', () => {
+    new FileTreeManager(container, state, callbacks);
+    state.set('design', {
+      _protocol: 'design/v1',
+      meta: { id: 'c', name: 'Carousel', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      pages: [{ id: 'p1', label: 'P1', layers: [] }, { id: 'p2', label: 'P2', layers: [] }],
+    } as unknown as DesignSpec);
+    const current = container.querySelector('.filetree-current');
+    expect(current?.textContent).toContain('2');
+    expect(current?.textContent).toContain('pages');
+  });
+
+  it('triggerOpen refreshRecent no-ops when .filetree-recent is removed (line 111)', async () => {
+    const { openFile } = await import('../../fs/file-access');
+    vi.mocked(openFile).mockResolvedValueOnce({
+      content: 'yaml', name: 'test.yaml',
+      handle: null as unknown as FileSystemFileHandle,
+    });
+    const ft = new FileTreeManager(container, state, callbacks);
+    container.querySelector('.filetree-recent')?.remove();
+    await expect(ft.triggerOpen()).resolves.toBeUndefined();
+  });
+
+  it('triggerSave shows generic error when rejection is non-Error (line 156)', async () => {
+    const { showToast } = await import('../../utils/toast');
+    vi.mocked(saveFile).mockRejectedValueOnce('string error');
+    const ft = new FileTreeManager(container, state, callbacks);
+    ft.triggerSave();
+    await new Promise(r => setTimeout(r, 20));
+    expect(showToast).toHaveBeenCalledWith('Save failed', 'error');
+  });
 });
