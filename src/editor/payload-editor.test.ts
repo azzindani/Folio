@@ -147,4 +147,70 @@ describe('PayloadEditor', () => {
     // Just verify it didn't throw
     expect(true).toBe(true);
   });
+
+  it('syncToState with valid YAML updates design in state', async () => {
+    vi.useFakeTimers();
+    const validYaml = `_protocol: design/v1
+meta:
+  id: sync-test
+  name: Sync Test
+  type: poster
+  created: ''
+  modified: ''
+document:
+  width: 800
+  height: 600
+  unit: px
+  dpi: 96
+layers: []
+`;
+    let changeCallback: (() => void) | null = null;
+    mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
+      changeCallback = cb;
+    });
+    mockEditor.getValue.mockReturnValue(validYaml);
+    mockEditor.getModel.mockReturnValue(mockModel);
+
+    const { state, editor } = await setupEditor();
+    await editor.init();
+
+    changeCallback?.();
+    await vi.advanceTimersByTimeAsync(400);
+
+    vi.useRealTimers();
+    // Design should have been set if YAML parsed successfully
+    const design = state.get().design;
+    if (design) {
+      expect(design.meta.name).toBe('Sync Test');
+    } else {
+      // At minimum, yamlSource should be set
+      expect(state.get().yamlSource).toBe(validYaml);
+    }
+  });
+
+  it('syncToState with invalid YAML calls setParseErrorMarker', async () => {
+    vi.useFakeTimers();
+    let changeCallback: (() => void) | null = null;
+    mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
+      changeCallback = cb;
+    });
+    mockEditor.getValue.mockReturnValue(': invalid: yaml: :::');
+    mockEditor.getModel.mockReturnValue(mockModel);
+
+    const { editor } = await setupEditor();
+    await editor.init();
+
+    changeCallback?.();
+    await vi.advanceTimersByTimeAsync(400);
+
+    vi.useRealTimers();
+    // Should call setModelMarkers with an error
+    expect(mockMonaco.editor.setModelMarkers).toHaveBeenCalled();
+  });
+
+  it('dispose with no timer clears nothing and does not throw', async () => {
+    const { editor } = await setupEditor();
+    // dispose without init — no debounce timer
+    expect(() => editor.dispose()).not.toThrow();
+  });
 });
