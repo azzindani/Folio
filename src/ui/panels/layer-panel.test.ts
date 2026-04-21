@@ -350,4 +350,88 @@ describe('LayerPanelManager — moveLayerBefore', () => {
     const move = (panel as unknown as { moveLayerBefore: (from: string, before: string) => void }).moveLayerBefore;
     expect(() => move.call(panel, 'x', 'nonexistent')).not.toThrow();
   });
+
+  it('moveLayerBefore on a paged design updates pages not top-level layers', () => {
+    const pagedDesign = {
+      _protocol: 'design/v1' as const,
+      meta: { id: 'p', name: 'Paged', type: 'carousel' as const, created: '', modified: '' },
+      document: { width: 800, height: 600, unit: 'px' as const, dpi: 96 },
+      pages: [
+        { id: 'page0', label: 'Page 1', layers: [makeRect('x', 30), makeRect('y', 20), makeRect('z', 10)] },
+      ],
+    } as unknown as import('../../schema/types').DesignSpec;
+    state.set('design', pagedDesign, false);
+
+    const move = (panel as unknown as { moveLayerBefore: (from: string, before: string) => void }).moveLayerBefore;
+    move.call(panel, 'z', 'x');
+    const updated = state.get().design!;
+    expect(updated.pages).toBeDefined();
+    expect(updated.pages![0].layers.map(l => l.id).indexOf('z')).toBeLessThan(
+      updated.pages![0].layers.map(l => l.id).indexOf('x'),
+    );
+  });
+});
+
+describe('LayerPanelManager — ctrl-click selection', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+  let panel: LayerPanelManager;
+
+  beforeEach(() => {
+    state = new StateManager();
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    const layers = [makeRect('a', 30), makeRect('b', 20)];
+    state.set('design', makeDesign(layers), false);
+    panel = new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('ctrl+click adds layer to selection', () => {
+    // Mock render during state.set so the notification doesn't add a 2nd { once: true } listener.
+    // (state.set 3rd param = recordUndo, not notify — it always notifies subscribers.)
+    const renderSpy = vi.spyOn(panel, 'render').mockImplementation(() => {});
+    state.set('selectedLayerIds', ['a']);
+    renderSpy.mockRestore();
+
+    const rowB = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="b"]')!;
+    rowB.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
+    expect(state.get().selectedLayerIds).toContain('a');
+    expect(state.get().selectedLayerIds).toContain('b');
+  });
+
+  it('ctrl+click on already-selected layer removes it from selection (filter branch)', () => {
+    const renderSpy = vi.spyOn(panel, 'render').mockImplementation(() => {});
+    state.set('selectedLayerIds', ['a', 'b']);
+    renderSpy.mockRestore();
+
+    const rowB = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="b"]')!;
+    rowB.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
+    expect(state.get().selectedLayerIds).not.toContain('b');
+    expect(state.get().selectedLayerIds).toContain('a');
+  });
+});
+
+describe('LayerPanelManager — rename same value', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    state.set('design', makeDesign([makeRect('myid', 10)]), false);
+    new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('blur with unchanged value calls render without renaming', () => {
+    const row = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="myid"]')!;
+    row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = wrapper.querySelector<HTMLInputElement>('.layer-rename-input')!;
+    // Don't change the value — blur triggers commit with same value
+    input.dispatchEvent(new Event('blur'));
+    expect(wrapper.querySelector('.layer-rename-input')).toBeNull();
+    expect(state.getCurrentLayers()[0].id).toBe('myid');
+  });
 });
