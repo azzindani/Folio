@@ -240,20 +240,28 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       'tr:nth-child(even){background:rgba(128,128,128,.1)}',
       'code{font-family:monospace;font-size:.9em;background:rgba(128,128,128,.15);padding:1px 4px;border-radius:3px}',
       'pre{background:rgba(128,128,128,.15);padding:8px;border-radius:4px;overflow:auto}',
+      'pre code{background:none;padding:0}',
       'blockquote{margin:0;padding-left:1em;border-left:3px solid currentColor;opacity:.7}',
     ].join('');
     div.appendChild(mdStyle);
 
-    // Lazy load marked.js and parse markdown (set innerHTML only once, after parse)
+    // Content container — mdStyle stays live, content goes here (avoids re-serialising the style tag)
+    const mdContent = document.createElement('div');
+    div.appendChild(mdContent);
+
     const mdValue = (layer.content as { value: string }).value;
     import('marked').then(({ marked }) => {
-      div.innerHTML = mdStyle.outerHTML + (marked.parse(mdValue, { gfm: true }) as string);
+      mdContent.innerHTML = marked.parse(mdValue, { gfm: true }) as string;
+      // Syntax-highlight code blocks via Prism (lazy, best-effort)
+      return import('prismjs').then(({ default: Prism }) => {
+        mdContent.querySelectorAll<HTMLElement>('pre code[class*="language-"]').forEach(block => {
+          Prism.highlightElement(block);
+        });
+      }).catch(() => { /* Prism unavailable — unstyled code is fine */ });
     }).catch(() => {
-      // marked.js failed to load — render as plain text
-      if (div.childElementCount <= 1) div.appendChild(document.createTextNode(mdValue));
+      // marked.js failed — fall back to plain text, no flash since div was empty
+      mdContent.textContent = mdValue;
     });
-    // Show plain text immediately while marked loads to avoid blank flash
-    div.appendChild(document.createTextNode(mdValue));
     fo.appendChild(div);
     g.appendChild(fo);
   } else if (layer.content.type === 'rich') {
