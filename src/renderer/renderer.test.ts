@@ -557,6 +557,42 @@ describe('renderPage — direct layer list', () => {
     expect(svg.querySelector('#cp-mask')).not.toBeNull();
     expect(svg.querySelector('[data-layer-id="clip-target"]')?.getAttribute('clip-path')).toBe('url(#cp-mask)');
   });
+
+  it('findLayer recursion: clip_path_ref targeting a layer nested inside a group', () => {
+    // The mask layer is nested inside a group — exercises findLayer recursion (lines 237-240)
+    const layers: Layer[] = [
+      {
+        id: 'grp', type: 'group', z: 5, x: 0, y: 0, width: 200, height: 200,
+        layers: [
+          { id: 'nested-mask', type: 'rect', z: 1, x: 0, y: 0, width: 100, height: 100 } as RectLayer,
+        ],
+      } as unknown as GroupLayer,
+      {
+        id: 'clipped', type: 'rect', z: 3, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'nested-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('#cp-nested-mask')).not.toBeNull();
+    expect(svg.querySelector('[data-layer-id="clipped"]')?.getAttribute('clip-path')).toBe('url(#cp-nested-mask)');
+  });
+
+  it('rotated clip mask layer gets a transform on the clip-path shape', () => {
+    // Exercises the rotation branch in buildClipDefs (lines 254-258)
+    const layers: Layer[] = [
+      {
+        id: 'rot-mask', type: 'rect', z: 2, x: 10, y: 10, width: 80, height: 80,
+        rotation: 45,
+      } as unknown as RectLayer,
+      {
+        id: 'rot-clipped', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'rot-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const clipShape = svg.querySelector('#cp-rot-mask > *');
+    expect(clipShape?.getAttribute('transform')).toMatch(/rotate\(45,/);
+  });
 });
 
 describe('renderLayer — show_if with layer field reference', () => {

@@ -85,7 +85,7 @@ describe('ComponentLibraryManager', () => {
     expect(stored.some(c => c.name === 'Persisted')).toBe(true);
   });
 
-  it('insertComponent adds a layer to the design', () => {
+  it('insertComponent adds a layer to the design (single-layer component)', () => {
     state.set('design', makeDesign([makeRect('base')]));
     state.set('selectedLayerIds', ['base']);
     const def = mgr.saveSelected('ToInsert')!;
@@ -94,6 +94,20 @@ describe('ComponentLibraryManager', () => {
     const layers = state.getCurrentLayers();
     // 'base' + inserted layer/group
     expect(layers.length).toBeGreaterThan(1);
+  });
+
+  it('insertComponent wraps multiple layers into a group', () => {
+    state.set('design', makeDesign([makeRect('r1'), makeRect('r2')]));
+    state.set('selectedLayerIds', ['r1', 'r2']);
+    const def = mgr.saveSelected('MultiLayer')!;
+    state.set('selectedLayerIds', []);
+    const countBefore = state.getCurrentLayers().length;
+    mgr.insertComponent(def.id);
+    const layers = state.getCurrentLayers();
+    // A group layer should have been added
+    expect(layers.length).toBeGreaterThan(countBefore);
+    const group = layers.find(l => l.type === 'group');
+    expect(group).toBeDefined();
   });
 
   it('deleteComponent removes it from the list', () => {
