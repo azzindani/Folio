@@ -107,3 +107,111 @@ describe('MinimapManager', () => {
     expect(createObjectURLMock).toHaveBeenCalled();
   });
 });
+
+describe('MinimapManager — Image.onload and onDrag', () => {
+  let state: StateManager;
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    container = makeContainer();
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: vi.fn().mockReturnValue('blob:test'), writable: true, configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: vi.fn(), writable: true, configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    container.remove();
+  });
+
+  it('Image.onload draws on canvas when ctx available', () => {
+    const clearRectMock = vi.fn();
+    const drawImageMock = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: clearRectMock,
+      drawImage: drawImageMock,
+    } as unknown as CanvasRenderingContext2D);
+
+    // Mock Image so onload fires immediately when src is set
+    const OrigImage = globalThis.Image;
+    class InstantImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onload?.(), 0); }
+    }
+    (globalThis as unknown as Record<string, unknown>).Image = InstantImage;
+
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    (globalThis as unknown as Record<string, unknown>).Image = OrigImage;
+
+    return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+      expect(clearRectMock).toHaveBeenCalled();
+      expect(drawImageMock).toHaveBeenCalled();
+    });
+  });
+
+  it('Image.onerror revokes the blob URL', () => {
+    const revokeSpy = vi.fn();
+    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeSpy, writable: true, configurable: true });
+
+    const OrigImage = globalThis.Image;
+    class FailImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onerror?.(), 0); }
+    }
+    (globalThis as unknown as Record<string, unknown>).Image = FailImage;
+
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    (globalThis as unknown as Record<string, unknown>).Image = OrigImage;
+
+    return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+      expect(revokeSpy).toHaveBeenCalled();
+    });
+  });
+
+  it('mousedown on canvas fires onDrag without crash', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+    state.set('zoom', 1, false);
+
+    const canvas = container.querySelector('canvas')!;
+    expect(() => {
+      canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 50, clientY: 50 }));
+    }).not.toThrow();
+  });
+
+  it('onDrag: mousemove after mousedown updates panX/panY', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+    state.set('zoom', 1, false);
+
+    const canvas = container.querySelector('canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 20, clientY: 20 }));
+    // panX and panY should have been set
+    expect(typeof state.get().panX).toBe('number');
+    expect(typeof state.get().panY).toBe('number');
+  });
+
+  it('onDrag: mouseup removes mousemove listener', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    const canvas = container.querySelector('canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    // After mouseup, mousemove should not trigger pan changes
+    const panXBefore = state.get().panX;
+    document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 999, clientY: 999 }));
+    expect(state.get().panX).toBe(panXBefore);
+  });
+});

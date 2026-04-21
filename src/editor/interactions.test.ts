@@ -1,7 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StateManager } from './state';
-import { alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV } from './interactions';
+import { InteractionManager, alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV } from './interactions';
 import type { Layer, DesignSpec } from '../schema/types';
+
+// Mock interact.js — we only care about the interactions logic, not the drag library
+vi.mock('interactjs', () => {
+  const listeners: Record<string, unknown> = {};
+  const mockInteractable = {
+    draggable: vi.fn().mockReturnThis(),
+    resizable: vi.fn().mockReturnThis(),
+    unset: vi.fn(),
+    _listeners: listeners,
+  };
+  const mockInteract = vi.fn(() => mockInteractable) as unknown as typeof import('interactjs').default;
+  (mockInteract as unknown as Record<string, unknown>).modifiers = {
+    snap: vi.fn(() => ({})),
+  };
+  (mockInteract as unknown as Record<string, unknown>).snappers = {
+    grid: vi.fn(() => ({})),
+  };
+  return { default: mockInteract };
+});
 
 function makeDesign(layers: Layer[]): DesignSpec {
   return {
@@ -174,3 +193,310 @@ describe('alignment utilities', () => {
     const layer = sm.getCurrentLayers()[0];
     expect(layer.x).toBe(100);
   });
+
+// ── InteractionManager ───────────────────────────────────────
+
+function makeDesignWithLayers(layers: Layer[]): DesignSpec {
+  return {
+    _protocol: 'design/v1',
+    meta: { id: 'test', name: 'Test', type: 'poster', created: '', modified: '' },
+    document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+    layers,
+  };
+}
+
+describe('InteractionManager', () => {
+  let state: StateManager;
+  let container: HTMLElement;
+  let manager: InteractionManager;
+
+  beforeEach(() => {
+    state = new StateManager();
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    manager = new InteractionManager(container, state);
+  });
+  afterEach(() => {
+    manager.disable();
+    container.remove();
+  });
+
+  it('constructs without error', () => {
+    expect(manager).toBeDefined();
+  });
+
+  it('enable() calls interact() for draggable and resizable', async () => {
+    const interact = (await import('interactjs')).default;
+    manager.enable();
+    expect(interact).toHaveBeenCalled();
+  });
+
+  it('disable() resets activeInteractables', () => {
+    manager.enable();
+    manager.disable();
+    // Should not throw
+    expect(() => manager.disable()).not.toThrow();
+  });
+
+  it('refresh() calls disable then enable', () => {
+    const disableSpy = vi.spyOn(manager as unknown as { disable: () => void }, 'disable');
+    const enableSpy = vi.spyOn(manager as unknown as { enable: () => void }, 'enable');
+    manager.refresh();
+    expect(disableSpy).toHaveBeenCalled();
+    expect(enableSpy).toHaveBeenCalled();
+  });
+
+  it('getLayerSnapTargets returns points from state layers', () => {
+    state.set('design', makeDesignWithLayers([
+      makeRect('a', 0, 0, 100, 100),
+      makeRect('b', 200, 200, 50, 50),
+    ]));
+    // Access private method via cast
+    const m = manager as unknown as { getLayerSnapTargets: (id: string) => { x: number; y: number }[] };
+    const pts = m.getLayerSnapTargets('a');
+    expect(pts.length).toBeGreaterThan(0);
+    // Should not include points from layer 'a' itself
+    expect(pts.some(p => p.x === 200 || p.x === 250)).toBe(true);
+  });
+
+  it('getLayerSnapTargets excludes the dragged layer', () => {
+    state.set('design', makeDesignWithLayers([
+      makeRect('dragged', 100, 100, 50, 50),
+    ]));
+    const m = manager as unknown as { getLayerSnapTargets: (id: string) => { x: number; y: number }[] };
+    const pts = m.getLayerSnapTargets('dragged');
+    // Only the dragged layer exists, so no snap targets
+    expect(pts.length).toBe(0);
+  });
+});
+
+describe('InteractionManager — drag and resize callbacks', () => {
+  let state: StateManager;
+  let container: HTMLElement;
+  let interactMock: ReturnType<typeof vi.mocked<typeof import('interactjs').default>>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    state = new StateManager();
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    const mod = await import('interactjs');
+    interactMock = vi.mocked(mod.default);
+  });
+  afterEach(() => { container.remove(); });
+
+  function getDraggableListeners(callIndex = 0) {
+    // interact() returns same mockInteractable; draggable is called once per interact() call
+    // callIndex 0 = first interact call = layer draggable
+    return interactMock.mock.results[callIndex].value.draggable.mock.calls[0][0].listeners;
+  }
+
+  it('draggable start listener selects layer if not locked', () => {
+    state.set('design', makeDesignWithLayers([makeRect('layer1', 0, 0, 100, 100)]));
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const mockEl = document.createElement('div');
+    mockEl.setAttribute('data-layer-id', 'layer1');
+    getDraggableListeners(0).start({ target: mockEl });
+    expect(state.get().selectedLayerIds).toContain('layer1');
+    manager.disable();
+  });
+
+  it('draggable start: locked layer is ignored', () => {
+    const lockedLayer = { ...makeRect('locked1', 0, 0, 100, 100), locked: true };
+    state.set('design', makeDesignWithLayers([lockedLayer as unknown as Layer]));
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const mockEl = document.createElement('div');
+    mockEl.setAttribute('data-layer-id', 'locked1');
+    getDraggableListeners(0).start({ target: mockEl });
+    expect(state.get().selectedLayerIds).not.toContain('locked1');
+    manager.disable();
+  });
+
+  it('draggable start: no layerId (target without data-layer-id) is ignored', () => {
+    state.set('design', makeDesignWithLayers([]));
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const plainEl = document.createElement('span');
+    expect(() => getDraggableListeners(0).start({ target: plainEl })).not.toThrow();
+    manager.disable();
+  });
+
+  it('draggable move listener updates layer position', () => {
+    state.set('design', makeDesignWithLayers([makeRect('mv', 10, 20, 100, 100)]));
+    state.set('zoom', 1, false);
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const mockEl = document.createElement('div');
+    mockEl.setAttribute('data-layer-id', 'mv');
+
+    // First, fire start to set draggedId
+    getDraggableListeners(0).start({ target: mockEl });
+    getDraggableListeners(0).move({ target: mockEl, dx: 10, dy: 5 });
+
+    const layer = state.getCurrentLayers().find(l => l.id === 'mv');
+    expect(layer?.x).toBe(20);
+    expect(layer?.y).toBe(25);
+    manager.disable();
+  });
+
+  it('draggable end clears draggedId without crash', () => {
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+    expect(() => getDraggableListeners(0).end()).not.toThrow();
+    manager.disable();
+  });
+});
+
+describe('InteractionManager — computeResize', () => {
+  let state: StateManager;
+  let manager: InteractionManager;
+
+  beforeEach(() => {
+    state = new StateManager();
+    manager = new InteractionManager(document.createElement('div'), state);
+  });
+
+  function callComputeResize(layer: Layer, handle: string, dx: number, dy: number) {
+    return (manager as unknown as {
+      computeResize: (l: Layer, h: string, dx: number, dy: number) => Partial<Layer>;
+    }).computeResize(layer, handle, dx, dy);
+  }
+
+  it('se handle resizes width and height', () => {
+    const layer = makeRect('r', 0, 0, 100, 100);
+    const result = callComputeResize(layer, 'se', 20, 10);
+    expect(result.width).toBe(120);
+    expect(result.height).toBe(110);
+  });
+
+  it('sw handle resizes width, height and adjusts x', () => {
+    const layer = makeRect('r', 50, 50, 100, 100);
+    const result = callComputeResize(layer, 'sw', -10, 20);
+    expect(result.x).toBe(40);
+    expect(result.width).toBe(110);
+    expect(result.height).toBe(120);
+  });
+
+  it('ne handle resizes width, height and adjusts y', () => {
+    const layer = makeRect('r', 0, 50, 100, 100);
+    const result = callComputeResize(layer, 'ne', 30, -20);
+    expect(result.y).toBe(30);
+    expect(result.width).toBe(130);
+    expect(result.height).toBe(120);
+  });
+
+  it('nw handle resizes and adjusts both x and y', () => {
+    const layer = makeRect('r', 50, 50, 100, 100);
+    const result = callComputeResize(layer, 'nw', -10, -10);
+    expect(result.x).toBe(40);
+    expect(result.y).toBe(40);
+    expect(result.width).toBe(110);
+    expect(result.height).toBe(110);
+  });
+
+  it('unknown handle returns empty object', () => {
+    const layer = makeRect('r', 0, 0, 100, 100);
+    const result = callComputeResize(layer, 'xx', 10, 10);
+    expect(result).toEqual({});
+  });
+
+  it('clamps width and height to minimum 10', () => {
+    const layer = makeRect('r', 0, 0, 15, 15);
+    const result = callComputeResize(layer, 'se', -100, -100);
+    expect(result.width).toBe(10);
+    expect(result.height).toBe(10);
+  });
+});
+
+describe('InteractionManager — resizable move and snap targets', () => {
+  let state: StateManager;
+  let container: HTMLElement;
+  let interactMock: ReturnType<typeof vi.mocked<typeof import('interactjs').default>>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    state = new StateManager();
+    container = document.createElement('div');
+    const parent = document.createElement('div');
+    parent.appendChild(container);
+    document.body.appendChild(parent);
+    const mod = await import('interactjs');
+    interactMock = vi.mocked(mod.default);
+  });
+  afterEach(() => {
+    container.parentElement?.remove();
+  });
+
+  it('resizable move: updates layer via computeResize', () => {
+    state.set('design', makeDesignWithLayers([makeRect('resize-me', 0, 0, 100, 100)]));
+    state.set('zoom', 1, false);
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    // The second draggable call is for the resizable (selection handle)
+    const resizableListeners = interactMock.mock.results[1].value.draggable.mock.calls[1][0].listeners;
+    const handleEl = document.createElement('div');
+    handleEl.dataset.handle = 'se';
+    handleEl.dataset.layerId = 'resize-me';
+    resizableListeners.move({ target: handleEl, dx: 20, dy: 10 });
+
+    const layer = state.getCurrentLayers().find(l => l.id === 'resize-me');
+    expect(layer?.width).toBe(120);
+    expect((layer as unknown as { height: number }).height).toBe(110);
+    manager.disable();
+  });
+
+  it('resizable move: no-op when no handle', () => {
+    state.set('design', makeDesignWithLayers([makeRect('r2', 0, 0, 100, 100)]));
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const resizableListeners = interactMock.mock.results[1].value.draggable.mock.calls[1][0].listeners;
+    const handleEl = document.createElement('div');
+    // No data-handle set
+    expect(() => resizableListeners.move({ target: handleEl, dx: 10, dy: 10 })).not.toThrow();
+    manager.disable();
+  });
+
+  it('snap targets function returns null when draggedId empty', () => {
+    state.set('design', makeDesignWithLayers([]));
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    // Get the snap targets from modifiers.snap call args
+    const snapArgs = vi.mocked(interactMock.modifiers.snap as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const snapTargetFn = snapArgs.targets[1]; // Custom snap function
+    // draggedId is empty string → should return null
+    const result = snapTargetFn(100, 100);
+    expect(result).toBeNull();
+    manager.disable();
+  });
+
+  it('snap targets function returns snap point when near a layer edge', () => {
+    state.set('design', makeDesignWithLayers([
+      makeRect('anchor', 0, 0, 100, 100),
+      makeRect('drag-me', 200, 200, 50, 50),
+    ]));
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    // Simulate dragstart to set draggedId
+    const mockEl = document.createElement('div');
+    mockEl.setAttribute('data-layer-id', 'drag-me');
+    interactMock.mock.results[0].value.draggable.mock.calls[0][0].listeners.start({ target: mockEl });
+
+    const snapArgs = vi.mocked(interactMock.modifiers.snap as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const snapTargetFn = snapArgs.targets[1];
+    // x=0, y=0 is an edge of 'anchor' — should snap
+    const result = snapTargetFn(1, 1);
+    expect(result).not.toBeNull();
+    expect(result).toHaveProperty('x');
+    manager.disable();
+  });
+});

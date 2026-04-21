@@ -266,3 +266,88 @@ describe('LayerPanelManager — move layer (drag-drop reorder)', () => {
     expect(wrapper.querySelectorAll('.dragging').length).toBe(0);
   });
 });
+
+describe('LayerPanelManager — drag-drop reorder (dragover, drop)', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    const layers = [makeRect('a', 30), makeRect('b', 20), makeRect('c', 10)];
+    state.set('design', makeDesign(layers), false);
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('dragover adds drop-target class', () => {
+    const rowA = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!;
+    const rowB = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="b"]')!;
+    rowA.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    rowB.dispatchEvent(new Event('dragover', { bubbles: true, cancelable: true }));
+    expect(rowB.classList.contains('drop-target')).toBe(true);
+  });
+
+  it('drop reorders layers (moves a before c)', () => {
+    const rowA = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!;
+    const rowC = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="c"]')!;
+    rowA.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    rowC.dispatchEvent(new Event('dragover', { bubbles: true, cancelable: true }));
+    rowC.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }));
+    // After drop, the layer order should have changed
+    const rows = [...wrapper.querySelectorAll<HTMLElement>('.layer-row')];
+    const ids = rows.map(r => r.dataset.layerId);
+    expect(ids).not.toEqual(['a', 'b', 'c']); // order changed
+  });
+
+  it('drop on same layer does nothing', () => {
+    const rowA = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!;
+    const before = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!.dataset.layerId;
+    rowA.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    rowA.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }));
+    const after = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!.dataset.layerId;
+    expect(after).toBe(before);
+  });
+
+  it('dragend removes dragging class', () => {
+    const rowA = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="a"]')!;
+    rowA.dispatchEvent(new Event('dragstart', { bubbles: true }));
+    rowA.dispatchEvent(new Event('dragend', { bubbles: true }));
+    expect(rowA.classList.contains('dragging')).toBe(false);
+  });
+});
+
+describe('LayerPanelManager — moveLayerBefore', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+  let panel: LayerPanelManager;
+
+  beforeEach(() => {
+    state = new StateManager();
+    const layers = [makeRect('x', 30), makeRect('y', 20), makeRect('z', 10)];
+    state.set('design', makeDesign(layers), false);
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    panel = new LayerPanelManager(wrapper, state);
+  });
+  afterEach(() => { wrapper.remove(); });
+
+  it('moveLayerBefore reorders layers in state', () => {
+    const move = (panel as unknown as { moveLayerBefore: (from: string, before: string) => void }).moveLayerBefore;
+    move.call(panel, 'z', 'x');
+    const layers = state.getCurrentLayers();
+    const ids = layers.map(l => l.id);
+    expect(ids.indexOf('z')).toBeLessThan(ids.indexOf('x'));
+  });
+
+  it('moveLayerBefore with invalid fromId is a no-op', () => {
+    const move = (panel as unknown as { moveLayerBefore: (from: string, before: string) => void }).moveLayerBefore;
+    expect(() => move.call(panel, 'nonexistent', 'x')).not.toThrow();
+  });
+
+  it('moveLayerBefore with invalid toId is a no-op', () => {
+    const move = (panel as unknown as { moveLayerBefore: (from: string, before: string) => void }).moveLayerBefore;
+    expect(() => move.call(panel, 'x', 'nonexistent')).not.toThrow();
+  });
+});

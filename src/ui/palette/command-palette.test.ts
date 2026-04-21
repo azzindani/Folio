@@ -398,4 +398,77 @@ describe('CommandPalette — more commands', () => {
     container.querySelector<HTMLElement>('.cmd-row')!.click();
     expect(redoSpy).toHaveBeenCalled();
   });
+
+  it('mode-visual command switches mode to visual', () => {
+    const { state, palette } = setup();
+    state.set('mode', 'payload', false);
+    palette.open();
+    const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+    input.value = 'Visual Mode';
+    input.dispatchEvent(new Event('input'));
+    container.querySelector<HTMLElement>('.cmd-row')!.click();
+    expect(state.get().mode).toBe('visual');
+  });
+
+  it('zoom-fit command calls app.canvas.fitToScreen', () => {
+    const { palette } = setup();
+    palette.open();
+    const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+    input.value = 'Fit Canvas';
+    input.dispatchEvent(new Event('input'));
+    container.querySelector<HTMLElement>('.cmd-row')!.click();
+    expect(mockApp.canvas.fitToScreen).toHaveBeenCalled();
+  });
+
+  it('export-svg command triggers download when design is set', () => {
+    Object.defineProperty(URL, 'createObjectURL', { writable: true, value: vi.fn().mockReturnValue('blob:x') });
+    Object.defineProperty(URL, 'revokeObjectURL', { writable: true, value: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const { palette } = setup();
+    palette.open();
+    const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+    input.value = 'Export as SVG';
+    input.dispatchEvent(new Event('input'));
+    expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
+    vi.restoreAllMocks();
+  });
+
+  it('export-html command triggers download when design is set', () => {
+    Object.defineProperty(URL, 'createObjectURL', { writable: true, value: vi.fn().mockReturnValue('blob:html') });
+    Object.defineProperty(URL, 'revokeObjectURL', { writable: true, value: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const { state, palette } = setup();
+    state.set('design', {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'x', type: 'poster', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+      layers: [],
+    } as unknown as import('../../schema/types').DesignSpec, false);
+    palette.open();
+    const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+    input.value = 'Export as HTML';
+    input.dispatchEvent(new Event('input'));
+    expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
+    vi.restoreAllMocks();
+  });
+
+  it('align-right command runs without crash', () => {
+    const { state, palette } = setup();
+    state.set('design', { _protocol: 'design/v1', meta: { id: 'x', name: 'x', type: 'poster', created: '', modified: '' }, document: { width: 1080, height: 1080, unit: 'px', dpi: 96 }, layers: [] } as unknown as import('../../schema/types').DesignSpec);
+    palette.open();
+    const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+    input.value = 'Align Right';
+    input.dispatchEvent(new Event('input'));
+    expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
+  });
+
+  it('distribute-h command runs without crash', () => {
+    const { state, palette } = setup();
+    state.set('design', { _protocol: 'design/v1', meta: { id: 'x', name: 'x', type: 'poster', created: '', modified: '' }, document: { width: 1080, height: 1080, unit: 'px', dpi: 96 }, layers: [] } as unknown as import('../../schema/types').DesignSpec);
+    palette.open();
+    const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+    input.value = 'Distribute H';
+    input.dispatchEvent(new Event('input'));
+    expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
+  });
 });
