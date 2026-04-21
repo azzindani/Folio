@@ -675,3 +675,65 @@ describe('listTemplateSlots', () => {
     expect(result.isError).toBe(true);
   });
 });
+
+// ── saveAsComponent error path ───────────────────────────────
+
+describe('saveAsComponent — error paths', () => {
+  it('returns error when design file does not exist (line 491)', () => {
+    const result = saveAsComponent({
+      design_path: path.join(tmpDir, 'nonexistent.yaml'),
+      layer_ids: ['any'],
+      component_name: 'Ghost',
+      project_path: tmpDir,
+    });
+    expect(result.isError).toBe(true);
+  });
+});
+
+// ── setNestedValue array notation ────────────────────────────
+
+describe('patchDesign — array selector notation (lines 666-669)', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'arr-proj');
+    createProject({ name: 'Array Test', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Array Patch', type: 'carousel' });
+    designPath = path.join(projectPath, 'designs/array-patch.design.yaml');
+    appendPage({
+      design_path: designPath,
+      page_id: 'page_1',
+      label: 'Page One',
+      layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100 } as Layer],
+    });
+  });
+
+  it('patches label of a page using array[key=val] notation', () => {
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'pages[id=page_1].label', value: 'Updated' }],
+    });
+    expect(result.isError).toBeUndefined();
+    const content = fs.readFileSync(designPath, 'utf-8');
+    expect(content).toContain('Updated');
+  });
+
+  it('silently no-ops when array item not found', () => {
+    // pages[id=missing] → arr.find returns undefined → early return
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'pages[id=missing].label', value: 'Oops' }],
+    });
+    expect(result.isError).toBeUndefined(); // no throw
+  });
+
+  it('silently no-ops when intermediate key is null', () => {
+    // doc.missingKey.sub → current becomes undefined after first step
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'missingKey.sub.value', value: 42 }],
+    });
+    expect(result.isError).toBeUndefined(); // no throw
+  });
+});

@@ -193,3 +193,105 @@ describe('PresentationMode — single-page design', () => {
     }).not.toThrow();
   });
 });
+
+describe('PresentationMode — close with fullscreen active (line 42)', () => {
+  it('close() calls exitFullscreen when fullscreenElement is set', () => {
+    const exitSpy = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(document, 'fullscreenElement', { value: document.body, configurable: true });
+    Object.defineProperty(document, 'exitFullscreen', { value: exitSpy, configurable: true, writable: true });
+    const state = new StateManager();
+    const pres = new PresentationMode(state);
+    state.set('design', makeDesign(), false);
+    pres.open();
+    pres.close();
+    expect(exitSpy).toHaveBeenCalled();
+    Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true });
+  });
+});
+
+describe('PresentationMode — edge case branches', () => {
+  afterEach(() => {
+    document.body.querySelectorAll('.pres-overlay').forEach(el => el.remove());
+  });
+
+  it('handleKey returns early when design removed after open (line 180)', () => {
+    const state = new StateManager();
+    const pres = new PresentationMode(state);
+    state.set('design', makeDesign(), false);
+    pres.open();
+    state.set('design', null as unknown as DesignSpec, false);
+    expect(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    }).not.toThrow();
+    pres.close();
+  });
+
+  it('renders page with no layers property using ?? [] fallback (line 135)', () => {
+    const state = new StateManager();
+    const design = {
+      _protocol: 'design/v1',
+      meta: { id: 'test', name: 'Test', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+      pages: [{ id: 'p1', label: 'Page 1' }], // no layers property
+    } as unknown as DesignSpec;
+    state.set('design', design, false);
+    const pres = new PresentationMode(state);
+    expect(() => pres.open()).not.toThrow();
+    expect(document.body.querySelector('.pres-overlay')).not.toBeNull();
+    pres.close();
+  });
+
+  it('scaleSlide no-ops when slide has no SVG (line 163 false branch)', () => {
+    const state = new StateManager();
+    const pres = new PresentationMode(state);
+    state.set('design', makeDesign(), false);
+    pres.open();
+    document.body.querySelector('.pres-slide svg')?.remove();
+    expect(() => window.dispatchEvent(new Event('resize'))).not.toThrow();
+    pres.close();
+  });
+
+  it('leftZone click navigates backward (navigate -1)', () => {
+    const state = new StateManager();
+    const pres = new PresentationMode(state);
+    state.set('design', makePagedDesign(3), false);
+    state.set('currentPageIndex', 1, false);
+    pres.open();
+    const slide = document.body.querySelector<HTMLElement>('.pres-slide')!;
+    // slide children: [svg, leftZone, rightZone]
+    const leftZone = slide.querySelectorAll<HTMLElement>('div')[0]!;
+    leftZone.click();
+    const counter = document.body.querySelector('.pres-counter');
+    expect(counter?.textContent).toContain('1');
+    pres.close();
+  });
+
+  it('rightZone click navigates forward (navigate +1)', () => {
+    const state = new StateManager();
+    const pres = new PresentationMode(state);
+    state.set('design', makePagedDesign(3), false);
+    state.set('currentPageIndex', 0, false);
+    pres.open();
+    const slide = document.body.querySelector<HTMLElement>('.pres-slide')!;
+    // slide children: [svg, leftZone, rightZone]
+    const rightZone = slide.querySelectorAll<HTMLElement>('div')[1]!;
+    rightZone.click();
+    const counter = document.body.querySelector('.pres-counter');
+    expect(counter?.textContent).toContain('2');
+    pres.close();
+  });
+
+  it('hudBtn mouseenter sets opacity to 1', () => {
+    const state = new StateManager();
+    const pres = new PresentationMode(state);
+    state.set('design', makePagedDesign(2), false);
+    pres.open();
+    const btn = document.body.querySelector<HTMLButtonElement>('.pres-hud button')!;
+    btn.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    expect(btn.style.opacity).toBe('1');
+    btn.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    // jsdom normalizes .8 to 0.8
+    expect(parseFloat(btn.style.opacity)).toBeCloseTo(0.8, 1);
+    pres.close();
+  });
+});
