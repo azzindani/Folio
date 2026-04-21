@@ -390,3 +390,110 @@ describe('KeyboardManager — getShortcuts', () => {
     expect(shortcuts.every(s => typeof s.key === 'string' && typeof s.action === 'function')).toBe(true);
   });
 });
+
+describe('KeyboardManager — uncovered branches', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('paste with non-object items does not select (line 186 FALSE branch)', async () => {
+    state.set('design', makeDesign([]));
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve('- 1\n- 2\n- 3') },
+      writable: true, configurable: true,
+    });
+    fireKey('v', { ctrl: true });
+    await new Promise(r => setTimeout(r, 50));
+    expect(state.getCurrentLayers()).toHaveLength(0);
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true, configurable: true });
+  });
+
+  it('groupSelected with layers having undefined x/y uses ?? 0 (lines 202-203)', () => {
+    const noXY = { id: 'noxy', type: 'rect', z: 10 } as unknown as Layer;
+    state.set('design', makeDesign([noXY, makeRect('b')]));
+    state.set('selectedLayerIds', ['noxy', 'b']);
+    fireKey('g', { ctrl: true });
+    const layers = state.getCurrentLayers();
+    expect(layers.length).toBe(1);
+    expect(layers[0].type).toBe('group');
+  });
+
+  it('ungroupSelected on group without layers property uses ?? [] (lines 218, 223)', () => {
+    const fakeGroup = { id: 'grp', type: 'group', z: 10 } as unknown as Layer;
+    state.set('design', makeDesign([fakeGroup]));
+    state.set('selectedLayerIds', ['grp']);
+    fireKey('g', { ctrl: true, shift: true });
+    expect(state.getCurrentLayers().length).toBe(0);
+  });
+
+  it('shortcuts not triggered from textarea element', () => {
+    state.set('design', makeDesign([makeRect('a')]));
+    state.set('selectedLayerIds', ['a']);
+    const textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+    textarea.dispatchEvent(ev);
+    expect(state.get().selectedLayerIds).toEqual(['a']);
+    document.body.removeChild(textarea);
+  });
+});
+
+describe('KeyboardManager — duplicate and adjustZ uncovered branches', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+D on layer without x/y uses ?? 0 fallback (lines 146-147)', () => {
+    const noXY = { id: 'naked', type: 'rect', z: 5 } as unknown as Layer;
+    state.set('design', makeDesign([noXY]));
+    state.set('selectedLayerIds', ['naked']);
+    fireKey('d', { ctrl: true });
+    const clone = state.getCurrentLayers().find(l => l.id !== 'naked')!;
+    expect(clone.x).toBe(20);
+    expect(clone.y).toBe(20);
+  });
+
+  it('adjustZ with selectedId not in layers skips silently (line 159 FALSE branch)', () => {
+    state.set('design', makeDesign([makeRect('a')]));
+    state.set('selectedLayerIds', ['nonexistent-id']);
+    expect(() => fireKey(']', { ctrl: true })).not.toThrow();
+    expect(state.getCurrentLayers()[0].z).toBe(20);
+  });
+});
+
+describe('KeyboardManager — paste with no-position layer', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+V pastes layer with undefined x/y using ?? 0 + 20 (line 184)', async () => {
+    state.set('design', makeDesign([]));
+    const yamlNoPos = 'id: nopos\ntype: rect\nz: 5\nwidth: 100\nheight: 100';
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve(yamlNoPos) },
+      writable: true, configurable: true,
+    });
+    fireKey('v', { ctrl: true });
+    await new Promise(r => setTimeout(r, 50));
+    const pasted = state.getCurrentLayers().find(l => l.id.includes('nopos'));
+    expect(pasted?.x).toBe(20);
+    expect(pasted?.y).toBe(20);
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true, configurable: true });
+  });
+});

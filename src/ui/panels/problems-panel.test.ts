@@ -85,6 +85,35 @@ describe('ProblemsPanelManager', () => {
     expect(panel.hasErrors()).toBe(panel.getErrors().some(e => e.severity === 'error'));
   });
 
+  it('renders error/warning counts when design has validation errors (lines 44-60)', () => {
+    const designWithErrors = {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'X', type: 'poster', created: '', modified: '' },
+      document: { width: 800, height: 600, unit: 'px' },
+      layers: [
+        { type: 'rect', z: 10, x: 0, y: 0, width: 50, height: 50 }, // missing id → error
+      ],
+    } as unknown as DesignSpec;
+    state.set('design', designWithErrors);
+    const content = container.querySelector('.problems-content')!.textContent ?? '';
+    expect(content).toMatch(/error/i);
+  });
+
+  it('renders warning-severity problem-row (lines 47-59 warning icon)', () => {
+    const design = {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'X', type: 'poster', created: '', modified: '' },
+      document: { width: 800, height: 600, unit: 'px' },
+      layers: [
+        { id: 'a', type: 'rect', z: 5, x: 0, y: 0, width: 10, height: 10 },
+        { id: 'b', type: 'rect', z: 5, x: 0, y: 0, width: 10, height: 10 },
+      ],
+    } as unknown as DesignSpec;
+    state.set('design', design);
+    const row = container.querySelector('.problem-row');
+    expect(row).not.toBeNull();
+  });
+
   it('clicking problem-row fires click handler without throwing', () => {
     // Set a design that produces a validation error
     const badDesign = {

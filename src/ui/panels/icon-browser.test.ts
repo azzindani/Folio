@@ -209,4 +209,28 @@ describe('IconBrowserManager', () => {
     const firstTile = container.querySelector<HTMLButtonElement>('.ib-tile')!;
     expect(firstTile.querySelector('svg')).not.toBeNull();
   });
+
+  it('renderGrid no-ops footer update when .ib-footer is removed (line 57 false branch)', () => {
+    const { get, addLayer, set } = makeState(null);
+    new IconBrowserManager(container, { get, addLayer, set } as unknown as import('../../editor/state').StateManager);
+    container.querySelector('.ib-footer')?.remove();
+    // Trigger renderGrid via search input (without footer element)
+    const searchInput = container.querySelector<HTMLInputElement>('.ib-search')!;
+    expect(() => fireInput(searchInput, 'arrow')).not.toThrow();
+    expect(container.querySelectorAll('.ib-tile').length).toBeGreaterThan(0);
+  });
+
+  it('insertIcon uses pages[0].layers when design.layers is undefined (line 99 ?? branch)', () => {
+    const design = {
+      _protocol: 'design/v1',
+      meta: { id: 't', name: 'T', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+      pages: [{ id: 'p1', label: 'P1', layers: [] }],
+    };
+    const { get, addLayer, set } = makeState(design);
+    new IconBrowserManager(container, { get, addLayer, set } as unknown as import('../../editor/state').StateManager);
+    const firstTile = container.querySelector<HTMLButtonElement>('.ib-tile')!;
+    firstTile.click();
+    expect(addLayer).toHaveBeenCalledOnce();
+  });
 });

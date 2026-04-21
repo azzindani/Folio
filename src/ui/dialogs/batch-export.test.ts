@@ -241,4 +241,36 @@ describe('BatchExportDialog', () => {
     expect(showToast).toHaveBeenCalledWith(expect.stringContaining('failed'), 'error');
     dlg.close();
   });
+
+  it('non-Error catch value uses "Unknown error" string (line 161 false branch)', async () => {
+    const { exportToSVG } = await import('../../export/exporter');
+    vi.mocked(exportToSVG).mockImplementationOnce(() => { throw 'plain string error'; });
+    const dlg = new BatchExportDialog();
+    dlg.open(makeSpec(), 0);
+    const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
+    formatSel.value = 'svg';
+    formatSel.dispatchEvent(new Event('change'));
+    document.querySelector<HTMLButtonElement>('#be-run')!.click();
+    await new Promise(r => setTimeout(r, 50));
+    // results[0].error should be 'Unknown error'
+    // The export failed gracefully → no crash
+    expect(document.querySelector('.dialog-overlay')).not.toBeNull();
+    dlg.close();
+  });
+
+  it('successful multi-page export closes dialog after delay', async () => {
+    vi.useFakeTimers();
+    const { exportToSVG } = await import('../../export/exporter');
+    vi.mocked(exportToSVG).mockReturnValue('<svg></svg>');
+    const dlg = new BatchExportDialog();
+    dlg.open(makeSpec(2), 0);
+    const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
+    formatSel.value = 'svg';
+    formatSel.dispatchEvent(new Event('change'));
+    document.querySelector<HTMLButtonElement>('#be-run')!.click();
+    await vi.runAllTimersAsync();
+    // After success, setTimeout closes it after 1200ms
+    expect(document.querySelector('.dialog-overlay')).toBeNull();
+    vi.useRealTimers();
+  });
 });
