@@ -346,7 +346,11 @@ export class EditorApp {
     this.commandPalette = new CommandPalette(this.container, this.state, this);
 
     // Initialize Monaco payload editor (lazy loaded)
-    const monacoContainer = this.container.querySelector('.monaco-container') as HTMLElement;
+    // viewportArea is cleared by ViewportLayoutManager, so create the container programmatically
+    const monacoContainer = document.createElement('div');
+    monacoContainer.className = 'monaco-container';
+    monacoContainer.style.display = 'none';
+    viewportArea.appendChild(monacoContainer);
     this.payloadEditor = new PayloadEditor(monacoContainer, this.state);
     this.payloadEditor.init().catch(() => {
       // Monaco failed to load — payload mode unavailable but visual mode still works
@@ -422,9 +426,7 @@ export class EditorApp {
 
       <div class="canvas-section">
         <div class="tab-bar-container"></div>
-        <div class="viewport-area">
-          <div class="monaco-container" style="display:none"></div>
-        </div>
+        <div class="viewport-area"></div>
       </div>
 
       <div class="properties-panel">
