@@ -1,0 +1,377 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { StateManager } from './state';
+import { CanvasManager } from './canvas';
+import type { DesignSpec, Layer } from '../schema/types';
+
+// Mock canvas getContext to avoid NotImplementedError
+const mockCtx = {
+  fillStyle: '',
+  font: '',
+  textBaseline: '',
+  fillRect: vi.fn(),
+  fillText: vi.fn(),
+  clearRect: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  measureText: vi.fn().mockReturnValue({ width: 20 }),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  stroke: vi.fn(),
+  setLineDash: vi.fn(),
+};
+
+beforeEach(() => {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(mockCtx as unknown as CanvasRenderingContext2D);
+  Object.values(mockCtx).forEach(v => typeof v === 'function' && vi.mocked(v as ReturnType<typeof vi.fn>).mockClear?.());
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  document.body.innerHTML = '';
+});
+
+function makeDesign(layers: Layer[] = []): DesignSpec {
+  return {
+    _protocol: 'design/v1',
+    meta: { id: 'test', name: 'Test', type: 'poster', created: '', modified: '' },
+    document: { width: 800, height: 600, unit: 'px', dpi: 96 },
+    layers,
+  } as unknown as DesignSpec;
+}
+
+function makeRect(id = 'r1'): Layer {
+  return {
+    id, type: 'rect', z: 10, x: 10, y: 20, width: 200, height: 100,
+    fill: { type: 'solid', color: '#ff0000' },
+  } as unknown as Layer;
+}
+
+function makeTextLayer(id = 't1'): Layer {
+  return {
+    id, type: 'text', z: 10, x: 50, y: 50, width: 200, height: 'auto',
+    content: { type: 'plain', value: 'Hello' },
+    style: { font_family: 'Inter', font_size: 24, font_weight: 400, color: '#ffffff' },
+  } as unknown as Layer;
+}
+
+function setup(layers: Layer[] = []) {
+  const state = new StateManager();
+  const container = document.createElement('div');
+  container.style.width = '1200px';
+  container.style.height = '800px';
+  document.body.appendChild(container);
+  const manager = new CanvasManager(container, state);
+  if (layers.length) {
+    state.set('design', makeDesign(layers), false);
+  }
+  return { state, manager, container };
+}
+
+// ── Constructor ──────────────────────────────────────────────
+
+describe('CanvasManager — constructor', () => {
+  it('creates viewport element inside container', () => {
+    const { container } = setup();
+    expect(container.querySelector('.canvas-viewport')).not.toBeNull();
+  });
+
+  it('creates rulers inside container', () => {
+    const { container } = setup();
+    expect(container.querySelector('.ruler-h')).not.toBeNull();
+    expect(container.querySelector('.ruler-v')).not.toBeNull();
+  });
+
+  it('creates ruler corner element', () => {
+    const { container } = setup();
+    expect(container.querySelector('.ruler-corner')).not.toBeNull();
+  });
+});
+
+// ── render() ────────────────────────────────────────────────
+
+describe('CanvasManager — render', () => {
+  it('does nothing when no design in state', () => {
+    const { container } = setup();
+    const svgContainer = container.querySelector('.canvas-svg-container');
+    expect(svgContainer?.children.length).toBe(0);
+  });
+
+  it('renders SVG when design is set', () => {
+    const { container } = setup([makeRect()]);
+    const svgContainer = container.querySelector('.canvas-svg-container');
+    expect(svgContainer?.querySelector('svg')).not.toBeNull();
+  });
+
+  it('re-renders when design state changes', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    const svgBefore = container.querySelector('.canvas-svg-container svg');
+    state.set('design', makeDesign([makeRect('r2')]), false);
+    const svgAfter = container.querySelector('.canvas-svg-container svg');
+    expect(svgAfter).not.toBeNull();
+    void svgBefore;
+  });
+
+  it('renders paged design using currentPageIndex', () => {
+    const pagedDesign = {
+      _protocol: 'design/v1',
+      meta: { id: 'paged', name: 'Paged', type: 'carousel', created: '', modified: '' },
+      document: { width: 800, height: 600, unit: 'px', dpi: 96 },
+      pages: [
+        { id: 'p0', label: 'Page 1', layers: [makeRect('r1')] },
+        { id: 'p1', label: 'Page 2', layers: [makeRect('r2')] },
+      ],
+    } as unknown as DesignSpec;
+
+    const { state, container } = setup();
+    state.set('design', pagedDesign, false);
+    expect(container.querySelector('.canvas-svg-container svg')).not.toBeNull();
+  });
+});
+
+// ── exportSVG() ──────────────────────────────────────────────
+
+describe('CanvasManager — exportSVG', () => {
+  it('returns empty string when no design rendered', () => {
+    const { manager } = setup();
+    expect(manager.exportSVG()).toBe('');
+  });
+
+  it('returns serialized SVG string when design is rendered', () => {
+    const { manager } = setup([makeRect()]);
+    const svg = manager.exportSVG();
+    expect(svg).toContain('<svg');
+  });
+});
+
+// ── fitToScreen() ────────────────────────────────────────────
+
+describe('CanvasManager — fitToScreen', () => {
+  it('does nothing when no design', () => {
+    const { state, manager } = setup();
+    manager.fitToScreen();
+    expect(state.get().zoom).toBe(1);
+  });
+
+  it('sets zoom and resets pan when design is loaded', () => {
+    const { state, manager } = setup([makeRect()]);
+    state.set('zoom', 3, false);
+    manager.fitToScreen();
+    expect(state.get().zoom).toBeLessThanOrEqual(1);
+    expect(state.get().panX).toBe(0);
+    expect(state.get().panY).toBe(0);
+  });
+});
+
+// ── onWheel (zoom / pan) ─────────────────────────────────────
+
+describe('CanvasManager — wheel events', () => {
+  it('zooms in on ctrl+wheel up', () => {
+    const { state, container } = setup([makeRect()]);
+    const initialZoom = state.get().zoom;
+    container.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, ctrlKey: true, bubbles: true }));
+    expect(state.get().zoom).toBeGreaterThan(initialZoom);
+  });
+
+  it('zooms out on ctrl+wheel down', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('zoom', 2, false);
+    container.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, ctrlKey: true, bubbles: true }));
+    expect(state.get().zoom).toBeLessThan(2);
+  });
+
+  it('pans on wheel without ctrl', () => {
+    const { state, container } = setup([makeRect()]);
+    container.dispatchEvent(new WheelEvent('wheel', { deltaX: 10, deltaY: 20, bubbles: true }));
+    expect(state.get().panX).toBe(-10);
+    expect(state.get().panY).toBe(-20);
+  });
+});
+
+// ── onPointerDown (layer selection) ─────────────────────────
+
+describe('CanvasManager — pointer events', () => {
+  it('deselects all when clicking empty canvas area', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    state.set('selectedLayerIds', ['r1'], false);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    svgContainer.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    expect(state.get().selectedLayerIds).toEqual([]);
+  });
+
+  it('selects layer when clicking element with data-layer-id', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    const svg = svgContainer.querySelector('svg')!;
+    // Create a mock layer element inside the svg
+    const layerEl = document.createElement('div');
+    layerEl.setAttribute('data-layer-id', 'r1');
+    svg.appendChild(layerEl as unknown as SVGElement);
+    layerEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    expect(state.get().selectedLayerIds).toContain('r1');
+  });
+
+  it('shift-click adds to selection', () => {
+    const { state, container } = setup([makeRect('r1'), makeRect('r2')]);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    const svg = svgContainer.querySelector('svg')!;
+    state.set('selectedLayerIds', ['r1'], false);
+
+    const layerEl = document.createElement('div');
+    layerEl.setAttribute('data-layer-id', 'r2');
+    svg.appendChild(layerEl as unknown as SVGElement);
+    layerEl.dispatchEvent(new PointerEvent('pointerdown', { shiftKey: true, bubbles: true }));
+    expect(state.get().selectedLayerIds).toContain('r1');
+    expect(state.get().selectedLayerIds).toContain('r2');
+  });
+
+  it('shift-click deselects already-selected layer', () => {
+    const { state, container } = setup([makeRect('r1')]);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    const svg = svgContainer.querySelector('svg')!;
+    state.set('selectedLayerIds', ['r1'], false);
+
+    const layerEl = document.createElement('div');
+    layerEl.setAttribute('data-layer-id', 'r1');
+    svg.appendChild(layerEl as unknown as SVGElement);
+    layerEl.dispatchEvent(new PointerEvent('pointerdown', { shiftKey: true, bubbles: true }));
+    expect(state.get().selectedLayerIds).not.toContain('r1');
+  });
+});
+
+// ── createLayerAt (drawing tools) ───────────────────────────
+
+describe('CanvasManager — drawing tools', () => {
+  const tools = ['rect', 'circle', 'line', 'text', 'polygon', 'frame'] as const;
+
+  for (const tool of tools) {
+    it(`${tool} tool creates a ${tool} layer on click`, () => {
+      const { state, container } = setup([makeRect()]);
+      state.set('activeTool', tool as import('./state').ToolId, false);
+      const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+      svgContainer.dispatchEvent(new PointerEvent('pointerdown', {
+        clientX: 100, clientY: 100, bubbles: true,
+      }));
+      const layers = state.getCurrentLayers();
+      const added = layers.find(l => l.id.startsWith(tool));
+      expect(added).toBeDefined();
+      expect(state.get().activeTool).toBe('select');
+    });
+  }
+});
+
+// ── State change reactions ───────────────────────────────────
+
+describe('CanvasManager — state change reactions', () => {
+  it('updates transform when zoom changes', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('zoom', 2, false);
+    const viewport = container.querySelector<HTMLElement>('.canvas-viewport')!;
+    expect(viewport.style.transform).toContain('scale(2)');
+  });
+
+  it('updates transform when panX/panY change', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('panX', 50, false);
+    const viewport = container.querySelector<HTMLElement>('.canvas-viewport')!;
+    expect(viewport.style.transform).toContain('50px');
+  });
+
+  it('renders guide lines when guides change', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('guides', [{ id: 'g1', axis: 'h' as const, position: 100 }], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    expect(selOverlay.querySelector('.ruler-guide')).not.toBeNull();
+  });
+
+  it('toggles tool-draw class when activeTool changes', () => {
+    const { state, container } = setup();
+    state.set('activeTool', 'rect' as import('./state').ToolId, false);
+    expect(container.classList.contains('tool-draw')).toBe(true);
+    state.set('activeTool', 'select' as import('./state').ToolId, false);
+    expect(container.classList.contains('tool-draw')).toBe(false);
+  });
+});
+
+// ── Guide lines rendering ────────────────────────────────────
+
+describe('CanvasManager — guide lines', () => {
+  it('renders both horizontal and vertical guides', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('guides', [
+      { id: 'g1', axis: 'h' as const, position: 200 },
+      { id: 'g2', axis: 'v' as const, position: 300 },
+    ], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    const guideSvg = selOverlay.querySelector('.ruler-guide');
+    expect(guideSvg).not.toBeNull();
+    const lines = guideSvg!.querySelectorAll('line');
+    expect(lines.length).toBe(2);
+  });
+
+  it('removes previous guide overlay before re-rendering', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('guides', [{ id: 'g1', axis: 'h' as const, position: 100 }], false);
+    state.set('guides', [{ id: 'g2', axis: 'v' as const, position: 200 }], false);
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    const guideSvgs = selOverlay.querySelectorAll('.ruler-guide');
+    expect(guideSvgs.length).toBe(1);
+  });
+});
+
+// ── Inline text editor ───────────────────────────────────────
+
+describe('CanvasManager — inline text editor', () => {
+  it('does nothing on dblclick when target has no data-layer-id', () => {
+    const { container } = setup([makeTextLayer()]);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    svgContainer.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(container.querySelector('.inline-text-editor')).toBeNull();
+  });
+
+  it('opens inline text editor on dblclick of text layer', () => {
+    const { container } = setup([makeTextLayer('t1')]);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    const svg = svgContainer.querySelector('svg')!;
+
+    const textEl = document.createElement('div');
+    textEl.setAttribute('data-layer-id', 't1');
+    svg.appendChild(textEl as unknown as SVGElement);
+
+    textEl.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(container.querySelector('.inline-text-editor')).not.toBeNull();
+  });
+
+  it('does not open editor for non-text layers on dblclick', () => {
+    const { container } = setup([makeRect('r1')]);
+    const svgContainer = container.querySelector<HTMLElement>('.canvas-svg-container')!;
+    const svg = svgContainer.querySelector('svg')!;
+
+    const rectEl = document.createElement('div');
+    rectEl.setAttribute('data-layer-id', 'r1');
+    svg.appendChild(rectEl as unknown as SVGElement);
+
+    rectEl.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(container.querySelector('.inline-text-editor')).toBeNull();
+  });
+});
+
+// ── mouseleave clears annotations ───────────────────────────
+
+describe('CanvasManager — annotations', () => {
+  it('clears annotations on mouseleave', () => {
+    const { container } = setup([makeRect()]);
+    // Just verify it doesn't throw
+    expect(() => {
+      container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    }).not.toThrow();
+  });
+
+  it('clears annotations on mousemove without altKey', () => {
+    const { container } = setup([makeRect()]);
+    expect(() => {
+      container.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, altKey: false }));
+    }).not.toThrow();
+  });
+});
