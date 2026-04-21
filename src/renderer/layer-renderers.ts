@@ -229,17 +229,31 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     div.style.fontWeight = String(style.font_weight ?? 400);
     div.style.color = typeof style.color === 'string' ? style.color : '#000';
     div.style.lineHeight = String(style.line_height ?? 1.5);
+    div.style.overflow = 'hidden';
+
+    // Scoped styles for markdown HTML output (tables, code, headings, etc.)
+    const mdStyle = document.createElement('style');
+    mdStyle.textContent = [
+      'table{border-collapse:collapse;width:100%;margin:.5em 0}',
+      'th,td{border:1px solid currentColor;padding:4px 8px;text-align:left}',
+      'th{font-weight:bold;opacity:.8}',
+      'tr:nth-child(even){background:rgba(128,128,128,.1)}',
+      'code{font-family:monospace;font-size:.9em;background:rgba(128,128,128,.15);padding:1px 4px;border-radius:3px}',
+      'pre{background:rgba(128,128,128,.15);padding:8px;border-radius:4px;overflow:auto}',
+      'blockquote{margin:0;padding-left:1em;border-left:3px solid currentColor;opacity:.7}',
+    ].join('');
+    div.appendChild(mdStyle);
 
     // Lazy load marked.js and parse markdown (set innerHTML only once, after parse)
     const mdValue = (layer.content as { value: string }).value;
     import('marked').then(({ marked }) => {
-      div.innerHTML = marked.parse(mdValue) as string;
+      div.innerHTML = mdStyle.outerHTML + (marked.parse(mdValue, { gfm: true }) as string);
     }).catch(() => {
       // marked.js failed to load — render as plain text
-      if (!div.innerHTML) div.textContent = mdValue;
+      if (div.childElementCount <= 1) div.appendChild(document.createTextNode(mdValue));
     });
     // Show plain text immediately while marked loads to avoid blank flash
-    div.textContent = mdValue;
+    div.appendChild(document.createTextNode(mdValue));
     fo.appendChild(div);
     g.appendChild(fo);
   } else if (layer.content.type === 'rich') {
