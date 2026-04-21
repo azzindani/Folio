@@ -318,6 +318,22 @@ describe('CanvasManager — guide lines', () => {
     const guideSvgs = selOverlay.querySelectorAll('.ruler-guide');
     expect(guideSvgs.length).toBe(1);
   });
+
+  it('dblclick on a guide line deletes that guide from state', () => {
+    const { state, container } = setup([makeRect()]);
+    state.set('guides', [
+      { id: 'del-g', axis: 'h' as const, position: 100 },
+      { id: 'keep-g', axis: 'v' as const, position: 200 },
+    ], false);
+
+    const selOverlay = container.querySelector('.canvas-selection-overlay')!;
+    const guideSvg = selOverlay.querySelector('.ruler-guide')!;
+    const line = guideSvg.querySelector('line[data-guide-id="del-g"]') as HTMLElement;
+    expect(line).not.toBeNull();
+    line.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(state.get().guides.find(g => g.id === 'del-g')).toBeUndefined();
+    expect(state.get().guides.find(g => g.id === 'keep-g')).toBeDefined();
+  });
 });
 
 // ── Inline text editor ───────────────────────────────────────
