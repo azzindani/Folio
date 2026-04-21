@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ComponentLibraryManager } from './component-library';
 import { StateManager } from '../../editor/state';
 import type { DesignSpec, Layer } from '../../schema/types';
@@ -35,6 +35,10 @@ describe('ComponentLibraryManager', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     mgr = new ComponentLibraryManager(container, state);
+  });
+
+  afterEach(() => {
+    container.remove();
   });
 
   it('renders empty state when no components', () => {
@@ -85,7 +89,7 @@ describe('ComponentLibraryManager', () => {
     expect(stored.some(c => c.name === 'Persisted')).toBe(true);
   });
 
-  it('insertComponent adds a layer to the design', () => {
+  it('insertComponent adds a layer to the design (single-layer component)', () => {
     state.set('design', makeDesign([makeRect('base')]));
     state.set('selectedLayerIds', ['base']);
     const def = mgr.saveSelected('ToInsert')!;
@@ -94,6 +98,20 @@ describe('ComponentLibraryManager', () => {
     const layers = state.getCurrentLayers();
     // 'base' + inserted layer/group
     expect(layers.length).toBeGreaterThan(1);
+  });
+
+  it('insertComponent wraps multiple layers into a group', () => {
+    state.set('design', makeDesign([makeRect('r1'), makeRect('r2')]));
+    state.set('selectedLayerIds', ['r1', 'r2']);
+    const def = mgr.saveSelected('MultiLayer')!;
+    state.set('selectedLayerIds', []);
+    const countBefore = state.getCurrentLayers().length;
+    mgr.insertComponent(def.id);
+    const layers = state.getCurrentLayers();
+    // A group layer should have been added
+    expect(layers.length).toBeGreaterThan(countBefore);
+    const group = layers.find(l => l.type === 'group');
+    expect(group).toBeDefined();
   });
 
   it('deleteComponent removes it from the list', () => {
@@ -112,5 +130,57 @@ describe('ComponentLibraryManager', () => {
     // Changing design triggers re-render; component cards should still be there
     state.set('design', makeDesign([makeRect('r2')]));
     expect(container.querySelectorAll('.comp-card').length).toBe(1);
+  });
+
+  it('clicking comp-insert button inserts the component', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    mgr.saveSelected('InsertMe');
+    const insertBtn = container.querySelector<HTMLButtonElement>('.comp-insert')!;
+    expect(insertBtn).not.toBeNull();
+    insertBtn.click();
+    // After insert, a new layer should be in the design
+    const layers = state.getCurrentLayers();
+    expect(layers.length).toBeGreaterThan(1);
+  });
+
+  it('clicking comp-delete button with confirm=false does not delete', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    mgr.saveSelected('DeleteMe');
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const deleteBtn = container.querySelector<HTMLButtonElement>('.comp-delete')!;
+    deleteBtn.click();
+    expect(mgr.getComponents().length).toBe(1);
+    vi.restoreAllMocks();
+  });
+
+  it('clicking comp-delete button with confirm=true deletes', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    mgr.saveSelected('DeleteConfirm');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const deleteBtn = container.querySelector<HTMLButtonElement>('.comp-delete')!;
+    deleteBtn.click();
+    expect(mgr.getComponents().length).toBe(0);
+    vi.restoreAllMocks();
+  });
+
+  it('clicking #comp-save button calls prompt and saveSelected (lines 153-154)', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    vi.spyOn(window, 'prompt').mockReturnValue('Prompted Name');
+    const saveBtn = container.querySelector<HTMLButtonElement>('#comp-save')!;
+    expect(saveBtn).not.toBeNull();
+    saveBtn.click();
+    expect(mgr.getComponents().some(c => c.name === 'Prompted Name')).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it('loadComponents returns [] when localStorage has malformed JSON (line 19)', () => {
+    localStorage.setItem('folio:components', '[[INVALID}}');
+    const newMgr = new ComponentLibraryManager(container, state);
+    // Should not throw and should have no components
+    expect(newMgr.getComponents().length).toBe(0);
   });
 });

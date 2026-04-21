@@ -92,4 +92,11 @@ describe('ViewportLayoutManager', () => {
     expect(container.querySelectorAll('.viewport-pane.active')[0] === panes[2]).toBe(true);
     expect(mgr.getActivePaneEl()?.closest('.viewport-pane') === panes[2]).toBe(true);
   });
+
+  it('getActivePaneEl returns null when activePaneId has no matching pane (line 46 ?? null)', () => {
+    const { mgr } = makeManager();
+    // Force activePaneId to a non-existent ID (private field hack for branch coverage)
+    (mgr as unknown as { activePaneId: string }).activePaneId = 'nonexistent';
+    expect(mgr.getActivePaneEl()).toBeNull();
+  });
 });

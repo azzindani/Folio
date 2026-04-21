@@ -105,4 +105,33 @@ describe('AnimationPanel', () => {
     dur.dispatchEvent(new Event('change'));
     expect(state.get().animations['r1']?.enter?.duration).toBe(800);
   });
+
+  it('changing exit type stores animation in state (lines 189-191)', () => {
+    state.set('design', makeDesign());
+    state.set('selectedLayerIds', ['r1']);
+    const sel = container.querySelector<HTMLSelectElement>('[data-kind="exit"][data-field="type"]')!;
+    sel.value = 'fade_out';
+    sel.dispatchEvent(new Event('change'));
+    expect(state.get().animations['r1']?.exit?.type).toBe('fade_out');
+  });
+
+  it('selecting (none) for exit clears exit animation (lines 187-188)', () => {
+    state.set('animations', { r1: { exit: { type: 'fade_out' } } }, false);
+    state.set('design', makeDesign());
+    state.set('selectedLayerIds', ['r1']);
+    const sel = container.querySelector<HTMLSelectElement>('[data-kind="exit"][data-field="type"]')!;
+    sel.value = '(none)';
+    sel.dispatchEvent(new Event('change'));
+    expect(state.get().animations['r1']?.exit).toBeUndefined();
+  });
+
+  it('selecting (none) for loop clears loop animation (line 195)', () => {
+    state.set('animations', { r1: { loop: { type: 'float' } } }, false);
+    state.set('design', makeDesign());
+    state.set('selectedLayerIds', ['r1']);
+    const sel = container.querySelector<HTMLSelectElement>('[data-kind="loop"][data-field="type"]')!;
+    sel.value = '(none)';
+    sel.dispatchEvent(new Event('change'));
+    expect(state.get().animations['r1']?.loop).toBeUndefined();
+  });
 });

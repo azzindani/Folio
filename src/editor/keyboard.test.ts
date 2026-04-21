@@ -265,3 +265,235 @@ describe('KeyboardManager — copy (no clipboard API in jsdom)', () => {
     expect(() => fireKey('c', { ctrl: true })).not.toThrow();
   });
 });
+
+describe('KeyboardManager — tool shortcuts', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('v sets activeTool to select', () => {
+    state.set('activeTool', 'rect', false);
+    fireKey('v');
+    expect(state.get().activeTool).toBe('select');
+  });
+
+  it('r sets activeTool to rect', () => {
+    fireKey('r');
+    expect(state.get().activeTool).toBe('rect');
+  });
+
+  it('t sets activeTool to text', () => {
+    fireKey('t');
+    expect(state.get().activeTool).toBe('text');
+  });
+
+  it('l sets activeTool to line', () => {
+    fireKey('l');
+    expect(state.get().activeTool).toBe('line');
+  });
+
+  it('c (no ctrl) sets activeTool to circle', () => {
+    fireKey('c');
+    expect(state.get().activeTool).toBe('circle');
+  });
+
+  it('Ctrl+0 calls fitToScreen', () => {
+    fireKey('0', { ctrl: true });
+    expect(mockApp.canvas.fitToScreen).toHaveBeenCalled();
+  });
+});
+
+describe('KeyboardManager — paste', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+V does not throw when clipboard is unavailable', () => {
+    state.set('design', makeDesign([]));
+    expect(() => fireKey('v', { ctrl: true })).not.toThrow();
+  });
+
+  it('Ctrl+V with clipboard returning valid YAML pastes layer', async () => {
+    state.set('design', makeDesign([]));
+    // Mock clipboard to return a valid layer YAML
+    const yamlLayer = 'id: pasted\ntype: rect\nz: 5\nx: 0\ny: 0\nwidth: 100\nheight: 100';
+    const origClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve(yamlLayer) },
+      writable: true, configurable: true,
+    });
+    fireKey('v', { ctrl: true });
+    await new Promise(r => setTimeout(r, 50)); // let promise resolve
+    const layers = state.getCurrentLayers();
+    expect(layers.some(l => l.id.includes('pasted'))).toBe(true);
+    Object.defineProperty(navigator, 'clipboard', { value: origClipboard, writable: true, configurable: true });
+  });
+
+  it('Ctrl+V with invalid clipboard content is silently ignored', async () => {
+    state.set('design', makeDesign([]));
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve('not valid yaml: [[[') },
+      writable: true, configurable: true,
+    });
+    expect(() => fireKey('v', { ctrl: true })).not.toThrow();
+    await new Promise(r => setTimeout(r, 50));
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true, configurable: true });
+  });
+});
+
+describe('KeyboardManager — presentation and print shortcuts', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('F5 does not throw when presentation is not available', () => {
+    expect(() => fireKey('F5')).not.toThrow();
+  });
+
+  it('Ctrl+P does not throw when printDesign is not available', () => {
+    expect(() => fireKey('p', { ctrl: true })).not.toThrow();
+  });
+
+  it('Ctrl+O does not throw when fileTree is not available', () => {
+    expect(() => fireKey('o', { ctrl: true })).not.toThrow();
+  });
+
+  it('Ctrl+S does not throw when fileTree is not available', () => {
+    expect(() => fireKey('s', { ctrl: true })).not.toThrow();
+  });
+});
+
+describe('KeyboardManager — getShortcuts', () => {
+  it('returns the registered shortcuts list', async () => {
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    const state = new StateManager();
+    const km = new KeyboardManager(state, mockApp);
+    const shortcuts = km.getShortcuts();
+    expect(Array.isArray(shortcuts)).toBe(true);
+    expect(shortcuts.length).toBeGreaterThan(0);
+    expect(shortcuts.every(s => typeof s.key === 'string' && typeof s.action === 'function')).toBe(true);
+  });
+});
+
+describe('KeyboardManager — uncovered branches', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('paste with non-object items does not select (line 186 FALSE branch)', async () => {
+    state.set('design', makeDesign([]));
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve('- 1\n- 2\n- 3') },
+      writable: true, configurable: true,
+    });
+    fireKey('v', { ctrl: true });
+    await new Promise(r => setTimeout(r, 50));
+    expect(state.getCurrentLayers()).toHaveLength(0);
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true, configurable: true });
+  });
+
+  it('groupSelected with layers having undefined x/y uses ?? 0 (lines 202-203)', () => {
+    const noXY = { id: 'noxy', type: 'rect', z: 10 } as unknown as Layer;
+    state.set('design', makeDesign([noXY, makeRect('b')]));
+    state.set('selectedLayerIds', ['noxy', 'b']);
+    fireKey('g', { ctrl: true });
+    const layers = state.getCurrentLayers();
+    expect(layers.length).toBe(1);
+    expect(layers[0].type).toBe('group');
+  });
+
+  it('ungroupSelected on group without layers property uses ?? [] (lines 218, 223)', () => {
+    const fakeGroup = { id: 'grp', type: 'group', z: 10 } as unknown as Layer;
+    state.set('design', makeDesign([fakeGroup]));
+    state.set('selectedLayerIds', ['grp']);
+    fireKey('g', { ctrl: true, shift: true });
+    expect(state.getCurrentLayers().length).toBe(0);
+  });
+
+  it('shortcuts not triggered from textarea element', () => {
+    state.set('design', makeDesign([makeRect('a')]));
+    state.set('selectedLayerIds', ['a']);
+    const textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+    textarea.dispatchEvent(ev);
+    expect(state.get().selectedLayerIds).toEqual(['a']);
+    document.body.removeChild(textarea);
+  });
+});
+
+describe('KeyboardManager — duplicate and adjustZ uncovered branches', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+D on layer without x/y uses ?? 0 fallback (lines 146-147)', () => {
+    const noXY = { id: 'naked', type: 'rect', z: 5 } as unknown as Layer;
+    state.set('design', makeDesign([noXY]));
+    state.set('selectedLayerIds', ['naked']);
+    fireKey('d', { ctrl: true });
+    const clone = state.getCurrentLayers().find(l => l.id !== 'naked')!;
+    expect(clone.x).toBe(20);
+    expect(clone.y).toBe(20);
+  });
+
+  it('adjustZ with selectedId not in layers skips silently (line 159 FALSE branch)', () => {
+    state.set('design', makeDesign([makeRect('a')]));
+    state.set('selectedLayerIds', ['nonexistent-id']);
+    expect(() => fireKey(']', { ctrl: true })).not.toThrow();
+    expect(state.getCurrentLayers()[0].z).toBe(20);
+  });
+});
+
+describe('KeyboardManager — paste with no-position layer', () => {
+  let state: StateManager;
+
+  beforeEach(async () => {
+    state = new StateManager();
+    vi.resetModules();
+    const { KeyboardManager } = await import('./keyboard');
+    new KeyboardManager(state, mockApp);
+  });
+
+  it('Ctrl+V pastes layer with undefined x/y using ?? 0 + 20 (line 184)', async () => {
+    state.set('design', makeDesign([]));
+    const yamlNoPos = 'id: nopos\ntype: rect\nz: 5\nwidth: 100\nheight: 100';
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: () => Promise.resolve(yamlNoPos) },
+      writable: true, configurable: true,
+    });
+    fireKey('v', { ctrl: true });
+    await new Promise(r => setTimeout(r, 50));
+    const pasted = state.getCurrentLayers().find(l => l.id.includes('nopos'));
+    expect(pasted?.x).toBe(20);
+    expect(pasted?.y).toBe(20);
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, writable: true, configurable: true });
+  });
+});

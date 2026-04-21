@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AlignToolbar } from './align-toolbar';
 import { StateManager } from '../../editor/state';
 import type { DesignSpec, Layer } from '../../schema/types';
@@ -27,47 +27,40 @@ describe('AlignToolbar', () => {
     container = makeContainer();
   });
 
-  it('does not build toolbar when no selection', () => {
-    new AlignToolbar(container, state);
-    expect(container.querySelector('.align-toolbar')).toBeNull();
+  afterEach(() => {
+    container.remove();
   });
 
-  it('does not show toolbar with fewer than 2 selections', () => {
+  it('builds toolbar eagerly in constructor (always present in DOM)', () => {
+    new AlignToolbar(container, state);
+    expect(container.querySelector('.align-toolbar')).not.toBeNull();
+  });
+
+  it('toolbar is visible with no selection (buttons just styled inactive)', () => {
+    new AlignToolbar(container, state);
+    const toolbar = container.querySelector('.align-toolbar') as HTMLElement;
+    expect(toolbar).toBeTruthy();
+    expect(toolbar.style.display).not.toBe('none');
+  });
+
+  it('buttons have reduced opacity when < 2 layers selected', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
     ] as Layer[];
     setDesignWithLayers(state, layers);
     state.set('selectedLayerIds', ['a']);
-    expect(container.querySelector('.align-toolbar')).toBeNull();
+    const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
+    expect(btns[0].style.opacity).toBe('0.3');
   });
 
-  it('builds and shows toolbar when ≥2 layers selected', () => {
+  it('creates 8 align buttons immediately after construction', () => {
     new AlignToolbar(container, state);
-    const layers = [
-      { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
-      { id: 'b', type: 'rect', z: 1, x: 100, y: 0, width: 50, height: 50 },
-    ] as Layer[];
-    setDesignWithLayers(state, layers);
-    state.set('selectedLayerIds', ['a', 'b']);
-    const toolbar = container.querySelector('.align-toolbar') as HTMLElement;
-    expect(toolbar).toBeTruthy();
-    expect(toolbar.style.display).toBe('flex');
-  });
-
-  it('creates 8 align buttons', () => {
-    new AlignToolbar(container, state);
-    const layers = [
-      { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
-      { id: 'b', type: 'rect', z: 1, x: 100, y: 0, width: 50, height: 50 },
-    ] as Layer[];
-    setDesignWithLayers(state, layers);
-    state.set('selectedLayerIds', ['a', 'b']);
     const btns = container.querySelectorAll('.align-btn');
     expect(btns.length).toBe(8);
   });
 
-  it('distribute buttons are disabled when only 2 layers selected', () => {
+  it('distribute buttons (indices 6-7) have reduced opacity when only 2 layers selected', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
@@ -75,13 +68,15 @@ describe('AlignToolbar', () => {
     ] as Layer[];
     setDesignWithLayers(state, layers);
     state.set('selectedLayerIds', ['a', 'b']);
-    // Distribute buttons (indices 6 & 7) need minSelect=3
     const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
-    expect(btns[6].disabled).toBe(true);
-    expect(btns[7].disabled).toBe(true);
+    // indices 0-5 (align) need minSelect=2 → full opacity with 2 selected
+    expect(btns[0].style.opacity).toBe('1');
+    // indices 6-7 (distribute) need minSelect=3 → inactive opacity with 2 selected
+    expect(btns[6].style.opacity).toBe('0.3');
+    expect(btns[7].style.opacity).toBe('0.3');
   });
 
-  it('all buttons enabled when 3+ layers selected', () => {
+  it('all buttons have full opacity when 3+ layers selected', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0,   y: 0, width: 50, height: 50 },
@@ -91,11 +86,11 @@ describe('AlignToolbar', () => {
     setDesignWithLayers(state, layers);
     state.set('selectedLayerIds', ['a', 'b', 'c']);
     const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
-    expect(btns[6].disabled).toBe(false);
-    expect(btns[7].disabled).toBe(false);
+    expect(btns[6].style.opacity).toBe('1');
+    expect(btns[7].style.opacity).toBe('1');
   });
 
-  it('hides toolbar when selection drops below 2', () => {
+  it('buttons return to inactive opacity when selection drops below 2', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
@@ -105,10 +100,13 @@ describe('AlignToolbar', () => {
     state.set('selectedLayerIds', ['a', 'b']);
     state.set('selectedLayerIds', ['a']);
     const toolbar = container.querySelector('.align-toolbar') as HTMLElement;
-    expect(toolbar.style.display).toBe('none');
+    // Toolbar stays in DOM
+    expect(toolbar).not.toBeNull();
+    const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
+    expect(btns[0].style.opacity).toBe('0.3');
   });
 
-  it('clicking an align button does not throw (calls align fn)', () => {
+  it('clicking an active align button does not throw', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0,   y: 0, width: 50, height: 50 },
@@ -118,5 +116,27 @@ describe('AlignToolbar', () => {
     state.set('selectedLayerIds', ['a', 'b']);
     const btn = container.querySelector<HTMLButtonElement>('.align-btn');
     expect(() => btn!.click()).not.toThrow();
+  });
+
+  it('clicking an inactive button (no selection) is a no-op — no crash', () => {
+    new AlignToolbar(container, state);
+    const btn = container.querySelector<HTMLButtonElement>('.align-btn');
+    // No layers selected → guard in click handler → no crash
+    expect(() => btn!.click()).not.toThrow();
+  });
+
+  it('toolbar element is created exactly once (no duplicates)', () => {
+    const layers = [
+      { id: 'a', type: 'rect', z: 0, x: 0,   y: 0, width: 50, height: 50 },
+      { id: 'b', type: 'rect', z: 1, x: 100, y: 0, width: 50, height: 50 },
+      { id: 'c', type: 'rect', z: 2, x: 200, y: 0, width: 50, height: 50 },
+    ] as Layer[];
+    setDesignWithLayers(state, layers);
+    new AlignToolbar(container, state);
+    state.set('selectedLayerIds', ['a', 'b']);
+    state.set('selectedLayerIds', ['a', 'b', 'c']);
+    state.set('selectedLayerIds', ['a']);
+    const toolbars = container.querySelectorAll('.align-toolbar');
+    expect(toolbars.length).toBe(1);
   });
 });

@@ -188,5 +188,143 @@ describe('StateManager', () => {
       const grp = topLayers.find(l => l.id === 'grp') as { layers: Layer[] };
       expect(grp?.layers).toHaveLength(0);
     });
+
+    it('renameLayer renames a layer in a flat design', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([{ id: 'old', type: 'rect', z: 0 } as Layer]));
+      sm.set('selectedLayerIds', ['old']);
+      sm.renameLayer('old', 'new-name');
+      const layers = sm.get().design?.layers ?? [];
+      expect(layers[0].id).toBe('new-name');
+      expect(sm.get().selectedLayerIds).toEqual(['new-name']);
+    });
+
+    it('renameLayer renames a layer in a paged design', () => {
+      const sm = new StateManager();
+      sm.set('design', {
+        _protocol: 'design/v1',
+        meta: { id: 't', name: 'T', type: 'carousel', created: '', modified: '' },
+        document: { width: 100, height: 100, unit: 'px', dpi: 96 },
+        pages: [
+          { id: 'p1', label: 'P1', layers: [{ id: 'layer1', type: 'rect', z: 0 } as Layer] },
+        ],
+      } as unknown as import('../schema/types').DesignSpec);
+      sm.set('currentPageIndex', 0, false);
+      sm.set('selectedLayerIds', ['layer1']);
+      sm.renameLayer('layer1', 'renamed');
+      const pages = sm.get().design?.pages;
+      expect(pages?.[0].layers?.[0].id).toBe('renamed');
+      expect(sm.get().selectedLayerIds).toContain('renamed');
+    });
+
+    it('renameLayer renames nested child in a group', () => {
+      const sm = new StateManager();
+      const groupLayer: Layer = {
+        id: 'grp', type: 'group', z: 0,
+        layers: [{ id: 'child', type: 'rect', z: 0 } as Layer],
+      } as unknown as Layer;
+      sm.set('design', makeDesign([groupLayer]));
+      sm.renameLayer('child', 'child-renamed');
+      const topLayers = sm.get().design?.layers ?? [];
+      const grp = topLayers.find(l => l.id === 'grp') as { layers: Layer[] };
+      expect(grp?.layers[0].id).toBe('child-renamed');
+    });
+
+    it('addLayer adds to paged design current page', () => {
+      const sm = new StateManager();
+      sm.set('design', {
+        _protocol: 'design/v1',
+        meta: { id: 't', name: 'T', type: 'carousel', created: '', modified: '' },
+        document: { width: 100, height: 100, unit: 'px', dpi: 96 },
+        pages: [
+          { id: 'p1', label: 'P1', layers: [] },
+          { id: 'p2', label: 'P2', layers: [] },
+        ],
+      } as unknown as import('../schema/types').DesignSpec);
+      sm.set('currentPageIndex', 0, false);
+      sm.addLayer({ id: 'new', type: 'rect', z: 1 } as Layer);
+      const pages = sm.get().design?.pages;
+      expect(pages?.[0].layers).toHaveLength(1);
+      expect(pages?.[1].layers).toHaveLength(0);
+    });
+
+    it('updateLayer updates layer in paged design', () => {
+      const sm = new StateManager();
+      sm.set('design', {
+        _protocol: 'design/v1',
+        meta: { id: 't', name: 'T', type: 'carousel', created: '', modified: '' },
+        document: { width: 100, height: 100, unit: 'px', dpi: 96 },
+        pages: [
+          { id: 'p1', label: 'P1', layers: [{ id: 'a', type: 'rect', z: 0, x: 0 } as Layer] },
+        ],
+      } as unknown as import('../schema/types').DesignSpec);
+      sm.set('currentPageIndex', 0, false);
+      sm.updateLayer('a', { x: 99 });
+      const pages = sm.get().design?.pages;
+      expect(pages?.[0].layers?.[0].x).toBe(99);
+    });
+
+    it('updateLayer updates nested child in a group', () => {
+      const sm = new StateManager();
+      const groupLayer: Layer = {
+        id: 'grp', type: 'group', z: 0,
+        layers: [{ id: 'child', type: 'rect', z: 0, x: 0 } as Layer],
+      } as unknown as Layer;
+      sm.set('design', makeDesign([groupLayer]));
+      sm.updateLayer('child', { x: 42 });
+      const topLayers = sm.get().design?.layers ?? [];
+      const grp = topLayers.find(l => l.id === 'grp') as { layers: Layer[] };
+      expect(grp?.layers[0].x).toBe(42);
+    });
+  });
+
+  describe('set() undo control', () => {
+    it('set(key, val, false) does not push undo for design changes', () => {
+      const sm = new StateManager();
+      expect(sm.canUndo()).toBe(false);
+      const design = makeDesign([]);
+      sm.set('design', design, false);
+      expect(sm.canUndo()).toBe(false);
+    });
+
+    it('set(key, val, true) pushes undo for design changes', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([]));
+      expect(sm.canUndo()).toBe(true);
+    });
+
+    it('undo on empty stack is a no-op', () => {
+      const sm = new StateManager();
+      expect(() => sm.undo()).not.toThrow();
+    });
+
+    it('redo on empty stack is a no-op', () => {
+      const sm = new StateManager();
+      expect(() => sm.redo()).not.toThrow();
+    });
+  });
+
+  describe('getCurrentLayers for paged designs', () => {
+    it('returns current page layers', () => {
+      const sm = new StateManager();
+      sm.set('design', {
+        _protocol: 'design/v1',
+        meta: { id: 't', name: 'T', type: 'carousel', created: '', modified: '' },
+        document: { width: 100, height: 100, unit: 'px', dpi: 96 },
+        pages: [
+          { id: 'p1', label: 'P1', layers: [{ id: 'a', type: 'rect', z: 0 } as Layer] },
+          { id: 'p2', label: 'P2', layers: [{ id: 'b', type: 'rect', z: 0 } as Layer] },
+        ],
+      } as unknown as import('../schema/types').DesignSpec);
+      sm.set('currentPageIndex', 1, false);
+      const layers = sm.getCurrentLayers();
+      expect(layers).toHaveLength(1);
+      expect(layers[0].id).toBe('b');
+    });
+
+    it('returns empty array when design is null', () => {
+      const sm = new StateManager();
+      expect(sm.getCurrentLayers()).toEqual([]);
+    });
   });
 });

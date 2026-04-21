@@ -229,17 +229,39 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     div.style.fontWeight = String(style.font_weight ?? 400);
     div.style.color = typeof style.color === 'string' ? style.color : '#000';
     div.style.lineHeight = String(style.line_height ?? 1.5);
+    div.style.overflow = 'hidden';
 
-    // Lazy load marked.js and parse markdown (set innerHTML only once, after parse)
+    // Scoped styles for markdown HTML output (tables, code, headings, etc.)
+    const mdStyle = document.createElement('style');
+    mdStyle.textContent = [
+      'table{border-collapse:collapse;width:100%;margin:.5em 0}',
+      'th,td{border:1px solid currentColor;padding:4px 8px;text-align:left}',
+      'th{font-weight:bold;opacity:.8}',
+      'tr:nth-child(even){background:rgba(128,128,128,.1)}',
+      'code{font-family:monospace;font-size:.9em;background:rgba(128,128,128,.15);padding:1px 4px;border-radius:3px}',
+      'pre{background:rgba(128,128,128,.15);padding:8px;border-radius:4px;overflow:auto}',
+      'pre code{background:none;padding:0}',
+      'blockquote{margin:0;padding-left:1em;border-left:3px solid currentColor;opacity:.7}',
+    ].join('');
+    div.appendChild(mdStyle);
+
+    // Content container — mdStyle stays live, content goes here (avoids re-serialising the style tag)
+    const mdContent = document.createElement('div');
+    div.appendChild(mdContent);
+
     const mdValue = (layer.content as { value: string }).value;
     import('marked').then(({ marked }) => {
-      div.innerHTML = marked.parse(mdValue) as string;
+      mdContent.innerHTML = marked.parse(mdValue, { gfm: true }) as string;
+      // Syntax-highlight code blocks via Prism (lazy, best-effort)
+      return import('prismjs').then(({ default: Prism }) => {
+        mdContent.querySelectorAll<HTMLElement>('pre code[class*="language-"]').forEach(block => {
+          Prism.highlightElement(block);
+        });
+      }).catch(() => { /* Prism unavailable — unstyled code is fine */ });
     }).catch(() => {
-      // marked.js failed to load — render as plain text
-      if (!div.innerHTML) div.textContent = mdValue;
+      // marked.js failed — fall back to plain text, no flash since div was empty
+      mdContent.textContent = mdValue;
     });
-    // Show plain text immediately while marked loads to avoid blank flash
-    div.textContent = mdValue;
     fo.appendChild(div);
     g.appendChild(fo);
   } else if (layer.content.type === 'rich') {

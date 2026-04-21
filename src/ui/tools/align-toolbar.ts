@@ -25,47 +25,35 @@ const ACTIONS: AlignAction[] = [
 export class AlignToolbar {
   private container: HTMLElement;
   private state: StateManager;
-  private toolbar: HTMLElement | null = null;
+  private toolbar: HTMLElement;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
     this.state = state;
+    this.toolbar = this.build();
+    this.refresh(0);
     this.state.subscribe(this.onStateChange.bind(this));
   }
 
   private onStateChange(_state: EditorState, changedKeys: (keyof EditorState)[]): void {
     if (changedKeys.includes('selectedLayerIds')) {
-      this.update();
+      this.refresh(this.state.get().selectedLayerIds.length);
     }
   }
 
-  private update(): void {
-    const count = this.state.get().selectedLayerIds.length;
-
-    if (count < 2) {
-      this.hide();
-      return;
-    }
-
-    if (!this.toolbar) {
-      this.build();
-    }
-
-    // Update disabled state per button
-    this.toolbar!.querySelectorAll<HTMLButtonElement>('.align-btn').forEach((btn, i) => {
+  private refresh(count: number): void {
+    this.toolbar.querySelectorAll<HTMLButtonElement>('.align-btn').forEach((btn, i) => {
       const minSel = ACTIONS[i]?.minSelect ?? 2;
-      btn.disabled = count < minSel;
-      btn.style.opacity = count < minSel ? '0.3' : '1';
+      const inactive = count < minSel;
+      btn.style.opacity = inactive ? '0.3' : '1';
+      btn.style.cursor = inactive ? 'not-allowed' : '';
     });
-
-    this.toolbar!.style.display = 'flex';
   }
 
-  private build(): void {
-    this.toolbar = document.createElement('div');
-    this.toolbar.className = 'align-toolbar';
+  private build(): HTMLElement {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'align-toolbar';
 
-    // Use clear text glyphs instead of hard-to-read unicode
     const labels = ['⬤▏', '⬤┃', '▕⬤', '▔⬤', '⬤━', '⬤▁', '⇐⇒', '⇑⇓'];
 
     ACTIONS.forEach((action, i) => {
@@ -75,16 +63,15 @@ export class AlignToolbar {
       btn.textContent = labels[i] ?? '·';
       btn.style.fontFamily = 'var(--font-mono)';
       btn.style.fontSize = '10px';
-      btn.addEventListener('click', () => action.fn(this.state));
-      this.toolbar!.appendChild(btn);
+      btn.addEventListener('click', () => {
+        const count = this.state.get().selectedLayerIds.length;
+        if (count < action.minSelect) return;
+        action.fn(this.state);
+      });
+      toolbar.appendChild(btn);
     });
 
-    this.container.appendChild(this.toolbar);
-  }
-
-  private hide(): void {
-    if (this.toolbar) {
-      this.toolbar.style.display = 'none';
-    }
+    this.container.appendChild(toolbar);
+    return toolbar;
   }
 }

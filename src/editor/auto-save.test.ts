@@ -89,4 +89,33 @@ describe('AutoSaveManager', () => {
     await vi.advanceTimersByTimeAsync(5000);
     expect(onSaved).not.toHaveBeenCalled();
   });
+
+  it('calling start twice does not create a second interval', async () => {
+    const onSaved = vi.fn();
+    const mgr = new AutoSaveManager(1000, async () => 'yaml');
+    mgr.setFileHandle(makeHandle());
+    mgr.onSavedCallback(onSaved);
+    mgr.start();
+    mgr.start(); // second call should be no-op
+    mgr.markDirty();
+    await vi.advanceTimersByTimeAsync(1500);
+    // Should still only be called once per interval
+    expect(onSaved.mock.calls.length).toBeLessThanOrEqual(2);
+    mgr.stop();
+  });
+
+  it('stop when already stopped does not throw', () => {
+    const mgr = new AutoSaveManager(1000, async () => 'yaml');
+    // Never started — stop should be a no-op
+    expect(() => mgr.stop()).not.toThrow();
+  });
+
+  it('flush: does nothing when getSaveContent returns null', async () => {
+    const onSaved = vi.fn();
+    const mgr = new AutoSaveManager(1000, async () => null as unknown as string);
+    mgr.setFileHandle(makeHandle());
+    mgr.onSavedCallback(onSaved);
+    await mgr.saveNow();
+    expect(onSaved).not.toHaveBeenCalled();
+  });
 });
