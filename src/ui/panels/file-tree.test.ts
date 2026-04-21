@@ -231,4 +231,26 @@ describe('FileTreeManager', () => {
     const openBtn = btns.find(b => b.textContent === 'Open') as HTMLButtonElement;
     expect(() => openBtn.click()).not.toThrow();
   });
+
+  it('triggerOpen calls onOpen with file content when openFile resolves', async () => {
+    const { openFile } = await import('../../fs/file-access');
+    vi.mocked(openFile).mockResolvedValueOnce({
+      content: 'yaml content',
+      name: 'test.yaml',
+      handle: null as unknown as FileSystemFileHandle,
+    });
+    const onOpen = vi.fn();
+    const ft = new FileTreeManager(container, state, { ...callbacks, onOpen });
+    await ft.triggerOpen();
+    expect(onOpen).toHaveBeenCalledWith('yaml content', 'test.yaml', null);
+  });
+
+  it('triggerSave shows error toast when saveFile rejects', async () => {
+    const { showToast } = await import('../../utils/toast');
+    vi.mocked(saveFile).mockRejectedValueOnce(new Error('Write failed'));
+    const ft = new FileTreeManager(container, state, callbacks);
+    ft.triggerSave();
+    await new Promise(r => setTimeout(r, 20));
+    expect(showToast).toHaveBeenCalledWith('Write failed', 'error');
+  });
 });
