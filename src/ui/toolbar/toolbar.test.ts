@@ -53,13 +53,12 @@ describe('ToolbarManager', () => {
   let state: StateManager;
   let container: HTMLElement;
   let app: EditorApp;
-  let toolbar: ToolbarManager;
 
   beforeEach(() => {
     state = new StateManager();
     container = makeContainer();
     app = makeApp();
-    toolbar = new ToolbarManager(container, state, app);
+    new ToolbarManager(container, state, app);
   });
 
   afterEach(() => {
@@ -350,5 +349,48 @@ describe('ToolbarManager', () => {
     item.click();
     await new Promise(r => setTimeout(r, 10));
     expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Export crashed'), 'error');
+  });
+
+  it('triggerExport returns early when no design (line 149)', async () => {
+    const { exportDesign } = await import('../../export/exporter');
+    vi.mocked(exportDesign).mockClear();
+    // No design set
+    const item = container.querySelector('[data-format="svg"]') as HTMLElement;
+    item.click();
+    await new Promise(r => setTimeout(r, 10));
+    expect(exportDesign).not.toHaveBeenCalled();
+  });
+
+  it('triggerExport shows "Export failed" for non-Error rejection (line 154)', async () => {
+    const { exportDesign } = await import('../../export/exporter');
+    const { showToast } = await import('../../utils/toast');
+    vi.mocked(exportDesign).mockRejectedValueOnce('string error'); // not instanceof Error
+    state.set('design', makeDesign());
+    const item = container.querySelector('[data-format="svg"]') as HTMLElement;
+    item.click();
+    await new Promise(r => setTimeout(r, 10));
+    expect(showToast).toHaveBeenCalledWith('Export failed', 'error');
+  });
+
+  it('template export with undefined meta.name uses fallback "design" (line 141)', () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:test');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL });
+    state.set('design', {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: undefined, type: 'poster', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      layers: [],
+    } as unknown as import('../../schema/types').DesignSpec);
+    const item = container.querySelector('[data-format="template"]') as HTMLElement;
+    expect(() => item.click()).not.toThrow();
+    vi.unstubAllGlobals();
+  });
+
+  it('onStateChange does not throw when .toolbar-project-name is removed (line 170)', () => {
+    container.querySelector('.toolbar-project-name')?.remove();
+    state.set('design', makeDesign('New Name'));
+    // nameEl is null → if(nameEl) false branch — no crash
+    expect(container.querySelector('.toolbar-project-name')).toBeNull();
   });
 });

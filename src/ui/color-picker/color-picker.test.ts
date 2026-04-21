@@ -113,13 +113,13 @@ describe('ColorPicker — popover structure', () => {
 describe('ColorPicker — interactions', () => {
   let picker: ColorPicker;
   let anchor: HTMLElement;
-  let onChange: ReturnType<typeof vi.fn>;
+  let onChange: ReturnType<typeof vi.fn> & ((hex: string) => void);
 
   beforeEach(() => {
     picker = new ColorPicker();
     anchor = document.createElement('button');
     document.body.appendChild(anchor);
-    onChange = vi.fn();
+    onChange = vi.fn() as ReturnType<typeof vi.fn> & ((hex: string) => void);
     picker.open(anchor, '#ff0000', onChange);
   });
   afterEach(() => {
@@ -185,5 +185,75 @@ describe('ColorPicker — interactions', () => {
 describe('ColorPicker — singleton export', () => {
   it('colorPicker is a ColorPicker instance', () => {
     expect(colorPicker).toBeInstanceOf(ColorPicker);
+  });
+});
+
+describe('ColorPicker — hexToHsl g<b branch (line 20)', () => {
+  it('open with color where r=max and g<b covers g<b true branch', () => {
+    // '#ff0088': r=255, g=0, b=136 → r=max, g<b → true branch of (g<b?6:0)
+    const picker = new ColorPicker();
+    const anchor = document.createElement('button');
+    document.body.appendChild(anchor);
+    expect(() => picker.open(anchor, '#ff0088', vi.fn())).not.toThrow();
+    picker.close();
+    anchor.remove();
+  });
+
+  it('open with green-max color covers hexToHsl case g branch', () => {
+    // '#00ff80': r=0, g=255, b=128 → g is max → case g
+    const picker = new ColorPicker();
+    const anchor = document.createElement('button');
+    document.body.appendChild(anchor);
+    expect(() => picker.open(anchor, '#00ff80', vi.fn())).not.toThrow();
+    picker.close();
+    anchor.remove();
+  });
+});
+
+describe('ColorPicker — syncUI with null popover (line 216)', () => {
+  it('does not crash when mousemove fires after picker is closed', async () => {
+    const picker = new ColorPicker();
+    const anchor = document.createElement('button');
+    document.body.appendChild(anchor);
+    const onChange = vi.fn();
+    picker.open(anchor, '#ff0000', onChange);
+
+    // Trigger mousedown on canvas to register mousemove listener
+    const canvas = document.body.querySelector<HTMLCanvasElement>('.cp-sv-canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
+    // Close the picker (sets popover to null)
+    picker.close();
+
+    // Mousemove fires after close → syncUI with null popover → early return
+    expect(() => {
+      document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 100 }));
+    }).not.toThrow();
+
+    // Cleanup
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    anchor.remove();
+  });
+});
+
+describe('ColorPicker — position: no overflow (lines 85-86 false branches)', () => {
+  it('does not adjust position when anchor fits within viewport', () => {
+    // Mock large window so left+240 < vw and top+340 < vh
+    Object.defineProperty(window, 'innerWidth', { value: 2000, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 2000, writable: true, configurable: true });
+
+    const picker = new ColorPicker();
+    const anchor = document.createElement('button');
+    // Position anchor so rect.bottom is small (far from bottom of viewport)
+    vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue({
+      top: 10, bottom: 40, left: 10, right: 100, width: 90, height: 30,
+    } as DOMRect);
+    document.body.appendChild(anchor);
+    expect(() => picker.open(anchor, '#ff0000', vi.fn())).not.toThrow();
+    picker.close();
+    anchor.remove();
+
+    Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 768, writable: true, configurable: true });
   });
 });

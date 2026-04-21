@@ -366,9 +366,28 @@ describe('LayerPanelManager — moveLayerBefore', () => {
     move.call(panel, 'z', 'x');
     const updated = state.get().design!;
     expect(updated.pages).toBeDefined();
-    expect(updated.pages![0].layers.map(l => l.id).indexOf('z')).toBeLessThan(
-      updated.pages![0].layers.map(l => l.id).indexOf('x'),
+    expect(updated.pages![0].layers!.map(l => l.id).indexOf('z')).toBeLessThan(
+      updated.pages![0].layers!.map(l => l.id).indexOf('x'),
     );
+  });
+
+  it('moveLayerBefore on multi-page design preserves other pages (line 229)', () => {
+    const pagedDesign = {
+      _protocol: 'design/v1' as const,
+      meta: { id: 'p', name: 'Paged', type: 'carousel' as const, created: '', modified: '' },
+      document: { width: 800, height: 600, unit: 'px' as const, dpi: 96 },
+      pages: [
+        { id: 'page0', label: 'Page 1', layers: [makeRect('x', 30), makeRect('y', 20)] },
+        { id: 'page1', label: 'Page 2', layers: [makeRect('q', 10)] },
+      ],
+    } as unknown as import('../../schema/types').DesignSpec;
+    state.set('design', pagedDesign, false);
+
+    const move = (panel as unknown as { moveLayerBefore: (from: string, before: string) => void }).moveLayerBefore;
+    move.call(panel, 'y', 'x');
+    const updated = state.get().design!;
+    // Page 1 still exists and is unchanged
+    expect(updated.pages![1].layers![0].id).toBe('q');
   });
 });
 
@@ -409,6 +428,27 @@ describe('LayerPanelManager — ctrl-click selection', () => {
     rowB.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
     expect(state.get().selectedLayerIds).not.toContain('b');
     expect(state.get().selectedLayerIds).toContain('a');
+  });
+
+  it('shift+click adds layer to selection (line 128)', () => {
+    const renderSpy = vi.spyOn(panel, 'render').mockImplementation(() => {});
+    state.set('selectedLayerIds', ['a']);
+    renderSpy.mockRestore();
+
+    const rowB = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="b"]')!;
+    rowB.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+    expect(state.get().selectedLayerIds).toContain('a');
+    expect(state.get().selectedLayerIds).toContain('b');
+  });
+
+  it('shift+click on already-selected layer removes it (line 128 filter branch)', () => {
+    const renderSpy = vi.spyOn(panel, 'render').mockImplementation(() => {});
+    state.set('selectedLayerIds', ['a', 'b']);
+    renderSpy.mockRestore();
+
+    const rowB = wrapper.querySelector<HTMLElement>('.layer-row[data-layer-id="b"]')!;
+    rowB.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+    expect(state.get().selectedLayerIds).not.toContain('b');
   });
 });
 

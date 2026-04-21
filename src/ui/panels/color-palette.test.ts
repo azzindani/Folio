@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ColorPaletteManager, addToRecent } from './color-palette';
 import { StateManager } from '../../editor/state';
-import type { DesignSpec } from '../../schema/types';
+import type { DesignSpec, Layer } from '../../schema/types';
 
 function makeState(layers: DesignSpec['layers'] = []): StateManager {
   const sm = new StateManager();
@@ -90,7 +90,7 @@ describe('ColorPaletteManager — edge cases', () => {
     const sm = makeState([{
       id: 'line1', type: 'line', z: 0,
       stroke: { color: '#ff1234', width: 2 },
-    } as unknown as DesignSpec['layers'][0]]);
+    } as unknown as Layer]);
     new ColorPaletteManager(container, sm, vi.fn());
     const swatches = [...container.querySelectorAll('.palette-swatch')] as HTMLElement[];
     expect(swatches.some(s => s.dataset.color === '#ff1234')).toBe(true);
@@ -130,7 +130,7 @@ describe('ColorPaletteManager — edge cases', () => {
     const sm = makeState([{
       id: 'grp', type: 'group', z: 0,
       layers: [{ id: 'inner', type: 'rect', z: 0, fill: { type: 'solid', color: '#abcdef' } }],
-    } as unknown as DesignSpec['layers'][0]]);
+    } as unknown as Layer]);
     new ColorPaletteManager(container, sm, vi.fn());
     const swatches = [...container.querySelectorAll('.palette-swatch')] as HTMLElement[];
     expect(swatches.some(s => s.dataset.color === '#abcdef')).toBe(true);

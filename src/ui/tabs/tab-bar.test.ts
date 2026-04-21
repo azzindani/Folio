@@ -213,7 +213,7 @@ describe('TabBarManager', () => {
     manager.openTab(makeTab('a'));
     // Trigger subscribe with 'design' key (not 'dirty')
     // This exercises the || keys.includes('design') path
-    state.set('design', null as unknown as Parameters<typeof state.set>[1], false);
+    state.set('design', null, false);
     // syncDirty should run: dirty is undefined → ?? false → markDirty('a', false)
     expect(c.querySelector('.tab-label')?.textContent).not.toContain('●');
   });
@@ -223,7 +223,7 @@ describe('TabBarManager', () => {
     manager.openTab(makeTab('a'));
     // state.dirty was never set (undefined) → ?? false fallback
     // Trigger syncDirty via design change
-    state.set('design', null as unknown as Parameters<typeof state.set>[1], false);
+    state.set('design', null, false);
     // markDirty called with false → no ● indicator
     expect(c.querySelector('.tab-label')?.textContent).not.toContain('●');
   });

@@ -86,7 +86,7 @@ describe('openFile — fallback path', () => {
     });
 
     await openFile();
-    expect(capturedInput?.accept).toBe('.yaml,.yml,.design.yaml');
+    expect((capturedInput as HTMLInputElement | null)?.accept).toBe('.yaml,.yml,.design.yaml');
     vi.restoreAllMocks();
   });
 });

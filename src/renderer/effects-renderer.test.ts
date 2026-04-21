@@ -84,7 +84,7 @@ describe('applyEffects — blend_mode', () => {
     const svg = makeSvg();
     const el = makeEl();
     applyEffects(el, { blend_mode: 'multiply' }, svg);
-    expect((el as HTMLElement).style.mixBlendMode).toBe('multiply');
+    expect((el as unknown as HTMLElement).style.mixBlendMode).toBe('multiply');
   });
 });
 

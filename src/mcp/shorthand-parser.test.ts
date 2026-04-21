@@ -378,7 +378,7 @@ describe('expandShorthand — additional branch coverage', () => {
     const sh: ShorthandLayer = { id: 'r', type: 'rect', z: 0, x: 50 }; // no y, width, height
     const result = expandShorthand(sh);
     expect(result.x).toBe(50);
-    expect((result as Record<string, unknown>).y).toBeUndefined();
+    expect((result as unknown as Record<string, unknown>).y).toBeUndefined();
   });
 
   it('circle with color fallback (no fill)', () => {
