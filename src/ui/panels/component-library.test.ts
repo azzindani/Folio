@@ -113,4 +113,38 @@ describe('ComponentLibraryManager', () => {
     state.set('design', makeDesign([makeRect('r2')]));
     expect(container.querySelectorAll('.comp-card').length).toBe(1);
   });
+
+  it('clicking comp-insert button inserts the component', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    mgr.saveSelected('InsertMe');
+    const insertBtn = container.querySelector<HTMLButtonElement>('.comp-insert')!;
+    expect(insertBtn).not.toBeNull();
+    insertBtn.click();
+    // After insert, a new layer should be in the design
+    const layers = state.getCurrentLayers();
+    expect(layers.length).toBeGreaterThan(1);
+  });
+
+  it('clicking comp-delete button with confirm=false does not delete', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    mgr.saveSelected('DeleteMe');
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const deleteBtn = container.querySelector<HTMLButtonElement>('.comp-delete')!;
+    deleteBtn.click();
+    expect(mgr.getComponents().length).toBe(1);
+    vi.restoreAllMocks();
+  });
+
+  it('clicking comp-delete button with confirm=true deletes', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    mgr.saveSelected('DeleteConfirm');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const deleteBtn = container.querySelector<HTMLButtonElement>('.comp-delete')!;
+    deleteBtn.click();
+    expect(mgr.getComponents().length).toBe(0);
+    vi.restoreAllMocks();
+  });
 });
