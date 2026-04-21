@@ -231,6 +231,31 @@ describe('exportDesign', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export-url');
   });
 
+  it('png format: succeeds when Image loads and downloads blob', async () => {
+    const mockCtx = { scale: vi.fn(), drawImage: vi.fn(), clearRect: vi.fn() };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      mockCtx as unknown as CanvasRenderingContext2D,
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (this: HTMLCanvasElement, cb) {
+      cb(new Blob(['fake-png'], { type: 'image/png' }));
+    });
+
+    const OrigImage = globalThis.Image;
+    class SuccessImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onload?.(), 0); }
+    }
+    (globalThis as unknown as { Image: unknown }).Image = SuccessImage;
+
+    try {
+      await exportDesign(makeSpec(), { format: 'png' });
+      expect(URL.createObjectURL).toHaveBeenCalled();
+    } finally {
+      (globalThis as unknown as { Image: unknown }).Image = OrigImage;
+    }
+  });
+
   it('png format: rejects when Image fails to load SVG', async () => {
     // Mock canvas for PNG export
     const mockCtx = { scale: vi.fn(), drawImage: vi.fn(), clearRect: vi.fn() };

@@ -324,4 +324,31 @@ describe('ToolbarManager', () => {
     sel.dispatchEvent(new Event('change'));
     expect(app.applyTheme).toHaveBeenCalledWith('light-clean');
   });
+
+  it('clicking batch format opens batch export dialog when design is set', async () => {
+    const { batchExportDialog } = await import('../../ui/dialogs/batch-export');
+    state.set('design', makeDesign());
+    const item = container.querySelector('[data-format="batch"]') as HTMLElement;
+    item.click();
+    expect(batchExportDialog.open).toHaveBeenCalled();
+  });
+
+  it('clicking batch format does nothing when no design', async () => {
+    const { batchExportDialog } = await import('../../ui/dialogs/batch-export');
+    vi.mocked(batchExportDialog.open).mockClear();
+    const item = container.querySelector('[data-format="batch"]') as HTMLElement;
+    item.click();
+    expect(batchExportDialog.open).not.toHaveBeenCalled();
+  });
+
+  it('triggerExport shows error toast when exportDesign throws', async () => {
+    const { exportDesign } = await import('../../export/exporter');
+    const { showToast } = await import('../../utils/toast');
+    vi.mocked(exportDesign).mockRejectedValueOnce(new Error('Export crashed'));
+    state.set('design', makeDesign());
+    const item = container.querySelector('[data-format="svg"]') as HTMLElement;
+    item.click();
+    await new Promise(r => setTimeout(r, 10));
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Export crashed'), 'error');
+  });
 });
