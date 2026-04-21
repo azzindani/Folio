@@ -479,6 +479,26 @@ describe('renderQRCode', () => {
       expect(el.tagName).toBe('g');
     }
   });
+
+  it('renders error fallback rect when encodeQR throws', async () => {
+    // Mock the QR encode module to throw for this test
+    const { vi } = await import('vitest');
+    const qrModule = await import('./qr/encode');
+    const spy = vi.spyOn(qrModule, 'encodeQR').mockImplementation(() => {
+      throw new Error('QR encode failed');
+    });
+
+    const layer: QRCodeLayer = {
+      id: 'qr-bad', type: 'qrcode', z: 0, x: 0, y: 0, width: 100, height: 100,
+      value: 'test',
+    } as unknown as QRCodeLayer;
+    const el = renderQRCode(layer, makeSVG());
+    const errorRect = Array.from(el.querySelectorAll('rect')).find(r =>
+      r.getAttribute('stroke') === '#e94560',
+    );
+    expect(errorRect).toBeDefined();
+    spy.mockRestore();
+  });
 });
 
 describe('renderAutoLayout', () => {
@@ -554,6 +574,31 @@ describe('renderAutoLayout', () => {
     } as unknown as AutoLayoutLayer;
     const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
     expect(el).toBeTruthy();
+  });
+
+  it('applies opacity attribute when fill has opacity (lines 668-669)', () => {
+    const layer: AutoLayoutLayer = {
+      id: 'al-opacity', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0,
+      fill: { type: 'solid', color: '#0000ff', opacity: 0.5 },
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const rect = el.querySelector('rect');
+    expect(rect?.getAttribute('opacity')).toBe('0.5');
+  });
+
+  it('applies stroke to background rect when stroke is defined (line 676)', () => {
+    const layer: AutoLayoutLayer = {
+      id: 'al-stroke', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0,
+      fill: { type: 'solid', color: '#00ff00' },
+      stroke: { color: '#ff0000', width: 2 },
+      layers: [],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const rect = el.querySelector('rect');
+    expect(rect?.getAttribute('stroke')).toBe('#ff0000');
   });
 });
 
