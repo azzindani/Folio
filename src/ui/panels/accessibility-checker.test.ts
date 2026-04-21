@@ -311,3 +311,29 @@ describe('AccessibilityChecker — click to select layer', () => {
     expect(state.get().selectedLayerIds).toContain('img-sel');
   });
 });
+
+describe('AccessibilityChecker — group recursion (line 141)', () => {
+  it('recurses into group layers and checks child layers', () => {
+    const state = makeState();
+    const el = makeContainer();
+    new AccessibilityChecker(el, state);
+
+    // A group containing an image without alt → should trigger recursion
+    const groupLayer = {
+      id: 'grp',
+      type: 'group',
+      name: 'grp',
+      x: 0, y: 0,
+      layers: [imageLayer('inner-img')],
+    } as unknown as Layer;
+
+    setDesignLayers(state, [groupLayer]);
+
+    // inner-img has no alt → warning should appear from recursive check
+    const items = el.querySelectorAll('.a11y-item');
+    expect(items.length).toBeGreaterThan(0);
+    // At least one item should reference the inner image
+    const innerItem = el.querySelector('[data-layer-id="inner-img"]');
+    expect(innerItem).not.toBeNull();
+  });
+});

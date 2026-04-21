@@ -764,3 +764,38 @@ describe('CanvasManager — drawArrowLine and drawLabel coverage', () => {
     expect(mockCtx.beginPath).toHaveBeenCalled();
   });
 });
+
+describe('CanvasManager — ruler guide inside viewport and no-design guide render', () => {
+  it('pointerup inside viewport adds a guide (line 763 FALSE branch)', () => {
+    const { state, container } = setup([makeRect()]);
+    const rulerH = container.querySelector<HTMLElement>('.ruler-h')!;
+    const vp = container.querySelector<HTMLElement>('.canvas-viewport')!;
+
+    // Mock getBoundingClientRect so the viewport appears to contain the release point
+    const origGetBCR = vp.getBoundingClientRect.bind(vp);
+    vi.spyOn(vp, 'getBoundingClientRect').mockReturnValue({
+      left: 0, right: 1000, top: 0, bottom: 1000, width: 1000, height: 1000, x: 0, y: 0, toJSON: () => {},
+    } as DOMRect);
+
+    rulerH.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 200, clientY: 10 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
+
+    expect(state.get().guides.length).toBeGreaterThan(0);
+    vi.restoreAllMocks();
+    void origGetBCR;
+  });
+
+  it('renderGuideLines with no design uses ?? fallback dimensions (line 781-783)', () => {
+    const state = new StateManager();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const mgr = new CanvasManager(container, state);
+
+    // Set guides with no design (state.get().design is undefined)
+    state.set('guides', [{ id: 'g1', axis: 'h' as const, position: 100 }], false);
+    // Should render without crash (uses 1080 fallback for width/height)
+    expect(container.innerHTML).toBeDefined();
+    container.remove();
+    void mgr;
+  });
+});

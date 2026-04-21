@@ -297,6 +297,16 @@ describe('renderMermaid', () => {
     expect(div).toBeTruthy();
     expect(div!.textContent).toContain('flowchart LR');
   });
+
+  it('uses default 400x300 when width/height are non-numeric', () => {
+    const layer = {
+      id: 'mm3', type: 'mermaid', z: 0,
+      definition: 'graph TD\n  A --> B',
+    } as unknown as MermaidLayer;
+    const el = renderMermaid(layer, makeSVG());
+    expect(el.getAttribute('width')).toBe('400');
+    expect(el.getAttribute('height')).toBe('300');
+  });
 });
 
 // ── Chart ───────────────────────────────────────────────────
@@ -387,6 +397,16 @@ describe('renderMath', () => {
     expect(el.getAttribute('data-layer-id')).toBe('ma');
     // Should contain the expression
     expect(el.textContent).toContain('E = mc^2');
+  });
+
+  it('uses default 300x100 when width/height are non-numeric', () => {
+    const layer = {
+      id: 'ma2', type: 'math', z: 0,
+      expression: 'x^2 + y^2 = z^2',
+    } as unknown as MathLayer;
+    const el = renderMath(layer, makeSVG());
+    expect(el.getAttribute('width')).toBe('300');
+    expect(el.getAttribute('height')).toBe('100');
   });
 });
 

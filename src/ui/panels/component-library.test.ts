@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ComponentLibraryManager } from './component-library';
 import { StateManager } from '../../editor/state';
 import type { DesignSpec, Layer } from '../../schema/types';
@@ -35,6 +35,10 @@ describe('ComponentLibraryManager', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     mgr = new ComponentLibraryManager(container, state);
+  });
+
+  afterEach(() => {
+    container.remove();
   });
 
   it('renders empty state when no components', () => {
@@ -160,5 +164,23 @@ describe('ComponentLibraryManager', () => {
     deleteBtn.click();
     expect(mgr.getComponents().length).toBe(0);
     vi.restoreAllMocks();
+  });
+
+  it('clicking #comp-save button calls prompt and saveSelected (lines 153-154)', () => {
+    state.set('design', makeDesign([makeRect('r1')]));
+    state.set('selectedLayerIds', ['r1']);
+    vi.spyOn(window, 'prompt').mockReturnValue('Prompted Name');
+    const saveBtn = container.querySelector<HTMLButtonElement>('#comp-save')!;
+    expect(saveBtn).not.toBeNull();
+    saveBtn.click();
+    expect(mgr.getComponents().some(c => c.name === 'Prompted Name')).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it('loadComponents returns [] when localStorage has malformed JSON (line 19)', () => {
+    localStorage.setItem('folio:components', '[[INVALID}}');
+    const newMgr = new ComponentLibraryManager(container, state);
+    // Should not throw and should have no components
+    expect(newMgr.getComponents().length).toBe(0);
   });
 });

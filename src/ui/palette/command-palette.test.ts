@@ -471,4 +471,29 @@ describe('CommandPalette — more commands', () => {
     input.dispatchEvent(new Event('input'));
     expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
   });
+
+  const alignCmds: Array<[string, string]> = [
+    ['Align Top', 'Align Top'],
+    ['Align Bottom', 'Align Bottom'],
+    ['Align Center Horizontal', 'Align Center Horizontal'],
+    ['Align Center Vertical', 'Align Center Vertical'],
+    ['Distribute Vertically', 'Distribute V'],
+  ];
+
+  for (const [label, query] of alignCmds) {
+    it(`${label} command runs without crash (lines 73-76,78)`, () => {
+      const { state, palette } = setup();
+      state.set('design', {
+        _protocol: 'design/v1',
+        meta: { id: 'x', name: 'x', type: 'poster', created: '', modified: '' },
+        document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+        layers: [],
+      } as unknown as import('../../schema/types').DesignSpec);
+      palette.open();
+      const input = container.querySelector<HTMLInputElement>('.command-palette-overlay input')!;
+      input.value = query;
+      input.dispatchEvent(new Event('input'));
+      expect(() => container.querySelector<HTMLElement>('.cmd-row')!.click()).not.toThrow();
+    });
+  }
 });

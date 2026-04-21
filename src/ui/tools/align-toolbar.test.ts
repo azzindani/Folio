@@ -119,4 +119,18 @@ describe('AlignToolbar', () => {
     const btn = container.querySelector<HTMLButtonElement>('.align-btn');
     expect(() => btn!.click()).not.toThrow();
   });
+
+  it('show() called twice only builds toolbar once (line 50 false branch)', () => {
+    new AlignToolbar(container, state);
+    const layers = [
+      { id: 'a', type: 'rect', z: 0, x: 0,   y: 0, width: 50, height: 50 },
+      { id: 'b', type: 'rect', z: 1, x: 100, y: 0, width: 50, height: 50 },
+      { id: 'c', type: 'rect', z: 2, x: 200, y: 0, width: 50, height: 50 },
+    ] as Layer[];
+    setDesignWithLayers(state, layers);
+    state.set('selectedLayerIds', ['a', 'b']);       // first show → build()
+    state.set('selectedLayerIds', ['a', 'b', 'c']); // second show → no rebuild
+    const toolbars = container.querySelectorAll('.align-toolbar');
+    expect(toolbars.length).toBe(1);
+  });
 });
