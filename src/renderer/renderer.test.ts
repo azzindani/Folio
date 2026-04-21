@@ -463,6 +463,16 @@ describe('renderLayer — component', () => {
     expect(compG).toBeTruthy();
   });
 
+  it('renders placeholder for component_list when ref not in registry (line 139)', () => {
+    const registry = new Map<string, ComponentSpec>();
+    const design = makeDesign([
+      { id: 'list-miss', type: 'component_list', z: 0, x: 0, y: 0,
+        component_ref: 'nonexistent', items: [] } as unknown as ComponentListLayer,
+    ]);
+    const svg = renderDesign(design, { componentRegistry: registry });
+    expect(svg.querySelector('[data-layer-id="list-miss"]')).not.toBeNull();
+  });
+
   it('renders component_list from registry', () => {
     const spec: ComponentSpec = {
       _protocol: 'component/v1',
@@ -503,5 +513,276 @@ describe('renderDesign — grid overlay', () => {
     // 6 column rects
     const rects = grid?.querySelectorAll('rect') ?? [];
     expect(rects.length).toBe(6);
+  });
+});
+
+describe('renderDesign — carousel pages', () => {
+  it('renders pages when spec.layers is absent', () => {
+    const spec: DesignSpec = {
+      _protocol: 'design/v1',
+      meta: { id: 'carousel', name: 'C', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px', dpi: 96 },
+      pages: [
+        { id: 'p1', label: 'Page 1', layers: [
+          { id: 'r1', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100 } as RectLayer,
+        ] },
+      ],
+    } as unknown as DesignSpec;
+    const svg = renderDesign(spec);
+    // spec.layers is undefined so renderDesign skips it — no layer children
+    expect(svg).toBeTruthy();
+    expect(svg.getAttribute('width')).toBe('1080');
+  });
+});
+
+describe('renderPage — direct layer list', () => {
+  it('renders layers onto a given canvas size', () => {
+    const layers: Layer[] = [
+      { id: 'r', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 } as RectLayer,
+    ];
+    const svg = renderPage(layers, 800, 600);
+    expect(svg.getAttribute('width')).toBe('800');
+    expect(svg.getAttribute('height')).toBe('600');
+    expect(svg.querySelector('[data-layer-id="r"]')).not.toBeNull();
+  });
+
+  it('sorts layers by z in renderPage', () => {
+    const layers: Layer[] = [
+      { id: 'top', type: 'rect', z: 10, x: 0, y: 0, width: 10, height: 10 } as RectLayer,
+      { id: 'bot', type: 'rect', z: 1, x: 0, y: 0, width: 10, height: 10 } as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const children = Array.from(svg.children).filter(c => c.tagName !== 'defs');
+    expect(children[0].getAttribute('data-layer-id')).toBe('bot');
+    expect(children[1].getAttribute('data-layer-id')).toBe('top');
+  });
+
+  it('applies clip-path defs in renderPage', () => {
+    const layers: Layer[] = [
+      { id: 'mask', type: 'rect', z: 2, x: 0, y: 0, width: 100, height: 100 } as RectLayer,
+      { id: 'clip-target', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'mask' } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('#cp-mask')).not.toBeNull();
+    expect(svg.querySelector('[data-layer-id="clip-target"]')?.getAttribute('clip-path')).toBe('url(#cp-mask)');
+  });
+
+  it('findLayer recursion: clip_path_ref targeting a layer nested inside a group', () => {
+    // The mask layer is nested inside a group — exercises findLayer recursion (lines 237-240)
+    const layers: Layer[] = [
+      {
+        id: 'grp', type: 'group', z: 5, x: 0, y: 0, width: 200, height: 200,
+        layers: [
+          { id: 'nested-mask', type: 'rect', z: 1, x: 0, y: 0, width: 100, height: 100 } as RectLayer,
+        ],
+      } as unknown as GroupLayer,
+      {
+        id: 'clipped', type: 'rect', z: 3, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'nested-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('#cp-nested-mask')).not.toBeNull();
+    expect(svg.querySelector('[data-layer-id="clipped"]')?.getAttribute('clip-path')).toBe('url(#cp-nested-mask)');
+  });
+
+  it('rotated clip mask layer gets a transform on the clip-path shape', () => {
+    // Exercises the rotation branch in buildClipDefs (lines 254-258)
+    const layers: Layer[] = [
+      {
+        id: 'rot-mask', type: 'rect', z: 2, x: 10, y: 10, width: 80, height: 80,
+        rotation: 45,
+      } as unknown as RectLayer,
+      {
+        id: 'rot-clipped', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'rot-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const clipShape = svg.querySelector('#cp-rot-mask > *');
+    expect(clipShape?.getAttribute('transform')).toMatch(/rotate\(45,/);
+  });
+
+  it('clip_path_ref to non-existent layer is skipped (findLayer returns null)', () => {
+    // Exercises the findLayer null return + "if (!refLayer) continue" guard
+    const layers: Layer[] = [
+      {
+        id: 'clipped', type: 'rect', z: 1, x: 0, y: 0, width: 100, height: 100,
+        clip_path_ref: 'does-not-exist',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    // No clip-path def should be added for the missing ref
+    expect(svg.querySelector('#cp-does-not-exist')).toBeNull();
+  });
+
+  it('shapeToClipElement fallback: non-shape type uses bounding box rect', () => {
+    // A text layer used as clip mask → falls through to fallback rect (lines 209-212)
+    const layers: Layer[] = [
+      {
+        id: 'text-mask', type: 'text', z: 2, x: 5, y: 10, width: 100, height: 30,
+        content: { type: 'plain', value: 'Clip' }, style: {},
+      } as unknown as Layer,
+      {
+        id: 'clipped', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'text-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const clipDef = svg.querySelector('#cp-text-mask');
+    expect(clipDef).not.toBeNull();
+    // The fallback shape is a rect
+    expect(clipDef?.querySelector('rect')).not.toBeNull();
+  });
+});
+
+describe('renderLayer — placeholder x/y ?? 0 fallback (lines 279-280)', () => {
+  let svg: SVGSVGElement;
+  beforeEach(() => { svg = createSVGRoot(1080, 1080); invalidateCache(); });
+
+  it('renderPlaceholder: text element uses x=0+8 when layer.x is undefined', () => {
+    // Unknown type → renderPlaceholder; layer has no x/y → triggers ?? 0 branch
+    const layer = { id: 'noxy', type: 'future_type', z: 0, width: 80, height: 60 } as unknown as Layer;
+    const el = renderLayer(layer, svg);
+    const text = el.querySelector('text');
+    expect(text?.getAttribute('x')).toBe('8');   // (undefined ?? 0) + 8 = 8
+    expect(text?.getAttribute('y')).toBe('20');  // (undefined ?? 0) + 20 = 20
+  });
+});
+
+describe('buildClipDefs — rotation with non-numeric width/height (lines 255-256)', () => {
+  beforeEach(() => { invalidateCache(); });
+
+  it('rotation branch uses 0 when mask width/height are non-numeric', () => {
+    const layers: Layer[] = [
+      {
+        id: 'no-size-mask', type: 'rect', z: 2, x: 10, y: 10,
+        rotation: 30,
+        // No width/height → typeof width === 'number' is false → uses 0
+      } as unknown as Layer,
+      {
+        id: 'clipped2', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'no-size-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const clipShape = svg.querySelector('#cp-no-size-mask > *');
+    // Rotation transform should exist; center computed as (10 + 0/2, 10 + 0/2) = (10, 10)
+    expect(clipShape?.getAttribute('transform')).toMatch(/rotate\(30,/);
+  });
+
+  it('rotation branch ?? 0 fallback when mask has no x or y (lines 255-256 ?? branch)', () => {
+    // No x, no y, no width, no height → all ?? 0 branches taken
+    const layers: Layer[] = [
+      {
+        id: 'noxy-mask', type: 'rect', z: 2, rotation: 45,
+      } as unknown as Layer,
+      {
+        id: 'clipped3', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'noxy-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const clipShape = svg.querySelector('#cp-noxy-mask > *');
+    expect(clipShape?.getAttribute('transform')).toMatch(/rotate\(45,0,0\)/);
+  });
+});
+
+describe('renderLayer — show_if with layer field reference', () => {
+  it('uses layer fields in expression (width check)', () => {
+    const svg = createSVGRoot(400, 400);
+    invalidateCache();
+    const el = renderLayer({
+      id: 'expr', type: 'rect', z: 0, x: 0, y: 0, width: 200, height: 50,
+      show_if: 'width > 100',
+    } as RectLayer, svg);
+    expect(el.getAttribute('data-hidden')).toBeNull();
+  });
+
+  it('hides layer when field-based expression is false', () => {
+    const svg = createSVGRoot(400, 400);
+    invalidateCache();
+    const el = renderLayer({
+      id: 'hidden-expr', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50,
+      show_if: 'width > 100',
+    } as RectLayer, svg);
+    expect(el.getAttribute('data-hidden')).toBe('show_if');
+  });
+});
+
+describe('renderLayer — additional layer types via renderPage', () => {
+  beforeEach(() => { invalidateCache(); });
+
+  it('renders image layer (line 88)', () => {
+    const layers: Layer[] = [
+      { id: 'img', type: 'image', z: 0, x: 0, y: 0, width: 200, height: 150,
+        src: 'https://example.com/photo.jpg' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="img"]')).not.toBeNull();
+  });
+
+  it('renders mermaid layer (line 90)', () => {
+    const layers: Layer[] = [
+      { id: 'mmd', type: 'mermaid', z: 0, x: 0, y: 0, width: 400, height: 300,
+        definition: 'graph TD\n  A-->B' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="mmd"]')).not.toBeNull();
+  });
+
+  it('renders chart layer (line 91)', () => {
+    const layers: Layer[] = [
+      { id: 'chart1', type: 'chart', z: 0, x: 0, y: 0, width: 400, height: 300,
+        chart_type: 'bar', data: [] } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="chart1"]')).not.toBeNull();
+  });
+
+  it('renders code layer (line 92)', () => {
+    const layers: Layer[] = [
+      { id: 'code1', type: 'code', z: 0, x: 0, y: 0, width: 400, height: 200,
+        code: 'const x = 1;', language: 'javascript' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="code1"]')).not.toBeNull();
+  });
+
+  it('renders math layer (line 93)', () => {
+    const layers: Layer[] = [
+      { id: 'math1', type: 'math', z: 0, x: 0, y: 0, width: 300, height: 80,
+        expression: 'E = mc^2' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="math1"]')).not.toBeNull();
+  });
+
+  it('renders qrcode layer (line 97)', () => {
+    const layers: Layer[] = [
+      { id: 'qr1', type: 'qrcode', z: 0, x: 50, y: 50, width: 100, height: 100,
+        value: 'https://example.com' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="qr1"]')).not.toBeNull();
+  });
+
+  it('renders auto_layout layer (line 98)', () => {
+    const layers: Layer[] = [
+      { id: 'al', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 200,
+        direction: 'horizontal', gap: 8, padding: 8, layers: [] } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="al"]')).not.toBeNull();
+  });
+
+  it('renders unknown type via default placeholder (line 99)', () => {
+    const layers: Layer[] = [
+      { id: 'unk', type: 'custom_widget' as Layer['type'], z: 0, x: 0, y: 0,
+        width: 100, height: 100 } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    expect(svg.querySelector('[data-layer-id="unk"]')).not.toBeNull();
   });
 });

@@ -132,4 +132,99 @@ describe('TabBarManager', () => {
     state.set('dirty', true, false);
     expect(c.querySelector('.tab-label')?.textContent).toContain('●');
   });
+
+  it('clicking close button (×) closes the tab via e.stopPropagation path', () => {
+    const onClose = vi.fn();
+    const onChange = vi.fn();
+    const { manager, container: c } = makeTabBar(onChange, onClose);
+    manager.openTab(makeTab('a'));
+    manager.openTab(makeTab('b'));
+    const closeBtn = c.querySelector<HTMLButtonElement>('.tab-close')!;
+    expect(closeBtn).not.toBeNull();
+    closeBtn.click();
+    // One tab should be removed
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
+
+  it('middle-click (auxclick button=1) on a tab closes it', () => {
+    const { manager, container: c } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    manager.openTab(makeTab('b'));
+    const tabEl = c.querySelectorAll<HTMLElement>('.tab-item')[0];
+    tabEl.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 1 }));
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
+
+  it('auxclick with button != 1 does not close the tab', () => {
+    const { manager, container: c } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    const tabEl = c.querySelector<HTMLElement>('.tab-item')!;
+    tabEl.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 2 }));
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
+
+  it('closeTab with non-existent id is a no-op', () => {
+    const { manager, container: c } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    manager.closeTab('nonexistent');
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
+
+  it('closeTab the only tab leaves no active tab', () => {
+    const onChange = vi.fn();
+    const { manager, container: c } = makeTabBar(onChange);
+    manager.openTab(makeTab('only'));
+    manager.closeTab('only');
+    expect(c.querySelectorAll('.tab-item').length).toBe(0);
+    expect(manager.getActiveTab()).toBeNull();
+    // onTabChange not called when no adjacent tab
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('syncDirty does nothing when no active tab', () => {
+    const { state, container: c } = makeTabBar();
+    // No tabs → no activeTabId → syncDirty is a no-op
+    state.set('dirty', true, false);
+    // No label → no crash
+    expect(c.querySelector('.tab-label')).toBeNull();
+  });
+
+  it('clicking tab item fires onTabChange', () => {
+    const onChange = vi.fn();
+    const { manager, container: c } = makeTabBar(onChange);
+    manager.openTab(makeTab('a'));
+    manager.openTab(makeTab('b'));
+    const firstTab = c.querySelectorAll<HTMLElement>('.tab-item')[0];
+    firstTab.click();
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
+  });
+
+  it('markDirty with non-existent tab id is a no-op (line 87 false branch)', () => {
+    const { manager, container: c } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    // Call markDirty with an id that doesn't exist
+    expect(() => manager.markDirty('nonexistent', true)).not.toThrow();
+    // Label should not have ● since the real tab was not dirtied
+    expect(c.querySelector('.tab-label')?.textContent).not.toContain('●');
+  });
+
+  it('setting design key triggers syncDirty (line 40 || branch)', () => {
+    const { manager, container: c, state } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    // Trigger subscribe with 'design' key (not 'dirty')
+    // This exercises the || keys.includes('design') path
+    state.set('design', null, false);
+    // syncDirty should run: dirty is undefined → ?? false → markDirty('a', false)
+    expect(c.querySelector('.tab-label')?.textContent).not.toContain('●');
+  });
+
+  it('syncDirty uses ?? false when state.dirty is undefined (line 95 branch)', () => {
+    const { manager, container: c, state } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    // state.dirty was never set (undefined) → ?? false fallback
+    // Trigger syncDirty via design change
+    state.set('design', null, false);
+    // markDirty called with false → no ● indicator
+    expect(c.querySelector('.tab-label')?.textContent).not.toContain('●');
+  });
 });

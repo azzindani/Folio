@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { exportAsTemplate, injectIntoTemplate, listSlots } from './template';
+import { exportAsTemplate, injectIntoTemplate, listSlots, getByPath, setByPath } from './template';
 import type { DesignSpec } from './types';
 
 function makeSpec(): DesignSpec {
@@ -94,6 +94,90 @@ describe('injectIntoTemplate', () => {
   });
 });
 
+describe('group / auto_layout nesting', () => {
+  it('extracts text slots from children of a group layer', () => {
+    const spec = {
+      _protocol: 'design/v1' as const,
+      meta: { id: 'g1', name: 'G', type: 'poster' as const, created: '', modified: '' },
+      document: { width: 400, height: 400, unit: 'px' as const, dpi: 96 },
+      layers: [
+        { id: 'grp', type: 'group', z: 1, x: 0, y: 0, width: 400, height: 400,
+          layers: [
+            { id: 'child-txt', type: 'text', z: 2, x: 0, y: 0, width: 200, height: 50,
+              content: { type: 'plain', value: 'Child text' }, style: {} },
+          ],
+        },
+      ],
+    } as unknown as import('./types').DesignSpec;
+    const t = exportAsTemplate(spec);
+    const slot = t.slots.find(s => s.id === 'child-txt_text');
+    expect(slot).toBeDefined();
+    expect(slot?.path).toContain('layers[0].layers[0]');
+  });
+
+  it('extracts text slots from children of an auto_layout layer', () => {
+    const spec = {
+      _protocol: 'design/v1' as const,
+      meta: { id: 'al1', name: 'AL', type: 'poster' as const, created: '', modified: '' },
+      document: { width: 400, height: 400, unit: 'px' as const, dpi: 96 },
+      layers: [
+        { id: 'frame', type: 'auto_layout', z: 1, x: 0, y: 0, width: 400, height: 200,
+          direction: 'row', gap: 8, padding: 0, align_items: 'start', justify_content: 'start',
+          fill: { type: 'none' }, layers: [
+            { id: 'label', type: 'text', z: 2, x: 0, y: 0, width: 100, height: 30,
+              content: { type: 'plain', value: 'Label' }, style: {} },
+          ],
+        },
+      ],
+    } as unknown as import('./types').DesignSpec;
+    const t = exportAsTemplate(spec);
+    expect(t.slots.find(s => s.id === 'label_text')).toBeDefined();
+  });
+});
+
+describe('multi-page template', () => {
+  it('extracts slots from carousel pages', () => {
+    const spec = {
+      _protocol: 'design/v1' as const,
+      meta: { id: 'c1', name: 'C', type: 'carousel' as const, created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' as const, dpi: 96 },
+      pages: [
+        { id: 'p1', label: 'Page 1', layers: [
+          { id: 'p1-title', type: 'text', z: 10, x: 0, y: 0, width: 500, height: 80,
+            content: { type: 'plain', value: 'Page 1 Title' }, style: {} },
+        ] },
+        { id: 'p2', label: 'Page 2', layers: [
+          { id: 'p2-img', type: 'image', z: 5, x: 0, y: 0, width: 400, height: 300, src: '/img2.jpg' },
+        ] },
+      ],
+    } as unknown as import('./types').DesignSpec;
+    const t = exportAsTemplate(spec);
+    expect(t.slots.find(s => s.id === 'p1-title_text')).toBeDefined();
+    expect(t.slots.find(s => s.id === 'p2-img_src')).toBeDefined();
+    expect(t.slots.find(s => s.path.startsWith('pages[0]'))).toBeDefined();
+    expect(t.slots.find(s => s.path.startsWith('pages[1]'))).toBeDefined();
+  });
+
+  it('inject replaces values in pages', () => {
+    const spec = {
+      _protocol: 'design/v1' as const,
+      meta: { id: 'c2', name: 'C', type: 'carousel' as const, created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' as const, dpi: 96 },
+      pages: [
+        { id: 'p1', label: 'Page 1', layers: [
+          { id: 'h1', type: 'text', z: 10, x: 0, y: 0, width: 500, height: 80,
+            content: { type: 'plain', value: 'Original' }, style: {} },
+        ] },
+      ],
+    } as unknown as import('./types').DesignSpec;
+    const t = exportAsTemplate(spec);
+    const design = injectIntoTemplate(t, { h1_text: 'Injected' });
+    const page = design.pages?.[0];
+    const layer = page?.layers?.[0] as { content: { value: string } };
+    expect(layer.content.value).toBe('Injected');
+  });
+});
+
 describe('listSlots', () => {
   it('returns same slots as exported template', () => {
     const t = exportAsTemplate(makeSpec());
@@ -103,5 +187,34 @@ describe('listSlots', () => {
   it('count matches slot count', () => {
     const t = exportAsTemplate(makeSpec());
     expect(listSlots(t).length).toBe(2); // title + hero
+  });
+});
+
+describe('getByPath / setByPath edge cases', () => {
+  it('getByPath returns undefined for non-existent path', () => {
+    const obj = { a: { b: 42 } };
+    expect(getByPath(obj, 'a.c.d')).toBeUndefined();
+  });
+
+  it('getByPath handles null intermediate value', () => {
+    const obj = { a: null };
+    expect(getByPath(obj, 'a.b')).toBeUndefined();
+  });
+
+  it('getByPath traverses array index', () => {
+    const obj = { items: ['x', 'y', 'z'] };
+    expect(getByPath(obj, 'items[1]')).toBe('y');
+  });
+
+  it('setByPath handles null intermediate (does not throw)', () => {
+    const obj: Record<string, unknown> = { a: null };
+    expect(() => setByPath(obj, 'a.b.c', 'val')).not.toThrow();
+  });
+
+  it('exportAsTemplate includes theme when present', () => {
+    const spec = makeSpec();
+    (spec as unknown as Record<string, unknown>)['theme'] = { tokens: {} };
+    const t = exportAsTemplate(spec);
+    expect(t.theme).toBeDefined();
   });
 });

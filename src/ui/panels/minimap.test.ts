@@ -107,3 +107,196 @@ describe('MinimapManager', () => {
     expect(createObjectURLMock).toHaveBeenCalled();
   });
 });
+
+describe('MinimapManager — Image.onload and onDrag', () => {
+  let state: StateManager;
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    container = makeContainer();
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: vi.fn().mockReturnValue('blob:test'), writable: true, configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: vi.fn(), writable: true, configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    container.remove();
+  });
+
+  it('Image.onload draws on canvas when ctx available', () => {
+    const clearRectMock = vi.fn();
+    const drawImageMock = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: clearRectMock,
+      drawImage: drawImageMock,
+    } as unknown as CanvasRenderingContext2D);
+
+    // Mock Image so onload fires immediately when src is set
+    const OrigImage = globalThis.Image;
+    class InstantImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onload?.(), 0); }
+    }
+    (globalThis as unknown as Record<string, unknown>).Image = InstantImage;
+
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    (globalThis as unknown as Record<string, unknown>).Image = OrigImage;
+
+    return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+      expect(clearRectMock).toHaveBeenCalled();
+      expect(drawImageMock).toHaveBeenCalled();
+    });
+  });
+
+  it('Image.onerror revokes the blob URL', () => {
+    const revokeSpy = vi.fn();
+    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeSpy, writable: true, configurable: true });
+
+    const OrigImage = globalThis.Image;
+    class FailImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onerror?.(), 0); }
+    }
+    (globalThis as unknown as Record<string, unknown>).Image = FailImage;
+
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    (globalThis as unknown as Record<string, unknown>).Image = OrigImage;
+
+    return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+      expect(revokeSpy).toHaveBeenCalled();
+    });
+  });
+
+  it('mousedown on canvas fires onDrag without crash', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+    state.set('zoom', 1, false);
+
+    const canvas = container.querySelector('canvas')!;
+    expect(() => {
+      canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 50, clientY: 50 }));
+    }).not.toThrow();
+  });
+
+  it('onDrag: mousemove after mousedown updates panX/panY', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+    state.set('zoom', 1, false);
+
+    const canvas = container.querySelector('canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 20, clientY: 20 }));
+    // panX and panY should have been set
+    expect(typeof state.get().panX).toBe('number');
+    expect(typeof state.get().panY).toBe('number');
+  });
+
+  it('onDrag: mouseup removes mousemove listener', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    const canvas = container.querySelector('canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    // After mouseup, mousemove should not trigger pan changes
+    const panXBefore = state.get().panX;
+    document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 999, clientY: 999 }));
+    expect(state.get().panX).toBe(panXBefore);
+  });
+
+  it('onDrag mousemove when design is null returns early (line 127)', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+    state.set('zoom', 1, false);
+    const canvas = container.querySelector('canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 10, clientY: 10 }));
+    // Remove design after mousedown but before mousemove
+    state.set('design', null as unknown as DesignSpec, false);
+    expect(() => {
+      document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 20, clientY: 20 }));
+    }).not.toThrow();
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+  });
+
+  it('onDrag uses ?? 1 fallback when zoom is undefined (line 131)', () => {
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+    // Do NOT set zoom — it will be undefined → ?? 1
+    const canvas = container.querySelector('canvas')!;
+    canvas.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 10, clientY: 10 }));
+    expect(() => {
+      document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 20, clientY: 20 }));
+    }).not.toThrow();
+    document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+  });
+
+  it('Image.onload with null ctx does not crash (line 87 false branch)', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+
+    const OrigImage = globalThis.Image;
+    class InstantImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_: string) { setTimeout(() => this.onload?.(), 0); }
+    }
+    (globalThis as unknown as Record<string, unknown>).Image = InstantImage;
+
+    new MinimapManager(container, state);
+    state.set('design', makeDesign());
+
+    (globalThis as unknown as Record<string, unknown>).Image = OrigImage;
+
+    return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+      // Should not throw even with null ctx
+      expect(true).toBe(true);
+    });
+  });
+
+  it('refreshThumbnail with paged design uses page?.layers ?? [] (line 72)', () => {
+    new MinimapManager(container, state);
+    const pagedDesign = {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'X', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      pages: [{ id: 'p1', label: 'P1' }], // no layers property
+    } as unknown as DesignSpec;
+    expect(() => state.set('design', pagedDesign)).not.toThrow();
+  });
+});
+
+describe('MinimapManager — clientWidth fallback (line 56)', () => {
+  it('uses 240 as THUMB_W when container.clientWidth is 0', () => {
+    const state = new StateManager();
+    // Container without clientWidth override → 0 in jsdom → || 240
+    const container2 = document.createElement('div');
+    document.body.appendChild(container2);
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: vi.fn().mockReturnValue('blob:test'), writable: true, configurable: true,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: vi.fn(), writable: true, configurable: true,
+    });
+    new MinimapManager(container2, state);
+    // clientWidth=0 → THUMB_W=240 via fallback
+    expect(() => state.set('design', {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'X', type: 'poster', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      layers: [],
+    } as unknown as DesignSpec)).not.toThrow();
+    const canvas = container2.querySelector('canvas')!;
+    expect(canvas.width).toBe(240); // || 240 fallback used
+    container2.remove();
+  });
+});

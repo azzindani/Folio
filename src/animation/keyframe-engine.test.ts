@@ -208,4 +208,41 @@ describe('PlaybackController', () => {
     const ctrl = new PlaybackController(makeAnimation(), vi.fn());
     expect(() => ctrl.pause()).not.toThrow();
   });
+
+  it('loop=true direction=alternate reverses on odd cycle (lines 174-177)', () => {
+    const onFrame = vi.fn();
+    const animation: KeyframeAnimation = {
+      keyframes: [{ t: 0, x: 0 }, { t: 1000, x: 100 }],
+      playback: { duration: 1000, loop: true, direction: 'alternate', easing: 'linear' },
+    };
+    const ctrl = new PlaybackController(animation, onFrame);
+
+    // Spy on performance.now to control elapsed time
+    const nowSpy = vi.spyOn(performance, 'now');
+
+    // First play sets startTime
+    nowSpy.mockReturnValueOnce(0); // play() → startTime = 0
+    nowSpy.mockReturnValueOnce(1500); // first tick: elapsed = 1500 → cycle=1 (odd) → reverse
+    ctrl.play(); // calls tick() once synchronously
+
+    // At 1500ms: cycle=1 (odd), t=500ms → currentTime = 1000-500 = 500 → x=50
+    const vals = onFrame.mock.calls[onFrame.mock.calls.length - 1][0];
+    expect(vals.x).toBeCloseTo(50, 0);
+
+    ctrl.pause();
+    nowSpy.mockRestore();
+  });
+
+  it('loop=false, elapsed >= duration stops controller (lines 192-194)', () => {
+    const onFrame = vi.fn();
+    const ctrl = new PlaybackController(makeAnimation(1000, false), onFrame);
+
+    const nowSpy = vi.spyOn(performance, 'now');
+    nowSpy.mockReturnValueOnce(0); // play() → startTime = 0
+    nowSpy.mockReturnValueOnce(2000); // first tick: elapsed = 2000 >= 1000
+    ctrl.play();
+
+    expect(ctrl.isRunning()).toBe(false);
+    nowSpy.mockRestore();
+  });
 });

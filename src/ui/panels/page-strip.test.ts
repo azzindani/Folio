@@ -130,4 +130,41 @@ describe('PageStrip', () => {
     const el = container.querySelector('.page-strip') as HTMLElement;
     expect(el.style.display).toBe('flex');
   });
+
+  it('onStateChange with unrelated key does not re-render (false branch line 27)', () => {
+    new PageStrip(container, state);
+    state.set('design', pagedDesign(2));
+    const innerHTML = container.querySelector('.page-strip')!.innerHTML;
+    // Changing zoom doesn't trigger re-render
+    state.set('zoom', 2);
+    expect(container.querySelector('.page-strip')!.innerHTML).toBe(innerHTML);
+  });
+
+  it('addPage is a no-op when design is removed before click (lines 86-88)', () => {
+    const strip = new PageStrip(container, state);
+    state.set('design', pagedDesign(2));
+    strip.render();
+    // Get the + button (last child)
+    const el = container.querySelector('.page-strip') as HTMLElement;
+    const addBtn = el.children[el.children.length - 1] as HTMLElement;
+    // Remove the design from state
+    state.set('design', null as unknown as import('../../schema/types').DesignSpec);
+    // Click add button when no design → should be a no-op
+    expect(() => addBtn.click()).not.toThrow();
+  });
+
+  it('createThumbnail uses ?? 1080 fallback when document dims missing (line 63)', () => {
+    const strip = new PageStrip(container, state);
+    const designNoSize = {
+      _protocol: 'design/v1',
+      meta: { id: 'x', name: 'X', type: 'carousel', created: '', modified: '' },
+      document: {} as unknown as { width: number; height: number; unit: string },
+      pages: [{ id: 'p1', label: 'P1', layers: [] }],
+    } as unknown as import('../../schema/types').DesignSpec;
+    state.set('design', designNoSize);
+    strip.render();
+    // Should render without crashing even with undefined dimensions
+    const el = container.querySelector('.page-strip') as HTMLElement;
+    expect(el.children.length).toBeGreaterThan(0);
+  });
 });
