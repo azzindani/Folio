@@ -45,7 +45,7 @@ function makeStateMock(design: ReturnType<typeof makeDesign> | null = null) {
   const get = vi.fn(() => state);
 
   const set = vi.fn((key: string, value: unknown) => {
-    (state as Record<string, unknown>)[key] = value;
+    (state as unknown as Record<string, unknown>)[key] = value;
     listeners.forEach(l => l(state, [key]));
   });
 
@@ -565,7 +565,7 @@ describe('FindReplaceManager', () => {
   it('renders results when selectedLayerIds is undefined (line 124 ??[] branch)', () => {
     const design = makeDesign([makeTextLayer('l1', 'Hello')]);
     const mock = makeStateMock(design);
-    (mock.state as Record<string, unknown>).selectedLayerIds = undefined;
+    (mock.state as unknown as Record<string, unknown>).selectedLayerIds = undefined;
     new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
     fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
     expect(container.querySelectorAll('.fr-result-item').length).toBe(1);

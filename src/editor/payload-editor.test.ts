@@ -109,15 +109,15 @@ describe('PayloadEditor', () => {
   it('onStateChange with mode=payload shows container', async () => {
     const { state, editor, container } = await setupEditor();
     await editor.init();
-    state.set('mode', 'payload' as import('./state').EditorMode, false);
+    state.set('mode', 'payload', false);
     expect(container.style.display).toBe('block');
   });
 
   it('onStateChange with mode=canvas hides container', async () => {
     const { state, editor, container } = await setupEditor();
     await editor.init();
-    state.set('mode', 'payload' as import('./state').EditorMode, false);
-    state.set('mode', 'canvas' as import('./state').EditorMode, false);
+    state.set('mode', 'payload', false);
+    state.set('mode', 'visual', false);
     expect(container.style.display).toBe('none');
   });
 
@@ -129,7 +129,7 @@ describe('PayloadEditor', () => {
 
   it('content change listener triggers debounced sync', async () => {
     vi.useFakeTimers();
-    let changeCallback: (() => void) | null = null;
+    let changeCallback: () => void = () => {};
     mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
       changeCallback = cb;
     });
@@ -138,7 +138,7 @@ describe('PayloadEditor', () => {
     await editor.init();
 
     // Trigger content change
-    changeCallback?.();
+    changeCallback();
 
     // Simulate timer completing — syncToState will run
     await vi.advanceTimersByTimeAsync(400);
@@ -164,7 +164,7 @@ document:
   dpi: 96
 layers: []
 `;
-    let changeCallback: (() => void) | null = null;
+    let changeCallback: () => void = () => {};
     mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
       changeCallback = cb;
     });
@@ -174,7 +174,7 @@ layers: []
     const { state, editor } = await setupEditor();
     await editor.init();
 
-    changeCallback?.();
+    changeCallback();
     await vi.advanceTimersByTimeAsync(400);
 
     vi.useRealTimers();
@@ -190,7 +190,7 @@ layers: []
 
   it('syncToState with invalid YAML calls setParseErrorMarker', async () => {
     vi.useFakeTimers();
-    let changeCallback: (() => void) | null = null;
+    let changeCallback: () => void = () => {};
     mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
       changeCallback = cb;
     });
@@ -200,7 +200,7 @@ layers: []
     const { editor } = await setupEditor();
     await editor.init();
 
-    changeCallback?.();
+    changeCallback();
     await vi.advanceTimersByTimeAsync(400);
 
     vi.useRealTimers();
@@ -212,5 +212,144 @@ layers: []
     const { editor } = await setupEditor();
     // dispose without init — no debounce timer
     expect(() => editor.dispose()).not.toThrow();
+  });
+
+  it('syncToState with valid YAML but critical validation errors sets yamlSource only (line 82)', async () => {
+    vi.useFakeTimers();
+    let changeCallback: () => void = () => {};
+    mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
+      changeCallback = cb;
+    });
+    // Valid YAML syntax but layer missing 'id' — causes critical validation error
+    const invalidDesignYaml = `
+_protocol: design/v1
+meta:
+  id: test
+  name: Test
+  type: poster
+  created: ''
+  modified: ''
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+layers:
+  - type: rect
+    z: 10
+    x: 0
+    y: 0
+    width: 100
+    height: 100
+`;
+    mockEditor.getValue.mockReturnValue(invalidDesignYaml);
+    mockEditor.getModel.mockReturnValue(mockModel);
+
+    const { state, editor } = await setupEditor();
+    await editor.init();
+
+    const initialDesign = state.get().design;
+    changeCallback();
+    await vi.advanceTimersByTimeAsync(400);
+    vi.useRealTimers();
+
+    // yamlSource should be set but design should NOT have changed
+    expect(state.get().yamlSource).toBe(invalidDesignYaml);
+    expect(state.get().design).toBe(initialDesign);
+  });
+});
+
+describe('PayloadEditor — additional branch coverage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEditor.getValue.mockReturnValue('');
+    mockEditor.onDidChangeModelContent.mockImplementation(() => {});
+  });
+  afterEach(() => {
+    document.body.innerHTML = '';
+    vi.useRealTimers();
+  });
+
+  it('syncFromState skips setValue when yaml equals currentValue (line 107 FALSE branch)', async () => {
+    const { state, editor } = await setupEditor();
+    await editor.init();
+
+    // Get the real YAML of the design first
+    const design = makeDesign();
+    const { serializeYAML } = await import('../schema/parser');
+    const yaml = serializeYAML(design);
+
+    // Pre-set the editor to return the same YAML
+    mockEditor.getValue.mockReturnValue(yaml);
+    mockEditor.setValue.mockClear();
+
+    state.set('design', design, false);
+    // yaml === currentValue → setValue should NOT be called
+    expect(mockEditor.setValue).not.toHaveBeenCalled();
+  });
+
+  it('syncFromState when editor.getPosition() returns null skips setPosition (line 111 FALSE)', async () => {
+    const { state, editor } = await setupEditor();
+    await editor.init();
+
+    mockEditor.getPosition.mockReturnValue(null);
+    mockEditor.getValue.mockReturnValue('different');
+    expect(() => state.set('design', makeDesign(), false)).not.toThrow();
+  });
+
+  it('updateMarkers with warning-severity error uses Warning marker severity (line 123 FALSE)', async () => {
+    vi.useFakeTimers();
+    let changeCallback: () => void = () => {};
+    mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
+      changeCallback = cb;
+    });
+    // A line layer with no coordinates triggers a warning (not error) from validator
+    const warnYaml = `_protocol: design/v1
+meta:
+  id: warn-test
+  name: Warn Test
+  type: poster
+  created: ''
+  modified: ''
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+layers:
+  - id: ln1
+    type: line
+    z: 1
+`;
+    mockEditor.getValue.mockReturnValue(warnYaml);
+    mockEditor.getModel.mockReturnValue(mockModel);
+
+    const { editor } = await setupEditor();
+    await editor.init();
+    changeCallback();
+    await vi.advanceTimersByTimeAsync(400);
+    vi.useRealTimers();
+    // setModelMarkers should be called with Warning severity for line layer
+    expect(mockMonaco.editor.setModelMarkers).toHaveBeenCalled();
+  });
+
+  it('updateMarkers when model is null skips setModelMarkers (line 134 FALSE)', async () => {
+    const { state, editor } = await setupEditor();
+    await editor.init();
+    mockEditor.getModel.mockReturnValue(null);
+    // Trigger syncFromState which triggers updateMarkers indirectly via state change
+    expect(() => state.set('design', makeDesign(), false)).not.toThrow();
+  });
+
+  it('dispose clears debounceTimer when one is pending (line 180 TRUE)', async () => {
+    vi.useFakeTimers();
+    let changeCallback: () => void = () => {};
+    mockEditor.onDidChangeModelContent.mockImplementation((cb: () => void) => {
+      changeCallback = cb;
+    });
+    const { editor } = await setupEditor();
+    await editor.init();
+    changeCallback(); // schedule debounce but don't advance timer
+    expect(() => editor.dispose()).not.toThrow(); // clears the pending timer
   });
 });

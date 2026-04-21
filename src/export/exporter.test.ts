@@ -353,7 +353,7 @@ describe('exportDesign', () => {
     try {
       await exportDesign(makeSpec(), { format: 'pdf' });
       expect(URL.createObjectURL).toHaveBeenCalled();
-    } catch (_) {
+    } catch {
       // PDF path may fail due to dynamic import caching; verify it at least reached pdf case
     } finally {
       vi.doUnmock('jspdf');
@@ -409,7 +409,7 @@ describe('exportDesign', () => {
       await exportDesign(makeCarouselSpec(), { format: 'pdf' });
       // addPage called for each page after the first (carousel has 2 pages)
       expect(mockJsPDF.addPage).toHaveBeenCalled();
-    } catch (_) {
+    } catch {
       // Dynamic import caching may prevent mock from applying
     } finally {
       vi.doUnmock('jspdf');

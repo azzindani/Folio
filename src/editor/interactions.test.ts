@@ -549,3 +549,88 @@ describe('InteractionManager — resizable move and snap targets', () => {
     manager.disable();
   });
 });
+
+describe('alignment — layers with undefined x/y/width/height (?? 0 / ternary : 0 branches)', () => {
+  function makeLayerNoProps(id: string): Layer {
+    return { id, type: 'rect', z: 0 } as unknown as Layer;
+  }
+
+  it('alignBottom with layer having no height uses 0 fallback (lines 211-213)', () => {
+    const sm = new StateManager();
+    const naked = makeLayerNoProps('naked');
+    sm.set('design', makeDesign([naked, makeRect('normal', 0, 0, 50, 100)]));
+    sm.set('selectedLayerIds', ['naked', 'normal']);
+    alignBottom(sm);
+    const layers = sm.getCurrentLayers();
+    expect(layers.find(l => l.id === 'normal')!.y).toBe(0);
+  });
+
+  it('distributeH with layer missing x uses ?? 0 fallback (line 241)', () => {
+    const sm = new StateManager();
+    const noX = makeLayerNoProps('nox');
+    sm.set('design', makeDesign([noX, makeRect('b', 100, 0, 50, 50), makeRect('c', 300, 0, 50, 50)]));
+    sm.set('selectedLayerIds', ['nox', 'b', 'c']);
+    expect(() => distributeH(sm)).not.toThrow();
+    expect(sm.getCurrentLayers().length).toBe(3);
+  });
+
+  it('distributeV with layer missing y uses ?? 0 fallback (line 258)', () => {
+    const sm = new StateManager();
+    const noY = makeLayerNoProps('noy');
+    sm.set('design', makeDesign([noY, makeRect('b', 0, 100, 50, 50), makeRect('c', 0, 300, 50, 50)]));
+    sm.set('selectedLayerIds', ['noy', 'b', 'c']);
+    expect(() => distributeV(sm)).not.toThrow();
+    expect(sm.getCurrentLayers().length).toBe(3);
+  });
+
+  it('alignBottom with layer missing y also covers (l.y ?? 0) branch', () => {
+    const sm = new StateManager();
+    const noY = makeLayerNoProps('noy');
+    const withH = { ...makeLayerNoProps('withH'), height: 80 } as unknown as Layer;
+    sm.set('design', makeDesign([noY, withH]));
+    sm.set('selectedLayerIds', ['noy', 'withH']);
+    expect(() => alignBottom(sm)).not.toThrow();
+  });
+
+  it('alignRight with layer having non-numeric width uses ternary : 0 (line 196)', () => {
+    const sm = new StateManager();
+    // width: 'auto' is not a number → typeof l.width === 'number' is FALSE → uses 0
+    const autoW = { id: 'aw', type: 'rect', z: 0, x: 50, y: 0, width: 'auto' } as unknown as Layer;
+    sm.set('design', makeDesign([autoW, makeRect('normal', 0, 0, 100, 50)]));
+    sm.set('selectedLayerIds', ['aw', 'normal']);
+    expect(() => alignRight(sm)).not.toThrow();
+    // 'normal' layer should align to right edge; autoW width treated as 0
+    const layers = sm.getCurrentLayers();
+    const normal = layers.find(l => l.id === 'normal')!;
+    expect(normal.x).toBeDefined();
+  });
+
+  it('alignTop with layer missing y uses ?? 0 fallback (line 204)', () => {
+    const sm = new StateManager();
+    const noY = makeLayerNoProps('noy');
+    sm.set('design', makeDesign([noY, makeRect('normal', 0, 100, 50, 50)]));
+    sm.set('selectedLayerIds', ['noy', 'normal']);
+    expect(() => alignTop(sm)).not.toThrow();
+    // noY.y is undefined (0 via ??), normal.y=100; minY=0 → both move to y=0
+    const layers = sm.getCurrentLayers();
+    expect(layers.find(l => l.id === 'normal')!.y).toBe(0);
+  });
+
+  it('distributeH sort comparator covers b.x ?? 0 when b has no x (line 241)', () => {
+    const sm = new StateManager();
+    const noX2 = makeLayerNoProps('nox2');
+    const noX3 = makeLayerNoProps('nox3');
+    sm.set('design', makeDesign([makeRect('a', 100, 0, 50, 50), noX2, noX3]));
+    sm.set('selectedLayerIds', ['a', 'nox2', 'nox3']);
+    expect(() => distributeH(sm)).not.toThrow();
+  });
+
+  it('distributeV sort comparator covers b.y ?? 0 when b has no y (line 258)', () => {
+    const sm = new StateManager();
+    const noY2 = makeLayerNoProps('noy2');
+    const noY3 = makeLayerNoProps('noy3');
+    sm.set('design', makeDesign([makeRect('a', 0, 100, 50, 50), noY2, noY3]));
+    sm.set('selectedLayerIds', ['a', 'noy2', 'noy3']);
+    expect(() => distributeV(sm)).not.toThrow();
+  });
+});
