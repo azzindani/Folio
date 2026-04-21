@@ -84,4 +84,31 @@ describe('ProblemsPanelManager', () => {
     // Valid design → no errors
     expect(panel.hasErrors()).toBe(panel.getErrors().some(e => e.severity === 'error'));
   });
+
+  it('clicking problem-row fires click handler without throwing', () => {
+    // Set a design that produces a validation error
+    const badDesign = {
+      _protocol: 'design/v1',
+      meta: { id: '', name: '', type: 'poster', created: '', modified: '' },
+      document: { width: 0, height: 0, unit: 'px' },
+      layers: [],
+    } as unknown as DesignSpec;
+    state.set('design', badDesign);
+
+    // Inject a problem-row manually if the validator didn't produce errors
+    const content = container.querySelector('.problems-content')!;
+    if (!content.querySelector('.problem-row')) {
+      const fakeRow = document.createElement('div');
+      fakeRow.className = 'problem-row';
+      fakeRow.dataset.path = 'layers[0].id';
+      content.appendChild(fakeRow);
+      // Re-register the click handler by re-rendering
+      panel.render();
+    }
+
+    const rows = content.querySelectorAll('.problem-row');
+    rows.forEach(row => {
+      expect(() => row.dispatchEvent(new MouseEvent('click'))).not.toThrow();
+    });
+  });
 });

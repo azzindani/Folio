@@ -114,4 +114,35 @@ describe('PanelResizer', () => {
     expect(onChange).toHaveBeenCalledWith(268);
     h.remove();
   });
+
+  it('currentSize falls back to computedStyle when inline style not set', () => {
+    const onChange = vi.fn();
+    const r = new PanelResizer({ cssVar: '--test-width', axis: 'x', min: 100, max: 500, target: root, onChange });
+    const h = r.getHandle();
+    document.body.appendChild(h);
+
+    // Do NOT set inline style — use computed style path instead
+    // Trigger a drag to call currentSize() without inline style
+    h.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 200, bubbles: true }));
+    h.dispatchEvent(new PointerEvent('pointermove', { clientX: 210, bubbles: true }));
+    h.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+
+    // onChange should be called with a clamped value
+    expect(onChange).toHaveBeenCalled();
+    h.remove();
+  });
+
+  it('pointerdown with non-zero button is a no-op', () => {
+    const onChange = vi.fn();
+    const r = new PanelResizer({ cssVar: '--test-width', axis: 'x', min: 100, max: 500, target: root, onChange });
+    const h = r.getHandle();
+    document.body.appendChild(h);
+    root.style.setProperty('--test-width', '200px');
+
+    // Button 1 (middle click) should not start drag
+    h.dispatchEvent(new PointerEvent('pointerdown', { button: 1, clientX: 200, bubbles: true }));
+    h.dispatchEvent(new PointerEvent('pointermove', { clientX: 300, bubbles: true }));
+    expect(onChange).not.toHaveBeenCalled();
+    h.remove();
+  });
 });
