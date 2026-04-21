@@ -194,6 +194,55 @@ describe('alignment utilities', () => {
     expect(layer.x).toBe(100);
   });
 
+  it('alignRight does nothing with fewer than 2 layers', () => {
+    const sm = new StateManager();
+    sm.set('design', makeDesign([makeRect('a', 100, 0, 50, 50)]));
+    sm.set('selectedLayerIds', ['a']);
+    alignRight(sm);
+    expect(sm.getCurrentLayers()[0].x).toBe(100);
+  });
+
+  it('alignTop does nothing with fewer than 2 layers', () => {
+    const sm = new StateManager();
+    sm.set('design', makeDesign([makeRect('a', 0, 100, 50, 50)]));
+    sm.set('selectedLayerIds', ['a']);
+    alignTop(sm);
+    expect(sm.getCurrentLayers()[0].y).toBe(100);
+  });
+
+  it('alignBottom does nothing with fewer than 2 layers', () => {
+    const sm = new StateManager();
+    sm.set('design', makeDesign([makeRect('a', 0, 100, 50, 50)]));
+    sm.set('selectedLayerIds', ['a']);
+    alignBottom(sm);
+    expect(sm.getCurrentLayers()[0].y).toBe(100);
+  });
+
+  it('alignCenterH does nothing with fewer than 2 layers', () => {
+    const sm = new StateManager();
+    sm.set('design', makeDesign([makeRect('a', 50, 0, 50, 50)]));
+    sm.set('selectedLayerIds', ['a']);
+    alignCenterH(sm);
+    expect(sm.getCurrentLayers()[0].x).toBe(50);
+  });
+
+  it('alignCenterV does nothing with fewer than 2 layers', () => {
+    const sm = new StateManager();
+    sm.set('design', makeDesign([makeRect('a', 0, 50, 50, 50)]));
+    sm.set('selectedLayerIds', ['a']);
+    alignCenterV(sm);
+    expect(sm.getCurrentLayers()[0].y).toBe(50);
+  });
+
+  it('distributeV does nothing with fewer than 3 layers', () => {
+    const sm = new StateManager();
+    sm.set('design', makeDesign([makeRect('a', 0, 0, 50, 50), makeRect('b', 0, 200, 50, 50)]));
+    sm.set('selectedLayerIds', ['a', 'b']);
+    const before = sm.getCurrentLayers().map(l => l.y);
+    distributeV(sm);
+    expect(sm.getCurrentLayers().map(l => l.y)).toEqual(before);
+  });
+
 // ── InteractionManager ───────────────────────────────────────
 
 function makeDesignWithLayers(layers: Layer[]): DesignSpec {

@@ -677,3 +677,74 @@ describe('CanvasManager — ruler guides', () => {
     expect(state.get().guides).toHaveLength(0);
   });
 });
+
+// ── drawArrowLine / drawLabel (distance annotations) ──────────
+
+describe('CanvasManager — drawArrowLine and drawLabel coverage', () => {
+  beforeEach(() => {
+    // Per-element getBBox: 'sel' is to the right of 'ref', creating a left gap
+    Object.defineProperty(Element.prototype, 'getBBox', {
+      value: function (this: Element) {
+        const id = this.getAttribute?.('data-layer-id');
+        if (id === 'sel') return { x: 300, y: 0, width: 50, height: 50 };
+        if (id === 'ref') return { x: 0, y: 0, width: 100, height: 50 };
+        return { x: 0, y: 0, width: 0, height: 0 };
+      },
+      configurable: true,
+      writable: true,
+    });
+  });
+  afterEach(() => {
+    delete (Element.prototype as { getBBox?: unknown }).getBBox;
+  });
+
+  it('mousemove with gap produces horizontal drawArrowLine call', () => {
+    const selLayer = { id: 'sel', type: 'rect', z: 20, x: 300, y: 0, width: 50, height: 50,
+      fill: { type: 'solid', color: '#f00' } } as unknown as Layer;
+    const refLayer = { id: 'ref', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 50,
+      fill: { type: 'solid', color: '#0f0' } } as unknown as Layer;
+    const { state, container } = setup([selLayer, refLayer]);
+    state.set('selectedLayerIds', ['sel']);
+
+    // Mouse at clientX=60, clientY=45 → design coords dx≈40, dy≈25 → within ref bbox [0,0,100,50]
+    container.dispatchEvent(new MouseEvent('mousemove', {
+      bubbles: true, altKey: true, clientX: 60, clientY: 45,
+    }));
+
+    // drawArrowLine calls ctx.beginPath and ctx.stroke
+    expect(mockCtx.beginPath).toHaveBeenCalled();
+    expect(mockCtx.stroke).toHaveBeenCalled();
+    // drawLabel calls ctx.fillRect and ctx.fillText
+    expect(mockCtx.fillRect).toHaveBeenCalled();
+    expect(mockCtx.fillText).toHaveBeenCalled();
+  });
+
+  it('mousemove with vertical gap produces vertical drawArrowLine call', () => {
+    // sel is below ref → top gap exists
+    const selLayer = { id: 'sel', type: 'rect', z: 20, x: 0, y: 200, width: 50, height: 50,
+      fill: { type: 'solid', color: '#f00' } } as unknown as Layer;
+    const refLayer = { id: 'ref', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 80,
+      fill: { type: 'solid', color: '#0f0' } } as unknown as Layer;
+
+    Object.defineProperty(Element.prototype, 'getBBox', {
+      value: function (this: Element) {
+        const id = this.getAttribute?.('data-layer-id');
+        if (id === 'sel') return { x: 0, y: 200, width: 50, height: 50 };
+        if (id === 'ref') return { x: 0, y: 0, width: 100, height: 80 };
+        return { x: 0, y: 0, width: 0, height: 0 };
+      },
+      configurable: true,
+      writable: true,
+    });
+
+    const { state, container } = setup([selLayer, refLayer]);
+    state.set('selectedLayerIds', ['sel']);
+
+    // Mouse at (50, 50) design coords → dy=30 → within ref bbox {y:0, h:80}
+    container.dispatchEvent(new MouseEvent('mousemove', {
+      bubbles: true, altKey: true, clientX: 70, clientY: 70,
+    }));
+
+    expect(mockCtx.beginPath).toHaveBeenCalled();
+  });
+});

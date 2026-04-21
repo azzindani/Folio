@@ -132,4 +132,34 @@ describe('TabBarManager', () => {
     state.set('dirty', true, false);
     expect(c.querySelector('.tab-label')?.textContent).toContain('●');
   });
+
+  it('clicking close button (×) closes the tab via e.stopPropagation path', () => {
+    const onClose = vi.fn();
+    const onChange = vi.fn();
+    const { manager, container: c } = makeTabBar(onChange, onClose);
+    manager.openTab(makeTab('a'));
+    manager.openTab(makeTab('b'));
+    const closeBtn = c.querySelector<HTMLButtonElement>('.tab-close')!;
+    expect(closeBtn).not.toBeNull();
+    closeBtn.click();
+    // One tab should be removed
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
+
+  it('middle-click (auxclick button=1) on a tab closes it', () => {
+    const { manager, container: c } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    manager.openTab(makeTab('b'));
+    const tabEl = c.querySelectorAll<HTMLElement>('.tab-item')[0];
+    tabEl.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 1 }));
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
+
+  it('auxclick with button != 1 does not close the tab', () => {
+    const { manager, container: c } = makeTabBar();
+    manager.openTab(makeTab('a'));
+    const tabEl = c.querySelector<HTMLElement>('.tab-item')!;
+    tabEl.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 2 }));
+    expect(c.querySelectorAll('.tab-item').length).toBe(1);
+  });
 });

@@ -495,4 +495,28 @@ describe('FindReplaceManager', () => {
 
     expect(mock.updateLayer).not.toHaveBeenCalled();
   });
+
+  it('mouseenter on unselected result item highlights it', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello world')]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+
+    const item = container.querySelector<HTMLElement>('.fr-result-item')!;
+    item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    // Background changes to surface color for unselected item
+    expect(item.style.background).toBe('var(--color-surface)');
+  });
+
+  it('mouseleave on unselected result item resets background to transparent', () => {
+    const design = makeDesign([makeTextLayer('l1', 'Hello world')]);
+    const mock = makeStateMock(design);
+    new FindReplaceManager(container, mock as unknown as import('../../editor/state').StateManager);
+    fireInput(container.querySelector<HTMLInputElement>('.fr-find')!, 'Hello');
+
+    const item = container.querySelector<HTMLElement>('.fr-result-item')!;
+    item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    item.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    expect(item.style.background).toBe('transparent');
+  });
 });
