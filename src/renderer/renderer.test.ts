@@ -593,6 +593,38 @@ describe('renderPage — direct layer list', () => {
     const clipShape = svg.querySelector('#cp-rot-mask > *');
     expect(clipShape?.getAttribute('transform')).toMatch(/rotate\(45,/);
   });
+
+  it('clip_path_ref to non-existent layer is skipped (findLayer returns null)', () => {
+    // Exercises the findLayer null return + "if (!refLayer) continue" guard
+    const layers: Layer[] = [
+      {
+        id: 'clipped', type: 'rect', z: 1, x: 0, y: 0, width: 100, height: 100,
+        clip_path_ref: 'does-not-exist',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    // No clip-path def should be added for the missing ref
+    expect(svg.querySelector('#cp-does-not-exist')).toBeNull();
+  });
+
+  it('shapeToClipElement fallback: non-shape type uses bounding box rect', () => {
+    // A text layer used as clip mask → falls through to fallback rect (lines 209-212)
+    const layers: Layer[] = [
+      {
+        id: 'text-mask', type: 'text', z: 2, x: 5, y: 10, width: 100, height: 30,
+        content: { type: 'plain', value: 'Clip' }, style: {},
+      } as unknown as Layer,
+      {
+        id: 'clipped', type: 'rect', z: 1, x: 0, y: 0, width: 200, height: 200,
+        clip_path_ref: 'text-mask',
+      } as unknown as RectLayer,
+    ];
+    const svg = renderPage(layers, 400, 400);
+    const clipDef = svg.querySelector('#cp-text-mask');
+    expect(clipDef).not.toBeNull();
+    // The fallback shape is a rect
+    expect(clipDef?.querySelector('rect')).not.toBeNull();
+  });
 });
 
 describe('renderLayer — show_if with layer field reference', () => {
