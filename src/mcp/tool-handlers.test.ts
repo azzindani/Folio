@@ -8,8 +8,8 @@ import {
   addLayer, updateLayer, removeLayer,
   listThemes, batchCreate, duplicateDesign,
   resumeDesign, saveAsComponent, applyTheme,
-  exportDesignTool, exportTemplateTool, injectTemplateTool, listTemplateSlots,
-} from './tool-handlers';
+  exportDesign, exportTemplate, injectTemplate, listTemplateSlots,
+} from './engine';
 import type { Layer } from '../schema/types';
 
 let tmpDir: string;
@@ -27,7 +27,7 @@ describe('createProject', () => {
     const projectPath = path.join(tmpDir, 'my-project');
     const result = createProject({ name: 'My Project', path: projectPath });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.success).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'project.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'themes/dark-tech.theme.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'designs'))).toBe(true);
@@ -38,7 +38,7 @@ describe('createProject', () => {
   it('returns error if directory exists', () => {
     fs.mkdirSync(path.join(tmpDir, 'existing'));
     const result = createProject({ name: 'Test', path: path.join(tmpDir, 'existing') });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 
@@ -52,8 +52,8 @@ describe('createDesign', () => {
 
   it('creates a poster design file', () => {
     const result = createDesign({ project_path: projectPath, name: 'My Poster', type: 'poster' });
-    expect(result.isError).toBeUndefined();
-    const parsed = JSON.parse(result.content[0].text);
+    expect(result.success).toBe(true);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.design_id).toBeTruthy();
     expect(fs.existsSync(path.join(projectPath, 'designs/my-poster.design.yaml'))).toBe(true);
   });
@@ -73,8 +73,8 @@ describe('listDesigns', () => {
     createDesign({ project_path: projectPath, name: 'Design B' });
 
     const result = listDesigns({ project_path: projectPath });
-    const designs = JSON.parse(result.content[0].text);
-    expect(designs).toHaveLength(2);
+    expect(result.success).toBe(true);
+    expect(result.designs as unknown[]).toHaveLength(2);
   });
 });
 
@@ -92,7 +92,7 @@ describe('appendPage', () => {
       layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080 } as import('../schema/types').Layer],
     });
 
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.page_id).toBe('cover');
     expect(parsed.page_count).toBe(1);
   });
@@ -107,7 +107,7 @@ describe('appendPage', () => {
     appendPage({ design_path: designPath, label: 'Page 2' });
     const result = appendPage({ design_path: designPath, label: 'Page 3' });
 
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.page_count).toBe(3);
   });
 });
@@ -124,7 +124,7 @@ describe('patchDesign', () => {
       selectors: [{ path: 'meta.name', value: 'New Name' }],
     });
 
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.patched_paths).toContain('meta.name');
   });
 });
@@ -139,7 +139,7 @@ describe('sealDesign', () => {
     appendPage({ design_path: designPath, label: 'Page 1' });
 
     const result = sealDesign({ design_path: designPath });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.status).toBe('sealed');
   });
 });
@@ -159,7 +159,7 @@ describe('addLayer / updateLayer / removeLayer', () => {
       design_path: designPath,
       layer: { id: 'new-rect', type: 'rect', z: 10, x: 0, y: 0, width: 100, height: 100 } as import('../schema/types').Layer,
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.layer_id).toBe('new-rect');
   });
 
@@ -174,7 +174,7 @@ describe('addLayer / updateLayer / removeLayer', () => {
       layer_id: 'rect1',
       props: { x: 50, y: 50 },
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.updated).toBe('rect1');
   });
 
@@ -185,7 +185,7 @@ describe('addLayer / updateLayer / removeLayer', () => {
     });
 
     const result = removeLayer({ design_path: designPath, layer_id: 'to-remove' });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.removed).toBe('to-remove');
   });
 });
@@ -196,7 +196,8 @@ describe('listThemes', () => {
     createProject({ name: 'Test', path: projectPath });
 
     const result = listThemes({ project_path: projectPath });
-    const themes = JSON.parse(result.content[0].text);
+    expect(result.success).toBe(true);
+    const themes = result.themes as Array<{ id: string }>;
     expect(themes).toHaveLength(1);
     expect(themes[0].id).toBe('dark-tech');
   });
@@ -210,12 +211,12 @@ describe('error paths — missing files', () => {
       design_path: path.join(tmpDir, 'nonexistent.design.yaml'),
       selectors: [{ path: 'meta.name', value: 'New Name' }],
     });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('sealDesign returns error for missing file', () => {
     const result = sealDesign({ design_path: path.join(tmpDir, 'no.yaml') });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('addLayer returns error for missing file', () => {
@@ -223,12 +224,12 @@ describe('error paths — missing files', () => {
       design_path: path.join(tmpDir, 'no.yaml'),
       layer: { id: 'x', type: 'rect', z: 0, x: 0, y: 0, width: 1, height: 1 } as Layer,
     });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('updateLayer returns error for missing file', () => {
     const result = updateLayer({ design_path: path.join(tmpDir, 'no.yaml'), layer_id: 'x', props: {} });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('updateLayer returns error for missing layer_id', () => {
@@ -237,22 +238,22 @@ describe('error paths — missing files', () => {
     createDesign({ project_path: projectPath, name: 'D' });
     const designPath = path.join(projectPath, 'designs/d.design.yaml');
     const result = updateLayer({ design_path: designPath, layer_id: 'ghost-id', props: { x: 50 } });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('removeLayer returns error for missing file', () => {
     const result = removeLayer({ design_path: path.join(tmpDir, 'no.yaml'), layer_id: 'x' });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('duplicateDesign returns error for missing source', () => {
     const result = duplicateDesign({ design_path: path.join(tmpDir, 'no.yaml'), new_name: 'Copy' });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('resumeDesign returns error for missing file', () => {
     const result = resumeDesign({ design_path: path.join(tmpDir, 'no.yaml') });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 
@@ -277,7 +278,7 @@ describe('patchDesign — advanced', () => {
         { path: 'document.width', value: 1920 },
       ],
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.patched_paths).toContain('meta.name');
     expect(parsed.patched_paths).toContain('document.width');
 
@@ -316,7 +317,7 @@ describe('addLayer in carousel page', () => {
       page_id: 'page_1',
       layer: { id: 'extra', type: 'rect', z: 30, x: 100, y: 100, width: 200, height: 200 } as Layer,
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.layer_id).toBe('extra');
   });
 
@@ -326,7 +327,7 @@ describe('addLayer in carousel page', () => {
       page_id: 'nonexistent-page',
       layer: { id: 'x', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as Layer,
     });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('updates a layer inside a carousel page', () => {
@@ -335,7 +336,7 @@ describe('addLayer in carousel page', () => {
       layer_id: 'bg',
       props: { x: 10 },
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.updated).toBe('bg');
   });
 
@@ -346,7 +347,7 @@ describe('addLayer in carousel page', () => {
       layer: { id: 'temp', type: 'rect', z: 40, x: 0, y: 0, width: 10, height: 10 } as Layer,
     });
     const result = removeLayer({ design_path: designPath, layer_id: 'temp' });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.removed).toBe('temp');
   });
 });
@@ -371,7 +372,7 @@ describe('batchCreate', () => {
         { name: 'Design Gamma', title: 'Gamma Title' },
       ],
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.count).toBe(3);
     expect(parsed.created).toHaveLength(3);
   });
@@ -382,7 +383,7 @@ describe('batchCreate', () => {
       template_id: 'hero-card',
       slots_array: [{ title: 'Item 1' }, { title: 'Item 2' }],
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.count).toBe(2);
   });
 });
@@ -402,7 +403,7 @@ describe('duplicateDesign', () => {
 
   it('creates a copy with a new name', () => {
     const result = duplicateDesign({ design_path: designPath, new_name: 'Copy Of Design' });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.design_id).toBeTruthy();
     expect(fs.existsSync(path.join(path.dirname(designPath), 'copy-of-design.design.yaml'))).toBe(true);
   });
@@ -410,7 +411,7 @@ describe('duplicateDesign', () => {
   it('returns error if duplicate name already exists', () => {
     duplicateDesign({ design_path: designPath, new_name: 'Copy' });
     const result = duplicateDesign({ design_path: designPath, new_name: 'Copy' });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('registers in project.yaml when project_path provided', () => {
@@ -435,14 +436,14 @@ describe('resumeDesign', () => {
 
   it('reports in_progress status for unsealed design', () => {
     const result = resumeDesign({ design_path: designPath });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.status).toBe('in_progress');
   });
 
   it('reports complete status for sealed design', () => {
     sealDesign({ design_path: designPath });
     const result = resumeDesign({ design_path: designPath });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.status).toBe('complete');
   });
 
@@ -455,7 +456,7 @@ describe('resumeDesign', () => {
       });
     }
     const result = resumeDesign({ design_path: designPath });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.completed_pages).toBe(3);
   });
 });
@@ -483,7 +484,7 @@ describe('saveAsComponent', () => {
       component_name: 'Hero Card',
       project_path: projectPath,
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.component_id).toBe('hero-card');
     expect(parsed.layers_extracted).toBe(2);
     expect(fs.existsSync(path.join(projectPath, 'components/hero-card.component.yaml'))).toBe(true);
@@ -496,7 +497,7 @@ describe('saveAsComponent', () => {
       component_name: 'Ghost Component',
       project_path: projectPath,
     });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 
@@ -512,24 +513,24 @@ describe('applyTheme', () => {
 
   it('applies an existing theme', () => {
     const result = applyTheme({ project_path: projectPath, theme_id: 'dark-tech' });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.active_theme).toBe('dark-tech');
   });
 
   it('returns error for unknown theme', () => {
     const result = applyTheme({ project_path: projectPath, theme_id: 'nonexistent-theme' });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('returns error when project.yaml not found', () => {
     const result = applyTheme({ project_path: path.join(tmpDir, 'no-project'), theme_id: 'dark-tech' });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 
-// ── exportDesignTool ─────────────────────────────────────────
+// ── exportDesign ─────────────────────────────────────────
 
-describe('exportDesignTool', () => {
+describe('exportDesign', () => {
   let projectPath: string;
   let designPath: string;
 
@@ -541,28 +542,28 @@ describe('exportDesignTool', () => {
   });
 
   it('returns queued status for SVG format', () => {
-    const result = exportDesignTool({ design_path: designPath, format: 'svg' });
-    const parsed = JSON.parse(result.content[0].text);
+    const result = exportDesign({ design_path: designPath, format: 'svg' });
+    const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('svg');
     expect(parsed.status).toBe('queued');
   });
 
   it('returns queued status for HTML format', () => {
-    const result = exportDesignTool({ design_path: designPath, format: 'html' });
-    const parsed = JSON.parse(result.content[0].text);
+    const result = exportDesign({ design_path: designPath, format: 'html' });
+    const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('html');
     expect(parsed.status).toBe('queued');
   });
 
   it('returns requires_puppeteer for PNG format', () => {
-    const result = exportDesignTool({ design_path: designPath, format: 'png' });
-    const parsed = JSON.parse(result.content[0].text);
+    const result = exportDesign({ design_path: designPath, format: 'png' });
+    const parsed = result as Record<string, unknown>;
     expect(parsed.status).toBe('requires_puppeteer');
   });
 
   it('returns error when design not found', () => {
-    const result = exportDesignTool({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
-    expect(result.isError).toBe(true);
+    const result = exportDesign({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
+    expect(result.success).toBe(false);
   });
 });
 
@@ -583,81 +584,81 @@ function makeDesignFile(dir: string): string {
   return p;
 }
 
-describe('exportTemplateTool', () => {
+describe('exportTemplate', () => {
   it('creates a .template file and returns slot info', () => {
     const designPath = makeDesignFile(tmpDir);
-    const result = exportTemplateTool({ design_path: designPath });
-    expect(result.isError).toBeUndefined();
-    const parsed = JSON.parse(result.content[0].text);
+    const result = exportTemplate({ design_path: designPath });
+    expect(result.success).toBe(true);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.slot_count).toBe(2);
     expect(parsed.template_path).toContain('.template.yaml');
-    expect(fs.existsSync(parsed.template_path)).toBe(true);
+    expect(fs.existsSync(parsed.template_path as string)).toBe(true);
   });
 
   it('respects custom output_path', () => {
     const designPath = makeDesignFile(tmpDir);
     const outPath = path.join(tmpDir, 'custom.template.yaml');
-    const result = exportTemplateTool({ design_path: designPath, output_path: outPath });
-    expect(JSON.parse(result.content[0].text).template_path).toBe(outPath);
+    const result = exportTemplate({ design_path: designPath, output_path: outPath });
+    expect(result.template_path).toBe(outPath);
     expect(fs.existsSync(outPath)).toBe(true);
   });
 
   it('returns error for missing design', () => {
-    const result = exportTemplateTool({ design_path: path.join(tmpDir, 'none.yaml') });
-    expect(result.isError).toBe(true);
+    const result = exportTemplate({ design_path: path.join(tmpDir, 'none.yaml') });
+    expect(result.success).toBe(false);
   });
 });
 
-describe('injectTemplateTool', () => {
+describe('injectTemplate', () => {
   function makeTemplate(dir: string): string {
     const designPath = makeDesignFile(dir);
-    const r = exportTemplateTool({ design_path: designPath });
-    return JSON.parse(r.content[0].text).template_path as string;
+    const r = exportTemplate({ design_path: designPath });
+    return r.template_path as string;
   }
 
   it('injects slots and writes design file', () => {
     const tplPath = makeTemplate(tmpDir);
     const outPath = path.join(tmpDir, 'injected.yaml');
-    const result = injectTemplateTool({
+    const result = injectTemplate({
       template_path: tplPath,
       slots: { title_text: 'Injected Title', hero_src: '/local/photo.jpg' },
       output_path: outPath,
     });
-    expect(result.isError).toBeUndefined();
+    expect(result.success).toBe(true);
     expect(fs.existsSync(outPath)).toBe(true);
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.slots_injected).toBe(2);
   });
 
   it('auto-derives output path when not specified', () => {
     const tplPath = makeTemplate(tmpDir);
-    const result = injectTemplateTool({ template_path: tplPath, slots: {} });
-    expect(result.isError).toBeUndefined();
-    const outPath = JSON.parse(result.content[0].text).design_path as string;
+    const result = injectTemplate({ template_path: tplPath, slots: {} });
+    expect(result.success).toBe(true);
+    const outPath = result.design_path as string;
     expect(outPath).toContain('.design.yaml');
     expect(fs.existsSync(outPath)).toBe(true);
   });
 
   it('returns error for missing template', () => {
-    const result = injectTemplateTool({ template_path: path.join(tmpDir, 'none.yaml'), slots: {} });
-    expect(result.isError).toBe(true);
+    const result = injectTemplate({ template_path: path.join(tmpDir, 'none.yaml'), slots: {} });
+    expect(result.success).toBe(false);
   });
 
   it('returns error for non-template file', () => {
     const designPath = makeDesignFile(tmpDir);
-    const result = injectTemplateTool({ template_path: designPath, slots: {} });
-    expect(result.isError).toBe(true);
+    const result = injectTemplate({ template_path: designPath, slots: {} });
+    expect(result.success).toBe(false);
   });
 });
 
 describe('listTemplateSlots', () => {
   it('lists slots from a valid template', () => {
     const designPath = makeDesignFile(tmpDir);
-    const r = exportTemplateTool({ design_path: designPath });
-    const tplPath = JSON.parse(r.content[0].text).template_path as string;
+    const r = exportTemplate({ design_path: designPath });
+    const tplPath = r.template_path as string;
     const result = listTemplateSlots({ template_path: tplPath });
-    expect(result.isError).toBeUndefined();
-    const parsed = JSON.parse(result.content[0].text);
+    expect(result.success).toBe(true);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.count).toBe(2);
     expect(parsed.slots[0]).toHaveProperty('id');
     expect(parsed.slots[0]).toHaveProperty('path');
@@ -666,13 +667,13 @@ describe('listTemplateSlots', () => {
 
   it('returns error for missing file', () => {
     const result = listTemplateSlots({ template_path: path.join(tmpDir, 'none.yaml') });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('returns error for non-template file', () => {
     const designPath = makeDesignFile(tmpDir);
     const result = listTemplateSlots({ template_path: designPath });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 
@@ -686,7 +687,7 @@ describe('saveAsComponent — error paths', () => {
       component_name: 'Ghost',
       project_path: tmpDir,
     });
-    expect(result.isError).toBe(true);
+    expect(result.success).toBe(false);
   });
 });
 
@@ -714,7 +715,7 @@ describe('patchDesign — array selector notation (lines 666-669)', () => {
       design_path: designPath,
       selectors: [{ path: 'pages[id=page_1].label', value: 'Updated' }],
     });
-    expect(result.isError).toBeUndefined();
+    expect(result.success).toBe(true);
     const content = fs.readFileSync(designPath, 'utf-8');
     expect(content).toContain('Updated');
   });
@@ -725,7 +726,7 @@ describe('patchDesign — array selector notation (lines 666-669)', () => {
       design_path: designPath,
       selectors: [{ path: 'pages[id=missing].label', value: 'Oops' }],
     });
-    expect(result.isError).toBeUndefined(); // no throw
+    expect(result.success).toBe(true); // no throw
   });
 
   it('silently no-ops when intermediate key is null', () => {
@@ -734,7 +735,7 @@ describe('patchDesign — array selector notation (lines 666-669)', () => {
       design_path: designPath,
       selectors: [{ path: 'missingKey.sub.value', value: 42 }],
     });
-    expect(result.isError).toBeUndefined(); // no throw
+    expect(result.success).toBe(true); // no throw
   });
 });
 
@@ -743,14 +744,14 @@ describe('patchDesign — array selector notation (lines 666-669)', () => {
 describe('listThemes — missing project', () => {
   it('returns error when project.yaml does not exist (line 326)', () => {
     const result = listThemes({ project_path: path.join(tmpDir, 'no-such-project') });
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Project not found');
+    expect(result.success).toBe(false);
+    expect(result.error as string).toContain('Project not found');
   });
 });
 
-// ── exportDesignTool — validation errors (line 348) ──────────
+// ── exportDesign — validation errors (line 348) ──────────
 
-describe('exportDesignTool — validation errors', () => {
+describe('exportDesign — validation errors', () => {
   it('returns error when design has critical validation errors (line 348)', () => {
     // Write a design file with a missing required field to trigger validation errors
     const designPath = path.join(tmpDir, 'bad.design.yaml');
@@ -760,7 +761,7 @@ describe('exportDesignTool — validation errors', () => {
       // missing document → validation error
       layers: [],
     }));
-    const result = exportDesignTool({ design_path: designPath, format: 'svg' });
+    const result = exportDesign({ design_path: designPath, format: 'svg' });
     // Either error (validation fails) or success (if validator passes)
     // Just ensure no crash
     expect(result).toBeDefined();
@@ -791,8 +792,8 @@ document:
       design_path: designPath,
       layer: { id: 'first', type: 'rect', z: 1, x: 0, y: 0, width: 100, height: 100 } as Layer,
     });
-    expect(result.isError).toBeUndefined();
-    const parsed = JSON.parse(result.content[0].text);
+    expect(result.success).toBe(true);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.layer_id).toBe('first');
   });
 });
@@ -812,7 +813,7 @@ describe('updateLayer — multiple layers, non-matching return unchanged (line 2
 
     // Update only layer-b — layer-a and layer-c go through line 272
     const result = updateLayer({ design_path: designPath, layer_id: 'layer-b', props: { x: 999 } });
-    expect(result.isError).toBeUndefined();
+    expect(result.success).toBe(true);
   });
 });
 
@@ -827,7 +828,7 @@ describe('batchCreate — ?? fallback for name', () => {
       template_id: 'my-tpl',
       slots_array: [{ title: 'No Name Slot' }],
     });
-    const parsed = JSON.parse(result.content[0].text);
+    const parsed = result as Record<string, unknown>;
     expect(parsed.count).toBe(1);
     // Name should use template_id fallback since no 'name' key in slot
     expect(parsed.created[0].design_id).toBeDefined();

@@ -206,14 +206,14 @@ describe('Full Carousel Workflow', () => {
 describe('MCP Incremental Carousel Generation', () => {
   it('simulates create → append × 3 → seal workflow', async () => {
     const { createProject, createDesign, appendPage, sealDesign } =
-      await import('../../src/mcp/tool-handlers');
+      await import('../../src/mcp/engine');
     const os = await import('os');
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-integ-'));
 
     try {
       // Step 1: Create project
       const projectResult = createProject({ name: 'Integration Test', path: path.join(tmpDir, 'project') });
-      expect(projectResult.isError).toBeUndefined();
+      expect(projectResult.success).toBe(true);
 
       const projectPath = path.join(tmpDir, 'project');
 
@@ -223,7 +223,7 @@ describe('MCP Incremental Carousel Generation', () => {
         name: 'Integration Carousel',
         type: 'carousel',
       });
-      expect(designResult.isError).toBeUndefined();
+      expect(designResult.success).toBe(true);
 
       const designPath = path.join(projectPath, 'designs/integration-carousel.design.yaml');
 
@@ -244,14 +244,12 @@ describe('MCP Incremental Carousel Generation', () => {
             style: { font_size: 48, font_weight: 700, color: '#FFF' },
           }],
         });
-        const parsed = JSON.parse(appendResult.content[0].text);
-        expect(parsed.page_count).toBe(i);
+        expect(appendResult.page_count).toBe(i);
       }
 
       // Step 4: Seal
       const sealResult = sealDesign({ design_path: designPath });
-      const sealParsed = JSON.parse(sealResult.content[0].text);
-      expect(sealParsed.status).toBe('sealed');
+      expect(sealResult.status).toBe('sealed');
 
       // Step 5: Verify the final file
       const finalYaml = fs.readFileSync(designPath, 'utf-8');
