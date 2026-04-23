@@ -274,9 +274,13 @@ export class CanvasManager {
       svg = renderDesign(design, { theme: theme ?? undefined, showGrid: this.state.get().gridVisible });
     }
 
-    // Replace SVG
-    this.svgContainer.innerHTML = '';
-    this.svgContainer.appendChild(svg);
+    // Atomic swap — no blank white frame between renders
+    if (this.currentSVG && this.currentSVG.parentElement === this.svgContainer) {
+      this.currentSVG.replaceWith(svg);
+    } else {
+      this.svgContainer.innerHTML = '';
+      this.svgContainer.appendChild(svg);
+    }
     this.currentSVG = svg;
 
     // Size viewport
@@ -295,37 +299,35 @@ export class CanvasManager {
   private updateSelectionOverlay(): void {
     this.selectionOverlay.innerHTML = '';
     const { selectedLayerIds, design } = this.state.get();
-
     if (!design || selectedLayerIds.length === 0) return;
+
+    const frag = document.createDocumentFragment();
 
     for (const id of selectedLayerIds) {
       const el = this.svgContainer.querySelector(`[data-layer-id="${id}"]`);
       if (!el) continue;
-
       const bbox = (el as SVGGraphicsElement).getBBox?.();
       if (!bbox) continue;
 
-      // Selection box
       const box = document.createElement('div');
       box.className = 'selection-box';
       box.style.left = `${bbox.x}px`;
       box.style.top = `${bbox.y}px`;
       box.style.width = `${bbox.width}px`;
       box.style.height = `${bbox.height}px`;
-      this.selectionOverlay.appendChild(box);
+      frag.appendChild(box);
 
-      // 8 resize handles: 4 corners + 4 edge midpoints
       const cx = bbox.x + bbox.width / 2;
       const cy = bbox.y + bbox.height / 2;
       const handles8 = [
-        { cls: 'nw', x: bbox.x,  y: bbox.y,  cursor: 'nw-resize' },
-        { cls: 'n',  x: cx,      y: bbox.y,  cursor: 'n-resize' },
-        { cls: 'ne', x: bbox.x + bbox.width, y: bbox.y,  cursor: 'ne-resize' },
-        { cls: 'e',  x: bbox.x + bbox.width, y: cy,      cursor: 'e-resize' },
-        { cls: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'se-resize' },
-        { cls: 's',  x: cx,      y: bbox.y + bbox.height, cursor: 's-resize' },
-        { cls: 'sw', x: bbox.x,  y: bbox.y + bbox.height, cursor: 'sw-resize' },
-        { cls: 'w',  x: bbox.x,  y: cy,      cursor: 'w-resize' },
+        { cls: 'nw', x: bbox.x,              y: bbox.y,               cursor: 'nw-resize' },
+        { cls: 'n',  x: cx,                   y: bbox.y,               cursor: 'n-resize'  },
+        { cls: 'ne', x: bbox.x + bbox.width,  y: bbox.y,               cursor: 'ne-resize' },
+        { cls: 'e',  x: bbox.x + bbox.width,  y: cy,                   cursor: 'e-resize'  },
+        { cls: 'se', x: bbox.x + bbox.width,  y: bbox.y + bbox.height, cursor: 'se-resize' },
+        { cls: 's',  x: cx,                   y: bbox.y + bbox.height, cursor: 's-resize'  },
+        { cls: 'sw', x: bbox.x,               y: bbox.y + bbox.height, cursor: 'sw-resize' },
+        { cls: 'w',  x: bbox.x,               y: cy,                   cursor: 'w-resize'  },
       ];
 
       for (const pos of handles8) {
@@ -337,10 +339,9 @@ export class CanvasManager {
         handle.style.pointerEvents = 'auto';
         handle.dataset.handle = pos.cls;
         handle.dataset.layerId = id;
-        this.selectionOverlay.appendChild(handle);
+        frag.appendChild(handle);
       }
 
-      // Rotation handle — circular, above center-top, shows angle on hover
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
       rotateHandle.style.left = `${cx - 6}px`;
@@ -359,8 +360,10 @@ export class CanvasManager {
         e.stopPropagation();
         this.startRotate(e, id, bbox);
       });
-      this.selectionOverlay.appendChild(rotateHandle);
+      frag.appendChild(rotateHandle);
     }
+
+    this.selectionOverlay.appendChild(frag);
   }
 
   private startRotate(

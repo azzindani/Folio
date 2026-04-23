@@ -38,6 +38,7 @@
   --left-panel-width:     260px;
   --right-panel-width:    280px;
   --statusbar-height:     32px;
+  --page-strip-height:    120px;
 }
 
 /* ── LIGHT THEME ──────────────────────────────────────────── */
@@ -127,6 +128,17 @@ html, body {
   padding: 0 8px;
   height: var(--formula-bar-height);
   z-index: 99;
+  position: relative;
+  overflow: visible;
+}
+/* Resize handle sits on the bottom edge, drags to expand formula bar */
+.formula-bar > .panel-resize-handle--y {
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 4px;
+  z-index: 110;
+  margin: 0;
 }
 
 .fb-layer-id {
@@ -411,6 +423,34 @@ html, body {
   overflow: hidden;
   position: relative;
   display: flex;
+}
+
+/* ── PAGE STRIP SECTION (carousel pages, below canvas) ────── */
+.page-strip-section {
+  flex-shrink: 0;
+  height: var(--page-strip-height);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  overflow: hidden;
+  position: relative;
+}
+/* Resize handle sits on the top edge, dragging up expands the strip */
+.page-strip-section > .panel-resize-handle--y {
+  position: absolute;
+  top: -2px;
+  left: 0; right: 0;
+  height: 4px;
+  z-index: 30;
+  margin: 0;
+}
+.page-strip-content {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 8px;
 }
 
 /* ── TAB BAR ──────────────────────────────────────────────── */

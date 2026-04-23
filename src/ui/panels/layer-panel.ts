@@ -48,14 +48,27 @@ export class LayerPanelManager {
     this.list = document.createElement('div');
     this.list.className = 'layer-list';
     this.list.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;min-height:0';
+    // Persistent delegated listeners — bound once, never removed
+    this.list.addEventListener('click', this.onClick.bind(this));
+    this.list.addEventListener('dblclick', this.onDblClick.bind(this));
     this.container.appendChild(this.list);
     this.render();
   }
 
   private onStateChange(_s: EditorState, keys: (keyof EditorState)[]): void {
-    if (keys.some(k => ['design', 'currentPageIndex', 'selectedLayerIds'].includes(k))) {
+    if (keys.some(k => ['design', 'currentPageIndex'].includes(k as string))) {
       this.render();
+    } else if (keys.includes('selectedLayerIds')) {
+      this.updateSelectionClasses();
     }
+  }
+
+  private updateSelectionClasses(): void {
+    const selected = this.state.get().selectedLayerIds;
+    this.list.querySelectorAll<HTMLElement>('.layer-row').forEach(row => {
+      const id = row.dataset.layerId;
+      row.classList.toggle('selected', !!id && selected.includes(id));
+    });
   }
 
   render(): void {
@@ -71,7 +84,7 @@ export class LayerPanelManager {
       html = '<div class="layer-empty">No layers</div>';
     }
     this.list.innerHTML = html;
-    this.bindRowEvents();
+    this.bindDragDrop();
   }
 
   private renderRow(node: TreeNode, selected: string[]): string {
@@ -105,13 +118,6 @@ export class LayerPanelManager {
     </div>`;
   }
 
-  private bindRowEvents(): void {
-    // Selection + collapse via delegated listener
-    this.list.addEventListener('click', this.onClick.bind(this), { once: true });
-    this.list.addEventListener('dblclick', this.onDblClick.bind(this), { once: true });
-    this.bindDragDrop();
-  }
-
   private onClick(e: MouseEvent): void {
     const target = e.target as HTMLElement;
     const btn = target.closest<HTMLElement>('[data-action]');
@@ -121,25 +127,22 @@ export class LayerPanelManager {
       return;
     }
     const row = target.closest<HTMLElement>('[data-layer-id]');
-    if (!row) { this.render(); return; }
+    if (!row) return;
     const id = row.dataset.layerId!;
     const cur = this.state.get().selectedLayerIds;
-    if (e.shiftKey) {
-      this.state.set('selectedLayerIds', cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
-    } else if (e.ctrlKey || e.metaKey) {
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
       this.state.set('selectedLayerIds', cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
     } else {
       this.state.set('selectedLayerIds', [id]);
     }
-    this.render();
   }
 
   private onDblClick(e: MouseEvent): void {
     const row = (e.target as HTMLElement).closest<HTMLElement>('[data-layer-id]');
-    if (!row) { this.render(); return; }
+    if (!row) return;
     const id = row.dataset.layerId!;
     const nameEl = row.querySelector<HTMLElement>('.layer-name');
-    if (!nameEl) { this.render(); return; }
+    if (!nameEl) return;
     this.startRename(nameEl, id);
   }
 
@@ -151,14 +154,13 @@ export class LayerPanelManager {
       return;
     }
     const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
-    if (!layer) { this.render(); return; }
-
+    if (!layer) return;
     if (action === 'toggle-vis') {
       this.state.updateLayer(layerId, { visible: layer.visible !== false ? false : true });
     } else if (action === 'toggle-lock') {
       this.state.updateLayer(layerId, { locked: !layer.locked });
     }
-    this.render();
+    // state.updateLayer triggers design change → onStateChange → render()
   }
 
   private startRename(el: HTMLElement, layerId: string): void {
