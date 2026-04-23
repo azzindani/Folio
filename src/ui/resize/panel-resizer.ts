@@ -23,11 +23,13 @@ export interface ResizerOptions {
   invert?: boolean;
   /** Called after each resize with the new size in px */
   onChange?: (size: number) => void;
+  /** localStorage key for persistence (default: derived from cssVar) */
+  persistKey?: string;
 }
 
 export class PanelResizer {
   private handle: HTMLElement;
-  private opts: Required<ResizerOptions>;
+  private opts: Required<Omit<ResizerOptions, 'persistKey'>> & { persistKey?: string };
   private dragging = false;
   private startPos = 0;
   private startSize = 0;
@@ -45,6 +47,21 @@ export class PanelResizer {
     this.handle.setAttribute('aria-orientation', opts.axis === 'x' ? 'vertical' : 'horizontal');
     this.handle.setAttribute('tabindex', '0');
     this.wireEvents();
+    this.restoreSize();
+  }
+
+  private storageKey(): string {
+    return `folio-panel:${this.opts.persistKey ?? this.opts.cssVar}`;
+  }
+
+  private restoreSize(): void {
+    try {
+      const saved = localStorage.getItem(this.storageKey());
+      if (saved) {
+        const px = parseInt(saved, 10);
+        if (!isNaN(px)) this.setSize(px);
+      }
+    } catch { /* private browsing / storage blocked */ }
   }
 
   /** Returns the injected handle element so caller can insert it into the DOM. */
@@ -64,6 +81,7 @@ export class PanelResizer {
   private setSize(px: number): void {
     const clamped = Math.min(this.opts.max, Math.max(this.opts.min, px));
     this.opts.target.style.setProperty(this.opts.cssVar, `${clamped}px`);
+    try { localStorage.setItem(this.storageKey(), String(clamped)); } catch { /* storage full */ }
     this.opts.onChange(clamped);
   }
 

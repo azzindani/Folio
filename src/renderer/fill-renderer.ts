@@ -70,30 +70,85 @@ function renderRadialGradient(
   return `url(#${id})`;
 }
 
+function toRad(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [0, 0, 0];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function lerpColor(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+  return rgbToHex(
+    Math.round(ar + (br - ar) * t),
+    Math.round(ag + (bg - ag) * t),
+    Math.round(ab + (bb - ab) * t),
+  );
+}
+
+function interpolateStopColor(stops: { position: number; color: string }[], t: number): string {
+  if (stops.length === 0) return '#000000';
+  if (t <= stops[0].position) return stops[0].color;
+  if (t >= stops[stops.length - 1].position) return stops[stops.length - 1].color;
+  for (let i = 0; i < stops.length - 1; i++) {
+    const s0 = stops[i];
+    const s1 = stops[i + 1];
+    if (t >= s0.position && t <= s1.position) {
+      const ratio = (t - s0.position) / (s1.position - s0.position);
+      return lerpColor(s0.color, s1.color, ratio);
+    }
+  }
+  return stops[stops.length - 1].color;
+}
+
 function renderConicGradient(
   fill: ConicGradientFill,
   defs: SVGDefsElement,
+  bounds: { width: number; height: number },
 ): string {
-  // SVG doesn't natively support conic gradients.
-  // Approximate with a radial gradient as fallback.
+  const { width: w, height: h } = bounds;
+  const cx = (fill.cx / 100) * w;
+  const cy = (fill.cy / 100) * h;
+  const r = Math.sqrt(w * w + h * h);
+
   const id = uniqueDefId('cg');
-  const gradient = createSVGElement('radialGradient', {
+  const pattern = createSVGElement('pattern', {
     id,
-    cx: `${fill.cx}%`,
-    cy: `${fill.cy}%`,
-    r: '50%',
+    x: '0', y: '0',
+    width: String(w), height: String(h),
+    patternUnits: 'userSpaceOnUse',
   });
 
-  for (const stop of fill.stops) {
-    gradient.appendChild(
-      createSVGElement('stop', {
-        offset: `${stop.position}%`,
-        'stop-color': stop.color,
-      }),
-    );
+  const N = 60;
+  const sorted = fill.stops.slice().sort((a, b) => a.position - b.position);
+  const startDeg = -90;
+
+  for (let i = 0; i < N; i++) {
+    const t0 = (i / N) * 100;
+    const t1 = ((i + 1) / N) * 100;
+    const tmid = (t0 + t1) / 2;
+    const color = interpolateStopColor(sorted, tmid);
+
+    const a0 = toRad(startDeg + (t0 / 100) * 360);
+    const a1 = toRad(startDeg + (t1 / 100) * 360);
+
+    const x0 = cx + Math.cos(a0) * r;
+    const y0 = cy + Math.sin(a0) * r;
+    const x1 = cx + Math.cos(a1) * r;
+    const y1 = cy + Math.sin(a1) * r;
+
+    const d = `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`;
+    pattern.appendChild(createSVGElement('path', { d, fill: color }));
   }
 
-  defs.appendChild(gradient);
+  defs.appendChild(pattern);
   return `url(#${id})`;
 }
 
@@ -156,7 +211,7 @@ export function applyFill(
       return { fill: renderRadialGradient(fill, defs) };
 
     case 'conic':
-      return { fill: renderConicGradient(fill, defs) };
+      return { fill: renderConicGradient(fill, defs, bounds) };
 
     case 'noise':
       return {

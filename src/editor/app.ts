@@ -30,6 +30,12 @@ import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
+import { ImageImportHandler } from './image-import-handler';
+import { projectFolder } from '../fs/project-folder';
+import { TimelinePanelManager } from '../ui/panels/timeline-panel';
+import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
+import { smartDuplicate } from '../utils/smart-duplicate';
+import { lintDesign } from '../utils/design-lint';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -212,6 +218,9 @@ export class EditorApp {
   private colorPalette!: ColorPaletteManager;
   private componentLibrary!: ComponentLibraryManager;
   private animationPanel!: AnimationPanel;
+  private imageImport!: ImageImportHandler;
+  private timelinePanel!: TimelinePanelManager;
+  private colorSchemePanel!: ColorSchemePanelManager;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -320,10 +329,30 @@ export class EditorApp {
       },
     );
 
+    // Image import: paste / drag-drop SVG + PNG onto the canvas
+    this.imageImport = new ImageImportHandler(this.state);
+    this.imageImport.setPalette(this.colorPalette);
+    this.imageImport.wire(this.container);
+    this.wireAssetPanel();
+
     // Animation panel
     const animContainer = this.container.querySelector<HTMLElement>('.animate-content');
     if (animContainer) {
       this.animationPanel = new AnimationPanel(animContainer, this.state);
+    }
+
+    // Timeline panel
+    const timelineContainer = this.container.querySelector<HTMLElement>('.timeline-content');
+    if (timelineContainer) {
+      this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state);
+    }
+
+    // Color scheme panel (inside colors tab)
+    const schemeContainer = this.container.querySelector<HTMLElement>('.color-scheme-content');
+    if (schemeContainer) {
+      this.colorSchemePanel = new ColorSchemePanelManager(schemeContainer, hex => {
+        this.colorPalette['onPick'](hex);
+      });
     }
 
     // Component library panel
@@ -332,11 +361,19 @@ export class EditorApp {
       this.componentLibrary = new ComponentLibraryManager(compContainer, this.state);
     }
 
-    // Page strip lives in the status bar (compact mode)
+    // Page strip lives in its own resizable section below the canvas
     this.pageStrip = new PageStrip(
-      this.container.querySelector('.status-pages')!,
+      this.container.querySelector('.page-strip-content')!,
       this.state,
     );
+    // Show/hide page strip section based on whether design has pages
+    this.state.subscribe((state, keys) => {
+      if (!keys.includes('design')) return;
+      const section = this.container.querySelector<HTMLElement>('#page-strip-section');
+      if (!section) return;
+      const hasPages = (state.design?.pages?.length ?? 0) > 0;
+      section.style.display = hasPages ? '' : 'none';
+    });
 
     this.wireStatusBar();
 
@@ -378,6 +415,7 @@ export class EditorApp {
       <div class="toolbar"></div>
 
       <div class="formula-bar">
+        <div class="formula-bar-resize-handle" data-resize="formula"></div>
         <span class="fb-layer-id">—</span>
         <span class="fb-prefix">ƒ=</span>
         <input class="fb-input" type="text" placeholder="Select a layer to inspect…" spellcheck="false">
@@ -406,6 +444,13 @@ export class EditorApp {
             <div class="panel-header">Files</div>
             <div class="file-tree-content"></div>
           </div>
+          <div class="asset-panel">
+            <div class="asset-panel-header">
+              <span class="asset-panel-title">Assets</span>
+              <button class="asset-open-btn" id="open-folder-btn" title="Open project folder">&#128193; Open Folder</button>
+            </div>
+            <div class="asset-grid" id="asset-grid"></div>
+          </div>
         </div>
 
         <div class="left-panel-view" data-panel="components">
@@ -427,6 +472,10 @@ export class EditorApp {
       <div class="canvas-section">
         <div class="tab-bar-container"></div>
         <div class="viewport-area"></div>
+        <div class="page-strip-section" id="page-strip-section" style="display:none">
+          <div class="page-strip-resize-handle" data-resize="page-strip"></div>
+          <div class="page-strip-content"></div>
+        </div>
       </div>
 
       <div class="properties-panel">
@@ -435,6 +484,7 @@ export class EditorApp {
           <button class="rpanel-tab active" data-tab="properties">Props</button>
           <button class="rpanel-tab" data-tab="colors">Colors</button>
           <button class="rpanel-tab" data-tab="animate">Animate</button>
+          <button class="rpanel-tab" data-tab="timeline">Timeline</button>
           <button class="rpanel-tab" data-tab="problems">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
@@ -442,14 +492,21 @@ export class EditorApp {
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
           </div>
-          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden">
-            <div class="color-palette-content" style="height:100%;overflow-y:auto"></div>
+          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden;display:flex;flex-direction:column">
+            <div class="color-palette-content" style="flex:1;overflow-y:auto"></div>
+            <div class="color-scheme-content" style="border-top:1px solid var(--color-border)">
+              <div class="panel-header" style="padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;
+                letter-spacing:.05em;color:var(--color-text-muted)">Color Schemes</div>
+            </div>
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
           </div>
           <div class="tab-pane" data-tab="animate" style="height:100%;overflow-y:auto">
             <div class="animate-content" style="height:100%"></div>
+          </div>
+          <div class="tab-pane" data-tab="timeline" style="height:100%;display:flex;flex-direction:column">
+            <div class="timeline-content" style="flex:1;overflow:hidden"></div>
           </div>
           <div class="tab-pane" data-tab="a11y" style="height:100%">
             <div class="a11y-content" style="height:100%"></div>
@@ -518,6 +575,37 @@ export class EditorApp {
       rightHandle.replaceWith(h);
       this.resizers.push(rightResizer);
     }
+
+    // Formula bar height resize (drag bottom edge downward to expand)
+    const formulaHandle = this.container.querySelector<HTMLElement>('[data-resize="formula"]');
+    if (formulaHandle) {
+      const formulaResizer = new PanelResizer({
+        cssVar: '--formula-bar-height',
+        axis: 'y',
+        min: 0,
+        max: 120,
+        target: root,
+      });
+      const h = formulaResizer.getHandle();
+      formulaHandle.replaceWith(h);
+      this.resizers.push(formulaResizer);
+    }
+
+    // Page strip height resize (drag top edge upward to expand)
+    const pageStripHandle = this.container.querySelector<HTMLElement>('[data-resize="page-strip"]');
+    if (pageStripHandle) {
+      const pageStripResizer = new PanelResizer({
+        cssVar: '--page-strip-height',
+        axis: 'y',
+        min: 60,
+        max: 360,
+        target: root,
+        invert: true,
+      });
+      const h = pageStripResizer.getHandle();
+      pageStripHandle.replaceWith(h);
+      this.resizers.push(pageStripResizer);
+    }
   }
 
   private wireActivityBar(): void {
@@ -568,6 +656,50 @@ export class EditorApp {
       btn.innerHTML = isLight ? '&#9790;' : '&#9788;';
       btn.title = isLight ? 'Switch to light theme' : 'Switch to dark theme';
     });
+  }
+
+  private wireAssetPanel(): void {
+    const btn   = this.container.querySelector<HTMLElement>('#open-folder-btn');
+    const grid  = this.container.querySelector<HTMLElement>('#asset-grid');
+    if (!btn || !grid) return;
+
+    btn.addEventListener('click', async () => {
+      try {
+        await projectFolder.open();
+        btn.textContent = `📁 ${projectFolder.rootName}`;
+      } catch (err) {
+        const { showToast } = await import('../utils/toast');
+        showToast((err as Error).message, 'warning');
+      }
+    });
+
+    const renderGrid = async (): Promise<void> => {
+      const assets = projectFolder.getAssets();
+      if (assets.length === 0) {
+        grid.innerHTML = '<span class="asset-empty">No images found</span>';
+        return;
+      }
+      grid.innerHTML = '';
+      for (const entry of assets) {
+        const tile = document.createElement('div');
+        tile.className = 'asset-tile';
+        tile.title = entry.path;
+        const url = await projectFolder.getBlobUrl(entry);
+        tile.style.backgroundImage = `url(${url})`;
+        tile.addEventListener('click', async () => {
+          if (entry.name.endsWith('.svg')) {
+            const file = await entry.handle.getFile();
+            await this.imageImport.fromSVGFile(file);
+          } else {
+            const file = await entry.handle.getFile();
+            await this.imageImport.fromRaster(file);
+          }
+        });
+        grid.appendChild(tile);
+      }
+    };
+
+    projectFolder.onChange(() => { void renderGrid(); });
   }
 
   private wireStatusBar(): void {

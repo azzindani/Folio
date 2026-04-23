@@ -274,9 +274,13 @@ export class CanvasManager {
       svg = renderDesign(design, { theme: theme ?? undefined, showGrid: this.state.get().gridVisible });
     }
 
-    // Replace SVG
-    this.svgContainer.innerHTML = '';
-    this.svgContainer.appendChild(svg);
+    // Atomic swap — no blank white frame between renders
+    if (this.currentSVG && this.currentSVG.parentElement === this.svgContainer) {
+      this.currentSVG.replaceWith(svg);
+    } else {
+      this.svgContainer.innerHTML = '';
+      this.svgContainer.appendChild(svg);
+    }
     this.currentSVG = svg;
 
     // Size viewport
@@ -295,38 +299,42 @@ export class CanvasManager {
   private updateSelectionOverlay(): void {
     this.selectionOverlay.innerHTML = '';
     const { selectedLayerIds, design } = this.state.get();
-
     if (!design || selectedLayerIds.length === 0) return;
+
+    const frag = document.createDocumentFragment();
 
     for (const id of selectedLayerIds) {
       const el = this.svgContainer.querySelector(`[data-layer-id="${id}"]`);
       if (!el) continue;
-
       const bbox = (el as SVGGraphicsElement).getBBox?.();
       if (!bbox) continue;
 
-      // Selection box
       const box = document.createElement('div');
       box.className = 'selection-box';
       box.style.left = `${bbox.x}px`;
       box.style.top = `${bbox.y}px`;
       box.style.width = `${bbox.width}px`;
       box.style.height = `${bbox.height}px`;
-      this.selectionOverlay.appendChild(box);
+      frag.appendChild(box);
 
-      // 8 resize handles: 4 corners + 4 edge midpoints
       const cx = bbox.x + bbox.width / 2;
       const cy = bbox.y + bbox.height / 2;
       const handles8 = [
-        { cls: 'nw', x: bbox.x,  y: bbox.y,  cursor: 'nw-resize' },
-        { cls: 'n',  x: cx,      y: bbox.y,  cursor: 'n-resize' },
-        { cls: 'ne', x: bbox.x + bbox.width, y: bbox.y,  cursor: 'ne-resize' },
-        { cls: 'e',  x: bbox.x + bbox.width, y: cy,      cursor: 'e-resize' },
-        { cls: 'se', x: bbox.x + bbox.width, y: bbox.y + bbox.height, cursor: 'se-resize' },
-        { cls: 's',  x: cx,      y: bbox.y + bbox.height, cursor: 's-resize' },
-        { cls: 'sw', x: bbox.x,  y: bbox.y + bbox.height, cursor: 'sw-resize' },
-        { cls: 'w',  x: bbox.x,  y: cy,      cursor: 'w-resize' },
+        { cls: 'nw', x: bbox.x,              y: bbox.y,               cursor: 'nw-resize' },
+        { cls: 'n',  x: cx,                   y: bbox.y,               cursor: 'n-resize'  },
+        { cls: 'ne', x: bbox.x + bbox.width,  y: bbox.y,               cursor: 'ne-resize' },
+        { cls: 'e',  x: bbox.x + bbox.width,  y: cy,                   cursor: 'e-resize'  },
+        { cls: 'se', x: bbox.x + bbox.width,  y: bbox.y + bbox.height, cursor: 'se-resize' },
+        { cls: 's',  x: cx,                   y: bbox.y + bbox.height, cursor: 's-resize'  },
+        { cls: 'sw', x: bbox.x,               y: bbox.y + bbox.height, cursor: 'sw-resize' },
+        { cls: 'w',  x: bbox.x,               y: cy,                   cursor: 'w-resize'  },
       ];
+
+      const layerData = this.state.getCurrentLayers().find(l => l.id === id) as unknown as Record<string, unknown> | undefined;
+      const origX = typeof layerData?.['x'] === 'number' ? (layerData['x'] as number) : bbox.x;
+      const origY = typeof layerData?.['y'] === 'number' ? (layerData['y'] as number) : bbox.y;
+      const origW = typeof layerData?.['width']  === 'number' ? (layerData['width']  as number) : bbox.width;
+      const origH = typeof layerData?.['height'] === 'number' ? (layerData['height'] as number) : bbox.height;
 
       for (const pos of handles8) {
         const handle = document.createElement('div');
@@ -337,10 +345,12 @@ export class CanvasManager {
         handle.style.pointerEvents = 'auto';
         handle.dataset.handle = pos.cls;
         handle.dataset.layerId = id;
-        this.selectionOverlay.appendChild(handle);
+        handle.addEventListener('pointerdown', (ev) => {
+          this.startResize(ev, id, pos.cls, origX, origY, origW, origH);
+        });
+        frag.appendChild(handle);
       }
 
-      // Rotation handle — circular, above center-top, shows angle on hover
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
       rotateHandle.style.left = `${cx - 6}px`;
@@ -359,8 +369,10 @@ export class CanvasManager {
         e.stopPropagation();
         this.startRotate(e, id, bbox);
       });
-      this.selectionOverlay.appendChild(rotateHandle);
+      frag.appendChild(rotateHandle);
     }
+
+    this.selectionOverlay.appendChild(frag);
   }
 
   private startRotate(
@@ -532,6 +544,67 @@ export class CanvasManager {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       this.clearSmartGuides();
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private startResize(
+    e: PointerEvent,
+    layerId: string,
+    handle: string,
+    origX: number, origY: number, origW: number, origH: number,
+  ): void {
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    if (!layer || layer.locked) return;
+    e.stopPropagation();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const zoom = this.state.get().zoom;
+    const aspectRatio = origW / (origH || 1);
+
+    const onMove = (me: PointerEvent) => {
+      let dx = (me.clientX - startX) / zoom;
+      let dy = (me.clientY - startY) / zoom;
+
+      let nx = origX, ny = origY, nw = origW, nh = origH;
+
+      // West edge: move x, shrink width
+      if (handle.includes('w')) { nx = origX + dx; nw = origW - dx; }
+      // East edge: grow width
+      if (handle.includes('e')) { nw = origW + dx; }
+      // North edge: move y, shrink height
+      if (handle.includes('n')) { ny = origY + dy; nh = origH - dy; }
+      // South edge: grow height
+      if (handle.includes('s')) { nh = origH + dy; }
+
+      // Shift = lock aspect ratio
+      if (me.shiftKey) {
+        const dominant = Math.abs(dx) > Math.abs(dy) ? 'w' : 'h';
+        if (dominant === 'w') {
+          nh = nw / aspectRatio;
+          if (handle.includes('n')) ny = origY + origH - nh;
+        } else {
+          nw = nh * aspectRatio;
+          if (handle.includes('w')) nx = origX + origW - nw;
+        }
+      }
+
+      // Minimum 4px
+      if (nw < 4) { if (handle.includes('w')) nx = origX + origW - 4; nw = 4; }
+      if (nh < 4) { if (handle.includes('n')) ny = origY + origH - 4; nh = 4; }
+
+      this.state.updateLayer(layerId, {
+        x: Math.round(nx), y: Math.round(ny),
+        width: Math.round(nw), height: Math.round(nh),
+      } as Parameters<typeof this.state.updateLayer>[1]);
+    };
+
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
     };
 
     document.addEventListener('pointermove', onMove);

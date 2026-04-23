@@ -1,5 +1,4 @@
-// ── MCP Tool Definitions ────────────────────────────────────
-// These match the tool surface from CLAUDE.md Section 11.2
+// ── MCP Tool Schema Types ────────────────────────────────────
 
 export interface ToolDefinition {
   name: string;
@@ -17,15 +16,49 @@ export interface PropertySchema {
   enum?: string[];
   items?: PropertySchema;
   properties?: Record<string, PropertySchema>;
+  required?: string[];
   default?: unknown;
 }
+
+// ── Handover / Next-Action Protocol ─────────────────────────
+// Included in write-tool responses so local models know exactly what to
+// call next without needing to reason about state from scratch.
+export interface NextAction {
+  tool: string;
+  params: Record<string, unknown>;
+  remaining: number;          // pages / operations left (0 = terminal)
+  hint?: string;              // brief content guidance for the next step
+}
+
+// ── §16 Return Value Contract ────────────────────────────────
+// Every tool returns this shape. No plain strings, lists, or undefined.
+export interface ToolResult {
+  success: boolean;
+  op?: string;
+  error?: string;
+  hint?: string;
+  backup?: string;
+  progress: string[];
+  token_estimate: number;
+  [key: string]: unknown;
+}
+
+// ── MCP Content Envelope ─────────────────────────────────────
 
 export interface ToolCallResult {
   content: { type: 'text'; text: string }[];
   isError?: boolean;
 }
 
+export function toMCPResult(result: ToolResult): ToolCallResult {
+  return {
+    content: [{ type: 'text', text: JSON.stringify(result) }],
+    isError: result.success === false,
+  };
+}
+
 // ── MCP Message Types (stdio transport) ─────────────────────
+
 export interface MCPRequest {
   jsonrpc: '2.0';
   id: number | string;
@@ -39,36 +72,3 @@ export interface MCPResponse {
   result?: unknown;
   error?: { code: number; message: string; data?: unknown };
 }
-
-export interface MCPNotification {
-  jsonrpc: '2.0';
-  method: string;
-  params?: Record<string, unknown>;
-}
-
-// ── Operation Protocol ──────────────────────────────────────
-export interface CreateOperation {
-  _operation: 'create';
-  _target: string;
-}
-
-export interface AppendOperation {
-  _operation: 'append';
-  _target: string;
-  _append_to: string;
-}
-
-export interface PatchOperation {
-  _operation: 'patch';
-  _target: string;
-  _selectors: { path: string; value: unknown }[];
-}
-
-export interface MergeOperation {
-  _operation: 'merge';
-  _target: string;
-  _source: string;
-  _strategy: 'append_pages' | 'replace_theme' | 'merge_layers';
-}
-
-export type MutationOperation = CreateOperation | AppendOperation | PatchOperation | MergeOperation;

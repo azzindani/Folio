@@ -1,3 +1,5 @@
+import type { AnimationSpec } from '../animation/types';
+
 // ── Layer Types ─────────────────────────────────────────────
 export type LayerType =
   | 'rect'
@@ -224,6 +226,8 @@ export interface BaseLayer {
   constraints?: PinConstraints;
   /** Layer id whose shape clips this layer (boolean mask / intersect) */
   clip_path_ref?: string;
+  /** Per-layer animation spec */
+  animation?: AnimationSpec;
 }
 
 // ── Concrete Layer Types ────────────────────────────────────
