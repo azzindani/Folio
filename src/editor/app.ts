@@ -332,11 +332,19 @@ export class EditorApp {
       this.componentLibrary = new ComponentLibraryManager(compContainer, this.state);
     }
 
-    // Page strip lives in the status bar (compact mode)
+    // Page strip lives in its own resizable section below the canvas
     this.pageStrip = new PageStrip(
-      this.container.querySelector('.status-pages')!,
+      this.container.querySelector('.page-strip-content')!,
       this.state,
     );
+    // Show/hide page strip section based on whether design has pages
+    this.state.subscribe((state, keys) => {
+      if (!keys.includes('design')) return;
+      const section = this.container.querySelector<HTMLElement>('#page-strip-section');
+      if (!section) return;
+      const hasPages = (state.design?.pages?.length ?? 0) > 0;
+      section.style.display = hasPages ? '' : 'none';
+    });
 
     this.wireStatusBar();
 
@@ -378,6 +386,7 @@ export class EditorApp {
       <div class="toolbar"></div>
 
       <div class="formula-bar">
+        <div class="formula-bar-resize-handle" data-resize="formula"></div>
         <span class="fb-layer-id">—</span>
         <span class="fb-prefix">ƒ=</span>
         <input class="fb-input" type="text" placeholder="Select a layer to inspect…" spellcheck="false">
@@ -427,6 +436,10 @@ export class EditorApp {
       <div class="canvas-section">
         <div class="tab-bar-container"></div>
         <div class="viewport-area"></div>
+        <div class="page-strip-section" id="page-strip-section" style="display:none">
+          <div class="page-strip-resize-handle" data-resize="page-strip"></div>
+          <div class="page-strip-content"></div>
+        </div>
       </div>
 
       <div class="properties-panel">
@@ -517,6 +530,37 @@ export class EditorApp {
       const h = rightResizer.getHandle();
       rightHandle.replaceWith(h);
       this.resizers.push(rightResizer);
+    }
+
+    // Formula bar height resize (drag bottom edge downward to expand)
+    const formulaHandle = this.container.querySelector<HTMLElement>('[data-resize="formula"]');
+    if (formulaHandle) {
+      const formulaResizer = new PanelResizer({
+        cssVar: '--formula-bar-height',
+        axis: 'y',
+        min: 0,
+        max: 120,
+        target: root,
+      });
+      const h = formulaResizer.getHandle();
+      formulaHandle.replaceWith(h);
+      this.resizers.push(formulaResizer);
+    }
+
+    // Page strip height resize (drag top edge upward to expand)
+    const pageStripHandle = this.container.querySelector<HTMLElement>('[data-resize="page-strip"]');
+    if (pageStripHandle) {
+      const pageStripResizer = new PanelResizer({
+        cssVar: '--page-strip-height',
+        axis: 'y',
+        min: 60,
+        max: 360,
+        target: root,
+        invert: true,
+      });
+      const h = pageStripResizer.getHandle();
+      pageStripHandle.replaceWith(h);
+      this.resizers.push(pageStripResizer);
     }
   }
 
