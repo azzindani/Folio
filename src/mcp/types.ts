@@ -16,7 +16,18 @@ export interface PropertySchema {
   enum?: string[];
   items?: PropertySchema;
   properties?: Record<string, PropertySchema>;
+  required?: string[];
   default?: unknown;
+}
+
+// ── Handover / Next-Action Protocol ─────────────────────────
+// Included in write-tool responses so local models know exactly what to
+// call next without needing to reason about state from scratch.
+export interface NextAction {
+  tool: string;
+  params: Record<string, unknown>;
+  remaining: number;          // pages / operations left (0 = terminal)
+  hint?: string;              // brief content guidance for the next step
 }
 
 // ── §16 Return Value Contract ────────────────────────────────

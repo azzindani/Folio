@@ -14,6 +14,8 @@ const HANDLERS: Record<string, Handler> = {
   apply_theme:       (a) => engine.applyTheme(a as Parameters<typeof engine.applyTheme>[0]),
   duplicate_design:  (a) => engine.duplicateDesign(a as Parameters<typeof engine.duplicateDesign>[0]),
   resume_design:     (a) => engine.resumeDesign(a as Parameters<typeof engine.resumeDesign>[0]),
+  create_task:       (a) => engine.createTask(a as Parameters<typeof engine.createTask>[0]),
+  resume_task:       (a) => engine.resumeTask(a as Parameters<typeof engine.resumeTask>[0]),
 };
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }
