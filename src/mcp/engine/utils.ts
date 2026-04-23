@@ -61,6 +61,23 @@ export function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// §20-21 — read at call time (not import time) so env changes take effect
+// MCP_CONSTRAINED_MODE=true  → 8 GB / 32K limits (original standard)
+// default                    → 128K / Gemma-4B limits (this project's target)
+export function isConstrained(): boolean {
+  return process.env['MCP_CONSTRAINED_MODE'] === 'true';
+}
+
+// Hard response size limits — checked at call time via isConstrained()
+export const LIMITS = {
+  get list_rows()    { return isConstrained() ? 20  : 100; },
+  get search_rows()  { return isConstrained() ? 10  : 50;  },
+  get list_items()   { return isConstrained() ? 40  : 200; },
+  get log_lines()    { return isConstrained() ? 50  : 200; },
+  get layer_rows()   { return isConstrained() ? 20  : 80;  },
+  get json_depth()   { return isConstrained() ? 3   : 6;   },
+} as const;
+
 // §16 — token budget awareness
 export function tokenEstimate(obj: unknown): number {
   return Math.ceil(JSON.stringify(obj).length / 4);

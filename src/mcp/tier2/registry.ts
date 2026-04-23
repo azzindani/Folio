@@ -1,7 +1,34 @@
-// §7 Tier 2 — Medium (7 tools): design lifecycle & layer manipulation
+// §7 Tier 2 — Medium (9 tools): design lifecycle & layer manipulation
 import type { ToolDefinition } from '../types';
 
 export const TIER2_TOOLS: ToolDefinition[] = [
+  {
+    name: 'inspect_design',
+    description: 'Surgical read: returns layer IDs, types, z-order, and positions only. Very low token cost. Use before editing to check current state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path: { type: 'string', description: 'Path to .design.yaml file' },
+        page_id:     { type: 'string', description: 'Page ID (carousel only; omit for poster or to list pages)' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'add_layers',
+    description: 'Add multiple layers in a single call. Preferred over repeated add_layer calls. Supports layers_shorthand for ~80% token savings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:      { type: 'string', description: 'Path to .design.yaml file' },
+        page_id:          { type: 'string', description: 'Page ID (carousel only)' },
+        layers:           { type: 'object', description: 'Verbose layers array', items: { type: 'object' } },
+        layers_shorthand: { type: 'object', description: 'Compact shorthand layers — saves ~80% tokens. Preferred for local models.', items: { type: 'object' } },
+        task_path:        { type: 'string', description: 'Path to .task.yaml — enables next_action handover baton' },
+      },
+      required: ['design_path'],
+    },
+  },
   {
     name: 'create_design',
     description: 'Create a new design file scaffold. Returns design_id and path.',

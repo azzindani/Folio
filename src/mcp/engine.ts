@@ -7,7 +7,8 @@ import type { ToolResult } from './types';
 import { validateDesignSpec } from '../schema/validator';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
-import { resolvePath, snapshot, readYAML, writeYAML, generateId, errResult, okResult } from './engine/utils';
+import { resolvePath, snapshot, readYAML, writeYAML, generateId, errResult, okResult, LIMITS } from './engine/utils';
+import { buildGuide } from './engine/guide';
 import { expandShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
@@ -59,9 +60,9 @@ export function listDesigns(args: { project_path: string }): ToolResult {
   if (!fs.existsSync(projectPath)) return errResult(op, `Project not found: ${projectPath}`, 'Run create_project first.');
   const project = readYAML<{ designs: unknown[] }>(projectPath);
   const designs = project.designs ?? [];
-  // §10 — bounded read: max 40 items
-  const truncated = designs.length > 40;
-  return okResult(op, { designs: designs.slice(0, 40), total: designs.length, truncated });
+  const limit = LIMITS.list_items;
+  const truncated = designs.length > limit;
+  return okResult(op, { designs: designs.slice(0, limit), total: designs.length, truncated });
 }
 export function listThemes(args: { project_path: string }): ToolResult {
   const op = 'list_themes';
@@ -199,7 +200,92 @@ export function resumeTask(args: { task_path: string }): ToolResult {
   });
 }
 
+export function getEngineGuide(_args: Record<string, unknown>): ToolResult {
+  const guide = buildGuide();
+  return okResult('get_engine_guide', { guide, token_hint: 'Load once per session. Refer to shorthand examples before generating layers.' });
+}
+
+export function listTasks(args: { project_path: string }): ToolResult {
+  const op = 'list_tasks';
+  const tasksDir = path.join(args.project_path, '.tasks');
+  if (!fs.existsSync(tasksDir)) return okResult(op, { tasks: [], total: 0, truncated: false });
+
+  const files = fs.readdirSync(tasksDir).filter(f => f.endsWith('.task.yaml'));
+  const limit = LIMITS.list_items;
+  const truncated = files.length > limit;
+  const tasks = files.slice(0, limit).map(f => {
+    try {
+      const spec = readYAML<{ task_id: string; brief: string; design_path: string; total_pages: number; pages: { status: string }[] }>(path.join(tasksDir, f));
+      const done = spec.pages.filter(p => p.status === 'done').length;
+      return { task_path: path.join(tasksDir, f), task_id: spec.task_id, brief: spec.brief, design_path: spec.design_path, total_pages: spec.total_pages, completed_pages: done, status: done === spec.total_pages ? 'complete' : 'in_progress' };
+    } catch { return { task_path: path.join(tasksDir, f), error: 'unreadable' }; }
+  });
+  return okResult(op, { tasks, total: files.length, truncated });
+}
+
 // ── Tier 2 — Design Lifecycle (7 tools) ─────────────────────
+// §10 — surgical read: returns IDs + types + positions only, NOT content values
+export function inspectDesign(args: { design_path: string; page_id?: string }): ToolResult {
+  const op = 'inspect_design';
+  if (!fs.existsSync(args.design_path)) return errResult(op, `Design not found: ${args.design_path}`, 'Check design_path.');
+  const spec = readYAML<DesignSpec>(args.design_path);
+  const limit = LIMITS.layer_rows;
+
+  const summarise = (layers: Layer[] = []) =>
+    layers.slice(0, limit).map(l => ({ id: l.id, type: l.type, z: l.z, x: l.x ?? 0, y: l.y ?? 0, w: l.width ?? 0, h: (l as unknown as Record<string, unknown>)['height'] ?? 0 }));
+
+  if (args.page_id && spec.pages) {
+    const page = spec.pages.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`);
+    const layers = summarise(page.layers);
+    return okResult(op, { page_id: page.id, label: page.label, layers, layer_count: (page.layers ?? []).length, truncated: (page.layers ?? []).length > limit });
+  }
+
+  if (spec.pages) {
+    const pageLimit = LIMITS.list_rows;
+    const pages = spec.pages.slice(0, pageLimit).map(p => ({ id: p.id, label: p.label, layer_count: (p.layers ?? []).length }));
+    return okResult(op, { type: 'carousel', page_count: spec.pages.length, pages, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: spec.pages.length > pageLimit });
+  }
+
+  const layers = summarise(spec.layers);
+  return okResult(op, { type: 'poster', layers, layer_count: (spec.layers ?? []).length, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: (spec.layers ?? []).length > limit });
+}
+
+// Multiple layers in a single call — avoids N round-trips for poster designs
+export function addLayers(args: {
+  design_path: string;
+  page_id?: string;
+  layers?: Layer[];
+  layers_shorthand?: ShorthandLayer[];
+  task_path?: string;
+}): ToolResult {
+  const op = 'add_layers';
+  if (!fs.existsSync(args.design_path)) return errResult(op, `Design not found: ${args.design_path}`, 'Check design_path.');
+  if (!args.layers?.length && !args.layers_shorthand?.length) return errResult(op, 'No layers provided', 'Pass layers or layers_shorthand array.');
+
+  const incoming: Layer[] = args.layers_shorthand?.length
+    ? expandShorthandLayers(args.layers_shorthand)
+    : (args.layers ?? []);
+
+  const bak = snapshot(args.design_path);
+  const spec = readYAML<DesignSpec>(args.design_path);
+
+  if (args.page_id && spec.pages) {
+    const page = spec.pages.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`);
+    if (!page.layers) page.layers = [];
+    page.layers.push(...incoming);
+  } else {
+    if (!spec.layers) spec.layers = [];
+    spec.layers.push(...incoming);
+  }
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(args.design_path, spec);
+
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: args.design_path }, remaining: 0, hint: 'Layers added. Call seal_design to finalise, or add_layers again for more.' };
+  return okResult(op, { added: incoming.length, layer_ids: incoming.map(l => l.id), next_action }, bak);
+}
+
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
   const op = 'create_design';
   const type = args.type ?? 'poster';
@@ -312,7 +398,8 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
   }
   writeYAML(args.design_path, spec);
 
-  return okResult(op, { patched_paths: patched, count: patched.length }, bak);
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: args.design_path }, remaining: -1, hint: 'Fields patched. Call seal_design or make further patches.' };
+  return okResult(op, { patched_paths: patched, count: patched.length, next_action }, bak);
 }
 export function sealDesign(args: { design_path: string }): ToolResult {
   const op = 'seal_design';
@@ -352,7 +439,8 @@ export function addLayer(args: { design_path: string; page_id?: string; layer: L
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(args.design_path, spec);
-  return okResult(op, { layer_id: args.layer.id }, bak);
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: args.design_path }, remaining: -1, hint: 'Continue adding layers or call seal_design when complete.' };
+  return okResult(op, { layer_id: args.layer.id, next_action }, bak);
 }
 export function updateLayer(args: { design_path: string; layer_id: string; props: Partial<Layer> }): ToolResult {
   const op = 'update_layer';
@@ -372,7 +460,8 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(args.design_path, spec);
-  return okResult(op, { updated: args.layer_id }, bak);
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: args.design_path }, remaining: -1, hint: 'Continue editing or call seal_design when complete.' };
+  return okResult(op, { updated: args.layer_id, next_action }, bak);
 }
 export function removeLayer(args: { design_path: string; layer_id: string }): ToolResult {
   const op = 'remove_layer';
@@ -385,7 +474,8 @@ export function removeLayer(args: { design_path: string; layer_id: string }): To
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(args.design_path, spec);
-  return okResult(op, { removed: args.layer_id }, bak);
+  const next_action: NextAction = { tool: 'inspect_design', params: { design_path: args.design_path }, remaining: -1, hint: 'Verify removal with inspect_design, then continue editing or seal.' };
+  return okResult(op, { removed: args.layer_id, next_action }, bak);
 }
 
 // ── Tier 3 — Export & Templates (6 tools) ───────────────────
@@ -461,12 +551,9 @@ export function exportTemplate(args: { design_path: string; output_path?: string
   const outPath = args.output_path ?? args.design_path.replace(/\.design\.yaml$/, '.template.yaml');
   writeYAML(outPath, template);
 
-  return okResult(op, {
-    template_path: outPath,
-    template_file: path.basename(outPath),
-    slot_count: template.slots.length,
-    slots: template.slots.map(s => ({ id: s.id, path: s.path, type: s.type, hint: s.hint })),
-  });
+  const slots = template.slots.map(s => ({ id: s.id, path: s.path, type: s.type, hint: s.hint }));
+  const next_action: NextAction = { tool: 'inject_template', params: { template_path: outPath, slots: Object.fromEntries(slots.map(s => [s.id, ''])) }, remaining: 1, hint: 'Fill slot values then call inject_template.' };
+  return okResult(op, { template_path: outPath, template_file: path.basename(outPath), slot_count: slots.length, slots, next_action });
 }
 export function injectTemplate(args: { template_path: string; slots: Record<string, unknown>; output_path?: string }): ToolResult {
   const op = 'inject_template';
@@ -480,7 +567,8 @@ export function injectTemplate(args: { template_path: string; slots: Record<stri
   const outPath = args.output_path ?? args.template_path.replace(/\.template\.yaml$/, `.${Date.now().toString(36)}.design.yaml`);
   writeYAML(outPath, design);
 
-  return okResult(op, { design_path: outPath, design_file: path.basename(outPath), slots_injected: Object.keys(args.slots).length });
+  const next_action: NextAction = { tool: 'export_design', params: { design_path: outPath, format: 'svg' }, remaining: 1, hint: 'Template injected. Export with export_design or open in editor.' };
+  return okResult(op, { design_path: outPath, design_file: path.basename(outPath), slots_injected: Object.keys(args.slots).length, next_action });
 }
 export function listTemplateSlots(args: { template_path: string }): ToolResult {
   const op = 'list_template_slots';
