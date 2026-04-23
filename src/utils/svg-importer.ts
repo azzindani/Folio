@@ -47,7 +47,7 @@ export function recolorSVG(svgDataUrl: string, colorMap: Map<string, string>): s
 
 // ── Internal helpers ────────────────────────────────────────────
 
-function extractSVGColors(root: Element): string[] {
+export function extractSVGColors(root: Element): string[] {
   const seen = new Set<string>();
 
   const push = (val: string | null) => {

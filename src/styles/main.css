@@ -1376,3 +1376,52 @@ html, body {
   }
   .activity-bar, .left-panel, .formula-bar, .properties-panel { display: none; }
 }
+
+/* ── TIMELINE PANEL ───────────────────────────────────────── */
+.timeline-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  font-size: 11px;
+}
+
+.timeline-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+
+.timeline-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── COLOR SCHEME PANEL ───────────────────────────────────── */
+.scheme-panel {
+  padding: 8px;
+}
+
+.scheme-row {
+  margin-bottom: 8px;
+}
+
+.scheme-swatch {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform .1s, box-shadow .1s;
+}
+
+.scheme-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}

@@ -2,6 +2,7 @@ import { StateManager } from './state';
 import type { EditorApp } from './app';
 import type { Layer } from '../schema/types';
 import { serializeYAML, parseYAML } from '../schema/parser';
+import { smartDuplicate } from '../utils/smart-duplicate';
 
 let duplicateCounter = 0;
 let groupCounter = 0;
@@ -78,6 +79,11 @@ export class KeyboardManager {
         description: 'Duplicate selected',
       },
       {
+        key: 'd', ctrl: true, shift: true,
+        action: () => this.smartDuplicateSelected(),
+        description: 'Smart duplicate (grid)',
+      },
+      {
         key: '[', ctrl: true,
         action: () => this.adjustZ(-1),
         description: 'Send backward',
@@ -149,6 +155,13 @@ export class KeyboardManager {
       };
       this.state.addLayer(clone);
     }
+  }
+
+  private smartDuplicateSelected(): void {
+    const layers = this.state.getSelectedLayers();
+    if (layers.length === 0) return;
+    const dupes = smartDuplicate(layers, { mode: 'grid', cols: 3, rows: 3, colGap: 10, rowGap: 10 });
+    for (const d of dupes) this.state.addLayer(d);
   }
 
   private adjustZ(delta: number): void {
