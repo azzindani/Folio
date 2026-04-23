@@ -1,7 +1,21 @@
-// §7 Tier 1 — Basic (6 tools): project management & navigation
+// §7 Tier 1 — Basic (10 tools, 128K context): project management, navigation, tasks
 import type { ToolDefinition } from '../types';
 
 export const TIER1_TOOLS: ToolDefinition[] = [
+  {
+    name: 'get_engine_guide',
+    description: 'Load the Folio engine reference: layer types, shorthand syntax, workflow patterns, token budget. Call ONCE at session start before generating any designs.',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'list_tasks',
+    description: 'List all task files (.task.yaml) in a project with progress status. Use to find task_path after a context reset.',
+    inputSchema: {
+      type: 'object',
+      properties: { project_path: { type: 'string', description: 'Path to project directory' } },
+      required: ['project_path'],
+    },
+  },
   {
     name: 'create_project',
     description: 'Create a new design project with directory structure, default theme, and project.yaml.',

@@ -8,6 +8,8 @@ import type { MCPRequest, MCPResponse, ToolResult } from '../types';
 type Handler = (args: Record<string, unknown>) => ToolResult;
 
 const HANDLERS: Record<string, Handler> = {
+  get_engine_guide:  (_a) => engine.getEngineGuide({}),
+  list_tasks:        (a) => engine.listTasks(a as Parameters<typeof engine.listTasks>[0]),
   create_project:    (a) => engine.createProject(a as Parameters<typeof engine.createProject>[0]),
   list_designs:      (a) => engine.listDesigns(a as Parameters<typeof engine.listDesigns>[0]),
   list_themes:       (a) => engine.listThemes(a as Parameters<typeof engine.listThemes>[0]),

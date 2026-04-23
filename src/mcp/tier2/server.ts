@@ -8,7 +8,9 @@ import type { MCPRequest, MCPResponse, ToolResult } from '../types';
 type Handler = (args: Record<string, unknown>) => ToolResult;
 
 const HANDLERS: Record<string, Handler> = {
-  create_design: (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
+  inspect_design: (a) => engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]),
+  add_layers:     (a) => engine.addLayers(a as Parameters<typeof engine.addLayers>[0]),
+  create_design:  (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
   append_page:   (a) => engine.appendPage(a as Parameters<typeof engine.appendPage>[0]),
   patch_design:  (a) => engine.patchDesign(a as Parameters<typeof engine.patchDesign>[0]),
   seal_design:   (a) => engine.sealDesign(a as Parameters<typeof engine.sealDesign>[0]),
