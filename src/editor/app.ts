@@ -32,6 +32,10 @@ import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
 import { projectFolder } from '../fs/project-folder';
+import { TimelinePanelManager } from '../ui/panels/timeline-panel';
+import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
+import { smartDuplicate } from '../utils/smart-duplicate';
+import { lintDesign } from '../utils/design-lint';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -215,6 +219,8 @@ export class EditorApp {
   private componentLibrary!: ComponentLibraryManager;
   private animationPanel!: AnimationPanel;
   private imageImport!: ImageImportHandler;
+  private timelinePanel!: TimelinePanelManager;
+  private colorSchemePanel!: ColorSchemePanelManager;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -333,6 +339,20 @@ export class EditorApp {
     const animContainer = this.container.querySelector<HTMLElement>('.animate-content');
     if (animContainer) {
       this.animationPanel = new AnimationPanel(animContainer, this.state);
+    }
+
+    // Timeline panel
+    const timelineContainer = this.container.querySelector<HTMLElement>('.timeline-content');
+    if (timelineContainer) {
+      this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state);
+    }
+
+    // Color scheme panel (inside colors tab)
+    const schemeContainer = this.container.querySelector<HTMLElement>('.color-scheme-content');
+    if (schemeContainer) {
+      this.colorSchemePanel = new ColorSchemePanelManager(schemeContainer, hex => {
+        this.colorPalette['onPick'](hex);
+      });
     }
 
     // Component library panel
@@ -464,6 +484,7 @@ export class EditorApp {
           <button class="rpanel-tab active" data-tab="properties">Props</button>
           <button class="rpanel-tab" data-tab="colors">Colors</button>
           <button class="rpanel-tab" data-tab="animate">Animate</button>
+          <button class="rpanel-tab" data-tab="timeline">Timeline</button>
           <button class="rpanel-tab" data-tab="problems">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
         </div>
@@ -471,14 +492,21 @@ export class EditorApp {
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
           </div>
-          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden">
-            <div class="color-palette-content" style="height:100%;overflow-y:auto"></div>
+          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden;display:flex;flex-direction:column">
+            <div class="color-palette-content" style="flex:1;overflow-y:auto"></div>
+            <div class="color-scheme-content" style="border-top:1px solid var(--color-border)">
+              <div class="panel-header" style="padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;
+                letter-spacing:.05em;color:var(--color-text-muted)">Color Schemes</div>
+            </div>
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
           </div>
           <div class="tab-pane" data-tab="animate" style="height:100%;overflow-y:auto">
             <div class="animate-content" style="height:100%"></div>
+          </div>
+          <div class="tab-pane" data-tab="timeline" style="height:100%;display:flex;flex-direction:column">
+            <div class="timeline-content" style="flex:1;overflow:hidden"></div>
           </div>
           <div class="tab-pane" data-tab="a11y" style="height:100%">
             <div class="a11y-content" style="height:100%"></div>

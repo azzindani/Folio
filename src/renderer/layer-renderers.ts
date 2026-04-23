@@ -45,57 +45,52 @@ function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; width: nu
   }
 }
 
-function getRadiusValues(radius: Radius): { rx: string; ry?: string } | { tl: number; tr: number; br: number; bl: number } {
-  if (typeof radius === 'number') {
-    return { rx: String(radius) };
-  }
-  return radius;
+// Build an SVG path for a rect with per-corner radii (quarter-circle arcs)
+function roundedRectPath(x: number, y: number, w: number, h: number,
+  r: { tl: number; tr: number; br: number; bl: number }): string {
+  const { tl, tr, br, bl } = r;
+  return [
+    `M ${x + tl} ${y}`,
+    `L ${x + w - tr} ${y}`, `Q ${x + w} ${y} ${x + w} ${y + tr}`,
+    `L ${x + w} ${y + h - br}`, `Q ${x + w} ${y + h} ${x + w - br} ${y + h}`,
+    `L ${x + bl} ${y + h}`,    `Q ${x} ${y + h} ${x} ${y + h - bl}`,
+    `L ${x} ${y + tl}`,        `Q ${x} ${y} ${x + tl} ${y}`, 'Z',
+  ].join(' ');
 }
 
 // ── Rect ────────────────────────────────────────────────────
 export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
-  const el = createSVGElement('rect', {
-    x: layer.x ?? 0,
-    y: layer.y ?? 0,
-    width: typeof layer.width === 'number' ? layer.width : 0,
-    height: typeof layer.height === 'number' ? layer.height : 0,
-  });
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+  const w = typeof layer.width  === 'number' ? layer.width  : 0;
+  const h = typeof layer.height === 'number' ? layer.height : 0;
 
-  if (layer.radius !== undefined) {
-    const rv = getRadiusValues(layer.radius);
-    if ('rx' in rv) {
-      el.setAttribute('rx', rv.rx);
-      if (rv.ry) el.setAttribute('ry', rv.ry);
-    } else {
-      // SVG rect doesn't support per-corner radius natively
-      // Use the average as approximation; for full support use path
-      const avg = (rv.tl + rv.tr + rv.br + rv.bl) / 4;
-      el.setAttribute('rx', String(avg));
+  // Determine which element to use based on radius type
+  let el: SVGElement;
+  if (layer.radius !== undefined && typeof layer.radius !== 'number') {
+    // Per-corner radius → convert to path
+    const r = layer.radius as { tl: number; tr: number; br: number; bl: number };
+    el = createSVGElement('path', { d: roundedRectPath(x, y, w, h, r) });
+  } else {
+    el = createSVGElement('rect', { x, y, width: w, height: h });
+    if (layer.radius !== undefined) {
+      el.setAttribute('rx', String(layer.radius as number));
     }
   }
 
   if (layer.fill) {
-    const fillResult = applyFill(layer.fill, svg, {
-      width: typeof layer.width === 'number' ? layer.width : 0,
-      height: typeof layer.height === 'number' ? layer.height : 0,
-    });
+    const fillResult = applyFill(layer.fill, svg, { width: w, height: h });
     el.setAttribute('fill', fillResult.fill);
-    if (fillResult.opacity !== undefined) {
-      el.setAttribute('fill-opacity', String(fillResult.opacity));
-    }
+    if (fillResult.opacity !== undefined) el.setAttribute('fill-opacity', String(fillResult.opacity));
   } else {
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) {
-    applyStroke(el, layer.stroke, svg);
-  }
+  if (layer.stroke) applyStroke(el, layer.stroke, svg);
 
   applyCommonAttributes(el, layer);
 
-  if (layer.effects) {
-    applyEffects(el, layer.effects, svg);
-  }
+  if (layer.effects) applyEffects(el, layer.effects, svg);
 
   return el;
 }
@@ -677,14 +672,16 @@ export function renderAutoLayout(
   const pad = normalizePadding(layer.padding);
   const x = layer.x ?? 0;
   const y = layer.y ?? 0;
+  const w = typeof layer.width === 'number' ? layer.width : 0;
+  const h = typeof layer.height === 'number' ? layer.height : 0;
+
+  const align   = layer.align_items    ?? 'start';
+  const justify = layer.justify_content ?? 'start';
 
   const g = createSVGElement('g');
   g.setAttribute('data-layer-id', layer.id);
 
-  // Background rect if fill is present
   if (layer.fill && layer.fill.type !== 'none') {
-    const w = typeof layer.width === 'number' ? layer.width : 0;
-    const h = typeof layer.height === 'number' ? layer.height : 0;
     const bg = createSVGElement('rect', { x, y, width: w, height: h });
     if (typeof layer.radius === 'number') {
       bg.setAttribute('rx', String(layer.radius));
@@ -694,31 +691,76 @@ export function renderAutoLayout(
     bg.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) bg.setAttribute('opacity', String(fillResult.opacity));
     fillResult.extraElements?.forEach(el => g.appendChild(el));
-    if (layer.stroke) {
-      applyStroke(bg, layer.stroke, svg);
-    }
+    if (layer.stroke) applyStroke(bg, layer.stroke, svg);
     g.appendChild(bg);
   }
 
-  // Lay out children
   const sorted = [...(layer.layers ?? [])].sort((a, b) => a.z - b.z);
-  let cursor = isRow
-    ? x + pad.left
-    : y + pad.top;
 
-  for (const child of sorted) {
-    // Override child position with computed layout position
-    const placed: Layer = isRow
-      ? { ...child, x: cursor, y: y + pad.top }
-      : { ...child, x: x + pad.left, y: cursor };
+  const mainSizes = sorted.map(child =>
+    isRow ? (typeof child.width  === 'number' ? child.width  : 0)
+          : (typeof child.height === 'number' ? child.height : 0),
+  );
+  const crossSizes = sorted.map(child =>
+    isRow ? (typeof child.height === 'number' ? child.height : 0)
+          : (typeof child.width  === 'number' ? child.width  : 0),
+  );
+
+  const mainPadStart  = isRow ? pad.left  : pad.top;
+  const mainPadEnd    = isRow ? pad.right : pad.bottom;
+  const crossPadStart = isRow ? pad.top   : pad.left;
+  const containerMain  = isRow ? w : h;
+  const containerCross = isRow ? h : w;
+  const availableMain  = containerMain  - mainPadStart - mainPadEnd;
+  const availableCross = containerCross - crossPadStart - (isRow ? pad.bottom : pad.right);
+  const totalMain = mainSizes.reduce((s, v) => s + v, 0) + Math.max(0, sorted.length - 1) * gap;
+
+  let cursor: number;
+  let dynGap = gap;
+  switch (justify) {
+    case 'center':
+      cursor = mainPadStart + (availableMain - totalMain) / 2; break;
+    case 'end':
+      cursor = mainPadStart + availableMain - totalMain; break;
+    case 'space-between':
+      cursor = mainPadStart;
+      dynGap = sorted.length > 1
+        ? (availableMain - mainSizes.reduce((s, v) => s + v, 0)) / (sorted.length - 1)
+        : 0;
+      break;
+    case 'space-around': {
+      const spare = availableMain - mainSizes.reduce((s, v) => s + v, 0);
+      dynGap = spare / sorted.length;
+      cursor = mainPadStart + dynGap / 2; break;
+    }
+    default: cursor = mainPadStart;
+  }
+
+  const getCrossPos = (cSize: number): number => {
+    switch (align) {
+      case 'center': return crossPadStart + (availableCross - cSize) / 2;
+      case 'end':    return crossPadStart + availableCross - cSize;
+      default:       return crossPadStart;
+    }
+  };
+
+  for (let i = 0; i < sorted.length; i++) {
+    const child    = sorted[i];
+    const crossPos = getCrossPos(crossSizes[i]);
+    const childX   = isRow ? x + cursor : x + crossPos;
+    const childY   = isRow ? y + crossPos : y + cursor;
+
+    const stretchW = align === 'stretch' && !isRow ? availableCross : undefined;
+    const stretchH = align === 'stretch' &&  isRow ? availableCross : undefined;
+
+    const placed: Layer = {
+      ...child, x: childX, y: childY,
+      ...(stretchW !== undefined ? { width:  stretchW } : {}),
+      ...(stretchH !== undefined ? { height: stretchH } : {}),
+    };
 
     g.appendChild(renderChild(placed, svg));
-
-    // Advance cursor by child size
-    const childSize = isRow
-      ? (typeof child.width  === 'number' ? child.width  : 0)
-      : (typeof child.height === 'number' ? child.height : 0);
-    cursor += childSize + gap;
+    cursor += mainSizes[i] + dynGap;
   }
 
   applyCommonAttributes(g, layer);
