@@ -30,6 +30,8 @@ import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
+import { ImageImportHandler } from './image-import-handler';
+import { projectFolder } from '../fs/project-folder';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -212,6 +214,7 @@ export class EditorApp {
   private colorPalette!: ColorPaletteManager;
   private componentLibrary!: ComponentLibraryManager;
   private animationPanel!: AnimationPanel;
+  private imageImport!: ImageImportHandler;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -320,6 +323,12 @@ export class EditorApp {
       },
     );
 
+    // Image import: paste / drag-drop SVG + PNG onto the canvas
+    this.imageImport = new ImageImportHandler(this.state);
+    this.imageImport.setPalette(this.colorPalette);
+    this.imageImport.wire(this.container);
+    this.wireAssetPanel();
+
     // Animation panel
     const animContainer = this.container.querySelector<HTMLElement>('.animate-content');
     if (animContainer) {
@@ -414,6 +423,13 @@ export class EditorApp {
           <div class="file-tree">
             <div class="panel-header">Files</div>
             <div class="file-tree-content"></div>
+          </div>
+          <div class="asset-panel">
+            <div class="asset-panel-header">
+              <span class="asset-panel-title">Assets</span>
+              <button class="asset-open-btn" id="open-folder-btn" title="Open project folder">&#128193; Open Folder</button>
+            </div>
+            <div class="asset-grid" id="asset-grid"></div>
           </div>
         </div>
 
@@ -612,6 +628,50 @@ export class EditorApp {
       btn.innerHTML = isLight ? '&#9790;' : '&#9788;';
       btn.title = isLight ? 'Switch to light theme' : 'Switch to dark theme';
     });
+  }
+
+  private wireAssetPanel(): void {
+    const btn   = this.container.querySelector<HTMLElement>('#open-folder-btn');
+    const grid  = this.container.querySelector<HTMLElement>('#asset-grid');
+    if (!btn || !grid) return;
+
+    btn.addEventListener('click', async () => {
+      try {
+        await projectFolder.open();
+        btn.textContent = `📁 ${projectFolder.rootName}`;
+      } catch (err) {
+        const { showToast } = await import('../utils/toast');
+        showToast((err as Error).message, 'warning');
+      }
+    });
+
+    const renderGrid = async (): Promise<void> => {
+      const assets = projectFolder.getAssets();
+      if (assets.length === 0) {
+        grid.innerHTML = '<span class="asset-empty">No images found</span>';
+        return;
+      }
+      grid.innerHTML = '';
+      for (const entry of assets) {
+        const tile = document.createElement('div');
+        tile.className = 'asset-tile';
+        tile.title = entry.path;
+        const url = await projectFolder.getBlobUrl(entry);
+        tile.style.backgroundImage = `url(${url})`;
+        tile.addEventListener('click', async () => {
+          if (entry.name.endsWith('.svg')) {
+            const file = await entry.handle.getFile();
+            await this.imageImport.fromSVGFile(file);
+          } else {
+            const file = await entry.handle.getFile();
+            await this.imageImport.fromRaster(file);
+          }
+        });
+        grid.appendChild(tile);
+      }
+    };
+
+    projectFolder.onChange(() => { void renderGrid(); });
   }
 
   private wireStatusBar(): void {
