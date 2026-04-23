@@ -660,9 +660,10 @@ describe('listTemplateSlots', () => {
     expect(result.success).toBe(true);
     const parsed = result as Record<string, unknown>;
     expect(parsed.count).toBe(2);
-    expect(parsed.slots[0]).toHaveProperty('id');
-    expect(parsed.slots[0]).toHaveProperty('path');
-    expect(parsed.slots[0]).toHaveProperty('type');
+    const slots = parsed.slots as Array<Record<string, unknown>>;
+    expect(slots[0]).toHaveProperty('id');
+    expect(slots[0]).toHaveProperty('path');
+    expect(slots[0]).toHaveProperty('type');
   });
 
   it('returns error for missing file', () => {
@@ -831,6 +832,7 @@ describe('batchCreate — ?? fallback for name', () => {
     const parsed = result as Record<string, unknown>;
     expect(parsed.count).toBe(1);
     // Name should use template_id fallback since no 'name' key in slot
-    expect(parsed.created[0].design_id).toBeDefined();
+    const created = parsed.created as Array<Record<string, unknown>>;
+    expect(created[0].design_id).toBeDefined();
   });
 });
