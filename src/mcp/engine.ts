@@ -8,6 +8,10 @@ import { validateDesignSpec } from '../schema/validator';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
 import { resolvePath, snapshot, readYAML, writeYAML, generateId, errResult, okResult } from './engine/utils';
+import { expandShorthandLayers } from './shorthand-parser';
+import type { ShorthandLayer } from './shorthand-parser';
+import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
+import type { NextAction } from './types';
 
 // ── Tier 1 — Project Management (6 tools) ───────────────────
 export function createProject(args: { name: string; path: string; theme?: string; canvas?: string }): ToolResult {
@@ -141,6 +145,60 @@ export function resumeDesign(args: { design_path: string }): ToolResult {
   });
 }
 
+export function createTask(args: { project_path: string; task_name: string; brief: string; theme?: string; pages: { id?: string; label: string; hints?: string }[]; width?: number; height?: number }): ToolResult {
+  const op = 'create_task';
+  if (!args.pages || args.pages.length === 0) return errResult(op, 'pages array must not be empty', 'Provide at least one page: [{label:"Cover",hints:"..."}]');
+
+  const designResult = createDesign({
+    project_path: args.project_path,
+    name: args.task_name,
+    type: 'carousel',
+    width: args.width,
+    height: args.height,
+    theme_ref: args.theme,
+  });
+  if (!designResult.success) return { ...designResult, op };
+
+  const designPath = designResult['path'] as string;
+  const { taskPath, spec } = createTaskFile({
+    projectPath: args.project_path,
+    taskName: args.task_name,
+    brief: args.brief,
+    designPath,
+    theme: args.theme ?? 'dark-tech',
+    pages: args.pages,
+  });
+
+  const next_action: NextAction = buildNextAction(spec, taskPath);
+  return okResult(op, {
+    task_id: spec.task_id,
+    task_path: taskPath,
+    design_path: designPath,
+    total_pages: spec.pages.length,
+    next_action,
+  });
+}
+export function resumeTask(args: { task_path: string }): ToolResult {
+  const op = 'resume_task';
+  if (!fs.existsSync(args.task_path)) return errResult(op, `Task not found: ${args.task_path}`, 'Check task_path. Use list_designs to find in-progress designs.');
+
+  const spec = readTask(args.task_path);
+  const done = spec.pages.filter(p => p.status === 'done').length;
+  const pending = spec.pages.filter(p => p.status === 'pending').length;
+  const next_action: NextAction = buildNextAction(spec, args.task_path);
+
+  return okResult(op, {
+    status: pending === 0 ? 'complete' : 'in_progress',
+    task_id: spec.task_id,
+    brief: spec.brief,
+    design_path: spec.design_path,
+    total_pages: spec.total_pages,
+    completed_pages: done,
+    remaining_pages: pending,
+    next_action,
+  });
+}
+
 // ── Tier 2 — Design Lifecycle (7 tools) ─────────────────────
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
   const op = 'create_design';
@@ -165,33 +223,54 @@ export function createDesign(args: { project_path: string; name: string; type?: 
   writeYAML(designPath, spec);
 
   const projectPath = path.join(args.project_path, 'project.yaml');
+  // For carousel designs, tell the model the first thing to do next
+  const next_action: NextAction | undefined = type === 'carousel' ? {
+    tool: 'append_page',
+    params: { design_path: designPath, page_id: 'page_1', label: 'Page 1' },
+    remaining: 1,
+    hint: 'Add pages with append_page (use task_path for automatic handover), then seal_design.',
+  } : undefined;
+
   if (fs.existsSync(projectPath)) {
     const bak = snapshot(projectPath);
     const project = readYAML<{ designs: unknown[] }>(projectPath);
     project.designs = project.designs ?? [];
     project.designs.push({ id: designId, path: `designs/${designId}.design.yaml`, type, status: 'draft' });
     writeYAML(projectPath, project);
-    return okResult(op, { design_id: spec.meta.id, path: designPath }, bak);
+    return okResult(op, { design_id: spec.meta.id, path: designPath, ...(next_action ? { next_action } : {}) }, bak);
   }
-  return okResult(op, { design_id: spec.meta.id, path: designPath });
+  return okResult(op, { design_id: spec.meta.id, path: designPath, ...(next_action ? { next_action } : {}) });
 }
-export function appendPage(args: { design_path: string; page_id?: string; label?: string; template_ref?: string; slots?: Record<string, unknown>; layers?: Layer[] }): ToolResult {
+export function appendPage(args: {
+  design_path: string;
+  page_id?: string;
+  label?: string;
+  template_ref?: string;
+  slots?: Record<string, unknown>;
+  layers?: Layer[];
+  layers_shorthand?: ShorthandLayer[];  // compact form — expands before write
+  task_path?: string;                    // if set, updates task state + emits next_action
+}): ToolResult {
   const op = 'append_page';
   if (!fs.existsSync(args.design_path)) return errResult(op, `Design not found: ${args.design_path}`, 'Check the design_path value.');
+
+  // Expand shorthand layers if provided (saves ~80% of model output tokens per page)
+  const layers: Layer[] = args.layers_shorthand && args.layers_shorthand.length > 0
+    ? expandShorthandLayers(args.layers_shorthand)
+    : (args.layers ?? []);
 
   const bak = snapshot(args.design_path);
   const spec = readYAML<DesignSpec>(args.design_path);
   if (!spec.pages) spec.pages = [];
 
   const pageId = args.page_id ?? `page_${spec.pages.length + 1}`;
-  const newPage: Page = {
+  spec.pages.push({
     id: pageId,
     label: args.label ?? `Page ${spec.pages.length + 1}`,
     template_ref: args.template_ref,
     slots: args.slots,
-    layers: args.layers ?? [],
-  };
-  spec.pages.push(newPage);
+    layers,
+  });
 
   if (spec.meta.generation) {
     spec.meta.generation.completed_pages = spec.pages.length;
@@ -201,7 +280,20 @@ export function appendPage(args: { design_path: string; page_id?: string; label?
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(args.design_path, spec);
 
-  return okResult(op, { page_id: pageId, page_count: spec.pages.length }, bak);
+  // Update task file and compute relay baton for the model
+  let next_action: NextAction | undefined;
+  if (args.task_path && fs.existsSync(args.task_path)) {
+    const taskSpec = readTask(args.task_path);
+    markPageDone(taskSpec, pageId);
+    writeTask(args.task_path, taskSpec);
+    next_action = buildNextAction(taskSpec, args.task_path);
+  }
+
+  return okResult(op, {
+    page_id: pageId,
+    page_count: spec.pages.length,
+    ...(next_action !== undefined ? { next_action } : {}),
+  }, bak);
 }
 export function patchDesign(args: { design_path: string; selectors: { path: string; value: unknown }[] }): ToolResult {
   const op = 'patch_design';
@@ -233,7 +325,13 @@ export function sealDesign(args: { design_path: string }): ToolResult {
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(args.design_path, spec);
 
-  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0 }, bak);
+  const next_action: NextAction = {
+    tool: 'export_design',
+    params: { design_path: args.design_path, format: 'svg' },
+    remaining: 0,
+    hint: 'Design sealed. Export with export_design or open in the editor.',
+  };
+  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, next_action }, bak);
 }
 export function addLayer(args: { design_path: string; page_id?: string; layer: Layer }): ToolResult {
   const op = 'add_layer';

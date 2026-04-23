@@ -68,4 +68,42 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       required: ['design_path'],
     },
   },
+  {
+    name: 'create_task',
+    description: 'Create a multi-page task plan + carousel scaffold. Returns next_action baton pointing to the first append_page call. Use for any design with more than one page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path: { type: 'string', description: 'Path to project directory' },
+        task_name:    { type: 'string', description: 'Task / design name' },
+        brief:        { type: 'string', description: 'One-sentence description of the full design' },
+        theme:        { type: 'string', description: 'Theme ID (default: dark-tech)' },
+        width:        { type: 'number', description: 'Canvas width px', default: 1080 },
+        height:       { type: 'number', description: 'Canvas height px', default: 1080 },
+        pages: {
+          type: 'object',
+          description: 'Ordered page plan: [{label:"Cover",hints:"bold headline + logo"}, ...]',
+          items: {
+            type: 'object',
+            properties: {
+              id:    { type: 'string', description: 'Page ID (auto-generated if omitted)' },
+              label: { type: 'string', description: 'Page title / purpose' },
+              hints: { type: 'string', description: 'Brief content guidance for this page' },
+            },
+            required: ['label'],
+          },
+        },
+      },
+      required: ['project_path', 'task_name', 'brief', 'pages'],
+    },
+  },
+  {
+    name: 'resume_task',
+    description: 'Read task state and get the exact next tool call to make. Call this whenever context resets mid-generation or to check progress.',
+    inputSchema: {
+      type: 'object',
+      properties: { task_path: { type: 'string', description: 'Path to .task.yaml file (returned by create_task)' } },
+      required: ['task_path'],
+    },
+  },
 ];
