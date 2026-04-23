@@ -73,6 +73,7 @@ export class ColorPaletteManager {
   private container: HTMLElement;
   private state: StateManager;
   private onPick: PickCallback;
+  private importedColors: string[] = [];
 
   constructor(container: HTMLElement, state: StateManager, onPick: PickCallback) {
     this.container = container;
@@ -80,6 +81,13 @@ export class ColorPaletteManager {
     this.onPick = onPick;
     this.render();
     this.state.subscribe(this.onStateChange.bind(this));
+  }
+
+  addImportedColors(colors: string[]): void {
+    const existing = new Set(this.importedColors);
+    colors.forEach(c => existing.add(c));
+    this.importedColors = [...existing].slice(0, 24);
+    this.render();
   }
 
   private onStateChange(_s: EditorState, keys: (keyof EditorState)[]): void {
@@ -92,6 +100,7 @@ export class ColorPaletteManager {
 
     this.container.innerHTML = `
       <div class="palette-panel">
+        ${this.importedColors.length ? this.renderGroup('Imported', this.importedColors) : ''}
         ${docColors.length ? this.renderGroup('Document Colors', docColors) : ''}
         ${recent.length ? this.renderGroup('Recent', recent) : ''}
         ${this.renderGroup('Swatches', PRESET_SWATCHES)}
