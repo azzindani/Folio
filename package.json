@@ -53,9 +53,10 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
+    "imagetracerjs": "^1.2.6",
     "interactjs": "^1.10.27",
-    "jspdf": "^2.5.2",
     "js-yaml": "^4.1.1",
+    "jspdf": "^2.5.2",
     "katex": "^0.16.11",
     "marked": "^18.0.0",
     "mermaid": "^11.4.1",

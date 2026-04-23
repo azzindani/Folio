@@ -1,6 +1,8 @@
 import { type StateManager, type EditorState } from '../../editor/state';
-import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, LinearGradientFill, RadialGradientFill, GradientStop } from '../../schema/types';
+import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, ImageLayer, LinearGradientFill, RadialGradientFill, GradientStop } from '../../schema/types';
 import { colorPicker } from '../color-picker/color-picker';
+import { recolorSVG, extractSVGColors } from '../../utils/svg-importer';
+import { removeBackground } from '../../utils/bg-remover';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -71,6 +73,7 @@ export class PropertiesPanelManager {
       case 'circle':      appearance = this.renderCircleFields(layer); break;
       case 'text':        appearance = this.renderTextFields(layer); break;
       case 'line':        appearance = this.renderLineFields(layer); break;
+      case 'image':       appearance = this.renderImageFields(layer as ImageLayer); break;
       case 'auto_layout': appearance = this.renderAutoLayoutFields(layer as import('../../schema/types').AutoLayoutLayer); break;
     }
     if (appearance) html += this.section('Appearance', appearance);
@@ -99,6 +102,7 @@ export class PropertiesPanelManager {
     this.bindGradientEditor(layer);
     this.bindEffectsButtons(layer);
     this.bindAccordions();
+    if (layer.type === 'image') this.bindSVGRecolor(layer as ImageLayer);
   }
 
   private renderBooleanOpsSection(): string {
@@ -391,6 +395,7 @@ export class PropertiesPanelManager {
         </div>`;
     }
     if (layer.style) {
+      html += this.renderFontPicker('style.font_family', layer.style.font_family ?? '');
       html += this.renderNumberField('style.font_size', 'Font Size', layer.style.font_size ?? 16, 1, 500, 1);
       html += this.renderNumberField('style.font_weight', 'Weight', layer.style.font_weight ?? 400, 100, 900, 100);
       if (layer.style.color) {
@@ -401,6 +406,28 @@ export class PropertiesPanelManager {
     return html;
   }
 
+  private renderFontPicker(prop: string, current: string): string {
+    const fonts = [
+      'Inter','Roboto','Open Sans','Lato','Poppins','Montserrat','Raleway','Nunito',
+      'Source Sans Pro','PT Sans','Ubuntu','Noto Sans','Playfair Display','Merriweather',
+      'Georgia','Times New Roman','Arial','Helvetica','Verdana','Trebuchet MS',
+      'Courier New','Courier Prime','Source Code Pro','JetBrains Mono','Fira Code',
+    ];
+    const opts = fonts.map(f =>
+      `<option value="${f}"${f === current ? ' selected' : ''}>${f}</option>`
+    ).join('');
+    const preview = current || 'Inter';
+    return `
+      <div style="margin-bottom:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Font Family</div>
+        <input list="font-datalist" class="prop-input" data-prop="${prop}" value="${current}"
+          style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;
+                 font-family:'${preview}',sans-serif">
+        <datalist id="font-datalist">${opts}</datalist>
+      </div>`;
+  }
+
   private renderLineFields(layer: LineLayer): string {
     return `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
@@ -409,6 +436,82 @@ export class PropertiesPanelManager {
         ${this.renderNumberInput('x2', 'X2', layer.x2)}
         ${this.renderNumberInput('y2', 'Y2', layer.y2)}
       </div>`;
+  }
+
+  private renderImageFields(layer: ImageLayer): string {
+    const isSVG = layer.src.startsWith('data:image/svg+xml');
+    const isRaster = layer.src.startsWith('data:image/png') || layer.src.startsWith('data:image/jpeg') || layer.src.startsWith('blob:');
+
+    let html = '';
+
+    if (isRaster) {
+      html += `
+        <div style="margin-bottom:8px">
+          <button class="btn btn-sm" id="bg-remove-btn" style="width:100%">Remove Background</button>
+        </div>`;
+    }
+
+    if (isSVG) {
+      const colors = this.parseSVGColors(layer.src);
+      if (colors.length > 0) {
+        const swatches = colors.map((c, i) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <div class="svg-color-swatch" data-svg-color-index="${i}"
+              style="width:22px;height:22px;border-radius:3px;border:1px solid var(--color-border);
+                     background:${c};flex-shrink:0"></div>
+            <input type="color" class="svg-color-picker" data-svg-color-index="${i}"
+                   data-original="${c}" value="${c}"
+                   style="width:36px;height:22px;border:none;padding:0;cursor:pointer">
+            <span style="font-size:11px;font-family:var(--font-mono);color:var(--color-text-muted)">${c}</span>
+          </div>`).join('');
+        html += `<div><div style="font-size:10px;color:var(--color-text-muted);margin-bottom:6px">SVG Colors</div>${swatches}</div>`;
+      }
+    }
+
+    return html;
+  }
+
+  private parseSVGColors(dataUrl: string): string[] {
+    try {
+      const raw = atob(dataUrl.replace(/^data:image\/svg\+xml;base64,/, ''));
+      const text = decodeURIComponent(escape(raw));
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      return extractSVGColors(doc.documentElement);
+    } catch {
+      return [];
+    }
+  }
+
+  private bindSVGRecolor(layer: ImageLayer): void {
+    this.content.querySelectorAll<HTMLInputElement>('.svg-color-picker').forEach(picker => {
+      picker.addEventListener('input', () => {
+        const original = picker.dataset.original!;
+        const newColor = picker.value;
+        const colorMap = new Map([[original, newColor]]);
+        const newSrc = recolorSVG(layer.src, colorMap);
+        this.applyPropertyChange(layer.id, 'src', newSrc);
+        const swatch = this.content.querySelector<HTMLElement>(
+          `.svg-color-swatch[data-svg-color-index="${picker.dataset.svgColorIndex}"]`
+        );
+        if (swatch) swatch.style.background = newColor;
+      });
+    });
+
+    const bgBtn = this.content.querySelector<HTMLButtonElement>('#bg-remove-btn');
+    if (bgBtn) {
+      bgBtn.addEventListener('click', () => {
+        bgBtn.textContent = 'Removing…';
+        bgBtn.disabled = true;
+        removeBackground(layer.src).then(newSrc => {
+          this.applyPropertyChange(layer.id, 'src', newSrc);
+        }).catch(() => {
+          bgBtn.textContent = 'Failed';
+        }).finally(() => {
+          bgBtn.disabled = false;
+          bgBtn.textContent = 'Remove Background';
+        });
+      });
+    }
   }
 
   private renderAutoLayoutFields(layer: import('../../schema/types').AutoLayoutLayer): string {

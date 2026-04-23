@@ -38,6 +38,7 @@
   --left-panel-width:     260px;
   --right-panel-width:    280px;
   --statusbar-height:     32px;
+  --page-strip-height:    120px;
 }
 
 /* ── LIGHT THEME ──────────────────────────────────────────── */
@@ -127,6 +128,17 @@ html, body {
   padding: 0 8px;
   height: var(--formula-bar-height);
   z-index: 99;
+  position: relative;
+  overflow: visible;
+}
+/* Resize handle sits on the bottom edge, drags to expand formula bar */
+.formula-bar > .panel-resize-handle--y {
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 4px;
+  z-index: 110;
+  margin: 0;
 }
 
 .fb-layer-id {
@@ -266,6 +278,69 @@ html, body {
 .file-tree {
   flex: 1;
   overflow-y: auto;
+  padding: 8px;
+}
+
+/* ── ASSET PANEL (project folder images) ─────────────────── */
+.asset-panel {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+}
+.asset-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+.asset-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+}
+.asset-open-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+}
+.asset-open-btn:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.asset-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 8px 8px;
+  align-content: flex-start;
+}
+.asset-tile {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: var(--color-surface-2);
+  cursor: pointer;
+  transition: border-color 0.1s, transform 0.1s;
+  flex-shrink: 0;
+}
+.asset-tile:hover { border-color: var(--color-primary); transform: scale(1.05); }
+.asset-empty {
+  font-size: 11px;
+  color: var(--color-text-muted);
   padding: 8px;
 }
 
@@ -411,6 +486,34 @@ html, body {
   overflow: hidden;
   position: relative;
   display: flex;
+}
+
+/* ── PAGE STRIP SECTION (carousel pages, below canvas) ────── */
+.page-strip-section {
+  flex-shrink: 0;
+  height: var(--page-strip-height);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  overflow: hidden;
+  position: relative;
+}
+/* Resize handle sits on the top edge, dragging up expands the strip */
+.page-strip-section > .panel-resize-handle--y {
+  position: absolute;
+  top: -2px;
+  left: 0; right: 0;
+  height: 4px;
+  z-index: 30;
+  margin: 0;
+}
+.page-strip-content {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 8px;
 }
 
 /* ── TAB BAR ──────────────────────────────────────────────── */
@@ -1272,4 +1375,53 @@ html, body {
       "statusbar";
   }
   .activity-bar, .left-panel, .formula-bar, .properties-panel { display: none; }
+}
+
+/* ── TIMELINE PANEL ───────────────────────────────────────── */
+.timeline-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  font-size: 11px;
+}
+
+.timeline-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+
+.timeline-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── COLOR SCHEME PANEL ───────────────────────────────────── */
+.scheme-panel {
+  padding: 8px;
+}
+
+.scheme-row {
+  margin-bottom: 8px;
+}
+
+.scheme-swatch {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform .1s, box-shadow .1s;
+}
+
+.scheme-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
