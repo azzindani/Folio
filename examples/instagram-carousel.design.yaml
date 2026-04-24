@@ -1,0 +1,1365 @@
+_protocol: design/v1
+_mode: complete
+
+# ─────────────────────────────────────────────────────────────────
+#  INSTAGRAM CAROUSEL — "Nexus AI" Product Launch
+#  Format: 1080×1080px (square Instagram, 4 slides)
+#  Type: carousel
+#  Style: Bold, vibrant, high-contrast purple/coral SaaS launch
+# ─────────────────────────────────────────────────────────────────
+
+meta:
+  id: nexus-ai-carousel-001
+  name: Nexus AI — Product Launch Carousel
+  type: carousel
+  created: "2026-04-24"
+  modified: "2026-04-24"
+  generator: folio-mcp
+  tags: [instagram, carousel, saas, product-launch, social]
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 72
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#7C3AED"
+    secondary: "#F97316"
+    accent: "#10B981"
+    background: "#0F0F1A"
+    surface: "#1A1A2E"
+    surface2: "#22223B"
+    text: "#F8FAFC"
+    text_muted: "#94A3B8"
+    heading: "Inter"
+    body: "Inter"
+    mono: "JetBrains Mono"
+
+pages:
+
+  # ══════════════════════════════════════════════════════════════
+  #  PAGE 1 — COVER
+  #  Large product name, tagline, abstract geometric background
+  # ══════════════════════════════════════════════════════════════
+  - id: page-1
+    label: "Cover"
+    layers:
+
+      - id: p1-grp-background
+        type: group
+        z: 0
+        x: 0
+        y: 0
+        layers:
+
+          - id: p1-bg-base
+            type: rect
+            z: 0
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill:
+              type: solid
+              color: "#0F0F1A"
+
+          - id: p1-bg-glow-tl
+            type: rect
+            z: 1
+            x: -100
+            y: -100
+            width: 700
+            height: 700
+            fill:
+              type: radial
+              cx: 30
+              cy: 30
+              radius: 55
+              stops:
+                - { color: "#7C3AED", position: 0 }
+                - { color: "transparent", position: 100 }
+            opacity: 0.35
+
+          - id: p1-bg-glow-br
+            type: rect
+            z: 1
+            x: 500
+            y: 500
+            width: 700
+            height: 700
+            fill:
+              type: radial
+              cx: 70
+              cy: 70
+              radius: 55
+              stops:
+                - { color: "#F97316", position: 0 }
+                - { color: "transparent", position: 100 }
+            opacity: 0.25
+
+          - id: p1-bg-noise
+            type: rect
+            z: 2
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill:
+              type: noise
+              opacity: 0.04
+              frequency: 0.65
+              octaves: 4
+
+          # Geometric deco — large ring
+          - id: p1-deco-ring
+            type: circle
+            z: 3
+            x: 390
+            y: 320
+            width: 440
+            height: 440
+            fill: { type: solid, color: "transparent" }
+            stroke: { color: "#7C3AED", width: 1.5, opacity: 0.2 }
+
+          # Inner ring
+          - id: p1-deco-ring-inner
+            type: circle
+            z: 3
+            x: 460
+            y: 390
+            width: 300
+            height: 300
+            fill: { type: solid, color: "transparent" }
+            stroke: { color: "#F97316", width: 1, opacity: 0.15 }
+
+          # Diagonal accent line
+          - id: p1-deco-line-1
+            type: line
+            z: 3
+            x1: 0
+            y1: 600
+            x2: 300
+            y2: 1080
+            stroke: { color: "#7C3AED", width: 1, opacity: 0.2 }
+
+          - id: p1-deco-line-2
+            type: line
+            z: 3
+            x1: 780
+            y1: 0
+            x2: 1080
+            y2: 480
+            stroke: { color: "#F97316", width: 1, opacity: 0.2 }
+
+      - id: p1-grp-content
+        type: group
+        z: 10
+        x: 0
+        y: 0
+        layers:
+
+          # Eyebrow badge
+          - id: p1-badge-bg
+            type: rect
+            z: 10
+            x: 80
+            y: 260
+            width: 180
+            height: 32
+            fill: { type: solid, color: "#7C3AED", opacity: 0.2 }
+            stroke: { color: "#7C3AED", width: 1 }
+            radius: 16
+
+          - id: p1-badge-text
+            type: text
+            z: 11
+            x: 80
+            y: 268
+            width: 180
+            height: auto
+            content: { type: plain, value: "INTRODUCING" }
+            style:
+              font_family: "$heading"
+              font_size: 11
+              font_weight: 700
+              color: "#7C3AED"
+              letter_spacing: 3
+              text_align: center
+
+          # Product name
+          - id: p1-product-name
+            type: text
+            z: 10
+            x: 72
+            y: 310
+            width: 936
+            height: auto
+            content: { type: plain, value: "NEXUS AI" }
+            style:
+              font_family: "$heading"
+              font_size: 128
+              font_weight: 900
+              color: "$text"
+              letter_spacing: -4
+              line_height: 0.9
+
+          # Tagline
+          - id: p1-tagline
+            type: text
+            z: 10
+            x: 80
+            y: 564
+            width: 700
+            height: auto
+            content: { type: plain, value: "Ship products 10× faster with AI that understands your entire codebase." }
+            style:
+              font_family: "$body"
+              font_size: 28
+              font_weight: 400
+              color: "$text_muted"
+              line_height: 1.4
+
+          # Accent bar under tagline
+          - id: p1-accent-bar
+            type: rect
+            z: 10
+            x: 80
+            y: 660
+            width: 80
+            height: 5
+            fill:
+              type: linear
+              angle: 0
+              stops:
+                - { color: "#7C3AED", position: 0 }
+                - { color: "#F97316", position: 100 }
+            radius: 3
+
+          # Hero stat
+          - id: p1-stat-number
+            type: text
+            z: 10
+            x: 80
+            y: 700
+            width: 300
+            height: auto
+            content: { type: plain, value: "10×" }
+            style:
+              font_family: "$heading"
+              font_size: 72
+              font_weight: 800
+              color: "#F97316"
+              line_height: 1.0
+
+          - id: p1-stat-label
+            type: text
+            z: 10
+            x: 80
+            y: 782
+            width: 300
+            height: auto
+            content: { type: plain, value: "faster shipping" }
+            style:
+              font_family: "$body"
+              font_size: 18
+              font_weight: 400
+              color: "$text_muted"
+
+      - id: p1-grp-footer
+        type: group
+        z: 20
+        x: 0
+        y: 0
+        layers:
+
+          - id: p1-footer-bg
+            type: rect
+            z: 20
+            x: 0
+            y: 980
+            width: 1080
+            height: 100
+            fill:
+              type: linear
+              angle: 90
+              stops:
+                - { color: "transparent", position: 0 }
+                - { color: "#0F0F1A", position: 100 }
+
+          - id: p1-slide-indicator
+            type: text
+            z: 21
+            x: 80
+            y: 1022
+            width: 200
+            height: auto
+            content: { type: plain, value: "1 / 4" }
+            style:
+              font_family: "$mono"
+              font_size: 12
+              font_weight: 500
+              color: "$text_muted"
+
+          - id: p1-brand
+            type: text
+            z: 21
+            x: 880
+            y: 1022
+            width: 120
+            height: auto
+            content: { type: plain, value: "@nexus_ai" }
+            style:
+              font_family: "$heading"
+              font_size: 12
+              font_weight: 600
+              color: "#7C3AED"
+              text_align: right
+
+          - id: p1-swipe-cue
+            type: text
+            z: 21
+            x: 380
+            y: 1042
+            width: 320
+            height: auto
+            content: { type: plain, value: "Swipe to learn more →" }
+            style:
+              font_family: "$body"
+              font_size: 11
+              font_weight: 400
+              color: "$text_muted"
+              text_align: center
+
+  # ══════════════════════════════════════════════════════════════
+  #  PAGE 2 — PROBLEM
+  #  3 pain points with icon placeholder circles + brief text
+  # ══════════════════════════════════════════════════════════════
+  - id: page-2
+    label: "Problem"
+    layers:
+
+      - id: p2-grp-background
+        type: group
+        z: 0
+        x: 0
+        y: 0
+        layers:
+
+          - id: p2-bg-base
+            type: rect
+            z: 0
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill: { type: solid, color: "#0F0F1A" }
+
+          - id: p2-bg-glow
+            type: rect
+            z: 1
+            x: 200
+            y: -150
+            width: 800
+            height: 800
+            fill:
+              type: radial
+              cx: 50
+              cy: 30
+              radius: 50
+              stops:
+                - { color: "#F97316", position: 0 }
+                - { color: "transparent", position: 100 }
+            opacity: 0.12
+
+          - id: p2-bg-noise
+            type: rect
+            z: 2
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill:
+              type: noise
+              opacity: 0.03
+              frequency: 0.65
+              octaves: 4
+
+      - id: p2-grp-content
+        type: group
+        z: 10
+        x: 0
+        y: 0
+        layers:
+
+          # Section label
+          - id: p2-section-label
+            type: text
+            z: 10
+            x: 80
+            y: 100
+            width: 920
+            height: auto
+            content: { type: plain, value: "THE PROBLEM" }
+            style:
+              font_family: "$heading"
+              font_size: 12
+              font_weight: 700
+              color: "#F97316"
+              letter_spacing: 4
+              text_align: center
+
+          - id: p2-headline
+            type: text
+            z: 10
+            x: 80
+            y: 132
+            width: 920
+            height: auto
+            content: { type: plain, value: "Building software is still broken." }
+            style:
+              font_family: "$heading"
+              font_size: 52
+              font_weight: 800
+              color: "$text"
+              line_height: 1.1
+              text_align: center
+
+          - id: p2-headline-2
+            type: text
+            z: 10
+            x: 80
+            y: 230
+            width: 920
+            height: auto
+            content: { type: plain, value: "Here's why teams struggle:" }
+            style:
+              font_family: "$body"
+              font_size: 22
+              font_weight: 400
+              color: "$text_muted"
+              text_align: center
+
+          # Pain point 1
+          - id: p2-pain1-icon-bg
+            type: circle
+            z: 10
+            x: 80
+            y: 310
+            width: 72
+            height: 72
+            fill:
+              type: solid
+              color: "#F97316"
+              opacity: 0.15
+            stroke: { color: "#F97316", width: 1.5, opacity: 0.5 }
+
+          - id: p2-pain1-icon-label
+            type: text
+            z: 11
+            x: 80
+            y: 334
+            width: 72
+            height: auto
+            content: { type: plain, value: "01" }
+            style:
+              font_family: "$mono"
+              font_size: 20
+              font_weight: 700
+              color: "#F97316"
+              text_align: center
+
+          - id: p2-pain1-title
+            type: text
+            z: 10
+            x: 176
+            y: 318
+            width: 824
+            height: auto
+            content: { type: plain, value: "Context switching kills flow" }
+            style:
+              font_family: "$heading"
+              font_size: 28
+              font_weight: 700
+              color: "$text"
+
+          - id: p2-pain1-body
+            type: text
+            z: 10
+            x: 176
+            y: 358
+            width: 824
+            height: auto
+            content: { type: plain, value: "Engineers spend 43% of their day reading docs, searching Slack history, and deciphering code they didn't write." }
+            style:
+              font_family: "$body"
+              font_size: 17
+              font_weight: 400
+              color: "$text_muted"
+              line_height: 1.5
+
+          - id: p2-divider-1
+            type: line
+            z: 10
+            x1: 80
+            y1: 448
+            x2: 1000
+            y2: 448
+            stroke: { color: "#1A1A2E", width: 1.5 }
+
+          # Pain point 2
+          - id: p2-pain2-icon-bg
+            type: circle
+            z: 10
+            x: 80
+            y: 470
+            width: 72
+            height: 72
+            fill:
+              type: solid
+              color: "#7C3AED"
+              opacity: 0.15
+            stroke: { color: "#7C3AED", width: 1.5, opacity: 0.5 }
+
+          - id: p2-pain2-icon-label
+            type: text
+            z: 11
+            x: 80
+            y: 494
+            width: 72
+            height: auto
+            content: { type: plain, value: "02" }
+            style:
+              font_family: "$mono"
+              font_size: 20
+              font_weight: 700
+              color: "#7C3AED"
+              text_align: center
+
+          - id: p2-pain2-title
+            type: text
+            z: 10
+            x: 176
+            y: 478
+            width: 824
+            height: auto
+            content: { type: plain, value: "Onboarding takes months, not days" }
+            style:
+              font_family: "$heading"
+              font_size: 28
+              font_weight: 700
+              color: "$text"
+
+          - id: p2-pain2-body
+            type: text
+            z: 10
+            x: 176
+            y: 518
+            width: 824
+            height: auto
+            content: { type: plain, value: "New hires take 3–6 months to reach full productivity. Every sprint, institutional knowledge walks out the door." }
+            style:
+              font_family: "$body"
+              font_size: 17
+              font_weight: 400
+              color: "$text_muted"
+              line_height: 1.5
+
+          - id: p2-divider-2
+            type: line
+            z: 10
+            x1: 80
+            y1: 608
+            x2: 1000
+            y2: 608
+            stroke: { color: "#1A1A2E", width: 1.5 }
+
+          # Pain point 3
+          - id: p2-pain3-icon-bg
+            type: circle
+            z: 10
+            x: 80
+            y: 630
+            width: 72
+            height: 72
+            fill:
+              type: solid
+              color: "#10B981"
+              opacity: 0.15
+            stroke: { color: "#10B981", width: 1.5, opacity: 0.5 }
+
+          - id: p2-pain3-icon-label
+            type: text
+            z: 11
+            x: 80
+            y: 654
+            width: 72
+            height: auto
+            content: { type: plain, value: "03" }
+            style:
+              font_family: "$mono"
+              font_size: 20
+              font_weight: 700
+              color: "#10B981"
+              text_align: center
+
+          - id: p2-pain3-title
+            type: text
+            z: 10
+            x: 176
+            y: 638
+            width: 824
+            height: auto
+            content: { type: plain, value: "Technical debt compounds silently" }
+            style:
+              font_family: "$heading"
+              font_size: 28
+              font_weight: 700
+              color: "$text"
+
+          - id: p2-pain3-body
+            type: text
+            z: 10
+            x: 176
+            y: 678
+            width: 824
+            height: auto
+            content: { type: plain, value: "68% of engineering teams have no systematic way to surface architectural issues before they become production incidents." }
+            style:
+              font_family: "$body"
+              font_size: 17
+              font_weight: 400
+              color: "$text_muted"
+              line_height: 1.5
+
+      - id: p2-grp-footer
+        type: group
+        z: 20
+        x: 0
+        y: 0
+        layers:
+
+          - id: p2-footer-bg
+            type: rect
+            z: 20
+            x: 0
+            y: 980
+            width: 1080
+            height: 100
+            fill:
+              type: linear
+              angle: 90
+              stops:
+                - { color: "transparent", position: 0 }
+                - { color: "#0F0F1A", position: 100 }
+
+          - id: p2-slide-indicator
+            type: text
+            z: 21
+            x: 80
+            y: 1022
+            width: 200
+            height: auto
+            content: { type: plain, value: "2 / 4" }
+            style:
+              font_family: "$mono"
+              font_size: 12
+              font_weight: 500
+              color: "$text_muted"
+
+          - id: p2-brand
+            type: text
+            z: 21
+            x: 880
+            y: 1022
+            width: 120
+            height: auto
+            content: { type: plain, value: "@nexus_ai" }
+            style:
+              font_family: "$heading"
+              font_size: 12
+              font_weight: 600
+              color: "#7C3AED"
+              text_align: right
+
+  # ══════════════════════════════════════════════════════════════
+  #  PAGE 3 — SOLUTION
+  #  Feature list with checkmarks + hero stat numbers
+  # ══════════════════════════════════════════════════════════════
+  - id: page-3
+    label: "Solution"
+    layers:
+
+      - id: p3-grp-background
+        type: group
+        z: 0
+        x: 0
+        y: 0
+        layers:
+
+          - id: p3-bg-base
+            type: rect
+            z: 0
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill: { type: solid, color: "#0F0F1A" }
+
+          - id: p3-bg-glow-left
+            type: rect
+            z: 1
+            x: -200
+            y: 200
+            width: 700
+            height: 700
+            fill:
+              type: radial
+              cx: 40
+              cy: 50
+              radius: 50
+              stops:
+                - { color: "#10B981", position: 0 }
+                - { color: "transparent", position: 100 }
+            opacity: 0.12
+
+          - id: p3-bg-glow-right
+            type: rect
+            z: 1
+            x: 600
+            y: 400
+            width: 600
+            height: 600
+            fill:
+              type: radial
+              cx: 60
+              cy: 60
+              radius: 50
+              stops:
+                - { color: "#7C3AED", position: 0 }
+                - { color: "transparent", position: 100 }
+            opacity: 0.15
+
+          - id: p3-bg-noise
+            type: rect
+            z: 2
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill:
+              type: noise
+              opacity: 0.03
+              frequency: 0.65
+              octaves: 4
+
+      - id: p3-grp-content
+        type: group
+        z: 10
+        x: 0
+        y: 0
+        layers:
+
+          - id: p3-section-label
+            type: text
+            z: 10
+            x: 80
+            y: 80
+            width: 920
+            height: auto
+            content: { type: plain, value: "THE SOLUTION" }
+            style:
+              font_family: "$heading"
+              font_size: 12
+              font_weight: 700
+              color: "#10B981"
+              letter_spacing: 4
+              text_align: center
+
+          - id: p3-headline
+            type: text
+            z: 10
+            x: 80
+            y: 114
+            width: 920
+            height: auto
+            content: { type: plain, value: "One AI. Your entire stack." }
+            style:
+              font_family: "$heading"
+              font_size: 56
+              font_weight: 800
+              color: "$text"
+              line_height: 1.1
+              text_align: center
+
+          # Stats row
+          - id: p3-stat-1-num
+            type: text
+            z: 10
+            x: 80
+            y: 230
+            width: 260
+            height: auto
+            content: { type: plain, value: "10×" }
+            style:
+              font_family: "$heading"
+              font_size: 64
+              font_weight: 900
+              color: "#10B981"
+              text_align: center
+
+          - id: p3-stat-1-label
+            type: text
+            z: 10
+            x: 80
+            y: 308
+            width: 260
+            height: auto
+            content: { type: plain, value: "faster shipping" }
+            style:
+              font_family: "$body"
+              font_size: 15
+              font_weight: 500
+              color: "$text_muted"
+              text_align: center
+
+          - id: p3-stat-divider-1
+            type: line
+            z: 10
+            x1: 380
+            y1: 240
+            x2: 380
+            y2: 330
+            stroke: { color: "#1A1A2E", width: 2 }
+
+          - id: p3-stat-2-num
+            type: text
+            z: 10
+            x: 400
+            y: 230
+            width: 280
+            height: auto
+            content: { type: plain, value: "94%" }
+            style:
+              font_family: "$heading"
+              font_size: 64
+              font_weight: 900
+              color: "#7C3AED"
+              text_align: center
+
+          - id: p3-stat-2-label
+            type: text
+            z: 10
+            x: 400
+            y: 308
+            width: 280
+            height: auto
+            content: { type: plain, value: "onboarding satisfaction" }
+            style:
+              font_family: "$body"
+              font_size: 15
+              font_weight: 500
+              color: "$text_muted"
+              text_align: center
+
+          - id: p3-stat-divider-2
+            type: line
+            z: 10
+            x1: 720
+            y1: 240
+            x2: 720
+            y2: 330
+            stroke: { color: "#1A1A2E", width: 2 }
+
+          - id: p3-stat-3-num
+            type: text
+            z: 10
+            x: 740
+            y: 230
+            width: 260
+            height: auto
+            content: { type: plain, value: "3 min" }
+            style:
+              font_family: "$heading"
+              font_size: 64
+              font_weight: 900
+              color: "#F97316"
+              text_align: center
+
+          - id: p3-stat-3-label
+            type: text
+            z: 10
+            x: 740
+            y: 308
+            width: 260
+            height: auto
+            content: { type: plain, value: "to first insight" }
+            style:
+              font_family: "$body"
+              font_size: 15
+              font_weight: 500
+              color: "$text_muted"
+              text_align: center
+
+          - id: p3-stats-divider
+            type: line
+            z: 10
+            x1: 80
+            y1: 368
+            x2: 1000
+            y2: 368
+            stroke: { color: "#22223B", width: 1.5 }
+
+          # Feature checklist
+          - id: p3-feature-check-1
+            type: text
+            z: 10
+            x: 80
+            y: 396
+            width: 44
+            height: auto
+            content: { type: plain, value: "✓" }
+            style:
+              font_family: "$heading"
+              font_size: 22
+              font_weight: 700
+              color: "#10B981"
+
+          - id: p3-feature-text-1
+            type: text
+            z: 10
+            x: 136
+            y: 394
+            width: 864
+            height: auto
+            content: { type: plain, value: "Semantic codebase search — ask questions, get precise file + line answers" }
+            style:
+              font_family: "$body"
+              font_size: 20
+              font_weight: 400
+              color: "$text"
+              line_height: 1.4
+
+          - id: p3-feature-check-2
+            type: text
+            z: 10
+            x: 80
+            y: 476
+            width: 44
+            height: auto
+            content: { type: plain, value: "✓" }
+            style:
+              font_family: "$heading"
+              font_size: 22
+              font_weight: 700
+              color: "#10B981"
+
+          - id: p3-feature-text-2
+            type: text
+            z: 10
+            x: 136
+            y: 474
+            width: 864
+            height: auto
+            content: { type: plain, value: "Auto-generated runbooks synced to every PR and deployment" }
+            style:
+              font_family: "$body"
+              font_size: 20
+              font_weight: 400
+              color: "$text"
+              line_height: 1.4
+
+          - id: p3-feature-check-3
+            type: text
+            z: 10
+            x: 80
+            y: 556
+            width: 44
+            height: auto
+            content: { type: plain, value: "✓" }
+            style:
+              font_family: "$heading"
+              font_size: 22
+              font_weight: 700
+              color: "#10B981"
+
+          - id: p3-feature-text-3
+            type: text
+            z: 10
+            x: 136
+            y: 554
+            width: 864
+            height: auto
+            content: { type: plain, value: "Dependency risk scoring — catch breaking changes before review" }
+            style:
+              font_family: "$body"
+              font_size: 20
+              font_weight: 400
+              color: "$text"
+              line_height: 1.4
+
+          - id: p3-feature-check-4
+            type: text
+            z: 10
+            x: 80
+            y: 636
+            width: 44
+            height: auto
+            content: { type: plain, value: "✓" }
+            style:
+              font_family: "$heading"
+              font_size: 22
+              font_weight: 700
+              color: "#10B981"
+
+          - id: p3-feature-text-4
+            type: text
+            z: 10
+            x: 136
+            y: 634
+            width: 864
+            height: auto
+            content: { type: plain, value: "Integrates with GitHub, GitLab, Jira, Slack in under 5 minutes" }
+            style:
+              font_family: "$body"
+              font_size: 20
+              font_weight: 400
+              color: "$text"
+              line_height: 1.4
+
+          - id: p3-feature-check-5
+            type: text
+            z: 10
+            x: 80
+            y: 716
+            width: 44
+            height: auto
+            content: { type: plain, value: "✓" }
+            style:
+              font_family: "$heading"
+              font_size: 22
+              font_weight: 700
+              color: "#10B981"
+
+          - id: p3-feature-text-5
+            type: text
+            z: 10
+            x: 136
+            y: 714
+            width: 864
+            height: auto
+            content: { type: plain, value: "SOC 2 Type II certified — your code never leaves your infrastructure" }
+            style:
+              font_family: "$body"
+              font_size: 20
+              font_weight: 400
+              color: "$text"
+              line_height: 1.4
+
+      - id: p3-grp-footer
+        type: group
+        z: 20
+        x: 0
+        y: 0
+        layers:
+
+          - id: p3-footer-bg
+            type: rect
+            z: 20
+            x: 0
+            y: 900
+            width: 1080
+            height: 180
+            fill:
+              type: linear
+              angle: 90
+              stops:
+                - { color: "transparent", position: 0 }
+                - { color: "#0F0F1A", position: 60 }
+                - { color: "#0F0F1A", position: 100 }
+
+          - id: p3-slide-indicator
+            type: text
+            z: 21
+            x: 80
+            y: 1022
+            width: 200
+            height: auto
+            content: { type: plain, value: "3 / 4" }
+            style:
+              font_family: "$mono"
+              font_size: 12
+              font_weight: 500
+              color: "$text_muted"
+
+          - id: p3-brand
+            type: text
+            z: 21
+            x: 880
+            y: 1022
+            width: 120
+            height: auto
+            content: { type: plain, value: "@nexus_ai" }
+            style:
+              font_family: "$heading"
+              font_size: 12
+              font_weight: 600
+              color: "#7C3AED"
+              text_align: right
+
+  # ══════════════════════════════════════════════════════════════
+  #  PAGE 4 — CTA
+  #  Call to action, URL, social handles
+  # ══════════════════════════════════════════════════════════════
+  - id: page-4
+    label: "CTA"
+    layers:
+
+      - id: p4-grp-background
+        type: group
+        z: 0
+        x: 0
+        y: 0
+        layers:
+
+          - id: p4-bg-base
+            type: rect
+            z: 0
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill: { type: solid, color: "#0F0F1A" }
+
+          - id: p4-bg-gradient-center
+            type: rect
+            z: 1
+            x: 90
+            y: 90
+            width: 900
+            height: 900
+            fill:
+              type: radial
+              cx: 50
+              cy: 50
+              radius: 55
+              stops:
+                - { color: "#7C3AED", position: 0 }
+                - { color: "transparent", position: 100 }
+            opacity: 0.22
+
+          - id: p4-bg-noise
+            type: rect
+            z: 2
+            x: 0
+            y: 0
+            width: 1080
+            height: 1080
+            fill:
+              type: noise
+              opacity: 0.04
+              frequency: 0.65
+              octaves: 4
+
+          # Decorative concentric rings
+          - id: p4-deco-ring-1
+            type: circle
+            z: 3
+            x: 165
+            y: 165
+            width: 750
+            height: 750
+            fill: { type: solid, color: "transparent" }
+            stroke: { color: "#7C3AED", width: 1, opacity: 0.12 }
+
+          - id: p4-deco-ring-2
+            type: circle
+            z: 3
+            x: 265
+            y: 265
+            width: 550
+            height: 550
+            fill: { type: solid, color: "transparent" }
+            stroke: { color: "#F97316", width: 1, opacity: 0.1 }
+
+      - id: p4-grp-content
+        type: group
+        z: 10
+        x: 0
+        y: 0
+        layers:
+
+          - id: p4-eyebrow
+            type: text
+            z: 10
+            x: 80
+            y: 240
+            width: 920
+            height: auto
+            content: { type: plain, value: "START FREE TODAY" }
+            style:
+              font_family: "$heading"
+              font_size: 13
+              font_weight: 700
+              color: "#F97316"
+              letter_spacing: 5
+              text_align: center
+
+          - id: p4-headline
+            type: text
+            z: 10
+            x: 80
+            y: 278
+            width: 920
+            height: auto
+            content: { type: plain, value: "Your team deserves\nbetter tools." }
+            style:
+              font_family: "$heading"
+              font_size: 72
+              font_weight: 900
+              color: "$text"
+              line_height: 1.0
+              text_align: center
+
+          # CTA button
+          - id: p4-btn-bg
+            type: rect
+            z: 10
+            x: 280
+            y: 560
+            width: 520
+            height: 80
+            fill:
+              type: linear
+              angle: 135
+              stops:
+                - { color: "#7C3AED", position: 0 }
+                - { color: "#5B21B6", position: 100 }
+            radius: 40
+
+          - id: p4-btn-text
+            type: text
+            z: 11
+            x: 280
+            y: 588
+            width: 520
+            height: auto
+            content: { type: plain, value: "Get Early Access — Free" }
+            style:
+              font_family: "$heading"
+              font_size: 22
+              font_weight: 700
+              color: "#F8FAFC"
+              text_align: center
+
+          - id: p4-url
+            type: text
+            z: 10
+            x: 80
+            y: 680
+            width: 920
+            height: auto
+            content: { type: plain, value: "nexus-ai.dev/launch" }
+            style:
+              font_family: "$mono"
+              font_size: 20
+              font_weight: 600
+              color: "#7C3AED"
+              text_align: center
+
+          - id: p4-tagline-final
+            type: text
+            z: 10
+            x: 80
+            y: 726
+            width: 920
+            height: auto
+            content: { type: plain, value: "No credit card. No lock-in. 14-day free trial." }
+            style:
+              font_family: "$body"
+              font_size: 16
+              font_weight: 400
+              color: "$text_muted"
+              text_align: center
+
+      - id: p4-grp-footer
+        type: group
+        z: 20
+        x: 0
+        y: 0
+        layers:
+
+          - id: p4-footer-bg
+            type: rect
+            z: 20
+            x: 0
+            y: 860
+            width: 1080
+            height: 220
+            fill:
+              type: linear
+              angle: 90
+              stops:
+                - { color: "transparent", position: 0 }
+                - { color: "#0F0F1A", position: 50 }
+
+          - id: p4-social-handles
+            type: text
+            z: 21
+            x: 80
+            y: 892
+            width: 920
+            height: auto
+            content: { type: plain, value: "@nexus_ai · @nexusAIhq · nexus-ai.dev" }
+            style:
+              font_family: "$body"
+              font_size: 16
+              font_weight: 400
+              color: "$text_muted"
+              text_align: center
+
+          - id: p4-hashtags
+            type: text
+            z: 21
+            x: 80
+            y: 926
+            width: 920
+            height: auto
+            content: { type: plain, value: "#NexusAI #AITools #ShipFaster #DevTools #ProductLaunch" }
+            style:
+              font_family: "$body"
+              font_size: 14
+              font_weight: 400
+              color: "#7C3AED"
+              text_align: center
+
+          - id: p4-slide-indicator
+            type: text
+            z: 21
+            x: 80
+            y: 1022
+            width: 200
+            height: auto
+            content: { type: plain, value: "4 / 4" }
+            style:
+              font_family: "$mono"
+              font_size: 12
+              font_weight: 500
+              color: "$text_muted"
+
+          - id: p4-brand
+            type: text
+            z: 21
+            x: 880
+            y: 1022
+            width: 120
+            height: auto
+            content: { type: plain, value: "@nexus_ai" }
+            style:
+              font_family: "$heading"
+              font_size: 12
+              font_weight: 600
+              color: "#7C3AED"
+              text_align: right

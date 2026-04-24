@@ -1,0 +1,842 @@
+_protocol: design/v1
+_mode: complete
+
+# ─────────────────────────────────────────────────────────────────
+#  EVENT POSTER — "NEON BLOOM FESTIVAL 2026"
+#  Format: 800×1130px portrait
+#  Type: poster
+#  Style: Dark neon aesthetic, bold typography, layered glows
+# ─────────────────────────────────────────────────────────────────
+
+meta:
+  id: neon-bloom-festival-001
+  name: Neon Bloom Festival 2026 — Concert Poster
+  type: poster
+  created: "2026-04-24"
+  modified: "2026-04-24"
+  generator: folio-mcp
+  tags: [festival, concert, poster, neon, music, event]
+
+document:
+  width: 800
+  height: 1130
+  unit: px
+  dpi: 72
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#00FFF0"
+    secondary: "#FF006E"
+    accent: "#FFE600"
+    background: "#03001C"
+    surface: "#0D0020"
+    surface2: "#140030"
+    text: "#F0F0FF"
+    text_muted: "#8888BB"
+    heading: "Inter"
+    body: "Inter"
+    mono: "JetBrains Mono"
+
+layers:
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-bg
+  #  Dark base + radial glow effects (purple/cyan atmosphere)
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-bg
+    type: group
+    z: 0
+    x: 0
+    y: 0
+    layers:
+
+      - id: bg-base
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 800
+        height: 1130
+        fill:
+          type: linear
+          angle: 180
+          stops:
+            - { color: "#03001C", position: 0 }
+            - { color: "#07003A", position: 50 }
+            - { color: "#03001C", position: 100 }
+
+      - id: bg-glow-top
+        type: rect
+        z: 1
+        x: -100
+        y: -200
+        width: 1000
+        height: 800
+        fill:
+          type: radial
+          cx: 50
+          cy: 30
+          radius: 60
+          stops:
+            - { color: "#6600CC", position: 0 }
+            - { color: "transparent", position: 100 }
+        opacity: 0.45
+
+      - id: bg-glow-cyan-left
+        type: rect
+        z: 2
+        x: -150
+        y: 300
+        width: 600
+        height: 600
+        fill:
+          type: radial
+          cx: 40
+          cy: 50
+          radius: 55
+          stops:
+            - { color: "#00FFF0", position: 0 }
+            - { color: "transparent", position: 100 }
+        opacity: 0.14
+
+      - id: bg-glow-pink-right
+        type: rect
+        z: 2
+        x: 400
+        y: 400
+        width: 600
+        height: 600
+        fill:
+          type: radial
+          cx: 60
+          cy: 55
+          radius: 55
+          stops:
+            - { color: "#FF006E", position: 0 }
+            - { color: "transparent", position: 100 }
+        opacity: 0.18
+
+      - id: bg-glow-bottom
+        type: rect
+        z: 2
+        x: 100
+        y: 750
+        width: 600
+        height: 500
+        fill:
+          type: radial
+          cx: 50
+          cy: 80
+          radius: 50
+          stops:
+            - { color: "#FFE600", position: 0 }
+            - { color: "transparent", position: 100 }
+        opacity: 0.08
+
+      - id: bg-noise
+        type: rect
+        z: 3
+        x: 0
+        y: 0
+        width: 800
+        height: 1130
+        fill:
+          type: noise
+          opacity: 0.05
+          frequency: 0.7
+          octaves: 4
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-deco
+  #  Decorative lines, corner brackets, scanlines
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-deco
+    type: group
+    z: 5
+    x: 0
+    y: 0
+    layers:
+
+      # Top border line (cyan)
+      - id: deco-top-line
+        type: rect
+        z: 5
+        x: 0
+        y: 0
+        width: 800
+        height: 3
+        fill:
+          type: linear
+          angle: 0
+          stops:
+            - { color: "transparent", position: 0 }
+            - { color: "#00FFF0", position: 30 }
+            - { color: "#00FFF0", position: 70 }
+            - { color: "transparent", position: 100 }
+
+      # Bottom border line (pink)
+      - id: deco-bottom-line
+        type: rect
+        z: 5
+        x: 0
+        y: 1127
+        width: 800
+        height: 3
+        fill:
+          type: linear
+          angle: 0
+          stops:
+            - { color: "transparent", position: 0 }
+            - { color: "#FF006E", position: 30 }
+            - { color: "#FF006E", position: 70 }
+            - { color: "transparent", position: 100 }
+
+      # Corner bracket — top left (horizontal)
+      - id: deco-corner-tl-h
+        type: line
+        z: 5
+        x1: 24
+        y1: 24
+        x2: 80
+        y2: 24
+        stroke: { color: "#00FFF0", width: 2, opacity: 0.7 }
+
+      # Corner bracket — top left (vertical)
+      - id: deco-corner-tl-v
+        type: line
+        z: 5
+        x1: 24
+        y1: 24
+        x2: 24
+        y2: 80
+        stroke: { color: "#00FFF0", width: 2, opacity: 0.7 }
+
+      # Corner bracket — top right (horizontal)
+      - id: deco-corner-tr-h
+        type: line
+        z: 5
+        x1: 776
+        y1: 24
+        x2: 720
+        y2: 24
+        stroke: { color: "#00FFF0", width: 2, opacity: 0.7 }
+
+      # Corner bracket — top right (vertical)
+      - id: deco-corner-tr-v
+        type: line
+        z: 5
+        x1: 776
+        y1: 24
+        x2: 776
+        y2: 80
+        stroke: { color: "#00FFF0", width: 2, opacity: 0.7 }
+
+      # Corner bracket — bottom left (horizontal)
+      - id: deco-corner-bl-h
+        type: line
+        z: 5
+        x1: 24
+        y1: 1106
+        x2: 80
+        y2: 1106
+        stroke: { color: "#FF006E", width: 2, opacity: 0.7 }
+
+      # Corner bracket — bottom left (vertical)
+      - id: deco-corner-bl-v
+        type: line
+        z: 5
+        x1: 24
+        y1: 1106
+        x2: 24
+        y2: 1050
+        stroke: { color: "#FF006E", width: 2, opacity: 0.7 }
+
+      # Corner bracket — bottom right (horizontal)
+      - id: deco-corner-br-h
+        type: line
+        z: 5
+        x1: 776
+        y1: 1106
+        x2: 720
+        y2: 1106
+        stroke: { color: "#FF006E", width: 2, opacity: 0.7 }
+
+      # Corner bracket — bottom right (vertical)
+      - id: deco-corner-br-v
+        type: line
+        z: 5
+        x1: 776
+        y1: 1106
+        x2: 776
+        y2: 1050
+        stroke: { color: "#FF006E", width: 2, opacity: 0.7 }
+
+      # Horizontal rule above lineup
+      - id: deco-rule-1
+        type: line
+        z: 5
+        x1: 40
+        y1: 530
+        x2: 760
+        y2: 530
+        stroke: { color: "#00FFF0", width: 1, opacity: 0.3 }
+
+      # Horizontal rule above details band
+      - id: deco-rule-2
+        type: line
+        z: 5
+        x1: 40
+        y1: 900
+        x2: 760
+        y2: 900
+        stroke: { color: "#FF006E", width: 1, opacity: 0.3 }
+
+      # Side accent bar — left
+      - id: deco-side-bar-l
+        type: rect
+        z: 5
+        x: 40
+        y: 100
+        width: 3
+        height: 400
+        fill:
+          type: linear
+          angle: 180
+          stops:
+            - { color: "transparent", position: 0 }
+            - { color: "#00FFF0", position: 40 }
+            - { color: "#FF006E", position: 100 }
+        opacity: 0.4
+
+      # Side accent bar — right
+      - id: deco-side-bar-r
+        type: rect
+        z: 5
+        x: 757
+        y: 100
+        width: 3
+        height: 400
+        fill:
+          type: linear
+          angle: 180
+          stops:
+            - { color: "transparent", position: 0 }
+            - { color: "#FF006E", position: 40 }
+            - { color: "#00FFF0", position: 100 }
+        opacity: 0.4
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-hero
+  #  Festival name (massive bold), date, location
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-hero
+    type: group
+    z: 10
+    x: 0
+    y: 0
+    layers:
+
+      # Edition badge
+      - id: hero-badge-bg
+        type: rect
+        z: 10
+        x: 280
+        y: 72
+        width: 240
+        height: 28
+        fill: { type: solid, color: "#00FFF0", opacity: 0.12 }
+        stroke: { color: "#00FFF0", width: 1 }
+        radius: 14
+
+      - id: hero-badge-text
+        type: text
+        z: 11
+        x: 280
+        y: 78
+        width: 240
+        height: auto
+        content: { type: plain, value: "5TH ANNUAL EDITION · 2026" }
+        style:
+          font_family: "$heading"
+          font_size: 10
+          font_weight: 700
+          color: "#00FFF0"
+          letter_spacing: 2
+          text_align: center
+
+      # Festival name — line 1
+      - id: hero-name-1
+        type: text
+        z: 10
+        x: 40
+        y: 120
+        width: 720
+        height: auto
+        content: { type: plain, value: "NEON" }
+        style:
+          font_family: "$heading"
+          font_size: 168
+          font_weight: 900
+          color: "$text"
+          letter_spacing: -6
+          line_height: 0.85
+          text_align: center
+
+      # Festival name — line 2 (cyan glow)
+      - id: hero-name-2
+        type: text
+        z: 10
+        x: 40
+        y: 272
+        width: 720
+        height: auto
+        content: { type: plain, value: "BLOOM" }
+        style:
+          font_family: "$heading"
+          font_size: 168
+          font_weight: 900
+          color: "#00FFF0"
+          letter_spacing: -6
+          line_height: 0.85
+          text_align: center
+
+      # "FESTIVAL" subtitle
+      - id: hero-festival-label
+        type: text
+        z: 10
+        x: 40
+        y: 430
+        width: 720
+        height: auto
+        content: { type: plain, value: "F  E  S  T  I  V  A  L" }
+        style:
+          font_family: "$heading"
+          font_size: 26
+          font_weight: 700
+          color: "#FF006E"
+          letter_spacing: 14
+          text_align: center
+
+      # Date + Location row
+      - id: hero-date-divider-l
+        type: line
+        z: 10
+        x1: 40
+        y1: 492
+        x2: 220
+        y2: 492
+        stroke: { color: "#FFE600", width: 1, opacity: 0.5 }
+
+      - id: hero-date-divider-r
+        type: line
+        z: 10
+        x1: 580
+        y1: 492
+        x2: 760
+        y2: 492
+        stroke: { color: "#FFE600", width: 1, opacity: 0.5 }
+
+      - id: hero-date
+        type: text
+        z: 10
+        x: 40
+        y: 474
+        width: 720
+        height: auto
+        content: { type: plain, value: "JULY 18–20, 2026" }
+        style:
+          font_family: "$heading"
+          font_size: 20
+          font_weight: 700
+          color: "#FFE600"
+          letter_spacing: 4
+          text_align: center
+
+      - id: hero-location
+        type: text
+        z: 10
+        x: 40
+        y: 502
+        width: 720
+        height: auto
+        content: { type: plain, value: "Riverside Grounds · Austin, TX" }
+        style:
+          font_family: "$body"
+          font_size: 14
+          font_weight: 400
+          color: "$text_muted"
+          letter_spacing: 2
+          text_align: center
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-lineup
+  #  3 tiers of artist names
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-lineup
+    type: group
+    z: 20
+    x: 0
+    y: 0
+    layers:
+
+      # Tier label
+      - id: lineup-tier-1-label
+        type: text
+        z: 20
+        x: 40
+        y: 548
+        width: 720
+        height: auto
+        content: { type: plain, value: "HEADLINERS" }
+        style:
+          font_family: "$heading"
+          font_size: 10
+          font_weight: 700
+          color: "#FF006E"
+          letter_spacing: 4
+          text_align: center
+
+      # Headliner 1
+      - id: lineup-headliner-1
+        type: text
+        z: 20
+        x: 40
+        y: 572
+        width: 720
+        height: auto
+        content: { type: plain, value: "VIOLET SURGE" }
+        style:
+          font_family: "$heading"
+          font_size: 68
+          font_weight: 900
+          color: "$text"
+          letter_spacing: -2
+          text_align: center
+          line_height: 1.0
+
+      # Headliner 2
+      - id: lineup-headliner-2
+        type: text
+        z: 20
+        x: 40
+        y: 646
+        width: 720
+        height: auto
+        content: { type: plain, value: "ECHO ATLAS" }
+        style:
+          font_family: "$heading"
+          font_size: 68
+          font_weight: 900
+          color: "#00FFF0"
+          letter_spacing: -2
+          text_align: center
+          line_height: 1.0
+
+      # Tier 2 label
+      - id: lineup-tier-2-label
+        type: text
+        z: 20
+        x: 40
+        y: 726
+        width: 720
+        height: auto
+        content: { type: plain, value: "FEATURED ACTS" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#FFE600"
+          letter_spacing: 4
+          text_align: center
+
+      # Featured artists row
+      - id: lineup-featured
+        type: text
+        z: 20
+        x: 40
+        y: 746
+        width: 720
+        height: auto
+        content: { type: plain, value: "PRISMA  ·  GLITCH MOTH  ·  SOLAR DRIFT  ·  NADIA VOSS" }
+        style:
+          font_family: "$heading"
+          font_size: 22
+          font_weight: 700
+          color: "$text"
+          letter_spacing: 1
+          text_align: center
+
+      # Tier 3 label
+      - id: lineup-tier-3-label
+        type: text
+        z: 20
+        x: 40
+        y: 800
+        width: 720
+        height: auto
+        content: { type: plain, value: "RISING ARTISTS" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#00FFF0"
+          letter_spacing: 4
+          text_align: center
+          opacity: 0.7
+
+      # Rising artists row
+      - id: lineup-rising
+        type: text
+        z: 20
+        x: 40
+        y: 820
+        width: 720
+        height: auto
+        content: { type: plain, value: "KIRA SABLE  ·  PHANTOM CELL  ·  WAVFORM  ·  AURIS  ·  DEEP STATIC" }
+        style:
+          font_family: "$body"
+          font_size: 14
+          font_weight: 500
+          color: "$text_muted"
+          letter_spacing: 1
+          text_align: center
+          line_height: 1.5
+
+      - id: lineup-rising-2
+        type: text
+        z: 20
+        x: 40
+        y: 856
+        width: 720
+        height: auto
+        content: { type: plain, value: "LUMEN THEORY  ·  ORION WAKE  ·  CASSIDY BLOOM  ·  NEONGRASS" }
+        style:
+          font_family: "$body"
+          font_size: 14
+          font_weight: 500
+          color: "$text_muted"
+          letter_spacing: 1
+          text_align: center
+          line_height: 1.5
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-details
+  #  Venue, tickets, website — bottom band
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-details
+    type: group
+    z: 30
+    x: 0
+    y: 0
+    layers:
+
+      # Details band background
+      - id: details-band-bg
+        type: rect
+        z: 30
+        x: 0
+        y: 910
+        width: 800
+        height: 220
+        fill:
+          type: linear
+          angle: 90
+          stops:
+            - { color: "#0D0020", position: 0 }
+            - { color: "#140030", position: 100 }
+        stroke: { color: "#FF006E", width: 0 }
+
+      # Accent strip at band top
+      - id: details-band-accent
+        type: rect
+        z: 31
+        x: 0
+        y: 910
+        width: 800
+        height: 3
+        fill:
+          type: linear
+          angle: 0
+          stops:
+            - { color: "#00FFF0", position: 0 }
+            - { color: "#FF006E", position: 50 }
+            - { color: "#FFE600", position: 100 }
+
+      # Three-column info layout
+
+      # Column 1: Venue
+      - id: details-venue-label
+        type: text
+        z: 31
+        x: 48
+        y: 934
+        width: 200
+        height: auto
+        content: { type: plain, value: "VENUE" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#00FFF0"
+          letter_spacing: 3
+
+      - id: details-venue-name
+        type: text
+        z: 31
+        x: 48
+        y: 952
+        width: 200
+        height: auto
+        content: { type: plain, value: "Riverside Grounds" }
+        style:
+          font_family: "$heading"
+          font_size: 16
+          font_weight: 700
+          color: "$text"
+
+      - id: details-venue-address
+        type: text
+        z: 31
+        x: 48
+        y: 974
+        width: 200
+        height: auto
+        content: { type: plain, value: "4400 Riverside Dr\nAustin, TX 78741" }
+        style:
+          font_family: "$body"
+          font_size: 12
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.5
+
+      # Column 2: Tickets
+      - id: details-tickets-label
+        type: text
+        z: 31
+        x: 310
+        y: 934
+        width: 180
+        height: auto
+        content: { type: plain, value: "TICKETS" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#FF006E"
+          letter_spacing: 3
+
+      - id: details-ticket-ga
+        type: text
+        z: 31
+        x: 310
+        y: 952
+        width: 180
+        height: auto
+        content: { type: plain, value: "GA · from $89" }
+        style:
+          font_family: "$heading"
+          font_size: 16
+          font_weight: 700
+          color: "$text"
+
+      - id: details-ticket-vip
+        type: text
+        z: 31
+        x: 310
+        y: 974
+        width: 180
+        height: auto
+        content: { type: plain, value: "VIP · from $249\n3-Day Pass · $199" }
+        style:
+          font_family: "$body"
+          font_size: 12
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.5
+
+      # Column 3: Website + social
+      - id: details-web-label
+        type: text
+        z: 31
+        x: 556
+        y: 934
+        width: 200
+        height: auto
+        content: { type: plain, value: "GET TICKETS" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#FFE600"
+          letter_spacing: 3
+
+      - id: details-web-url
+        type: text
+        z: 31
+        x: 556
+        y: 952
+        width: 200
+        height: auto
+        content: { type: plain, value: "neonbloomfest.com" }
+        style:
+          font_family: "$mono"
+          font_size: 14
+          font_weight: 600
+          color: "#00FFF0"
+
+      - id: details-social
+        type: text
+        z: 31
+        x: 556
+        y: 974
+        width: 200
+        height: auto
+        content: { type: plain, value: "@neonbloomfest\n#NeonBloom2026" }
+        style:
+          font_family: "$body"
+          font_size: 12
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.5
+
+      # Vertical dividers between columns
+      - id: details-col-div-1
+        type: line
+        z: 31
+        x1: 284
+        y1: 930
+        x2: 284
+        y2: 1015
+        stroke: { color: "#00FFF0", width: 1, opacity: 0.2 }
+
+      - id: details-col-div-2
+        type: line
+        z: 31
+        x1: 530
+        y1: 930
+        x2: 530
+        y2: 1015
+        stroke: { color: "#00FFF0", width: 1, opacity: 0.2 }
+
+      # Copyright / age notice
+      - id: details-footer-text
+        type: text
+        z: 31
+        x: 40
+        y: 1090
+        width: 720
+        height: auto
+        content: { type: plain, value: "All ages welcome · Rain or shine · No refunds · Subject to change · © 2026 Neon Bloom Events LLC" }
+        style:
+          font_family: "$body"
+          font_size: 9
+          font_weight: 400
+          color: "$text_muted"
+          text_align: center
+          opacity: 0.6
