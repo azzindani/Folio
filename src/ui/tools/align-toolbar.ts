@@ -44,9 +44,7 @@ export class AlignToolbar {
   private refresh(count: number): void {
     this.toolbar.querySelectorAll<HTMLButtonElement>('.align-btn').forEach((btn, i) => {
       const minSel = ACTIONS[i]?.minSelect ?? 2;
-      const inactive = count < minSel;
-      btn.style.opacity = inactive ? '0.3' : '1';
-      btn.style.cursor = inactive ? 'not-allowed' : '';
+      btn.classList.toggle('inactive', count < minSel);
     });
   }
 

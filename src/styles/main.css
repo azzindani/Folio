@@ -39,6 +39,7 @@
   --right-panel-width:    280px;
   --statusbar-height:     32px;
   --page-strip-height:    120px;
+  --mobile-nav-height:    52px;
 }
 
 /* ── LIGHT THEME ──────────────────────────────────────────── */
@@ -78,11 +79,12 @@ html, body {
 #app {
   height: 100%;
   display: grid;
+  /* min() guards prevent panels from crushing the canvas below 200px */
   grid-template-columns:
     var(--activity-bar-width)
-    var(--left-panel-width)
+    min(var(--left-panel-width), calc(100vw - var(--activity-bar-width) - 200px - var(--right-panel-width)))
     1fr
-    var(--right-panel-width);
+    min(var(--right-panel-width), calc(50vw - var(--activity-bar-width)));
   grid-template-rows:
     var(--toolbar-height)
     var(--formula-bar-height)
@@ -945,6 +947,16 @@ html, body {
   transition: background .1s, color .1s;
 }
 .align-btn:hover { background: var(--color-border); color: var(--color-text); }
+/* Fix #1 — inactive buttons must not be clickable */
+.align-btn.inactive {
+  opacity: 0.3;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+/* Smooth show/hide with visibility transition */
+.align-toolbar {
+  transition: opacity 0.15s, transform 0.15s;
+}
 
 /* ── TOAST ────────────────────────────────────────────────── */
 .toast {
@@ -1309,8 +1321,21 @@ html, body {
   width: 32px; height: 2px;
 }
 .panel-resize-handle:hover::after { opacity: 1; }
+/* Fix #6 — visible focus ring for keyboard users */
+.panel-resize-handle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+/* Fix #7 — coarse pointer (touch): wider hit targets */
+@media (pointer: coarse) {
+  .panel-resize-handle--x { width: 12px; margin: 0 -6px; }
+  .panel-resize-handle--y { height: 12px; margin: -6px 0; }
+}
 
 /* ── TOOL GRID WRAP ───────────────────────────────────────── */
+/* Fix #5 — scrollable toolbox with max-height so layer panel always visible */
 .tools-panel {
   display: flex;
   flex-wrap: wrap;
@@ -1320,6 +1345,10 @@ html, body {
   padding: 6px 4px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .tool-section-sep {
@@ -1352,8 +1381,52 @@ html, body {
 }
 .ruler-unit-btn:hover { color: var(--color-primary); }
 
-/* ── RESPONSIVE ───────────────────────────────────────────── */
-@media (max-width: 1023px) {
+/* ── MOBILE NAV BAR (hidden on desktop, shown on mobile) ────── */
+.mobile-nav { display: none; }
+.mob-nav-btn {
+  flex: 1;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s, background 0.1s;
+}
+.mob-nav-btn.active {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+.mob-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 190;
+}
+.mob-backdrop.active { display: block; }
+/* Drag grip shown at top of mobile sheet panels */
+.mob-sheet-grip {
+  display: none;
+  justify-content: center;
+  padding: 8px 0 4px;
+  flex-shrink: 0;
+  cursor: grab;
+}
+.mob-sheet-grip::before {
+  content: '';
+  width: 36px; height: 4px;
+  background: var(--color-border-strong);
+  border-radius: 2px;
+}
+
+/* ── RESPONSIVE — TABLET (768–1023px) ────────────────────── */
+/* Fix #3/#10: panels as slide-in overlays, accessible via activity bar */
+@media (min-width: 768px) and (max-width: 1023px) {
   #app {
     grid-template-columns: var(--activity-bar-width) 0px 1fr 0px;
     grid-template-areas:
@@ -1362,9 +1435,39 @@ html, body {
       "actbar    lpanel   canvas   canvas"
       "statusbar statusbar statusbar statusbar";
   }
-  .properties-panel { display: none; }
+
+  .left-panel {
+    position: absolute;
+    left: var(--activity-bar-width);
+    top: calc(var(--toolbar-height) + var(--formula-bar-height));
+    bottom: var(--statusbar-height);
+    width: clamp(220px, 30vw, 320px);
+    z-index: 120;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    border-right: 1px solid var(--color-border-strong);
+  }
+  #app:not(.panel-collapsed) .left-panel { transform: translateX(0); }
+
+  .properties-panel {
+    display: flex !important;
+    position: absolute;
+    right: 0;
+    top: calc(var(--toolbar-height) + var(--formula-bar-height));
+    bottom: var(--statusbar-height);
+    width: clamp(240px, 32vw, 340px);
+    z-index: 120;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(105%);
+    transition: transform 0.25s ease;
+    border-left: 1px solid var(--color-border-strong);
+  }
+  .properties-panel.mob-open { transform: translateX(0); }
 }
 
+/* ── RESPONSIVE — MOBILE (<768px) ────────────────────────── */
+/* Fix #2/#4: canvas fills screen, panels as bottom sheets */
 @media (max-width: 767px) {
   #app {
     grid-template-columns: 1fr;
@@ -1374,7 +1477,72 @@ html, body {
       "canvas"
       "statusbar";
   }
-  .activity-bar, .left-panel, .formula-bar, .properties-panel { display: none; }
+
+  .activity-bar, .formula-bar { display: none; }
+
+  /* Mobile bottom nav bar */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: var(--statusbar-height);
+    left: 0; right: 0;
+    height: var(--mobile-nav-height);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    z-index: 200;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    gap: 4px;
+  }
+
+  /* Reserve space above mobile nav in status bar */
+  .status-bar { z-index: 210; }
+
+  /* Left panel — bottom sheet */
+  .left-panel {
+    display: flex !important;
+    position: fixed;
+    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height));
+    left: 0; right: 0;
+    height: 65vh;
+    width: auto !important;
+    z-index: 195;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(110%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    border-right: none;
+    border-top: 1px solid var(--color-border-strong);
+  }
+  .left-panel.mob-open { transform: translateY(0); }
+  .left-panel > .panel-resize-handle--x { display: none; }
+  .left-panel .mob-sheet-grip { display: flex; }
+
+  /* Properties panel — bottom sheet */
+  .properties-panel {
+    display: flex !important;
+    position: fixed;
+    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height));
+    left: 0; right: 0;
+    height: 65vh;
+    z-index: 195;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(110%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    border-left: none;
+    border-top: 1px solid var(--color-border-strong);
+  }
+  .properties-panel.mob-open { transform: translateY(0); }
+  .properties-panel .mob-sheet-grip { display: flex; }
+  .right-panel-resize-handle { display: none; }
+
+  /* Tool buttons and layer rows larger for touch */
+  .tool-btn { width: 44px; height: 44px; font-size: 18px; }
+  .layer-row { min-height: 44px; }
+  .layer-vis-btn, .layer-lock-btn { width: 36px; height: 36px; }
 }
 
 /* ── TIMELINE PANEL ───────────────────────────────────────── */

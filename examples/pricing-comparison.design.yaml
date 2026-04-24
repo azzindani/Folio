@@ -1,0 +1,1033 @@
+_protocol: design/v1
+_mode: complete
+
+# ─────────────────────────────────────────────────────────────────
+#  PRICING COMPARISON — SaaS Pricing Table (3 tiers)
+#  Format: 1200×700px landscape
+#  Type: poster
+#  Style: Clean dark UI, card-based layout, vega-lite bar chart
+# ─────────────────────────────────────────────────────────────────
+
+meta:
+  id: pricing-comparison-001
+  name: SaaS Pricing Comparison — Choose Your Plan
+  type: poster
+  created: "2026-04-24"
+  modified: "2026-04-24"
+  generator: folio-mcp
+  tags: [pricing, saas, comparison, dark-ui, cards]
+
+document:
+  width: 1200
+  height: 700
+  unit: px
+  dpi: 72
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#6366F1"
+    secondary: "#8B5CF6"
+    accent: "#F59E0B"
+    background: "#0C0C14"
+    surface: "#14142A"
+    surface2: "#1E1E38"
+    surface3: "#28284A"
+    text: "#F1F1FB"
+    text_muted: "#7878AA"
+    heading: "Inter"
+    body: "Inter"
+    mono: "JetBrains Mono"
+
+layers:
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-bg
+  #  Background + subtle grid/noise texture
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-bg
+    type: group
+    z: 0
+    x: 0
+    y: 0
+    layers:
+
+      - id: bg-base
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1200
+        height: 700
+        fill:
+          type: linear
+          angle: 135
+          stops:
+            - { color: "#0C0C14", position: 0 }
+            - { color: "#10101E", position: 100 }
+
+      - id: bg-glow-center
+        type: rect
+        z: 1
+        x: 200
+        y: -100
+        width: 800
+        height: 600
+        fill:
+          type: radial
+          cx: 50
+          cy: 30
+          radius: 55
+          stops:
+            - { color: "#6366F1", position: 0 }
+            - { color: "transparent", position: 100 }
+        opacity: 0.1
+
+      - id: bg-noise
+        type: rect
+        z: 2
+        x: 0
+        y: 0
+        width: 1200
+        height: 700
+        fill:
+          type: noise
+          opacity: 0.025
+          frequency: 0.8
+          octaves: 3
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-header
+  #  Title + subtitle
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-header
+    type: group
+    z: 10
+    x: 0
+    y: 0
+    layers:
+
+      - id: header-title
+        type: text
+        z: 10
+        x: 40
+        y: 32
+        width: 1120
+        height: auto
+        content: { type: plain, value: "Choose Your Plan" }
+        style:
+          font_family: "$heading"
+          font_size: 36
+          font_weight: 800
+          color: "$text"
+          text_align: center
+          letter_spacing: -0.5
+
+      - id: header-subtitle
+        type: text
+        z: 10
+        x: 40
+        y: 78
+        width: 1120
+        height: auto
+        content: { type: plain, value: "Start free, scale as you grow. Upgrade or cancel at any time." }
+        style:
+          font_family: "$body"
+          font_size: 15
+          font_weight: 400
+          color: "$text_muted"
+          text_align: center
+
+      # Popular badge for Pro card
+      - id: header-popular-bg
+        type: rect
+        z: 11
+        x: 530
+        y: 26
+        width: 140
+        height: 24
+        fill:
+          type: linear
+          angle: 135
+          stops:
+            - { color: "#6366F1", position: 0 }
+            - { color: "#8B5CF6", position: 100 }
+        radius: 12
+
+      - id: header-popular-text
+        type: text
+        z: 12
+        x: 530
+        y: 31
+        width: 140
+        height: auto
+        content: { type: plain, value: "MOST POPULAR" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#FFFFFF"
+          text_align: center
+          letter_spacing: 1.5
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-free-card
+  #  Free tier card
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-free-card
+    type: group
+    z: 20
+    x: 0
+    y: 0
+    layers:
+
+      - id: free-card-bg
+        type: rect
+        z: 20
+        x: 40
+        y: 110
+        width: 330
+        height: 490
+        fill: { type: solid, color: "#14142A" }
+        radius: 16
+        stroke: { color: "#2A2A4A", width: 1 }
+
+      - id: free-tier-label
+        type: text
+        z: 21
+        x: 56
+        y: 136
+        width: 298
+        height: auto
+        content: { type: plain, value: "FREE" }
+        style:
+          font_family: "$heading"
+          font_size: 13
+          font_weight: 700
+          color: "$text_muted"
+          letter_spacing: 3
+
+      - id: free-price
+        type: text
+        z: 21
+        x: 56
+        y: 162
+        width: 200
+        height: auto
+        content: { type: plain, value: "$0" }
+        style:
+          font_family: "$heading"
+          font_size: 56
+          font_weight: 900
+          color: "$text"
+          line_height: 1.0
+
+      - id: free-period
+        type: text
+        z: 21
+        x: 56
+        y: 228
+        width: 200
+        height: auto
+        content: { type: plain, value: "per month · forever" }
+        style:
+          font_family: "$body"
+          font_size: 12
+          font_weight: 400
+          color: "$text_muted"
+
+      - id: free-divider
+        type: line
+        z: 21
+        x1: 56
+        y1: 258
+        x2: 354
+        y2: 258
+        stroke: { color: "#2A2A4A", width: 1 }
+
+      # Feature list
+      - id: free-feat-1
+        type: text
+        z: 21
+        x: 56
+        y: 272
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  Up to 3 projects" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: free-feat-2
+        type: text
+        z: 21
+        x: 56
+        y: 302
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  5 GB storage" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: free-feat-3
+        type: text
+        z: 21
+        x: 56
+        y: 332
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  Community support" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: free-feat-4
+        type: text
+        z: 21
+        x: 56
+        y: 362
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  Basic analytics" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: free-feat-5
+        type: text
+        z: 21
+        x: 56
+        y: 392
+        width: 298
+        height: auto
+        content: { type: plain, value: "✗  API access" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.6
+
+      - id: free-feat-6
+        type: text
+        z: 21
+        x: 56
+        y: 422
+        width: 298
+        height: auto
+        content: { type: plain, value: "✗  Team collaboration" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.6
+
+      - id: free-feat-7
+        type: text
+        z: 21
+        x: 56
+        y: 452
+        width: 298
+        height: auto
+        content: { type: plain, value: "✗  Custom domains" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text_muted"
+          line_height: 1.6
+
+      # CTA button
+      - id: free-btn-bg
+        type: rect
+        z: 21
+        x: 56
+        y: 540
+        width: 298
+        height: 44
+        fill: { type: solid, color: "#1E1E38" }
+        radius: 10
+        stroke: { color: "#3A3A5C", width: 1 }
+
+      - id: free-btn-text
+        type: text
+        z: 22
+        x: 56
+        y: 554
+        width: 298
+        height: auto
+        content: { type: plain, value: "Get Started Free" }
+        style:
+          font_family: "$heading"
+          font_size: 14
+          font_weight: 600
+          color: "$text"
+          text_align: center
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-pro-card
+  #  Pro tier — highlighted, gradient border, featured
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-pro-card
+    type: group
+    z: 20
+    x: 0
+    y: 0
+    layers:
+
+      # Gradient border (slightly larger rect behind card)
+      - id: pro-card-border
+        type: rect
+        z: 20
+        x: 433
+        y: 96
+        width: 334
+        height: 518
+        fill:
+          type: linear
+          angle: 135
+          stops:
+            - { color: "#6366F1", position: 0 }
+            - { color: "#8B5CF6", position: 50 }
+            - { color: "#F59E0B", position: 100 }
+        radius: 18
+
+      - id: pro-card-bg
+        type: rect
+        z: 21
+        x: 436
+        y: 99
+        width: 328
+        height: 512
+        fill: { type: solid, color: "#14142A" }
+        radius: 16
+
+      # Subtle inner glow
+      - id: pro-card-glow
+        type: rect
+        z: 22
+        x: 436
+        y: 99
+        width: 328
+        height: 260
+        fill:
+          type: radial
+          cx: 50
+          cy: 20
+          radius: 60
+          stops:
+            - { color: "#6366F1", position: 0 }
+            - { color: "transparent", position: 100 }
+        opacity: 0.18
+        radius: 16
+
+      - id: pro-tier-label
+        type: text
+        z: 23
+        x: 452
+        y: 122
+        width: 296
+        height: auto
+        content: { type: plain, value: "PRO" }
+        style:
+          font_family: "$heading"
+          font_size: 13
+          font_weight: 700
+          color: "#8B5CF6"
+          letter_spacing: 3
+
+      - id: pro-price
+        type: text
+        z: 23
+        x: 452
+        y: 148
+        width: 200
+        height: auto
+        content: { type: plain, value: "$49" }
+        style:
+          font_family: "$heading"
+          font_size: 56
+          font_weight: 900
+          color: "$text"
+          line_height: 1.0
+
+      - id: pro-period
+        type: text
+        z: 23
+        x: 452
+        y: 214
+        width: 200
+        height: auto
+        content: { type: plain, value: "per month · billed annually" }
+        style:
+          font_family: "$body"
+          font_size: 12
+          font_weight: 400
+          color: "$text_muted"
+
+      - id: pro-savings-badge
+        type: rect
+        z: 23
+        x: 652
+        y: 150
+        width: 96
+        height: 22
+        fill: { type: solid, color: "#F59E0B", opacity: 0.15 }
+        stroke: { color: "#F59E0B", width: 1 }
+        radius: 11
+
+      - id: pro-savings-text
+        type: text
+        z: 24
+        x: 652
+        y: 156
+        width: 96
+        height: auto
+        content: { type: plain, value: "SAVE 20%" }
+        style:
+          font_family: "$heading"
+          font_size: 9
+          font_weight: 700
+          color: "#F59E0B"
+          text_align: center
+          letter_spacing: 1
+
+      - id: pro-divider
+        type: line
+        z: 23
+        x1: 452
+        y1: 244
+        x2: 748
+        y2: 244
+        stroke: { color: "#2A2A4A", width: 1 }
+
+      # Feature list
+      - id: pro-feat-1
+        type: text
+        z: 23
+        x: 452
+        y: 258
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  Unlimited projects" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: pro-feat-2
+        type: text
+        z: 23
+        x: 452
+        y: 288
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  100 GB storage" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: pro-feat-3
+        type: text
+        z: 23
+        x: 452
+        y: 318
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  Priority email support" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: pro-feat-4
+        type: text
+        z: 23
+        x: 452
+        y: 348
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  Advanced analytics" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: pro-feat-5
+        type: text
+        z: 23
+        x: 452
+        y: 378
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  Full API access" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: pro-feat-6
+        type: text
+        z: 23
+        x: 452
+        y: 408
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  Up to 10 team members" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: pro-feat-7
+        type: text
+        z: 23
+        x: 452
+        y: 438
+        width: 296
+        height: auto
+        content: { type: plain, value: "✓  3 custom domains" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      # CTA button (gradient)
+      - id: pro-btn-bg
+        type: rect
+        z: 23
+        x: 452
+        y: 552
+        width: 296
+        height: 44
+        fill:
+          type: linear
+          angle: 135
+          stops:
+            - { color: "#6366F1", position: 0 }
+            - { color: "#8B5CF6", position: 100 }
+        radius: 10
+
+      - id: pro-btn-text
+        type: text
+        z: 24
+        x: 452
+        y: 566
+        width: 296
+        height: auto
+        content: { type: plain, value: "Start Pro Trial" }
+        style:
+          font_family: "$heading"
+          font_size: 14
+          font_weight: 700
+          color: "#FFFFFF"
+          text_align: center
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-enterprise-card
+  #  Enterprise tier card
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-enterprise-card
+    type: group
+    z: 20
+    x: 0
+    y: 0
+    layers:
+
+      - id: enterprise-card-bg
+        type: rect
+        z: 20
+        x: 830
+        y: 110
+        width: 330
+        height: 490
+        fill: { type: solid, color: "#14142A" }
+        radius: 16
+        stroke: { color: "#2A2A4A", width: 1 }
+
+      - id: enterprise-tier-label
+        type: text
+        z: 21
+        x: 846
+        y: 136
+        width: 298
+        height: auto
+        content: { type: plain, value: "ENTERPRISE" }
+        style:
+          font_family: "$heading"
+          font_size: 13
+          font_weight: 700
+          color: "#F59E0B"
+          letter_spacing: 3
+
+      - id: enterprise-price
+        type: text
+        z: 21
+        x: 846
+        y: 162
+        width: 298
+        height: auto
+        content: { type: plain, value: "Custom" }
+        style:
+          font_family: "$heading"
+          font_size: 44
+          font_weight: 900
+          color: "$text"
+          line_height: 1.0
+
+      - id: enterprise-period
+        type: text
+        z: 21
+        x: 846
+        y: 216
+        width: 298
+        height: auto
+        content: { type: plain, value: "annual contract · volume pricing" }
+        style:
+          font_family: "$body"
+          font_size: 12
+          font_weight: 400
+          color: "$text_muted"
+
+      - id: enterprise-divider
+        type: line
+        z: 21
+        x1: 846
+        y1: 258
+        x2: 1144
+        y2: 258
+        stroke: { color: "#2A2A4A", width: 1 }
+
+      # Feature list
+      - id: enterprise-feat-1
+        type: text
+        z: 21
+        x: 846
+        y: 272
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  Everything in Pro" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 600
+          color: "#F59E0B"
+          line_height: 1.6
+
+      - id: enterprise-feat-2
+        type: text
+        z: 21
+        x: 846
+        y: 302
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  Unlimited team members" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: enterprise-feat-3
+        type: text
+        z: 21
+        x: 846
+        y: 332
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  1 TB+ storage" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: enterprise-feat-4
+        type: text
+        z: 21
+        x: 846
+        y: 362
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  Dedicated account manager" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: enterprise-feat-5
+        type: text
+        z: 21
+        x: 846
+        y: 392
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  SSO / SAML 2.0" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: enterprise-feat-6
+        type: text
+        z: 21
+        x: 846
+        y: 422
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  SLA 99.99% uptime" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      - id: enterprise-feat-7
+        type: text
+        z: 21
+        x: 846
+        y: 452
+        width: 298
+        height: auto
+        content: { type: plain, value: "✓  On-premise deployment" }
+        style:
+          font_family: "$body"
+          font_size: 13
+          font_weight: 400
+          color: "$text"
+          line_height: 1.6
+
+      # CTA button
+      - id: enterprise-btn-bg
+        type: rect
+        z: 21
+        x: 846
+        y: 540
+        width: 298
+        height: 44
+        fill: { type: solid, color: "#1E1E38" }
+        radius: 10
+        stroke: { color: "#F59E0B", width: 1 }
+
+      - id: enterprise-btn-text
+        type: text
+        z: 22
+        x: 846
+        y: 554
+        width: 298
+        height: auto
+        content: { type: plain, value: "Contact Sales" }
+        style:
+          font_family: "$heading"
+          font_size: 14
+          font_weight: 600
+          color: "#F59E0B"
+          text_align: center
+
+  # ══════════════════════════════════════════════════════════════
+  #  GROUP: grp-footer
+  #  "All plans include" band + chart + CTA text
+  # ══════════════════════════════════════════════════════════════
+
+  - id: grp-footer
+    type: group
+    z: 30
+    x: 0
+    y: 0
+    layers:
+
+      # Footer background strip
+      - id: footer-bg
+        type: rect
+        z: 30
+        x: 0
+        y: 620
+        width: 1200
+        height: 80
+        fill:
+          type: linear
+          angle: 90
+          stops:
+            - { color: "transparent", position: 0 }
+            - { color: "#0C0C14", position: 50 }
+
+      # "All plans include" label
+      - id: footer-included-label
+        type: text
+        z: 31
+        x: 40
+        y: 636
+        width: 400
+        height: auto
+        content: { type: plain, value: "All plans include:" }
+        style:
+          font_family: "$heading"
+          font_size: 11
+          font_weight: 700
+          color: "$text_muted"
+          letter_spacing: 1
+
+      # Included items
+      - id: footer-included-items
+        type: text
+        z: 31
+        x: 40
+        y: 656
+        width: 760
+        height: auto
+        content: { type: plain, value: "SSL · 99.9% uptime SLA · GDPR compliance · 30-day money-back guarantee · Free migrations · 24/7 status page" }
+        style:
+          font_family: "$body"
+          font_size: 11
+          font_weight: 400
+          color: "$text_muted"
+
+      # CTA right
+      - id: footer-cta-text
+        type: text
+        z: 31
+        x: 860
+        y: 636
+        width: 300
+        height: auto
+        content: { type: plain, value: "Questions? Talk to us." }
+        style:
+          font_family: "$heading"
+          font_size: 13
+          font_weight: 600
+          color: "$text"
+          text_align: right
+
+      - id: footer-cta-url
+        type: text
+        z: 31
+        x: 860
+        y: 658
+        width: 300
+        height: auto
+        content: { type: plain, value: "acme.io/pricing · hello@acme.io" }
+        style:
+          font_family: "$mono"
+          font_size: 11
+          font_weight: 500
+          color: "#6366F1"
+          text_align: right
+
+  # ══════════════════════════════════════════════════════════════
+  #  Vega-Lite bar chart — feature comparison by tier
+  #  Positioned to the left, using available negative space
+  # ══════════════════════════════════════════════════════════════
+
+  - id: chart-comparison
+    type: chart
+    z: 40
+    x: 56
+    y: 120
+    width: 300
+    height: 340
+    spec:
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json"
+      title:
+        text: "Feature Value by Tier"
+        color: "#7878AA"
+        fontSize: 11
+        font: "Inter"
+      data:
+        values:
+          - { feature: "Storage", tier: "Free", score: 1 }
+          - { feature: "Storage", tier: "Pro", score: 5 }
+          - { feature: "Storage", tier: "Enterprise", score: 10 }
+          - { feature: "Integrations", tier: "Free", score: 2 }
+          - { feature: "Integrations", tier: "Pro", score: 6 }
+          - { feature: "Integrations", tier: "Enterprise", score: 10 }
+          - { feature: "Support", tier: "Free", score: 1 }
+          - { feature: "Support", tier: "Pro", score: 6 }
+          - { feature: "Support", tier: "Enterprise", score: 10 }
+          - { feature: "Team Size", tier: "Free", score: 1 }
+          - { feature: "Team Size", tier: "Pro", score: 5 }
+          - { feature: "Team Size", tier: "Enterprise", score: 10 }
+      mark: { type: bar, cornerRadiusTopLeft: 3, cornerRadiusTopRight: 3 }
+      encoding:
+        x:
+          field: tier
+          type: nominal
+          axis:
+            labelColor: "#7878AA"
+            tickColor: "#2A2A4A"
+            domainColor: "#2A2A4A"
+            labelFontSize: 10
+          title: null
+        y:
+          field: score
+          type: quantitative
+          title: "Capability Score"
+          axis:
+            labelColor: "#7878AA"
+            gridColor: "#1E1E38"
+            domainColor: "#2A2A4A"
+            titleColor: "#7878AA"
+            titleFontSize: 10
+        color:
+          field: tier
+          type: nominal
+          scale:
+            domain: ["Free", "Pro", "Enterprise"]
+            range: ["#28284A", "#6366F1", "#F59E0B"]
+          legend:
+            labelColor: "#7878AA"
+            titleColor: "#7878AA"
+            orient: bottom
+        column:
+          field: feature
+          type: nominal
+          header:
+            labelColor: "#7878AA"
+            labelFontSize: 10
+            labelFont: "Inter"
+            title: null
+      config:
+        background: "transparent"
+        view: { stroke: null }
+        axis: { gridOpacity: 0.4 }
+        facet: { spacing: 4 }

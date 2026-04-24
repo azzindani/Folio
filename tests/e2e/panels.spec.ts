@@ -133,7 +133,8 @@ test.describe('Panels — align toolbar', () => {
     page.on('pageerror', e => errors.push(e.message));
     await page.keyboard.press('Escape');
     const firstBtn = page.locator('.align-toolbar button').first();
-    await firstBtn.click();
+    // Inactive buttons have pointer-events:none; force:true tests the JS guard
+    await firstBtn.click({ force: true });
     expect(errors).toHaveLength(0);
   });
 });
