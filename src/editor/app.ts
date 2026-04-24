@@ -34,8 +34,6 @@ import { ImageImportHandler } from './image-import-handler';
 import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
-import { smartDuplicate } from '../utils/smart-duplicate';
-import { lintDesign } from '../utils/design-lint';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',

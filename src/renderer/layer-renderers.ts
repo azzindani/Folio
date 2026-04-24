@@ -2,7 +2,7 @@ import type {
   Layer, RectLayer, CircleLayer, PathLayer, PolygonLayer,
   LineLayer, TextLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
-  QRCodeLayer, AutoLayoutLayer, Radius, ColorOrGradient,
+  QRCodeLayer, AutoLayoutLayer, ColorOrGradient,
 } from '../schema/types';
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
