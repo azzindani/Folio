@@ -157,8 +157,9 @@ test.describe('Layer operations — alignment toolbar', () => {
   test('clicking align-left button does not crash', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
-    // Select at least one layer
+    // Need ≥2 layers selected to activate align buttons
     await page.locator('.layer-row').first().click();
+    await page.locator('.layer-row').nth(1).click({ modifiers: ['Shift'] });
     const btn = page.locator('.align-toolbar .align-btn').first();
     if (await btn.count() > 0) await btn.click();
     expect(errors).toHaveLength(0);
