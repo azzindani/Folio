@@ -51,6 +51,7 @@ export class LayerPanelManager {
     // Persistent delegated listeners — bound once, never removed
     this.list.addEventListener('click', this.onClick.bind(this));
     this.list.addEventListener('dblclick', this.onDblClick.bind(this));
+    this.list.addEventListener('keydown', this.onKeyDown.bind(this));
     this.container.appendChild(this.list);
     this.render();
   }
@@ -116,6 +117,26 @@ export class LayerPanelManager {
         ${locked ? '🔒' : '🔓'}
       </button>
     </div>`;
+  }
+
+  private onKeyDown(e: KeyboardEvent): void {
+    if (!['ArrowUp', 'ArrowDown', 'Enter', ' '].includes(e.key)) return;
+    const rows = Array.from(this.list.querySelectorAll<HTMLElement>('.layer-row'));
+    if (!rows.length) return;
+    const active = document.activeElement as HTMLElement;
+    const idx = rows.indexOf(active);
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = e.key === 'ArrowUp' ? idx - 1 : idx + 1;
+      const target = rows[Math.max(0, Math.min(rows.length - 1, next))];
+      target?.focus();
+    } else if ((e.key === 'Enter' || e.key === ' ') && idx >= 0) {
+      e.preventDefault();
+      const id = active.dataset.layerId;
+      if (!id) return;
+      const cur = this.state.get().selectedLayerIds;
+      this.state.set('selectedLayerIds', cur.includes(id) ? cur : [id]);
+    }
   }
 
   private onClick(e: MouseEvent): void {
