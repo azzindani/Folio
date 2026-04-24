@@ -429,7 +429,16 @@ export class EditorApp {
         <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">&#9790;</button>
       </div>
 
+      <div class="mob-backdrop"></div>
+
+      <nav class="mobile-nav" aria-label="Mobile navigation">
+        <button class="mob-nav-btn" data-mob="layers" title="Layers">&#9776;</button>
+        <button class="mob-nav-btn" data-mob="props" title="Properties">&#9881;</button>
+        <button class="mob-nav-btn" data-mob="cmd" title="Command palette">&#128269;</button>
+      </nav>
+
       <div class="left-panel">
+        <div class="mob-sheet-grip" aria-hidden="true"></div>
         <div class="left-panel-view active" data-panel="layers">
           <div class="tools-panel"></div>
           <div class="layer-panel">
@@ -477,6 +486,7 @@ export class EditorApp {
       </div>
 
       <div class="properties-panel">
+        <div class="mob-sheet-grip" aria-hidden="true"></div>
         <div class="right-panel-resize-handle" data-resize="right"></div>
         <div class="rpanel-tabs">
           <button class="rpanel-tab active" data-tab="properties">Props</button>
@@ -538,6 +548,7 @@ export class EditorApp {
     this.wireRpanelTabs();
     this.wireThemeToggle();
     this.wireResizers();
+    this.wireMobileNav();
   }
 
   private wireResizers(): void {
@@ -653,6 +664,57 @@ export class EditorApp {
       root.setAttribute('data-theme', isLight ? 'dark' : 'light');
       btn.innerHTML = isLight ? '&#9790;' : '&#9788;';
       btn.title = isLight ? 'Switch to light theme' : 'Switch to dark theme';
+    });
+  }
+
+  private wireMobileNav(): void {
+    const backdrop = this.container.querySelector<HTMLElement>('.mob-backdrop');
+    const leftPanel = this.container.querySelector<HTMLElement>('.left-panel');
+    const rightPanel = this.container.querySelector<HTMLElement>('.properties-panel');
+    const navBtns = this.container.querySelectorAll<HTMLElement>('.mob-nav-btn');
+    if (!backdrop || !leftPanel || !rightPanel) return;
+
+    const closeAll = (): void => {
+      leftPanel.classList.remove('mob-open');
+      rightPanel.classList.remove('mob-open');
+      backdrop.classList.remove('active');
+      navBtns.forEach(b => b.classList.remove('active'));
+    };
+
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.mob;
+        if (target === 'cmd') {
+          closeAll();
+          this.commandPalette?.open?.();
+          return;
+        }
+        const isLeft = target === 'layers';
+        const panel = isLeft ? leftPanel : rightPanel;
+        const isOpen = panel.classList.contains('mob-open');
+        closeAll();
+        if (!isOpen) {
+          panel.classList.add('mob-open');
+          backdrop.classList.add('active');
+          btn.classList.add('active');
+        }
+      });
+    });
+
+    backdrop.addEventListener('click', closeAll);
+
+    // Swipe-down-to-close on sheet grip
+    [leftPanel, rightPanel].forEach(panel => {
+      const grip = panel.querySelector<HTMLElement>('.mob-sheet-grip');
+      if (!grip) return;
+      let startY = 0;
+      grip.addEventListener('pointerdown', (e) => {
+        startY = e.clientY;
+        grip.setPointerCapture(e.pointerId);
+      });
+      grip.addEventListener('pointerup', (e) => {
+        if (e.clientY - startY > 60) closeAll();
+      });
     });
   }
 

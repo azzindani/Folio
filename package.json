@@ -21,11 +21,12 @@
     "test:unit:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:e2e": "playwright test tests/e2e/",
-    "test:visual": "playwright test tests/visual/",
-    "test:update-snapshots": "playwright test --update-snapshots",
+    "test:e2e": "playwright test tests/e2e/ --project=chromium",
+    "test:visual": "playwright test tests/visual/ --project=chromium",
+    "test:update-snapshots": "playwright test --update-snapshots --project=chromium",
     "test:bench": "vitest bench",
     "mcp": "node --loader ts-node/esm src/mcp/server.ts",
+    "mcp:http": "node --loader ts-node/esm src/mcp/http-server.ts",
     "clean": "rm -rf dist node_modules .vite"
   },
   "repository": {
