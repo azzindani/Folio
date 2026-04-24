@@ -43,7 +43,7 @@ describe('AlignToolbar', () => {
     expect(toolbar.style.display).not.toBe('none');
   });
 
-  it('buttons have reduced opacity when < 2 layers selected', () => {
+  it('buttons have inactive class when < 2 layers selected', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
@@ -51,7 +51,7 @@ describe('AlignToolbar', () => {
     setDesignWithLayers(state, layers);
     state.set('selectedLayerIds', ['a']);
     const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
-    expect(btns[0].style.opacity).toBe('0.3');
+    expect(btns[0].classList.contains('inactive')).toBe(true);
   });
 
   it('creates 8 align buttons immediately after construction', () => {
@@ -60,7 +60,7 @@ describe('AlignToolbar', () => {
     expect(btns.length).toBe(8);
   });
 
-  it('distribute buttons (indices 6-7) have reduced opacity when only 2 layers selected', () => {
+  it('distribute buttons (indices 6-7) are inactive when only 2 layers selected', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 50 },
@@ -69,14 +69,14 @@ describe('AlignToolbar', () => {
     setDesignWithLayers(state, layers);
     state.set('selectedLayerIds', ['a', 'b']);
     const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
-    // indices 0-5 (align) need minSelect=2 → full opacity with 2 selected
-    expect(btns[0].style.opacity).toBe('1');
-    // indices 6-7 (distribute) need minSelect=3 → inactive opacity with 2 selected
-    expect(btns[6].style.opacity).toBe('0.3');
-    expect(btns[7].style.opacity).toBe('0.3');
+    // indices 0-5 (align) need minSelect=2 → active with 2 selected
+    expect(btns[0].classList.contains('inactive')).toBe(false);
+    // indices 6-7 (distribute) need minSelect=3 → inactive with 2 selected
+    expect(btns[6].classList.contains('inactive')).toBe(true);
+    expect(btns[7].classList.contains('inactive')).toBe(true);
   });
 
-  it('all buttons have full opacity when 3+ layers selected', () => {
+  it('all buttons are active (no inactive class) when 3+ layers selected', () => {
     new AlignToolbar(container, state);
     const layers = [
       { id: 'a', type: 'rect', z: 0, x: 0,   y: 0, width: 50, height: 50 },
@@ -86,8 +86,8 @@ describe('AlignToolbar', () => {
     setDesignWithLayers(state, layers);
     state.set('selectedLayerIds', ['a', 'b', 'c']);
     const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
-    expect(btns[6].style.opacity).toBe('1');
-    expect(btns[7].style.opacity).toBe('1');
+    expect(btns[6].classList.contains('inactive')).toBe(false);
+    expect(btns[7].classList.contains('inactive')).toBe(false);
   });
 
   it('buttons return to inactive opacity when selection drops below 2', () => {
@@ -103,7 +103,7 @@ describe('AlignToolbar', () => {
     // Toolbar stays in DOM
     expect(toolbar).not.toBeNull();
     const btns = container.querySelectorAll<HTMLButtonElement>('.align-btn');
-    expect(btns[0].style.opacity).toBe('0.3');
+    expect(btns[0].classList.contains('inactive')).toBe(true);
   });
 
   it('clicking an active align button does not throw', () => {
