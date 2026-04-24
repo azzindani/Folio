@@ -59,7 +59,10 @@ export class PanelResizer {
       const saved = localStorage.getItem(this.storageKey());
       if (saved) {
         const px = parseInt(saved, 10);
-        if (!isNaN(px)) this.setSize(px);
+        if (!isNaN(px)) {
+          const clamped = Math.min(this.opts.max, Math.max(this.opts.min, px));
+          this.opts.target.style.setProperty(this.opts.cssVar, `${clamped}px`);
+        }
       }
     } catch { /* private browsing / storage blocked */ }
   }

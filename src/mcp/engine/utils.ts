@@ -4,11 +4,14 @@ import * as os from 'os';
 import yaml from 'js-yaml';
 import type { ToolResult } from '../types';
 
-// §18 — reject paths outside the user's home directory
+// §18 — reject paths outside the user's home directory or OS temp directory
 export function resolvePath(filePath: string): string {
   const resolved = path.resolve(filePath);
   const home = os.homedir();
-  if (!resolved.startsWith(home + path.sep) && resolved !== home) {
+  const tmp = os.tmpdir();
+  const underHome = resolved.startsWith(home + path.sep) || resolved === home;
+  const underTmp = resolved.startsWith(tmp + path.sep) || resolved === tmp;
+  if (!underHome && !underTmp) {
     throw new Error(`Path outside allowed home directory: ${filePath}`);
   }
   return resolved;
