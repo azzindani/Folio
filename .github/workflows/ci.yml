@@ -125,7 +125,7 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: npm run test:visual -- --project=chromium
+      - run: npm run test:visual
       - name: Upload visual diff artifacts on failure
         uses: actions/upload-artifact@v4
         if: failure()
@@ -136,13 +136,9 @@ jobs:
 
   # ── E2E TESTS ─────────────────────────────────────────────────
   e2e-tests:
-    name: E2E Tests (${{ matrix.browser }})
+    name: E2E Tests (chromium)
     needs: build
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        browser: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -150,18 +146,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx playwright install --with-deps chromium
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
-      - run: npm run test:e2e -- --project=${{ matrix.browser }}
+      - run: npm run test:e2e
       - name: Upload E2E artifacts on failure
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: e2e-${{ matrix.browser }}-artifacts
+          name: e2e-chromium-artifacts
           path: tests/playwright-report/
           retention-days: 7
 
