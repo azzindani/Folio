@@ -541,11 +541,14 @@ describe('exportDesign', () => {
     designPath = path.join(projectPath, 'designs/export-me.design.yaml');
   });
 
-  it('returns queued status for SVG format', () => {
+  it('writes SVG file and returns ok status', () => {
     const result = exportDesign({ design_path: designPath, format: 'svg' });
     const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('svg');
-    expect(parsed.status).toBe('queued');
+    expect(parsed.status).toBe('ok');
+    const outPath = parsed['output_path'] as string;
+    expect(fs.existsSync(outPath)).toBe(true);
+    expect((parsed['bytes'] as number) > 0).toBe(true);
   });
 
   it('returns queued status for HTML format', () => {
