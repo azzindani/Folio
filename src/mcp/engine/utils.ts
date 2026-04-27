@@ -87,6 +87,12 @@ export const LIMITS = {
 export const READ_TOKEN_CAP  = 500;
 export const WRITE_TOKEN_CAP = 150;
 
+// Output budget: max tokens per tool response. Read from env at call time.
+// Set FOLIO_OUTPUT_BUDGET=1000 (default) for local models; higher for cloud APIs.
+export function getOutputBudget(): number {
+  return parseInt(process.env['FOLIO_OUTPUT_BUDGET'] ?? '1000', 10);
+}
+
 export function tokenEstimate(obj: unknown): number {
   return Math.ceil(JSON.stringify(obj).length / 4);
 }
@@ -214,5 +220,28 @@ export function okResult(
     ...(backup !== undefined ? { backup } : {}),
   };
   r.token_estimate = tokenEstimate(r);
+
+  const budget = getOutputBudget();
+  if (r.token_estimate > budget) {
+    // Trim verbose fields to fit within output budget.
+    // Priority: keep success/op/domain fields; compress meta fields.
+    if (r.context) {
+      const ctx = r.context as ContextField;
+      r.context = { op: ctx.op, summary: ctx.summary, artifacts: [], timestamp: ctx.timestamp };
+    }
+    if (r.handover) {
+      const hw = r.handover as Handover;
+      r.handover = { ...hw, suggested_next: hw.suggested_next.slice(0, 1) };
+    }
+    if (Array.isArray(r.progress) && (r.progress as ProgressItem[]).length > 2) {
+      r.progress = (r.progress as ProgressItem[]).slice(-2);
+    }
+    if (typeof r.backup === 'string') {
+      r.backup = path.basename(r.backup as string);
+    }
+    r.budget_trimmed = true;
+    r.token_estimate = tokenEstimate(r);
+  }
+
   return r;
 }
