@@ -260,14 +260,15 @@ export function resumeDesign(args: { design_path: string; project_path?: string 
   });
 }
 
-export function getEngineGuide(_args: Record<string, unknown>): ToolResult {
+export function getEngineGuide(args: { section?: string }): ToolResult {
   const op = 'get_engine_guide';
   const progress: ProgressItem[] = [];
-  const guide = buildGuide();
-  progress.push(pOk('Engine guide loaded', 'call once per session'));
-  const context = buildContext(op, 'Loaded Folio engine reference guide');
+  const guide = buildGuide(args.section);
+  const section = args.section ?? 'quick_ref';
+  progress.push(pOk(`Guide section: ${section}`, 'sections: quick_ref | shorthand | layers | workflow'));
+  const context = buildContext(op, `Loaded guide section "${section}"`);
   const handover = buildHandover('PROJECT', {});
-  return okResult(op, { guide, token_hint: 'Load once per session. Refer to shorthand before generating layers.', progress, context, handover });
+  return okResult(op, { section, guide, sections_available: 'quick_ref | shorthand | layers | workflow', progress, context, handover });
 }
 
 export function listTasks(args: { project_path: string }): ToolResult {

@@ -4,8 +4,18 @@ import type { ToolDefinition } from '../types';
 export const TIER1_TOOLS: ToolDefinition[] = [
   {
     name: 'get_engine_guide',
-    description: 'Load engine reference: layer types, shorthand syntax, workflow. Call once.',
-    inputSchema: { type: 'object', properties: {} },
+    description: 'Load engine guide section. Default: quick_ref (~200 tokens).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        section: {
+          type: 'string',
+          enum: ['quick_ref', 'shorthand', 'layers', 'workflow'],
+          description: 'Guide section to load (default: quick_ref)',
+          default: 'quick_ref',
+        },
+      },
+    },
   },
   {
     name: 'list_tasks',
