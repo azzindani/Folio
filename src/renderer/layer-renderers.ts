@@ -34,17 +34,23 @@ function applyCommonAttributes(
   layer: Layer,
 ): void {
   el.setAttribute('data-layer-id', layer.id);
+
+  // Build transform: flip (scale around center) then rotate
+  const cx = (layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2);
+  const cy = (layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2);
+  const transforms: string[] = [];
+  if (layer.flip_h || layer.flip_v) {
+    const sx = layer.flip_h ? -1 : 1;
+    const sy = layer.flip_v ? -1 : 1;
+    transforms.push(`translate(${cx} ${cy}) scale(${sx} ${sy}) translate(${-cx} ${-cy})`);
+  }
   if (layer.rotation) {
-    const cx = (layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2);
-    const cy = (layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2);
-    el.setAttribute('transform', `rotate(${layer.rotation} ${cx} ${cy})`);
+    transforms.push(`rotate(${layer.rotation} ${cx} ${cy})`);
   }
-  if (layer.visible === false) {
-    el.setAttribute('display', 'none');
-  }
-  if (layer.opacity !== undefined) {
-    el.setAttribute('opacity', String(layer.opacity));
-  }
+  if (transforms.length > 0) el.setAttribute('transform', transforms.join(' '));
+
+  if (layer.visible === false) el.setAttribute('display', 'none');
+  if (layer.opacity !== undefined) el.setAttribute('opacity', String(layer.opacity));
 }
 
 function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; width: number; dash?: number[]; linecap?: string; linejoin?: string }, svg?: SVGSVGElement): void {
@@ -736,52 +742,71 @@ export function renderAutoLayout(
   const availableCross = containerCross - crossPadStart - (isRow ? pad.bottom : pad.right);
   const totalMain = mainSizes.reduce((s, v) => s + v, 0) + Math.max(0, sorted.length - 1) * gap;
 
-  let cursor: number;
-  let dynGap = gap;
-  switch (justify) {
-    case 'center':
-      cursor = mainPadStart + (availableMain - totalMain) / 2; break;
-    case 'end':
-      cursor = mainPadStart + availableMain - totalMain; break;
-    case 'space-between':
-      cursor = mainPadStart;
-      dynGap = sorted.length > 1
-        ? (availableMain - mainSizes.reduce((s, v) => s + v, 0)) / (sorted.length - 1)
-        : 0;
-      break;
-    case 'space-around': {
-      const spare = availableMain - mainSizes.reduce((s, v) => s + v, 0);
-      dynGap = spare / sorted.length;
-      cursor = mainPadStart + dynGap / 2; break;
-    }
-    default: cursor = mainPadStart;
-  }
-
-  const getCrossPos = (cSize: number): number => {
-    switch (align) {
-      case 'center': return crossPadStart + (availableCross - cSize) / 2;
-      case 'end':    return crossPadStart + availableCross - cSize;
-      default:       return crossPadStart;
+  const calcCursor = (total: number, count: number, sizes: number[]): { start: number; dynGap: number } => {
+    switch (justify) {
+      case 'center':      return { start: mainPadStart + (availableMain - total) / 2,              dynGap: gap };
+      case 'end':         return { start: mainPadStart + availableMain - total,                    dynGap: gap };
+      case 'space-between': return { start: mainPadStart, dynGap: count > 1 ? (availableMain - sizes.reduce((s,v)=>s+v,0)) / (count-1) : 0 };
+      case 'space-around':  { const sp = availableMain - sizes.reduce((s,v)=>s+v,0); return { start: mainPadStart + (sp/count)/2, dynGap: sp/count }; }
+      default:            return { start: mainPadStart,                                            dynGap: gap };
     }
   };
 
-  for (let i = 0; i < sorted.length; i++) {
-    const child    = sorted[i];
-    const crossPos = getCrossPos(crossSizes[i]);
-    const childX   = isRow ? x + cursor : x + crossPos;
-    const childY   = isRow ? y + crossPos : y + cursor;
-
-    const stretchW = align === 'stretch' && !isRow ? availableCross : undefined;
-    const stretchH = align === 'stretch' &&  isRow ? availableCross : undefined;
-
+  const placeChild = (child: Layer, mc: number, cc: number, cIdx: number, trackCross: number): void => {
+    let crossPos: number;
+    switch (align) {
+      case 'center': crossPos = cc + (trackCross - crossSizes[cIdx]) / 2; break;
+      case 'end':    crossPos = cc + trackCross - crossSizes[cIdx]; break;
+      default:       crossPos = cc;
+    }
     const placed: Layer = {
-      ...child, x: childX, y: childY,
-      ...(stretchW !== undefined ? { width:  stretchW } : {}),
-      ...(stretchH !== undefined ? { height: stretchH } : {}),
+      ...child,
+      x: isRow ? x + mc : x + crossPos,
+      y: isRow ? y + crossPos : y + mc,
+      ...(align === 'stretch' &&  isRow ? { height: trackCross } : {}),
+      ...(align === 'stretch' && !isRow ? { width:  trackCross } : {}),
     };
-
     g.appendChild(renderChild(placed, svg));
-    cursor += mainSizes[i] + dynGap;
+  };
+
+  if (layer.wrap && availableMain > 0) {
+    // Group children into wrap tracks
+    const tracks: { idxs: number[] }[] = [];
+    let track: number[] = [];
+    let trackUsed = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const sz = mainSizes[i];
+      const needed = track.length === 0 ? sz : trackUsed + gap + sz;
+      if (track.length > 0 && needed > availableMain + 0.5) {
+        tracks.push({ idxs: [...track] });
+        track = [i]; trackUsed = sz;
+      } else {
+        track.push(i); trackUsed = needed;
+      }
+    }
+    if (track.length > 0) tracks.push({ idxs: track });
+
+    let crossCursor = crossPadStart;
+    for (const { idxs } of tracks) {
+      const tSizes = idxs.map(i => mainSizes[i]);
+      const tTotal = tSizes.reduce((s,v)=>s+v,0) + Math.max(0, idxs.length-1) * gap;
+      const trackCross = Math.max(...idxs.map(i => crossSizes[i]));
+      const { start, dynGap } = calcCursor(tTotal, idxs.length, tSizes);
+      let mc = start;
+      for (let j = 0; j < idxs.length; j++) {
+        placeChild(sorted[idxs[j]], mc, crossCursor, idxs[j], trackCross);
+        mc += tSizes[j] + dynGap;
+      }
+      crossCursor += trackCross + gap;
+    }
+  } else {
+    // No wrap — linear pass
+    const { start, dynGap } = calcCursor(totalMain, sorted.length, mainSizes);
+    let cursor = start;
+    for (let i = 0; i < sorted.length; i++) {
+      placeChild(sorted[i], cursor, crossPadStart, i, availableCross);
+      cursor += mainSizes[i] + dynGap;
+    }
   }
 
   applyCommonAttributes(g, layer);
