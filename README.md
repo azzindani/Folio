@@ -21,33 +21,35 @@ Renderer capabilities include linear, radial, conic, and multi-stop gradient fil
 
 ## Installation & Requirements
 
-Installation targets local LLM setups on Linux, macOS, and Windows. Requirements are Node.js 20 LTS (or Bun 1.0+), Git, and npm. No API keys or cloud accounts are required at any point.
+Requirements are Git, Bun 1.0+ (recommended) or Node.js 20 LTS, and an MCP-compatible client (LM Studio, Claude Desktop, Open WebUI, etc.). No API keys or cloud accounts are required.
+
+**Self-updating bootstrap — Linux / macOS** (clone on first run, `git pull` on every subsequent run):
 
 ```bash
-# Clone and start the visual editor
-git clone https://github.com/azzindani/Folio.git
-cd Folio && npm ci && npm run dev
-# → http://localhost:5173
-
-# Run the MCP server (all 3 tiers, Node)
-npm run mcp
-
-# Run with Bun (~50ms cold start, recommended for local LLMs)
-bun run src/mcp/index.ts
-```
-
-Add to your MCP client's `mcp.json`:
-
-```json
+# mcp.json entry — paste as-is, replace FOLIO_MCP_TIER with 1, 2, or 3
 {
-  "mcpServers": {
-    "folio": {
-      "command": "bun",
-      "args": ["run", "/path/to/Folio/src/mcp/index.ts"],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" }
-    }
-  }
+  "command": "bash",
+  "args": ["-c", "[ -d ~/.folio_mcp ] || git clone https://github.com/azzindani/Folio ~/.folio_mcp && cd ~/.folio_mcp && git pull && bun install --frozen-lockfile && FOLIO_MCP_TIER=1 bun run src/mcp/index.ts"]
 }
 ```
 
-For small models, set `FOLIO_MCP_TIER=1` to expose only the 10 Basic tools. Set `FOLIO_MCP_TIER=2` for Basic + Design (19 tools). Omit for all 25 tools. The project includes 1,360 automated tests across unit, integration, and end-to-end suites (Vitest + Playwright).
+**Self-updating bootstrap — Windows PowerShell:**
+
+```powershell
+# mcp.json entry
+{
+  "command": "powershell",
+  "args": ["-NoProfile", "-Command", "if(!(Test-Path ~/.folio_mcp)){git clone https://github.com/azzindani/Folio ~/.folio_mcp}; Set-Location ~/.folio_mcp; git pull; bun install --frozen-lockfile; $env:FOLIO_MCP_TIER='1'; bun run src/mcp/index.ts"]
+}
+```
+
+**Local dev (repo already cloned):**
+
+```bash
+git clone https://github.com/azzindani/Folio.git
+cd Folio && npm ci
+npm run dev        # visual editor → http://localhost:5173
+bun run src/mcp/index.ts  # MCP server (all tiers)
+```
+
+Set `FOLIO_MCP_TIER=1` for 10 Basic tools (32K–64K models), `FOLIO_MCP_TIER=2` for 19 tools (64K+), or omit for all 25 tools. Set `FOLIO_OUTPUT_BUDGET=1000` (default) to cap each tool response at 1,000 tokens. The project includes 1,360 automated tests across unit, integration, and end-to-end suites (Vitest + Playwright).
