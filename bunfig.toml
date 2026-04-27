@@ -1,0 +1,8 @@
+# Bun runtime config — MCP server only (browser build uses Vite)
+# Bun natively executes TypeScript; no tsc/ts-node/esm loader needed.
+
+[run]
+# Inherit env from shell — no extra vars needed here
+
+[install]
+exact = true            # reproducible lockfile (like npm ci)

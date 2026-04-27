@@ -81,9 +81,31 @@ export const LIMITS = {
   get json_depth()   { return isConstrained() ? 3   : 6;   },
 } as const;
 
+// §16 — token budget caps (enforced via LIMITS; these are the reference ceilings)
+export const READ_TOKEN_CAP  = 500;   // read responses must stay under this
+export const WRITE_TOKEN_CAP = 150;   // write confirmations must stay under this
+
 // §16 — token budget awareness
 export function tokenEstimate(obj: unknown): number {
   return Math.ceil(JSON.stringify(obj).length / 4);
+}
+
+// §Operation Receipt Logging — persistent JSONL audit trail at ~/.folio/ops.log
+// Never throws; logging must not crash the server.
+const OPS_LOG = path.join(os.homedir(), '.folio', 'ops.log');
+
+export function appendOpLog(entry: {
+  op: string;
+  success: boolean;
+  file?: string;
+  backup?: string;
+  token_estimate?: number;
+}): void {
+  try {
+    const line = JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n';
+    fs.mkdirSync(path.dirname(OPS_LOG), { recursive: true });
+    fs.appendFileSync(OPS_LOG, line, 'utf-8');
+  } catch { /* never fail on logging */ }
 }
 
 // §16 — standard error response
