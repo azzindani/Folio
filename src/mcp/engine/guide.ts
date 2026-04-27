@@ -39,9 +39,10 @@ Ellipse:{id:"dot",   type:"ellipse",z:8, pos:[500,500,80,80],  fill:"#E94560"}
 Icon:   {id:"ico",   type:"icon",  z:9,  pos:[880,80,64,64],   icon:"star", color:"#E94560"}
 Group:  {id:"grp",   type:"group", z:6,  pos:[80,80,400,300],  layers:[...]}
 
-Text shorthand fields:  text, size, weight, color, align
+Text shorthand fields:  text, size, weight, color, align, text_decoration:"underline"|"line-through"
 Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"gradient",angle:135,stops:[{color,pos}]}
-Stroke shorthand:       "#hex" or {color:"#hex",width:2,dash:[4,2]}`,
+Stroke shorthand:       "#hex" or {color:"#hex",width:2,dash:[4,2]}
+Base fields (all types): opacity:0-1 · rotation:deg · flip_h:bool · flip_v:bool · locked:bool`,
 
   layers: `# Layer Types — Required Fields
 rect      id type z x y width height    + fill? stroke? radius? opacity?

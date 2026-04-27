@@ -18,6 +18,7 @@ export class CanvasManager {
   private currentSVG: SVGSVGElement | null = null;
   private rulerH!: HTMLCanvasElement;
   private rulerV!: HTMLCanvasElement;
+  private marqueeEl: HTMLDivElement | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
@@ -442,6 +443,66 @@ export class CanvasManager {
     document.addEventListener('pointerup', onUp);
   }
 
+  private startMarquee(e: PointerEvent): void {
+    if (!e.shiftKey) this.state.set('selectedLayerIds', []);
+
+    const vpRect = this.viewport.getBoundingClientRect();
+    const startX = e.clientX - vpRect.left;
+    const startY = e.clientY - vpRect.top;
+
+    // Create visual marquee rect
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;border:1.5px dashed #5b9cf6;background:rgba(91,156,246,0.08);
+      pointer-events:none;z-index:100;box-sizing:border-box;`;
+    el.style.left = `${startX}px`; el.style.top = `${startY}px`;
+    el.style.width = '0'; el.style.height = '0';
+    this.viewport.appendChild(el);
+    this.marqueeEl = el;
+
+    const onMove = (ev: PointerEvent) => {
+      const cx = ev.clientX - vpRect.left;
+      const cy = ev.clientY - vpRect.top;
+      const x = Math.min(startX, cx), y = Math.min(startY, cy);
+      const w = Math.abs(cx - startX),  h = Math.abs(cy - startY);
+      el.style.left = `${x}px`; el.style.top  = `${y}px`;
+      el.style.width = `${w}px`; el.style.height = `${h}px`;
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      el.remove(); this.marqueeEl = null;
+
+      const cx = ev.clientX - vpRect.left;
+      const cy = ev.clientY - vpRect.top;
+      if (Math.abs(cx - startX) < 4 && Math.abs(cy - startY) < 4) return; // tiny drag = click
+
+      const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+      // Convert marquee corners to design coords
+      const rx1 = (Math.min(startX, cx) - panX) / zoom;
+      const ry1 = (Math.min(startY, cy) - panY) / zoom;
+      const rx2 = (Math.max(startX, cx) - panX) / zoom;
+      const ry2 = (Math.max(startY, cy) - panY) / zoom;
+
+      const hit = this.state.getCurrentLayers().filter(l => {
+        const lx = l.x ?? 0;  const ly = l.y ?? 0;
+        const lw = typeof l.width  === 'number' ? l.width  : 0;
+        const lh = typeof l.height === 'number' ? l.height : 0;
+        return lx < rx2 && lx + lw > rx1 && ly < ry2 && ly + lh > ry1;
+      }).map(l => l.id);
+
+      if (e.shiftKey) {
+        const prev = this.state.get().selectedLayerIds;
+        this.state.set('selectedLayerIds', [...new Set([...prev, ...hit])]);
+      } else {
+        this.state.set('selectedLayerIds', hit);
+      }
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
   private onPointerDown(e: PointerEvent): void {
     const { activeTool } = this.state.get();
 
@@ -457,8 +518,8 @@ export class CanvasManager {
     const layerEl = target.closest('[data-layer-id]') as SVGElement | null;
 
     if (!layerEl) {
-      // Click on empty canvas — deselect
-      this.state.set('selectedLayerIds', []);
+      // Begin rubber-band / marquee selection
+      this.startMarquee(e);
       return;
     }
 

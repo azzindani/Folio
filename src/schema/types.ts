@@ -213,6 +213,8 @@ export interface BaseLayer {
   height?: number | 'auto';
   pos?: PositionShorthand;
   rotation?: number;
+  flip_h?: boolean;
+  flip_v?: boolean;
   visible?: boolean;
   locked?: boolean;
   opacity?: number;
