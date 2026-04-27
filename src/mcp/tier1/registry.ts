@@ -4,12 +4,12 @@ import type { ToolDefinition } from '../types';
 export const TIER1_TOOLS: ToolDefinition[] = [
   {
     name: 'get_engine_guide',
-    description: 'Load the Folio engine reference: layer types, shorthand syntax, workflow patterns, token budget. Call ONCE at session start before generating any designs.',
+    description: 'Load engine reference: layer types, shorthand syntax, workflow. Call once.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'list_tasks',
-    description: 'List all task files (.task.yaml) in a project with progress status. Use to find task_path after a context reset.',
+    description: 'List task files in a project with progress status.',
     inputSchema: {
       type: 'object',
       properties: { project_path: { type: 'string', description: 'Path to project directory' } },
@@ -18,12 +18,12 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'create_project',
-    description: 'Create a new design project with directory structure, default theme, and project.yaml.',
+    description: 'Create project with directory structure, default theme, project.yaml.',
     inputSchema: {
       type: 'object',
       properties: {
         name:   { type: 'string', description: 'Project name' },
-        path:   { type: 'string', description: 'Absolute directory path to create project in' },
+        path:   { type: 'string', description: 'Absolute directory path for the project' },
         theme:  { type: 'string', description: 'Theme ID (default: dark-tech)', default: 'dark-tech' },
         canvas: { type: 'string', description: 'Canvas size e.g. "1080x1080"', default: '1080x1080' },
       },
@@ -32,7 +32,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'list_designs',
-    description: 'List designs in a project. Returns max 40 items with truncated/total fields.',
+    description: 'List designs in a project. Returns max 40 items.',
     inputSchema: {
       type: 'object',
       properties: { project_path: { type: 'string', description: 'Path to project directory' } },
@@ -62,29 +62,32 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'duplicate_design',
-    description: 'Copy an existing design with a new name and UUID. Registers copy in project.yaml.',
+    description: 'Copy a design with a new name and UUID. Registers in project.yaml.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to source .design.yaml file' },
+        design_path:  { type: 'string', description: 'Path to source .design.yaml' },
         new_name:     { type: 'string', description: 'Name for the duplicated design' },
-        project_path: { type: 'string', description: 'Path to project directory (for registry update)' },
+        project_path: { type: 'string', description: 'Project directory (for registry update)' },
       },
       required: ['design_path', 'new_name'],
     },
   },
   {
     name: 'resume_design',
-    description: 'Read generation state of an in-progress carousel so the LLM can continue appending pages.',
+    description: 'Read carousel generation state to continue appending pages.',
     inputSchema: {
       type: 'object',
-      properties: { design_path: { type: 'string', description: 'Path to .design.yaml file' } },
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml file' },
+        project_path: { type: 'string', description: 'Project dir (optional — enables relative paths)' },
+      },
       required: ['design_path'],
     },
   },
   {
     name: 'create_task',
-    description: 'Create a multi-page task plan + carousel scaffold. Returns next_action baton pointing to the first append_page call. Use for any design with more than one page.',
+    description: 'Plan multi-page carousel + scaffold. Returns first append_page baton.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -96,13 +99,13 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         height:       { type: 'number', description: 'Canvas height px', default: 1080 },
         pages: {
           type: 'object',
-          description: 'Ordered page plan: [{label:"Cover",hints:"bold headline + logo"}, ...]',
+          description: 'Page plan: [{label:"Cover",hints:"bold headline"}]',
           items: {
             type: 'object',
             properties: {
-              id:    { type: 'string', description: 'Page ID (auto-generated if omitted)' },
+              id:    { type: 'string', description: 'Page ID (auto if omitted)' },
               label: { type: 'string', description: 'Page title / purpose' },
-              hints: { type: 'string', description: 'Brief content guidance for this page' },
+              hints: { type: 'string', description: 'Content guidance for this page' },
             },
             required: ['label'],
           },
@@ -113,10 +116,10 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'resume_task',
-    description: 'Read task state and get the exact next tool call to make. Call this whenever context resets mid-generation or to check progress.',
+    description: 'Read task state and get exact next tool call. Use after context reset.',
     inputSchema: {
       type: 'object',
-      properties: { task_path: { type: 'string', description: 'Path to .task.yaml file (returned by create_task)' } },
+      properties: { task_path: { type: 'string', description: 'Path to .task.yaml (from create_task)' } },
       required: ['task_path'],
     },
   },
