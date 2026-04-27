@@ -476,13 +476,14 @@ export class EditorApp {
         <div class="left-panel-resize-handle" data-resize="left"></div>
       </div>
 
-      <div class="canvas-section">
+      <div class="canvas-section" style="position:relative">
         <div class="tab-bar-container"></div>
         <div class="viewport-area"></div>
         <div class="page-strip-section" id="page-strip-section" style="display:none">
           <div class="page-strip-resize-handle" data-resize="page-strip"></div>
           <div class="page-strip-content"></div>
         </div>
+        <button class="rpanel-reopen-btn" id="rpanel-reopen" title="Open Properties panel">&#x2039;</button>
       </div>
 
       <div class="properties-panel">
@@ -495,6 +496,7 @@ export class EditorApp {
           <button class="rpanel-tab" data-tab="timeline">Timeline</button>
           <button class="rpanel-tab" data-tab="problems">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
+          <button class="rpanel-close-btn" id="rpanel-toggle" title="Close panel (Ctrl+\)">&#x203A;</button>
         </div>
         <div class="rpanel-body">
           <div class="tab-pane active" data-tab="properties">
@@ -645,25 +647,59 @@ export class EditorApp {
   private wireRpanelTabs(): void {
     const tabs = this.container.querySelectorAll<HTMLElement>('.rpanel-tab');
     const panes = this.container.querySelectorAll<HTMLElement>('.rpanel-body .tab-pane');
+    const app = this.container.closest('#app') ?? this.container;
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const tabId = tab.dataset.tab!;
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
         panes.forEach(p => p.classList.toggle('active', p.dataset.tab === tabId));
+        // Clicking a tab while collapsed re-opens the panel
+        app.classList.remove('rpanel-collapsed');
+        this.syncRpanelToggleIcon();
       });
     });
+
+    // Close / re-open buttons
+    const toggleClose = this.container.querySelector<HTMLElement>('#rpanel-toggle');
+    const toggleOpen = this.container.querySelector<HTMLElement>('#rpanel-reopen');
+    const toggle = () => {
+      app.classList.toggle('rpanel-collapsed');
+      this.syncRpanelToggleIcon();
+    };
+    toggleClose?.addEventListener('click', toggle);
+    toggleOpen?.addEventListener('click', toggle);
+    this.syncRpanelToggleIcon();
+  }
+
+  private syncRpanelToggleIcon(): void {
+    const app = this.container.closest('#app') ?? this.container;
+    const btn = this.container.querySelector<HTMLElement>('#rpanel-toggle');
+    if (!btn) return;
+    const collapsed = app.classList.contains('rpanel-collapsed');
+    btn.innerHTML = collapsed ? '&#x2039;' : '&#x203A;';
+    btn.title = collapsed ? 'Open Properties panel (Ctrl+\\)' : 'Close Properties panel (Ctrl+\\)';
   }
 
   private wireThemeToggle(): void {
     const btn = this.container.querySelector<HTMLElement>('#theme-toggle');
     if (!btn) return;
     const root = document.documentElement;
+
+    // Restore persisted theme
+    const saved = localStorage.getItem('folio:ui-theme') ?? 'dark';
+    root.setAttribute('data-theme', saved);
+    btn.innerHTML = saved === 'light' ? '&#9790;' : '&#9788;';
+    btn.title = saved === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+
     btn.addEventListener('click', () => {
       const isLight = root.getAttribute('data-theme') === 'light';
-      root.setAttribute('data-theme', isLight ? 'dark' : 'light');
-      btn.innerHTML = isLight ? '&#9790;' : '&#9788;';
-      btn.title = isLight ? 'Switch to light theme' : 'Switch to dark theme';
+      const next = isLight ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      btn.innerHTML = next === 'light' ? '&#9790;' : '&#9788;';
+      btn.title = next === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+      localStorage.setItem('folio:ui-theme', next);
+      this.payloadEditor?.setTheme(next);
     });
   }
 

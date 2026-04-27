@@ -208,14 +208,18 @@ export class KeyboardManager {
     if (layers.length < 2) return;
     const maxZ = Math.max(...layers.map(l => l.z));
     const groupId = `group-${++groupCounter}`;
+    const minX = Math.min(...layers.map(l => l.x ?? 0));
+    const minY = Math.min(...layers.map(l => l.y ?? 0));
+    const maxX = Math.max(...layers.map(l => (l.x ?? 0) + (typeof l.width  === 'number' ? l.width  : 0)));
+    const maxY = Math.max(...layers.map(l => (l.y ?? 0) + (typeof l.height === 'number' ? l.height : 0)));
     const groupLayer: Layer = {
       id: groupId,
       type: 'group',
       z: maxZ,
-      x: Math.min(...layers.map(l => l.x ?? 0)),
-      y: Math.min(...layers.map(l => l.y ?? 0)),
-      width: 0,
-      height: 0,
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
       layers: layers,
     } as unknown as Layer;
 
