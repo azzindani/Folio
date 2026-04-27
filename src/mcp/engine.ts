@@ -14,6 +14,7 @@ import {
   buildContext, buildHandover,
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
+import { renderToSVGString } from './engine/svg-export';
 import { expandShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
@@ -656,13 +657,28 @@ export function exportDesign(args: { design_path: string; format: string; output
   if (criticals.length > 0) return errResult(op, `Validation errors: ${criticals.map(e => e.message).join('; ')}`, 'Fix errors then retry.', progress);
 
   const outPath = args.output_path ?? dPath.replace('.design.yaml', `.${args.format}`);
-  if (args.format === 'svg' || args.format === 'html') {
-    progress.push(pOk(`Queued ${args.format.toUpperCase()} export`, path.basename(outPath)));
-    const context = buildContext(op, `Queued ${args.format.toUpperCase()} export for "${spec.meta.name}"`, [
-      { type: args.format, path: outPath, role: 'queued' },
+  if (args.format === 'svg') {
+    try {
+      const svgStr = renderToSVGString(spec);
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, svgStr, 'utf-8');
+      progress.push(pOk('SVG written', path.basename(outPath)));
+      const context = buildContext(op, `SVG exported for "${spec.meta.name}"`, [
+        { type: 'svg', path: outPath, role: 'output' },
+      ]);
+      const handover = buildHandover('EXPORT', { design_path: dPath });
+      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, progress, context, handover });
+    } catch (err) {
+      return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
+    }
+  }
+  if (args.format === 'html') {
+    progress.push(pOk('HTML export queued', path.basename(outPath)));
+    const context = buildContext(op, `Queued HTML export for "${spec.meta.name}"`, [
+      { type: 'html', path: outPath, role: 'queued' },
     ]);
     const handover = buildHandover('EXPORT', { design_path: dPath });
-    return okResult(op, { format: args.format, output_file: path.basename(outPath), output_path: outPath, status: 'queued', progress, context, handover });
+    return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'queued', progress, context, handover });
   }
   progress.push(pWarn('PNG/PDF requires Puppeteer (Phase 2)'));
   const context = buildContext(op, `Export queued — ${args.format.toUpperCase()} needs Puppeteer`);

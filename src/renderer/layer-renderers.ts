@@ -10,6 +10,25 @@ import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS } from './lucide-icons';
 import { encodeQR } from './qr/encode';
 
+// Word-wrap plain text into lines that fit within maxWidth.
+// Uses a ~0.52× font-size char-width estimate (accurate for Inter/sans-serif).
+function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number): string[] {
+  const lines: string[] = [];
+  for (const para of text.split('\n')) {
+    if (!maxWidth || maxWidth <= 0) { lines.push(para); continue; }
+    const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * 0.52)));
+    const words = para.split(' ');
+    let cur = '';
+    for (const word of words) {
+      if (!cur) { cur = word; }
+      else if ((cur + ' ' + word).length <= maxChars) { cur += ' ' + word; }
+      else { lines.push(cur); cur = word; }
+    }
+    lines.push(cur);
+  }
+  return lines.length ? lines : [''];
+}
+
 function applyCommonAttributes(
   el: SVGElement,
   layer: Layer,
@@ -280,49 +299,51 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     g.appendChild(textEl);
   } else {
     // Plain text
-    const textEl = createSVGElement('text', {
-      x: layer.x ?? 0,
-      y: (layer.y ?? 0) + (style.font_size ?? 16),
-    });
+    const fontSize = style.font_size ?? 16;
+    const lineH = fontSize * (style.line_height ?? 1.4);
+    const value = layer.content.value;
+    const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
+
+    // Compute x anchor
+    const anchor = style.align === 'center' ? 'middle' : style.align === 'right' ? 'end' : 'start';
+    let textX = layer.x ?? 0;
+    if (style.align === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
+    else if (style.align === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
+
+    // Compute y anchor (vertical align within layer height)
+    let textY = (layer.y ?? 0) + fontSize;
+    if (typeof layer.height === 'number' && style.vertical_align) {
+      const totalH = lines.length * lineH;
+      if (style.vertical_align === 'middle') textY = (layer.y ?? 0) + (layer.height - totalH) / 2 + fontSize;
+      else if (style.vertical_align === 'bottom') textY = (layer.y ?? 0) + layer.height - totalH + fontSize;
+    }
+
+    const textEl = createSVGElement('text', { x: textX, y: textY });
     textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
-    textEl.setAttribute('font-size', String(style.font_size ?? 16));
+    textEl.setAttribute('font-size', String(fontSize));
     textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
+    if (style.text_decoration && style.text_decoration !== 'none') {
+      textEl.setAttribute('text-decoration', style.text_decoration);
+    }
+    if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+    if (style.align) textEl.setAttribute('text-anchor', anchor);
+
     const textColor = style.color
       ? resolveColorOrGradient(style.color, getOrCreateDefs(svg))
       : '#000';
     textEl.setAttribute('fill', textColor);
 
-    if (style.line_height) {
-      textEl.setAttribute('line-height', String(style.line_height));
-    }
-    if (style.letter_spacing) {
-      textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
-    }
-    if (style.align) {
-      const anchor = style.align === 'center' ? 'middle' : style.align === 'right' ? 'end' : 'start';
-      textEl.setAttribute('text-anchor', anchor);
-      if (style.align === 'center' && typeof layer.width === 'number') {
-        textEl.setAttribute('x', String((layer.x ?? 0) + layer.width / 2));
-      } else if (style.align === 'right' && typeof layer.width === 'number') {
-        textEl.setAttribute('x', String((layer.x ?? 0) + layer.width));
-      }
-    }
-
-    // Handle multiline text
-    const value = layer.content.value;
-    const lines = value.split('\n');
     if (lines.length > 1) {
-      const lineH = (style.font_size ?? 16) * (style.line_height ?? 1.5);
       for (let i = 0; i < lines.length; i++) {
         const tspan = createSVGElement('tspan', {
-          x: textEl.getAttribute('x') ?? String(layer.x ?? 0),
+          x: String(textX),
           dy: i === 0 ? '0' : String(lineH),
         });
         tspan.textContent = lines[i];
         textEl.appendChild(tspan);
       }
     } else {
-      textEl.textContent = value;
+      textEl.textContent = lines[0] ?? '';
     }
 
     g.appendChild(textEl);
