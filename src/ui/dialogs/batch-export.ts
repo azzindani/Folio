@@ -132,7 +132,60 @@ export class BatchExportDialog {
 
     const ext = fmt === 'svg' ? 'svg' : fmt === 'html' ? 'html' : 'png';
     const scale = fmt === 'png2x' ? 2 : 1;
+    const mimeType = fmt === 'svg' ? 'image/svg+xml' : fmt === 'html' ? 'text/html' : 'image/png';
     const results: BatchResult[] = [];
+
+    // Try to pick a directory for multi-file exports (Chrome 86+)
+    type FSDir = { getFileHandle: (name: string, opts: { create: boolean }) => Promise<FileSystemFileHandle> };
+    let dirHandle: FSDir | null = null;
+    if ('showDirectoryPicker' in window && pages.length > 1) {
+      try {
+        dirHandle = await (window as Window & typeof globalThis & {
+          showDirectoryPicker: (opts: { mode: string }) => Promise<FSDir>
+        }).showDirectoryPicker({ mode: 'readwrite' });
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') {
+          if (runBtn) runBtn.disabled = false;
+          return; // User cancelled
+        }
+        dirHandle = null; // API failed — fall back to downloads
+      }
+    } else if ('showSaveFilePicker' in window && pages.length === 1) {
+      // Single file — offer save dialog
+      const filename = `${prefix}.${ext}`;
+      try {
+        const handle = await (window as Window & typeof globalThis & {
+          showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>
+        }).showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: ext.toUpperCase(), accept: { [mimeType]: [`.${ext}`] } }],
+        });
+        if (statusEl) statusEl.textContent = `Exporting ${filename}…`;
+        const pi = pages[0];
+        let blob: Blob;
+        if (fmt === 'svg') {
+          blob = new Blob([exportToSVG(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
+        } else if (fmt === 'html') {
+          blob = new Blob([exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
+        } else {
+          blob = await exportToPNG(spec, { format: 'png', pageIndex: pi, scale });
+        }
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        if (barEl) barEl.style.width = '100%';
+        if (statusEl) statusEl.textContent = `Saved ${filename}`;
+        showToast(`Saved ${filename}`, 'success');
+        setTimeout(() => this.close(), 1200);
+        return;
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') {
+          if (runBtn) runBtn.disabled = false;
+          return;
+        }
+        // Fall through to download
+      }
+    }
 
     for (let i = 0; i < pages.length; i++) {
       const pi = pages[i];
@@ -143,17 +196,21 @@ export class BatchExportDialog {
       if (barEl) barEl.style.width = `${Math.round(((i) / pages.length) * 100)}%`;
 
       try {
-        const opts = { format: 'png' as const, pageIndex: pi, scale };
-        let blob: Blob | string;
-
+        let blob: Blob;
         if (fmt === 'svg') {
-          blob = exportToSVG(spec, { format: 'svg', pageIndex: pi });
-          triggerTextDownload(blob, filename, 'image/svg+xml');
+          blob = new Blob([exportToSVG(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
         } else if (fmt === 'html') {
-          blob = exportToHTML(spec, { format: 'html', pageIndex: pi });
-          triggerTextDownload(blob, filename, 'text/html');
+          blob = new Blob([exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
         } else {
-          blob = await exportToPNG(spec, opts);
+          blob = await exportToPNG(spec, { format: 'png', pageIndex: pi, scale });
+        }
+
+        if (dirHandle) {
+          const fh = await dirHandle.getFileHandle(filename, { create: true });
+          const writable = await fh.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        } else {
           triggerBlobDownload(blob, filename);
         }
         results.push({ page: pi, filename, ok: true });
@@ -192,11 +249,6 @@ function triggerBlobDownload(blob: Blob, filename: string): void {
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
-}
-
-function triggerTextDownload(text: string, filename: string, mime: string): void {
-  const blob = new Blob([text], { type: mime });
-  triggerBlobDownload(blob, filename);
 }
 
 function yieldToMicrotasks(): Promise<void> {

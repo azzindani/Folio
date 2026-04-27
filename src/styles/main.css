@@ -107,6 +107,24 @@ html, body {
     var(--right-panel-width);
 }
 
+/* Collapsed right panel */
+#app.rpanel-collapsed {
+  grid-template-columns:
+    var(--activity-bar-width)
+    min(var(--left-panel-width), calc(100vw - var(--activity-bar-width) - 200px))
+    1fr
+    0px;
+}
+
+/* Both panels collapsed */
+#app.panel-collapsed.rpanel-collapsed {
+  grid-template-columns:
+    var(--activity-bar-width)
+    0px
+    1fr
+    0px;
+}
+
 /* ── TOOLBAR ──────────────────────────────────────────────── */
 .toolbar {
   grid-area: toolbar;
@@ -229,6 +247,10 @@ html, body {
   min-width: 0;
   position: relative;
 }
+
+/* Resize handle cursors */
+.panel-resize-handle--x { cursor: col-resize; }
+.panel-resize-handle--y { cursor: row-resize; }
 
 /* Resize handle: right edge of left panel */
 .left-panel > .panel-resize-handle--x {
@@ -668,10 +690,49 @@ html, body {
   z-index: 60;
 }
 
+/* Button to collapse/re-open the right panel from the tab strip */
+.rpanel-close-btn {
+  width: 24px; height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin: auto 4px auto 0;
+  transition: color .1s, background .1s;
+}
+.rpanel-close-btn:hover { background: var(--color-border); color: var(--color-text); }
+
+/* Re-open panel button: shown on the canvas edge when rpanel is collapsed */
+.rpanel-reopen-btn {
+  position: absolute;
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-right: none;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  z-index: 60;
+  transition: color .1s, background .1s;
+}
+.rpanel-reopen-btn:hover { background: var(--color-surface-2); color: var(--color-primary); }
+#app.rpanel-collapsed .rpanel-reopen-btn { display: flex; }
+
 .rpanel-tabs {
   display: flex;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
+  align-items: center;
 }
 .rpanel-tab {
   flex: 1;

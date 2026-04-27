@@ -1,5 +1,6 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { Page } from '../../schema/types';
+import { renderPage } from '../../renderer/renderer';
 
 export class PageStrip {
   private container: HTMLElement;
@@ -24,7 +25,7 @@ export class PageStrip {
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
-    if (changedKeys.some(k => ['design', 'currentPageIndex'].includes(k))) {
+    if (changedKeys.some(k => ['design', 'currentPageIndex', 'theme'].includes(k as string))) {
       this.render();
     }
   }
@@ -40,7 +41,7 @@ export class PageStrip {
     this.strip.innerHTML = '';
 
     design.pages.forEach((page, index) => {
-      const thumb = this.createThumbnail(page, index, index === currentPageIndex);
+      const thumb = this.createThumbnail(page, index, index === currentPageIndex, design.document.width, design.document.height);
       this.strip.appendChild(thumb);
     });
 
@@ -58,27 +59,126 @@ export class PageStrip {
     this.strip.appendChild(addBtn);
   }
 
-  private createThumbnail(page: Page, index: number, active: boolean): HTMLElement {
-    const thumb = document.createElement('div');
-    const aspect = (this.state.get().design?.document.height ?? 1080) / (this.state.get().design?.document.width ?? 1080);
+  private createThumbnail(page: Page, index: number, active: boolean, docW: number, docH: number): HTMLElement {
+    const THUMB_W = 72;
+    const aspect = docH / (docW || 1);
+    const THUMB_H = Math.round(THUMB_W * aspect);
 
-    thumb.style.cssText = `
-      min-width: 60px; height: ${60 * aspect}px; background: var(--color-surface-2);
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+      position: relative; flex-shrink: 0; cursor: pointer;
       border: 2px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'};
-      border-radius: var(--radius-sm); cursor: pointer; position: relative;
-      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-      font-size: 10px; color: var(--color-text-muted);
-      ${active ? 'box-shadow: 0 0 0 2px var(--color-primary)' : ''};
+      border-radius: var(--radius-sm);
+      ${active ? 'box-shadow: 0 0 0 2px var(--color-primary);' : ''}
+      width: ${THUMB_W}px; height: ${THUMB_H + 18}px;
+      background: var(--color-surface-2);
+      display: flex; flex-direction: column; overflow: hidden;
+    `;
+    wrapper.title = page.label ?? `Page ${index + 1}`;
+
+    // SVG thumbnail
+    const svgWrap = document.createElement('div');
+    svgWrap.style.cssText = `
+      width: ${THUMB_W}px; height: ${THUMB_H}px; overflow: hidden;
+      flex-shrink: 0; background: #fff; position: relative;
     `;
 
-    thumb.textContent = page.label ?? `${index + 1}`;
-    thumb.title = page.label ?? `Page ${index + 1}`;
+    try {
+      const { theme } = this.state.get();
+      const svg = renderPage(page.layers ?? [], docW, docH, { theme: theme ?? undefined });
+      svg.setAttribute('width', String(THUMB_W));
+      svg.setAttribute('height', String(THUMB_H));
+      svg.style.display = 'block';
+      svg.style.pointerEvents = 'none';
+      svgWrap.appendChild(svg);
+    } catch {
+      // Render failed — show blank thumbnail
+      svgWrap.style.background = 'var(--color-surface-3)';
+    }
 
-    thumb.addEventListener('click', () => {
+    // Page label
+    const label = document.createElement('div');
+    label.style.cssText = `
+      height: 18px; line-height: 18px; font-size: 9px; text-align: center;
+      color: var(--color-text-muted); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; padding: 0 4px; flex-shrink: 0;
+      background: var(--color-surface);
+      ${active ? 'color: var(--color-primary); font-weight: 600;' : ''}
+    `;
+    label.textContent = page.label ?? `${index + 1}`;
+
+    wrapper.appendChild(svgWrap);
+    wrapper.appendChild(label);
+
+    wrapper.addEventListener('click', () => {
       this.state.set('currentPageIndex', index, false);
     });
 
-    return thumb;
+    // Right-click context menu for rename/delete
+    wrapper.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      this.openPageContextMenu(e, index);
+    });
+
+    return wrapper;
+  }
+
+  private openPageContextMenu(e: MouseEvent, pageIndex: number): void {
+    const existing = document.querySelector('.page-context-menu');
+    existing?.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'page-context-menu';
+    menu.style.cssText = `
+      position: fixed; left: ${e.clientX}px; top: ${e.clientY}px;
+      background: var(--color-surface-2); border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
+      z-index: 500; min-width: 140px; overflow: hidden; font-size: 12px;
+    `;
+
+    const item = (label: string, action: () => void) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = `
+        display: block; width: 100%; padding: 6px 12px; border: none;
+        background: transparent; color: var(--color-text); cursor: pointer;
+        text-align: left; font-size: 12px;
+      `;
+      btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--color-surface-3)'; });
+      btn.addEventListener('mouseleave', () => { btn.style.background = 'transparent'; });
+      btn.addEventListener('click', () => { menu.remove(); action(); });
+      return btn;
+    };
+
+    menu.appendChild(item('Rename page…', () => {
+      const design = this.state.get().design;
+      if (!design?.pages) return;
+      const current = design.pages[pageIndex]?.label ?? `Page ${pageIndex + 1}`;
+      const name = prompt('Page name:', current);
+      if (name !== null && name.trim()) {
+        const pages = design.pages.map((p, i) => i === pageIndex ? { ...p, label: name.trim() } : p);
+        this.state.set('design', { ...design, pages });
+      }
+    }));
+
+    const design = this.state.get().design;
+    if ((design?.pages?.length ?? 0) > 1) {
+      menu.appendChild(item('Delete page', () => {
+        const d = this.state.get().design;
+        if (!d?.pages) return;
+        const pages = d.pages.filter((_, i) => i !== pageIndex);
+        const idx = Math.min(this.state.get().currentPageIndex, pages.length - 1);
+        this.state.set('design', { ...d, pages });
+        this.state.set('currentPageIndex', Math.max(0, idx), false);
+      }));
+    }
+
+    document.body.appendChild(menu);
+
+    const dismiss = (ev: MouseEvent) => {
+      if (!menu.contains(ev.target as Node)) { menu.remove(); document.removeEventListener('click', dismiss, true); }
+    };
+    setTimeout(() => document.addEventListener('click', dismiss, true), 0);
   }
 
   private addPage(): void {

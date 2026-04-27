@@ -159,29 +159,57 @@ export function downloadText(content: string, filename: string, mimeType: string
   downloadBlob(blob, filename);
 }
 
+/** Save blob via native file-save dialog when available; falls back to anchor download. */
+async function saveBlob(blob: Blob, suggestedName: string, mimeType: string, ext: string): Promise<void> {
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as Window & typeof globalThis & {
+        showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>
+      }).showSaveFilePicker({
+        suggestedName,
+        types: [{ description: ext.toUpperCase(), accept: { [mimeType]: [`.${ext}`] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err) {
+      // User cancelled or API unavailable — fall through to download anchor
+      if ((err as Error).name === 'AbortError') return;
+    }
+  }
+  downloadBlob(blob, suggestedName);
+}
+
+/** Save text via native file-save dialog when available; falls back to anchor download. */
+async function saveText(content: string, suggestedName: string, mimeType: string, ext: string): Promise<void> {
+  const blob = new Blob([content], { type: mimeType });
+  await saveBlob(blob, suggestedName, mimeType, ext);
+}
+
 export async function exportDesign(spec: DesignSpec, options: ExportOptions): Promise<void> {
   const name = spec.meta.name.replace(/\s+/g, '-').toLowerCase();
 
   switch (options.format) {
     case 'svg': {
       const svg = exportToSVG(spec, options);
-      downloadText(svg, `${name}.svg`, 'image/svg+xml');
+      await saveText(svg, `${name}.svg`, 'image/svg+xml', 'svg');
       break;
     }
     case 'png': {
       const blob = await exportToPNG(spec, options);
-      downloadBlob(blob, `${name}.png`);
+      await saveBlob(blob, `${name}.png`, 'image/png', 'png');
       break;
     }
     case 'html':
     case 'html-animated': {
       const html = exportToHTML(spec, options);
-      downloadText(html, `${name}.html`, 'text/html');
+      await saveText(html, `${name}.html`, 'text/html', 'html');
       break;
     }
     case 'pdf': {
       const blob = await exportToPDF(spec, options);
-      downloadBlob(blob, `${name}.pdf`);
+      await saveBlob(blob, `${name}.pdf`, 'application/pdf', 'pdf');
       break;
     }
   }
