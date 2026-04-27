@@ -19,6 +19,12 @@ export interface ShorthandLayer {
   y?: number;
   width?: number | 'auto';
   height?: number | 'auto';
+  opacity?: number;
+  rotation?: number;
+  flip_h?: boolean;
+  flip_v?: boolean;
+  visible?: boolean;
+  locked?: boolean;
   fill?: string | Fill;
   stroke?: string | { color: string; width: number };
   radius?: number;
@@ -74,11 +80,17 @@ function expandStroke(stroke: string | { color: string; width: number }): { colo
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
-  const base = {
+  const base: Record<string, unknown> = {
     id: sh.id,
     z: sh.z,
     ...pos,
   };
+  if (sh.opacity   !== undefined) base['opacity']   = sh.opacity;
+  if (sh.rotation  !== undefined) base['rotation']  = sh.rotation;
+  if (sh.flip_h    !== undefined) base['flip_h']    = sh.flip_h;
+  if (sh.flip_v    !== undefined) base['flip_v']    = sh.flip_v;
+  if (sh.visible   !== undefined) base['visible']   = sh.visible;
+  if (sh.locked    !== undefined) base['locked']    = sh.locked;
 
   switch (sh.type) {
     case 'rect':

@@ -4,27 +4,29 @@ import type { ToolDefinition } from '../types';
 export const TIER2_TOOLS: ToolDefinition[] = [
   {
     name: 'inspect_design',
-    description: 'Surgical read: returns layer IDs, types, z-order, and positions only. Very low token cost. Use before editing to check current state.',
+    description: 'Surgical read: layer IDs, types, z-order, positions. Low token cost.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
-        page_id:     { type: 'string', description: 'Page ID (carousel only; omit for poster or to list pages)' },
+        design_path:  { type: 'string', description: 'Path to .design.yaml (relative ok with project_path)' },
+        page_id:      { type: 'string', description: 'Page ID (carousel only; omit to list pages)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
       },
       required: ['design_path'],
     },
   },
   {
     name: 'add_layers',
-    description: 'Add multiple layers in a single call. Preferred over repeated add_layer calls. Supports layers_shorthand for ~80% token savings.',
+    description: 'Add multiple layers at once. Use layers_shorthand for 80% token savings.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:      { type: 'string', description: 'Path to .design.yaml file' },
+        design_path:      { type: 'string', description: 'Path to .design.yaml' },
         page_id:          { type: 'string', description: 'Page ID (carousel only)' },
+        project_path:     { type: 'string', description: 'Project dir — enables relative design_path' },
         layers:           { type: 'object', description: 'Verbose layers array', items: { type: 'object' } },
-        layers_shorthand: { type: 'object', description: 'Compact shorthand layers — saves ~80% tokens. Preferred for local models.', items: { type: 'object' } },
-        task_path:        { type: 'string', description: 'Path to .task.yaml — enables next_action handover baton' },
+        layers_shorthand: { type: 'object', description: 'Compact shorthand — 80% fewer tokens', items: { type: 'object' } },
+        task_path:        { type: 'string', description: 'Path to .task.yaml — enables handover baton' },
       },
       required: ['design_path'],
     },
@@ -47,29 +49,32 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'append_page',
-    description: 'Append a page to a carousel design. Accepts template_ref + slots or raw layers.',
+    description: 'Append a page to carousel. Accepts template+slots or raw layers.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml file' },
-        page_id:      { type: 'string', description: 'Page identifier' },
-        label:        { type: 'string', description: 'Page label' },
-        template_ref: { type: 'string', description: 'Template ID to use' },
+        design_path:      { type: 'string', description: 'Path to .design.yaml' },
+        page_id:          { type: 'string', description: 'Page identifier' },
+        label:            { type: 'string', description: 'Page label' },
+        project_path:     { type: 'string', description: 'Project dir — enables relative design_path' },
+        template_ref:     { type: 'string', description: 'Template ID to use' },
         slots:            { type: 'object', description: 'Slot values for the template', properties: {} },
-        layers:           { type: 'object', description: 'Full verbose layers array', items: { type: 'object' } },
-        layers_shorthand: { type: 'object', description: 'Compact shorthand layers — saves ~80% output tokens. Preferred for local models.', items: { type: 'object' } },
-        task_path:        { type: 'string', description: 'Path to .task.yaml — enables automatic next_action handover baton in response' },
+        layers:           { type: 'object', description: 'Verbose layers array', items: { type: 'object' } },
+        layers_shorthand: { type: 'object', description: 'Compact shorthand — 80% fewer tokens', items: { type: 'object' } },
+        task_path:        { type: 'string', description: 'Path to .task.yaml — enables handover baton' },
       },
       required: ['design_path'],
     },
   },
   {
     name: 'patch_design',
-    description: 'Surgical update to specific fields via dot-path selectors. Snapshots before write.',
+    description: 'Surgical field update via dot-path selectors. Snapshots before write.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        dry_run:      { type: 'boolean', description: 'Validate selectors without writing (default false)', default: false },
         selectors: {
           type: 'object',
           description: 'Array of {path, value} selectors',
@@ -81,35 +86,40 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'seal_design',
-    description: 'Mark a carousel design as complete. Sets _mode to "complete".',
+    description: 'Mark design complete. Sets _mode to "complete". Call after all layers added.',
     inputSchema: {
       type: 'object',
-      properties: { design_path: { type: 'string', description: 'Path to .design.yaml file' } },
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
       required: ['design_path'],
     },
   },
   {
     name: 'add_layer',
-    description: 'Add a layer to a design or specific page.',
+    description: 'Add a single layer to a design or page.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
-        page_id:     { type: 'string', description: 'Page ID (carousel only)' },
-        layer:       { type: 'object', description: 'Layer specification', properties: {} },
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        page_id:      { type: 'string', description: 'Page ID (carousel only)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        layer:        { type: 'object', description: 'Layer specification', properties: {} },
       },
       required: ['design_path', 'layer'],
     },
   },
   {
     name: 'update_layer',
-    description: 'Update specific properties on a layer by ID.',
+    description: 'Merge props into a layer by ID. Snapshots before write.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
-        layer_id:    { type: 'string', description: 'Layer ID to update' },
-        props:       { type: 'object', description: 'Properties to merge', properties: {} },
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        layer_id:     { type: 'string', description: 'Layer ID to update' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        props:        { type: 'object', description: 'Properties to merge', properties: {} },
       },
       required: ['design_path', 'layer_id', 'props'],
     },
@@ -120,8 +130,9 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
-        layer_id:    { type: 'string', description: 'Layer ID to remove' },
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        layer_id:     { type: 'string', description: 'Layer ID to remove' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
       },
       required: ['design_path', 'layer_id'],
     },

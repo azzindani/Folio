@@ -79,11 +79,32 @@ export class PropertiesPanelManager {
     if (appearance) html += this.section('Appearance', appearance);
 
     // Transform section
+    const isLocked = !!(layer as { locked?: boolean }).locked;
     const transform = `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         ${this.renderNumberInput('z', 'Z', layer.z)}
         ${this.renderNumberInput('opacity', 'Opacity', layer.opacity ?? 1)}
         ${this.renderNumberInput('rotation', 'Rotate°', layer.rotation ?? 0)}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button id="pp-lock-btn" title="${isLocked ? 'Unlock layer' : 'Lock layer'}"
+          style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:var(--radius-sm);
+                 border:1px solid var(--color-border);background:${isLocked ? 'var(--color-accent)' : 'transparent'};
+                 color:${isLocked ? '#fff' : 'var(--color-text)'};cursor:pointer;font-size:11px">
+          ${isLocked ? '🔒 Locked' : '🔓 Unlocked'}
+        </button>
+        <button id="pp-flip-h-btn" title="Flip horizontal"
+          style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--color-border);
+                 background:${(layer as {flip_h?:boolean}).flip_h ? 'var(--color-accent)' : 'transparent'};
+                 color:${(layer as {flip_h?:boolean}).flip_h ? '#fff' : 'var(--color-text)'};cursor:pointer;font-size:11px">
+          ↔ Flip H
+        </button>
+        <button id="pp-flip-v-btn" title="Flip vertical"
+          style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--color-border);
+                 background:${(layer as {flip_v?:boolean}).flip_v ? 'var(--color-accent)' : 'transparent'};
+                 color:${(layer as {flip_v?:boolean}).flip_v ? '#fff' : 'var(--color-text)'};cursor:pointer;font-size:11px">
+          ↕ Flip V
+        </button>
       </div>
       ${this.renderBlendModeField(layer.effects?.blend_mode)}`;
     html += this.section('Transform', transform);
@@ -689,6 +710,31 @@ export class PropertiesPanelManager {
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
     });
+
+    // Lock toggle
+    const lockBtn = this.content.querySelector<HTMLButtonElement>('#pp-lock-btn');
+    if (lockBtn) {
+      lockBtn.addEventListener('click', () => {
+        const cur = !!(layer as { locked?: boolean }).locked;
+        this.applyPropertyChange(layer.id, 'locked', !cur);
+      });
+    }
+
+    // Flip toggles
+    const flipHBtn = this.content.querySelector<HTMLButtonElement>('#pp-flip-h-btn');
+    if (flipHBtn) {
+      flipHBtn.addEventListener('click', () => {
+        const cur = !!(layer as { flip_h?: boolean }).flip_h;
+        this.applyPropertyChange(layer.id, 'flip_h', !cur);
+      });
+    }
+    const flipVBtn = this.content.querySelector<HTMLButtonElement>('#pp-flip-v-btn');
+    if (flipVBtn) {
+      flipVBtn.addEventListener('click', () => {
+        const cur = !!(layer as { flip_v?: boolean }).flip_v;
+        this.applyPropertyChange(layer.id, 'flip_v', !cur);
+      });
+    }
 
     // Auto-layout special inputs
     const wrapCb = this.content.querySelector<HTMLInputElement>('input[data-prop="wrap"]');

@@ -133,15 +133,38 @@ export class ToolbarManager {
     const { design } = this.state.get();
     if (!design) { showToast('No design open', 'error'); return; }
     const template = exportAsTemplate(design);
-    const yaml = JSON.stringify(template, null, 2); // browser: download as JSON for now
-    const blob = new Blob([yaml], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${design.meta.name ?? 'design'}.template.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast(`Template exported (${template.slots.length} slots)`, 'success');
+    const json = JSON.stringify(template, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const suggestedName = `${(design.meta.name ?? 'design').replace(/\s+/g, '-').toLowerCase()}.template.json`;
+
+    if ('showSaveFilePicker' in window) {
+      (window as Window & typeof globalThis & {
+        showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>
+      }).showSaveFilePicker({
+        suggestedName,
+        types: [{ description: 'Template JSON', accept: { 'application/json': ['.json'] } }],
+      }).then(async handle => {
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        showToast(`Template saved (${template.slots.length} slots)`, 'success');
+      }).catch((err: Error) => {
+        if (err.name !== 'AbortError') {
+          // Fallback
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = suggestedName; a.click();
+          URL.revokeObjectURL(url);
+          showToast(`Template exported (${template.slots.length} slots)`, 'success');
+        }
+      });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = suggestedName; a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Template exported (${template.slots.length} slots)`, 'success');
+    }
   }
 
   private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html'): Promise<void> {

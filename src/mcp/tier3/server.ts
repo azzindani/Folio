@@ -3,6 +3,7 @@ import * as readline from 'readline';
 import { TIER3_TOOLS } from './registry';
 import * as engine from '../engine';
 import { toMCPResult } from '../types';
+import { appendOpLog } from '../engine/utils';
 import type { MCPRequest, MCPResponse, ToolResult } from '../types';
 
 type Handler = (args: Record<string, unknown>) => ToolResult;
@@ -31,8 +32,14 @@ function handle(req: MCPRequest): void {
       const args = (params as { arguments?: Record<string, unknown> })?.arguments ?? {};
       const fn = HANDLERS[name];
       if (!fn) return send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) });
-      try { return send({ jsonrpc: '2.0', id, result: toMCPResult(fn(args)) }); }
-      catch (err) { return send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) }); }
+      try {
+        const result = fn(args);
+        appendOpLog({ op: name, success: result.success, file: (args['design_path'] ?? args['project_path'] ?? args['template_path']) as string | undefined, backup: result['backup'] as string | undefined, token_estimate: result.token_estimate });
+        return send({ jsonrpc: '2.0', id, result: toMCPResult(result) });
+      } catch (err) {
+        appendOpLog({ op: name, success: false });
+        return send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) });
+      }
     }
     default:
       send({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } });

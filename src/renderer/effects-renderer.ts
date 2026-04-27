@@ -11,15 +11,39 @@ export function applyEffects(
 
   if (effects.shadows?.length) {
     for (const shadow of effects.shadows) {
-      filterPrimitives.push(
-        createSVGElement('feDropShadow', {
-          dx: shadow.x,
-          dy: shadow.y,
-          stdDeviation: shadow.blur / 2,
-          'flood-color': shadow.color,
-          'flood-opacity': '1',
-        }),
-      );
+      if (shadow.spread && shadow.spread > 0) {
+        // Decompose into feMorphology(dilate) + feGaussianBlur + feOffset + feFlood + feMerge
+        // to support CSS-like spread radius.
+        const morphEl = createSVGElement('feMorphology', {
+          in: 'SourceAlpha', operator: 'dilate', radius: shadow.spread, result: 'spread',
+        });
+        const blurEl = createSVGElement('feGaussianBlur', {
+          in: 'spread', stdDeviation: shadow.blur / 2, result: 'blurred',
+        });
+        const offsetEl = createSVGElement('feOffset', {
+          in: 'blurred', dx: shadow.x, dy: shadow.y, result: 'offset',
+        });
+        const floodEl = createSVGElement('feFlood', {
+          'flood-color': shadow.color, 'flood-opacity': '1', result: 'color',
+        });
+        const compositeEl = createSVGElement('feComposite', {
+          in: 'color', in2: 'offset', operator: 'in', result: 'shadow',
+        });
+        const mergeEl = createSVGElement('feMerge', {});
+        mergeEl.appendChild(createSVGElement('feMergeNode', { in: 'shadow' }));
+        mergeEl.appendChild(createSVGElement('feMergeNode', { in: 'SourceGraphic' }));
+        filterPrimitives.push(morphEl, blurEl, offsetEl, floodEl, compositeEl, mergeEl);
+      } else {
+        filterPrimitives.push(
+          createSVGElement('feDropShadow', {
+            dx: shadow.x,
+            dy: shadow.y,
+            stdDeviation: shadow.blur / 2,
+            'flood-color': shadow.color,
+            'flood-opacity': '1',
+          }),
+        );
+      }
     }
   }
 
