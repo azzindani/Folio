@@ -4,39 +4,40 @@ import type { ToolDefinition } from '../types';
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
     name: 'export_design',
-    description: 'Export a design to SVG, HTML, PNG, or PDF. PNG/PDF requires Puppeteer (Phase 2).',
+    description: 'Export design to SVG or HTML. PNG/PDF needs Puppeteer (Phase 2).',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
-        format:      { type: 'string', enum: ['png', 'svg', 'html', 'pdf'] },
-        output_path: { type: 'string', description: 'Output file path (derived if omitted)' },
-        scale:       { type: 'number', description: 'Scale factor 1–3', default: 2 },
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        format:       { type: 'string', enum: ['png', 'svg', 'html', 'pdf'] },
+        output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        scale:        { type: 'number', description: 'Scale factor 1–3', default: 2 },
       },
       required: ['design_path', 'format'],
     },
   },
   {
     name: 'batch_create',
-    description: 'Generate N designs from one template by providing an array of slot objects.',
+    description: 'Generate N designs from one template using an array of slot objects.',
     inputSchema: {
       type: 'object',
       properties: {
         project_path: { type: 'string', description: 'Path to project directory' },
         template_id:  { type: 'string', description: 'Template ID to use' },
-        slots_array:  { type: 'object', description: 'Array of slot objects, one per design', items: { type: 'object' } },
+        slots_array:  { type: 'object', description: 'One slot object per design', items: { type: 'object' } },
       },
       required: ['project_path', 'template_id', 'slots_array'],
     },
   },
   {
     name: 'save_as_component',
-    description: 'Extract layers from a design into a reusable .component.yaml and replace with an instance.',
+    description: 'Extract layers into .component.yaml and replace with component instance.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:    { type: 'string', description: 'Path to source .design.yaml file' },
-        layer_ids:      { type: 'object', description: 'Array of layer IDs to extract', items: { type: 'string' } },
+        design_path:    { type: 'string', description: 'Path to source .design.yaml' },
+        layer_ids:      { type: 'object', description: 'Layer IDs to extract', items: { type: 'string' } },
         component_name: { type: 'string', description: 'Name for the new component' },
         project_path:   { type: 'string', description: 'Path to project directory' },
       },
@@ -45,35 +46,36 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'export_template',
-    description: 'Export a design as a .template.yaml skeleton with named slots.',
+    description: 'Export design as .template.yaml skeleton with named slots.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to source .design.yaml file' },
-        output_path: { type: 'string', description: 'Output path for .template.yaml (auto-derived if omitted)' },
+        design_path:  { type: 'string', description: 'Path to source .design.yaml' },
+        output_path:  { type: 'string', description: 'Output path for .template.yaml (auto if omitted)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
       },
       required: ['design_path'],
     },
   },
   {
     name: 'inject_template',
-    description: 'Inject slot values into a template to produce a complete .design.yaml.',
+    description: 'Inject slot values into template to produce a .design.yaml.',
     inputSchema: {
       type: 'object',
       properties: {
-        template_path: { type: 'string', description: 'Path to .template.yaml file' },
+        template_path: { type: 'string', description: 'Path to .template.yaml' },
         slots:         { type: 'object', description: 'Map of slot_id → value', properties: {} },
-        output_path:   { type: 'string', description: 'Output path for .design.yaml (auto-derived if omitted)' },
+        output_path:   { type: 'string', description: 'Output path for .design.yaml (auto if omitted)' },
       },
       required: ['template_path', 'slots'],
     },
   },
   {
     name: 'list_template_slots',
-    description: 'List injectable slots in a .template.yaml with paths, types, and hints.',
+    description: 'List injectable slots in a .template.yaml with paths, types, hints.',
     inputSchema: {
       type: 'object',
-      properties: { template_path: { type: 'string', description: 'Path to .template.yaml file' } },
+      properties: { template_path: { type: 'string', description: 'Path to .template.yaml' } },
       required: ['template_path'],
     },
   },
