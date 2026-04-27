@@ -35,22 +35,75 @@ export class ImageImportHandler {
     container.addEventListener('paste',   e => { void this.onPaste(e); });
     container.addEventListener('dragover', e => e.preventDefault());
     container.addEventListener('drop',    e => { void this.onDrop(e); });
+
+    // Global paste fallback: catches paste events that bubble from Monaco or other editors
+    document.addEventListener('paste', e => {
+      // Only handle if a text input / contenteditable is NOT the target
+      const target = e.target as HTMLElement;
+      const inText = target.matches('input,textarea,[contenteditable]')
+        || Boolean(target.closest('[contenteditable],.monaco-editor'));
+      if (inText) return;
+      void this.onPaste(e);
+    });
   }
 
   // ── Paste ─────────────────────────────────────────────────────
   private async onPaste(e: ClipboardEvent): Promise<void> {
     const items = e.clipboardData?.items;
     if (!items) return;
-    for (const item of items) {
+
+    // Collect all items first, prioritise SVG → raster image → text/html img → svg text
+    const allItems = Array.from(items);
+
+    // Priority 1: explicit SVG MIME
+    for (const item of allItems) {
       if (item.type === 'image/svg+xml') {
-        const f = item.getAsFile(); if (f) { await this.fromSVGFile(f); return; }
+        const f = item.getAsFile();
+        if (f) { e.preventDefault(); await this.fromSVGFile(f); return; }
       }
+    }
+
+    // Priority 2: any raster image (PNG/JPEG/GIF/WebP) — handles Flaticon copy
+    for (const item of allItems) {
       if (item.type.startsWith('image/')) {
-        const b = item.getAsFile(); if (b) { await this.fromRaster(b); return; }
+        const b = item.getAsFile();
+        if (b) { e.preventDefault(); await this.fromRaster(b); return; }
       }
+    }
+
+    // Priority 3: text/html that contains an <img src="..."> — browser image copy
+    for (const item of allItems) {
+      if (item.type === 'text/html') {
+        await new Promise<void>(res => {
+          item.getAsString(async html => {
+            const m = html.match(/src=["']([^"']+)["']/i);
+            if (m) {
+              try {
+                const resp = await fetch(m[1]);
+                if (resp.ok) {
+                  const blob = await resp.blob();
+                  if (blob.type.startsWith('image/')) {
+                    e.preventDefault();
+                    await this.fromRaster(blob);
+                  }
+                }
+              } catch { /* cross-origin fetch blocked — skip */ }
+            }
+            res();
+          });
+        });
+        return;
+      }
+    }
+
+    // Priority 4: plain SVG text
+    for (const item of allItems) {
       if (item.type === 'text/plain') {
         item.getAsString(async txt => {
-          if (txt.trimStart().startsWith('<svg')) await this.fromSVGText(txt);
+          if (txt.trimStart().startsWith('<svg')) {
+            e.preventDefault();
+            await this.fromSVGText(txt);
+          }
         });
       }
     }
@@ -79,9 +132,10 @@ export class ImageImportHandler {
   }
 
   async fromRaster(blob: Blob): Promise<void> {
-    const url = URL.createObjectURL(blob);
-    const { w, h } = await imgSize(url);
-    const layer = makeLayer(url, w, h, nextId('img'));
+    // Convert to data URL so the src survives page reloads (blob URLs are session-only)
+    const dataUrl = await blobToDataUrl(blob);
+    const { w, h } = await imgSize(dataUrl);
+    const layer = makeLayer(dataUrl, w, h, nextId('img'));
     const colors = await extractDominantColors(blob);
     this.commit(layer, colors);
   }
@@ -126,5 +180,14 @@ async function imgSize(src: string): Promise<{ w: number; h: number }> {
     img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
     img.onerror = () => res({ w: 100, h: 100 });
     img.src = src;
+  });
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Failed to read image'));
+    reader.readAsDataURL(blob);
   });
 }

@@ -18,6 +18,7 @@ export class CanvasManager {
   private currentSVG: SVGSVGElement | null = null;
   private rulerH!: HTMLCanvasElement;
   private rulerV!: HTMLCanvasElement;
+  private marqueeEl: HTMLDivElement | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
@@ -348,8 +349,29 @@ export class CanvasManager {
         handle.addEventListener('pointerdown', (ev) => {
           this.startResize(ev, id, pos.cls, origX, origY, origW, origH);
         });
+        // Double-click on handle opens inline text editor for text layers
+        handle.addEventListener('dblclick', (ev) => {
+          ev.stopPropagation();
+          const layer = this.state.getCurrentLayers().find(l => l.id === id);
+          if (layer?.type === 'text') {
+            const svgEl = this.svgContainer.querySelector<SVGElement>(`[data-layer-id="${id}"]`);
+            if (svgEl) this.openInlineTextEditor(layer as TextLayer, svgEl);
+          }
+        });
         frag.appendChild(handle);
       }
+
+      // Double-click on selection box also opens inline editor
+      box.style.pointerEvents = 'auto';
+      box.style.cursor = 'move';
+      box.addEventListener('dblclick', (ev) => {
+        ev.stopPropagation();
+        const layer = this.state.getCurrentLayers().find(l => l.id === id);
+        if (layer?.type === 'text') {
+          const svgEl = this.svgContainer.querySelector<SVGElement>(`[data-layer-id="${id}"]`);
+          if (svgEl) this.openInlineTextEditor(layer as TextLayer, svgEl);
+        }
+      });
 
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
@@ -421,6 +443,66 @@ export class CanvasManager {
     document.addEventListener('pointerup', onUp);
   }
 
+  private startMarquee(e: PointerEvent): void {
+    if (!e.shiftKey) this.state.set('selectedLayerIds', []);
+
+    const vpRect = this.viewport.getBoundingClientRect();
+    const startX = e.clientX - vpRect.left;
+    const startY = e.clientY - vpRect.top;
+
+    // Create visual marquee rect
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;border:1.5px dashed #5b9cf6;background:rgba(91,156,246,0.08);
+      pointer-events:none;z-index:100;box-sizing:border-box;`;
+    el.style.left = `${startX}px`; el.style.top = `${startY}px`;
+    el.style.width = '0'; el.style.height = '0';
+    this.viewport.appendChild(el);
+    this.marqueeEl = el;
+
+    const onMove = (ev: PointerEvent) => {
+      const cx = ev.clientX - vpRect.left;
+      const cy = ev.clientY - vpRect.top;
+      const x = Math.min(startX, cx), y = Math.min(startY, cy);
+      const w = Math.abs(cx - startX),  h = Math.abs(cy - startY);
+      el.style.left = `${x}px`; el.style.top  = `${y}px`;
+      el.style.width = `${w}px`; el.style.height = `${h}px`;
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      el.remove(); this.marqueeEl = null;
+
+      const cx = ev.clientX - vpRect.left;
+      const cy = ev.clientY - vpRect.top;
+      if (Math.abs(cx - startX) < 4 && Math.abs(cy - startY) < 4) return; // tiny drag = click
+
+      const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+      // Convert marquee corners to design coords
+      const rx1 = (Math.min(startX, cx) - panX) / zoom;
+      const ry1 = (Math.min(startY, cy) - panY) / zoom;
+      const rx2 = (Math.max(startX, cx) - panX) / zoom;
+      const ry2 = (Math.max(startY, cy) - panY) / zoom;
+
+      const hit = this.state.getCurrentLayers().filter(l => {
+        const lx = l.x ?? 0;  const ly = l.y ?? 0;
+        const lw = typeof l.width  === 'number' ? l.width  : 0;
+        const lh = typeof l.height === 'number' ? l.height : 0;
+        return lx < rx2 && lx + lw > rx1 && ly < ry2 && ly + lh > ry1;
+      }).map(l => l.id);
+
+      if (e.shiftKey) {
+        const prev = this.state.get().selectedLayerIds;
+        this.state.set('selectedLayerIds', [...new Set([...prev, ...hit])]);
+      } else {
+        this.state.set('selectedLayerIds', hit);
+      }
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
   private onPointerDown(e: PointerEvent): void {
     const { activeTool } = this.state.get();
 
@@ -436,8 +518,8 @@ export class CanvasManager {
     const layerEl = target.closest('[data-layer-id]') as SVGElement | null;
 
     if (!layerEl) {
-      // Click on empty canvas — deselect
-      this.state.set('selectedLayerIds', []);
+      // Begin rubber-band / marquee selection
+      this.startMarquee(e);
       return;
     }
 
@@ -564,6 +646,19 @@ export class CanvasManager {
     const startY = e.clientY;
     const zoom = this.state.get().zoom;
     const aspectRatio = origW / (origH || 1);
+    const isGroup = layer.type === 'group';
+    // Snapshot group children positions for proportional scaling
+    type GroupLayer = Layer & { layers?: Layer[] };
+    const groupChildren: Layer[] = isGroup
+      ? [...((layer as GroupLayer).layers ?? [])]
+      : [];
+    const childSnapshots = groupChildren.map(c => ({
+      id: c.id,
+      x: c.x ?? 0,
+      y: c.y ?? 0,
+      w: typeof c.width  === 'number' ? c.width  : 0,
+      h: typeof c.height === 'number' ? c.height : 0,
+    }));
 
     const onMove = (me: PointerEvent) => {
       let dx = (me.clientX - startX) / zoom;
@@ -596,10 +691,26 @@ export class CanvasManager {
       if (nw < 4) { if (handle.includes('w')) nx = origX + origW - 4; nw = 4; }
       if (nh < 4) { if (handle.includes('n')) ny = origY + origH - 4; nh = 4; }
 
+      const rnx = Math.round(nx), rny = Math.round(ny);
+      const rnw = Math.round(nw), rnh = Math.round(nh);
+
       this.state.updateLayer(layerId, {
-        x: Math.round(nx), y: Math.round(ny),
-        width: Math.round(nw), height: Math.round(nh),
+        x: rnx, y: rny, width: rnw, height: rnh,
       } as Parameters<typeof this.state.updateLayer>[1]);
+
+      // Scale group children proportionally
+      if (isGroup && origW > 0 && origH > 0) {
+        const sx = rnw / origW;
+        const sy = rnh / origH;
+        for (const snap of childSnapshots) {
+          this.state.updateLayer(snap.id, {
+            x: Math.round(rnx + (snap.x - origX) * sx),
+            y: Math.round(rny + (snap.y - origY) * sy),
+            width: Math.max(4, Math.round(snap.w * sx)),
+            height: Math.max(4, Math.round(snap.h * sy)),
+          } as Parameters<typeof this.state.updateLayer>[1]);
+        }
+      }
     };
 
     const onUp = () => {
