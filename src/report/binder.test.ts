@@ -30,7 +30,7 @@ describe('bindLayer', () => {
       chart_type: 'bar',
       data_ref: '$data.metrics',
     } as Layer;
-    const result = bindLayer(layer, datasets) as Record<string, unknown>;
+    const result = bindLayer(layer, datasets) as unknown as Record<string, unknown>;
     expect(result['data_ref']).toEqual(rows);
   });
 
@@ -42,7 +42,7 @@ describe('bindLayer', () => {
       label: 'Total',
       value: '$agg.metrics.sum(value)',
     } as Layer;
-    const result = bindLayer(layer, datasets) as Record<string, unknown>;
+    const result = bindLayer(layer, datasets) as unknown as Record<string, unknown>;
     expect(result['value']).toBe(930);
   });
 
@@ -59,13 +59,13 @@ describe('bindLayer', () => {
         value: '$agg.metrics.max(value)',
       } as Layer],
     } as Layer;
-    const result = bindLayer(layer, datasets) as { layers: Array<Record<string, unknown>> };
+    const result = bindLayer(layer, datasets) as unknown as { layers: Array<Record<string, unknown>> };
     expect(result.layers[0]['value']).toBe(510);
   });
 
   it('passes through null/undefined fields unchanged', () => {
     const layer: Layer = { id: 'r', type: 'rect', z: 0 } as Layer;
-    const result = bindLayer(layer, datasets) as Record<string, unknown>;
+    const result = bindLayer(layer, datasets) as unknown as Record<string, unknown>;
     expect(result['fill']).toBeUndefined();
   });
 });
@@ -78,6 +78,6 @@ describe('bindLayers', () => {
     ];
     const results = bindLayers(layers, datasets);
     expect((results[0] as { content: { value: string } }).content.value).toBe('static');
-    expect((results[1] as Record<string, unknown>)['value']).toBe(2);
+    expect((results[1] as unknown as Record<string, unknown>)['value']).toBe(2);
   });
 });
