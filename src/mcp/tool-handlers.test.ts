@@ -552,17 +552,18 @@ describe('exportDesign', () => {
     expect((parsed['bytes'] as number) > 0).toBe(true);
   });
 
-  it('returns queued status for HTML format', () => {
+  it('exports HTML and returns ok status', () => {
     const result = exportDesign({ design_path: designPath, format: 'html' });
     const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('html');
-    expect(parsed.status).toBe('queued');
+    expect(parsed.status).toBe('ok');
+    expect(result.success).toBe(true);
   });
 
-  it('returns requires_puppeteer for PNG format', () => {
+  it('returns unsupported for PNG format', () => {
     const result = exportDesign({ design_path: designPath, format: 'png' });
     const parsed = result as Record<string, unknown>;
-    expect(parsed.status).toBe('requires_puppeteer');
+    expect(parsed.status).toBe('unsupported');
   });
 
   it('returns error when design not found', () => {

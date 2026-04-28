@@ -619,6 +619,23 @@ export interface DesignSpec {
   layers?: Layer[];
   pages?: Page[];
   report?: ReportSpec;
+  // Mode B interactive output
+  _output_mode?: 'static' | 'interactive';
+  state?: Record<string, StateDef>;
+  scripts?: ScriptDef[];
+}
+
+// ── Mode B — Interactive Output ─────────────────────────────
+export interface StateDef {
+  type: 'string' | 'number' | 'boolean';
+  default: unknown;
+}
+
+export interface ScriptDef {
+  id: string;
+  language: 'typescript' | 'javascript';
+  trigger?: string;
+  code: string;
 }
 
 // ── Component Definition ────────────────────────────────────
