@@ -79,4 +79,50 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       required: ['template_path'],
     },
   },
+  // ── Report tools ──────────────────────────────────────────
+  {
+    name: 'generate_report',
+    description: 'Scaffold a new report-type design with pages, navigation, and optional data sources.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path:  { type: 'string', description: 'Path to project directory' },
+        name:          { type: 'string', description: 'Report name' },
+        layout:        { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar'], default: 'paged' },
+        nav_type:      { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar' },
+        pages:         { type: 'object', description: 'Array of {id?, label} page specs', items: { type: 'object' } },
+        width:         { type: 'number', default: 1080 },
+        height:        { type: 'number', default: 1080 },
+        data_sources:  { type: 'object', description: 'Optional inline/json/csv data sources', items: { type: 'object' } },
+      },
+      required: ['project_path', 'name', 'pages'],
+    },
+  },
+  {
+    name: 'bind_data',
+    description: 'Attach or update inline datasets on a report design for $data.* / $agg.* expressions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        datasets:     { type: 'object', description: 'Array of {id, rows[]}', items: { type: 'object' } },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'datasets'],
+    },
+  },
+  {
+    name: 'export_report',
+    description: 'Assemble a report design into a self-contained interactive HTML file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml (must be type: report)' },
+        output_path:  { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
+        theme:        { type: 'string', enum: ['light', 'dark'], default: 'dark' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
 ];

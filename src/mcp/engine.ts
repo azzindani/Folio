@@ -19,6 +19,8 @@ import { expandShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
+import { assembleReportHTML } from '../export/html-assembler';
+import type { LoadedDataset } from '../report/data-loader';
 
 // ── Tier 2 forward-declaration (createDesign called by createTask) ──
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
@@ -673,17 +675,50 @@ export function exportDesign(args: { design_path: string; format: string; output
     }
   }
   if (args.format === 'html') {
-    progress.push(pOk('HTML export queued', path.basename(outPath)));
-    const context = buildContext(op, `Queued HTML export for "${spec.meta.name}"`, [
-      { type: 'html', path: outPath, role: 'queued' },
-    ]);
-    const handover = buildHandover('EXPORT', { design_path: dPath });
-    return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'queued', progress, context, handover });
+    try {
+      
+      const datasets = new Map<string, LoadedDataset>();
+      const sources: { id: string; rows?: Record<string, unknown>[] }[] = spec.report?.data?.sources ?? [];
+      for (const src of sources) {
+        if (src.rows) datasets.set(src.id, { id: src.id, rows: src.rows });
+      }
+      const html: string = spec.meta.type === 'report'
+        ? assembleReportHTML(spec, datasets, {})
+        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title></head><body>${renderToSVGString(spec)}</body></html>`;
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, html, 'utf-8');
+      progress.push(pOk('HTML written', path.basename(outPath)));
+      const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
+      const handover = buildHandover('EXPORT', { design_path: dPath });
+      return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, progress, context, handover });
+    } catch (err) {
+      return errResult(op, `HTML export failed: ${(err as Error).message}`, 'Check design spec.', progress);
+    }
   }
-  progress.push(pWarn('PNG/PDF requires Puppeteer (Phase 2)'));
-  const context = buildContext(op, `Export queued — ${args.format.toUpperCase()} needs Puppeteer`);
+  if (args.format === 'pdf') {
+    // PDF via Puppeteer is async — export HTML first, then call exportToPuppeteerPDF separately
+    const htmlPath = outPath.replace(/\.pdf$/, '-puppeteer.html');
+    try {
+      
+      const datasets = new Map<string, LoadedDataset>();
+      const sources: { id: string; rows?: Record<string, unknown>[] }[] = spec.report?.data?.sources ?? [];
+      for (const src of sources) {
+        if (src.rows) datasets.set(src.id, { id: src.id, rows: src.rows });
+      }
+      const html: string = assembleReportHTML(spec, datasets, {});
+      fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
+      fs.writeFileSync(htmlPath, html, 'utf-8');
+      progress.push(pOk('HTML staged for Puppeteer PDF', path.basename(htmlPath)));
+    } catch {
+      progress.push(pWarn('HTML staging failed; PDF may be incomplete'));
+    }
+    const context = buildContext(op, `PDF requires async Puppeteer step`, [{ type: 'html', path: htmlPath, role: 'pdf-stage' }]);
+    const handover = buildHandover('EXPORT', { design_path: dPath, html_path: htmlPath });
+    return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'puppeteer_required', html_path: htmlPath, hint: 'Call exportToPuppeteerPDF(htmlPath, outputPath) from Node to complete.', progress, context, handover });
+  }
+  const context = buildContext(op, `Export format ${args.format} not supported`);
   const handover = buildHandover('EXPORT', { design_path: dPath });
-  return okResult(op, { format: args.format, status: 'requires_puppeteer', hint: 'PNG/PDF export needs Puppeteer (Phase 2).', progress, context, handover });
+  return okResult(op, { format: args.format, status: 'unsupported', hint: `Supported formats: svg, html, pdf`, progress, context, handover });
 }
 
 export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {
@@ -811,6 +846,136 @@ export function listTemplateSlots(args: { template_path: string }): ToolResult {
   const context = buildContext(op, `Listed ${slots.length} slot(s) in template`);
   const handover = buildHandover('EXPORT', { template_path: tPath });
   return okResult(op, { slots, count: slots.length, progress, context, handover });
+}
+
+// ── Report MCP tools ─────────────────────────────────────────
+
+export function generateReport(args: {
+  project_path: string;
+  name: string;
+  layout?: 'paged' | 'scroll' | 'tabs' | 'sidebar';
+  nav_type?: 'sidebar' | 'topbar' | 'tabs' | 'dots';
+  pages: { id?: string; label: string }[];
+  width?: number;
+  height?: number;
+  data_sources?: { id: string; type: 'inline' | 'json' | 'csv'; path?: string; rows?: Record<string, unknown>[] }[];
+}): ToolResult {
+  const op = 'generate_report';
+  const progress: ProgressItem[] = [];
+  const pDir = path.resolve(args.project_path);
+  if (!fs.existsSync(pDir)) return errResult(op, `Project not found: ${pDir}`, 'Check project_path.');
+
+  const id = generateId();
+  const dPath = path.join(pDir, 'designs', `${args.name.toLowerCase().replace(/\s+/g, '-')}.design.yaml`);
+  fs.mkdirSync(path.dirname(dPath), { recursive: true });
+
+  const pages = args.pages.map((p, i) => ({
+    id: p.id ?? `page_${i + 1}`,
+    label: p.label,
+    layers: [] as unknown[],
+  }));
+
+  const spec: DesignSpec = {
+    _protocol: 'design/v1',
+    _mode: 'in_progress',
+    meta: { id, name: args.name, type: 'report', created: new Date().toISOString(), modified: new Date().toISOString() },
+    document: { width: args.width ?? 1080, height: args.height ?? 1080, unit: 'px' },
+    pages: pages as Page[],
+    report: {
+      layout: args.layout ?? 'paged',
+      navigation: args.nav_type ? { type: args.nav_type } : { type: 'sidebar' },
+      data: args.data_sources ? { sources: args.data_sources } : undefined,
+    },
+  } as unknown as DesignSpec;
+
+  writeYAML(dPath, spec);
+  progress.push(pOk(`Report design created`, path.basename(dPath)));
+  const context = buildContext(op, `Report "${args.name}" scaffolded (${pages.length} pages)`, [
+    { type: 'design', path: dPath, role: 'report' },
+  ]);
+  const handover = buildHandover('COMPOSE', { design_path: dPath });
+  return okResult(op, { design_id: id, design_path: dPath, page_count: pages.length, progress, context, handover });
+}
+
+export function bindData(args: {
+  design_path: string;
+  datasets: { id: string; rows: Record<string, unknown>[] }[];
+  project_path?: string;
+}): ToolResult {
+  const op = 'bind_data';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const spec = readYAML<DesignSpec>(dPath);
+  const dataSpec = spec.report?.data ?? { sources: [] };
+  const existingIds = new Set((dataSpec.sources ?? []).map((s: { id: string }) => s.id));
+
+  for (const ds of args.datasets) {
+    if (!existingIds.has(ds.id)) {
+      (dataSpec.sources ?? (dataSpec.sources = [])).push({
+        id: ds.id,
+        type: 'inline',
+        rows: ds.rows,
+      });
+    } else {
+      const src = (dataSpec.sources ?? []).find((s: { id: string }) => s.id === ds.id);
+      if (src) src.rows = ds.rows;
+    }
+    progress.push(pOk(`Bound dataset "${ds.id}"`, `${ds.rows.length} rows`));
+  }
+
+  if (!spec.report) spec.report = { layout: 'paged' };
+  (spec.report as unknown as Record<string, unknown>)['data'] = dataSpec;
+  writeYAML(dPath, spec);
+
+  const context = buildContext(op, `Bound ${args.datasets.length} dataset(s) to report`, [
+    { type: 'design', path: dPath, role: 'report' },
+  ]);
+  const handover = buildHandover('COMPOSE', { design_path: dPath });
+  return okResult(op, { bound: args.datasets.map(d => ({ id: d.id, rows: d.rows.length })), progress, context, handover });
+}
+
+export function exportReport(args: {
+  design_path: string;
+  output_path?: string;
+  theme?: 'light' | 'dark';
+  project_path?: string;
+}): ToolResult {
+  const op = 'export_report';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const spec = readYAML<DesignSpec>(dPath);
+  if (spec.meta.type !== 'report') {
+    return errResult(op, 'Design is not type "report"', 'Use export_design for non-report types.', progress);
+  }
+
+  const outPath = args.output_path ?? dPath.replace('.design.yaml', '.report.html');
+  progress.push(pInfo('Assembling report HTML'));
+
+  try {
+    
+    const datasets = new Map<string, LoadedDataset>();
+    const sources: { id: string; rows?: Record<string, unknown>[] }[] = spec.report?.data?.sources ?? [];
+    for (const src of sources) {
+      if (src.rows) datasets.set(src.id, { id: src.id, rows: src.rows });
+    }
+
+    const html: string = assembleReportHTML(spec, datasets, { theme: args.theme ?? 'dark' });
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, html, 'utf-8');
+    progress.push(pOk('Report HTML written', path.basename(outPath)));
+
+    const context = buildContext(op, `Report exported as HTML: ${path.basename(outPath)}`, [
+      { type: 'html', path: outPath, role: 'report-output' },
+    ]);
+    const handover = buildHandover('EXPORT', { output_path: outPath });
+    return okResult(op, { output_path: outPath, output_file: path.basename(outPath), bytes: html.length, progress, context, handover });
+  } catch (err) {
+    return errResult(op, `HTML assembly failed: ${(err as Error).message}`, 'Ensure design has pages.', progress);
+  }
 }
 
 // ── Internal shared helpers ───────────────────────────────────
