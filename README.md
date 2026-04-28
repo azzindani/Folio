@@ -1,10 +1,10 @@
 # Folio
 
-A self-hosted MCP server and visual editor that gives local LLMs structured tools to generate, edit, and export graphic designs as plain YAML files. No cloud APIs, no subscriptions — everything runs on your machine.
+A self-hosted MCP server and browser-based graphic design editor that gives local LLMs structured tools to generate, edit, and export designs as plain YAML files. No cloud APIs, no subscriptions — everything runs on your machine.
 
 ## Features
 
-- **25 tools** across 3 servers: basic (10), design (9), export (6)
+- **25 MCP tools** across 3 servers: basic (10), design (9), export (6)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Automatic snapshots** — every write creates a `.mcp_versions/` backup before touching disk
 - **Operation receipt logging** — full audit trail at `~/.folio/ops.log`
@@ -21,6 +21,194 @@ A self-hosted MCP server and visual editor that gives local LLMs structured tool
 - **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, align toolbar, Monaco YAML editor with bidirectional sync
 - **Modular architecture** — thin MCP wrappers, zero domain logic in servers; all business logic in `engine.ts`
 
+---
+
+## Visual Editor
+
+Folio ships a full browser-based design editor accessible at `http://localhost:5173` after `npm run dev`. It operates on the same `.design.yaml` files the MCP server reads and writes — no conversion step.
+
+### Canvas
+
+| Capability | Detail |
+|---|---|
+| Render engine | SVG-in-HTML — vector-native, pixel-perfect at any zoom |
+| Layer selection | Click to select; Shift+click to add; drag on empty canvas for rubber-band multi-select |
+| Move | Drag any selected layer; arrow keys for 1px nudge |
+| Resize | 8-point handles; Shift to constrain aspect ratio |
+| Rotate | Dedicated handle above selection box; Shift to snap to 15° |
+| Flip | Horizontal and vertical flip via Transform panel |
+| Group | Ctrl+G to group; Ctrl+Shift+G to ungroup; resize scales children |
+| Lock | Lock/Unlock toggle in Transform panel — locked layers cannot be dragged or resized |
+| Zoom | Ctrl+scroll or pinch; Ctrl+0 to fit canvas |
+| Pan | Space+drag or middle-mouse drag |
+| Guides | Drag from rulers to place snap guides |
+| Grid | G to toggle; configurable columns, gutter, baseline |
+| Annotations | Alt+hover shows distance between selected layer and hovered layer |
+
+### Panels
+
+| Panel | Function |
+|---|---|
+| Layer panel | All layers grouped by z-band (background / structural / content / overlay / foreground); virtual scroll handles 200+ layers; click to select, drag to reorder |
+| Properties panel | Position, size, fill, stroke, effects, transform (z / opacity / rotation / flip), blend mode — all fields live-update the canvas |
+| Problems panel | Validation errors and warnings with layer ID and message; click to select the offending layer |
+| File tree | Browse and open `.design.yaml`, `.template.yaml`, `.component.yaml` files |
+| Page strip | Carousel page thumbnails — click to navigate, drag to reorder |
+| Payload editor | Monaco YAML editor (VS Code engine) with inline validation, syntax highlighting, and bidirectional sync with the canvas |
+| Command palette | Ctrl+K or `/` — search and execute any action by name |
+| Align toolbar | Align left/center/right/top/middle/bottom; distribute horizontally/vertically; match width/height |
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|---|---|
+| `V` | Select tool |
+| `R` | Rectangle tool |
+| `C` | Circle tool |
+| `T` | Text tool |
+| `L` | Line tool |
+| `G` | Toggle grid |
+| `Ctrl+K` / `/` | Command palette |
+| `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / Redo |
+| `Ctrl+D` | Duplicate selected layer(s) |
+| `Ctrl+C` / `Ctrl+V` | Copy / Paste as YAML |
+| `Ctrl+G` / `Ctrl+Shift+G` | Group / Ungroup |
+| `Ctrl+[` / `Ctrl+]` | Send backward / Bring forward |
+| `Ctrl+0` | Fit canvas to screen |
+| `Ctrl+S` | Save file |
+| `Delete` | Delete selected layer(s) |
+
+### Export (from editor)
+
+| Format | Notes |
+|---|---|
+| SVG | Vector, lossless, opens in any browser |
+| PNG ×1 / ×2 / ×3 | Up to 3240×3240 px — retina quality |
+| PDF | Client-side via jsPDF |
+| HTML | Self-contained — all assets and YAML embedded inline |
+
+---
+
+## Design Engine
+
+The engine is the layer between the YAML file and the rendered SVG. It runs in both the browser (for the visual editor) and Node/Bun (for MCP export). Every design is a `.design.yaml` file — the canvas is a live view, never the source of truth.
+
+### Layer Types
+
+| Type | Capabilities |
+|---|---|
+| `rect` | Fill (solid / linear / radial / conic / noise gradient), stroke, border radius (uniform or per-corner), shadow, opacity, flip, rotation |
+| `circle` / `ellipse` | Same fill and stroke options as rect |
+| `text` | Plain, markdown (via marked.js), or rich (inline spans); word-wrap by layer width; left/center/right align; vertical align (top/middle/bottom); underline/strikethrough; letter spacing; line height |
+| `line` | Stroke color, width, dash pattern, linecap, linejoin |
+| `path` | SVG bezier path (`d` attribute), fill + stroke |
+| `icon` | 80+ Lucide icons by name (e.g. `"star"`, `"arrow-right"`, `"lock"`) — rendered as inline SVG |
+| `image` | Raster or SVG; `src` accepts file path or data URL; optional SVG recolor |
+| `group` | Arbitrary nesting; resize scales all children proportionally |
+| `auto_layout` | Flexbox-like frame: `direction` (row/column), `gap`, `padding`, `align_items`, `justify_content`, `wrap` |
+| `mermaid` | Mermaid diagram DSL rendered as SVG (lazy loaded) |
+| `chart` | Vega-Lite JSON spec rendered as interactive chart (lazy loaded) |
+| `code` | Syntax-highlighted code block via Prism (lazy loaded) |
+| `math` | KaTeX math expression (lazy loaded) |
+| `component` | Reference to a `.component.yaml` — resolved and inlined at render time |
+| `qrcode` | QR code generated client-side with no external dependencies |
+
+### Fill Types
+
+```yaml
+fill: { type: solid,  color: "$primary" }
+fill: { type: linear, angle: 135, stops: [{color: "#1A1A2E", position: 0}, {color: "#16213E", position: 100}] }
+fill: { type: radial, cx: 50, cy: 50, radius: 70, stops: [...] }
+fill: { type: conic,  angle: 0, stops: [...] }
+fill: { type: noise,  base_color: "#1A1A2E", intensity: 0.3 }
+fill: { type: none }
+```
+
+### Effects
+
+| Effect | Rendered as |
+|---|---|
+| Drop shadow | SVG `feDropShadow` (simple) or `feMorphology + feGaussianBlur + feOffset + feMerge` (with spread) |
+| Blur | SVG `feGaussianBlur` on SourceGraphic |
+| Opacity | SVG `opacity` attribute |
+| Blend mode | CSS `mix-blend-mode` |
+| Rotation | SVG `rotate(deg cx cy)` transform |
+| Flip H / Flip V | SVG `translate + scale(-1,1) + translate` transform |
+
+### Theme Tokens
+
+Prefix any color or font value with `$` to reference the active theme:
+
+```yaml
+color:       "$primary"      # → theme.colors.primary
+fill:        "$surface"      # → theme.colors.surface
+font_family: "$heading"      # → theme.typography.families.heading
+color:       "$text_muted"   # → theme.colors.text_muted
+```
+
+Built-in themes: `dark-tech` (dark indigo/red), `light-clean` (white/blue). Custom themes defined in `themes/` and registered in `project.yaml`.
+
+### Z-Index Bands
+
+```
+0–9    Background   — full-bleed fills, textures
+10–19  Structural   — cards, frames, containers
+20–49  Content      — text, icons, images, charts
+50–69  Overlay      — color washes, decorative overlays
+70–89  Foreground   — accent shapes, highlights
+90–99  UI           — editor-only handles (never written to files)
+```
+
+### Design File Format
+
+```yaml
+_protocol: "design/v1"
+_mode: complete         # draft | complete
+
+meta:
+  id: my-poster
+  name: My Poster
+  type: poster          # poster | carousel
+  created: "2026-04-28"
+  modified: "2026-04-28"
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1080
+    fill: { type: linear, angle: 135, stops: [{color: "$background", position: 0}, {color: "$surface", position: 100}] }
+
+  - id: headline
+    type: text
+    z: 20
+    x: 80
+    y: 400
+    width: 920
+    height: auto
+    content: { type: plain, value: "Hello, Folio!" }
+    style:
+      font_family: "$heading"
+      font_size: 80
+      font_weight: 800
+      color: "$text"
+      align: center
+      line_height: 1.1
+```
+
+---
 ## Important: Always Use Absolute File Paths
 
 > **Do not use relative paths with `project_path` or `design_path`.**
@@ -29,13 +217,13 @@ A self-hosted MCP server and visual editor that gives local LLMs structured tool
 >
 > Always give the model the full absolute path:
 > ```
-> Create a design in /home/you/designs/my-project
+> Create a design in C:\Users\you\designs\my-project
 > ```
-> The model passes that path directly to the MCP tools. Relative paths and `~` expansion are not supported in all clients.
+> The model passes that path directly to the MCP tools. `~` expansion is not supported in all clients.
+
+---
 
 ## Quick Install (LM Studio)
-
-> **Tested on Linux.** macOS and Windows are supported by design and pass CI, but have not been hand-tested. Reports from non-Linux users are welcome.
 
 ### Requirements
 
@@ -47,27 +235,74 @@ A self-hosted MCP server and visual editor that gives local LLMs structured tool
 
 | Platform | Status |
 |---|---|
-| Linux | Tested — real-world verified |
-| macOS | Untested — CI/CD pipeline passes |
 | Windows | Untested — CI/CD pipeline passes |
+| macOS | Untested — CI/CD pipeline passes |
+| Linux | Tested — real-world verified |
 
 ### First Run
 
 The first launch clones the repo and installs dependencies (~1–2 minutes). Subsequent launches are instant.
 
-> **Pre-install recommended:** To avoid the LM Studio connection timeout on first launch, run this once in a terminal before connecting:
-> ```bash
-> d="$HOME/.mcp_servers/Folio"
-> git clone https://github.com/azzindani/Folio.git "$d" --quiet
-> cd "$d" && bun install --frozen-lockfile
+> **Pre-install recommended (Windows):** To avoid the LM Studio connection timeout on first launch, run this once in PowerShell before connecting:
+> ```powershell
+> $d = Join-Path $env:USERPROFILE '.mcp_servers\Folio'
+> git clone https://github.com/azzindani/Folio.git $d --quiet
+> Set-Location $d; bun install --frozen-lockfile
 > ```
 > If you skip this and LM Studio times out, press **Restart** in the MCP Servers panel — it will reconnect and complete the install.
 
-### Steps
+---
+
+### Windows (PowerShell)
 
 1. Open LM Studio → **Developer** tab (`</>`) or find it via **Integrations**
 2. Find **mcp.json** or **Edit mcp.json** → click to open
 3. Paste this config:
+
+```json
+{
+  "mcpServers": {
+    "folio_basic": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='1'; bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    },
+    "folio_design": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='2'; bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    },
+    "folio_export": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='3'; bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    }
+  }
+}
+```
+
+4. Wait for the green dot next to each server
+5. Start chatting — the model will see all 25 tools
+
+> For small models (≤32K context), use only `folio_basic` (10 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
+
+---
+
+### macOS / Linux (bash)
+
+Replace the entries above with the bash equivalent:
 
 ```json
 {
@@ -103,57 +338,7 @@ The first launch clones the repo and installs dependencies (~1–2 minutes). Sub
 }
 ```
 
-4. Wait for the green dot next to each server
-5. Start chatting — the model will see all 25 tools
-
-> For small models (≤32K context), use only `folio_basic` (10 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
-
-### Windows PowerShell
-
-Replace the `"command"` and `"args"` in each entry with the PowerShell equivalent:
-
-```json
-{
-  "mcpServers": {
-    "folio_basic": {
-      "command": "powershell",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='1'; bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    },
-    "folio_design": {
-      "command": "powershell",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='2'; bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    },
-    "folio_export": {
-      "command": "powershell",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='3'; bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    }
-  }
-}
-```
+---
 
 ## Available Tools
 
@@ -200,7 +385,7 @@ SVG export, batch generation, templates, and component extraction.
 
 | Tool | Purpose |
 |---|---|
-| `export_design` | Export design to SVG (written to disk via server-side jsdom renderer) or HTML; PNG/PDF queued for Phase 2 |
+| `export_design` | Export to SVG (server-side jsdom renderer, writes file to disk) or HTML; PNG/PDF queued for Phase 2 |
 | `export_template` | Export sealed design as `.template.yaml` skeleton with named `{{slot}}` placeholders |
 | `list_template_slots` | List all injectable slots in a `.template.yaml` with paths, types, and hints |
 | `inject_template` | Fill template slots with new content to produce a `.design.yaml` |
@@ -208,7 +393,6 @@ SVG export, batch generation, templates, and component extraction.
 | `save_as_component` | Extract selected layers into a `.component.yaml` and replace with a component instance |
 
 ---
-
 ## Workflow Reference
 
 ### Poster (single page)
@@ -246,37 +430,43 @@ SVG export, batch generation, templates, and component extraction.
 ### Create a poster
 
 ```
-Create a project at /home/me/designs/work, then make a dark tech poster with a bold headline and a red pill badge
+Create a project at C:\Users\me\designs\work, then make a dark tech poster with a bold headline and a red pill badge
 ```
 
 ### Build a carousel
 
 ```
-Plan a 5-slide product launch carousel at /home/me/designs/launch — cover, problem, solution, features, CTA
+Plan a 5-slide product launch carousel at C:\Users\me\designs\launch — cover, problem, solution, features, CTA
 ```
 
 ### Resume after context reset
 
 ```
-Resume the task at /home/me/designs/launch/tasks/product-launch.task.yaml
+Resume the task at C:\Users\me\designs\launch\tasks\product-launch.task.yaml
 ```
 
 ### Export as SVG
 
 ```
-Export /home/me/designs/work/designs/poster.design.yaml as SVG
+Export C:\Users\me\designs\work\designs\poster.design.yaml as SVG
 ```
 
 ### Batch from template
 
 ```
-Generate 10 variations of the announcement template using the slots in /home/me/designs/templates/announcement.template.yaml
+Generate 10 variations of the announcement template using the slots in C:\Users\me\designs\templates\announcement.template.yaml
 ```
 
 ### Patch a specific field
 
 ```
-Change the headline text in /home/me/designs/work/designs/poster.design.yaml to "Q3 Results"
+Change the headline text in C:\Users\me\designs\work\designs\poster.design.yaml to "Q3 Results"
+```
+
+### Open the visual editor
+
+```bash
+npm run dev   # → http://localhost:5173
 ```
 
 ---
@@ -297,7 +487,7 @@ Set `MCP_CONSTRAINED_MODE=true` to reduce result set sizes for lower-memory mach
 |---|---|---|
 | `FOLIO_OUTPUT_BUDGET` | `1000` | Max tokens per tool response |
 | `FOLIO_MCP_TIER` | `1` | Tool tier: `1` basic, `2` basic+design, `3` all |
-| `MCP_CONSTRAINED_MODE` | `false` | Set `true` to reduce result sizes for small RAM machines |
+| `MCP_CONSTRAINED_MODE` | `false` | Set `true` to reduce result sizes for low-RAM machines |
 
 ---
 
@@ -305,17 +495,18 @@ Set `MCP_CONSTRAINED_MODE=true` to reduce result set sizes for lower-memory mach
 
 **Step 1:** Remove from your MCP client — delete all `folio_*` entries from `mcp.json` and restart the client.
 
-**Step 2:** Delete installed files:
-
-```bash
-rm -rf ~/.mcp_servers/Folio
-rm -rf ~/.folio          # ops.log and snapshots
-```
+**Step 2:** Delete installed files.
 
 Windows PowerShell:
 ```powershell
 Remove-Item -Recurse -Force "$env:USERPROFILE\.mcp_servers\Folio"
 Remove-Item -Recurse -Force "$env:USERPROFILE\.folio"
+```
+
+macOS / Linux:
+```bash
+rm -rf ~/.mcp_servers/Folio
+rm -rf ~/.folio
 ```
 
 ---
@@ -382,7 +573,8 @@ Folio/
 
 ```bash
 # Install dependencies
-npm ci  # or: bun install
+npm ci        # Node
+bun install   # Bun (faster)
 
 # Run all unit + integration tests (1,360 tests)
 npm run test:unit
