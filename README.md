@@ -4,7 +4,7 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 
 ## Features
 
-- **25 MCP tools** across 3 servers: basic (10), design (9), export (6)
+- **28 MCP tools** across 3 servers: basic (10), design (9), export (9)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Automatic snapshots** — every write creates a `.mcp_versions/` backup before touching disk
 - **Operation receipt logging** — full audit trail at `~/.folio/ops.log`
@@ -14,6 +14,7 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 - **Shorthand layer syntax** — `pos:[x,y,w,h]`, `fill:"#hex"`, `icon:"star"` — ~80% fewer tokens than verbose YAML
 - **13 layer types** — rect, circle, text, line, path, icon, image, group, mermaid, chart, code, math, component
 - **Live SVG export** — server-side jsdom renderer writes real `.svg` files from MCP without a browser
+- **Interactive report HTML** — `export_report` assembles multi-page reports into a self-contained `.html` with navigation runtime, `$data.*` expression binding, and Mode A interactions
 - **Theme token system** — `$primary`, `$heading`, `$text_muted` resolved at render time from active theme
 - **Component library** — reusable layer groups with named slot definitions
 - **Carousel / multi-page** — incremental page-by-page generation with task state tracking
@@ -379,18 +380,21 @@ Full design lifecycle — create, inspect, build, edit. All write tools create a
 
 ---
 
-### Tier 3 — Export (6 tools)
+### Tier 3 — Export (9 tools)
 
-SVG export, batch generation, templates, and component extraction.
+SVG/HTML export, batch generation, templates, component extraction, and interactive report assembly.
 
 | Tool | Purpose |
 |---|---|
-| `export_design` | Export to SVG (server-side jsdom renderer, writes file to disk) or HTML; PNG/PDF queued for Phase 2 |
+| `export_design` | Export to SVG (server-side jsdom renderer) or self-contained HTML; PDF stages HTML for Puppeteer |
 | `export_template` | Export sealed design as `.template.yaml` skeleton with named `{{slot}}` placeholders |
 | `list_template_slots` | List all injectable slots in a `.template.yaml` with paths, types, and hints |
 | `inject_template` | Fill template slots with new content to produce a `.design.yaml` |
 | `batch_create` | Generate N designs from one template using an array of slot objects |
 | `save_as_component` | Extract selected layers into a `.component.yaml` and replace with a component instance |
+| `generate_report` | Scaffold a `report`-type design with pages, navigation (sidebar/topbar/tabs/dots), and optional data sources |
+| `bind_data` | Attach or update inline datasets on a report design; fields support `$data.*` / `$agg.*` expressions |
+| `export_report` | Assemble a report design into a self-contained interactive HTML file with navigation runtime |
 
 ---
 ## Workflow Reference
@@ -414,6 +418,18 @@ SVG export, batch generation, templates, and component extraction.
 4. seal_design     → validate + freeze
 5. export_design   → format: svg
 ```
+
+### Report (interactive HTML document)
+
+```
+1. generate_report  → scaffold report .design.yaml (pages, nav, layout)
+2. bind_data        → attach inline datasets for $data.* / $agg.* expressions
+3. append_page      → add layers to each page (supports data-driven layers)
+4. seal_design      → validate + freeze
+5. export_report    → assemble self-contained .report.html with nav runtime
+```
+
+The exported HTML is fully self-contained — one file, no external dependencies. Navigation, page switching, and data bindings are powered by a 2 KB inline runtime (`window.Folio.nav`). Supports sidebar, topbar, tabs, and dot navigation.
 
 ### Patch (edit sealed design)
 
@@ -555,14 +571,14 @@ Folio/
 │   │   └── component-resolver.ts← component ref → inlined layers
 │   ├── editor/                  ← browser visual editor (canvas, state, interactions)
 │   ├── ui/                      ← panels, toolbar, command palette
-│   ├── export/                  ← PNG / SVG / PDF / HTML exporters
+│   ├── export/                  ← SVG / HTML / PDF exporters; html-assembler (report runtime); mode-b-runtime; script-sandbox; puppeteer-pdf
 │   ├── themes/                  ← built-in theme definitions (dark-tech, light-clean)
 │   └── utils/                   ← debug logger, ruler units
 ├── tests/
 │   ├── e2e/                     ← Playwright end-to-end tests
 │   ├── visual/                  ← Playwright visual regression snapshots
 │   └── fixtures/                ← sample .design.yaml files
-└── src/**/*.test.ts             ← 1,360 Vitest unit + integration tests
+└── src/**/*.test.ts             ← 1,726 Vitest unit + integration tests
 ```
 
 ---
