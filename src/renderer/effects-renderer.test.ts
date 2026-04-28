@@ -88,6 +88,36 @@ describe('applyEffects — blend_mode', () => {
   });
 });
 
+describe('applyEffects — shadow with spread', () => {
+  it('uses feMorphology+feGaussianBlur+feOffset decomposition when spread > 0', () => {
+    const svg = makeSvg();
+    const el = makeEl();
+    applyEffects(el, { shadows: [{ x: 2, y: 4, blur: 8, color: '#000', spread: 4 }] }, svg);
+    expect(el.getAttribute('filter')).toMatch(/^url\(#fx-/);
+    expect(svg.querySelector('feMorphology')).not.toBeNull();
+    expect(svg.querySelector('feGaussianBlur')).not.toBeNull();
+    expect(svg.querySelector('feOffset')).not.toBeNull();
+    expect(svg.querySelector('feFlood')).not.toBeNull();
+    expect(svg.querySelector('feComposite')).not.toBeNull();
+    expect(svg.querySelector('feMerge')).not.toBeNull();
+  });
+
+  it('feMorphology has correct dilate radius', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { shadows: [{ x: 0, y: 0, blur: 4, color: '#f00', spread: 6 }] }, svg);
+    const morph = svg.querySelector('feMorphology')!;
+    expect(morph.getAttribute('operator')).toBe('dilate');
+    expect(morph.getAttribute('radius')).toBe('6');
+  });
+
+  it('falls back to feDropShadow when spread is 0', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { shadows: [{ x: 1, y: 1, blur: 4, color: '#000', spread: 0 }] }, svg);
+    expect(svg.querySelector('feDropShadow')).not.toBeNull();
+    expect(svg.querySelector('feMorphology')).toBeNull();
+  });
+});
+
 describe('applyEffects — no effects', () => {
   it('does not add filter when no shadows or blur', () => {
     const svg = makeSvg();

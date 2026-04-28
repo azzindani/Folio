@@ -8,6 +8,8 @@ import {
   renderLine, renderText, renderImage, renderIcon,
   renderMermaid, renderChart, renderCode, renderMath, renderGroup,
   renderQRCode, renderAutoLayout,
+  renderInteractiveChart, renderInteractiveTable, renderRichText,
+  renderKpiCard, renderMap, renderEmbedCode, renderPopup,
 } from './layer-renderers';
 
 export interface RenderOptions {
@@ -94,9 +96,16 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'group':         el = renderGroup(layer, svg, renderLayer); break;
     case 'component':     el = renderComponentLayer(layer as ComponentLayer, svg); break;
     case 'component_list':el = renderComponentListLayer(layer as ComponentListLayer, svg); break;
-    case 'qrcode':        el = renderQRCode(layer, svg); break;
-    case 'auto_layout':   el = renderAutoLayout(layer, svg, renderLayer); break;
-    default:              el = renderPlaceholder(layer, svg); break;
+    case 'qrcode':              el = renderQRCode(layer, svg); break;
+    case 'auto_layout':         el = renderAutoLayout(layer, svg, renderLayer); break;
+    case 'interactive_chart':   el = renderInteractiveChart(layer, svg); break;
+    case 'interactive_table':   el = renderInteractiveTable(layer, svg); break;
+    case 'rich_text':           el = renderRichText(layer, svg); break;
+    case 'kpi_card':            el = renderKpiCard(layer, svg); break;
+    case 'map':                 el = renderMap(layer, svg); break;
+    case 'embed_code':          el = renderEmbedCode(layer, svg); break;
+    case 'popup':               el = renderPopup(layer, svg, renderLayer); break;
+    default:                    el = renderPlaceholder(layer, svg); break;
   }
 
   if (layer.clip_path_ref) {
