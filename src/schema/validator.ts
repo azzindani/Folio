@@ -10,6 +10,9 @@ const VALID_LAYER_TYPES = new Set([
   'rect', 'circle', 'path', 'polygon', 'line',
   'text', 'image', 'icon', 'component', 'component_list',
   'mermaid', 'chart', 'code', 'math', 'group',
+  'qrcode', 'auto_layout',
+  'interactive_chart', 'interactive_table', 'rich_text',
+  'kpi_card', 'map', 'embed_code', 'popup',
 ]);
 
 const VALID_FILL_TYPES = new Set([

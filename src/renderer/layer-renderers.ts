@@ -3,6 +3,8 @@ import type {
   LineLayer, TextLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
   QRCodeLayer, AutoLayoutLayer, ColorOrGradient,
+  InteractiveChartLayer, InteractiveTableLayer, RichTextLayer,
+  KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer,
 } from '../schema/types';
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
@@ -820,4 +822,281 @@ function normalizePadding(
   if (p === undefined || p === null) return { top: 0, right: 0, bottom: 0, left: 0 };
   if (typeof p === 'number') return { top: p, right: p, bottom: p, left: p };
   return p;
+}
+
+// ── Helpers shared by report renderers ──────────────────────
+
+function makeForeignObject(
+  layer: { x?: number; y?: number; width?: number | 'auto'; height?: number | 'auto'; id?: string },
+  placeholderLabel: string,
+  cssClass: string,
+  extraStyle?: string,
+): { fo: SVGElement; container: HTMLElement } {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.className = cssClass;
+  container.style.cssText = `width:100%;height:100%;overflow:hidden;box-sizing:border-box;${extraStyle ?? ''}`;
+  if (layer.id) container.dataset['layerId'] = layer.id;
+
+  const placeholder = document.createElement('div');
+  placeholder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#8892A4;font-family:monospace;font-size:12px;';
+  placeholder.textContent = placeholderLabel;
+  container.appendChild(placeholder);
+  fo.appendChild(container);
+
+  return { fo, container };
+}
+
+// ── Interactive Chart (Plotly) ───────────────────────────────
+export function renderInteractiveChart(layer: InteractiveChartLayer, _svg: SVGSVGElement): SVGElement {
+  const { fo, container } = makeForeignObject(layer, `[Chart: ${layer.chart_type}]`, 'folio-chart');
+
+  const meta = {
+    layerId: layer.id,
+    chartType: layer.chart_type,
+    dataRef: layer.data_ref,
+    xField: layer.x_field,
+    yField: layer.y_field,
+    colorField: layer.color_field,
+    title: layer.title,
+    colorScheme: layer.color_scheme ?? 'blues',
+    customColors: layer.custom_colors,
+    legend: layer.legend ?? true,
+    grid: layer.grid ?? true,
+    animate: layer.animate ?? true,
+  };
+  container.dataset['plotlySpec'] = JSON.stringify(meta);
+  container.dataset['renderType'] = 'plotly';
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Interactive Table (Tabulator) ────────────────────────────
+export function renderInteractiveTable(layer: InteractiveTableLayer, _svg: SVGSVGElement): SVGElement {
+  const { fo, container } = makeForeignObject(layer, '[Table loading…]', 'folio-table');
+
+  const meta = {
+    layerId: layer.id,
+    dataRef: layer.data_ref,
+    columns: layer.columns,
+    pagination: layer.pagination ?? true,
+    pageSize: layer.page_size ?? 20,
+    filterable: layer.filterable ?? false,
+    exportable: layer.exportable ?? false,
+    theme: layer.theme ?? 'midnight',
+  };
+  container.dataset['tabulatorSpec'] = JSON.stringify(meta);
+  container.dataset['renderType'] = 'tabulator';
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Rich Text (marked.js) ────────────────────────────────────
+export function renderRichText(layer: RichTextLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.className = 'folio-richtext';
+  const ff = layer.font_family ?? 'Inter, sans-serif';
+  const fs = layer.font_size ?? 16;
+  const lh = layer.line_height ?? 1.6;
+  const color = layer.color ?? '#e0e0e0';
+  const linkColor = layer.link_color ?? '#6c5ce7';
+  container.style.cssText = `width:100%;height:100%;overflow:auto;box-sizing:border-box;font-family:${ff};font-size:${fs}px;line-height:${lh};color:${color};--link-color:${linkColor};`;
+
+  if (layer.format === 'html') {
+    container.innerHTML = layer.content;
+  } else {
+    // Markdown placeholder — marked.js renders this in report runtime
+    container.dataset['markdownSrc'] = layer.content;
+    container.dataset['renderType'] = 'markdown';
+    const pre = document.createElement('pre');
+    pre.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    pre.style.cssText = 'white-space:pre-wrap;margin:0;font-size:inherit;color:inherit;';
+    pre.textContent = layer.content;
+    container.appendChild(pre);
+  }
+
+  fo.appendChild(container);
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── KPI Card ─────────────────────────────────────────────────
+export function renderKpiCard(layer: KpiCardLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 300;
+  const h = typeof layer.height === 'number' ? layer.height : 180;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  const card = document.createElement('div');
+  card.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  card.className = 'folio-kpi';
+  const bg = layer.background ?? '#1e1e3a';
+  const textColor = layer.text_color ?? '#ffffff';
+  const radius = layer.border_radius ?? 12;
+  card.style.cssText = `width:100%;height:100%;box-sizing:border-box;background:${bg};color:${textColor};border-radius:${radius}px;padding:20px;display:flex;flex-direction:column;justify-content:space-between;`;
+
+  const valStr = typeof layer.value === 'number'
+    ? formatKpiValue(layer.value, layer.format, layer.currency, layer.decimals)
+    : String(layer.value);
+  const deltaStr = layer.delta !== undefined
+    ? formatKpiValue(Number(layer.delta), layer.delta_format === 'percent' ? 'percent' : 'number', undefined, 1)
+    : undefined;
+  const posColor = layer.delta_positive_color ?? '#00b894';
+  const negColor = layer.delta_negative_color ?? '#e17055';
+  const deltaNum = layer.delta !== undefined ? Number(layer.delta) : 0;
+  const deltaColor = deltaNum >= 0 ? posColor : negColor;
+
+  card.innerHTML = `
+    <div class="kpi-label" xmlns="http://www.w3.org/1999/xhtml" style="font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.08em;">${escHtml(layer.label)}</div>
+    <div class="kpi-value" xmlns="http://www.w3.org/1999/xhtml" style="font-size:36px;font-weight:700;line-height:1;">${escHtml(valStr)}</div>
+    ${deltaStr ? `<div class="kpi-delta" xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px;color:${deltaColor};">${escHtml((deltaNum >= 0 ? '▲ ' : '▼ ') + deltaStr)}</div>` : ''}
+    ${layer.sparkline_data ? `<canvas class="kpi-sparkline" data-data-ref="${escHtml(layer.sparkline_data ?? '')}" data-field="${escHtml(layer.sparkline_field ?? '')}" data-color="${escHtml(layer.sparkline_color ?? '#6c5ce7')}" style="width:100%;height:40px;"></canvas>` : ''}
+  `;
+
+  fo.appendChild(card);
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+function formatKpiValue(value: number, format?: string, currency?: string, decimals?: number): string {
+  const dec = decimals ?? 0;
+  if (format === 'currency') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD', maximumFractionDigits: dec }).format(value);
+  }
+  if (format === 'percent') {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(dec)}%`;
+  }
+  return value.toFixed(dec);
+}
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Map (Leaflet) ────────────────────────────────────────────
+export function renderMap(layer: MapLayer, _svg: SVGSVGElement): SVGElement {
+  const { fo, container } = makeForeignObject(layer, '[Map loading…]', 'folio-map');
+
+  const meta = {
+    layerId: layer.id,
+    center: layer.center,
+    zoom: layer.zoom ?? 2,
+    tileProvider: layer.tile_provider ?? 'osm',
+    overlays: layer.overlays ?? [],
+  };
+  container.dataset['leafletSpec'] = JSON.stringify(meta);
+  container.dataset['renderType'] = 'leaflet';
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Embed Code ───────────────────────────────────────────────
+export function renderEmbedCode(layer: EmbedCodeLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  if (layer.sandbox !== false) {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    iframe.style.cssText = `width:${w}px;height:${h}px;border:none;`;
+    iframe.setAttribute('srcdoc', layer.html);
+    iframe.setAttribute('sandbox', layer.allow_scripts ? 'allow-scripts' : '');
+    fo.appendChild(iframe);
+  } else {
+    const container = document.createElement('div');
+    container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    container.style.cssText = `width:${w}px;height:${h}px;overflow:hidden;`;
+    container.innerHTML = layer.html;
+    fo.appendChild(container);
+  }
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Popup ────────────────────────────────────────────────────
+export function renderPopup(
+  layer: PopupLayer,
+  svg: SVGSVGElement,
+  renderChildFn: (l: Layer, s: SVGSVGElement) => SVGElement,
+): SVGElement {
+  // Popup renders as a hidden <g> group; the report runtime JS shows/hides it.
+  const w = typeof layer.width === 'number' ? layer.width : 600;
+  const h = typeof layer.height === 'number' ? layer.height : 400;
+
+  const g = createSVGElement('g', {
+    'data-popup-id': layer.id,
+    'data-trigger-id': layer.trigger_id ?? '',
+    'data-modal': String(layer.modal ?? true),
+    'data-animation': layer.open_animation ?? 'fade',
+  });
+
+  // Backdrop rect (hidden by default)
+  const backdrop = createSVGElement('rect', {
+    x: 0, y: 0, width: '100%', height: '100%',
+    fill: 'rgba(0,0,0,0.5)',
+    'data-popup-backdrop': layer.id,
+  });
+  g.appendChild(backdrop);
+
+  // Panel rect
+  const panel = createSVGElement('rect', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+    fill: '#1a1a2e',
+    rx: 8,
+    ry: 8,
+  });
+  g.appendChild(panel);
+
+  // Child layers
+  for (const child of (layer.layers ?? [])) {
+    g.appendChild(renderChildFn(child, svg));
+  }
+
+  // Hidden by default; runtime JS handles show/hide
+  g.setAttribute('visibility', 'hidden');
+  g.setAttribute('opacity', '0');
+
+  applyCommonAttributes(g, layer);
+  return g;
 }
