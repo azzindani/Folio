@@ -15,6 +15,9 @@ const HANDLERS: Record<string, Handler> = {
   export_template:     (a) => engine.exportTemplate(a as Parameters<typeof engine.exportTemplate>[0]),
   inject_template:     (a) => engine.injectTemplate(a as Parameters<typeof engine.injectTemplate>[0]),
   list_template_slots: (a) => engine.listTemplateSlots(a as Parameters<typeof engine.listTemplateSlots>[0]),
+  generate_report:     (a) => engine.generateReport(a as Parameters<typeof engine.generateReport>[0]),
+  bind_data:           (a) => engine.bindData(a as Parameters<typeof engine.bindData>[0]),
+  export_report:       (a) => engine.exportReport(a as Parameters<typeof engine.exportReport>[0]),
 };
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }

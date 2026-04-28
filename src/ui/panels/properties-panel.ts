@@ -314,17 +314,39 @@ export class PropertiesPanelManager {
   }
 
   private renderFillFields(fill: (RectLayer | CircleLayer)['fill']): string {
-    if (!fill || fill.type === 'none') return '';
-    if (fill.type === 'solid') {
-      return this.renderColorField('fill.color', 'Fill', fill.color);
+    const activeType = fill?.type ?? 'none';
+    const types: Array<{ key: string; label: string }> = [
+      { key: 'solid',  label: 'Solid'  },
+      { key: 'linear', label: 'Linear' },
+      { key: 'radial', label: 'Radial' },
+      { key: 'none',   label: 'None'   },
+    ];
+    const tabs = types.map(t => {
+      const active = activeType === t.key;
+      return `<button class="fill-type-btn" data-fill-type="${t.key}"
+        style="flex:1;padding:3px 0;font-size:10px;border:1px solid var(--color-border);
+               background:${active ? 'var(--color-accent)' : 'var(--color-bg)'};
+               color:${active ? '#fff' : 'var(--color-text-muted)'};
+               border-radius:3px;cursor:pointer">${t.label}</button>`;
+    }).join('');
+
+    let body = '';
+    if (!fill || fill.type === 'none') {
+      body = '';
+    } else if (fill.type === 'solid') {
+      body = this.renderColorField('fill.color', 'Fill', fill.color);
+    } else if (fill.type === 'linear') {
+      body = this.renderLinearGradientFields(fill);
+    } else if (fill.type === 'radial') {
+      body = this.renderRadialGradientFields(fill);
     }
-    if (fill.type === 'linear') {
-      return this.renderLinearGradientFields(fill);
-    }
-    if (fill.type === 'radial') {
-      return this.renderRadialGradientFields(fill);
-    }
-    return '';
+
+    return `
+      <div style="margin-bottom:6px">
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Fill</div>
+        <div class="fill-type-tabs" style="display:flex;gap:3px;margin-bottom:6px">${tabs}</div>
+        ${body}
+      </div>`;
   }
 
   private renderLinearGradientFields(fill: LinearGradientFill): string {
@@ -347,7 +369,11 @@ export class PropertiesPanelManager {
           Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
         </div>
         ${this.renderNumberField('fill.angle', 'Angle °', fill.angle, 0, 360, 1)}
-        <div style="font-size:11px;color:var(--color-text-muted);margin:6px 0 4px">Stops</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px">
+          <span style="font-size:11px;color:var(--color-text-muted)">Stops</span>
+          <button class="grad-add-stop-btn" style="font-size:11px;background:none;border:1px solid var(--color-border);
+            border-radius:3px;color:var(--color-text-muted);cursor:pointer;padding:1px 6px">+</button>
+        </div>
     `;
     fill.stops.forEach((stop, i) => {
       html += this.renderGradientStop(stop, i);
@@ -357,15 +383,33 @@ export class PropertiesPanelManager {
   }
 
   private renderRadialGradientFields(fill: RadialGradientFill): string {
+    const stopCss = fill.stops.map(s => `${s.color} ${s.position}%`).join(', ');
+    const previewBg = `radial-gradient(circle at ${fill.cx ?? 50}% ${fill.cy ?? 50}%, ${stopCss})`;
+    const thumbs = fill.stops.map((s, i) => this.renderGradientThumb(s.color, s.position, i)).join('');
+
     let html = `
       <div>
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Radial Gradient</div>
+        <div class="grad-bar-wrap" style="position:relative;margin-bottom:4px">
+          <div class="grad-preview" data-fill-type="radial"
+            style="height:20px;border-radius:4px;background:${previewBg};
+                   border:1px solid var(--color-border);cursor:crosshair">
+          </div>
+          <div class="grad-thumbs" style="position:relative;height:14px">${thumbs}</div>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:6px">
+          Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           ${this.renderNumberInput('fill.cx', 'CX (%)', fill.cx)}
           ${this.renderNumberInput('fill.cy', 'CY (%)', fill.cy)}
         </div>
         ${this.renderNumberField('fill.radius', 'Radius (%)', fill.radius, 0, 200, 1)}
-        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;margin-top:8px">Stops</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px">
+          <span style="font-size:11px;color:var(--color-text-muted)">Stops</span>
+          <button class="grad-add-stop-btn" style="font-size:11px;background:none;border:1px solid var(--color-border);
+            border-radius:3px;color:var(--color-text-muted);cursor:pointer;padding:1px 6px">+</button>
+        </div>
     `;
     fill.stops.forEach((stop, i) => {
       html += this.renderGradientStop(stop, i);
@@ -632,8 +676,22 @@ export class PropertiesPanelManager {
   }
 
   private bindGradientEditor(layer: Layer): void {
+    // Fill type switcher tabs
+    this.content.querySelectorAll<HTMLButtonElement>('.fill-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.switchFillType(layer.id, btn.dataset.fillType ?? 'solid');
+      });
+    });
+
     const preview = this.content.querySelector<HTMLElement>('.grad-preview');
     const thumbsContainer = this.content.querySelector<HTMLElement>('.grad-thumbs');
+
+    // + add stop button
+    const addStopBtn = this.content.querySelector<HTMLButtonElement>('.grad-add-stop-btn');
+    if (addStopBtn) {
+      addStopBtn.addEventListener('click', () => this.addGradientStop(layer.id, 50));
+    }
+
     if (!preview || !thumbsContainer) return;
 
     // Click on bar → add new stop at that position
@@ -670,6 +728,49 @@ export class PropertiesPanelManager {
         }, { once: true });
       });
     });
+  }
+
+  private switchFillType(layerId: string, toType: string): void {
+    const layers = this.state.getCurrentLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return;
+
+    const currentFill = (layer as { fill?: { type: string; color?: string; stops?: { color: string; position: number }[]; angle?: number; cx?: number; cy?: number; radius?: number } }).fill;
+
+    let newFill: unknown;
+    switch (toType) {
+      case 'solid':
+        newFill = { type: 'solid', color: currentFill?.stops?.[0]?.color ?? currentFill?.color ?? '#6c5ce7' };
+        break;
+      case 'linear':
+        newFill = {
+          type: 'linear',
+          angle: currentFill?.angle ?? 135,
+          stops: currentFill?.stops ?? [
+            { color: currentFill?.color ?? '#6c5ce7', position: 0 },
+            { color: '#a29bfe', position: 100 },
+          ],
+        };
+        break;
+      case 'radial':
+        newFill = {
+          type: 'radial',
+          cx: currentFill?.cx ?? 50,
+          cy: currentFill?.cy ?? 50,
+          radius: currentFill?.radius ?? 70,
+          stops: currentFill?.stops ?? [
+            { color: currentFill?.color ?? '#6c5ce7', position: 0 },
+            { color: '#1a1a2e', position: 100 },
+          ],
+        };
+        break;
+      case 'none':
+        newFill = { type: 'none' };
+        break;
+      default:
+        return;
+    }
+    this.applyPropertyChange(layerId, 'fill', newFill);
   }
 
   private addGradientStop(layerId: string, position: number): void {
