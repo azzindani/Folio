@@ -786,3 +786,68 @@ describe('renderLayer — additional layer types via renderPage', () => {
     expect(svg.querySelector('[data-layer-id="unk"]')).not.toBeNull();
   });
 });
+
+describe('renderLayer — report layer types (lines 101-107)', () => {
+  it('renders interactive_chart layer', () => {
+    const layers: Layer[] = [
+      { id: 'chart1', type: 'interactive_chart', z: 0, x: 0, y: 0, width: 400, height: 300,
+        chart_type: 'bar', data_source: 'sales' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="chart1"]')).not.toBeNull();
+  });
+
+  it('renders interactive_table layer', () => {
+    const layers: Layer[] = [
+      { id: 'tbl1', type: 'interactive_table', z: 0, x: 0, y: 0, width: 400, height: 300,
+        data_source: 'users', columns: [] } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="tbl1"]')).not.toBeNull();
+  });
+
+  it('renders rich_text layer', () => {
+    const layers: Layer[] = [
+      { id: 'rt1', type: 'rich_text', z: 0, x: 0, y: 0, width: 300, height: 200,
+        content: '# Hello' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="rt1"]')).not.toBeNull();
+  });
+
+  it('renders kpi_card layer', () => {
+    const layers: Layer[] = [
+      { id: 'kpi1', type: 'kpi_card', z: 0, x: 0, y: 0, width: 200, height: 120,
+        label: 'Revenue', value: '$1M' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="kpi1"]')).not.toBeNull();
+  });
+
+  it('renders map layer', () => {
+    const layers: Layer[] = [
+      { id: 'map1', type: 'map', z: 0, x: 0, y: 0, width: 400, height: 300,
+        center: [51.5, -0.1], zoom: 10 } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="map1"]')).not.toBeNull();
+  });
+
+  it('renders embed_code layer', () => {
+    const layers: Layer[] = [
+      { id: 'emb1', type: 'embed_code', z: 0, x: 0, y: 0, width: 300, height: 200,
+        code: '<div>Hello</div>' } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="emb1"]')).not.toBeNull();
+  });
+
+  it('renders popup layer', () => {
+    const layers: Layer[] = [
+      { id: 'pop1', type: 'popup', z: 0, x: 0, y: 0, width: 300, height: 200,
+        trigger_id: 'btn1', layers: [] } as unknown as Layer,
+    ];
+    const svg = renderPage(layers, 500, 500);
+    expect(svg.querySelector('[data-layer-id="pop1"]')).not.toBeNull();
+  });
+});

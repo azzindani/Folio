@@ -3,7 +3,7 @@
  * Coverage target: 90%
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { applyFill } from './fill-renderer';
+import { applyFill, resolveColorOrGradient } from './fill-renderer';
 import { createSVGRoot, resetDefIdCounter } from './svg-utils';
 import type {
   SolidFill, LinearGradientFill, RadialGradientFill, ConicGradientFill,
@@ -224,5 +224,38 @@ describe('applyFill — def ID uniqueness', () => {
     const r1 = applyFill(fill, svg, { width: 200, height: 200 });
     const r2 = applyFill(fill, svg, { width: 200, height: 200 });
     expect(r1.fill).not.toBe(r2.fill);
+  });
+});
+
+describe('resolveColorOrGradient', () => {
+  it('returns string color directly', () => {
+    const svg = makeSVG();
+    const defs = (svg.querySelector('defs') ?? (() => {
+      const d = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svg.appendChild(d); return d;
+    })()) as SVGDefsElement;
+    expect(resolveColorOrGradient('#ff0000', defs)).toBe('#ff0000');
+  });
+
+  it('resolves linear gradient and returns url reference', () => {
+    const svg = makeSVG();
+    const defs = (svg.querySelector('defs') ?? (() => {
+      const d = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svg.appendChild(d); return d;
+    })()) as SVGDefsElement;
+    const fill = { type: 'linear' as const, angle: 90, stops: [{ color: '#000', position: 0 }, { color: '#fff', position: 100 }] };
+    const result = resolveColorOrGradient(fill, defs);
+    expect(result).toMatch(/^url\(#lg-/);
+  });
+
+  it('resolves radial gradient and returns url reference', () => {
+    const svg = makeSVG();
+    const defs = (svg.querySelector('defs') ?? (() => {
+      const d = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svg.appendChild(d); return d;
+    })()) as SVGDefsElement;
+    const fill = { type: 'radial' as const, cx: 50, cy: 50, radius: 50, stops: [{ color: '#000', position: 0 }, { color: '#fff', position: 100 }] };
+    const result = resolveColorOrGradient(fill, defs);
+    expect(result).toMatch(/^url\(#rg-/);
   });
 });

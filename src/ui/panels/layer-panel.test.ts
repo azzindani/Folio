@@ -475,3 +475,65 @@ describe('LayerPanelManager — rename same value', () => {
     expect(state.getCurrentLayers()[0].id).toBe('myid');
   });
 });
+
+describe('LayerPanelManager — keyboard navigation', () => {
+  let state: StateManager;
+  let wrapper: HTMLElement;
+  let panel: LayerPanelManager;
+
+  beforeEach(() => {
+    state = new StateManager();
+    wrapper = document.createElement('div');
+    document.body.appendChild(wrapper);
+    panel = new LayerPanelManager(wrapper, state);
+    state.set('design', makeDesign([makeRect('a', 10), makeRect('b', 20), makeRect('c', 30)]));
+  });
+  afterEach(() => { wrapper.remove(); void panel; });
+
+  it('ArrowDown moves focus to next row', () => {
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    const rows = wrapper.querySelectorAll<HTMLElement>('.layer-row');
+    rows[0].focus();
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(document.activeElement).toBe(rows[1]);
+  });
+
+  it('ArrowUp moves focus to previous row', () => {
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    const rows = wrapper.querySelectorAll<HTMLElement>('.layer-row');
+    rows[2].focus();
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(document.activeElement).toBe(rows[1]);
+  });
+
+  it('ArrowUp at first row stays on first row', () => {
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    const rows = wrapper.querySelectorAll<HTMLElement>('.layer-row');
+    rows[0].focus();
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(document.activeElement).toBe(rows[0]);
+  });
+
+  it('Enter selects the focused row', () => {
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    const rows = wrapper.querySelectorAll<HTMLElement>('.layer-row');
+    rows[1].focus();
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(state.get().selectedLayerIds).toContain(rows[1].dataset.layerId);
+  });
+
+  it('Space selects the focused row', () => {
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    const rows = wrapper.querySelectorAll<HTMLElement>('.layer-row');
+    rows[0].focus();
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    expect(state.get().selectedLayerIds).toContain(rows[0].dataset.layerId);
+  });
+
+  it('ignores unrelated keys', () => {
+    const list = wrapper.querySelector<HTMLElement>('.layer-list')!;
+    const rows = wrapper.querySelectorAll<HTMLElement>('.layer-row');
+    rows[0].focus();
+    expect(() => list.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))).not.toThrow();
+  });
+});
