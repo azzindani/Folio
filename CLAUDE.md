@@ -1,6 +1,6 @@
 # CLAUDE.md — Folio Design Engine
 # Local-first YAML graphic design engine | LLM-first architecture
-# v2.0.0 | Phase 1 ~90% complete
+# v2.1.0 | Phase 1 complete · Phase 2 in progress
 
 > Full specs live in docs/ARCHITECTURE.md (architecture) and docs/DESIGN.md (design system + payload format).
 
@@ -128,7 +128,7 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 | Shorthand expander | `src/engine/shorthand-expander.ts` | ✓ Complete |
 | Component resolver | `src/engine/component-resolver.ts` | ✓ Complete |
 | SVG renderer | `src/renderer/renderer.ts` | ✓ Complete |
-| Layer renderers | `src/renderer/layer-renderers.ts` | ✓ Complete (icon/conic = placeholder) |
+| Layer renderers | `src/renderer/layer-renderers.ts` | ✓ Complete |
 | Fill renderer | `src/renderer/fill-renderer.ts` | ✓ Complete |
 | Effects renderer | `src/renderer/effects-renderer.ts` | ✓ Complete |
 | Editor app | `src/editor/app.ts` | ✓ Complete |
@@ -146,7 +146,11 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 | File access | `src/fs/file-access.ts` | ✓ Complete |
 | File watcher | `src/fs/file-watcher.ts` | ✓ Complete |
 | Layer panel | `src/ui/panels/layer-panel.ts` | ✓ Complete |
-| Properties panel | `src/ui/panels/properties-panel.ts` | ~ Partial (gradient editor stub) |
+| Properties panel | `src/ui/panels/properties-panel.ts` | ✓ Complete |
+| Report data loader | `src/report/data-loader.ts` | ✓ Complete |
+| Report aggregator | `src/report/aggregator.ts` | ✓ Complete |
+| Report binder | `src/report/binder.ts` | ✓ Complete |
+| Report navigation | `src/report/navigation.ts` | ✓ Complete |
 | Problems panel | `src/ui/panels/problems-panel.ts` | ✓ Complete |
 | File tree | `src/ui/panels/file-tree.ts` | ✓ Complete |
 | Page strip | `src/ui/panels/page-strip.ts` | ✓ Complete |
@@ -158,18 +162,17 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 
 ---
 
-## 4. KNOWN GAPS (not yet implemented)
+## 4. KNOWN GAPS
 
 | Gap | Area | Priority |
 |---|---|---|
-| Lucide SVG sprite (icon layer uses placeholder) | Renderer | High |
-| Per-corner border radius (currently averaged) | Renderer | Medium |
+| Report interactive HTML export (full runtime bundle) | Export | Phase 2 |
+| Report MCP tools (generate_report, bind_data, etc.) | MCP | Phase 2 |
 | Mode B interactive output (state, scripts, data binding) | Export | Phase 2 |
 | Scripting sandbox (iframe/SES) | Security | Phase 2 |
+| Puppeteer PDF (high-fidelity) | Export | Phase 2 |
 | Timeline editor UI | Animation | Phase 3 |
 | GIF / MP4 / WebM / Lottie export | Export | Phase 3 |
-| Puppeteer PDF (high-fidelity) | Export | Phase 2 |
-| `npm install` not run (node_modules missing) | Setup | Immediate |
 
 ---
 
