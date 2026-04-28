@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PageStrip } from './page-strip';
 import { StateManager } from '../../editor/state';
 import type { DesignSpec } from '../../schema/types';
@@ -259,5 +259,72 @@ describe('PageStrip', () => {
         }, 10);
       }, 10);
     });
+  });
+});
+
+describe('PageStrip — rename via context menu', () => {
+  let state: StateManager;
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    state = new StateManager();
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+    document.querySelectorAll('.page-context-menu').forEach(m => m.remove());
+    vi.restoreAllMocks();
+  });
+
+  it('Rename prompts and updates page label', () => {
+    vi.spyOn(window, 'prompt').mockReturnValue('New Title');
+    const strip = new PageStrip(container, state);
+    state.set('design', {
+      _protocol: 'design/v1',
+      meta: { id: 'p', name: 'P', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      pages: [
+        { id: 'p1', label: 'Old Title', layers: [] },
+        { id: 'p2', label: 'Page 2', layers: [] },
+      ],
+    } as unknown as DesignSpec);
+    strip.render();
+
+    const thumbs = container.querySelectorAll<HTMLElement>('.page-strip > div');
+    const firstThumb = Array.from(thumbs).find(el => !el.textContent?.includes('+'));
+    firstThumb?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 50, clientY: 50 }));
+
+    const menu = document.querySelector('.page-context-menu');
+    const renameBtn = Array.from(menu?.querySelectorAll('button') ?? []).find(b => b.textContent?.includes('Rename'));
+    renameBtn?.click();
+
+    const design = state.get().design as DesignSpec;
+    expect(design.pages?.[0].label).toBe('New Title');
+  });
+
+  it('Rename prompt cancels when user cancels (returns null)', () => {
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    const strip = new PageStrip(container, state);
+    state.set('design', {
+      _protocol: 'design/v1',
+      meta: { id: 'p', name: 'P', type: 'carousel', created: '', modified: '' },
+      document: { width: 1080, height: 1080, unit: 'px' },
+      pages: [{ id: 'p1', label: 'Original', layers: [] }],
+    } as unknown as DesignSpec);
+    strip.render();
+
+    const thumbs = container.querySelectorAll<HTMLElement>('.page-strip > div');
+    const firstThumb = Array.from(thumbs).find(el => !el.textContent?.includes('+'));
+    firstThumb?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 50, clientY: 50 }));
+
+    const menu = document.querySelector('.page-context-menu');
+    const renameBtn = Array.from(menu?.querySelectorAll('button') ?? []).find(b => b.textContent?.includes('Rename'));
+    renameBtn?.click();
+
+    const design = state.get().design as DesignSpec;
+    // Label unchanged
+    expect(design.pages?.[0].label).toBe('Original');
   });
 });

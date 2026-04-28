@@ -672,6 +672,103 @@ describe('renderAutoLayout', () => {
     expect(rect?.getAttribute('width')).toBe('0');
     expect(rect?.getAttribute('height')).toBe('0');
   });
+
+  it('wrap mode: groups children into tracks when they overflow main axis', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 80, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 80, height: 40 },
+      { id: 'c3', type: 'rect', z: 2, x: 0, y: 0, width: 80, height: 40 },
+    ];
+    const layer = {
+      id: 'al-wrap', type: 'auto_layout', z: 0, x: 0, y: 0, width: 160, height: 200,
+      direction: 'row', gap: 8, wrap: true,
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    // Should render all 3 children without throwing
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(3);
+  });
+
+  it('center alignment positions children along cross-axis center', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 20 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 60, height: 60 },
+    ];
+    const layer = {
+      id: 'al-center', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 8, align: 'center',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(2);
+  });
+
+  it('end alignment positions children at cross-axis end', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 30 },
+    ];
+    const layer = {
+      id: 'al-end', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0, align: 'end',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(1);
+  });
+
+  it('justify: center positions cursor at center of main axis', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 40 },
+    ];
+    const layer = {
+      id: 'jc', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'center',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(1);
+  });
+
+  it('justify: end positions cursor at main axis end', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 40 },
+    ];
+    const layer = {
+      id: 'je', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'end',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(1);
+  });
+
+  it('justify: space-between distributes space between children', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 50, height: 40 },
+    ];
+    const layer = {
+      id: 'jsb', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'space-between',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(2);
+  });
+
+  it('justify: space-around distributes equal space around children', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 40, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 40, height: 40 },
+    ];
+    const layer = {
+      id: 'jsa', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'space-around',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(2);
+  });
 });
 
 // ── Text ─────────────────────────────────────────────────────
