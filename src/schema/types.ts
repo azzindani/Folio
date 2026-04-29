@@ -25,7 +25,8 @@ export type LayerType =
   | 'kpi_card'
   | 'map'
   | 'embed_code'
-  | 'popup';
+  | 'popup'
+  | 'particle';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -239,6 +240,21 @@ export interface BaseLayer {
   animation?: AnimationSpec;
   /** PowerApps-style formula bindings: { fill: "=state.active ? '#f00' : '#ccc'" } */
   formulas?: Record<string, string>;
+  /** SVG animateMotion path for kinetic animation */
+  motion_path?: {
+    path: string;        // SVG path d attribute (e.g. "M 0 0 Q 200 100 400 0")
+    duration?: number;   // ms, default 2000
+    loop?: boolean;
+    easing?: string;     // CSS easing, default 'ease-in-out'
+    auto_rotate?: boolean; // rotate element along path
+  };
+  /** 3D rotation transform */
+  rotate3d?: {
+    x?: number;          // degrees
+    y?: number;
+    z?: number;
+    perspective?: number; // px, default 800
+  };
 }
 
 // ── Concrete Layer Types ────────────────────────────────────
@@ -504,6 +520,16 @@ export interface PopupLayer extends BaseLayer {
   layers?: Layer[];
 }
 
+export interface ParticleLayer extends BaseLayer {
+  type: 'particle';
+  count?: number;      // default 50
+  size?: number;       // default 4 (px)
+  speed?: number;      // default 3 (seconds per cycle)
+  colors?: string[];   // default ['#6c5ce7','#00cec9','#fd79a8']
+  shape?: 'circle' | 'square' | 'star';
+  spread?: number;     // 0-1, default 1 (full layer area)
+}
+
 export type Layer =
   | RectLayer
   | CircleLayer
@@ -528,7 +554,8 @@ export type Layer =
   | KpiCardLayer
   | MapLayer
   | EmbedCodeLayer
-  | PopupLayer;
+  | PopupLayer
+  | ParticleLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {

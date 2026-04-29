@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { assemblePresentationHTML } from './presentation-assembler';
 import type { DesignSpec } from '../schema/types';
 
-const mockRenderToSVGString = vi.fn(() => '<svg><rect/></svg>');
+const mockRenderToSVGString = vi.fn((_spec: unknown, _ctx?: unknown) => '<svg><rect/></svg>');
 
 vi.mock('../mcp/engine/svg-export', () => ({
-  renderToSVGString: (...args: unknown[]) => mockRenderToSVGString(...args),
+  renderToSVGString: (spec: unknown, ctx?: unknown) => mockRenderToSVGString(spec, ctx),
 }));
 
 function makeSpec(overrides: Partial<DesignSpec> = {}): DesignSpec {

@@ -22,6 +22,10 @@ import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
 import { assemblePresentationHTML } from '../export/presentation-assembler';
 import type { LoadedDataset } from '../report/data-loader';
+import { evaluateFormula, isFormula } from '../scripting/formula';
+import type { FormulaContext } from '../scripting/formula';
+import { buildTimelineTracks, renderTimelineASCII, addKeyframe } from '../ui/panels/timeline-panel';
+import type { Keyframe } from '../animation/types';
 
 // ── Tier 2 forward-declaration (createDesign called by createTask) ──
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
@@ -923,6 +927,13 @@ export function exportPresentation(args: {
   }
 
   const outPath = args.output_path ?? dPath.replace('.design.yaml', '.presentation.html');
+
+  // Load formula context if available (applied at runtime in browser via JS runtime)
+  const formulaCtxPath = dPath.replace('.design.yaml', '.formula.json');
+  if (fs.existsSync(formulaCtxPath)) {
+    try { JSON.parse(fs.readFileSync(formulaCtxPath, 'utf-8')); } catch { /* ignore */ }
+  }
+
   progress.push(pInfo('Assembling presentation HTML'));
   try {
     const html = assemblePresentationHTML(spec, { theme: args.theme ?? 'dark', auto_advance: args.auto_advance });
@@ -1069,6 +1080,63 @@ export function exportReport(args: {
   }
 }
 
+// ── Formula tools ─────────────────────────────────────────────
+
+export function setFormulaContext(args: {
+  design_path: string;
+  state?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  project_path?: string;
+}): ToolResult {
+  const op = 'set_formula_context';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const ctxPath = dPath.replace('.design.yaml', '.formula.json');
+  const payload = { state: args.state ?? {}, data: args.data ?? {} };
+  fs.writeFileSync(ctxPath, JSON.stringify(payload, null, 2), 'utf-8');
+
+  return okResult(op, {
+    context_path: ctxPath,
+    keys: {
+      state: Object.keys(args.state ?? {}),
+      data: Object.keys(args.data ?? {}),
+    },
+  });
+}
+
+export function debugFormula(args: {
+  formula: string;
+  state?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  design_path?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'debug_formula';
+  if (!isFormula(args.formula)) {
+    return errResult(op, 'Formula must start with =', 'Formula must start with =');
+  }
+
+  let state: Record<string, unknown> = args.state ?? {};
+  let data: Record<string, unknown> = args.data ?? {};
+
+  if (args.design_path) {
+    const dPath = resolveDesignPath(args.design_path, args.project_path);
+    const ctxPath = dPath.replace('.design.yaml', '.formula.json');
+    if (fs.existsSync(ctxPath)) {
+      try {
+        const loaded = JSON.parse(fs.readFileSync(ctxPath, 'utf-8')) as Record<string, unknown>;
+        state = { ...(loaded['state'] as Record<string, unknown> ?? {}), ...state };
+        data  = { ...(loaded['data']  as Record<string, unknown> ?? {}), ...data };
+      } catch { /* ignore malformed .formula.json */ }
+    }
+  }
+
+  const ctx: FormulaContext = { state, data };
+  const result = evaluateFormula(args.formula, ctx);
+  return okResult(op, { result, type: typeof result, formula: args.formula });
+}
+
 // ── Internal shared helpers ───────────────────────────────────
 
 function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: unknown): void {
@@ -1091,4 +1159,77 @@ function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: un
 
 function isConstrained(): boolean {
   return process.env['MCP_CONSTRAINED_MODE'] === 'true';
+}
+
+// ── Animation timeline tools ──────────────────────────────────
+
+export function inspectTimeline(args: {
+  design_path: string;
+  page_id?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'inspect_timeline';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const spec = readYAML<DesignSpec>(dPath);
+  let layers: Layer[];
+
+  if (args.page_id) {
+    const page = (spec.pages ?? []).find((p: Page) => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Check page_id.');
+    layers = page.layers ?? [];
+  } else {
+    layers = spec.layers ?? [];
+  }
+
+  const tracks = buildTimelineTracks(
+    layers.map(l => ({
+      id: l.id,
+      label: (l as { label?: string }).label,
+      animation: l.animation,
+    })),
+  );
+  const ascii = renderTimelineASCII(tracks);
+
+  return okResult(op, { track_count: tracks.length, tracks, ascii });
+}
+
+export function addKeyframeToLayer(args: {
+  design_path: string;
+  layer_id: string;
+  keyframe: Keyframe;
+  project_path?: string;
+}): ToolResult {
+  const op = 'add_keyframe';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const bak = snapshot(dPath);
+  const spec = readYAML<DesignSpec>(dPath);
+
+  // Search top-level layers first, then each page
+  let found = false;
+  const applyToLayer = (layer: Layer): Layer => {
+    if (layer.id !== args.layer_id) return layer;
+    found = true;
+    return { ...layer, animation: addKeyframe(layer.animation ?? {}, args.keyframe) };
+  };
+
+  if (spec.layers) {
+    spec.layers = spec.layers.map(applyToLayer);
+  }
+  if (!found && spec.pages) {
+    for (const page of spec.pages) {
+      if (page.layers) {
+        page.layers = page.layers.map(applyToLayer);
+        if (found) break;
+      }
+    }
+  }
+
+  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Check layer_id.');
+
+  writeYAML(dPath, spec);
+  return okResult(op, { layer_id: args.layer_id, keyframe: args.keyframe }, bak);
 }

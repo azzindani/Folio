@@ -159,4 +159,61 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       required: ['design_path'],
     },
   },
+  // ── Formula tools ─────────────────────────────────────────
+  {
+    name: 'set_formula_context',
+    description: 'Store state/data context for formula binding on a design. Used by export tools to resolve =expr bindings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        state:        { type: 'object', description: 'Key-value state variables', properties: {} },
+        data:         { type: 'object', description: 'Dataset key-value map', properties: {} },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'debug_formula',
+    description: 'Evaluate a formula expression against a given context and return the result with type info.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        formula:      { type: 'string', description: 'Formula string starting with =' },
+        state:        { type: 'object', description: 'State variables', properties: {} },
+        data:         { type: 'object', description: 'Data variables', properties: {} },
+        design_path:  { type: 'string', description: 'Optional: load context from .formula.json' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['formula'],
+    },
+  },
+  {
+    name: 'inspect_timeline',
+    description: 'Show animation keyframe tracks for a design as ASCII timeline.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        page_id:      { type: 'string', description: 'Optional page filter' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'add_keyframe',
+    description: 'Add or replace a keyframe on a layer animation timeline.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        layer_id:     { type: 'string', description: 'Target layer id' },
+        keyframe:     { type: 'object', description: '{t:ms, x?, y?, opacity?, scale?, rotation?}', properties: {} },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'layer_id', 'keyframe'],
+    },
+  },
 ];

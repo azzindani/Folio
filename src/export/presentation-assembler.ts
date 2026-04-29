@@ -60,6 +60,7 @@ ${slides}
   <button id="btn-next" aria-label="Next">&#8594;</button>
   <button id="btn-fs" aria-label="Fullscreen">&#9974;</button>
   <button id="btn-notes" aria-label="Speaker notes">&#128203;</button>
+  <button id="btn-tp" aria-label="Teleprompter">&#9654;&#9654;</button>
 </div>
 <div id="folio-notes" class="folio-notes" hidden></div>
 <div id="folio-progress" class="folio-progress"><div id="folio-progress-bar"></div></div>
@@ -122,6 +123,11 @@ body[data-theme=light]{background:#fff}
   max-width:60%;background:rgba(0,0,0,.85);color:#eee;padding:1rem 1.5rem;
   border-radius:.5rem;font:15px/1.5 system-ui;z-index:99;backdrop-filter:blur(4px)}
 .ft-slide svg{width:100%;height:100%;object-fit:contain}
+[data-scroll-anim]{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+[data-scroll-anim].scroll-visible{opacity:1;transform:none}
+.folio-teleprompter{position:fixed;inset:0;background:rgba(0,0,0,.92);color:#fff;
+  font:28px/1.8 system-ui;z-index:200;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:4rem}
+.folio-teleprompter p{max-width:800px;text-align:center}
 `;
 
 const PRESENTATION_RUNTIME_JS = `(function(){
@@ -173,12 +179,37 @@ const PRESENTATION_RUNTIME_JS = `(function(){
     var el=document.getElementById('folio-notes');
     el.hidden=!el.hidden;
   };
+
+  // Teleprompter
+  var tpEl=null,tpTimer=null,tpSpeed=2;
+  document.getElementById('btn-tp').onclick=function(){toggleTeleprompter();};
+  function toggleTeleprompter(){
+    if(tpEl){document.body.removeChild(tpEl);tpEl=null;clearInterval(tpTimer);return;}
+    var pData=pages[cur]||{};
+    if(!pData.notes)return;
+    tpEl=document.createElement('div');tpEl.className='folio-teleprompter';
+    tpEl.innerHTML='<p>'+pData.notes+'</p>';
+    tpEl.onclick=function(){toggleTeleprompter();};
+    document.body.appendChild(tpEl);
+    var scrollPos=0;
+    tpTimer=setInterval(function(){scrollPos+=tpSpeed;tpEl.scrollTop=scrollPos;},50);
+  }
+
+  // Scroll-triggered animations
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('scroll-visible');io.unobserve(e.target);}
+    });
+  },{threshold:0.15});
+  document.querySelectorAll('[data-scroll-anim]').forEach(function(el){io.observe(el);});
+
   document.addEventListener('keydown',function(e){
     if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ')go(cur+1,1);
     else if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(cur-1,-1);
     else if(e.key==='f'||e.key==='F')document.getElementById('btn-fs').click();
     else if(e.key==='Escape')document.exitFullscreen&&document.exitFullscreen();
     else if(e.key==='n'||e.key==='N')document.getElementById('btn-notes').click();
+    else if(e.key==='t'||e.key==='T')toggleTeleprompter();
   });
 
   // Touch swipe

@@ -20,6 +20,10 @@ const HANDLERS: Record<string, Handler> = {
   export_report:        (a) => engine.exportReport(a as Parameters<typeof engine.exportReport>[0]),
   create_presentation:  (a) => engine.createPresentation(a as Parameters<typeof engine.createPresentation>[0]),
   export_presentation:  (a) => engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]),
+  set_formula_context:  (a) => engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]),
+  debug_formula:        (a) => engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]),
+  inspect_timeline:     (a) => engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]),
+  add_keyframe:         (a) => engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]),
 };
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }
