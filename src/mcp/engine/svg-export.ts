@@ -16,9 +16,9 @@ function ensureDOM(): void {
   serializer = new dom.window.XMLSerializer();
 }
 
-export function renderToSVGString(spec: DesignSpec): string {
+export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext): string {
   ensureDOM();
-  const svgEl = renderDesign(spec);
+  const svgEl = renderDesign(spec, { formulaContext });
   let raw = (serializer as { serializeToString(el: Node): string }).serializeToString(svgEl);
   // Remove duplicate xmlns added by jsdom serializer alongside the one in createSVGRoot
   raw = raw.replace(/(<svg[^>]*?) xmlns="http:\/\/www\.w3\.org\/2000\/svg"/, '$1');

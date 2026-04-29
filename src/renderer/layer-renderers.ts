@@ -4,7 +4,7 @@ import type {
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
   QRCodeLayer, AutoLayoutLayer, ColorOrGradient,
   InteractiveChartLayer, InteractiveTableLayer, RichTextLayer,
-  KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer,
+  KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer, ParticleLayer,
 } from '../schema/types';
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
@@ -1098,5 +1098,100 @@ export function renderPopup(
   g.setAttribute('opacity', '0');
 
   applyCommonAttributes(g, layer);
+  return g;
+}
+
+// ── Particle ─────────────────────────────────────────────────
+
+/** Deterministic PRNG — seed with layer id + index to avoid Math.random() in render path. */
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function makeStar(cx: number, cy: number, r: number): string {
+  const points: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const radius = i % 2 === 0 ? r : r * 0.4;
+    points.push(`${cx + radius * Math.cos(angle)},${cy + radius * Math.sin(angle)}`);
+  }
+  return points.join(' ');
+}
+
+export function renderParticle(layer: ParticleLayer, _svg: SVGSVGElement): SVGElement {
+  const g = createSVGElement('g');
+  g.setAttribute('data-layer-id', layer.id);
+
+  const count  = layer.count ?? 50;
+  const size   = layer.size ?? 4;
+  const speed  = layer.speed ?? 3;
+  const colors = layer.colors ?? ['#6c5ce7', '#00cec9', '#fd79a8'];
+  const shape  = layer.shape ?? 'circle';
+  const spread = layer.spread ?? 1;
+
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+  const w = typeof layer.width  === 'number' ? layer.width  : 200;
+  const h = typeof layer.height === 'number' ? layer.height : 200;
+
+  const idSeed = hashString(layer.id);
+
+  for (let i = 0; i < count; i++) {
+    const seed = idSeed + i * 997;
+    const px = x + seededRandom(seed)      * w * spread;
+    const py = y + seededRandom(seed + 1)  * h * spread;
+    const color = colors[i % colors.length];
+    const animDelay = seededRandom(seed + 2) * speed;
+    const animDur   = speed * (0.7 + seededRandom(seed + 3) * 0.6);
+    const driftX    = (seededRandom(seed + 4) - 0.5) * size * 6;
+    const driftY    = (seededRandom(seed + 5) - 0.5) * size * 6;
+
+    let particle: SVGElement;
+    if (shape === 'square') {
+      particle = createSVGElement('rect', {
+        x: px - size / 2,
+        y: py - size / 2,
+        width:  size,
+        height: size,
+        fill:   color,
+        opacity: String(0.5 + seededRandom(seed + 6) * 0.5),
+      });
+    } else if (shape === 'star') {
+      particle = createSVGElement('polygon', {
+        points:  makeStar(px, py, size),
+        fill:    color,
+        opacity: String(0.5 + seededRandom(seed + 6) * 0.5),
+      });
+    } else {
+      particle = createSVGElement('circle', {
+        cx:      px,
+        cy:      py,
+        r:       size / 2,
+        fill:    color,
+        opacity: String(0.5 + seededRandom(seed + 6) * 0.5),
+      });
+    }
+
+    // Floating CSS animation injected via inline style
+    particle.setAttribute('style',
+      `animation: folio-particle-float ${animDur.toFixed(2)}s ${animDelay.toFixed(2)}s ease-in-out infinite alternate;` +
+      `--dp-dx:${driftX.toFixed(1)}px;--dp-dy:${driftY.toFixed(1)}px;`
+    );
+
+    g.appendChild(particle);
+  }
+
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, _svg);
+
   return g;
 }
