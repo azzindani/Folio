@@ -20,6 +20,7 @@ import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
+import { assemblePresentationHTML } from '../export/presentation-assembler';
 import type { LoadedDataset } from '../report/data-loader';
 
 // ── Tier 2 forward-declaration (createDesign called by createTask) ──
@@ -846,6 +847,96 @@ export function listTemplateSlots(args: { template_path: string }): ToolResult {
   const context = buildContext(op, `Listed ${slots.length} slot(s) in template`);
   const handover = buildHandover('EXPORT', { template_path: tPath });
   return okResult(op, { slots, count: slots.length, progress, context, handover });
+}
+
+// ── Presentation MCP tools ───────────────────────────────────
+
+export function createPresentation(args: {
+  project_path: string;
+  name: string;
+  pages: { id?: string; label: string; notes?: string }[];
+  width?: number;
+  height?: number;
+  transition?: string;
+  auto_advance?: number;
+  theme?: 'dark' | 'light';
+}): ToolResult {
+  const op = 'create_presentation';
+  const progress: ProgressItem[] = [];
+  const pDir = path.resolve(args.project_path);
+  if (!fs.existsSync(pDir)) return errResult(op, `Project not found: ${pDir}`, 'Check project_path.');
+
+  const id = generateId();
+  const slug = args.name.toLowerCase().replace(/\s+/g, '-');
+  const dPath = path.join(pDir, 'designs', `${slug}.design.yaml`);
+  fs.mkdirSync(path.dirname(dPath), { recursive: true });
+
+  const pages = args.pages.map((p, i) => ({
+    id: p.id ?? `slide_${i + 1}`,
+    label: p.label,
+    notes: p.notes,
+    layers: [] as unknown[],
+    transition: args.transition ? { type: args.transition, duration: 400 } : undefined,
+    auto_advance: args.auto_advance,
+  }));
+
+  const spec = {
+    _protocol: 'design/v1',
+    _mode: 'in_progress',
+    meta: { id, name: args.name, type: 'presentation', created: new Date().toISOString(), modified: new Date().toISOString() },
+    document: { width: args.width ?? 1920, height: args.height ?? 1080, unit: 'px', dpi: 96 },
+    pages,
+    presentation: {
+      auto_advance: args.auto_advance ?? 0,
+      show_controls: true,
+      show_progress: true,
+      keyboard: true,
+      touch: true,
+      aspect_ratio: '16:9',
+    },
+  };
+
+  writeYAML(dPath, spec);
+  progress.push(pOk('Presentation design created', path.basename(dPath)));
+  const context = buildContext(op, `Presentation "${args.name}" scaffolded (${pages.length} slides)`, [
+    { type: 'design', path: dPath, role: 'presentation' },
+  ]);
+  const handover = buildHandover('COMPOSE', { design_path: dPath });
+  return okResult(op, { design_id: id, design_path: dPath, slide_count: pages.length, progress, context, handover });
+}
+
+export function exportPresentation(args: {
+  design_path: string;
+  output_path?: string;
+  theme?: 'light' | 'dark';
+  auto_advance?: number;
+  project_path?: string;
+}): ToolResult {
+  const op = 'export_presentation';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const spec = readYAML<import('../schema/types').DesignSpec>(dPath);
+  if (!['presentation', 'carousel', 'motion'].includes(spec.meta.type)) {
+    return errResult(op, `Design type "${spec.meta.type}" not supported for presentation export`, 'Use a presentation, carousel, or motion design.', progress);
+  }
+
+  const outPath = args.output_path ?? dPath.replace('.design.yaml', '.presentation.html');
+  progress.push(pInfo('Assembling presentation HTML'));
+  try {
+    const html = assemblePresentationHTML(spec, { theme: args.theme ?? 'dark', auto_advance: args.auto_advance });
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, html, 'utf-8');
+    progress.push(pOk('Presentation HTML written', path.basename(outPath)));
+    const context = buildContext(op, `Presentation exported: ${path.basename(outPath)}`, [
+      { type: 'html', path: outPath, role: 'presentation-output' },
+    ]);
+    const handover = buildHandover('EXPORT', { output_path: outPath });
+    return okResult(op, { output_path: outPath, output_file: path.basename(outPath), bytes: html.length, slide_count: (spec.pages ?? []).length, progress, context, handover });
+  } catch (err) {
+    return errResult(op, `Presentation assembly failed: ${(err as Error).message}`, 'Ensure design has pages.', progress);
+  }
 }
 
 // ── Report MCP tools ─────────────────────────────────────────

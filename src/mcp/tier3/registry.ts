@@ -125,4 +125,38 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       required: ['design_path'],
     },
   },
+  // ── Presentation tools ────────────────────────────────────
+  {
+    name: 'create_presentation',
+    description: 'Scaffold a presentation-type design (1920×1080) with slides, transitions, and presentation settings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path:  { type: 'string', description: 'Path to project directory' },
+        name:          { type: 'string', description: 'Presentation name' },
+        pages:         { type: 'object', description: 'Array of {id?, label, notes?} slide specs', items: { type: 'object' } },
+        transition:    { type: 'string', enum: ['none','fade','slide-left','slide-right','slide-up','slide-down','zoom-in','zoom-out','flip-h','flip-v','cube-left','cube-right','reveal','wipe-left','wipe-right','dissolve','morph'], default: 'fade' },
+        auto_advance:  { type: 'number', description: 'Auto-advance delay ms (0 = manual)' },
+        width:         { type: 'number', default: 1920 },
+        height:        { type: 'number', default: 1080 },
+        theme:         { type: 'string', enum: ['dark', 'light'], default: 'dark' },
+      },
+      required: ['project_path', 'name', 'pages'],
+    },
+  },
+  {
+    name: 'export_presentation',
+    description: 'Assemble a presentation/carousel/motion design into a self-contained HTML presenter with transitions, keyboard nav, and audio.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:   { type: 'string', description: 'Path to .design.yaml (must be type: presentation/carousel/motion)' },
+        output_path:   { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
+        theme:         { type: 'string', enum: ['light', 'dark'], default: 'dark' },
+        auto_advance:  { type: 'number', description: 'Override auto-advance delay ms' },
+        project_path:  { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
 ];
