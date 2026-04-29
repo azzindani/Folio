@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 
 export interface AnimationExportOptions {
-  type: 'gif' | 'mp4';
+  type: 'gif' | 'mp4' | 'webm';
   fps?: number;
   duration?: number;
   width?: number;
@@ -39,6 +40,30 @@ interface PuppeteerModule {
 function tryRequirePuppeteer(): PuppeteerModule | null {
   if (typeof require === 'undefined') return null;
   try { return require('puppeteer') as PuppeteerModule; } catch { return null; }
+}
+
+export function tryFfmpeg(): boolean {
+  try { execSync('ffmpeg -version', { stdio: 'ignore' }); return true; } catch { return false; }
+}
+
+export function encodeWithFfmpeg(
+  frameDir: string,
+  outputPath: string,
+  opts: Pick<AnimationExportOptions, 'type' | 'fps'>,
+): void {
+  const fps = opts.fps ?? (opts.type === 'gif' ? 10 : 30);
+  const pattern = path.join(frameDir, 'frame-%05d.png');
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+
+  if (opts.type === 'gif') {
+    const palette = path.join(frameDir, 'palette.png');
+    execSync(`ffmpeg -y -framerate ${fps} -i "${pattern}" -vf palettegen "${palette}"`, { stdio: 'ignore' });
+    execSync(`ffmpeg -y -framerate ${fps} -i "${pattern}" -i "${palette}" -lavfi paletteuse "${outputPath}"`, { stdio: 'ignore' });
+  } else if (opts.type === 'mp4') {
+    execSync(`ffmpeg -y -framerate ${fps} -i "${pattern}" -c:v libx264 -pix_fmt yuv420p "${outputPath}"`, { stdio: 'ignore' });
+  } else {
+    execSync(`ffmpeg -y -framerate ${fps} -i "${pattern}" -c:v libvpx-vp9 -b:v 0 -crf 30 "${outputPath}"`, { stdio: 'ignore' });
+  }
 }
 
 export async function exportToAnimation(
@@ -97,7 +122,14 @@ export async function exportToAnimation(
     }
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    const manifest = { type: opts.type, frames: frameCount, fps, frameDir, outputPath };
+
+    if (tryFfmpeg()) {
+      encodeWithFfmpeg(frameDir, outputPath, opts);
+      fs.rmSync(frameDir, { recursive: true, force: true });
+      return { success: true, output_path: outputPath, frames: frameCount };
+    }
+
+    const manifest = { type: opts.type, frames: frameCount, fps, frameDir: null, outputPath };
     const manifestPath = outputPath + '.frames.json';
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
     fs.rmSync(frameDir, { recursive: true, force: true });

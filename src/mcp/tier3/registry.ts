@@ -216,4 +216,45 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       required: ['design_path', 'layer_id', 'keyframe'],
     },
   },
+  {
+    name: 'export_animation',
+    description: 'Export a presentation design as GIF, MP4, or WebM animation (requires Puppeteer + optionally ffmpeg).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        type:         { type: 'string', enum: ['gif', 'mp4', 'webm'], description: 'Output format' },
+        output_path:  { type: 'string', description: 'Output file path (auto-derived if omitted)' },
+        fps:          { type: 'number', description: 'Frames per second (default 10 for gif, 30 for mp4/webm)' },
+        duration:     { type: 'number', description: 'Animation duration in ms (default 3000)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'type'],
+    },
+  },
+  {
+    name: 'setup_remote_presenter',
+    description: 'Generate remote clicker setup: client JS snippet + curl commands to control slides over HTTP.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        port:         { type: 'number', description: 'Port for the remote server (default 3737)' },
+        design_path:  { type: 'string', description: 'Optional: path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir' },
+      },
+    },
+  },
+  {
+    name: 'setup_collab',
+    description: 'Generate collaborative editing server setup: SSE file-watch server for multi-user design sync.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml to watch' },
+        port:         { type: 'number', description: 'Port for the collab server (default 3738)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
 ];
