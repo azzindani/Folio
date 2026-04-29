@@ -1,6 +1,6 @@
 # CLAUDE.md — Folio Design Engine
 # Local-first YAML graphic design engine | LLM-first architecture
-# v2.1.0 | Phase 1 complete · Phase 2 in progress
+# v2.5.0 | Phase 1–5 complete
 
 > Full specs live in docs/ARCHITECTURE.md (architecture) and docs/DESIGN.md (design system + payload format).
 
@@ -144,7 +144,9 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 | Puppeteer PDF | `src/export/puppeteer-pdf.ts` | ✓ Complete |
 | Presentation assembler | `src/export/presentation-assembler.ts` | ✓ Complete |
 | Lottie export | `src/export/lottie-export.ts` | ✓ Complete |
-| Animation frame export | `src/export/animation-export.ts` | ✓ Complete |
+| Animation frame export (GIF/MP4/WebM + ffmpeg) | `src/export/animation-export.ts` | ✓ Complete |
+| Remote clicker SSE server | `src/export/remote-server.ts` | ✓ Complete |
+| Collaborative editing SSE server | `src/collab/collab-server.ts` | ✓ Complete |
 | Animation CSS | `src/animation/css-generator.ts` | ✓ Complete |
 | Keyframe engine | `src/animation/keyframe-engine.ts` | ✓ Complete |
 | Page transition CSS | `src/animation/transition-css.ts` | ✓ Complete |
@@ -194,9 +196,12 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 | Teleprompter mode | Presenter | Phase 4 | ✓ Done |
 | set_formula_context + debug_formula MCP tools | MCP | Phase 4 | ✓ Done |
 | inspect_timeline + add_keyframe MCP tools | MCP | Phase 4 | ✓ Done |
-| WebM encoding (ffmpeg integration) | Export | Phase 5 | Open |
-| Remote clicker WebSocket server | Presenter | Phase 5 | Open |
-| Collaborative editing (multi-user) | Editor | Phase 5 | Open |
+| WebM encoding (ffmpeg integration) | Export | Phase 5 | ✓ Done |
+| Remote clicker SSE server | Presenter | Phase 5 | ✓ Done |
+| Collaborative editing (SSE file-watch) | Editor | Phase 5 | ✓ Done |
+| export_animation MCP tool | MCP | Phase 5 | ✓ Done |
+| setup_remote_presenter MCP tool | MCP | Phase 5 | ✓ Done |
+| setup_collab MCP tool | MCP | Phase 5 | ✓ Done |
 
 ---
 

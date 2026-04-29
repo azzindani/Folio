@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { exportToAnimation } from './animation-export';
+import { exportToAnimation, tryFfmpeg, encodeWithFfmpeg } from './animation-export';
 
 let tmpDir: string;
 beforeEach(() => { tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-anim-test-')); });
@@ -107,5 +107,47 @@ describe('exportToAnimation', () => {
     const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.gif'), { type: 'gif' }, factory);
     expect(r.success).toBe(false);
     expect(r.error).toContain('launch failed');
+  });
+
+  it('accepts webm type', async () => {
+    const htmlPath = makeHtml();
+    const factory = async () => ({
+      browser: {
+        close: async () => { return; },
+        newPage: async () => ({
+          setViewport: async () => { return; },
+          goto: async () => { return; },
+          screenshot: async () => Buffer.from('PNG'),
+          evaluate: async () => { return; },
+          close: async () => { return; },
+        }),
+      },
+    });
+    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.webm'), { type: 'webm', fps: 5, duration: 200 }, factory);
+    expect(r.success).toBe(true);
+    expect(r.frames).toBe(1); // 5fps × 0.2s = 1
+  });
+});
+
+describe('tryFfmpeg', () => {
+  it('returns a boolean', () => {
+    const result = tryFfmpeg();
+    expect(typeof result).toBe('boolean');
+  });
+});
+
+describe('encodeWithFfmpeg', () => {
+  it('throws when ffmpeg not installed (expected in CI)', () => {
+    if (tryFfmpeg()) return; // skip if ffmpeg present
+    const frameDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-frames-'));
+    try {
+      expect(() => encodeWithFfmpeg(frameDir, path.join(tmpDir, 'out.gif'), { type: 'gif', fps: 10 })).toThrow();
+    } finally {
+      fs.rmSync(frameDir, { recursive: true, force: true });
+    }
+  });
+
+  it('is callable as a function', () => {
+    expect(typeof encodeWithFfmpeg).toBe('function');
   });
 });

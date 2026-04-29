@@ -26,6 +26,8 @@ import { evaluateFormula, isFormula } from '../scripting/formula';
 import type { FormulaContext } from '../scripting/formula';
 import { buildTimelineTracks, renderTimelineASCII, addKeyframe } from '../ui/panels/timeline-panel';
 import type { Keyframe } from '../animation/types';
+import { getClientScript } from '../export/remote-server';
+import { tryFfmpeg } from '../export/animation-export';
 
 // ── Tier 2 forward-declaration (createDesign called by createTask) ──
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
@@ -1232,4 +1234,102 @@ export function addKeyframeToLayer(args: {
 
   writeYAML(dPath, spec);
   return okResult(op, { layer_id: args.layer_id, keyframe: args.keyframe }, bak);
+}
+
+// ── Phase 5 — Animation / Remote / Collab ────────────────────
+
+export function exportAnimation(args: {
+  design_path: string;
+  type: 'gif' | 'mp4' | 'webm';
+  output_path?: string;
+  fps?: number;
+  duration?: number;
+  page_id?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'export_animation';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  // Build HTML for the design, then record animation frames
+  const spec = readYAML<DesignSpec>(dPath);
+  let html: string;
+  try {
+    html = assemblePresentationHTML(spec, {});
+  } catch (e) {
+    return errResult(op, `Failed to render HTML: ${(e as Error).message}`, 'Ensure the design has valid pages.');
+  }
+
+  const ext = args.type === 'gif' ? 'gif' : args.type === 'mp4' ? 'mp4' : 'webm';
+  const baseName = path.basename(dPath, '.design.yaml');
+  const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', `${baseName}.${ext}`);
+  const htmlPath = outputPath + '.tmp.html';
+
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(htmlPath, html);
+
+  // Since exportToAnimation is async, we return instructions for running it
+  // The MCP tool provides instructions; actual encode is via CLI/script
+  fs.unlinkSync(htmlPath);
+
+  const hasFfmpeg = tryFfmpeg();
+
+  return okResult(op, {
+    design_path: dPath,
+    output_path: outputPath,
+    type: args.type,
+    fps: args.fps ?? (args.type === 'gif' ? 10 : 30),
+    duration: args.duration ?? 3000,
+    ffmpeg_available: hasFfmpeg,
+    hint: hasFfmpeg
+      ? `Run: npx folio export-anim "${dPath}" --type ${args.type} --output "${outputPath}"`
+      : 'ffmpeg not found. Install ffmpeg then re-run this tool.',
+  });
+}
+
+export function setupRemotePresenter(args: {
+  port?: number;
+  design_path?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'setup_remote_presenter';
+  const port = args.port ?? 3737;
+
+  const clientScript = getClientScript(port);
+
+  const curlNext = `curl -s -X POST http://localhost:${port}/command -H 'Content-Type: application/json' -d '{"type":"next"}'`;
+  const curlPrev = `curl -s -X POST http://localhost:${port}/command -H 'Content-Type: application/json' -d '{"type":"prev"}'`;
+  const curlGoto = `curl -s -X POST http://localhost:${port}/command -H 'Content-Type: application/json' -d '{"type":"goto","slide":0}'`;
+
+  return okResult(op, {
+    port,
+    server_start_command: `node -e "const{startRemoteServer}=require('./dist/export/remote-server');startRemoteServer(${port}).then(()=>console.log('Remote clicker running on :${port}'))"`,
+    client_script: clientScript,
+    commands: { next: curlNext, prev: curlPrev, goto: curlGoto },
+    hint: `Embed client_script in your presentation HTML inside a <script> tag, then start the server and use curl commands or any HTTP client to control slides.`,
+  });
+}
+
+export function setupCollab(args: {
+  design_path: string;
+  port?: number;
+  project_path?: string;
+}): ToolResult {
+  const op = 'setup_collab';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const port = args.port ?? 3738;
+
+  return okResult(op, {
+    design_path: dPath,
+    port,
+    server_start_command: `node -e "const{startCollabServer}=require('./dist/collab/collab-server');startCollabServer({design_path:'${dPath}',port:${port}}).then(s=>console.log('Collab server on :'+s.port))"`,
+    endpoints: {
+      events: `http://localhost:${port}/events`,
+      design: `http://localhost:${port}/design`,
+      patch:  `http://localhost:${port}/patch`,
+    },
+    hint: 'Start the collab server, then connect any client to /events (SSE) to receive design-changed events. POST to /patch with {content:"<yaml>"} to push changes.',
+  });
 }

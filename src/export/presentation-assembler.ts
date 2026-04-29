@@ -8,6 +8,8 @@ export interface PresentationOptions {
   theme?: 'dark' | 'light';
   /** Override the design's presentation settings */
   auto_advance?: number;
+  /** Port for remote clicker SSE server — embeds client script if set */
+  remote_port?: number;
 }
 
 export function assemblePresentationHTML(
@@ -66,7 +68,7 @@ ${slides}
 <div id="folio-progress" class="folio-progress"><div id="folio-progress-bar"></div></div>
 ${audioTracks}
 <script type="application/json" id="folio-page-data">${pageData}</script>
-<script>${PRESENTATION_RUNTIME_JS}</script>
+<script>${PRESENTATION_RUNTIME_JS}</script>${opts.remote_port != null ? `\n<script>${buildRemoteClientScript(opts.remote_port)}</script>` : ''}
 </body>
 </html>`;
 }
@@ -104,6 +106,10 @@ function buildAudioTracks(spec: DesignSpec): string {
 
 function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function buildRemoteClientScript(port: number): string {
+  return `(function(){var es=new EventSource('http://localhost:${port}/events');es.onmessage=function(e){try{var c=JSON.parse(e.data);if(c.type==='next')window.__folioNext&&window.__folioNext();else if(c.type==='prev')window.__folioPrev&&window.__folioPrev();else if(c.type==='goto'&&typeof c.slide==='number')window.__folioGoto&&window.__folioGoto(c.slide);else if(c.type==='start')window.__folioStart&&window.__folioStart();else if(c.type==='stop')window.__folioStop&&window.__folioStop();}catch(ex){}};})();`;
 }
 
 const PRESENTATION_BASE_CSS = `
@@ -221,6 +227,11 @@ const PRESENTATION_RUNTIME_JS = `(function(){
   });
 
   window.FolioPresenter={goto:go,current:function(){return cur;},total:total};
+  window.__folioNext=function(){go(cur+1,1);};
+  window.__folioPrev=function(){go(cur-1,-1);};
+  window.__folioGoto=function(n){go(n,0);};
+  window.__folioStart=function(){scheduleAuto((pages[cur]||{}).autoMs||3000);};
+  window.__folioStop=function(){clearTimeout(timer);};
   document.getElementById('slide-counter').textContent='1/'+total;
   scheduleAuto((pages[0]||{}).autoMs||0);
 })();`;

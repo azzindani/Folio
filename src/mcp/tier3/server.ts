@@ -22,8 +22,11 @@ const HANDLERS: Record<string, Handler> = {
   export_presentation:  (a) => engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]),
   set_formula_context:  (a) => engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]),
   debug_formula:        (a) => engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]),
-  inspect_timeline:     (a) => engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]),
-  add_keyframe:         (a) => engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]),
+  inspect_timeline:       (a) => engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]),
+  add_keyframe:           (a) => engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]),
+  export_animation:       (a) => engine.exportAnimation(a as Parameters<typeof engine.exportAnimation>[0]),
+  setup_remote_presenter: (a) => engine.setupRemotePresenter(a as Parameters<typeof engine.setupRemotePresenter>[0]),
+  setup_collab:           (a) => engine.setupCollab(a as Parameters<typeof engine.setupCollab>[0]),
 };
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }

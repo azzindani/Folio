@@ -4,7 +4,7 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 
 ## Features
 
-- **38 MCP tools** across 3 servers: basic (10), design (9), export (19)
+- **41 MCP tools** across 3 servers: basic (10), design (9), export (22)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Automatic snapshots** — every write creates a `.mcp_versions/` backup before touching disk
 - **Operation receipt logging** — full audit trail at `~/.folio/ops.log`
@@ -17,13 +17,15 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 - **Interactive report HTML** — `export_report` assembles multi-page reports into a self-contained `.html` with navigation runtime, `$data.*` expression binding, and Mode A interactions
 - **Presentation engine** — `create_presentation` + `export_presentation` produce 17-transition self-contained HTML decks with keyboard nav, touch swipe, auto-advance, teleprompter mode, and audio cues
 - **Formula binding** — PowerApps-style `=expression` on any layer property; `set_formula_context` + `debug_formula` MCP tools; secure sandboxed evaluator
-- **Animation timeline** — keyframe scrubber UI panel, `inspect_timeline` + `add_keyframe` MCP tools, Lottie JSON export, GIF/MP4 frame capture
+- **Animation timeline** — keyframe scrubber UI panel, `inspect_timeline` + `add_keyframe` MCP tools, Lottie JSON export, GIF/MP4/WebM export (ffmpeg when available)
 - **Motion + effects** — SVG `animateMotion` path animation, particle effects layer, 3D `rotate3d` transforms, scroll-triggered animations
 - **Theme token system** — `$primary`, `$heading`, `$text_muted` resolved at render time from active theme
 - **Component library** — reusable layer groups with named slot definitions
 - **Carousel / multi-page** — incremental page-by-page generation with task state tracking
 - **dry_run validation** — `patch_design` validates all selectors before writing
 - **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, align toolbar, Monaco YAML editor with bidirectional sync
+- **Remote clicker** — `setup_remote_presenter` MCP tool generates SSE server + client JS for HTTP-controlled slide navigation
+- **Collaborative editing** — `setup_collab` MCP tool generates SSE file-watch server; multi-user design sync via `/patch` + `/events` endpoints
 - **Modular architecture** — thin MCP wrappers, zero domain logic in servers; all business logic in `engine.ts`
 
 ---
@@ -384,9 +386,9 @@ Full design lifecycle — create, inspect, build, edit. All write tools create a
 
 ---
 
-### Tier 3 — Export (19 tools)
+### Tier 3 — Export (22 tools)
 
-SVG/HTML export, batch generation, templates, component extraction, report assembly, presentations, formula binding, and animation.
+SVG/HTML export, batch generation, templates, component extraction, report assembly, presentations, formula binding, animation, and collaboration.
 
 | Tool | Purpose |
 |---|---|
@@ -405,6 +407,9 @@ SVG/HTML export, batch generation, templates, component extraction, report assem
 | `debug_formula` | Evaluate a `=expression` against a given context and return result with type info |
 | `inspect_timeline` | Show animation keyframe tracks for a design as ASCII timeline |
 | `add_keyframe` | Add or replace a keyframe on a layer's animation timeline |
+| `export_animation` | Export presentation as GIF/MP4/WebM (Puppeteer frame capture + ffmpeg encoding when available) |
+| `setup_remote_presenter` | Generate SSE remote clicker: client JS snippet + curl commands for HTTP-controlled slide navigation |
+| `setup_collab` | Generate SSE collaborative editing server: file-watch + `/patch` + `/events` endpoints for multi-user sync |
 
 ---
 ## Workflow Reference
@@ -600,7 +605,7 @@ Folio/
 │   ├── e2e/                     ← Playwright end-to-end tests
 │   ├── visual/                  ← Playwright visual regression snapshots
 │   └── fixtures/                ← sample .design.yaml files
-└── src/**/*.test.ts             ← 1,870 Vitest unit + integration tests
+└── src/**/*.test.ts             ← 1,935 Vitest unit + integration tests
 ```
 
 ---
