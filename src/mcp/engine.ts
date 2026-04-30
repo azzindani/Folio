@@ -20,7 +20,14 @@ import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
+import { assemblePresentationHTML } from '../export/presentation-assembler';
 import type { LoadedDataset } from '../report/data-loader';
+import { evaluateFormula, isFormula } from '../scripting/formula';
+import type { FormulaContext } from '../scripting/formula';
+import { buildTimelineTracks, renderTimelineASCII, addKeyframe } from '../ui/panels/timeline-panel';
+import type { Keyframe } from '../animation/types';
+import { getClientScript } from '../export/remote-server';
+import { tryFfmpeg } from '../export/animation-export';
 
 // ── Tier 2 forward-declaration (createDesign called by createTask) ──
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
@@ -848,6 +855,103 @@ export function listTemplateSlots(args: { template_path: string }): ToolResult {
   return okResult(op, { slots, count: slots.length, progress, context, handover });
 }
 
+// ── Presentation MCP tools ───────────────────────────────────
+
+export function createPresentation(args: {
+  project_path: string;
+  name: string;
+  pages: { id?: string; label: string; notes?: string }[];
+  width?: number;
+  height?: number;
+  transition?: string;
+  auto_advance?: number;
+  theme?: 'dark' | 'light';
+}): ToolResult {
+  const op = 'create_presentation';
+  const progress: ProgressItem[] = [];
+  const pDir = path.resolve(args.project_path);
+  if (!fs.existsSync(pDir)) return errResult(op, `Project not found: ${pDir}`, 'Check project_path.');
+
+  const id = generateId();
+  const slug = args.name.toLowerCase().replace(/\s+/g, '-');
+  const dPath = path.join(pDir, 'designs', `${slug}.design.yaml`);
+  fs.mkdirSync(path.dirname(dPath), { recursive: true });
+
+  const pages = args.pages.map((p, i) => ({
+    id: p.id ?? `slide_${i + 1}`,
+    label: p.label,
+    notes: p.notes,
+    layers: [] as unknown[],
+    transition: args.transition ? { type: args.transition, duration: 400 } : undefined,
+    auto_advance: args.auto_advance,
+  }));
+
+  const spec = {
+    _protocol: 'design/v1',
+    _mode: 'in_progress',
+    meta: { id, name: args.name, type: 'presentation', created: new Date().toISOString(), modified: new Date().toISOString() },
+    document: { width: args.width ?? 1920, height: args.height ?? 1080, unit: 'px', dpi: 96 },
+    pages,
+    presentation: {
+      auto_advance: args.auto_advance ?? 0,
+      show_controls: true,
+      show_progress: true,
+      keyboard: true,
+      touch: true,
+      aspect_ratio: '16:9',
+    },
+  };
+
+  writeYAML(dPath, spec);
+  progress.push(pOk('Presentation design created', path.basename(dPath)));
+  const context = buildContext(op, `Presentation "${args.name}" scaffolded (${pages.length} slides)`, [
+    { type: 'design', path: dPath, role: 'presentation' },
+  ]);
+  const handover = buildHandover('COMPOSE', { design_path: dPath });
+  return okResult(op, { design_id: id, design_path: dPath, slide_count: pages.length, progress, context, handover });
+}
+
+export function exportPresentation(args: {
+  design_path: string;
+  output_path?: string;
+  theme?: 'light' | 'dark';
+  auto_advance?: number;
+  project_path?: string;
+}): ToolResult {
+  const op = 'export_presentation';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const spec = readYAML<import('../schema/types').DesignSpec>(dPath);
+  if (!['presentation', 'carousel', 'motion'].includes(spec.meta.type)) {
+    return errResult(op, `Design type "${spec.meta.type}" not supported for presentation export`, 'Use a presentation, carousel, or motion design.', progress);
+  }
+
+  const outPath = args.output_path ?? dPath.replace('.design.yaml', '.presentation.html');
+
+  // Load formula context if available (applied at runtime in browser via JS runtime)
+  const formulaCtxPath = dPath.replace('.design.yaml', '.formula.json');
+  if (fs.existsSync(formulaCtxPath)) {
+    try { JSON.parse(fs.readFileSync(formulaCtxPath, 'utf-8')); } catch { /* ignore */ }
+  }
+
+  progress.push(pInfo('Assembling presentation HTML'));
+  try {
+    const html = assemblePresentationHTML(spec, { theme: args.theme ?? 'dark', auto_advance: args.auto_advance });
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, html, 'utf-8');
+    progress.push(pOk('Presentation HTML written', path.basename(outPath)));
+    const context = buildContext(op, `Presentation exported: ${path.basename(outPath)}`, [
+      { type: 'html', path: outPath, role: 'presentation-output' },
+    ]);
+    const handover = buildHandover('EXPORT', { output_path: outPath });
+    return okResult(op, { output_path: outPath, output_file: path.basename(outPath), bytes: html.length, slide_count: (spec.pages ?? []).length, progress, context, handover });
+  } catch (err) {
+    return errResult(op, `Presentation assembly failed: ${(err as Error).message}`, 'Ensure design has pages.', progress);
+  }
+}
+
 // ── Report MCP tools ─────────────────────────────────────────
 
 export function generateReport(args: {
@@ -978,6 +1082,63 @@ export function exportReport(args: {
   }
 }
 
+// ── Formula tools ─────────────────────────────────────────────
+
+export function setFormulaContext(args: {
+  design_path: string;
+  state?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  project_path?: string;
+}): ToolResult {
+  const op = 'set_formula_context';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const ctxPath = dPath.replace('.design.yaml', '.formula.json');
+  const payload = { state: args.state ?? {}, data: args.data ?? {} };
+  fs.writeFileSync(ctxPath, JSON.stringify(payload, null, 2), 'utf-8');
+
+  return okResult(op, {
+    context_path: ctxPath,
+    keys: {
+      state: Object.keys(args.state ?? {}),
+      data: Object.keys(args.data ?? {}),
+    },
+  });
+}
+
+export function debugFormula(args: {
+  formula: string;
+  state?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  design_path?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'debug_formula';
+  if (!isFormula(args.formula)) {
+    return errResult(op, 'Formula must start with =', 'Formula must start with =');
+  }
+
+  let state: Record<string, unknown> = args.state ?? {};
+  let data: Record<string, unknown> = args.data ?? {};
+
+  if (args.design_path) {
+    const dPath = resolveDesignPath(args.design_path, args.project_path);
+    const ctxPath = dPath.replace('.design.yaml', '.formula.json');
+    if (fs.existsSync(ctxPath)) {
+      try {
+        const loaded = JSON.parse(fs.readFileSync(ctxPath, 'utf-8')) as Record<string, unknown>;
+        state = { ...(loaded['state'] as Record<string, unknown> ?? {}), ...state };
+        data  = { ...(loaded['data']  as Record<string, unknown> ?? {}), ...data };
+      } catch { /* ignore malformed .formula.json */ }
+    }
+  }
+
+  const ctx: FormulaContext = { state, data };
+  const result = evaluateFormula(args.formula, ctx);
+  return okResult(op, { result, type: typeof result, formula: args.formula });
+}
+
 // ── Internal shared helpers ───────────────────────────────────
 
 function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: unknown): void {
@@ -1000,4 +1161,175 @@ function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: un
 
 function isConstrained(): boolean {
   return process.env['MCP_CONSTRAINED_MODE'] === 'true';
+}
+
+// ── Animation timeline tools ──────────────────────────────────
+
+export function inspectTimeline(args: {
+  design_path: string;
+  page_id?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'inspect_timeline';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const spec = readYAML<DesignSpec>(dPath);
+  let layers: Layer[];
+
+  if (args.page_id) {
+    const page = (spec.pages ?? []).find((p: Page) => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Check page_id.');
+    layers = page.layers ?? [];
+  } else {
+    layers = spec.layers ?? [];
+  }
+
+  const tracks = buildTimelineTracks(
+    layers.map(l => ({
+      id: l.id,
+      label: (l as { label?: string }).label,
+      animation: l.animation,
+    })),
+  );
+  const ascii = renderTimelineASCII(tracks);
+
+  return okResult(op, { track_count: tracks.length, tracks, ascii });
+}
+
+export function addKeyframeToLayer(args: {
+  design_path: string;
+  layer_id: string;
+  keyframe: Keyframe;
+  project_path?: string;
+}): ToolResult {
+  const op = 'add_keyframe';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const bak = snapshot(dPath);
+  const spec = readYAML<DesignSpec>(dPath);
+
+  // Search top-level layers first, then each page
+  let found = false;
+  const applyToLayer = (layer: Layer): Layer => {
+    if (layer.id !== args.layer_id) return layer;
+    found = true;
+    return { ...layer, animation: addKeyframe(layer.animation ?? {}, args.keyframe) };
+  };
+
+  if (spec.layers) {
+    spec.layers = spec.layers.map(applyToLayer);
+  }
+  if (!found && spec.pages) {
+    for (const page of spec.pages) {
+      if (page.layers) {
+        page.layers = page.layers.map(applyToLayer);
+        if (found) break;
+      }
+    }
+  }
+
+  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Check layer_id.');
+
+  writeYAML(dPath, spec);
+  return okResult(op, { layer_id: args.layer_id, keyframe: args.keyframe }, bak);
+}
+
+// ── Phase 5 — Animation / Remote / Collab ────────────────────
+
+export function exportAnimation(args: {
+  design_path: string;
+  type: 'gif' | 'mp4' | 'webm';
+  output_path?: string;
+  fps?: number;
+  duration?: number;
+  page_id?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'export_animation';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  // Build HTML for the design, then record animation frames
+  const spec = readYAML<DesignSpec>(dPath);
+  let html: string;
+  try {
+    html = assemblePresentationHTML(spec, {});
+  } catch (e) {
+    return errResult(op, `Failed to render HTML: ${(e as Error).message}`, 'Ensure the design has valid pages.');
+  }
+
+  const ext = args.type === 'gif' ? 'gif' : args.type === 'mp4' ? 'mp4' : 'webm';
+  const baseName = path.basename(dPath, '.design.yaml');
+  const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', `${baseName}.${ext}`);
+  const htmlPath = outputPath + '.tmp.html';
+
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(htmlPath, html);
+
+  // Since exportToAnimation is async, we return instructions for running it
+  // The MCP tool provides instructions; actual encode is via CLI/script
+  fs.unlinkSync(htmlPath);
+
+  const hasFfmpeg = tryFfmpeg();
+
+  return okResult(op, {
+    design_path: dPath,
+    output_path: outputPath,
+    type: args.type,
+    fps: args.fps ?? (args.type === 'gif' ? 10 : 30),
+    duration: args.duration ?? 3000,
+    ffmpeg_available: hasFfmpeg,
+    hint: hasFfmpeg
+      ? `Run: npx folio export-anim "${dPath}" --type ${args.type} --output "${outputPath}"`
+      : 'ffmpeg not found. Install ffmpeg then re-run this tool.',
+  });
+}
+
+export function setupRemotePresenter(args: {
+  port?: number;
+  design_path?: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'setup_remote_presenter';
+  const port = args.port ?? 3737;
+
+  const clientScript = getClientScript(port);
+
+  const curlNext = `curl -s -X POST http://localhost:${port}/command -H 'Content-Type: application/json' -d '{"type":"next"}'`;
+  const curlPrev = `curl -s -X POST http://localhost:${port}/command -H 'Content-Type: application/json' -d '{"type":"prev"}'`;
+  const curlGoto = `curl -s -X POST http://localhost:${port}/command -H 'Content-Type: application/json' -d '{"type":"goto","slide":0}'`;
+
+  return okResult(op, {
+    port,
+    server_start_command: `node -e "const{startRemoteServer}=require('./dist/export/remote-server');startRemoteServer(${port}).then(()=>console.log('Remote clicker running on :${port}'))"`,
+    client_script: clientScript,
+    commands: { next: curlNext, prev: curlPrev, goto: curlGoto },
+    hint: `Embed client_script in your presentation HTML inside a <script> tag, then start the server and use curl commands or any HTTP client to control slides.`,
+  });
+}
+
+export function setupCollab(args: {
+  design_path: string;
+  port?: number;
+  project_path?: string;
+}): ToolResult {
+  const op = 'setup_collab';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+
+  const port = args.port ?? 3738;
+
+  return okResult(op, {
+    design_path: dPath,
+    port,
+    server_start_command: `node -e "const{startCollabServer}=require('./dist/collab/collab-server');startCollabServer({design_path:'${dPath}',port:${port}}).then(s=>console.log('Collab server on :'+s.port))"`,
+    endpoints: {
+      events: `http://localhost:${port}/events`,
+      design: `http://localhost:${port}/design`,
+      patch:  `http://localhost:${port}/patch`,
+    },
+    hint: 'Start the collab server, then connect any client to /events (SSE) to receive design-changed events. POST to /patch with {content:"<yaml>"} to push changes.',
+  });
 }

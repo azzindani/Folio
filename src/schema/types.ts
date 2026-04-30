@@ -25,7 +25,8 @@ export type LayerType =
   | 'kpi_card'
   | 'map'
   | 'embed_code'
-  | 'popup';
+  | 'popup'
+  | 'particle';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -237,6 +238,23 @@ export interface BaseLayer {
   clip_path_ref?: string;
   /** Per-layer animation spec */
   animation?: AnimationSpec;
+  /** PowerApps-style formula bindings: { fill: "=state.active ? '#f00' : '#ccc'" } */
+  formulas?: Record<string, string>;
+  /** SVG animateMotion path for kinetic animation */
+  motion_path?: {
+    path: string;        // SVG path d attribute (e.g. "M 0 0 Q 200 100 400 0")
+    duration?: number;   // ms, default 2000
+    loop?: boolean;
+    easing?: string;     // CSS easing, default 'ease-in-out'
+    auto_rotate?: boolean; // rotate element along path
+  };
+  /** 3D rotation transform */
+  rotate3d?: {
+    x?: number;          // degrees
+    y?: number;
+    z?: number;
+    perspective?: number; // px, default 800
+  };
 }
 
 // ── Concrete Layer Types ────────────────────────────────────
@@ -502,6 +520,16 @@ export interface PopupLayer extends BaseLayer {
   layers?: Layer[];
 }
 
+export interface ParticleLayer extends BaseLayer {
+  type: 'particle';
+  count?: number;      // default 50
+  size?: number;       // default 4 (px)
+  speed?: number;      // default 3 (seconds per cycle)
+  colors?: string[];   // default ['#6c5ce7','#00cec9','#fd79a8']
+  shape?: 'circle' | 'square' | 'star';
+  spread?: number;     // 0-1, default 1 (full layer area)
+}
+
 export type Layer =
   | RectLayer
   | CircleLayer
@@ -526,7 +554,8 @@ export type Layer =
   | KpiCardLayer
   | MapLayer
   | EmbedCodeLayer
-  | PopupLayer;
+  | PopupLayer
+  | ParticleLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {
@@ -552,6 +581,48 @@ export interface ThemeSpec {
   radii: Record<string, number>;
 }
 
+// ── Easing ───────────────────────────────────────────────────
+export type EasingFunction =
+  | 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out'
+  | `cubic-bezier(${string})` | `steps(${string})`;
+
+// ── Page Transition ─────────────────────────────────────────
+export type PageTransitionType =
+  | 'none' | 'fade' | 'slide-left' | 'slide-right' | 'slide-up' | 'slide-down'
+  | 'zoom-in' | 'zoom-out' | 'flip-h' | 'flip-v' | 'cube-left' | 'cube-right'
+  | 'reveal' | 'wipe-left' | 'wipe-right' | 'dissolve' | 'morph';
+
+export interface PageTransition {
+  type: PageTransitionType;
+  duration?: number;   // ms, default 400
+  easing?: EasingFunction;
+}
+
+// ── Audio Track ──────────────────────────────────────────────
+export interface AudioTrack {
+  id: string;
+  src: string;        // URL or base64 data URI
+  start_time?: number; // ms offset into the presentation timeline
+  duration?: number;
+  volume?: number;    // 0–1
+  loop?: boolean;
+  fade_in?: number;   // ms
+  fade_out?: number;  // ms
+}
+
+// ── Presentation Settings ────────────────────────────────────
+export interface PresentationSettings {
+  auto_advance?: number;   // ms per slide; 0 = manual
+  loop?: boolean;
+  show_progress?: boolean;
+  show_slide_numbers?: boolean;
+  show_controls?: boolean;
+  keyboard?: boolean;
+  touch?: boolean;
+  fullscreen_on_start?: boolean;
+  aspect_ratio?: '16:9' | '4:3' | '1:1' | string;
+}
+
 // ── Page ────────────────────────────────────────────────────
 export interface Page {
   id: string;
@@ -559,6 +630,14 @@ export interface Page {
   template_ref?: string;
   slots?: Record<string, unknown>;
   layers?: Layer[];
+  /** Incoming transition (plays when this slide enters) */
+  transition?: PageTransition;
+  /** Speaker notes (markdown) */
+  notes?: string;
+  /** Per-slide auto-advance override in ms (0 = manual) */
+  auto_advance?: number;
+  /** Audio cues that start when this slide becomes active */
+  audio_cues?: Pick<AudioTrack, 'src' | 'volume' | 'fade_in'>[];
 }
 
 // ── Design Document ─────────────────────────────────────────
@@ -580,7 +659,7 @@ export interface GenerationMeta {
 export interface DesignMeta {
   id: string;
   name: string;
-  type: 'poster' | 'carousel' | 'motion' | 'report';
+  type: 'poster' | 'carousel' | 'motion' | 'report' | 'presentation';
   created: string;
   modified: string;
   generator?: string;
@@ -619,6 +698,9 @@ export interface DesignSpec {
   layers?: Layer[];
   pages?: Page[];
   report?: ReportSpec;
+  // Presentation / motion settings
+  presentation?: PresentationSettings;
+  audio?: AudioTrack[];
   // Mode B interactive output
   _output_mode?: 'static' | 'interactive';
   state?: Record<string, StateDef>;
