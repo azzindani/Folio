@@ -125,4 +125,136 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       required: ['design_path'],
     },
   },
+  // ── Presentation tools ────────────────────────────────────
+  {
+    name: 'create_presentation',
+    description: 'Scaffold a presentation-type design (1920×1080) with slides, transitions, and presentation settings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path:  { type: 'string', description: 'Path to project directory' },
+        name:          { type: 'string', description: 'Presentation name' },
+        pages:         { type: 'object', description: 'Array of {id?, label, notes?} slide specs', items: { type: 'object' } },
+        transition:    { type: 'string', enum: ['none','fade','slide-left','slide-right','slide-up','slide-down','zoom-in','zoom-out','flip-h','flip-v','cube-left','cube-right','reveal','wipe-left','wipe-right','dissolve','morph'], default: 'fade' },
+        auto_advance:  { type: 'number', description: 'Auto-advance delay ms (0 = manual)' },
+        width:         { type: 'number', default: 1920 },
+        height:        { type: 'number', default: 1080 },
+        theme:         { type: 'string', enum: ['dark', 'light'], default: 'dark' },
+      },
+      required: ['project_path', 'name', 'pages'],
+    },
+  },
+  {
+    name: 'export_presentation',
+    description: 'Assemble a presentation/carousel/motion design into a self-contained HTML presenter with transitions, keyboard nav, and audio.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:   { type: 'string', description: 'Path to .design.yaml (must be type: presentation/carousel/motion)' },
+        output_path:   { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
+        theme:         { type: 'string', enum: ['light', 'dark'], default: 'dark' },
+        auto_advance:  { type: 'number', description: 'Override auto-advance delay ms' },
+        project_path:  { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  // ── Formula tools ─────────────────────────────────────────
+  {
+    name: 'set_formula_context',
+    description: 'Store state/data context for formula binding on a design. Used by export tools to resolve =expr bindings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        state:        { type: 'object', description: 'Key-value state variables', properties: {} },
+        data:         { type: 'object', description: 'Dataset key-value map', properties: {} },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'debug_formula',
+    description: 'Evaluate a formula expression against a given context and return the result with type info.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        formula:      { type: 'string', description: 'Formula string starting with =' },
+        state:        { type: 'object', description: 'State variables', properties: {} },
+        data:         { type: 'object', description: 'Data variables', properties: {} },
+        design_path:  { type: 'string', description: 'Optional: load context from .formula.json' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['formula'],
+    },
+  },
+  {
+    name: 'inspect_timeline',
+    description: 'Show animation keyframe tracks for a design as ASCII timeline.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        page_id:      { type: 'string', description: 'Optional page filter' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'add_keyframe',
+    description: 'Add or replace a keyframe on a layer animation timeline.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        layer_id:     { type: 'string', description: 'Target layer id' },
+        keyframe:     { type: 'object', description: '{t:ms, x?, y?, opacity?, scale?, rotation?}', properties: {} },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'layer_id', 'keyframe'],
+    },
+  },
+  {
+    name: 'export_animation',
+    description: 'Export a presentation design as GIF, MP4, or WebM animation (requires Puppeteer + optionally ffmpeg).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        type:         { type: 'string', enum: ['gif', 'mp4', 'webm'], description: 'Output format' },
+        output_path:  { type: 'string', description: 'Output file path (auto-derived if omitted)' },
+        fps:          { type: 'number', description: 'Frames per second (default 10 for gif, 30 for mp4/webm)' },
+        duration:     { type: 'number', description: 'Animation duration in ms (default 3000)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'type'],
+    },
+  },
+  {
+    name: 'setup_remote_presenter',
+    description: 'Generate remote clicker setup: client JS snippet + curl commands to control slides over HTTP.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        port:         { type: 'number', description: 'Port for the remote server (default 3737)' },
+        design_path:  { type: 'string', description: 'Optional: path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir' },
+      },
+    },
+  },
+  {
+    name: 'setup_collab',
+    description: 'Generate collaborative editing server setup: SSE file-watch server for multi-user design sync.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml to watch' },
+        port:         { type: 'number', description: 'Port for the collab server (default 3738)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
 ];

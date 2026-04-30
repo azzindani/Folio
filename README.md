@@ -4,7 +4,7 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 
 ## Features
 
-- **28 MCP tools** across 3 servers: basic (10), design (9), export (9)
+- **41 MCP tools** across 3 servers: basic (10), design (9), export (22)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Automatic snapshots** — every write creates a `.mcp_versions/` backup before touching disk
 - **Operation receipt logging** — full audit trail at `~/.folio/ops.log`
@@ -12,14 +12,20 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 - **Handover protocol** — every response includes the next 3 suggested tool calls with pre-filled params so LLMs can chain tools without losing state
 - **Context recovery** — `resume_task` and `resume_design` restore full carousel state after context resets
 - **Shorthand layer syntax** — `pos:[x,y,w,h]`, `fill:"#hex"`, `icon:"star"` — ~80% fewer tokens than verbose YAML
-- **13 layer types** — rect, circle, text, line, path, icon, image, group, mermaid, chart, code, math, component
+- **14 layer types** — rect, circle, text, line, path, icon, image, group, mermaid, chart, code, math, component, particle
 - **Live SVG export** — server-side jsdom renderer writes real `.svg` files from MCP without a browser
 - **Interactive report HTML** — `export_report` assembles multi-page reports into a self-contained `.html` with navigation runtime, `$data.*` expression binding, and Mode A interactions
+- **Presentation engine** — `create_presentation` + `export_presentation` produce 17-transition self-contained HTML decks with keyboard nav, touch swipe, auto-advance, teleprompter mode, and audio cues
+- **Formula binding** — PowerApps-style `=expression` on any layer property; `set_formula_context` + `debug_formula` MCP tools; secure sandboxed evaluator
+- **Animation timeline** — keyframe scrubber UI panel, `inspect_timeline` + `add_keyframe` MCP tools, Lottie JSON export, GIF/MP4/WebM export (ffmpeg when available)
+- **Motion + effects** — SVG `animateMotion` path animation, particle effects layer, 3D `rotate3d` transforms, scroll-triggered animations
 - **Theme token system** — `$primary`, `$heading`, `$text_muted` resolved at render time from active theme
 - **Component library** — reusable layer groups with named slot definitions
 - **Carousel / multi-page** — incremental page-by-page generation with task state tracking
 - **dry_run validation** — `patch_design` validates all selectors before writing
 - **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, align toolbar, Monaco YAML editor with bidirectional sync
+- **Remote clicker** — `setup_remote_presenter` MCP tool generates SSE server + client JS for HTTP-controlled slide navigation
+- **Collaborative editing** — `setup_collab` MCP tool generates SSE file-watch server; multi-user design sync via `/patch` + `/events` endpoints
 - **Modular architecture** — thin MCP wrappers, zero domain logic in servers; all business logic in `engine.ts`
 
 ---
@@ -380,9 +386,9 @@ Full design lifecycle — create, inspect, build, edit. All write tools create a
 
 ---
 
-### Tier 3 — Export (9 tools)
+### Tier 3 — Export (22 tools)
 
-SVG/HTML export, batch generation, templates, component extraction, and interactive report assembly.
+SVG/HTML export, batch generation, templates, component extraction, report assembly, presentations, formula binding, animation, and collaboration.
 
 | Tool | Purpose |
 |---|---|
@@ -395,6 +401,15 @@ SVG/HTML export, batch generation, templates, component extraction, and interact
 | `generate_report` | Scaffold a `report`-type design with pages, navigation (sidebar/topbar/tabs/dots), and optional data sources |
 | `bind_data` | Attach or update inline datasets on a report design; fields support `$data.*` / `$agg.*` expressions |
 | `export_report` | Assemble a report design into a self-contained interactive HTML file with navigation runtime |
+| `create_presentation` | Scaffold a 1920×1080 presentation design with slides, 17 transition types, and presenter settings |
+| `export_presentation` | Assemble presentation into self-contained HTML with keyboard nav, touch swipe, teleprompter, and audio |
+| `set_formula_context` | Persist state/data context for `=expression` formula bindings on a design |
+| `debug_formula` | Evaluate a `=expression` against a given context and return result with type info |
+| `inspect_timeline` | Show animation keyframe tracks for a design as ASCII timeline |
+| `add_keyframe` | Add or replace a keyframe on a layer's animation timeline |
+| `export_animation` | Export presentation as GIF/MP4/WebM (Puppeteer frame capture + ffmpeg encoding when available) |
+| `setup_remote_presenter` | Generate SSE remote clicker: client JS snippet + curl commands for HTTP-controlled slide navigation |
+| `setup_collab` | Generate SSE collaborative editing server: file-watch + `/patch` + `/events` endpoints for multi-user sync |
 
 ---
 ## Workflow Reference
@@ -430,6 +445,18 @@ SVG/HTML export, batch generation, templates, component extraction, and interact
 ```
 
 The exported HTML is fully self-contained — one file, no external dependencies. Navigation, page switching, and data bindings are powered by a 2 KB inline runtime (`window.Folio.nav`). Supports sidebar, topbar, tabs, and dot navigation.
+
+### Presentation (animated slide deck)
+
+```
+1. create_presentation → scaffold 1920×1080 design (slides, transitions, auto-advance)
+2. append_page         → add layers to each slide
+3. set_formula_context → bind state/data for =expression properties (optional)
+4. add_keyframe        → add animation keyframes per layer (optional)
+5. export_presentation → self-contained HTML presenter with keyboard nav + teleprompter
+```
+
+The exported HTML is fully self-contained — 17 CSS transition types, keyboard/touch nav, auto-advance timer, speaker notes, teleprompter mode, fullscreen, audio cue playback, and `window.FolioPresenter` runtime API.
 
 ### Patch (edit sealed design)
 
@@ -578,7 +605,7 @@ Folio/
 │   ├── e2e/                     ← Playwright end-to-end tests
 │   ├── visual/                  ← Playwright visual regression snapshots
 │   └── fixtures/                ← sample .design.yaml files
-└── src/**/*.test.ts             ← 1,726 Vitest unit + integration tests
+└── src/**/*.test.ts             ← 1,935 Vitest unit + integration tests
 ```
 
 ---
@@ -592,7 +619,7 @@ Folio/
 npm ci        # Node
 bun install   # Bun (faster)
 
-# Run all unit + integration tests (1,360 tests)
+# Run all unit + integration tests (1,870 tests)
 npm run test:unit
 
 # Run with coverage report
