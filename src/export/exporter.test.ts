@@ -123,43 +123,42 @@ describe('exportToSVG', () => {
 // ── exportToHTML ─────────────────────────────────────────────
 
 describe('exportToHTML', () => {
-  it('returns a valid HTML string', () => {
-    const result = exportToHTML(makeSpec(), { format: 'html' });
+  it('returns a valid HTML string', async () => {
+    const result = await exportToHTML(makeSpec(), { format: 'html' });
     expect(result).toContain('<!DOCTYPE html>');
     expect(result).toContain('<html');
     expect(result).toContain('</html>');
   });
 
-  it('embeds the SVG', () => {
-    const result = exportToHTML(makeSpec(), { format: 'html' });
+  it('embeds the SVG', async () => {
+    const result = await exportToHTML(makeSpec(), { format: 'html' });
     expect(result).toContain('<svg');
     expect(result).toContain('</svg>');
   });
 
-  it('includes design name in <title>', () => {
-    const result = exportToHTML(makeSpec(), { format: 'html' });
+  it('includes design name in <title>', async () => {
+    const result = await exportToHTML(makeSpec(), { format: 'html' });
     expect(result).toContain('<title>Export Test</title>');
   });
 
-  it('embeds design data as JSON in script tag', () => {
-    const result = exportToHTML(makeSpec(), { format: 'html' });
+  it('embeds design data as JSON in script tag', async () => {
+    const result = await exportToHTML(makeSpec(), { format: 'html' });
     expect(result).toContain('id="design-data"');
     expect(result).toContain('"_protocol": "design/v1"');
   });
 
-  it('includes basic CSS reset', () => {
-    const result = exportToHTML(makeSpec(), { format: 'html' });
+  it('includes basic CSS reset', async () => {
+    const result = await exportToHTML(makeSpec(), { format: 'html' });
     expect(result).toContain('<style>');
     expect(result).toContain('box-sizing: border-box');
   });
 
-  it('includes animation CSS when animations provided', () => {
+  it('includes animation CSS when animations provided', async () => {
     const animations = new Map();
     animations.set('headline', {
       enter: { type: 'fade_up', delay: 0, duration: 600, easing: 'ease-out' },
     });
-    const result = exportToHTML(makeSpec(), { format: 'html-animated', animations });
-    // The HTML should contain something from animation CSS
+    const result = await exportToHTML(makeSpec(), { format: 'html-animated', animations });
     expect(result).toContain('<!DOCTYPE html>');
   });
 });

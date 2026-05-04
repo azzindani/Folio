@@ -1,9 +1,7 @@
-import type { DesignSpec, ThemeSpec } from '../schema/types';
+import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderDesign, renderPage } from '../renderer/renderer';
-import { assembleReportHTML } from './html-assembler';
-import { pageHasInteractiveLayers } from './interactive-renderers';
 import type { LoadedDataset } from '../report/data-loader';
 
 export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
@@ -108,25 +106,38 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
-export function exportToInteractiveHTML(
+export async function exportToInteractiveHTML(
   spec: DesignSpec,
   datasets?: Map<string, LoadedDataset>,
   opts?: { theme?: 'light' | 'dark'; title?: string },
-): string {
+): Promise<string> {
+  // Lazy-load the assembler so the interactive-report runtime (Chart.js wiring,
+  // table runtime, etc.) is code-split into its own chunk and not shipped in
+  // the main editor bundle.
+  const { assembleReportHTML } = await import('./html-assembler');
   return assembleReportHTML(spec, datasets ?? new Map(), {
     title: opts?.title ?? spec.meta.name,
     theme: opts?.theme,
   });
 }
 
-/** True if the spec contains layers that benefit from interactive HTML output. */
-export function hasInteractiveContent(spec: DesignSpec): boolean {
-  if (spec.pages && spec.pages.some(p => pageHasInteractiveLayers(p.layers))) return true;
-  if (pageHasInteractiveLayers(spec.layers)) return true;
-  return false;
+const INTERACTIVE_TYPES = new Set<Layer['type']>([
+  'interactive_chart', 'interactive_table', 'kpi_card', 'rich_text', 'embed_code',
+]);
+
+function hasInteractiveLayers(layers: Layer[] | undefined): boolean {
+  if (!layers) return false;
+  return layers.some(l => INTERACTIVE_TYPES.has(l.type)
+    || hasInteractiveLayers((l as { layers?: Layer[] }).layers));
 }
 
-export function exportToHTML(spec: DesignSpec, options: ExportOptions): string {
+/** True if the spec contains layers that benefit from interactive HTML output. */
+export function hasInteractiveContent(spec: DesignSpec): boolean {
+  if (spec.pages && spec.pages.some(p => hasInteractiveLayers(p.layers))) return true;
+  return hasInteractiveLayers(spec.layers);
+}
+
+export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Promise<string> {
   // If the design has interactive widgets (charts/tables/KPIs), emit a full
   // interactive report instead of a static SVG-in-HTML wrapper.
   if (hasInteractiveContent(spec) || options.format === 'html-report') {
@@ -233,7 +244,7 @@ export async function exportDesign(spec: DesignSpec, options: ExportOptions): Pr
     case 'html':
     case 'html-animated':
     case 'html-report': {
-      const html = exportToHTML(spec, options);
+      const html = await exportToHTML(spec, options);
       await saveText(html, `${name}.html`, 'text/html', 'html');
       break;
     }
