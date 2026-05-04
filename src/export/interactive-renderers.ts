@@ -4,7 +4,6 @@ import type {
   InteractiveTableLayer,
   KpiCardLayer,
   RichTextLayer,
-  TableColumn,
 } from '../schema/types';
 import type { LoadedDataset } from '../report/data-loader';
 
