@@ -20,15 +20,15 @@ export class ToolbarManager {
 
   private build(): void {
     this.container.innerHTML = `
-      <div class="toolbar-left" style="display:flex;align-items:center;gap:12px;flex:1">
-        <span style="display:flex;align-items:center;gap:6px;user-select:none">
+      <div class="toolbar-left" style="display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0;overflow:hidden">
+        <span style="display:flex;align-items:center;gap:6px;user-select:none;flex-shrink:0">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0">
             <rect width="18" height="18" rx="4" fill="var(--color-primary)"/>
             <path d="M4 4h10v2.5H6.5v2H9v2.5H6.5V14H4V4z" fill="white"/>
           </svg>
           <strong style="color:var(--color-text);font-size:15px;letter-spacing:-0.02em">Folio</strong>
         </span>
-        <span style="color:var(--color-border)">&#x2502;</span>
+        <span style="color:var(--color-border);flex-shrink:0">&#x2502;</span>
         <span class="toolbar-project-name" style="color:var(--color-text-muted);font-size:13px">Untitled</span>
       </div>
 
@@ -60,6 +60,7 @@ export class ToolbarManager {
             <button class="export-item" data-format="png">PNG ×2</button>
             <button class="export-item" data-format="pdf">PDF</button>
             <button class="export-item" data-format="html">HTML (self-contained)</button>
+            <button class="export-item" data-format="html-report">Interactive Report (HTML)</button>
             <div style="height:1px;background:var(--color-border);margin:2px 0"></div>
             <button class="export-item" data-format="batch">Batch Export…</button>
             <button class="export-item" data-format="template">Export as Template…</button>
@@ -103,7 +104,7 @@ export class ToolbarManager {
       return;
     }
 
-    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'batch' | 'template' | undefined;
+    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report' | 'batch' | 'template' | undefined;
     if (format) {
       this.closeExportMenu();
       if (format === 'batch') {
@@ -115,7 +116,7 @@ export class ToolbarManager {
         this.triggerTemplateExport();
         return;
       }
-      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html');
+      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report');
     }
   }
 
@@ -167,12 +168,13 @@ export class ToolbarManager {
     }
   }
 
-  private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html'): Promise<void> {
+  private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html' | 'html-report'): Promise<void> {
     const { design, theme } = this.state.get();
     if (!design) return;
     try {
       await exportDesign(design, { format, theme: theme ?? undefined, scale: 2 });
-      showToast(`Exported as ${format.toUpperCase()}`, 'success');
+      const label = format === 'html-report' ? 'Interactive HTML' : format.toUpperCase();
+      showToast(`Exported as ${label}`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Export failed';
       showToast(msg, 'error');

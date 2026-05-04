@@ -42,6 +42,8 @@ export class AlignToolbar {
   }
 
   private refresh(count: number): void {
+    // Hide entire toolbar unless 2+ layers selected (none of the actions apply)
+    this.toolbar.classList.toggle('align-toolbar--hidden', count < 2);
     this.toolbar.querySelectorAll<HTMLButtonElement>('.align-btn').forEach((btn, i) => {
       const minSel = ACTIONS[i]?.minSelect ?? 2;
       btn.classList.toggle('inactive', count < minSel);

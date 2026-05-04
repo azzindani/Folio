@@ -490,11 +490,11 @@ export class EditorApp {
         <div class="mob-sheet-grip" aria-hidden="true"></div>
         <div class="right-panel-resize-handle" data-resize="right"></div>
         <div class="rpanel-tabs">
-          <button class="rpanel-tab active" data-tab="properties">Props</button>
-          <button class="rpanel-tab" data-tab="colors">Colors</button>
-          <button class="rpanel-tab" data-tab="animate">Animate</button>
-          <button class="rpanel-tab" data-tab="timeline">Timeline</button>
-          <button class="rpanel-tab" data-tab="problems">Issues</button>
+          <button class="rpanel-tab active" data-tab="properties" title="Properties">Props</button>
+          <button class="rpanel-tab" data-tab="colors" title="Colors">Color</button>
+          <button class="rpanel-tab" data-tab="animate" title="Animate">Anim</button>
+          <button class="rpanel-tab" data-tab="timeline" title="Timeline">Time</button>
+          <button class="rpanel-tab" data-tab="problems" title="Issues">Issues</button>
           <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
           <button class="rpanel-close-btn" id="rpanel-toggle" title="Close panel (Ctrl+\)">&#x203A;</button>
         </div>
@@ -502,23 +502,22 @@ export class EditorApp {
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
           </div>
-          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden;display:flex;flex-direction:column">
+          <div class="tab-pane tab-pane--flex" data-tab="colors">
             <div class="color-palette-content" style="flex:1;overflow-y:auto"></div>
             <div class="color-scheme-content" style="border-top:1px solid var(--color-border)">
-              <div class="panel-header" style="padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;
-                letter-spacing:.05em;color:var(--color-text-muted)">Color Schemes</div>
+              <div class="panel-header" style="padding:6px 8px">Color Schemes</div>
             </div>
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
           </div>
-          <div class="tab-pane" data-tab="animate" style="height:100%;overflow-y:auto">
+          <div class="tab-pane tab-pane--scroll" data-tab="animate">
             <div class="animate-content" style="height:100%"></div>
           </div>
-          <div class="tab-pane" data-tab="timeline" style="height:100%;display:flex;flex-direction:column">
+          <div class="tab-pane tab-pane--flex" data-tab="timeline">
             <div class="timeline-content" style="flex:1;overflow:hidden"></div>
           </div>
-          <div class="tab-pane" data-tab="a11y" style="height:100%">
+          <div class="tab-pane tab-pane--full" data-tab="a11y">
             <div class="a11y-content" style="height:100%"></div>
           </div>
         </div>
@@ -623,25 +622,45 @@ export class EditorApp {
     const actBtns = this.container.querySelectorAll<HTMLElement>('.act-btn[data-panel]');
     const panelViews = this.container.querySelectorAll<HTMLElement>('.left-panel-view');
     const leftPanel = this.container.querySelector<HTMLElement>('.left-panel')!;
+    const app = leftPanel.closest('#app') as HTMLElement | null;
 
     let currentPanel = 'layers';
+
+    const setCollapsed = (collapsed: boolean): void => {
+      app?.classList.toggle('panel-collapsed', collapsed);
+      actBtns.forEach(b => {
+        b.setAttribute('aria-expanded', String(!collapsed && b.dataset.panel === currentPanel));
+      });
+    };
 
     actBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const panelId = btn.dataset.panel!;
+        const isCollapsed = !!app?.classList.contains('panel-collapsed');
 
         if (panelId === currentPanel) {
-          // Toggle collapse
-          leftPanel.closest('#app')?.classList.toggle('panel-collapsed');
+          setCollapsed(!isCollapsed);
           return;
         }
 
         currentPanel = panelId;
         actBtns.forEach(b => b.classList.toggle('active', b.dataset.panel === panelId));
         panelViews.forEach(v => v.classList.toggle('active', v.dataset.panel === panelId));
-        leftPanel.closest('#app')?.classList.remove('panel-collapsed');
+        setCollapsed(false);
       });
     });
+
+    // Floating expand button — always reachable when panel is collapsed,
+    // including narrow widths where the activity bar might be obscured.
+    if (app && !app.querySelector('.lpanel-expand-btn')) {
+      const expandBtn = document.createElement('button');
+      expandBtn.className = 'lpanel-expand-btn';
+      expandBtn.title = 'Open side panel';
+      expandBtn.setAttribute('aria-label', 'Open side panel');
+      expandBtn.innerHTML = '&#x203A;';
+      expandBtn.addEventListener('click', () => setCollapsed(false));
+      app.appendChild(expandBtn);
+    }
   }
 
   private wireRpanelTabs(): void {

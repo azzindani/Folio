@@ -166,7 +166,7 @@ export class BatchExportDialog {
         if (fmt === 'svg') {
           blob = new Blob([exportToSVG(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
         } else if (fmt === 'html') {
-          blob = new Blob([exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
+          blob = new Blob([await exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
         } else {
           blob = await exportToPNG(spec, { format: 'png', pageIndex: pi, scale });
         }
@@ -200,7 +200,7 @@ export class BatchExportDialog {
         if (fmt === 'svg') {
           blob = new Blob([exportToSVG(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
         } else if (fmt === 'html') {
-          blob = new Blob([exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
+          blob = new Blob([await exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
         } else {
           blob = await exportToPNG(spec, { format: 'png', pageIndex: pi, scale });
         }

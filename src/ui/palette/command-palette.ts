@@ -90,16 +90,30 @@ export class CommandPalette {
           URL.revokeObjectURL(url);
         }
       }},
-      { id: 'export-html', label: 'Export as HTML', category: 'Export', action: () => {
+      { id: 'export-html', label: 'Export as HTML', category: 'Export', action: async () => {
         const design = state.get().design;
         const theme = state.get().theme;
         if (design) {
-          const html = exportToHTML(design, { format: 'html', theme: theme ?? undefined });
+          const html = await exportToHTML(design, { format: 'html', theme: theme ?? undefined });
           const blob = new Blob([html], { type: 'text/html' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
           a.download = `${design.meta.name}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }},
+      { id: 'export-html-report', label: 'Export as Interactive Report (HTML)', category: 'Export', action: async () => {
+        const design = state.get().design;
+        const theme = state.get().theme;
+        if (design) {
+          const html = await exportToHTML(design, { format: 'html-report', theme: theme ?? undefined });
+          const blob = new Blob([html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${design.meta.name}-report.html`;
           a.click();
           URL.revokeObjectURL(url);
         }
