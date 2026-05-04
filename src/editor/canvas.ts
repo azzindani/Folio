@@ -233,6 +233,10 @@ export class CanvasManager {
 
     if (needsRender) {
       this.render();
+      // Keep selection handles in sync with the moved/resized layer
+      if (this.state.get().selectedLayerIds.length > 0) {
+        this.updateSelectionOverlay();
+      }
     }
 
     if (changedKeys.includes('selectedLayerIds')) {
@@ -421,13 +425,18 @@ export class CanvasManager {
       padding:3px 8px;border-radius:4px;pointer-events:none;z-index:500;font-family:monospace`;
     document.body.appendChild(tip);
 
+    let interactionStarted = false;
     const onMove = (me: PointerEvent) => {
+      if (!interactionStarted) {
+        interactionStarted = true;
+        this.state.beginInteraction();
+      }
       const dx = me.clientX - cx;
       const dy = me.clientY - cy;
       let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
       if (me.shiftKey) angle = Math.round(angle / 15) * 15;
       const normalized = Math.round(((angle % 360) + 360) % 360);
-      this.state.updateLayer(layerId, { rotation: normalized });
+      this.state.updateLayer(layerId, { rotation: normalized }, false);
       tip.textContent = `${normalized}°`;
       tip.style.left = `${me.clientX + 14}px`;
       tip.style.top  = `${me.clientY - 8}px`;
@@ -598,10 +607,17 @@ export class CanvasManager {
     const origX = layer.x ?? 0;
     const origY = layer.y ?? 0;
     const zoom = this.state.get().zoom;
+    let moved = false;
 
     const onMove = (me: PointerEvent) => {
       const dx = (me.clientX - startX) / zoom;
       const dy = (me.clientY - startY) / zoom;
+      // 3px threshold avoids accidental drags on a click
+      if (!moved && Math.abs(dx) < 3 / zoom && Math.abs(dy) < 3 / zoom) return;
+      if (!moved) {
+        moved = true;
+        this.state.beginInteraction();
+      }
       let newX = Math.round(origX + dx);
       let newY = Math.round(origY + dy);
 
@@ -618,7 +634,7 @@ export class CanvasManager {
         }
       }
 
-      this.state.updateLayer(layerId, { x: newX, y: newY });
+      this.state.updateLayer(layerId, { x: newX, y: newY }, false);
       this.drawSmartGuides(layerId, newX, newY, layer);
     };
 
@@ -659,8 +675,13 @@ export class CanvasManager {
       w: typeof c.width  === 'number' ? c.width  : 0,
       h: typeof c.height === 'number' ? c.height : 0,
     }));
+    let interactionStarted = false;
 
     const onMove = (me: PointerEvent) => {
+      if (!interactionStarted) {
+        interactionStarted = true;
+        this.state.beginInteraction();
+      }
       let dx = (me.clientX - startX) / zoom;
       let dy = (me.clientY - startY) / zoom;
 
@@ -696,7 +717,7 @@ export class CanvasManager {
 
       this.state.updateLayer(layerId, {
         x: rnx, y: rny, width: rnw, height: rnh,
-      } as Parameters<typeof this.state.updateLayer>[1]);
+      } as Parameters<typeof this.state.updateLayer>[1], false);
 
       // Scale group children proportionally
       if (isGroup && origW > 0 && origH > 0) {
@@ -708,7 +729,7 @@ export class CanvasManager {
             y: Math.round(rny + (snap.y - origY) * sy),
             width: Math.max(4, Math.round(snap.w * sx)),
             height: Math.max(4, Math.round(snap.h * sy)),
-          } as Parameters<typeof this.state.updateLayer>[1]);
+          } as Parameters<typeof this.state.updateLayer>[1], false);
         }
       }
     };
