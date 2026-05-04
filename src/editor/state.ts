@@ -118,6 +118,15 @@ export class StateManager {
     this.redoStack = [];
   }
 
+  /**
+   * Take an undo snapshot at the start of an interaction (drag/resize/rotate).
+   * Subsequent `updateLayer(..., false)` calls during the interaction will
+   * mutate the design without polluting the undo stack.
+   */
+  beginInteraction(): void {
+    this.pushUndo();
+  }
+
   undo(): void {
     const prev = this.undoStack.pop();
     if (!prev) return;
@@ -159,9 +168,9 @@ export class StateManager {
     return layers.filter(l => this.state.selectedLayerIds.includes(l.id));
   }
 
-  updateLayer(layerId: string, updates: Partial<Layer>): void {
+  updateLayer(layerId: string, updates: Partial<Layer>, recordUndo = true): void {
     if (!this.state.design) return;
-    this.pushUndo();
+    if (recordUndo) this.pushUndo();
 
     const updateInArray = (layers: Layer[]): Layer[] =>
       layers.map(l => {
