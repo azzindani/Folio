@@ -141,6 +141,10 @@ test.describe('Layer operations — alignment toolbar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForSelector('.canvas-area svg', { timeout: 10_000 });
+    // Select 2+ layers so the align toolbar becomes visible
+    await page.locator('.layer-row').first().click();
+    await page.locator('.layer-row').nth(1).click({ modifiers: ['Shift'] });
+    await page.waitForSelector('.align-toolbar:not(.align-toolbar--hidden)', { timeout: 5_000 });
   });
 
   test('align toolbar is visible', async ({ page }) => {
