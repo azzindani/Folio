@@ -23,6 +23,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test tests/e2e/ --project=chromium",
     "test:visual": "playwright test tests/visual/ --project=chromium",
+    "test:ui-audit": "playwright test --config=playwright.audit.config.ts",
     "test:update-snapshots": "playwright test --update-snapshots --project=chromium",
     "test:bench": "vitest bench",
     "mcp": "node --loader ts-node/esm src/mcp/server.ts",

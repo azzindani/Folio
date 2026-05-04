@@ -20,15 +20,15 @@ export class ToolbarManager {
 
   private build(): void {
     this.container.innerHTML = `
-      <div class="toolbar-left" style="display:flex;align-items:center;gap:12px;flex:1">
-        <span style="display:flex;align-items:center;gap:6px;user-select:none">
+      <div class="toolbar-left" style="display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0;overflow:hidden">
+        <span style="display:flex;align-items:center;gap:6px;user-select:none;flex-shrink:0">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0">
             <rect width="18" height="18" rx="4" fill="var(--color-primary)"/>
             <path d="M4 4h10v2.5H6.5v2H9v2.5H6.5V14H4V4z" fill="white"/>
           </svg>
           <strong style="color:var(--color-text);font-size:15px;letter-spacing:-0.02em">Folio</strong>
         </span>
-        <span style="color:var(--color-border)">&#x2502;</span>
+        <span style="color:var(--color-border);flex-shrink:0">&#x2502;</span>
         <span class="toolbar-project-name" style="color:var(--color-text-muted);font-size:13px">Untitled</span>
       </div>
 

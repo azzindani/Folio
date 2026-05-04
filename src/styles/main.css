@@ -36,7 +36,7 @@
   --formula-bar-height:   36px;
   --activity-bar-width:   48px;
   --left-panel-width:     260px;
-  --right-panel-width:    280px;
+  --right-panel-width:    300px;
   --statusbar-height:     32px;
   --page-strip-height:    120px;
   --mobile-nav-height:    52px;
@@ -135,7 +135,20 @@ html, body {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   z-index: 100;
+  height: var(--toolbar-height);
+  overflow: hidden;
+  white-space: nowrap;
 }
+/* Ensure toolbar content cannot wrap to a second row */
+.toolbar > * { flex-shrink: 0; }
+.toolbar .toolbar-left { min-width: 0; }
+.toolbar .toolbar-project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.toolbar button { flex-shrink: 0; }
 
 /* ── FORMULA BAR ──────────────────────────────────────────── */
 .formula-bar {
@@ -219,13 +232,16 @@ html, body {
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
+  line-height: 1;
   transition: background 0.1s, color 0.1s;
   position: relative;
   flex-shrink: 0;
+  margin: 1px 0;
 }
-.act-btn:hover { background: var(--color-border); color: var(--color-text); }
-.act-btn.active { color: var(--color-primary); }
+.act-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+.act-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.act-btn.active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
 .act-btn.active::before {
   content: '';
   position: absolute;
@@ -385,9 +401,9 @@ html, body {
 .layer-row {
   display: flex;
   align-items: center;
-  gap: 2px;
-  height: 28px;
-  padding: 0 6px 0 0;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 8px 0 0;
   cursor: pointer;
   border-radius: 4px;
   font-size: 12px;
@@ -732,37 +748,62 @@ html, body {
   display: flex;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-  align-items: center;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  background: var(--color-surface);
 }
+.rpanel-tabs::-webkit-scrollbar { display: none; }
 .rpanel-tab {
-  flex: 1;
-  padding: 6px 8px;
+  flex: 1 1 auto;
+  min-width: 36px;
+  padding: 8px 4px;
   border: none;
   background: transparent;
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: 0;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: color .1s, border-color .1s;
+  transition: color .1s, border-color .1s, background .1s;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
-.rpanel-tab:hover { color: var(--color-text); }
+.rpanel-tab:hover { color: var(--color-text); background: var(--color-surface-2); }
 .rpanel-tab.active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
 }
+/* Below 380px panel width, tabs can wrap-clip; show only active tab text, abbreviate others */
+.rpanel-tab[data-tab="properties"]::after { content: ""; }
 
 .rpanel-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
+  flex: 1 1 auto;
+  overflow: hidden;
   min-height: 0;
+  position: relative;
 }
+.rpanel-body > .tab-pane:not(.tab-pane--full):not(.tab-pane--flex):not(.tab-pane--scroll) {
+  padding: 0;
+  overflow-y: auto;
+  height: 100%;
+}
+.rpanel-body > .tab-pane.active.tab-pane--full,
+.rpanel-body > .tab-pane.active.tab-pane--flex,
+.rpanel-body > .tab-pane.active.tab-pane--scroll { height: 100%; }
+/* Default content padding for non-modular panes (Properties, Issues) */
+.rpanel-body > .tab-pane[data-tab="properties"],
+.rpanel-body > .tab-pane[data-tab="problems"] { padding: 0; }
 
-.rpanel-body > .tab-pane { display: none; }
+.rpanel-body > .tab-pane { display: none; height: 100%; }
 .rpanel-body > .tab-pane.active { display: block; }
+.rpanel-body > .tab-pane--flex.active { display: flex; flex-direction: column; overflow: hidden; }
+.rpanel-body > .tab-pane--scroll.active { display: block; overflow-y: auto; }
+.rpanel-body > .tab-pane--full.active { display: block; }
 
 /* ── STATUS BAR ───────────────────────────────────────────── */
 .status-bar {
@@ -836,16 +877,37 @@ html, body {
   font-size: 11px;
   color: var(--color-text-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
 }
+.status-bar { gap: 0; min-width: 0; }
+.status-spacer { flex: 1 1 auto; min-width: 0; }
 
 /* ── SCROLLBARS ───────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
+  background: var(--color-border-strong);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--color-border-strong) transparent; }
+
+/* ── GLOBAL FOCUS RING (keyboard navigation) ──────────────── */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+button:focus:not(:focus-visible) { outline: none; }
 
 /* ── PANEL HEADERS ────────────────────────────────────────── */
 .panel-header {
@@ -854,7 +916,9 @@ html, body {
   text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--color-text-muted);
-  padding: 8px 10px 4px;
+  padding: 10px 12px 6px;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 /* ── BUTTONS ──────────────────────────────────────────────── */
@@ -863,7 +927,8 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 6px 12px;
+  min-height: 28px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface-2);
@@ -881,7 +946,7 @@ html, body {
   color: #fff;
 }
 .btn-primary:hover { filter: brightness(1.1); }
-.btn-sm { padding: 3px 8px; font-size: 11px; }
+.btn-sm { padding: 5px 10px; font-size: 11px; min-height: 26px; }
 .btn-icon {
   width: 28px; height: 28px;
   padding: 0;
@@ -896,7 +961,8 @@ html, body {
   overflow: hidden;
 }
 .mode-toggle button {
-  padding: 4px 14px;
+  padding: 6px 14px;
+  min-height: 26px;
   border: none;
   background: transparent;
   color: var(--color-text-muted);
@@ -1017,6 +1083,12 @@ html, body {
 /* Smooth show/hide with visibility transition */
 .align-toolbar {
   transition: opacity 0.15s, transform 0.15s;
+}
+.align-toolbar.align-toolbar--hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-4px);
 }
 
 /* ── TOAST ────────────────────────────────────────────────── */
@@ -1396,28 +1468,27 @@ html, body {
 }
 
 /* ── TOOL GRID WRAP ───────────────────────────────────────── */
-/* Fix #5 — scrollable toolbox with max-height so layer panel always visible */
+/* Grid layout — tools auto-fill, separators span full width */
 .tools-panel {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 34px);
   justify-content: center;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 6px 4px;
+  align-content: start;
+  gap: 4px;
+  padding: 6px 6px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
 }
 
 .tool-section-sep {
-  width: 100%;
+  grid-column: 1 / -1;
   height: 1px;
   background: var(--color-border);
-  margin: 3px 0;
-  flex-basis: 100%;
+  margin: 2px 0;
 }
 
 /* ── RULER UNIT BADGE ─────────────────────────────────────── */
@@ -1540,6 +1611,18 @@ html, body {
   }
 
   .activity-bar, .formula-bar { display: none; }
+
+  /* Compact toolbar on mobile: hide secondary chrome, keep core controls */
+  .toolbar { padding: 0 8px; gap: 6px; }
+  .toolbar .toolbar-project-name { display: none; }
+  .toolbar .toolbar-left > span:nth-child(2) { display: none; } /* hide divider */
+  .toolbar .toolbar-theme-select { display: none; }
+  .toolbar .mode-toggle button { padding: 6px 10px; }
+
+  /* Status bar: only essential controls on mobile, no overflow */
+  .status-bar { padding: 0 4px; gap: 0; }
+  .status-pages { display: none; }
+  .sb-info { display: none; }
 
   /* Mobile bottom nav bar */
   .mobile-nav {
