@@ -60,6 +60,7 @@ export class ToolbarManager {
             <button class="export-item" data-format="png">PNG ×2</button>
             <button class="export-item" data-format="pdf">PDF</button>
             <button class="export-item" data-format="html">HTML (self-contained)</button>
+            <button class="export-item" data-format="html-report">Interactive Report (HTML)</button>
             <div style="height:1px;background:var(--color-border);margin:2px 0"></div>
             <button class="export-item" data-format="batch">Batch Export…</button>
             <button class="export-item" data-format="template">Export as Template…</button>
@@ -103,7 +104,7 @@ export class ToolbarManager {
       return;
     }
 
-    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'batch' | 'template' | undefined;
+    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report' | 'batch' | 'template' | undefined;
     if (format) {
       this.closeExportMenu();
       if (format === 'batch') {
@@ -115,7 +116,7 @@ export class ToolbarManager {
         this.triggerTemplateExport();
         return;
       }
-      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html');
+      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report');
     }
   }
 
@@ -167,12 +168,13 @@ export class ToolbarManager {
     }
   }
 
-  private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html'): Promise<void> {
+  private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html' | 'html-report'): Promise<void> {
     const { design, theme } = this.state.get();
     if (!design) return;
     try {
       await exportDesign(design, { format, theme: theme ?? undefined, scale: 2 });
-      showToast(`Exported as ${format.toUpperCase()}`, 'success');
+      const label = format === 'html-report' ? 'Interactive HTML' : format.toUpperCase();
+      showToast(`Exported as ${label}`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Export failed';
       showToast(msg, 'error');

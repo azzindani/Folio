@@ -284,6 +284,11 @@ export class CanvasManager {
     }
     this.currentSVG = svg;
 
+    // Match viewport background to the design's first opaque fill so an
+    // intermediate transparent SVG doesn't flash white during state changes.
+    const paper = inferCanvasPaper(design);
+    if (paper) this.viewport.style.setProperty('--canvas-paper', paper);
+
     // Size viewport
     this.viewport.style.width = `${width}px`;
     this.viewport.style.height = `${height}px`;
@@ -340,8 +345,8 @@ export class CanvasManager {
       for (const pos of handles8) {
         const handle = document.createElement('div');
         handle.className = `selection-handle handle-${pos.cls}`;
-        handle.style.left = `${pos.x - 4}px`;
-        handle.style.top  = `${pos.y - 4}px`;
+        handle.style.left = `${pos.x - 5}px`;
+        handle.style.top  = `${pos.y - 5}px`;
         handle.style.cursor = pos.cursor;
         handle.style.pointerEvents = 'auto';
         handle.dataset.handle = pos.cls;
@@ -375,15 +380,10 @@ export class CanvasManager {
 
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
-      rotateHandle.style.left = `${cx - 6}px`;
+      rotateHandle.style.left = `${cx - 7}px`;
       rotateHandle.style.top  = `${bbox.y - 32}px`;
       rotateHandle.style.cursor = 'grab';
       rotateHandle.style.pointerEvents = 'auto';
-      rotateHandle.style.width = '12px';
-      rotateHandle.style.height = '12px';
-      rotateHandle.style.borderRadius = '50%';
-      rotateHandle.style.background = 'var(--color-primary)';
-      rotateHandle.style.border = '2px solid #fff';
       rotateHandle.dataset.handle = 'rotate';
       rotateHandle.dataset.layerId = id;
       rotateHandle.title = 'Rotate (Shift = 15° snap)';
@@ -1116,4 +1116,22 @@ function drawLabel(
   ctx.fillText(text, x - w / 2 + 3, y);
   ctx.setLineDash([3, 3]);
   ctx.fillStyle = '#e94560';
+}
+
+// ── Canvas paper-color heuristic ─────────────────────────────
+// Returns a CSS color from the first full-cover rect at (0,0) — used to
+// keep the viewport background matching the design so render swaps don't
+// flash a different color through transparent regions.
+function inferCanvasPaper(
+  design: { layers?: Layer[]; pages?: { layers?: Layer[] }[] } | null,
+): string | null {
+  if (!design) return null;
+  const layers = (design.pages?.[0]?.layers ?? design.layers ?? []) as Layer[];
+  for (const l of layers) {
+    const fill = (l as { fill?: { type?: string; color?: string } }).fill;
+    if (l.type === 'rect' && fill?.type === 'solid' && fill.color && !fill.color.startsWith('$')) {
+      return fill.color;
+    }
+  }
+  return null;
 }

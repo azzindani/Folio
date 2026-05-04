@@ -622,25 +622,45 @@ export class EditorApp {
     const actBtns = this.container.querySelectorAll<HTMLElement>('.act-btn[data-panel]');
     const panelViews = this.container.querySelectorAll<HTMLElement>('.left-panel-view');
     const leftPanel = this.container.querySelector<HTMLElement>('.left-panel')!;
+    const app = leftPanel.closest('#app') as HTMLElement | null;
 
     let currentPanel = 'layers';
+
+    const setCollapsed = (collapsed: boolean): void => {
+      app?.classList.toggle('panel-collapsed', collapsed);
+      actBtns.forEach(b => {
+        b.setAttribute('aria-expanded', String(!collapsed && b.dataset.panel === currentPanel));
+      });
+    };
 
     actBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const panelId = btn.dataset.panel!;
+        const isCollapsed = !!app?.classList.contains('panel-collapsed');
 
         if (panelId === currentPanel) {
-          // Toggle collapse
-          leftPanel.closest('#app')?.classList.toggle('panel-collapsed');
+          setCollapsed(!isCollapsed);
           return;
         }
 
         currentPanel = panelId;
         actBtns.forEach(b => b.classList.toggle('active', b.dataset.panel === panelId));
         panelViews.forEach(v => v.classList.toggle('active', v.dataset.panel === panelId));
-        leftPanel.closest('#app')?.classList.remove('panel-collapsed');
+        setCollapsed(false);
       });
     });
+
+    // Floating expand button — always reachable when panel is collapsed,
+    // including narrow widths where the activity bar might be obscured.
+    if (app && !app.querySelector('.lpanel-expand-btn')) {
+      const expandBtn = document.createElement('button');
+      expandBtn.className = 'lpanel-expand-btn';
+      expandBtn.title = 'Open side panel';
+      expandBtn.setAttribute('aria-label', 'Open side panel');
+      expandBtn.innerHTML = '&#x203A;';
+      expandBtn.addEventListener('click', () => setCollapsed(false));
+      app.appendChild(expandBtn);
+    }
   }
 
   private wireRpanelTabs(): void {

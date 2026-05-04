@@ -1,0 +1,170 @@
+_protocol: design/v1
+meta:
+  name: Sales Performance Q4 2025
+  type: report
+  description: Interactive HTML report demo — KPI cards, sortable table, and Chart.js charts.
+document:
+  width: 1280
+  height: 1800
+  unit: px
+  dpi: 96
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: revenue
+        type: inline
+        rows:
+          - { month: Jan, total: 142000, target: 130000 }
+          - { month: Feb, total: 156000, target: 140000 }
+          - { month: Mar, total: 178000, target: 150000 }
+          - { month: Apr, total: 165000, target: 160000 }
+          - { month: May, total: 192000, target: 170000 }
+          - { month: Jun, total: 215000, target: 180000 }
+          - { month: Jul, total: 234000, target: 190000 }
+          - { month: Aug, total: 251000, target: 200000 }
+          - { month: Sep, total: 268000, target: 210000 }
+          - { month: Oct, total: 289000, target: 220000 }
+          - { month: Nov, total: 312000, target: 230000 }
+          - { month: Dec, total: 345000, target: 240000 }
+      - id: top_products
+        type: inline
+        rows:
+          - { sku: SKU-001, product: Pro Subscription, region: NA, revenue: 142000, units: 1420, growth: 18.5 }
+          - { sku: SKU-002, product: Team Plan,        region: EU, revenue: 98000,  units: 980,  growth: 12.3 }
+          - { sku: SKU-003, product: Enterprise,       region: NA, revenue: 256000, units: 320,  growth: 24.7 }
+          - { sku: SKU-004, product: Starter,          region: APAC, revenue: 42000, units: 2100, growth: 4.2 }
+          - { sku: SKU-005, product: Add-on Pack,      region: EU, revenue: 31000,  units: 620,  growth: -2.1 }
+          - { sku: SKU-006, product: API Credits,      region: NA, revenue: 87000,  units: 8700, growth: 31.4 }
+          - { sku: SKU-007, product: Custom Domain,    region: APAC, revenue: 19000, units: 380, growth: 8.7 }
+          - { sku: SKU-008, product: White-label,      region: EU, revenue: 124000, units: 62,   growth: 19.6 }
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 40
+        width: 1160
+        height: 120
+        format: markdown
+        font_family: Playfair Display
+        font_size: 48
+        line_height: 1.1
+        content: "**Sales Performance Q4 2025**"
+      - id: subtitle
+        type: rich_text
+        x: 60
+        y: 110
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#94a3b8'
+        content: "FISCAL YEAR · 12 MONTHS · ALL REGIONS"
+      - id: kpi-revenue
+        type: kpi_card
+        x: 60
+        y: 200
+        width: 280
+        height: 130
+        label: Total Revenue
+        value: 2847000
+        format: currency
+        currency: USD
+        delta: 18.4
+        delta_format: percent
+        sparkline_data: revenue
+        sparkline_field: total
+        sparkline_color: '#60a5fa'
+      - id: kpi-units
+        type: kpi_card
+        x: 360
+        y: 200
+        width: 280
+        height: 130
+        label: Units Sold
+        value: 14602
+        format: number
+        delta: 12.1
+        delta_format: percent
+      - id: kpi-aov
+        type: kpi_card
+        x: 660
+        y: 200
+        width: 280
+        height: 130
+        label: Avg Order Value
+        value: 195
+        format: currency
+        currency: USD
+        delta: 5.6
+        delta_format: percent
+      - id: kpi-margin
+        type: kpi_card
+        x: 960
+        y: 200
+        width: 260
+        height: 130
+        label: Gross Margin
+        value: 64.2
+        format: percent
+        delta: -1.8
+        delta_format: percent
+      - id: chart-revenue
+        type: interactive_chart
+        x: 60
+        y: 360
+        width: 760
+        height: 380
+        chart_type: line
+        data_ref: revenue
+        x_field: month
+        y_field: total
+        title: Monthly Revenue
+        legend: true
+        grid: true
+        animate: true
+      - id: chart-target
+        type: interactive_chart
+        x: 840
+        y: 360
+        width: 380
+        height: 380
+        chart_type: bar
+        data_ref: revenue
+        x_field: month
+        y_field: target
+        title: Monthly Target
+        legend: false
+        animate: true
+      - id: section-products
+        type: rich_text
+        x: 60
+        y: 780
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        content: "**Top Products**"
+      - id: tbl-products
+        type: interactive_table
+        x: 60
+        y: 830
+        width: 1160
+        height: 480
+        data_ref: top_products
+        pagination: true
+        page_size: 8
+        filterable: true
+        exportable: true
+        columns:
+          - { field: sku,      title: SKU,      width: 120, sortable: true }
+          - { field: product,  title: Product,  width: 240, sortable: true }
+          - { field: region,   title: Region,   width: 100, sortable: true, formatter: badge }
+          - { field: revenue,  title: Revenue,  width: 160, sortable: true, formatter: currency, align: right }
+          - { field: units,    title: Units,    width: 120, sortable: true, formatter: number, align: right }
+          - { field: growth,   title: YoY,      width: 120, sortable: true, formatter: delta, align: right }

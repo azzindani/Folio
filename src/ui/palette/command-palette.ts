@@ -104,6 +104,20 @@ export class CommandPalette {
           URL.revokeObjectURL(url);
         }
       }},
+      { id: 'export-html-report', label: 'Export as Interactive Report (HTML)', category: 'Export', action: () => {
+        const design = state.get().design;
+        const theme = state.get().theme;
+        if (design) {
+          const html = exportToHTML(design, { format: 'html-report', theme: theme ?? undefined });
+          const blob = new Blob([html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${design.meta.name}-report.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }},
 
       // Page
       { id: 'next-page', label: 'Next Page', category: 'Page', action: () => {

@@ -220,7 +220,7 @@ html, body {
   border-right: 1px solid var(--color-border);
   padding: 6px 0;
   gap: 2px;
-  z-index: 50;
+  z-index: 130; /* above left-panel overlay (z:120) so buttons remain clickable */
   overflow: hidden;
 }
 
@@ -251,6 +251,46 @@ html, body {
   border-radius: 0 2px 2px 0;
 }
 .act-spacer { flex: 1; }
+
+/* Floating "open panel" button — only visible when left panel is collapsed.
+   Sits at the left edge of the canvas so the user can always re-open it. */
+.lpanel-expand-btn {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 130;
+  box-shadow: var(--shadow-sm);
+  transition: background .12s, color .12s, transform .12s;
+}
+.lpanel-expand-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  transform: translateY(-50%) translateX(2px);
+}
+#app.panel-collapsed .lpanel-expand-btn { display: flex; }
+/* On desktop, anchor it to the right edge of the activity bar instead of viewport edge */
+@media (min-width: 1024px) {
+  .lpanel-expand-btn { left: var(--activity-bar-width); }
+}
+/* Hidden in mobile sheet layout — bottom nav handles it */
+@media (max-width: 767px) {
+  .lpanel-expand-btn { display: none !important; }
+}
 
 /* ── LEFT PANEL ───────────────────────────────────────────── */
 .left-panel {
@@ -658,8 +698,9 @@ html, body {
 .canvas-viewport {
   position: relative;
   box-shadow: var(--shadow-lg);
-  background: white;
+  background: var(--canvas-paper, #1e1e2e);
 }
+:root[data-theme='light'] .canvas-viewport { background: var(--canvas-paper, #ffffff); }
 
 .monaco-container {
   position: absolute;
@@ -979,27 +1020,53 @@ button:focus:not(:focus-visible) { outline: none; }
 /* ── SELECTION HANDLES (8-point Photoshop-style) ──────────── */
 .selection-handle {
   position: absolute;
-  width: 8px; height: 8px;
+  width: 10px; height: 10px;
   background: #fff;
   border: 2px solid var(--color-primary);
   border-radius: 2px;
   z-index: 90;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  transition: transform .08s ease, background .08s ease, border-color .08s ease;
+  /* Larger invisible hit box for easier grabbing */
+  outline: 6px solid transparent;
+  outline-offset: -6px;
 }
-/* Edge handles are slightly thinner */
-.handle-n, .handle-s { width: 14px; border-radius: 3px; margin-left: -3px; }
-.handle-e, .handle-w { height: 14px; border-radius: 3px; margin-top: -3px; }
+.selection-handle:hover {
+  background: var(--color-primary);
+  border-color: #fff;
+  transform: scale(1.25);
+}
+.selection-handle:active {
+  background: var(--color-primary-strong, var(--color-primary));
+  transform: scale(1.1);
+}
+/* Edge handles: longer along the edge axis */
+.handle-n, .handle-s { width: 18px; border-radius: 3px; margin-left: -4px; }
+.handle-e, .handle-w { height: 18px; border-radius: 3px; margin-top: -4px; }
 .handle-rotate {
   background: var(--color-primary) !important;
   border-color: #fff !important;
   border-radius: 50% !important;
+  width: 14px !important;
+  height: 14px !important;
 }
+.handle-rotate:hover { transform: scale(1.2); }
+
 .selection-box {
   position: absolute;
-  border: 2px solid var(--color-primary);
+  border: 1.5px solid var(--color-primary);
   pointer-events: none;
   z-index: 89;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset;
+}
+
+/* Coarse pointer (touch / pen): bigger handles */
+@media (pointer: coarse) {
+  .selection-handle { width: 14px; height: 14px; outline-width: 8px; outline-offset: -8px; }
+  .handle-n, .handle-s { width: 24px; }
+  .handle-e, .handle-w { height: 24px; }
+  .handle-rotate { width: 18px !important; height: 18px !important; }
 }
 
 /* ── ANIMATION PANEL ──────────────────────────────────────── */

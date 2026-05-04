@@ -2,8 +2,11 @@ import type { DesignSpec, ThemeSpec } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderDesign, renderPage } from '../renderer/renderer';
+import { assembleReportHTML } from './html-assembler';
+import { pageHasInteractiveLayers } from './interactive-renderers';
+import type { LoadedDataset } from '../report/data-loader';
 
-export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'pdf';
+export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
 
 export interface ExportOptions {
   format: ExportFormat;
@@ -105,7 +108,33 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
+export function exportToInteractiveHTML(
+  spec: DesignSpec,
+  datasets?: Map<string, LoadedDataset>,
+  opts?: { theme?: 'light' | 'dark'; title?: string },
+): string {
+  return assembleReportHTML(spec, datasets ?? new Map(), {
+    title: opts?.title ?? spec.meta.name,
+    theme: opts?.theme,
+  });
+}
+
+/** True if the spec contains layers that benefit from interactive HTML output. */
+export function hasInteractiveContent(spec: DesignSpec): boolean {
+  if (spec.pages && spec.pages.some(p => pageHasInteractiveLayers(p.layers))) return true;
+  if (pageHasInteractiveLayers(spec.layers)) return true;
+  return false;
+}
+
 export function exportToHTML(spec: DesignSpec, options: ExportOptions): string {
+  // If the design has interactive widgets (charts/tables/KPIs), emit a full
+  // interactive report instead of a static SVG-in-HTML wrapper.
+  if (hasInteractiveContent(spec) || options.format === 'html-report') {
+    return exportToInteractiveHTML(spec, undefined, {
+      theme: options.theme && (options.theme as { mode?: 'light' | 'dark' }).mode === 'light' ? 'light' : 'dark',
+    });
+  }
+
   const svgString = exportToSVG(spec, options);
 
   const animationCSS = options.animations
@@ -202,7 +231,8 @@ export async function exportDesign(spec: DesignSpec, options: ExportOptions): Pr
       break;
     }
     case 'html':
-    case 'html-animated': {
+    case 'html-animated':
+    case 'html-report': {
       const html = exportToHTML(spec, options);
       await saveText(html, `${name}.html`, 'text/html', 'html');
       break;
