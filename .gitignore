@@ -8,4 +8,6 @@ tests/visual/diffs/
 tests/e2e/artifacts/
 test-results/
 tests/playwright-report/
+tests/ui-audit/screenshots/
+tests/ui-audit/reports/
 *.tgz
