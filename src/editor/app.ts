@@ -983,6 +983,12 @@ export class EditorApp {
       this.state.set('currentPageIndex', 0);
       this.state.set('dirty', false);
     });
+
+    // Auto-fit so layer corners are reachable inside the canvas-area.
+    // Without this, a 1080×1080 design at 100% zoom puts the right/bottom
+    // resize handles outside the visible canvas (clipped by overflow:hidden),
+    // making them un-clickable.
+    requestAnimationFrame(() => this.canvas?.fitToScreen?.());
   }
 
   loadFromYAML(yamlSource: string): void {
