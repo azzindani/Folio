@@ -104,11 +104,48 @@ export class CanvasManager {
   private bindEvents(): void {
     this.svgContainer.addEventListener('pointerdown', this.onPointerDown.bind(this));
     this.svgContainer.addEventListener('dblclick', this.onDblClick.bind(this));
+    this.svgContainer.addEventListener('pointermove', this.onCanvasHover.bind(this));
+    this.svgContainer.addEventListener('pointerleave', () => this.clearHoverBox());
     this.container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
     this.container.addEventListener('mousemove', this.onMouseMoveForAnnotations.bind(this));
     this.container.addEventListener('mouseleave', () => this.clearAnnotations());
     this.rulerH.addEventListener('pointerdown', (e) => this.startGuide(e, 'h'));
     this.rulerV.addEventListener('pointerdown', (e) => this.startGuide(e, 'v'));
+  }
+
+  private hoverBox: HTMLDivElement | null = null;
+
+  private onCanvasHover(e: PointerEvent): void {
+    // Suppress while a drag is in progress
+    if (e.buttons !== 0) return this.clearHoverBox();
+    const target = e.target as SVGElement | null;
+    if (!target?.closest) return;
+    const layerEl = target.closest('[data-layer-id]') as SVGGraphicsElement | null;
+    if (!layerEl) return this.clearHoverBox();
+    const layerId = layerEl.getAttribute('data-layer-id');
+    // Don't outline the already-selected layer (selection box already shown)
+    if (layerId && this.state.get().selectedLayerIds.includes(layerId)) {
+      return this.clearHoverBox();
+    }
+    const bbox = layerEl.getBBox?.();
+    if (!bbox) return this.clearHoverBox();
+    if (!this.hoverBox) {
+      this.hoverBox = document.createElement('div');
+      this.hoverBox.className = 'canvas-hover-box';
+      this.selectionOverlay.appendChild(this.hoverBox);
+    }
+    this.hoverBox.style.left = `${bbox.x}px`;
+    this.hoverBox.style.top = `${bbox.y}px`;
+    this.hoverBox.style.width = `${bbox.width}px`;
+    this.hoverBox.style.height = `${bbox.height}px`;
+    this.hoverBox.style.opacity = '1';
+  }
+
+  private clearHoverBox(): void {
+    if (this.hoverBox) {
+      this.hoverBox.remove();
+      this.hoverBox = null;
+    }
   }
 
   // ── Distance annotation overlay ─────────────────────────────
@@ -312,6 +349,13 @@ export class CanvasManager {
     const { selectedLayerIds, design } = this.state.get();
     if (!design || selectedLayerIds.length === 0) return;
 
+    // Multi-select: single union bbox + group handles, plus thin per-layer
+    // outline so the user still sees which layers are selected.
+    if (selectedLayerIds.length > 1) {
+      this.drawMultiSelectOverlay(selectedLayerIds);
+      return;
+    }
+
     const frag = document.createDocumentFragment();
 
     for (const id of selectedLayerIds) {
@@ -400,6 +444,157 @@ export class CanvasManager {
     }
 
     this.selectionOverlay.appendChild(frag);
+  }
+
+  private drawMultiSelectOverlay(selectedIds: string[]): void {
+    const frag = document.createDocumentFragment();
+    const bboxes: { id: string; bb: DOMRect | SVGRect }[] = [];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (const id of selectedIds) {
+      const el = this.svgContainer.querySelector(`[data-layer-id="${id}"]`);
+      if (!el) continue;
+      const bb = (el as SVGGraphicsElement).getBBox?.();
+      if (!bb) continue;
+      bboxes.push({ id, bb });
+      if (bb.x < minX) minX = bb.x;
+      if (bb.y < minY) minY = bb.y;
+      if (bb.x + bb.width  > maxX) maxX = bb.x + bb.width;
+      if (bb.y + bb.height > maxY) maxY = bb.y + bb.height;
+    }
+    if (bboxes.length === 0 || !isFinite(minX)) return;
+
+    // Per-layer thin outlines so user knows which layers are in the group
+    for (const { bb } of bboxes) {
+      const o = document.createElement('div');
+      o.className = 'selection-box';
+      o.style.cssText =
+        `left:${bb.x}px;top:${bb.y}px;width:${bb.width}px;height:${bb.height}px;` +
+        `outline:1px dashed color-mix(in srgb, var(--color-primary) 60%, transparent);` +
+        `outline-offset:0px;background:transparent;border:none;pointer-events:none;`;
+      frag.appendChild(o);
+    }
+
+    // Union bbox box
+    const W = maxX - minX, H = maxY - minY;
+    const unionBox = document.createElement('div');
+    unionBox.className = 'selection-box selection-box--multi';
+    unionBox.style.cssText = `left:${minX}px;top:${minY}px;width:${W}px;height:${H}px;cursor:move;pointer-events:auto;`;
+    unionBox.addEventListener('pointerdown', (ev) => {
+      ev.stopPropagation();
+      this.startGroupDrag(ev, selectedIds);
+    });
+    frag.appendChild(unionBox);
+
+    // 8 handles around union bbox — scale all selected proportionally
+    const cx = minX + W / 2;
+    const cy = minY + H / 2;
+    const handles: { cls: string; x: number; y: number; cur: string }[] = [
+      { cls: 'nw', x: minX,         y: minY,         cur: 'nw-resize' },
+      { cls: 'n',  x: cx,           y: minY,         cur: 'n-resize'  },
+      { cls: 'ne', x: minX + W,     y: minY,         cur: 'ne-resize' },
+      { cls: 'e',  x: minX + W,     y: cy,           cur: 'e-resize'  },
+      { cls: 'se', x: minX + W,     y: minY + H,     cur: 'se-resize' },
+      { cls: 's',  x: cx,           y: minY + H,     cur: 's-resize'  },
+      { cls: 'sw', x: minX,         y: minY + H,     cur: 'sw-resize' },
+      { cls: 'w',  x: minX,         y: cy,           cur: 'w-resize'  },
+    ];
+    for (const pos of handles) {
+      const h = document.createElement('div');
+      h.className = `selection-handle handle-${pos.cls}`;
+      h.style.left = `${pos.x - 5}px`;
+      h.style.top  = `${pos.y - 5}px`;
+      h.style.cursor = pos.cur;
+      h.style.pointerEvents = 'auto';
+      h.dataset.handle = pos.cls;
+      h.addEventListener('pointerdown', (ev) => {
+        ev.stopPropagation();
+        this.startGroupResize(ev, selectedIds, pos.cls, minX, minY, W, H);
+      });
+      frag.appendChild(h);
+    }
+    this.selectionOverlay.appendChild(frag);
+  }
+
+  private startGroupDrag(e: PointerEvent, ids: string[]): void {
+    const startX = e.clientX, startY = e.clientY;
+    const zoom = this.state.get().zoom;
+    const layers = this.state.getCurrentLayers().filter(l => ids.includes(l.id));
+    const origs = new Map(layers.map(l => [l.id, { x: l.x ?? 0, y: l.y ?? 0 }]));
+    let started = false;
+    const onMove = (me: PointerEvent) => {
+      const dx = (me.clientX - startX) / zoom;
+      const dy = (me.clientY - startY) / zoom;
+      if (!started && Math.abs(dx) < 3 / zoom && Math.abs(dy) < 3 / zoom) return;
+      if (!started) { started = true; this.state.beginInteraction(); }
+      for (const [id, o] of origs) {
+        this.state.updateLayer(id, { x: Math.round(o.x + dx), y: Math.round(o.y + dy) }, false);
+      }
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private startGroupResize(
+    e: PointerEvent,
+    ids: string[],
+    handle: string,
+    bx: number, by: number, bw: number, bh: number,
+  ): void {
+    const startX = e.clientX, startY = e.clientY;
+    const zoom = this.state.get().zoom;
+    const layers = this.state.getCurrentLayers().filter(l => ids.includes(l.id));
+    // Snapshot each layer's bounds relative to the union bbox
+    const origs = layers.map(l => ({
+      id: l.id,
+      rx: ((l.x ?? 0) - bx) / bw,            // relative x in [0..1]
+      ry: ((l.y ?? 0) - by) / bh,
+      rw: (typeof l.width  === 'number' ? l.width  : 0) / bw,
+      rh: (typeof l.height === 'number' ? l.height : 0) / bh,
+    }));
+    let started = false;
+    const onMove = (me: PointerEvent) => {
+      const dx = (me.clientX - startX) / zoom;
+      const dy = (me.clientY - startY) / zoom;
+      let nx = bx, ny = by, nw = bw, nh = bh;
+      if (handle.includes('w')) { nx = bx + dx; nw = bw - dx; }
+      if (handle.includes('e')) { nw = bw + dx; }
+      if (handle.includes('n')) { ny = by + dy; nh = bh - dy; }
+      if (handle.includes('s')) { nh = bh + dy; }
+      // Shift = aspect lock; Alt = from center
+      if (me.altKey) {
+        if (handle.includes('e')) { nx = bx - dx; nw = bw + 2 * dx; }
+        if (handle.includes('w')) { nx = bx + dx; nw = bw - 2 * dx; }
+        if (handle.includes('s')) { ny = by - dy; nh = bh + 2 * dy; }
+        if (handle.includes('n')) { ny = by + dy; nh = bh - 2 * dy; }
+      }
+      if (me.shiftKey) {
+        const ar = bw / (bh || 1);
+        const dom = Math.abs(dx) > Math.abs(dy) ? 'w' : 'h';
+        if (dom === 'w') nh = nw / ar; else nw = nh * ar;
+      }
+      nw = Math.max(4, nw); nh = Math.max(4, nh);
+      if (!started) { started = true; this.state.beginInteraction(); }
+      // Apply scaling to every layer relative to its position in the union
+      for (const o of origs) {
+        this.state.updateLayer(o.id, {
+          x: Math.round(nx + o.rx * nw),
+          y: Math.round(ny + o.ry * nh),
+          width:  Math.max(4, Math.round(o.rw * nw)),
+          height: Math.max(4, Math.round(o.rh * nh)),
+        } as Parameters<typeof this.state.updateLayer>[1], false);
+      }
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   }
 
   private startRotate(
@@ -533,7 +728,24 @@ export class CanvasManager {
       return;
     }
 
-    const layerId = layerEl.getAttribute('data-layer-id')!;
+    let layerId = layerEl.getAttribute('data-layer-id')!;
+
+    // Alt-click: cycle through stacked layers underneath the cursor.
+    // Use elementsFromPoint to enumerate layers behind the topmost; pick
+    // the next one after the currently-selected so repeated alt-clicks
+    // walk the z-stack downward.
+    if (e.altKey && !e.shiftKey) {
+      const stack = (document.elementsFromPoint?.(e.clientX, e.clientY) ?? [])
+        .map(el => (el as SVGElement | HTMLElement).closest?.('[data-layer-id]'))
+        .filter((el): el is SVGElement => !!el && this.svgContainer.contains(el))
+        .map(el => el.getAttribute('data-layer-id')!)
+        .filter((v, i, a) => v && a.indexOf(v) === i);
+      if (stack.length > 1) {
+        const cur = this.state.get().selectedLayerIds[0];
+        const idx = stack.indexOf(cur ?? '');
+        layerId = stack[(idx + 1) % stack.length];
+      }
+    }
 
     if (e.shiftKey) {
       const current = this.state.get().selectedLayerIds;
@@ -697,15 +909,25 @@ export class CanvasManager {
       // South edge: grow height
       if (handle.includes('s')) { nh = origH + dy; }
 
+      // Alt = resize from center: every edge change mirrored on the opposite side
+      if (me.altKey) {
+        if (handle.includes('e')) { nx = origX - dx; nw = origW + 2 * dx; }
+        if (handle.includes('w')) { nx = origX + dx; nw = origW - 2 * dx; }
+        if (handle.includes('s')) { ny = origY - dy; nh = origH + 2 * dy; }
+        if (handle.includes('n')) { ny = origY + dy; nh = origH - 2 * dy; }
+      }
+
       // Shift = lock aspect ratio
       if (me.shiftKey) {
         const dominant = Math.abs(dx) > Math.abs(dy) ? 'w' : 'h';
         if (dominant === 'w') {
           nh = nw / aspectRatio;
           if (handle.includes('n')) ny = origY + origH - nh;
+          if (me.altKey) ny = origY + origH / 2 - nh / 2;
         } else {
           nw = nh * aspectRatio;
           if (handle.includes('w')) nx = origX + origW - nw;
+          if (me.altKey) nx = origX + origW / 2 - nw / 2;
         }
       }
 

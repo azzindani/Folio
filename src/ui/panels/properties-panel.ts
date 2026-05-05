@@ -303,8 +303,27 @@ export class PropertiesPanelManager {
   private renderRectFields(layer: RectLayer): string {
     let html = '';
     html += this.renderFillFields(layer.fill);
-    if (typeof layer.radius === 'number') {
-      html += this.renderNumberField('radius', 'Radius', layer.radius, 0, 500, 1);
+    // Uniform radius input — always visible, defaults to 0
+    const r = layer.radius;
+    const uniform = typeof r === 'number' ? r : (r ? '' : 0);
+    html += `<div class="prop-row">
+      <label class="prop-label">Radius</label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <input type="number" class="prop-input" data-prop="radius"
+          value="${uniform}" placeholder="${typeof r === 'object' ? 'mixed' : '0'}"
+          min="0" step="1" style="flex:1" />
+        <button class="prop-btn" data-prop-action="toggle-corners" title="Toggle per-corner radius">
+          ${typeof r === 'object' ? '⊟' : '⊞'}
+        </button>
+      </div>
+    </div>`;
+    if (typeof r === 'object' && r) {
+      html += `<div class="prop-corner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px 8px 8px">
+        <input type="number" class="prop-input" data-prop="radius.tl" value="${r.tl ?? 0}" min="0" step="1" placeholder="TL" title="Top-left" />
+        <input type="number" class="prop-input" data-prop="radius.tr" value="${r.tr ?? 0}" min="0" step="1" placeholder="TR" title="Top-right" />
+        <input type="number" class="prop-input" data-prop="radius.bl" value="${r.bl ?? 0}" min="0" step="1" placeholder="BL" title="Bottom-left" />
+        <input type="number" class="prop-input" data-prop="radius.br" value="${r.br ?? 0}" min="0" step="1" placeholder="BR" title="Bottom-right" />
+      </div>`;
     }
     return html;
   }
@@ -818,6 +837,23 @@ export class PropertiesPanelManager {
       lockBtn.addEventListener('click', () => {
         const cur = !!(layer as { locked?: boolean }).locked;
         this.applyPropertyChange(layer.id, 'locked', !cur);
+      });
+    }
+
+    // Toggle uniform ↔ per-corner radius
+    const toggleCornersBtn = this.content.querySelector<HTMLButtonElement>('[data-prop-action="toggle-corners"]');
+    if (toggleCornersBtn) {
+      toggleCornersBtn.addEventListener('click', () => {
+        const cur = (layer as { radius?: number | { tl: number; tr: number; br: number; bl: number } }).radius;
+        if (typeof cur === 'object' && cur) {
+          // Per-corner → uniform: collapse to max corner value
+          const max = Math.max(cur.tl ?? 0, cur.tr ?? 0, cur.br ?? 0, cur.bl ?? 0);
+          this.applyPropertyChange(layer.id, 'radius', max);
+        } else {
+          // Uniform → per-corner: expand the single value to all 4 corners
+          const v = typeof cur === 'number' ? cur : 0;
+          this.applyPropertyChange(layer.id, 'radius', { tl: v, tr: v, br: v, bl: v });
+        }
       });
     }
 
