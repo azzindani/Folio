@@ -141,7 +141,14 @@ export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Pr
   // If the design has interactive widgets (charts/tables/KPIs), emit a full
   // interactive report instead of a static SVG-in-HTML wrapper.
   if (hasInteractiveContent(spec) || options.format === 'html-report') {
-    return exportToInteractiveHTML(spec, undefined, {
+    // Auto-load any inline data sources so the report has data to render.
+    let datasets: Map<string, LoadedDataset> | undefined;
+    const sources = spec.report?.data?.sources;
+    if (sources && sources.length > 0) {
+      const { loadAllSources } = await import('../report/data-loader');
+      datasets = await loadAllSources(sources);
+    }
+    return exportToInteractiveHTML(spec, datasets, {
       theme: options.theme && (options.theme as { mode?: 'light' | 'dark' }).mode === 'light' ? 'light' : 'dark',
     });
   }
