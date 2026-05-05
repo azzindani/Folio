@@ -305,11 +305,10 @@ export class CanvasManager {
     const pages = design.pages;
     const currentPageIndex = this.state.get().currentPageIndex;
 
-    // Set viewport bg color BEFORE the SVG swap so any transparent gap
-    // between old/new SVG shows the correct paper color, not the dark
-    // editor surface (the "dimming" the user reported).
-    const paper = inferCanvasPaper(design);
-    if (paper) this.viewport.style.setProperty('--canvas-paper', paper);
+    // Canvas viewport stays a neutral "paper" color (white in light theme,
+    // dark gray in dark theme). The design's first bg layer renders inside
+    // the SVG as a normal layer so the user can move/edit/delete it freely
+    // — separating canvas-as-page from the editable background layer.
 
     let svg: SVGSVGElement;
 
@@ -1360,35 +1359,4 @@ function drawLabel(
   ctx.fillText(text, x - w / 2 + 3, y);
   ctx.setLineDash([3, 3]);
   ctx.fillStyle = '#e94560';
-}
-
-// ── Canvas paper-color heuristic ─────────────────────────────
-// Returns a CSS color from the first full-cover rect at (0,0) — used to
-// keep the viewport background matching the design so render swaps don't
-// flash a different color through transparent regions.
-function inferCanvasPaper(
-  design: { layers?: Layer[]; pages?: { layers?: Layer[] }[] } | null,
-): string | null {
-  if (!design) return null;
-  const layers = (design.pages?.[0]?.layers ?? design.layers ?? []) as Layer[];
-  for (const l of layers) {
-    const fill = (l as {
-      fill?: {
-        type?: string;
-        color?: string;
-        stops?: { color?: string }[];
-      };
-    }).fill;
-    if (l.type !== 'rect' || !fill) continue;
-    if (fill.type === 'solid' && fill.color && !fill.color.startsWith('$')) {
-      return fill.color;
-    }
-    // Gradient: use first stop as best-effort match — avoids viewport flash
-    // when the SVG is swapped between renders.
-    if ((fill.type === 'linear' || fill.type === 'radial') && fill.stops?.length) {
-      const first = fill.stops[0]?.color;
-      if (first && !first.startsWith('$')) return first;
-    }
-  }
-  return null;
 }
