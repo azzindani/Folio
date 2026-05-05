@@ -1348,6 +1348,64 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 
 /* ── PROPERTIES PANEL INTERNALS ───────────────────────────── */
+
+/* Empty-state: shown when nothing is selected. */
+.prop-empty { padding: 0; }
+.prop-empty-hero {
+  text-align: center;
+  padding: 28px 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.prop-empty-icon {
+  font-size: 28px;
+  color: var(--color-text-dim);
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+.prop-empty-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+.prop-empty-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  max-width: 240px;
+  margin: 0 auto;
+}
+.prop-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  padding: 3px 2px;
+  color: var(--color-text-muted);
+  gap: 8px;
+}
+.prop-info-row > span:last-child {
+  color: var(--color-text);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+.prop-empty kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: var(--color-text);
+  margin: 0 1px;
+}
+
 .prop-section {
   border-bottom: 1px solid var(--color-border);
   padding: 8px 10px;
@@ -1560,12 +1618,12 @@ button:focus:not(:focus-visible) { outline: none; }
 /* Fix #3/#10: panels as slide-in overlays, accessible via activity bar */
 @media (min-width: 768px) and (max-width: 1023px) {
   #app {
-    grid-template-columns: var(--activity-bar-width) 0px 1fr 0px;
+    grid-template-columns: var(--activity-bar-width) 0px 1fr 0px var(--activity-bar-width);
     grid-template-areas:
-      "toolbar   toolbar  toolbar  toolbar"
-      "formula   formula  formula  formula"
-      "actbar    lpanel   canvas   canvas"
-      "statusbar statusbar statusbar statusbar";
+      "toolbar   toolbar  toolbar  toolbar  toolbar"
+      "formula   formula  formula  formula  formula"
+      "actbar    lpanel   canvas   canvas   ractbar"
+      "statusbar statusbar statusbar statusbar statusbar";
   }
 
   .left-panel {
@@ -1610,7 +1668,7 @@ button:focus:not(:focus-visible) { outline: none; }
       "statusbar";
   }
 
-  .activity-bar, .formula-bar { display: none; }
+  .activity-bar, .formula-bar, .r-activity-bar { display: none; }
 
   /* Compact toolbar on mobile: hide secondary chrome, keep core controls */
   .toolbar { padding: 0 8px; gap: 6px; }
