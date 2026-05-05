@@ -749,16 +749,16 @@ html, body {
 
 /* Button to collapse/re-open the right panel from the tab strip */
 .rpanel-close-btn {
-  width: 24px; height: 24px;
+  width: 24px; height: 32px;
   border: none;
   background: transparent;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm);
   flex-shrink: 0;
-  margin: auto 4px auto 0;
+  margin-left: auto;
   transition: color .1s, background .1s;
 }
 .rpanel-close-btn:hover { background: var(--color-border); color: var(--color-text); }
@@ -789,38 +789,45 @@ html, body {
   display: flex;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-  align-items: stretch;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  padding: 4px 4px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
   background: var(--color-surface);
 }
 .rpanel-tabs::-webkit-scrollbar { display: none; }
+/* Match .act-btn (left activity bar) — square icon button */
 .rpanel-tab {
-  flex: 1 1 auto;
-  min-width: 36px;
-  padding: 8px 4px;
+  position: relative;
+  flex: 0 0 auto;
+  width: 32px; height: 32px;
   border: none;
   background: transparent;
   color: var(--color-text-muted);
-  font-size: 10.5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color .1s, border-color .1s, background .1s;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: background .1s, color .1s;
 }
-.rpanel-tab:hover { color: var(--color-text); background: var(--color-surface-2); }
+.rpanel-tab:hover { background: var(--color-surface-2); color: var(--color-text); }
+.rpanel-tab:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 .rpanel-tab.active {
   color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
-/* Below 380px panel width, tabs can wrap-clip; show only active tab text, abbreviate others */
-.rpanel-tab[data-tab="properties"]::after { content: ""; }
+/* Bottom marker mirrors left activity bar's left marker */
+.rpanel-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 6px; right: 6px; bottom: -4px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 2px 2px 0 0;
+}
 
 .rpanel-body {
   flex: 1 1 auto;

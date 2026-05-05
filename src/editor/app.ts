@@ -490,12 +490,12 @@ export class EditorApp {
         <div class="mob-sheet-grip" aria-hidden="true"></div>
         <div class="right-panel-resize-handle" data-resize="right"></div>
         <div class="rpanel-tabs">
-          <button class="rpanel-tab active" data-tab="properties" title="Properties">Props</button>
-          <button class="rpanel-tab" data-tab="colors" title="Colors">Color</button>
-          <button class="rpanel-tab" data-tab="animate" title="Animate">Anim</button>
-          <button class="rpanel-tab" data-tab="timeline" title="Timeline">Time</button>
-          <button class="rpanel-tab" data-tab="problems" title="Issues">Issues</button>
-          <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
+          <button class="rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">&#9881;</button>
+          <button class="rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">&#127912;</button>
+          <button class="rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">&#9889;</button>
+          <button class="rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">&#9201;</button>
+          <button class="rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">&#9888;</button>
+          <button class="rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">&#9855;</button>
           <button class="rpanel-close-btn" id="rpanel-toggle" title="Close panel (Ctrl+\)">&#x203A;</button>
         </div>
         <div class="rpanel-body">
