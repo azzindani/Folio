@@ -414,9 +414,17 @@ export class CanvasManager {
         frag.appendChild(handle);
       }
 
-      // Double-click on selection box also opens inline editor
+      // Selection box absorbs clicks for dblclick (text editing) — wire
+      // pointerdown so it ALSO initiates drag on the layer underneath.
+      // Without this, clicking on a selected layer's bbox does nothing
+      // because the box covers the SVG and the SVG's pointerdown never fires.
       box.style.pointerEvents = 'auto';
       box.style.cursor = 'move';
+      box.style.touchAction = 'none';
+      box.addEventListener('pointerdown', (ev) => {
+        ev.stopPropagation();
+        this.startDrag(ev, id);
+      });
       box.addEventListener('dblclick', (ev) => {
         ev.stopPropagation();
         const layer = this.state.getCurrentLayers().find(l => l.id === id);

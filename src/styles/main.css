@@ -539,8 +539,12 @@ html, body {
 
 .canvas-area.tool-draw { cursor: crosshair; }
 
-/* Cursor hint over selectable layers (SVG) */
-.canvas-svg-container svg [data-layer-id] { cursor: pointer; }
+/* Cursor hint over selectable layers (SVG) — and disable browser
+   touch gestures so pointerdown/move on layers fires for touch drag.
+   Native pinch-zoom on the empty canvas still works (canvas-area itself
+   is left alone). */
+.canvas-svg-container svg [data-layer-id] { cursor: pointer; touch-action: none; }
+.selection-box { touch-action: none; }
 
 /* Hover highlight rectangle — drawn by JS into selectionOverlay */
 .canvas-hover-box {
@@ -964,6 +968,8 @@ button:focus:not(:focus-visible) { outline: none; }
   /* Larger invisible hit box for easier grabbing */
   outline: 6px solid transparent;
   outline-offset: -6px;
+  /* Disable browser's native touch gestures so pointermove fires for drag */
+  touch-action: none;
 }
 .selection-handle:hover {
   background: var(--color-primary);
