@@ -79,41 +79,44 @@ html, body {
 #app {
   height: 100%;
   display: grid;
-  /* min() guards prevent panels from crushing the canvas below 200px */
+  /* 5 columns: actbar | lpanel | canvas | rpanel | r-actbar */
   grid-template-columns:
     var(--activity-bar-width)
-    min(var(--left-panel-width), calc(100vw - var(--activity-bar-width) - 200px - var(--right-panel-width)))
+    min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - 200px - var(--right-panel-width)))
     1fr
-    min(var(--right-panel-width), calc(50vw - var(--activity-bar-width)));
+    min(var(--right-panel-width), calc(50vw - var(--activity-bar-width)))
+    var(--activity-bar-width);
   grid-template-rows:
     var(--toolbar-height)
     var(--formula-bar-height)
     1fr
     var(--statusbar-height);
   grid-template-areas:
-    "toolbar   toolbar  toolbar  toolbar"
-    "formula   formula  formula  formula"
-    "actbar    lpanel   canvas   rpanel"
-    "statusbar statusbar statusbar statusbar";
+    "toolbar   toolbar  toolbar  toolbar  toolbar"
+    "formula   formula  formula  formula  formula"
+    "actbar    lpanel   canvas   rpanel   ractbar"
+    "statusbar statusbar statusbar statusbar statusbar";
   transition: grid-template-columns 0.18s ease;
 }
 
-/* Collapsed left panel (activity bar still visible) */
+/* Collapsed left panel (activity bars still visible) */
 #app.panel-collapsed {
   grid-template-columns:
     var(--activity-bar-width)
     0px
     1fr
-    var(--right-panel-width);
+    var(--right-panel-width)
+    var(--activity-bar-width);
 }
 
-/* Collapsed right panel */
+/* Collapsed right panel (right activity bar still visible) */
 #app.rpanel-collapsed {
   grid-template-columns:
     var(--activity-bar-width)
-    min(var(--left-panel-width), calc(100vw - var(--activity-bar-width) - 200px))
+    min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - 200px))
     1fr
-    0px;
+    0px
+    var(--activity-bar-width);
 }
 
 /* Both panels collapsed */
@@ -122,7 +125,8 @@ html, body {
     var(--activity-bar-width)
     0px
     1fr
-    0px;
+    0px
+    var(--activity-bar-width);
 }
 
 /* ── TOOLBAR ──────────────────────────────────────────────── */
@@ -224,6 +228,27 @@ html, body {
   overflow: hidden;
 }
 
+/* Right activity bar — mirror of the left one. Always visible so the
+   right-panel tabs are reachable even when the panel is collapsed. */
+.r-activity-bar {
+  grid-area: ractbar;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  padding: 6px 0;
+  gap: 2px;
+  z-index: 130;
+  overflow: hidden;
+}
+/* Active-state marker on the right edge (mirror of left bar's left marker) */
+.r-activity-bar .act-btn.active::before {
+  left: auto;
+  right: 0;
+  border-radius: 2px 0 0 2px;
+}
+
 .act-btn {
   width: 36px; height: 36px;
   border: none;
@@ -252,45 +277,7 @@ html, body {
 }
 .act-spacer { flex: 1; }
 
-/* Floating "open panel" button — only visible when left panel is collapsed.
-   Sits at the left edge of the canvas so the user can always re-open it. */
-.lpanel-expand-btn {
-  position: fixed;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 56px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-left: none;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 130;
-  box-shadow: var(--shadow-sm);
-  transition: background .12s, color .12s, transform .12s;
-}
-.lpanel-expand-btn:hover {
-  background: var(--color-surface-2);
-  color: var(--color-text);
-  transform: translateY(-50%) translateX(2px);
-}
-#app.panel-collapsed .lpanel-expand-btn { display: flex; }
-/* On desktop, anchor it to the right edge of the activity bar instead of viewport edge */
-@media (min-width: 1024px) {
-  .lpanel-expand-btn { left: var(--activity-bar-width); }
-}
-/* Hidden in mobile sheet layout — bottom nav handles it */
-@media (max-width: 767px) {
-  .lpanel-expand-btn { display: none !important; }
-}
+/* Notch removed — activity bar handles re-expand by clicking any icon. */
 
 /* ── LEFT PANEL ───────────────────────────────────────────── */
 .left-panel {
@@ -708,12 +695,15 @@ html, body {
   grid-area: unset;
 }
 
+/* Canvas-as-page: viewport is a neutral "paper" sheet. The design's
+   background layer (if any) renders inside the SVG as a normal layer,
+   so the user can move/edit/delete it freely. */
 .canvas-viewport {
   position: relative;
   box-shadow: var(--shadow-lg);
-  background: var(--canvas-paper, #1e1e2e);
+  background: #ffffff;
 }
-:root[data-theme='light'] .canvas-viewport { background: var(--canvas-paper, #ffffff); }
+:root[data-theme='dark'] .canvas-viewport { background: #1f1f2e; }
 
 .monaco-container {
   position: absolute;
@@ -760,87 +750,10 @@ html, body {
   z-index: 60;
 }
 
-/* Button to collapse/re-open the right panel from the tab strip */
-.rpanel-close-btn {
-  width: 24px; height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-  margin-left: auto;
-  transition: color .1s, background .1s;
-}
-.rpanel-close-btn:hover { background: var(--color-border); color: var(--color-text); }
-
-/* Re-open panel button: shown on the canvas edge when rpanel is collapsed */
-.rpanel-reopen-btn {
-  position: absolute;
-  right: 0; top: 50%;
-  transform: translateY(-50%);
-  width: 18px; height: 48px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-right: none;
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  cursor: pointer;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
-  font-size: 11px;
-  z-index: 60;
-  transition: color .1s, background .1s;
-}
-.rpanel-reopen-btn:hover { background: var(--color-surface-2); color: var(--color-primary); }
-#app.rpanel-collapsed .rpanel-reopen-btn { display: flex; }
-
-.rpanel-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 2px;
-  padding: 4px 4px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  background: var(--color-surface);
-}
-.rpanel-tabs::-webkit-scrollbar { display: none; }
-/* Match .act-btn (left activity bar) — square icon button */
-.rpanel-tab {
-  position: relative;
-  flex: 0 0 auto;
-  width: 32px; height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  transition: background .1s, color .1s;
-}
-.rpanel-tab:hover { background: var(--color-surface-2); color: var(--color-text); }
-.rpanel-tab:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
-.rpanel-tab.active {
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-}
-/* Bottom marker mirrors left activity bar's left marker */
-.rpanel-tab.active::after {
-  content: '';
-  position: absolute;
-  left: 6px; right: 6px; bottom: -4px;
-  height: 2px;
-  background: var(--color-primary);
-  border-radius: 2px 2px 0 0;
-}
+/* .rpanel-tab buttons live inside .r-activity-bar and inherit .act-btn
+   styling (defined above). The bottom-marker variant is unused now that
+   the buttons are in a vertical strip; the .r-activity-bar .act-btn.active
+   rule provides the right-edge marker instead. */
 
 .rpanel-body {
   flex: 1 1 auto;

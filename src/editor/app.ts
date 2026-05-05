@@ -483,21 +483,11 @@ export class EditorApp {
           <div class="page-strip-resize-handle" data-resize="page-strip"></div>
           <div class="page-strip-content"></div>
         </div>
-        <button class="rpanel-reopen-btn" id="rpanel-reopen" title="Open Properties panel">&#x2039;</button>
       </div>
 
       <div class="properties-panel">
         <div class="mob-sheet-grip" aria-hidden="true"></div>
         <div class="right-panel-resize-handle" data-resize="right"></div>
-        <div class="rpanel-tabs">
-          <button class="rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">&#9881;</button>
-          <button class="rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">&#127912;</button>
-          <button class="rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">&#9889;</button>
-          <button class="rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">&#9201;</button>
-          <button class="rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">&#9888;</button>
-          <button class="rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">&#9855;</button>
-          <button class="rpanel-close-btn" id="rpanel-toggle" title="Close panel (Ctrl+\)">&#x203A;</button>
-        </div>
         <div class="rpanel-body">
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
@@ -522,6 +512,15 @@ export class EditorApp {
           </div>
         </div>
         <div class="minimap-container"></div>
+      </div>
+
+      <div class="r-activity-bar" role="tablist" aria-label="Right panel tabs">
+        <button class="act-btn rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">&#9881;</button>
+        <button class="act-btn rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">&#127912;</button>
+        <button class="act-btn rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">&#9889;</button>
+        <button class="act-btn rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">&#9201;</button>
+        <button class="act-btn rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">&#9888;</button>
+        <button class="act-btn rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">&#9855;</button>
       </div>
 
       <div class="status-bar">
@@ -650,54 +649,33 @@ export class EditorApp {
       });
     });
 
-    // Floating expand button — always reachable when panel is collapsed,
-    // including narrow widths where the activity bar might be obscured.
-    if (app && !app.querySelector('.lpanel-expand-btn')) {
-      const expandBtn = document.createElement('button');
-      expandBtn.className = 'lpanel-expand-btn';
-      expandBtn.title = 'Open side panel';
-      expandBtn.setAttribute('aria-label', 'Open side panel');
-      expandBtn.innerHTML = '&#x203A;';
-      expandBtn.addEventListener('click', () => setCollapsed(false));
-      app.appendChild(expandBtn);
-    }
+    // Removed: floating .lpanel-expand-btn notch. The activity bar is
+    // always visible and clicking any of its icons re-expands the panel.
   }
 
   private wireRpanelTabs(): void {
-    const tabs = this.container.querySelectorAll<HTMLElement>('.rpanel-tab');
+    const tabs = this.container.querySelectorAll<HTMLElement>('.r-activity-bar .rpanel-tab');
     const panes = this.container.querySelectorAll<HTMLElement>('.rpanel-body .tab-pane');
     const app = this.container.closest('#app') ?? this.container;
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const tabId = tab.dataset.tab!;
+        const isActive = tab.classList.contains('active');
+        const isCollapsed = app.classList.contains('rpanel-collapsed');
+
+        // Click already-active tab while expanded → collapse
+        if (isActive && !isCollapsed) {
+          app.classList.add('rpanel-collapsed');
+          return;
+        }
+
+        // Otherwise switch to that tab and ensure panel is open
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
         panes.forEach(p => p.classList.toggle('active', p.dataset.tab === tabId));
-        // Clicking a tab while collapsed re-opens the panel
         app.classList.remove('rpanel-collapsed');
-        this.syncRpanelToggleIcon();
       });
     });
-
-    // Close / re-open buttons
-    const toggleClose = this.container.querySelector<HTMLElement>('#rpanel-toggle');
-    const toggleOpen = this.container.querySelector<HTMLElement>('#rpanel-reopen');
-    const toggle = () => {
-      app.classList.toggle('rpanel-collapsed');
-      this.syncRpanelToggleIcon();
-    };
-    toggleClose?.addEventListener('click', toggle);
-    toggleOpen?.addEventListener('click', toggle);
-    this.syncRpanelToggleIcon();
-  }
-
-  private syncRpanelToggleIcon(): void {
-    const app = this.container.closest('#app') ?? this.container;
-    const btn = this.container.querySelector<HTMLElement>('#rpanel-toggle');
-    if (!btn) return;
-    const collapsed = app.classList.contains('rpanel-collapsed');
-    btn.innerHTML = collapsed ? '&#x2039;' : '&#x203A;';
-    btn.title = collapsed ? 'Open Properties panel (Ctrl+\\)' : 'Close Properties panel (Ctrl+\\)';
   }
 
   private wireThemeToggle(): void {
