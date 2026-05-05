@@ -268,6 +268,12 @@ export class CanvasManager {
     const pages = design.pages;
     const currentPageIndex = this.state.get().currentPageIndex;
 
+    // Set viewport bg color BEFORE the SVG swap so any transparent gap
+    // between old/new SVG shows the correct paper color, not the dark
+    // editor surface (the "dimming" the user reported).
+    const paper = inferCanvasPaper(design);
+    if (paper) this.viewport.style.setProperty('--canvas-paper', paper);
+
     let svg: SVGSVGElement;
 
     if (pages && pages.length > 0) {
@@ -287,11 +293,6 @@ export class CanvasManager {
       this.svgContainer.appendChild(svg);
     }
     this.currentSVG = svg;
-
-    // Match viewport background to the design's first opaque fill so an
-    // intermediate transparent SVG doesn't flash white during state changes.
-    const paper = inferCanvasPaper(design);
-    if (paper) this.viewport.style.setProperty('--canvas-paper', paper);
 
     // Size viewport
     this.viewport.style.width = `${width}px`;
@@ -1149,9 +1150,22 @@ function inferCanvasPaper(
   if (!design) return null;
   const layers = (design.pages?.[0]?.layers ?? design.layers ?? []) as Layer[];
   for (const l of layers) {
-    const fill = (l as { fill?: { type?: string; color?: string } }).fill;
-    if (l.type === 'rect' && fill?.type === 'solid' && fill.color && !fill.color.startsWith('$')) {
+    const fill = (l as {
+      fill?: {
+        type?: string;
+        color?: string;
+        stops?: { color?: string }[];
+      };
+    }).fill;
+    if (l.type !== 'rect' || !fill) continue;
+    if (fill.type === 'solid' && fill.color && !fill.color.startsWith('$')) {
       return fill.color;
+    }
+    // Gradient: use first stop as best-effort match — avoids viewport flash
+    // when the SVG is swapped between renders.
+    if ((fill.type === 'linear' || fill.type === 'radial') && fill.stops?.length) {
+      const first = fill.stops[0]?.color;
+      if (first && !first.startsWith('$')) return first;
     }
   }
   return null;
