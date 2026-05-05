@@ -268,3 +268,48 @@ export function distributeV(state: StateManager): void {
     currentY += bounds[i].height + gap;
   }
 }
+
+// ── Flip H / V ─────────────────────────────────────────────────
+// Mirror the selection around its common bounding-box center axis.
+// Implemented as a CSS-like scale via the layer.scale_x / scale_y fields
+// so the renderer applies an SVG transform; for layers without scale,
+// fall back to mirroring x/width math around the bbox center.
+
+export function flipHorizontal(state: StateManager): void {
+  const layers = state.getSelectedLayers();
+  if (layers.length === 0) return;
+  const bb = unionBounds(layers);
+  for (const l of layers) {
+    const b = getLayerBounds(l);
+    const newX = bb.x + (bb.x + bb.width - (b.x + b.width));
+    const flipped = !l.flip_h;
+    state.updateLayer(l.id, {
+      x: Math.round(newX),
+      flip_h: flipped,
+    } as Partial<Layer>);
+  }
+}
+
+export function flipVertical(state: StateManager): void {
+  const layers = state.getSelectedLayers();
+  if (layers.length === 0) return;
+  const bb = unionBounds(layers);
+  for (const l of layers) {
+    const b = getLayerBounds(l);
+    const newY = bb.y + (bb.y + bb.height - (b.y + b.height));
+    const flipped = !l.flip_v;
+    state.updateLayer(l.id, {
+      y: Math.round(newY),
+      flip_v: flipped,
+    } as Partial<Layer>);
+  }
+}
+
+function unionBounds(layers: Layer[]): Bounds {
+  const bs = layers.map(getLayerBounds);
+  const minX = Math.min(...bs.map(b => b.x));
+  const minY = Math.min(...bs.map(b => b.y));
+  const maxX = Math.max(...bs.map(b => b.x + b.width));
+  const maxY = Math.max(...bs.map(b => b.y + b.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}

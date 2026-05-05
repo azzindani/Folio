@@ -552,6 +552,19 @@ html, body {
 
 .canvas-area.tool-draw { cursor: crosshair; }
 
+/* Cursor hint over selectable layers (SVG) */
+.canvas-svg-container svg [data-layer-id] { cursor: pointer; }
+
+/* Hover highlight rectangle — drawn by JS into selectionOverlay */
+.canvas-hover-box {
+  position: absolute;
+  border: 1.5px dashed color-mix(in srgb, var(--color-primary) 80%, transparent);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 85;
+  transition: opacity .08s;
+}
+
 /* Tab bar lives at top of canvas area */
 .tab-bar-container {
   flex-shrink: 0;
