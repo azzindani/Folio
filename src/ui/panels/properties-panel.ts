@@ -8,6 +8,10 @@ function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
 }
 
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export class PropertiesPanelManager {
   private container: HTMLElement;
   private state: StateManager;
@@ -30,10 +34,7 @@ export class PropertiesPanelManager {
     const selected = this.state.getSelectedLayers();
 
     if (selected.length === 0) {
-      this.content.innerHTML = `
-        <div style="color:var(--color-text-muted);padding:16px;font-size:12px">
-          Select a layer to edit its properties
-        </div>`;
+      this.renderEmptyState();
       return;
     }
 
@@ -49,6 +50,57 @@ export class PropertiesPanelManager {
 
     const layer = selected[0];
     this.renderLayerProperties(layer);
+  }
+
+  private renderEmptyState(): void {
+    const { design, currentPageIndex } = this.state.get();
+    if (!design) {
+      this.content.innerHTML = `<div style="padding:16px;color:var(--color-text-muted);font-size:12px">No design loaded</div>`;
+      return;
+    }
+    const layerCount = this.state.getCurrentLayers().length;
+    const totalLayers = (design.pages ?? [{ layers: design.layers ?? [] }])
+      .reduce((s, p) => s + (p.layers?.length ?? 0), 0);
+    const pageCount = design.pages?.length ?? 1;
+    const { width, height } = design.document;
+    const pageLabel = design.pages?.[currentPageIndex]?.label ?? `Page ${currentPageIndex + 1}`;
+    const meta = design.meta;
+
+    this.content.innerHTML = `
+      <div class="prop-empty">
+        <div class="prop-empty-hero">
+          <div class="prop-empty-icon">&#9881;</div>
+          <div class="prop-empty-title">No selection</div>
+          <div class="prop-empty-hint">Click a layer on the canvas or in the layers panel to edit its properties.</div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-header">Document</div>
+          <div class="prop-section-body" style="padding:8px">
+            <div class="prop-info-row"><span>Name</span><span title="${esc(meta.name)}">${esc(meta.name)}</span></div>
+            <div class="prop-info-row"><span>Type</span><span>${esc(meta.type ?? 'design')}</span></div>
+            <div class="prop-info-row"><span>Size</span><span>${width} × ${height}</span></div>
+            ${pageCount > 1 ? `
+              <div class="prop-info-row"><span>Page</span><span>${esc(String(pageLabel))} <span style="color:var(--color-text-dim)">(${currentPageIndex + 1}/${pageCount})</span></span></div>
+              <div class="prop-info-row"><span>Layers (page)</span><span>${layerCount}</span></div>
+              <div class="prop-info-row"><span>Layers (all)</span><span>${totalLayers}</span></div>
+            ` : `
+              <div class="prop-info-row"><span>Layers</span><span>${layerCount}</span></div>
+            `}
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-header">Quick tips</div>
+          <div class="prop-section-body" style="padding:8px;color:var(--color-text-muted);font-size:11px;line-height:1.5">
+            <div><kbd>V</kbd> Select &middot; <kbd>R</kbd>/<kbd>C</kbd>/<kbd>T</kbd>/<kbd>L</kbd> Tools</div>
+            <div><kbd>⌘K</kbd> Command palette</div>
+            <div><kbd>⌘0</kbd> Fit canvas &middot; <kbd>⌘1</kbd> 100%</div>
+            <div><kbd>Alt</kbd>+drag handle resizes from center</div>
+            <div><kbd>Alt</kbd>+click cycles stacked layers</div>
+            <div><kbd>Shift</kbd>+<kbd>H</kbd>/<kbd>V</kbd> Flip selection</div>
+          </div>
+        </div>
+      </div>`;
+    this.bindAccordions();
   }
 
   private renderLayerProperties(layer: Layer): void {
