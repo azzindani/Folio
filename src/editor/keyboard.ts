@@ -3,6 +3,7 @@ import type { EditorApp } from './app';
 import type { Layer } from '../schema/types';
 import { serializeYAML, parseYAML } from '../schema/parser';
 import { smartDuplicate } from '../utils/smart-duplicate';
+import { flipHorizontal, flipVertical } from './interactions';
 
 let duplicateCounter = 0;
 let groupCounter = 0;
@@ -102,6 +103,10 @@ export class KeyboardManager {
       // Group
       { key: 'g', ctrl: true, action: () => this.groupSelected(), description: 'Group selected layers' },
       { key: 'g', ctrl: true, shift: true, action: () => this.ungroupSelected(), description: 'Ungroup selected' },
+      // Flip transforms (Shift+H mirrors horizontally, Shift+V mirrors vertically).
+      // e.key is uppercase when Shift is held without Ctrl, hence 'H' / 'V'.
+      { key: 'H', shift: true, action: () => this.flipSelectedH(), description: 'Flip selection horizontally' },
+      { key: 'V', shift: true, action: () => this.flipSelectedV(), description: 'Flip selection vertically' },
       // Presentation
       { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },
       // Print
@@ -202,6 +207,9 @@ export class KeyboardManager {
       }
     }).catch(() => {/* clipboard not available */});
   }
+
+  private flipSelectedH(): void { flipHorizontal(this.state); }
+  private flipSelectedV(): void { flipVertical(this.state); }
 
   private groupSelected(): void {
     const layers = this.state.getSelectedLayers();
