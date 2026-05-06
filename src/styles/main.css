@@ -168,12 +168,13 @@ html, body {
   position: relative;
   overflow: visible;
 }
-/* Resize handle sits on the bottom edge, drags to expand formula bar */
+/* Resize handle sits on the bottom edge, drags to expand formula bar.
+   formula-bar uses overflow:visible so we can let it stick out. */
 .formula-bar > .panel-resize-handle--y {
   position: absolute;
-  bottom: -2px;
+  bottom: -4px;
   left: 0; right: 0;
-  height: 4px;
+  height: 8px;
   z-index: 110;
   margin: 0;
 }
@@ -291,15 +292,36 @@ html, body {
   position: relative;
 }
 
-/* Resize handle cursors */
+/* Resize handle cursors + hit-area + visible line.
+   Handles sit INSIDE the panel (parents have overflow:hidden) with an
+   8px hit area; a 1px tinted line is painted via ::before so the hit
+   area itself is invisible but the edge is discoverable on hover. */
 .panel-resize-handle--x { cursor: col-resize; }
 .panel-resize-handle--y { cursor: row-resize; }
+.panel-resize-handle--x,
+.panel-resize-handle--y {
+  background: transparent;
+  touch-action: none;
+}
+.panel-resize-handle--x::before,
+.panel-resize-handle--y::before {
+  content: '';
+  position: absolute;
+  background: transparent;
+  transition: background 0.12s;
+}
+.panel-resize-handle--x::before { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); }
+.panel-resize-handle--y::before { left: 0; right: 0; top: 50%; height: 1px; transform: translateY(-50%); }
+.panel-resize-handle--x:hover::before,
+.panel-resize-handle--y:hover::before,
+.panel-resize-handle--x:focus-visible::before,
+.panel-resize-handle--y:focus-visible::before { background: var(--color-primary); }
 
-/* Resize handle: right edge of left panel */
+/* Resize handle: right edge of left panel (inside, since parent overflow:hidden) */
 .left-panel > .panel-resize-handle--x {
   position: absolute;
-  right: -2px; top: 0; bottom: 0;
-  width: 4px;
+  right: 0; top: 0; bottom: 0;
+  width: 8px;
   z-index: 60;
 }
 
@@ -581,15 +603,17 @@ html, body {
   overflow: hidden;
   position: relative;
 }
-/* Resize handle sits on the top edge, dragging up expands the strip */
+/* Resize handle sits on the top edge of the strip (inside, since parent
+   overflow:hidden would clip an outside handle). */
 .page-strip-section > .panel-resize-handle--y {
   position: absolute;
-  top: -2px;
+  top: 0;
   left: 0; right: 0;
-  height: 4px;
+  height: 8px;
   z-index: 30;
   margin: 0;
 }
+.page-strip-section .page-strip-content { padding-top: 8px; }
 .page-strip-content {
   height: 100%;
   overflow-x: auto;
@@ -746,11 +770,11 @@ html, body {
   position: relative;
 }
 
-/* Resize handle: left edge of right panel */
+/* Resize handle: left edge of right panel (inside, since parent overflow:hidden) */
 .properties-panel > .panel-resize-handle--x {
   position: absolute;
-  left: -2px; top: 0; bottom: 0;
-  width: 4px;
+  left: 0; top: 0; bottom: 0;
+  width: 8px;
   z-index: 60;
 }
 
@@ -1660,6 +1684,7 @@ button:focus:not(:focus-visible) { outline: none; }
     border-left: 1px solid var(--color-border-strong);
   }
   .properties-panel.mob-open { transform: translateX(0); }
+  .properties-panel .minimap-container { display: none; }
 }
 
 /* ── RESPONSIVE — MOBILE (<768px) ────────────────────────── */
@@ -1746,6 +1771,10 @@ button:focus:not(:focus-visible) { outline: none; }
   .properties-panel.mob-open { transform: translateY(0); }
   .properties-panel .mob-sheet-grip { display: flex; }
   .right-panel-resize-handle { display: none; }
+
+  /* Hide the minimap previewer on mobile — bottom-sheet panels don't
+     have room for it and it duplicates canvas-pan controls. */
+  .properties-panel .minimap-container { display: none; }
 
   /* Tool buttons and layer rows larger for touch */
   .tool-btn { width: 44px; height: 44px; font-size: 18px; }
