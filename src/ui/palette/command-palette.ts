@@ -1,6 +1,6 @@
 import type { StateManager } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
-import { alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV } from '../../editor/interactions';
+import { alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV, flipHorizontal, flipVertical } from '../../editor/interactions';
 import { exportToHTML } from '../../export/exporter';
 
 let paletteLayerCounter = 0;
@@ -76,6 +76,10 @@ export class CommandPalette {
       { id: 'align-center-v', label: 'Align Center Vertical', category: 'Align', action: () => alignCenterV(state) },
       { id: 'distribute-h', label: 'Distribute Horizontally', category: 'Align', action: () => distributeH(state) },
       { id: 'distribute-v', label: 'Distribute Vertically', category: 'Align', action: () => distributeV(state) },
+
+      // Transform
+      { id: 'flip-h', label: 'Flip Horizontal', category: 'Transform', shortcut: 'Shift+H', action: () => flipHorizontal(state) },
+      { id: 'flip-v', label: 'Flip Vertical', category: 'Transform', shortcut: 'Shift+V', action: () => flipVertical(state) },
 
       // Export
       { id: 'export-svg', label: 'Export as SVG', category: 'Export', action: () => {

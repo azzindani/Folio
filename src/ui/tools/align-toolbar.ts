@@ -2,6 +2,7 @@ import { type StateManager, type EditorState } from '../../editor/state';
 import {
   alignLeft, alignRight, alignTop, alignBottom,
   alignCenterH, alignCenterV, distributeH, distributeV,
+  flipHorizontal, flipVertical,
 } from '../../editor/interactions';
 
 interface AlignAction {
@@ -20,6 +21,9 @@ const ACTIONS: AlignAction[] = [
   { icon: '&#x2195;', title: 'Align bottom edges', fn: alignBottom,  minSelect: 2 },
   { icon: '&#x2194;', title: 'Distribute horizontally', fn: distributeH, minSelect: 3 },
   { icon: '&#x2195;', title: 'Distribute vertically',   fn: distributeV, minSelect: 3 },
+  // Single-selection transforms
+  { icon: '&#x21C6;', title: 'Flip horizontal (Shift+H)', fn: flipHorizontal, minSelect: 1 },
+  { icon: '&#x21C5;', title: 'Flip vertical (Shift+V)',   fn: flipVertical,   minSelect: 1 },
 ];
 
 export class AlignToolbar {
@@ -42,8 +46,8 @@ export class AlignToolbar {
   }
 
   private refresh(count: number): void {
-    // Hide entire toolbar unless 2+ layers selected (none of the actions apply)
-    this.toolbar.classList.toggle('align-toolbar--hidden', count < 2);
+    // Hide entire toolbar unless at least 1 layer is selected (flip works on 1).
+    this.toolbar.classList.toggle('align-toolbar--hidden', count < 1);
     this.toolbar.querySelectorAll<HTMLButtonElement>('.align-btn').forEach((btn, i) => {
       const minSel = ACTIONS[i]?.minSelect ?? 2;
       btn.classList.toggle('inactive', count < minSel);
@@ -54,7 +58,7 @@ export class AlignToolbar {
     const toolbar = document.createElement('div');
     toolbar.className = 'align-toolbar';
 
-    const labels = ['⬤▏', '⬤┃', '▕⬤', '▔⬤', '⬤━', '⬤▁', '⇐⇒', '⇑⇓'];
+    const labels = ['⬤▏', '⬤┃', '▕⬤', '▔⬤', '⬤━', '⬤▁', '⇐⇒', '⇑⇓', '⇄', '⇅'];
 
     ACTIONS.forEach((action, i) => {
       const btn = document.createElement('button');

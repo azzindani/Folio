@@ -72,16 +72,17 @@ function setup(layers: Layer[] = []) {
 describe('PropertiesPanelManager — no selection', () => {
   afterEach(() => { document.querySelectorAll('div').forEach(el => el.remove()); });
 
-  it('shows "Select a layer" message when nothing selected', () => {
+  it('shows empty-state hint when nothing selected', () => {
     const { wrapper, state } = setup([makeRect()]);
     state.set('selectedLayerIds', []);
-    expect(wrapper.textContent).toContain('Select a layer');
+    expect(wrapper.textContent).toContain('No selection');
+    expect(wrapper.textContent).toContain('Click a layer');
   });
 
   it('shows message when design is null', () => {
     const { wrapper, panel } = setup();
     panel.render(); // trigger initial render
-    expect(wrapper.textContent).toContain('Select a layer');
+    expect(wrapper.textContent).toContain('No design loaded');
   });
 });
 

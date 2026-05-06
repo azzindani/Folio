@@ -1,0 +1,1093 @@
+_protocol: design/v1
+meta:
+  id: us-stock-market-2025
+  name: US Stock Market 2025 — Comprehensive Analytics Report
+  type: report
+  description: |
+    Interactive multi-page report covering S&P 500 index, sector performance,
+    top movers, dividend leaders, valuation metrics, macro indicators, and
+    earnings calendar. Demonstrates KPIs, sortable tables, multi-series charts,
+    rich text, and dataset binding.
+  author: Folio Demo
+  created_at: '2026-01-15'
+  tags: [finance, stocks, analytics, dashboard]
+document:
+  width: 1440
+  height: 2000
+  unit: px
+  dpi: 96
+report:
+  layout: scroll
+  navigation: tabs
+  data:
+    sources:
+      - id: sp500_monthly
+        type: inline
+        rows:
+          - { month: '2025-01', close: 4783.45, volume: 8942000000, return_pct: 1.62 }
+          - { month: '2025-02', close: 4892.13, volume: 9123000000, return_pct: 2.27 }
+          - { month: '2025-03', close: 5021.78, volume: 9845000000, return_pct: 2.65 }
+          - { month: '2025-04', close: 4934.21, volume: 9512000000, return_pct: -1.74 }
+          - { month: '2025-05', close: 5156.92, volume: 9678000000, return_pct: 4.51 }
+          - { month: '2025-06', close: 5298.34, volume: 9234000000, return_pct: 2.74 }
+          - { month: '2025-07', close: 5412.67, volume: 8987000000, return_pct: 2.16 }
+          - { month: '2025-08', close: 5378.45, volume: 8756000000, return_pct: -0.63 }
+          - { month: '2025-09', close: 5489.23, volume: 9145000000, return_pct: 2.06 }
+          - { month: '2025-10', close: 5623.78, volume: 9342000000, return_pct: 2.45 }
+          - { month: '2025-11', close: 5712.45, volume: 8923000000, return_pct: 1.58 }
+          - { month: '2025-12', close: 5824.32, volume: 9234000000, return_pct: 1.96 }
+      - id: sector_perf
+        type: inline
+        rows:
+          - { sector: Technology,             ytd_return: 38.42, market_cap_t: 18.7, pe_ratio: 32.4, weight: 30.2 }
+          - { sector: Healthcare,             ytd_return: 12.18, market_cap_t: 8.4,  pe_ratio: 24.1, weight: 13.5 }
+          - { sector: Financials,             ytd_return: 22.67, market_cap_t: 7.9,  pe_ratio: 16.8, weight: 12.8 }
+          - { sector: Consumer Discretionary, ytd_return: 18.94, market_cap_t: 6.3,  pe_ratio: 28.7, weight: 10.4 }
+          - { sector: Communication Services, ytd_return: 31.25, market_cap_t: 5.1,  pe_ratio: 26.3, weight: 8.7 }
+          - { sector: Industrials,            ytd_return: 14.83, market_cap_t: 4.8,  pe_ratio: 22.9, weight: 8.2 }
+          - { sector: Consumer Staples,       ytd_return: 6.42,  market_cap_t: 3.6,  pe_ratio: 21.4, weight: 6.1 }
+          - { sector: Energy,                 ytd_return: -4.18, market_cap_t: 2.4,  pe_ratio: 12.3, weight: 4.0 }
+          - { sector: Utilities,              ytd_return: 8.71,  market_cap_t: 1.9,  pe_ratio: 18.6, weight: 3.2 }
+          - { sector: Real Estate,            ytd_return: 5.34,  market_cap_t: 1.7,  pe_ratio: 35.2, weight: 2.8 }
+          - { sector: Materials,              ytd_return: 9.82,  market_cap_t: 1.2,  pe_ratio: 19.7, weight: 2.0 }
+      - id: top_movers
+        type: inline
+        rows:
+          - { ticker: NVDA,  name: NVIDIA Corp,           sector: Technology, price: 894.52,  change_pct: 4.83,  market_cap_b: 2197.4 }
+          - { ticker: META,  name: Meta Platforms,        sector: Communication, price: 612.34, change_pct: 3.12, market_cap_b: 1567.8 }
+          - { ticker: TSLA,  name: Tesla Inc,             sector: Consumer Disc, price: 387.18, change_pct: 6.42, market_cap_b: 1232.5 }
+          - { ticker: AVGO,  name: Broadcom Inc,          sector: Technology, price: 198.76,  change_pct: 2.84, market_cap_b: 924.3 }
+          - { ticker: AMD,   name: Advanced Micro Devices, sector: Technology, price: 234.92, change_pct: 5.21, market_cap_b: 380.1 }
+          - { ticker: SMCI,  name: Super Micro Computer,  sector: Technology, price: 89.43,   change_pct: 8.73, market_cap_b: 51.6 }
+          - { ticker: PLTR,  name: Palantir Tech,         sector: Technology, price: 78.21,   change_pct: 4.18, market_cap_b: 174.8 }
+          - { ticker: COIN,  name: Coinbase Global,       sector: Financials, price: 312.84,  change_pct: 7.32, market_cap_b: 80.2 }
+          - { ticker: AAPL,  name: Apple Inc,             sector: Technology, price: 248.93,  change_pct: 1.23, market_cap_b: 3782.1 }
+          - { ticker: MSFT,  name: Microsoft Corp,        sector: Technology, price: 487.65,  change_pct: 0.98, market_cap_b: 3624.7 }
+          - { ticker: GOOG,  name: Alphabet Inc Class C,  sector: Communication, price: 198.34, change_pct: 1.87, market_cap_b: 2456.3 }
+          - { ticker: AMZN,  name: Amazon.com Inc,        sector: Consumer Disc, price: 234.56, change_pct: 2.15, market_cap_b: 2461.8 }
+          - { ticker: BRK.B, name: Berkshire Hathaway B,  sector: Financials, price: 487.21,  change_pct: 0.42, market_cap_b: 1057.4 }
+          - { ticker: LLY,   name: Eli Lilly & Co,        sector: Healthcare, price: 884.32,  change_pct: -1.24, market_cap_b: 838.6 }
+          - { ticker: JPM,   name: JPMorgan Chase,        sector: Financials, price: 268.43,  change_pct: 1.62, market_cap_b: 757.9 }
+          - { ticker: V,     name: Visa Inc,              sector: Financials, price: 312.87,  change_pct: 0.83, market_cap_b: 631.4 }
+          - { ticker: MA,    name: Mastercard Inc,        sector: Financials, price: 542.18,  change_pct: 0.71, market_cap_b: 498.7 }
+          - { ticker: UNH,   name: UnitedHealth Group,    sector: Healthcare, price: 612.43,  change_pct: -0.92, market_cap_b: 561.8 }
+          - { ticker: XOM,   name: Exxon Mobil Corp,      sector: Energy, price: 118.34,      change_pct: -2.18, market_cap_b: 521.7 }
+          - { ticker: WMT,   name: Walmart Inc,           sector: Consumer Stap, price: 89.42, change_pct: 1.04, market_cap_b: 715.6 }
+      - id: dividend_aristocrats
+        type: inline
+        rows:
+          - { ticker: KO,    name: Coca-Cola Company,     yield_pct: 3.12, payout_ratio: 73.4, dgr_5yr: 4.2,  consecutive_yrs: 62 }
+          - { ticker: PG,    name: Procter & Gamble,      yield_pct: 2.48, payout_ratio: 62.1, dgr_5yr: 5.8,  consecutive_yrs: 68 }
+          - { ticker: JNJ,   name: Johnson & Johnson,     yield_pct: 2.94, payout_ratio: 56.8, dgr_5yr: 6.1,  consecutive_yrs: 62 }
+          - { ticker: MMM,   name: 3M Company,            yield_pct: 6.42, payout_ratio: 89.3, dgr_5yr: 0.8,  consecutive_yrs: 65 }
+          - { ticker: CL,    name: Colgate-Palmolive,     yield_pct: 2.31, payout_ratio: 60.4, dgr_5yr: 3.2,  consecutive_yrs: 61 }
+          - { ticker: WMT,   name: Walmart Inc,           yield_pct: 1.21, payout_ratio: 38.7, dgr_5yr: 1.8,  consecutive_yrs: 51 }
+          - { ticker: PEP,   name: PepsiCo Inc,           yield_pct: 3.18, payout_ratio: 71.2, dgr_5yr: 7.1,  consecutive_yrs: 52 }
+          - { ticker: ABBV,  name: AbbVie Inc,            yield_pct: 3.84, payout_ratio: 82.6, dgr_5yr: 9.4,  consecutive_yrs: 53 }
+          - { ticker: TGT,   name: Target Corp,           yield_pct: 2.67, payout_ratio: 49.8, dgr_5yr: 12.3, consecutive_yrs: 56 }
+          - { ticker: AFL,   name: Aflac Inc,             yield_pct: 1.94, payout_ratio: 28.4, dgr_5yr: 11.7, consecutive_yrs: 41 }
+          - { ticker: LOW,   name: Lowe's Companies,      yield_pct: 1.82, payout_ratio: 36.1, dgr_5yr: 17.4, consecutive_yrs: 62 }
+          - { ticker: ADP,   name: Automatic Data Processing, yield_pct: 2.04, payout_ratio: 58.6, dgr_5yr: 13.2, consecutive_yrs: 49 }
+          - { ticker: ED,    name: Consolidated Edison,   yield_pct: 3.42, payout_ratio: 67.8, dgr_5yr: 2.9,  consecutive_yrs: 50 }
+          - { ticker: EMR,   name: Emerson Electric,      yield_pct: 1.97, payout_ratio: 47.3, dgr_5yr: 1.4,  consecutive_yrs: 67 }
+          - { ticker: MCD,   name: McDonald's Corp,       yield_pct: 2.38, payout_ratio: 56.4, dgr_5yr: 8.6,  consecutive_yrs: 48 }
+      - id: macro_indicators
+        type: inline
+        rows:
+          - { period: '2025-Q1', gdp_growth: 2.4, cpi_yoy: 3.2, unemployment: 3.8, fed_rate: 4.50, ten_yr_yield: 4.12 }
+          - { period: '2025-Q2', gdp_growth: 2.7, cpi_yoy: 3.0, unemployment: 3.7, fed_rate: 4.25, ten_yr_yield: 4.08 }
+          - { period: '2025-Q3', gdp_growth: 2.9, cpi_yoy: 2.7, unemployment: 3.6, fed_rate: 4.00, ten_yr_yield: 3.94 }
+          - { period: '2025-Q4', gdp_growth: 3.1, cpi_yoy: 2.4, unemployment: 3.5, fed_rate: 3.75, ten_yr_yield: 3.78 }
+      - id: earnings_calendar
+        type: inline
+        rows:
+          - { date: '2026-01-22', ticker: NFLX, company: Netflix Inc,         time: AMC, eps_est: 4.18, eps_actual: 4.27, surprise_pct: 2.15, revenue_est_b: 10.84, status: beat }
+          - { date: '2026-01-23', ticker: TSLA, company: Tesla Inc,           time: AMC, eps_est: 0.74, eps_actual: 0.91, surprise_pct: 22.97, revenue_est_b: 27.32, status: beat }
+          - { date: '2026-01-24', ticker: INTC, company: Intel Corp,          time: AMC, eps_est: 0.12, eps_actual: 0.09, surprise_pct: -25.00, revenue_est_b: 13.84, status: miss }
+          - { date: '2026-01-27', ticker: AAPL, company: Apple Inc,           time: AMC, eps_est: 2.34, eps_actual: 2.41, surprise_pct: 2.99, revenue_est_b: 124.2, status: beat }
+          - { date: '2026-01-28', ticker: MSFT, company: Microsoft Corp,      time: AMC, eps_est: 3.18, eps_actual: 3.24, surprise_pct: 1.89, revenue_est_b: 68.9, status: beat }
+          - { date: '2026-01-28', ticker: GOOG, company: Alphabet Inc,        time: AMC, eps_est: 2.12, eps_actual: 2.18, surprise_pct: 2.83, revenue_est_b: 96.4, status: beat }
+          - { date: '2026-01-29', ticker: META, company: Meta Platforms,      time: AMC, eps_est: 6.84, eps_actual: 6.72, surprise_pct: -1.75, revenue_est_b: 47.2, status: miss }
+          - { date: '2026-01-30', ticker: AMZN, company: Amazon.com Inc,      time: AMC, eps_est: 1.42, eps_actual: 1.58, surprise_pct: 11.27, revenue_est_b: 187.4, status: beat }
+          - { date: '2026-02-04', ticker: GOOG, company: Alphabet Inc Class C, time: AMC, eps_est: 2.18, eps_actual: null, surprise_pct: null, revenue_est_b: 96.8, status: upcoming }
+          - { date: '2026-02-05', ticker: AMD,  company: Advanced Micro Devices, time: AMC, eps_est: 1.12, eps_actual: null, surprise_pct: null, revenue_est_b: 7.84, status: upcoming }
+          - { date: '2026-02-06', ticker: NVDA, company: NVIDIA Corp,         time: AMC, eps_est: 0.84, eps_actual: null, surprise_pct: null, revenue_est_b: 41.2, status: upcoming }
+          - { date: '2026-02-12', ticker: COIN, company: Coinbase Global,     time: AMC, eps_est: 1.94, eps_actual: null, surprise_pct: null, revenue_est_b: 1.42, status: upcoming }
+      - id: bond_yields
+        type: inline
+        rows:
+          - { maturity: 1M,  yield: 4.32 }
+          - { maturity: 3M,  yield: 4.18 }
+          - { maturity: 6M,  yield: 4.04 }
+          - { maturity: 1Y,  yield: 3.92 }
+          - { maturity: 2Y,  yield: 3.84 }
+          - { maturity: 3Y,  yield: 3.78 }
+          - { maturity: 5Y,  yield: 3.74 }
+          - { maturity: 7Y,  yield: 3.76 }
+          - { maturity: 10Y, yield: 3.78 }
+          - { maturity: 20Y, yield: 4.04 }
+          - { maturity: 30Y, yield: 4.12 }
+      - id: vix_history
+        type: inline
+        rows:
+          - { date: '2025-07', vix_close: 14.32 }
+          - { date: '2025-08', vix_close: 16.84 }
+          - { date: '2025-09', vix_close: 18.42 }
+          - { date: '2025-10', vix_close: 15.91 }
+          - { date: '2025-11', vix_close: 13.24 }
+          - { date: '2025-12', vix_close: 12.48 }
+pages:
+  - id: summary
+    label: Executive Summary
+    layers:
+      - id: bg-summary
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1440
+        height: 2000
+        fill: { type: solid, color: '#0F172A' }
+      - id: hero-summary
+        type: rich_text
+        z: 10
+        x: 60
+        y: 60
+        width: 1320
+        height: 100
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        line_height: 1.05
+        color: '#F1F5F9'
+        content: "**US Stock Market — 2025 Annual Review**"
+      - id: subtitle-summary
+        type: rich_text
+        z: 11
+        x: 60
+        y: 150
+        width: 1320
+        height: 30
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#64748B'
+        content: "S&P 500 · SECTOR ROTATION · INCOME · MACRO · 2025 FULL YEAR"
+      - id: kpi-spx
+        type: kpi_card
+        z: 20
+        x: 60
+        y: 220
+        width: 300
+        height: 150
+        label: S&P 500 Close
+        value: 5824.32
+        format: number
+        decimals: 2
+        delta: 21.7
+        delta_format: percent
+        sparkline_data: sp500_monthly
+        sparkline_field: close
+        sparkline_color: '#60a5fa'
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-volatility
+        type: kpi_card
+        z: 21
+        x: 380
+        y: 220
+        width: 300
+        height: 150
+        label: VIX Index (Dec)
+        value: 12.48
+        format: number
+        decimals: 2
+        delta: -22.4
+        delta_format: percent
+        delta_positive_color: '#ef4444'
+        delta_negative_color: '#22c55e'
+        sparkline_data: vix_history
+        sparkline_field: vix_close
+        sparkline_color: '#f59e0b'
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-fed-rate
+        type: kpi_card
+        z: 22
+        x: 700
+        y: 220
+        width: 300
+        height: 150
+        label: Fed Funds Rate
+        value: 3.75
+        format: percent
+        decimals: 2
+        delta: -0.75
+        delta_format: percent
+        delta_positive_color: '#ef4444'
+        delta_negative_color: '#22c55e'
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-10yr
+        type: kpi_card
+        z: 23
+        x: 1020
+        y: 220
+        width: 360
+        height: 150
+        label: 10Y Treasury Yield
+        value: 3.78
+        format: percent
+        decimals: 2
+        delta: -0.34
+        delta_format: percent
+        delta_positive_color: '#ef4444'
+        delta_negative_color: '#22c55e'
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: section-spx-chart
+        type: rich_text
+        z: 30
+        x: 60
+        y: 410
+        width: 1320
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 28
+        color: '#F1F5F9'
+        content: "**S&P 500 Monthly Performance**"
+      - id: chart-spx-line
+        type: interactive_chart
+        z: 31
+        x: 60
+        y: 470
+        width: 880
+        height: 380
+        chart_type: line
+        data_ref: sp500_monthly
+        x_field: month
+        y_field: close
+        title: S&P 500 Closing Price
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#60a5fa']
+      - id: chart-spx-volume
+        type: interactive_chart
+        z: 32
+        x: 960
+        y: 470
+        width: 420
+        height: 380
+        chart_type: bar
+        data_ref: sp500_monthly
+        x_field: month
+        y_field: volume
+        title: Monthly Volume
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#a78bfa']
+      - id: section-narrative
+        type: rich_text
+        z: 40
+        x: 60
+        y: 880
+        width: 1320
+        height: 280
+        format: markdown
+        font_family: Inter
+        font_size: 16
+        line_height: 1.7
+        color: '#CBD5E1'
+        content: |
+          ## Market Outlook
+
+          The S&P 500 closed 2025 at **5,824.32**, up **21.7%** for the year — its strongest annual return since 2021. Gains were front-loaded in Q3 as the Fed pivoted to rate cuts and inflation moderated to **2.4%** by year-end.
+
+          **Technology** (+38.4%) led the rally, driven by AI infrastructure spend and earnings beats from NVIDIA, AVGO, and AMD. **Communication Services** (+31.3%) and **Financials** (+22.7%) rounded out the top three. **Energy** was the lone declining sector (-4.2%) on lower oil prices and demand concerns.
+
+          Volatility remained subdued — the **VIX** averaged 14.7 across the year and ended at a multi-year low of **12.48**, suggesting elevated complacency entering 2026.
+  - id: sectors
+    label: Sector Analysis
+    layers:
+      - id: bg-sectors
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1440
+        height: 2000
+        fill: { type: solid, color: '#0F172A' }
+      - id: hero-sectors
+        type: rich_text
+        z: 10
+        x: 60
+        y: 60
+        width: 1320
+        height: 100
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        line_height: 1.05
+        color: '#F1F5F9'
+        content: "**Sector Rotation & Performance**"
+      - id: subtitle-sectors
+        type: rich_text
+        z: 11
+        x: 60
+        y: 150
+        width: 1320
+        height: 30
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#64748B'
+        content: "11 GICS SECTORS · YTD RETURN · MARKET CAP · VALUATION"
+      - id: chart-sector-returns
+        type: interactive_chart
+        z: 20
+        x: 60
+        y: 220
+        width: 880
+        height: 480
+        chart_type: bar
+        data_ref: sector_perf
+        x_field: sector
+        y_field: ytd_return
+        title: 2025 YTD Return by Sector (%)
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#22c55e']
+      - id: chart-sector-weight
+        type: interactive_chart
+        z: 21
+        x: 960
+        y: 220
+        width: 420
+        height: 480
+        chart_type: donut
+        data_ref: sector_perf
+        x_field: sector
+        y_field: weight
+        title: Index Weight (%)
+        legend: true
+        animate: true
+      - id: section-sector-table
+        type: rich_text
+        z: 30
+        x: 60
+        y: 730
+        width: 1320
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 28
+        color: '#F1F5F9'
+        content: "**Sector Detail**"
+      - id: tbl-sectors
+        type: interactive_table
+        z: 31
+        x: 60
+        y: 790
+        width: 1320
+        height: 540
+        data_ref: sector_perf
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: sector,        title: Sector,        width: 280, sortable: true }
+          - { field: ytd_return,    title: YTD %,         width: 140, sortable: true, formatter: percent, decimals: 2, align: right }
+          - { field: market_cap_t,  title: Mkt Cap ($T),  width: 160, sortable: true, formatter: number, decimals: 1, align: right }
+          - { field: pe_ratio,      title: P/E,           width: 120, sortable: true, formatter: number, decimals: 1, align: right }
+          - { field: weight,        title: Weight %,      width: 140, sortable: true, formatter: percent, decimals: 2, align: right }
+      - id: insight-sectors
+        type: rich_text
+        z: 40
+        x: 60
+        y: 1380
+        width: 1320
+        height: 220
+        format: markdown
+        font_family: Inter
+        font_size: 16
+        line_height: 1.7
+        color: '#CBD5E1'
+        content: |
+          ## Sector Insights
+
+          - **Technology** dominates with a **30.2%** index weight and **38.4%** YTD return — the AI infrastructure cycle continues to drive valuations to historically elevated P/E ratios near **32x**.
+          - **Energy** lagged with a **-4.2%** return and trades at a discount **12.3x** P/E, reflecting concerns about supply-demand balance and the energy transition.
+          - **Real Estate** has the highest P/E at **35.2x** despite modest **+5.3%** returns, indicating investor expectations of further rate cuts.
+          - Defensive sectors (**Staples, Utilities**) underperformed as the risk-on rotation continued through Q4.
+  - id: movers
+    label: Top Movers
+    layers:
+      - id: bg-movers
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1440
+        height: 2000
+        fill: { type: solid, color: '#0F172A' }
+      - id: hero-movers
+        type: rich_text
+        z: 10
+        x: 60
+        y: 60
+        width: 1320
+        height: 100
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        line_height: 1.05
+        color: '#F1F5F9'
+        content: "**Top 20 Movers**"
+      - id: subtitle-movers
+        type: rich_text
+        z: 11
+        x: 60
+        y: 150
+        width: 1320
+        height: 30
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#64748B'
+        content: "MARKET-MOVING NAMES · DAILY % CHANGE · MARKET CAP RANKING"
+      - id: kpi-leader
+        type: kpi_card
+        z: 20
+        x: 60
+        y: 220
+        width: 320
+        height: 150
+        label: Best Performer
+        value: 'SMCI'
+        format: text
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+        icon: '▲'
+      - id: kpi-leader-pct
+        type: kpi_card
+        z: 21
+        x: 400
+        y: 220
+        width: 320
+        height: 150
+        label: Daily Gain
+        value: 8.73
+        format: percent
+        decimals: 2
+        delta_format: percent
+        background: '#1E293B'
+        text_color: '#22c55e'
+        border_radius: 12
+      - id: kpi-laggard
+        type: kpi_card
+        z: 22
+        x: 740
+        y: 220
+        width: 320
+        height: 150
+        label: Worst Performer
+        value: 'XOM'
+        format: text
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+        icon: '▼'
+      - id: kpi-laggard-pct
+        type: kpi_card
+        z: 23
+        x: 1080
+        y: 220
+        width: 300
+        height: 150
+        label: Daily Loss
+        value: -2.18
+        format: percent
+        decimals: 2
+        background: '#1E293B'
+        text_color: '#ef4444'
+        border_radius: 12
+      - id: chart-mcap
+        type: interactive_chart
+        z: 30
+        x: 60
+        y: 410
+        width: 1320
+        height: 380
+        chart_type: bar
+        data_ref: top_movers
+        x_field: ticker
+        y_field: market_cap_b
+        title: Market Cap by Ticker ($B)
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#3b82f6']
+      - id: section-movers-table
+        type: rich_text
+        z: 40
+        x: 60
+        y: 820
+        width: 1320
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 28
+        color: '#F1F5F9'
+        content: "**Sortable / Filterable Watchlist**"
+      - id: tbl-movers
+        type: interactive_table
+        z: 41
+        x: 60
+        y: 880
+        width: 1320
+        height: 700
+        data_ref: top_movers
+        pagination: true
+        page_size: 10
+        filterable: true
+        exportable: true
+        columns:
+          - { field: ticker,       title: Ticker,    width: 100, sortable: true }
+          - { field: name,         title: Company,   width: 280, sortable: true }
+          - { field: sector,       title: Sector,    width: 180, sortable: true, formatter: badge }
+          - { field: price,        title: Price,     width: 140, sortable: true, formatter: currency, decimals: 2, align: right }
+          - { field: change_pct,   title: Change %,  width: 160, sortable: true, formatter: percent, decimals: 2, align: right }
+          - { field: market_cap_b, title: Cap ($B),  width: 180, sortable: true, formatter: number, decimals: 1, align: right }
+  - id: income
+    label: Dividends & Income
+    layers:
+      - id: bg-income
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1440
+        height: 2000
+        fill: { type: solid, color: '#0F172A' }
+      - id: hero-income
+        type: rich_text
+        z: 10
+        x: 60
+        y: 60
+        width: 1320
+        height: 100
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        line_height: 1.05
+        color: '#F1F5F9'
+        content: "**Dividend Aristocrats — Income Champions**"
+      - id: subtitle-income
+        type: rich_text
+        z: 11
+        x: 60
+        y: 150
+        width: 1320
+        height: 30
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#64748B'
+        content: "25+ CONSECUTIVE YEARS OF DIVIDEND INCREASES · YIELD · GROWTH RATE"
+      - id: kpi-avg-yield
+        type: kpi_card
+        z: 20
+        x: 60
+        y: 220
+        width: 320
+        height: 150
+        label: Avg Dividend Yield
+        value: 2.78
+        format: percent
+        decimals: 2
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-highest-yield
+        type: kpi_card
+        z: 21
+        x: 400
+        y: 220
+        width: 320
+        height: 150
+        label: Highest Yield
+        value: 'MMM 6.42%'
+        format: text
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-longest-streak
+        type: kpi_card
+        z: 22
+        x: 740
+        y: 220
+        width: 320
+        height: 150
+        label: Longest Streak
+        value: 'PG 68 yrs'
+        format: text
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-best-growth
+        type: kpi_card
+        z: 23
+        x: 1080
+        y: 220
+        width: 300
+        height: 150
+        label: Best DGR (5y)
+        value: 'LOW 17.4%'
+        format: text
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: chart-yield-by-ticker
+        type: interactive_chart
+        z: 30
+        x: 60
+        y: 410
+        width: 880
+        height: 420
+        chart_type: bar
+        data_ref: dividend_aristocrats
+        x_field: ticker
+        y_field: yield_pct
+        title: Dividend Yield (%) by Ticker
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#fbbf24']
+      - id: chart-streak
+        type: interactive_chart
+        z: 31
+        x: 960
+        y: 410
+        width: 420
+        height: 420
+        chart_type: bar
+        data_ref: dividend_aristocrats
+        x_field: ticker
+        y_field: consecutive_yrs
+        title: Consecutive Years of Increases
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#10b981']
+      - id: section-aristocrats-table
+        type: rich_text
+        z: 40
+        x: 60
+        y: 870
+        width: 1320
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 28
+        color: '#F1F5F9'
+        content: "**Detailed Aristocrats Roster**"
+      - id: tbl-aristocrats
+        type: interactive_table
+        z: 41
+        x: 60
+        y: 930
+        width: 1320
+        height: 540
+        data_ref: dividend_aristocrats
+        pagination: true
+        page_size: 8
+        filterable: true
+        exportable: true
+        columns:
+          - { field: ticker,           title: Ticker,    width: 100, sortable: true }
+          - { field: name,             title: Company,   width: 320, sortable: true }
+          - { field: yield_pct,        title: Yield %,   width: 140, sortable: true, formatter: percent, decimals: 2, align: right }
+          - { field: payout_ratio,     title: Payout %,  width: 140, sortable: true, formatter: percent, decimals: 1, align: right }
+          - { field: dgr_5yr,          title: DGR 5Y %,  width: 140, sortable: true, formatter: percent, decimals: 1, align: right }
+          - { field: consecutive_yrs,  title: Years,     width: 140, sortable: true, formatter: number, align: right }
+      - id: insight-income
+        type: rich_text
+        z: 50
+        x: 60
+        y: 1500
+        width: 1320
+        height: 220
+        format: markdown
+        font_family: Inter
+        font_size: 16
+        line_height: 1.7
+        color: '#CBD5E1'
+        content: |
+          ## Income Strategy Notes
+
+          The **Dividend Aristocrats** are S&P 500 constituents with at least **25 consecutive years** of dividend increases — a rare combination of cash-flow durability and capital-return discipline.
+
+          - **Higher yields** often come paired with **higher payout ratios** (e.g. MMM at 89.3%) — sustainability requires careful monitoring of free cash flow.
+          - **Lower-yield growers** like **LOW** (1.82%) and **TGT** (2.67%) have grown dividends fastest (DGR 17.4% / 12.3% over 5 years) — total-return potential rivals broad-market indexes.
+          - The basket's average yield of **2.78%** clears the **3M Treasury** by a meaningful margin, and offers inflation protection via dividend growth.
+  - id: macro
+    label: Macro & Yield Curve
+    layers:
+      - id: bg-macro
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1440
+        height: 2000
+        fill: { type: solid, color: '#0F172A' }
+      - id: hero-macro
+        type: rich_text
+        z: 10
+        x: 60
+        y: 60
+        width: 1320
+        height: 100
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        line_height: 1.05
+        color: '#F1F5F9'
+        content: "**Macro Indicators & Yield Curve**"
+      - id: subtitle-macro
+        type: rich_text
+        z: 11
+        x: 60
+        y: 150
+        width: 1320
+        height: 30
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#64748B'
+        content: "GDP · CPI · UNEMPLOYMENT · FED RATE · TREASURY CURVE"
+      - id: kpi-gdp
+        type: kpi_card
+        z: 20
+        x: 60
+        y: 220
+        width: 320
+        height: 150
+        label: Q4 GDP Growth
+        value: 3.1
+        format: percent
+        decimals: 1
+        delta: 0.7
+        delta_format: percent
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-cpi
+        type: kpi_card
+        z: 21
+        x: 400
+        y: 220
+        width: 320
+        height: 150
+        label: CPI YoY
+        value: 2.4
+        format: percent
+        decimals: 1
+        delta: -0.8
+        delta_format: percent
+        delta_positive_color: '#ef4444'
+        delta_negative_color: '#22c55e'
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-unemp
+        type: kpi_card
+        z: 22
+        x: 740
+        y: 220
+        width: 320
+        height: 150
+        label: Unemployment
+        value: 3.5
+        format: percent
+        decimals: 1
+        delta: -0.3
+        delta_format: percent
+        delta_positive_color: '#ef4444'
+        delta_negative_color: '#22c55e'
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: kpi-real-rate
+        type: kpi_card
+        z: 23
+        x: 1080
+        y: 220
+        width: 300
+        height: 150
+        label: Real Fed Rate
+        value: 1.35
+        format: percent
+        decimals: 2
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: chart-yield-curve
+        type: interactive_chart
+        z: 30
+        x: 60
+        y: 410
+        width: 880
+        height: 420
+        chart_type: line
+        data_ref: bond_yields
+        x_field: maturity
+        y_field: yield
+        title: US Treasury Yield Curve (Dec 2025)
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#06b6d4']
+      - id: chart-fed-path
+        type: interactive_chart
+        z: 31
+        x: 960
+        y: 410
+        width: 420
+        height: 420
+        chart_type: line
+        data_ref: macro_indicators
+        x_field: period
+        y_field: fed_rate
+        title: Fed Funds Rate Path
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#f97316']
+      - id: section-macro-table
+        type: rich_text
+        z: 40
+        x: 60
+        y: 870
+        width: 1320
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 28
+        color: '#F1F5F9'
+        content: "**Quarterly Macro Snapshot**"
+      - id: tbl-macro
+        type: interactive_table
+        z: 41
+        x: 60
+        y: 930
+        width: 1320
+        height: 320
+        data_ref: macro_indicators
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: period,         title: Quarter,        width: 200, sortable: true }
+          - { field: gdp_growth,     title: GDP %,          width: 220, sortable: true, formatter: percent, decimals: 1, align: right }
+          - { field: cpi_yoy,        title: CPI YoY %,      width: 220, sortable: true, formatter: percent, decimals: 1, align: right }
+          - { field: unemployment,   title: Unemploy %,     width: 220, sortable: true, formatter: percent, decimals: 1, align: right }
+          - { field: fed_rate,       title: Fed Rate %,     width: 220, sortable: true, formatter: percent, decimals: 2, align: right }
+          - { field: ten_yr_yield,   title: 10Y Yield %,    width: 220, sortable: true, formatter: percent, decimals: 2, align: right }
+      - id: insight-macro
+        type: rich_text
+        z: 50
+        x: 60
+        y: 1280
+        width: 1320
+        height: 280
+        format: markdown
+        font_family: Inter
+        font_size: 16
+        line_height: 1.7
+        color: '#CBD5E1'
+        content: |
+          ## Macro Backdrop
+
+          The macroeconomic transition through 2025 was orderly:
+
+          - **GDP** accelerated each quarter — from **2.4%** in Q1 to **3.1%** in Q4 — supported by resilient consumer spending and corporate capex on AI infrastructure.
+          - **Inflation** continued to moderate, with CPI declining from **3.2%** to **2.4%** — within striking distance of the Fed's 2% target.
+          - **The labor market** softened modestly to a **3.5%** unemployment rate, still tight by historical standards.
+          - **The Fed** delivered three 25 bp cuts (March, July, October) — bringing the policy rate from **4.50% → 3.75%** while signalling further easing in 2026.
+          - **The yield curve** remains slightly inverted at the front end (1M-2Y), but normalised at longer maturities — consistent with a soft-landing scenario.
+  - id: earnings
+    label: Earnings Calendar
+    layers:
+      - id: bg-earnings
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 1440
+        height: 2000
+        fill: { type: solid, color: '#0F172A' }
+      - id: hero-earnings
+        type: rich_text
+        z: 10
+        x: 60
+        y: 60
+        width: 1320
+        height: 100
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        line_height: 1.05
+        color: '#F1F5F9'
+        content: "**Q4 2025 Earnings — Beats, Misses, & Upcoming**"
+      - id: subtitle-earnings
+        type: rich_text
+        z: 11
+        x: 60
+        y: 150
+        width: 1320
+        height: 30
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: '#64748B'
+        content: "JANUARY 2026 EARNINGS CALENDAR · EPS · REVENUE EST · SURPRISE"
+      - id: kpi-beats
+        type: kpi_card
+        z: 20
+        x: 60
+        y: 220
+        width: 320
+        height: 150
+        label: Beats Reported
+        value: 6
+        format: number
+        background: '#1E293B'
+        text_color: '#22c55e'
+        border_radius: 12
+        icon: '✓'
+      - id: kpi-misses
+        type: kpi_card
+        z: 21
+        x: 400
+        y: 220
+        width: 320
+        height: 150
+        label: Misses Reported
+        value: 2
+        format: number
+        background: '#1E293B'
+        text_color: '#ef4444'
+        border_radius: 12
+        icon: '✗'
+      - id: kpi-upcoming
+        type: kpi_card
+        z: 22
+        x: 740
+        y: 220
+        width: 320
+        height: 150
+        label: Upcoming
+        value: 4
+        format: number
+        background: '#1E293B'
+        text_color: '#fbbf24'
+        border_radius: 12
+        icon: '○'
+      - id: kpi-avg-surprise
+        type: kpi_card
+        z: 23
+        x: 1080
+        y: 220
+        width: 300
+        height: 150
+        label: Avg Surprise
+        value: 4.55
+        format: percent
+        decimals: 2
+        background: '#1E293B'
+        text_color: '#F1F5F9'
+        border_radius: 12
+      - id: chart-surprise
+        type: interactive_chart
+        z: 30
+        x: 60
+        y: 410
+        width: 1320
+        height: 380
+        chart_type: bar
+        data_ref: earnings_calendar
+        x_field: ticker
+        y_field: surprise_pct
+        title: EPS Surprise % (Reported)
+        legend: false
+        grid: true
+        animate: true
+        custom_colors: ['#8b5cf6']
+      - id: section-earnings-table
+        type: rich_text
+        z: 40
+        x: 60
+        y: 820
+        width: 1320
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 28
+        color: '#F1F5F9'
+        content: "**Full Calendar — Sortable / Filterable**"
+      - id: tbl-earnings
+        type: interactive_table
+        z: 41
+        x: 60
+        y: 880
+        width: 1320
+        height: 580
+        data_ref: earnings_calendar
+        pagination: true
+        page_size: 8
+        filterable: true
+        exportable: true
+        columns:
+          - { field: date,           title: Date,         width: 140, sortable: true }
+          - { field: ticker,         title: Ticker,       width: 120, sortable: true }
+          - { field: company,        title: Company,      width: 280, sortable: true }
+          - { field: time,           title: Time,         width: 100, sortable: true, formatter: badge }
+          - { field: eps_est,        title: EPS Est,      width: 140, sortable: true, formatter: currency, decimals: 2, align: right }
+          - { field: eps_actual,     title: EPS Actual,   width: 140, sortable: true, formatter: currency, decimals: 2, align: right }
+          - { field: surprise_pct,   title: Surprise %,   width: 160, sortable: true, formatter: percent, decimals: 2, align: right }
+          - { field: revenue_est_b,  title: Rev Est ($B), width: 160, sortable: true, formatter: number, decimals: 2, align: right }
+          - { field: status,         title: Status,       width: 140, sortable: true, formatter: badge }
+      - id: insight-earnings
+        type: rich_text
+        z: 50
+        x: 60
+        y: 1490
+        width: 1320
+        height: 280
+        format: markdown
+        font_family: Inter
+        font_size: 16
+        line_height: 1.7
+        color: '#CBD5E1'
+        content: |
+          ## Q4 Earnings Themes
+
+          - **Mega-cap tech** continued to deliver — Apple, Microsoft, Alphabet, Tesla, and Amazon all beat — though Meta's modest **-1.75%** miss reflects rising AI capex pressure.
+          - **Tesla** stunned with a **+22.97%** EPS beat as deliveries surged and energy storage scaled.
+          - **Netflix's** beat was modest at **+2.15%**, though the print confirmed continued ad-tier traction.
+          - **Intel's** **-25%** miss capped a difficult year amid foundry losses and PC weakness.
+          - The week of **Feb 4–6** features high-profile reports from **GOOG, AMD, NVDA** — collectively a referendum on the AI infrastructure thesis.
+
+          ---
+
+          *Data shown for illustrative purposes. Past performance does not guarantee future results.*
