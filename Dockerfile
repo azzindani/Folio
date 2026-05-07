@@ -7,11 +7,19 @@
 # the existing shell scripts under ./scripts so docker and bare-metal builds
 # stay in sync.
 #
-#   build  → scripts/build.sh   (typecheck · lint · vite build)
-#   serve  → scripts/serve.sh   (vite preview, host 0.0.0.0)
+#   build  → scripts/build.sh           (typecheck · lint · vite build)
+#   ui     → scripts/serve.sh           (vite preview, :4173)
+#   mcp    → scripts/serve-mcp.sh       (MCP HTTP/SSE, :3333)
+#   entry  → scripts/docker-entrypoint  (dispatch by $FOLIO_MODE)
 #
-# Build:   docker build -t folio:latest .
-# Run:     docker run --rm -p 4173:4173 folio:latest
+# Build:                docker build -t folio:latest .
+# Run UI:               docker run --rm -p 4173:4173 folio:latest
+# Run MCP HTTP API:     docker run --rm -p 3333:3333 -e FOLIO_MODE=mcp folio:latest
+# Run both:             docker run --rm -p 4173:4173 -p 3333:3333 \
+#                                   -e FOLIO_MODE=both folio:latest
+# With auth:            -e FOLIO_API_KEY=secret  (then Authorization: Bearer secret)
+#
+# Anthropic MCP connector points at:  http://<host>:3333/mcp  (POST, JSON-RPC)
 # ─────────────────────────────────────────────────────────────────────────────
 
 ARG NODE_VERSION=20
@@ -53,8 +61,11 @@ FROM ${DEBIAN_BASE} AS runtime
 ARG NODE_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 ENV NODE_ENV=production
+# Defaults — override per `docker run -e ...`
+ENV FOLIO_MODE=ui
 ENV PORT=4173
 ENV HOST=0.0.0.0
+ENV FOLIO_PORT=3333
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -70,19 +81,29 @@ RUN groupadd --system folio \
 
 WORKDIR /app
 
-# Copy build output + the runtime deps `vite preview` needs.
+# Build output for `vite preview`.
 COPY --from=builder --chown=folio:folio /app/dist           ./dist
+# node_modules carries vite (UI preview) AND ts-node (MCP HTTP runner).
 COPY --from=builder --chown=folio:folio /app/node_modules   ./node_modules
 COPY --from=builder --chown=folio:folio /app/package.json   ./package.json
+COPY --from=builder --chown=folio:folio /app/package-lock.json ./package-lock.json
+COPY --from=builder --chown=folio:folio /app/tsconfig.json  ./tsconfig.json
 COPY --from=builder --chown=folio:folio /app/vite.config.ts ./vite.config.ts
 COPY --from=builder --chown=folio:folio /app/index.html     ./index.html
-COPY --chown=folio:folio scripts/serve.sh ./scripts/serve.sh
-RUN chmod +x scripts/serve.sh
+# MCP HTTP server is TS — copy src/ so ts-node can load it at runtime.
+COPY --from=builder --chown=folio:folio /app/src            ./src
+COPY --chown=folio:folio scripts/serve.sh             ./scripts/serve.sh
+COPY --chown=folio:folio scripts/serve-mcp.sh         ./scripts/serve-mcp.sh
+COPY --chown=folio:folio scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
+RUN chmod +x scripts/serve.sh scripts/serve-mcp.sh scripts/docker-entrypoint.sh
 
 USER folio
-EXPOSE 4173
+EXPOSE 4173 3333
 
+# Health check probes whichever role is active. UI on :4173, MCP on :3333.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -fsS "http://127.0.0.1:${PORT}/" >/dev/null || exit 1
+  CMD curl -fsS "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 \
+   || curl -fsS "http://127.0.0.1:${FOLIO_PORT}/health" >/dev/null 2>&1 \
+   || exit 1
 
-CMD ["scripts/serve.sh"]
+ENTRYPOINT ["scripts/docker-entrypoint.sh"]
