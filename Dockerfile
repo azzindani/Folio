@@ -8,11 +8,13 @@
 # stay in sync.
 #
 #   build  → scripts/build.sh           (typecheck · lint · vite build)
+#   test   → scripts/test.sh            (unit + integration; --e2e opt-in)
 #   ui     → scripts/serve.sh           (vite preview, :4173)
 #   mcp    → scripts/serve-mcp.sh       (MCP HTTP/SSE, :3333)
 #   entry  → scripts/docker-entrypoint  (dispatch by $FOLIO_MODE)
 #
 # Build:                docker build -t folio:latest .
+# Skip tests (faster):  docker build --build-arg SKIP_TESTS=1 -t folio:latest .
 # Run UI:               docker run --rm -p 4173:4173 folio:latest
 # Run MCP HTTP API:     docker run --rm -p 3333:3333 -e FOLIO_MODE=mcp folio:latest
 # Run both:             docker run --rm -p 4173:4173 -p 3333:3333 \
@@ -24,6 +26,7 @@
 
 ARG NODE_VERSION=20
 ARG DEBIAN_BASE=debian:bookworm-slim
+ARG SKIP_TESTS=0
 
 # ── Stage 1: builder ─────────────────────────────────────────────────────────
 FROM ${DEBIAN_BASE} AS builder
@@ -46,11 +49,26 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --prefer-offline --no-audit --no-fund
 
-# Project sources + scripts.
+# Project sources + scripts + test fixtures/configs.
 COPY tsconfig.json vite.config.ts eslint.config.js index.html ./
+COPY vitest.config.ts vitest.integration.config.ts ./
 COPY src ./src
+COPY tests ./tests
+COPY examples ./examples
+COPY docs ./docs
 COPY scripts ./scripts
 RUN chmod +x scripts/*.sh
+
+# Run the full unit + integration test suite before building. Override
+# with --build-arg SKIP_TESTS=1 to skip during fast iteration. (E2E /
+# visual tests are opt-in via scripts/test.sh --e2e and require Playwright
+# Chromium; not run here by default.)
+ARG SKIP_TESTS
+RUN if [ "${SKIP_TESTS:-0}" = "1" ]; then \
+      echo "[docker] SKIP_TESTS=1 — skipping scripts/test.sh"; \
+    else \
+      scripts/test.sh; \
+    fi
 
 # Reuse the existing build script (typecheck + lint + vite build).
 RUN scripts/build.sh
