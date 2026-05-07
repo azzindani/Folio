@@ -3,8 +3,22 @@ import type { ToolDefinition } from '../types';
 
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
+    name: 'open_in_editor',
+    description: 'Return a clickable URL that opens the Folio editor on a design. The editor live-refreshes when subsequent MCP tools edit the same file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string',  description: 'Path to .design.yaml — omit to open the editor at its home page' },
+        project_path: { type: 'string',  description: 'Project dir for resolving relative design_path' },
+        editor_url:   { type: 'string',  description: 'Override editor base URL (default: $FOLIO_EDITOR_URL or http://localhost:4173)' },
+        page:         { type: 'number',  description: 'Page index to focus (1-based)' },
+      },
+      required: [],
+    },
+  },
+  {
     name: 'export_design',
-    description: 'Export design to SVG or HTML. PNG/PDF needs Puppeteer (Phase 2).',
+    description: 'Export design to SVG or HTML. SVG returns an inline image preview alongside the JSON result. PNG/PDF needs Puppeteer (Phase 2).',
     inputSchema: {
       type: 'object',
       properties: {
