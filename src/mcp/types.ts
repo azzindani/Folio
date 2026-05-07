@@ -72,21 +72,39 @@ export interface ToolResult {
   token_estimate: number;
   context?: ContextField;
   handover?: Handover;
+  /** Optional inline content rendered alongside the JSON text block.
+   *  Examples: SVG/PNG previews of an exported design, clickable links
+   *  to the editor, raw resource URIs. Translated by toMCPResult. */
+  _attachments?: AttachmentBlock[];
   [key: string]: unknown;
 }
 
 // ── MCP Content Envelope ─────────────────────────────────────
 
+/** A single content block in an MCP tool response.
+ *  Matches the MCP spec content union (text, image, resource). */
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; data: string; mimeType: string }
+  | { type: 'resource'; resource: { uri: string; mimeType?: string; text?: string; blob?: string } };
+
+/** Public alias used by tool authors to attach inline previews. */
+export type AttachmentBlock = ContentBlock;
+
 export interface ToolCallResult {
-  content: { type: 'text'; text: string }[];
+  content: ContentBlock[];
   isError?: boolean;
 }
 
 export function toMCPResult(result: ToolResult): ToolCallResult {
-  return {
-    content: [{ type: 'text', text: JSON.stringify(result) }],
-    isError: result.success === false,
-  };
+  // Strip _attachments before serializing — they live in dedicated content
+  // blocks rather than being inlined into the JSON text payload.
+  const { _attachments, ...rest } = result;
+  const content: ContentBlock[] = [{ type: 'text', text: JSON.stringify(rest) }];
+  if (Array.isArray(_attachments)) {
+    for (const att of _attachments) content.push(att);
+  }
+  return { content, isError: result.success === false };
 }
 
 // ── MCP Message Types (stdio transport) ─────────────────────

@@ -676,7 +676,14 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'svg', path: outPath, role: 'output' },
       ]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, progress, context, handover });
+      // Attach the SVG inline so MCP-aware chat clients can preview the
+      // export without opening the file. Also include a resource link to
+      // the file path so file-system clients can open it locally.
+      const _attachments = [
+        { type: 'image' as const, data: Buffer.from(svgStr, 'utf-8').toString('base64'), mimeType: 'image/svg+xml' },
+        { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/svg+xml', text: path.basename(outPath) } },
+      ];
+      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
     }
@@ -1331,5 +1338,56 @@ export function setupCollab(args: {
       patch:  `http://localhost:${port}/patch`,
     },
     hint: 'Start the collab server, then connect any client to /events (SSE) to receive design-changed events. POST to /patch with {content:"<yaml>"} to push changes.',
+  });
+}
+
+// ── open_in_editor — return a URL the user can click to open Folio ──
+//
+// The Anthropic chat UI renders text content as Markdown, so a plain URL
+// becomes a clickable link. We also attach a `resource` block so MCP
+// clients that support resource previews can render the link richly.
+export function openInEditor(args: {
+  design_path?: string;
+  project_path?: string;
+  editor_url?: string;
+  page?: number;
+}): ToolResult {
+  const op = 'open_in_editor';
+  const progress: ProgressItem[] = [];
+  const baseUrl = (args.editor_url ?? process.env['FOLIO_EDITOR_URL'] ?? 'http://localhost:4173').replace(/\/+$/, '');
+
+  let dPath = '';
+  if (args.design_path) {
+    dPath = resolveDesignPath(args.design_path, args.project_path);
+    if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+  }
+
+  const params = new URLSearchParams();
+  if (dPath) params.set('file', dPath);
+  if (typeof args.page === 'number') params.set('page', String(args.page));
+  // Live-refresh: tell the editor to subscribe to MCP file-change events.
+  const mcpUrl = process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`;
+  params.set('mcp_url', mcpUrl);
+
+  const url = params.toString() ? `${baseUrl}/?${params.toString()}` : baseUrl;
+  progress.push(pOk('Editor URL', url));
+
+  const _attachments = [
+    { type: 'resource' as const, resource: { uri: url, mimeType: 'text/html', text: `Open Folio editor → ${url}` } },
+  ];
+
+  const context = buildContext(op, `Editor link generated`,
+    dPath ? [{ type: 'design', path: dPath, role: 'opened' }] : []);
+  const handover = buildHandover('EXPORT', dPath ? { design_path: dPath } : {});
+
+  return okResult(op, {
+    url,
+    editor_url: baseUrl,
+    design_path: dPath || undefined,
+    hint: `Open ${url} in a browser. The editor will live-refresh as MCP edits the file.`,
+    progress,
+    context,
+    handover,
+    _attachments,
   });
 }
