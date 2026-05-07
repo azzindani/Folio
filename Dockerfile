@@ -21,6 +21,14 @@
 #                                   -e FOLIO_MODE=both folio:latest
 # With auth:            -e FOLIO_API_KEY=secret  (then Authorization: Bearer secret)
 #
+# Persistence:          Folio stores projects as YAML files (no database).
+#                       Mount a host directory or named volume at
+#                       /home/folio/projects so designs survive restarts:
+#                         -v $PWD/folio-projects:/home/folio/projects
+#                       or:
+#                         -v folio-data:/home/folio/projects
+#                       MCP tools then take project_path=/home/folio/projects/<name>.
+#
 # Anthropic MCP connector points at:  http://<host>:3333/mcp  (POST, JSON-RPC)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -84,6 +92,10 @@ ENV FOLIO_MODE=ui
 ENV PORT=4173
 ENV HOST=0.0.0.0
 ENV FOLIO_PORT=3333
+# All MCP file ops are gated to $HOME or /tmp by src/mcp/engine/utils.ts.
+# /home/folio/projects is the canonical persistence point — mount a host
+# directory (or a docker volume) here to keep projects across restarts.
+ENV FOLIO_PROJECTS_DIR=/home/folio/projects
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -115,8 +127,13 @@ COPY --chown=folio:folio scripts/serve-mcp.sh         ./scripts/serve-mcp.sh
 COPY --chown=folio:folio scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 RUN chmod +x scripts/serve.sh scripts/serve-mcp.sh scripts/docker-entrypoint.sh
 
+# Pre-create + own the projects mount point so an unmounted run still works
+# (data goes into the image layer; mount a volume to make it survive).
+RUN mkdir -p "${FOLIO_PROJECTS_DIR}" && chown -R folio:folio /home/folio
+
 USER folio
 EXPOSE 4173 3333
+VOLUME ["/home/folio/projects"]
 
 # Health check probes whichever role is active. UI on :4173, MCP on :3333.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
