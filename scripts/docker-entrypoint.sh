@@ -15,6 +15,16 @@ if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
 
+# Make the projects dir if it doesn't exist (covers fresh volumes).
+PROJECTS_DIR="${FOLIO_PROJECTS_DIR:-/home/folio/projects}"
+mkdir -p "${PROJECTS_DIR}" 2>/dev/null || true
+
+MOUNT_KIND="ephemeral (image layer — mount a volume to persist)"
+if mountpoint -q "${PROJECTS_DIR}" 2>/dev/null; then
+  MOUNT_KIND="persistent (mounted volume)"
+fi
+echo "[entrypoint] FOLIO_PROJECTS_DIR=${PROJECTS_DIR} — ${MOUNT_KIND}"
+
 MODE="${FOLIO_MODE:-ui}"
 case "${MODE}" in
   ui)
