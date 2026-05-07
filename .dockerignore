@@ -1,0 +1,30 @@
+# Keep build context small + reproducible.
+.git
+.github
+node_modules
+dist
+.vite
+coverage
+test-results
+tests/visual/diffs
+tests/e2e/artifacts
+tests/playwright-report
+tests/ui-audit/screenshots
+tests/ui-audit/reports
+
+# Local editor / OS junk
+.DS_Store
+*.local
+*.log
+.idea
+.vscode
+
+# Tarballs and build artifacts
+*.tgz
+
+# Docker itself
+Dockerfile
+.dockerignore
+
+# Notebooks / docs not needed at runtime
+folio_colab.ipynb
