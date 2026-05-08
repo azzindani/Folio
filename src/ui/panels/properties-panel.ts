@@ -3,6 +3,7 @@ import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, ImageLayer, L
 import { colorPicker } from '../color-picker/color-picker';
 import { recolorSVG, extractSVGColors } from '../../utils/svg-importer';
 import { removeBackground } from '../../utils/bg-remover';
+import { attachWheelAdjustAll } from '../inputs/wheel-adjust';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -882,6 +883,9 @@ export class PropertiesPanelManager {
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
     });
+
+    // Mouse-wheel adjusts every number field. Shift = ×10, Alt = ×0.1.
+    attachWheelAdjustAll(this.content);
 
     // Lock toggle
     const lockBtn = this.content.querySelector<HTMLButtonElement>('#pp-lock-btn');

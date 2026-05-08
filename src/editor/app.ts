@@ -406,6 +406,31 @@ export class EditorApp {
         // Invalid YAML from external editor — ignore until it's valid
       }
     });
+
+    // MCP live-refresh: when the user opens the editor with `?mcp_url=...`
+    // (typically minted by the MCP `open_in_editor` tool), subscribe to
+    // /editor/events on the MCP HTTP server and reload the design as soon
+    // as a tool call mutates the underlying YAML.
+    this.subscribeMCPLiveRefresh();
+  }
+
+  private subscribeMCPLiveRefresh(): void {
+    if (typeof location === 'undefined' || typeof EventSource === 'undefined') return;
+    void import('./mcp-events').then(({ subscribeMCPEvents, parseMCPParams }) => {
+      const params = parseMCPParams();
+      if (!params.mcpUrl) return;
+      try {
+        subscribeMCPEvents({
+          mcpUrl: params.mcpUrl,
+          designPath: params.designPath,
+          onFileChanged: (yamlContent) => {
+            try { this.loadFromYAML(yamlContent); } catch { /* invalid YAML — wait for next event */ }
+            void import('../utils/toast').then(({ showToast }) => showToast('Design updated by MCP', 'info'));
+          },
+          onError: () => { /* connection blip — EventSource auto-reconnects */ },
+        });
+      } catch { /* MCP server unreachable — silent fallback */ }
+    });
   }
 
   private buildLayout(): void {
