@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: japanese-zen
+name: Japanese Zen
+version: "1.0.0"
+tags: [japanese, zen, wabi-sabi, minimal, cultural]
+description: "Sumi ink black, indigo and vermillion on washi cream — wabi-sabi quietude and tea-ceremony calm."
+colors:
+  background: "#F1EADA"
+  surface:    "#E8DFC8"
+  surface_2:  "#D9CDB0"
+  primary:    "#1B2A3A"
+  secondary:  "#2B4C7E"
+  accent:     "#C0392B"
+  text:       "#1A1410"
+  text_muted: "#6B6151"
+  border:     "#B8A98A"
+  success:    "#5C7A4A"
+  warning:    "#B98A2E"
+  danger:     "#A82E20"

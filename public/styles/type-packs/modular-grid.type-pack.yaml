@@ -1,0 +1,15 @@
+_protocol: type-pack/v1
+id: modular-grid
+name: Modular Grid
+version: "1.0.0"
+tags: [grid, magazine, news, swiss, modular]
+description: "Inter on a strict modular grid with Roboto Mono — Swiss magazine/news register."
+families:
+  heading: "Inter"
+  body:    "Inter"
+  mono:    "Roboto Mono"
+scale:
+  h1:
+    size: 64
+    weight: 600
+    line_height: 1.1

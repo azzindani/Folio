@@ -1,0 +1,21 @@
+_protocol: type-pack/v1
+id: didone-luxe
+name: Didone Luxe
+version: "1.0.0"
+tags: [didone, luxury, fashion, magazine, editorial]
+description: "Playfair Display + Lora + EB Garamond — ultra-high-fashion magazine register."
+families:
+  heading: "Playfair Display"
+  body:    "Lora"
+  mono:    "Courier Prime"
+  display: "Playfair Display"
+  accent:  "EB Garamond"
+scale:
+  display:
+    size: 144
+    weight: 900
+    line_height: 0.95
+  h1:
+    size: 96
+    weight: 700
+    line_height: 1.05

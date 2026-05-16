@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: noir-cinematic
+name: Noir Cinematic
+version: "1.0.0"
+tags: [noir, cinematic, dramatic, dark, moody, film]
+description: "Heavy single-direction shadow with cold rim halo — 1940s film-noir key light register."
+effects:
+  shadow_card:   "0 24px 48px rgba(0,0,0,0.65)"
+  shadow_glow:   "0 0 80px rgba(255,255,255,0.05), 0 0 160px rgba(255,255,255,0.03)"
+  shadow_inset:  "inset 0 -2px 12px rgba(0,0,0,0.45)"
+  shadow_text:   "2px 2px 8px rgba(0,0,0,0.80)"
+  blur_glass:    8
+  blur_backdrop: 14

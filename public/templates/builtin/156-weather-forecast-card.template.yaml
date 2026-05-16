@@ -1,0 +1,609 @@
+_protocol: template/v1
+
+# Weather forecast widget — 1080×1350 portrait, ocean-blue theme.
+# City + current condition top, large current temp with stylized sun
+# (circle + rays), feels-like + humidity badges, 5 mini day cards in
+# a row, sunrise/sunset footer.
+meta:
+  id: tmpl-weather-forecast-card
+  name: Weather Forecast Card
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [weather, forecast, card, widget, portrait, ocean]
+  description: "Weather forecast widget with current temperature, feels-like, humidity, and 5-day mini forecast row."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: ocean-blue
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1350
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$background", position: 60 }
+        - { color: "$surface", position: 100 }
+
+  # ── Soft ambient glow ─────────────────────────────────────
+  - id: glow
+    type: circle
+    z: 2
+    cx: 800
+    cy: 280
+    rx: 360
+    ry: 360
+    fill:
+      type: radial
+      stops:
+        - { color: "#FFE08A", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.45
+
+  # ── City + condition ──────────────────────────────────────
+  - id: city
+    type: text
+    z: 10
+    x: 60
+    y: 80
+    width: 960
+    height: 0
+    content: { type: plain, value: "Lisbon, Portugal" }
+    style:
+      font_family: $heading
+      font_size: 42
+      font_weight: 700
+      color: "#FFFFFF"
+      line_height: 1.2
+
+  - id: condition
+    type: text
+    z: 11
+    x: 60
+    y: 140
+    width: 960
+    height: 0
+    content: { type: plain, value: "Mostly sunny  ·  light breeze" }
+    style:
+      font_family: $body
+      font_size: 22
+      color: "#FFFFFFD0"
+      line_height: 1.3
+
+  # ── Sun icon (circle + 8 ray lines) ───────────────────────
+  - id: sun-core
+    type: circle
+    z: 20
+    cx: 800
+    cy: 350
+    rx: 90
+    ry: 90
+    fill: { type: solid, color: "#FFD66B" }
+
+  - id: ray-1
+    type: line
+    z: 21
+    x1: 800
+    y1: 200
+    x2: 800
+    y2: 240
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-2
+    type: line
+    z: 21
+    x1: 800
+    y1: 460
+    x2: 800
+    y2: 500
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-3
+    type: line
+    z: 21
+    x1: 650
+    y1: 350
+    x2: 690
+    y2: 350
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-4
+    type: line
+    z: 21
+    x1: 910
+    y1: 350
+    x2: 950
+    y2: 350
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-5
+    type: line
+    z: 21
+    x1: 695
+    y1: 245
+    x2: 723
+    y2: 273
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-6
+    type: line
+    z: 21
+    x1: 877
+    y1: 427
+    x2: 905
+    y2: 455
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-7
+    type: line
+    z: 21
+    x1: 905
+    y1: 245
+    x2: 877
+    y2: 273
+    stroke: { color: "#FFD66B", width: 8 }
+
+  - id: ray-8
+    type: line
+    z: 21
+    x1: 723
+    y1: 427
+    x2: 695
+    y2: 455
+    stroke: { color: "#FFD66B", width: 8 }
+
+  # ── Current temperature (huge) ────────────────────────────
+  - id: current-temp
+    type: text
+    z: 30
+    x: 60
+    y: 240
+    width: 600
+    height: 0
+    content: { type: plain, value: "24°" }
+    style:
+      font_family: $heading
+      font_size: 260
+      font_weight: 800
+      color: "#FFFFFF"
+      line_height: 1
+      letter_spacing: -0.04
+
+  - id: high-low
+    type: text
+    z: 31
+    x: 60
+    y: 500
+    width: 600
+    height: 0
+    content: { type: plain, value: "H 27°  ·  L 18°" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "#FFFFFFD0"
+      line_height: 1.3
+
+  # ── Feels-like badge ──────────────────────────────────────
+  - id: feels-pill
+    type: rect
+    z: 40
+    x: 60
+    y: 580
+    width: 460
+    height: 110
+    radius: 24
+    fill: { type: solid, color: "#FFFFFF22" }
+    stroke: { color: "#FFFFFF55", width: 1 }
+
+  - id: feels-label
+    type: text
+    z: 41
+    x: 90
+    y: 605
+    width: 420
+    height: 0
+    content: { type: plain, value: "FEELS LIKE" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "#FFFFFFAA"
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: feels-value
+    type: text
+    z: 42
+    x: 90
+    y: 632
+    width: 420
+    height: 0
+    content: { type: plain, value: "26°" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 700
+      color: "#FFFFFF"
+      line_height: 1.1
+
+  # ── Humidity badge ────────────────────────────────────────
+  - id: humid-pill
+    type: rect
+    z: 43
+    x: 560
+    y: 580
+    width: 460
+    height: 110
+    radius: 24
+    fill: { type: solid, color: "#FFFFFF22" }
+    stroke: { color: "#FFFFFF55", width: 1 }
+
+  - id: humid-label
+    type: text
+    z: 44
+    x: 590
+    y: 605
+    width: 420
+    height: 0
+    content: { type: plain, value: "HUMIDITY" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "#FFFFFFAA"
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: humid-value
+    type: text
+    z: 45
+    x: 590
+    y: 632
+    width: 420
+    height: 0
+    content: { type: plain, value: "62%" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 700
+      color: "#FFFFFF"
+      line_height: 1.1
+
+  # ── 5-day forecast row ────────────────────────────────────
+  - id: forecast-header
+    type: text
+    z: 50
+    x: 60
+    y: 750
+    width: 960
+    height: 0
+    content: { type: plain, value: "NEXT 5 DAYS" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: "#FFFFFFCC"
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  # Day 1 card
+  - id: d1-card
+    type: rect
+    z: 51
+    x: 60
+    y: 800
+    width: 180
+    height: 280
+    radius: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: d1-day
+    type: text
+    z: 52
+    x: 60
+    y: 822
+    width: 180
+    height: 0
+    content: { type: plain, value: "SUN" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center }
+
+  - id: d1-icon
+    type: circle
+    z: 53
+    cx: 150
+    cy: 900
+    rx: 30
+    ry: 30
+    fill: { type: solid, color: "#FFD66B" }
+
+  - id: d1-hi
+    type: text
+    z: 54
+    x: 60
+    y: 970
+    width: 180
+    height: 0
+    content: { type: plain, value: "26°" }
+    style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, text_align: center, line_height: 1.1 }
+
+  - id: d1-lo
+    type: text
+    z: 55
+    x: 60
+    y: 1020
+    width: 180
+    height: 0
+    content: { type: plain, value: "17°" }
+    style: { font_family: $body, font_size: 20, color: $text_muted, text_align: center, line_height: 1.1 }
+
+  # Day 2 card
+  - id: d2-card
+    type: rect
+    z: 56
+    x: 256
+    y: 800
+    width: 180
+    height: 280
+    radius: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: d2-day
+    type: text
+    z: 57
+    x: 256
+    y: 822
+    width: 180
+    height: 0
+    content: { type: plain, value: "MON" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center }
+
+  - id: d2-icon
+    type: circle
+    z: 58
+    cx: 346
+    cy: 900
+    rx: 30
+    ry: 30
+    fill: { type: solid, color: "#9BBCD8" }
+
+  - id: d2-hi
+    type: text
+    z: 59
+    x: 256
+    y: 970
+    width: 180
+    height: 0
+    content: { type: plain, value: "23°" }
+    style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, text_align: center, line_height: 1.1 }
+
+  - id: d2-lo
+    type: text
+    z: 60
+    x: 256
+    y: 1020
+    width: 180
+    height: 0
+    content: { type: plain, value: "16°" }
+    style: { font_family: $body, font_size: 20, color: $text_muted, text_align: center, line_height: 1.1 }
+
+  # Day 3 card
+  - id: d3-card
+    type: rect
+    z: 61
+    x: 452
+    y: 800
+    width: 180
+    height: 280
+    radius: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: d3-day
+    type: text
+    z: 62
+    x: 452
+    y: 822
+    width: 180
+    height: 0
+    content: { type: plain, value: "TUE" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center }
+
+  - id: d3-icon
+    type: circle
+    z: 63
+    cx: 542
+    cy: 900
+    rx: 30
+    ry: 30
+    fill: { type: solid, color: "#6FA4D6" }
+
+  - id: d3-hi
+    type: text
+    z: 64
+    x: 452
+    y: 970
+    width: 180
+    height: 0
+    content: { type: plain, value: "20°" }
+    style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, text_align: center, line_height: 1.1 }
+
+  - id: d3-lo
+    type: text
+    z: 65
+    x: 452
+    y: 1020
+    width: 180
+    height: 0
+    content: { type: plain, value: "14°" }
+    style: { font_family: $body, font_size: 20, color: $text_muted, text_align: center, line_height: 1.1 }
+
+  # Day 4 card
+  - id: d4-card
+    type: rect
+    z: 66
+    x: 648
+    y: 800
+    width: 180
+    height: 280
+    radius: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: d4-day
+    type: text
+    z: 67
+    x: 648
+    y: 822
+    width: 180
+    height: 0
+    content: { type: plain, value: "WED" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center }
+
+  - id: d4-icon
+    type: circle
+    z: 68
+    cx: 738
+    cy: 900
+    rx: 30
+    ry: 30
+    fill: { type: solid, color: "#9BBCD8" }
+
+  - id: d4-hi
+    type: text
+    z: 69
+    x: 648
+    y: 970
+    width: 180
+    height: 0
+    content: { type: plain, value: "22°" }
+    style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, text_align: center, line_height: 1.1 }
+
+  - id: d4-lo
+    type: text
+    z: 70
+    x: 648
+    y: 1020
+    width: 180
+    height: 0
+    content: { type: plain, value: "15°" }
+    style: { font_family: $body, font_size: 20, color: $text_muted, text_align: center, line_height: 1.1 }
+
+  # Day 5 card
+  - id: d5-card
+    type: rect
+    z: 71
+    x: 844
+    y: 800
+    width: 180
+    height: 280
+    radius: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: d5-day
+    type: text
+    z: 72
+    x: 844
+    y: 822
+    width: 180
+    height: 0
+    content: { type: plain, value: "THU" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center }
+
+  - id: d5-icon
+    type: circle
+    z: 73
+    cx: 934
+    cy: 900
+    rx: 30
+    ry: 30
+    fill: { type: solid, color: "#FFD66B" }
+
+  - id: d5-hi
+    type: text
+    z: 74
+    x: 844
+    y: 970
+    width: 180
+    height: 0
+    content: { type: plain, value: "25°" }
+    style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, text_align: center, line_height: 1.1 }
+
+  - id: d5-lo
+    type: text
+    z: 75
+    x: 844
+    y: 1020
+    width: 180
+    height: 0
+    content: { type: plain, value: "18°" }
+    style: { font_family: $body, font_size: 20, color: $text_muted, text_align: center, line_height: 1.1 }
+
+  # ── Sunrise / sunset footer ───────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 80
+    x: 60
+    y: 1140
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: sunrise
+    type: text
+    z: 81
+    x: 60
+    y: 1180
+    width: 460
+    height: 0
+    content: { type: plain, value: "↑ Sunrise  06:24" }
+    style: { font_family: $body, font_size: 22, font_weight: 600, color: $text, line_height: 1.3 }
+
+  - id: sunset
+    type: text
+    z: 82
+    x: 60
+    y: 1180
+    width: 960
+    height: 0
+    content: { type: plain, value: "↓ Sunset  20:48" }
+    style: { font_family: $body, font_size: 22, font_weight: 600, color: $text, text_align: right, line_height: 1.3 }
+
+  - id: ts
+    type: text
+    z: 83
+    x: 60
+    y: 1240
+    width: 960
+    height: 0
+    content: { type: plain, value: "Updated 14:30 local  ·  source: openweather" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: center
+      line_height: 1.3
+
+slots:
+  - { id: city,         path: "layers[2].content.value",  type: text, hint: "City name",                default: "Lisbon, Portugal" }
+  - { id: current_temp, path: "layers[13].content.value", type: text, hint: "Current temperature (°)", default: "24°" }
+  - { id: feels_like,   path: "layers[17].content.value", type: text, hint: "Feels-like temperature",  default: "26°" }
+  - { id: humidity,     path: "layers[20].content.value", type: text, hint: "Humidity %",              default: "62%" }

@@ -1,0 +1,385 @@
+_protocol: template/v1
+
+# Electronic music festival poster (1200×1800 portrait).
+# Cyber-synthwave: glitchy neon DJ name, sub-DJs, gradient circles for rave
+# light effect, BPM label, club + date.
+meta:
+  id: tmpl-concert-poster-electronic
+  name: Concert Poster — Electronic
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, concert, music, electronic, edm, rave, synthwave]
+  description: "Cyber-synthwave electronic music poster with glitchy DJ name, gradient rave circles and BPM tag."
+
+document:
+  width: 1200
+  height: 1800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1800
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 50 }
+        - { color: "$background", position: 100 }
+
+  - id: rave-circle-a
+    type: circle
+    z: 1
+    cx: 220
+    cy: 380
+    rx: 380
+    ry: 380
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.6
+
+  - id: rave-circle-b
+    type: circle
+    z: 2
+    cx: 1020
+    cy: 520
+    rx: 340
+    ry: 340
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.55
+
+  - id: rave-circle-c
+    type: circle
+    z: 3
+    cx: 600
+    cy: 1300
+    rx: 460
+    ry: 460
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.4
+
+  - id: grid-line-top
+    type: rect
+    z: 5
+    x: 60
+    y: 130
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.55
+
+  - id: grid-line-bottom
+    type: rect
+    z: 6
+    x: 60
+    y: 1670
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.55
+
+  - id: bpm-pill
+    type: rect
+    z: 10
+    x: 60
+    y: 76
+    width: 120
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: bpm-text
+    type: text
+    z: 11
+    x: 60
+    y: 86
+    width: 120
+    height: 0
+    content: { type: plain, value: "// 138 BPM" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.18
+      text_align: center
+      text_transform: uppercase
+
+  - id: stage-tag
+    type: text
+    z: 12
+    x: 980
+    y: 86
+    width: 160
+    height: 0
+    content: { type: plain, value: "MAIN STAGE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.32
+      text_align: right
+      text_transform: uppercase
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 60
+    y: 280
+    width: 1080
+    height: 0
+    content: { type: plain, value: "SUBSONIC LABEL NIGHT · DARKROOM SESSIONS" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: headliner-shadow
+    type: text
+    z: 21
+    x: 64
+    y: 380
+    width: 1080
+    height: 0
+    content: { type: plain, value: "KAIROS" }
+    style:
+      font_family: $heading
+      font_size: 240
+      font_weight: 900
+      color: $primary
+      line_height: 0.88
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+    opacity: 0.5
+
+  - id: headliner-shadow-2
+    type: text
+    z: 22
+    x: 56
+    y: 380
+    width: 1080
+    height: 0
+    content: { type: plain, value: "KAIROS" }
+    style:
+      font_family: $heading
+      font_size: 240
+      font_weight: 900
+      color: $secondary
+      line_height: 0.88
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+    opacity: 0.5
+
+  - id: headliner
+    type: text
+    z: 23
+    x: 60
+    y: 380
+    width: 1080
+    height: 0
+    content: { type: plain, value: "KAIROS" }
+    style:
+      font_family: $heading
+      font_size: 240
+      font_weight: 900
+      color: $text
+      line_height: 0.88
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: live-tag
+    type: text
+    z: 24
+    x: 60
+    y: 580
+    width: 1080
+    height: 0
+    content: { type: plain, value: "[ LIVE A/V SET ]" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: support-rule
+    type: rect
+    z: 30
+    x: 400
+    y: 760
+    width: 400
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.7
+
+  - id: support-label
+    type: text
+    z: 31
+    x: 60
+    y: 790
+    width: 1080
+    height: 0
+    content: { type: plain, value: "+ SUPPORT" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: support-djs
+    type: text
+    z: 32
+    x: 60
+    y: 850
+    width: 1080
+    height: 0
+    content:
+      type: plain
+      value: "NYX MACHINA · 808 ORACLE\nVELVET STATIC · MIDI WITCH\nTHE NULL HOUR"
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $text
+      line_height: 1.2
+      letter_spacing: -0.005
+      text_align: center
+      text_transform: uppercase
+
+  - id: venue-block
+    type: rect
+    z: 40
+    x: 60
+    y: 1220
+    width: 1080
+    height: 280
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.8
+
+  - id: venue-label
+    type: text
+    z: 41
+    x: 60
+    y: 1260
+    width: 1080
+    height: 0
+    content: { type: plain, value: "@ VENUE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: venue
+    type: text
+    z: 42
+    x: 60
+    y: 1300
+    width: 1080
+    height: 0
+    content: { type: plain, value: "HANGAR 7 — BERLIN" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 900
+      color: $text
+      letter_spacing: -0.005
+      text_align: center
+      text_transform: uppercase
+
+  - id: date
+    type: text
+    z: 43
+    x: 60
+    y: 1390
+    width: 1080
+    height: 0
+    content: { type: plain, value: "FRI · 02 OCT 2026" }
+    style:
+      font_family: $mono
+      font_size: 28
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.36
+      text_align: center
+      text_transform: uppercase
+
+  - id: time
+    type: text
+    z: 44
+    x: 60
+    y: 1440
+    width: 1080
+    height: 0
+    content: { type: plain, value: "23:00 → 07:00" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.24
+      text_align: center
+
+  - id: footer
+    type: text
+    z: 50
+    x: 60
+    y: 1710
+    width: 1080
+    height: 0
+    content: { type: plain, value: "18+ · TICKETS @ SUBSONIC.IO · STRICT DOOR" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: headliner,   path: "layers[12].content.value", type: text, hint: "Headliner DJ name",      default: "KAIROS" }
+  - { id: support_djs, path: "layers[16].content.value", type: text, hint: "Support DJs (\\n separated)", default: "NYX MACHINA · 808 ORACLE\nVELVET STATIC · MIDI WITCH\nTHE NULL HOUR" }
+  - { id: venue,       path: "layers[19].content.value", type: text, hint: "Venue name",             default: "HANGAR 7 — BERLIN" }
+  - { id: date,        path: "layers[20].content.value", type: text, hint: "Show date",              default: "FRI · 02 OCT 2026" }
+  - { id: time,        path: "layers[21].content.value", type: text, hint: "Set time / hours",       default: "23:00 → 07:00" }

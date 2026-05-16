@@ -1,0 +1,319 @@
+_protocol: template/v1
+
+# Sci-fi movie poster (1280×1920 portrait).
+# Ocean-blue cosmos: planet circle + scattered star dots, bold geometric title,
+# BEYOND THE STARS tagline, monospace release date.
+meta:
+  id: tmpl-movie-poster-scifi
+  name: Movie Poster — Sci-Fi
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, movie, film, scifi, space, cosmic]
+  description: "Cosmic sci-fi movie poster with planet, star field and bold geometric title."
+
+document:
+  width: 1280
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: ocean-blue
+  overrides:
+    background: "#020613"
+    surface: "#06122B"
+    primary: "#4DA8DA"
+    secondary: "#A78BFA"
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1280
+    height: 1920
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "#000000", position: 0 }
+        - { color: "$background", position: 50 }
+        - { color: "$surface", position: 100 }
+
+  - id: cosmic-glow
+    type: circle
+    z: 1
+    cx: 640
+    cy: 760
+    rx: 720
+    ry: 720
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 80 }
+    opacity: 0.35
+
+  - id: planet
+    type: circle
+    z: 5
+    cx: 640
+    cy: 820
+    rx: 360
+    ry: 360
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$surface", position: 70 }
+        - { color: "#000000", position: 100 }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: planet-ring
+    type: circle
+    z: 6
+    cx: 640
+    cy: 820
+    rx: 420
+    ry: 420
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.5
+
+  - id: planet-ring-2
+    type: circle
+    z: 7
+    cx: 640
+    cy: 820
+    rx: 480
+    ry: 480
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$secondary", width: 1 }
+    opacity: 0.3
+
+  - id: star-1
+    type: circle
+    z: 10
+    cx: 180
+    cy: 320
+    rx: 2
+    ry: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: star-2
+    type: circle
+    z: 11
+    cx: 1080
+    cy: 280
+    rx: 3
+    ry: 3
+    fill: { type: solid, color: "$text" }
+
+  - id: star-3
+    type: circle
+    z: 12
+    cx: 220
+    cy: 720
+    rx: 2
+    ry: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: star-4
+    type: circle
+    z: 13
+    cx: 1100
+    cy: 760
+    rx: 2
+    ry: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: star-5
+    type: circle
+    z: 14
+    cx: 140
+    cy: 1100
+    rx: 3
+    ry: 3
+    fill: { type: solid, color: "$text" }
+
+  - id: star-6
+    type: circle
+    z: 15
+    cx: 1140
+    cy: 1180
+    rx: 2
+    ry: 2
+    fill: { type: solid, color: "$secondary" }
+
+  - id: star-7
+    type: circle
+    z: 16
+    cx: 980
+    cy: 460
+    rx: 2
+    ry: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: star-8
+    type: circle
+    z: 17
+    cx: 320
+    cy: 480
+    rx: 2
+    ry: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: coords
+    type: text
+    z: 20
+    x: 60
+    y: 80
+    width: 600
+    height: 0
+    content: { type: plain, value: "// 51.7°N · 142.3°W · ORBIT 7" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.18
+
+  - id: scan
+    type: text
+    z: 21
+    x: 620
+    y: 80
+    width: 600
+    height: 0
+    content: { type: plain, value: "[ DEEP-FIELD SCAN · NO. 0118 ]" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.18
+      text_align: right
+      text_transform: uppercase
+
+  - id: lead-actors
+    type: text
+    z: 22
+    x: 120
+    y: 200
+    width: 1040
+    height: 0
+    content: { type: plain, value: "REN KAVOSAKI    LIV ATWELL    JONAS PROBST" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 800
+      color: $text
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: lead-rule
+    type: rect
+    z: 23
+    x: 460
+    y: 250
+    width: 360
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: tagline-eyebrow
+    type: text
+    z: 30
+    x: 120
+    y: 1300
+    width: 1040
+    height: 0
+    content: { type: plain, value: "BEYOND THE STARS" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+  - id: tagline
+    type: text
+    z: 31
+    x: 120
+    y: 1350
+    width: 1040
+    height: 0
+    content: { type: plain, value: "something is waiting." }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 400
+      font_style: italic
+      color: $text_muted
+      letter_spacing: 0.04
+      text_align: center
+
+  - id: title-line-1
+    type: text
+    z: 40
+    x: 80
+    y: 1460
+    width: 1120
+    height: 0
+    content: { type: plain, value: "EVENT" }
+    style:
+      font_family: $heading
+      font_size: 220
+      font_weight: 900
+      color: $text
+      line_height: 0.9
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: title-line-2
+    type: text
+    z: 41
+    x: 80
+    y: 1650
+    width: 1120
+    height: 0
+    content: { type: plain, value: "HORIZON" }
+    style:
+      font_family: $heading
+      font_size: 220
+      font_weight: 900
+      color: $primary
+      line_height: 0.9
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: release-date
+    type: text
+    z: 50
+    x: 120
+    y: 1840
+    width: 1040
+    height: 0
+    content: { type: plain, value: ">> RELEASE.STAMP // 03.21.2026 // IMAX + 70MM <<" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.18
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: lead_actors,  path: "layers[15].content.value", type: text, hint: "Lead actor names",       default: "REN KAVOSAKI    LIV ATWELL    JONAS PROBST" }
+  - { id: tagline,      path: "layers[18].content.value", type: text, hint: "Tagline after 'BEYOND THE STARS'", default: "something is waiting." }
+  - { id: title,        path: "layers[19].content.value", type: text, hint: "Title line 1",           default: "EVENT" }
+  - { id: title_line_2, path: "layers[20].content.value", type: text, hint: "Title line 2",           default: "HORIZON" }
+  - { id: release_date, path: "layers[21].content.value", type: text, hint: "Release date line",      default: ">> RELEASE.STAMP // 03.21.2026 // IMAX + 70MM <<" }

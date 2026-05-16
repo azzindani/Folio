@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: coffee-roast
+name: Coffee Roast
+version: "1.0.0"
+tags: [coffee, cafe, warm, beverage, hospitality]
+description: "Espresso, caramel and walnut with warm gold on cream — third-wave café and roastery."
+colors:
+  background: "#F5EBDB"
+  surface:    "#EBDDC4"
+  surface_2:  "#D8C19E"
+  primary:    "#3A1F12"
+  secondary:  "#A06A38"
+  accent:     "#C99A4A"
+  text:       "#241208"
+  text_muted: "#6E4F38"
+  border:     "#C6A87E"
+  success:    "#5C7A3A"
+  warning:    "#C68A20"
+  danger:     "#A8421E"
