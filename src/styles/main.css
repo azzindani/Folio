@@ -1228,6 +1228,10 @@ button:focus:not(:focus-visible) { outline: none; }
   text-align: left;
   overflow: hidden;
   transition: border-color 120ms, transform 120ms;
+  /* Virtualization: skip layout/paint for cards off-screen so the
+     grid can hold thousands of entries without melting. */
+  content-visibility: auto;
+  contain-intrinsic-size: 260px;
 }
 .tmpl-card:hover {
   border-color: var(--color-primary);
@@ -1296,6 +1300,44 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .catalog-tab:hover  { color: var(--color-text); background: var(--color-surface-2); }
 .catalog-tab.active { color: var(--color-text); background: var(--color-bg); border-color: var(--color-border); }
+
+/* Filter bar: search + tag chips */
+.catalog-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  flex-wrap: wrap;
+}
+.catalog-filter:empty { display: none; }
+.catalog-search {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font: inherit;
+  padding: 6px 10px;
+  min-width: 240px;
+  flex: 0 0 auto;
+}
+.catalog-search:focus { outline: 1px solid var(--color-primary); }
+.catalog-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.tag-chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font-family: inherit;
+}
+.tag-chip:hover    { color: var(--color-text); }
+.tag-chip.selected { background: var(--color-primary); color: var(--color-bg); border-color: var(--color-primary); }
+.tag-chip.clear    { background: transparent; color: var(--color-text-muted); border-style: dashed; }
+.catalog-count { font-size: 11px; color: var(--color-text-muted); margin-left: auto; }
 
 .catalog-body  { flex: 1; display: grid; grid-template-columns: 1fr 360px; min-height: 0; }
 .catalog-list  { padding: 16px 18px; overflow-y: auto; }

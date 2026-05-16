@@ -1,0 +1,144 @@
+{
+  "_generator": "scripts/gen-catalog-index.mjs",
+  "count": 8,
+  "entries": [
+    {
+      "id": "tmpl-event-poster",
+      "name": "Event Poster (Neon)",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "event",
+        "festival",
+        "neon",
+        "dark"
+      ],
+      "width": 800,
+      "height": 1130,
+      "slots": 9,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "04-event-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-instagram-carousel",
+      "name": "Instagram Carousel (4 slides)",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "social",
+        "instagram",
+        "dark"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 8,
+      "pages": 4,
+      "themeRef": "dark-tech",
+      "file": "06-instagram-carousel.template.yaml"
+    },
+    {
+      "id": "tmpl-kpi-dashboard",
+      "name": "KPI Dashboard",
+      "type": "report",
+      "tags": [
+        "report",
+        "dashboard",
+        "kpi",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 900,
+      "slots": 12,
+      "pages": 1,
+      "themeRef": "indigo-pro",
+      "file": "07-kpi-dashboard.template.yaml"
+    },
+    {
+      "id": "tmpl-pricing-3tier",
+      "name": "Pricing — 3 Tiers",
+      "type": "poster",
+      "tags": [
+        "pricing",
+        "saas",
+        "comparison",
+        "dark",
+        "landscape"
+      ],
+      "width": 1200,
+      "height": 700,
+      "slots": 11,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "05-pricing-3tier.template.yaml"
+    },
+    {
+      "id": "tmpl-quote-card",
+      "name": "Quote Card",
+      "type": "poster",
+      "tags": [
+        "card",
+        "quote",
+        "testimonial",
+        "social"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "02-quote-card.template.yaml"
+    },
+    {
+      "id": "tmpl-sectioned-report",
+      "name": "Sectioned Report",
+      "type": "report",
+      "tags": [
+        "report",
+        "sections",
+        "interactive",
+        "analysis"
+      ],
+      "width": 1280,
+      "height": 2000,
+      "slots": 5,
+      "pages": 3,
+      "themeRef": "dark-tech",
+      "file": "08-sectioned-report.template.yaml"
+    },
+    {
+      "id": "tmpl-simple-poster",
+      "name": "Simple Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "minimal",
+        "dark"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "01-simple-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-stats-card",
+      "name": "Stats Card",
+      "type": "poster",
+      "tags": [
+        "card",
+        "stats",
+        "kpi",
+        "dashboard",
+        "dark"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "03-stats-card.template.yaml"
+    }
+  ]
+}
