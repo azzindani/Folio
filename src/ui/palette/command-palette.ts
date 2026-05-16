@@ -183,11 +183,14 @@ export class CommandPalette {
       const target = e.target as HTMLElement;
       const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      // Ctrl+K or / opens the palette (Ctrl+K avoids browser Quick Find in Firefox)
-      const isSlash = e.key === '/' && !inInput;
-      const isCtrlK = e.key === 'k' && (e.ctrlKey || e.metaKey);
+      // Ctrl+K, Ctrl+Shift+P, or "/" — match the conventions of both
+      // Linear/Notion (Ctrl+K) and VSCode (Ctrl+Shift+P) so users land
+      // on either shortcut and just have it work.
+      const isSlash   = e.key === '/' && !inInput;
+      const isCtrlK   = e.key === 'k' && (e.ctrlKey || e.metaKey);
+      const isCtrlShP = (e.key === 'P' || e.key === 'p') && e.shiftKey && (e.ctrlKey || e.metaKey);
 
-      if ((isSlash || isCtrlK) && !this.visible) {
+      if ((isSlash || isCtrlK || isCtrlShP) && !this.visible) {
         e.preventDefault();
         this.open();
       }

@@ -22,7 +22,9 @@ async function shot(page: Page, name: string): Promise<void> {
 }
 
 async function waitForEditor(page: Page): Promise<void> {
-  await page.waitForSelector('.toolbar-project-name', { timeout: 10_000 });
+  // .toolbar-project-name collapses at mobile widths; .toolbar is the
+  // stable anchor across viewports.
+  await page.waitForSelector('.toolbar', { timeout: 10_000 });
   await page.waitForTimeout(300);
 }
 
@@ -148,20 +150,29 @@ test('C. General sweep — panels, viewports, console', async ({ page }) => {
     await waitForEditor(page);
     await shot(page, `vp-${vp.name}`);
 
-    // Look for any element overflowing the viewport horizontally
-    const overflow = await page.evaluate(() => {
-      const out: { tag: string; cls: string; w: number }[] = [];
-      const docW = document.documentElement.clientWidth;
-      document.querySelectorAll<HTMLElement>('body *').forEach(el => {
-        const r = el.getBoundingClientRect();
-        if (r.right > docW + 1 && r.width > 0 && r.height > 0) {
-          out.push({ tag: el.tagName, cls: el.className.toString().slice(0, 60), w: Math.round(r.right - docW) });
-        }
-      });
-      return out.slice(0, 8);
+    // Real user-visible overflow = scrollWidth > clientWidth AND the
+    // overflow is not clipped/hidden. Panels parked off-canvas via
+    // translateX still extend scrollWidth, but if html/body have
+    // overflow: hidden the user never sees a scrollbar.
+    const docOverflow = await page.evaluate(() => {
+      const d  = document.documentElement;
+      const b  = document.body;
+      const csd = getComputedStyle(d);
+      const csb = getComputedStyle(b);
+      const clipped = (cs: CSSStyleDeclaration) =>
+        cs.overflow.includes('hidden') || cs.overflowX.includes('hidden') ||
+        cs.overflow.includes('clip')   || cs.overflowX.includes('clip');
+      return {
+        dx:  clipped(csd) ? 0 : d.scrollWidth - d.clientWidth,
+        bdx: clipped(csb) ? 0 : b.scrollWidth - b.clientWidth,
+      };
     });
-    if (overflow.length > 0) {
-      notes.push({ step: `C.overflow-${vp.name}`, severity: 'warn', msg: JSON.stringify(overflow) });
+    if (docOverflow.dx > 1 || docOverflow.bdx > 1) {
+      notes.push({
+        step: `C.overflow-${vp.name}`,
+        severity: 'warn',
+        msg: `html=${docOverflow.dx}, body=${docOverflow.bdx}`,
+      });
     }
   }
 });

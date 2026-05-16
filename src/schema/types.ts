@@ -48,16 +48,21 @@ export interface LinearGradientFill {
 
 export interface RadialGradientFill {
   type: 'radial';
-  cx: number;
-  cy: number;
-  radius: number;
+  /** Center X (%). Defaults to 50. */
+  cx?: number;
+  /** Center Y (%). Defaults to 50. */
+  cy?: number;
+  /** Radius (%). Defaults to 50. */
+  radius?: number;
   stops: GradientStop[];
 }
 
 export interface ConicGradientFill {
   type: 'conic';
-  cx: number;
-  cy: number;
+  /** Center X (%). Defaults to 50. */
+  cx?: number;
+  /** Center Y (%). Defaults to 50. */
+  cy?: number;
   stops: GradientStop[];
 }
 

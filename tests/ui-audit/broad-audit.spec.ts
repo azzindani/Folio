@@ -63,14 +63,19 @@ test('2. Layer panel — click each layer, verify selection, props panel populat
   await page.goto('/');
   await waitForEditor(page);
 
-  const rows = page.locator('.layer-row, [data-layer-id]').filter({ has: page.locator('text=/./')});
+  // .layer-row[data-layer-id] is the row itself; child collapse/vis/lock
+   // buttons also carry data-layer-id, so be explicit about the row class.
+  const rows = page.locator('.layer-row[data-layer-id]');
   const n = await rows.count();
   notes.push({ step: '2.layer-rows', severity: 'info', msg: `${n} layer rows` });
 
   for (let i = 0; i < Math.min(n, 8); i++) {
     await rows.nth(i).click();
     await page.waitForTimeout(100);
-    const propsText = await page.locator('.properties-content, .properties-panel').textContent({ timeout: 800 }).catch(() => '');
+    // .first() — comma selector matches both content + wrapper which
+    // makes textContent() throw (multi-match error) and swallow the result.
+    const propsText = await page.locator('.properties-content').first()
+      .textContent({ timeout: 800 }).catch(() => '');
     const hasProps = (propsText ?? '').length > 30;
     notes.push({ step: `2.layer-${i}-props`, severity: hasProps ? 'info' : 'warn', msg: `props text length ${propsText?.length ?? 0}` });
   }
@@ -248,14 +253,23 @@ test('9. Status bar — zoom in / out / fit', async ({ page }) => {
   await shot(page, '9-after-zoom-ops');
 });
 
-test('10. Command palette (Ctrl+Shift+P)', async ({ page }) => {
+test('10. Command palette (Ctrl+K / Ctrl+Shift+P)', async ({ page }) => {
   await page.goto('/');
   await waitForEditor(page);
+  // Try both shortcuts — palette accepts either.
+  await page.keyboard.press('Control+k');
+  await page.waitForTimeout(200);
+  await shot(page, '10a-palette-ctrl-k');
+  const ckVisible = await page.locator('.command-palette-overlay').isVisible().catch(() => false);
+  notes.push({ step: '10.palette-ctrl-k', severity: ckVisible ? 'info' : 'warn', msg: `${ckVisible}` });
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(120);
+
   await page.keyboard.press('Control+Shift+P');
   await page.waitForTimeout(200);
-  await shot(page, '10-palette-opened');
-  const palVisible = await page.locator('.command-palette').isVisible().catch(() => false);
-  notes.push({ step: '10.palette-visible', severity: palVisible ? 'info' : 'warn', msg: `${palVisible}` });
+  await shot(page, '10b-palette-ctrl-shift-p');
+  const csVisible = await page.locator('.command-palette-overlay').isVisible().catch(() => false);
+  notes.push({ step: '10.palette-ctrl-shift-p', severity: csVisible ? 'info' : 'warn', msg: `${csVisible}` });
 });
 
 test('11. Keyboard shortcuts — Delete, duplicate, select all', async ({ page }) => {

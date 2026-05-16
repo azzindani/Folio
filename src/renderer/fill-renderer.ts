@@ -50,11 +50,17 @@ function renderRadialGradient(
   defs: SVGDefsElement,
 ): string {
   const id = uniqueDefId('rg');
+  // cx/cy/radius default to 50% (centered, full bounds) when omitted —
+  // makes hand-written YAML templates terser without crashing the SVG
+  // with `"undefined%"`.
+  const cx = fill.cx ?? 50;
+  const cy = fill.cy ?? 50;
+  const r  = fill.radius ?? 50;
   const gradient = createSVGElement('radialGradient', {
     id,
-    cx: `${fill.cx}%`,
-    cy: `${fill.cy}%`,
-    r: `${fill.radius}%`,
+    cx: `${cx}%`,
+    cy: `${cy}%`,
+    r:  `${r}%`,
   });
 
   for (const stop of fill.stops) {
@@ -79,13 +85,15 @@ function renderConicGradient(
   const id = uniqueDefId('cg');
   const sorted = fill.stops.slice().sort((a, b) => a.position - b.position);
 
+  const cx = fill.cx ?? 50;
+  const cy = fill.cy ?? 50;
   const gradient = createSVGElement('radialGradient', {
     id,
-    cx: `${fill.cx}%`,
-    cy: `${fill.cy}%`,
+    cx: `${cx}%`,
+    cy: `${cy}%`,
     r: '50%',
-    fx: `${fill.cx}%`,
-    fy: `${fill.cy}%`,
+    fx: `${cx}%`,
+    fy: `${cy}%`,
     gradientUnits: 'objectBoundingBox',
   });
 
