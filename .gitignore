@@ -1,14 +1,32 @@
+# Dependencies + build output
 node_modules/
 dist/
 .vite/
-*.local
-.DS_Store
+*.tgz
+
+# Test + audit output (specs live in tests/, results don't get committed)
 coverage/
+test-results/
 tests/visual/diffs/
 tests/e2e/artifacts/
-test-results/
 tests/playwright-report/
 tests/ui-audit/screenshots/
 tests/ui-audit/reports/
 tests/ui-audit/vision/
-*.tgz
+tests/ui-audit/broad/
+
+# Environment + secrets
+*.local
+.env
+.env.*
+!.env.example
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
