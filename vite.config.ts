@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'path';
 import { generateCatalogIndex } from './scripts/gen-catalog-index.mjs';
+import { generatePaletteIndex } from './scripts/gen-palette-index.mjs';
 
 /**
  * Auto-regenerate src/templates/catalog-index.json whenever a
@@ -50,6 +51,50 @@ function folioCatalogIndexPlugin(): Plugin {
   };
 }
 
+/**
+ * Auto-regenerate src/styles/palette-index.json whenever a
+ * .palette.yaml file under public/styles/palettes/ changes. Same
+ * idempotent-write semantics as the catalog plugin above.
+ */
+function folioPaletteIndexPlugin(): Plugin {
+  const PALETTE_GLOB = /public[/\\]styles[/\\]palettes[/\\][^/\\]+\.palette\.yaml$/;
+  let regenerating: Promise<void> | null = null;
+
+  const regen = async (reason: string): Promise<void> => {
+    if (regenerating) return regenerating;
+    regenerating = generatePaletteIndex({ silent: true })
+      .then(({ count, changed, errors }) => {
+        if (errors.length) {
+          for (const e of errors) console.warn(`[folio-palettes] error: ${e}`);
+        }
+        if (changed) {
+          console.log(`[folio-palettes] index — ${count} palettes (${reason})`);
+        }
+      })
+      .catch(err => { console.error('[folio-palettes] regen failed:', err); })
+      .finally(() => { regenerating = null; });
+    return regenerating;
+  };
+
+  return {
+    name: 'folio-palette-index',
+
+    async buildStart() {
+      await regen('build start');
+    },
+
+    configureServer(server) {
+      const onEvent = (file: string, kind: string): void => {
+        if (!PALETTE_GLOB.test(file)) return;
+        void regen(`${kind} ${file}`);
+      };
+      server.watcher.on('add',    f => onEvent(f, 'add'));
+      server.watcher.on('change', f => onEvent(f, 'change'));
+      server.watcher.on('unlink', f => onEvent(f, 'unlink'));
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
@@ -60,7 +105,7 @@ export default defineConfig(({ mode }) => ({
     __DEV__: mode === 'development',
     __PROD__: mode === 'production',
   },
-  plugins: [folioCatalogIndexPlugin()],
+  plugins: [folioCatalogIndexPlugin(), folioPaletteIndexPlugin()],
   build: {
     target: 'es2022',
     outDir: 'dist',
