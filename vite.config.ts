@@ -13,10 +13,10 @@ import { generateVariants }     from './scripts/gen-template-variants.mjs';
  * that import it (notably src/templates/builtin-loader.ts).
  */
 function folioCatalogIndexPlugin(): Plugin {
-  const TEMPLATE_GLOB = /src[/\\]templates[/\\]builtin[/\\][^/\\]+\.template\.yaml$/;
+  const TEMPLATE_GLOB = /public[/\\]templates[/\\]builtin[/\\][^/\\]+\.template\.yaml$/;
   // Files that the variant generator owns — ignore change events for
   // these so the plugin doesn't loop when it writes them itself.
-  const VARIANT_GLOB  = /src[/\\]templates[/\\]builtin[/\\]v-[^/\\]+\.template\.yaml$/;
+  const VARIANT_GLOB  = /public[/\\]templates[/\\]builtin[/\\]v-[^/\\]+\.template\.yaml$/;
   let regenerating: Promise<void> | null = null;
 
   const runPipeline = async (reason: string, regenVariants: boolean): Promise<void> => {

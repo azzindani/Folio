@@ -16,7 +16,7 @@ import { load as parseYAML } from 'js-yaml';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const ROOT       = path.resolve(__dirname, '..');
-const TPL_DIR    = path.join(ROOT, 'src', 'templates', 'builtin');
+const TPL_DIR    = path.join(ROOT, 'public', 'templates', 'builtin');
 const OUT_FILE   = path.join(ROOT, 'src', 'templates', 'catalog-index.json');
 
 /** Convert a partially-parsed TemplateSpec into a flat catalog entry. */

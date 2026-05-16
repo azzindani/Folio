@@ -1,0 +1,203 @@
+_protocol: template/v1
+
+# Lesson title slide — 1920×1080 16:9, forest-deep theme.
+# Chapter eyebrow, lesson title display, learning objective subtitle,
+# instructor row (avatar + name + role), duration pill, course footer.
+meta:
+  id: tmpl-lesson-title
+  name: Lesson Title
+  type: presentation
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [presentation, slide, lesson, education, course, 16-9]
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: accent-bar
+    type: rect
+    z: 5
+    x: 120
+    y: 220
+    width: 8
+    height: 640
+    fill: { type: solid, color: "$accent" }
+
+  - id: chapter-eyebrow
+    type: text
+    z: 10
+    x: 160
+    y: 220
+    width: 1600
+    height: 0
+    content: { type: plain, value: "CHAPTER 3 · LESSON 02" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: lesson-title
+    type: text
+    z: 11
+    x: 160
+    y: 290
+    width: 1600
+    height: 0
+    content: { type: plain, value: "Functions, Scope & Closures" }
+    style:
+      font_family: $heading
+      font_size: 120
+      font_weight: 800
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.03
+
+  - id: learning-objective
+    type: text
+    z: 12
+    x: 160
+    y: 480
+    width: 1600
+    height: 0
+    content: { type: plain, value: "Understand how JavaScript scopes variables and how closures capture state across function boundaries." }
+    style:
+      font_family: $body
+      font_size: 36
+      font_weight: 400
+      color: $text_muted
+      line_height: 1.4
+
+  - id: divider
+    type: rect
+    z: 13
+    x: 160
+    y: 700
+    width: 240
+    height: 2
+    fill: { type: solid, color: "$border" }
+
+  - id: instructor-avatar
+    type: circle
+    z: 20
+    cx: 200
+    cy: 800
+    rx: 36
+    ry: 36
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+
+  - id: instructor-name
+    type: text
+    z: 21
+    x: 260
+    y: 776
+    width: 800
+    height: 0
+    content: { type: plain, value: "Dr. Yuki Tanaka" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: $text
+      line_height: 1.2
+
+  - id: instructor-role
+    type: text
+    z: 22
+    x: 260
+    y: 814
+    width: 800
+    height: 0
+    content: { type: plain, value: "Senior Engineering Instructor" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      letter_spacing: 0.1
+
+  - id: duration-pill
+    type: rect
+    z: 30
+    x: 1500
+    y: 770
+    width: 260
+    height: 60
+    radius: 30
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: duration-text
+    type: text
+    z: 31
+    x: 1500
+    y: 790
+    width: 260
+    height: 0
+    content: { type: plain, value: "⏱  45 min" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $accent
+      text_align: center
+
+  - id: footer-rule
+    type: rect
+    z: 40
+    x: 120
+    y: 990
+    width: 1680
+    height: 1
+    fill: { type: solid, color: "$border" }
+    opacity: 0.5
+
+  - id: course-name
+    type: text
+    z: 41
+    x: 120
+    y: 1020
+    width: 1680
+    height: 0
+    content: { type: plain, value: "Modern JavaScript Foundations · folio.academy" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text_muted
+      letter_spacing: 0.1
+
+slots:
+  - { id: chapter_number,     path: "layers[2].content.value",  type: text, hint: "Chapter/lesson eyebrow",      default: "CHAPTER 3 · LESSON 02" }
+  - { id: lesson_title,       path: "layers[3].content.value",  type: text, hint: "Lesson title",                default: "Functions, Scope & Closures" }
+  - { id: learning_objective, path: "layers[4].content.value",  type: text, hint: "Learning objective summary",  default: "Understand how JavaScript scopes variables and how closures capture state across function boundaries." }
+  - { id: instructor_name,    path: "layers[7].content.value",  type: text, hint: "Instructor name",             default: "Dr. Yuki Tanaka" }
+  - { id: instructor_role,    path: "layers[8].content.value",  type: text, hint: "Instructor role",             default: "Senior Engineering Instructor" }
+  - { id: duration,           path: "layers[10].content.value", type: text, hint: "Estimated duration",          default: "⏱  45 min" }
+  - { id: course_name,        path: "layers[12].content.value", type: text, hint: "Course/module footer",        default: "Modern JavaScript Foundations · folio.academy" }
