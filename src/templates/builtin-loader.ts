@@ -67,34 +67,32 @@ export function findIndexEntry(id: string): CatalogIndexEntry | undefined {
 
 // ── Full template loader (lazy) ──────────────────────────────
 
-// Vite resolves the glob keys at build time. Non-eager: each value is a
-// () => Promise<string> that fetches the YAML raw text on demand.
-const rawLoaders = import.meta.glob<string>('./builtin/*.template.yaml', {
-  query:  '?raw',
-  import: 'default',
-});
+// Templates live under public/templates/builtin/, served at runtime
+// by the dev server / static host. Fetching by constructed URL means
+// the bundle stays flat regardless of how many templates ship —
+// `import.meta.glob` would register every path in the JS bundle and
+// scale linearly with file count.
+const BUILTIN_BASE = '/templates/builtin';
 
 const specCache = new Map<string, TemplateSpec>();
 const inflight  = new Map<string, Promise<TemplateSpec | undefined>>();
-
-function loaderKeyFor(file: string): string {
-  return `./builtin/${file}`;
-}
 
 export async function loadFullTemplate(id: string): Promise<TemplateSpec | undefined> {
   if (specCache.has(id)) return specCache.get(id);
   const existing = inflight.get(id);
   if (existing) return existing;
 
+  // Ensure the index is loaded so findIndexEntry can resolve.
+  if (!indexCache) await loadCatalogIndex();
   const entry = findIndexEntry(id);
   if (!entry) return undefined;
-  const key = loaderKeyFor(entry.file);
-  const load = rawLoaders[key];
-  if (!load) return undefined;
 
+  const url = `${BUILTIN_BASE}/${entry.file}`;
   const p = (async () => {
     try {
-      const raw  = await load();
+      const res  = await fetch(url);
+      if (!res.ok) return undefined;
+      const raw  = await res.text();
       const spec = parseYAML(raw) as TemplateSpec;
       if (!spec || spec._protocol !== 'template/v1') return undefined;
       specCache.set(id, spec);

@@ -17,7 +17,7 @@ import { load as parseYAML, dump as dumpYAML } from 'js-yaml';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const ROOT       = path.resolve(__dirname, '..');
-const TPL_DIR    = path.join(ROOT, 'src', 'templates', 'builtin');
+const TPL_DIR    = path.join(ROOT, 'public', 'templates', 'builtin');
 
 // Variant filename prefix. Anything matching `v-*.template.yaml` is a
 // generated variant and is rewritten by this script. Sorts after the
