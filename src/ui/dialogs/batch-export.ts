@@ -1,8 +1,9 @@
 import type { DesignSpec } from '../../schema/types';
 import { exportToSVG, exportToPNG, exportToHTML } from '../../export/exporter';
+import { EXPORT_SCALE_PRESETS, getScalePreset, defaultScalePreset } from '../../export/scale-presets';
 import { showToast } from '../../utils/toast';
 
-export type BatchFormat = 'svg' | 'png1x' | 'png2x' | 'html';
+export type BatchFormat = 'svg' | 'png' | 'html';
 
 export interface BatchExportOptions {
   format: BatchFormat;
@@ -39,10 +40,17 @@ export class BatchExportDialog {
           <div class="dialog-row">
             <label class="dialog-label" for="be-format">Format</label>
             <select class="dialog-input" id="be-format">
-              <option value="png2x">PNG ×2 (recommended)</option>
-              <option value="png1x">PNG ×1</option>
-              <option value="svg">SVG (vector)</option>
+              <option value="png">PNG (raster)</option>
+              <option value="svg">SVG (vector — unlimited resolution)</option>
               <option value="html">HTML (self-contained)</option>
+            </select>
+          </div>
+          <div class="dialog-row" id="be-scale-row">
+            <label class="dialog-label" for="be-scale">Resolution</label>
+            <select class="dialog-input" id="be-scale">
+              ${EXPORT_SCALE_PRESETS.map(p => `
+                <option value="${p.id}" ${p.id === defaultScalePreset().id ? 'selected' : ''}
+                  title="${p.description}">${p.label} — ${p.dpi} DPI</option>`).join('')}
             </select>
           </div>
           ${isMultiPage ? `
@@ -76,8 +84,10 @@ export class BatchExportDialog {
 
     document.body.appendChild(this.overlay);
 
+    const scaleRow = this.overlay.querySelector<HTMLElement>('#be-scale-row');
+
     const updatePreview = () => {
-      const fmt = (this.overlay!.querySelector<HTMLSelectElement>('#be-format')?.value ?? 'png2x') as BatchFormat;
+      const fmt = (this.overlay!.querySelector<HTMLSelectElement>('#be-format')?.value ?? 'png') as BatchFormat;
       const prefix = this.overlay!.querySelector<HTMLInputElement>('#be-prefix')?.value ?? 'design';
       const pagesVal = this.overlay!.querySelector<HTMLSelectElement>('#be-pages')?.value ?? 'all';
       const ext = fmt === 'svg' ? 'svg' : fmt === 'html' ? 'html' : 'png';
@@ -87,6 +97,8 @@ export class BatchExportDialog {
         : `${prefix}-page-1.${ext} … ${prefix}-page-${count}.${ext}`;
       const el = this.overlay!.querySelector('#be-preview-text');
       if (el) el.textContent = preview;
+      // Resolution picker only meaningful for raster PNG output.
+      if (scaleRow) scaleRow.style.display = fmt === 'png' ? '' : 'none';
     };
 
     this.overlay.querySelector('#be-format')?.addEventListener('change', updatePreview);
@@ -115,9 +127,10 @@ export class BatchExportDialog {
     const overlay = this.overlay;
     if (!overlay) return;
 
-    const fmt = (overlay.querySelector<HTMLSelectElement>('#be-format')?.value ?? 'png2x') as BatchFormat;
+    const fmt = (overlay.querySelector<HTMLSelectElement>('#be-format')?.value ?? 'png') as BatchFormat;
     const prefix = overlay.querySelector<HTMLInputElement>('#be-prefix')?.value ?? 'design';
     const pagesVal = overlay.querySelector<HTMLSelectElement>('#be-pages')?.value ?? 'all';
+    const scaleId = overlay.querySelector<HTMLSelectElement>('#be-scale')?.value ?? defaultScalePreset().id;
 
     const pages: number[] = isMultiPage && pagesVal === 'all'
       ? Array.from({ length: pageCount }, (_, i) => i)
@@ -131,7 +144,7 @@ export class BatchExportDialog {
     if (runBtn) runBtn.disabled = true;
 
     const ext = fmt === 'svg' ? 'svg' : fmt === 'html' ? 'html' : 'png';
-    const scale = fmt === 'png2x' ? 2 : 1;
+    const scale = (getScalePreset(scaleId) ?? defaultScalePreset()).scale;
     const mimeType = fmt === 'svg' ? 'image/svg+xml' : fmt === 'html' ? 'text/html' : 'image/png';
     const results: BatchResult[] = [];
 

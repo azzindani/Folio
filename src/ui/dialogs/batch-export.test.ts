@@ -105,9 +105,30 @@ describe('BatchExportDialog', () => {
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(), 0);
     const opts = [...document.querySelectorAll('#be-format option')].map(o => (o as HTMLOptionElement).value);
-    expect(opts).toContain('png2x');
+    expect(opts).toContain('png');
     expect(opts).toContain('svg');
     expect(opts).toContain('html');
+    dlg.close();
+  });
+
+  it('scale selector exposes export presets', () => {
+    const dlg = new BatchExportDialog();
+    dlg.open(makeSpec(), 0);
+    const opts = [...document.querySelectorAll('#be-scale option')].map(o => (o as HTMLOptionElement).value);
+    expect(opts).toContain('x1');
+    expect(opts).toContain('x2');
+    expect(opts).toContain('print-300');
+    dlg.close();
+  });
+
+  it('scale row hides when format is svg', () => {
+    const dlg = new BatchExportDialog();
+    dlg.open(makeSpec(), 0);
+    const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
+    formatSel.value = 'svg';
+    formatSel.dispatchEvent(new Event('change'));
+    const row = document.querySelector<HTMLElement>('#be-scale-row')!;
+    expect(row.style.display).toBe('none');
     dlg.close();
   });
 
@@ -189,24 +210,26 @@ describe('BatchExportDialog', () => {
     dlg.close();
   });
 
-  it('Export button runs PNG export (png2x)', async () => {
+  it('Export button runs PNG export at default scale ×2', async () => {
     const { exportToPNG } = await import('../../export/exporter');
+    vi.mocked(exportToPNG).mockClear();
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(), 0);
-    // Default format is png2x
+    // Default format is png, default scale preset is x2
     document.querySelector<HTMLButtonElement>('#be-run')!.click();
     await new Promise(r => setTimeout(r, 50));
-    expect(exportToPNG).toHaveBeenCalled();
+    expect(exportToPNG).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ scale: 2 }));
     dlg.close();
   });
 
-  it('Export button runs PNG1x export', async () => {
+  it('Export button honors selected scale preset (×1)', async () => {
     const { exportToPNG } = await import('../../export/exporter');
+    vi.mocked(exportToPNG).mockClear();
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(), 0);
-    const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
-    formatSel.value = 'png1x';
-    formatSel.dispatchEvent(new Event('change'));
+    const scaleSel = document.querySelector<HTMLSelectElement>('#be-scale')!;
+    scaleSel.value = 'x1';
+    scaleSel.dispatchEvent(new Event('change'));
     document.querySelector<HTMLButtonElement>('#be-run')!.click();
     await new Promise(r => setTimeout(r, 50));
     expect(exportToPNG).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ scale: 1 }));
