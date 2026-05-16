@@ -397,6 +397,11 @@ export class CatalogDialog {
     if (!spec) return;
     try {
       const design = injectIntoTemplate(spec, {});
+      // Multi-page templates declare layers under pages[0]. Promote them
+      // to top-level so the single-page thumbnail renderer sees content.
+      if ((!design.layers || design.layers.length === 0) && design.pages?.[0]?.layers?.length) {
+        design.layers = design.pages[0].layers;
+      }
       const themeId = (typeof design.theme === 'object' && design.theme && 'ref' in design.theme)
         ? (design.theme as { ref?: string }).ref
         : undefined;
