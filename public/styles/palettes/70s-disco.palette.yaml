@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: 70s-disco
+name: 70s Disco
+version: "1.0.0"
+tags: [retro, 70s, disco, groovy, vintage]
+description: "Chocolate brown, harvest gold and burnt orange — wood-paneled lounge meets boogie nights."
+colors:
+  background: "#F2E2BD"
+  surface:    "#E8D29A"
+  surface_2:  "#D9B978"
+  primary:    "#C2541A"
+  secondary:  "#4A2C12"
+  accent:     "#D9A032"
+  text:       "#2A1808"
+  text_muted: "#6E4A28"
+  border:     "#B89858"
+  success:    "#7A8A2A"
+  warning:    "#D9A032"
+  danger:     "#A6321A"

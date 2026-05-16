@@ -1,0 +1,288 @@
+_protocol: template/v1
+
+# Esports player performance — pro player eyebrow, hero, 5 KPIs (KDA, win-rate,
+# earnings, hours, rank), 12-week KDA trend, agent/champion table, tournament
+# results table, map win-rate bar.
+meta:
+  id: tmpl-esports-performance-report
+  name: Esports · Player Performance
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, esports, gaming, valorant, league, performance, interactive]
+  description: "Esports player report: KDA trend, agent and tournament performance, prize earnings, map win-rate."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: kda_trend
+        type: inline
+        rows:
+          - { week: W01, kda: 1.42, avg_damage: 142 }
+          - { week: W02, kda: 1.58, avg_damage: 148 }
+          - { week: W03, kda: 1.36, avg_damage: 138 }
+          - { week: W04, kda: 1.62, avg_damage: 152 }
+          - { week: W05, kda: 1.74, avg_damage: 158 }
+          - { week: W06, kda: 1.48, avg_damage: 144 }
+          - { week: W07, kda: 1.82, avg_damage: 162 }
+          - { week: W08, kda: 1.94, avg_damage: 168 }
+          - { week: W09, kda: 1.68, avg_damage: 154 }
+          - { week: W10, kda: 2.04, avg_damage: 172 }
+          - { week: W11, kda: 2.18, avg_damage: 178 }
+          - { week: W12, kda: 2.32, avg_damage: 186 }
+      - id: agent_performance
+        type: inline
+        rows:
+          - { agent: "Jett",     games: 86, win_rate_pct: 64, kda: 1.92, avg_damage: 172 }
+          - { agent: "Raze",     games: 64, win_rate_pct: 58, kda: 1.74, avg_damage: 184 }
+          - { agent: "Reyna",    games: 48, win_rate_pct: 62, kda: 2.04, avg_damage: 168 }
+          - { agent: "Chamber",  games: 42, win_rate_pct: 54, kda: 1.86, avg_damage: 162 }
+          - { agent: "Phoenix",  games: 36, win_rate_pct: 56, kda: 1.68, avg_damage: 156 }
+          - { agent: "Yoru",     games: 28, win_rate_pct: 48, kda: 1.42, avg_damage: 148 }
+          - { agent: "Neon",     games: 32, win_rate_pct: 60, kda: 1.82, avg_damage: 164 }
+          - { agent: "Iso",      games: 24, win_rate_pct: 52, kda: 1.56, avg_damage: 152 }
+          - { agent: "Waylay",   games: 18, win_rate_pct: 46, kda: 1.38, avg_damage: 144 }
+          - { agent: "Clove",    games: 14, win_rate_pct: 64, kda: 1.78, avg_damage: 158 }
+      - id: tournaments
+        type: inline
+        rows:
+          - { tournament: "VCT Masters Shanghai 2025",     placement: "1st",        prize: 350000, team: "Sentinels" }
+          - { tournament: "VCT Champions Seoul 2025",      placement: "3rd-4th",    prize: 180000, team: "Sentinels" }
+          - { tournament: "VCT Americas Kickoff 2026",     placement: "2nd",        prize: 125000, team: "Sentinels" }
+          - { tournament: "Red Bull Home Ground IV",       placement: "1st",        prize:  75000, team: "Sentinels" }
+          - { tournament: "Game Changers Championship",    placement: "5th-6th",    prize:  28000, team: "Sentinels" }
+          - { tournament: "VCT Pacific Open Qualifier",    placement: "1st",        prize:  42000, team: "Sentinels" }
+          - { tournament: "Esports World Cup Riyadh 2025", placement: "Top 8",      prize:  60000, team: "Sentinels" }
+          - { tournament: "VCT Masters Madrid 2026",       placement: "1st",        prize: 280000, team: "Sentinels" }
+      - id: map_winrate
+        type: inline
+        rows:
+          - { map: "Haven",     win_rate_pct: 68 }
+          - { map: "Bind",      win_rate_pct: 58 }
+          - { map: "Ascent",    win_rate_pct: 72 }
+          - { map: "Split",     win_rate_pct: 54 }
+          - { map: "Icebox",    win_rate_pct: 46 }
+          - { map: "Lotus",     win_rate_pct: 62 }
+          - { map: "Sunset",    win_rate_pct: 64 }
+          - { map: "Abyss",     win_rate_pct: 52 }
+
+pages:
+  - id: performance
+    label: Performance
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "TENZ · SENTINELS · VALORANT · 2025-26 COMPETITIVE SEASON"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**Player Performance — Competitive Season**\n*KDA trajectory, agent mastery, tournament results, and map proficiency.*"
+
+      - id: kpi-kda
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: KDA Ratio
+        value: 1.82
+        format: number
+        decimals: 2
+        delta: 0.24
+        delta_format: number
+
+      - id: kpi-winrate
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Win Rate
+        value: 58.4
+        format: percent
+        delta: 4.6
+        delta_format: percent
+
+      - id: kpi-earnings
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Tournament Earnings
+        value: 1140000
+        format: currency
+        currency: USD
+        delta: 32.8
+        delta_format: percent
+
+      - id: kpi-hours
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Hours Played
+        value: 1284
+        format: number
+        delta: 18.6
+        delta_format: percent
+
+      - id: kpi-rank
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Global Rank
+        value: 3
+        format: number
+        delta: 2
+        delta_format: number
+
+      - id: section-kda
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**KDA Trend — Last 12 Weeks**"
+
+      - id: chart-kda
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 400
+        chart_type: line
+        data_ref: kda_trend
+        x_field: week
+        y_field: kda
+        title: Weekly KDA Ratio (Kills + Assists / Deaths)
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-agents
+        type: rich_text
+        x: 60
+        y: 900
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Agent Performance — Top 10 Picks**"
+
+      - id: tbl-agents
+        type: interactive_table
+        x: 60
+        y: 960
+        width: 1160
+        height: 540
+        data_ref: agent_performance
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: agent,           title: Agent,         width: 240, sortable: true, formatter: badge }
+          - { field: games,           title: Games,         width: 180, sortable: true, formatter: number,  align: right }
+          - { field: win_rate_pct,    title: Win Rate %,    width: 220, sortable: true, formatter: percent, align: right }
+          - { field: kda,             title: KDA,           width: 220, sortable: true, formatter: number,  align: right }
+          - { field: avg_damage,      title: Avg Damage,    width: 220, sortable: true, formatter: number,  align: right }
+
+      - id: section-tournaments
+        type: rich_text
+        x: 60
+        y: 1540
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Tournament Results — 2025-26**"
+
+      - id: tbl-tournaments
+        type: interactive_table
+        x: 60
+        y: 1600
+        width: 1160
+        height: 460
+        data_ref: tournaments
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: tournament,   title: Tournament,    width: 480, sortable: true }
+          - { field: placement,    title: Placement,     width: 220, sortable: true, formatter: badge }
+          - { field: prize,        title: Prize USD,     width: 220, sortable: true, formatter: currency, align: right }
+          - { field: team,         title: Team,          width: 220, sortable: true }
+
+      - id: section-maps
+        type: rich_text
+        x: 60
+        y: 2100
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Map Win Rate — All Competitive Maps**"
+
+      - id: chart-maps
+        type: interactive_chart
+        x: 60
+        y: 2160
+        width: 1160
+        height: 220
+        chart_type: bar
+        data_ref: map_winrate
+        x_field: map
+        y_field: win_rate_pct
+        title: Win % by Map (Higher = Better)
+        legend: false
+        grid: true
+        animate: true
+
+slots:
+  - { id: report_title,         path: "pages[0].layers[1].content",  type: text, hint: "Report title",        default: "**Player Performance — Competitive Season**\n*KDA trajectory, agent mastery, tournament results, and map proficiency.*" }
+  - { id: report_eyebrow,       path: "pages[0].layers[0].content",  type: text, hint: "Player eyebrow",      default: "TENZ · SENTINELS · VALORANT · 2025-26 COMPETITIVE SEASON" }
+  - { id: kda_section,          path: "pages[0].layers[7].content",  type: text, hint: "KDA heading",         default: "**KDA Trend — Last 12 Weeks**" }
+  - { id: agents_section,       path: "pages[0].layers[9].content",  type: text, hint: "Agents heading",      default: "**Agent Performance — Top 10 Picks**" }
+  - { id: tournaments_section,  path: "pages[0].layers[11].content", type: text, hint: "Tournaments heading", default: "**Tournament Results — 2025-26**" }
+  - { id: maps_section,         path: "pages[0].layers[13].content", type: text, hint: "Maps heading",        default: "**Map Win Rate — All Competitive Maps**" }

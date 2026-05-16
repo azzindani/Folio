@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: halloween-pumpkin
+name: Halloween Pumpkin
+version: "1.0.0"
+tags: [holiday, halloween, spooky, pumpkin, october]
+description: "Pumpkin orange and raven purple on black — jack-o'-lantern glow with bone-white type."
+colors:
+  background: "#0E0A12"
+  surface:    "#1A1322"
+  surface_2:  "#261B33"
+  primary:    "#F26F1A"
+  secondary:  "#6A2EB0"
+  accent:     "#F0E6CC"
+  text:       "#F0E6CC"
+  text_muted: "#9A8AA8"
+  border:     "#3A2855"
+  success:    "#7AC840"
+  warning:    "#F2C840"
+  danger:     "#B81E1E"

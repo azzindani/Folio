@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: stencil-military
+name: Stencil Military
+version: "1.0.0"
+tags: [stencil, military, tactical, industrial, mil-spec, utility]
+description: "Stardos Stencil display over Saira Condensed body — tactical, mil-spec, industrial signage register."
+families:
+  heading: "Stardos Stencil"
+  body:    "Saira Condensed"
+  mono:    "Share Tech Mono"
+  display: "Stardos Stencil"
+  accent:  "Major Mono Display"
+scale:
+  h1:
+    size: 80
+    weight: 700
+    line_height: 1.1

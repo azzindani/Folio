@@ -1,0 +1,374 @@
+_protocol: template/v1
+
+# Coming-soon launch page — 1080×1920 portrait, dark-tech theme.
+# Huge headline, product eyebrow, tagline, email signup mockup, countdown row.
+meta:
+  id: tmpl-coming-soon-page
+  name: Coming Soon Page
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, app, screen, coming-soon, launch, portrait, dark]
+  description: "Coming-soon landing page with countdown timer, email capture, and launch date."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: glow-top
+    type: circle
+    z: 1
+    cx: 540
+    cy: 0
+    rx: 600
+    ry: 500
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.35
+
+  # ── Product eyebrow ───────────────────────────────────────
+  - id: eyebrow-pill
+    type: rect
+    z: 10
+    x: 380
+    y: 240
+    width: 320
+    height: 48
+    radius: 24
+    fill: { type: solid, color: "rgba(255,255,255,0.06)" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: eyebrow-text
+    type: text
+    z: 11
+    x: 380
+    y: 254
+    width: 320
+    height: 0
+    content: { type: plain, value: "★  AXIOM ANALYTICS" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.24
+
+  # ── Huge headline ─────────────────────────────────────────
+  - id: headline
+    type: text
+    z: 20
+    x: 60
+    y: 360
+    width: 960
+    height: 0
+    content: { type: plain, value: "COMING\nSOON" }
+    style:
+      font_family: $heading
+      font_size: 220
+      font_weight: 900
+      color: $text
+      text_align: center
+      line_height: 0.92
+      letter_spacing: -0.04
+
+  # ── Tagline ───────────────────────────────────────────────
+  - id: tagline
+    type: text
+    z: 21
+    x: 80
+    y: 850
+    width: 920
+    height: 0
+    content: { type: plain, value: "Real-time product analytics, finally without the SQL.\nLaunching this summer." }
+    style:
+      font_family: $body
+      font_size: 26
+      color: $text_muted
+      text_align: center
+      line_height: 1.5
+
+  # ── Countdown row ─────────────────────────────────────────
+  - id: cd-1-bg
+    type: rect
+    z: 30
+    x: 80
+    y: 1060
+    width: 200
+    height: 180
+    radius: 16
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: cd-1-num
+    type: text
+    z: 31
+    x: 80
+    y: 1090
+    width: 200
+    height: 0
+    content: { type: plain, value: "42" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  - id: cd-1-lbl
+    type: text
+    z: 32
+    x: 80
+    y: 1200
+    width: 200
+    height: 0
+    content: { type: plain, value: "DAYS" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.3
+
+  - id: cd-2-bg
+    type: rect
+    z: 33
+    x: 300
+    y: 1060
+    width: 200
+    height: 180
+    radius: 16
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: cd-2-num
+    type: text
+    z: 34
+    x: 300
+    y: 1090
+    width: 200
+    height: 0
+    content: { type: plain, value: "18" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  - id: cd-2-lbl
+    type: text
+    z: 35
+    x: 300
+    y: 1200
+    width: 200
+    height: 0
+    content: { type: plain, value: "HRS" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.3
+
+  - id: cd-3-bg
+    type: rect
+    z: 36
+    x: 520
+    y: 1060
+    width: 200
+    height: 180
+    radius: 16
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: cd-3-num
+    type: text
+    z: 37
+    x: 520
+    y: 1090
+    width: 200
+    height: 0
+    content: { type: plain, value: "37" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  - id: cd-3-lbl
+    type: text
+    z: 38
+    x: 520
+    y: 1200
+    width: 200
+    height: 0
+    content: { type: plain, value: "MIN" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.3
+
+  - id: cd-4-bg
+    type: rect
+    z: 39
+    x: 740
+    y: 1060
+    width: 200
+    height: 180
+    radius: 16
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: cd-4-num
+    type: text
+    z: 40
+    x: 740
+    y: 1090
+    width: 200
+    height: 0
+    content: { type: plain, value: "12" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  - id: cd-4-lbl
+    type: text
+    z: 41
+    x: 740
+    y: 1200
+    width: 200
+    height: 0
+    content: { type: plain, value: "SEC" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.3
+
+  # ── Email signup mockup ───────────────────────────────────
+  - id: email-label
+    type: text
+    z: 50
+    x: 80
+    y: 1380
+    width: 920
+    height: 0
+    content: { type: plain, value: "GET NOTIFIED AT LAUNCH" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.3
+
+  - id: email-input
+    type: rect
+    z: 51
+    x: 80
+    y: 1430
+    width: 640
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: email-placeholder
+    type: text
+    z: 52
+    x: 110
+    y: 1452
+    width: 580
+    height: 0
+    content: { type: plain, value: "you@company.com" }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text_muted
+
+  - id: email-btn
+    type: rect
+    z: 53
+    x: 740
+    y: 1430
+    width: 260
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: email-btn-text
+    type: text
+    z: 54
+    x: 740
+    y: 1452
+    width: 260
+    height: 0
+    content: { type: plain, value: "Notify me" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  # ── Launch date footer ────────────────────────────────────
+  - id: launch-date
+    type: text
+    z: 60
+    x: 60
+    y: 1800
+    width: 960
+    height: 0
+    content: { type: plain, value: "Launching · 28 June 2026" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.1
+
+slots:
+  - { id: product_name, path: "layers[3].content.value",  type: text, hint: "Product name eyebrow", default: "★  AXIOM ANALYTICS" }
+  - { id: tagline,      path: "layers[5].content.value",  type: text, hint: "Tagline paragraph",    default: "Real-time product analytics, finally without the SQL.\nLaunching this summer." }
+  - { id: launch_date,  path: "layers[24].content.value", type: text, hint: "Launch date line",     default: "Launching · 28 June 2026" }

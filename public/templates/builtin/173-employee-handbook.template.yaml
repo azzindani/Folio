@@ -1,0 +1,399 @@
+_protocol: template/v1
+
+# 12-page employee handbook — 1240×1754 A4 portrait, corporate-slate theme.
+# Cover → welcome → values → conduct → time-off → benefits → expenses →
+# remote → security → harassment → contacts → signature.
+meta:
+  id: tmpl-employee-handbook
+  name: Employee Handbook · 12 Pages
+  type: book
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [book, handbook, hr, policy, corporate, a4]
+  description: "Twelve-page employee handbook covering welcome, values, code of conduct, time off, benefits, expenses, remote work, security, harassment, contacts, and signature acknowledgement."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+pages:
+  # ── Page 1 · Cover ─────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: accent-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 880, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: logo, type: text, z: 10, x: 100, y: 120, width: 600, height: 0, content: { type: plain, value: "◆ MERIDIAN CAPITAL" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4 } }
+      - { id: year, type: text, z: 11, x: 1040, y: 120, width: 120, height: 0, content: { type: plain, value: "2026" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: right, letter_spacing: 0.2 } }
+      - { id: kicker, type: text, z: 20, x: 100, y: 440, width: 1040, height: 0, content: { type: plain, value: "EMPLOYEE HANDBOOK" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6 } }
+      - { id: title, type: text, z: 21, x: 100, y: 500, width: 1040, height: 0, content: { type: plain, value: "How we\nwork together." }, style: { font_family: $heading, font_size: 88, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.03 } }
+      - { id: subtitle, type: text, z: 22, x: 100, y: 760, width: 1040, height: 0, content: { type: plain, value: "Policies, benefits and expectations · Effective January 1, 2026" }, style: { font_family: $body, font_size: 20, color: "#FFFFFF", opacity: 0.9, line_height: 1.4 } }
+      - { id: toc-label, type: text, z: 30, x: 100, y: 1000, width: 1040, height: 0, content: { type: plain, value: "WHAT'S INSIDE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: toc-rule, type: rect, z: 31, x: 100, y: 1040, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: toc-1, type: text, z: 32, x: 100, y: 1080, width: 1040, height: 0, content: { type: plain, value: "01 · Welcome from our CEO" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-2, type: text, z: 32, x: 100, y: 1120, width: 1040, height: 0, content: { type: plain, value: "02 · Our values" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-3, type: text, z: 32, x: 100, y: 1160, width: 1040, height: 0, content: { type: plain, value: "03 · Code of conduct" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-4, type: text, z: 32, x: 100, y: 1200, width: 1040, height: 0, content: { type: plain, value: "04 · Time off" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-5, type: text, z: 32, x: 100, y: 1240, width: 1040, height: 0, content: { type: plain, value: "05 · Benefits" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-6, type: text, z: 32, x: 100, y: 1280, width: 1040, height: 0, content: { type: plain, value: "06 · Expenses & travel" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-7, type: text, z: 32, x: 100, y: 1320, width: 1040, height: 0, content: { type: plain, value: "07 · Remote & flexible work" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-8, type: text, z: 32, x: 100, y: 1360, width: 1040, height: 0, content: { type: plain, value: "08 · Security & data" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-9, type: text, z: 32, x: 100, y: 1400, width: 1040, height: 0, content: { type: plain, value: "09 · Anti-harassment policy" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-10, type: text, z: 32, x: 100, y: 1440, width: 1040, height: 0, content: { type: plain, value: "10 · Contacts" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: toc-11, type: text, z: 32, x: 100, y: 1480, width: 1040, height: 0, content: { type: plain, value: "11 · Acknowledgement & signature" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 2 } }
+      - { id: foot-rule, type: rect, z: 40, x: 100, y: 1600, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: confidential, type: text, z: 41, x: 100, y: 1640, width: 600, height: 0, content: { type: plain, value: "CONFIDENTIAL · FOR INTERNAL USE" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.3 } }
+      - { id: pn, type: text, z: 42, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "01 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 2 · Welcome Letter ───────────────────────────────
+  - id: welcome
+    label: Welcome
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "01 · A WELCOME" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Glad you're here." }, style: { font_family: $heading, font_size: 64, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 290, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: p1, type: text, z: 20, x: 100, y: 340, width: 1040, height: 0, content: { type: plain, value: "Whether this is your first week or your fifth year, thank you for being part of Meridian. This handbook is not a contract and it is not meant to cover every situation you will encounter. It is a map of how we have agreed to work together — the policies that hold us accountable to each other, and the benefits and expectations that go with employment here." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: p2, type: text, z: 21, x: 100, y: 560, width: 1040, height: 0, content: { type: plain, value: "We try to write our policies the way we wish other companies wrote theirs: plainly, with judgement built in, and with the assumption that you are a capable adult. We will not always get it right. When you find something that is unclear, contradictory or out of date, please tell People Ops. We update this handbook quarterly." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: p3, type: text, z: 22, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "Three short ideas to keep in mind as you read on. First, default to trust and verify only when there is a real reason. Second, ask for help early and often — small problems are cheap to fix, big ones are expensive. Third, do the kind, careful thing even when nobody is watching, because someone always is, and because it is the right thing." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: p4, type: text, z: 23, x: 100, y: 1040, width: 1040, height: 0, content: { type: plain, value: "If you ever feel uncertain about whether something is permitted, the answer is usually to ask. Our doors and inboxes are open. We are a better company because of every person who joins it. Welcome aboard." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: sig-rule, type: rect, z: 30, x: 100, y: 1280, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: sig, type: text, z: 31, x: 100, y: 1320, width: 1040, height: 0, content: { type: plain, value: "Catherine Bauer" }, style: { font_family: $heading, font_size: 32, font_style: italic, color: $text } }
+      - { id: sig-role, type: text, z: 32, x: 100, y: 1380, width: 1040, height: 0, content: { type: plain, value: "Chair & Chief Executive Officer" }, style: { font_family: $body, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: sig-date, type: text, z: 33, x: 100, y: 1410, width: 1040, height: 0, content: { type: plain, value: "January 2, 2026" }, style: { font_family: $mono, font_size: 14, color: $text_muted } }
+      - { id: pn, type: text, z: 40, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "02 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 3 · Values ───────────────────────────────────────
+  - id: values
+    label: Our Values
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "02 · OUR VALUES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Five ideas we keep coming back to." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: v1-num, type: text, z: 20, x: 100, y: 390, width: 100, height: 0, content: { type: plain, value: "01" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: v1-title, type: text, z: 21, x: 240, y: 400, width: 900, height: 0, content: { type: plain, value: "Clients first, always." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text } }
+      - { id: v1-body, type: text, z: 22, x: 240, y: 446, width: 900, height: 0, content: { type: plain, value: "When in doubt, take the option that serves the client better, even when it costs us something in the short term. The trust we build pays back many times over." }, style: { font_family: $body, font_size: 16, color: $text_muted, line_height: 1.7 } }
+      - { id: v2-num, type: text, z: 20, x: 100, y: 600, width: 100, height: 0, content: { type: plain, value: "02" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: v2-title, type: text, z: 21, x: 240, y: 610, width: 900, height: 0, content: { type: plain, value: "Plain words, plain numbers." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text } }
+      - { id: v2-body, type: text, z: 22, x: 240, y: 656, width: 900, height: 0, content: { type: plain, value: "Say what you mean. Show your assumptions. Round your numbers honestly. Jargon is a tax on the reader; we try not to charge it." }, style: { font_family: $body, font_size: 16, color: $text_muted, line_height: 1.7 } }
+      - { id: v3-num, type: text, z: 20, x: 100, y: 810, width: 100, height: 0, content: { type: plain, value: "03" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: v3-title, type: text, z: 21, x: 240, y: 820, width: 900, height: 0, content: { type: plain, value: "Disagree, decide, commit." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text } }
+      - { id: v3-body, type: text, z: 22, x: 240, y: 866, width: 900, height: 0, content: { type: plain, value: "Air your strongest objections in the meeting, not in the hallway after it. Once a decision is made, give it your full effort — even the one you argued against." }, style: { font_family: $body, font_size: 16, color: $text_muted, line_height: 1.7 } }
+      - { id: v4-num, type: text, z: 20, x: 100, y: 1020, width: 100, height: 0, content: { type: plain, value: "04" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: v4-title, type: text, z: 21, x: 240, y: 1030, width: 900, height: 0, content: { type: plain, value: "Care for the craft." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text } }
+      - { id: v4-body, type: text, z: 22, x: 240, y: 1076, width: 900, height: 0, content: { type: plain, value: "Polish your work. Read it again. Check the numbers once more. The small last passes are what make the difference between competent and excellent." }, style: { font_family: $body, font_size: 16, color: $text_muted, line_height: 1.7 } }
+      - { id: v5-num, type: text, z: 20, x: 100, y: 1230, width: 100, height: 0, content: { type: plain, value: "05" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: v5-title, type: text, z: 21, x: 240, y: 1240, width: 900, height: 0, content: { type: plain, value: "Leave it better than you found it." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text } }
+      - { id: v5-body, type: text, z: 22, x: 240, y: 1286, width: 900, height: 0, content: { type: plain, value: "The doc, the codebase, the conference room, the company. Small acts of stewardship compound. So do small acts of neglect." }, style: { font_family: $body, font_size: 16, color: $text_muted, line_height: 1.7 } }
+      - { id: callout, type: rect, z: 30, x: 100, y: 1480, width: 1040, height: 130, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 1 } }
+      - { id: callout-text, type: text, z: 31, x: 140, y: 1510, width: 960, height: 0, content: { type: plain, value: "These are aspirations, not slogans. We measure ourselves against them in performance reviews and in the choices we make every day." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text, line_height: 1.6 } }
+      - { id: pn, type: text, z: 40, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "03 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 4 · Code of Conduct ──────────────────────────────
+  - id: conduct
+    label: Code of Conduct
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "03 · CODE OF CONDUCT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "How we treat each other." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: intro, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "Meridian is committed to a working environment that is respectful, inclusive and professional. The expectations below apply to every employee, contractor and visitor — in the office, on remote calls, at company-sponsored events and on every channel we use to communicate." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: rule-1, type: rect, z: 30, x: 100, y: 580, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: do-title, type: text, z: 31, x: 100, y: 610, width: 460, height: 0, content: { type: plain, value: "WE DO" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: do-1, type: text, z: 32, x: 100, y: 660, width: 460, height: 0, content: { type: plain, value: "✓  Treat colleagues with respect, regardless of role or tenure." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: do-2, type: text, z: 32, x: 100, y: 720, width: 460, height: 0, content: { type: plain, value: "✓  Disagree about ideas, never about people." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: do-3, type: text, z: 32, x: 100, y: 780, width: 460, height: 0, content: { type: plain, value: "✓  Give feedback specifically, kindly and promptly." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: do-4, type: text, z: 32, x: 100, y: 840, width: 460, height: 0, content: { type: plain, value: "✓  Honour confidentiality — yours, our clients', and each other's." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: do-5, type: text, z: 32, x: 100, y: 900, width: 460, height: 0, content: { type: plain, value: "✓  Report concerns through the channels described on page 11." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: do-6, type: text, z: 32, x: 100, y: 960, width: 460, height: 0, content: { type: plain, value: "✓  Acknowledge mistakes and work to repair them." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: dont-title, type: text, z: 40, x: 620, y: 610, width: 520, height: 0, content: { type: plain, value: "WE DON'T" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#B5421A", letter_spacing: 0.5 } }
+      - { id: dont-1, type: text, z: 41, x: 620, y: 660, width: 520, height: 0, content: { type: plain, value: "✗  Discriminate or harass on the basis of any protected class." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: dont-2, type: text, z: 41, x: 620, y: 720, width: 520, height: 0, content: { type: plain, value: "✗  Speak about colleagues in ways we would not say to their face." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: dont-3, type: text, z: 41, x: 620, y: 780, width: 520, height: 0, content: { type: plain, value: "✗  Share client data outside the engagement scope." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: dont-4, type: text, z: 41, x: 620, y: 840, width: 520, height: 0, content: { type: plain, value: "✗  Accept gifts above $100 without disclosure." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: dont-5, type: text, z: 41, x: 620, y: 900, width: 520, height: 0, content: { type: plain, value: "✗  Hold side roles that conflict with Meridian's interests." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: dont-6, type: text, z: 41, x: 620, y: 960, width: 520, height: 0, content: { type: plain, value: "✗  Retaliate against anyone who raises a concern in good faith." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: closing-rule, type: rect, z: 50, x: 100, y: 1100, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: closing, type: text, z: 51, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "Violations of this Code may result in disciplinary action up to and including termination of employment. Serious breaches may also be reported to relevant authorities. If you witness or experience a violation, contact your manager, People Ops or use the anonymous Ethics Hotline described on page 11." }, style: { font_family: $body, font_size: 16, color: $text_muted, line_height: 1.7 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "04 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 5 · Time Off ─────────────────────────────────────
+  - id: time-off
+    label: Time Off
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "04 · TIME OFF" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Rest is part of the job." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: c1, type: rect, z: 20, x: 100, y: 380, width: 500, height: 260, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: c1-l, type: text, z: 21, x: 140, y: 420, width: 420, height: 0, content: { type: plain, value: "ANNUAL LEAVE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: c1-v, type: text, z: 22, x: 140, y: 460, width: 420, height: 0, content: { type: plain, value: "25 days" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: c1-s, type: text, z: 23, x: 140, y: 560, width: 420, height: 0, content: { type: plain, value: "Per calendar year, accrued monthly. Carry up to 5 unused days into the next year." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: c2, type: rect, z: 20, x: 640, y: 380, width: 500, height: 260, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: c2-l, type: text, z: 21, x: 680, y: 420, width: 420, height: 0, content: { type: plain, value: "SICK LEAVE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: c2-v, type: text, z: 22, x: 680, y: 460, width: 420, height: 0, content: { type: plain, value: "10 days" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: c2-s, type: text, z: 23, x: 680, y: 560, width: 420, height: 0, content: { type: plain, value: "Per year, no doctor's note required for absences under 3 days." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: c3, type: rect, z: 20, x: 100, y: 680, width: 500, height: 260, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: c3-l, type: text, z: 21, x: 140, y: 720, width: 420, height: 0, content: { type: plain, value: "PARENTAL LEAVE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: c3-v, type: text, z: 22, x: 140, y: 760, width: 420, height: 0, content: { type: plain, value: "16 weeks" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: c3-s, type: text, z: 23, x: 140, y: 860, width: 420, height: 0, content: { type: plain, value: "Fully paid, available to all new parents regardless of gender or family structure." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: c4, type: rect, z: 20, x: 640, y: 680, width: 500, height: 260, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: c4-l, type: text, z: 21, x: 680, y: 720, width: 420, height: 0, content: { type: plain, value: "COMPANY HOLIDAYS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: c4-v, type: text, z: 22, x: 680, y: 760, width: 420, height: 0, content: { type: plain, value: "12 days" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: c4-s, type: text, z: 23, x: 680, y: 860, width: 420, height: 0, content: { type: plain, value: "Including a winter shutdown of 5 working days between December 24 and January 2." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: extra-title, type: text, z: 30, x: 100, y: 1000, width: 1040, height: 0, content: { type: plain, value: "OTHER LEAVE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: extra-rule, type: rect, z: 31, x: 100, y: 1040, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: extra-1, type: text, z: 32, x: 100, y: 1080, width: 1040, height: 0, content: { type: plain, value: "Bereavement leave — up to 10 days for an immediate family member, 3 days for an extended family member." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: extra-2, type: text, z: 32, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "Jury duty — paid in full for the entire term of service. Submit your summons to People Ops." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: extra-3, type: text, z: 32, x: 100, y: 1200, width: 1040, height: 0, content: { type: plain, value: "Volunteer days — 2 paid days per year to support a cause of your choice; submit a brief description after." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: extra-4, type: text, z: 32, x: 100, y: 1260, width: 1040, height: 0, content: { type: plain, value: "Sabbatical — 4 paid weeks after every 5 years of continuous service, with manager pre-approval." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: how-title, type: text, z: 40, x: 100, y: 1380, width: 1040, height: 0, content: { type: plain, value: "HOW TO REQUEST" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: how-rule, type: rect, z: 41, x: 100, y: 1420, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: how-body, type: text, z: 42, x: 100, y: 1460, width: 1040, height: 0, content: { type: plain, value: "Submit requests in Workday at least two weeks in advance for planned leave longer than three days. Your manager approves; HR confirms. For urgent leave, notify your manager directly and update Workday afterwards." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "05 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 6 · Benefits ─────────────────────────────────────
+  - id: benefits
+    label: Benefits
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "05 · BENEFITS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "What we offer beyond salary." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: b1-icon, type: rect, z: 20, x: 100, y: 380, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b1-icon-text, type: text, z: 21, x: 100, y: 398, width: 60, height: 0, content: { type: plain, value: "+" }, style: { font_family: $heading, font_size: 32, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b1-t, type: text, z: 22, x: 200, y: 386, width: 940, height: 0, content: { type: plain, value: "Health, dental & vision insurance" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b1-b, type: text, z: 23, x: 200, y: 420, width: 940, height: 0, content: { type: plain, value: "100% of premiums covered for the employee, 80% for dependents. PPO and HMO options. Enrolment within 30 days of joining." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: b2-icon, type: rect, z: 30, x: 100, y: 530, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b2-icon-text, type: text, z: 31, x: 100, y: 548, width: 60, height: 0, content: { type: plain, value: "$" }, style: { font_family: $heading, font_size: 32, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b2-t, type: text, z: 32, x: 200, y: 536, width: 940, height: 0, content: { type: plain, value: "401(k) match" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b2-b, type: text, z: 33, x: 200, y: 570, width: 940, height: 0, content: { type: plain, value: "Dollar-for-dollar match on the first 6% of salary you contribute. Vested immediately. Roth and traditional both supported." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: b3-icon, type: rect, z: 40, x: 100, y: 680, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b3-icon-text, type: text, z: 41, x: 100, y: 698, width: 60, height: 0, content: { type: plain, value: "◐" }, style: { font_family: $heading, font_size: 28, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b3-t, type: text, z: 42, x: 200, y: 686, width: 940, height: 0, content: { type: plain, value: "Mental-health support" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b3-b, type: text, z: 43, x: 200, y: 720, width: 940, height: 0, content: { type: plain, value: "12 fully covered therapy or coaching sessions per year via Spring Health. Crisis line available 24/7. No referral required." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: b4-icon, type: rect, z: 50, x: 100, y: 830, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b4-icon-text, type: text, z: 51, x: 100, y: 848, width: 60, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 28, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b4-t, type: text, z: 52, x: 200, y: 836, width: 940, height: 0, content: { type: plain, value: "Learning & development" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b4-b, type: text, z: 53, x: 200, y: 870, width: 940, height: 0, content: { type: plain, value: "$2,500 annual budget for courses, books, conferences and certifications. No pre-approval needed under $500." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: b5-icon, type: rect, z: 60, x: 100, y: 980, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b5-icon-text, type: text, z: 61, x: 100, y: 998, width: 60, height: 0, content: { type: plain, value: "⌂" }, style: { font_family: $heading, font_size: 26, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b5-t, type: text, z: 62, x: 200, y: 986, width: 940, height: 0, content: { type: plain, value: "Home-office stipend" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b5-b, type: text, z: 63, x: 200, y: 1020, width: 940, height: 0, content: { type: plain, value: "$1,000 one-time setup grant plus $80/month for utilities. Refresh budget every 3 years on the same terms." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: b6-icon, type: rect, z: 70, x: 100, y: 1130, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b6-icon-text, type: text, z: 71, x: 100, y: 1148, width: 60, height: 0, content: { type: plain, value: "◇" }, style: { font_family: $heading, font_size: 28, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b6-t, type: text, z: 72, x: 200, y: 1136, width: 940, height: 0, content: { type: plain, value: "Equity & employee stock plan" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b6-b, type: text, z: 73, x: 200, y: 1170, width: 940, height: 0, content: { type: plain, value: "RSUs granted at hire and refresh annually. ESPP offers 15% discount on quarterly purchase windows." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: b7-icon, type: rect, z: 80, x: 100, y: 1280, width: 60, height: 60, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: b7-icon-text, type: text, z: 81, x: 100, y: 1298, width: 60, height: 0, content: { type: plain, value: "❤" }, style: { font_family: $heading, font_size: 28, color: "#FFFFFF", text_align: center, font_weight: 800 } }
+      - { id: b7-t, type: text, z: 82, x: 200, y: 1286, width: 940, height: 0, content: { type: plain, value: "Family & fertility" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: b7-b, type: text, z: 83, x: 200, y: 1320, width: 940, height: 0, content: { type: plain, value: "Up to $20,000 lifetime benefit for fertility treatments, adoption fees or surrogacy support. Backup childcare and elder care via Care.com." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: footnote, type: text, z: 90, x: 100, y: 1500, width: 1040, height: 0, content: { type: plain, value: "Full benefits guide available on the People Ops intranet. Open enrolment runs each November." }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: pn, type: text, z: 95, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "06 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 7 · Expenses ─────────────────────────────────────
+  - id: expenses
+    label: Expenses
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "06 · EXPENSES & TRAVEL" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Spend it like it's yours." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: principle, type: rect, z: 20, x: 100, y: 380, width: 1040, height: 160, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 1 } }
+      - { id: principle-label, type: text, z: 21, x: 140, y: 410, width: 960, height: 0, content: { type: plain, value: "GUIDING PRINCIPLE" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: principle-text, type: text, z: 22, x: 140, y: 446, width: 960, height: 0, content: { type: plain, value: "Spend Meridian money the way you would spend your own — sensibly, on what you need, with receipts. If you would not feel comfortable defending the purchase to your team, don't make it." }, style: { font_family: $body, font_size: 18, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: t-title, type: text, z: 30, x: 100, y: 600, width: 1040, height: 0, content: { type: plain, value: "TRAVEL LIMITS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-rule, type: rect, z: 31, x: 100, y: 640, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: th-bg, type: rect, z: 40, x: 100, y: 660, width: 1040, height: 40, fill: { type: solid, color: "$surface" } }
+      - { id: th-1, type: text, z: 41, x: 120, y: 672, width: 360, height: 0, content: { type: plain, value: "CATEGORY" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: th-2, type: text, z: 41, x: 500, y: 672, width: 320, height: 0, content: { type: plain, value: "DOMESTIC PER NIGHT" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: th-3, type: text, z: 41, x: 840, y: 672, width: 280, height: 0, content: { type: plain, value: "INTERNATIONAL" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: r1-l, type: text, z: 50, x: 120, y: 720, width: 360, height: 0, content: { type: plain, value: "Hotel" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r1-d, type: text, z: 51, x: 500, y: 720, width: 320, height: 0, content: { type: plain, value: "Up to $240" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r1-i, type: text, z: 52, x: 840, y: 720, width: 280, height: 0, content: { type: plain, value: "Up to $320" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r1-rule, type: rect, z: 53, x: 100, y: 760, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r2-l, type: text, z: 60, x: 120, y: 780, width: 360, height: 0, content: { type: plain, value: "Meals (per day)" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r2-d, type: text, z: 61, x: 500, y: 780, width: 320, height: 0, content: { type: plain, value: "Up to $85" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r2-i, type: text, z: 62, x: 840, y: 780, width: 280, height: 0, content: { type: plain, value: "Up to $110" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r2-rule, type: rect, z: 63, x: 100, y: 820, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r3-l, type: text, z: 70, x: 120, y: 840, width: 360, height: 0, content: { type: plain, value: "Air travel" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r3-d, type: text, z: 71, x: 500, y: 840, width: 320, height: 0, content: { type: plain, value: "Economy" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r3-i, type: text, z: 72, x: 840, y: 840, width: 280, height: 0, content: { type: plain, value: "Economy / Premium ≥8h" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r3-rule, type: rect, z: 73, x: 100, y: 880, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r4-l, type: text, z: 80, x: 120, y: 900, width: 360, height: 0, content: { type: plain, value: "Ground transport" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r4-d, type: text, z: 81, x: 500, y: 900, width: 320, height: 0, content: { type: plain, value: "Public + ride-share" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r4-i, type: text, z: 82, x: 840, y: 900, width: 280, height: 0, content: { type: plain, value: "Public + ride-share" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r4-rule, type: rect, z: 83, x: 100, y: 940, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r5-l, type: text, z: 90, x: 120, y: 960, width: 360, height: 0, content: { type: plain, value: "Client entertainment" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r5-d, type: text, z: 91, x: 500, y: 960, width: 320, height: 0, content: { type: plain, value: "$150 / head" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r5-i, type: text, z: 92, x: 840, y: 960, width: 280, height: 0, content: { type: plain, value: "$180 / head" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r5-rule, type: rect, z: 93, x: 100, y: 1000, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: how-title, type: text, z: 100, x: 100, y: 1080, width: 1040, height: 0, content: { type: plain, value: "HOW TO SUBMIT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: how-rule, type: rect, z: 101, x: 100, y: 1120, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: how-1, type: text, z: 102, x: 100, y: 1160, width: 1040, height: 0, content: { type: plain, value: "1.  Use the Meridian corporate card where possible — transactions auto-import to Expensify." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: how-2, type: text, z: 103, x: 100, y: 1220, width: 1040, height: 0, content: { type: plain, value: "2.  Photograph receipts for any item over $25; attach in Expensify within 14 days." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: how-3, type: text, z: 104, x: 100, y: 1280, width: 1040, height: 0, content: { type: plain, value: "3.  Categorise correctly and add a one-line business purpose for each expense." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: how-4, type: text, z: 105, x: 100, y: 1340, width: 1040, height: 0, content: { type: plain, value: "4.  Personal cards are reimbursed monthly via direct deposit, typically within 7 business days of approval." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: warn, type: rect, z: 110, x: 100, y: 1440, width: 1040, height: 130, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "#B5421A", width: 1 } }
+      - { id: warn-title, type: text, z: 111, x: 140, y: 1470, width: 960, height: 0, content: { type: plain, value: "WHAT WE DO NOT REIMBURSE" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "#B5421A", letter_spacing: 0.5 } }
+      - { id: warn-body, type: text, z: 112, x: 140, y: 1510, width: 960, height: 0, content: { type: plain, value: "Personal entertainment, alcohol on solo business trips, hotel-room minibars, traffic fines, spousal travel without prior written approval, gifts to government officials." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: pn, type: text, z: 120, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "07 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 8 · Remote Work ──────────────────────────────────
+  - id: remote
+    label: Remote Work
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "07 · REMOTE & FLEXIBLE WORK" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Where the work happens." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: intro, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "Most Meridian roles are hybrid by default. Some are fully office-based; a few are fully remote. The expectations below apply to anyone who works from somewhere other than a Meridian office for some or all of their week." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: r1-title, type: text, z: 30, x: 100, y: 580, width: 1040, height: 0, content: { type: plain, value: "1.  Core hours" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: r1-body, type: text, z: 31, x: 100, y: 620, width: 1040, height: 0, content: { type: plain, value: "10:00 — 15:00 local time, Monday to Friday. Be reachable on Slack and available for meetings during this window. Outside core hours, you choose when to work." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.7 } }
+      - { id: r2-title, type: text, z: 40, x: 100, y: 760, width: 1040, height: 0, content: { type: plain, value: "2.  Office days" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: r2-body, type: text, z: 41, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "Hybrid employees come into the office at least 2 days per week. Tuesdays are an all-hands day for most teams; the other day is your choice. Book a desk in Robin before 9am." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.7 } }
+      - { id: r3-title, type: text, z: 50, x: 100, y: 940, width: 1040, height: 0, content: { type: plain, value: "3.  Working from another country" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: r3-body, type: text, z: 51, x: 100, y: 980, width: 1040, height: 0, content: { type: plain, value: "You may work from any country for up to 30 calendar days per year, provided you notify People Ops at least 14 days in advance. Longer stays trigger tax and employment-law obligations and require written pre-approval." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.7 } }
+      - { id: r4-title, type: text, z: 60, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "4.  Your home setup" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: r4-body, type: text, z: 61, x: 100, y: 1180, width: 1040, height: 0, content: { type: plain, value: "You are responsible for a reliable internet connection (≥ 50 Mbps), a quiet space for calls, and a workspace that meets basic ergonomic and safety standards. The home-office stipend exists to help you build this." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.7 } }
+      - { id: r5-title, type: text, z: 70, x: 100, y: 1340, width: 1040, height: 0, content: { type: plain, value: "5.  Etiquette on video calls" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: r5-body, type: text, z: 71, x: 100, y: 1380, width: 1040, height: 0, content: { type: plain, value: "Camera on by default for internal meetings of 6 or fewer; optional for larger meetings. Mute by default. Use the chat for clarifying questions to avoid talking over each other." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.7 } }
+      - { id: pn, type: text, z: 80, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "08 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 9 · Security ─────────────────────────────────────
+  - id: security
+    label: Security
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "08 · SECURITY & DATA" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Protect what's been trusted to us." }, style: { font_family: $heading, font_size: 42, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: intro, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "Our clients trust us with confidential information. Every employee is responsible for safeguarding it. Negligence around these basics is grounds for discipline up to and including termination." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: must-title, type: text, z: 30, x: 100, y: 540, width: 1040, height: 0, content: { type: plain, value: "MUST DO" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: must-rule, type: rect, z: 31, x: 100, y: 580, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: m1, type: text, z: 32, x: 100, y: 620, width: 1040, height: 0, content: { type: plain, value: "✓  Enable two-factor authentication on every Meridian account, without exception." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: m2, type: text, z: 33, x: 100, y: 680, width: 1040, height: 0, content: { type: plain, value: "✓  Use 1Password (provided) for every credential. No reused passwords, no shared logins." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: m3, type: text, z: 34, x: 100, y: 740, width: 1040, height: 0, content: { type: plain, value: "✓  Encrypt your laptop with FileVault or BitLocker. IT will check on first day." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: m4, type: text, z: 35, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "✓  Report a lost device or suspected breach to security@meridian.co within 1 hour." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: m5, type: text, z: 36, x: 100, y: 860, width: 1040, height: 0, content: { type: plain, value: "✓  Complete the annual security training within 30 days of your hire anniversary." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: must-not, type: text, z: 40, x: 100, y: 980, width: 1040, height: 0, content: { type: plain, value: "MUST NOT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#B5421A", letter_spacing: 0.5 } }
+      - { id: mn-rule, type: rect, z: 41, x: 100, y: 1020, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: mn1, type: text, z: 42, x: 100, y: 1060, width: 1040, height: 0, content: { type: plain, value: "✗  Store client data on personal devices, USB drives, or unapproved cloud services." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: mn2, type: text, z: 43, x: 100, y: 1120, width: 1040, height: 0, content: { type: plain, value: "✗  Send confidential information over unencrypted email or consumer messaging apps." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: mn3, type: text, z: 44, x: 100, y: 1180, width: 1040, height: 0, content: { type: plain, value: "✗  Discuss client matters in public — cafés, planes, ride-shares, or social media." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: mn4, type: text, z: 45, x: 100, y: 1240, width: 1040, height: 0, content: { type: plain, value: "✗  Install software outside of our Approved Software list without written IT approval." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: mn5, type: text, z: 46, x: 100, y: 1300, width: 1040, height: 0, content: { type: plain, value: "✗  Click links in unexpected emails — forward suspicious messages to phishing@meridian.co." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.8 } }
+      - { id: callout, type: rect, z: 50, x: 100, y: 1420, width: 1040, height: 150, radius: 8, fill: { type: solid, color: "$primary" } }
+      - { id: callout-t, type: text, z: 51, x: 140, y: 1450, width: 960, height: 0, content: { type: plain, value: "INCIDENT REPORTING" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5 } }
+      - { id: callout-b, type: text, z: 52, x: 140, y: 1490, width: 960, height: 0, content: { type: plain, value: "Lost device, suspicious email, or anything that does not look right: security@meridian.co · +1 415 555 0100 · #sec-help on Slack." }, style: { font_family: $body, font_size: 16, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "09 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 10 · Anti-Harassment Policy ──────────────────────
+  - id: harassment
+    label: Anti-Harassment
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "09 · ANTI-HARASSMENT POLICY" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "A workplace free from harassment." }, style: { font_family: $heading, font_size: 42, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: p1, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "Meridian prohibits harassment, discrimination and retaliation of any kind. This policy applies to every employee, contractor, vendor, client and visitor — in our offices, at our events, on our communication tools and at any work-related setting." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: def-title, type: text, z: 30, x: 100, y: 580, width: 1040, height: 0, content: { type: plain, value: "WHAT WE MEAN BY HARASSMENT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: def-rule, type: rect, z: 31, x: 100, y: 620, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: def-body, type: text, z: 32, x: 100, y: 660, width: 1040, height: 0, content: { type: plain, value: "Any unwelcome conduct — verbal, written, visual or physical — based on a person's race, color, national origin, religion, age, gender identity, sexual orientation, marital status, pregnancy, disability, military status, or any other protected characteristic. This includes offensive jokes, slurs, intimidation, unwelcome touching, suggestive comments, sharing inappropriate images, persistent unwanted contact, and quid-pro-quo proposals." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.7 } }
+      - { id: report-title, type: text, z: 40, x: 100, y: 980, width: 1040, height: 0, content: { type: plain, value: "HOW TO REPORT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: report-rule, type: rect, z: 41, x: 100, y: 1020, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: ch-1, type: rect, z: 50, x: 100, y: 1060, width: 320, height: 200, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: ch-1-t, type: text, z: 51, x: 140, y: 1090, width: 240, height: 0, content: { type: plain, value: "YOUR MANAGER" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: ch-1-b, type: text, z: 52, x: 140, y: 1130, width: 240, height: 0, content: { type: plain, value: "Direct, fastest path. They will involve People Ops within 24 hours." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: ch-2, type: rect, z: 60, x: 460, y: 1060, width: 320, height: 200, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: ch-2-t, type: text, z: 61, x: 500, y: 1090, width: 240, height: 0, content: { type: plain, value: "PEOPLE OPS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: ch-2-b, type: text, z: 62, x: 500, y: 1130, width: 240, height: 0, content: { type: plain, value: "people-help@meridian.co or any member of the People Ops team." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: ch-3, type: rect, z: 70, x: 820, y: 1060, width: 320, height: 200, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: ch-3-t, type: text, z: 71, x: 860, y: 1090, width: 240, height: 0, content: { type: plain, value: "ETHICS HOTLINE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: ch-3-b, type: text, z: 72, x: 860, y: 1130, width: 240, height: 0, content: { type: plain, value: "Anonymous · third-party operated · 24/7 · ethics.meridian.co" }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: process-title, type: text, z: 80, x: 100, y: 1300, width: 1040, height: 0, content: { type: plain, value: "WHAT HAPPENS NEXT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: process-rule, type: rect, z: 81, x: 100, y: 1340, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: pr-1, type: text, z: 82, x: 100, y: 1380, width: 1040, height: 0, content: { type: plain, value: "Every report receives acknowledgement within 24 hours and triage within 3 business days. Investigations are conducted with discretion, by trained staff or — for serious matters — outside counsel. Findings and any consequences are communicated as fully as the investigation allows." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: retaliation, type: text, z: 90, x: 100, y: 1540, width: 1040, height: 0, content: { type: plain, value: "Retaliation against anyone who reports in good faith — or participates in an investigation — is strictly prohibited and is itself grounds for termination." }, style: { font_family: $body, font_size: 15, font_weight: 700, color: $text, line_height: 1.7 } }
+      - { id: pn, type: text, z: 100, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "10 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 11 · Contacts ────────────────────────────────────
+  - id: contacts
+    label: Contacts
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "10 · WHO TO CONTACT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Where to go for what." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: t-1, type: rect, z: 20, x: 100, y: 380, width: 500, height: 200, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: t-1-l, type: text, z: 21, x: 140, y: 410, width: 420, height: 0, content: { type: plain, value: "PEOPLE OPS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-1-t, type: text, z: 22, x: 140, y: 450, width: 420, height: 0, content: { type: plain, value: "Benefits, leave, payroll, HR questions." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: t-1-e, type: text, z: 23, x: 140, y: 510, width: 420, height: 0, content: { type: plain, value: "people-help@meridian.co" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text } }
+      - { id: t-1-p, type: text, z: 24, x: 140, y: 540, width: 420, height: 0, content: { type: plain, value: "+1 415 555 0140 · #peopleops" }, style: { font_family: $mono, font_size: 13, color: $text_muted } }
+      - { id: t-2, type: rect, z: 30, x: 640, y: 380, width: 500, height: 200, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: t-2-l, type: text, z: 31, x: 680, y: 410, width: 420, height: 0, content: { type: plain, value: "IT HELPDESK" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-2-t, type: text, z: 32, x: 680, y: 450, width: 420, height: 0, content: { type: plain, value: "Laptop, accounts, access requests, password reset." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: t-2-e, type: text, z: 33, x: 680, y: 510, width: 420, height: 0, content: { type: plain, value: "it-help@meridian.co" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text } }
+      - { id: t-2-p, type: text, z: 34, x: 680, y: 540, width: 420, height: 0, content: { type: plain, value: "+1 415 555 0160 · #it-help" }, style: { font_family: $mono, font_size: 13, color: $text_muted } }
+      - { id: t-3, type: rect, z: 40, x: 100, y: 620, width: 500, height: 200, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: t-3-l, type: text, z: 41, x: 140, y: 650, width: 420, height: 0, content: { type: plain, value: "SECURITY" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-3-t, type: text, z: 42, x: 140, y: 690, width: 420, height: 0, content: { type: plain, value: "Phishing, lost device, breach, suspicious activity." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: t-3-e, type: text, z: 43, x: 140, y: 750, width: 420, height: 0, content: { type: plain, value: "security@meridian.co" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text } }
+      - { id: t-3-p, type: text, z: 44, x: 140, y: 780, width: 420, height: 0, content: { type: plain, value: "+1 415 555 0100 · 24/7 hotline" }, style: { font_family: $mono, font_size: 13, color: $text_muted } }
+      - { id: t-4, type: rect, z: 50, x: 640, y: 620, width: 500, height: 200, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: t-4-l, type: text, z: 51, x: 680, y: 650, width: 420, height: 0, content: { type: plain, value: "LEGAL" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-4-t, type: text, z: 52, x: 680, y: 690, width: 420, height: 0, content: { type: plain, value: "Contracts, NDAs, IP, subpoenas, regulatory." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: t-4-e, type: text, z: 53, x: 680, y: 750, width: 420, height: 0, content: { type: plain, value: "legal@meridian.co" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text } }
+      - { id: t-4-p, type: text, z: 54, x: 680, y: 780, width: 420, height: 0, content: { type: plain, value: "+1 415 555 0180 · #legal-help" }, style: { font_family: $mono, font_size: 13, color: $text_muted } }
+      - { id: t-5, type: rect, z: 60, x: 100, y: 860, width: 500, height: 200, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: t-5-l, type: text, z: 61, x: 140, y: 890, width: 420, height: 0, content: { type: plain, value: "EAP & MENTAL HEALTH" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-5-t, type: text, z: 62, x: 140, y: 930, width: 420, height: 0, content: { type: plain, value: "Therapy, coaching, crisis support — Spring Health." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: t-5-e, type: text, z: 63, x: 140, y: 990, width: 420, height: 0, content: { type: plain, value: "springhealth.com/meridian" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text } }
+      - { id: t-5-p, type: text, z: 64, x: 140, y: 1020, width: 420, height: 0, content: { type: plain, value: "+1 855 629 0554 · 24/7" }, style: { font_family: $mono, font_size: 13, color: $text_muted } }
+      - { id: t-6, type: rect, z: 70, x: 640, y: 860, width: 500, height: 200, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: t-6-l, type: text, z: 71, x: 680, y: 890, width: 420, height: 0, content: { type: plain, value: "ETHICS HOTLINE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: t-6-t, type: text, z: 72, x: 680, y: 930, width: 420, height: 0, content: { type: plain, value: "Anonymous reporting, third-party operated." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.5 } }
+      - { id: t-6-e, type: text, z: 73, x: 680, y: 990, width: 420, height: 0, content: { type: plain, value: "ethics.meridian.co" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text } }
+      - { id: t-6-p, type: text, z: 74, x: 680, y: 1020, width: 420, height: 0, content: { type: plain, value: "+1 800 555 0190 · 24/7" }, style: { font_family: $mono, font_size: 13, color: $text_muted } }
+      - { id: addr-title, type: text, z: 80, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "OFFICE ADDRESSES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: addr-rule, type: rect, z: 81, x: 100, y: 1180, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: addr-1, type: text, z: 82, x: 100, y: 1220, width: 460, height: 0, content: { type: plain, value: "SAN FRANCISCO — HQ\n450 Mission Street, 14th Floor\nSan Francisco, CA 94105" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: addr-2, type: text, z: 83, x: 640, y: 1220, width: 460, height: 0, content: { type: plain, value: "NEW YORK\n530 Fifth Avenue, 22nd Floor\nNew York, NY 10036" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: addr-3, type: text, z: 84, x: 100, y: 1380, width: 460, height: 0, content: { type: plain, value: "LONDON\n2 More London Riverside\nLondon SE1 2AP" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: addr-4, type: text, z: 85, x: 640, y: 1380, width: 460, height: 0, content: { type: plain, value: "SINGAPORE\n8 Marina View, Level 32\nSingapore 018960" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: pn, type: text, z: 90, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "11 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }
+
+  # ── Page 12 · Signature ───────────────────────────────────
+  - id: signature
+    label: Signature
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "11 · ACKNOWLEDGEMENT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Signature & acknowledgement." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: ack-1, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "By signing below, I acknowledge that I have received, read and understood the Meridian Capital Employee Handbook dated January 2026." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: ack-2, type: text, z: 21, x: 100, y: 480, width: 1040, height: 0, content: { type: plain, value: "I understand that this handbook is a general guide and is not a contract of employment. Meridian may modify, revoke or supplement any policy, in whole or in part, at any time. I will be notified of material changes." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: ack-3, type: text, z: 22, x: 100, y: 620, width: 1040, height: 0, content: { type: plain, value: "I agree to comply with the policies described and to ask my manager or People Ops if I have any questions about how a policy applies to my situation." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: sig-block, type: rect, z: 30, x: 100, y: 800, width: 1040, height: 280, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: name-label, type: text, z: 31, x: 140, y: 840, width: 460, height: 0, content: { type: plain, value: "EMPLOYEE NAME" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: name-line, type: rect, z: 32, x: 140, y: 900, width: 460, height: 2, fill: { type: solid, color: "$text_muted" } }
+      - { id: emp-id-label, type: text, z: 33, x: 660, y: 840, width: 460, height: 0, content: { type: plain, value: "EMPLOYEE ID" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: emp-id-line, type: rect, z: 34, x: 660, y: 900, width: 460, height: 2, fill: { type: solid, color: "$text_muted" } }
+      - { id: sig-label, type: text, z: 35, x: 140, y: 970, width: 460, height: 0, content: { type: plain, value: "SIGNATURE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: sig-line, type: rect, z: 36, x: 140, y: 1030, width: 460, height: 2, fill: { type: solid, color: "$text_muted" } }
+      - { id: date-label, type: text, z: 37, x: 660, y: 970, width: 460, height: 0, content: { type: plain, value: "DATE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: date-line, type: rect, z: 38, x: 660, y: 1030, width: 460, height: 2, fill: { type: solid, color: "$text_muted" } }
+      - { id: submit-title, type: text, z: 40, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "WHERE TO RETURN THIS PAGE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: submit-rule, type: rect, z: 41, x: 100, y: 1180, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: submit-body, type: text, z: 42, x: 100, y: 1220, width: 1040, height: 0, content: { type: plain, value: "Sign electronically via DocuSign (link emailed on your first day) or return a scanned copy to people-help@meridian.co within 14 days of your start date. Your manager and People Ops will both receive a copy for your file." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.7 } }
+      - { id: closing-rule, type: rect, z: 50, x: 100, y: 1440, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: closing, type: text, z: 51, x: 100, y: 1480, width: 1040, height: 0, content: { type: plain, value: "We are glad you are part of Meridian." }, style: { font_family: $heading, font_size: 24, font_style: italic, color: $primary, text_align: center } }
+      - { id: footer, type: text, z: 60, x: 100, y: 1640, width: 600, height: 0, content: { type: plain, value: "MERIDIAN CAPITAL · EFFECTIVE 1 JAN 2026" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.3 } }
+      - { id: pn, type: text, z: 70, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "12 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right } }

@@ -1,0 +1,290 @@
+_protocol: template/v1
+
+# Restaurant POS daily — eyebrow, hero, 5 KPIs (sales, covers, avg check,
+# labor %, food %), hourly sales line 12pm-11pm, top menu items table,
+# server leaderboard table, dining section utilization bar.
+meta:
+  id: tmpl-restaurant-pos-report
+  name: Restaurant POS · Daily Performance
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, restaurant, pos, hospitality, daily, interactive]
+  description: "Daily restaurant operations report: sales, labor, food cost, hourly sales curve, menu mix, server leaderboard."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: hourly_sales
+        type: inline
+        rows:
+          - { hour: "12 PM", sales:  486, covers: 18 }
+          - { hour: "1 PM",  sales:  812, covers: 28 }
+          - { hour: "2 PM",  sales:  642, covers: 22 }
+          - { hour: "3 PM",  sales:  324, covers: 12 }
+          - { hour: "4 PM",  sales:  286, covers: 10 }
+          - { hour: "5 PM",  sales:  724, covers: 24 }
+          - { hour: "6 PM",  sales: 1284, covers: 42 }
+          - { hour: "7 PM",  sales: 1846, covers: 58 }
+          - { hour: "8 PM",  sales: 1968, covers: 62 }
+          - { hour: "9 PM",  sales: 1542, covers: 48 }
+          - { hour: "10 PM", sales:  962, covers: 32 }
+          - { hour: "11 PM", sales:  486, covers: 16 }
+      - id: top_menu
+        type: inline
+        rows:
+          - { dish: "Truffle Risotto",            sold:  62, revenue: 1736, food_cost: 422, margin_pct: 76 }
+          - { dish: "Pan-Seared Salmon",          sold:  58, revenue: 1682, food_cost: 528, margin_pct: 69 }
+          - { dish: "Wagyu Burger",               sold:  84, revenue: 2268, food_cost: 824, margin_pct: 64 }
+          - { dish: "Margherita Pizza",           sold:  92, revenue: 1564, food_cost: 392, margin_pct: 75 }
+          - { dish: "Caesar Salad",               sold:  76, revenue:  988, food_cost: 198, margin_pct: 80 }
+          - { dish: "Filet Mignon 8oz",           sold:  42, revenue: 2184, food_cost: 798, margin_pct: 63 }
+          - { dish: "Lobster Mac & Cheese",       sold:  38, revenue: 1216, food_cost: 384, margin_pct: 68 }
+          - { dish: "Tuna Tartare",               sold:  34, revenue:  748, food_cost: 218, margin_pct: 71 }
+          - { dish: "Crème Brûlée",               sold:  68, revenue:  748, food_cost: 142, margin_pct: 81 }
+          - { dish: "House Old Fashioned",        sold: 102, revenue: 1632, food_cost: 286, margin_pct: 82 }
+      - id: server_leaderboard
+        type: inline
+        rows:
+          - { server: "Marcus Reed",        covers: 58, sales: 2842, avg_check: 49, tips_pct: 22.4 }
+          - { server: "Isabella Ortiz",     covers: 64, sales: 3186, avg_check: 50, tips_pct: 24.6 }
+          - { server: "Jamal Carter",       covers: 52, sales: 2624, avg_check: 50, tips_pct: 20.8 }
+          - { server: "Sophia Nakamura",    covers: 48, sales: 2486, avg_check: 52, tips_pct: 23.2 }
+          - { server: "Liam O'Brien",       covers: 42, sales: 1968, avg_check: 47, tips_pct: 18.4 }
+          - { server: "Aria Patel",         covers: 56, sales: 2842, avg_check: 51, tips_pct: 21.8 }
+          - { server: "Diego Rivera",       covers: 38, sales: 1742, avg_check: 46, tips_pct: 19.2 }
+          - { server: "Chloe Bergman",      covers: 44, sales: 2186, avg_check: 50, tips_pct: 22.6 }
+      - id: section_utilization
+        type: inline
+        rows:
+          - { section: "Main Dining",       turn_rate: 3.2, occupancy_pct: 86 }
+          - { section: "Bar",               turn_rate: 4.6, occupancy_pct: 92 }
+          - { section: "Patio",             turn_rate: 2.8, occupancy_pct: 74 }
+          - { section: "Private Room",      turn_rate: 1.4, occupancy_pct: 58 }
+          - { section: "Chef's Counter",    turn_rate: 2.2, occupancy_pct: 82 }
+          - { section: "Booth Section",     turn_rate: 3.4, occupancy_pct: 88 }
+
+pages:
+  - id: daily
+    label: Daily
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "OAK & EMBER · 2026-05-17 SATURDAY · DAILY OPS REPORT"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**Daily Performance — Service Report**\n*Sales, covers, hourly curve, menu mix, server leaderboard, and section utilization.*"
+
+      - id: kpi-sales
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Sales
+        value: 11362
+        format: currency
+        currency: USD
+        delta: 14.6
+        delta_format: percent
+        sparkline_data: hourly_sales
+        sparkline_field: sales
+        sparkline_color: "$primary"
+
+      - id: kpi-covers
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Covers
+        value: 372
+        format: number
+        delta: 8.4
+        delta_format: percent
+
+      - id: kpi-check
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Avg Check
+        value: 49
+        format: currency
+        currency: USD
+        delta: 5.8
+        delta_format: percent
+
+      - id: kpi-labor
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Labor Cost %
+        value: 26.4
+        format: percent
+        delta: -1.2
+        delta_format: percent
+
+      - id: kpi-food
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Food Cost %
+        value: 29.8
+        format: percent
+        delta: -0.8
+        delta_format: percent
+
+      - id: section-hours
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Hourly Sales — Lunch through Late Night**"
+
+      - id: chart-hours
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 400
+        chart_type: line
+        data_ref: hourly_sales
+        x_field: hour
+        y_field: sales
+        title: Sales and Covers by Hour
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-menu
+        type: rich_text
+        x: 60
+        y: 900
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top 10 Menu Items — Today**"
+
+      - id: tbl-menu
+        type: interactive_table
+        x: 60
+        y: 960
+        width: 1160
+        height: 540
+        data_ref: top_menu
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: dish,         title: Dish,           width: 360, sortable: true }
+          - { field: sold,         title: Sold,           width: 160, sortable: true, formatter: number,   align: right }
+          - { field: revenue,      title: Revenue USD,    width: 200, sortable: true, formatter: currency, align: right }
+          - { field: food_cost,    title: Food Cost USD,  width: 200, sortable: true, formatter: currency, align: right }
+          - { field: margin_pct,   title: Margin %,       width: 240, sortable: true, formatter: percent,  align: right }
+
+      - id: section-servers
+        type: rich_text
+        x: 60
+        y: 1540
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Server Leaderboard — Tonight's Shift**"
+
+      - id: tbl-servers
+        type: interactive_table
+        x: 60
+        y: 1600
+        width: 1160
+        height: 440
+        data_ref: server_leaderboard
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: server,      title: Server,         width: 300, sortable: true }
+          - { field: covers,      title: Covers,         width: 180, sortable: true, formatter: number,   align: right }
+          - { field: sales,       title: Sales USD,      width: 200, sortable: true, formatter: currency, align: right }
+          - { field: avg_check,   title: Avg Check USD,  width: 220, sortable: true, formatter: currency, align: right }
+          - { field: tips_pct,    title: Tips %,         width: 260, sortable: true, formatter: percent,  align: right }
+
+      - id: section-sections
+        type: rich_text
+        x: 60
+        y: 2080
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Section Utilization — Floor Plan**"
+
+      - id: chart-sections
+        type: interactive_chart
+        x: 60
+        y: 2140
+        width: 1160
+        height: 240
+        chart_type: bar
+        data_ref: section_utilization
+        x_field: section
+        y_field: occupancy_pct
+        title: Occupancy % by Dining Section
+        legend: false
+        grid: true
+        animate: true
+
+slots:
+  - { id: report_title,       path: "pages[0].layers[1].content",  type: text, hint: "Report title",     default: "**Daily Performance — Service Report**\n*Sales, covers, hourly curve, menu mix, server leaderboard, and section utilization.*" }
+  - { id: report_eyebrow,     path: "pages[0].layers[0].content",  type: text, hint: "Date eyebrow",     default: "OAK & EMBER · 2026-05-17 SATURDAY · DAILY OPS REPORT" }
+  - { id: hours_section,      path: "pages[0].layers[7].content",  type: text, hint: "Hours heading",    default: "**Hourly Sales — Lunch through Late Night**" }
+  - { id: menu_section,       path: "pages[0].layers[9].content",  type: text, hint: "Menu heading",     default: "**Top 10 Menu Items — Today**" }
+  - { id: servers_section,    path: "pages[0].layers[11].content", type: text, hint: "Servers heading",  default: "**Server Leaderboard — Tonight's Shift**" }
+  - { id: sections_section,   path: "pages[0].layers[13].content", type: text, hint: "Sections heading", default: "**Section Utilization — Floor Plan**" }

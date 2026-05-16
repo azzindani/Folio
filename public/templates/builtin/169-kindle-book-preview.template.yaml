@@ -1,0 +1,107 @@
+_protocol: template/v1
+
+# 5-page Kindle book preview — 1080×1920 portrait (e-reader), light-clean theme.
+# Cover → title page → copyright → chapter 1 opener (drop cap) → chapter 1 body.
+meta:
+  id: tmpl-kindle-book-preview
+  name: Kindle Book Preview · 5 Pages
+  type: book
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [book, kindle, ebook, preview, serif, portrait]
+  description: "Five-page e-reader book preview with classic serif typography. Cover, title page, copyright, chapter one opener with drop cap, and chapter body."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+pages:
+  # ── Page 1 · Book Cover ───────────────────────────────────
+  - id: cover
+    label: Book Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: top-frame, type: rect, z: 1, x: 60, y: 60, width: 960, height: 1800, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 2 }, opacity: 0.6 }
+      - { id: emblem, type: text, z: 10, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 64, color: "#FFFFFF", text_align: center, opacity: 0.9 } }
+      - { id: imprint, type: text, z: 11, x: 60, y: 320, width: 960, height: 0, content: { type: plain, value: "HARROW & SONS PUBLISHING" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.6, opacity: 0.85 } }
+      - { id: title, type: text, z: 20, x: 80, y: 680, width: 920, height: 0, content: { type: plain, value: "The Quiet Hours" }, style: { font_family: $heading, font_size: 96, font_weight: 700, color: "#FFFFFF", text_align: center, line_height: 1.1, font_style: italic } }
+      - { id: divider, type: rect, z: 21, x: 480, y: 940, width: 120, height: 1, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
+      - { id: subtitle, type: text, z: 22, x: 80, y: 1000, width: 920, height: 0, content: { type: plain, value: "A Novel" }, style: { font_family: $body, font_size: 28, font_style: italic, color: "#FFFFFF", text_align: center, opacity: 0.9 } }
+      - { id: author, type: text, z: 23, x: 80, y: 1620, width: 920, height: 0, content: { type: plain, value: "MARGARET HOLLOWAY" }, style: { font_family: $heading, font_size: 36, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.4 } }
+      - { id: medal-circle, type: circle, z: 30, cx: 540, cy: 1380, rx: 80, ry: 80, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.95 }
+      - { id: medal-text, type: text, z: 31, x: 460, y: 1352, width: 160, height: 0, content: { type: plain, value: "BOOKER\nFINALIST" }, style: { font_family: $body, font_size: 14, font_weight: 800, color: $primary, text_align: center, letter_spacing: 0.3, line_height: 1.3 } }
+      - { id: footer, type: text, z: 40, x: 60, y: 1820, width: 960, height: 0, content: { type: plain, value: "FREE PREVIEW · CHAPTER ONE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.5, opacity: 0.7 } }
+
+  # ── Page 2 · Title Page ───────────────────────────────────
+  - id: title-page
+    label: Title Page
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: emblem, type: text, z: 10, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 56, color: $primary, text_align: center } }
+      - { id: title, type: text, z: 20, x: 60, y: 660, width: 960, height: 0, content: { type: plain, value: "The Quiet Hours" }, style: { font_family: $heading, font_size: 88, font_weight: 700, color: $text, text_align: center, font_style: italic, line_height: 1.1 } }
+      - { id: divider, type: rect, z: 21, x: 480, y: 880, width: 120, height: 1, fill: { type: solid, color: "$text_muted" } }
+      - { id: subtitle, type: text, z: 22, x: 60, y: 940, width: 960, height: 0, content: { type: plain, value: "A Novel" }, style: { font_family: $body, font_size: 26, font_style: italic, color: $text_muted, text_align: center } }
+      - { id: by-line, type: text, z: 23, x: 60, y: 1240, width: 960, height: 0, content: { type: plain, value: "BY" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+      - { id: author, type: text, z: 24, x: 60, y: 1300, width: 960, height: 0, content: { type: plain, value: "Margaret Holloway" }, style: { font_family: $heading, font_size: 42, font_weight: 700, color: $text, text_align: center, font_style: italic } }
+      - { id: imprint-divider, type: rect, z: 30, x: 380, y: 1620, width: 320, height: 1, fill: { type: solid, color: "$text_muted" } }
+      - { id: imprint, type: text, z: 31, x: 60, y: 1680, width: 960, height: 0, content: { type: plain, value: "HARROW & SONS" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $text, text_align: center, letter_spacing: 0.5 } }
+      - { id: city, type: text, z: 32, x: 60, y: 1720, width: 960, height: 0, content: { type: plain, value: "London · New York" }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+
+  # ── Page 3 · Copyright Page ───────────────────────────────
+  - id: copyright
+    label: Copyright
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: rule-top, type: rect, z: 1, x: 120, y: 200, width: 840, height: 1, fill: { type: solid, color: "$text_muted" } }
+      - { id: kicker, type: text, z: 10, x: 120, y: 240, width: 840, height: 0, content: { type: plain, value: "FIRST EDITION" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+      - { id: rule-mid, type: rect, z: 2, x: 360, y: 320, width: 360, height: 1, fill: { type: solid, color: "$text_muted" } }
+      - { id: c-1, type: text, z: 20, x: 120, y: 380, width: 840, height: 0, content: { type: plain, value: "Copyright © 2026 by Margaret Holloway" }, style: { font_family: $body, font_size: 16, color: $text, text_align: center, line_height: 1.6 } }
+      - { id: c-2, type: text, z: 21, x: 120, y: 460, width: 840, height: 0, content: { type: plain, value: "All rights reserved. Published in the United States by Harrow & Sons, an imprint of Harrow Publishing Group, New York. Originally published in Great Britain by Harrow & Sons London." }, style: { font_family: $body, font_size: 15, color: $text, text_align: center, line_height: 1.7 } }
+      - { id: c-3, type: text, z: 22, x: 120, y: 660, width: 840, height: 0, content: { type: plain, value: "Harrow & Sons and the leaping-hare colophon are registered trademarks of Harrow Publishing Group LLC." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.7 } }
+      - { id: c-4, type: text, z: 23, x: 120, y: 820, width: 840, height: 0, content: { type: plain, value: "This is a work of fiction. Names, characters, places, and incidents either are the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.7 } }
+      - { id: lib-label, type: text, z: 30, x: 120, y: 1080, width: 840, height: 0, content: { type: plain, value: "LIBRARY OF CONGRESS CATALOGING-IN-PUBLICATION DATA" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+      - { id: lib-data, type: text, z: 31, x: 120, y: 1130, width: 840, height: 0, content: { type: plain, value: "Names: Holloway, Margaret, author.\nTitle: The Quiet Hours / Margaret Holloway.\nDescription: First edition. | New York: Harrow & Sons, 2026.\nIdentifiers: ISBN 978-1-9234-8821-7 (hardcover) | ISBN 978-1-9234-8822-4 (ebook)" }, style: { font_family: $mono, font_size: 13, color: $text, text_align: left, line_height: 1.8 } }
+      - { id: print-line, type: text, z: 40, x: 120, y: 1480, width: 840, height: 0, content: { type: plain, value: "10  9  8  7  6  5  4  3  2  1" }, style: { font_family: $body, font_size: 14, color: $text, text_align: center, letter_spacing: 0.4 } }
+      - { id: print-date, type: text, z: 41, x: 120, y: 1540, width: 840, height: 0, content: { type: plain, value: "Printed in the United States of America" }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, text_align: center } }
+      - { id: typography, type: text, z: 42, x: 120, y: 1620, width: 840, height: 0, content: { type: plain, value: "Set in Caslon by Ross & Carrew Typography, Edinburgh.\nBook design by Iris Marsh." }, style: { font_family: $body, font_size: 13, color: $text_muted, text_align: center, line_height: 1.7 } }
+      - { id: page-num, type: text, z: 50, x: 120, y: 1820, width: 840, height: 0, content: { type: plain, value: "iv" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center } }
+
+  # ── Page 4 · Chapter 1 Opener ─────────────────────────────
+  - id: chapter-opener
+    label: Chapter 1 Opener
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: chapter-mark, type: text, z: 10, x: 120, y: 280, width: 840, height: 0, content: { type: plain, value: "ONE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.8 } }
+      - { id: ornament, type: text, z: 11, x: 120, y: 340, width: 840, height: 0, content: { type: plain, value: "✦ ✦ ✦" }, style: { font_family: $heading, font_size: 24, color: $primary, text_align: center, letter_spacing: 0.6 } }
+      - { id: chapter-title, type: text, z: 20, x: 120, y: 440, width: 840, height: 0, content: { type: plain, value: "The House by the Sea" }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, text_align: center, font_style: italic, line_height: 1.2 } }
+      - { id: rule, type: rect, z: 21, x: 480, y: 600, width: 120, height: 1, fill: { type: solid, color: "$text_muted" } }
+      - { id: dropcap-frame, type: rect, z: 30, x: 120, y: 740, width: 180, height: 200, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: dropcap, type: text, z: 31, x: 120, y: 740, width: 180, height: 0, content: { type: plain, value: "I" }, style: { font_family: $heading, font_size: 180, font_weight: 700, color: $primary, text_align: center, line_height: 1.05, font_style: italic } }
+      - { id: para-1, type: text, z: 40, x: 320, y: 760, width: 640, height: 0, content: { type: plain, value: "t had been seventeen years since I last walked the path down to the cove, and yet the air still smelled exactly as I remembered: salt, dry grass, and the faint, sweet rot of seaweed left high by the tide." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-2, type: text, z: 41, x: 120, y: 1020, width: 840, height: 0, content: { type: plain, value: "    My mother had written that the house was failing, that the slate roof had let in water all winter, that the orchard had gone wild. She wrote in the same precise, slanting hand she had used to write me letters at school, and I read each line three times before I answered." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-3, type: text, z: 42, x: 120, y: 1280, width: 840, height: 0, content: { type: plain, value: "    I told her I would come at Easter. I told her I would come in the summer. I told her I would come when the term ended, when the manuscript was finished, when the weather improved. I did not come. And then, one Tuesday in October, the telephone rang at half past six in the morning." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-4, type: text, z: 43, x: 120, y: 1560, width: 840, height: 0, content: { type: plain, value: "    Now I was here. The taxi had dropped me at the top of the lane an hour ago. I had been standing at the gate ever since." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: page-num, type: text, z: 50, x: 120, y: 1820, width: 840, height: 0, content: { type: plain, value: "3" }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center } }
+
+  # ── Page 5 · Chapter 1 Body ───────────────────────────────
+  - id: chapter-body
+    label: Chapter 1 Body
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: header-rule, type: rect, z: 1, x: 120, y: 200, width: 840, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.5 }
+      - { id: header, type: text, z: 10, x: 120, y: 160, width: 400, height: 0, content: { type: plain, value: "THE QUIET HOURS" }, style: { font_family: $body, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: header-right, type: text, z: 11, x: 560, y: 160, width: 400, height: 0, content: { type: plain, value: "MARGARET HOLLOWAY" }, style: { font_family: $body, font_size: 12, color: $text_muted, text_align: right, letter_spacing: 0.4 } }
+      - { id: para-1, type: text, z: 20, x: 120, y: 260, width: 840, height: 0, content: { type: plain, value: "The gate had warped. I had to lift it from its hinge and walk it open in a half-circle, the iron whining as I went. The hedge on either side had grown so high that I could not see the house until I was twenty paces past it, and then suddenly there it was, lower than I remembered, and smaller, with the shutters all closed except one." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-2, type: text, z: 21, x: 120, y: 580, width: 840, height: 0, content: { type: plain, value: "    The path was overgrown. Wet grass slapped against my shins as I walked. I passed the apple tree my brother and I had planted the year I turned twelve, now an old, twisted thing, heavy with small green fruit. I passed the bench where my father used to read on summer evenings. I passed the empty kennel where the dog had lived." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-3, type: text, z: 22, x: 120, y: 900, width: 840, height: 0, content: { type: plain, value: "    The door was not locked. It never had been. I pushed it open with one hand and stepped into the hall, and the smell of the house — the smell, more than anything, more than the photographs or the rugs or the books — was what undid me." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-4, type: text, z: 23, x: 120, y: 1160, width: 840, height: 0, content: { type: plain, value: "    Beeswax. Cold ash. The faint mineral note of old stone. I closed the door behind me, set my bag down on the flagstones, and for a long moment I did not move at all. The clock in the kitchen was ticking. Somewhere above me, a floorboard creaked, settling." }, style: { font_family: $body, font_size: 22, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: para-5, type: text, z: 24, x: 120, y: 1440, width: 840, height: 0, content: { type: plain, value: "    \"Mum?\" I called, though I knew there would be no answer." }, style: { font_family: $body, font_size: 22, font_style: italic, color: $text, text_align: left, line_height: 1.7 } }
+      - { id: cont-marker, type: text, z: 30, x: 120, y: 1620, width: 840, height: 0, content: { type: plain, value: "— end of free preview —" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center } }
+      - { id: cta, type: text, z: 31, x: 120, y: 1680, width: 840, height: 0, content: { type: plain, value: "CONTINUE READING · BUY THE BOOK" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.4 } }
+      - { id: page-num, type: text, z: 40, x: 120, y: 1820, width: 840, height: 0, content: { type: plain, value: "4" }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center } }

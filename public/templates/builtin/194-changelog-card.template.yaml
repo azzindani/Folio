@@ -1,0 +1,340 @@
+_protocol: template/v1
+
+# Changelog entry card — 1920×1080 landscape, editorial-cream theme.
+# Version + date eyebrow, "What's New" headline, 4 tagged changes, link.
+meta:
+  id: tmpl-changelog-card
+  name: Changelog Card
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, screen, changelog, release-notes, landscape, editorial]
+  description: "Release-notes changelog card with version eyebrow, tagged change list, and link to full changelog."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  - id: rule-top
+    type: rect
+    z: 1
+    x: 120
+    y: 100
+    width: 1680
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  # ── Eyebrow row ───────────────────────────────────────────
+  - id: ver-pill
+    type: rect
+    z: 10
+    x: 120
+    y: 140
+    width: 180
+    height: 44
+    radius: 8
+    fill: { type: solid, color: "$text" }
+
+  - id: ver-text
+    type: text
+    z: 11
+    x: 120
+    y: 153
+    width: 180
+    height: 0
+    content: { type: plain, value: "v2.5.0" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $background
+      text_align: center
+      letter_spacing: 0.04
+
+  - id: release-date
+    type: text
+    z: 12
+    x: 320
+    y: 152
+    width: 600
+    height: 0
+    content: { type: plain, value: "Released · May 17, 2026" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+
+  - id: tag
+    type: text
+    z: 13
+    x: 120
+    y: 152
+    width: 1680
+    height: 0
+    content: { type: plain, value: "CHANGELOG" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $primary
+      text_align: right
+      letter_spacing: 0.32
+
+  # ── Headline ──────────────────────────────────────────────
+  - id: headline
+    type: text
+    z: 20
+    x: 120
+    y: 240
+    width: 1680
+    height: 0
+    content: { type: plain, value: "What's new this release" }
+    style:
+      font_family: $heading
+      font_size: 76
+      font_weight: 800
+      color: $text
+      letter_spacing: -0.025
+      line_height: 1.05
+
+  - id: lede
+    type: text
+    z: 21
+    x: 120
+    y: 340
+    width: 1680
+    height: 0
+    content: { type: plain, value: "Faster exports, cleaner timeline panel, and a long-requested keyboard fix." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text_muted
+      line_height: 1.5
+
+  # ── Change 1 — ADDED ──────────────────────────────────────
+  - id: c1-badge
+    type: rect
+    z: 30
+    x: 120
+    y: 450
+    width: 140
+    height: 36
+    radius: 6
+    fill: { type: solid, color: "rgba(16,185,129,0.16)" }
+    stroke: { color: "$accent", width: 1 }
+
+  - id: c1-badge-text
+    type: text
+    z: 31
+    x: 120
+    y: 459
+    width: 140
+    height: 0
+    content: { type: plain, value: "ADDED" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: $accent
+      text_align: center
+      letter_spacing: 0.2
+
+  - id: c1-text
+    type: text
+    z: 32
+    x: 290
+    y: 456
+    width: 1510
+    height: 0
+    content: { type: plain, value: "Remote-presenter mode — control slides from your phone over SSE." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  # ── Change 2 — IMPROVED ───────────────────────────────────
+  - id: c2-badge
+    type: rect
+    z: 33
+    x: 120
+    y: 540
+    width: 140
+    height: 36
+    radius: 6
+    fill: { type: solid, color: "rgba(99,102,241,0.16)" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: c2-badge-text
+    type: text
+    z: 34
+    x: 120
+    y: 549
+    width: 140
+    height: 0
+    content: { type: plain, value: "IMPROVED" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: $primary
+      text_align: center
+      letter_spacing: 0.2
+
+  - id: c2-text
+    type: text
+    z: 35
+    x: 290
+    y: 546
+    width: 1510
+    height: 0
+    content: { type: plain, value: "PNG export is ~40% faster for documents with more than 100 layers." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  # ── Change 3 — FIXED ──────────────────────────────────────
+  - id: c3-badge
+    type: rect
+    z: 36
+    x: 120
+    y: 630
+    width: 140
+    height: 36
+    radius: 6
+    fill: { type: solid, color: "rgba(239,68,68,0.16)" }
+    stroke: { color: "$secondary", width: 1 }
+
+  - id: c3-badge-text
+    type: text
+    z: 37
+    x: 120
+    y: 639
+    width: 140
+    height: 0
+    content: { type: plain, value: "FIXED" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: $secondary
+      text_align: center
+      letter_spacing: 0.2
+
+  - id: c3-text
+    type: text
+    z: 38
+    x: 290
+    y: 636
+    width: 1510
+    height: 0
+    content: { type: plain, value: "Cmd/Ctrl+S no longer leaks the browser save dialog while Monaco is focused." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  # ── Change 4 — ADDED ──────────────────────────────────────
+  - id: c4-badge
+    type: rect
+    z: 39
+    x: 120
+    y: 720
+    width: 140
+    height: 36
+    radius: 6
+    fill: { type: solid, color: "rgba(16,185,129,0.16)" }
+    stroke: { color: "$accent", width: 1 }
+
+  - id: c4-badge-text
+    type: text
+    z: 40
+    x: 120
+    y: 729
+    width: 140
+    height: 0
+    content: { type: plain, value: "ADDED" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: $accent
+      text_align: center
+      letter_spacing: 0.2
+
+  - id: c4-text
+    type: text
+    z: 41
+    x: 290
+    y: 726
+    width: 1510
+    height: 0
+    content: { type: plain, value: "26 new templates — including web/app screen patterns and analytics reports." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  # ── Full-changelog link ───────────────────────────────────
+  - id: rule-bottom
+    type: rect
+    z: 50
+    x: 120
+    y: 880
+    width: 1680
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: link
+    type: text
+    z: 51
+    x: 120
+    y: 910
+    width: 1680
+    height: 0
+    content: { type: plain, value: "View the full changelog  →" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.02
+
+  - id: footer
+    type: text
+    z: 52
+    x: 120
+    y: 910
+    width: 1680
+    height: 0
+    content: { type: plain, value: "folio.app/changelog" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text_muted
+      text_align: right
+
+slots:
+  - { id: version,      path: "layers[3].content.value", type: text, hint: "Version pill",       default: "v2.5.0" }
+  - { id: release_date, path: "layers[4].content.value", type: text, hint: "Release date line",  default: "Released · May 17, 2026" }

@@ -1,0 +1,353 @@
+_protocol: template/v1
+
+# SaaS landing hero — 1920×1080 landscape, indigo-pro theme.
+# Headline, subtitle, two CTAs, logo row, product screenshot placeholder.
+meta:
+  id: tmpl-landing-page-hero
+  name: Landing Page Hero
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, screen, landing, hero, saas, landscape, indigo]
+  description: "SaaS landing-page hero with headline, subtitle, dual CTAs, social-proof logos, and product screenshot placeholder."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  - id: glow
+    type: circle
+    z: 1
+    cx: 1500
+    cy: -100
+    rx: 700
+    ry: 700
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.35
+
+  # ── Top nav strip ─────────────────────────────────────────
+  - id: nav-brand
+    type: text
+    z: 5
+    x: 80
+    y: 60
+    width: 200
+    height: 0
+    content: { type: plain, value: "▲ Axiom" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $text
+
+  - id: nav-links
+    type: text
+    z: 6
+    x: 80
+    y: 64
+    width: 1760
+    height: 0
+    content: { type: plain, value: "Product   ·   Pricing   ·   Docs   ·   Sign in" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      text_align: right
+
+  # ── Eyebrow pill ──────────────────────────────────────────
+  - id: eyebrow-pill
+    type: rect
+    z: 10
+    x: 80
+    y: 180
+    width: 300
+    height: 40
+    radius: 20
+    fill: { type: solid, color: "rgba(99,102,241,0.14)" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: eyebrow-text
+    type: text
+    z: 11
+    x: 80
+    y: 192
+    width: 300
+    height: 0
+    content: { type: plain, value: "★  v2.5 — now with Claude" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.06
+
+  # ── Headline ──────────────────────────────────────────────
+  - id: headline
+    type: text
+    z: 20
+    x: 80
+    y: 250
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Ship product\nfaster with Axiom." }
+    style:
+      font_family: $heading
+      font_size: 104
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.035
+
+  # ── Subtitle ──────────────────────────────────────────────
+  - id: subtitle
+    type: text
+    z: 21
+    x: 80
+    y: 510
+    width: 1000
+    height: 0
+    content: { type: plain, value: "The AI-native analytics platform that turns raw product data into clear, actionable answers — without writing SQL." }
+    style:
+      font_family: $body
+      font_size: 24
+      color: $text_muted
+      line_height: 1.5
+
+  # ── CTAs ──────────────────────────────────────────────────
+  - id: cta-primary
+    type: rect
+    z: 30
+    x: 80
+    y: 660
+    width: 260
+    height: 72
+    radius: 12
+    fill: { type: solid, color: "$primary" }
+    effects:
+      shadow:
+        - { dx: 0, dy: 8, blur: 24, color: "rgba(99,102,241,0.42)" }
+
+  - id: cta-primary-text
+    type: text
+    z: 31
+    x: 80
+    y: 684
+    width: 260
+    height: 0
+    content: { type: plain, value: "Start free  →" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: cta-secondary
+    type: rect
+    z: 32
+    x: 360
+    y: 660
+    width: 240
+    height: 72
+    radius: 12
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$border", width: 2 }
+
+  - id: cta-secondary-text
+    type: text
+    z: 33
+    x: 360
+    y: 684
+    width: 240
+    height: 0
+    content: { type: plain, value: "Watch demo  ▷" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+      text_align: center
+
+  # ── Social-proof logos ────────────────────────────────────
+  - id: sp-label
+    type: text
+    z: 40
+    x: 80
+    y: 800
+    width: 1000
+    height: 0
+    content: { type: plain, value: "TRUSTED BY TEAMS AT" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.3
+
+  - id: sp-logo-1
+    type: rect
+    z: 41
+    x: 80
+    y: 840
+    width: 140
+    height: 40
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: sp-logo-2
+    type: rect
+    z: 42
+    x: 240
+    y: 840
+    width: 140
+    height: 40
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: sp-logo-3
+    type: rect
+    z: 43
+    x: 400
+    y: 840
+    width: 140
+    height: 40
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: sp-logo-4
+    type: rect
+    z: 44
+    x: 560
+    y: 840
+    width: 140
+    height: 40
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: sp-logo-5
+    type: rect
+    z: 45
+    x: 720
+    y: 840
+    width: 140
+    height: 40
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  # ── Product screenshot placeholder ────────────────────────
+  - id: shot-bg
+    type: rect
+    z: 50
+    x: 1200
+    y: 200
+    width: 680
+    height: 720
+    radius: 20
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$surface", position: 0 }
+        - { color: "$surface2", position: 100 }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 32, blur: 64, color: "rgba(0,0,0,0.4)" }
+
+  - id: shot-toolbar
+    type: rect
+    z: 51
+    x: 1200
+    y: 200
+    width: 680
+    height: 48
+    radius: 20
+    fill: { type: solid, color: "$surface2" }
+
+  - id: shot-tl-1
+    type: circle
+    z: 52
+    cx: 1228
+    cy: 224
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$secondary" }
+
+  - id: shot-tl-2
+    type: circle
+    z: 53
+    cx: 1254
+    cy: 224
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: shot-tl-3
+    type: circle
+    z: 54
+    cx: 1280
+    cy: 224
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: shot-content
+    type: text
+    z: 55
+    x: 1240
+    y: 540
+    width: 600
+    height: 0
+    content: { type: plain, value: "📊 Product analytics dashboard" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      text_align: center
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer
+    type: text
+    z: 60
+    x: 80
+    y: 1010
+    width: 1000
+    height: 0
+    content: { type: plain, value: "No credit card · cancel anytime · 14-day Pro trial" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+
+slots:
+  - { id: headline,       path: "layers[6].content.value",  type: text, hint: "Hero headline (2 lines)", default: "Ship product\nfaster with Axiom." }
+  - { id: subtitle,       path: "layers[7].content.value",  type: text, hint: "Hero subtitle",          default: "The AI-native analytics platform that turns raw product data into clear, actionable answers — without writing SQL." }
+  - { id: primary_cta,    path: "layers[9].content.value",  type: text, hint: "Primary CTA label",      default: "Start free  →" }
+  - { id: secondary_cta,  path: "layers[11].content.value", type: text, hint: "Secondary CTA label",    default: "Watch demo  ▷" }

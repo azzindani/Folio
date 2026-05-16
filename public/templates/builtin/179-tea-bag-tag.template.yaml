@@ -1,0 +1,401 @@
+_protocol: template/v1
+
+# Tea bag tag / sachet — 600×800 portrait, forest-deep theme.
+# Brand top, tea variety, flavor notes, brewing instructions (temperature
+# + minutes + cups visualized with little dots), origin region, organic
+# certification badge. String-hole detail at top.
+meta:
+  id: tmpl-tea-bag-tag
+  name: Tea Bag Tag
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, tea, beverage, sachet, botanical, portrait]
+  description: "Tea bag tag/sachet with brand, variety, flavor notes, brewing instructions, and organic badge."
+
+document:
+  width: 600
+  height: 800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 600
+    height: 800
+    fill: { type: solid, color: "$background" }
+
+  # ── String-hole detail (top notch) ────────────────────────
+  - id: hole-bg
+    type: circle
+    z: 4
+    cx: 300
+    cy: 56
+    r: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: hole
+    type: circle
+    z: 5
+    cx: 300
+    cy: 56
+    r: 8
+    fill: { type: solid, color: "$background" }
+
+  # ── Outer frame ───────────────────────────────────────────
+  - id: frame
+    type: rect
+    z: 6
+    x: 40
+    y: 110
+    width: 520
+    height: 650
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Inner ornament corners (top) ──────────────────────────
+  - id: corner-tl
+    type: path
+    z: 7
+    d: "M 70 140 L 70 120 L 90 120"
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: corner-tr
+    type: path
+    z: 8
+    d: "M 510 120 L 530 120 L 530 140"
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: corner-bl
+    type: path
+    z: 9
+    d: "M 70 730 L 70 750 L 90 750"
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: corner-br
+    type: path
+    z: 10
+    d: "M 510 750 L 530 750 L 530 730"
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Brand ─────────────────────────────────────────────────
+  - id: brand
+    type: text
+    z: 15
+    x: 60
+    y: 160
+    width: 480
+    height: 0
+    content: { type: plain, value: "MOSS & MOON" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: brand-sub
+    type: text
+    z: 16
+    x: 60
+    y: 196
+    width: 480
+    height: 0
+    content: { type: plain, value: "loose-leaf tea co."
+    }
+    style:
+      font_family: $body
+      font_size: 11
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.12
+
+  # ── Tea variety ───────────────────────────────────────────
+  - id: variety
+    type: text
+    z: 20
+    x: 60
+    y: 250
+    width: 480
+    height: 0
+    content: { type: plain, value: "Jasmine Silver Needle" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: $text
+      text_align: center
+      line_height: 1.15
+      letter_spacing: -0.01
+
+  # ── Flavor notes ──────────────────────────────────────────
+  - id: notes
+    type: text
+    z: 21
+    x: 80
+    y: 320
+    width: 440
+    height: 0
+    content: { type: plain, value: "Delicate jasmine blossoms, honey sweetness, soft floral finish" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  # ── Divider ───────────────────────────────────────────────
+  - id: div-l
+    type: line
+    z: 25
+    x1: 200
+    y1: 400
+    x2: 280
+    y2: 400
+    stroke: { color: "$primary", width: 1 }
+
+  - id: div-leaf
+    type: path
+    z: 26
+    d: "M 300 392 Q 312 400 300 408 Q 288 400 300 392 Z"
+    fill: { type: solid, color: "$primary" }
+
+  - id: div-r
+    type: line
+    z: 27
+    x1: 320
+    y1: 400
+    x2: 400
+    y2: 400
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Brewing instructions block ────────────────────────────
+  - id: brew-eyebrow
+    type: text
+    z: 30
+    x: 60
+    y: 430
+    width: 480
+    height: 0
+    content: { type: plain, value: "BREWING" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.42
+
+  # ── Temp box ──────────────────────────────────────────────
+  - id: temp-box
+    type: rect
+    z: 31
+    x: 70
+    y: 460
+    width: 140
+    height: 90
+    radius: 6
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: temp-label
+    type: text
+    z: 32
+    x: 70
+    y: 472
+    width: 140
+    height: 0
+    content: { type: plain, value: "TEMP" }
+    style: { font_family: $body, font_size: 10, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.32 }
+
+  - id: temp-value
+    type: text
+    z: 33
+    x: 70
+    y: 495
+    width: 140
+    height: 0
+    content: { type: plain, value: "80°C" }
+    style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center, line_height: 1.2 }
+
+  - id: temp-sub
+    type: text
+    z: 34
+    x: 70
+    y: 528
+    width: 140
+    height: 0
+    content: { type: plain, value: "175°F" }
+    style: { font_family: $body, font_size: 11, color: $text_muted, text_align: center }
+
+  # ── Minutes box ───────────────────────────────────────────
+  - id: min-box
+    type: rect
+    z: 35
+    x: 230
+    y: 460
+    width: 140
+    height: 90
+    radius: 6
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: min-label
+    type: text
+    z: 36
+    x: 230
+    y: 472
+    width: 140
+    height: 0
+    content: { type: plain, value: "STEEP" }
+    style: { font_family: $body, font_size: 10, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.32 }
+
+  - id: min-value
+    type: text
+    z: 37
+    x: 230
+    y: 495
+    width: 140
+    height: 0
+    content: { type: plain, value: "3 min" }
+    style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center, line_height: 1.2 }
+
+  - id: min-sub
+    type: text
+    z: 38
+    x: 230
+    y: 528
+    width: 140
+    height: 0
+    content: { type: plain, value: "minutes" }
+    style: { font_family: $body, font_size: 11, color: $text_muted, text_align: center }
+
+  # ── Cups box ──────────────────────────────────────────────
+  - id: cups-box
+    type: rect
+    z: 39
+    x: 390
+    y: 460
+    width: 140
+    height: 90
+    radius: 6
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: cups-label
+    type: text
+    z: 40
+    x: 390
+    y: 472
+    width: 140
+    height: 0
+    content: { type: plain, value: "WATER" }
+    style: { font_family: $body, font_size: 10, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.32 }
+
+  - id: cups-value
+    type: text
+    z: 41
+    x: 390
+    y: 495
+    width: 140
+    height: 0
+    content: { type: plain, value: "250 ml" }
+    style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center, line_height: 1.2 }
+
+  - id: cups-sub
+    type: text
+    z: 42
+    x: 390
+    y: 528
+    width: 140
+    height: 0
+    content: { type: plain, value: "1 cup" }
+    style: { font_family: $body, font_size: 11, color: $text_muted, text_align: center }
+
+  # ── Origin region ─────────────────────────────────────────
+  - id: origin-eyebrow
+    type: text
+    z: 50
+    x: 60
+    y: 600
+    width: 480
+    height: 0
+    content: { type: plain, value: "ORIGIN" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: origin
+    type: text
+    z: 51
+    x: 60
+    y: 624
+    width: 480
+    height: 0
+    content: { type: plain, value: "Fujian Province · China" }
+    style:
+      font_family: $heading
+      font_size: 17
+      color: $text
+      text_align: center
+      line_height: 1.3
+
+  # ── Organic certification badge ───────────────────────────
+  - id: cert-circle
+    type: circle
+    z: 60
+    cx: 300
+    cy: 700
+    r: 36
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: cert-text-1
+    type: text
+    z: 61
+    x: 240
+    y: 685
+    width: 120
+    height: 0
+    content: { type: plain, value: "CERTIFIED" }
+    style: { font_family: $body, font_size: 9, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.32 }
+
+  - id: cert-text-2
+    type: text
+    z: 62
+    x: 240
+    y: 703
+    width: 120
+    height: 0
+    content: { type: plain, value: "ORGANIC" }
+    style: { font_family: $heading, font_size: 12, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.18 }
+
+slots:
+  - { id: brand,         path: "layers[8].content.value",  type: text, hint: "Brand name",         default: "MOSS & MOON" }
+  - { id: variety,       path: "layers[10].content.value", type: text, hint: "Tea variety",        default: "Jasmine Silver Needle" }
+  - { id: flavor_notes,  path: "layers[11].content.value", type: text, hint: "Flavor notes",       default: "Delicate jasmine blossoms, honey sweetness, soft floral finish" }
+  - { id: brew_temp_c,   path: "layers[18].content.value", type: text, hint: "Brewing temperature", default: "80°C" }
+  - { id: brew_minutes,  path: "layers[22].content.value", type: text, hint: "Steep minutes",      default: "3 min" }
