@@ -1,6 +1,6 @@
 {
   "_generator": "scripts/gen-catalog-index.mjs",
-  "count": 84,
+  "count": 100,
   "entries": [
     {
       "id": "tmpl-document-cover",
@@ -40,6 +40,25 @@
       "pages": 0,
       "themeRef": "cyber-synthwave",
       "file": "27-album-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-award-certificate",
+      "name": "Award Certificate",
+      "type": "certificate",
+      "tags": [
+        "certificate",
+        "award",
+        "excellence",
+        "formal",
+        "gold",
+        "landscape"
+      ],
+      "width": 1600,
+      "height": 1200,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "89-award-certificate.template.yaml"
     },
     {
       "id": "tmpl-bauhaus-poster",
@@ -154,6 +173,45 @@
       "file": "13-business-card.template.yaml"
     },
     {
+      "id": "tmpl-business-card-modern",
+      "name": "Business Card · Brutalist Modern",
+      "type": "card",
+      "tags": [
+        "card",
+        "business",
+        "brutalist",
+        "modern",
+        "contact",
+        "print",
+        "mono"
+      ],
+      "width": 1050,
+      "height": 600,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "brutalist-mono",
+      "file": "93-business-card-modern.template.yaml"
+    },
+    {
+      "id": "tmpl-cafe-menu-chalkboard",
+      "name": "Cafe Menu · Chalkboard",
+      "type": "menu",
+      "tags": [
+        "menu",
+        "cafe",
+        "chalkboard",
+        "coffee",
+        "casual",
+        "portrait"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 1,
+      "pages": 0,
+      "themeRef": "forest-deep",
+      "file": "97-cafe-menu-chalkboard.template.yaml"
+    },
+    {
       "id": "tmpl-certificate",
       "name": "Certificate of Achievement",
       "type": "poster",
@@ -208,6 +266,44 @@
       "pages": 0,
       "themeRef": "light-clean",
       "file": "20-comparison-table.template.yaml"
+    },
+    {
+      "id": "tmpl-completion-certificate",
+      "name": "Completion Certificate",
+      "type": "certificate",
+      "tags": [
+        "certificate",
+        "completion",
+        "course",
+        "professional",
+        "corporate",
+        "landscape"
+      ],
+      "width": 1600,
+      "height": 1200,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "corporate-slate",
+      "file": "90-completion-certificate.template.yaml"
+    },
+    {
+      "id": "tmpl-conference-badge",
+      "name": "Conference Badge",
+      "type": "card",
+      "tags": [
+        "badge",
+        "conference",
+        "lanyard",
+        "event",
+        "attendee",
+        "portrait"
+      ],
+      "width": 1050,
+      "height": 1500,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "91-conference-badge.template.yaml"
     },
     {
       "id": "tmpl-conference-poster",
@@ -283,6 +379,26 @@
       "pages": 0,
       "themeRef": "light-clean",
       "file": "31-cover-letter.template.yaml"
+    },
+    {
+      "id": "tmpl-resume-creative",
+      "name": "Creative Resume",
+      "type": "resume",
+      "tags": [
+        "resume",
+        "cv",
+        "creative",
+        "pastel",
+        "a4",
+        "portrait",
+        "sidebar"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "pastel-dream",
+      "file": "94-resume-creative.template.yaml"
     },
     {
       "id": "tmpl-deal-card",
@@ -395,6 +511,43 @@
       "pages": 0,
       "themeRef": "cyber-synthwave",
       "file": "37-event-ticket.template.yaml"
+    },
+    {
+      "id": "tmpl-event-ticket-neon",
+      "name": "Event Ticket · Neon",
+      "type": "ticket",
+      "tags": [
+        "ticket",
+        "event",
+        "concert",
+        "admission",
+        "perforated",
+        "neon"
+      ],
+      "width": 1600,
+      "height": 600,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "neon-bloom",
+      "file": "92-event-ticket.template.yaml"
+    },
+    {
+      "id": "tmpl-executive-dashboard-report",
+      "name": "Executive Dashboard",
+      "type": "report",
+      "tags": [
+        "report",
+        "executive",
+        "dashboard",
+        "kpi",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2200,
+      "slots": 5,
+      "pages": 1,
+      "themeRef": "indigo-pro",
+      "file": "85-executive-dashboard-report.template.yaml"
     },
     {
       "id": "tmpl-financial-statement-report",
@@ -583,6 +736,25 @@
       "file": "54-inventory-status-report.template.yaml"
     },
     {
+      "id": "tmpl-invoice-modern",
+      "name": "Invoice · Modern",
+      "type": "invoice",
+      "tags": [
+        "invoice",
+        "billing",
+        "finance",
+        "a4",
+        "professional",
+        "clean"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "98-invoice-modern.template.yaml"
+    },
+    {
       "id": "tmpl-kpi-dashboard",
       "name": "KPI Dashboard",
       "type": "report",
@@ -635,6 +807,25 @@
       "pages": 0,
       "themeRef": "indigo-pro",
       "file": "10-linkedin-post.template.yaml"
+    },
+    {
+      "id": "tmpl-lookbook-cover",
+      "name": "Lookbook Cover · Editorial",
+      "type": "poster",
+      "tags": [
+        "lookbook",
+        "cover",
+        "editorial",
+        "fashion",
+        "magazine",
+        "portrait"
+      ],
+      "width": 1240,
+      "height": 1600,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "95-lookbook-cover.template.yaml"
     },
     {
       "id": "tmpl-lookbook-page",
@@ -694,6 +885,25 @@
       "file": "51-marketing-analytics-report.template.yaml"
     },
     {
+      "id": "tmpl-marketing-funnel-report",
+      "name": "Marketing Funnel Analytics",
+      "type": "report",
+      "tags": [
+        "report",
+        "marketing",
+        "funnel",
+        "cohort",
+        "analytics",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2400,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "corporate-slate",
+      "file": "86-marketing-funnel-report.template.yaml"
+    },
+    {
       "id": "tmpl-maximalist-collage",
       "name": "Maximalist Collage Poster",
       "type": "poster",
@@ -711,6 +921,25 @@
       "pages": 0,
       "themeRef": "neon-bloom",
       "file": "57-maximalist-collage.template.yaml"
+    },
+    {
+      "id": "tmpl-member-card",
+      "name": "Membership Card · Premium",
+      "type": "card",
+      "tags": [
+        "card",
+        "membership",
+        "loyalty",
+        "premium",
+        "dark",
+        "horizontal"
+      ],
+      "width": 1050,
+      "height": 600,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "100-member-card.template.yaml"
     },
     {
       "id": "tmpl-memphis-poster",
@@ -920,6 +1149,25 @@
       "file": "42-process-flow.template.yaml"
     },
     {
+      "id": "tmpl-product-analytics-report",
+      "name": "Product Analytics",
+      "type": "report",
+      "tags": [
+        "report",
+        "product",
+        "analytics",
+        "retention",
+        "engagement",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2100,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "editorial-cream",
+      "file": "87-product-analytics-report.template.yaml"
+    },
+    {
       "id": "tmpl-product-card",
       "name": "Product Card",
       "type": "card",
@@ -1012,6 +1260,25 @@
       "file": "02-quote-card.template.yaml"
     },
     {
+      "id": "tmpl-receipt-thermal",
+      "name": "Receipt · Thermal Print",
+      "type": "invoice",
+      "tags": [
+        "receipt",
+        "thermal",
+        "retail",
+        "transaction",
+        "mono",
+        "narrow"
+      ],
+      "width": 600,
+      "height": 1400,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "mono-print",
+      "file": "99-receipt-thermal.template.yaml"
+    },
+    {
       "id": "tmpl-recipe-card",
       "name": "Recipe Card",
       "type": "poster",
@@ -1048,6 +1315,24 @@
       "pages": 0,
       "themeRef": "editorial-cream",
       "file": "35-restaurant-menu.template.yaml"
+    },
+    {
+      "id": "tmpl-restaurant-menu-two-column",
+      "name": "Restaurant Menu · Two-Column",
+      "type": "menu",
+      "tags": [
+        "menu",
+        "restaurant",
+        "fine-dining",
+        "two-column",
+        "a4"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 1,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "96-restaurant-menu.template.yaml"
     },
     {
       "id": "tmpl-resume-cv",
@@ -1515,6 +1800,25 @@
       "pages": 1,
       "themeRef": "forest-deep",
       "file": "53-engagement-dashboard.template.yaml"
+    },
+    {
+      "id": "tmpl-user-research-report",
+      "name": "User Research Findings",
+      "type": "report",
+      "tags": [
+        "report",
+        "research",
+        "ux",
+        "qualitative",
+        "interviews",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2400,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "mono-print",
+      "file": "88-user-research-report.template.yaml"
     },
     {
       "id": "tmpl-vaporwave-card",

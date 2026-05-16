@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: noir-gold
+name: Noir Gold
+version: "1.0.0"
+tags: [luxury, editorial, high-end, dark, gold]
+description: "Pure black with gold and warm white — high-end editorial, fashion, and gala."
+colors:
+  background: "#0A0A0A"
+  surface:    "#141414"
+  surface_2:  "#1E1E1E"
+  primary:    "#D4A647"
+  secondary:  "#F5EBD0"
+  accent:     "#B07530"
+  text:       "#F5EBD0"
+  text_muted: "#9A8E72"
+  border:     "#2A2520"
+  success:    "#A8C27A"
+  warning:    "#E0B454"
+  danger:     "#D26060"

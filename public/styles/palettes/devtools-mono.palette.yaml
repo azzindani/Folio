@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: devtools-mono
+name: Devtools Mono
+version: "1.0.0"
+tags: [tech, developer, terminal, dark, mono]
+description: "Near-black with neon green terminal accent — CLI, devtools, and code-first interfaces."
+colors:
+  background: "#0B0D0E"
+  surface:    "#131618"
+  surface_2:  "#1B1F22"
+  primary:    "#00E676"
+  secondary:  "#7BFF8A"
+  accent:     "#FF9A3C"
+  text:       "#E6EDE8"
+  text_muted: "#8A938E"
+  border:     "#262B2E"
+  success:    "#00E676"
+  warning:    "#FFB020"
+  danger:     "#FF5577"

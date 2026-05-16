@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: saas-indigo
+name: SaaS Indigo
+version: "1.0.0"
+tags: [tech, saas, dashboard, dark, indigo]
+description: "Dark indigo and violet — modern SaaS dashboards and product UI."
+colors:
+  background: "#0F1226"
+  surface:    "#171A33"
+  surface_2:  "#1F2342"
+  primary:    "#6366F1"
+  secondary:  "#A855F7"
+  accent:     "#22D3EE"
+  text:       "#E8EAF8"
+  text_muted: "#8A8FB8"
+  border:     "#2B2F55"
+  success:    "#10B981"
+  warning:    "#F59E0B"
+  danger:     "#EF4444"

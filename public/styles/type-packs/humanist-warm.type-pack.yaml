@@ -1,0 +1,10 @@
+_protocol: type-pack/v1
+id: humanist-warm
+name: Humanist Warm
+version: "1.0.0"
+tags: [humanist, warm, friendly, readable, approachable]
+description: "Source family suite — warm, friendly, and exceptionally legible across sizes."
+families:
+  heading: "Source Serif Pro"
+  body:    "Source Sans Pro"
+  mono:    "Source Code Pro"
