@@ -4,7 +4,7 @@ import type { ToolDefinition } from '../types';
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
     name: 'export_design',
-    description: 'Export a design to SVG, HTML, PNG, or PDF. PNG/PDF requires Puppeteer (Phase 2).',
+    description: 'Export a design to SVG, HTML, PNG, or PDF. PNG/PDF uses headless chromium (playwright).',
     inputSchema: {
       type: 'object',
       properties: {

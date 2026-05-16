@@ -5,7 +5,7 @@ import * as engine from '../engine';
 import { toMCPResult } from '../types';
 import type { MCPRequest, MCPResponse, ToolResult } from '../types';
 
-type Handler = (args: Record<string, unknown>) => ToolResult;
+type Handler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>;
 
 const HANDLERS: Record<string, Handler> = {
   export_design:       (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
@@ -31,8 +31,11 @@ function handle(req: MCPRequest): void {
       const args = (params as { arguments?: Record<string, unknown> })?.arguments ?? {};
       const fn = HANDLERS[name];
       if (!fn) return send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) });
-      try { return send({ jsonrpc: '2.0', id, result: toMCPResult(fn(args)) }); }
-      catch (err) { return send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) }); }
+      Promise.resolve()
+        .then(() => fn(args))
+        .then(result => send({ jsonrpc: '2.0', id, result: toMCPResult(result) }))
+        .catch((err: unknown) => send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) }));
+      return;
     }
     default:
       send({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } });
