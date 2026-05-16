@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: jade-stone
+name: Jade Stone
+version: "1.0.0"
+tags: [mineral, gemstone, jade, asian, prosperity]
+description: "Polished jade green and dark green with gold inlay on ivory — heirloom carved-stone wealth."
+colors:
+  background: "#F5F1E2"
+  surface:    "#EAE5D0"
+  surface_2:  "#D6D2B4"
+  primary:    "#2E6A52"
+  secondary:  "#143A2E"
+  accent:     "#B89640"
+  text:       "#0E1F18"
+  text_muted: "#4A5E54"
+  border:     "#BBBE9C"
+  success:    "#2E6A52"
+  warning:    "#B89640"
+  danger:     "#8A3026"

@@ -1,0 +1,60 @@
+_protocol: template/v1
+
+# Get well soon — 1080×1500 portrait, pastel-dream theme.
+# Friendly headline, flower + sun decoration, message paragraph, signed-by line.
+meta:
+  id: tmpl-get-well-soon
+  name: Get Well Soon Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, greeting, get-well, friendly, pastel, portrait]
+  description: "Friendly pastel get-well-soon card with flower and sunshine decoration, recipient name, and warm message."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: linear, angle: 180, stops: [ { color: "$background", position: 0 }, { color: "$surface", position: 100 } ] } }
+
+  # 1-7 — sunshine top-right (center + rays as rects)
+  - { id: sun-core, type: circle, z: 5, cx: 880, cy: 200, rx: 80, ry: 80, fill: { type: solid, color: "$accent" }, opacity: 0.85 }
+  - { id: ray-1, type: rect, z: 4, x: 868, y: 60,  width: 24, height: 80, fill: { type: solid, color: "$accent" }, opacity: 0.6, radius: 12 }
+  - { id: ray-2, type: rect, z: 4, x: 1000, y: 180, width: 80, height: 24, fill: { type: solid, color: "$accent" }, opacity: 0.6, radius: 12 }
+  - { id: ray-3, type: rect, z: 4, x: 868, y: 280, width: 24, height: 80, fill: { type: solid, color: "$accent" }, opacity: 0.6, radius: 12 }
+  - { id: ray-4, type: rect, z: 4, x: 740, y: 180, width: 80, height: 24, fill: { type: solid, color: "$accent" }, opacity: 0.6, radius: 12 }
+
+  # 6,7 — petals + center flower bottom-left (5 petals as circles + center)
+  - { id: petal-1, type: circle, z: 4, cx: 130, cy: 1240, rx: 50, ry: 50, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+  - { id: petal-2, type: circle, z: 4, cx: 220, cy: 1240, rx: 50, ry: 50, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+  - { id: petal-3, type: circle, z: 4, cx: 175, cy: 1170, rx: 50, ry: 50, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+  - { id: petal-4, type: circle, z: 4, cx: 175, cy: 1310, rx: 50, ry: 50, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+  - { id: petal-c, type: circle, z: 5, cx: 175, cy: 1240, rx: 32, ry: 32, fill: { type: solid, color: "$accent" } }
+
+  # 11 eyebrow
+  - { id: eyebrow, type: text, z: 10, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "thinking of you" }, style: { font_family: $heading, font_size: 28, font_style: italic, color: "$text_muted", text_align: center, letter_spacing: 0.2 } }
+  # 12 headline
+  - { id: headline, type: text, z: 11, x: 80, y: 460, width: 920, height: 0, content: { type: plain, value: "Get Well\nSoon" }, style: { font_family: $heading, font_size: 110, font_weight: 700, color: "$primary", text_align: center, line_height: 1.05, letter_spacing: -0.02 } }
+  # 13 recipient line
+  - { id: dear, type: text, z: 20, x: 80, y: 720, width: 920, height: 0, content: { type: plain, value: "Dear Aunt Helen," }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$text", text_align: center, line_height: 1.4 } }
+  # 14 message
+  - { id: message, type: text, z: 21, x: 160, y: 800, width: 760, height: 0, content: { type: plain, value: "Sending a little sunshine your way and lots of hugs from afar. Take all the time you need to rest, drink your tea, and let the good days find their way back to you. We're keeping you in our thoughts every single day." }, style: { font_family: $body, font_size: 22, color: "$text", text_align: center, line_height: 1.7 } }
+  # 15 divider
+  - { id: divider, type: rect, z: 22, x: 490, y: 1150, width: 100, height: 2, fill: { type: solid, color: "$primary" } }
+  # 16 signoff
+  - { id: signoff, type: text, z: 23, x: 80, y: 1200, width: 920, height: 0, content: { type: plain, value: "with love," }, style: { font_family: $heading, font_size: 26, font_style: italic, color: "$text_muted", text_align: center } }
+  # 17 signed by
+  - { id: signed, type: text, z: 24, x: 80, y: 1260, width: 920, height: 0, content: { type: plain, value: "Maya, Liam & the kids" }, style: { font_family: $heading, font_size: 36, font_weight: 600, color: "$primary", text_align: center, line_height: 1.3 } }
+
+slots:
+  - { id: recipient, path: "layers[13].content.value", type: text, hint: "Recipient salutation",   default: "Dear Aunt Helen," }
+  - { id: message,   path: "layers[14].content.value", type: text, hint: "Warm get-well message",  default: "Sending a little sunshine your way and lots of hugs from afar. Take all the time you need to rest, drink your tea, and let the good days find their way back to you. We're keeping you in our thoughts every single day." }
+  - { id: signed_by, path: "layers[17].content.value", type: text, hint: "Signed by",              default: "Maya, Liam & the kids" }

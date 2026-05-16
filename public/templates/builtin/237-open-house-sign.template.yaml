@@ -1,0 +1,388 @@
+_protocol: template/v1
+
+# Real estate OPEN HOUSE sign — 1500×1080 landscape, corporate-slate.
+# Header banner, address big, date+time, agent + brokerage + phone,
+# directional arrow polygon on the right side.
+meta:
+  id: tmpl-open-house-sign
+  name: Open House Sign
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [sign, real-estate, open-house, corporate, slate, landscape]
+  description: "Real estate open house sign with banner header, address, date/time, agent info, brokerage, and directional arrow."
+
+document:
+  width: 1500
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1500
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  # ── Header banner ─────────────────────────────────────────
+  - id: banner
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1500
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: banner-stripe
+    type: rect
+    z: 2
+    x: 0
+    y: 160
+    width: 1500
+    height: 6
+    fill: { type: solid, color: "$accent" }
+
+  - id: banner-eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 40
+    width: 900
+    height: 0
+    content: { type: plain, value: "OPEN HOUSE" }
+    style:
+      font_family: $heading
+      font_size: 76
+      font_weight: 800
+      color: "#FFFFFF"
+      line_height: 1
+      letter_spacing: 0.02
+
+  - id: banner-sub
+    type: text
+    z: 11
+    x: 60
+    y: 120
+    width: 900
+    height: 0
+    content: { type: plain, value: "tour today · all welcome · refreshments served" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: "#FFFFFF"
+      line_height: 1.3
+      opacity: 0.85
+
+  - id: banner-logo-box
+    type: rect
+    z: 12
+    x: 1320
+    y: 40
+    width: 140
+    height: 80
+    radius: 8
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: banner-logo-text
+    type: text
+    z: 13
+    x: 1320
+    y: 60
+    width: 140
+    height: 0
+    content: { type: plain, value: "MERIDIAN" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.1
+      line_height: 1.3
+
+  # ── Address (big, left) ───────────────────────────────────
+  - id: addr-label
+    type: text
+    z: 20
+    x: 60
+    y: 240
+    width: 900
+    height: 0
+    content: { type: plain, value: "ADDRESS" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: addr-value
+    type: text
+    z: 21
+    x: 60
+    y: 280
+    width: 1000
+    height: 0
+    content: { type: plain, value: "742 Birchwood Drive" }
+    style:
+      font_family: $heading
+      font_size: 80
+      font_weight: 800
+      color: "$text"
+      line_height: 1.05
+      letter_spacing: -0.02
+
+  - id: addr-city
+    type: text
+    z: 22
+    x: 60
+    y: 380
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Palo Alto, CA 94301" }
+    style:
+      font_family: $heading
+      font_size: 42
+      font_weight: 600
+      color: "$text_muted"
+      line_height: 1.2
+
+  # ── Date + time ──────────────────────────────────────────
+  - id: dt-box
+    type: rect
+    z: 30
+    x: 60
+    y: 480
+    width: 800
+    height: 130
+    radius: 14
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: dt-label
+    type: text
+    z: 31
+    x: 80
+    y: 502
+    width: 760
+    height: 0
+    content: { type: plain, value: "WHEN" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: dt-date
+    type: text
+    z: 32
+    x: 80
+    y: 530
+    width: 760
+    height: 0
+    content: { type: plain, value: "Sunday, May 24" }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 800
+      color: "$text"
+      line_height: 1.2
+
+  - id: dt-time
+    type: text
+    z: 33
+    x: 80
+    y: 575
+    width: 760
+    height: 0
+    content: { type: plain, value: "1:00 PM – 4:00 PM" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$accent"
+      line_height: 1.3
+
+  # ── Agent info ───────────────────────────────────────────
+  - id: agent-divider
+    type: rect
+    z: 40
+    x: 60
+    y: 680
+    width: 800
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: agent-label
+    type: text
+    z: 41
+    x: 60
+    y: 710
+    width: 800
+    height: 0
+    content: { type: plain, value: "YOUR HOST" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: agent-name
+    type: text
+    z: 42
+    x: 60
+    y: 745
+    width: 800
+    height: 0
+    content: { type: plain, value: "Rachel Kim" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 700
+      color: "$text"
+      line_height: 1.2
+
+  - id: agent-broker
+    type: text
+    z: 43
+    x: 60
+    y: 805
+    width: 800
+    height: 0
+    content: { type: plain, value: "Meridian Realty · License #01987456" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: "$text_muted"
+      line_height: 1.3
+
+  - id: agent-phone
+    type: text
+    z: 44
+    x: 60
+    y: 855
+    width: 800
+    height: 0
+    content: { type: plain, value: "(650) 555-0148" }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 700
+      color: "$primary"
+      line_height: 1.2
+
+  - id: agent-web
+    type: text
+    z: 45
+    x: 60
+    y: 910
+    width: 800
+    height: 0
+    content: { type: plain, value: "rachelkim.meridianrealty.com" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.3
+
+  # ── Directional arrow (right side) ───────────────────────
+  - id: arrow-bg
+    type: rect
+    z: 50
+    x: 980
+    y: 250
+    width: 480
+    height: 700
+    radius: 24
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.08
+
+  - id: arrow-shape
+    type: polygon
+    z: 51
+    points: "1010,540 1280,540 1280,440 1430,600 1280,760 1280,660 1010,660"
+    fill: { type: solid, color: "$primary" }
+
+  - id: arrow-label
+    type: text
+    z: 52
+    x: 980
+    y: 320
+    width: 480
+    height: 0
+    content: { type: plain, value: "THIS WAY" }
+    style:
+      font_family: $heading
+      font_size: 42
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      line_height: 1.2
+      letter_spacing: 0.05
+
+  - id: arrow-sub
+    type: text
+    z: 53
+    x: 980
+    y: 820
+    width: 480
+    height: 0
+    content: { type: plain, value: "follow the signs" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.3
+
+  # ── Footer band ───────────────────────────────────────────
+  - id: footer-band
+    type: rect
+    z: 60
+    x: 0
+    y: 1010
+    width: 1500
+    height: 70
+    fill: { type: solid, color: "$primary" }
+
+  - id: footer-text
+    type: text
+    z: 61
+    x: 0
+    y: 1030
+    width: 1500
+    height: 0
+    content: { type: plain, value: "MERIDIAN REALTY · 825 University Ave · Palo Alto, CA · meridianrealty.com" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.3
+      line_height: 1.3
+      opacity: 0.9
+
+slots:
+  - { id: address,      path: "layers[8].content.value",  type: text, hint: "Street address (big)",   default: "742 Birchwood Drive" }
+  - { id: open_date,    path: "layers[12].content.value", type: text, hint: "Open house date",        default: "Sunday, May 24" }
+  - { id: open_time,    path: "layers[13].content.value", type: text, hint: "Open house time",        default: "1:00 PM – 4:00 PM" }
+  - { id: agent_name,   path: "layers[16].content.value", type: text, hint: "Agent name",             default: "Rachel Kim" }
+  - { id: brokerage,    path: "layers[17].content.value", type: text, hint: "Brokerage + license",    default: "Meridian Realty · License #01987456" }
+  - { id: agent_phone,  path: "layers[18].content.value", type: text, hint: "Agent phone",            default: "(650) 555-0148" }

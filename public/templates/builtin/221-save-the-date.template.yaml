@@ -1,0 +1,55 @@
+_protocol: template/v1
+
+# Wedding Save the Date — 1500×1080 landscape, editorial-cream theme.
+# Left ornament + right ornament, center couple names + huge date.
+meta:
+  id: tmpl-save-the-date-landscape
+  name: Save the Date · Landscape
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, save-the-date, elegant, cream, landscape]
+  description: "Elegant landscape wedding save-the-date with couple names script and a large wedding date."
+
+document:
+  width: 1500
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1080, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: outer-frame, type: rect, z: 1, x: 60, y: 60, width: 1380, height: 960, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+  # 2 inner frame
+  - { id: inner-frame, type: rect, z: 2, x: 78, y: 78, width: 1344, height: 924, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 3 left ornament
+  - { id: orn-left, type: text, z: 5, x: 120, y: 540, width: 0, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 60, color: "$primary", text_align: left } }
+  # 4 right ornament
+  - { id: orn-right, type: text, z: 5, x: 1320, y: 540, width: 0, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 60, color: "$primary", text_align: left } }
+  # 5 eyebrow
+  - { id: eyebrow, type: text, z: 10, x: 60, y: 220, width: 1380, height: 0, content: { type: plain, value: "SAVE THE DATE" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.8, text_transform: uppercase } }
+  # 6 short rule
+  - { id: rule-top, type: rect, z: 11, x: 700, y: 290, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 7 couple names
+  - { id: couple, type: text, z: 12, x: 60, y: 340, width: 1380, height: 0, content: { type: plain, value: "Olivia & Daniel" }, style: { font_family: $heading, font_size: 92, font_weight: 400, font_style: italic, color: "$primary", text_align: center, line_height: 1.1, letter_spacing: -0.01 } }
+  # 8 are getting married
+  - { id: subtitle, type: text, z: 13, x: 60, y: 480, width: 1380, height: 0, content: { type: plain, value: "are getting married" }, style: { font_family: $body, font_size: 20, color: "$text_muted", text_align: center, letter_spacing: 0.4, text_transform: lowercase } }
+  # 9 — huge date
+  - { id: date, type: text, z: 20, x: 60, y: 560, width: 1380, height: 0, content: { type: plain, value: "10 · 17 · 2026" }, style: { font_family: $heading, font_size: 130, font_weight: 600, color: "$text", text_align: center, line_height: 1.1, letter_spacing: 0.05 } }
+  # 10 short rule
+  - { id: rule-bot, type: rect, z: 21, x: 700, y: 740, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 11 location
+  - { id: location, type: text, z: 22, x: 60, y: 790, width: 1380, height: 0, content: { type: plain, value: "Lakeside Estate · Saugatuck, Michigan" }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$text", text_align: center, line_height: 1.3 } }
+  # 12 footer
+  - { id: footer, type: text, z: 30, x: 60, y: 920, width: 1380, height: 0, content: { type: plain, value: "FORMAL INVITATION TO FOLLOW" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.6 } }
+
+slots:
+  - { id: couple_names, path: "layers[7].content.value",  type: text, hint: "Couple names",   default: "Olivia & Daniel" }
+  - { id: wedding_date, path: "layers[9].content.value",  type: text, hint: "Wedding date",   default: "10 · 17 · 2026" }
+  - { id: location,     path: "layers[11].content.value", type: text, hint: "Location",       default: "Lakeside Estate · Saugatuck, Michigan" }

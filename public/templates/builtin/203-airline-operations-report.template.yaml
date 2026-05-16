@@ -1,0 +1,269 @@
+_protocol: template/v1
+
+# Airline daily operations — eyebrow, hero, 5 KPIs (flights, on-time,
+# cancellations, load factor, fuel cost), hub on-time bar, route performance
+# table, delay-cause donut, aircraft utilization table.
+meta:
+  id: tmpl-airline-operations-report
+  name: Airline · Daily Operations
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, airline, aviation, operations, logistics, interactive]
+  description: "Daily airline operations: flights, on-time rate, cancellations, load factor, fuel, hub performance, route yield, delay causes, fleet utilization."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: hub_ontime
+        type: inline
+        rows:
+          - { hub: "ATL", ontime_pct: 84.6, departures: 412 }
+          - { hub: "DFW", ontime_pct: 81.2, departures: 386 }
+          - { hub: "ORD", ontime_pct: 72.8, departures: 348 }
+          - { hub: "DEN", ontime_pct: 86.4, departures: 312 }
+          - { hub: "LAX", ontime_pct: 78.4, departures: 296 }
+          - { hub: "JFK", ontime_pct: 74.2, departures: 264 }
+          - { hub: "SFO", ontime_pct: 76.8, departures: 248 }
+          - { hub: "SEA", ontime_pct: 88.2, departures: 218 }
+      - id: route_performance
+        type: inline
+        rows:
+          - { route: "ATL-LAX", flights: 18, ontime_pct: 84.2, load_pct: 92.4, yield_usd: 268 }
+          - { route: "JFK-LHR", flights: 12, ontime_pct: 76.8, load_pct: 89.6, yield_usd: 642 }
+          - { route: "ORD-DEN", flights: 22, ontime_pct: 82.4, load_pct: 86.2, yield_usd: 184 }
+          - { route: "DFW-MIA", flights: 16, ontime_pct: 78.6, load_pct: 84.8, yield_usd: 226 }
+          - { route: "LAX-HNL", flights: 14, ontime_pct: 88.4, load_pct: 94.2, yield_usd: 312 }
+          - { route: "SFO-NRT", flights:  6, ontime_pct: 72.4, load_pct: 91.8, yield_usd: 824 }
+          - { route: "SEA-ANC", flights: 10, ontime_pct: 86.2, load_pct: 78.4, yield_usd: 248 }
+          - { route: "DEN-PHX", flights: 20, ontime_pct: 84.8, load_pct: 82.6, yield_usd: 156 }
+          - { route: "BOS-LAS", flights:  8, ontime_pct: 74.2, load_pct: 88.4, yield_usd: 198 }
+          - { route: "MIA-SJU", flights: 12, ontime_pct: 80.6, load_pct: 92.6, yield_usd: 224 }
+      - id: delay_causes
+        type: inline
+        rows:
+          - { cause: "Weather",            share_pct: 38.4, flights: 142 }
+          - { cause: "Maintenance",        share_pct: 22.6, flights:  84 }
+          - { cause: "Crew",               share_pct: 16.8, flights:  62 }
+          - { cause: "Air Traffic Control", share_pct: 14.2, flights:  53 }
+          - { cause: "Other / Late Aircraft", share_pct:  8.0, flights:  30 }
+      - id: aircraft_util
+        type: inline
+        rows:
+          - { tail: "N812DL",  type: "B737-900",  cycles: 4, hours: 11.4, utilization_pct: 84.2 }
+          - { tail: "N634AA",  type: "A321neo",   cycles: 3, hours: 10.8, utilization_pct: 79.6 }
+          - { tail: "N728UA",  type: "B777-300",  cycles: 2, hours: 14.6, utilization_pct: 88.4 }
+          - { tail: "N956WN",  type: "B737-MAX8", cycles: 5, hours: 12.2, utilization_pct: 91.2 }
+          - { tail: "N418AS",  type: "A320",      cycles: 4, hours:  9.8, utilization_pct: 76.8 }
+          - { tail: "N512JB",  type: "A321",      cycles: 3, hours: 10.2, utilization_pct: 82.4 }
+          - { tail: "N246NK",  type: "A319",      cycles: 4, hours:  8.6, utilization_pct: 74.2 }
+          - { tail: "N188FR",  type: "A320neo",   cycles: 4, hours: 10.4, utilization_pct: 86.8 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "DELTA AIR LINES · NETWORK OPS · DAILY · 2026-05-17"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**Daily Operations — Network Performance**\n*Flights, on-time arrivals, cancellations, load factor, fuel, hub and route performance.*"
+
+      - id: kpi-flights
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Flights
+        value: 2484
+        format: number
+        delta: 1.4
+        delta_format: percent
+
+      - id: kpi-ontime
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: On-Time %
+        value: 80.4
+        format: percent
+        decimals: 1
+        delta: 2.6
+        delta_format: percent
+
+      - id: kpi-cancels
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Cancellations
+        value: 42
+        format: number
+        delta: -8.2
+        delta_format: percent
+
+      - id: kpi-load
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Load Factor %
+        value: 86.8
+        format: percent
+        decimals: 1
+        delta: 1.2
+        delta_format: percent
+
+      - id: kpi-fuel
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Fuel Cost ($M)
+        value: 14.6
+        format: number
+        decimals: 1
+        delta: -3.4
+        delta_format: percent
+
+      - id: section-hubs
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**On-Time Performance by Hub**"
+
+      - id: chart-hubs
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 380
+        chart_type: bar
+        data_ref: hub_ontime
+        x_field: hub
+        y_field: ontime_pct
+        title: Hub On-Time Departure % (Top 8 Hubs)
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-routes
+        type: rich_text
+        x: 60
+        y: 880
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top Route Performance**"
+
+      - id: tbl-routes
+        type: interactive_table
+        x: 60
+        y: 940
+        width: 1160
+        height: 560
+        data_ref: route_performance
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: route,      title: Route,        width: 240, sortable: true, formatter: badge }
+          - { field: flights,    title: Flights,      width: 180, sortable: true, formatter: number,  align: right }
+          - { field: ontime_pct, title: On-Time %,    width: 200, sortable: true, formatter: percent, align: right }
+          - { field: load_pct,   title: Load %,       width: 200, sortable: true, formatter: percent, align: right }
+          - { field: yield_usd,  title: Yield ($/seat), width: 320, sortable: true, formatter: currency, align: right }
+
+      - id: section-delays
+        type: rich_text
+        x: 60
+        y: 1540
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Delay Cause Breakdown**"
+
+      - id: chart-delays
+        type: interactive_chart
+        x: 60
+        y: 1600
+        width: 480
+        height: 400
+        chart_type: donut
+        data_ref: delay_causes
+        x_field: cause
+        y_field: share_pct
+        title: Delay Causes (Share of Delayed Flights)
+        legend: true
+        animate: true
+
+      - id: tbl-aircraft
+        type: interactive_table
+        x: 580
+        y: 1600
+        width: 640
+        height: 400
+        data_ref: aircraft_util
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: tail,             title: Tail,            width: 140, sortable: true }
+          - { field: type,             title: Type,            width: 180, sortable: true, formatter: badge }
+          - { field: cycles,           title: Cycles,          width: 110, sortable: true, formatter: number,  align: right }
+          - { field: hours,            title: Hours,           width: 110, sortable: true, formatter: number,  align: right }
+          - { field: utilization_pct,  title: Util %,          width: 100, sortable: true, formatter: percent, align: right }
+
+slots:
+  - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Report title",      default: "**Daily Operations — Network Performance**\n*Flights, on-time arrivals, cancellations, load factor, fuel, hub and route performance.*" }
+  - { id: report_eyebrow,    path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",      default: "DELTA AIR LINES · NETWORK OPS · DAILY · 2026-05-17" }
+  - { id: hubs_section,      path: "pages[0].layers[7].content",  type: text, hint: "Hubs heading",      default: "**On-Time Performance by Hub**" }
+  - { id: routes_section,    path: "pages[0].layers[9].content",  type: text, hint: "Routes heading",    default: "**Top Route Performance**" }
+  - { id: delays_section,    path: "pages[0].layers[11].content", type: text, hint: "Delays heading",    default: "**Delay Cause Breakdown**" }

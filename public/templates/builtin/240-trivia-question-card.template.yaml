@@ -1,0 +1,426 @@
+_protocol: template/v1
+
+# Trivia question card — 1080×1080 square, cyber-synthwave theme.
+# Question number eyebrow + progress dots, big question, 4 colored
+# answer option badges (A/B/C/D), tap-to-reveal footer.
+meta:
+  id: tmpl-trivia-question-card
+  name: Trivia Question Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [trivia, quiz, game, card, square, cyber, synthwave]
+  description: "Trivia question card with question number, progress dots, big question text, 4 colored answer options, and tap-to-reveal footer."
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  - id: bg-glow
+    type: circle
+    z: 1
+    cx: 540
+    cy: 540
+    rx: 600
+    ry: 600
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$background", position: 100 }
+    opacity: 0.18
+
+  - id: bg-grid-h
+    type: rect
+    z: 2
+    x: 0
+    y: 900
+    width: 1080
+    height: 4
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.3
+
+  - id: bg-grid-h2
+    type: rect
+    z: 3
+    x: 0
+    y: 940
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.2
+
+  # ── Eyebrow + progress dots ──────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 80
+    width: 960
+    height: 0
+    content: { type: plain, value: "QUESTION 5  /  10" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "$accent"
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  # progress dots row — 10 dots, first 5 filled
+  - id: dot-1
+    type: circle
+    z: 20
+    cx: 405
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "$accent" }
+
+  - id: dot-2
+    type: circle
+    z: 21
+    cx: 435
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "$accent" }
+
+  - id: dot-3
+    type: circle
+    z: 22
+    cx: 465
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "$accent" }
+
+  - id: dot-4
+    type: circle
+    z: 23
+    cx: 495
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "$accent" }
+
+  - id: dot-5
+    type: circle
+    z: 24
+    cx: 525
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "$accent" }
+
+  - id: dot-6
+    type: circle
+    z: 25
+    cx: 555
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: dot-7
+    type: circle
+    z: 26
+    cx: 585
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: dot-8
+    type: circle
+    z: 27
+    cx: 615
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: dot-9
+    type: circle
+    z: 28
+    cx: 645
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: dot-10
+    type: circle
+    z: 29
+    cx: 675
+    cy: 140
+    rx: 9
+    ry: 9
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  # ── Question text (big) ──────────────────────────────────
+  - id: question
+    type: text
+    z: 30
+    x: 80
+    y: 220
+    width: 920
+    height: 0
+    content:
+      type: plain
+      value: "Which planet in our solar system has the most moons?"
+    style:
+      font_family: $heading
+      font_size: 52
+      font_weight: 800
+      color: "$text"
+      text_align: center
+      line_height: 1.25
+      letter_spacing: -0.01
+
+  # ── 4 Answer options ─────────────────────────────────────
+  # Option A — pink
+  - id: opt-a-bg
+    type: rect
+    z: 40
+    x: 80
+    y: 460
+    width: 440
+    height: 110
+    radius: 16
+    fill: { type: solid, color: "#FF2E88" }
+
+  - id: opt-a-letter
+    type: text
+    z: 41
+    x: 110
+    y: 488
+    width: 60
+    height: 0
+    content: { type: plain, value: "A" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.1
+
+  - id: opt-a-text
+    type: text
+    z: 42
+    x: 190
+    y: 502
+    width: 320
+    height: 0
+    content: { type: plain, value: "Jupiter" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "#FFFFFF"
+      line_height: 1.3
+
+  # Option B — cyan
+  - id: opt-b-bg
+    type: rect
+    z: 43
+    x: 560
+    y: 460
+    width: 440
+    height: 110
+    radius: 16
+    fill: { type: solid, color: "#00E5FF" }
+
+  - id: opt-b-letter
+    type: text
+    z: 44
+    x: 590
+    y: 488
+    width: 60
+    height: 0
+    content: { type: plain, value: "B" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 900
+      color: "#0A0A2E"
+      text_align: center
+      line_height: 1.1
+
+  - id: opt-b-text
+    type: text
+    z: 45
+    x: 670
+    y: 502
+    width: 320
+    height: 0
+    content: { type: plain, value: "Saturn" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "#0A0A2E"
+      line_height: 1.3
+
+  # Option C — yellow
+  - id: opt-c-bg
+    type: rect
+    z: 46
+    x: 80
+    y: 600
+    width: 440
+    height: 110
+    radius: 16
+    fill: { type: solid, color: "#FFD600" }
+
+  - id: opt-c-letter
+    type: text
+    z: 47
+    x: 110
+    y: 628
+    width: 60
+    height: 0
+    content: { type: plain, value: "C" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 900
+      color: "#0A0A2E"
+      text_align: center
+      line_height: 1.1
+
+  - id: opt-c-text
+    type: text
+    z: 48
+    x: 190
+    y: 642
+    width: 320
+    height: 0
+    content: { type: plain, value: "Uranus" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "#0A0A2E"
+      line_height: 1.3
+
+  # Option D — violet
+  - id: opt-d-bg
+    type: rect
+    z: 49
+    x: 560
+    y: 600
+    width: 440
+    height: 110
+    radius: 16
+    fill: { type: solid, color: "#A347FF" }
+
+  - id: opt-d-letter
+    type: text
+    z: 50
+    x: 590
+    y: 628
+    width: 60
+    height: 0
+    content: { type: plain, value: "D" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.1
+
+  - id: opt-d-text
+    type: text
+    z: 51
+    x: 670
+    y: 642
+    width: 320
+    height: 0
+    content: { type: plain, value: "Neptune" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "#FFFFFF"
+      line_height: 1.3
+
+  # ── Difficulty pill ──────────────────────────────────────
+  - id: diff-bg
+    type: rect
+    z: 60
+    x: 440
+    y: 770
+    width: 200
+    height: 50
+    radius: 25
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: diff-text
+    type: text
+    z: 61
+    x: 440
+    y: 786
+    width: 200
+    height: 0
+    content: { type: plain, value: "MEDIUM · 200 pts" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$accent"
+      text_align: center
+      letter_spacing: 0.4
+      line_height: 1.3
+
+  # ── Tap to reveal footer ─────────────────────────────────
+  - id: footer-text
+    type: text
+    z: 70
+    x: 80
+    y: 990
+    width: 920
+    height: 0
+    content: { type: plain, value: "›  TAP TO REVEAL ANSWER  ‹" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.4
+      line_height: 1.3
+
+slots:
+  - { id: question_number, path: "layers[4].content.value",  type: text, hint: "Question number eyebrow", default: "QUESTION 5  /  10" }
+  - { id: question_text,   path: "layers[15].content.value", type: text, hint: "Question text (big)",     default: "Which planet in our solar system has the most moons?" }
+  - { id: option_a,        path: "layers[17].content.value", type: text, hint: "Option A",                default: "Jupiter" }
+  - { id: option_b,        path: "layers[20].content.value", type: text, hint: "Option B",                default: "Saturn" }
+  - { id: option_c,        path: "layers[23].content.value", type: text, hint: "Option C",                default: "Uranus" }
+  - { id: option_d,        path: "layers[26].content.value", type: text, hint: "Option D",                default: "Neptune" }

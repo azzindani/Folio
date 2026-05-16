@@ -1,0 +1,1121 @@
+_protocol: template/v1
+
+# Gaming leaderboard — 1080×1920 portrait, dark-tech theme.
+# TOP 10 ranking rows with rank · player · score · change.
+# Gold/silver/bronze color for top 3.
+meta:
+  id: tmpl-leaderboard-display
+  name: Leaderboard Display
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [leaderboard, gaming, contest, ranking, dark, portrait]
+  description: "Top-10 gaming/contest leaderboard with player rows, scores, change indicators, and gold/silver/bronze tier colors."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill: { type: solid, color: "$background" }
+
+  - id: bg-glow
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 400
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$background", position: 100 }
+    opacity: 0.2
+
+  # ── Header ────────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 130
+    width: 960
+    height: 0
+    content: { type: plain, value: "STRIKEFORCE CHAMPIONSHIP · SEASON 7" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: "$accent"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: title
+    type: text
+    z: 11
+    x: 60
+    y: 175
+    width: 960
+    height: 0
+    content: { type: plain, value: "TOP 10" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: "$text"
+      text_align: center
+      line_height: 1
+      letter_spacing: 0.04
+
+  - id: subtitle
+    type: text
+    z: 12
+    x: 60
+    y: 290
+    width: 960
+    height: 0
+    content: { type: plain, value: "live rankings · updated every 5 minutes" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.3
+
+  # ── Column header strip ──────────────────────────────────
+  - id: col-strip
+    type: rect
+    z: 20
+    x: 40
+    y: 360
+    width: 1000
+    height: 40
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$accent", width: 1 }
+    opacity: 0.5
+
+  - id: col-rank
+    type: text
+    z: 21
+    x: 70
+    y: 372
+    width: 80
+    height: 0
+    content: { type: plain, value: "#" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 800
+      color: "$text_muted"
+      letter_spacing: 0.5
+
+  - id: col-player
+    type: text
+    z: 22
+    x: 180
+    y: 372
+    width: 400
+    height: 0
+    content: { type: plain, value: "PLAYER" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 800
+      color: "$text_muted"
+      letter_spacing: 0.5
+
+  - id: col-score
+    type: text
+    z: 23
+    x: 700
+    y: 372
+    width: 200
+    height: 0
+    content: { type: plain, value: "SCORE" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 800
+      color: "$text_muted"
+      text_align: right
+      letter_spacing: 0.5
+
+  - id: col-change
+    type: text
+    z: 24
+    x: 940
+    y: 372
+    width: 80
+    height: 0
+    content: { type: plain, value: "Δ" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 800
+      color: "$text_muted"
+      text_align: right
+      letter_spacing: 0.5
+
+  # ── Rank 1 — gold ─────────────────────────────────────────
+  - id: r1-bg
+    type: rect
+    z: 30
+    x: 40
+    y: 420
+    width: 1000
+    height: 110
+    radius: 14
+    fill: { type: solid, color: "#FFD700" }
+    opacity: 0.12
+    stroke: { color: "#FFD700", width: 2 }
+
+  - id: r1-rank
+    type: text
+    z: 31
+    x: 70
+    y: 450
+    width: 100
+    height: 0
+    content: { type: plain, value: "1" }
+    style:
+      font_family: $heading
+      font_size: 52
+      font_weight: 900
+      color: "#FFD700"
+      line_height: 1.1
+
+  - id: r1-player
+    type: text
+    z: 32
+    x: 200
+    y: 458
+    width: 480
+    height: 0
+    content: { type: plain, value: "ShadowReaper_X" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "$text"
+      line_height: 1.2
+
+  - id: r1-team
+    type: text
+    z: 33
+    x: 200
+    y: 500
+    width: 480
+    height: 0
+    content: { type: plain, value: "Team Vortex · Korea" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: "$text_muted"
+      line_height: 1.3
+
+  - id: r1-score
+    type: text
+    z: 34
+    x: 700
+    y: 470
+    width: 220
+    height: 0
+    content: { type: plain, value: "284,650" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$text"
+      text_align: right
+      line_height: 1.2
+
+  - id: r1-change
+    type: text
+    z: 35
+    x: 930
+    y: 472
+    width: 100
+    height: 0
+    content: { type: plain, value: "↑ 2" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#3DD68C"
+      text_align: right
+      line_height: 1.2
+
+  # ── Rank 2 — silver ──────────────────────────────────────
+  - id: r2-bg
+    type: rect
+    z: 40
+    x: 40
+    y: 550
+    width: 1000
+    height: 110
+    radius: 14
+    fill: { type: solid, color: "#C0C0C0" }
+    opacity: 0.10
+    stroke: { color: "#C0C0C0", width: 2 }
+
+  - id: r2-rank
+    type: text
+    z: 41
+    x: 70
+    y: 580
+    width: 100
+    height: 0
+    content: { type: plain, value: "2" }
+    style:
+      font_family: $heading
+      font_size: 52
+      font_weight: 900
+      color: "#C0C0C0"
+      line_height: 1.1
+
+  - id: r2-player
+    type: text
+    z: 42
+    x: 200
+    y: 588
+    width: 480
+    height: 0
+    content: { type: plain, value: "NeonByte" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "$text"
+      line_height: 1.2
+
+  - id: r2-team
+    type: text
+    z: 43
+    x: 200
+    y: 630
+    width: 480
+    height: 0
+    content: { type: plain, value: "Apex Nine · USA" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: "$text_muted"
+      line_height: 1.3
+
+  - id: r2-score
+    type: text
+    z: 44
+    x: 700
+    y: 600
+    width: 220
+    height: 0
+    content: { type: plain, value: "271,420" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$text"
+      text_align: right
+      line_height: 1.2
+
+  - id: r2-change
+    type: text
+    z: 45
+    x: 930
+    y: 602
+    width: 100
+    height: 0
+    content: { type: plain, value: "↓ 1" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#FF5555"
+      text_align: right
+      line_height: 1.2
+
+  # ── Rank 3 — bronze ──────────────────────────────────────
+  - id: r3-bg
+    type: rect
+    z: 50
+    x: 40
+    y: 680
+    width: 1000
+    height: 110
+    radius: 14
+    fill: { type: solid, color: "#CD7F32" }
+    opacity: 0.12
+    stroke: { color: "#CD7F32", width: 2 }
+
+  - id: r3-rank
+    type: text
+    z: 51
+    x: 70
+    y: 710
+    width: 100
+    height: 0
+    content: { type: plain, value: "3" }
+    style:
+      font_family: $heading
+      font_size: 52
+      font_weight: 900
+      color: "#CD7F32"
+      line_height: 1.1
+
+  - id: r3-player
+    type: text
+    z: 52
+    x: 200
+    y: 718
+    width: 480
+    height: 0
+    content: { type: plain, value: "VoidWalker_99" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "$text"
+      line_height: 1.2
+
+  - id: r3-team
+    type: text
+    z: 53
+    x: 200
+    y: 760
+    width: 480
+    height: 0
+    content: { type: plain, value: "Phantom Squad · Germany" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: "$text_muted"
+      line_height: 1.3
+
+  - id: r3-score
+    type: text
+    z: 54
+    x: 700
+    y: 730
+    width: 220
+    height: 0
+    content: { type: plain, value: "258,995" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$text"
+      text_align: right
+      line_height: 1.2
+
+  - id: r3-change
+    type: text
+    z: 55
+    x: 930
+    y: 732
+    width: 100
+    height: 0
+    content: { type: plain, value: "↑ 1" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#3DD68C"
+      text_align: right
+      line_height: 1.2
+
+  # ── Ranks 4-10 — slim rows ───────────────────────────────
+  # 4
+  - id: r4-row
+    type: rect
+    z: 60
+    x: 40
+    y: 810
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r4-rank
+    type: text
+    z: 61
+    x: 70
+    y: 826
+    width: 100
+    height: 0
+    content: { type: plain, value: "4" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r4-player
+    type: text
+    z: 62
+    x: 200
+    y: 832
+    width: 480
+    height: 0
+    content: { type: plain, value: "CrimsonAce" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r4-score
+    type: text
+    z: 63
+    x: 700
+    y: 832
+    width: 220
+    height: 0
+    content: { type: plain, value: "245,300" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r4-change
+    type: text
+    z: 64
+    x: 930
+    y: 832
+    width: 100
+    height: 0
+    content: { type: plain, value: "→" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "$text_muted"
+      text_align: right
+      line_height: 1.3
+
+  # 5
+  - id: r5-row
+    type: rect
+    z: 70
+    x: 40
+    y: 900
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r5-rank
+    type: text
+    z: 71
+    x: 70
+    y: 916
+    width: 100
+    height: 0
+    content: { type: plain, value: "5" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r5-player
+    type: text
+    z: 72
+    x: 200
+    y: 922
+    width: 480
+    height: 0
+    content: { type: plain, value: "PixelMonarch" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r5-score
+    type: text
+    z: 73
+    x: 700
+    y: 922
+    width: 220
+    height: 0
+    content: { type: plain, value: "232,810" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r5-change
+    type: text
+    z: 74
+    x: 930
+    y: 922
+    width: 100
+    height: 0
+    content: { type: plain, value: "↑ 3" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#3DD68C"
+      text_align: right
+      line_height: 1.3
+
+  # 6
+  - id: r6-row
+    type: rect
+    z: 80
+    x: 40
+    y: 990
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r6-rank
+    type: text
+    z: 81
+    x: 70
+    y: 1006
+    width: 100
+    height: 0
+    content: { type: plain, value: "6" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r6-player
+    type: text
+    z: 82
+    x: 200
+    y: 1012
+    width: 480
+    height: 0
+    content: { type: plain, value: "GhostFire_77" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r6-score
+    type: text
+    z: 83
+    x: 700
+    y: 1012
+    width: 220
+    height: 0
+    content: { type: plain, value: "221,455" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r6-change
+    type: text
+    z: 84
+    x: 930
+    y: 1012
+    width: 100
+    height: 0
+    content: { type: plain, value: "↓ 2" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#FF5555"
+      text_align: right
+      line_height: 1.3
+
+  # 7
+  - id: r7-row
+    type: rect
+    z: 90
+    x: 40
+    y: 1080
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r7-rank
+    type: text
+    z: 91
+    x: 70
+    y: 1096
+    width: 100
+    height: 0
+    content: { type: plain, value: "7" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r7-player
+    type: text
+    z: 92
+    x: 200
+    y: 1102
+    width: 480
+    height: 0
+    content: { type: plain, value: "QuantumLeap" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r7-score
+    type: text
+    z: 93
+    x: 700
+    y: 1102
+    width: 220
+    height: 0
+    content: { type: plain, value: "208,720" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r7-change
+    type: text
+    z: 94
+    x: 930
+    y: 1102
+    width: 100
+    height: 0
+    content: { type: plain, value: "↑ 1" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#3DD68C"
+      text_align: right
+      line_height: 1.3
+
+  # 8
+  - id: r8-row
+    type: rect
+    z: 100
+    x: 40
+    y: 1170
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r8-rank
+    type: text
+    z: 101
+    x: 70
+    y: 1186
+    width: 100
+    height: 0
+    content: { type: plain, value: "8" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r8-player
+    type: text
+    z: 102
+    x: 200
+    y: 1192
+    width: 480
+    height: 0
+    content: { type: plain, value: "ZeroDayRain" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r8-score
+    type: text
+    z: 103
+    x: 700
+    y: 1192
+    width: 220
+    height: 0
+    content: { type: plain, value: "195,260" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r8-change
+    type: text
+    z: 104
+    x: 930
+    y: 1192
+    width: 100
+    height: 0
+    content: { type: plain, value: "↓ 1" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#FF5555"
+      text_align: right
+      line_height: 1.3
+
+  # 9
+  - id: r9-row
+    type: rect
+    z: 110
+    x: 40
+    y: 1260
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r9-rank
+    type: text
+    z: 111
+    x: 70
+    y: 1276
+    width: 100
+    height: 0
+    content: { type: plain, value: "9" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r9-player
+    type: text
+    z: 112
+    x: 200
+    y: 1282
+    width: 480
+    height: 0
+    content: { type: plain, value: "HexOmen" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r9-score
+    type: text
+    z: 113
+    x: 700
+    y: 1282
+    width: 220
+    height: 0
+    content: { type: plain, value: "183,940" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r9-change
+    type: text
+    z: 114
+    x: 930
+    y: 1282
+    width: 100
+    height: 0
+    content: { type: plain, value: "↑ 4" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#3DD68C"
+      text_align: right
+      line_height: 1.3
+
+  # 10
+  - id: r10-row
+    type: rect
+    z: 120
+    x: 40
+    y: 1350
+    width: 1000
+    height: 70
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: r10-rank
+    type: text
+    z: 121
+    x: 60
+    y: 1366
+    width: 110
+    height: 0
+    content: { type: plain, value: "10" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "$accent"
+      line_height: 1.2
+
+  - id: r10-player
+    type: text
+    z: 122
+    x: 200
+    y: 1372
+    width: 480
+    height: 0
+    content: { type: plain, value: "GlitchKnight" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text"
+      line_height: 1.3
+
+  - id: r10-score
+    type: text
+    z: 123
+    x: 700
+    y: 1372
+    width: 220
+    height: 0
+    content: { type: plain, value: "172,015" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: right
+      line_height: 1.3
+
+  - id: r10-change
+    type: text
+    z: 124
+    x: 930
+    y: 1372
+    width: 100
+    height: 0
+    content: { type: plain, value: "↓ 3" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "#FF5555"
+      text_align: right
+      line_height: 1.3
+
+  # ── Legend ────────────────────────────────────────────────
+  - id: legend-bg
+    type: rect
+    z: 200
+    x: 40
+    y: 1480
+    width: 1000
+    height: 110
+    radius: 14
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: legend-title
+    type: text
+    z: 201
+    x: 60
+    y: 1500
+    width: 960
+    height: 0
+    content: { type: plain, value: "TIER COLORS" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 800
+      color: "$text_muted"
+      letter_spacing: 0.5
+      text_align: center
+
+  - id: legend-c1
+    type: circle
+    z: 202
+    cx: 180
+    cy: 1555
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFD700" }
+
+  - id: legend-c1-label
+    type: text
+    z: 203
+    x: 210
+    y: 1545
+    width: 200
+    height: 0
+    content: { type: plain, value: "Gold · #1" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text"
+      line_height: 1.3
+
+  - id: legend-c2
+    type: circle
+    z: 204
+    cx: 480
+    cy: 1555
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#C0C0C0" }
+
+  - id: legend-c2-label
+    type: text
+    z: 205
+    x: 510
+    y: 1545
+    width: 200
+    height: 0
+    content: { type: plain, value: "Silver · #2" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text"
+      line_height: 1.3
+
+  - id: legend-c3
+    type: circle
+    z: 206
+    cx: 780
+    cy: 1555
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#CD7F32" }
+
+  - id: legend-c3-label
+    type: text
+    z: 207
+    x: 810
+    y: 1545
+    width: 200
+    height: 0
+    content: { type: plain, value: "Bronze · #3" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text"
+      line_height: 1.3
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 250
+    x: 40
+    y: 1660
+    width: 1000
+    height: 1
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.5
+
+  - id: footer-end-label
+    type: text
+    z: 251
+    x: 60
+    y: 1700
+    width: 960
+    height: 0
+    content: { type: plain, value: "CONTEST ENDS IN" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: footer-end-time
+    type: text
+    z: 252
+    x: 60
+    y: 1740
+    width: 960
+    height: 0
+    content: { type: plain, value: "23 : 14 : 08" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      line_height: 1.1
+      letter_spacing: 0.05
+
+  - id: footer-name
+    type: text
+    z: 253
+    x: 60
+    y: 1840
+    width: 960
+    height: 0
+    content: { type: plain, value: "live at strikeforce.gg/leaderboard" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.3
+
+slots:
+  - { id: contest_name, path: "layers[2].content.value",   type: text, hint: "Contest name eyebrow", default: "STRIKEFORCE CHAMPIONSHIP · SEASON 7" }
+  - { id: end_time,     path: "layers[64].content.value", type: text, hint: "Contest end countdown", default: "23 : 14 : 08" }

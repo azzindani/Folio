@@ -1,0 +1,257 @@
+_protocol: template/v1
+
+# 6-page museum exhibit guide — 1240×1754 A4 portrait, mono-print theme.
+# Cover → curator's note → gallery map → featured works → programs → museum info.
+meta:
+  id: tmpl-museum-exhibit-guide
+  name: Museum Exhibit Guide (6 pages)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, museum, exhibit, guide, mono, a4, brochure]
+  description: "Six-page museum exhibit guide: cover with exhibit title and dates, curator's note, gallery map with floorplan grid, featured works spread with four artwork cards, program schedule, and museum info with sponsor wall."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: mono-print
+
+pages:
+  # ── Page 1 · Cover ─────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: top-rule, type: rect, z: 1, x: 80, y: 100, width: 1080, height: 6, fill: { type: solid, color: "$text" } }
+      - { id: museum-name, type: text, z: 10, x: 80, y: 130, width: 1080, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM OF MODERN ART" }, style: { font_family: $mono, font_size: 16, font_weight: 800, color: $text, letter_spacing: 0.7 } }
+      - { id: museum-meta, type: text, z: 11, x: 80, y: 170, width: 1080, height: 0, content: { type: plain, value: "GALLERIES 3 & 4  ·  SPRING EXHIBITION  ·  GUIDE No. 17" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: hero-block, type: rect, z: 20, x: 80, y: 280, width: 1080, height: 920, fill: { type: solid, color: "$text" } }
+      - { id: hero-block-inner, type: rect, z: 21, x: 120, y: 320, width: 1000, height: 840, fill: { type: solid, color: "transparent" }, stroke: { color: "$background", width: 2 } }
+      - { id: kicker, type: text, z: 22, x: 120, y: 380, width: 1000, height: 0, content: { type: plain, value: "A SOLO EXHIBITION" }, style: { font_family: $mono, font_size: 16, font_weight: 800, color: "$background", text_align: center, letter_spacing: 0.7 } }
+      - { id: rule-mid, type: rect, z: 23, x: 580, y: 430, width: 80, height: 3, fill: { type: solid, color: "$background" } }
+      - { id: artist, type: text, z: 24, x: 120, y: 480, width: 1000, height: 0, content: { type: plain, value: "Yara\nIonescu" }, style: { font_family: $heading, font_size: 156, font_weight: 800, color: "$background", text_align: center, line_height: 0.95, letter_spacing: -0.04 } }
+      - { id: title, type: text, z: 25, x: 120, y: 820, width: 1000, height: 0, content: { type: plain, value: "—  Quiet Geometries  —" }, style: { font_family: $heading, font_size: 38, font_style: italic, color: "$background", text_align: center, opacity: 0.95 } }
+      - { id: dates, type: text, z: 26, x: 120, y: 900, width: 1000, height: 0, content: { type: plain, value: "17 MAY  →  09 SEPTEMBER 2026" }, style: { font_family: $mono, font_size: 22, font_weight: 800, color: "$background", text_align: center, letter_spacing: 0.6 } }
+      - { id: years, type: text, z: 27, x: 120, y: 960, width: 1000, height: 0, content: { type: plain, value: "twenty-six paintings · twelve works on paper · two installations" }, style: { font_family: $body, font_size: 18, font_style: italic, color: "$background", opacity: 0.85, text_align: center } }
+      - { id: hero-cite, type: text, z: 28, x: 120, y: 1080, width: 1000, height: 0, content: { type: plain, value: "\"I do not paint the silence. I paint the space the silence sits in.\"" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$background", text_align: center, opacity: 0.9, line_height: 1.4 } }
+      - { id: hero-cite-attr, type: text, z: 29, x: 120, y: 1140, width: 1000, height: 0, content: { type: plain, value: "— YARA IONESCU, IN CONVERSATION, 2024" }, style: { font_family: $mono, font_size: 12, color: "$background", text_align: center, opacity: 0.75, letter_spacing: 0.5 } }
+      - { id: foot-rule, type: rect, z: 30, x: 80, y: 1280, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: foot-loc, type: text, z: 31, x: 80, y: 1310, width: 720, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM · 224 OFLAHERTY STREET" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $text, letter_spacing: 0.5 } }
+      - { id: foot-url, type: text, z: 32, x: 700, y: 1310, width: 460, height: 0, content: { type: plain, value: "EASTRIVER.MUSEUM" }, style: { font_family: $mono, font_size: 12, color: $text, text_align: right, letter_spacing: 0.5 } }
+      - { id: ticket-box, type: rect, z: 40, x: 80, y: 1380, width: 1080, height: 240, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 3 } }
+      - { id: ticket-label, type: text, z: 41, x: 120, y: 1410, width: 1000, height: 0, content: { type: plain, value: "TICKETS & TIMES" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: ticket-times, type: text, z: 42, x: 120, y: 1450, width: 500, height: 0, content: { type: plain, value: "TUE — SUN  ·  10am — 6pm\nTHU LATE OPENING  ·  to 9pm\nCLOSED MONDAYS" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.6 } }
+      - { id: ticket-prices, type: text, z: 43, x: 620, y: 1450, width: 500, height: 0, content: { type: plain, value: "ADULT          $18\nSTUDENT / SR.  $12\nUNDER 12       FREE" }, style: { font_family: $mono, font_size: 16, color: $text, line_height: 1.6, letter_spacing: 0.3 } }
+      - { id: foot-num, type: text, z: 50, x: 80, y: 1700, width: 1080, height: 0, content: { type: plain, value: "ERM · GUIDE No. 17  ·  COVER" }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+
+  # ── Page 2 · Curator's Note ────────────────────────────────
+  - id: curator-note
+    label: Curator's Note
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: pagehead, type: text, z: 1, x: 80, y: 100, width: 1080, height: 0, content: { type: plain, value: "CURATOR'S NOTE  ·  PAGE 02" }, style: { font_family: $mono, font_size: 12, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: pagehead-rule, type: rect, z: 2, x: 80, y: 130, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: kicker, type: text, z: 10, x: 80, y: 180, width: 1080, height: 0, content: { type: plain, value: "WORDS FROM THE GALLERY" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 11, x: 80, y: 220, width: 1080, height: 0, content: { type: plain, value: "What the rooms are holding." }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 80, y: 360, width: 80, height: 4, fill: { type: solid, color: "$text" } }
+      - { id: body-1, type: text, z: 20, x: 80, y: 400, width: 720, height: 0, content: { type: plain, value: "Quiet Geometries gathers eight years of Yara Ionescu's painting practice into two adjacent galleries, and asks them to share a single argument. The argument, simply put, is that geometry is not the cold thing modernism made of it — that a square, given the right room, can be tender; that a circle can grieve.\n\nThe twenty-six paintings here are arranged not by date but by the time of day each one feels like. Gallery 3 opens with morning works (cool whites, soft blues, the long horizontal of 'Slow Window I'), passes through afternoon (the dense ochre rooms of the central wall), and gives way, by the back room, to a deep, attentive evening. Gallery 4, smaller and quieter, is given over to the works on paper and to the two installations — including the long-awaited reinstallation of 'Distance Held in Both Hands' (2019).\n\nIonescu is a painter who has always preferred to be slow in public. She has refused dozens of commissions, declined every biennial since 2018, and works in a converted bakery north of the city with no studio assistants. This is the first solo museum exhibition of her work in eleven years. We are honored to host it." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: body-2, type: text, z: 21, x: 80, y: 1140, width: 720, height: 0, content: { type: plain, value: "Walk slowly. Sit when there are benches. The artist asked us, in conversation, to please not whisper — \"normal voices, please. A room with paintings is not a library.\" We have taken her advice to heart, and pass it on." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: sig, type: text, z: 30, x: 80, y: 1320, width: 720, height: 0, content: { type: plain, value: "— Reina Ferrazzano" }, style: { font_family: $heading, font_size: 26, font_style: italic, color: $text } }
+      - { id: sig-role, type: text, z: 31, x: 80, y: 1360, width: 720, height: 0, content: { type: plain, value: "CHIEF CURATOR  ·  EAST RIVER MUSEUM" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: side-rule, type: rect, z: 40, x: 840, y: 400, width: 2, height: 1150, fill: { type: solid, color: "$text" } }
+      - { id: side-kicker, type: text, z: 41, x: 870, y: 400, width: 290, height: 0, content: { type: plain, value: "AT A GLANCE" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: side-fact-1-label, type: text, z: 42, x: 870, y: 460, width: 290, height: 0, content: { type: plain, value: "WORKS" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: side-fact-1-val, type: text, z: 43, x: 870, y: 490, width: 290, height: 0, content: { type: plain, value: "40" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: side-fact-1-note, type: text, z: 44, x: 870, y: 560, width: 290, height: 0, content: { type: plain, value: "26 paintings, 12 works on paper, 2 installations" }, style: { font_family: $body, font_size: 13, color: $text_muted, line_height: 1.5 } }
+      - { id: side-fact-2-label, type: text, z: 42, x: 870, y: 640, width: 290, height: 0, content: { type: plain, value: "SPAN" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: side-fact-2-val, type: text, z: 43, x: 870, y: 670, width: 290, height: 0, content: { type: plain, value: "2018 → 2026" }, style: { font_family: $heading, font_size: 30, font_weight: 800, color: $text, line_height: 1.1 } }
+      - { id: side-fact-2-note, type: text, z: 44, x: 870, y: 730, width: 290, height: 0, content: { type: plain, value: "eight years of practice in two rooms" }, style: { font_family: $body, font_size: 13, color: $text_muted, line_height: 1.5 } }
+      - { id: side-fact-3-label, type: text, z: 42, x: 870, y: 820, width: 290, height: 0, content: { type: plain, value: "DURATION" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: side-fact-3-val, type: text, z: 43, x: 870, y: 850, width: 290, height: 0, content: { type: plain, value: "16 WEEKS" }, style: { font_family: $heading, font_size: 40, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: side-fact-3-note, type: text, z: 44, x: 870, y: 910, width: 290, height: 0, content: { type: plain, value: "17 May → 9 September 2026" }, style: { font_family: $body, font_size: 13, color: $text_muted, line_height: 1.5 } }
+      - { id: side-rule-bot, type: rect, z: 45, x: 870, y: 1000, width: 290, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: side-pull-kicker, type: text, z: 46, x: 870, y: 1020, width: 290, height: 0, content: { type: plain, value: "DO NOT MISS" }, style: { font_family: $mono, font_size: 12, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: side-pull, type: text, z: 47, x: 870, y: 1060, width: 290, height: 0, content: { type: plain, value: "The reinstallation of 'Distance Held in Both Hands' (2019) in the back room of Gallery 4. Allow ten minutes." }, style: { font_family: $heading, font_size: 17, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: foot-rule, type: rect, z: 60, x: 80, y: 1690, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: foot, type: text, z: 61, x: 80, y: 1710, width: 1080, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM  ·  QUIET GEOMETRIES  ·  02" }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+
+  # ── Page 3 · Gallery Map ───────────────────────────────────
+  - id: gallery-map
+    label: Gallery Map
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: pagehead, type: text, z: 1, x: 80, y: 100, width: 1080, height: 0, content: { type: plain, value: "GALLERY MAP  ·  PAGE 03" }, style: { font_family: $mono, font_size: 12, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: pagehead-rule, type: rect, z: 2, x: 80, y: 130, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: title, type: text, z: 10, x: 80, y: 180, width: 1080, height: 0, content: { type: plain, value: "Floorplan — second floor." }, style: { font_family: $heading, font_size: 50, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: subtitle, type: text, z: 11, x: 80, y: 290, width: 1080, height: 0, content: { type: plain, value: "Galleries 3 & 4 occupy the east wing. Approximate viewing time: 60–90 minutes." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text_muted, line_height: 1.4 } }
+      - { id: divider, type: rect, z: 12, x: 80, y: 380, width: 80, height: 3, fill: { type: solid, color: "$text" } }
+      - { id: floor-bg, type: rect, z: 20, x: 80, y: 420, width: 1080, height: 760, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 3 } }
+      - { id: r-entry, type: rect, z: 21, x: 540, y: 1080, width: 160, height: 100, fill: { type: solid, color: "$text" } }
+      - { id: r-entry-label, type: text, z: 22, x: 540, y: 1116, width: 160, height: 0, content: { type: plain, value: "ENTRY" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: "$background", text_align: center, letter_spacing: 0.5 } }
+      - { id: r-g3-bg, type: rect, z: 21, x: 120, y: 460, width: 580, height: 500, fill: { type: solid, color: "$background" }, stroke: { color: "$text", width: 2 } }
+      - { id: r-g3-label, type: text, z: 22, x: 120, y: 480, width: 580, height: 0, content: { type: plain, value: "GALLERY 3" }, style: { font_family: $mono, font_size: 18, font_weight: 800, color: $text, text_align: center, letter_spacing: 0.5 } }
+      - { id: r-g3-sub, type: text, z: 23, x: 120, y: 510, width: 580, height: 0, content: { type: plain, value: "MORNING → AFTERNOON  ·  20 paintings" }, style: { font_family: $body, font_size: 13, color: $text_muted, text_align: center } }
+      - { id: r-g3-wall-1, type: rect, z: 24, x: 160, y: 580, width: 500, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.15 }
+      - { id: r-g3-wall-2, type: rect, z: 24, x: 160, y: 640, width: 240, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.15 }
+      - { id: r-g3-wall-3, type: rect, z: 24, x: 420, y: 640, width: 240, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.15 }
+      - { id: r-g3-wall-4, type: rect, z: 24, x: 160, y: 700, width: 500, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.15 }
+      - { id: r-g3-num-1, type: text, z: 25, x: 200, y: 760, width: 120, height: 0, content: { type: plain, value: "❶" }, style: { font_family: $heading, font_size: 32, color: $text, text_align: center } }
+      - { id: r-g3-num-2, type: text, z: 25, x: 360, y: 760, width: 120, height: 0, content: { type: plain, value: "❷" }, style: { font_family: $heading, font_size: 32, color: $text, text_align: center } }
+      - { id: r-g3-num-3, type: text, z: 25, x: 520, y: 760, width: 120, height: 0, content: { type: plain, value: "❸" }, style: { font_family: $heading, font_size: 32, color: $text, text_align: center } }
+      - { id: r-g3-bench, type: rect, z: 26, x: 360, y: 870, width: 100, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.3 }
+      - { id: r-g3-bench-l, type: text, z: 27, x: 320, y: 910, width: 180, height: 0, content: { type: plain, value: "bench" }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, font_style: italic } }
+      - { id: r-g4-bg, type: rect, z: 21, x: 720, y: 460, width: 420, height: 500, fill: { type: solid, color: "$background" }, stroke: { color: "$text", width: 2 } }
+      - { id: r-g4-label, type: text, z: 22, x: 720, y: 480, width: 420, height: 0, content: { type: plain, value: "GALLERY 4" }, style: { font_family: $mono, font_size: 18, font_weight: 800, color: $text, text_align: center, letter_spacing: 0.5 } }
+      - { id: r-g4-sub, type: text, z: 23, x: 720, y: 510, width: 420, height: 0, content: { type: plain, value: "EVENING + WORKS ON PAPER" }, style: { font_family: $body, font_size: 13, color: $text_muted, text_align: center } }
+      - { id: r-g4-wall-1, type: rect, z: 24, x: 760, y: 580, width: 340, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.15 }
+      - { id: r-g4-wall-2, type: rect, z: 24, x: 760, y: 640, width: 340, height: 30, fill: { type: solid, color: "$text" }, opacity: 0.15 }
+      - { id: r-g4-num-4, type: text, z: 25, x: 800, y: 720, width: 120, height: 0, content: { type: plain, value: "❹" }, style: { font_family: $heading, font_size: 32, color: $text, text_align: center } }
+      - { id: r-g4-num-5, type: text, z: 25, x: 940, y: 720, width: 120, height: 0, content: { type: plain, value: "❺" }, style: { font_family: $heading, font_size: 32, color: $text, text_align: center } }
+      - { id: r-install, type: rect, z: 26, x: 800, y: 820, width: 260, height: 100, fill: { type: solid, color: "$text" }, opacity: 0.2, stroke: { color: "$text", width: 2 } }
+      - { id: r-install-label, type: text, z: 27, x: 800, y: 856, width: 260, height: 0, content: { type: plain, value: "INSTALLATION" }, style: { font_family: $mono, font_size: 11, font_weight: 800, color: $text, text_align: center, letter_spacing: 0.5 } }
+      - { id: r-arrow, type: text, z: 30, x: 660, y: 700, width: 80, height: 0, content: { type: plain, value: "→" }, style: { font_family: $heading, font_size: 56, color: $text, text_align: center } }
+      - { id: legend-card, type: rect, z: 40, x: 80, y: 1220, width: 1080, height: 420, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+      - { id: legend-kicker, type: text, z: 41, x: 120, y: 1250, width: 1000, height: 0, content: { type: plain, value: "LEGEND  ·  THE SUGGESTED ROUTE" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: legend-rule, type: rect, z: 42, x: 120, y: 1290, width: 1000, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: legend-1, type: text, z: 43, x: 120, y: 1310, width: 520, height: 0, content: { type: plain, value: "❶  Slow Window suite (5 works) — start here." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.6 } }
+      - { id: legend-2, type: text, z: 43, x: 120, y: 1350, width: 520, height: 0, content: { type: plain, value: "❷  The Ochre Wall (8 works) — the central argument." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.6 } }
+      - { id: legend-3, type: text, z: 43, x: 120, y: 1390, width: 520, height: 0, content: { type: plain, value: "❸  Tower paintings (4 works) — vertical series." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.6 } }
+      - { id: legend-4, type: text, z: 43, x: 640, y: 1310, width: 480, height: 0, content: { type: plain, value: "❹  Works on paper (12) — quiet, please." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.6 } }
+      - { id: legend-5, type: text, z: 43, x: 640, y: 1350, width: 480, height: 0, content: { type: plain, value: "❺  Distance Held in Both Hands (installation)." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.6 } }
+      - { id: legend-tip, type: text, z: 44, x: 120, y: 1460, width: 1000, height: 0, content: { type: plain, value: "TIP — the route was sequenced by the artist. The lighting in Gallery 4 dims gradually as you walk; please give your eyes a moment to adjust at the threshold." }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: legend-access, type: text, z: 45, x: 120, y: 1570, width: 1000, height: 0, content: { type: plain, value: "ACCESSIBILITY — both galleries are step-free. Tactile guides and large-print labels are available at the entry desk." }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: foot-rule, type: rect, z: 60, x: 80, y: 1690, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: foot, type: text, z: 61, x: 80, y: 1710, width: 1080, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM  ·  QUIET GEOMETRIES  ·  03" }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+
+  # ── Page 4 · Featured Works ────────────────────────────────
+  - id: featured-works
+    label: Featured Works
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: pagehead, type: text, z: 1, x: 80, y: 100, width: 1080, height: 0, content: { type: plain, value: "FEATURED WORKS  ·  PAGE 04" }, style: { font_family: $mono, font_size: 12, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: pagehead-rule, type: rect, z: 2, x: 80, y: 130, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: title, type: text, z: 10, x: 80, y: 180, width: 1080, height: 0, content: { type: plain, value: "Four works to sit with." }, style: { font_family: $heading, font_size: 50, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: subtitle, type: text, z: 11, x: 80, y: 290, width: 1080, height: 0, content: { type: plain, value: "If you have only twenty minutes, the gallery suggests these four." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text_muted, line_height: 1.4 } }
+      - { id: divider, type: rect, z: 12, x: 80, y: 380, width: 80, height: 3, fill: { type: solid, color: "$text" } }
+      - { id: card-1, type: rect, z: 20, x: 80, y: 420, width: 520, height: 600, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+      - { id: card-1-img, type: rect, z: 21, x: 120, y: 460, width: 440, height: 280, fill: { type: linear, angle: 135, stops: [{ color: "$text", position: 0 }, { color: "$surface", position: 100 }] }, opacity: 0.7 }
+      - { id: card-1-img-ph, type: text, z: 22, x: 120, y: 580, width: 440, height: 0, content: { type: plain, value: "[ Slow Window I, 2019 ]" }, style: { font_family: $mono, font_size: 14, font_style: italic, color: "$background", text_align: center, letter_spacing: 0.3 } }
+      - { id: card-1-num, type: text, z: 23, x: 120, y: 770, width: 80, height: 0, content: { type: plain, value: "❶" }, style: { font_family: $heading, font_size: 32, color: $text } }
+      - { id: card-1-title, type: text, z: 24, x: 180, y: 776, width: 380, height: 0, content: { type: plain, value: "Slow Window I" }, style: { font_family: $heading, font_size: 26, font_weight: 800, color: $text, line_height: 1.2 } }
+      - { id: card-1-meta, type: text, z: 25, x: 180, y: 814, width: 380, height: 0, content: { type: plain, value: "OIL ON LINEN  ·  2019  ·  72 × 96 in" }, style: { font_family: $mono, font_size: 11, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: card-1-body, type: text, z: 26, x: 120, y: 860, width: 440, height: 0, content: { type: plain, value: "The painting that opens the show. Six near-whites lined up in the proportions of a deep windowsill at 7am. The artist worked from a single photograph, taken in her kitchen, repeatedly, for two years." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6, text_align: justify } }
+      - { id: card-2, type: rect, z: 20, x: 640, y: 420, width: 520, height: 600, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+      - { id: card-2-img, type: rect, z: 21, x: 680, y: 460, width: 440, height: 280, fill: { type: linear, angle: 90, stops: [{ color: "#B8956A", position: 0 }, { color: "$surface", position: 100 }] }, opacity: 0.7 }
+      - { id: card-2-img-ph, type: text, z: 22, x: 680, y: 580, width: 440, height: 0, content: { type: plain, value: "[ The Ochre Argument, 2022 ]" }, style: { font_family: $mono, font_size: 14, font_style: italic, color: $text, text_align: center, letter_spacing: 0.3 } }
+      - { id: card-2-num, type: text, z: 23, x: 680, y: 770, width: 80, height: 0, content: { type: plain, value: "❷" }, style: { font_family: $heading, font_size: 32, color: $text } }
+      - { id: card-2-title, type: text, z: 24, x: 740, y: 776, width: 380, height: 0, content: { type: plain, value: "The Ochre Argument" }, style: { font_family: $heading, font_size: 26, font_weight: 800, color: $text, line_height: 1.2 } }
+      - { id: card-2-meta, type: text, z: 25, x: 740, y: 814, width: 380, height: 0, content: { type: plain, value: "OIL ON BIRCH PANEL  ·  2022  ·  60 × 60 in" }, style: { font_family: $mono, font_size: 11, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: card-2-body, type: text, z: 26, x: 680, y: 860, width: 440, height: 0, content: { type: plain, value: "The centerpiece of Gallery 3. A square within a square within a square, each at a slightly different value of the same ochre. Move forward, then back. The painting reorganizes itself." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6, text_align: justify } }
+      - { id: card-3, type: rect, z: 30, x: 80, y: 1040, width: 520, height: 600, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+      - { id: card-3-img, type: rect, z: 31, x: 120, y: 1080, width: 440, height: 280, fill: { type: linear, angle: 180, stops: [{ color: "$text", position: 0 }, { color: "#4A5D7E", position: 100 }] }, opacity: 0.75 }
+      - { id: card-3-img-ph, type: text, z: 32, x: 120, y: 1200, width: 440, height: 0, content: { type: plain, value: "[ Tower After Rain, 2024 ]" }, style: { font_family: $mono, font_size: 14, font_style: italic, color: "$background", text_align: center, letter_spacing: 0.3 } }
+      - { id: card-3-num, type: text, z: 33, x: 120, y: 1390, width: 80, height: 0, content: { type: plain, value: "❸" }, style: { font_family: $heading, font_size: 32, color: $text } }
+      - { id: card-3-title, type: text, z: 34, x: 180, y: 1396, width: 380, height: 0, content: { type: plain, value: "Tower After Rain" }, style: { font_family: $heading, font_size: 26, font_weight: 800, color: $text, line_height: 1.2 } }
+      - { id: card-3-meta, type: text, z: 35, x: 180, y: 1434, width: 380, height: 0, content: { type: plain, value: "OIL ON LINEN  ·  2024  ·  108 × 36 in" }, style: { font_family: $mono, font_size: 11, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: card-3-body, type: text, z: 36, x: 120, y: 1480, width: 440, height: 0, content: { type: plain, value: "Three meters tall and impossibly narrow. The vertical proportion was chosen, the artist says, to make the body still look up — \"like a stranger you can't quite ignore.\"" }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6, text_align: justify } }
+      - { id: card-4, type: rect, z: 30, x: 640, y: 1040, width: 520, height: 600, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+      - { id: card-4-img, type: rect, z: 31, x: 680, y: 1080, width: 440, height: 280, fill: { type: radial, stops: [{ color: "#FFF8E7", position: 0 }, { color: "$text", position: 100 }] }, opacity: 0.85 }
+      - { id: card-4-img-ph, type: text, z: 32, x: 680, y: 1200, width: 440, height: 0, content: { type: plain, value: "[ Distance Held in Both Hands, 2019 ]" }, style: { font_family: $mono, font_size: 13, font_style: italic, color: "$background", text_align: center, letter_spacing: 0.3 } }
+      - { id: card-4-num, type: text, z: 33, x: 680, y: 1390, width: 80, height: 0, content: { type: plain, value: "❹" }, style: { font_family: $heading, font_size: 32, color: $text } }
+      - { id: card-4-title, type: text, z: 34, x: 740, y: 1396, width: 380, height: 0, content: { type: plain, value: "Distance Held in Both Hands" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: $text, line_height: 1.2 } }
+      - { id: card-4-meta, type: text, z: 35, x: 740, y: 1442, width: 380, height: 0, content: { type: plain, value: "INSTALLATION · MIXED MEDIA  ·  2019" }, style: { font_family: $mono, font_size: 11, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: card-4-body, type: text, z: 36, x: 680, y: 1480, width: 440, height: 0, content: { type: plain, value: "The long-awaited reinstallation. Allow at least ten minutes inside. Reservations recommended — a quiet attendant will let you in." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6, text_align: justify } }
+      - { id: foot-rule, type: rect, z: 60, x: 80, y: 1690, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: foot, type: text, z: 61, x: 80, y: 1710, width: 1080, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM  ·  QUIET GEOMETRIES  ·  04" }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+
+  # ── Page 5 · Programs ──────────────────────────────────────
+  - id: programs
+    label: Programs
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: pagehead, type: text, z: 1, x: 80, y: 100, width: 1080, height: 0, content: { type: plain, value: "EDUCATIONAL PROGRAMS  ·  PAGE 05" }, style: { font_family: $mono, font_size: 12, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: pagehead-rule, type: rect, z: 2, x: 80, y: 130, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: title, type: text, z: 10, x: 80, y: 180, width: 1080, height: 0, content: { type: plain, value: "Lectures, walkthroughs, and one quiet hour." }, style: { font_family: $heading, font_size: 44, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: subtitle, type: text, z: 11, x: 80, y: 330, width: 1080, height: 0, content: { type: plain, value: "All programs are free with admission unless noted. Sign up at the entry desk or eastriver.museum/programs." }, style: { font_family: $heading, font_size: 20, font_style: italic, color: $text_muted, line_height: 1.4 } }
+      - { id: divider, type: rect, z: 12, x: 80, y: 420, width: 80, height: 3, fill: { type: solid, color: "$text" } }
+      - { id: th-when, type: text, z: 20, x: 80, y: 460, width: 220, height: 0, content: { type: plain, value: "WHEN" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: th-prog, type: text, z: 20, x: 320, y: 460, width: 620, height: 0, content: { type: plain, value: "PROGRAM" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: th-who, type: text, z: 20, x: 960, y: 460, width: 200, height: 0, content: { type: plain, value: "LED BY" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: th-rule, type: rect, z: 21, x: 80, y: 490, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: row-1-when, type: text, z: 30, x: 80, y: 510, width: 220, height: 0, content: { type: plain, value: "WED 21 MAY\n6:30 — 8:00 pm" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, line_height: 1.6 } }
+      - { id: row-1-prog, type: text, z: 30, x: 320, y: 510, width: 620, height: 0, content: { type: plain, value: "Opening Lecture — The Quiet Geometry" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.2 } }
+      - { id: row-1-desc, type: text, z: 31, x: 320, y: 552, width: 620, height: 0, content: { type: plain, value: "Conversation with the artist on her practice and the shape of attention." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: row-1-who, type: text, z: 30, x: 960, y: 510, width: 200, height: 0, content: { type: plain, value: "Yara Ionescu\n+ R. Ferrazzano" }, style: { font_family: $body, font_size: 13, color: $text, line_height: 1.6 } }
+      - { id: row-1-rule, type: rect, z: 31, x: 80, y: 620, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: row-2-when, type: text, z: 30, x: 80, y: 640, width: 220, height: 0, content: { type: plain, value: "EVERY SAT\n2:00 — 3:00 pm" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, line_height: 1.6 } }
+      - { id: row-2-prog, type: text, z: 30, x: 320, y: 640, width: 620, height: 0, content: { type: plain, value: "Curator's Walkthrough" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.2 } }
+      - { id: row-2-desc, type: text, z: 31, x: 320, y: 678, width: 620, height: 0, content: { type: plain, value: "A 60-minute tour of both galleries with stops at six key works." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: row-2-who, type: text, z: 30, x: 960, y: 640, width: 200, height: 0, content: { type: plain, value: "Rotating curators" }, style: { font_family: $body, font_size: 13, color: $text, line_height: 1.6 } }
+      - { id: row-2-rule, type: rect, z: 31, x: 80, y: 750, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: row-3-when, type: text, z: 30, x: 80, y: 770, width: 220, height: 0, content: { type: plain, value: "FRI 6 JUN\n7:00 — 9:00 pm" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, line_height: 1.6 } }
+      - { id: row-3-prog, type: text, z: 30, x: 320, y: 770, width: 620, height: 0, content: { type: plain, value: "Ochre Night — Open Studio" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.2 } }
+      - { id: row-3-desc, type: text, z: 31, x: 320, y: 812, width: 620, height: 0, content: { type: plain, value: "A hands-on workshop on color mixing and pigment history. Materials provided." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: row-3-who, type: text, z: 30, x: 960, y: 770, width: 200, height: 0, content: { type: plain, value: "Lin Okegbo,\nstudio educator\n[ $25, reg. req. ]" }, style: { font_family: $body, font_size: 12, color: $text, line_height: 1.6 } }
+      - { id: row-3-rule, type: rect, z: 31, x: 80, y: 900, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: row-4-when, type: text, z: 30, x: 80, y: 920, width: 220, height: 0, content: { type: plain, value: "SUN 22 JUN\n11:00 am — 12:00" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, line_height: 1.6 } }
+      - { id: row-4-prog, type: text, z: 30, x: 320, y: 920, width: 620, height: 0, content: { type: plain, value: "Family Sunday — Slow Looking for Kids" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.2 } }
+      - { id: row-4-desc, type: text, z: 31, x: 320, y: 962, width: 620, height: 0, content: { type: plain, value: "An hour of guided observation for ages 6–11, with sketching materials." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: row-4-who, type: text, z: 30, x: 960, y: 920, width: 200, height: 0, content: { type: plain, value: "Family ed. team" }, style: { font_family: $body, font_size: 13, color: $text, line_height: 1.6 } }
+      - { id: row-4-rule, type: rect, z: 31, x: 80, y: 1050, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: row-5-when, type: text, z: 30, x: 80, y: 1070, width: 220, height: 0, content: { type: plain, value: "THU 17 JUL\n6:30 — 7:30 pm" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, line_height: 1.6 } }
+      - { id: row-5-prog, type: text, z: 30, x: 320, y: 1070, width: 620, height: 0, content: { type: plain, value: "In Conversation — Painting + Architecture" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.2 } }
+      - { id: row-5-desc, type: text, z: 31, x: 320, y: 1112, width: 620, height: 0, content: { type: plain, value: "How proportion travels between two disciplines." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: row-5-who, type: text, z: 30, x: 960, y: 1070, width: 200, height: 0, content: { type: plain, value: "Y. Ionescu\n+ N. Halberg" }, style: { font_family: $body, font_size: 13, color: $text, line_height: 1.6 } }
+      - { id: row-5-rule, type: rect, z: 31, x: 80, y: 1180, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: row-6-when, type: text, z: 30, x: 80, y: 1200, width: 220, height: 0, content: { type: plain, value: "WED 03 SEP\n6:30 — 8:00 pm" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, line_height: 1.6 } }
+      - { id: row-6-prog, type: text, z: 30, x: 320, y: 1200, width: 620, height: 0, content: { type: plain, value: "Closing Conversation — What the Show Taught Us" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.2 } }
+      - { id: row-6-desc, type: text, z: 31, x: 320, y: 1242, width: 620, height: 0, content: { type: plain, value: "A roundtable with curators, the artist, and three visiting writers." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: row-6-who, type: text, z: 30, x: 960, y: 1200, width: 200, height: 0, content: { type: plain, value: "Full panel" }, style: { font_family: $body, font_size: 13, color: $text, line_height: 1.6 } }
+      - { id: row-6-rule, type: rect, z: 31, x: 80, y: 1310, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: quiet-card, type: rect, z: 40, x: 80, y: 1350, width: 1080, height: 220, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+      - { id: quiet-kicker, type: text, z: 41, x: 120, y: 1380, width: 1000, height: 0, content: { type: plain, value: "QUIET HOUR  ·  EVERY SUNDAY 10 — 11 AM" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: quiet-text, type: text, z: 42, x: 120, y: 1420, width: 1000, height: 0, content: { type: plain, value: "We dim the lights, mute the audio guides, and reserve the galleries for visitors who prefer a calmer sensory experience. No reservation required. Companions welcome." }, style: { font_family: $heading, font_size: 19, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: foot-rule, type: rect, z: 60, x: 80, y: 1690, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: foot, type: text, z: 61, x: 80, y: 1710, width: 1080, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM  ·  QUIET GEOMETRIES  ·  05" }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+
+  # ── Page 6 · Museum Info + Sponsors ────────────────────────
+  - id: info
+    label: Visitor Info
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: pagehead, type: text, z: 1, x: 80, y: 100, width: 1080, height: 0, content: { type: plain, value: "VISITOR INFORMATION  ·  PAGE 06" }, style: { font_family: $mono, font_size: 12, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: pagehead-rule, type: rect, z: 2, x: 80, y: 130, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: title, type: text, z: 10, x: 80, y: 180, width: 1080, height: 0, content: { type: plain, value: "Plan your visit." }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 11, x: 80, y: 320, width: 80, height: 3, fill: { type: solid, color: "$text" } }
+      - { id: col-1-h, type: text, z: 20, x: 80, y: 360, width: 340, height: 0, content: { type: plain, value: "HOURS" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: col-1-body, type: text, z: 21, x: 80, y: 400, width: 340, height: 0, content: { type: plain, value: "TUE — WED   10am — 6pm\nTHURSDAY    10am — 9pm\nFRI — SUN   10am — 6pm\nMONDAY      closed" }, style: { font_family: $mono, font_size: 14, color: $text, line_height: 1.8, letter_spacing: 0.2 } }
+      - { id: col-2-h, type: text, z: 22, x: 460, y: 360, width: 340, height: 0, content: { type: plain, value: "ADMISSION" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: col-2-body, type: text, z: 23, x: 460, y: 400, width: 340, height: 0, content: { type: plain, value: "ADULT          $18\nSENIOR (65+)   $12\nSTUDENT        $12\nUNDER 12       FREE\nMEMBERS        FREE" }, style: { font_family: $mono, font_size: 14, color: $text, line_height: 1.8, letter_spacing: 0.2 } }
+      - { id: col-3-h, type: text, z: 24, x: 840, y: 360, width: 320, height: 0, content: { type: plain, value: "GETTING HERE" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: col-3-body, type: text, z: 25, x: 840, y: 400, width: 320, height: 0, content: { type: plain, value: "224 OFlaherty Street\nDistrict 5\n\nMETRO  →  Old Yards\n(8 min walk)\n\nBUS    →  46, 51, 92\n(stops at the door)" }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 } }
+      - { id: amenities-rule, type: rect, z: 30, x: 80, y: 680, width: 1080, height: 1, fill: { type: solid, color: "$text" } }
+      - { id: amenities-h, type: text, z: 31, x: 80, y: 710, width: 1080, height: 0, content: { type: plain, value: "AMENITIES" }, style: { font_family: $mono, font_size: 13, font_weight: 800, color: $text, letter_spacing: 0.5 } }
+      - { id: amen-1, type: text, z: 32, x: 80, y: 760, width: 240, height: 0, content: { type: plain, value: "◯ CAFÉ\nGround floor, north wing.\nOpen during museum hours." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: amen-2, type: text, z: 32, x: 360, y: 760, width: 240, height: 0, content: { type: plain, value: "◯ SHOP\nGround floor, by entry.\nCatalog of the exhibition available." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: amen-3, type: text, z: 32, x: 640, y: 760, width: 240, height: 0, content: { type: plain, value: "◯ COAT CHECK\nFree for all visitors.\nLockers available." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: amen-4, type: text, z: 32, x: 920, y: 760, width: 240, height: 0, content: { type: plain, value: "◯ ACCESSIBILITY\nStep-free throughout.\nWheelchairs at desk." }, style: { font_family: $body, font_size: 14, color: $text, line_height: 1.6 } }
+      - { id: sponsor-block, type: rect, z: 40, x: 80, y: 940, width: 1080, height: 600, fill: { type: solid, color: "$text" } }
+      - { id: sponsor-h, type: text, z: 41, x: 80, y: 980, width: 1080, height: 0, content: { type: plain, value: "QUIET GEOMETRIES IS MADE POSSIBLE BY" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: "$background", text_align: center, letter_spacing: 0.6 } }
+      - { id: sponsor-rule, type: rect, z: 42, x: 580, y: 1020, width: 80, height: 3, fill: { type: solid, color: "$background" } }
+      - { id: sponsor-lead, type: text, z: 43, x: 80, y: 1060, width: 1080, height: 0, content: { type: plain, value: "PRESENTING SPONSOR" }, style: { font_family: $mono, font_size: 12, color: "$background", text_align: center, opacity: 0.75, letter_spacing: 0.5 } }
+      - { id: sponsor-1, type: text, z: 44, x: 80, y: 1090, width: 1080, height: 0, content: { type: plain, value: "THE HALBERG FOUNDATION" }, style: { font_family: $heading, font_size: 38, font_weight: 800, color: "$background", text_align: center, letter_spacing: 0.04 } }
+      - { id: sponsor-mid-rule, type: rect, z: 45, x: 240, y: 1170, width: 760, height: 1, fill: { type: solid, color: "$background" }, opacity: 0.3 }
+      - { id: sponsor-mid-lead, type: text, z: 46, x: 80, y: 1190, width: 1080, height: 0, content: { type: plain, value: "MAJOR SUPPORT FROM" }, style: { font_family: $mono, font_size: 12, color: "$background", text_align: center, opacity: 0.75, letter_spacing: 0.5 } }
+      - { id: sponsor-2, type: text, z: 47, x: 80, y: 1230, width: 1080, height: 0, content: { type: plain, value: "MERIDIAN CAPITAL  ·  COURBET & MOORE  ·  THE OKEGBO TRUST" }, style: { font_family: $heading, font_size: 24, font_weight: 800, color: "$background", text_align: center, letter_spacing: 0.3, line_height: 1.4 } }
+      - { id: sponsor-bot-rule, type: rect, z: 48, x: 240, y: 1310, width: 760, height: 1, fill: { type: solid, color: "$background" }, opacity: 0.3 }
+      - { id: sponsor-bot-lead, type: text, z: 49, x: 80, y: 1330, width: 1080, height: 0, content: { type: plain, value: "AND THE GENEROSITY OF OUR MEMBERS" }, style: { font_family: $mono, font_size: 12, color: "$background", text_align: center, opacity: 0.75, letter_spacing: 0.5 } }
+      - { id: sponsor-3, type: text, z: 50, x: 120, y: 1370, width: 1000, height: 0, content: { type: plain, value: "Anonymous (3) · J. & K. Adabra · Bonelli Family · Cassano Fund · The Devereaux\nGrant · Hartwell-Lin · Imelda Press · Quayside Partners · Reine Atelier · Salinger\nFoundation · Tassi Brothers · Vaspar Group · Wexler Hubbard · The Yiannopoulos Trust" }, style: { font_family: $body, font_size: 13, color: "$background", text_align: center, opacity: 0.85, line_height: 1.7 } }
+      - { id: foot-rule, type: rect, z: 60, x: 80, y: 1610, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+      - { id: foot-url, type: text, z: 61, x: 80, y: 1630, width: 540, height: 0, content: { type: plain, value: "EASTRIVER.MUSEUM  ·  @EASTRIVER.MUSEUM" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $text, letter_spacing: 0.5 } }
+      - { id: foot-tel, type: text, z: 62, x: 600, y: 1630, width: 560, height: 0, content: { type: plain, value: "TEL  +1 (555) 014-2233" }, style: { font_family: $mono, font_size: 12, color: $text, text_align: right, letter_spacing: 0.5 } }
+      - { id: foot, type: text, z: 63, x: 80, y: 1710, width: 1080, height: 0, content: { type: plain, value: "EAST RIVER MUSEUM  ·  QUIET GEOMETRIES  ·  THANK YOU FOR VISITING." }, style: { font_family: $mono, font_size: 11, color: $text_muted, text_align: center, letter_spacing: 0.5 } }

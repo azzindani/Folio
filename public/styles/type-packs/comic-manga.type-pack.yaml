@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: comic-manga
+name: Comic Manga
+version: "1.0.0"
+tags: [comic, manga, speech-bubble, playful, display, pop]
+description: "Bangers display with Comic Neue body — comic books and manga speech-bubble energy."
+families:
+  heading: "Bangers"
+  body:    "Comic Neue"
+  mono:    "Special Elite"
+  display: "Bangers"
+  accent:  "Bangers"
+scale:
+  h1:
+    size: 80
+    weight: 400
+    line_height: 1.0
