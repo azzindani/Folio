@@ -1,0 +1,140 @@
+_protocol: template/v1
+
+# Opening title slide for a presentation deck — 16:9 widescreen.
+# Big display title, subtitle, presenter line, date/version, accent
+# outlined circle on the right for visual interest.
+meta:
+  id: tmpl-slide-title
+  name: Slide — Title
+  type: presentation
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [slide, presentation, title, deck, 16x9]
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: accent-circle
+    type: circle
+    z: 5
+    cx: 1640
+    cy: 540
+    rx: 360
+    ry: 360
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+    opacity: 0.55
+
+  - id: title
+    type: text
+    z: 10
+    x: 120
+    y: 380
+    width: 1400
+    height: 0
+    content: { type: plain, value: "The Future of Design Engines" }
+    style:
+      font_family: $heading
+      font_size: 120
+      font_weight: 700
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.03
+
+  - id: subtitle
+    type: text
+    z: 11
+    x: 120
+    y: 620
+    width: 1400
+    height: 0
+    content: { type: plain, value: "Local-first, LLM-native, infinitely composable" }
+    style:
+      font_family: $body
+      font_size: 36
+      font_weight: 400
+      color: $text_muted
+      line_height: 1.3
+
+  - id: presenter
+    type: text
+    z: 12
+    x: 120
+    y: 880
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Alex Rivera · Folio Team" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: $text
+
+  - id: date
+    type: text
+    z: 13
+    x: 120
+    y: 930
+    width: 1000
+    height: 0
+    content: { type: plain, value: "May 2026 · v2.5" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text_muted
+
+  - id: accent-label
+    type: text
+    z: 14
+    x: 1480
+    y: 525
+    width: 320
+    height: 0
+    content: { type: plain, value: "KEYNOTE" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+      text_align: center
+
+  - id: accent-bar
+    type: rect
+    z: 6
+    x: 120
+    y: 320
+    width: 80
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "$accent" }
+
+slots:
+  - { id: title,         path: "layers[2].content.value", type: text, hint: "Big presentation title",        default: "The Future of Design Engines" }
+  - { id: subtitle,      path: "layers[3].content.value", type: text, hint: "Subtitle / tagline",            default: "Local-first, LLM-native, infinitely composable" }
+  - { id: presenter,     path: "layers[4].content.value", type: text, hint: "Presenter or team",             default: "Alex Rivera · Folio Team" }
+  - { id: date,          path: "layers[5].content.value", type: text, hint: "Date · version",                default: "May 2026 · v2.5" }
+  - { id: accent_label,  path: "layers[6].content.value", type: text, hint: "Accent label (inside circle)",  default: "KEYNOTE" }

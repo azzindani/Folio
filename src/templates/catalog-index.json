@@ -1,6 +1,6 @@
 {
   "_generator": "scripts/gen-catalog-index.mjs",
-  "count": 24,
+  "count": 44,
   "entries": [
     {
       "id": "tmpl-document-cover",
@@ -20,6 +20,45 @@
       "pages": 0,
       "themeRef": "light-clean",
       "file": "14-a4-document-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-album-cover",
+      "name": "Album Cover",
+      "type": "card",
+      "tags": [
+        "card",
+        "album",
+        "music",
+        "cover",
+        "cyber",
+        "synthwave",
+        "square"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "cyber-synthwave",
+      "file": "27-album-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-book-cover",
+      "name": "Book Cover",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "book",
+        "cover",
+        "print",
+        "brutalist",
+        "typographic"
+      ],
+      "width": 1280,
+      "height": 1920,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "brutalist-mono",
+      "file": "26-book-cover.template.yaml"
     },
     {
       "id": "tmpl-business-card",
@@ -59,6 +98,25 @@
       "file": "15-certificate.template.yaml"
     },
     {
+      "id": "tmpl-cocktail-card",
+      "name": "Cocktail Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "cocktail",
+        "hospitality",
+        "menu",
+        "portrait",
+        "warm"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 11,
+      "pages": 0,
+      "themeRef": "sunset-glow",
+      "file": "36-cocktail-card.template.yaml"
+    },
+    {
       "id": "tmpl-comparison-table",
       "name": "Comparison Table",
       "type": "card",
@@ -93,6 +151,25 @@
       "pages": 0,
       "themeRef": "indigo-pro",
       "file": "21-conference-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-cover-letter",
+      "name": "Cover Letter (A4)",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "letter",
+        "formal",
+        "a4",
+        "professional",
+        "print"
+      ],
+      "width": 2480,
+      "height": 3508,
+      "slots": 10,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "31-cover-letter.template.yaml"
     },
     {
       "id": "tmpl-donut-kpi",
@@ -148,6 +225,63 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "04-event-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-event-ticket",
+      "name": "Event Ticket",
+      "type": "card",
+      "tags": [
+        "ticket",
+        "event",
+        "concert",
+        "hospitality",
+        "landscape",
+        "synthwave"
+      ],
+      "width": 1500,
+      "height": 600,
+      "slots": 8,
+      "pages": 0,
+      "themeRef": "cyber-synthwave",
+      "file": "37-event-ticket.template.yaml"
+    },
+    {
+      "id": "tmpl-gauge-meter",
+      "name": "Gauge Meter Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "gauge",
+        "meter",
+        "kpi",
+        "chart",
+        "square"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "ocean-blue",
+      "file": "43-gauge-meter.template.yaml"
+    },
+    {
+      "id": "tmpl-gift-voucher",
+      "name": "Gift Voucher",
+      "type": "card",
+      "tags": [
+        "voucher",
+        "gift",
+        "hospitality",
+        "card",
+        "landscape",
+        "pastel"
+      ],
+      "width": 1500,
+      "height": 750,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "pastel-dream",
+      "file": "38-gift-voucher.template.yaml"
     },
     {
       "id": "tmpl-instagram-carousel",
@@ -220,6 +354,25 @@
       "file": "10-linkedin-post.template.yaml"
     },
     {
+      "id": "tmpl-magazine-cover",
+      "name": "Magazine Cover",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "magazine",
+        "cover",
+        "editorial",
+        "lifestyle",
+        "print"
+      ],
+      "width": 1080,
+      "height": 1440,
+      "slots": 8,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "25-magazine-cover.template.yaml"
+    },
+    {
       "id": "tmpl-minimal-quote-poster",
       "name": "Minimal Quote Poster",
       "type": "poster",
@@ -256,6 +409,25 @@
       "file": "19-multi-metric-dashboard.template.yaml"
     },
     {
+      "id": "tmpl-newsletter-header",
+      "name": "Newsletter Header",
+      "type": "card",
+      "tags": [
+        "card",
+        "newsletter",
+        "header",
+        "banner",
+        "corporate",
+        "masthead"
+      ],
+      "width": 1200,
+      "height": 400,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "corporate-slate",
+      "file": "29-newsletter-header.template.yaml"
+    },
+    {
       "id": "tmpl-pricing-3tier",
       "name": "Pricing — 3 Tiers",
       "type": "poster",
@@ -272,6 +444,25 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "05-pricing-3tier.template.yaml"
+    },
+    {
+      "id": "tmpl-process-flow",
+      "name": "Process Flow Infographic",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "infographic",
+        "process",
+        "flow",
+        "steps",
+        "square"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 11,
+      "pages": 0,
+      "themeRef": "forest-deep",
+      "file": "42-process-flow.template.yaml"
     },
     {
       "id": "tmpl-product-launch-hero",
@@ -293,6 +484,24 @@
       "file": "23-product-launch-hero.template.yaml"
     },
     {
+      "id": "tmpl-case-study",
+      "name": "Project Case Study",
+      "type": "report",
+      "tags": [
+        "report",
+        "case-study",
+        "project",
+        "landscape",
+        "professional"
+      ],
+      "width": 1280,
+      "height": 900,
+      "slots": 18,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "33-project-case-study.template.yaml"
+    },
+    {
       "id": "tmpl-quote-card",
       "name": "Quote Card",
       "type": "poster",
@@ -308,6 +517,83 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "02-quote-card.template.yaml"
+    },
+    {
+      "id": "tmpl-recipe-card",
+      "name": "Recipe Card",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "recipe",
+        "food",
+        "instagram",
+        "pastel",
+        "card"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 14,
+      "pages": 0,
+      "themeRef": "pastel-dream",
+      "file": "28-recipe-card.template.yaml"
+    },
+    {
+      "id": "tmpl-restaurant-menu",
+      "name": "Restaurant Menu",
+      "type": "poster",
+      "tags": [
+        "menu",
+        "restaurant",
+        "hospitality",
+        "print",
+        "portrait",
+        "editorial"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 24,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "35-restaurant-menu.template.yaml"
+    },
+    {
+      "id": "tmpl-resume-cv",
+      "name": "Resume / CV (A4)",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "resume",
+        "cv",
+        "a4",
+        "professional",
+        "print",
+        "two-column"
+      ],
+      "width": 2480,
+      "height": 3508,
+      "slots": 30,
+      "pages": 0,
+      "themeRef": "mono-print",
+      "file": "30-resume-cv.template.yaml"
+    },
+    {
+      "id": "tmpl-save-the-date",
+      "name": "Save the Date",
+      "type": "card",
+      "tags": [
+        "card",
+        "wedding",
+        "save-the-date",
+        "social",
+        "square",
+        "elegant"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "39-save-the-date.template.yaml"
     },
     {
       "id": "tmpl-sectioned-report",
@@ -343,6 +629,43 @@
       "file": "01-simple-poster.template.yaml"
     },
     {
+      "id": "tmpl-slide-content",
+      "name": "Slide — Content",
+      "type": "presentation",
+      "tags": [
+        "slide",
+        "presentation",
+        "content",
+        "bullets",
+        "callout",
+        "16x9"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "slots": 9,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "41-slide-content.template.yaml"
+    },
+    {
+      "id": "tmpl-slide-title",
+      "name": "Slide — Title",
+      "type": "presentation",
+      "tags": [
+        "slide",
+        "presentation",
+        "title",
+        "deck",
+        "16x9"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "40-slide-title.template.yaml"
+    },
+    {
       "id": "tmpl-sparkline-card",
       "name": "Sparkline Card",
       "type": "card",
@@ -361,6 +684,25 @@
       "file": "17-sparkline-card.template.yaml"
     },
     {
+      "id": "tmpl-speaker-bio",
+      "name": "Speaker Bio Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "speaker",
+        "conference",
+        "intro",
+        "16x9",
+        "landscape"
+      ],
+      "width": 1280,
+      "height": 720,
+      "slots": 8,
+      "pages": 0,
+      "themeRef": "sunset-glow",
+      "file": "34-speaker-bio.template.yaml"
+    },
+    {
       "id": "tmpl-stats-card",
       "name": "Stats Card",
       "type": "poster",
@@ -377,6 +719,44 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "03-stats-card.template.yaml"
+    },
+    {
+      "id": "tmpl-team-profile",
+      "name": "Team Member Profile",
+      "type": "card",
+      "tags": [
+        "card",
+        "team",
+        "profile",
+        "photo",
+        "square",
+        "social"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 7,
+      "pages": 0,
+      "themeRef": "forest-deep",
+      "file": "32-team-member-profile.template.yaml"
+    },
+    {
+      "id": "tmpl-tutorial-3step",
+      "name": "Tutorial — 3 Steps",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "tutorial",
+        "how-to",
+        "steps",
+        "vertical",
+        "pastel"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 9,
+      "pages": 0,
+      "themeRef": "pastel-dream",
+      "file": "44-tutorial-3-step.template.yaml"
     },
     {
       "id": "tmpl-twitter-card",
