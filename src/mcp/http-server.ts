@@ -7,7 +7,7 @@ import * as engine from './engine';
 import { toMCPResult } from './types';
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition } from './types';
 
-type Handler = (args: Record<string, unknown>) => ToolResult;
+type Handler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>;
 
 // §1 — All-tier handler map
 const HANDLERS: Record<string, Handler> = {
@@ -61,7 +61,7 @@ function jsonReply(res: http.ServerResponse, status: number, body: unknown): voi
 }
 
 // §4 — MCP JSON-RPC dispatch
-function handleMCP(req: MCPRequest): MCPResponse {
+async function handleMCP(req: MCPRequest): Promise<MCPResponse> {
   const { id, method, params } = req;
   switch (method) {
     case 'initialize':
@@ -75,7 +75,7 @@ function handleMCP(req: MCPRequest): MCPResponse {
       const args = (params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {};
       const fn = HANDLERS[name];
       if (!fn) return { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) };
-      try { return { jsonrpc: '2.0', id, result: toMCPResult(fn(args)) }; }
+      try { return { jsonrpc: '2.0', id, result: toMCPResult(await fn(args)) }; }
       catch (err) { return { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) }; }
     }
     default:
@@ -128,7 +128,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     try { body = await readBody(req); } catch { jsonReply(res, 400, { error: 'Failed to read request body' }); return; }
     let parsed: MCPRequest;
     try { parsed = JSON.parse(body) as MCPRequest; } catch { jsonReply(res, 400, { jsonrpc: '2.0', id: 0, error: { code: -32700, message: 'Parse error' } }); return; }
-    const response = handleMCP(parsed);
+    const response = await handleMCP(parsed);
     sseBroadcast(response);
     jsonReply(res, 200, response);
     return;

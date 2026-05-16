@@ -12,6 +12,7 @@ import { buildGuide } from './engine/guide';
 import { expandShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
+import { runExport, type ExportFormat } from './engine/export';
 import type { NextAction } from './types';
 
 // ── Tier 1 — Project Management (6 tools) ───────────────────
@@ -479,9 +480,14 @@ export function removeLayer(args: { design_path: string; layer_id: string }): To
 }
 
 // ── Tier 3 — Export & Templates (6 tools) ───────────────────
-export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number }): ToolResult {
+export async function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number }): Promise<ToolResult> {
   const op = 'export_design';
   if (!fs.existsSync(args.design_path)) return errResult(op, `Design not found: ${args.design_path}`, 'Check the design_path value.');
+
+  const allowed: ExportFormat[] = ['svg', 'html', 'png', 'pdf'];
+  if (!allowed.includes(args.format as ExportFormat)) {
+    return errResult(op, `Unsupported format: ${args.format}`, `Use one of: ${allowed.join(', ')}.`);
+  }
 
   const spec = readYAML<DesignSpec>(args.design_path);
   const criticals = validateDesignSpec(spec).filter(e => e.severity === 'error');
@@ -489,10 +495,26 @@ export function exportDesign(args: { design_path: string; format: string; output
 
   // §19 — output_path must not equal input
   const outPath = args.output_path ?? args.design_path.replace('.design.yaml', `.${args.format}`);
-  if (args.format === 'svg' || args.format === 'html') {
-    return okResult(op, { format: args.format, output_file: path.basename(outPath), output_path: outPath, status: 'queued' });
+  if (path.resolve(outPath) === path.resolve(args.design_path)) {
+    return errResult(op, 'Output path must differ from input.', 'Provide a distinct output_path.');
   }
-  return okResult(op, { format: args.format, status: 'requires_puppeteer', hint: 'PNG/PDF export requires Puppeteer (Phase 2).' });
+
+  try {
+    const outcome = await runExport({ spec, format: args.format as ExportFormat, outPath, scale: args.scale ?? 2 });
+    return okResult(op, {
+      format: outcome.format,
+      output_file: path.basename(outPath),
+      output_path: outPath,
+      bytes: outcome.bytes,
+      status: 'written',
+    });
+  } catch (e) {
+    const msg = (e as Error).message;
+    const hint = args.format === 'png' || args.format === 'pdf'
+      ? 'PNG/PDF requires playwright + chromium. Run `npx playwright install chromium`.'
+      : 'Export failed — see error message.';
+    return errResult(op, msg, hint);
+  }
 }
 export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {
   const op = 'batch_create';

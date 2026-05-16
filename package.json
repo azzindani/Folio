@@ -39,6 +39,7 @@
   "devDependencies": {
     "@playwright/test": "1.59.1",
     "@types/js-yaml": "^4.0.9",
+    "@types/jsdom": "^28.0.3",
     "@types/katex": "^0.16.8",
     "@types/node": "^25.6.0",
     "@types/prismjs": "^1.26.6",
@@ -62,6 +63,7 @@
     "marked": "^18.0.2",
     "mermaid": "^11.14.0",
     "monaco-editor": "^0.55.1",
+    "playwright": "^1.60.0",
     "prismjs": "^1.30.0",
     "vega-embed": "^7.1.0"
   },

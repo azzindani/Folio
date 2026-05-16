@@ -109,7 +109,7 @@ Editor:    Monaco (lazy loaded)
 YAML:      js-yaml
 Renderers: marked.js (always) · mermaid/vega-lite/katex/prism (lazy)
 Export:    dom-to-image-more + jsPDF + SVG serialize
-MCP:       Node.js stdio, reads/writes .yaml files directly
+MCP:       Node.js stdio + HTTP; reads/writes .yaml; exports via playwright (PNG/PDF)
 Tests:     Vitest (unit) · Playwright (E2E + visual)
 ```
 
@@ -163,14 +163,14 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 
 | Gap | Area | Priority |
 |---|---|---|
-| Puppeteer PDF/PNG (MCP server export — currently returns `requires_puppeteer`) | Export | Phase 2 |
 | Mode B interactive output (state, scripts, data binding) | Export | Phase 2 |
 | Scripting sandbox (iframe/SES) | Security | Phase 2 |
 | Timeline editor UI | Animation | Phase 3 |
 | GIF / MP4 / WebM / Lottie export | Export | Phase 3 |
 
-Phase 1 items previously listed (Lucide sprite, per-corner radius, gradient editor,
-color picker, `npm install`) are all complete — see Module Map.
+Done: Phase 1 (Lucide sprite, per-corner radius, gradient editor, color picker).
+MCP server-side export (SVG / HTML / PNG / PDF) is wired through playwright in
+`src/mcp/engine/export.ts`; the legacy "requires_puppeteer" stub is gone.
 
 ---
 

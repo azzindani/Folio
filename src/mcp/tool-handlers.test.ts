@@ -534,36 +534,68 @@ describe('exportDesign', () => {
   let projectPath: string;
   let designPath: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     projectPath = path.join(tmpDir, 'export-proj');
     createProject({ name: 'Export', path: projectPath });
     createDesign({ project_path: projectPath, name: 'Export Me' });
     designPath = path.join(projectPath, 'designs/export-me.design.yaml');
+    const { setRasterizer } = await import('./engine/export');
+    setRasterizer(async (a) => Buffer.from(`fake-${a.format}-${a.spec.document.width}x${a.spec.document.height}`));
   });
 
-  it('returns queued status for SVG format', () => {
-    const result = exportDesign({ design_path: designPath, format: 'svg' });
+  afterEach(async () => {
+    const { setRasterizer } = await import('./engine/export');
+    setRasterizer(null);
+  });
+
+  it('writes SVG to disk and reports bytes', async () => {
+    const result = await exportDesign({ design_path: designPath, format: 'svg' });
     const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('svg');
-    expect(parsed.status).toBe('queued');
+    expect(parsed.status).toBe('written');
+    expect(parsed.bytes).toBeGreaterThan(0);
+    expect(fs.existsSync(parsed.output_path as string)).toBe(true);
   });
 
-  it('returns queued status for HTML format', () => {
-    const result = exportDesign({ design_path: designPath, format: 'html' });
+  it('writes HTML to disk', async () => {
+    const result = await exportDesign({ design_path: designPath, format: 'html' });
     const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('html');
-    expect(parsed.status).toBe('queued');
+    expect(parsed.status).toBe('written');
+    expect(fs.existsSync(parsed.output_path as string)).toBe(true);
   });
 
-  it('returns requires_puppeteer for PNG format', () => {
-    const result = exportDesign({ design_path: designPath, format: 'png' });
+  it('writes PNG via rasterizer', async () => {
+    const result = await exportDesign({ design_path: designPath, format: 'png' });
     const parsed = result as Record<string, unknown>;
-    expect(parsed.status).toBe('requires_puppeteer');
+    expect(parsed.status).toBe('written');
+    expect(parsed.format).toBe('png');
+    expect(fs.readFileSync(parsed.output_path as string).toString()).toContain('fake-png-');
   });
 
-  it('returns error when design not found', () => {
-    const result = exportDesign({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
+  it('writes PDF via rasterizer', async () => {
+    const result = await exportDesign({ design_path: designPath, format: 'pdf' });
+    const parsed = result as Record<string, unknown>;
+    expect(parsed.status).toBe('written');
+    expect(parsed.format).toBe('pdf');
+    expect(fs.readFileSync(parsed.output_path as string).toString()).toContain('fake-pdf-');
+  });
+
+  it('rejects unsupported format', async () => {
+    const result = await exportDesign({ design_path: designPath, format: 'gif' });
     expect(result.success).toBe(false);
+    expect(result.error).toContain('Unsupported');
+  });
+
+  it('returns error when design not found', async () => {
+    const result = await exportDesign({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects when output_path equals input', async () => {
+    const result = await exportDesign({ design_path: designPath, format: 'svg', output_path: designPath });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('differ');
   });
 });
 
@@ -753,7 +785,7 @@ describe('listThemes — missing project', () => {
 // ── exportDesign — validation errors (line 348) ──────────
 
 describe('exportDesign — validation errors', () => {
-  it('returns error when design has critical validation errors (line 348)', () => {
+  it('returns error when design has critical validation errors (line 348)', async () => {
     // Write a design file with a missing required field to trigger validation errors
     const designPath = path.join(tmpDir, 'bad.design.yaml');
     fs.writeFileSync(designPath, JSON.stringify({
@@ -762,9 +794,7 @@ describe('exportDesign — validation errors', () => {
       // missing document → validation error
       layers: [],
     }));
-    const result = exportDesign({ design_path: designPath, format: 'svg' });
-    // Either error (validation fails) or success (if validator passes)
-    // Just ensure no crash
+    const result = await exportDesign({ design_path: designPath, format: 'svg' });
     expect(result).toBeDefined();
   });
 });
