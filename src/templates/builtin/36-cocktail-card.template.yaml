@@ -1,0 +1,319 @@
+_protocol: template/v1
+
+# Single-cocktail spotlight card — 1080×1620 portrait. Sunset-glow warm hues.
+# Glass illustration via stacked circles; ingredients triple row; garnish pill.
+meta:
+  id: tmpl-cocktail-card
+  name: Cocktail Card
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, cocktail, hospitality, menu, portrait, warm]
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: glass-outer
+    type: circle
+    z: 5
+    cx: 540
+    cy: 480
+    rx: 260
+    ry: 260
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.55
+
+  - id: glass-inner-liquid
+    type: circle
+    z: 6
+    cx: 540
+    cy: 480
+    rx: 180
+    ry: 180
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+
+  - id: glass-shine
+    type: circle
+    z: 7
+    cx: 470
+    cy: 410
+    rx: 36
+    ry: 36
+    fill: { type: solid, color: "$surface" }
+    opacity: 0.5
+
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 820
+    width: 920
+    height: 0
+    content: { type: plain, value: "SIGNATURE COCKTAIL" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: $accent
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: name
+    type: text
+    z: 11
+    x: 80
+    y: 870
+    width: 920
+    height: 0
+    content: { type: plain, value: "Negroni Sbagliato" }
+    style:
+      font_family: $heading
+      font_size: 78
+      font_weight: 500
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.05
+      letter_spacing: -0.01
+
+  - id: origin
+    type: text
+    z: 12
+    x: 80
+    y: 980
+    width: 920
+    height: 0
+    content: { type: plain, value: "Milano · 1972" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.16
+      line_height: 1.4
+
+  - id: divider
+    type: rect
+    z: 13
+    x: 490
+    y: 1050
+    width: 100
+    height: 2
+    fill: { type: solid, color: "$accent" }
+
+  - id: ing1-amount
+    type: text
+    z: 20
+    x: 280
+    y: 1110
+    width: 120
+    height: 0
+    content: { type: plain, value: "30ml" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 600
+      color: $primary
+      text_align: right
+      line_height: 1.4
+
+  - id: ing1-name
+    type: text
+    z: 21
+    x: 430
+    y: 1110
+    width: 370
+    height: 0
+    content: { type: plain, value: "Campari" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: ing2-amount
+    type: text
+    z: 20
+    x: 280
+    y: 1160
+    width: 120
+    height: 0
+    content: { type: plain, value: "30ml" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 600
+      color: $primary
+      text_align: right
+      line_height: 1.4
+
+  - id: ing2-name
+    type: text
+    z: 21
+    x: 430
+    y: 1160
+    width: 370
+    height: 0
+    content: { type: plain, value: "Sweet Vermouth" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: ing3-amount
+    type: text
+    z: 20
+    x: 280
+    y: 1210
+    width: 120
+    height: 0
+    content: { type: plain, value: "90ml" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 600
+      color: $primary
+      text_align: right
+      line_height: 1.4
+
+  - id: ing3-name
+    type: text
+    z: 21
+    x: 430
+    y: 1210
+    width: 370
+    height: 0
+    content: { type: plain, value: "Prosecco" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: method-label
+    type: text
+    z: 30
+    x: 80
+    y: 1300
+    width: 920
+    height: 0
+    content: { type: plain, value: "METHOD" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $accent
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: method
+    type: text
+    z: 31
+    x: 120
+    y: 1330
+    width: 840
+    height: 0
+    content: { type: plain, value: "Build over ice in a rocks glass. Stir gently. Top with prosecco." }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  - id: garnish-pill
+    type: rect
+    z: 40
+    x: 360
+    y: 1430
+    width: 360
+    height: 44
+    radius: 22
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$accent", width: 1 }
+
+  - id: garnish-text
+    type: text
+    z: 41
+    x: 360
+    y: 1444
+    width: 360
+    height: 0
+    content: { type: plain, value: "Garnish · Orange Wheel" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: $accent
+      text_align: center
+      line_height: 1
+      letter_spacing: 0.08
+
+  - id: price-tag-rect
+    type: rect
+    z: 50
+    x: 920
+    y: 80
+    width: 100
+    height: 60
+    radius: 10
+    fill: { type: solid, color: "$primary" }
+
+  - id: price-text
+    type: text
+    z: 51
+    x: 920
+    y: 98
+    width: 100
+    height: 0
+    content: { type: plain, value: "$16" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+
+slots:
+  - { id: name,             path: "layers[5].content.value",  type: text, hint: "Cocktail name",        default: "Negroni Sbagliato" }
+  - { id: origin,           path: "layers[6].content.value",  type: text, hint: "Origin / year",        default: "Milano · 1972" }
+  - { id: ingredient1_amount, path: "layers[8].content.value",  type: text, hint: "Ing 1 measure",     default: "30ml" }
+  - { id: ingredient1_name,   path: "layers[9].content.value",  type: text, hint: "Ing 1 name",        default: "Campari" }
+  - { id: ingredient2_amount, path: "layers[10].content.value", type: text, hint: "Ing 2 measure",     default: "30ml" }
+  - { id: ingredient2_name,   path: "layers[11].content.value", type: text, hint: "Ing 2 name",        default: "Sweet Vermouth" }
+  - { id: ingredient3_amount, path: "layers[12].content.value", type: text, hint: "Ing 3 measure",     default: "90ml" }
+  - { id: ingredient3_name,   path: "layers[13].content.value", type: text, hint: "Ing 3 name",        default: "Prosecco" }
+  - { id: method,           path: "layers[15].content.value", type: text, hint: "Method one-liner",    default: "Build over ice in a rocks glass. Stir gently. Top with prosecco." }
+  - { id: garnish,          path: "layers[17].content.value", type: text, hint: "Garnish callout",     default: "Garnish · Orange Wheel" }
+  - { id: price,            path: "layers[19].content.value", type: text, hint: "Price",               default: "$16" }
