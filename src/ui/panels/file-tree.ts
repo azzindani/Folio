@@ -1,5 +1,7 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import { openFile, saveFile } from '../../fs/file-access';
+import { templatePickerDialog } from '../dialogs/template-picker';
+import { serializeYAML } from '../../schema/parser';
 
 const RECENT_KEY = 'folio:recentFiles';
 const MAX_RECENT = 8;
@@ -44,9 +46,11 @@ export class FileTreeManager {
     const actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:4px;padding:4px 0 8px';
 
+    const newBtn  = this.makeBtn('New', 'New from template', () => this.triggerNewFromTemplate());
     const openBtn = this.makeBtn('Open', 'Ctrl+O', () => this.triggerOpen());
     const saveBtn = this.makeBtn('Save', 'Ctrl+S', () => this.triggerSave());
 
+    actions.appendChild(newBtn);
     actions.appendChild(openBtn);
     actions.appendChild(saveBtn);
     this.container.appendChild(actions);
@@ -129,6 +133,15 @@ export class FileTreeManager {
       (item as HTMLElement).addEventListener('mouseleave', () => {
         (item as HTMLElement).style.background = '';
       });
+    });
+  }
+
+  triggerNewFromTemplate(): void {
+    templatePickerDialog.open((design, t) => {
+      // Funnel through the same load path as Open so the editor wires up
+      // state subscribers, history, etc. consistently.
+      const yaml = serializeYAML(design);
+      this.onOpen(yaml, `${t.id}.design.yaml`, null);
     });
   }
 
