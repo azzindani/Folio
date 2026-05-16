@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: embossed-paper
+name: Embossed Paper
+version: "1.0.0"
+tags: [emboss, letterpress, paper, tactile, debossed]
+description: "Top-highlight + bottom-shadow inset — letterpress embossed paper register."
+effects:
+  shadow_card:   "inset 1px 1px 2px rgba(255,255,255,0.70), inset -1px -1px 2px rgba(0,0,0,0.15)"
+  shadow_glow:   "inset 2px 2px 3px rgba(255,255,255,0.80), inset -2px -2px 3px rgba(0,0,0,0.20)"
+  shadow_inset:  "inset 1px 1px 2px rgba(255,255,255,0.70), inset -1px -1px 2px rgba(0,0,0,0.15)"
+  shadow_text:   "1px 1px 0 rgba(255,255,255,0.65), -1px -1px 0 rgba(0,0,0,0.20)"
+  blur_glass:    4
+  blur_backdrop: 3

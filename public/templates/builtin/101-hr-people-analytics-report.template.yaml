@@ -1,0 +1,286 @@
+_protocol: template/v1
+
+# HR people analytics — 5 KPIs (headcount, attrition, eNPS, time-to-hire, tenure),
+# 12-month headcount trend line, department breakdown table, engagement matrix,
+# diversity stacked bar. Single-page scroll report.
+meta:
+  id: tmpl-hr-people-analytics-report
+  name: HR · People Analytics
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, hr, people, analytics, engagement, diversity, interactive]
+  description: "People analytics dashboard: headcount, attrition, engagement, department breakdown, diversity."
+
+document:
+  width: 1280
+  height: 2200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: headcount_trend
+        type: inline
+        rows:
+          - { month: Jun, headcount: 1842, hires: 38, exits: 22 }
+          - { month: Jul, headcount: 1858, hires: 32, exits: 16 }
+          - { month: Aug, headcount: 1874, hires: 28, exits: 12 }
+          - { month: Sep, headcount: 1896, hires: 42, exits: 20 }
+          - { month: Oct, headcount: 1914, hires: 34, exits: 16 }
+          - { month: Nov, headcount: 1932, hires: 30, exits: 12 }
+          - { month: Dec, headcount: 1948, hires: 22, exits: 14 }
+          - { month: Jan, headcount: 1976, hires: 48, exits: 20 }
+          - { month: Feb, headcount: 2002, hires: 42, exits: 16 }
+          - { month: Mar, headcount: 2034, hires: 46, exits: 14 }
+          - { month: Apr, headcount: 2062, hires: 40, exits: 12 }
+          - { month: May, headcount: 2084, hires: 36, exits: 14 }
+      - id: departments
+        type: inline
+        rows:
+          - { department: Engineering,        headcount: 612, open_roles: 38, attrition_pct: 9.2 }
+          - { department: Sales,              headcount: 286, open_roles: 22, attrition_pct: 18.4 }
+          - { department: Customer Success,   headcount: 224, open_roles: 14, attrition_pct: 14.6 }
+          - { department: Marketing,          headcount: 118, open_roles:  8, attrition_pct: 12.8 }
+          - { department: Product,            headcount: 142, open_roles: 11, attrition_pct:  8.4 }
+          - { department: Data & Analytics,   headcount:  96, open_roles:  7, attrition_pct:  7.2 }
+          - { department: Finance,            headcount:  68, open_roles:  4, attrition_pct:  6.8 }
+          - { department: People & Talent,    headcount:  54, open_roles:  3, attrition_pct: 11.4 }
+          - { department: Legal & Compliance, headcount:  32, open_roles:  2, attrition_pct:  4.2 }
+          - { department: Operations,         headcount: 452, open_roles: 24, attrition_pct: 16.8 }
+      - id: engagement
+        type: inline
+        rows:
+          - { dimension: Manager Effectiveness, q1: 7.4, q2: 7.6, q3: 7.8, q4: 8.1 }
+          - { dimension: Career Growth,         q1: 6.2, q2: 6.4, q3: 6.8, q4: 7.0 }
+          - { dimension: Recognition,           q1: 6.8, q2: 7.0, q3: 7.2, q4: 7.4 }
+          - { dimension: Work-Life Balance,     q1: 7.2, q2: 7.0, q3: 7.4, q4: 7.6 }
+          - { dimension: Compensation Fairness, q1: 5.8, q2: 5.6, q3: 6.0, q4: 6.4 }
+      - id: diversity
+        type: inline
+        rows:
+          - { level: Individual Contributor, women_pct: 42.4, men_pct: 56.2, nonbinary_pct: 1.4 }
+          - { level: Senior IC,              women_pct: 38.6, men_pct: 60.2, nonbinary_pct: 1.2 }
+          - { level: Manager,                women_pct: 36.2, men_pct: 62.8, nonbinary_pct: 1.0 }
+          - { level: Senior Manager,         women_pct: 32.8, men_pct: 66.4, nonbinary_pct: 0.8 }
+          - { level: Director,               women_pct: 28.4, men_pct: 71.0, nonbinary_pct: 0.6 }
+          - { level: VP & Above,             women_pct: 24.2, men_pct: 75.4, nonbinary_pct: 0.4 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "PEOPLE OPS · Q2 FY2026 · GLOBAL HEADCOUNT"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 80
+        format: markdown
+        font_family: Playfair Display
+        font_size: 44
+        font_weight: 700
+        line_height: 1.1
+        content: "**People Analytics — Quarterly Review**"
+
+      - id: kpi-headcount
+        type: kpi_card
+        x: 60
+        y: 180
+        width: 224
+        height: 140
+        label: Total Headcount
+        value: 2084
+        format: number
+        delta: 13.1
+        delta_format: percent
+        sparkline_data: headcount_trend
+        sparkline_field: headcount
+        sparkline_color: "$primary"
+
+      - id: kpi-attrition
+        type: kpi_card
+        x: 304
+        y: 180
+        width: 224
+        height: 140
+        label: Attrition (TTM)
+        value: 11.8
+        format: percent
+        delta: -2.4
+        delta_format: percent
+
+      - id: kpi-enps
+        type: kpi_card
+        x: 548
+        y: 180
+        width: 224
+        height: 140
+        label: eNPS
+        value: 34
+        format: number
+        delta: 6
+        delta_format: number
+
+      - id: kpi-ttf
+        type: kpi_card
+        x: 792
+        y: 180
+        width: 224
+        height: 140
+        label: Time-to-Hire (days)
+        value: 38.4
+        format: number
+        decimals: 1
+        delta: -4.2
+        delta_format: percent
+
+      - id: kpi-tenure
+        type: kpi_card
+        x: 1036
+        y: 180
+        width: 184
+        height: 140
+        label: Avg Tenure (yrs)
+        value: 3.6
+        format: number
+        decimals: 1
+        delta: 0.2
+        delta_format: number
+
+      - id: section-headcount
+        type: rich_text
+        x: 60
+        y: 360
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Headcount Trend — Last 12 Months**"
+
+      - id: chart-headcount
+        type: interactive_chart
+        x: 60
+        y: 420
+        width: 1160
+        height: 380
+        chart_type: line
+        data_ref: headcount_trend
+        x_field: month
+        y_field: headcount
+        title: Total Headcount — Monthly
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-departments
+        type: rich_text
+        x: 60
+        y: 840
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Department Breakdown**"
+
+      - id: tbl-departments
+        type: interactive_table
+        x: 60
+        y: 900
+        width: 1160
+        height: 480
+        data_ref: departments
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: department,    title: Department,     width: 360, sortable: true, formatter: badge }
+          - { field: headcount,     title: Headcount,      width: 240, sortable: true, formatter: number,  align: right }
+          - { field: open_roles,    title: Open Roles,     width: 240, sortable: true, formatter: number,  align: right }
+          - { field: attrition_pct, title: Attrition %,    width: 240, sortable: true, formatter: percent, align: right }
+
+      - id: section-engagement
+        type: rich_text
+        x: 60
+        y: 1420
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Engagement Survey — Quarterly Scores (out of 10)**"
+
+      - id: tbl-engagement
+        type: interactive_table
+        x: 60
+        y: 1480
+        width: 1160
+        height: 300
+        data_ref: engagement
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: dimension, title: Dimension, width: 440, sortable: true }
+          - { field: q1,        title: Q1,        width: 180, sortable: true, formatter: number, align: right }
+          - { field: q2,        title: Q2,        width: 180, sortable: true, formatter: number, align: right }
+          - { field: q3,        title: Q3,        width: 180, sortable: true, formatter: number, align: right }
+          - { field: q4,        title: Q4,        width: 180, sortable: true, formatter: number, align: right }
+
+      - id: section-diversity
+        type: rich_text
+        x: 60
+        y: 1820
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Diversity by Career Level**"
+
+      - id: chart-diversity
+        type: interactive_chart
+        x: 60
+        y: 1880
+        width: 1160
+        height: 280
+        chart_type: bar
+        data_ref: diversity
+        x_field: level
+        y_field: women_pct
+        title: Representation by Level — % Women / Men / Nonbinary
+        legend: true
+        grid: true
+        animate: true
+
+slots:
+  - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**People Analytics — Quarterly Review**" }
+  - { id: report_eyebrow,      path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",         default: "PEOPLE OPS · Q2 FY2026 · GLOBAL HEADCOUNT" }
+  - { id: headcount_section,   path: "pages[0].layers[7].content",  type: text, hint: "Headcount heading",    default: "**Headcount Trend — Last 12 Months**" }
+  - { id: departments_section, path: "pages[0].layers[9].content",  type: text, hint: "Departments heading",  default: "**Department Breakdown**" }
+  - { id: engagement_section,  path: "pages[0].layers[11].content", type: text, hint: "Engagement heading",   default: "**Engagement Survey — Quarterly Scores (out of 10)**" }
+  - { id: diversity_section,   path: "pages[0].layers[13].content", type: text, hint: "Diversity heading",    default: "**Diversity by Career Level**" }

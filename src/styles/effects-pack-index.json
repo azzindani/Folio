@@ -1,6 +1,6 @@
 {
   "_generator": "scripts/gen-effects-pack-index.mjs",
-  "count": 8,
+  "count": 13,
   "entries": [
     {
       "id": "brutalist-hard",
@@ -22,6 +22,48 @@
         "blur_backdrop"
       ],
       "file": "brutalist-hard.effects-pack.yaml"
+    },
+    {
+      "id": "comic-halftone",
+      "name": "Comic Halftone",
+      "tags": [
+        "comic",
+        "pop-art",
+        "lichtenstein",
+        "halftone",
+        "staggered"
+      ],
+      "description": "Two-color staggered offset, zero blur — pop-art comic book register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "comic-halftone.effects-pack.yaml"
+    },
+    {
+      "id": "embossed-paper",
+      "name": "Embossed Paper",
+      "tags": [
+        "emboss",
+        "letterpress",
+        "paper",
+        "tactile",
+        "debossed"
+      ],
+      "description": "Top-highlight + bottom-shadow inset — letterpress embossed paper register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "embossed-paper.effects-pack.yaml"
     },
     {
       "id": "ethereal-glass",
@@ -87,6 +129,27 @@
       "file": "glow-rim.effects-pack.yaml"
     },
     {
+      "id": "holographic-shimmer",
+      "name": "Holographic Shimmer",
+      "tags": [
+        "holographic",
+        "iridescent",
+        "y2k",
+        "foil",
+        "shimmer"
+      ],
+      "description": "Layered cyan/magenta/yellow glows — holographic foil Y2K register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "holographic-shimmer.effects-pack.yaml"
+    },
+    {
       "id": "neon-glow",
       "name": "Neon Glow",
       "tags": [
@@ -106,6 +169,27 @@
         "blur_backdrop"
       ],
       "file": "neon-glow.effects-pack.yaml"
+    },
+    {
+      "id": "pixel-crisp",
+      "name": "Pixel Crisp",
+      "tags": [
+        "pixel",
+        "retro",
+        "8bit",
+        "arcade",
+        "stepped"
+      ],
+      "description": "Hard 2px stepped offset, zero blur — 8-bit pixel-art register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "pixel-crisp.effects-pack.yaml"
     },
     {
       "id": "sharp-shadow",
@@ -169,6 +253,27 @@
         "blur_backdrop"
       ],
       "file": "vintage-print.effects-pack.yaml"
+    },
+    {
+      "id": "watercolor-soft",
+      "name": "Watercolor Soft",
+      "tags": [
+        "watercolor",
+        "painterly",
+        "dreamy",
+        "soft",
+        "pastel"
+      ],
+      "description": "Stacked low-alpha colored bleeds — painterly watercolor wash register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "watercolor-soft.effects-pack.yaml"
     }
   ]
 }
