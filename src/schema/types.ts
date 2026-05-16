@@ -615,6 +615,55 @@ export interface PaletteSpec {
   colors: Record<string, string | Record<string, string>>;
 }
 
+// ── Type pack ───────────────────────────────────────────────
+/**
+ * A TypePackSpec is the typography slice of a theme — font families
+ * plus the type scale. Swappable independently so the same template +
+ * palette pair can read as "editorial serif" or "geometric sans" by
+ * flipping a single ref.
+ *
+ * composeTheme(theme, { typePack }) overlays typePack.families on top
+ * of theme.typography.families, and (if provided) typePack.scale on
+ * top of theme.typography.scale. Unspecified slots fall through.
+ *
+ * Authored as `*.type-pack.yaml` under public/styles/type-packs/.
+ */
+export interface TypePackSpec {
+  _protocol: 'type-pack/v1';
+  id: string;
+  name: string;
+  version: string;
+  tags?: string[];
+  description?: string;
+  /** Font family slots: heading / body / mono / display / accent / ... */
+  families: Record<string, string>;
+  /** Optional size+weight+line-height scale (overlays theme.typography.scale). */
+  scale?: Record<string, TypographyScale>;
+}
+
+// ── Effects pack ────────────────────────────────────────────
+/**
+ * An EffectsPackSpec is the effects slice of a theme — shadows, blur,
+ * glow, and any other "surface treatment" tokens. Swapping packs flips
+ * the visual register (flat / neon / brutalist / soft-elevation)
+ * without touching colors or typography.
+ *
+ * composeTheme(theme, { effectsPack }) overlays effectsPack.effects on
+ * top of theme.effects. Unspecified keys fall through.
+ *
+ * Authored as `*.effects-pack.yaml` under public/styles/effects-packs/.
+ */
+export interface EffectsPackSpec {
+  _protocol: 'effects-pack/v1';
+  id: string;
+  name: string;
+  version: string;
+  tags?: string[];
+  description?: string;
+  /** Same shape as ThemeSpec.effects — overlays the theme's effects map. */
+  effects: Record<string, string | number>;
+}
+
 // ── Easing ───────────────────────────────────────────────────
 export type EasingFunction =
   | 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out'
@@ -730,11 +779,17 @@ export interface DesignSpec {
     overrides?: Record<string, string>;
   };
   /**
-   * Optional palette overlay. When set, palette.colors are merged on
-   * top of theme.colors before render. The two axes are orthogonal —
-   * any template can pair with any palette.
+   * Optional style overlays. Each axis is orthogonal — a design can
+   * mix any palette × type pack × effects pack on top of its theme.
+   * composeTheme() applies them in order before render.
    */
   palette?: {
+    ref: string;
+  };
+  type_pack?: {
+    ref: string;
+  };
+  effects_pack?: {
     ref: string;
   };
   layers?: Layer[];
