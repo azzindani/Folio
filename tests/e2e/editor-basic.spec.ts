@@ -220,7 +220,11 @@ test.describe('Editor — export', () => {
 
   test('PNG export item is present in export menu', async ({ page }) => {
     await page.locator('[data-action="export"]').click();
-    await expect(page.locator('[data-format="png"]')).toBeVisible();
+    // The export menu lists one PNG button per scale preset (×1/×2/×3/×4/300/600 DPI).
+    // Assert that at least one is visible.
+    const pngItems = page.locator('[data-format="png"]');
+    expect(await pngItems.count()).toBeGreaterThan(0);
+    await expect(pngItems.first()).toBeVisible();
   });
 
   test('HTML export item is present in export menu', async ({ page }) => {
