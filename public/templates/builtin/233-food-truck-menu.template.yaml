@@ -1,0 +1,510 @@
+_protocol: template/v1
+
+# Food truck menu — 1080×1620 portrait, sunset-glow theme.
+# Truck name + tagline, 6 menu items with descriptions,
+# specialty-of-the-day callout block, location/social footer.
+meta:
+  id: tmpl-food-truck-menu
+  name: Food Truck Menu
+  type: menu
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [menu, food-truck, casual, street-food, sunset, portrait]
+  description: "Food truck menu with 6 items, descriptions, prices, specialty-of-the-day callout, location and social media footer."
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  # ── Background gradient ───────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill:
+      type: linear
+      angle: 160
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  # ── Top decorative chevron ────────────────────────────────
+  - id: chevron
+    type: polygon
+    z: 1
+    points: "0,0 1080,0 1080,80 540,140 0,80"
+    fill: { type: solid, color: "$primary" }
+
+  # ── Masthead ──────────────────────────────────────────────
+  - id: tagline
+    type: text
+    z: 10
+    x: 80
+    y: 180
+    width: 920
+    height: 0
+    content: { type: plain, value: "GRUB ON WHEELS" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "$accent"
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  - id: truck-name
+    type: text
+    z: 11
+    x: 80
+    y: 230
+    width: 920
+    height: 0
+    content: { type: plain, value: "Smokestack & Skillet" }
+    style:
+      font_family: $heading
+      font_size: 78
+      font_weight: 800
+      color: "$text"
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.02
+
+  - id: truck-sub
+    type: text
+    z: 12
+    x: 80
+    y: 330
+    width: 920
+    height: 0
+    content: { type: plain, value: "wood-fired tacos · slow-smoked everything" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.3
+
+  # ── Specialty callout ─────────────────────────────────────
+  - id: special-bg
+    type: rect
+    z: 20
+    x: 60
+    y: 400
+    width: 960
+    height: 120
+    radius: 20
+    fill: { type: solid, color: "$primary" }
+
+  - id: special-eyebrow
+    type: text
+    z: 21
+    x: 60
+    y: 420
+    width: 960
+    height: 0
+    content: { type: plain, value: "TODAY'S SPECIAL" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+      opacity: 0.85
+
+  - id: special-name
+    type: text
+    z: 22
+    x: 60
+    y: 450
+    width: 960
+    height: 0
+    content: { type: plain, value: "Brisket Birria Tacos · $14" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+
+  # ── Item 1 — Pulled Pork Sliders ──────────────────────────
+  - id: i1-name
+    type: text
+    z: 30
+    x: 80
+    y: 580
+    width: 700
+    height: 0
+    content: { type: plain, value: "Pulled Pork Sliders" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: i1-price
+    type: text
+    z: 31
+    x: 80
+    y: 580
+    width: 920
+    height: 0
+    content: { type: plain, value: "$11" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      line_height: 1.3
+
+  - id: i1-desc
+    type: text
+    z: 32
+    x: 80
+    y: 620
+    width: 920
+    height: 0
+    content: { type: plain, value: "12-hour smoked pork shoulder · house pickles · brioche · 3 sliders" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.4
+
+  # ── Item 2 — Korean BBQ Tacos ─────────────────────────────
+  - id: i2-name
+    type: text
+    z: 40
+    x: 80
+    y: 690
+    width: 700
+    height: 0
+    content: { type: plain, value: "Korean BBQ Tacos" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: i2-price
+    type: text
+    z: 41
+    x: 80
+    y: 690
+    width: 920
+    height: 0
+    content: { type: plain, value: "$13" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      line_height: 1.3
+
+  - id: i2-desc
+    type: text
+    z: 42
+    x: 80
+    y: 730
+    width: 920
+    height: 0
+    content: { type: plain, value: "gochujang short rib · kimchi slaw · sesame · scallion · 3 tacos" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.4
+
+  # ── Item 3 — Loaded Burnt-End Fries ───────────────────────
+  - id: i3-name
+    type: text
+    z: 50
+    x: 80
+    y: 800
+    width: 700
+    height: 0
+    content: { type: plain, value: "Loaded Burnt-End Fries" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: i3-price
+    type: text
+    z: 51
+    x: 80
+    y: 800
+    width: 920
+    height: 0
+    content: { type: plain, value: "$12" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      line_height: 1.3
+
+  - id: i3-desc
+    type: text
+    z: 52
+    x: 80
+    y: 840
+    width: 920
+    height: 0
+    content: { type: plain, value: "hand-cut fries · brisket burnt ends · queso · pickled jalapeños" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.4
+
+  # ── Item 4 — Smash Burger ─────────────────────────────────
+  - id: i4-name
+    type: text
+    z: 60
+    x: 80
+    y: 910
+    width: 700
+    height: 0
+    content: { type: plain, value: "Double Smash Burger" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: i4-price
+    type: text
+    z: 61
+    x: 80
+    y: 910
+    width: 920
+    height: 0
+    content: { type: plain, value: "$13" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      line_height: 1.3
+
+  - id: i4-desc
+    type: text
+    z: 62
+    x: 80
+    y: 950
+    width: 920
+    height: 0
+    content: { type: plain, value: "two beef patties · american cheese · grilled onion · special sauce" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.4
+
+  # ── Item 5 — Veggie Mushroom Quesadilla ───────────────────
+  - id: i5-name
+    type: text
+    z: 70
+    x: 80
+    y: 1020
+    width: 700
+    height: 0
+    content: { type: plain, value: "Wild Mushroom Quesadilla" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: i5-price
+    type: text
+    z: 71
+    x: 80
+    y: 1020
+    width: 920
+    height: 0
+    content: { type: plain, value: "$10" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      line_height: 1.3
+
+  - id: i5-desc
+    type: text
+    z: 72
+    x: 80
+    y: 1060
+    width: 920
+    height: 0
+    content: { type: plain, value: "oyster + cremini mushrooms · oaxaca cheese · poblano · cilantro (v)" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.4
+
+  # ── Item 6 — Mac & Brisket ────────────────────────────────
+  - id: i6-name
+    type: text
+    z: 80
+    x: 80
+    y: 1130
+    width: 700
+    height: 0
+    content: { type: plain, value: "Brisket Mac Bowl" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      line_height: 1.3
+
+  - id: i6-price
+    type: text
+    z: 81
+    x: 80
+    y: 1130
+    width: 920
+    height: 0
+    content: { type: plain, value: "$14" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      line_height: 1.3
+
+  - id: i6-desc
+    type: text
+    z: 82
+    x: 80
+    y: 1170
+    width: 920
+    height: 0
+    content: { type: plain, value: "cavatappi · three-cheese sauce · chopped brisket · crispy onions" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text_muted"
+      line_height: 1.4
+
+  # ── Footer band ───────────────────────────────────────────
+  - id: footer-band
+    type: rect
+    z: 90
+    x: 0
+    y: 1320
+    width: 1080
+    height: 300
+    fill: { type: solid, color: "$primary" }
+
+  - id: footer-location-label
+    type: text
+    z: 91
+    x: 80
+    y: 1360
+    width: 920
+    height: 0
+    content: { type: plain, value: "TODAY @ " }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+      opacity: 0.8
+
+  - id: footer-location
+    type: text
+    z: 92
+    x: 80
+    y: 1400
+    width: 920
+    height: 0
+    content: { type: plain, value: "Mission Dolores Park · 11AM–3PM" }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.2
+
+  - id: footer-divider
+    type: rect
+    z: 93
+    x: 470
+    y: 1470
+    width: 140
+    height: 2
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.5
+
+  - id: footer-social
+    type: text
+    z: 94
+    x: 80
+    y: 1500
+    width: 920
+    height: 0
+    content: { type: plain, value: "@smokestackandskillet · smokestackandskillet.com" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.4
+      opacity: 0.9
+
+  - id: footer-cash
+    type: text
+    z: 95
+    x: 80
+    y: 1540
+    width: 920
+    height: 0
+    content: { type: plain, value: "cash · card · venmo · tap to pay" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.4
+      opacity: 0.7
+
+slots:
+  - { id: truck_name,      path: "layers[3].content.value",  type: text, hint: "Truck name",            default: "Smokestack & Skillet" }
+  - { id: today_special,   path: "layers[7].content.value",  type: text, hint: "Today's special",      default: "Brisket Birria Tacos · $14" }
+  - { id: today_location,  path: "layers[27].content.value", type: text, hint: "Location + hours",     default: "Mission Dolores Park · 11AM–3PM" }

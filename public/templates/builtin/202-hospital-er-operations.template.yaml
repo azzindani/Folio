@@ -1,0 +1,284 @@
+_protocol: template/v1
+
+# Hospital ER operations — 24-hour eyebrow, hero, 5 KPIs (patients, wait,
+# LWBS, admit, LOS), hourly arrivals line, triage donut, chief complaints
+# table, staff schedule table.
+meta:
+  id: tmpl-hospital-er-operations-report
+  name: Hospital ER · Operations Dashboard
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, healthcare, hospital, emergency, operations, interactive]
+  description: "Emergency department 24-hour dashboard: census, wait times, LWBS, admit rate, length of stay, triage levels, complaints, and staffing."
+
+document:
+  width: 1280
+  height: 2300
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: hourly_arrivals
+        type: inline
+        rows:
+          - { hour: "00", arrivals:  8 }
+          - { hour: "01", arrivals:  6 }
+          - { hour: "02", arrivals:  5 }
+          - { hour: "03", arrivals:  4 }
+          - { hour: "04", arrivals:  4 }
+          - { hour: "05", arrivals:  6 }
+          - { hour: "06", arrivals: 10 }
+          - { hour: "07", arrivals: 14 }
+          - { hour: "08", arrivals: 18 }
+          - { hour: "09", arrivals: 22 }
+          - { hour: "10", arrivals: 26 }
+          - { hour: "11", arrivals: 28 }
+          - { hour: "12", arrivals: 30 }
+          - { hour: "13", arrivals: 32 }
+          - { hour: "14", arrivals: 31 }
+          - { hour: "15", arrivals: 29 }
+          - { hour: "16", arrivals: 28 }
+          - { hour: "17", arrivals: 27 }
+          - { hour: "18", arrivals: 26 }
+          - { hour: "19", arrivals: 24 }
+          - { hour: "20", arrivals: 21 }
+          - { hour: "21", arrivals: 18 }
+          - { hour: "22", arrivals: 14 }
+          - { hour: "23", arrivals: 11 }
+      - id: triage_dist
+        type: inline
+        rows:
+          - { triage: "L1 Resuscitation", share_pct:  3.2, count:  15 }
+          - { triage: "L2 Emergent",      share_pct: 14.4, count:  68 }
+          - { triage: "L3 Urgent",        share_pct: 48.6, count: 230 }
+          - { triage: "L4 Less Urgent",   share_pct: 26.2, count: 124 }
+          - { triage: "L5 Non-Urgent",    share_pct:  7.6, count:  36 }
+      - id: top_complaints
+        type: inline
+        rows:
+          - { complaint: "Chest Pain",            volume: 62, avg_wait: 18, admit_rate: 42.6 }
+          - { complaint: "Abdominal Pain",        volume: 58, avg_wait: 34, admit_rate: 22.4 }
+          - { complaint: "Shortness of Breath",   volume: 46, avg_wait: 14, admit_rate: 48.2 }
+          - { complaint: "Laceration",            volume: 38, avg_wait: 42, admit_rate:  2.8 }
+          - { complaint: "Fever",                 volume: 36, avg_wait: 38, admit_rate: 12.4 }
+          - { complaint: "Headache",              volume: 32, avg_wait: 46, admit_rate:  8.6 }
+          - { complaint: "Back Pain",             volume: 28, avg_wait: 52, admit_rate:  4.2 }
+          - { complaint: "Fall / Trauma",         volume: 26, avg_wait: 22, admit_rate: 32.8 }
+          - { complaint: "Vomiting / Diarrhea",   volume: 24, avg_wait: 36, admit_rate: 14.6 }
+          - { complaint: "Altered Mental Status", volume: 22, avg_wait: 16, admit_rate: 58.4 }
+      - id: staff_schedule
+        type: inline
+        rows:
+          - { shift: "07:00-11:00 Day A",   mds: 6, rns: 18, techs:  8, capacity_pct: 82 }
+          - { shift: "11:00-15:00 Day B",   mds: 8, rns: 22, techs: 10, capacity_pct: 94 }
+          - { shift: "15:00-19:00 Eve A",   mds: 8, rns: 24, techs: 10, capacity_pct: 98 }
+          - { shift: "19:00-23:00 Eve B",   mds: 7, rns: 22, techs:  9, capacity_pct: 92 }
+          - { shift: "23:00-03:00 Night A", mds: 5, rns: 16, techs:  6, capacity_pct: 68 }
+          - { shift: "03:00-07:00 Night B", mds: 4, rns: 12, techs:  5, capacity_pct: 54 }
+          - { shift: "Overlap Float",       mds: 2, rns:  6, techs:  3, capacity_pct: 76 }
+          - { shift: "Charge / Triage",     mds: 1, rns:  4, techs:  2, capacity_pct: 88 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "ST MARY'S MEDICAL CENTER · ER OPERATIONS · 24H ENDING 06:00"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**Emergency Department — Operations Dashboard**\n*24-hour census, wait times, triage acuity, complaint mix, and staffing.*"
+
+      - id: kpi-patients
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Patients Seen
+        value: 473
+        format: number
+        delta: 6.4
+        delta_format: percent
+
+      - id: kpi-wait
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Avg Wait (min)
+        value: 32
+        format: number
+        delta: -8.2
+        delta_format: percent
+
+      - id: kpi-lwbs
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: LWBS %
+        value: 2.4
+        format: percent
+        decimals: 1
+        delta: -0.6
+        delta_format: percent
+
+      - id: kpi-admit
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Admit Rate %
+        value: 18.8
+        format: percent
+        decimals: 1
+        delta: 1.2
+        delta_format: percent
+
+      - id: kpi-los
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Avg LOS (hr)
+        value: 4.6
+        format: number
+        decimals: 1
+        delta: -0.4
+        delta_format: percent
+
+      - id: section-arrivals
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Hourly Arrival Rate — Past 24 Hours**"
+
+      - id: chart-arrivals
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 400
+        chart_type: line
+        data_ref: hourly_arrivals
+        x_field: hour
+        y_field: arrivals
+        title: ER Arrivals per Hour (0-23)
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-triage
+        type: rich_text
+        x: 60
+        y: 900
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Triage Acuity Distribution**"
+
+      - id: chart-triage
+        type: interactive_chart
+        x: 60
+        y: 960
+        width: 400
+        height: 400
+        chart_type: donut
+        data_ref: triage_dist
+        x_field: triage
+        y_field: share_pct
+        title: ESI Triage Levels
+        legend: true
+        animate: true
+
+      - id: tbl-complaints
+        type: interactive_table
+        x: 500
+        y: 960
+        width: 720
+        height: 400
+        data_ref: top_complaints
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: complaint,   title: Chief Complaint, width: 280, sortable: true }
+          - { field: volume,      title: Volume,          width: 140, sortable: true, formatter: number,  align: right }
+          - { field: avg_wait,    title: Wait (min),      width: 140, sortable: true, formatter: number,  align: right }
+          - { field: admit_rate,  title: Admit %,         width: 160, sortable: true, formatter: percent, align: right }
+
+      - id: section-staff
+        type: rich_text
+        x: 60
+        y: 1400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Staffing Schedule — Current 24-Hour Cycle**"
+
+      - id: tbl-staff
+        type: interactive_table
+        x: 60
+        y: 1460
+        width: 1160
+        height: 540
+        data_ref: staff_schedule
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: shift,         title: Shift,             width: 360, sortable: true, formatter: badge }
+          - { field: mds,           title: MDs,               width: 180, sortable: true, formatter: number,  align: right }
+          - { field: rns,           title: RNs,               width: 180, sortable: true, formatter: number,  align: right }
+          - { field: techs,         title: Techs,             width: 180, sortable: true, formatter: number,  align: right }
+          - { field: capacity_pct,  title: Capacity Used %,   width: 260, sortable: true, formatter: percent, align: right }
+
+slots:
+  - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**Emergency Department — Operations Dashboard**\n*24-hour census, wait times, triage acuity, complaint mix, and staffing.*" }
+  - { id: report_eyebrow,    path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",         default: "ST MARY'S MEDICAL CENTER · ER OPERATIONS · 24H ENDING 06:00" }
+  - { id: arrivals_section,  path: "pages[0].layers[7].content",  type: text, hint: "Arrivals heading",     default: "**Hourly Arrival Rate — Past 24 Hours**" }
+  - { id: triage_section,    path: "pages[0].layers[9].content",  type: text, hint: "Triage heading",       default: "**Triage Acuity Distribution**" }
+  - { id: staff_section,     path: "pages[0].layers[12].content", type: text, hint: "Staffing heading",     default: "**Staffing Schedule — Current 24-Hour Cycle**" }

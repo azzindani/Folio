@@ -1,0 +1,285 @@
+_protocol: template/v1
+
+# Retail store sales — store eyebrow, hero, 5 KPIs (sales, transactions, AOV,
+# conversion, basket), hourly traffic+sales line, top categories table,
+# inventory health table, promotion performance bar.
+meta:
+  id: tmpl-retail-store-sales-report
+  name: Retail · Store Sales
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, retail, sales, store, merchandising, interactive]
+  description: "Store-level retail report: sales, transactions, AOV, conversion, basket size, hourly traffic, category mix, inventory health, promotion lift."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: hourly_sales
+        type: inline
+        rows:
+          - { hour: "10:00", traffic:  82, sales:  1840 }
+          - { hour: "11:00", traffic: 124, sales:  3260 }
+          - { hour: "12:00", traffic: 186, sales:  5420 }
+          - { hour: "13:00", traffic: 168, sales:  4880 }
+          - { hour: "14:00", traffic: 142, sales:  4120 }
+          - { hour: "15:00", traffic: 178, sales:  5180 }
+          - { hour: "16:00", traffic: 224, sales:  6840 }
+          - { hour: "17:00", traffic: 286, sales:  9240 }
+          - { hour: "18:00", traffic: 342, sales: 11680 }
+          - { hour: "19:00", traffic: 318, sales: 10420 }
+          - { hour: "20:00", traffic: 242, sales:  7860 }
+          - { hour: "21:00", traffic: 168, sales:  4920 }
+      - id: top_categories
+        type: inline
+        rows:
+          - { category: "Women's Apparel",  units: 642, revenue: 18420, margin_pct: 42.6 }
+          - { category: "Men's Apparel",    units: 484, revenue: 14860, margin_pct: 41.2 }
+          - { category: "Footwear",         units: 326, revenue: 16240, margin_pct: 48.4 }
+          - { category: "Accessories",      units: 412, revenue:  8420, margin_pct: 56.8 }
+          - { category: "Beauty & Skincare", units: 286, revenue:  6840, margin_pct: 52.4 }
+          - { category: "Home & Living",    units: 184, revenue:  7280, margin_pct: 44.2 }
+          - { category: "Activewear",       units: 248, revenue:  9620, margin_pct: 46.8 }
+          - { category: "Denim",            units: 162, revenue:  8420, margin_pct: 48.6 }
+          - { category: "Outerwear",        units:  98, revenue: 12840, margin_pct: 52.2 }
+          - { category: "Kids & Baby",      units: 218, revenue:  5680, margin_pct: 38.4 }
+      - id: inventory_health
+        type: inline
+        rows:
+          - { bucket: "In Stock",            skus: 4286, value:  642000, turn: 4.8, stockouts:   0 }
+          - { bucket: "Low Stock",           skus:  642, value:   84200, turn: 6.2, stockouts:  18 }
+          - { bucket: "Out of Stock",        skus:  186, value:       0, turn: 0.0, stockouts: 186 }
+          - { bucket: "Overstock",           skus:  342, value:  148600, turn: 1.4, stockouts:   0 }
+          - { bucket: "Aged 90+ Days",       skus:  214, value:   62800, turn: 0.6, stockouts:   0 }
+      - id: promo_performance
+        type: inline
+        rows:
+          - { promo: "BOGO Denim",          discount_spend: 4280, incremental_rev: 18420 }
+          - { promo: "20% Off Footwear",    discount_spend: 3640, incremental_rev: 14860 }
+          - { promo: "Beauty Bundle $25",   discount_spend: 1820, incremental_rev:  9240 }
+          - { promo: "Loyalty 2X Points",   discount_spend:  840, incremental_rev: 11280 }
+          - { promo: "Outerwear -30%",      discount_spend: 5240, incremental_rev: 16480 }
+          - { promo: "Kids 2-for-$40",      discount_spend: 1240, incremental_rev:  6820 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "STORE #0428 · UNION SQUARE · DAILY SALES · 2026-05-17"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**Store Sales Dashboard — Daily**\n*Sales, traffic, conversion, basket, category mix, inventory health, and promotion lift.*"
+
+      - id: kpi-sales
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Sales ($)
+        value: 75660
+        format: currency
+        currency: USD
+        delta: 12.4
+        delta_format: percent
+
+      - id: kpi-txns
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Transactions
+        value: 1248
+        format: number
+        delta: 8.6
+        delta_format: percent
+
+      - id: kpi-aov
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: AOV ($)
+        value: 60.6
+        format: currency
+        currency: USD
+        delta: 3.4
+        delta_format: percent
+
+      - id: kpi-conv
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Conversion %
+        value: 48.4
+        format: percent
+        decimals: 1
+        delta: 2.2
+        delta_format: percent
+
+      - id: kpi-basket
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Items / Basket
+        value: 2.86
+        format: number
+        decimals: 2
+        delta: 4.8
+        delta_format: percent
+
+      - id: section-hourly
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Hourly Traffic & Sales — Trading Hours**"
+
+      - id: chart-hourly
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 400
+        chart_type: line
+        data_ref: hourly_sales
+        x_field: hour
+        y_field: sales
+        title: Hourly Sales (USD) — 10:00 to 21:00
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-categories
+        type: rich_text
+        x: 60
+        y: 900
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top Categories — Units, Revenue, Margin**"
+
+      - id: tbl-categories
+        type: interactive_table
+        x: 60
+        y: 960
+        width: 1160
+        height: 540
+        data_ref: top_categories
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: category,    title: Category,   width: 360, sortable: true, formatter: badge }
+          - { field: units,       title: Units,      width: 200, sortable: true, formatter: number,   align: right }
+          - { field: revenue,     title: Revenue,    width: 240, sortable: true, formatter: currency, align: right }
+          - { field: margin_pct,  title: Margin %,   width: 220, sortable: true, formatter: percent,  align: right }
+
+      - id: section-inventory
+        type: rich_text
+        x: 60
+        y: 1540
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Inventory Health by Bucket**"
+
+      - id: tbl-inventory
+        type: interactive_table
+        x: 60
+        y: 1600
+        width: 1160
+        height: 340
+        data_ref: inventory_health
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: bucket,      title: Bucket,         width: 300, sortable: true, formatter: badge }
+          - { field: skus,        title: SKUs,           width: 180, sortable: true, formatter: number,   align: right }
+          - { field: value,       title: Inv Value,      width: 220, sortable: true, formatter: currency, align: right }
+          - { field: turn,        title: Turn (x/yr),    width: 200, sortable: true, formatter: number,   align: right }
+          - { field: stockouts,   title: Stockouts,      width: 220, sortable: true, formatter: number,   align: right }
+
+      - id: section-promo
+        type: rich_text
+        x: 60
+        y: 1980
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Promotion Performance — Discount Spend vs Incremental Revenue**"
+
+      - id: chart-promo
+        type: interactive_chart
+        x: 60
+        y: 2040
+        width: 1160
+        height: 320
+        chart_type: bar
+        data_ref: promo_performance
+        x_field: promo
+        y_field: incremental_rev
+        title: Promo Spend vs Incremental Revenue (USD)
+        legend: true
+        grid: true
+        animate: true
+
+slots:
+  - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",        default: "**Store Sales Dashboard — Daily**\n*Sales, traffic, conversion, basket, category mix, inventory health, and promotion lift.*" }
+  - { id: report_eyebrow,      path: "pages[0].layers[0].content",  type: text, hint: "Store eyebrow",       default: "STORE #0428 · UNION SQUARE · DAILY SALES · 2026-05-17" }
+  - { id: hourly_section,      path: "pages[0].layers[7].content",  type: text, hint: "Hourly heading",      default: "**Hourly Traffic & Sales — Trading Hours**" }
+  - { id: categories_section,  path: "pages[0].layers[9].content",  type: text, hint: "Categories heading",  default: "**Top Categories — Units, Revenue, Margin**" }
+  - { id: inventory_section,   path: "pages[0].layers[11].content", type: text, hint: "Inventory heading",   default: "**Inventory Health by Bucket**" }
+  - { id: promo_section,       path: "pages[0].layers[13].content", type: text, hint: "Promo heading",       default: "**Promotion Performance — Discount Spend vs Incremental Revenue**" }

@@ -1,0 +1,16 @@
+_protocol: type-pack/v1
+id: cjk-friendly
+name: CJK Friendly
+version: "1.0.0"
+tags: [cjk, i18n, multi-script, noto, international, accessible]
+description: "Noto Sans across all slots — multi-script coverage for Latin, Chinese, Japanese, Korean."
+families:
+  heading: "Noto Sans"
+  body:    "Noto Sans"
+  mono:    "Noto Sans Mono"
+  accent:  "Noto Sans"
+scale:
+  h1:
+    size: 64
+    weight: 700
+    line_height: 1.3

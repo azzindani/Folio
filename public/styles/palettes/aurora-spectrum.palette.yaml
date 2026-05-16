@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: aurora-spectrum
+name: Aurora Spectrum
+version: "1.0.0"
+tags: [gradient, aurora, vibrant, dark, ethereal]
+description: "Deep purple sliding through magenta into emerald and cyan with cream — borealis sky waves."
+colors:
+  background: "#0E0820"
+  surface:    "#1A1230"
+  surface_2:  "#2A1E48"
+  primary:    "#3CD4A2"
+  secondary:  "#C84EAE"
+  accent:     "#48C0E0"
+  text:       "#F2E8F8"
+  text_muted: "#A892BC"
+  border:     "#3C2C58"
+  success:    "#3CD4A2"
+  warning:    "#E8B448"
+  danger:     "#E84E6A"

@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: koi-pond
+name: Koi Pond
+version: "1.0.0"
+tags: [animal, koi, fish, japanese, tranquil]
+description: "Pond green, coral orange and lily pink against cream and ink black — serene garden waters."
+colors:
+  background: "#F4F1E4"
+  surface:    "#E8E4D0"
+  surface_2:  "#D2D2B4"
+  primary:    "#3E6A4A"
+  secondary:  "#D86840"
+  accent:     "#E89AA4"
+  text:       "#141818"
+  text_muted: "#52605A"
+  border:     "#B6BCA0"
+  success:    "#3E6A4A"
+  warning:    "#D88A38"
+  danger:     "#B83A2C"

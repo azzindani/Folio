@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: italian-trattoria
+name: Italian Trattoria
+version: "1.0.0"
+tags: [cuisine, italian, rustic, hospitality, herb]
+description: "Basil green, tomato red and olive with walnut on cream — checkered-cloth trattoria warmth."
+colors:
+  background: "#F8F1DE"
+  surface:    "#EEE3C8"
+  surface_2:  "#D8CAA4"
+  primary:    "#C03028"
+  secondary:  "#3E5A2A"
+  accent:     "#7A5230"
+  text:       "#221A12"
+  text_muted: "#5E4E38"
+  border:     "#C2B080"
+  success:    "#3E5A2A"
+  warning:    "#C48A22"
+  danger:     "#C03028"

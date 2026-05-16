@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: sunrise-gradient
+name: Sunrise Gradient
+version: "1.0.0"
+tags: [gradient, sunrise, warm, optimistic, sky]
+description: "Peach, coral and gold ascending into indigo dawn on cream — daybreak horizon glow."
+colors:
+  background: "#FCF1E4"
+  surface:    "#F8E4CE"
+  surface_2:  "#F2C9A0"
+  primary:    "#E26A4A"
+  secondary:  "#2E2F66"
+  accent:     "#E8A02C"
+  text:       "#1F1A38"
+  text_muted: "#735A56"
+  border:     "#E4C29C"
+  success:    "#5A8A5C"
+  warning:    "#E8A02C"
+  danger:     "#C2342A"

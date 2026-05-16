@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: peacock-jewel
+name: Peacock Jewel
+version: "1.0.0"
+tags: [animal, peacock, jewel-tone, regal, ornate]
+description: "Teal plumage, emerald, sapphire and gold on cream — opulent peacock-tail luster."
+colors:
+  background: "#FBF4E4"
+  surface:    "#F2E8D0"
+  surface_2:  "#E5D6B2"
+  primary:    "#0E5C6E"
+  secondary:  "#127A5A"
+  accent:     "#B8861C"
+  text:       "#0A2A33"
+  text_muted: "#4A6A72"
+  border:     "#C8B894"
+  success:    "#127A5A"
+  warning:    "#B8861C"
+  danger:     "#9A2A38"
