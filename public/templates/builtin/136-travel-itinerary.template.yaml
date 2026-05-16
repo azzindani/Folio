@@ -1,0 +1,215 @@
+_protocol: template/v1
+
+# 5-page travel itinerary — 1240×1754 A4 portrait, sunset-glow theme.
+# Cover (destination + dates) → 3 day-by-day schedules → packing list + emergency contacts.
+meta:
+  id: tmpl-travel-itinerary-tokyo
+  name: Travel Itinerary · Tokyo (5 pages)
+  type: carousel
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [carousel, travel, itinerary, tokyo, sunset, a4]
+  description: "Five-page travel itinerary with cover, three day-by-day schedules with morning/afternoon/evening blocks, and packing list with emergency contacts."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+pages:
+  # ── Page 1 · Cover ──────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: linear, angle: 165, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 50 }, { color: "$background", position: 100 }] } }
+      - { id: sun, type: circle, z: 1, cx: 940, cy: 380, rx: 220, ry: 220, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.55 }
+      - { id: mt-1, type: rect, z: 2, x: 0, y: 880, width: 600, height: 320, transform: { rotate: -8 }, fill: { type: solid, color: "$text" }, opacity: 0.25 }
+      - { id: mt-2, type: rect, z: 3, x: 400, y: 900, width: 800, height: 300, transform: { rotate: 6 }, fill: { type: solid, color: "$text" }, opacity: 0.35 }
+      - { id: kicker-pill, type: rect, z: 10, x: 100, y: 140, width: 220, height: 40, radius: 20, fill: { type: solid, color: "rgba(255,255,255,0.9)" } }
+      - { id: kicker, type: text, z: 11, x: 100, y: 152, width: 220, height: 0, content: { type: plain, value: "ITINERARY · 2026" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center } }
+      - { id: trip-kicker, type: text, z: 20, x: 100, y: 320, width: 1040, height: 0, content: { type: plain, value: "A LONG WEEKEND IN" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, text_transform: uppercase, opacity: 0.9 } }
+      - { id: city, type: text, z: 21, x: 100, y: 400, width: 1040, height: 0, content: { type: plain, value: "TOKYO" }, style: { font_family: $heading, font_size: 240, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.04 } }
+      - { id: city-jp, type: text, z: 22, x: 100, y: 680, width: 1040, height: 0, content: { type: plain, value: "東京  ·  TŌKYŌ" }, style: { font_family: $heading, font_size: 32, font_style: italic, color: "#FFFFFF", opacity: 0.85, letter_spacing: 0.4 } }
+      - { id: dates-card, type: rect, z: 30, x: 100, y: 1240, width: 1040, height: 200, radius: 16, fill: { type: solid, color: "rgba(255,255,255,0.95)" } }
+      - { id: from-l, type: text, z: 31, x: 140, y: 1280, width: 280, height: 0, content: { type: plain, value: "DEPART" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: from-v, type: text, z: 32, x: 140, y: 1310, width: 280, height: 0, content: { type: plain, value: "Thu · Oct 8" }, style: { font_family: $heading, font_size: 36, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: from-d, type: text, z: 33, x: 140, y: 1370, width: 280, height: 0, content: { type: plain, value: "21:40 · LHR T2" }, style: { font_family: $mono, font_size: 14, color: $primary, letter_spacing: 0.3 } }
+      - { id: arrow, type: text, z: 34, x: 460, y: 1310, width: 100, height: 0, content: { type: plain, value: "→" }, style: { font_family: $heading, font_size: 40, color: $primary, text_align: center } }
+      - { id: to-l, type: text, z: 31, x: 580, y: 1280, width: 280, height: 0, content: { type: plain, value: "RETURN" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: to-v, type: text, z: 32, x: 580, y: 1310, width: 280, height: 0, content: { type: plain, value: "Mon · Oct 12" }, style: { font_family: $heading, font_size: 36, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: to-d, type: text, z: 33, x: 580, y: 1370, width: 280, height: 0, content: { type: plain, value: "11:20 · HND" }, style: { font_family: $mono, font_size: 14, color: $primary, letter_spacing: 0.3 } }
+      - { id: nights-pill, type: rect, z: 40, x: 900, y: 1300, width: 200, height: 80, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: nights-v, type: text, z: 41, x: 900, y: 1308, width: 200, height: 0, content: { type: plain, value: "4 nights" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF", text_align: center } }
+      - { id: nights-l, type: text, z: 42, x: 900, y: 1352, width: 200, height: 0, content: { type: plain, value: "3 full days" }, style: { font_family: $mono, font_size: 12, color: "#FFFFFF", text_align: center, opacity: 0.9, letter_spacing: 0.3 } }
+      - { id: traveler-card, type: rect, z: 50, x: 100, y: 1480, width: 1040, height: 80, radius: 12, fill: { type: solid, color: "rgba(255,255,255,0.2)" }, stroke: { color: "rgba(255,255,255,0.4)", width: 1 } }
+      - { id: traveler-l, type: text, z: 51, x: 140, y: 1497, width: 400, height: 0, content: { type: plain, value: "TRAVELERS" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: traveler-v, type: text, z: 52, x: 140, y: 1518, width: 600, height: 0, content: { type: plain, value: "Sara & Felix Holm" }, style: { font_family: $heading, font_size: 24, font_weight: 700, color: "#FFFFFF", line_height: 1.3 } }
+      - { id: hotel, type: text, z: 53, x: 760, y: 1518, width: 360, height: 0, content: { type: plain, value: "Hotel Niwa · Jimbocho" }, style: { font_family: $body, font_size: 16, font_style: italic, color: "#FFFFFF", text_align: right, opacity: 0.85 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1700, width: 140, height: 0, content: { type: plain, value: "OVERVIEW  ·  1/5" }, style: { font_family: $mono, font_size: 12, color: "#FFFFFF", text_align: right, opacity: 0.7, letter_spacing: 0.4 } }
+
+  # ── Page 2 · Day 1 ──────────────────────────────────────────
+  - id: day-1
+    label: Day 1 · Jimbocho & Asakusa
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: day-tag, type: text, z: 10, x: 100, y: 100, width: 600, height: 0, content: { type: plain, value: "DAY 01  ·  FRIDAY OCT 9" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Old books, old temple." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: morn-block, type: rect, z: 20, x: 100, y: 320, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: morn-tab, type: rect, z: 21, x: 100, y: 320, width: 200, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: morn-tab-t, type: text, z: 22, x: 100, y: 338, width: 200, height: 0, content: { type: plain, value: "MORNING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: morn-time, type: text, z: 23, x: 320, y: 338, width: 400, height: 0, content: { type: plain, value: "08:30 — 12:00" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.3 } }
+      - { id: morn-1, type: text, z: 24, x: 140, y: 420, width: 1000, height: 0, content: { type: plain, value: "→ Breakfast at the hotel café · order the matcha porridge" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-2, type: text, z: 25, x: 140, y: 480, width: 1000, height: 0, content: { type: plain, value: "→ Walk the Jimbocho secondhand bookshop street" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-3, type: text, z: 26, x: 140, y: 540, width: 1000, height: 0, content: { type: plain, value: "→ Coffee stop at Glitch Coffee · single-origin pour-over" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-note, type: text, z: 27, x: 140, y: 620, width: 1000, height: 0, content: { type: plain, value: "Most shops open at 10:00 — start at the cafés first." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: aft-block, type: rect, z: 30, x: 100, y: 740, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: aft-tab, type: rect, z: 31, x: 100, y: 740, width: 200, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: aft-tab-t, type: text, z: 32, x: 100, y: 758, width: 200, height: 0, content: { type: plain, value: "AFTERNOON" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: aft-time, type: text, z: 33, x: 320, y: 758, width: 400, height: 0, content: { type: plain, value: "13:00 — 17:30" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.3 } }
+      - { id: aft-1, type: text, z: 34, x: 140, y: 840, width: 1000, height: 0, content: { type: plain, value: "→ Lunch at Kanda Yabusoba · soba on tatami, no menu English" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-2, type: text, z: 35, x: 140, y: 900, width: 1000, height: 0, content: { type: plain, value: "→ Senso-ji temple at Asakusa · Hozomon gate, the pagoda" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-3, type: text, z: 36, x: 140, y: 960, width: 1000, height: 0, content: { type: plain, value: "→ Walk Nakamise-dori for ningyo-yaki and senbei to-go" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-note, type: text, z: 37, x: 140, y: 1040, width: 1000, height: 0, content: { type: plain, value: "Take the Ginza line from Kanda to Asakusa, ~12 min." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: eve-block, type: rect, z: 40, x: 100, y: 1160, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: eve-tab, type: rect, z: 41, x: 100, y: 1160, width: 200, height: 60, fill: { type: solid, color: "$secondary" } }
+      - { id: eve-tab-t, type: text, z: 42, x: 100, y: 1178, width: 200, height: 0, content: { type: plain, value: "EVENING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: eve-time, type: text, z: 43, x: 320, y: 1178, width: 400, height: 0, content: { type: plain, value: "18:30 — late" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.3, opacity: 0.9 } }
+      - { id: eve-1, type: text, z: 44, x: 140, y: 1260, width: 1000, height: 0, content: { type: plain, value: "→ Sunset on the Sumida riverboat back to Hama-rikyu" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-2, type: text, z: 45, x: 140, y: 1320, width: 1000, height: 0, content: { type: plain, value: "→ Dinner at Tonkatsu Maisen, Aoyama (reservation 19:45)" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-3, type: text, z: 46, x: 140, y: 1380, width: 1000, height: 0, content: { type: plain, value: "→ Nightcap at Bar Trench, Ebisu · last train back at 00:14" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-note, type: text, z: 47, x: 140, y: 1460, width: 1000, height: 0, content: { type: plain, value: "Reservation for Maisen confirmed under Holm/2." }, style: { font_family: $body, font_size: 15, font_style: italic, color: "#FFFFFF", line_height: 1.6, opacity: 0.85 } }
+      - { id: pn, type: text, z: 60, x: 100, y: 1700, width: 1040, height: 0, content: { type: plain, value: "DAY 01  ·  JIMBOCHO + ASAKUSA  ·  ITINERARY 2/5" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 3 · Day 2 ──────────────────────────────────────────
+  - id: day-2
+    label: Day 2 · Yanaka & Ueno
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: day-tag, type: text, z: 10, x: 100, y: 100, width: 600, height: 0, content: { type: plain, value: "DAY 02  ·  SATURDAY OCT 10" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Slow streets & a museum." }, style: { font_family: $heading, font_size: 52, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: morn-block, type: rect, z: 20, x: 100, y: 320, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: morn-tab, type: rect, z: 21, x: 100, y: 320, width: 200, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: morn-tab-t, type: text, z: 22, x: 100, y: 338, width: 200, height: 0, content: { type: plain, value: "MORNING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: morn-time, type: text, z: 23, x: 320, y: 338, width: 400, height: 0, content: { type: plain, value: "08:00 — 12:30" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.3 } }
+      - { id: morn-1, type: text, z: 24, x: 140, y: 420, width: 1000, height: 0, content: { type: plain, value: "→ Breakfast at Kayaba Coffee · old Yanaka kissaten" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-2, type: text, z: 25, x: 140, y: 480, width: 1000, height: 0, content: { type: plain, value: "→ Walk through Yanaka cemetery and into Nezu shrine" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-3, type: text, z: 26, x: 140, y: 540, width: 1000, height: 0, content: { type: plain, value: "→ Browse the indie ceramic shops along Yanaka Ginza" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-note, type: text, z: 27, x: 140, y: 620, width: 1000, height: 0, content: { type: plain, value: "Saturday morning is the best time — shops open early, fewer tourists." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: aft-block, type: rect, z: 30, x: 100, y: 740, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: aft-tab, type: rect, z: 31, x: 100, y: 740, width: 200, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: aft-tab-t, type: text, z: 32, x: 100, y: 758, width: 200, height: 0, content: { type: plain, value: "AFTERNOON" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: aft-time, type: text, z: 33, x: 320, y: 758, width: 400, height: 0, content: { type: plain, value: "13:00 — 18:00" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.3 } }
+      - { id: aft-1, type: text, z: 34, x: 140, y: 840, width: 1000, height: 0, content: { type: plain, value: "→ Lunch at Hantei · 100-year-old kushiage house" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-2, type: text, z: 35, x: 140, y: 900, width: 1000, height: 0, content: { type: plain, value: "→ Tokyo National Museum at Ueno · book Honkan + Heiseikan" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-3, type: text, z: 36, x: 140, y: 960, width: 1000, height: 0, content: { type: plain, value: "→ Kayanoya for dashi shopping in Tokyo Midtown after" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-note, type: text, z: 37, x: 140, y: 1040, width: 1000, height: 0, content: { type: plain, value: "Pre-purchase museum tickets — door queues run 40 minutes." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: eve-block, type: rect, z: 40, x: 100, y: 1160, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: eve-tab, type: rect, z: 41, x: 100, y: 1160, width: 200, height: 60, fill: { type: solid, color: "$secondary" } }
+      - { id: eve-tab-t, type: text, z: 42, x: 100, y: 1178, width: 200, height: 0, content: { type: plain, value: "EVENING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: eve-time, type: text, z: 43, x: 320, y: 1178, width: 400, height: 0, content: { type: plain, value: "18:30 — late" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.3, opacity: 0.9 } }
+      - { id: eve-1, type: text, z: 44, x: 140, y: 1260, width: 1000, height: 0, content: { type: plain, value: "→ Omakase at Sushi Tokami (20:00) · counter reserved" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-2, type: text, z: 45, x: 140, y: 1320, width: 1000, height: 0, content: { type: plain, value: "→ Stroll the Ginza neon, peek at Wako window" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-3, type: text, z: 46, x: 140, y: 1380, width: 1000, height: 0, content: { type: plain, value: "→ Whisky on the 41st floor of Park Hotel Tokyo" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-note, type: text, z: 47, x: 140, y: 1460, width: 1000, height: 0, content: { type: plain, value: "Tokami requires cash · ¥48,000pp confirmed." }, style: { font_family: $body, font_size: 15, font_style: italic, color: "#FFFFFF", line_height: 1.6, opacity: 0.85 } }
+      - { id: pn, type: text, z: 60, x: 100, y: 1700, width: 1040, height: 0, content: { type: plain, value: "DAY 02  ·  YANAKA + UENO  ·  ITINERARY 3/5" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 4 · Day 3 ──────────────────────────────────────────
+  - id: day-3
+    label: Day 3 · Shibuya & Daikanyama
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: day-tag, type: text, z: 10, x: 100, y: 100, width: 600, height: 0, content: { type: plain, value: "DAY 03  ·  SUNDAY OCT 11" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Bookshops & a long lunch." }, style: { font_family: $heading, font_size: 52, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: morn-block, type: rect, z: 20, x: 100, y: 320, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: morn-tab, type: rect, z: 21, x: 100, y: 320, width: 200, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: morn-tab-t, type: text, z: 22, x: 100, y: 338, width: 200, height: 0, content: { type: plain, value: "MORNING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: morn-time, type: text, z: 23, x: 320, y: 338, width: 400, height: 0, content: { type: plain, value: "09:00 — 13:00" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.3 } }
+      - { id: morn-1, type: text, z: 24, x: 140, y: 420, width: 1000, height: 0, content: { type: plain, value: "→ Breakfast at Fuglen Tomigaya · Norwegian-Japanese kissa" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-2, type: text, z: 25, x: 140, y: 480, width: 1000, height: 0, content: { type: plain, value: "→ Stroll the Yoyogi Park hanging-out culture (Sunday only)" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-3, type: text, z: 26, x: 140, y: 540, width: 1000, height: 0, content: { type: plain, value: "→ Tsutaya Daikanyama · the famous T-site bookshops" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: morn-note, type: text, z: 27, x: 140, y: 620, width: 1000, height: 0, content: { type: plain, value: "Bring an empty tote — books here are heavy and hard to resist." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: aft-block, type: rect, z: 30, x: 100, y: 740, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: aft-tab, type: rect, z: 31, x: 100, y: 740, width: 200, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: aft-tab-t, type: text, z: 32, x: 100, y: 758, width: 200, height: 0, content: { type: plain, value: "AFTERNOON" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: aft-time, type: text, z: 33, x: 320, y: 758, width: 400, height: 0, content: { type: plain, value: "13:30 — 18:30" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.3 } }
+      - { id: aft-1, type: text, z: 34, x: 140, y: 840, width: 1000, height: 0, content: { type: plain, value: "→ Long lunch at Pignon, Yoyogi-Hachiman (no reservation)" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-2, type: text, z: 35, x: 140, y: 900, width: 1000, height: 0, content: { type: plain, value: "→ Walk to Meiji Jingu shrine · forested approach" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-3, type: text, z: 36, x: 140, y: 960, width: 1000, height: 0, content: { type: plain, value: "→ Cross the Shibuya scramble at golden hour, hit Loft" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: aft-note, type: text, z: 37, x: 140, y: 1040, width: 1000, height: 0, content: { type: plain, value: "Pignon fills up by 13:00 — arrive at 13:30 for the 14:00 second seating." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: eve-block, type: rect, z: 40, x: 100, y: 1160, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: eve-tab, type: rect, z: 41, x: 100, y: 1160, width: 200, height: 60, fill: { type: solid, color: "$secondary" } }
+      - { id: eve-tab-t, type: text, z: 42, x: 100, y: 1178, width: 200, height: 0, content: { type: plain, value: "EVENING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: eve-time, type: text, z: 43, x: 320, y: 1178, width: 400, height: 0, content: { type: plain, value: "19:00 — late" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.3, opacity: 0.9 } }
+      - { id: eve-1, type: text, z: 44, x: 140, y: 1260, width: 1000, height: 0, content: { type: plain, value: "→ Dinner at Den · Hiroyasu Kawate's modern kaiseki" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-2, type: text, z: 45, x: 140, y: 1320, width: 1000, height: 0, content: { type: plain, value: "→ Sing one song badly at Karaoke Kan (final-night ritual)" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-3, type: text, z: 46, x: 140, y: 1380, width: 1000, height: 0, content: { type: plain, value: "→ Last drink at Bar Benfiddich · Yamazaki neat" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: eve-note, type: text, z: 47, x: 140, y: 1460, width: 1000, height: 0, content: { type: plain, value: "Den at 19:00 sharp — they will release the seat after 19:15." }, style: { font_family: $body, font_size: 15, font_style: italic, color: "#FFFFFF", line_height: 1.6, opacity: 0.85 } }
+      - { id: pn, type: text, z: 60, x: 100, y: 1700, width: 1040, height: 0, content: { type: plain, value: "DAY 03  ·  SHIBUYA + DAIKANYAMA  ·  ITINERARY 4/5" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 5 · Packing + Emergency ────────────────────────────
+  - id: packing
+    label: Packing & Emergency
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: tag, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "BEFORE YOU GO  ·  EMERGENCY INFO" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Pack & prepare." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: pack-label, type: text, z: 20, x: 100, y: 320, width: 1040, height: 0, content: { type: plain, value: "PACKING LIST · OCTOBER WEATHER (12-22°C)" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: pack-rule, type: rect, z: 21, x: 100, y: 360, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: col-1-h, type: text, z: 30, x: 100, y: 400, width: 320, height: 0, content: { type: plain, value: "CLOTHING" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: c1-1, type: text, z: 31, x: 100, y: 440, width: 320, height: 0, content: { type: plain, value: "☐  4 shirts (1 button-down)" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c1-2, type: text, z: 31, x: 100, y: 470, width: 320, height: 0, content: { type: plain, value: "☐  2 light jumpers" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c1-3, type: text, z: 31, x: 100, y: 500, width: 320, height: 0, content: { type: plain, value: "☐  1 rain shell, 1 light coat" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c1-4, type: text, z: 31, x: 100, y: 530, width: 320, height: 0, content: { type: plain, value: "☐  2 trousers, 1 dressy" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c1-5, type: text, z: 31, x: 100, y: 560, width: 320, height: 0, content: { type: plain, value: "☐  Walking shoes — broken in" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c1-6, type: text, z: 31, x: 100, y: 590, width: 320, height: 0, content: { type: plain, value: "☐  Smart shoes for Den/Tokami" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c1-7, type: text, z: 31, x: 100, y: 620, width: 320, height: 0, content: { type: plain, value: "☐  Socks · always one extra pair" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: col-2-h, type: text, z: 40, x: 460, y: 400, width: 320, height: 0, content: { type: plain, value: "TECH & DOCS" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: c2-1, type: text, z: 41, x: 460, y: 440, width: 320, height: 0, content: { type: plain, value: "☐  Passports · 6+ months validity" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c2-2, type: text, z: 41, x: 460, y: 470, width: 320, height: 0, content: { type: plain, value: "☐  Travel insurance card" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c2-3, type: text, z: 41, x: 460, y: 500, width: 320, height: 0, content: { type: plain, value: "☐  IC card / Suica top-up plan" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c2-4, type: text, z: 41, x: 460, y: 530, width: 320, height: 0, content: { type: plain, value: "☐  Type-A plug adapter ×2" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c2-5, type: text, z: 41, x: 460, y: 560, width: 320, height: 0, content: { type: plain, value: "☐  Power bank · charged" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c2-6, type: text, z: 41, x: 460, y: 590, width: 320, height: 0, content: { type: plain, value: "☐  Pocket Wi-Fi (Ninja, ordered)" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c2-7, type: text, z: 41, x: 460, y: 620, width: 320, height: 0, content: { type: plain, value: "☐  Cash ¥80k · cards on backup" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: col-3-h, type: text, z: 50, x: 820, y: 400, width: 320, height: 0, content: { type: plain, value: "EVERYDAY CARRY" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: c3-1, type: text, z: 51, x: 820, y: 440, width: 320, height: 0, content: { type: plain, value: "☐  Daypack · 18L max" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c3-2, type: text, z: 51, x: 820, y: 470, width: 320, height: 0, content: { type: plain, value: "☐  Compact umbrella" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c3-3, type: text, z: 51, x: 820, y: 500, width: 320, height: 0, content: { type: plain, value: "☐  Reusable water bottle" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c3-4, type: text, z: 51, x: 820, y: 530, width: 320, height: 0, content: { type: plain, value: "☐  Tissues · small towel" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c3-5, type: text, z: 51, x: 820, y: 560, width: 320, height: 0, content: { type: plain, value: "☐  Sunglasses, light scarf" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c3-6, type: text, z: 51, x: 820, y: 590, width: 320, height: 0, content: { type: plain, value: "☐  Lipbalm · the dry air" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: c3-7, type: text, z: 51, x: 820, y: 620, width: 320, height: 0, content: { type: plain, value: "☐  Empty tote (Tsutaya day)" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: emerg-card, type: rect, z: 60, x: 100, y: 760, width: 1040, height: 600, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: emerg-label, type: text, z: 61, x: 140, y: 800, width: 960, height: 0, content: { type: plain, value: "IF SOMETHING GOES WRONG" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.85 } }
+      - { id: emerg-title, type: text, z: 62, x: 140, y: 840, width: 960, height: 0, content: { type: plain, value: "Emergency contacts." }, style: { font_family: $heading, font_size: 36, font_weight: 700, color: "#FFFFFF", line_height: 1.2, letter_spacing: -0.02 } }
+      - { id: e1-l, type: text, z: 63, x: 140, y: 920, width: 480, height: 0, content: { type: plain, value: "TOKYO EMERGENCY" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: e1-v, type: text, z: 64, x: 140, y: 950, width: 480, height: 0, content: { type: plain, value: "Police 110  ·  Ambulance 119" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.4 } }
+      - { id: e2-l, type: text, z: 63, x: 660, y: 920, width: 480, height: 0, content: { type: plain, value: "UK EMBASSY · TOKYO" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: e2-v, type: text, z: 64, x: 660, y: 950, width: 480, height: 0, content: { type: plain, value: "+81 3 5211 1100" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.4 } }
+      - { id: e3-l, type: text, z: 63, x: 140, y: 1020, width: 480, height: 0, content: { type: plain, value: "HOTEL NIWA · 24H FRONT DESK" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: e3-v, type: text, z: 64, x: 140, y: 1050, width: 480, height: 0, content: { type: plain, value: "+81 3 3293 0028" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.4 } }
+      - { id: e4-l, type: text, z: 63, x: 660, y: 1020, width: 480, height: 0, content: { type: plain, value: "INSURANCE · WORLD NOMADS" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: e4-v, type: text, z: 64, x: 660, y: 1050, width: 480, height: 0, content: { type: plain, value: "+44 20 8237 8400" }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.4 } }
+      - { id: home-l, type: text, z: 63, x: 140, y: 1140, width: 960, height: 0, content: { type: plain, value: "AT HOME · MARTHA HOLM (SISTER)" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: home-v, type: text, z: 64, x: 140, y: 1170, width: 960, height: 0, content: { type: plain, value: "+44 7700 900 184  ·  martha.holm@protonmail.com" }, style: { font_family: $heading, font_size: 20, color: "#FFFFFF", line_height: 1.4 } }
+      - { id: doc-l, type: text, z: 63, x: 140, y: 1240, width: 960, height: 0, content: { type: plain, value: "POLICY NUMBERS" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: doc-v, type: text, z: 64, x: 140, y: 1270, width: 960, height: 0, content: { type: plain, value: "Insurance WN-2026-0974-1138  ·  Hotel res. NIWA-OCT-2046122" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", line_height: 1.6, opacity: 0.95, letter_spacing: 0.2 } }
+      - { id: gambate, type: text, z: 70, x: 100, y: 1440, width: 1040, height: 0, content: { type: plain, value: "頑張って · ganbatte · safe travels" }, style: { font_family: $heading, font_size: 26, font_style: italic, color: $primary, text_align: center, letter_spacing: 0.3 } }
+      - { id: pn, type: text, z: 80, x: 100, y: 1700, width: 1040, height: 0, content: { type: plain, value: "PACKING & EMERGENCY  ·  ITINERARY 5/5" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+slots:
+  - { id: city,         path: "pages[0].layers[12].content.value", type: text, hint: "Destination",      default: "TOKYO" }
+  - { id: city_local,   path: "pages[0].layers[13].content.value", type: text, hint: "Local name",       default: "東京  ·  TŌKYŌ" }
+  - { id: depart_date,  path: "pages[0].layers[16].content.value", type: text, hint: "Depart date",      default: "Thu · Oct 8" }
+  - { id: return_date,  path: "pages[0].layers[21].content.value", type: text, hint: "Return date",      default: "Mon · Oct 12" }
+  - { id: travelers,    path: "pages[0].layers[28].content.value", type: text, hint: "Traveler names",   default: "Sara & Felix Holm" }
+  - { id: hotel,        path: "pages[0].layers[29].content.value", type: text, hint: "Hotel name",       default: "Hotel Niwa · Jimbocho" }

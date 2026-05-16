@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: foil-iridescent
+name: Foil Iridescent
+version: "1.0.0"
+tags: [foil, iridescent, shimmer, pastel, holographic, premium]
+description: "Subtle iridescent foil shimmer — pastel lavender/pink/cyan layering for luxury packaging register."
+effects:
+  shadow_card:   "0 4px 16px rgba(180,150,255,0.25), 0 8px 24px rgba(255,180,210,0.18), 0 12px 36px rgba(150,220,255,0.15)"
+  shadow_glow:   "0 0 22px rgba(200,170,255,0.40), 0 0 36px rgba(255,200,225,0.32), 0 0 52px rgba(170,230,255,0.24)"
+  shadow_inset:  "inset 0 1px 2px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(180,150,255,0.18)"
+  shadow_text:   "0 1px 2px rgba(180,150,255,0.30), 0 2px 4px rgba(255,180,210,0.20)"
+  blur_glass:    6
+  blur_backdrop: 10

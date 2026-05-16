@@ -1,0 +1,257 @@
+_protocol: template/v1
+
+# Romance movie poster (1280×1920 portrait).
+# Pastel-dream: cursive title centered, dual character circle placeholder,
+# "A LOVE STORY THAT" tagline, soft golden accents and release date.
+meta:
+  id: tmpl-movie-poster-romance
+  name: Movie Poster — Romance
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, movie, film, romance, pastel, love-story]
+  description: "Soft pastel romance movie poster with cursive title and golden accents."
+
+document:
+  width: 1280
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+  overrides:
+    primary: "#D4A55C"
+    secondary: "#C97A8C"
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1280
+    height: 1920
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 60 }
+        - { color: "#F5E0D6", position: 100 }
+
+  - id: warm-glow
+    type: circle
+    z: 1
+    cx: 640
+    cy: 900
+    rx: 580
+    ry: 580
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.32
+
+  - id: character-circle-left
+    type: circle
+    z: 5
+    cx: 460
+    cy: 880
+    rx: 260
+    ry: 260
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "$surface", position: 100 }
+    opacity: 0.7
+    stroke: { color: "$primary", width: 2 }
+
+  - id: character-circle-right
+    type: circle
+    z: 6
+    cx: 820
+    cy: 880
+    rx: 260
+    ry: 260
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$surface", position: 100 }
+    opacity: 0.7
+    stroke: { color: "$primary", width: 2 }
+
+  - id: heart-accent
+    type: circle
+    z: 7
+    cx: 640
+    cy: 880
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$secondary" }
+
+  - id: studio-eyebrow
+    type: text
+    z: 10
+    x: 120
+    y: 160
+    width: 1040
+    height: 0
+    content: { type: plain, value: "GOLDLIGHT PICTURES PRESENTS" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.48
+      text_align: center
+      text_transform: uppercase
+
+  - id: lead-actors
+    type: text
+    z: 11
+    x: 120
+    y: 220
+    width: 1040
+    height: 0
+    content: { type: plain, value: "AMARA SINCLAIR    &    THEO BENNETT" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.18
+      text_align: center
+      text_transform: uppercase
+
+  - id: deco-line-left
+    type: rect
+    z: 20
+    x: 380
+    y: 1280
+    width: 200
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-line-right
+    type: rect
+    z: 21
+    x: 700
+    y: 1280
+    width: 200
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-dot
+    type: circle
+    z: 22
+    cx: 640
+    cy: 1280
+    rx: 4
+    ry: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: title
+    type: text
+    z: 30
+    x: 80
+    y: 1320
+    width: 1120
+    height: 0
+    content: { type: plain, value: "When the Letters\nFound Us" }
+    style:
+      font_family: $heading
+      font_size: 110
+      font_weight: 400
+      font_style: italic
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.005
+      text_align: center
+
+  - id: tagline-eyebrow
+    type: text
+    z: 40
+    x: 120
+    y: 1620
+    width: 1040
+    height: 0
+    content: { type: plain, value: "A LOVE STORY THAT" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+  - id: tagline
+    type: text
+    z: 41
+    x: 120
+    y: 1670
+    width: 1040
+    height: 0
+    content: { type: plain, value: "took a decade and three oceans to come home." }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 400
+      font_style: italic
+      color: $text
+      letter_spacing: 0.01
+      text_align: center
+
+  - id: release-rule
+    type: rect
+    z: 50
+    x: 440
+    y: 1780
+    width: 400
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: release-date
+    type: text
+    z: 51
+    x: 120
+    y: 1810
+    width: 1040
+    height: 0
+    content: { type: plain, value: "IN THEATERS · VALENTINE'S DAY 2026" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: footer
+    type: text
+    z: 52
+    x: 120
+    y: 1860
+    width: 1040
+    height: 0
+    content: { type: plain, value: "RATED PG-13 · A GOLDLIGHT / TIDEWATER FILMS RELEASE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.36
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: lead_actors,  path: "layers[6].content.value",  type: text, hint: "Lead actor names",          default: "AMARA SINCLAIR    &    THEO BENNETT" }
+  - { id: title,        path: "layers[10].content.value", type: text, hint: "Movie title (cursive)",     default: "When the Letters\nFound Us" }
+  - { id: tagline,      path: "layers[12].content.value", type: text, hint: "Tagline after 'A LOVE STORY THAT'", default: "took a decade and three oceans to come home." }
+  - { id: release_date, path: "layers[14].content.value", type: text, hint: "Release date line",         default: "IN THEATERS · VALENTINE'S DAY 2026" }

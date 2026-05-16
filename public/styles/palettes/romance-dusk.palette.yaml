@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: romance-dusk
+name: Romance Dusk
+version: "1.0.0"
+tags: [romance, sunset, intimate, warm, emotional]
+description: "Deep plum, rose-gold and bronze with warm peach — sunset dinner-date intimacy."
+colors:
+  background: "#FBF1E6"
+  surface:    "#F4E1D2"
+  surface_2:  "#E8C8B4"
+  primary:    "#4A1F38"
+  secondary:  "#C58A6A"
+  accent:     "#8A5A2B"
+  text:       "#2A1422"
+  text_muted: "#7A5A52"
+  border:     "#D8B7A0"
+  success:    "#6A8A4A"
+  warning:    "#C68A2C"
+  danger:     "#A8334A"

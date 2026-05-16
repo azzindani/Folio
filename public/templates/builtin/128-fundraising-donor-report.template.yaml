@@ -1,0 +1,310 @@
+_protocol: template/v1
+
+# Nonprofit fundraising annual report — mission eyebrow, hero, 5 KPIs (total
+# raised, donors, avg gift, retention, programs funded), 12-month giving line,
+# donor-segment donut, campaign performance table, top donors table, program
+# impact narrative.
+meta:
+  id: tmpl-fundraising-donor-report
+  name: Nonprofit · Fundraising Annual Report
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, nonprofit, fundraising, donors, philanthropy, annual, interactive]
+  description: "Annual fundraising report: giving trends, donor segments, campaign performance, top donors, program impact."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: giving_trend
+        type: inline
+        rows:
+          - { month: Jun, raised:  142800, target: 140000 }
+          - { month: Jul, raised:  168400, target: 150000 }
+          - { month: Aug, raised:  186200, target: 160000 }
+          - { month: Sep, raised:  214600, target: 180000 }
+          - { month: Oct, raised:  248200, target: 200000 }
+          - { month: Nov, raised:  328400, target: 280000 }
+          - { month: Dec, raised:  624800, target: 520000 }
+          - { month: Jan, raised:  184200, target: 170000 }
+          - { month: Feb, raised:  142600, target: 140000 }
+          - { month: Mar, raised:  178400, target: 160000 }
+          - { month: Apr, raised:  212800, target: 180000 }
+          - { month: May, raised:  246400, target: 200000 }
+      - id: donor_segments
+        type: inline
+        rows:
+          - { segment: "Major ($10K+)",        donors:   42, total: 1284000 }
+          - { segment: "Leadership ($2.5K-$10K)", donors:  168, total:  624800 }
+          - { segment: "Sustaining ($500-$2.5K)", donors:  482, total:  428600 }
+          - { segment: "Friends ($100-$500)",   donors: 1284, total:  286400 }
+          - { segment: "Grassroots (<$100)",    donors: 2842, total:  142800 }
+          - { segment: "Corporate / Foundation", donors:   28, total:  248600 }
+      - id: campaigns
+        type: inline
+        rows:
+          - { campaign: Annual Gala,                  goal: 600000, raised: 684200, roi:  6.8, donors:  342 }
+          - { campaign: Spring Direct Mail,           goal:  80000, raised:  92400, roi:  4.2, donors: 1842 }
+          - { campaign: Giving Tuesday,               goal: 120000, raised: 184600, roi:  8.4, donors: 2486 }
+          - { campaign: Year-End Email Series,        goal: 200000, raised: 248800, roi: 12.6, donors: 1684 }
+          - { campaign: Capital Campaign Phase 2,     goal: 800000, raised: 624800, roi:  5.4, donors:   86 }
+          - { campaign: Peer-to-Peer Walk,            goal:  60000, raised:  74200, roi:  3.8, donors:  984 }
+          - { campaign: Corporate Match Drive,        goal: 100000, raised: 142800, roi:  9.2, donors:   24 }
+          - { campaign: Planned Giving Outreach,      goal: 150000, raised:  86400, roi:  2.6, donors:   18 }
+      - id: top_donors
+        type: inline
+        rows:
+          - { donor: "Anonymous Foundation",            cumulative: 425000, gifts: 8, first_year: 2018, last_gift: "2026-04-22" }
+          - { donor: "Eleanor & James Whitfield",       cumulative: 312000, gifts: 14, first_year: 2014, last_gift: "2026-05-08" }
+          - { donor: "Hartwell Family Trust",           cumulative: 248000, gifts: 6, first_year: 2020, last_gift: "2026-03-14" }
+          - { donor: "Pacific Heritage Fund",           cumulative: 186000, gifts: 4, first_year: 2022, last_gift: "2026-04-18" }
+          - { donor: "Margaret Sullivan",               cumulative: 162000, gifts: 22, first_year: 2009, last_gift: "2026-05-12" }
+          - { donor: "Bennett Foundation",              cumulative: 148000, gifts: 5, first_year: 2021, last_gift: "2026-02-26" }
+          - { donor: "Dr. Patricia Okonkwo",            cumulative: 124000, gifts: 12, first_year: 2016, last_gift: "2026-04-04" }
+          - { donor: "Rivera Family Charitable Fund",   cumulative: 108000, gifts: 7, first_year: 2019, last_gift: "2026-05-01" }
+          - { donor: "Sterling Holdings LLC",           cumulative:  92000, gifts: 4, first_year: 2022, last_gift: "2026-01-18" }
+          - { donor: "Theodore Lindgren",               cumulative:  84000, gifts: 18, first_year: 2011, last_gift: "2026-04-28" }
+
+pages:
+  - id: annual
+    label: Annual Report
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "BRIGHT HORIZONS FOUNDATION · FY2026 · ANNUAL REPORT TO DONORS"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 130
+        format: markdown
+        font_family: Playfair Display
+        font_size: 40
+        font_weight: 700
+        line_height: 1.2
+        content: "**A Year of Generosity — FY2026**\n*Together, our 4,846 donors funded literacy programs, food security, and youth mentorship in 14 communities.*"
+
+      - id: kpi-raised
+        type: kpi_card
+        x: 60
+        y: 240
+        width: 224
+        height: 140
+        label: Total Raised
+        value: 2876400
+        format: currency
+        currency: USD
+        delta: 18.4
+        delta_format: percent
+        sparkline_data: giving_trend
+        sparkline_field: raised
+        sparkline_color: "$primary"
+
+      - id: kpi-donors
+        type: kpi_card
+        x: 304
+        y: 240
+        width: 224
+        height: 140
+        label: Active Donors
+        value: 4846
+        format: number
+        delta: 12.6
+        delta_format: percent
+
+      - id: kpi-avg
+        type: kpi_card
+        x: 548
+        y: 240
+        width: 224
+        height: 140
+        label: Avg Gift
+        value: 594
+        format: currency
+        currency: USD
+        delta: 5.2
+        delta_format: percent
+
+      - id: kpi-retention
+        type: kpi_card
+        x: 792
+        y: 240
+        width: 224
+        height: 140
+        label: Donor Retention %
+        value: 68.4
+        format: percent
+        delta: 2.8
+        delta_format: percent
+
+      - id: kpi-programs
+        type: kpi_card
+        x: 1036
+        y: 240
+        width: 184
+        height: 140
+        label: Programs Funded
+        value: 24
+        format: number
+        delta: 4
+        delta_format: number
+
+      - id: section-giving
+        type: rich_text
+        x: 60
+        y: 420
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Monthly Giving — FY2026**"
+
+      - id: chart-giving
+        type: interactive_chart
+        x: 60
+        y: 480
+        width: 740
+        height: 380
+        chart_type: line
+        data_ref: giving_trend
+        x_field: month
+        y_field: raised
+        title: Monthly Raised vs Target
+        legend: true
+        grid: true
+        animate: true
+
+      - id: chart-segments
+        type: interactive_chart
+        x: 820
+        y: 480
+        width: 400
+        height: 380
+        chart_type: donut
+        data_ref: donor_segments
+        x_field: segment
+        y_field: total
+        title: Giving by Donor Segment
+        legend: true
+        animate: true
+
+      - id: section-campaigns
+        type: rich_text
+        x: 60
+        y: 900
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Campaign Performance**"
+
+      - id: tbl-campaigns
+        type: interactive_table
+        x: 60
+        y: 960
+        width: 1160
+        height: 420
+        data_ref: campaigns
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: campaign,  title: Campaign,        width: 340, sortable: true, formatter: badge }
+          - { field: goal,      title: Goal,            width: 180, sortable: true, formatter: currency, align: right }
+          - { field: raised,    title: Raised,          width: 180, sortable: true, formatter: currency, align: right }
+          - { field: roi,       title: ROI,             width: 160, sortable: true, formatter: number,   align: right }
+          - { field: donors,    title: Donors,          width: 180, sortable: true, formatter: number,   align: right }
+
+      - id: section-donors
+        type: rich_text
+        x: 60
+        y: 1420
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top Lifetime Donors**"
+
+      - id: tbl-donors
+        type: interactive_table
+        x: 60
+        y: 1480
+        width: 1160
+        height: 460
+        data_ref: top_donors
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: donor,        title: Donor,            width: 360, sortable: true }
+          - { field: cumulative,   title: Lifetime Giving,  width: 220, sortable: true, formatter: currency, align: right }
+          - { field: gifts,        title: Gifts,            width: 140, sortable: true, formatter: number,   align: right }
+          - { field: first_year,   title: First Year,       width: 160, sortable: true, formatter: number,   align: right }
+          - { field: last_gift,    title: Last Gift,        width: 200, sortable: true }
+
+      - id: section-impact
+        type: rich_text
+        x: 60
+        y: 1980
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Program Impact**"
+
+      - id: impact-body
+        type: rich_text
+        x: 60
+        y: 2040
+        width: 1160
+        height: 320
+        format: markdown
+        font_family: Inter
+        font_size: 15
+        line_height: 1.7
+        content: |
+          **Literacy Initiative.** Our after-school tutoring program reached **1,842 students** across 14 elementary schools this year — a 24% increase from FY2025. Reading-level assessments showed an average gain of **1.6 grade levels** among participants who attended at least 20 sessions.
+
+          **Food Security.** Mobile pantries distributed **186,400 meals** to 8,200 families in food-insecure neighborhoods. The new Saturday market in the Eastside corridor served 642 new households in its first six months.
+
+          **Youth Mentorship.** Pairing 412 high school students with professional mentors, **94% of participating seniors graduated on time** and 86% enrolled in post-secondary education or workforce programs. The college-prep cohort produced 38 first-generation college students this spring.
+
+          **Looking Ahead.** With your continued support, FY2027 priorities include expanding the literacy program to two new districts, launching a workforce training partnership with local employers, and completing Phase 2 of the community center capital campaign.
+
+slots:
+  - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",        default: "**A Year of Generosity — FY2026**\n*Together, our 4,846 donors funded literacy programs, food security, and youth mentorship in 14 communities.*" }
+  - { id: report_eyebrow,      path: "pages[0].layers[0].content",  type: text, hint: "Mission eyebrow",     default: "BRIGHT HORIZONS FOUNDATION · FY2026 · ANNUAL REPORT TO DONORS" }
+  - { id: giving_section,      path: "pages[0].layers[7].content",  type: text, hint: "Giving heading",      default: "**Monthly Giving — FY2026**" }
+  - { id: campaigns_section,   path: "pages[0].layers[10].content", type: text, hint: "Campaigns heading",   default: "**Campaign Performance**" }
+  - { id: donors_section,      path: "pages[0].layers[12].content", type: text, hint: "Donors heading",      default: "**Top Lifetime Donors**" }
+  - { id: impact_section,      path: "pages[0].layers[14].content", type: text, hint: "Impact heading",      default: "**Program Impact**" }
+  - { id: impact_body,         path: "pages[0].layers[15].content", type: text, hint: "Impact narrative",    default: "**Literacy Initiative.** Our after-school..." }

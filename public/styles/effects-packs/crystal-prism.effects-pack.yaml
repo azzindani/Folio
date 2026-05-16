@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: crystal-prism
+name: Crystal Prism
+version: "1.0.0"
+tags: [crystal, prism, rainbow, refraction, holographic, chromatic]
+description: "Rainbow chromatic refraction — layered magenta/cyan/yellow bloom mimicking prism light dispersion."
+effects:
+  shadow_card:   "0 0 16px rgba(255,0,255,0.25), 0 0 24px rgba(0,255,255,0.20), 0 0 32px rgba(255,255,0,0.18)"
+  shadow_glow:   "0 0 20px rgba(255,0,255,0.40), 0 0 32px rgba(0,255,255,0.35), 0 0 44px rgba(255,255,0,0.28), 0 0 56px rgba(0,255,128,0.18)"
+  shadow_inset:  "inset 0 0 14px rgba(255,255,255,0.30), inset 0 0 24px rgba(180,220,255,0.18)"
+  shadow_text:   "1px 0 2px rgba(255,0,255,0.40), -1px 0 2px rgba(0,255,255,0.40), 0 1px 2px rgba(255,255,0,0.30)"
+  blur_glass:    12
+  blur_backdrop: 16

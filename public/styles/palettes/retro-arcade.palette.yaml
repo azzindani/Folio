@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: retro-arcade
+name: Retro Arcade
+version: "1.0.0"
+tags: [arcade, retro, neon, crt, gaming]
+description: "Neon pink, cyan, lime and yellow on jet black — CRT-arcade Tron-grid synthwave."
+colors:
+  background: "#080814"
+  surface:    "#12122A"
+  surface_2:  "#1E1E3F"
+  primary:    "#FF2EA0"
+  secondary:  "#00E6F0"
+  accent:     "#C8FF1E"
+  text:       "#F2F0FF"
+  text_muted: "#8A88B5"
+  border:     "#2A2A50"
+  success:    "#34F08A"
+  warning:    "#FFD13B"
+  danger:     "#FF3D5A"

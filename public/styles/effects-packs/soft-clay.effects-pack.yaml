@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: soft-clay
+name: Soft Clay
+version: "1.0.0"
+tags: [clay, claymorphism, chunky, 3d, playful, extruded]
+description: "Chunky 3D-clay extrusion — hard offset drop plus soft ambient diffusion for tactile playfulness."
+effects:
+  shadow_card:   "0 8px 0 rgba(0,0,0,0.15), 0 12px 24px rgba(0,0,0,0.08)"
+  shadow_glow:   "0 10px 0 rgba(120,90,180,0.25), 0 18px 36px rgba(120,90,180,0.18)"
+  shadow_inset:  "inset 0 4px 0 rgba(255,255,255,0.55), inset 0 -2px 0 rgba(0,0,0,0.10)"
+  shadow_text:   "0 2px 0 rgba(0,0,0,0.18)"
+  blur_glass:    0
+  blur_backdrop: 0
