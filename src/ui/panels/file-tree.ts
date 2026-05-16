@@ -138,7 +138,7 @@ export class FileTreeManager {
   }
 
   triggerNewFromTemplate(): void {
-    catalogDialog.open({
+    void catalogDialog.open({
       onOpen: (design, label) => {
         const yaml = serializeYAML(design);
         const safe = label.replace(/[^a-z0-9-]+/gi, '-').toLowerCase();
