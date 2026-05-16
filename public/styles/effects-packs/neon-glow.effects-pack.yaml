@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: neon-glow
+name: Neon Glow
+version: "1.0.0"
+tags: [neon, synthwave, glow, cyber, dark]
+description: "Saturated cyan/magenta bloom on every surface — synthwave nightclub register."
+effects:
+  shadow_card:   "0 0 28px rgba(255,0,200,0.18), 0 0 56px rgba(0,255,240,0.12)"
+  shadow_glow:   "0 0 24px rgba(0,255,240,0.55), 0 0 64px rgba(255,0,200,0.35)"
+  shadow_inset:  "inset 0 0 18px rgba(0,255,240,0.20)"
+  shadow_text:   "0 0 12px rgba(0,255,240,0.65), 0 0 24px rgba(255,0,200,0.40)"
+  blur_glass:    22
+  blur_backdrop: 18

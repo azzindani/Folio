@@ -1,0 +1,358 @@
+_protocol: template/v1
+
+# Award certificate — landscape 1600×1200, editorial-cream theme.
+# Distinguishing layout: corner laurel ornaments, single-line gold rule,
+# centered seal at bottom-center, two signature columns flanking.
+meta:
+  id: tmpl-award-certificate
+  name: Award Certificate
+  type: certificate
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [certificate, award, excellence, formal, gold, landscape]
+  description: "Formal certificate of excellence with gold accents, recipient name, award reason, and dual signatures."
+
+document:
+  width: 1600
+  height: 1200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+  overrides:
+    accent: "#B8893A"
+
+layers:
+  # ── Background + frame ────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1600
+    height: 1200
+    fill: { type: solid, color: "$background" }
+
+  - id: frame-outer
+    type: rect
+    z: 1
+    x: 60
+    y: 60
+    width: 1480
+    height: 1080
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 4 }
+
+  - id: frame-inner
+    type: rect
+    z: 2
+    x: 80
+    y: 80
+    width: 1440
+    height: 1040
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 1 }
+    opacity: 0.5
+
+  # ── Corner laurel triangles (decorative) ──────────────────
+  - id: corner-tl
+    type: polygon
+    z: 3
+    points: "100,100 220,100 100,220"
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.15
+
+  - id: corner-tr
+    type: polygon
+    z: 4
+    points: "1380,100 1500,100 1500,220"
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.15
+
+  - id: corner-bl
+    type: polygon
+    z: 5
+    points: "100,1100 100,980 220,1100"
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.15
+
+  - id: corner-br
+    type: polygon
+    z: 6
+    points: "1500,1100 1380,1100 1500,980"
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.15
+
+  # ── Eyebrow ───────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 200
+    y: 180
+    width: 1200
+    height: 0
+    content: { type: plain, value: "★ FOLIO INSTITUTE ★" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+  # ── Title ─────────────────────────────────────────────────
+  - id: title
+    type: text
+    z: 11
+    x: 200
+    y: 240
+    width: 1200
+    height: 0
+    content: { type: plain, value: "Certificate of Excellence" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 700
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.1
+      letter_spacing: -0.01
+
+  - id: title-rule
+    type: rect
+    z: 12
+    x: 700
+    y: 350
+    width: 200
+    height: 2
+    fill: { type: solid, color: "$accent" }
+
+  # ── Awarded to ────────────────────────────────────────────
+  - id: awarded-to
+    type: text
+    z: 20
+    x: 200
+    y: 410
+    width: 1200
+    height: 0
+    content: { type: plain, value: "is hereby awarded to" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      line_height: 1.3
+
+  - id: recipient-name
+    type: text
+    z: 21
+    x: 200
+    y: 470
+    width: 1200
+    height: 0
+    content: { type: plain, value: "Catherine Beaumont-Wells" }
+    style:
+      font_family: $heading
+      font_size: 86
+      font_weight: 700
+      color: $primary
+      text_align: center
+      line_height: 1.05
+      letter_spacing: -0.02
+
+  - id: recipient-rule
+    type: rect
+    z: 22
+    x: 500
+    y: 600
+    width: 600
+    height: 1
+    fill: { type: solid, color: "$accent" }
+
+  # ── Award reason ──────────────────────────────────────────
+  - id: award-reason
+    type: text
+    z: 23
+    x: 280
+    y: 640
+    width: 1040
+    height: 0
+    content:
+      type: plain
+      value: "in recognition of outstanding leadership, exemplary craftsmanship, and sustained contribution to the design engineering discipline."
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      text_align: center
+      line_height: 1.55
+
+  # ── Date row ──────────────────────────────────────────────
+  - id: date-label
+    type: text
+    z: 30
+    x: 200
+    y: 820
+    width: 1200
+    height: 0
+    content: { type: plain, value: "PRESENTED" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: date-value
+    type: text
+    z: 31
+    x: 200
+    y: 848
+    width: 1200
+    height: 0
+    content: { type: plain, value: "May 16, 2026" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 600
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  # ── Center seal ───────────────────────────────────────────
+  - id: seal-outer
+    type: circle
+    z: 40
+    cx: 800
+    cy: 980
+    rx: 70
+    ry: 70
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "#7C5A1F", position: 100 }
+    opacity: 0.95
+
+  - id: seal-inner
+    type: circle
+    z: 41
+    cx: 800
+    cy: 980
+    rx: 48
+    ry: 48
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "#FFFFFF", width: 2 }
+    opacity: 0.7
+
+  - id: seal-star
+    type: text
+    z: 42
+    x: 720
+    y: 950
+    width: 160
+    height: 0
+    content: { type: plain, value: "★" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+
+  # ── Signatures (left + right) ─────────────────────────────
+  - id: sig-left-line
+    type: rect
+    z: 50
+    x: 200
+    y: 1000
+    width: 360
+    height: 1
+    fill: { type: solid, color: "$text" }
+
+  - id: sig-left-name
+    type: text
+    z: 51
+    x: 160
+    y: 1015
+    width: 440
+    height: 0
+    content: { type: plain, value: "Dr. Hannah Liang" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 600
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  - id: sig-left-role
+    type: text
+    z: 52
+    x: 160
+    y: 1050
+    width: 440
+    height: 0
+    content: { type: plain, value: "DIRECTOR OF PROGRAMS" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: center
+      text_transform: uppercase
+
+  - id: sig-right-line
+    type: rect
+    z: 53
+    x: 1040
+    y: 1000
+    width: 360
+    height: 1
+    fill: { type: solid, color: "$text" }
+
+  - id: sig-right-name
+    type: text
+    z: 54
+    x: 1000
+    y: 1015
+    width: 440
+    height: 0
+    content: { type: plain, value: "Folio Institute" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 600
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  - id: sig-right-role
+    type: text
+    z: 55
+    x: 1000
+    y: 1050
+    width: 440
+    height: 0
+    content: { type: plain, value: "AWARDING ORGANIZATION" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: recipient,    path: "layers[11].content.value", type: text, hint: "Recipient full name",       default: "Catherine Beaumont-Wells" }
+  - { id: award_reason, path: "layers[13].content.value", type: text, hint: "Award reason statement",    default: "in recognition of outstanding leadership, exemplary craftsmanship, and sustained contribution to the design engineering discipline." }
+  - { id: awarded_by,   path: "layers[23].content.value", type: text, hint: "Awarding organization",    default: "Folio Institute" }
+  - { id: date,         path: "layers[15].content.value", type: text, hint: "Presentation date",         default: "May 16, 2026" }

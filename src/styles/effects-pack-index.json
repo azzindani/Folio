@@ -1,5 +1,174 @@
 {
   "_generator": "scripts/gen-effects-pack-index.mjs",
-  "count": 0,
-  "entries": []
+  "count": 8,
+  "entries": [
+    {
+      "id": "brutalist-hard",
+      "name": "Brutalist Hard",
+      "tags": [
+        "brutalist",
+        "punk",
+        "zine",
+        "hard",
+        "offset"
+      ],
+      "description": "Solid offset block shadows, zero blur, zero glow — photocopy-zine punk register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "brutalist-hard.effects-pack.yaml"
+    },
+    {
+      "id": "ethereal-glass",
+      "name": "Ethereal Glass",
+      "tags": [
+        "glass",
+        "frosted",
+        "ethereal",
+        "luminous",
+        "glassmorphism"
+      ],
+      "description": "High backdrop blur with luminous low-alpha shadows — frosted glassmorphism register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "ethereal-glass.effects-pack.yaml"
+    },
+    {
+      "id": "flat-minimal",
+      "name": "Flat Minimal",
+      "tags": [
+        "flat",
+        "minimal",
+        "hairline",
+        "swiss",
+        "clean"
+      ],
+      "description": "Barely-there hairline shadows, no glow — pure flat editorial register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "flat-minimal.effects-pack.yaml"
+    },
+    {
+      "id": "glow-rim",
+      "name": "Glow Rim",
+      "tags": [
+        "glow",
+        "rim",
+        "showcase",
+        "product",
+        "accent"
+      ],
+      "description": "Strong accent-tinted rim glow over a moderate card shadow — product showcase register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "glow-rim.effects-pack.yaml"
+    },
+    {
+      "id": "neon-glow",
+      "name": "Neon Glow",
+      "tags": [
+        "neon",
+        "synthwave",
+        "glow",
+        "cyber",
+        "dark"
+      ],
+      "description": "Saturated cyan/magenta bloom on every surface — synthwave nightclub register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "neon-glow.effects-pack.yaml"
+    },
+    {
+      "id": "sharp-shadow",
+      "name": "Sharp Shadow",
+      "tags": [
+        "sharp",
+        "architectural",
+        "poster",
+        "offset",
+        "high-contrast"
+      ],
+      "description": "High-contrast precise offset shadow with zero blur — architectural poster register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "sharp-shadow.effects-pack.yaml"
+    },
+    {
+      "id": "soft-elevation",
+      "name": "Soft Elevation",
+      "tags": [
+        "material",
+        "soft",
+        "elevation",
+        "layered",
+        "product"
+      ],
+      "description": "Gentle multi-layer Material-style elevation with a moderate accent glow.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "soft-elevation.effects-pack.yaml"
+    },
+    {
+      "id": "vintage-print",
+      "name": "Vintage Print",
+      "tags": [
+        "vintage",
+        "print",
+        "letterpress",
+        "risograph",
+        "paper"
+      ],
+      "description": "Paper-pressed inset shadows with warm sepia tone — letterpress / risograph register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "vintage-print.effects-pack.yaml"
+    }
+  ]
 }

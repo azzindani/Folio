@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: wealth-emerald
+name: Wealth Emerald
+version: "1.0.0"
+tags: [finance, wealth, premium, dark, emerald]
+description: "Dark forest with gold — premium wealth management and private banking."
+colors:
+  background: "#0E2620"
+  surface:    "#143028"
+  surface_2:  "#1C3D33"
+  primary:    "#C9A24B"
+  secondary:  "#3E8C6E"
+  accent:     "#E4D29A"
+  text:       "#EAF1EC"
+  text_muted: "#9DB2A6"
+  border:     "#264A40"
+  success:    "#5DBA7A"
+  warning:    "#E0B454"
+  danger:     "#C66060"

@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: sunset-pop
+name: Sunset Pop
+version: "1.0.0"
+tags: [casual, playful, warm, vibrant, sunset]
+description: "Peach, coral, magenta, and golden yellow — warm, energetic social and lifestyle."
+colors:
+  background: "#FFF4EC"
+  surface:    "#FFE5D2"
+  surface_2:  "#FFD1B1"
+  primary:    "#FF5E62"
+  secondary:  "#FF2E93"
+  accent:     "#FFB23F"
+  text:       "#3A1A22"
+  text_muted: "#8A5A60"
+  border:     "#F5C7B0"
+  success:    "#2BAE66"
+  warning:    "#E08A1F"
+  danger:     "#D02A3A"

@@ -1,5 +1,306 @@
 {
   "_generator": "scripts/gen-palette-index.mjs",
-  "count": 0,
-  "entries": []
+  "count": 15,
+  "entries": [
+    {
+      "id": "audit-slate",
+      "name": "Audit Slate",
+      "tags": [
+        "formal",
+        "business",
+        "audit",
+        "neutral",
+        "slate"
+      ],
+      "description": "Neutral slate with amber highlights — clear, professional audit and compliance output.",
+      "swatches": [
+        "#F7F8FA",
+        "#EDF0F3",
+        "#DDE2E8",
+        "#475569",
+        "#64748B"
+      ],
+      "file": "audit-slate.palette.yaml"
+    },
+    {
+      "id": "banking-burgundy",
+      "name": "Banking Burgundy",
+      "tags": [
+        "formal",
+        "finance",
+        "banking",
+        "conservative",
+        "burgundy"
+      ],
+      "description": "Deep burgundy on cream — established, conservative banking and legal documents.",
+      "swatches": [
+        "#FAF6EF",
+        "#F2EBDD",
+        "#E8DEC9",
+        "#6E1E2B",
+        "#3D2A2F"
+      ],
+      "file": "banking-burgundy.palette.yaml"
+    },
+    {
+      "id": "candy-bright",
+      "name": "Candy Bright",
+      "tags": [
+        "casual",
+        "playful",
+        "pastel",
+        "light",
+        "candy"
+      ],
+      "description": "Pastel pink, sky blue, mint, and lavender — playful, friendly, kids and lifestyle.",
+      "swatches": [
+        "#FFFBFE",
+        "#FDF0F8",
+        "#F5E4F2",
+        "#F46AAE",
+        "#5CB8F2"
+      ],
+      "file": "candy-bright.palette.yaml"
+    },
+    {
+      "id": "champagne-cream",
+      "name": "Champagne Cream",
+      "tags": [
+        "luxury",
+        "editorial",
+        "magazine",
+        "light",
+        "champagne"
+      ],
+      "description": "Ivory cream with champagne gold and black — magazine luxe and editorial covers.",
+      "swatches": [
+        "#FBF6EC",
+        "#F3EBDA",
+        "#E8DBC2",
+        "#B7945A",
+        "#1A1A1A"
+      ],
+      "file": "champagne-cream.palette.yaml"
+    },
+    {
+      "id": "clinical-mint",
+      "name": "Clinical Mint",
+      "tags": [
+        "health",
+        "medical",
+        "clean",
+        "light",
+        "mint"
+      ],
+      "description": "White and soft mint — calm, clean medical and clinical interfaces.",
+      "swatches": [
+        "#FFFFFF",
+        "#F2FAF7",
+        "#E2F3EC",
+        "#2BA68A",
+        "#4FB3D9"
+      ],
+      "file": "clinical-mint.palette.yaml"
+    },
+    {
+      "id": "corporate-navy",
+      "name": "Corporate Navy",
+      "tags": [
+        "formal",
+        "business",
+        "corporate",
+        "navy",
+        "blue"
+      ],
+      "description": "Classic navy and steel on white — trustworthy corporate look for reports and decks.",
+      "swatches": [
+        "#FFFFFF",
+        "#F4F6FA",
+        "#E6EBF2",
+        "#1F4E8C",
+        "#5A7AA1"
+      ],
+      "file": "corporate-navy.palette.yaml"
+    },
+    {
+      "id": "devtools-mono",
+      "name": "Devtools Mono",
+      "tags": [
+        "tech",
+        "developer",
+        "terminal",
+        "dark",
+        "mono"
+      ],
+      "description": "Near-black with neon green terminal accent — CLI, devtools, and code-first interfaces.",
+      "swatches": [
+        "#0B0D0E",
+        "#131618",
+        "#1B1F22",
+        "#00E676",
+        "#7BFF8A"
+      ],
+      "file": "devtools-mono.palette.yaml"
+    },
+    {
+      "id": "executive-graphite",
+      "name": "Executive Graphite",
+      "tags": [
+        "formal",
+        "premium",
+        "executive",
+        "dark",
+        "graphite"
+      ],
+      "description": "Deep graphite paired with warm bronze — confident, premium executive aesthetic.",
+      "swatches": [
+        "#1A1C1F",
+        "#23262A",
+        "#2D3137",
+        "#C08A4A",
+        "#8D7355"
+      ],
+      "file": "executive-graphite.palette.yaml"
+    },
+    {
+      "id": "fintech-violet",
+      "name": "Fintech Violet",
+      "tags": [
+        "finance",
+        "fintech",
+        "modern",
+        "dark",
+        "violet"
+      ],
+      "description": "Deep violet with bright teal — modern fintech apps and crypto dashboards.",
+      "swatches": [
+        "#150F2E",
+        "#1E1640",
+        "#2A1F58",
+        "#7C3AED",
+        "#06D6C4"
+      ],
+      "file": "fintech-violet.palette.yaml"
+    },
+    {
+      "id": "noir-gold",
+      "name": "Noir Gold",
+      "tags": [
+        "luxury",
+        "editorial",
+        "high-end",
+        "dark",
+        "gold"
+      ],
+      "description": "Pure black with gold and warm white — high-end editorial, fashion, and gala.",
+      "swatches": [
+        "#0A0A0A",
+        "#141414",
+        "#1E1E1E",
+        "#D4A647",
+        "#F5EBD0"
+      ],
+      "file": "noir-gold.palette.yaml"
+    },
+    {
+      "id": "saas-indigo",
+      "name": "SaaS Indigo",
+      "tags": [
+        "tech",
+        "saas",
+        "dashboard",
+        "dark",
+        "indigo"
+      ],
+      "description": "Dark indigo and violet — modern SaaS dashboards and product UI.",
+      "swatches": [
+        "#0F1226",
+        "#171A33",
+        "#1F2342",
+        "#6366F1",
+        "#A855F7"
+      ],
+      "file": "saas-indigo.palette.yaml"
+    },
+    {
+      "id": "startup-electric",
+      "name": "Startup Electric",
+      "tags": [
+        "tech",
+        "startup",
+        "bold",
+        "dark",
+        "electric"
+      ],
+      "description": "Black with electric lime and magenta — energetic, bold startup landing pages.",
+      "swatches": [
+        "#0A0A0F",
+        "#14141C",
+        "#1E1E2A",
+        "#C8FF3A",
+        "#FF2EC4"
+      ],
+      "file": "startup-electric.palette.yaml"
+    },
+    {
+      "id": "sunset-pop",
+      "name": "Sunset Pop",
+      "tags": [
+        "casual",
+        "playful",
+        "warm",
+        "vibrant",
+        "sunset"
+      ],
+      "description": "Peach, coral, magenta, and golden yellow — warm, energetic social and lifestyle.",
+      "swatches": [
+        "#FFF4EC",
+        "#FFE5D2",
+        "#FFD1B1",
+        "#FF5E62",
+        "#FF2E93"
+      ],
+      "file": "sunset-pop.palette.yaml"
+    },
+    {
+      "id": "wealth-emerald",
+      "name": "Wealth Emerald",
+      "tags": [
+        "finance",
+        "wealth",
+        "premium",
+        "dark",
+        "emerald"
+      ],
+      "description": "Dark forest with gold — premium wealth management and private banking.",
+      "swatches": [
+        "#0E2620",
+        "#143028",
+        "#1C3D33",
+        "#C9A24B",
+        "#3E8C6E"
+      ],
+      "file": "wealth-emerald.palette.yaml"
+    },
+    {
+      "id": "wellness-sage",
+      "name": "Wellness Sage",
+      "tags": [
+        "health",
+        "wellness",
+        "calm",
+        "organic",
+        "sage"
+      ],
+      "description": "Cream with sage green and dusty rose — holistic, calming wellness brands.",
+      "swatches": [
+        "#FAF6F0",
+        "#F1EBE0",
+        "#E5DCCC",
+        "#7E9B7A",
+        "#C9988F"
+      ],
+      "file": "wellness-sage.palette.yaml"
+    }
+  ]
 }

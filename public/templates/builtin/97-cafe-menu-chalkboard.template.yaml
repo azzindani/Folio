@@ -1,0 +1,676 @@
+_protocol: template/v1
+
+# Chalkboard cafe menu — 1080×1350 portrait, forest-deep theme.
+# Distinct: handwritten feel via italic heading, dotted leader rows,
+# two sections (Espresso, Pastries), chalk-textured ornaments (stars,
+# scribble lines), price column right-aligned.
+meta:
+  id: tmpl-cafe-menu-chalkboard
+  name: Cafe Menu · Chalkboard
+  type: menu
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [menu, cafe, chalkboard, coffee, casual, portrait]
+  description: "Chalkboard-style cafe menu with espresso drinks and pastries, handwriting-style typography, and chalk-texture ornaments."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  # ── Chalkboard background ─────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1350
+    fill: { type: solid, color: "$background" }
+
+  - id: bg-noise
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 1350
+    fill:
+      type: noise
+      opacity: 0.06
+      frequency: 0.9
+      octaves: 3
+
+  # ── Outer chalk frame ─────────────────────────────────────
+  - id: frame
+    type: rect
+    z: 2
+    x: 50
+    y: 50
+    width: 980
+    height: 1250
+    fill: { type: solid, color: "transparent" }
+    stroke:
+      color: "#F2EAD3"
+      width: 2
+      dash: [6, 8]
+
+  # ── Chalk stars (top decorations) ─────────────────────────
+  - id: star-tl
+    type: text
+    z: 5
+    x: 80
+    y: 90
+    width: 60
+    height: 0
+    content: { type: plain, value: "✦" }
+    style:
+      font_family: $heading
+      font_size: 28
+      color: "#F2EAD3"
+      opacity: 0.7
+
+  - id: star-tr
+    type: text
+    z: 6
+    x: 940
+    y: 90
+    width: 60
+    height: 0
+    content: { type: plain, value: "✦" }
+    style:
+      font_family: $heading
+      font_size: 28
+      color: "#F2EAD3"
+      opacity: 0.7
+
+  # ── Cafe name (hero, "handwritten" italic) ────────────────
+  - id: cafe-eyebrow
+    type: text
+    z: 10
+    x: 100
+    y: 130
+    width: 880
+    height: 0
+    content: { type: plain, value: "— THE DAILY MENU —" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 600
+      color: "#F2EAD3"
+      letter_spacing: 0.6
+      text_align: center
+      text_transform: uppercase
+      opacity: 0.7
+
+  - id: cafe-name
+    type: text
+    z: 11
+    x: 100
+    y: 160
+    width: 880
+    height: 0
+    content: { type: plain, value: "Birch & Bramble" }
+    style:
+      font_family: $heading
+      font_size: 78
+      font_weight: 700
+      font_style: italic
+      color: "#F2EAD3"
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.01
+
+  - id: cafe-sub
+    type: text
+    z: 12
+    x: 100
+    y: 260
+    width: 880
+    height: 0
+    content: { type: plain, value: "small-batch coffee · fresh pastries · open daily" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_style: italic
+      color: "#F2EAD3"
+      text_align: center
+      line_height: 1.3
+      opacity: 0.75
+
+  # ── Scribble divider ──────────────────────────────────────
+  - id: scribble-1
+    type: rect
+    z: 13
+    x: 460
+    y: 305
+    width: 160
+    height: 2
+    fill: { type: solid, color: "#F2EAD3" }
+    opacity: 0.5
+
+  # ── ESPRESSO section ──────────────────────────────────────
+  - id: sec1-heading
+    type: text
+    z: 20
+    x: 100
+    y: 340
+    width: 880
+    height: 0
+    content: { type: plain, value: "✦  Espresso & Coffee  ✦" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 700
+      font_style: italic
+      color: "#F2EAD3"
+      text_align: center
+      line_height: 1.2
+
+  # Espresso 1
+  - id: sec1-i1-name
+    type: text
+    z: 21
+    x: 120
+    y: 400
+    width: 700
+    height: 0
+    content: { type: plain, value: "Espresso · double" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec1-i1-price
+    type: text
+    z: 22
+    x: 830
+    y: 400
+    width: 140
+    height: 0
+    content: { type: plain, value: "£3.20" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Espresso 2
+  - id: sec1-i2-name
+    type: text
+    z: 23
+    x: 120
+    y: 442
+    width: 700
+    height: 0
+    content: { type: plain, value: "Cortado" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec1-i2-price
+    type: text
+    z: 24
+    x: 830
+    y: 442
+    width: 140
+    height: 0
+    content: { type: plain, value: "£3.50" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Espresso 3
+  - id: sec1-i3-name
+    type: text
+    z: 25
+    x: 120
+    y: 484
+    width: 700
+    height: 0
+    content: { type: plain, value: "Flat White" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec1-i3-price
+    type: text
+    z: 26
+    x: 830
+    y: 484
+    width: 140
+    height: 0
+    content: { type: plain, value: "£3.80" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Espresso 4
+  - id: sec1-i4-name
+    type: text
+    z: 27
+    x: 120
+    y: 526
+    width: 700
+    height: 0
+    content: { type: plain, value: "Latte · oat / cow / almond" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec1-i4-price
+    type: text
+    z: 28
+    x: 830
+    y: 526
+    width: 140
+    height: 0
+    content: { type: plain, value: "£4.20" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Espresso 5
+  - id: sec1-i5-name
+    type: text
+    z: 29
+    x: 120
+    y: 568
+    width: 700
+    height: 0
+    content: { type: plain, value: "Cappuccino" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec1-i5-price
+    type: text
+    z: 30
+    x: 830
+    y: 568
+    width: 140
+    height: 0
+    content: { type: plain, value: "£4.00" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Espresso 6
+  - id: sec1-i6-name
+    type: text
+    z: 31
+    x: 120
+    y: 610
+    width: 700
+    height: 0
+    content: { type: plain, value: "Honey Cardamom Latte" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec1-i6-price
+    type: text
+    z: 32
+    x: 830
+    y: 610
+    width: 140
+    height: 0
+    content: { type: plain, value: "£4.80" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # ── Scribble divider ──────────────────────────────────────
+  - id: scribble-2
+    type: rect
+    z: 40
+    x: 460
+    y: 690
+    width: 160
+    height: 2
+    fill: { type: solid, color: "#F2EAD3" }
+    opacity: 0.5
+
+  # ── PASTRIES section ──────────────────────────────────────
+  - id: sec2-heading
+    type: text
+    z: 41
+    x: 100
+    y: 720
+    width: 880
+    height: 0
+    content: { type: plain, value: "✦  Pastries & Bakes  ✦" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 700
+      font_style: italic
+      color: "#F2EAD3"
+      text_align: center
+      line_height: 1.2
+
+  # Pastry 1
+  - id: sec2-i1-name
+    type: text
+    z: 42
+    x: 120
+    y: 780
+    width: 700
+    height: 0
+    content: { type: plain, value: "Almond Croissant" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec2-i1-price
+    type: text
+    z: 43
+    x: 830
+    y: 780
+    width: 140
+    height: 0
+    content: { type: plain, value: "£3.90" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Pastry 2
+  - id: sec2-i2-name
+    type: text
+    z: 44
+    x: 120
+    y: 822
+    width: 700
+    height: 0
+    content: { type: plain, value: "Pain au Chocolat" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec2-i2-price
+    type: text
+    z: 45
+    x: 830
+    y: 822
+    width: 140
+    height: 0
+    content: { type: plain, value: "£3.60" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Pastry 3
+  - id: sec2-i3-name
+    type: text
+    z: 46
+    x: 120
+    y: 864
+    width: 700
+    height: 0
+    content: { type: plain, value: "Rhubarb Danish" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec2-i3-price
+    type: text
+    z: 47
+    x: 830
+    y: 864
+    width: 140
+    height: 0
+    content: { type: plain, value: "£4.20" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Pastry 4
+  - id: sec2-i4-name
+    type: text
+    z: 48
+    x: 120
+    y: 906
+    width: 700
+    height: 0
+    content: { type: plain, value: "Sourdough Toastie" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec2-i4-price
+    type: text
+    z: 49
+    x: 830
+    y: 906
+    width: 140
+    height: 0
+    content: { type: plain, value: "£6.50" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Pastry 5
+  - id: sec2-i5-name
+    type: text
+    z: 50
+    x: 120
+    y: 948
+    width: 700
+    height: 0
+    content: { type: plain, value: "Banana Loaf · slice" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec2-i5-price
+    type: text
+    z: 51
+    x: 830
+    y: 948
+    width: 140
+    height: 0
+    content: { type: plain, value: "£3.40" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # Pastry 6
+  - id: sec2-i6-name
+    type: text
+    z: 52
+    x: 120
+    y: 990
+    width: 700
+    height: 0
+    content: { type: plain, value: "Salted Caramel Cookie" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 600
+      font_style: italic
+      color: "#F2EAD3"
+      line_height: 1.3
+
+  - id: sec2-i6-price
+    type: text
+    z: 53
+    x: 830
+    y: 990
+    width: 140
+    height: 0
+    content: { type: plain, value: "£2.80" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: "#F2EAD3"
+      text_align: right
+      line_height: 1.3
+
+  # ── Bottom ornament + footer ─────────────────────────────
+  - id: scribble-3
+    type: rect
+    z: 60
+    x: 360
+    y: 1080
+    width: 360
+    height: 2
+    fill: { type: solid, color: "#F2EAD3" }
+    opacity: 0.5
+
+  - id: footer-msg
+    type: text
+    z: 61
+    x: 100
+    y: 1110
+    width: 880
+    height: 0
+    content: { type: plain, value: "made with care · served with a smile ☕" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_style: italic
+      color: "#F2EAD3"
+      text_align: center
+      line_height: 1.3
+      opacity: 0.8
+
+  - id: footer-hours
+    type: text
+    z: 62
+    x: 100
+    y: 1170
+    width: 880
+    height: 0
+    content: { type: plain, value: "OPEN MON–FRI 7AM–6PM · SAT–SUN 8AM–5PM" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: "#F2EAD3"
+      letter_spacing: 0.5
+      text_align: center
+      line_height: 1.3
+      opacity: 0.7
+
+  - id: star-bl
+    type: text
+    z: 63
+    x: 80
+    y: 1230
+    width: 60
+    height: 0
+    content: { type: plain, value: "✦" }
+    style:
+      font_family: $heading
+      font_size: 24
+      color: "#F2EAD3"
+      opacity: 0.6
+
+  - id: star-br
+    type: text
+    z: 64
+    x: 940
+    y: 1230
+    width: 60
+    height: 0
+    content: { type: plain, value: "✦" }
+    style:
+      font_family: $heading
+      font_size: 24
+      color: "#F2EAD3"
+      opacity: 0.6
+
+slots:
+  - { id: cafe_name, path: "layers[6].content.value", type: text, hint: "Cafe name", default: "Birch & Bramble" }

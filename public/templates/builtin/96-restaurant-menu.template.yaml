@@ -1,0 +1,945 @@
+_protocol: template/v1
+
+# Two-column restaurant menu — A4 portrait 1240×1754, editorial-cream theme.
+# Distinct from 35-restaurant-menu: 4 categories × 3 items in a 2×2 grid,
+# elegant serif typography, dotted leader lines between dish + price.
+meta:
+  id: tmpl-restaurant-menu-two-column
+  name: Restaurant Menu · Two-Column
+  type: menu
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [menu, restaurant, fine-dining, two-column, a4]
+  description: "Elegant two-column restaurant menu with four categories (Starters, Mains, Desserts, Drinks), realistic dishes, descriptions, and prices."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # ── Header rule top ──────────────────────────────────────
+  - id: top-rule
+    type: rect
+    z: 1
+    x: 100
+    y: 100
+    width: 1040
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # ── Eyebrow ───────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 5
+    x: 100
+    y: 130
+    width: 1040
+    height: 0
+    content: { type: plain, value: "★ ESTABLISHED 2012 · SEASONAL EUROPEAN ★" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+  # ── Restaurant name (hero) ───────────────────────────────
+  - id: restaurant-name
+    type: text
+    z: 6
+    x: 100
+    y: 170
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Maison Verdier" }
+    style:
+      font_family: $heading
+      font_size: 76
+      font_weight: 700
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.05
+      letter_spacing: -0.01
+
+  - id: tagline
+    type: text
+    z: 7
+    x: 100
+    y: 280
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Dinner Menu · Spring & Summer 2026" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      line_height: 1.3
+
+  - id: header-rule
+    type: rect
+    z: 8
+    x: 560
+    y: 320
+    width: 120
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  # ── STARTERS (top-left) ───────────────────────────────────
+  - id: cat1-heading
+    type: text
+    z: 10
+    x: 100
+    y: 380
+    width: 500
+    height: 0
+    content: { type: plain, value: "STARTERS" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.3
+      text_transform: uppercase
+
+  - id: cat1-rule
+    type: rect
+    z: 11
+    x: 100
+    y: 412
+    width: 500
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  # Starter 1
+  - id: cat1-item1-name
+    type: text
+    z: 12
+    x: 100
+    y: 432
+    width: 380
+    height: 0
+    content: { type: plain, value: "Burrata · Fig · Pistachio" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat1-item1-price
+    type: text
+    z: 13
+    x: 480
+    y: 432
+    width: 120
+    height: 0
+    content: { type: plain, value: "16" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat1-item1-desc
+    type: text
+    z: 14
+    x: 100
+    y: 460
+    width: 500
+    height: 0
+    content: { type: plain, value: "House burrata, fresh black mission figs, candied pistachio, white balsamic, basil oil." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Starter 2
+  - id: cat1-item2-name
+    type: text
+    z: 15
+    x: 100
+    y: 510
+    width: 380
+    height: 0
+    content: { type: plain, value: "Beetroot Tartare" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat1-item2-price
+    type: text
+    z: 16
+    x: 480
+    y: 510
+    width: 120
+    height: 0
+    content: { type: plain, value: "14" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat1-item2-desc
+    type: text
+    z: 17
+    x: 100
+    y: 538
+    width: 500
+    height: 0
+    content: { type: plain, value: "Roasted golden beet, capers, shallot, chive, lemon crème fraîche, rye crisp." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Starter 3
+  - id: cat1-item3-name
+    type: text
+    z: 18
+    x: 100
+    y: 588
+    width: 380
+    height: 0
+    content: { type: plain, value: "Wild Mushroom Velouté" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat1-item3-price
+    type: text
+    z: 19
+    x: 480
+    y: 588
+    width: 120
+    height: 0
+    content: { type: plain, value: "13" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat1-item3-desc
+    type: text
+    z: 20
+    x: 100
+    y: 616
+    width: 500
+    height: 0
+    content: { type: plain, value: "Chanterelle, porcini, thyme cream, brown butter, sourdough croutons." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # ── MAINS (top-right) ─────────────────────────────────────
+  - id: cat2-heading
+    type: text
+    z: 30
+    x: 640
+    y: 380
+    width: 500
+    height: 0
+    content: { type: plain, value: "MAINS" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.3
+      text_transform: uppercase
+
+  - id: cat2-rule
+    type: rect
+    z: 31
+    x: 640
+    y: 412
+    width: 500
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  # Main 1
+  - id: cat2-item1-name
+    type: text
+    z: 32
+    x: 640
+    y: 432
+    width: 380
+    height: 0
+    content: { type: plain, value: "Cornish Sea Bass" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat2-item1-price
+    type: text
+    z: 33
+    x: 1020
+    y: 432
+    width: 120
+    height: 0
+    content: { type: plain, value: "32" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat2-item1-desc
+    type: text
+    z: 34
+    x: 640
+    y: 460
+    width: 500
+    height: 0
+    content: { type: plain, value: "Pan-roasted sea bass, fennel purée, saffron mussels, samphire, lemon brown butter." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Main 2
+  - id: cat2-item2-name
+    type: text
+    z: 35
+    x: 640
+    y: 510
+    width: 380
+    height: 0
+    content: { type: plain, value: "Aged Sirloin · 250g" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat2-item2-price
+    type: text
+    z: 36
+    x: 1020
+    y: 510
+    width: 120
+    height: 0
+    content: { type: plain, value: "38" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat2-item2-desc
+    type: text
+    z: 37
+    x: 640
+    y: 538
+    width: 500
+    height: 0
+    content: { type: plain, value: "40-day dry-aged sirloin, pommes anna, charred shallot, peppercorn jus." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Main 3
+  - id: cat2-item3-name
+    type: text
+    z: 38
+    x: 640
+    y: 588
+    width: 380
+    height: 0
+    content: { type: plain, value: "Pumpkin Agnolotti (v)" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat2-item3-price
+    type: text
+    z: 39
+    x: 1020
+    y: 588
+    width: 120
+    height: 0
+    content: { type: plain, value: "24" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat2-item3-desc
+    type: text
+    z: 40
+    x: 640
+    y: 616
+    width: 500
+    height: 0
+    content: { type: plain, value: "Hand-cut pumpkin & amaretti agnolotti, sage butter, brown butter solids, parmigiano." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Main 4
+  - id: cat2-item4-name
+    type: text
+    z: 41
+    x: 640
+    y: 666
+    width: 380
+    height: 0
+    content: { type: plain, value: "Confit Duck Leg" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat2-item4-price
+    type: text
+    z: 42
+    x: 1020
+    y: 666
+    width: 120
+    height: 0
+    content: { type: plain, value: "29" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat2-item4-desc
+    type: text
+    z: 43
+    x: 640
+    y: 694
+    width: 500
+    height: 0
+    content: { type: plain, value: "Slow-cooked duck leg, Puy lentils, savoy cabbage, blackcurrant gastrique." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # ── Divider mid-page ──────────────────────────────────────
+  - id: mid-rule
+    type: rect
+    z: 50
+    x: 540
+    y: 880
+    width: 160
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  - id: mid-ornament
+    type: text
+    z: 51
+    x: 540
+    y: 870
+    width: 160
+    height: 0
+    content: { type: plain, value: "✦" }
+    style:
+      font_family: $heading
+      font_size: 16
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  # ── DESSERTS (bottom-left) ────────────────────────────────
+  - id: cat3-heading
+    type: text
+    z: 60
+    x: 100
+    y: 940
+    width: 500
+    height: 0
+    content: { type: plain, value: "DESSERTS" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.3
+      text_transform: uppercase
+
+  - id: cat3-rule
+    type: rect
+    z: 61
+    x: 100
+    y: 972
+    width: 500
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  # Dessert 1
+  - id: cat3-item1-name
+    type: text
+    z: 62
+    x: 100
+    y: 992
+    width: 380
+    height: 0
+    content: { type: plain, value: "Dark Chocolate Pavé" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat3-item1-price
+    type: text
+    z: 63
+    x: 480
+    y: 992
+    width: 120
+    height: 0
+    content: { type: plain, value: "12" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat3-item1-desc
+    type: text
+    z: 64
+    x: 100
+    y: 1020
+    width: 500
+    height: 0
+    content: { type: plain, value: "70% Valrhona pavé, hazelnut crunch, salted caramel, crème fraîche sorbet." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Dessert 2
+  - id: cat3-item2-name
+    type: text
+    z: 65
+    x: 100
+    y: 1070
+    width: 380
+    height: 0
+    content: { type: plain, value: "Lemon Tart" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat3-item2-price
+    type: text
+    z: 66
+    x: 480
+    y: 1070
+    width: 120
+    height: 0
+    content: { type: plain, value: "10" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat3-item2-desc
+    type: text
+    z: 67
+    x: 100
+    y: 1098
+    width: 500
+    height: 0
+    content: { type: plain, value: "Amalfi lemon curd, almond shortbread, torched Italian meringue." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Dessert 3
+  - id: cat3-item3-name
+    type: text
+    z: 68
+    x: 100
+    y: 1148
+    width: 380
+    height: 0
+    content: { type: plain, value: "Affogato" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat3-item3-price
+    type: text
+    z: 69
+    x: 480
+    y: 1148
+    width: 120
+    height: 0
+    content: { type: plain, value: "9" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat3-item3-desc
+    type: text
+    z: 70
+    x: 100
+    y: 1176
+    width: 500
+    height: 0
+    content: { type: plain, value: "Madagascar vanilla gelato, double espresso, hazelnut biscotti." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # ── DRINKS (bottom-right) ─────────────────────────────────
+  - id: cat4-heading
+    type: text
+    z: 80
+    x: 640
+    y: 940
+    width: 500
+    height: 0
+    content: { type: plain, value: "DRINKS" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.3
+      text_transform: uppercase
+
+  - id: cat4-rule
+    type: rect
+    z: 81
+    x: 640
+    y: 972
+    width: 500
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  # Drink 1
+  - id: cat4-item1-name
+    type: text
+    z: 82
+    x: 640
+    y: 992
+    width: 380
+    height: 0
+    content: { type: plain, value: "House Negroni" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat4-item1-price
+    type: text
+    z: 83
+    x: 1020
+    y: 992
+    width: 120
+    height: 0
+    content: { type: plain, value: "14" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat4-item1-desc
+    type: text
+    z: 84
+    x: 640
+    y: 1020
+    width: 500
+    height: 0
+    content: { type: plain, value: "Tanqueray, Cocchi Torino, Campari, orange oil, large rock." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Drink 2
+  - id: cat4-item2-name
+    type: text
+    z: 85
+    x: 640
+    y: 1070
+    width: 380
+    height: 0
+    content: { type: plain, value: "Garden Spritz" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat4-item2-price
+    type: text
+    z: 86
+    x: 1020
+    y: 1070
+    width: 120
+    height: 0
+    content: { type: plain, value: "12" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat4-item2-desc
+    type: text
+    z: 87
+    x: 640
+    y: 1098
+    width: 500
+    height: 0
+    content: { type: plain, value: "Elderflower, cucumber, prosecco, soda, mint, lemon peel." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Drink 3
+  - id: cat4-item3-name
+    type: text
+    z: 88
+    x: 640
+    y: 1148
+    width: 380
+    height: 0
+    content: { type: plain, value: "Chablis · 175ml" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat4-item3-price
+    type: text
+    z: 89
+    x: 1020
+    y: 1148
+    width: 120
+    height: 0
+    content: { type: plain, value: "16" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat4-item3-desc
+    type: text
+    z: 90
+    x: 640
+    y: 1176
+    width: 500
+    height: 0
+    content: { type: plain, value: "Domaine Servin, Burgundy 2022 — citrus, oyster shell, long finish." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # Drink 4
+  - id: cat4-item4-name
+    type: text
+    z: 91
+    x: 640
+    y: 1226
+    width: 380
+    height: 0
+    content: { type: plain, value: "Espresso · single origin" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: cat4-item4-price
+    type: text
+    z: 92
+    x: 1020
+    y: 1226
+    width: 120
+    height: 0
+    content: { type: plain, value: "4" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 700
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  - id: cat4-item4-desc
+    type: text
+    z: 93
+    x: 640
+    y: 1254
+    width: 500
+    height: 0
+    content: { type: plain, value: "Ethiopian Yirgacheffe, light roast, notes of bergamot and stone fruit." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 100
+    x: 100
+    y: 1610
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.3
+
+  - id: footer-note
+    type: text
+    z: 101
+    x: 100
+    y: 1635
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Allergens available on request. A discretionary 12.5% service charge will be added to your bill." }
+    style:
+      font_family: $body
+      font_size: 11
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      line_height: 1.4
+
+  - id: footer-address
+    type: text
+    z: 102
+    x: 100
+    y: 1685
+    width: 1040
+    height: 0
+    content: { type: plain, value: "14 RUE DES LAVANDIÈRES · LYON · MAISONVERDIER.FR" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: restaurant_name, path: "layers[3].content.value", type: text, hint: "Restaurant name", default: "Maison Verdier" }

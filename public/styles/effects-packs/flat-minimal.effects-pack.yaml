@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: flat-minimal
+name: Flat Minimal
+version: "1.0.0"
+tags: [flat, minimal, hairline, swiss, clean]
+description: "Barely-there hairline shadows, no glow — pure flat editorial register."
+effects:
+  shadow_card:   "0 1px 0 rgba(0,0,0,0.06)"
+  shadow_glow:   "none"
+  shadow_inset:  "inset 0 0 0 1px rgba(0,0,0,0.05)"
+  shadow_text:   "none"
+  blur_glass:    2
+  blur_backdrop: 0

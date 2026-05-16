@@ -1,0 +1,272 @@
+_protocol: template/v1
+
+# Executive dashboard — 6 hero KPIs, revenue trend line, segment stacked bar,
+# customer health donut, top accounts table. Single page scroll report.
+meta:
+  id: tmpl-executive-dashboard-report
+  name: Executive Dashboard
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, executive, dashboard, kpi, interactive]
+  description: "Board-level executive dashboard: 6 KPIs, revenue trend, growth by segment, health distribution, top accounts."
+
+document:
+  width: 1280
+  height: 2200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: revenue_trend
+        type: inline
+        rows:
+          - { month: Jan, revenue:  982400, target:  920000 }
+          - { month: Feb, revenue: 1018600, target:  950000 }
+          - { month: Mar, revenue: 1074200, target:  980000 }
+          - { month: Apr, revenue: 1112800, target: 1010000 }
+          - { month: May, revenue: 1168400, target: 1040000 }
+          - { month: Jun, revenue: 1224700, target: 1080000 }
+          - { month: Jul, revenue: 1287300, target: 1120000 }
+          - { month: Aug, revenue: 1342600, target: 1160000 }
+          - { month: Sep, revenue: 1408900, target: 1200000 }
+          - { month: Oct, revenue: 1472400, target: 1250000 }
+          - { month: Nov, revenue: 1538200, target: 1300000 }
+          - { month: Dec, revenue: 1619800, target: 1360000 }
+      - id: segment_growth
+        type: inline
+        rows:
+          - { segment: Enterprise,    new_arr: 4280000, expansion: 2140000 }
+          - { segment: Mid-Market,    new_arr: 2860000, expansion: 1480000 }
+          - { segment: SMB,           new_arr: 1640000, expansion:  720000 }
+          - { segment: Self-Serve,    new_arr:  840000, expansion:  310000 }
+      - id: health_dist
+        type: inline
+        rows:
+          - { health: Healthy,   share_pct: 62.4, accounts: 1842 }
+          - { health: Stable,    share_pct: 21.8, accounts:  644 }
+          - { health: At Risk,   share_pct: 11.2, accounts:  331 }
+          - { health: Critical,  share_pct:  4.6, accounts:  136 }
+      - id: top_accounts
+        type: inline
+        rows:
+          - { account: Northwind Industries,    segment: Enterprise, arr: 1842000, growth:  18.4, health: Healthy,  risk_score:  12 }
+          - { account: Contoso Pharmaceuticals, segment: Enterprise, arr: 1428000, growth:  24.2, health: Healthy,  risk_score:   8 }
+          - { account: Globex Manufacturing,    segment: Enterprise, arr: 1184000, growth:   6.8, health: Stable,   risk_score:  34 }
+          - { account: Initech Software,        segment: Mid-Market, arr:  864000, growth:  31.6, health: Healthy,  risk_score:  14 }
+          - { account: Umbrella Logistics,      segment: Enterprise, arr:  812000, growth: -12.4, health: At Risk,  risk_score:  62 }
+          - { account: Acme Retail Group,       segment: Mid-Market, arr:  742000, growth:  14.8, health: Healthy,  risk_score:  18 }
+          - { account: Stark Energy,            segment: Enterprise, arr:  698000, growth:   9.2, health: Stable,   risk_score:  28 }
+          - { account: Wayne Holdings,          segment: Mid-Market, arr:  584000, growth:  22.7, health: Healthy,  risk_score:  16 }
+          - { account: Cyberdyne Robotics,      segment: Mid-Market, arr:  512000, growth:  -4.2, health: At Risk,  risk_score:  58 }
+          - { account: Hooli Networks,          segment: Mid-Market, arr:  468000, growth:  11.4, health: Stable,   risk_score:  32 }
+          - { account: Pied Piper Data,         segment: SMB,        arr:  324000, growth:  41.8, health: Healthy,  risk_score:  10 }
+          - { account: Vandelay Imports,        segment: SMB,        arr:  286000, growth: -18.6, health: Critical, risk_score:  78 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "NORTHWIND CORP · FY2025 · BOARD REVIEW"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 80
+        format: markdown
+        font_family: Playfair Display
+        font_size: 48
+        font_weight: 700
+        line_height: 1.1
+        content: "**Executive Dashboard — Full Year 2025**"
+
+      - id: kpi-revenue
+        type: kpi_card
+        x: 60
+        y: 180
+        width: 280
+        height: 140
+        label: Total Revenue
+        value: 15250300
+        format: currency
+        currency: USD
+        delta: 21.4
+        delta_format: percent
+        sparkline_data: revenue_trend
+        sparkline_field: revenue
+        sparkline_color: "$primary"
+
+      - id: kpi-customers
+        type: kpi_card
+        x: 360
+        y: 180
+        width: 280
+        height: 140
+        label: Active Customers
+        value: 2953
+        format: number
+        delta: 14.8
+        delta_format: percent
+
+      - id: kpi-nrr
+        type: kpi_card
+        x: 660
+        y: 180
+        width: 280
+        height: 140
+        label: Net Revenue Retention
+        value: 118.6
+        format: percent
+        delta: 3.2
+        delta_format: percent
+
+      - id: kpi-margin
+        type: kpi_card
+        x: 960
+        y: 180
+        width: 260
+        height: 140
+        label: Gross Margin
+        value: 74.2
+        format: percent
+        delta: 1.8
+        delta_format: percent
+
+      - id: kpi-cac-payback
+        type: kpi_card
+        x: 60
+        y: 340
+        width: 580
+        height: 140
+        label: CAC Payback (months)
+        value: 14.2
+        format: number
+        decimals: 1
+        delta: -2.4
+        delta_format: percent
+
+      - id: kpi-pipeline
+        type: kpi_card
+        x: 660
+        y: 340
+        width: 560
+        height: 140
+        label: Qualified Pipeline
+        value: 42180000
+        format: currency
+        currency: USD
+        delta: 28.6
+        delta_format: percent
+
+      - id: chart-revenue
+        type: interactive_chart
+        x: 60
+        y: 520
+        width: 1160
+        height: 400
+        chart_type: line
+        data_ref: revenue_trend
+        x_field: month
+        y_field: revenue
+        title: Revenue Trend — Monthly vs Target
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-segments
+        type: rich_text
+        x: 60
+        y: 950
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Growth by Segment**"
+
+      - id: chart-segments
+        type: interactive_chart
+        x: 60
+        y: 1010
+        width: 740
+        height: 380
+        chart_type: bar
+        data_ref: segment_growth
+        x_field: segment
+        y_field: new_arr
+        title: New ARR vs Expansion ARR by Segment
+        legend: true
+        grid: true
+        animate: true
+
+      - id: chart-health
+        type: interactive_chart
+        x: 820
+        y: 1010
+        width: 400
+        height: 380
+        chart_type: donut
+        data_ref: health_dist
+        x_field: health
+        y_field: share_pct
+        title: Customer Health Distribution
+        legend: true
+        animate: true
+
+      - id: section-accounts
+        type: rich_text
+        x: 60
+        y: 1420
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top Accounts**"
+
+      - id: tbl-accounts
+        type: interactive_table
+        x: 60
+        y: 1480
+        width: 1160
+        height: 640
+        data_ref: top_accounts
+        pagination: true
+        page_size: 10
+        filterable: true
+        exportable: true
+        columns:
+          - { field: account,    title: Account,     width: 280, sortable: true }
+          - { field: segment,    title: Segment,     width: 150, sortable: true, formatter: badge }
+          - { field: arr,        title: ARR,         width: 160, sortable: true, formatter: currency, align: right }
+          - { field: growth,     title: YoY %,       width: 140, sortable: true, formatter: delta, align: right }
+          - { field: health,     title: Health,      width: 140, sortable: true, formatter: badge }
+          - { field: risk_score, title: Risk Score,  width: 130, sortable: true, formatter: number, align: right }
+
+slots:
+  - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Dashboard title",  default: "**Executive Dashboard — Full Year 2025**" }
+  - { id: report_eyebrow,    path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",     default: "NORTHWIND CORP · FY2025 · BOARD REVIEW" }
+  - { id: revenue_title,     path: "pages[0].layers[8].title",    type: text, hint: "Revenue chart",    default: "Revenue Trend — Monthly vs Target" }
+  - { id: segment_section,   path: "pages[0].layers[9].content",  type: text, hint: "Segment heading",  default: "**Growth by Segment**" }
+  - { id: accounts_section,  path: "pages[0].layers[12].content", type: text, hint: "Accounts heading", default: "**Top Accounts**" }

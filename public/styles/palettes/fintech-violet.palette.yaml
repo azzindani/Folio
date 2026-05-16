@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: fintech-violet
+name: Fintech Violet
+version: "1.0.0"
+tags: [finance, fintech, modern, dark, violet]
+description: "Deep violet with bright teal — modern fintech apps and crypto dashboards."
+colors:
+  background: "#150F2E"
+  surface:    "#1E1640"
+  surface_2:  "#2A1F58"
+  primary:    "#7C3AED"
+  secondary:  "#06D6C4"
+  accent:     "#F472B6"
+  text:       "#F0EBFF"
+  text_muted: "#9D93C2"
+  border:     "#332866"
+  success:    "#22D3A1"
+  warning:    "#FACC15"
+  danger:     "#FB6B7C"
