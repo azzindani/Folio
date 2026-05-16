@@ -36,6 +36,30 @@ test('Folio Catalog — browse + pick + open', async ({ page }) => {
   const tabs = page.locator('.catalog-tab');
   await expect(tabs).toHaveCount(4);
 
+  // Search bar narrows the template list
+  const initialCards = await page.locator('.tmpl-card[data-template]').count();
+  expect(initialCards).toBeGreaterThan(0);
+  await page.locator('input[data-input="search"]').fill('stats');
+  await page.waitForTimeout(150);
+  const filteredCards = await page.locator('.tmpl-card[data-template]').count();
+  expect(filteredCards, 'search should narrow the grid').toBeLessThan(initialCards);
+  expect(filteredCards).toBeGreaterThan(0);
+  await shot(page, '01b-search-stats');
+
+  // Tag chip click filters too — clear search first
+  await page.locator('input[data-input="search"]').fill('');
+  await page.waitForTimeout(100);
+  const firstChip = page.locator('.tag-chip').first();
+  if (await firstChip.count() > 0) {
+    await firstChip.click();
+    await page.waitForTimeout(100);
+    const taggedCount = await page.locator('.tmpl-card[data-template]').count();
+    expect(taggedCount).toBeGreaterThan(0);
+    await shot(page, '01c-tag-filter');
+    // Clear filter so subsequent steps see the full set
+    await page.locator('.tag-chip.clear').click().catch(() => {});
+  }
+
   // Switch to Themes
   await page.locator('.catalog-tab[data-tab="themes"]').click();
   await page.waitForTimeout(200);

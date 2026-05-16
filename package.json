@@ -9,7 +9,10 @@
   },
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/gen-catalog-index.mjs",
     "build": "tsc && vite build",
+    "prebuild": "node scripts/gen-catalog-index.mjs",
+    "gen:catalog": "node scripts/gen-catalog-index.mjs",
     "build:analyze": "ANALYZE=true vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

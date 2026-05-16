@@ -1,40 +1,95 @@
 import { load as parseYAML } from 'js-yaml';
 import type { TemplateSpec } from '../schema/template';
+import catalogIndexJSON from './catalog-index.json';
 
-// Vite bundles every .template.yaml under builtin/ as raw text at build time.
-// `eager: true` because the picker dialog needs the metadata to render cards;
-// the YAML strings are small (< 30 KB total across the starter pack).
-const rawTemplates = import.meta.glob<string>('./builtin/*.template.yaml', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
+// ── Public types ─────────────────────────────────────────────
+
+export interface CatalogIndexEntry {
+  id:        string;
+  name:      string;
+  type:      string;
+  tags:      string[];
+  width:     number;
+  height:    number;
+  slots:     number;
+  pages:     number;
+  themeRef?: string;
+  /** Filename under src/templates/builtin/, used by the lazy loader. */
+  file:      string;
+}
 
 export interface BuiltinTemplate {
-  id: string;
+  id:   string;
   spec: TemplateSpec;
 }
 
-let cache: BuiltinTemplate[] | null = null;
+interface CatalogIndexFile {
+  count:   number;
+  entries: CatalogIndexEntry[];
+}
 
-export function loadBuiltinTemplates(): BuiltinTemplate[] {
-  if (cache) return cache;
-  const out: BuiltinTemplate[] = [];
-  for (const [path, raw] of Object.entries(rawTemplates)) {
+// ── Index (eager, tiny) ──────────────────────────────────────
+
+const INDEX: CatalogIndexEntry[] = (catalogIndexJSON as CatalogIndexFile).entries;
+
+export function loadCatalogIndex(): CatalogIndexEntry[] {
+  return INDEX;
+}
+
+export function findIndexEntry(id: string): CatalogIndexEntry | undefined {
+  return INDEX.find(e => e.id === id);
+}
+
+// ── Full template loader (lazy) ──────────────────────────────
+
+// Vite resolves the glob keys at build time. Non-eager: each value is a
+// () => Promise<string> that fetches the YAML raw text on demand.
+const rawLoaders = import.meta.glob<string>('./builtin/*.template.yaml', {
+  query:  '?raw',
+  import: 'default',
+});
+
+const specCache = new Map<string, TemplateSpec>();
+const inflight  = new Map<string, Promise<TemplateSpec | undefined>>();
+
+function loaderKeyFor(file: string): string {
+  return `./builtin/${file}`;
+}
+
+export async function loadFullTemplate(id: string): Promise<TemplateSpec | undefined> {
+  if (specCache.has(id)) return specCache.get(id);
+  const existing = inflight.get(id);
+  if (existing) return existing;
+
+  const entry = findIndexEntry(id);
+  if (!entry) return undefined;
+  const key = loaderKeyFor(entry.file);
+  const load = rawLoaders[key];
+  if (!load) return undefined;
+
+  const p = (async () => {
     try {
+      const raw  = await load();
       const spec = parseYAML(raw) as TemplateSpec;
-      if (!spec || spec._protocol !== 'template/v1') continue;
-      // Use the template's own meta.id (e.g. "tmpl-stats-card") so combos
-      // and MCP tools can reference templates by a stable name independent
-      // of file location. Fall back to the file basename if meta.id is missing.
-      const fallbackId = path.replace(/^.*\//, '').replace(/\.template\.yaml$/, '');
-      const id = (spec.meta?.id as string | undefined) ?? fallbackId;
-      out.push({ id, spec });
+      if (!spec || spec._protocol !== 'template/v1') return undefined;
+      specCache.set(id, spec);
+      return spec;
     } catch {
-      // Skip malformed templates rather than crashing the whole picker.
+      return undefined;
+    } finally {
+      inflight.delete(id);
     }
-  }
-  out.sort((a, b) => a.spec.meta.name.localeCompare(b.spec.meta.name));
-  cache = out;
-  return out;
+  })();
+  inflight.set(id, p);
+  return p;
+}
+
+/** Pre-warm a batch (e.g. visible cards). Returns once all resolve. */
+export async function preloadTemplates(ids: string[]): Promise<void> {
+  await Promise.all(ids.map(id => loadFullTemplate(id)));
+}
+
+/** Synchronously read an already-loaded spec from the cache (or undefined). */
+export function peekTemplate(id: string): TemplateSpec | undefined {
+  return specCache.get(id);
 }
