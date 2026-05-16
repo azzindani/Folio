@@ -473,10 +473,10 @@ export class PropertiesPanelManager {
           Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          ${this.renderNumberInput('fill.cx', 'CX (%)', fill.cx)}
-          ${this.renderNumberInput('fill.cy', 'CY (%)', fill.cy)}
+          ${this.renderNumberInput('fill.cx', 'CX (%)', fill.cx ?? 50)}
+          ${this.renderNumberInput('fill.cy', 'CY (%)', fill.cy ?? 50)}
         </div>
-        ${this.renderNumberField('fill.radius', 'Radius (%)', fill.radius, 0, 200, 1)}
+        ${this.renderNumberField('fill.radius', 'Radius (%)', fill.radius ?? 50, 0, 200, 1)}
         <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px">
           <span style="font-size:11px;color:var(--color-text-muted)">Stops</span>
           <button class="grad-add-stop-btn" style="font-size:11px;background:none;border:1px solid var(--color-border);
