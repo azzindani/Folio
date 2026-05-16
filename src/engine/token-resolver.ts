@@ -63,8 +63,24 @@ export function resolveToken(token: string, ctx: TokenResolutionContext): string
     return String(colorDeep);
   }
 
+  // Semantic aliases — common tokens that templates rely on even when
+  // a theme doesn't define them explicitly. Lets template authors use
+  // `$surface2` / `$accent` without every theme needing to redefine them.
+  const aliased = COLOR_ALIASES[key];
+  if (aliased) {
+    const v = deepSearch(ctx.theme.colors as unknown as Record<string, unknown>, aliased);
+    if (v !== undefined) return String(v);
+  }
+
   return FALLBACK_COLOR;
 }
+
+/** Templates may reference these — fall back to the named theme color. */
+const COLOR_ALIASES: Record<string, string> = {
+  surface2:  'surface',
+  surface_2: 'surface',
+  accent:    'secondary',
+};
 
 export function isToken(value: unknown): value is string {
   return typeof value === 'string' && value.startsWith(TOKEN_PREFIX);

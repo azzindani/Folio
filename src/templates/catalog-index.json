@@ -1,7 +1,136 @@
 {
   "_generator": "scripts/gen-catalog-index.mjs",
-  "count": 8,
+  "count": 24,
   "entries": [
+    {
+      "id": "tmpl-document-cover",
+      "name": "A4 Document Cover",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "cover",
+        "document",
+        "a4",
+        "editorial",
+        "print"
+      ],
+      "width": 2480,
+      "height": 3508,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "14-a4-document-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-business-card",
+      "name": "Business Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "business",
+        "print",
+        "contact",
+        "mono"
+      ],
+      "width": 1050,
+      "height": 600,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "mono-print",
+      "file": "13-business-card.template.yaml"
+    },
+    {
+      "id": "tmpl-certificate",
+      "name": "Certificate of Achievement",
+      "type": "poster",
+      "tags": [
+        "certificate",
+        "award",
+        "formal",
+        "print",
+        "a4",
+        "landscape"
+      ],
+      "width": 2480,
+      "height": 1754,
+      "slots": 7,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "15-certificate.template.yaml"
+    },
+    {
+      "id": "tmpl-comparison-table",
+      "name": "Comparison Table",
+      "type": "card",
+      "tags": [
+        "card",
+        "comparison",
+        "before-after",
+        "table",
+        "landscape"
+      ],
+      "width": 1200,
+      "height": 800,
+      "slots": 16,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "20-comparison-table.template.yaml"
+    },
+    {
+      "id": "tmpl-conference-poster",
+      "name": "Conference Poster (A1)",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "conference",
+        "academic",
+        "a1",
+        "research"
+      ],
+      "width": 1680,
+      "height": 2378,
+      "slots": 16,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "21-conference-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-donut-kpi",
+      "name": "Donut KPI",
+      "type": "card",
+      "tags": [
+        "card",
+        "donut",
+        "kpi",
+        "dashboard",
+        "chart",
+        "square"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 9,
+      "pages": 0,
+      "themeRef": "forest-deep",
+      "file": "18-donut-kpi.template.yaml"
+    },
+    {
+      "id": "tmpl-event-invitation",
+      "name": "Event Invitation",
+      "type": "poster",
+      "tags": [
+        "invitation",
+        "event",
+        "formal",
+        "portrait",
+        "warm"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 7,
+      "pages": 0,
+      "themeRef": "sunset-glow",
+      "file": "16-event-invitation.template.yaml"
+    },
     {
       "id": "tmpl-event-poster",
       "name": "Event Poster (Neon)",
@@ -38,6 +167,24 @@
       "file": "06-instagram-carousel.template.yaml"
     },
     {
+      "id": "tmpl-instagram-story",
+      "name": "Instagram Story",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "social",
+        "instagram",
+        "story",
+        "sunset"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "sunset-glow",
+      "file": "09-instagram-story.template.yaml"
+    },
+    {
       "id": "tmpl-kpi-dashboard",
       "name": "KPI Dashboard",
       "type": "report",
@@ -53,6 +200,60 @@
       "pages": 1,
       "themeRef": "indigo-pro",
       "file": "07-kpi-dashboard.template.yaml"
+    },
+    {
+      "id": "tmpl-linkedin-post",
+      "name": "LinkedIn Post",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "social",
+        "linkedin",
+        "professional",
+        "indigo"
+      ],
+      "width": 1200,
+      "height": 627,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "10-linkedin-post.template.yaml"
+    },
+    {
+      "id": "tmpl-minimal-quote-poster",
+      "name": "Minimal Quote Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "quote",
+        "minimal",
+        "editorial",
+        "print"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "mono-print",
+      "file": "24-minimal-quote-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-multi-metric-dashboard",
+      "name": "Multi-Metric Dashboard",
+      "type": "report",
+      "tags": [
+        "report",
+        "dashboard",
+        "kpi",
+        "multi-metric",
+        "landscape"
+      ],
+      "width": 1280,
+      "height": 900,
+      "slots": 16,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "19-multi-metric-dashboard.template.yaml"
     },
     {
       "id": "tmpl-pricing-3tier",
@@ -71,6 +272,25 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "05-pricing-3tier.template.yaml"
+    },
+    {
+      "id": "tmpl-product-launch-hero",
+      "name": "Product Launch Hero",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "hero",
+        "product",
+        "launch",
+        "dark",
+        "landscape"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "23-product-launch-hero.template.yaml"
     },
     {
       "id": "tmpl-quote-card",
@@ -123,6 +343,24 @@
       "file": "01-simple-poster.template.yaml"
     },
     {
+      "id": "tmpl-sparkline-card",
+      "name": "Sparkline Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "sparkline",
+        "kpi",
+        "dashboard",
+        "wide"
+      ],
+      "width": 1080,
+      "height": 400,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "ocean-blue",
+      "file": "17-sparkline-card.template.yaml"
+    },
+    {
       "id": "tmpl-stats-card",
       "name": "Stats Card",
       "type": "poster",
@@ -139,6 +377,62 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "03-stats-card.template.yaml"
+    },
+    {
+      "id": "tmpl-twitter-card",
+      "name": "Twitter / X Card",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "social",
+        "twitter",
+        "x",
+        "dark",
+        "data"
+      ],
+      "width": 1200,
+      "height": 675,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "11-twitter-card.template.yaml"
+    },
+    {
+      "id": "tmpl-webinar-promo",
+      "name": "Webinar Promo",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "webinar",
+        "promo",
+        "social",
+        "landscape"
+      ],
+      "width": 1200,
+      "height": 675,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "ocean-blue",
+      "file": "22-webinar-promo.template.yaml"
+    },
+    {
+      "id": "tmpl-youtube-thumbnail",
+      "name": "YouTube Thumbnail",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "social",
+        "youtube",
+        "thumbnail",
+        "neon",
+        "hype"
+      ],
+      "width": 1280,
+      "height": 720,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "neon-bloom",
+      "file": "12-youtube-thumbnail.template.yaml"
     }
   ]
 }

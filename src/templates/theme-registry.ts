@@ -26,6 +26,12 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'sunset-glow': ['dark', 'warm', 'sunset'],
   'mono-print':  ['light', 'mono', 'editorial'],
   'forest-deep': ['dark', 'green', 'organic'],
+  'pastel-dream':    ['light', 'pastel', 'soft', 'feminine'],
+  'high-contrast':   ['dark', 'high-contrast', 'a11y', 'electric'],
+  'brutalist-mono':  ['light', 'mono', 'brutalist', 'editorial'],
+  'cyber-synthwave': ['dark', 'neon', 'synthwave', 'retro'],
+  'editorial-cream': ['light', 'warm', 'editorial', 'magazine'],
+  'corporate-slate': ['dark', 'corporate', 'professional', 'steel'],
 };
 
 function asString(v: string | Record<string, string> | undefined, fallback = '#000000'): string {
