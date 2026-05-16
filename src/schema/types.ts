@@ -586,6 +586,35 @@ export interface ThemeSpec {
   radii: Record<string, number>;
 }
 
+// ── Palette ─────────────────────────────────────────────────
+/**
+ * A PaletteSpec is the colors-only slice of a theme, packaged so it can
+ * be swapped independently. composeTheme(theme, { palette }) overlays
+ * palette.colors on top of theme.colors — the rest of the theme
+ * (typography, spacing, radii, effects) is untouched.
+ *
+ * Authored as `*.palette.yaml` under public/styles/palettes/ and indexed
+ * by scripts/gen-palette-index.mjs.
+ */
+export interface PaletteSpec {
+  _protocol: 'palette/v1';
+  /** Stable slug used by `palette: { ref: <id> }` references. */
+  id: string;
+  /** Display name shown in the picker. */
+  name: string;
+  /** Author-managed semver for cache busting. */
+  version: string;
+  /** Mood/domain tags surfaced in the picker (e.g. "formal", "healthcare"). */
+  tags?: string[];
+  /** One-line description shown on hover. */
+  description?: string;
+  /**
+   * Same shape as ThemeSpec.colors — keys overlay the theme's color
+   * map. Any keys not declared here fall through to the theme.
+   */
+  colors: Record<string, string | Record<string, string>>;
+}
+
 // ── Easing ───────────────────────────────────────────────────
 export type EasingFunction =
   | 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out'
@@ -699,6 +728,14 @@ export interface DesignSpec {
   theme?: {
     ref: string;
     overrides?: Record<string, string>;
+  };
+  /**
+   * Optional palette overlay. When set, palette.colors are merged on
+   * top of theme.colors before render. The two axes are orthogonal —
+   * any template can pair with any palette.
+   */
+  palette?: {
+    ref: string;
   };
   layers?: Layer[];
   pages?: Page[];
