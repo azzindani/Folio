@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: tea-zen
+name: Tea Zen
+version: "1.0.0"
+tags: [drink, tea, zen, matcha, calm]
+description: "Matcha green and bamboo on warm cream with clay-brown and cherry-blossom — tea-ceremony calm."
+colors:
+  background: "#F5EFE0"
+  surface:    "#EDE2C8"
+  surface_2:  "#DFD0A8"
+  primary:    "#5A7A3A"
+  secondary:  "#8C5A38"
+  accent:     "#E8B0B8"
+  text:       "#2A2818"
+  text_muted: "#6A5E42"
+  border:     "#C2B488"
+  success:    "#5A7A3A"
+  warning:    "#C9962A"
+  danger:     "#B0463A"

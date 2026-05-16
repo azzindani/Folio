@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: brewery-craft
+name: Brewery Craft
+version: "1.0.0"
+tags: [drink, beer, brewery, craft, taproom]
+description: "Amber gold and dark malt brown with hops green and roasted black — craft-taproom chalkboard."
+colors:
+  background: "#1A1208"
+  surface:    "#241A0E"
+  surface_2:  "#322412"
+  primary:    "#E0A330"
+  secondary:  "#7AA02A"
+  accent:     "#F2E2BD"
+  text:       "#F5EBD0"
+  text_muted: "#A89878"
+  border:     "#4A3820"
+  success:    "#7AA02A"
+  warning:    "#E0A330"
+  danger:     "#C8423A"

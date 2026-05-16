@@ -1,0 +1,621 @@
+_protocol: template/v1
+
+# Status dashboard page — 1080×1920 portrait, dark-tech theme.
+# Operational banner, 6 service rows w/ uptime, 3 past incidents.
+meta:
+  id: tmpl-status-page
+  name: Status Page
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, app, screen, status, uptime, portrait, dark]
+  description: "Service status dashboard with operational banner, service uptime rows, and recent incident history."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill: { type: solid, color: "$background" }
+
+  # ── Brand strip ───────────────────────────────────────────
+  - id: brand
+    type: text
+    z: 5
+    x: 60
+    y: 70
+    width: 960
+    height: 0
+    content: { type: plain, value: "ACME · STATUS" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.24
+
+  - id: ts
+    type: text
+    z: 6
+    x: 60
+    y: 70
+    width: 960
+    height: 0
+    content: { type: plain, value: "Updated · just now" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      text_align: right
+
+  # ── Overall banner ────────────────────────────────────────
+  - id: banner
+    type: rect
+    z: 10
+    x: 60
+    y: 130
+    width: 960
+    height: 180
+    radius: 16
+    fill: { type: solid, color: "rgba(16,185,129,0.14)" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: banner-dot
+    type: circle
+    z: 11
+    cx: 130
+    cy: 220
+    rx: 18
+    ry: 18
+    fill: { type: solid, color: "$accent" }
+
+  - id: banner-text
+    type: text
+    z: 12
+    x: 180
+    y: 175
+    width: 800
+    height: 0
+    content: { type: plain, value: "All Systems Operational" }
+    style:
+      font_family: $heading
+      font_size: 40
+      font_weight: 800
+      color: $text
+      letter_spacing: -0.01
+
+  - id: banner-sub
+    type: text
+    z: 13
+    x: 180
+    y: 235
+    width: 800
+    height: 0
+    content: { type: plain, value: "All 6 services are running normally. No active incidents." }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+
+  # ── Services section header ───────────────────────────────
+  - id: svc-hdr
+    type: text
+    z: 20
+    x: 60
+    y: 380
+    width: 960
+    height: 0
+    content: { type: plain, value: "SERVICES" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $text_muted
+      letter_spacing: 0.3
+
+  # ── Service row 1 — API ──────────────────────────────────
+  - id: svc1-bg
+    type: rect
+    z: 21
+    x: 60
+    y: 420
+    width: 960
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: svc1-dot
+    type: circle
+    z: 22
+    cx: 100
+    cy: 460
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: svc1-name
+    type: text
+    z: 23
+    x: 130
+    y: 446
+    width: 500
+    height: 0
+    content: { type: plain, value: "API Gateway" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+
+  - id: svc1-up
+    type: text
+    z: 24
+    x: 60
+    y: 446
+    width: 960
+    height: 0
+    content: { type: plain, value: "99.998% · operational" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $accent
+      text_align: right
+
+  # ── Service row 2 — Dashboard ────────────────────────────
+  - id: svc2-bg
+    type: rect
+    z: 25
+    x: 60
+    y: 510
+    width: 960
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: svc2-dot
+    type: circle
+    z: 26
+    cx: 100
+    cy: 550
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: svc2-name
+    type: text
+    z: 27
+    x: 130
+    y: 536
+    width: 500
+    height: 0
+    content: { type: plain, value: "Web Dashboard" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+
+  - id: svc2-up
+    type: text
+    z: 28
+    x: 60
+    y: 536
+    width: 960
+    height: 0
+    content: { type: plain, value: "99.995% · operational" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $accent
+      text_align: right
+
+  # ── Service row 3 — Auth ─────────────────────────────────
+  - id: svc3-bg
+    type: rect
+    z: 29
+    x: 60
+    y: 600
+    width: 960
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: svc3-dot
+    type: circle
+    z: 30
+    cx: 100
+    cy: 640
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: svc3-name
+    type: text
+    z: 31
+    x: 130
+    y: 626
+    width: 500
+    height: 0
+    content: { type: plain, value: "Authentication" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+
+  - id: svc3-up
+    type: text
+    z: 32
+    x: 60
+    y: 626
+    width: 960
+    height: 0
+    content: { type: plain, value: "100.000% · operational" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $accent
+      text_align: right
+
+  # ── Service row 4 — Webhooks ─────────────────────────────
+  - id: svc4-bg
+    type: rect
+    z: 33
+    x: 60
+    y: 690
+    width: 960
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: svc4-dot
+    type: circle
+    z: 34
+    cx: 100
+    cy: 730
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: svc4-name
+    type: text
+    z: 35
+    x: 130
+    y: 716
+    width: 500
+    height: 0
+    content: { type: plain, value: "Webhooks Delivery" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+
+  - id: svc4-up
+    type: text
+    z: 36
+    x: 60
+    y: 716
+    width: 960
+    height: 0
+    content: { type: plain, value: "99.92% · operational" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $accent
+      text_align: right
+
+  # ── Service row 5 — CDN ──────────────────────────────────
+  - id: svc5-bg
+    type: rect
+    z: 37
+    x: 60
+    y: 780
+    width: 960
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: svc5-dot
+    type: circle
+    z: 38
+    cx: 100
+    cy: 820
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: svc5-name
+    type: text
+    z: 39
+    x: 130
+    y: 806
+    width: 500
+    height: 0
+    content: { type: plain, value: "Static CDN" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+
+  - id: svc5-up
+    type: text
+    z: 40
+    x: 60
+    y: 806
+    width: 960
+    height: 0
+    content: { type: plain, value: "99.997% · operational" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $accent
+      text_align: right
+
+  # ── Service row 6 — Database ─────────────────────────────
+  - id: svc6-bg
+    type: rect
+    z: 41
+    x: 60
+    y: 870
+    width: 960
+    height: 80
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: svc6-dot
+    type: circle
+    z: 42
+    cx: 100
+    cy: 910
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: svc6-name
+    type: text
+    z: 43
+    x: 130
+    y: 896
+    width: 500
+    height: 0
+    content: { type: plain, value: "Database Cluster" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $text
+
+  - id: svc6-up
+    type: text
+    z: 44
+    x: 60
+    y: 896
+    width: 960
+    height: 0
+    content: { type: plain, value: "99.999% · operational" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $accent
+      text_align: right
+
+  # ── Incident history header ───────────────────────────────
+  - id: inc-hdr
+    type: text
+    z: 50
+    x: 60
+    y: 1020
+    width: 960
+    height: 0
+    content: { type: plain, value: "RECENT INCIDENTS" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $text_muted
+      letter_spacing: 0.3
+
+  # ── Incident 1 ────────────────────────────────────────────
+  - id: i1-bg
+    type: rect
+    z: 51
+    x: 60
+    y: 1060
+    width: 960
+    height: 220
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: i1-date
+    type: text
+    z: 52
+    x: 90
+    y: 1086
+    width: 900
+    height: 0
+    content: { type: plain, value: "MAY 14 · RESOLVED · 47 min" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.2
+
+  - id: i1-title
+    type: text
+    z: 53
+    x: 90
+    y: 1118
+    width: 900
+    height: 0
+    content: { type: plain, value: "Elevated API latency in EU-West-2" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 700
+      color: $text
+
+  - id: i1-body
+    type: text
+    z: 54
+    x: 90
+    y: 1170
+    width: 900
+    height: 0
+    content: { type: plain, value: "A misconfigured connection pool caused P95 latency to rise to 800ms. Rolled back at 14:23 UTC; latency normalized within 4 minutes." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.55
+
+  # ── Incident 2 ────────────────────────────────────────────
+  - id: i2-bg
+    type: rect
+    z: 55
+    x: 60
+    y: 1300
+    width: 960
+    height: 220
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: i2-date
+    type: text
+    z: 56
+    x: 90
+    y: 1326
+    width: 900
+    height: 0
+    content: { type: plain, value: "MAY 09 · RESOLVED · 1h 12 min" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.2
+
+  - id: i2-title
+    type: text
+    z: 57
+    x: 90
+    y: 1358
+    width: 900
+    height: 0
+    content: { type: plain, value: "Webhook delivery delays" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 700
+      color: $text
+
+  - id: i2-body
+    type: text
+    z: 58
+    x: 90
+    y: 1410
+    width: 900
+    height: 0
+    content: { type: plain, value: "Queue backlog after a deploy regression delayed webhook delivery up to 18 minutes. All queued events delivered. Added regression test." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.55
+
+  # ── Incident 3 ────────────────────────────────────────────
+  - id: i3-bg
+    type: rect
+    z: 59
+    x: 60
+    y: 1540
+    width: 960
+    height: 220
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: i3-date
+    type: text
+    z: 60
+    x: 90
+    y: 1566
+    width: 900
+    height: 0
+    content: { type: plain, value: "MAY 02 · RESOLVED · 22 min" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.2
+
+  - id: i3-title
+    type: text
+    z: 61
+    x: 90
+    y: 1598
+    width: 900
+    height: 0
+    content: { type: plain, value: "Dashboard intermittent 502 errors" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 700
+      color: $text
+
+  - id: i3-body
+    type: text
+    z: 62
+    x: 90
+    y: 1650
+    width: 900
+    height: 0
+    content: { type: plain, value: "A stuck load-balancer node returned 502 for ~3% of dashboard requests. Node drained and replaced. Adjusted health-check thresholds." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.55
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer
+    type: text
+    z: 70
+    x: 60
+    y: 1830
+    width: 960
+    height: 0
+    content: { type: plain, value: "Subscribe to updates · status.acme.com/feed.rss" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: overall_status, path: "layers[5].content.value", type: text, hint: "Overall status headline", default: "All Systems Operational" }

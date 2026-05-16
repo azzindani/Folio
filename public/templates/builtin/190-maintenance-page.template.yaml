@@ -1,0 +1,258 @@
+_protocol: template/v1
+
+# Maintenance page — 1080×1920 portrait, corporate-slate theme.
+# Wrench icon, "WE'LL BE BACK" headline, ETA, status-page CTA.
+meta:
+  id: tmpl-maintenance-page
+  name: Maintenance Page
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, app, screen, maintenance, downtime, portrait, corporate]
+  description: "Scheduled-maintenance page with wrench icon, ETA, and status-page CTA."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill: { type: solid, color: "$background" }
+
+  - id: top-band
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 12
+    fill:
+      type: linear
+      angle: 90
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+
+  # ── Wrench icon container ─────────────────────────────────
+  - id: icon-bg
+    type: circle
+    z: 10
+    cx: 540
+    cy: 480
+    rx: 160
+    ry: 160
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 4 }
+
+  # ── Wrench icon — built from path + rect ──────────────────
+  - id: wrench-handle
+    type: rect
+    z: 11
+    x: 525
+    y: 410
+    width: 30
+    height: 130
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: wrench-head
+    type: path
+    z: 12
+    d: "M 470 380 Q 470 350 500 350 L 580 350 Q 610 350 610 380 L 610 420 L 570 420 L 570 400 L 510 400 L 510 420 L 470 420 Z"
+    fill: { type: solid, color: "$primary" }
+
+  - id: wrench-bolt
+    type: circle
+    z: 13
+    cx: 540
+    cy: 550
+    rx: 20
+    ry: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 4 }
+
+  # ── Status pill ───────────────────────────────────────────
+  - id: status-pill
+    type: rect
+    z: 20
+    x: 380
+    y: 720
+    width: 320
+    height: 48
+    radius: 24
+    fill: { type: solid, color: "rgba(245,158,11,0.15)" }
+    stroke: { color: "$accent", width: 1 }
+
+  - id: status-dot
+    type: circle
+    z: 21
+    cx: 420
+    cy: 744
+    rx: 7
+    ry: 7
+    fill: { type: solid, color: "$accent" }
+
+  - id: status-text
+    type: text
+    z: 22
+    x: 440
+    y: 734
+    width: 240
+    height: 0
+    content: { type: plain, value: "SCHEDULED MAINTENANCE" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.2
+
+  # ── Headline ──────────────────────────────────────────────
+  - id: headline
+    type: text
+    z: 30
+    x: 60
+    y: 820
+    width: 960
+    height: 0
+    content: { type: plain, value: "WE'LL BE\nBACK SOON" }
+    style:
+      font_family: $heading
+      font_size: 120
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.025
+
+  # ── Body copy ─────────────────────────────────────────────
+  - id: body-copy
+    type: text
+    z: 31
+    x: 80
+    y: 1120
+    width: 920
+    height: 0
+    content: { type: plain, value: "Our team is upgrading core infrastructure to bring you faster, more reliable service. We apologize for the interruption." }
+    style:
+      font_family: $body
+      font_size: 24
+      color: $text_muted
+      text_align: center
+      line_height: 1.55
+
+  # ── ETA block ─────────────────────────────────────────────
+  - id: eta-bg
+    type: rect
+    z: 40
+    x: 180
+    y: 1320
+    width: 720
+    height: 140
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: eta-label
+    type: text
+    z: 41
+    x: 180
+    y: 1346
+    width: 720
+    height: 0
+    content: { type: plain, value: "ESTIMATED RETURN" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.3
+
+  - id: eta-value
+    type: text
+    z: 42
+    x: 180
+    y: 1378
+    width: 720
+    height: 0
+    content: { type: plain, value: "May 17, 2026 · 04:00 UTC" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 700
+      color: $primary
+      text_align: center
+      line_height: 1.3
+
+  # ── Status page CTA ───────────────────────────────────────
+  - id: cta-bg
+    type: rect
+    z: 50
+    x: 280
+    y: 1560
+    width: 520
+    height: 88
+    radius: 44
+    fill: { type: solid, color: "$primary" }
+
+  - id: cta-text
+    type: text
+    z: 51
+    x: 280
+    y: 1586
+    width: 520
+    height: 0
+    content: { type: plain, value: "View status page →" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: cta-url
+    type: text
+    z: 52
+    x: 60
+    y: 1700
+    width: 960
+    height: 0
+    content: { type: plain, value: "status.acme.com" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text_muted
+      text_align: center
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer
+    type: text
+    z: 60
+    x: 60
+    y: 1830
+    width: 960
+    height: 0
+    content: { type: plain, value: "Thanks for your patience — Acme Engineering" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: estimated_return,  path: "layers[14].content.value", type: text, hint: "Estimated return time",   default: "May 17, 2026 · 04:00 UTC" }
+  - { id: status_page_url,   path: "layers[17].content.value", type: text, hint: "Status page URL",         default: "status.acme.com" }

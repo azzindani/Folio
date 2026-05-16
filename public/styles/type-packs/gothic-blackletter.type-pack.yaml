@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: gothic-blackletter
+name: Gothic Blackletter
+version: "1.0.0"
+tags: [gothic, blackletter, medieval, dark-academia, fraktur, ornate]
+description: "UnifrakturMaguntia display over EB Garamond body — medieval, dark academia, manuscript register."
+families:
+  heading: "UnifrakturMaguntia"
+  body:    "EB Garamond"
+  mono:    "Cutive Mono"
+  display: "UnifrakturMaguntia"
+  accent:  "Cormorant Garamond"
+scale:
+  display:
+    size: 96
+    weight: 400
+    line_height: 1.1

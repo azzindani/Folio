@@ -1,0 +1,312 @@
+_protocol: template/v1
+
+# Skincare bottle label — 600×1000 portrait, light-clean theme.
+# Minimalist clinical aesthetic: brand top in small caps, product name
+# (e.g. "VITAMIN C SERUM") huge, key claim banner, hairline divider,
+# directions panel, volume bottom. Lots of whitespace, dermatology-clinic feel.
+meta:
+  id: tmpl-cosmetics-bottle-label
+  name: Cosmetics Bottle Label
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, cosmetics, skincare, beauty, minimalist, portrait]
+  description: "Minimalist skincare bottle label with brand, product name, key claim, directions, and volume."
+
+document:
+  width: 600
+  height: 1000
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 600
+    height: 1000
+    fill: { type: solid, color: "$background" }
+
+  # ── Frame ─────────────────────────────────────────────────
+  - id: frame
+    type: rect
+    z: 1
+    x: 24
+    y: 24
+    width: 552
+    height: 952
+    fill: { type: none }
+    stroke: { color: "$border", width: 1 }
+
+  # ── Brand top ─────────────────────────────────────────────
+  - id: brand
+    type: text
+    z: 10
+    x: 60
+    y: 80
+    width: 480
+    height: 0
+    content: { type: plain, value: "AETHER" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  - id: brand-sub
+    type: text
+    z: 11
+    x: 60
+    y: 116
+    width: 480
+    height: 0
+    content: { type: plain, value: "CLINICAL SKINCARE" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  # ── Top hairline ──────────────────────────────────────────
+  - id: hairline-top
+    type: rect
+    z: 12
+    x: 60
+    y: 156
+    width: 480
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Product number badge ──────────────────────────────────
+  - id: product-no
+    type: text
+    z: 15
+    x: 60
+    y: 200
+    width: 480
+    height: 0
+    content: { type: plain, value: "No. 03" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $primary
+      text_align: center
+      letter_spacing: 0.24
+
+  # ── Product name HUGE ─────────────────────────────────────
+  - id: product-name-line-1
+    type: text
+    z: 20
+    x: 40
+    y: 280
+    width: 520
+    height: 0
+    content: { type: plain, value: "VITAMIN C" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.01
+      text_transform: uppercase
+
+  - id: product-name-line-2
+    type: text
+    z: 21
+    x: 40
+    y: 348
+    width: 520
+    height: 0
+    content: { type: plain, value: "SERUM" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.01
+      text_transform: uppercase
+
+  # ── Concentration accent ──────────────────────────────────
+  - id: concentration
+    type: text
+    z: 22
+    x: 60
+    y: 430
+    width: 480
+    height: 0
+    content: { type: plain, value: "15% L-ASCORBIC ACID" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $primary
+      text_align: center
+      letter_spacing: 0.36
+
+  # ── Key claim banner ──────────────────────────────────────
+  - id: claim-bg
+    type: rect
+    z: 30
+    x: 60
+    y: 480
+    width: 480
+    height: 100
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: claim-eyebrow
+    type: text
+    z: 31
+    x: 60
+    y: 500
+    width: 480
+    height: 0
+    content: { type: plain, value: "CLINICALLY PROVEN" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: claim-text
+    type: text
+    z: 32
+    x: 80
+    y: 524
+    width: 440
+    height: 0
+    content: { type: plain, value: "Brightens · Evens tone · Antioxidant defense" }
+    style:
+      font_family: $heading
+      font_size: 16
+      color: $text
+      text_align: center
+      line_height: 1.4
+
+  # ── Mid divider with dot ──────────────────────────────────
+  - id: mid-line-l
+    type: line
+    z: 35
+    x1: 140
+    y1: 620
+    x2: 280
+    y2: 620
+    stroke: { color: "$border", width: 1 }
+
+  - id: mid-dot
+    type: circle
+    z: 36
+    cx: 300
+    cy: 620
+    r: 3
+    fill: { type: solid, color: "$primary" }
+
+  - id: mid-line-r
+    type: line
+    z: 37
+    x1: 320
+    y1: 620
+    x2: 460
+    y2: 620
+    stroke: { color: "$border", width: 1 }
+
+  # ── Directions ────────────────────────────────────────────
+  - id: dir-eyebrow
+    type: text
+    z: 40
+    x: 60
+    y: 650
+    width: 480
+    height: 0
+    content: { type: plain, value: "DIRECTIONS" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: dir-text
+    type: text
+    z: 41
+    x: 80
+    y: 686
+    width: 440
+    height: 0
+    content: { type: plain, value: "Apply 3–4 drops to cleansed skin morning and evening. Follow with moisturizer and SPF during the day. Patch test before first use." }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text
+      text_align: center
+      line_height: 1.6
+
+  # ── Bottom hairline ───────────────────────────────────────
+  - id: hairline-bot
+    type: rect
+    z: 50
+    x: 60
+    y: 840
+    width: 480
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Volume ────────────────────────────────────────────────
+  - id: volume
+    type: text
+    z: 51
+    x: 60
+    y: 870
+    width: 480
+    height: 0
+    content: { type: plain, value: "30 ml / 1.0 fl. oz." }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_weight: 600
+      color: $text
+      text_align: center
+      letter_spacing: 0.12
+
+  - id: footer
+    type: text
+    z: 52
+    x: 60
+    y: 920
+    width: 480
+    height: 0
+    content: { type: plain, value: "DERMATOLOGIST TESTED  ·  CRUELTY FREE  ·  MADE IN SWITZERLAND" }
+    style:
+      font_family: $body
+      font_size: 9
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.32
+
+slots:
+  - { id: brand,        path: "layers[2].content.value",  type: text, hint: "Brand name",         default: "AETHER" }
+  - { id: product_name, path: "layers[6].content.value",  type: text, hint: "Product name line 1", default: "VITAMIN C" }
+  - { id: key_claim,    path: "layers[11].content.value", type: text, hint: "Key claim text",     default: "Brightens · Evens tone · Antioxidant defense" }
+  - { id: directions,   path: "layers[16].content.value", type: text, hint: "Directions / usage", default: "Apply 3–4 drops to cleansed skin morning and evening. Follow with moisturizer and SPF during the day. Patch test before first use." }
+  - { id: volume_ml,    path: "layers[18].content.value", type: text, hint: "Volume",             default: "30 ml / 1.0 fl. oz." }

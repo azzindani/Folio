@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: soccer-pitch
+name: Soccer Pitch
+version: "1.0.0"
+tags: [sports, soccer, football, pitch, matchday]
+description: "Grass-green pitch with chalk lines, crimson kit and sky-blue accents — matchday energy."
+colors:
+  background: "#1F5A2E"
+  surface:    "#26703A"
+  surface_2:  "#2E8048"
+  primary:    "#F8F8F2"
+  secondary:  "#C42129"
+  accent:     "#7CC8F2"
+  text:       "#F8F8F2"
+  text_muted: "#B8D6C0"
+  border:     "#3A9558"
+  success:    "#9FE072"
+  warning:    "#F2C84A"
+  danger:     "#E84A4A"
