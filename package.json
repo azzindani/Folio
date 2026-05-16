@@ -9,9 +9,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/gen-catalog-index.mjs && node scripts/gen-palette-index.mjs && tsc && vite build",
+    "build": "node scripts/gen-catalog-index.mjs && node scripts/gen-palette-index.mjs && node scripts/gen-type-pack-index.mjs && node scripts/gen-effects-pack-index.mjs && tsc && vite build",
     "gen:catalog": "node scripts/gen-catalog-index.mjs",
     "gen:palettes": "node scripts/gen-palette-index.mjs",
+    "gen:type-packs": "node scripts/gen-type-pack-index.mjs",
+    "gen:effects-packs": "node scripts/gen-effects-pack-index.mjs",
     "gen:variants": "node scripts/gen-template-variants.mjs",
     "build:analyze": "ANALYZE=true vite build",
     "preview": "vite preview",
