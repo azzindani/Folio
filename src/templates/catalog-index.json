@@ -1,6 +1,6 @@
 {
   "_generator": "scripts/gen-catalog-index.mjs",
-  "count": 44,
+  "count": 59,
   "entries": [
     {
       "id": "tmpl-document-cover",
@@ -42,6 +42,25 @@
       "file": "27-album-cover.template.yaml"
     },
     {
+      "id": "tmpl-bauhaus-poster",
+      "name": "Bauhaus Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "bauhaus",
+        "destijl",
+        "mondrian",
+        "geometric",
+        "primary-colors"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "high-contrast",
+      "file": "55-bauhaus-poster.template.yaml"
+    },
+    {
       "id": "tmpl-book-cover",
       "name": "Book Cover",
       "type": "poster",
@@ -59,6 +78,24 @@
       "pages": 0,
       "themeRef": "brutalist-mono",
       "file": "26-book-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-brutalist-raw",
+      "name": "Brutalist Raw",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "brutalist",
+        "raw",
+        "mono",
+        "antidesign"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "high-contrast",
+      "file": "58-brutalist-raw.template.yaml"
     },
     {
       "id": "tmpl-business-card",
@@ -246,6 +283,24 @@
       "file": "37-event-ticket.template.yaml"
     },
     {
+      "id": "tmpl-financial-statement-report",
+      "name": "Financial Statement (P&L)",
+      "type": "report",
+      "tags": [
+        "report",
+        "finance",
+        "pnl",
+        "accounting",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 1700,
+      "slots": 5,
+      "pages": 1,
+      "themeRef": "corporate-slate",
+      "file": "52-financial-statement-report.template.yaml"
+    },
+    {
       "id": "tmpl-gauge-meter",
       "name": "Gauge Meter Card",
       "type": "card",
@@ -284,6 +339,44 @@
       "file": "38-gift-voucher.template.yaml"
     },
     {
+      "id": "tmpl-glass-card",
+      "name": "Glassmorphism Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "glass",
+        "glassmorphism",
+        "modern",
+        "frosted",
+        "landscape"
+      ],
+      "width": 1200,
+      "height": 800,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "indigo-pro",
+      "file": "48-glassmorphism-card.template.yaml"
+    },
+    {
+      "id": "tmpl-handdrawn-note",
+      "name": "Hand-Drawn Note",
+      "type": "card",
+      "tags": [
+        "card",
+        "sketchnote",
+        "scrapbook",
+        "casual",
+        "handdrawn",
+        "postit"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 6,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "56-hand-drawn-note.template.yaml"
+    },
+    {
       "id": "tmpl-instagram-carousel",
       "name": "Instagram Carousel (4 slides)",
       "type": "carousel",
@@ -317,6 +410,24 @@
       "pages": 0,
       "themeRef": "sunset-glow",
       "file": "09-instagram-story.template.yaml"
+    },
+    {
+      "id": "tmpl-inventory-status-report",
+      "name": "Inventory Status Report",
+      "type": "report",
+      "tags": [
+        "report",
+        "inventory",
+        "operations",
+        "warehouse",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2000,
+      "slots": 6,
+      "pages": 3,
+      "themeRef": "editorial-cream",
+      "file": "54-inventory-status-report.template.yaml"
     },
     {
       "id": "tmpl-kpi-dashboard",
@@ -373,6 +484,63 @@
       "file": "25-magazine-cover.template.yaml"
     },
     {
+      "id": "tmpl-marketing-analytics-report",
+      "name": "Marketing Analytics Report",
+      "type": "report",
+      "tags": [
+        "report",
+        "marketing",
+        "analytics",
+        "funnel",
+        "campaigns",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 1900,
+      "slots": 6,
+      "pages": 2,
+      "themeRef": "ocean-blue",
+      "file": "51-marketing-analytics-report.template.yaml"
+    },
+    {
+      "id": "tmpl-maximalist-collage",
+      "name": "Maximalist Collage Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "maximalist",
+        "collage",
+        "busy",
+        "layered",
+        "scrapbook"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "neon-bloom",
+      "file": "57-maximalist-collage.template.yaml"
+    },
+    {
+      "id": "tmpl-memphis-poster",
+      "name": "Memphis Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "memphis",
+        "geometric",
+        "80s",
+        "playful",
+        "pastel"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "pastel-dream",
+      "file": "45-memphis-poster.template.yaml"
+    },
+    {
       "id": "tmpl-minimal-quote-poster",
       "name": "Minimal Quote Poster",
       "type": "poster",
@@ -426,6 +594,25 @@
       "pages": 0,
       "themeRef": "corporate-slate",
       "file": "29-newsletter-header.template.yaml"
+    },
+    {
+      "id": "tmpl-newspaper-page",
+      "name": "Newspaper Front Page",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "newspaper",
+        "editorial",
+        "print",
+        "retro",
+        "broadsheet"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 13,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "49-newspaper-front-page.template.yaml"
     },
     {
       "id": "tmpl-pricing-3tier",
@@ -577,6 +764,43 @@
       "file": "30-resume-cv.template.yaml"
     },
     {
+      "id": "tmpl-retro-poster",
+      "name": "Retro 70s Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "retro",
+        "70s",
+        "sunburst",
+        "mod",
+        "warm"
+      ],
+      "width": 1080,
+      "height": 1620,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "sunset-glow",
+      "file": "59-retro-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-sales-quarterly-report",
+      "name": "Sales Quarterly Report",
+      "type": "report",
+      "tags": [
+        "report",
+        "sales",
+        "quarterly",
+        "kpi",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 1800,
+      "slots": 5,
+      "pages": 1,
+      "themeRef": "indigo-pro",
+      "file": "50-sales-quarterly-report.template.yaml"
+    },
+    {
       "id": "tmpl-save-the-date",
       "name": "Save the Date",
       "type": "card",
@@ -721,6 +945,25 @@
       "file": "03-stats-card.template.yaml"
     },
     {
+      "id": "tmpl-swiss-poster",
+      "name": "Swiss International Poster",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "swiss",
+        "international",
+        "typography",
+        "grid",
+        "minimal"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "mono-print",
+      "file": "46-swiss-international-poster.template.yaml"
+    },
+    {
       "id": "tmpl-team-profile",
       "name": "Team Member Profile",
       "type": "card",
@@ -776,6 +1019,45 @@
       "pages": 0,
       "themeRef": "dark-tech",
       "file": "11-twitter-card.template.yaml"
+    },
+    {
+      "id": "tmpl-engagement-dashboard",
+      "name": "User Engagement Dashboard",
+      "type": "report",
+      "tags": [
+        "report",
+        "engagement",
+        "product",
+        "cohorts",
+        "retention",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 1800,
+      "slots": 5,
+      "pages": 1,
+      "themeRef": "forest-deep",
+      "file": "53-engagement-dashboard.template.yaml"
+    },
+    {
+      "id": "tmpl-vaporwave-card",
+      "name": "Vaporwave Aesthetic",
+      "type": "card",
+      "tags": [
+        "card",
+        "vaporwave",
+        "synthwave",
+        "80s",
+        "retro",
+        "neon",
+        "dark"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "cyber-synthwave",
+      "file": "47-vaporwave-card.template.yaml"
     },
     {
       "id": "tmpl-webinar-promo",
