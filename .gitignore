@@ -4,6 +4,16 @@ dist/
 .vite/
 *.tgz
 
+# Generated indices — single source of truth is the YAML files under
+# public/styles/ and public/templates/. The four index JSONs are
+# regenerated on every build / dev / typecheck / test via npm scripts
+# and the Vite plugins, so checking them in just creates merge-conflict
+# noise on every YAML edit.
+src/templates/catalog-index.json
+src/styles/palette-index.json
+src/styles/type-pack-index.json
+src/styles/effects-pack-index.json
+
 # Test + audit output (specs live in tests/, results don't get committed)
 coverage/
 test-results/
