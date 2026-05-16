@@ -144,18 +144,43 @@ export class InteractionManager {
     const w = typeof layer.width === 'number' ? layer.width : 0;
     const h = typeof layer.height === 'number' ? layer.height : 0;
 
+    let next: Partial<Layer> = {};
     switch (handle) {
       case 'se':
-        return { width: Math.max(10, Math.round(w + dx)), height: Math.max(10, Math.round(h + dy)) };
+        next = { width: Math.max(10, Math.round(w + dx)), height: Math.max(10, Math.round(h + dy)) };
+        break;
       case 'sw':
-        return { x: Math.round(x + dx), width: Math.max(10, Math.round(w - dx)), height: Math.max(10, Math.round(h + dy)) };
+        next = { x: Math.round(x + dx), width: Math.max(10, Math.round(w - dx)), height: Math.max(10, Math.round(h + dy)) };
+        break;
       case 'ne':
-        return { y: Math.round(y + dy), width: Math.max(10, Math.round(w + dx)), height: Math.max(10, Math.round(h - dy)) };
+        next = { y: Math.round(y + dy), width: Math.max(10, Math.round(w + dx)), height: Math.max(10, Math.round(h - dy)) };
+        break;
       case 'nw':
-        return { x: Math.round(x + dx), y: Math.round(y + dy), width: Math.max(10, Math.round(w - dx)), height: Math.max(10, Math.round(h - dy)) };
+        next = { x: Math.round(x + dx), y: Math.round(y + dy), width: Math.max(10, Math.round(w - dx)), height: Math.max(10, Math.round(h - dy)) };
+        break;
       default:
         return {};
     }
+
+    // Text layers: scale font_size with the bounding box. Use the geometric
+    // mean of x/y scale factors so non-uniform drags (e.g. SE only widening)
+    // still feel natural — pure width changes barely touch font, pure height
+    // changes scale font directly.
+    if (layer.type === 'text' && w > 0 && h > 0) {
+      const newW = (next.width as number | undefined) ?? w;
+      const newH = (next.height as number | undefined) ?? h;
+      const sx = newW / w;
+      const sy = newH / h;
+      const scale = Math.sqrt(sx * sy);
+      const style = (layer as { style?: { font_size?: number } }).style;
+      const curFs = style?.font_size ?? 16;
+      const nextFs = Math.max(6, Math.round(curFs * scale * 100) / 100);
+      if (nextFs !== curFs) {
+        (next as { style?: Record<string, unknown> }).style = { ...style, font_size: nextFs };
+      }
+    }
+
+    return next;
   }
 
   private getLayerId(target: EventTarget): string | null {
@@ -267,4 +292,49 @@ export function distributeV(state: StateManager): void {
     state.updateLayer(sorted[i].id, { y: Math.round(currentY) });
     currentY += bounds[i].height + gap;
   }
+}
+
+// ── Flip H / V ─────────────────────────────────────────────────
+// Mirror the selection around its common bounding-box center axis.
+// Implemented as a CSS-like scale via the layer.scale_x / scale_y fields
+// so the renderer applies an SVG transform; for layers without scale,
+// fall back to mirroring x/width math around the bbox center.
+
+export function flipHorizontal(state: StateManager): void {
+  const layers = state.getSelectedLayers();
+  if (layers.length === 0) return;
+  const bb = unionBounds(layers);
+  for (const l of layers) {
+    const b = getLayerBounds(l);
+    const newX = bb.x + (bb.x + bb.width - (b.x + b.width));
+    const flipped = !l.flip_h;
+    state.updateLayer(l.id, {
+      x: Math.round(newX),
+      flip_h: flipped,
+    } as Partial<Layer>);
+  }
+}
+
+export function flipVertical(state: StateManager): void {
+  const layers = state.getSelectedLayers();
+  if (layers.length === 0) return;
+  const bb = unionBounds(layers);
+  for (const l of layers) {
+    const b = getLayerBounds(l);
+    const newY = bb.y + (bb.y + bb.height - (b.y + b.height));
+    const flipped = !l.flip_v;
+    state.updateLayer(l.id, {
+      y: Math.round(newY),
+      flip_v: flipped,
+    } as Partial<Layer>);
+  }
+}
+
+function unionBounds(layers: Layer[]): Bounds {
+  const bs = layers.map(getLayerBounds);
+  const minX = Math.min(...bs.map(b => b.x));
+  const minY = Math.min(...bs.map(b => b.y));
+  const maxX = Math.max(...bs.map(b => b.x + b.width));
+  const maxY = Math.max(...bs.map(b => b.y + b.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }

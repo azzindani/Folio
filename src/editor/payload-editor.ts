@@ -25,10 +25,11 @@ export class PayloadEditor {
 
     // Configure YAML-like behavior (Monaco doesn't have native YAML mode,
     // but plaintext with custom highlights works)
+    const uiTheme = document.documentElement.getAttribute('data-theme') ?? 'dark';
     this.editor = this.monaco.editor.create(this.container, {
       value: this.state.get().yamlSource,
       language: 'yaml',
-      theme: 'vs-dark',
+      theme: uiTheme === 'light' ? 'vs' : 'vs-dark',
       fontSize: 13,
       fontFamily: 'JetBrains Mono, Fira Code, monospace',
       lineNumbers: 'on',
@@ -163,6 +164,11 @@ export class PayloadEditor {
         this.editor.layout();
       }
     }
+  }
+
+  setTheme(uiTheme: string): void {
+    if (!this.monaco) return;
+    this.monaco.editor.setTheme(uiTheme === 'light' ? 'vs' : 'vs-dark');
   }
 
   show(): void {

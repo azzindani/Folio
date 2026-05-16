@@ -1,9 +1,10 @@
-import type { DesignSpec, ThemeSpec } from '../schema/types';
+import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderDesign, renderPage } from '../renderer/renderer';
+import type { LoadedDataset } from '../report/data-loader';
 
-export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'pdf';
+export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
 
 export interface ExportOptions {
   format: ExportFormat;
@@ -105,7 +106,53 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
-export function exportToHTML(spec: DesignSpec, options: ExportOptions): string {
+export async function exportToInteractiveHTML(
+  spec: DesignSpec,
+  datasets?: Map<string, LoadedDataset>,
+  opts?: { theme?: 'light' | 'dark'; title?: string },
+): Promise<string> {
+  // Lazy-load the assembler so the interactive-report runtime (Chart.js wiring,
+  // table runtime, etc.) is code-split into its own chunk and not shipped in
+  // the main editor bundle.
+  const { assembleReportHTML } = await import('./html-assembler');
+  return assembleReportHTML(spec, datasets ?? new Map(), {
+    title: opts?.title ?? spec.meta.name,
+    theme: opts?.theme,
+  });
+}
+
+const INTERACTIVE_TYPES = new Set<Layer['type']>([
+  'interactive_chart', 'interactive_table', 'kpi_card', 'rich_text', 'embed_code',
+]);
+
+function hasInteractiveLayers(layers: Layer[] | undefined): boolean {
+  if (!layers) return false;
+  return layers.some(l => INTERACTIVE_TYPES.has(l.type)
+    || hasInteractiveLayers((l as { layers?: Layer[] }).layers));
+}
+
+/** True if the spec contains layers that benefit from interactive HTML output. */
+export function hasInteractiveContent(spec: DesignSpec): boolean {
+  if (spec.pages && spec.pages.some(p => hasInteractiveLayers(p.layers))) return true;
+  return hasInteractiveLayers(spec.layers);
+}
+
+export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Promise<string> {
+  // If the design has interactive widgets (charts/tables/KPIs), emit a full
+  // interactive report instead of a static SVG-in-HTML wrapper.
+  if (hasInteractiveContent(spec) || options.format === 'html-report') {
+    // Auto-load any inline data sources so the report has data to render.
+    let datasets: Map<string, LoadedDataset> | undefined;
+    const sources = spec.report?.data?.sources;
+    if (sources && sources.length > 0) {
+      const { loadAllSources } = await import('../report/data-loader');
+      datasets = await loadAllSources(sources);
+    }
+    return exportToInteractiveHTML(spec, datasets, {
+      theme: options.theme && (options.theme as { mode?: 'light' | 'dark' }).mode === 'light' ? 'light' : 'dark',
+    });
+  }
+
   const svgString = exportToSVG(spec, options);
 
   const animationCSS = options.animations
@@ -159,29 +206,58 @@ export function downloadText(content: string, filename: string, mimeType: string
   downloadBlob(blob, filename);
 }
 
+/** Save blob via native file-save dialog when available; falls back to anchor download. */
+async function saveBlob(blob: Blob, suggestedName: string, mimeType: string, ext: string): Promise<void> {
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as Window & typeof globalThis & {
+        showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle>
+      }).showSaveFilePicker({
+        suggestedName,
+        types: [{ description: ext.toUpperCase(), accept: { [mimeType]: [`.${ext}`] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err) {
+      // User cancelled or API unavailable — fall through to download anchor
+      if ((err as Error).name === 'AbortError') return;
+    }
+  }
+  downloadBlob(blob, suggestedName);
+}
+
+/** Save text via native file-save dialog when available; falls back to anchor download. */
+async function saveText(content: string, suggestedName: string, mimeType: string, ext: string): Promise<void> {
+  const blob = new Blob([content], { type: mimeType });
+  await saveBlob(blob, suggestedName, mimeType, ext);
+}
+
 export async function exportDesign(spec: DesignSpec, options: ExportOptions): Promise<void> {
   const name = spec.meta.name.replace(/\s+/g, '-').toLowerCase();
 
   switch (options.format) {
     case 'svg': {
       const svg = exportToSVG(spec, options);
-      downloadText(svg, `${name}.svg`, 'image/svg+xml');
+      await saveText(svg, `${name}.svg`, 'image/svg+xml', 'svg');
       break;
     }
     case 'png': {
       const blob = await exportToPNG(spec, options);
-      downloadBlob(blob, `${name}.png`);
+      await saveBlob(blob, `${name}.png`, 'image/png', 'png');
       break;
     }
     case 'html':
-    case 'html-animated': {
-      const html = exportToHTML(spec, options);
-      downloadText(html, `${name}.html`, 'text/html');
+    case 'html-animated':
+    case 'html-report': {
+      const html = await exportToHTML(spec, options);
+      await saveText(html, `${name}.html`, 'text/html', 'html');
       break;
     }
     case 'pdf': {
       const blob = await exportToPDF(spec, options);
-      downloadBlob(blob, `${name}.pdf`);
+      await saveBlob(blob, `${name}.pdf`, 'application/pdf', 'pdf');
       break;
     }
   }

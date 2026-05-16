@@ -18,7 +18,15 @@ export type LayerType =
   | 'math'
   | 'group'
   | 'qrcode'
-  | 'auto_layout';
+  | 'auto_layout'
+  | 'interactive_chart'
+  | 'interactive_table'
+  | 'rich_text'
+  | 'kpi_card'
+  | 'map'
+  | 'embed_code'
+  | 'popup'
+  | 'particle';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -213,6 +221,8 @@ export interface BaseLayer {
   height?: number | 'auto';
   pos?: PositionShorthand;
   rotation?: number;
+  flip_h?: boolean;
+  flip_v?: boolean;
   visible?: boolean;
   locked?: boolean;
   opacity?: number;
@@ -228,6 +238,23 @@ export interface BaseLayer {
   clip_path_ref?: string;
   /** Per-layer animation spec */
   animation?: AnimationSpec;
+  /** PowerApps-style formula bindings: { fill: "=state.active ? '#f00' : '#ccc'" } */
+  formulas?: Record<string, string>;
+  /** SVG animateMotion path for kinetic animation */
+  motion_path?: {
+    path: string;        // SVG path d attribute (e.g. "M 0 0 Q 200 100 400 0")
+    duration?: number;   // ms, default 2000
+    loop?: boolean;
+    easing?: string;     // CSS easing, default 'ease-in-out'
+    auto_rotate?: boolean; // rotate element along path
+  };
+  /** 3D rotation transform */
+  rotate3d?: {
+    x?: number;          // degrees
+    y?: number;
+    z?: number;
+    perspective?: number; // px, default 800
+  };
 }
 
 // ── Concrete Layer Types ────────────────────────────────────
@@ -357,6 +384,152 @@ export interface AutoLayoutLayer extends BaseLayer {
   layers: Layer[];
 }
 
+// ── Data Binding Types ──────────────────────────────────────
+export type DataSourceType = 'csv' | 'excel' | 'json' | 'inline' | 'api';
+export type AggregateOp = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'groupby' | 'filter' | 'sort';
+
+export interface DataSource {
+  id: string;
+  type: DataSourceType;
+  path?: string;
+  sheet?: string;
+  range?: string;
+  headers?: boolean;
+  delimiter?: string;
+  rows?: Record<string, unknown>[];
+  url?: string;
+}
+
+export interface DataSpec {
+  sources: DataSource[];
+}
+
+// ── Report-specific Layer Types ─────────────────────────────
+
+export type ChartType =
+  | 'bar' | 'line' | 'area' | 'pie' | 'donut'
+  | 'scatter' | 'heatmap' | 'funnel' | 'waterfall';
+
+export interface InteractiveChartLayer extends BaseLayer {
+  type: 'interactive_chart';
+  chart_type: ChartType;
+  data_ref: string;
+  x_field?: string;
+  y_field?: string;
+  color_field?: string;
+  title?: string;
+  x_label?: string;
+  y_label?: string;
+  color_scheme?: string;
+  custom_colors?: string[];
+  legend?: boolean;
+  grid?: boolean;
+  interactive?: boolean;
+  animate?: boolean;
+}
+
+export type TableFormatter = 'currency' | 'number' | 'percent' | 'date' | 'badge' | 'delta';
+
+export interface TableColumn {
+  field: string;
+  title: string;
+  width?: number;
+  sortable?: boolean;
+  formatter?: TableFormatter;
+  align?: 'left' | 'center' | 'right';
+}
+
+export interface InteractiveTableLayer extends BaseLayer {
+  type: 'interactive_table';
+  data_ref: string;
+  columns: TableColumn[];
+  pagination?: boolean;
+  page_size?: number;
+  filterable?: boolean;
+  exportable?: boolean;
+  theme?: string;
+}
+
+export interface RichTextLayer extends BaseLayer {
+  type: 'rich_text';
+  content: string;
+  format?: 'markdown' | 'html';
+  font_family?: string;
+  font_size?: number;
+  line_height?: number;
+  color?: string;
+  link_color?: string;
+}
+
+export interface KpiCardLayer extends BaseLayer {
+  type: 'kpi_card';
+  label: string;
+  value: string | number;
+  format?: 'currency' | 'number' | 'percent' | 'custom';
+  currency?: string;
+  decimals?: number;
+  delta?: string | number;
+  delta_format?: 'percent' | 'number';
+  delta_positive_color?: string;
+  delta_negative_color?: string;
+  sparkline_data?: string;
+  sparkline_field?: string;
+  sparkline_color?: string;
+  icon?: string;
+  background?: string;
+  text_color?: string;
+  border_radius?: number;
+}
+
+export type MapTileProvider = 'osm' | 'carto-dark' | 'carto-light' | 'stamen-toner';
+export type MapOverlayType = 'markers' | 'heatmap' | 'choropleth';
+
+export interface MapOverlay {
+  type: MapOverlayType;
+  data_ref: string;
+  lat_field?: string;
+  lng_field?: string;
+  label_field?: string;
+  value_field?: string;
+  intensity_field?: string;
+  color?: string;
+}
+
+export interface MapLayer extends BaseLayer {
+  type: 'map';
+  center: [number, number];
+  zoom?: number;
+  tile_provider?: MapTileProvider;
+  overlays?: MapOverlay[];
+}
+
+export interface EmbedCodeLayer extends BaseLayer {
+  type: 'embed_code';
+  html: string;
+  sandbox?: boolean;
+  allow_scripts?: boolean;
+}
+
+export interface PopupLayer extends BaseLayer {
+  type: 'popup';
+  trigger_id?: string;
+  trigger_event?: string;
+  modal?: boolean;
+  close_on_backdrop?: boolean;
+  open_animation?: 'fade' | 'slide-up' | 'slide-right';
+  layers?: Layer[];
+}
+
+export interface ParticleLayer extends BaseLayer {
+  type: 'particle';
+  count?: number;      // default 50
+  size?: number;       // default 4 (px)
+  speed?: number;      // default 3 (seconds per cycle)
+  colors?: string[];   // default ['#6c5ce7','#00cec9','#fd79a8']
+  shape?: 'circle' | 'square' | 'star';
+  spread?: number;     // 0-1, default 1 (full layer area)
+}
+
 export type Layer =
   | RectLayer
   | CircleLayer
@@ -374,7 +547,15 @@ export type Layer =
   | MathLayer
   | GroupLayer
   | QRCodeLayer
-  | AutoLayoutLayer;
+  | AutoLayoutLayer
+  | InteractiveChartLayer
+  | InteractiveTableLayer
+  | RichTextLayer
+  | KpiCardLayer
+  | MapLayer
+  | EmbedCodeLayer
+  | PopupLayer
+  | ParticleLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {
@@ -400,6 +581,48 @@ export interface ThemeSpec {
   radii: Record<string, number>;
 }
 
+// ── Easing ───────────────────────────────────────────────────
+export type EasingFunction =
+  | 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out'
+  | `cubic-bezier(${string})` | `steps(${string})`;
+
+// ── Page Transition ─────────────────────────────────────────
+export type PageTransitionType =
+  | 'none' | 'fade' | 'slide-left' | 'slide-right' | 'slide-up' | 'slide-down'
+  | 'zoom-in' | 'zoom-out' | 'flip-h' | 'flip-v' | 'cube-left' | 'cube-right'
+  | 'reveal' | 'wipe-left' | 'wipe-right' | 'dissolve' | 'morph';
+
+export interface PageTransition {
+  type: PageTransitionType;
+  duration?: number;   // ms, default 400
+  easing?: EasingFunction;
+}
+
+// ── Audio Track ──────────────────────────────────────────────
+export interface AudioTrack {
+  id: string;
+  src: string;        // URL or base64 data URI
+  start_time?: number; // ms offset into the presentation timeline
+  duration?: number;
+  volume?: number;    // 0–1
+  loop?: boolean;
+  fade_in?: number;   // ms
+  fade_out?: number;  // ms
+}
+
+// ── Presentation Settings ────────────────────────────────────
+export interface PresentationSettings {
+  auto_advance?: number;   // ms per slide; 0 = manual
+  loop?: boolean;
+  show_progress?: boolean;
+  show_slide_numbers?: boolean;
+  show_controls?: boolean;
+  keyboard?: boolean;
+  touch?: boolean;
+  fullscreen_on_start?: boolean;
+  aspect_ratio?: '16:9' | '4:3' | '1:1' | string;
+}
+
 // ── Page ────────────────────────────────────────────────────
 export interface Page {
   id: string;
@@ -407,6 +630,14 @@ export interface Page {
   template_ref?: string;
   slots?: Record<string, unknown>;
   layers?: Layer[];
+  /** Incoming transition (plays when this slide enters) */
+  transition?: PageTransition;
+  /** Speaker notes (markdown) */
+  notes?: string;
+  /** Per-slide auto-advance override in ms (0 = manual) */
+  auto_advance?: number;
+  /** Audio cues that start when this slide becomes active */
+  audio_cues?: Pick<AudioTrack, 'src' | 'volume' | 'fade_in'>[];
 }
 
 // ── Design Document ─────────────────────────────────────────
@@ -428,11 +659,31 @@ export interface GenerationMeta {
 export interface DesignMeta {
   id: string;
   name: string;
-  type: 'poster' | 'carousel' | 'motion';
+  type: 'poster' | 'carousel' | 'motion' | 'report' | 'presentation';
   created: string;
   modified: string;
   generator?: string;
   generation?: GenerationMeta;
+}
+
+// ── Report Layout ───────────────────────────────────────────
+export type ReportLayoutType = 'paged' | 'scroll' | 'tabs' | 'sidebar';
+
+export interface NavigationSpec {
+  type: 'sidebar' | 'topbar' | 'tabs' | 'dots';
+  width?: number;
+  position?: 'left' | 'right';
+  labels?: boolean;
+  collapsible?: boolean;
+  show_icons?: boolean;
+  active_color?: string;
+  background?: string;
+}
+
+export interface ReportSpec {
+  layout: ReportLayoutType;
+  navigation?: NavigationSpec;
+  data?: DataSpec;
 }
 
 export interface DesignSpec {
@@ -446,6 +697,27 @@ export interface DesignSpec {
   };
   layers?: Layer[];
   pages?: Page[];
+  report?: ReportSpec;
+  // Presentation / motion settings
+  presentation?: PresentationSettings;
+  audio?: AudioTrack[];
+  // Mode B interactive output
+  _output_mode?: 'static' | 'interactive';
+  state?: Record<string, StateDef>;
+  scripts?: ScriptDef[];
+}
+
+// ── Mode B — Interactive Output ─────────────────────────────
+export interface StateDef {
+  type: 'string' | 'number' | 'boolean';
+  default: unknown;
+}
+
+export interface ScriptDef {
+  id: string;
+  language: 'typescript' | 'javascript';
+  trigger?: string;
+  code: string;
 }
 
 // ── Component Definition ────────────────────────────────────

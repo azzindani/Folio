@@ -72,16 +72,17 @@ function setup(layers: Layer[] = []) {
 describe('PropertiesPanelManager — no selection', () => {
   afterEach(() => { document.querySelectorAll('div').forEach(el => el.remove()); });
 
-  it('shows "Select a layer" message when nothing selected', () => {
+  it('shows empty-state hint when nothing selected', () => {
     const { wrapper, state } = setup([makeRect()]);
     state.set('selectedLayerIds', []);
-    expect(wrapper.textContent).toContain('Select a layer');
+    expect(wrapper.textContent).toContain('No selection');
+    expect(wrapper.textContent).toContain('Click a layer');
   });
 
   it('shows message when design is null', () => {
     const { wrapper, panel } = setup();
     panel.render(); // trigger initial render
-    expect(wrapper.textContent).toContain('Select a layer');
+    expect(wrapper.textContent).toContain('No design loaded');
   });
 });
 
@@ -839,5 +840,31 @@ describe('PropertiesPanelManager — gradient removeGradientStop guard', () => {
       fill: { stops: unknown[] };
     };
     expect(layer.fill.stops.length).toBe(1);
+  });
+});
+
+describe('PropertiesPanelManager — flip buttons (lines 828-836)', () => {
+  afterEach(() => { document.querySelectorAll('div').forEach(el => el.remove()); });
+
+  it('clicking flip_h button toggles flip_h on layer', () => {
+    const layer = makeRect('r-flip', { flip_h: false } as Partial<Layer>);
+    const { state, wrapper } = setup([layer]);
+    state.set('selectedLayerIds', ['r-flip']);
+    const btn = wrapper.querySelector<HTMLButtonElement>('#pp-flip-h-btn');
+    expect(btn).not.toBeNull();
+    btn?.click();
+    const updated = state.getCurrentLayers().find(l => l.id === 'r-flip') as unknown as { flip_h?: boolean };
+    expect(updated.flip_h).toBe(true);
+  });
+
+  it('clicking flip_v button toggles flip_v on layer', () => {
+    const layer = makeRect('r-flipv', { flip_v: true } as Partial<Layer>);
+    const { state, wrapper } = setup([layer]);
+    state.set('selectedLayerIds', ['r-flipv']);
+    const btn = wrapper.querySelector<HTMLButtonElement>('#pp-flip-v-btn');
+    expect(btn).not.toBeNull();
+    btn?.click();
+    const updated = state.getCurrentLayers().find(l => l.id === 'r-flipv') as unknown as { flip_v?: boolean };
+    expect(updated.flip_v).toBe(false);
   });
 });

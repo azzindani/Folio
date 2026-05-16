@@ -1,6 +1,6 @@
 # CLAUDE.md — Folio Design Engine
 # Local-first YAML graphic design engine | LLM-first architecture
-# v2.0.0 | Phase 1 complete · Phase 2 in planning
+# v2.5.0 | Phase 1–5 complete
 
 > Full specs live in docs/ARCHITECTURE.md (architecture) and docs/DESIGN.md (design system + payload format).
 
@@ -109,7 +109,7 @@ Editor:    Monaco (lazy loaded)
 YAML:      js-yaml
 Renderers: marked.js (always) · mermaid/vega-lite/katex/prism (lazy)
 Export:    dom-to-image-more + jsPDF + SVG serialize
-MCP:       Node.js stdio + HTTP; reads/writes .yaml; exports via playwright (PNG/PDF)
+MCP:       Node.js stdio, reads/writes .yaml files directly
 Tests:     Vitest (unit) · Playwright (E2E + visual)
 ```
 
@@ -138,8 +138,19 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 | Keyboard | `src/editor/keyboard.ts` | ✓ Complete |
 | Payload editor | `src/editor/payload-editor.ts` | ✓ Complete |
 | Exporter | `src/export/exporter.ts` | ✓ Complete |
+| Report HTML assembler | `src/export/html-assembler.ts` | ✓ Complete |
+| Mode B runtime | `src/export/mode-b-runtime.ts` | ✓ Complete |
+| Script sandbox | `src/export/script-sandbox.ts` | ✓ Complete |
+| Puppeteer PDF | `src/export/puppeteer-pdf.ts` | ✓ Complete |
+| Presentation assembler | `src/export/presentation-assembler.ts` | ✓ Complete |
+| Lottie export | `src/export/lottie-export.ts` | ✓ Complete |
+| Animation frame export (GIF/MP4/WebM + ffmpeg) | `src/export/animation-export.ts` | ✓ Complete |
+| Remote clicker SSE server | `src/export/remote-server.ts` | ✓ Complete |
+| Collaborative editing SSE server | `src/collab/collab-server.ts` | ✓ Complete |
 | Animation CSS | `src/animation/css-generator.ts` | ✓ Complete |
 | Keyframe engine | `src/animation/keyframe-engine.ts` | ✓ Complete |
+| Page transition CSS | `src/animation/transition-css.ts` | ✓ Complete |
+| Formula evaluator | `src/scripting/formula.ts` | ✓ Complete |
 | MCP tool handlers | `src/mcp/tool-handlers.ts` | ✓ Complete |
 | MCP server | `src/mcp/mcp-server.ts` | ✓ Complete |
 | Shorthand parser | `src/mcp/shorthand-parser.ts` | ✓ Complete |
@@ -147,7 +158,11 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 | File watcher | `src/fs/file-watcher.ts` | ✓ Complete |
 | Layer panel | `src/ui/panels/layer-panel.ts` | ✓ Complete |
 | Properties panel | `src/ui/panels/properties-panel.ts` | ✓ Complete |
-| Color picker | `src/ui/color-picker/color-picker.ts` | ✓ Complete |
+| Timeline panel | `src/ui/panels/timeline-panel.ts` | ✓ Complete |
+| Report data loader | `src/report/data-loader.ts` | ✓ Complete |
+| Report aggregator | `src/report/aggregator.ts` | ✓ Complete |
+| Report binder | `src/report/binder.ts` | ✓ Complete |
+| Report navigation | `src/report/navigation.ts` | ✓ Complete |
 | Problems panel | `src/ui/panels/problems-panel.ts` | ✓ Complete |
 | File tree | `src/ui/panels/file-tree.ts` | ✓ Complete |
 | Page strip | `src/ui/panels/page-strip.ts` | ✓ Complete |
@@ -159,18 +174,34 @@ Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 
 ---
 
-## 4. KNOWN GAPS (not yet implemented)
+## 4. KNOWN GAPS
 
-| Gap | Area | Priority |
-|---|---|---|
-| Mode B interactive output (state, scripts, data binding) | Export | Phase 2 |
-| Scripting sandbox (iframe/SES) | Security | Phase 2 |
-| Timeline editor UI | Animation | Phase 3 |
-| GIF / MP4 / WebM / Lottie export | Export | Phase 3 |
-
-Done: Phase 1 (Lucide sprite, per-corner radius, gradient editor, color picker).
-MCP server-side export (SVG / HTML / PNG / PDF) is wired through playwright in
-`src/mcp/engine/export.ts`; the legacy "requires_puppeteer" stub is gone.
+| Gap | Area | Priority | Status |
+|---|---|---|---|
+| Report interactive HTML export | Export | Phase 2 | ✓ Done |
+| Report MCP tools (generate_report, bind_data, export_report) | MCP | Phase 2 | ✓ Done |
+| Mode B interactive output (state, scripts, data binding) | Export | Phase 2 | ✓ Done |
+| Scripting sandbox (iframe/SES) | Security | Phase 2 | ✓ Done |
+| Puppeteer PDF (high-fidelity) | Export | Phase 2 | ✓ Done |
+| Formula binding (=expr PowerApps-style) | Scripting | Phase 4 | ✓ Done |
+| Page transitions (17 types) | Animation | Phase 4 | ✓ Done |
+| Presentation assembler + MCP tools | Export/MCP | Phase 4 | ✓ Done |
+| Timeline editor UI (scrubber + keyframe panel) | Animation | Phase 4 | ✓ Done |
+| Lottie export (AnimationSpec → JSON) | Export | Phase 4 | ✓ Done |
+| GIF/MP4 frame capture (Puppeteer-based) | Export | Phase 4 | ✓ Done |
+| Particle effects layer type | Renderer | Phase 4 | ✓ Done |
+| Motion path animation (SVG animateMotion) | Renderer | Phase 4 | ✓ Done |
+| 3D perspective transforms (rotate3d) | Renderer | Phase 4 | ✓ Done |
+| Scroll-triggered animations | Runtime | Phase 4 | ✓ Done |
+| Teleprompter mode | Presenter | Phase 4 | ✓ Done |
+| set_formula_context + debug_formula MCP tools | MCP | Phase 4 | ✓ Done |
+| inspect_timeline + add_keyframe MCP tools | MCP | Phase 4 | ✓ Done |
+| WebM encoding (ffmpeg integration) | Export | Phase 5 | ✓ Done |
+| Remote clicker SSE server | Presenter | Phase 5 | ✓ Done |
+| Collaborative editing (SSE file-watch) | Editor | Phase 5 | ✓ Done |
+| export_animation MCP tool | MCP | Phase 5 | ✓ Done |
+| setup_remote_presenter MCP tool | MCP | Phase 5 | ✓ Done |
+| setup_collab MCP tool | MCP | Phase 5 | ✓ Done |
 
 ---
 

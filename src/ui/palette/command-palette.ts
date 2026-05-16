@@ -1,6 +1,6 @@
 import type { StateManager } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
-import { alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV } from '../../editor/interactions';
+import { alignLeft, alignRight, alignTop, alignBottom, alignCenterH, alignCenterV, distributeH, distributeV, flipHorizontal, flipVertical } from '../../editor/interactions';
 import { exportToHTML } from '../../export/exporter';
 
 let paletteLayerCounter = 0;
@@ -77,6 +77,10 @@ export class CommandPalette {
       { id: 'distribute-h', label: 'Distribute Horizontally', category: 'Align', action: () => distributeH(state) },
       { id: 'distribute-v', label: 'Distribute Vertically', category: 'Align', action: () => distributeV(state) },
 
+      // Transform
+      { id: 'flip-h', label: 'Flip Horizontal', category: 'Transform', shortcut: 'Shift+H', action: () => flipHorizontal(state) },
+      { id: 'flip-v', label: 'Flip Vertical', category: 'Transform', shortcut: 'Shift+V', action: () => flipVertical(state) },
+
       // Export
       { id: 'export-svg', label: 'Export as SVG', category: 'Export', action: () => {
         const svg = app.exportSVG();
@@ -90,16 +94,30 @@ export class CommandPalette {
           URL.revokeObjectURL(url);
         }
       }},
-      { id: 'export-html', label: 'Export as HTML', category: 'Export', action: () => {
+      { id: 'export-html', label: 'Export as HTML', category: 'Export', action: async () => {
         const design = state.get().design;
         const theme = state.get().theme;
         if (design) {
-          const html = exportToHTML(design, { format: 'html', theme: theme ?? undefined });
+          const html = await exportToHTML(design, { format: 'html', theme: theme ?? undefined });
           const blob = new Blob([html], { type: 'text/html' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
           a.download = `${design.meta.name}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }},
+      { id: 'export-html-report', label: 'Export as Interactive Report (HTML)', category: 'Export', action: async () => {
+        const design = state.get().design;
+        const theme = state.get().theme;
+        if (design) {
+          const html = await exportToHTML(design, { format: 'html-report', theme: theme ?? undefined });
+          const blob = new Blob([html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${design.meta.name}-report.html`;
           a.click();
           URL.revokeObjectURL(url);
         }

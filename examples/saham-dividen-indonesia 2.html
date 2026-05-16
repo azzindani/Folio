@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisis Saham Dividen Tertinggi Indonesia 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1f2d45;
+    --gold: #f5c842;
+    --gold2: #e8a800;
+    --green: #22d3a0;
+    --red: #ff5e5e;
+    --blue: #4fa3e0;
+    --orange: #ff8c42;
+    --text: #f0f4ff;
+    --text2: #9badc8;
+    --text3: #5a7399;
+    --border: rgba(255,255,255,0.07);
+    --glow: rgba(245,200,66,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(79,163,224,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(245,200,66,0.06) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+  }
+  .header-inner { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .header-badge {
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    color: #000;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--text);
+  }
+  h1 em { font-style: italic; color: var(--gold); }
+  .header-meta { color: var(--text2); font-size: 13px; margin-top: 8px; }
+  .header-meta span { color: var(--green); font-weight: 500; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 8px;
+    font-size: 12px; color: var(--text2);
+    white-space: nowrap;
+  }
+  .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+  /* ── KPI Cards ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 36px; }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative; overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .kpi:hover { transform: translateY(-2px); border-color: rgba(245,200,66,0.25); }
+  .kpi::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: var(--kpi-color, var(--gold)); }
+  .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 8px; }
+  .kpi-value { font-family: 'DM Serif Display', serif; font-size: 30px; color: var(--text); }
+  .kpi-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .kpi-up { color: var(--green); }
+  .kpi-down { color: var(--red); }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px; font-weight: 400;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+  .section-number { color: var(--gold); font-size: 13px; font-weight: 600; }
+
+  /* ── Layout grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+  @media(max-width:900px){ .grid-2,.grid-3 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+  }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 18px; }
+
+  /* ── Stock Table ── */
+  .table-wrapper { overflow-x: auto; margin-bottom: 28px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  thead th.right { text-align: right; }
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.selected { background: rgba(245,200,66,0.06); border-color: rgba(245,200,66,0.15); }
+  td { padding: 13px 14px; vertical-align: middle; white-space: nowrap; }
+  .td-right { text-align: right; }
+
+  .ticker-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+  }
+  .sector-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    color: var(--text2);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+  }
+  .yield-bar-wrap { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  .yield-bar-bg { width: 80px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .yield-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+  .yield-num { font-weight: 600; font-size: 14px; min-width: 48px; text-align: right; }
+  .price-val { font-size: 13px; color: var(--text); }
+  .dps-val { font-size: 13px; color: var(--text2); }
+  .dpr-val { font-size: 13px; }
+
+  .rating-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px;
+  }
+
+  /* ── Tab Filter ── */
+  .tabs { display: flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap; }
+  .tab {
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: rgba(245,200,66,0.4); color: var(--gold); }
+  .tab.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 600; }
+
+  /* ── Charts ── */
+  .chart-container { position: relative; }
+
+  /* ── Forecast ── */
+  .forecast-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .forecast-scenario { display: flex; gap: 8px; }
+  .scenario-btn {
+    padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--text2); font-size: 12px;
+    font-family: inherit; cursor: pointer; transition: all 0.2s;
+  }
+  .scenario-btn.active { background: var(--surface3); color: var(--text); border-color: var(--blue); }
+
+  /* ── Detail Panel ── */
+  #detail-panel {
+    background: var(--surface2);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 28px;
+    display: none;
+  }
+  #detail-panel.visible { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; }
+  .detail-metric { }
+  .detail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 4px; }
+  .detail-value { font-size: 18px; font-weight: 600; }
+
+  .risk-meter { display: flex; gap: 4px; margin-top: 6px; }
+  .risk-block { height: 6px; flex: 1; border-radius: 2px; }
+
+  /* ── Sector Breakdown ── */
+  .sector-list { display: flex; flex-direction: column; gap: 10px; }
+  .sector-row { display: flex; align-items: center; gap: 12px; }
+  .sector-name { width: 120px; font-size: 12px; color: var(--text2); flex-shrink: 0; }
+  .sector-bar-bg { flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+  .sector-bar-fill { height: 100%; border-radius: 4px; }
+  .sector-pct { font-size: 12px; font-weight: 600; width: 40px; text-align: right; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 0;
+    margin-top: 40px;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  footer strong { color: var(--text2); }
+
+  .tooltip-custom {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="header-badge">Riset Pasar Modal · IDX · Maret 2026</div>
+        <h1>Saham Dividen <em>Tertinggi</em><br>Indonesia 2026</h1>
+        <p class="header-meta">Analisis komprehensif berdasarkan data historis & proyeksi 2026–2031 &nbsp;·&nbsp; <span>IDXHIDIV20 Universe</span></p>
+      </div>
+      <div>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          Data diperbarui: Maret 2026
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── KPI ── -->
+  <div class="kpi-grid">
+    <div class="kpi" style="--kpi-color: var(--gold)">
+      <div class="kpi-label">Yield Tertinggi 2024</div>
+      <div class="kpi-value">15.6%</div>
+      <div class="kpi-sub">ITMG · Indo Tambangraya Megah</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--green)">
+      <div class="kpi-label">Rata-rata Yield Top-10</div>
+      <div class="kpi-value">11.8%</div>
+      <div class="kpi-sub kpi-up">▲ vs. deposito 4.5%</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--blue)">
+      <div class="kpi-label">Emiten IDXHIDIV20</div>
+      <div class="kpi-value">20</div>
+      <div class="kpi-sub">Periode Feb 2025 – Feb 2026</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--orange)">
+      <div class="kpi-label">Sektor Dominan</div>
+      <div class="kpi-value">Tambang</div>
+      <div class="kpi-sub">Batu bara · 6 emiten teratas</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--red)">
+      <div class="kpi-label">Risiko Dividend Trap</div>
+      <div class="kpi-value">TINGGI</div>
+      <div class="kpi-sub">Koreksi pasca ex-date avg −4.5%</div>
+    </div>
+  </div>
+
+  <!-- ── TABEL UTAMA ── -->
+  <h2 class="section-title"><span class="section-number">01</span> Ranking Dividend Yield</h2>
+
+  <div class="tabs" id="sector-tabs">
+    <button class="tab active" onclick="filterTable('all',this)">Semua Sektor</button>
+    <button class="tab" onclick="filterTable('tambang',this)">⛏ Tambang</button>
+    <button class="tab" onclick="filterTable('perbankan',this)">🏦 Perbankan</button>
+    <button class="tab" onclick="filterTable('energi',this)">⚡ Energi</button>
+    <button class="tab" onclick="filterTable('konsumsi',this)">🛒 Konsumsi</button>
+    <button class="tab" onclick="filterTable('infrastruktur',this)">🔧 Infrastruktur</button>
+  </div>
+
+  <div class="card table-wrapper">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Emiten</th>
+          <th>Sektor</th>
+          <th class="right">Harga (Rp)</th>
+          <th class="right">DPS 2024 (Rp)</th>
+          <th class="right">DPR (%)</th>
+          <th class="right">Dividend Yield</th>
+          <th class="right">Rating</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── DETAIL PANEL ── -->
+  <div id="detail-panel">
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- ── CHARTS ROW 1 ── -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Yield Comparison – Top 10 Emiten (2024)</div>
+      <div class="chart-container" style="height:280px">
+        <canvas id="yieldChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Komposisi Sektor berdasarkan Yield</div>
+      <div style="display:flex;align-items:center;gap:24px">
+        <div class="chart-container" style="height:220px;flex:0 0 220px">
+          <canvas id="sectorChart"></canvas>
+        </div>
+        <div class="sector-list" style="flex:1">
+          <div class="sector-row"><span class="sector-name">Batu Bara</span><div class="sector-bar-bg"><div class="sector-bar-fill" style="width:56%;background:#f5c842"></div></div><span class="sector-pct" style="color:#f5c842">56%</span></div>
+          <div class="sector-row"><span class="sector-name">Perbankan</span><div class="sector-bar-bg"><div class="sector-bar-fill" style="width:18%;background:#4fa3e0"></div></div><span class="sector-pct" style="color:#4fa3e0">18%</span></div>
+          <div class="sector-row"><span class="sector-name">Energi/Gas</span><div class="sector-bar-bg"><div class="sector-bar-fill" style="width:12%;background:#22d3a0"></div></div><span class="sector-pct" style="color:#22d3a0">12%</span></div>
+          <div class="sector-row"><span class="sector-name">Konsumsi</span><div class="sector-bar-bg"><div class="sector-bar-fill" style="width:8%;background:#ff8c42"></div></div><span class="sector-pct" style="color:#ff8c42">8%</span></div>
+          <div class="sector-row"><span class="sector-name">Lainnya</span><div class="sector-bar-bg"><div class="sector-bar-fill" style="width:6%;background:#8b6aff"></div></div><span class="sector-pct" style="color:#8b6aff">6%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FORECAST ── -->
+  <h2 class="section-title"><span class="section-number">02</span> Proyeksi Dividen 5 Tahun (2026–2031)</h2>
+
+  <div class="card" style="margin-bottom:28px">
+    <div class="forecast-header">
+      <div class="card-title" style="margin:0">Estimasi Dividend Yield Top-5 Saham (Skenario)</div>
+      <div class="forecast-scenario">
+        <button class="scenario-btn active" onclick="setScenario('bull',this)">Bull</button>
+        <button class="scenario-btn" onclick="setScenario('base',this)">Base</button>
+        <button class="scenario-btn" onclick="setScenario('bear',this)">Bear</button>
+      </div>
+    </div>
+    <div class="chart-container" style="height:320px">
+      <canvas id="forecastChart"></canvas>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+      <div style="background:var(--surface3);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Bull Case</div>
+        <div style="font-size:13px;color:var(--text2)">Harga batu bara tetap ≥ US$100/ton, transisi energi melambat. Yield ITMG bisa capai <strong style="color:var(--green)">18–20%</strong></div>
+      </div>
+      <div style="background:var(--surface3);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Base Case</div>
+        <div style="font-size:13px;color:var(--text2)">Normalisasi harga komoditas. Sektor perbankan & konsumsi mengisi gap. Yield rata-rata <strong style="color:var(--gold)">10–14%</strong></div>
+      </div>
+      <div style="background:var(--surface3);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Bear Case</div>
+        <div style="font-size:13px;color:var(--text2)">Resesi global, harga batu bara < US$80/ton. Yield turun ke <strong style="color:var(--red)">5–8%</strong>, DPR dikurangi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHARTS ROW 2 ── -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Tren Historis Yield ITMG vs PTBA (2020–2025)</div>
+      <div class="chart-container" style="height:250px">
+        <canvas id="histChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Simulasi Passive Income Rp100 Juta (10 Tahun)</div>
+      <div class="chart-container" style="height:250px">
+        <canvas id="incomeChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ANALISIS RISIKO ── -->
+  <h2 class="section-title"><span class="section-number">03</span> Analisis Risiko & Rekomendasi</h2>
+
+  <div class="grid-3">
+    <div class="card" style="border-top: 2px solid var(--green)">
+      <div style="font-size:20px;margin-bottom:10px">✅</div>
+      <div style="font-weight:600;margin-bottom:8px;color:var(--green)">Peluang</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--green)">›</span>Yield jauh di atas deposito & obligasi RI</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--green)">›</span>Emiten batu bara didukung permintaan Asia (India, ASEAN)</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--green)">›</span>PTBA/ITMG di bawah MIND ID → Danantara butuh dividen besar</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--green)">›</span>Harga saham terkoreksi → yield naik secara matematis</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 2px solid var(--red)">
+      <div style="font-size:20px;margin-bottom:10px">⚠️</div>
+      <div style="font-weight:600;margin-bottom:8px;color:var(--red)">Risiko</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--red)">›</span>Dividend Trap: harga anjlok pasca ex-date (avg −4.5%)</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--red)">›</span>Siklikalitas batu bara sangat tinggi</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--red)">›</span>Perbankan: kualitas kredit memburuk, likuiditas ketat</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--red)">›</span>Transisi energi global menekan batu bara jangka panjang</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 2px solid var(--blue)">
+      <div style="font-size:20px;margin-bottom:10px">💡</div>
+      <div style="font-weight:600;margin-bottom:8px;color:var(--blue)">Strategi</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--blue)">›</span>Akumulasi setelah ex-date → harga lebih murah</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--blue)">›</span>Diversifikasi: tambang + perbankan + konsumsi</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--blue)">›</span>Prioritas DPR tinggi + konsistensi 3 tahun terakhir</li>
+        <li style="font-size:13px;color:var(--text2);padding-left:16px;position:relative"><span style="position:absolute;left:0;color:var(--blue)">›</span>Monitor jadwal RUPS untuk estimasi DPS lebih awal</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <strong>Disclaimer:</strong> Analisis ini bersifat informatif dan tidak merupakan rekomendasi investasi. Kinerja masa lalu tidak menjamin hasil di masa depan. Data yield berdasarkan harga saham historis dan dividen yang telah dibagikan (FY2024), serta proyeksi dari berbagai riset sekuritas (Ciptadana, Bareksa, CNBC Indonesia). Selalu lakukan due diligence sebelum membuat keputusan investasi. Sumber: CNBC Indonesia, Bareksa, IDNFinancials, BEI (IDX), Bloomberg, Yahoo Finance · <strong>Update: Maret 2026</strong>
+  </footer>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────
+const stocks = [
+  {
+    ticker: 'ITMG', name: 'Indo Tambangraya Megah', sektor: 'tambang',
+    price: 22500, dps: 3473, dpr: 92, yield: 15.55,
+    color: '#f5c842',
+    rating: 4, ratingLabel: 'Strong Buy',
+    desc: 'Salah satu emiten tambang batu bara terbesar di Indonesia. Rajin membagi dividen dua kali setahun (interim + final). DPR sangat tinggi, yield konsisten double-digit sejak 2021.',
+    pe: 5.8, pbv: 1.9, roe: 32, beta: 1.25,
+    forecast: { bull:[18,19,18,17,16], base:[15,14,13,12,11], bear:[9,8,7,6,5] }
+  },
+  {
+    ticker: 'ADRO', name: 'Alamtri Resources Indonesia', sektor: 'tambang',
+    price: 1800, dps: 273.53, dpr: 75, yield: 15.19,
+    color: '#e8a800',
+    rating: 4, ratingLabel: 'Strong Buy',
+    desc: 'Konglomerat energi yang sedang bertransisi ke green energy setelah melepas AADI. Terkenal membagi dividen jumbo, kadang hingga ratusan persen dari laba.',
+    pe: 6.2, pbv: 1.4, roe: 22, beta: 1.18,
+    forecast: { bull:[12,11,10,9,8], base:[8,7,6,5,5], bear:[4,4,3,3,3] }
+  },
+  {
+    ticker: 'PTBA', name: 'Bukit Asam Tbk', sektor: 'tambang',
+    price: 2470, dps: 333, dpr: 100, yield: 13.23,
+    color: '#d4920a',
+    rating: 4, ratingLabel: 'Buy',
+    desc: 'BUMN tambang di bawah MIND ID → Danantara. Pernah membagi 100% laba sebagai dividen. Dukungan pemerintah memastikan DPR tetap tinggi untuk mendanai Danantara.',
+    pe: 7.1, pbv: 1.2, roe: 18, beta: 1.10,
+    forecast: { bull:[14,13,12,11,10], base:[11,10,9,8,7], bear:[6,5,5,4,4] }
+  },
+  {
+    ticker: 'PBSA', name: 'Paramita Bangun Sarana', sektor: 'infrastruktur',
+    price: 436, dps: 55, dpr: 68, yield: 12.61,
+    color: '#4fa3e0',
+    rating: 3, ratingLabel: 'Hold',
+    desc: 'Emiten konstruksi yang memberikan yield kompetitif. Kapitalisasi pasar lebih kecil dengan likuiditas terbatas.',
+    pe: 8.9, pbv: 1.1, roe: 13, beta: 0.85,
+    forecast: { bull:[13,12,11,10,9], base:[10,9,8,7,6], bear:[6,5,4,4,3] }
+  },
+  {
+    ticker: 'CFIN', name: 'Clipan Finance Indonesia', sektor: 'perbankan',
+    price: 397, dps: 50, dpr: 72, yield: 12.60,
+    color: '#7fc3e8',
+    rating: 3, ratingLabel: 'Hold',
+    desc: 'Perusahaan pembiayaan dengan kebijakan dividen yang konsisten. Yield menarik namun perlu monitor kualitas kredit.',
+    pe: 7.5, pbv: 0.9, roe: 12, beta: 0.78,
+    forecast: { bull:[13,12,11,10,9], base:[10,9,8,7,6], bear:[6,5,4,3,3] }
+  },
+  {
+    ticker: 'PGAS', name: 'Perusahaan Gas Negara', sektor: 'energi',
+    price: 1615, dps: 182.08, dpr: 65, yield: 11.27,
+    color: '#22d3a0',
+    rating: 4, ratingLabel: 'Buy',
+    desc: 'BUMN energi dengan bisnis gas yang stabil. Baru masuk IDXHIDIV20 periode 2025-2026 dengan yield langsung double digit.',
+    pe: 8.2, pbv: 1.3, roe: 16, beta: 0.92,
+    forecast: { bull:[12,12,11,11,10], base:[10,9,9,8,8], bear:[7,6,6,5,5] }
+  },
+  {
+    ticker: 'MPMX', name: 'Mitra Pinasthika Mustika', sektor: 'konsumsi',
+    price: 1080, dps: 120, dpr: 60, yield: 11.11,
+    color: '#ff8c42',
+    rating: 3, ratingLabel: 'Buy',
+    desc: 'Portofolio investasi Saratoga. Diverse bisnis dari otomotif hingga jasa keuangan. Konsisten membagi dividen yang menarik.',
+    pe: 9.1, pbv: 1.0, roe: 11, beta: 0.95,
+    forecast: { bull:[12,11,10,10,9], base:[9,9,8,8,7], bear:[6,5,5,4,4] }
+  },
+  {
+    ticker: 'UNTR', name: 'United Tractors', sektor: 'tambang',
+    price: 20900, dps: 2151, dpr: 55, yield: 10.29,
+    color: '#c8a830',
+    rating: 4, ratingLabel: 'Buy',
+    desc: 'Distributor alat berat Komatsu & emiten tambang. Bisnis diversifikasi yang stabil dengan track record dividen yang baik.',
+    pe: 6.8, pbv: 1.8, roe: 26, beta: 1.05,
+    forecast: { bull:[11,11,10,10,9], base:[9,8,8,7,7], bear:[6,5,5,4,4] }
+  },
+  {
+    ticker: 'BBRI', name: 'Bank Rakyat Indonesia', sektor: 'perbankan',
+    price: 3820, dps: 320, dpr: 60, yield: 8.38,
+    color: '#4fa3e0',
+    rating: 3, ratingLabel: 'Hold',
+    desc: 'Bank terbesar di Indonesia. Yield tinggi karena harga saham tertekan. UMKM & kredit mikro menjadi risiko utama di 2025-2026.',
+    pe: 10.2, pbv: 1.6, roe: 16, beta: 1.12,
+    forecast: { bull:[10,10,9,9,8], base:[8,7,7,6,6], bear:[5,4,4,4,3] }
+  },
+  {
+    ticker: 'BMRI', name: 'Bank Mandiri', sektor: 'perbankan',
+    price: 5500, dps: 466.18, dpr: 60, yield: 8.48,
+    color: '#6bbde0',
+    rating: 3, ratingLabel: 'Hold',
+    desc: 'BUMN perbankan terbesar. Dividen naik konsisten (Rp466 vs Rp354 tahun sebelumnya). Likuiditas lebih baik dari peers.',
+    pe: 9.8, pbv: 1.9, roe: 19, beta: 1.08,
+    forecast: { bull:[10,10,9,9,8], base:[8,8,7,7,6], bear:[5,5,4,4,3] }
+  },
+];
+
+const years = [2026, 2027, 2028, 2029, 2030];
+let currentScenario = 'bull';
+let activeFilter = 'all';
+let selectedRow = null;
+
+// ─────────────────────────────────────────
+// TABLE
+// ─────────────────────────────────────────
+function filterTable(sector, btn) {
+  activeFilter = sector;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const filtered = activeFilter === 'all' ? stocks : stocks.filter(s => s.sektor === activeFilter);
+  const maxYield = Math.max(...stocks.map(s => s.yield));
+
+  tbody.innerHTML = filtered.map((s, i) => {
+    const yieldPct = (s.yield / maxYield) * 100;
+    const yieldColor = s.yield >= 13 ? '#f5c842' : s.yield >= 10 ? '#22d3a0' : '#4fa3e0';
+    const ratingColor = s.rating >= 4 ? '#22d3a0' : '#f5c842';
+    const stars = '●'.repeat(s.rating) + '○'.repeat(5 - s.rating);
+    return `
+    <tr data-ticker="${s.ticker}" onclick="showDetail('${s.ticker}')">
+      <td><span style="color:var(--text3);font-size:12px">${i+1}</span></td>
+      <td>
+        <span class="ticker-badge" style="background:${s.color}22;color:${s.color}">${s.ticker}</span>
+        <span style="margin-left:8px;color:var(--text2);font-size:12px">${s.name}</span>
+      </td>
+      <td><span class="sector-tag">${s.sektor}</span></td>
+      <td class="td-right"><span class="price-val">Rp${s.price.toLocaleString('id')}</span></td>
+      <td class="td-right"><span class="dps-val">Rp${s.dps.toLocaleString('id')}</span></td>
+      <td class="td-right"><span class="dpr-val" style="color:${s.dpr>=80?'#22d3a0':s.dpr>=60?'#f5c842':'var(--text2)'}">${s.dpr}%</span></td>
+      <td class="td-right">
+        <div class="yield-bar-wrap">
+          <div class="yield-bar-bg"><div class="yield-bar-fill" style="width:${yieldPct}%;background:${yieldColor}"></div></div>
+          <span class="yield-num" style="color:${yieldColor}">${s.yield.toFixed(2)}%</span>
+        </div>
+      </td>
+      <td class="td-right">
+        <span style="color:${ratingColor};font-size:11px;letter-spacing:0.05em">${s.ratingLabel}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function showDetail(ticker) {
+  const s = stocks.find(x => x.ticker === ticker);
+  const panel = document.getElementById('detail-panel');
+
+  // Highlight row
+  document.querySelectorAll('#table-body tr').forEach(r => r.classList.remove('selected'));
+  const row = document.querySelector(`tr[data-ticker="${ticker}"]`);
+  if (selectedRow === ticker) {
+    panel.classList.remove('visible');
+    selectedRow = null;
+    return;
+  }
+  if (row) row.classList.add('selected');
+  selectedRow = ticker;
+
+  const riskLevel = s.beta > 1.1 ? 5 : s.beta > 0.9 ? 3 : 2;
+  const riskBars = Array.from({length:5}, (_,i) =>
+    `<div class="risk-block" style="background:${i<riskLevel?'#ff5e5e':'rgba(255,255,255,0.1)'}"></div>`
+  ).join('');
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span class="ticker-badge" style="font-size:18px;padding:6px 14px;background:${s.color}22;color:${s.color}">${s.ticker}</span>
+      <div>
+        <div style="font-weight:600;font-size:16px">${s.name}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px">${s.desc}</div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-metric">
+        <div class="detail-label">Dividend Yield</div>
+        <div class="detail-value" style="color:${s.color}">${s.yield.toFixed(2)}%</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">Harga Saham</div>
+        <div class="detail-value">Rp${s.price.toLocaleString('id')}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">DPS (2024)</div>
+        <div class="detail-value">Rp${s.dps.toLocaleString('id')}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">Payout Ratio</div>
+        <div class="detail-value" style="color:${s.dpr>=80?'#22d3a0':'#f5c842'}">${s.dpr}%</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">P/E Ratio</div>
+        <div class="detail-value">${s.pe}x</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">ROE</div>
+        <div class="detail-value" style="color:#22d3a0">${s.roe}%</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">Beta (Volatilitas)</div>
+        <div class="detail-value">${s.beta}</div>
+        <div class="risk-meter">${riskBars}</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-label">Proj. Yield 2026 (Base)</div>
+        <div class="detail-value" style="color:#4fa3e0">${s.forecast.base[0]}%</div>
+      </div>
+    </div>
+  `;
+  panel.classList.add('visible');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ─────────────────────────────────────────
+// CHARTS
+// ─────────────────────────────────────────
+const chartDefaults = {
+  animation: { duration: 800, easing: 'easeInOutQuart' },
+  plugins: {
+    legend: { labels: { color: '#9badc8', font: { family: 'DM Sans', size: 12 } } },
+    tooltip: { backgroundColor: '#1a2235', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#f0f4ff', bodyColor: '#9badc8', padding: 10 }
+  },
+  scales: {
+    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#5a7399' } },
+    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#5a7399' } }
+  }
+};
+
+// Yield Bar Chart
+new Chart(document.getElementById('yieldChart'), {
+  type: 'bar',
+  data: {
+    labels: stocks.slice(0,10).map(s => s.ticker),
+    datasets: [{
+      label: 'Dividend Yield (%)',
+      data: stocks.slice(0,10).map(s => s.yield),
+      backgroundColor: stocks.slice(0,10).map(s => s.color + 'bb'),
+      borderColor: stocks.slice(0,10).map(s => s.color),
+      borderWidth: 1, borderRadius: 6,
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    indexAxis: 'y',
+    plugins: { ...chartDefaults.plugins, legend: { display: false } },
+    scales: {
+      x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => v + '%' } },
+      y: { ...chartDefaults.scales.y, ticks: { color: '#f0f4ff', font: { weight: '600' } } }
+    }
+  }
+});
+
+// Sector Donut
+new Chart(document.getElementById('sectorChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Batu Bara', 'Perbankan', 'Energi/Gas', 'Konsumsi', 'Lainnya'],
+    datasets: [{
+      data: [56, 18, 12, 8, 6],
+      backgroundColor: ['#f5c842', '#4fa3e0', '#22d3a0', '#ff8c42', '#8b6aff'],
+      borderColor: '#111827', borderWidth: 3,
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    cutout: '68%',
+    plugins: { ...chartDefaults.plugins, legend: { display: false } }
+  }
+});
+
+// Forecast Line Chart
+let forecastChart;
+function buildForecastData(scenario) {
+  const top5 = stocks.slice(0, 5);
+  return {
+    labels: years.map(String),
+    datasets: top5.map(s => ({
+      label: s.ticker,
+      data: s.forecast[scenario],
+      borderColor: s.color, backgroundColor: s.color + '22',
+      tension: 0.4, fill: false, borderWidth: 2.5,
+      pointBackgroundColor: s.color, pointRadius: 4, pointHoverRadius: 6,
+    }))
+  };
+}
+
+forecastChart = new Chart(document.getElementById('forecastChart'), {
+  type: 'line',
+  data: buildForecastData('bull'),
+  options: {
+    ...chartDefaults,
+    scales: {
+      x: { ...chartDefaults.scales.x },
+      y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } }
+    }
+  }
+});
+
+function setScenario(scenario, btn) {
+  currentScenario = scenario;
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  forecastChart.data = buildForecastData(scenario);
+  forecastChart.update('active');
+}
+
+// Historical Chart
+new Chart(document.getElementById('histChart'), {
+  type: 'line',
+  data: {
+    labels: ['2020','2021','2022','2023','2024','2025E'],
+    datasets: [
+      { label: 'ITMG', data: [4.2, 7.8, 18.5, 16.2, 15.55, 10.0], borderColor: '#f5c842', backgroundColor: '#f5c84220', tension:0.4, fill:true, borderWidth:2.5, pointRadius:4 },
+      { label: 'PTBA', data: [3.8, 6.5, 22.0, 13.8, 13.23, 9.0], borderColor: '#22d3a0', backgroundColor: '#22d3a020', tension:0.4, fill:true, borderWidth:2.5, pointRadius:4 },
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      x: { ...chartDefaults.scales.x },
+      y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } }
+    }
+  }
+});
+
+// Passive Income Simulator
+const principal = 100_000_000;
+const yearLabels = Array.from({length:10}, (_,i) => 2026+i);
+const highYield = 12; // ITMG/ADRO
+const medYield = 8;   // Mixed portfolio
+const lowYield = 4.5; // Deposito
+
+function simulate(yield_pct, years) {
+  let bal = principal;
+  return Array.from({length:years}, () => { bal += bal * (yield_pct/100); return Math.round(bal); });
+}
+
+new Chart(document.getElementById('incomeChart'), {
+  type: 'line',
+  data: {
+    labels: yearLabels.map(String),
+    datasets: [
+      { label: 'High Yield (12%)', data: simulate(highYield, 10), borderColor: '#f5c842', backgroundColor: '#f5c84212', tension:0.4, fill:true, borderWidth:2.5, pointRadius:0 },
+      { label: 'Mixed Portfolio (8%)', data: simulate(medYield, 10), borderColor: '#4fa3e0', backgroundColor: '#4fa3e012', tension:0.4, fill:true, borderWidth:2.5, pointRadius:0 },
+      { label: 'Deposito (4.5%)', data: simulate(lowYield, 10), borderColor: '#5a7399', backgroundColor: 'transparent', tension:0.4, fill:false, borderWidth:1.5, pointRadius:0, borderDash:[4,4] },
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      x: { ...chartDefaults.scales.x },
+      y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => 'Rp' + (v/1e6).toFixed(0) + 'jt' } }
+    }
+  }
+});
+
+// Init
+renderTable();
+</script>
+</body>
+</html>

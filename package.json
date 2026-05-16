@@ -23,10 +23,16 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test tests/e2e/ --project=chromium",
     "test:visual": "playwright test tests/visual/ --project=chromium",
+    "test:ui-audit": "playwright test --config=playwright.audit.config.ts",
     "test:update-snapshots": "playwright test --update-snapshots --project=chromium",
     "test:bench": "vitest bench",
     "mcp": "node --loader ts-node/esm src/mcp/server.ts",
     "mcp:http": "node --loader ts-node/esm src/mcp/http-server.ts",
+    "bun:mcp": "bun run src/mcp/index.ts",
+    "bun:mcp:http": "bun run src/mcp/http-server.ts",
+    "bun:mcp:1": "FOLIO_MCP_TIER=1 bun run src/mcp/index.ts",
+    "bun:mcp:2": "FOLIO_MCP_TIER=2 bun run src/mcp/index.ts",
+    "bun:mcp:3": "FOLIO_MCP_TIER=3 bun run src/mcp/index.ts",
     "clean": "rm -rf dist node_modules .vite"
   },
   "repository": {
@@ -39,7 +45,7 @@
   "devDependencies": {
     "@playwright/test": "1.59.1",
     "@types/js-yaml": "^4.0.9",
-    "@types/jsdom": "^28.0.3",
+    "@types/jsdom": "^28.0.1",
     "@types/katex": "^0.16.8",
     "@types/node": "^25.6.0",
     "@types/prismjs": "^1.26.6",
@@ -63,7 +69,6 @@
     "marked": "^18.0.2",
     "mermaid": "^11.14.0",
     "monaco-editor": "^0.55.1",
-    "playwright": "^1.60.0",
     "prismjs": "^1.30.0",
     "vega-embed": "^7.1.0"
   },

@@ -8,6 +8,8 @@ import {
   renderImage, renderIcon, renderMermaid, renderChart,
   renderCode, renderMath, renderGroup, renderRect,
   renderQRCode, renderAutoLayout,
+  renderInteractiveChart, renderInteractiveTable, renderRichText,
+  renderKpiCard, renderMap, renderEmbedCode, renderPopup,
 } from './layer-renderers';
 
 // Simple render fn for group tests (avoids circular import with renderer.ts)
@@ -26,6 +28,8 @@ import type {
   Layer, PathLayer, PolygonLayer, LineLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer, RectLayer,
   QRCodeLayer, AutoLayoutLayer,
+  InteractiveChartLayer, InteractiveTableLayer, RichTextLayer,
+  KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer,
 } from '../schema/types';
 
 function makeSVG() {
@@ -668,6 +672,103 @@ describe('renderAutoLayout', () => {
     expect(rect?.getAttribute('width')).toBe('0');
     expect(rect?.getAttribute('height')).toBe('0');
   });
+
+  it('wrap mode: groups children into tracks when they overflow main axis', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 80, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 80, height: 40 },
+      { id: 'c3', type: 'rect', z: 2, x: 0, y: 0, width: 80, height: 40 },
+    ];
+    const layer = {
+      id: 'al-wrap', type: 'auto_layout', z: 0, x: 0, y: 0, width: 160, height: 200,
+      direction: 'row', gap: 8, wrap: true,
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    // Should render all 3 children without throwing
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(3);
+  });
+
+  it('center alignment positions children along cross-axis center', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 20 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 60, height: 60 },
+    ];
+    const layer = {
+      id: 'al-center', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 8, align: 'center',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(2);
+  });
+
+  it('end alignment positions children at cross-axis end', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 30 },
+    ];
+    const layer = {
+      id: 'al-end', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 100,
+      direction: 'row', gap: 0, align: 'end',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(1);
+  });
+
+  it('justify: center positions cursor at center of main axis', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 40 },
+    ];
+    const layer = {
+      id: 'jc', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'center',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(1);
+  });
+
+  it('justify: end positions cursor at main axis end', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 60, height: 40 },
+    ];
+    const layer = {
+      id: 'je', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'end',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(1);
+  });
+
+  it('justify: space-between distributes space between children', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 50, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 50, height: 40 },
+    ];
+    const layer = {
+      id: 'jsb', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'space-between',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(2);
+  });
+
+  it('justify: space-around distributes equal space around children', () => {
+    const children: RectLayer[] = [
+      { id: 'c1', type: 'rect', z: 0, x: 0, y: 0, width: 40, height: 40 },
+      { id: 'c2', type: 'rect', z: 1, x: 0, y: 0, width: 40, height: 40 },
+    ];
+    const layer = {
+      id: 'jsa', type: 'auto_layout', z: 0, x: 0, y: 0, width: 200, height: 80,
+      direction: 'row', gap: 0, justify: 'space-around',
+      layers: children,
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    expect(el.querySelectorAll('[data-layer-id]').length).toBe(2);
+  });
 });
 
 // ── Text ─────────────────────────────────────────────────────
@@ -806,5 +907,286 @@ describe('renderIcon — fallback for unknown icon', () => {
     expect(el.querySelector('rect')).not.toBeNull();
     const text = el.querySelector('text');
     expect(text?.textContent).toBe('__nonexistent_icon__');
+  });
+});
+
+// ── Report layer renderers ───────────────────────────────────
+
+describe('renderInteractiveChart', () => {
+  it('renders a foreignObject with folio-chart container', () => {
+    const layer: InteractiveChartLayer = {
+      id: 'chart1', type: 'interactive_chart', z: 0,
+      chart_type: 'bar', data_ref: '$data.sales',
+      x: 10, y: 20, width: 600, height: 400,
+    } as unknown as InteractiveChartLayer;
+    const fo = renderInteractiveChart(layer, makeSVG());
+    expect(fo.tagName.toLowerCase()).toBe('foreignobject');
+    const container = fo.querySelector('.folio-chart');
+    expect(container).not.toBeNull();
+  });
+
+  it('stores plotly spec in data attribute', () => {
+    const layer: InteractiveChartLayer = {
+      id: 'c2', type: 'interactive_chart', z: 0,
+      chart_type: 'line', data_ref: '$data.metrics',
+      x: 0, y: 0, width: 400, height: 300,
+      title: 'My Chart', legend: false, grid: true, animate: false,
+    } as unknown as InteractiveChartLayer;
+    const fo = renderInteractiveChart(layer, makeSVG());
+    const container = fo.querySelector<HTMLElement>('.folio-chart');
+    const spec = JSON.parse(container?.dataset['plotlySpec'] ?? '{}');
+    expect(spec.chartType).toBe('line');
+    expect(spec.title).toBe('My Chart');
+    expect(spec.legend).toBe(false);
+  });
+
+  it('defaults width/height to 400/300 when not numeric', () => {
+    const layer = { id: 'c3', type: 'interactive_chart', z: 0, chart_type: 'bar', data_ref: '$data.x' } as unknown as InteractiveChartLayer;
+    const fo = renderInteractiveChart(layer, makeSVG());
+    expect(fo.getAttribute('width')).toBe('400');
+    expect(fo.getAttribute('height')).toBe('300');
+  });
+});
+
+describe('renderInteractiveTable', () => {
+  it('renders a foreignObject with folio-table container', () => {
+    const layer: InteractiveTableLayer = {
+      id: 't1', type: 'interactive_table', z: 0,
+      data_ref: '$data.rows', columns: [{ field: 'name', title: 'Name' }],
+      x: 0, y: 0, width: 800, height: 300,
+    } as unknown as InteractiveTableLayer;
+    const fo = renderInteractiveTable(layer, makeSVG());
+    expect(fo.tagName.toLowerCase()).toBe('foreignobject');
+    expect(fo.querySelector('.folio-table')).not.toBeNull();
+  });
+
+  it('stores tabulator spec with columns in data attribute', () => {
+    const cols = [{ field: 'rev', title: 'Revenue', width: 120, sortable: true }];
+    const layer: InteractiveTableLayer = {
+      id: 't2', type: 'interactive_table', z: 0,
+      data_ref: '$data.sales', columns: cols,
+      pagination: true, page_size: 10, filterable: true, exportable: true, theme: 'midnight',
+      x: 0, y: 0, width: 600, height: 300,
+    } as unknown as InteractiveTableLayer;
+    const fo = renderInteractiveTable(layer, makeSVG());
+    const container = fo.querySelector<HTMLElement>('.folio-table');
+    const spec = JSON.parse(container?.dataset['tabulatorSpec'] ?? '{}');
+    expect(spec.columns).toEqual(cols);
+    expect(spec.pageSize).toBe(10);
+    expect(spec.exportable).toBe(true);
+  });
+});
+
+describe('renderRichText', () => {
+  it('renders markdown with data-markdown-src', () => {
+    const layer: RichTextLayer = {
+      id: 'rt1', type: 'rich_text', z: 0,
+      content: '## Hello', format: 'markdown',
+      x: 0, y: 0, width: 500, height: 200,
+    } as unknown as RichTextLayer;
+    const fo = renderRichText(layer, makeSVG());
+    const container = fo.querySelector<HTMLElement>('.folio-richtext');
+    expect(container?.dataset['markdownSrc']).toBe('## Hello');
+  });
+
+  it('renders HTML content directly as innerHTML', () => {
+    const layer: RichTextLayer = {
+      id: 'rt2', type: 'rich_text', z: 0,
+      content: '<p>Hello</p>', format: 'html',
+      x: 0, y: 0, width: 500, height: 200,
+    } as unknown as RichTextLayer;
+    const fo = renderRichText(layer, makeSVG());
+    const container = fo.querySelector('.folio-richtext');
+    expect(container?.innerHTML).toContain('<p>Hello</p>');
+  });
+
+  it('applies font styling from layer props', () => {
+    const layer: RichTextLayer = {
+      id: 'rt3', type: 'rich_text', z: 0,
+      content: 'text', font_family: 'Roboto', font_size: 18,
+      color: '#fff', link_color: '#aaa',
+      x: 0, y: 0, width: 400, height: 100,
+    } as unknown as RichTextLayer;
+    const fo = renderRichText(layer, makeSVG());
+    const c = fo.querySelector<HTMLElement>('.folio-richtext');
+    expect(c?.style.cssText).toContain('Roboto');
+    expect(c?.style.cssText).toContain('18px');
+  });
+});
+
+describe('renderKpiCard', () => {
+  it('renders a foreignObject with folio-kpi card', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi1', type: 'kpi_card', z: 0,
+      label: 'Revenue', value: 142000,
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    expect(fo.tagName.toLowerCase()).toBe('foreignobject');
+    expect(fo.querySelector('.folio-kpi')).not.toBeNull();
+  });
+
+  it('shows label and formatted value', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi2', type: 'kpi_card', z: 0,
+      label: 'Total', value: 1500,
+      format: 'currency', currency: 'USD', decimals: 0,
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    const card = fo.querySelector('.folio-kpi');
+    expect(card?.textContent).toContain('Total');
+    expect(card?.innerHTML).toContain('$1,500');
+  });
+
+  it('shows positive delta with up arrow', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi3', type: 'kpi_card', z: 0,
+      label: 'Growth', value: 100, delta: 12.4, delta_format: 'percent',
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    expect(fo.querySelector('.folio-kpi')?.innerHTML).toContain('▲');
+  });
+
+  it('shows negative delta with down arrow', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi4', type: 'kpi_card', z: 0,
+      label: 'Churn', value: 50, delta: -2.1,
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    expect(fo.querySelector('.folio-kpi')?.innerHTML).toContain('▼');
+  });
+
+  it('renders sparkline canvas when sparkline_data present', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi5', type: 'kpi_card', z: 0,
+      label: 'Revenue', value: 100,
+      sparkline_data: '$data.sales', sparkline_field: 'revenue', sparkline_color: '#6c5ce7',
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    const canvas = fo.querySelector('canvas.kpi-sparkline');
+    expect(canvas).not.toBeNull();
+  });
+
+  it('formats number with decimals', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi6', type: 'kpi_card', z: 0,
+      label: 'Rate', value: 3.14159, format: 'number', decimals: 2,
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    expect(fo.querySelector('.folio-kpi')?.innerHTML).toContain('3.14');
+  });
+
+  it('formats percent value', () => {
+    const layer: KpiCardLayer = {
+      id: 'kpi7', type: 'kpi_card', z: 0,
+      label: 'Growth', value: 12.5, format: 'percent',
+      x: 0, y: 0, width: 300, height: 180,
+    } as unknown as KpiCardLayer;
+    const fo = renderKpiCard(layer, makeSVG());
+    expect(fo.querySelector('.folio-kpi')?.innerHTML).toContain('%');
+  });
+});
+
+describe('renderMap', () => {
+  it('renders a foreignObject with folio-map container', () => {
+    const layer: MapLayer = {
+      id: 'map1', type: 'map', z: 0,
+      center: [20, 0], zoom: 2, tile_provider: 'osm',
+      x: 0, y: 0, width: 700, height: 450,
+    } as unknown as MapLayer;
+    const fo = renderMap(layer, makeSVG());
+    expect(fo.querySelector('.folio-map')).not.toBeNull();
+  });
+
+  it('stores leaflet spec in data attribute', () => {
+    const overlays = [{ type: 'markers' as const, data_ref: '$data.regions', lat_field: 'lat', lng_field: 'lng' }];
+    const layer: MapLayer = {
+      id: 'map2', type: 'map', z: 0,
+      center: [51.5, -0.1], zoom: 10,
+      tile_provider: 'carto-dark', overlays,
+      x: 0, y: 0, width: 600, height: 400,
+    } as unknown as MapLayer;
+    const fo = renderMap(layer, makeSVG());
+    const container = fo.querySelector<HTMLElement>('.folio-map');
+    const spec = JSON.parse(container?.dataset['leafletSpec'] ?? '{}');
+    expect(spec.zoom).toBe(10);
+    expect(spec.tileProvider).toBe('carto-dark');
+    expect(spec.overlays).toHaveLength(1);
+  });
+});
+
+describe('renderEmbedCode', () => {
+  it('renders a sandboxed iframe by default', () => {
+    const layer: EmbedCodeLayer = {
+      id: 'em1', type: 'embed_code', z: 0,
+      html: '<div>hello</div>', sandbox: true,
+      x: 0, y: 0, width: 400, height: 300,
+    } as unknown as EmbedCodeLayer;
+    const fo = renderEmbedCode(layer, makeSVG());
+    const iframe = fo.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute('srcdoc')).toBe('<div>hello</div>');
+  });
+
+  it('sets allow-scripts sandbox attribute when allow_scripts', () => {
+    const layer: EmbedCodeLayer = {
+      id: 'em2', type: 'embed_code', z: 0,
+      html: '<script>1+1</script>', sandbox: true, allow_scripts: true,
+      x: 0, y: 0, width: 400, height: 300,
+    } as unknown as EmbedCodeLayer;
+    const fo = renderEmbedCode(layer, makeSVG());
+    expect(fo.querySelector('iframe')?.getAttribute('sandbox')).toBe('allow-scripts');
+  });
+
+  it('renders div with innerHTML when sandbox:false', () => {
+    const layer: EmbedCodeLayer = {
+      id: 'em3', type: 'embed_code', z: 0,
+      html: '<p>raw</p>', sandbox: false,
+      x: 0, y: 0, width: 400, height: 300,
+    } as unknown as EmbedCodeLayer;
+    const fo = renderEmbedCode(layer, makeSVG());
+    expect(fo.querySelector('iframe')).toBeNull();
+    expect(fo.querySelector('div')?.innerHTML).toContain('<p>raw</p>');
+  });
+});
+
+describe('renderPopup', () => {
+  it('renders a hidden <g> element', () => {
+    const layer: PopupLayer = {
+      id: 'pop1', type: 'popup', z: 100,
+      trigger_id: 'btn1', modal: true, open_animation: 'fade',
+      layers: [],
+      x: 100, y: 100, width: 600, height: 400,
+    } as unknown as PopupLayer;
+    const g = renderPopup(layer, makeSVG(), (l, s) => renderRect(l as RectLayer, s));
+    expect(g.tagName.toLowerCase()).toBe('g');
+    expect(g.getAttribute('visibility')).toBe('hidden');
+    expect(g.getAttribute('data-popup-id')).toBe('pop1');
+  });
+
+  it('renders backdrop rect', () => {
+    const layer: PopupLayer = {
+      id: 'pop2', type: 'popup', z: 100, layers: [],
+      x: 0, y: 0, width: 400, height: 300,
+    } as unknown as PopupLayer;
+    const g = renderPopup(layer, makeSVG(), (l, s) => renderRect(l as RectLayer, s));
+    const backdrop = g.querySelector('[data-popup-backdrop]');
+    expect(backdrop).not.toBeNull();
+  });
+
+  it('renders child layers inside the popup', () => {
+    const child: RectLayer = { id: 'child', type: 'rect', z: 1, x: 0, y: 0, width: 50, height: 50 };
+    const layer: PopupLayer = {
+      id: 'pop3', type: 'popup', z: 100, layers: [child],
+      x: 0, y: 0, width: 400, height: 300,
+    } as unknown as PopupLayer;
+    const g = renderPopup(layer, makeSVG(), (l, s) => renderRect(l as RectLayer, s));
+    // backdrop + panel + 1 child = at least 3 children
+    expect(g.children.length).toBeGreaterThanOrEqual(3);
   });
 });

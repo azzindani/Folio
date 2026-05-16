@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisis Saham Dividen Tertinggi — IDX 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #050a0f;
+    --surface: #0b1420;
+    --surface2: #0f1e2e;
+    --border: rgba(255,200,80,0.12);
+    --gold: #f5c842;
+    --gold2: #e8a020;
+    --green: #2ecc8a;
+    --red: #e84040;
+    --text: #e8e0d0;
+    --muted: #7a8a9a;
+    --accent: #1a8fff;
+    --coal: #c84040;
+    --bank: #3a9fff;
+    --infra: #8b5cf6;
+    --industrial: #f97316;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BACKGROUND TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(245,200,66,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(26,143,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo-area h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold) 0%, #fff8e0 50%, var(--gold2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+
+  .logo-area p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .header-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+
+  .badge.live {
+    background: rgba(245,200,66,0.08);
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: rgba(245,200,66,0.5); }
+    50% { border-color: var(--gold); }
+  }
+
+  /* SUMMARY CARDS */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--gold));
+  }
+
+  .summary-card:hover {
+    background: var(--surface2);
+    border-color: rgba(245,200,66,0.25);
+    transform: translateY(-2px);
+  }
+
+  .summary-card .label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .summary-card .value {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--card-color, var(--gold));
+    line-height: 1;
+  }
+
+  .summary-card .sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .tab-btn.active {
+    color: var(--gold);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+  }
+
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* TABLE */
+  .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    padding: 14px 16px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  thead th:hover { color: var(--gold); }
+  thead th.sorted { color: var(--gold); }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  tbody tr:hover { background: rgba(245,200,66,0.04); }
+
+  td {
+    padding: 14px 16px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .ticker-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ticker-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .ticker-code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--gold);
+  }
+
+  .company-name {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .yield-bar-cell { min-width: 140px; }
+
+  .yield-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .yield-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .yield-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  .yield-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 45px;
+    text-align: right;
+  }
+
+  .sector-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.5px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  .rating-cell { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .rating-buy { color: var(--green); }
+  .rating-hold { color: var(--gold); }
+  .rating-watch { color: var(--muted); }
+
+  .dpr-cell { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); }
+
+  /* CHARTS GRID */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 768px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .charts-grid-3 { grid-template-columns: 1fr !important; }
+  }
+
+  .charts-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+  }
+
+  .chart-card h3 {
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    letter-spacing: 0.3px;
+  }
+
+  .chart-card p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .chart-container { position: relative; }
+
+  /* SECTOR ANALYSIS */
+  .sector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .sector-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .sector-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--sector-color);
+  }
+
+  .sector-card:hover {
+    border-color: rgba(255,255,255,0.12);
+    transform: translateX(3px);
+  }
+
+  .sector-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .sector-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--sector-color);
+  }
+
+  .sector-yield-avg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--sector-color);
+  }
+
+  .sector-emiten {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .sector-tickers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .sticker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 7px;
+    border: 1px solid;
+    border-radius: 2px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .sticker:hover { opacity: 1; }
+
+  /* DETAIL MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid rgba(245,200,66,0.3);
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modal-in 0.25s ease;
+  }
+
+  @keyframes modal-in {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px; height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover { border-color: var(--gold); color: var(--gold); }
+
+  .modal-body { padding: 24px; }
+
+  .modal-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .modal-metric {
+    background: rgba(0,0,0,0.3);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .modal-metric .m-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  .modal-metric .m-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--gold);
+  }
+
+  .modal-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(232,224,208,0.85);
+    margin-bottom: 16px;
+  }
+
+  .modal-risks, .modal-catalysts {
+    margin-bottom: 16px;
+  }
+
+  .modal-risks h4, .modal-catalysts h4 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .modal-catalysts h4 { color: var(--green); }
+  .modal-risks h4 { color: var(--red); }
+
+  .risk-item, .catalyst-item {
+    font-size: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .risk-item::before { content: '▼'; color: var(--red); font-size: 8px; margin-top: 2px; flex-shrink: 0; }
+  .catalyst-item::before { content: '▲'; color: var(--green); font-size: 8px; margin-top: 2px; flex-shrink: 0; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 1px;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    border-radius: 2px;
+  }
+
+  .filter-btn.active, .filter-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(245,200,66,0.06);
+  }
+
+  /* DISCLAIMER */
+  .disclaimer {
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    margin-top: 40px;
+    background: rgba(232,64,64,0.04);
+    border-color: rgba(232,64,64,0.2);
+  }
+
+  .disclaimer p {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1.6;
+  }
+
+  .disclaimer strong { color: var(--red); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(245,200,66,0.2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(245,200,66,0.4); }
+
+  /* WATERMARK */
+  .watermark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: rgba(122,138,154,0.4);
+    text-align: center;
+    padding: 24px 0 40px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* ANIMATE IN */
+  .fade-up {
+    animation: fade-up 0.5s ease both;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up:nth-child(1) { animation-delay: 0.05s; }
+  .fade-up:nth-child(2) { animation-delay: 0.1s; }
+  .fade-up:nth-child(3) { animation-delay: 0.15s; }
+  .fade-up:nth-child(4) { animation-delay: 0.2s; }
+  .fade-up:nth-child(5) { animation-delay: 0.25s; }
+
+  .highlight-row { background: rgba(245,200,66,0.05) !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div class="logo-area">
+        <h1>Saham Dividen Tertinggi</h1>
+        <p>IDX High Dividend Analysis — Indonesia 2026</p>
+      </div>
+      <div class="header-meta">
+        <span class="badge live">● Live Research</span>
+        <span class="badge">Update: Maret 2026</span>
+        <span class="badge">IDXHIDIV20 + IDX</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-grid">
+    <div class="summary-card fade-up" style="--card-accent:#f5c842;--card-color:#f5c842;">
+      <div class="label">Avg Dividend Yield</div>
+      <div class="value">10.4%</div>
+      <div class="sub">Top 15 emiten IDX</div>
+    </div>
+    <div class="summary-card fade-up" style="--card-accent:#2ecc8a;--card-color:#2ecc8a;">
+      <div class="label">Yield Tertinggi</div>
+      <div class="value">17.9%</div>
+      <div class="sub">SKRN (Superkrane)</div>
+    </div>
+    <div class="summary-card fade-up" style="--card-accent:#1a8fff;--card-color:#1a8fff;">
+      <div class="label">Sektor Terkuat</div>
+      <div class="value">Batu Bara</div>
+      <div class="sub">ITMG, PTBA, ADRO, BSSR</div>
+    </div>
+    <div class="summary-card fade-up" style="--card-accent:#8b5cf6;--card-color:#8b5cf6;">
+      <div class="label">Total Dividen IDX</div>
+      <div class="value">Rp322T</div>
+      <div class="sub">Proyeksi 2025, -11% YoY</div>
+    </div>
+    <div class="summary-card fade-up" style="--card-accent:#f97316;--card-color:#f97316;">
+      <div class="label">IDXHIDIV20 Periode</div>
+      <div class="value">Feb 26</div>
+      <div class="sub">Efektif s.d. Feb 2027</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('tabel')">Tabel Lengkap</button>
+    <button class="tab-btn" onclick="switchTab('chart')">Visualisasi</button>
+    <button class="tab-btn" onclick="switchTab('sektor')">Analisis Sektor</button>
+    <button class="tab-btn" onclick="switchTab('strategi')">Strategi Portofolio</button>
+  </div>
+
+  <!-- TAB: TABEL -->
+  <div id="tab-tabel" class="tab-content active">
+    <div class="filter-bar">
+      <span class="filter-label">Filter:</span>
+      <button class="filter-btn active" onclick="filterTable('all', this)">Semua</button>
+      <button class="filter-btn" onclick="filterTable('Batu Bara', this)">⚫ Batu Bara</button>
+      <button class="filter-btn" onclick="filterTable('Perbankan', this)">🏦 Perbankan</button>
+      <button class="filter-btn" onclick="filterTable('Energi', this)">⚡ Energi</button>
+      <button class="filter-btn" onclick="filterTable('Industri', this)">🏗️ Industri</button>
+      <button class="filter-btn" onclick="filterTable('Lainnya', this)">📦 Lainnya</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="sahamTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">#</th>
+            <th onclick="sortTable(1)">Emiten ↕</th>
+            <th onclick="sortTable(2)">Sektor</th>
+            <th onclick="sortTable(3)">Div. Yield ↕</th>
+            <th onclick="sortTable(4)">DPR</th>
+            <th onclick="sortTable(5)">Harga Est.</th>
+            <th onclick="sortTable(6)">Rating</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: CHART -->
+  <div id="tab-chart" class="tab-content">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Dividend Yield Perbandingan</h3>
+        <p>Top 15 emiten, diurutkan yield tertinggi</p>
+        <div class="chart-container" style="height:340px">
+          <canvas id="yieldBarChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Distribusi per Sektor</h3>
+        <p>Jumlah emiten berdasarkan kategori sektor</p>
+        <div class="chart-container" style="height:340px">
+          <canvas id="sectorPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>DPR vs Dividend Yield</h3>
+        <p>Perbandingan rasio pembayaran terhadap imbal hasil</p>
+        <div class="chart-container" style="height:300px">
+          <canvas id="dprScatterChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Yield Rata-rata per Sektor</h3>
+        <p>Segmen terbaik untuk dividend hunting</p>
+        <div class="chart-container" style="height:300px">
+          <canvas id="sectorAvgChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SEKTOR -->
+  <div id="tab-sektor" class="tab-content">
+    <div class="sector-grid" id="sectorGrid"></div>
+  </div>
+
+  <!-- TAB: STRATEGI -->
+  <div id="tab-strategi" class="tab-content">
+    <div class="charts-grid-3">
+      <div class="chart-card">
+        <h3>🎯 Profil Konservatif</h3>
+        <p>Stabilitas + yield 5–8%</p>
+        <div style="margin-top:8px">
+          <div class="risk-item" style="border-color:rgba(46,204,138,0.2)">
+            <span style="color:var(--green);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">BBRI</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~5.2% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Bank terbesar, dividen konsisten, BUMN defensif</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(46,204,138,0.2)">
+            <span style="color:var(--green);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">TLKM</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~5.5% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Telekomunikasi defensif, arus kas kuat</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(46,204,138,0.2)">
+            <span style="color:var(--green);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">BMRI</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~6.0% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Bank Mandiri, tren laba naik terus</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(46,204,138,0.2)">
+            <span style="color:var(--green);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">BJTM</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~7.5% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Bank daerah, dividen stabil 6–8%</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:rgba(46,204,138,0.06);border:1px solid rgba(46,204,138,0.2);">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:4px">PROYEKSI YIELD PORTOFOLIO</div>
+          <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--green)">6.1%</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>⚡ Profil Moderat</h3>
+        <p>Yield 8–12%, campuran sektor</p>
+        <div style="margin-top:8px">
+          <div class="risk-item" style="border-color:rgba(245,200,66,0.2)">
+            <span style="color:var(--gold);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">PTBA</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~10–12% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">DPR bisa 100%, pelat merah</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(245,200,66,0.2)">
+            <span style="color:var(--gold);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">PGAS</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~8.0% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Gas Negara, semi-monopoli utilitas</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(245,200,66,0.2)">
+            <span style="color:var(--gold);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">HEXA</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~10%+ yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Hexindo alat berat, yield dua digit</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(245,200,66,0.2)">
+            <span style="color:var(--gold);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">AADI</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~8.5% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Adaro Andalan, fokus coal</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--gold);font-family:'IBM Plex Mono',monospace;margin-bottom:4px">PROYEKSI YIELD PORTOFOLIO</div>
+          <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--gold)">9.6%</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>🔥 Profil Agresif</h3>
+        <p>Yield 12%+, high risk / reward</p>
+        <div style="margin-top:8px">
+          <div class="risk-item" style="border-color:rgba(232,64,64,0.2)">
+            <span style="color:var(--red);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">ITMG</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~12–15% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Indo Tambangraya, dividen interim+final</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(232,64,64,0.2)">
+            <span style="color:var(--red);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">BSSR</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~12%+ yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Baramulti, small-mid cap favorit</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(232,64,64,0.2)">
+            <span style="color:var(--red);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">SKRN</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~17.9% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Superkrane, tertinggi 2025</div>
+            </div>
+          </div>
+          <div class="risk-item" style="border-color:rgba(232,64,64,0.2)">
+            <span style="color:var(--red);font-size:10px;margin-top:3px;flex-shrink:0">●</span>
+            <div>
+              <strong style="color:var(--text);font-size:13px">DMAS</strong>
+              <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:8px">~16% yield</span>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Puradelta, properti industrial Sinarmas</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:rgba(232,64,64,0.06);border:1px solid rgba(232,64,64,0.2);">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--red);font-family:'IBM Plex Mono',monospace;margin-bottom:4px">PROYEKSI YIELD PORTOFOLIO</div>
+          <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--red)">14.5%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Factors -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>⚠️ Risiko Utama Dividend Hunting 2026</h3>
+        <p>Faktor yang perlu dimonitor investor</p>
+        <div style="margin-top:8px">
+          <div class="risk-item">Normalisasi harga batu bara global → potensi penurunan laba & DPR emiten tambang</div>
+          <div class="risk-item">Suku bunga BI tinggi → arus modal keluar (capital outflow) menekan saham bank</div>
+          <div class="risk-item">Yield tinggi bisa karena harga saham terdiskon parah, bukan kemurahan dividen</div>
+          <div class="risk-item">Perubahan kebijakan DPR pemerintah (BUMN) berpotensi kurangi dividen tanpa pemberitahuan</div>
+          <div class="risk-item">Fluktuasi IDR/USD mempengaruhi emiten dengan eksposur komoditas ekspor</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>✅ Katalis Positif 2026</h3>
+        <p>Pendorong pertumbuhan dividen</p>
+        <div style="margin-top:8px">
+          <div class="catalyst-item">Proyeksi penurunan suku bunga BI → dorongan valuasi saham dividen</div>
+          <div class="catalyst-item">Pertumbuhan ekonomi Indonesia diproyeksikan 5.3% → laba korporasi tumbuh</div>
+          <div class="catalyst-item">Harga emas global tinggi → ANTM berpotensi naikkan dividen per saham</div>
+          <div class="catalyst-item">Kebijakan energi transisi → emiten batubara masih mengaliri kas besar jangka menengah</div>
+          <div class="catalyst-item">Target IHSG 10.500 oleh Mirae Asset → sentiment positif pasar IDX 2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <p><strong>⚠ DISCLAIMER:</strong> Analisis ini bersifat edukatif dan tidak merupakan rekomendasi investasi. Data yield bersifat historis dan proyektif berdasarkan riset publik. Keputusan investasi sepenuhnya tanggung jawab investor. Harga saham dan dividen dapat berubah. Konsultasikan dengan WMI berlisensi OJK sebelum investasi.</p>
+  </div>
+
+  <div class="watermark">IDX High Dividend Research · Indonesia · 2026</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div id="modalTicker" style="font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--gold);font-weight:500;"></div>
+        <div id="modalCompany" style="font-size:13px;color:var(--muted);margin-top:4px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-metrics" id="modalMetrics"></div>
+      <p class="modal-desc" id="modalDesc"></p>
+      <div class="modal-catalysts">
+        <h4>Katalis Positif</h4>
+        <div id="modalCatalysts"></div>
+      </div>
+      <div class="modal-risks">
+        <h4>Risiko Utama</h4>
+        <div id="modalRisks"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STOCKS = [
+  {
+    rank:1, ticker:'SKRN', company:'Superkrane Mitra Utama', sector:'Industri',
+    yield:17.93, dpr:95, price:'~Rp 474', rating:'HOLD',
+    color:'#f97316',
+    desc:'Emiten sewa alat berat & konstruksi. Mencatat yield tertinggi di Semester I/2025 dengan dividen Rp85/lembar. Membagi dividen dua kali: interim (Nov 2024) Rp45 dan final (Mei 2025) Rp40. Yield luar biasa tinggi perlu diverifikasi terhadap harga saham.',
+    catalysts:['Permintaan alat berat dari sektor pertambangan masih kuat','Dividend interim + final meningkatkan frekuensi pembayaran','Arus kas operasional solid'],
+    risks:['Yield sangat tinggi perlu cross-check harga vs valuasi','Bergantung pada permintaan sektor tambang','Kapitalisasi pasar kecil, likuiditas terbatas'],
+  },
+  {
+    rank:2, ticker:'DMAS', company:'Puradelta Lestari', sector:'Lainnya',
+    yield:16.0, dpr:85, price:'~Rp 200', rating:'WATCH',
+    color:'#8b5cf6',
+    desc:'Emiten properti industrial milik grup Sinarmas. Sempat absen membagi dividen setahun, namun kembali dengan yield >16% dari laba tahun buku 2024. Posisi sebagai kawasan industri strategis mendukung arus kas jangka panjang.',
+    catalysts:['Kawasan industri Deltamas terus berkembang','Permintaan lahan industri dari perusahaan asing meningkat','Grup Sinarmas komitmen bagi dividen besar'],
+    risks:['Ketidakpastian properti komersial pasca-pandemi','Siklus bisnis properti industrial fluktuatif','Kehadiran dividen tidak konsisten (pernah absen)'],
+  },
+  {
+    rank:3, ticker:'ITMG', company:'Indo Tambangraya Megah', sector:'Batu Bara',
+    yield:14.5, dpr:90, price:'~Rp 26.000', rating:'BUY',
+    color:'#c84040',
+    desc:'Salah satu emiten batu bara terbesar Indonesia. Rutin membagikan dividen dua kali setahun (interim dan final), dengan historis yield sering di atas 10–15%. Anak usaha Banpu Thailand ini dikenal sangat loyal kepada pemegang saham.',
+    catalysts:['Harga batu bara global masih relatif tinggi','Dua kali pembayaran dividen per tahun','DPR konsisten 80–90%','Arus kas bebas sangat kuat'],
+    risks:['Normalisasi harga batubara internasional','Tekanan transisi energi jangka panjang','Regulasi lingkungan makin ketat'],
+  },
+  {
+    rank:4, ticker:'BSSR', company:'Baramulti Suksessarana', sector:'Batu Bara',
+    yield:13.5, dpr:88, price:'~Rp 5.000', rating:'BUY',
+    color:'#c84040',
+    desc:'Emiten batubara small-mid cap favorit pemburu dividen. Kerap memberikan yield dua digit secara konsisten. Skala lebih kecil dari ITMG namun efisiensi operasional tinggi menghasilkan free cash flow besar relatif terhadap market cap.',
+    catalysts:['FCF yield sangat tinggi relatif market cap','Manajemen komitmen tinggi bagi dividen besar','Operasi efisien, cost of coal rendah'],
+    risks:['Likuiditas saham lebih rendah dari emiten besar','Sangat sensitif terhadap harga batu bara global','Risiko konsentrasi komoditas tunggal'],
+  },
+  {
+    rank:5, ticker:'PTBA', company:'Bukit Asam Tbk', sector:'Batu Bara',
+    yield:12.0, dpr:100, price:'~Rp 2.800', rating:'BUY',
+    color:'#c84040',
+    desc:'BUMN pertambangan batu bara terbesar. Dikenal dengan Dividend Payout Ratio yang bisa mencapai 100% dari laba bersih. Sebagai emiten pelat merah, memiliki komitmen kuat pada pemegang saham dan mandat pemerintah untuk distribusi dividen.',
+    catalysts:['DPR bisa capai 100% — seluruh laba dibagi','BUMN dengan mandate dividen dari pemerintah','Infrastruktur rel batu bara Sumatera competitive advantage'],
+    risks:['100% DPR tak tersedia untuk reinvestasi','Bergantung pada harga batu bara thermal','Rencana transisi ke energi hijau jangka panjang'],
+  },
+  {
+    rank:6, ticker:'HEXA', company:'Hexindo Adiperkasa', sector:'Industri',
+    yield:11.0, dpr:82, price:'~Rp 7.200', rating:'BUY',
+    color:'#f97316',
+    desc:'Distributor alat berat Hitachi untuk pasar Indonesia. Yield sering di atas 10% tergantung volume penjualan ke sektor tambang. Bisnis siklikal namun margin distribusi stabil membuat dividen cukup dapat diprediksi dalam jangka menengah.',
+    catalysts:['Permintaan alat berat dari sektor tambang & konstruksi','Dividen konsisten dua digit','Hubungan distribusi eksklusif Hitachi'],
+    risks:['Sangat bergantung pada capex sektor pertambangan','Risiko persaingan dari merk alat berat China','Penjualan bersifat siklikal'],
+  },
+  {
+    rank:7, ticker:'ADRO', company:'Adaro Energy Indonesia', sector:'Batu Bara',
+    yield:10.0, dpr:78, price:'~Rp 2.300', rating:'HOLD',
+    color:'#c84040',
+    desc:'Perusahaan energi terdiversifikasi, bergerak dari batubara menuju green energy. Meski ekspansi ke energi bersih membutuhkan capex besar, Adaro tetap membagikan dividen tunai yang besar. Transformasi bisnis memberi nilai jangka panjang.',
+    catalysts:['Diversifikasi ke energi terbarukan jangka panjang','Arus kas batubara masih besar','Rekam jejak dividen konsisten'],
+    risks:['Capex green energy menekan free cash flow','Transisi bisnis menciptakan ketidakpastian DPR','Harga batubara normalisasi'],
+  },
+  {
+    rank:8, ticker:'AADI', company:'Adaro Andalan Indonesia', sector:'Batu Bara',
+    yield:8.5, dpr:75, price:'~Rp 8.000', rating:'BUY',
+    color:'#c84040',
+    desc:'Spin-off Adaro yang fokus murni pada operasi batubara. Dibentuk agar aset batubara memiliki entitas terpisah dari strategi green energy grup. Yield 8.5% menarik dengan focus bisnis yang lebih terfokus.',
+    catalysts:['Fokus murni batubara → DPR lebih predictable','Pisah dari capex green energy ADRO','Potensi special dividend'],
+    risks:['Entitas baru, rekam jejak dividen terbatas','Harga batubara turun = dividen turun','Bergantung pada operasi tambang Kalimantan'],
+  },
+  {
+    rank:9, ticker:'BJTM', company:'Bank Pembangunan Daerah Jawa Timur', sector:'Perbankan',
+    yield:7.5, dpr:70, price:'~Rp 620', rating:'BUY',
+    color:'#3a9fff',
+    desc:'Bank daerah paling populer untuk pemburu dividen. Yield tahunan stabil di 6–8% secara konsisten. Fokus pada Jawa Timur memberikan keunggulan lokal. Reputasi sebagai "bank dividen" membuatnya selalu masuk radar investor pasif.',
+    catalysts:['Yield stabil 6–8% jangka panjang','Basis nasabah loyal Jawa Timur','Efisiensi operasional bank daerah'],
+    risks:['Skala lebih kecil dari bank besar nasional','Potensi tekanan NIM dari suku bunga','Risiko kredit daerah'],
+  },
+  {
+    rank:10, ticker:'BMRI', company:'Bank Mandiri Tbk', sector:'Perbankan',
+    yield:6.2, dpr:65, price:'~Rp 5.800', rating:'BUY',
+    color:'#3a9fff',
+    desc:'Bank terbesar Indonesia berdasarkan total aset. Tren kenaikan laba BMRI secara historis diikuti kenaikan dividen per lembar saham. Portofolio kredit yang terdiversifikasi memberikan ketahanan di berbagai siklus ekonomi.',
+    catalysts:['Laba bersih terus tumbuh → dividen naik','Ekspansi digital banking membuka segmen baru','Bank terbesar — likuiditas saham sangat tinggi'],
+    risks:['Yield lebih rendah dari saham batu bara','Regulasi perbankan OJK yang ketat','Kenaikan NPL di tengah perlambatan ekonomi'],
+  },
+  {
+    rank:11, ticker:'BBRI', company:'Bank Rakyat Indonesia', sector:'Perbankan',
+    yield:5.8, dpr:65, price:'~Rp 4.200', rating:'BUY',
+    color:'#3a9fff',
+    desc:'Bank dengan laba terbesar Indonesia, fokus UMKM. Rutin membagi dividen tinggi dengan rasio tinggi. Jaringan mikro terluas di Indonesia memberikan keunggulan kompetitif struktural yang melindungi pendapatan jangka panjang.',
+    catalysts:['Laba terbesar Indonesia — basis dividen kuat','Jaringan UMKM tidak tertandingi','Likuiditas saham sangat tinggi (LQ45)'],
+    risks:['NPL UMKM lebih rentan saat ekonomi melambat','Yield lebih rendah dari batubara','Persaingan fintech menggerus segmen mikro'],
+  },
+  {
+    rank:12, ticker:'PGAS', company:'Perusahaan Gas Negara', sector:'Energi',
+    yield:8.0, dpr:72, price:'~Rp 1.400', rating:'BUY',
+    color:'#2ecc8a',
+    desc:'BUMN pengelola infrastruktur gas terbesar Indonesia. Posisi semi-monopoli distribusi gas memberikan visibilitas pendapatan tinggi. Yield 8% konsisten menjadikannya pilihan Mirae Asset sebagai top 5 saham dividen terbaik 2025.',
+    catalysts:['Semi-monopoli distribusi gas nasional','Yield 8% konsisten, low volatility','Proyek infrastruktur gas terus ekspansi'],
+    risks:['Regulasi harga gas ditentukan pemerintah','Transisi ke energi terbarukan jangka panjang','Capex infrastruktur besar menekan FCF'],
+  },
+  {
+    rank:13, ticker:'TLKM', company:'Telkom Indonesia', sector:'Lainnya',
+    yield:5.5, dpr:60, price:'~Rp 2.700', rating:'HOLD',
+    color:'#8b5cf6',
+    desc:'BUMN telekomunikasi nasional. Saham defensif dengan dividen rutin, cocok untuk investor konservatif. Arus kas stabil dari layanan broadband dan enterprise. Tekanan dari kompetisi dan tantangan digital menjadi headwind.',
+    catalysts:['Saham defensif, arus kas stabil','BUMN mandate dividen pemerintah','Ekspansi data center & digital bisnis'],
+    risks:['Tekanan persaingan dari XL, Indosat','Perlambatan pertumbuhan pendapatan voice','Yield kalah dengan sektor lain'],
+  },
+  {
+    rank:14, ticker:'BBNI', company:'Bank Negara Indonesia', sector:'Perbankan',
+    yield:8.4, dpr:72, price:'~Rp 4.500', rating:'BUY',
+    color:'#3a9fff',
+    desc:'Bank Himbara dengan dividen tunai Rp374/saham untuk tahun buku 2024, menghasilkan yield 8.42%. Fokus pada korporasi dan ekspansi internasional memberikan diversifikasi pendapatan. Masuk radar saham dividen bank tertinggi 2025.',
+    catalysts:['Yield 8.4% tertinggi di kelompok bank besar','Laba korporasi tumbuh konsisten','Ekspansi layanan internasional'],
+    risks:['Eksposur kredit korporasi besar','Regulasi OJK','Persaingan ketat sesama Himbara'],
+  },
+  {
+    rank:15, ticker:'INDF', company:'Indofood Sukses Makmur', sector:'Lainnya',
+    yield:4.5, dpr:55, price:'~Rp 7.800', rating:'HOLD',
+    color:'#8b5cf6',
+    desc:'Konglomerasi consumer goods terbesar Indonesia. Yield lebih rendah dari batu bara namun sangat stabil dan defensif. Diversifikasi produk dari mie instan hingga perkebunan memberikan ketahanan saat siklus turun.',
+    catalysts:['Saham defensif consumer staples','Dividen sangat konsisten setiap tahun','Diversifikasi bisnis luas'],
+    risks:['Yield terendah di daftar ini','Margin squeezed oleh kenaikan bahan baku','Persaingan produk consumer goods meningkat'],
+  },
+];
+
+const SECTOR_COLORS = {
+  'Batu Bara': '#c84040',
+  'Perbankan': '#3a9fff',
+  'Energi': '#2ecc8a',
+  'Industri': '#f97316',
+  'Lainnya': '#8b5cf6',
+};
+
+const SECTOR_BADGES = {
+  'Batu Bara': 'background:rgba(200,64,64,0.12);color:#e07070;border:1px solid rgba(200,64,64,0.25)',
+  'Perbankan': 'background:rgba(58,159,255,0.12);color:#7ab8ff;border:1px solid rgba(58,159,255,0.25)',
+  'Energi': 'background:rgba(46,204,138,0.12);color:#6dddaa;border:1px solid rgba(46,204,138,0.25)',
+  'Industri': 'background:rgba(249,115,22,0.12);color:#fdba74;border:1px solid rgba(249,115,22,0.25)',
+  'Lainnya': 'background:rgba(139,92,246,0.12);color:#c4b5fd;border:1px solid rgba(139,92,246,0.25)',
+};
+
+const RATING_STYLE = {
+  'BUY': 'rating-buy',
+  'HOLD': 'rating-hold',
+  'WATCH': 'rating-watch',
+};
+
+let currentFilter = 'all';
+let sortCol = 3;
+let sortDir = -1;
+
+function renderTable() {
+  let data = [...STOCKS];
+  if (currentFilter !== 'all') data = data.filter(s => s.sector === currentFilter);
+  data.sort((a, b) => {
+    const keys = ['rank','ticker','sector','yield','dpr','price','rating'];
+    const k = keys[sortCol];
+    if (sortCol === 3 || sortCol === 4) return sortDir * (b[k] - a[k]);
+    return sortDir * a[k].localeCompare(b[k]);
+  });
+
+  const maxYield = Math.max(...STOCKS.map(s => s.yield));
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = data.map((s, i) => `
+    <tr onclick="openModal('${s.ticker}')" class="${i % 2 === 0 ? '' : ''}">
+      <td style="font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:12px;">${String(s.rank).padStart(2,'0')}</td>
+      <td>
+        <div class="ticker-cell">
+          <div class="ticker-dot" style="background:${s.color};box-shadow:0 0 6px ${s.color}66;"></div>
+          <div>
+            <div class="ticker-code">${s.ticker}</div>
+            <div class="company-name">${s.company}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="sector-badge" style="${SECTOR_BADGES[s.sector]}">${s.sector}</span></td>
+      <td class="yield-bar-cell">
+        <div class="yield-bar-wrap">
+          <div class="yield-bar-bg">
+            <div class="yield-bar-fill" style="width:${(s.yield/maxYield*100)}%;background:linear-gradient(90deg,${s.color},${s.color}cc);"></div>
+          </div>
+          <span class="yield-val" style="color:${s.color}">${s.yield.toFixed(1)}%</span>
+        </div>
+      </td>
+      <td class="dpr-cell">${s.dpr}%</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);">${s.price}</td>
+      <td class="rating-cell ${RATING_STYLE[s.rating]}">${s.rating}</td>
+      <td><button onclick="event.stopPropagation();openModal('${s.ticker}')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:5px 10px;cursor:pointer;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">DETAIL →</button></td>
+    </tr>
+  `).join('');
+}
+
+function filterTable(sector, btn) {
+  currentFilter = sector;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+  document.querySelectorAll('thead th').forEach((th, i) => {
+    th.classList.toggle('sorted', i === col);
+  });
+  renderTable();
+}
+
+function openModal(ticker) {
+  const s = STOCKS.find(x => x.ticker === ticker);
+  if (!s) return;
+  document.getElementById('modalTicker').textContent = s.ticker;
+  document.getElementById('modalCompany').textContent = s.company;
+  document.getElementById('modalMetrics').innerHTML = `
+    <div class="modal-metric"><div class="m-label">Div. Yield</div><div class="m-val" style="color:${s.color}">${s.yield.toFixed(1)}%</div></div>
+    <div class="modal-metric"><div class="m-label">DPR</div><div class="m-val">${s.dpr}%</div></div>
+    <div class="modal-metric"><div class="m-label">Rating</div><div class="m-val ${RATING_STYLE[s.rating]}">${s.rating}</div></div>
+    <div class="modal-metric"><div class="m-label">Sektor</div><div class="m-val" style="font-size:13px">${s.sector}</div></div>
+    <div class="modal-metric"><div class="m-label">Harga Est.</div><div class="m-val" style="font-size:13px">${s.price}</div></div>
+    <div class="modal-metric"><div class="m-label">Rank IDX</div><div class="m-val" style="font-size:18px">#${s.rank}</div></div>
+  `;
+  document.getElementById('modalDesc').textContent = s.desc;
+  document.getElementById('modalCatalysts').innerHTML = s.catalysts.map(c => `<div class="catalyst-item">${c}</div>`).join('');
+  document.getElementById('modalRisks').innerHTML = s.risks.map(r => `<div class="risk-item">${r}</div>`).join('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModalBtn();
+}
+function closeModalBtn() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// TABS
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'chart') setTimeout(initCharts, 50);
+  if (name === 'sektor') renderSectors();
+}
+
+let chartsInit = false;
+function initCharts() {
+  if (chartsInit) return;
+  chartsInit = true;
+  Chart.defaults.color = '#7a8a9a';
+  Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+
+  const sorted = [...STOCKS].sort((a,b) => b.yield - a.yield);
+
+  // BAR CHART
+  new Chart(document.getElementById('yieldBarChart'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => s.ticker),
+      datasets: [{
+        data: sorted.map(s => s.yield),
+        backgroundColor: sorted.map(s => s.color + 'bb'),
+        borderColor: sorted.map(s => s.color),
+        borderWidth: 1,
+        borderRadius: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(1)}% yield` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%', font: { size: 10 } } }
+      }
+    }
+  });
+
+  // PIE CHART
+  const sectorCounts = {};
+  STOCKS.forEach(s => { sectorCounts[s.sector] = (sectorCounts[s.sector] || 0) + 1; });
+  new Chart(document.getElementById('sectorPieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(sectorCounts),
+      datasets: [{
+        data: Object.values(sectorCounts),
+        backgroundColor: Object.keys(sectorCounts).map(s => SECTOR_COLORS[s] + 'aa'),
+        borderColor: Object.keys(sectorCounts).map(s => SECTOR_COLORS[s]),
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { font: { size: 11 }, padding: 12 } } },
+      cutout: '55%'
+    }
+  });
+
+  // SCATTER (DPR vs Yield)
+  new Chart(document.getElementById('dprScatterChart'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Emiten',
+        data: STOCKS.map(s => ({ x: s.dpr, y: s.yield, label: s.ticker })),
+        backgroundColor: STOCKS.map(s => s.color + 'bb'),
+        borderColor: STOCKS.map(s => s.color),
+        borderWidth: 1,
+        pointRadius: 7,
+        pointHoverRadius: 10,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${STOCKS[ctx.dataIndex].ticker}: DPR ${ctx.raw.x}%, Yield ${ctx.raw.y}%` } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Dividend Payout Ratio (%)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { title: { display: true, text: 'Dividend Yield (%)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+
+  // SECTOR AVG
+  const sectorYields = {};
+  const sectorCount = {};
+  STOCKS.forEach(s => {
+    sectorYields[s.sector] = (sectorYields[s.sector] || 0) + s.yield;
+    sectorCount[s.sector] = (sectorCount[s.sector] || 0) + 1;
+  });
+  const sectorAvg = Object.keys(sectorYields).map(k => ({ name: k, avg: sectorYields[k] / sectorCount[k] })).sort((a,b) => b.avg - a.avg);
+
+  new Chart(document.getElementById('sectorAvgChart'), {
+    type: 'bar',
+    data: {
+      labels: sectorAvg.map(s => s.name),
+      datasets: [{
+        data: sectorAvg.map(s => s.avg),
+        backgroundColor: sectorAvg.map(s => SECTOR_COLORS[s.name] + 'aa'),
+        borderColor: sectorAvg.map(s => SECTOR_COLORS[s.name]),
+        borderWidth: 1,
+        borderRadius: 2,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(1)}% avg yield` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderSectors() {
+  const sectors = {};
+  STOCKS.forEach(s => {
+    if (!sectors[s.sector]) sectors[s.sector] = { tickers: [], totalYield: 0 };
+    sectors[s.sector].tickers.push(s);
+    sectors[s.sector].totalYield += s.yield;
+  });
+
+  const descriptions = {
+    'Batu Bara': 'Sektor paling loyal membagikan dividen di IDX. Harga batu bara thermal masih mendukung arus kas besar. Risiko utama: normalisasi harga global dan tekanan transisi energi jangka panjang.',
+    'Perbankan': 'Keseimbangan antara capital gain dan dividen rutin. Bank BUMN memiliki mandat pemerintah untuk distribusi laba. Sensitif terhadap suku bunga BI dan kualitas kredit.',
+    'Energi': 'Sektor utilitas semi-monopoli dengan visibilitas pendapatan tinggi. PGAS mendominasi dengan posisi infrastruktur gas nasional yang tidak mudah tertandingi.',
+    'Industri': 'Emiten alat berat dengan yield dua digit. Bergantung pada siklus capex sektor tambang dan konstruksi. Volatilitas lebih tinggi namun imbal hasil menarik.',
+    'Lainnya': 'Mix sektor: properti industrial, telekomunikasi, dan consumer goods. Lebih defensif namun yield umumnya lebih rendah dari batu bara.'
+  };
+
+  document.getElementById('sectorGrid').innerHTML = Object.entries(sectors).map(([sector, data]) => {
+    const avgYield = (data.totalYield / data.tickers.length).toFixed(1);
+    const color = SECTOR_COLORS[sector];
+    return `
+      <div class="sector-card" style="--sector-color:${color}">
+        <div class="sector-card-head">
+          <div class="sector-name">${sector}</div>
+          <div class="sector-yield-avg">${avgYield}%</div>
+        </div>
+        <div class="sector-emiten">${data.tickers.length} emiten · avg yield</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px;">${descriptions[sector]}</p>
+        <div class="sector-tickers">
+          ${data.tickers.map(t => `<span class="sticker" style="color:${color};border-color:${color}44;">${t.ticker}</span>`).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Init
+renderTable();
+</script>
+</body>
+</html>

@@ -54,10 +54,10 @@ describe('AlignToolbar', () => {
     expect(btns[0].classList.contains('inactive')).toBe(true);
   });
 
-  it('creates 8 align buttons immediately after construction', () => {
+  it('creates 10 buttons (8 align/distribute + 2 flip) on construction', () => {
     new AlignToolbar(container, state);
     const btns = container.querySelectorAll('.align-btn');
-    expect(btns.length).toBe(8);
+    expect(btns.length).toBe(10);
   });
 
   it('distribute buttons (indices 6-7) are inactive when only 2 layers selected', () => {

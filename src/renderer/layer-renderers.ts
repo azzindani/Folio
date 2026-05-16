@@ -3,6 +3,8 @@ import type {
   LineLayer, TextLayer, ImageLayer, IconLayer,
   MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer,
   QRCodeLayer, AutoLayoutLayer, ColorOrGradient,
+  InteractiveChartLayer, InteractiveTableLayer, RichTextLayer,
+  KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer, ParticleLayer,
 } from '../schema/types';
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
@@ -10,22 +12,47 @@ import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS } from './lucide-icons';
 import { encodeQR } from './qr/encode';
 
+// Word-wrap plain text into lines that fit within maxWidth.
+// Uses a ~0.52× font-size char-width estimate (accurate for Inter/sans-serif).
+function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number): string[] {
+  const lines: string[] = [];
+  for (const para of text.split('\n')) {
+    if (!maxWidth || maxWidth <= 0) { lines.push(para); continue; }
+    const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * 0.52)));
+    const words = para.split(' ');
+    let cur = '';
+    for (const word of words) {
+      if (!cur) { cur = word; }
+      else if ((cur + ' ' + word).length <= maxChars) { cur += ' ' + word; }
+      else { lines.push(cur); cur = word; }
+    }
+    lines.push(cur);
+  }
+  return lines.length ? lines : [''];
+}
+
 function applyCommonAttributes(
   el: SVGElement,
   layer: Layer,
 ): void {
   el.setAttribute('data-layer-id', layer.id);
+
+  // Build transform: flip (scale around center) then rotate
+  const cx = (layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2);
+  const cy = (layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2);
+  const transforms: string[] = [];
+  if (layer.flip_h || layer.flip_v) {
+    const sx = layer.flip_h ? -1 : 1;
+    const sy = layer.flip_v ? -1 : 1;
+    transforms.push(`translate(${cx} ${cy}) scale(${sx} ${sy}) translate(${-cx} ${-cy})`);
+  }
   if (layer.rotation) {
-    const cx = (layer.x ?? 0) + ((typeof layer.width === 'number' ? layer.width : 0) / 2);
-    const cy = (layer.y ?? 0) + ((typeof layer.height === 'number' ? layer.height : 0) / 2);
-    el.setAttribute('transform', `rotate(${layer.rotation} ${cx} ${cy})`);
+    transforms.push(`rotate(${layer.rotation} ${cx} ${cy})`);
   }
-  if (layer.visible === false) {
-    el.setAttribute('display', 'none');
-  }
-  if (layer.opacity !== undefined) {
-    el.setAttribute('opacity', String(layer.opacity));
-  }
+  if (transforms.length > 0) el.setAttribute('transform', transforms.join(' '));
+
+  if (layer.visible === false) el.setAttribute('display', 'none');
+  if (layer.opacity !== undefined) el.setAttribute('opacity', String(layer.opacity));
 }
 
 function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; width: number; dash?: number[]; linecap?: string; linejoin?: string }, svg?: SVGSVGElement): void {
@@ -280,49 +307,51 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     g.appendChild(textEl);
   } else {
     // Plain text
-    const textEl = createSVGElement('text', {
-      x: layer.x ?? 0,
-      y: (layer.y ?? 0) + (style.font_size ?? 16),
-    });
+    const fontSize = style.font_size ?? 16;
+    const lineH = fontSize * (style.line_height ?? 1.4);
+    const value = layer.content.value;
+    const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
+
+    // Compute x anchor
+    const anchor = style.align === 'center' ? 'middle' : style.align === 'right' ? 'end' : 'start';
+    let textX = layer.x ?? 0;
+    if (style.align === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
+    else if (style.align === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
+
+    // Compute y anchor (vertical align within layer height)
+    let textY = (layer.y ?? 0) + fontSize;
+    if (typeof layer.height === 'number' && style.vertical_align) {
+      const totalH = lines.length * lineH;
+      if (style.vertical_align === 'middle') textY = (layer.y ?? 0) + (layer.height - totalH) / 2 + fontSize;
+      else if (style.vertical_align === 'bottom') textY = (layer.y ?? 0) + layer.height - totalH + fontSize;
+    }
+
+    const textEl = createSVGElement('text', { x: textX, y: textY });
     textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
-    textEl.setAttribute('font-size', String(style.font_size ?? 16));
+    textEl.setAttribute('font-size', String(fontSize));
     textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
+    if (style.text_decoration && style.text_decoration !== 'none') {
+      textEl.setAttribute('text-decoration', style.text_decoration);
+    }
+    if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+    if (style.align) textEl.setAttribute('text-anchor', anchor);
+
     const textColor = style.color
       ? resolveColorOrGradient(style.color, getOrCreateDefs(svg))
       : '#000';
     textEl.setAttribute('fill', textColor);
 
-    if (style.line_height) {
-      textEl.setAttribute('line-height', String(style.line_height));
-    }
-    if (style.letter_spacing) {
-      textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
-    }
-    if (style.align) {
-      const anchor = style.align === 'center' ? 'middle' : style.align === 'right' ? 'end' : 'start';
-      textEl.setAttribute('text-anchor', anchor);
-      if (style.align === 'center' && typeof layer.width === 'number') {
-        textEl.setAttribute('x', String((layer.x ?? 0) + layer.width / 2));
-      } else if (style.align === 'right' && typeof layer.width === 'number') {
-        textEl.setAttribute('x', String((layer.x ?? 0) + layer.width));
-      }
-    }
-
-    // Handle multiline text
-    const value = layer.content.value;
-    const lines = value.split('\n');
     if (lines.length > 1) {
-      const lineH = (style.font_size ?? 16) * (style.line_height ?? 1.5);
       for (let i = 0; i < lines.length; i++) {
         const tspan = createSVGElement('tspan', {
-          x: textEl.getAttribute('x') ?? String(layer.x ?? 0),
+          x: String(textX),
           dy: i === 0 ? '0' : String(lineH),
         });
         tspan.textContent = lines[i];
         textEl.appendChild(tspan);
       }
     } else {
-      textEl.textContent = value;
+      textEl.textContent = lines[0] ?? '';
     }
 
     g.appendChild(textEl);
@@ -715,52 +744,71 @@ export function renderAutoLayout(
   const availableCross = containerCross - crossPadStart - (isRow ? pad.bottom : pad.right);
   const totalMain = mainSizes.reduce((s, v) => s + v, 0) + Math.max(0, sorted.length - 1) * gap;
 
-  let cursor: number;
-  let dynGap = gap;
-  switch (justify) {
-    case 'center':
-      cursor = mainPadStart + (availableMain - totalMain) / 2; break;
-    case 'end':
-      cursor = mainPadStart + availableMain - totalMain; break;
-    case 'space-between':
-      cursor = mainPadStart;
-      dynGap = sorted.length > 1
-        ? (availableMain - mainSizes.reduce((s, v) => s + v, 0)) / (sorted.length - 1)
-        : 0;
-      break;
-    case 'space-around': {
-      const spare = availableMain - mainSizes.reduce((s, v) => s + v, 0);
-      dynGap = spare / sorted.length;
-      cursor = mainPadStart + dynGap / 2; break;
-    }
-    default: cursor = mainPadStart;
-  }
-
-  const getCrossPos = (cSize: number): number => {
-    switch (align) {
-      case 'center': return crossPadStart + (availableCross - cSize) / 2;
-      case 'end':    return crossPadStart + availableCross - cSize;
-      default:       return crossPadStart;
+  const calcCursor = (total: number, count: number, sizes: number[]): { start: number; dynGap: number } => {
+    switch (justify) {
+      case 'center':      return { start: mainPadStart + (availableMain - total) / 2,              dynGap: gap };
+      case 'end':         return { start: mainPadStart + availableMain - total,                    dynGap: gap };
+      case 'space-between': return { start: mainPadStart, dynGap: count > 1 ? (availableMain - sizes.reduce((s,v)=>s+v,0)) / (count-1) : 0 };
+      case 'space-around':  { const sp = availableMain - sizes.reduce((s,v)=>s+v,0); return { start: mainPadStart + (sp/count)/2, dynGap: sp/count }; }
+      default:            return { start: mainPadStart,                                            dynGap: gap };
     }
   };
 
-  for (let i = 0; i < sorted.length; i++) {
-    const child    = sorted[i];
-    const crossPos = getCrossPos(crossSizes[i]);
-    const childX   = isRow ? x + cursor : x + crossPos;
-    const childY   = isRow ? y + crossPos : y + cursor;
-
-    const stretchW = align === 'stretch' && !isRow ? availableCross : undefined;
-    const stretchH = align === 'stretch' &&  isRow ? availableCross : undefined;
-
+  const placeChild = (child: Layer, mc: number, cc: number, cIdx: number, trackCross: number): void => {
+    let crossPos: number;
+    switch (align) {
+      case 'center': crossPos = cc + (trackCross - crossSizes[cIdx]) / 2; break;
+      case 'end':    crossPos = cc + trackCross - crossSizes[cIdx]; break;
+      default:       crossPos = cc;
+    }
     const placed: Layer = {
-      ...child, x: childX, y: childY,
-      ...(stretchW !== undefined ? { width:  stretchW } : {}),
-      ...(stretchH !== undefined ? { height: stretchH } : {}),
+      ...child,
+      x: isRow ? x + mc : x + crossPos,
+      y: isRow ? y + crossPos : y + mc,
+      ...(align === 'stretch' &&  isRow ? { height: trackCross } : {}),
+      ...(align === 'stretch' && !isRow ? { width:  trackCross } : {}),
     };
-
     g.appendChild(renderChild(placed, svg));
-    cursor += mainSizes[i] + dynGap;
+  };
+
+  if (layer.wrap && availableMain > 0) {
+    // Group children into wrap tracks
+    const tracks: { idxs: number[] }[] = [];
+    let track: number[] = [];
+    let trackUsed = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const sz = mainSizes[i];
+      const needed = track.length === 0 ? sz : trackUsed + gap + sz;
+      if (track.length > 0 && needed > availableMain + 0.5) {
+        tracks.push({ idxs: [...track] });
+        track = [i]; trackUsed = sz;
+      } else {
+        track.push(i); trackUsed = needed;
+      }
+    }
+    if (track.length > 0) tracks.push({ idxs: track });
+
+    let crossCursor = crossPadStart;
+    for (const { idxs } of tracks) {
+      const tSizes = idxs.map(i => mainSizes[i]);
+      const tTotal = tSizes.reduce((s,v)=>s+v,0) + Math.max(0, idxs.length-1) * gap;
+      const trackCross = Math.max(...idxs.map(i => crossSizes[i]));
+      const { start, dynGap } = calcCursor(tTotal, idxs.length, tSizes);
+      let mc = start;
+      for (let j = 0; j < idxs.length; j++) {
+        placeChild(sorted[idxs[j]], mc, crossCursor, idxs[j], trackCross);
+        mc += tSizes[j] + dynGap;
+      }
+      crossCursor += trackCross + gap;
+    }
+  } else {
+    // No wrap — linear pass
+    const { start, dynGap } = calcCursor(totalMain, sorted.length, mainSizes);
+    let cursor = start;
+    for (let i = 0; i < sorted.length; i++) {
+      placeChild(sorted[i], cursor, crossPadStart, i, availableCross);
+      cursor += mainSizes[i] + dynGap;
+    }
   }
 
   applyCommonAttributes(g, layer);
@@ -774,4 +822,376 @@ function normalizePadding(
   if (p === undefined || p === null) return { top: 0, right: 0, bottom: 0, left: 0 };
   if (typeof p === 'number') return { top: p, right: p, bottom: p, left: p };
   return p;
+}
+
+// ── Helpers shared by report renderers ──────────────────────
+
+function makeForeignObject(
+  layer: { x?: number; y?: number; width?: number | 'auto'; height?: number | 'auto'; id?: string },
+  placeholderLabel: string,
+  cssClass: string,
+  extraStyle?: string,
+): { fo: SVGElement; container: HTMLElement } {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.className = cssClass;
+  container.style.cssText = `width:100%;height:100%;overflow:hidden;box-sizing:border-box;${extraStyle ?? ''}`;
+  if (layer.id) container.dataset['layerId'] = layer.id;
+
+  const placeholder = document.createElement('div');
+  placeholder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#8892A4;font-family:monospace;font-size:12px;';
+  placeholder.textContent = placeholderLabel;
+  container.appendChild(placeholder);
+  fo.appendChild(container);
+
+  return { fo, container };
+}
+
+// ── Interactive Chart (Plotly) ───────────────────────────────
+export function renderInteractiveChart(layer: InteractiveChartLayer, _svg: SVGSVGElement): SVGElement {
+  const { fo, container } = makeForeignObject(layer, `[Chart: ${layer.chart_type}]`, 'folio-chart');
+
+  const meta = {
+    layerId: layer.id,
+    chartType: layer.chart_type,
+    dataRef: layer.data_ref,
+    xField: layer.x_field,
+    yField: layer.y_field,
+    colorField: layer.color_field,
+    title: layer.title,
+    colorScheme: layer.color_scheme ?? 'blues',
+    customColors: layer.custom_colors,
+    legend: layer.legend ?? true,
+    grid: layer.grid ?? true,
+    animate: layer.animate ?? true,
+  };
+  container.dataset['plotlySpec'] = JSON.stringify(meta);
+  container.dataset['renderType'] = 'plotly';
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Interactive Table (Tabulator) ────────────────────────────
+export function renderInteractiveTable(layer: InteractiveTableLayer, _svg: SVGSVGElement): SVGElement {
+  const { fo, container } = makeForeignObject(layer, '[Table loading…]', 'folio-table');
+
+  const meta = {
+    layerId: layer.id,
+    dataRef: layer.data_ref,
+    columns: layer.columns,
+    pagination: layer.pagination ?? true,
+    pageSize: layer.page_size ?? 20,
+    filterable: layer.filterable ?? false,
+    exportable: layer.exportable ?? false,
+    theme: layer.theme ?? 'midnight',
+  };
+  container.dataset['tabulatorSpec'] = JSON.stringify(meta);
+  container.dataset['renderType'] = 'tabulator';
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Rich Text (marked.js) ────────────────────────────────────
+export function renderRichText(layer: RichTextLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.className = 'folio-richtext';
+  const ff = layer.font_family ?? 'Inter, sans-serif';
+  const fs = layer.font_size ?? 16;
+  const lh = layer.line_height ?? 1.6;
+  const color = layer.color ?? '#e0e0e0';
+  const linkColor = layer.link_color ?? '#6c5ce7';
+  container.style.cssText = `width:100%;height:100%;overflow:auto;box-sizing:border-box;font-family:${ff};font-size:${fs}px;line-height:${lh};color:${color};--link-color:${linkColor};`;
+
+  if (layer.format === 'html') {
+    container.innerHTML = layer.content;
+  } else {
+    // Markdown placeholder — marked.js renders this in report runtime
+    container.dataset['markdownSrc'] = layer.content;
+    container.dataset['renderType'] = 'markdown';
+    const pre = document.createElement('pre');
+    pre.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    pre.style.cssText = 'white-space:pre-wrap;margin:0;font-size:inherit;color:inherit;';
+    pre.textContent = layer.content;
+    container.appendChild(pre);
+  }
+
+  fo.appendChild(container);
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── KPI Card ─────────────────────────────────────────────────
+export function renderKpiCard(layer: KpiCardLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 300;
+  const h = typeof layer.height === 'number' ? layer.height : 180;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  const card = document.createElement('div');
+  card.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  card.className = 'folio-kpi';
+  const bg = layer.background ?? '#1e1e3a';
+  const textColor = layer.text_color ?? '#ffffff';
+  const radius = layer.border_radius ?? 12;
+  card.style.cssText = `width:100%;height:100%;box-sizing:border-box;background:${bg};color:${textColor};border-radius:${radius}px;padding:20px;display:flex;flex-direction:column;justify-content:space-between;`;
+
+  const valStr = typeof layer.value === 'number'
+    ? formatKpiValue(layer.value, layer.format, layer.currency, layer.decimals)
+    : String(layer.value);
+  const deltaStr = layer.delta !== undefined
+    ? formatKpiValue(Number(layer.delta), layer.delta_format === 'percent' ? 'percent' : 'number', undefined, 1)
+    : undefined;
+  const posColor = layer.delta_positive_color ?? '#00b894';
+  const negColor = layer.delta_negative_color ?? '#e17055';
+  const deltaNum = layer.delta !== undefined ? Number(layer.delta) : 0;
+  const deltaColor = deltaNum >= 0 ? posColor : negColor;
+
+  card.innerHTML = `
+    <div class="kpi-label" xmlns="http://www.w3.org/1999/xhtml" style="font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.08em;">${escHtml(layer.label)}</div>
+    <div class="kpi-value" xmlns="http://www.w3.org/1999/xhtml" style="font-size:36px;font-weight:700;line-height:1;">${escHtml(valStr)}</div>
+    ${deltaStr ? `<div class="kpi-delta" xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px;color:${deltaColor};">${escHtml((deltaNum >= 0 ? '▲ ' : '▼ ') + deltaStr)}</div>` : ''}
+    ${layer.sparkline_data ? `<canvas class="kpi-sparkline" data-data-ref="${escHtml(layer.sparkline_data ?? '')}" data-field="${escHtml(layer.sparkline_field ?? '')}" data-color="${escHtml(layer.sparkline_color ?? '#6c5ce7')}" style="width:100%;height:40px;"></canvas>` : ''}
+  `;
+
+  fo.appendChild(card);
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+function formatKpiValue(value: number, format?: string, currency?: string, decimals?: number): string {
+  const dec = decimals ?? 0;
+  if (format === 'currency') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD', maximumFractionDigits: dec }).format(value);
+  }
+  if (format === 'percent') {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(dec)}%`;
+  }
+  return value.toFixed(dec);
+}
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Map (Leaflet) ────────────────────────────────────────────
+export function renderMap(layer: MapLayer, _svg: SVGSVGElement): SVGElement {
+  const { fo, container } = makeForeignObject(layer, '[Map loading…]', 'folio-map');
+
+  const meta = {
+    layerId: layer.id,
+    center: layer.center,
+    zoom: layer.zoom ?? 2,
+    tileProvider: layer.tile_provider ?? 'osm',
+    overlays: layer.overlays ?? [],
+  };
+  container.dataset['leafletSpec'] = JSON.stringify(meta);
+  container.dataset['renderType'] = 'leaflet';
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Embed Code ───────────────────────────────────────────────
+export function renderEmbedCode(layer: EmbedCodeLayer, _svg: SVGSVGElement): SVGElement {
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
+
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+
+  if (layer.sandbox !== false) {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    iframe.style.cssText = `width:${w}px;height:${h}px;border:none;`;
+    iframe.setAttribute('srcdoc', layer.html);
+    iframe.setAttribute('sandbox', layer.allow_scripts ? 'allow-scripts' : '');
+    fo.appendChild(iframe);
+  } else {
+    const container = document.createElement('div');
+    container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    container.style.cssText = `width:${w}px;height:${h}px;overflow:hidden;`;
+    container.innerHTML = layer.html;
+    fo.appendChild(container);
+  }
+
+  applyCommonAttributes(fo, layer);
+  return fo;
+}
+
+// ── Popup ────────────────────────────────────────────────────
+export function renderPopup(
+  layer: PopupLayer,
+  svg: SVGSVGElement,
+  renderChildFn: (l: Layer, s: SVGSVGElement) => SVGElement,
+): SVGElement {
+  // Popup renders as a hidden <g> group; the report runtime JS shows/hides it.
+  const w = typeof layer.width === 'number' ? layer.width : 600;
+  const h = typeof layer.height === 'number' ? layer.height : 400;
+
+  const g = createSVGElement('g', {
+    'data-popup-id': layer.id,
+    'data-trigger-id': layer.trigger_id ?? '',
+    'data-modal': String(layer.modal ?? true),
+    'data-animation': layer.open_animation ?? 'fade',
+  });
+
+  // Backdrop rect (hidden by default)
+  const backdrop = createSVGElement('rect', {
+    x: 0, y: 0, width: '100%', height: '100%',
+    fill: 'rgba(0,0,0,0.5)',
+    'data-popup-backdrop': layer.id,
+  });
+  g.appendChild(backdrop);
+
+  // Panel rect
+  const panel = createSVGElement('rect', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+    fill: '#1a1a2e',
+    rx: 8,
+    ry: 8,
+  });
+  g.appendChild(panel);
+
+  // Child layers
+  for (const child of (layer.layers ?? [])) {
+    g.appendChild(renderChildFn(child, svg));
+  }
+
+  // Hidden by default; runtime JS handles show/hide
+  g.setAttribute('visibility', 'hidden');
+  g.setAttribute('opacity', '0');
+
+  applyCommonAttributes(g, layer);
+  return g;
+}
+
+// ── Particle ─────────────────────────────────────────────────
+
+/** Deterministic PRNG — seed with layer id + index to avoid Math.random() in render path. */
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function makeStar(cx: number, cy: number, r: number): string {
+  const points: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    const radius = i % 2 === 0 ? r : r * 0.4;
+    points.push(`${cx + radius * Math.cos(angle)},${cy + radius * Math.sin(angle)}`);
+  }
+  return points.join(' ');
+}
+
+export function renderParticle(layer: ParticleLayer, _svg: SVGSVGElement): SVGElement {
+  const g = createSVGElement('g');
+  g.setAttribute('data-layer-id', layer.id);
+
+  const count  = layer.count ?? 50;
+  const size   = layer.size ?? 4;
+  const speed  = layer.speed ?? 3;
+  const colors = layer.colors ?? ['#6c5ce7', '#00cec9', '#fd79a8'];
+  const shape  = layer.shape ?? 'circle';
+  const spread = layer.spread ?? 1;
+
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+  const w = typeof layer.width  === 'number' ? layer.width  : 200;
+  const h = typeof layer.height === 'number' ? layer.height : 200;
+
+  const idSeed = hashString(layer.id);
+
+  for (let i = 0; i < count; i++) {
+    const seed = idSeed + i * 997;
+    const px = x + seededRandom(seed)      * w * spread;
+    const py = y + seededRandom(seed + 1)  * h * spread;
+    const color = colors[i % colors.length];
+    const animDelay = seededRandom(seed + 2) * speed;
+    const animDur   = speed * (0.7 + seededRandom(seed + 3) * 0.6);
+    const driftX    = (seededRandom(seed + 4) - 0.5) * size * 6;
+    const driftY    = (seededRandom(seed + 5) - 0.5) * size * 6;
+
+    let particle: SVGElement;
+    if (shape === 'square') {
+      particle = createSVGElement('rect', {
+        x: px - size / 2,
+        y: py - size / 2,
+        width:  size,
+        height: size,
+        fill:   color,
+        opacity: String(0.5 + seededRandom(seed + 6) * 0.5),
+      });
+    } else if (shape === 'star') {
+      particle = createSVGElement('polygon', {
+        points:  makeStar(px, py, size),
+        fill:    color,
+        opacity: String(0.5 + seededRandom(seed + 6) * 0.5),
+      });
+    } else {
+      particle = createSVGElement('circle', {
+        cx:      px,
+        cy:      py,
+        r:       size / 2,
+        fill:    color,
+        opacity: String(0.5 + seededRandom(seed + 6) * 0.5),
+      });
+    }
+
+    // Floating CSS animation injected via inline style
+    particle.setAttribute('style',
+      `animation: folio-particle-float ${animDur.toFixed(2)}s ${animDelay.toFixed(2)}s ease-in-out infinite alternate;` +
+      `--dp-dx:${driftX.toFixed(1)}px;--dp-dy:${driftY.toFixed(1)}px;`
+    );
+
+    g.appendChild(particle);
+  }
+
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, _svg);
+
+  return g;
 }
