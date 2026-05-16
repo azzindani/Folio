@@ -1,7 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'path';
 import { generateCatalogIndex } from './scripts/gen-catalog-index.mjs';
-import { generateVariants }     from './scripts/gen-template-variants.mjs';
 
 /**
  * Auto-regenerate src/templates/catalog-index.json whenever a
@@ -14,33 +13,19 @@ import { generateVariants }     from './scripts/gen-template-variants.mjs';
  */
 function folioCatalogIndexPlugin(): Plugin {
   const TEMPLATE_GLOB = /public[/\\]templates[/\\]builtin[/\\][^/\\]+\.template\.yaml$/;
-  // Files that the variant generator owns — ignore change events for
-  // these so the plugin doesn't loop when it writes them itself.
-  const VARIANT_GLOB  = /public[/\\]templates[/\\]builtin[/\\]v-[^/\\]+\.template\.yaml$/;
   let regenerating: Promise<void> | null = null;
 
-  const runPipeline = async (reason: string, regenVariants: boolean): Promise<void> => {
-    if (regenVariants) {
-      const v = await generateVariants({ silent: true });
-      if (v.written > 0 || v.pruned > 0) {
-        console.log(`[folio-catalog] variants — wrote=${v.written} pruned=${v.pruned} (${reason})`);
-      }
-      if (v.errors.length) {
-        for (const e of v.errors) console.warn(`[folio-catalog] variant error: ${e}`);
-      }
-    }
-    const c = await generateCatalogIndex({ silent: true });
-    if (c.changed) {
-      console.log(`[folio-catalog] index — ${c.count} templates (${reason})`);
-    }
-    if (c.errors.length) {
-      for (const e of c.errors) console.warn(`[folio-catalog] index error: ${e}`);
-    }
-  };
-
-  const regen = async (reason: string, regenVariants: boolean): Promise<void> => {
+  const regen = async (reason: string): Promise<void> => {
     if (regenerating) return regenerating;
-    regenerating = runPipeline(reason, regenVariants)
+    regenerating = generateCatalogIndex({ silent: true })
+      .then(({ count, changed, errors }) => {
+        if (errors.length) {
+          for (const e of errors) console.warn(`[folio-catalog] error: ${e}`);
+        }
+        if (changed) {
+          console.log(`[folio-catalog] index — ${count} templates (${reason})`);
+        }
+      })
       .catch(err => { console.error('[folio-catalog] regen failed:', err); })
       .finally(() => { regenerating = null; });
     return regenerating;
@@ -50,16 +35,13 @@ function folioCatalogIndexPlugin(): Plugin {
     name: 'folio-catalog-index',
 
     async buildStart() {
-      // On dev/build start, regenerate variants too — keeps the dev
-      // catalog in sync if a base was edited while the server was off.
-      await regen('build start', true);
+      await regen('build start');
     },
 
     configureServer(server) {
       const onEvent = (file: string, kind: string): void => {
         if (!TEMPLATE_GLOB.test(file)) return;
-        if (VARIANT_GLOB.test(file)) return; // skip self-writes
-        void regen(`${kind} ${file}`, true);
+        void regen(`${kind} ${file}`);
       };
       server.watcher.on('add',    f => onEvent(f, 'add'));
       server.watcher.on('change', f => onEvent(f, 'change'));
