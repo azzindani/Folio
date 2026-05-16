@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'path';
 import { generateCatalogIndex } from './scripts/gen-catalog-index.mjs';
+import { generateVariants }     from './scripts/gen-template-variants.mjs';
 
 /**
  * Auto-regenerate src/templates/catalog-index.json whenever a
@@ -13,25 +14,34 @@ import { generateCatalogIndex } from './scripts/gen-catalog-index.mjs';
  */
 function folioCatalogIndexPlugin(): Plugin {
   const TEMPLATE_GLOB = /src[/\\]templates[/\\]builtin[/\\][^/\\]+\.template\.yaml$/;
+  // Files that the variant generator owns — ignore change events for
+  // these so the plugin doesn't loop when it writes them itself.
+  const VARIANT_GLOB  = /src[/\\]templates[/\\]builtin[/\\]v-[^/\\]+\.template\.yaml$/;
   let regenerating: Promise<void> | null = null;
 
-  const regen = async (reason: string): Promise<void> => {
-    // Coalesce overlapping regen calls — if one is in flight, a second
-    // file save during regen reuses it instead of stacking work.
+  const runPipeline = async (reason: string, regenVariants: boolean): Promise<void> => {
+    if (regenVariants) {
+      const v = await generateVariants({ silent: true });
+      if (v.written > 0 || v.pruned > 0) {
+        console.log(`[folio-catalog] variants — wrote=${v.written} pruned=${v.pruned} (${reason})`);
+      }
+      if (v.errors.length) {
+        for (const e of v.errors) console.warn(`[folio-catalog] variant error: ${e}`);
+      }
+    }
+    const c = await generateCatalogIndex({ silent: true });
+    if (c.changed) {
+      console.log(`[folio-catalog] index — ${c.count} templates (${reason})`);
+    }
+    if (c.errors.length) {
+      for (const e of c.errors) console.warn(`[folio-catalog] index error: ${e}`);
+    }
+  };
+
+  const regen = async (reason: string, regenVariants: boolean): Promise<void> => {
     if (regenerating) return regenerating;
-    regenerating = generateCatalogIndex({ silent: true })
-      .then(({ count, changed, errors }) => {
-        if (errors.length) {
-          console.warn(`[folio-catalog] ${errors.length} template error(s) during ${reason}:`);
-          for (const e of errors) console.warn(`  - ${e}`);
-        }
-        if (changed) {
-          console.log(`[folio-catalog] regenerated index (${count} templates) — ${reason}`);
-        }
-      })
-      .catch(err => {
-        console.error('[folio-catalog] regen failed:', err);
-      })
+    regenerating = runPipeline(reason, regenVariants)
+      .catch(err => { console.error('[folio-catalog] regen failed:', err); })
       .finally(() => { regenerating = null; });
     return regenerating;
   };
@@ -39,16 +49,21 @@ function folioCatalogIndexPlugin(): Plugin {
   return {
     name: 'folio-catalog-index',
 
-    // Runs for both `vite build` and `vite` (dev). Replaces the old
-    // predev/prebuild npm hooks.
     async buildStart() {
-      await regen('build start');
+      // On dev/build start, regenerate variants too — keeps the dev
+      // catalog in sync if a base was edited while the server was off.
+      await regen('build start', true);
     },
 
     configureServer(server) {
-      server.watcher.on('add',    (file) => { if (TEMPLATE_GLOB.test(file)) void regen(`add ${file}`); });
-      server.watcher.on('change', (file) => { if (TEMPLATE_GLOB.test(file)) void regen(`change ${file}`); });
-      server.watcher.on('unlink', (file) => { if (TEMPLATE_GLOB.test(file)) void regen(`unlink ${file}`); });
+      const onEvent = (file: string, kind: string): void => {
+        if (!TEMPLATE_GLOB.test(file)) return;
+        if (VARIANT_GLOB.test(file)) return; // skip self-writes
+        void regen(`${kind} ${file}`, true);
+      };
+      server.watcher.on('add',    f => onEvent(f, 'add'));
+      server.watcher.on('change', f => onEvent(f, 'change'));
+      server.watcher.on('unlink', f => onEvent(f, 'unlink'));
     },
   };
 }
