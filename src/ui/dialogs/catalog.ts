@@ -52,16 +52,15 @@ export class CatalogDialog {
   private io: IntersectionObserver | null = null;
   private thumbCache = new Map<string, string>();
 
-  open(cb: OpenCallbacks): void {
+  async open(cb: OpenCallbacks): Promise<void> {
     this.close();
     this.cb = cb;
-    this.index  = loadCatalogIndex();
     this.themes = loadThemeCatalog();
-    this.selectedTemplateId = this.index[0]?.id ?? null;
-    this.selectedThemeId    = this.themes[0]?.id ?? null;
     this.tab = 'templates';
     this.filter = { search: '', tag: null };
 
+    // Render shell synchronously with a loading placeholder so the
+    // dialog appears instantly; fill in cards once the index resolves.
     this.overlay = document.createElement('div');
     this.overlay.className = 'dialog-overlay catalog-overlay';
     this.overlay.innerHTML = this.shellHTML();
@@ -69,10 +68,15 @@ export class CatalogDialog {
 
     this.installObserver();
     this.bindShell();
+    document.addEventListener('keydown', this.onKey);
+
+    // Index is fetched as a hashed asset rather than inlined into the
+    // bundle, so the first dialog-open does a one-time HTTP roundtrip.
+    this.index = await loadCatalogIndex();
+    this.selectedTemplateId = this.index[0]?.id ?? null;
+    this.selectedThemeId    = this.themes[0]?.id ?? null;
     this.renderTab();
     void this.renderPreview();
-
-    document.addEventListener('keydown', this.onKey);
   }
 
   close(): void {

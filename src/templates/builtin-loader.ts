@@ -1,6 +1,9 @@
 import { load as parseYAML } from 'js-yaml';
 import type { TemplateSpec } from '../schema/template';
-import catalogIndexJSON from './catalog-index.json';
+// `?url` makes Vite emit the JSON as a hashed static asset rather than
+// inlining it into the main bundle. With 800+ entries the index is
+// ~400KB — inlining busts the 500KB main-bundle budget.
+import indexUrl from './catalog-index.json?url';
 
 // ── Public types ─────────────────────────────────────────────
 
@@ -28,16 +31,38 @@ interface CatalogIndexFile {
   entries: CatalogIndexEntry[];
 }
 
-// ── Index (eager, tiny) ──────────────────────────────────────
+// ── Index (lazy-fetched asset) ───────────────────────────────
 
-const INDEX: CatalogIndexEntry[] = (catalogIndexJSON as CatalogIndexFile).entries;
+let indexCache:    CatalogIndexEntry[] | null = null;
+let indexInflight: Promise<CatalogIndexEntry[]> | null = null;
 
-export function loadCatalogIndex(): CatalogIndexEntry[] {
-  return INDEX;
+export async function loadCatalogIndex(): Promise<CatalogIndexEntry[]> {
+  if (indexCache) return indexCache;
+  if (indexInflight) return indexInflight;
+  indexInflight = (async () => {
+    try {
+      const res  = await fetch(indexUrl);
+      const data = (await res.json()) as CatalogIndexFile;
+      indexCache = data.entries;
+      return data.entries;
+    } finally {
+      indexInflight = null;
+    }
+  })();
+  return indexInflight;
+}
+
+/**
+ * Returns the loaded index synchronously, or null before
+ * loadCatalogIndex() resolves. Use this from render-hot paths where
+ * an awaited load already ran upstream (e.g. catalog dialog open).
+ */
+export function peekCatalogIndex(): CatalogIndexEntry[] | null {
+  return indexCache;
 }
 
 export function findIndexEntry(id: string): CatalogIndexEntry | undefined {
-  return INDEX.find(e => e.id === id);
+  return indexCache?.find(e => e.id === id);
 }
 
 // ── Full template loader (lazy) ──────────────────────────────

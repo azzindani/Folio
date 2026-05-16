@@ -1,16 +1,29 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   loadCatalogIndex,
   loadFullTemplate,
   findIndexEntry,
   peekTemplate,
+  peekCatalogIndex,
+  type CatalogIndexEntry,
 } from './builtin-loader';
 
-describe('catalog index (eager metadata)', () => {
+// The index is fetched as a Vite asset URL (`?url`). In vitest with
+// jsdom, fetch resolves the URL against the test server which serves
+// files from the project root. One awaited load before each block
+// populates the module cache; sync helpers (findIndexEntry,
+// peekCatalogIndex) then work as in production.
+
+let INDEX: CatalogIndexEntry[];
+
+beforeAll(async () => {
+  INDEX = await loadCatalogIndex();
+});
+
+describe('catalog index (lazy-fetched metadata)', () => {
   it('loads index entries with required fields', () => {
-    const index = loadCatalogIndex();
-    expect(index.length).toBeGreaterThan(0);
-    for (const e of index) {
+    expect(INDEX.length).toBeGreaterThan(0);
+    for (const e of INDEX) {
       expect(typeof e.id).toBe('string');
       expect(typeof e.name).toBe('string');
       expect(typeof e.type).toBe('string');
@@ -24,20 +37,32 @@ describe('catalog index (eager metadata)', () => {
   });
 
   it('entries reference unique ids', () => {
-    const ids = loadCatalogIndex().map(e => e.id);
+    const ids = INDEX.map(e => e.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('findIndexEntry returns by id', () => {
-    const first = loadCatalogIndex()[0];
+    const first = INDEX[0];
     expect(findIndexEntry(first.id)).toEqual(first);
     expect(findIndexEntry('___nope___')).toBeUndefined();
+  });
+
+  it('peekCatalogIndex returns the populated cache after load', () => {
+    const cached = peekCatalogIndex();
+    expect(cached).not.toBeNull();
+    expect(cached!.length).toBe(INDEX.length);
+  });
+
+  it('loadCatalogIndex caches — subsequent calls resolve to the same array', async () => {
+    const a = await loadCatalogIndex();
+    const b = await loadCatalogIndex();
+    expect(a).toBe(b);
   });
 });
 
 describe('loadFullTemplate (lazy)', () => {
   it('returns the full TemplateSpec for a known id', async () => {
-    const first = loadCatalogIndex()[0];
+    const first = INDEX[0];
     const spec  = await loadFullTemplate(first.id);
     expect(spec).toBeDefined();
     expect(spec?._protocol).toBe('template/v1');
@@ -45,7 +70,7 @@ describe('loadFullTemplate (lazy)', () => {
   });
 
   it('caches the result — peekTemplate after load returns same spec', async () => {
-    const first = loadCatalogIndex()[0];
+    const first = INDEX[0];
     const a = await loadFullTemplate(first.id);
     const b = peekTemplate(first.id);
     expect(a).toBeDefined();
@@ -58,11 +83,7 @@ describe('loadFullTemplate (lazy)', () => {
   });
 
   it('deduplicates concurrent in-flight loads', async () => {
-    const first = loadCatalogIndex()[0];
-    // Hit the loader from a fresh module is hard; instead, fire two in
-    // parallel right after each other and confirm both resolve to the
-    // same spec object (cache shared, no double-parse needed for
-    // correctness — this is a smoke for the inflight dedupe path).
+    const first = INDEX[0];
     const [a, b] = await Promise.all([
       loadFullTemplate(first.id),
       loadFullTemplate(first.id),
