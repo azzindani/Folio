@@ -248,6 +248,15 @@ export class EditorApp {
 
     this.canvas = new CanvasManager(primaryPane, this.state);
 
+    // Refit the canvas when the viewport changes so design content stays
+    // visible after window resize or device-orientation change. Debounced
+    // to coalesce rapid resize events.
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    window.addEventListener('resize', () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => this.canvas?.fitToScreen?.(), 150);
+    });
+
     this.toolbar = new ToolbarManager(
       this.container.querySelector('.toolbar')!,
       this.state,
@@ -990,8 +999,10 @@ export class EditorApp {
     // Auto-fit so layer corners are reachable inside the canvas-area.
     // Without this, a 1080×1080 design at 100% zoom puts the right/bottom
     // resize handles outside the visible canvas (clipped by overflow:hidden),
-    // making them un-clickable.
-    requestAnimationFrame(() => this.canvas?.fitToScreen?.());
+    // making them un-clickable. Double-rAF so the responsive grid template
+    // has settled (narrow viewports rearrange .properties-panel etc.) before
+    // we read container width.
+    requestAnimationFrame(() => requestAnimationFrame(() => this.canvas?.fitToScreen?.()));
   }
 
   loadFromYAML(yamlSource: string): void {
