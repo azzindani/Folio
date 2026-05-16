@@ -1262,6 +1262,140 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .tmpl-empty { color: var(--color-text-muted); font-size: 13px; padding: 24px; text-align: center; }
 
+/* ── Folio Catalog (full-screen browse) ──────────────────── */
+.catalog-overlay { padding: 32px; }
+.catalog {
+  width: min(1280px, 95vw);
+  height: min(820px, 90vh);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.catalog-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+.catalog-title { font-size: 16px; font-weight: 700; color: var(--color-text); margin: 0; }
+.catalog-tabs  { display: flex; gap: 6px; flex: 1; margin-left: 16px; }
+.catalog-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 120ms, color 120ms, border-color 120ms;
+}
+.catalog-tab:hover  { color: var(--color-text); background: var(--color-surface-2); }
+.catalog-tab.active { color: var(--color-text); background: var(--color-bg); border-color: var(--color-border); }
+
+.catalog-body  { flex: 1; display: grid; grid-template-columns: 1fr 360px; min-height: 0; }
+.catalog-list  { padding: 16px 18px; overflow-y: auto; }
+.catalog-rail  {
+  border-left: 1px solid var(--color-border);
+  background: var(--color-bg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.catalog-rail-head { display: flex; flex-direction: column; gap: 6px; }
+.rail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
+.rail-pick  { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.rail-chip  {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.rail-x     { color: var(--color-text-muted); font-size: 12px; }
+.rail-preview {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  min-height: 180px;
+  max-height: 440px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rail-preview svg { max-width: 100%; max-height: 100%; }
+.rail-empty {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  padding: 24px;
+  text-align: center;
+}
+.catalog-rail-actions { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
+.catalog-rail-actions .btn { width: 100%; justify-content: center; padding: 8px 10px; }
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  padding: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-link:hover { color: var(--color-primary); }
+
+.tmpl-card.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary) inset;
+}
+
+/* Theme card preview */
+.theme-grid .tmpl-card { aspect-ratio: auto; }
+.theme-preview {
+  aspect-ratio: 4 / 3;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+}
+.theme-preview-row { display: flex; gap: 6px; align-items: center; }
+.theme-preview-h   { font-size: 28px; font-weight: 700; line-height: 1; }
+.theme-preview-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+.theme-swatches    { display: flex; gap: 4px; }
+.theme-swatch      {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.theme-swatch.sm   { width: 14px; height: 14px; border-radius: 3px; }
+
+/* Combo card */
+.combo-thumb {
+  aspect-ratio: 4 / 3;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+}
+.combo-thumb-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .dialog-row {
   display: flex;
   align-items: center;
