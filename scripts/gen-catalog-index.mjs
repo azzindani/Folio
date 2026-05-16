@@ -3,7 +3,10 @@
 // src/templates/builtin/ and emits a flat metadata JSON the catalog
 // dialog can browse without parsing the full specs.
 //
-// Run via `npm run gen:catalog` (also wired to predev/prebuild).
+// Two entry points:
+//   - CLI: `npm run gen:catalog` runs the script directly.
+//   - Programmatic: `generateCatalogIndex()` is imported by the Vite
+//     plugin (vite.config.ts) so dev mode auto-regenerates on save.
 
 import { promises as fs } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +41,13 @@ function summarize(spec, file) {
   };
 }
 
-async function main() {
+/**
+ * Regenerate the catalog index. Returns a result object so callers (CLI
+ * and Vite plugin) can decide how to surface success/error.
+ * The file is only rewritten when its content actually changes, so
+ * watching the output file for changes is a reliable HMR signal.
+ */
+export async function generateCatalogIndex({ silent = false } = {}) {
   const files = (await fs.readdir(TPL_DIR))
     .filter(f => f.endsWith('.template.yaml'))
     .sort();
@@ -69,25 +78,35 @@ async function main() {
     entries,
   };
 
-  // Skip rewrite if content unchanged — keeps git diffs clean across
-  // dev runs when no template metadata has actually changed.
   const next = JSON.stringify(out, null, 2) + '\n';
   let prev = '';
   try { prev = await fs.readFile(OUT_FILE, 'utf8'); } catch { /* first run */ }
-  if (prev !== next) {
+  const changed = prev !== next;
+  if (changed) {
     await fs.writeFile(OUT_FILE, next, 'utf8');
   }
 
-  // Friendly console output. Caller scripts in CI parse stdout, keep stable.
-  console.log(`[catalog-index] wrote ${entries.length} templates → ${path.relative(ROOT, OUT_FILE)}`);
-  if (errors.length) {
-    console.error(`[catalog-index] ${errors.length} error(s):`);
-    for (const e of errors) console.error(`  - ${e}`);
-    process.exitCode = 1;
+  if (!silent) {
+    console.log(`[catalog-index] ${changed ? 'wrote' : 'unchanged'} ${entries.length} templates → ${path.relative(ROOT, OUT_FILE)}`);
+    if (errors.length) {
+      console.error(`[catalog-index] ${errors.length} error(s):`);
+      for (const e of errors) console.error(`  - ${e}`);
+    }
   }
+
+  return { count: entries.length, changed, errors, outFile: OUT_FILE };
 }
 
-main().catch(err => {
-  console.error('[catalog-index] fatal:', err);
-  process.exit(1);
-});
+// ── CLI entry ──────────────────────────────────────────────────
+
+const isCliInvocation =
+  process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isCliInvocation) {
+  generateCatalogIndex().then(({ errors }) => {
+    if (errors.length) process.exitCode = 1;
+  }).catch(err => {
+    console.error('[catalog-index] fatal:', err);
+    process.exit(1);
+  });
+}
