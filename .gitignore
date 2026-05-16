@@ -10,4 +10,5 @@ test-results/
 tests/playwright-report/
 tests/ui-audit/screenshots/
 tests/ui-audit/reports/
+tests/ui-audit/vision/
 *.tgz

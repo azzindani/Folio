@@ -945,9 +945,28 @@ export class CanvasManager {
       const rnx = Math.round(nx), rny = Math.round(ny);
       const rnw = Math.round(nw), rnh = Math.round(nh);
 
-      this.state.updateLayer(layerId, {
+      const updates: Record<string, unknown> = {
         x: rnx, y: rny, width: rnw, height: rnh,
-      } as Parameters<typeof this.state.updateLayer>[1], false);
+      };
+
+      // Text layers: scale font_size with the bounding box. Geometric mean
+      // of x/y scale factors keeps non-uniform drags feeling natural — a
+      // pure-width drag barely touches the font, a pure-height drag scales
+      // it directly. Original (not previous-frame) dimensions are the basis
+      // so a continuous drag yields a stable absolute scale.
+      if (layer.type === 'text' && origW > 0 && origH > 0) {
+        const sx = rnw / origW;
+        const sy = rnh / origH;
+        const scale = Math.sqrt(sx * sy);
+        const style = (layer as { style?: { font_size?: number } }).style;
+        const baseFs = style?.font_size ?? 16;
+        const nextFs = Math.max(6, Math.round(baseFs * scale * 100) / 100);
+        if (nextFs !== baseFs) {
+          updates['style'] = { ...style, font_size: nextFs };
+        }
+      }
+
+      this.state.updateLayer(layerId, updates as Parameters<typeof this.state.updateLayer>[1], false);
 
       // Scale group children proportionally
       if (isGroup && origW > 0 && origH > 0) {
