@@ -1,6 +1,6 @@
 {
   "_generator": "scripts/gen-catalog-index.mjs",
-  "count": 100,
+  "count": 124,
   "entries": [
     {
       "id": "tmpl-document-cover",
@@ -40,6 +40,25 @@
       "pages": 0,
       "themeRef": "cyber-synthwave",
       "file": "27-album-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-app-store-screenshots",
+      "name": "App Store Screenshots · 5-Set",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "app-store",
+        "marketing",
+        "mobile",
+        "portrait",
+        "screenshots"
+      ],
+      "width": 1242,
+      "height": 2688,
+      "slots": 9,
+      "pages": 5,
+      "themeRef": "light-clean",
+      "file": "111-app-store-screenshots.template.yaml"
     },
     {
       "id": "tmpl-award-certificate",
@@ -116,6 +135,64 @@
       "pages": 0,
       "themeRef": "brutalist-mono",
       "file": "26-book-cover.template.yaml"
+    },
+    {
+      "id": "tmpl-book-cover-business",
+      "name": "Book Cover — Business",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "book",
+        "cover",
+        "business",
+        "non-fiction",
+        "corporate"
+      ],
+      "width": 1600,
+      "height": 2400,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "corporate-slate",
+      "file": "117-book-cover-business.template.yaml"
+    },
+    {
+      "id": "tmpl-book-cover-romance",
+      "name": "Book Cover — Romance",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "book",
+        "cover",
+        "romance",
+        "soft",
+        "pastel",
+        "script"
+      ],
+      "width": 1600,
+      "height": 2400,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "pastel-dream",
+      "file": "116-book-cover-romance.template.yaml"
+    },
+    {
+      "id": "tmpl-book-cover-thriller",
+      "name": "Book Cover — Thriller",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "book",
+        "cover",
+        "thriller",
+        "cinematic",
+        "dark"
+      ],
+      "width": 1600,
+      "height": 2400,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "115-book-cover-thriller.template.yaml"
     },
     {
       "id": "tmpl-brand-campaign",
@@ -324,6 +401,44 @@
       "file": "21-conference-poster.template.yaml"
     },
     {
+      "id": "tmpl-conference-program",
+      "name": "Conference Program · 6 Pages",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "conference",
+        "program",
+        "event",
+        "corporate",
+        "a4"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 8,
+      "pages": 6,
+      "themeRef": "corporate-slate",
+      "file": "113-conference-program.template.yaml"
+    },
+    {
+      "id": "tmpl-coupon-discount-card",
+      "name": "Coupon / Discount Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "marketing",
+        "coupon",
+        "discount",
+        "promo",
+        "voucher"
+      ],
+      "width": 1500,
+      "height": 600,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "sunset-glow",
+      "file": "124-coupon-discount-card.template.yaml"
+    },
+    {
       "id": "tmpl-completion-cert",
       "name": "Course Completion Certificate",
       "type": "poster",
@@ -401,6 +516,25 @@
       "file": "94-resume-creative.template.yaml"
     },
     {
+      "id": "tmpl-customer-support-report",
+      "name": "Customer Support · Quarterly",
+      "type": "report",
+      "tags": [
+        "report",
+        "support",
+        "csat",
+        "tickets",
+        "agents",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2300,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "editorial-cream",
+      "file": "103-customer-support-quarterly-report.template.yaml"
+    },
+    {
       "id": "tmpl-deal-card",
       "name": "Deal of the Day",
       "type": "card",
@@ -439,6 +573,26 @@
       "file": "75-destination-card.template.yaml"
     },
     {
+      "id": "tmpl-devops-incident-postmortem-report",
+      "name": "DevOps · Incident Postmortem",
+      "type": "report",
+      "tags": [
+        "report",
+        "devops",
+        "sre",
+        "incident",
+        "postmortem",
+        "reliability",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2400,
+      "slots": 9,
+      "pages": 1,
+      "themeRef": "dark-tech",
+      "file": "102-devops-incident-postmortem-report.template.yaml"
+    },
+    {
       "id": "tmpl-donut-kpi",
       "name": "Donut KPI",
       "type": "card",
@@ -456,6 +610,25 @@
       "pages": 0,
       "themeRef": "forest-deep",
       "file": "18-donut-kpi.template.yaml"
+    },
+    {
+      "id": "tmpl-ecommerce-gmv-report",
+      "name": "E-commerce · GMV Performance",
+      "type": "report",
+      "tags": [
+        "report",
+        "ecommerce",
+        "gmv",
+        "orders",
+        "conversion",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2400,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "indigo-pro",
+      "file": "106-ecommerce-gmv-report.template.yaml"
     },
     {
       "id": "tmpl-event-invitation",
@@ -683,6 +856,26 @@
       "file": "80-holiday-card.template.yaml"
     },
     {
+      "id": "tmpl-hr-people-analytics-report",
+      "name": "HR · People Analytics",
+      "type": "report",
+      "tags": [
+        "report",
+        "hr",
+        "people",
+        "analytics",
+        "engagement",
+        "diversity",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2200,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "corporate-slate",
+      "file": "101-hr-people-analytics-report.template.yaml"
+    },
+    {
       "id": "tmpl-instagram-carousel",
       "name": "Instagram Carousel (4 slides)",
       "type": "carousel",
@@ -716,6 +909,25 @@
       "pages": 0,
       "themeRef": "sunset-glow",
       "file": "09-instagram-story.template.yaml"
+    },
+    {
+      "id": "tmpl-instagram-story-set",
+      "name": "Instagram Story · 5-Part Set",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "instagram",
+        "story",
+        "social",
+        "portrait",
+        "sunset"
+      ],
+      "width": 1080,
+      "height": 1920,
+      "slots": 8,
+      "pages": 5,
+      "themeRef": "sunset-glow",
+      "file": "110-instagram-story-set.template.yaml"
     },
     {
       "id": "tmpl-inventory-status-report",
@@ -770,6 +982,25 @@
       "pages": 1,
       "themeRef": "indigo-pro",
       "file": "07-kpi-dashboard.template.yaml"
+    },
+    {
+      "id": "tmpl-learning-platform-report",
+      "name": "Learning Platform · Course Analytics",
+      "type": "report",
+      "tags": [
+        "report",
+        "learning",
+        "education",
+        "courses",
+        "retention",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2400,
+      "slots": 7,
+      "pages": 1,
+      "themeRef": "pastel-dream",
+      "file": "104-learning-platform-report.template.yaml"
     },
     {
       "id": "tmpl-lesson-title",
@@ -902,6 +1133,25 @@
       "pages": 1,
       "themeRef": "corporate-slate",
       "file": "86-marketing-funnel-report.template.yaml"
+    },
+    {
+      "id": "tmpl-math-worksheet",
+      "name": "Math Worksheet",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "education",
+        "worksheet",
+        "math",
+        "printable",
+        "a4"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 2,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "121-math-worksheet.template.yaml"
     },
     {
       "id": "tmpl-maximalist-collage",
@@ -1112,6 +1362,63 @@
       "file": "49-newspaper-front-page.template.yaml"
     },
     {
+      "id": "tmpl-pitch-deck-product",
+      "name": "Pitch Deck · Product (8 slides)",
+      "type": "deck",
+      "tags": [
+        "deck",
+        "pitch",
+        "product",
+        "sales",
+        "corporate",
+        "landscape"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "slots": 8,
+      "pages": 8,
+      "themeRef": "corporate-slate",
+      "file": "108-pitch-deck-product.template.yaml"
+    },
+    {
+      "id": "tmpl-pitch-deck-startup",
+      "name": "Pitch Deck · Startup (10 slides)",
+      "type": "deck",
+      "tags": [
+        "deck",
+        "pitch",
+        "startup",
+        "presentation",
+        "indigo",
+        "landscape"
+      ],
+      "width": 1920,
+      "height": 1080,
+      "slots": 10,
+      "pages": 10,
+      "themeRef": "indigo-pro",
+      "file": "107-pitch-deck-startup.template.yaml"
+    },
+    {
+      "id": "tmpl-podcast-cover-art",
+      "name": "Podcast Cover Art",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "podcast",
+        "audio",
+        "cover-art",
+        "square",
+        "dark"
+      ],
+      "width": 1400,
+      "height": 1400,
+      "slots": 4,
+      "pages": 0,
+      "themeRef": "dark-tech",
+      "file": "123-podcast-cover-art.template.yaml"
+    },
+    {
       "id": "tmpl-pricing-3tier",
       "name": "Pricing — 3 Tiers",
       "type": "poster",
@@ -1260,6 +1567,44 @@
       "file": "02-quote-card.template.yaml"
     },
     {
+      "id": "tmpl-real-estate-portfolio-report",
+      "name": "Real Estate · Portfolio Overview",
+      "type": "report",
+      "tags": [
+        "report",
+        "real-estate",
+        "portfolio",
+        "finance",
+        "occupancy",
+        "interactive"
+      ],
+      "width": 1280,
+      "height": 2300,
+      "slots": 6,
+      "pages": 1,
+      "themeRef": "editorial-cream",
+      "file": "105-real-estate-portfolio-report.template.yaml"
+    },
+    {
+      "id": "tmpl-real-estate-listing-flyer",
+      "name": "Real Estate Listing Flyer",
+      "type": "poster",
+      "tags": [
+        "poster",
+        "real-estate",
+        "listing",
+        "flyer",
+        "property",
+        "a4"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 9,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "122-real-estate-listing-flyer.template.yaml"
+    },
+    {
       "id": "tmpl-receipt-thermal",
       "name": "Receipt · Thermal Print",
       "type": "invoice",
@@ -1296,6 +1641,25 @@
       "pages": 0,
       "themeRef": "pastel-dream",
       "file": "28-recipe-card.template.yaml"
+    },
+    {
+      "id": "tmpl-recipe-zine",
+      "name": "Recipe Zine · 6 Pages",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "recipe",
+        "zine",
+        "food",
+        "cookbook",
+        "cream"
+      ],
+      "width": 1080,
+      "height": 1350,
+      "slots": 9,
+      "pages": 6,
+      "themeRef": "editorial-cream",
+      "file": "114-recipe-zine.template.yaml"
     },
     {
       "id": "tmpl-restaurant-menu",
@@ -1649,6 +2013,25 @@
       "file": "03-stats-card.template.yaml"
     },
     {
+      "id": "tmpl-storybook-5page",
+      "name": "Storybook · 5 Pages",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "storybook",
+        "kids",
+        "illustration",
+        "pastel",
+        "square"
+      ],
+      "width": 1080,
+      "height": 1080,
+      "slots": 6,
+      "pages": 5,
+      "themeRef": "pastel-dream",
+      "file": "109-storybook-5page.template.yaml"
+    },
+    {
       "id": "tmpl-swiss-poster",
       "name": "Swiss International Poster",
       "type": "poster",
@@ -1666,6 +2049,25 @@
       "pages": 0,
       "themeRef": "mono-print",
       "file": "46-swiss-international-poster.template.yaml"
+    },
+    {
+      "id": "tmpl-tarot-card",
+      "name": "Tarot Card",
+      "type": "card",
+      "tags": [
+        "card",
+        "tarot",
+        "mystical",
+        "occult",
+        "cream",
+        "gold"
+      ],
+      "width": 800,
+      "height": 1400,
+      "slots": 3,
+      "pages": 0,
+      "themeRef": "editorial-cream",
+      "file": "119-tarot-card.template.yaml"
     },
     {
       "id": "tmpl-team-profile",
@@ -1704,6 +2106,24 @@
       "pages": 0,
       "themeRef": "editorial-cream",
       "file": "84-thanksgiving-announcement.template.yaml"
+    },
+    {
+      "id": "tmpl-trading-card-modern",
+      "name": "Trading Card — Modern",
+      "type": "card",
+      "tags": [
+        "card",
+        "trading",
+        "collectible",
+        "gaming",
+        "synthwave"
+      ],
+      "width": 1050,
+      "height": 1500,
+      "slots": 9,
+      "pages": 0,
+      "themeRef": "cyber-synthwave",
+      "file": "118-trading-card-modern.template.yaml"
     },
     {
       "id": "tmpl-travel-deal-banner",
@@ -1841,6 +2261,25 @@
       "file": "47-vaporwave-card.template.yaml"
     },
     {
+      "id": "tmpl-vocabulary-flashcard",
+      "name": "Vocabulary Flashcard",
+      "type": "card",
+      "tags": [
+        "card",
+        "education",
+        "language",
+        "vocabulary",
+        "flashcard",
+        "study"
+      ],
+      "width": 1050,
+      "height": 1500,
+      "slots": 5,
+      "pages": 0,
+      "themeRef": "light-clean",
+      "file": "120-vocabulary-flashcard.template.yaml"
+    },
+    {
       "id": "tmpl-webinar-promo",
       "name": "Webinar Promo",
       "type": "poster",
@@ -1857,6 +2296,25 @@
       "pages": 0,
       "themeRef": "ocean-blue",
       "file": "22-webinar-promo.template.yaml"
+    },
+    {
+      "id": "tmpl-wedding-invitation-suite",
+      "name": "Wedding Invitation Suite (4 pages)",
+      "type": "carousel",
+      "tags": [
+        "carousel",
+        "wedding",
+        "invitation",
+        "elegant",
+        "cream",
+        "a4"
+      ],
+      "width": 1240,
+      "height": 1754,
+      "slots": 9,
+      "pages": 4,
+      "themeRef": "editorial-cream",
+      "file": "112-wedding-invitation-suite.template.yaml"
     },
     {
       "id": "tmpl-youtube-thumbnail",

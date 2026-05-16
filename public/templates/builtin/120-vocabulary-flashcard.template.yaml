@@ -1,0 +1,248 @@
+_protocol: template/v1
+
+# Language vocabulary flashcard — portrait (1050×1500).
+# Clean light layout: big headword center, phonetic spelling, part-of-speech
+# pill, definition paragraph, italic example sentence, language flag chip.
+meta:
+  id: tmpl-vocabulary-flashcard
+  name: Vocabulary Flashcard
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, education, language, vocabulary, flashcard, study]
+  description: "Clean vocabulary flashcard with headword, phonetics, part-of-speech badge, definition and example."
+
+document:
+  width: 1050
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1050
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  - id: card-frame
+    type: rect
+    z: 1
+    x: 60
+    y: 60
+    width: 930
+    height: 1380
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: accent-bar
+    type: rect
+    z: 2
+    x: 60
+    y: 60
+    width: 930
+    height: 8
+    radius: 24
+    fill: { type: solid, color: "$primary" }
+
+  - id: header-row
+    type: text
+    z: 5
+    x: 100
+    y: 110
+    width: 500
+    height: 0
+    content: { type: plain, value: "VOCABULARY · LEVEL B2" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: flag-chip
+    type: rect
+    z: 6
+    x: 820
+    y: 100
+    width: 130
+    height: 40
+    radius: 20
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: flag-text
+    type: text
+    z: 7
+    x: 820
+    y: 110
+    width: 130
+    height: 0
+    content: { type: plain, value: "EN · US" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "$text"
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: word
+    type: text
+    z: 10
+    x: 100
+    y: 380
+    width: 850
+    height: 0
+    content: { type: plain, value: "Ephemeral" }
+    style:
+      font_family: $heading
+      font_size: 130
+      font_weight: 700
+      color: "$text"
+      line_height: 1.0
+      letter_spacing: -0.02
+      text_align: center
+
+  - id: phonetic
+    type: text
+    z: 11
+    x: 100
+    y: 540
+    width: 850
+    height: 0
+    content: { type: plain, value: "/ɪˈfɛm(ə)rəl/" }
+    style:
+      font_family: $mono
+      font_size: 34
+      font_weight: 500
+      color: "$text_muted"
+      text_align: center
+
+  - id: pos-pill
+    type: rect
+    z: 15
+    x: 425
+    y: 620
+    width: 200
+    height: 50
+    radius: 25
+    fill: { type: solid, color: "$primary" }
+
+  - id: pos-text
+    type: text
+    z: 16
+    x: 425
+    y: 633
+    width: 200
+    height: 0
+    content: { type: plain, value: "adjective" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "#FFFFFF"
+      letter_spacing: 0.1
+      text_align: center
+
+  - id: section-divider
+    type: rect
+    z: 20
+    x: 200
+    y: 740
+    width: 650
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: definition-label
+    type: text
+    z: 21
+    x: 100
+    y: 780
+    width: 850
+    height: 0
+    content: { type: plain, value: "DEFINITION" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: definition
+    type: text
+    z: 22
+    x: 100
+    y: 820
+    width: 850
+    height: 0
+    content: { type: plain, value: "Lasting for a very short time; fleeting. Often used to describe transient beauty, moments, or impressions that vanish almost as soon as they appear." }
+    style:
+      font_family: $body
+      font_size: 26
+      color: "$text"
+      line_height: 1.45
+
+  - id: example-label
+    type: text
+    z: 25
+    x: 100
+    y: 1110
+    width: 850
+    height: 0
+    content: { type: plain, value: "EXAMPLE" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: example
+    type: text
+    z: 26
+    x: 100
+    y: 1150
+    width: 850
+    height: 0
+    content: { type: plain, value: "“The cherry blossoms were ephemeral, lasting only a single rain-swept afternoon before scattering across the path.”" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_style: italic
+      color: "$text_muted"
+      line_height: 1.5
+
+  - id: footer
+    type: text
+    z: 30
+    x: 100
+    y: 1390
+    width: 850
+    height: 0
+    content: { type: plain, value: "card 042 · folio.study" }
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text_muted"
+      letter_spacing: 0.18
+      text_align: center
+
+slots:
+  - { id: word,            path: "layers[6].content.value",  type: text, hint: "Headword",            default: "Ephemeral" }
+  - { id: phonetic,        path: "layers[7].content.value",  type: text, hint: "IPA phonetic spelling", default: "/ɪˈfɛm(ə)rəl/" }
+  - { id: part_of_speech,  path: "layers[9].content.value",  type: text, hint: "Part of speech",      default: "adjective" }
+  - { id: definition,      path: "layers[12].content.value", type: text, hint: "Definition",          default: "Lasting for a very short time; fleeting. Often used to describe transient beauty, moments, or impressions that vanish almost as soon as they appear." }
+  - { id: example,         path: "layers[14].content.value", type: text, hint: "Example sentence",    default: "“The cherry blossoms were ephemeral, lasting only a single rain-swept afternoon before scattering across the path.”" }

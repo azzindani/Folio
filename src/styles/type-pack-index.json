@@ -1,6 +1,6 @@
 {
   "_generator": "scripts/gen-type-pack-index.mjs",
-  "count": 10,
+  "count": 16,
   "entries": [
     {
       "id": "brutalist-mono",
@@ -19,6 +19,25 @@
         "mono": "Space Mono"
       },
       "file": "brutalist-mono.type-pack.yaml"
+    },
+    {
+      "id": "calligraphy-script",
+      "name": "Calligraphy Script",
+      "tags": [
+        "script",
+        "calligraphy",
+        "wedding",
+        "formal",
+        "invitation",
+        "elegant"
+      ],
+      "description": "Great Vibes script over Cormorant + EB Garamond — formal invitations and ceremonies.",
+      "families": {
+        "heading": "Cormorant",
+        "body": "EB Garamond",
+        "mono": "Courier Prime"
+      },
+      "file": "calligraphy-script.type-pack.yaml"
     },
     {
       "id": "corporate-clean",
@@ -165,6 +184,63 @@
       "file": "mono-tech.type-pack.yaml"
     },
     {
+      "id": "old-style-serif",
+      "name": "Old Style Serif",
+      "tags": [
+        "serif",
+        "classic",
+        "scholarly",
+        "garalde",
+        "humanist",
+        "historical"
+      ],
+      "description": "EB Garamond with Cormorant accents — classic 16th-century scholarly register.",
+      "families": {
+        "heading": "EB Garamond",
+        "body": "EB Garamond",
+        "mono": "Courier Prime"
+      },
+      "file": "old-style-serif.type-pack.yaml"
+    },
+    {
+      "id": "pixel-retro",
+      "name": "Pixel Retro",
+      "tags": [
+        "pixel",
+        "retro",
+        "arcade",
+        "8-bit",
+        "gaming",
+        "nostalgic"
+      ],
+      "description": "Press Start 2P over VT323 — 8-bit arcade nostalgia for game and retro layouts.",
+      "families": {
+        "heading": "Press Start 2P",
+        "body": "VT323",
+        "mono": "VT323"
+      },
+      "file": "pixel-retro.type-pack.yaml"
+    },
+    {
+      "id": "sci-fi",
+      "name": "Sci-Fi",
+      "tags": [
+        "sci-fi",
+        "futuristic",
+        "ui",
+        "poster",
+        "tech",
+        "geometric"
+      ],
+      "description": "Orbitron headlines with Rajdhani body — futuristic sci-fi UI and poster register.",
+      "families": {
+        "heading": "Orbitron",
+        "body": "Rajdhani",
+        "mono": "Share Tech Mono"
+      },
+      "file": "sci-fi.type-pack.yaml"
+    },
+    {
       "id": "scribe-handwritten",
       "name": "Scribe Handwritten",
       "tags": [
@@ -181,6 +257,44 @@
         "mono": "Cutive Mono"
       },
       "file": "scribe-handwritten.type-pack.yaml"
+    },
+    {
+      "id": "slab-serif",
+      "name": "Slab Serif",
+      "tags": [
+        "slab",
+        "serif",
+        "technical",
+        "blog",
+        "article",
+        "sturdy"
+      ],
+      "description": "Roboto Slab heading over Merriweather body — sturdy, technical-friendly long-form.",
+      "families": {
+        "heading": "Roboto Slab",
+        "body": "Merriweather",
+        "mono": "Roboto Mono"
+      },
+      "file": "slab-serif.type-pack.yaml"
+    },
+    {
+      "id": "tabloid-bold",
+      "name": "Tabloid Bold",
+      "tags": [
+        "tabloid",
+        "bold",
+        "newspaper",
+        "magazine",
+        "all-caps",
+        "headline"
+      ],
+      "description": "Bebas Neue ALL-CAPS headlines with Oswald accent and Roboto body — tabloid impact.",
+      "families": {
+        "heading": "Bebas Neue",
+        "body": "Roboto",
+        "mono": "Roboto Mono"
+      },
+      "file": "tabloid-bold.type-pack.yaml"
     }
   ]
 }

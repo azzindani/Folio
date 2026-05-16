@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: legal-walnut
+name: Legal Walnut
+version: "1.0.0"
+tags: [legal, law, conservative, walnut, formal]
+description: "Walnut brown and deep navy with gold on cream — law firms, contracts and conservative briefs."
+colors:
+  background: "#F4ECDC"
+  surface:    "#EFE3CB"
+  surface_2:  "#E2D2B0"
+  primary:    "#4A2C1A"
+  secondary:  "#1F2C4A"
+  accent:     "#B08838"
+  text:       "#21180F"
+  text_muted: "#5E4E3C"
+  border:     "#CDB78B"
+  success:    "#4D6E3E"
+  warning:    "#A87822"
+  danger:     "#7A1F1F"

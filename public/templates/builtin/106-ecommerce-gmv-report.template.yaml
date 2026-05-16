@@ -1,0 +1,322 @@
+_protocol: template/v1
+
+# E-commerce GMV — hero w/ GMV banner, 5 KPIs (GMV, orders, AOV, conversion,
+# returns), monthly GMV vs target line, top categories table, top SKUs table,
+# region stacked bar, marketing-channel attribution donut.
+meta:
+  id: tmpl-ecommerce-gmv-report
+  name: E-commerce · GMV Performance
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, ecommerce, gmv, orders, conversion, interactive]
+  description: "E-commerce GMV performance: orders, AOV, conversion, top categories & SKUs, regional split, channel attribution."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: gmv_trend
+        type: inline
+        rows:
+          - { month: Jun, gmv_m:  8.42, target_m:  8.00 }
+          - { month: Jul, gmv_m:  8.86, target_m:  8.40 }
+          - { month: Aug, gmv_m:  9.24, target_m:  8.80 }
+          - { month: Sep, gmv_m:  9.68, target_m:  9.20 }
+          - { month: Oct, gmv_m: 10.24, target_m:  9.60 }
+          - { month: Nov, gmv_m: 14.86, target_m: 12.40 }
+          - { month: Dec, gmv_m: 18.42, target_m: 16.20 }
+          - { month: Jan, gmv_m:  9.84, target_m:  9.40 }
+          - { month: Feb, gmv_m:  9.62, target_m:  9.20 }
+          - { month: Mar, gmv_m: 10.48, target_m:  9.80 }
+          - { month: Apr, gmv_m: 11.24, target_m: 10.40 }
+          - { month: May, gmv_m: 11.86, target_m: 11.00 }
+      - id: categories
+        type: inline
+        rows:
+          - { category: Apparel & Accessories,    gmv_m: 28.4, orders:  98420, aov: 288.6, growth_pct:  18.4 }
+          - { category: Home & Kitchen,           gmv_m: 22.8, orders:  64200, aov: 354.8, growth_pct:  12.6 }
+          - { category: Beauty & Personal Care,   gmv_m: 18.4, orders:  82400, aov: 223.4, growth_pct:  24.8 }
+          - { category: Electronics,              gmv_m: 16.2, orders:  18600, aov: 870.4, growth_pct:   6.8 }
+          - { category: Toys & Games,             gmv_m: 12.6, orders:  42800, aov: 294.6, growth_pct:  -4.2 }
+          - { category: Sports & Outdoors,        gmv_m: 10.8, orders:  28400, aov: 380.2, growth_pct:  14.8 }
+          - { category: Books & Media,            gmv_m:  6.4, orders:  62800, aov: 101.8, growth_pct:  -8.6 }
+          - { category: Pet Supplies,             gmv_m:  5.8, orders:  38400, aov: 151.0, growth_pct:  32.4 }
+          - { category: Grocery & Pantry,         gmv_m:  4.2, orders:  48200, aov:  87.2, growth_pct:  21.6 }
+          - { category: Office & Stationery,      gmv_m:  3.4, orders:  18600, aov: 182.8, growth_pct:  -2.4 }
+      - id: top_skus
+        type: inline
+        rows:
+          - { sku: "APL-T-2401-BLK", name: "Cotton Crew Tee — Black",          revenue: 1842600, units: 18420, stock: 4280, velocity_d:  82 }
+          - { sku: "HOM-CK-1180-NAV", name: "5-Quart Enameled Dutch Oven",      revenue: 1428400, units:  4280, stock:  680, velocity_d:  64 }
+          - { sku: "BPC-SK-0420-WHT", name: "Vitamin C Brightening Serum 30ml", revenue: 1248600, units: 28600, stock: 8240, velocity_d:  92 }
+          - { sku: "ELC-HP-9201-BLK", name: "Wireless Over-Ear Headphones",     revenue:  982400, units:  4820, stock: 1240, velocity_d:  48 }
+          - { sku: "APL-D-3380-IDG", name: "Indigo Mid-Rise Selvedge Jeans",    revenue:  864200, units:  6420, stock: 2840, velocity_d:  74 }
+          - { sku: "HOM-LT-2240-BRS", name: "Brass Arc Floor Lamp",             revenue:  742800, units:  2840, stock:  420, velocity_d:  56 }
+          - { sku: "TOY-LG-5510-RED", name: "Wooden Block Set — 100pc",         revenue:  612400, units:  8640, stock: 3240, velocity_d: 102 }
+          - { sku: "SPT-RN-7740-BLU", name: "Trail Running Shoes — Blue",       revenue:  584600, units:  3820, stock: 1480, velocity_d:  68 }
+          - { sku: "PET-FD-1020-CHK", name: "Grain-Free Dry Dog Food 24lb",     revenue:  482400, units: 12480, stock: 4820, velocity_d: 124 }
+          - { sku: "BPC-HR-0220-AMB", name: "Argan-Oil Hair Mask 200ml",        revenue:  428600, units: 14820, stock: 5240, velocity_d: 142 }
+          - { sku: "BKM-BK-8810-HRD", name: "The Atlas of Lost Cities (hbk)",   revenue:  342800, units: 18420, stock: 2840, velocity_d:  86 }
+          - { sku: "ELC-WC-3340-BLK", name: "USB-C 65W Travel Charger",         revenue:  286400, units: 12480, stock: 6420, velocity_d:  98 }
+      - id: regions
+        type: inline
+        rows:
+          - { region: "US East",         apparel: 4.82, home: 3.84, beauty: 3.12, other: 4.24 }
+          - { region: "US West",         apparel: 4.24, home: 3.42, beauty: 2.86, other: 3.86 }
+          - { region: "US Central",      apparel: 3.12, home: 2.68, beauty: 2.14, other: 2.94 }
+          - { region: "Canada",          apparel: 1.84, home: 1.42, beauty: 1.18, other: 1.62 }
+          - { region: "UK & Ireland",    apparel: 2.42, home: 1.86, beauty: 1.62, other: 2.18 }
+          - { region: "EU",              apparel: 3.86, home: 3.12, beauty: 2.84, other: 3.42 }
+          - { region: "APAC",            apparel: 2.94, home: 2.42, beauty: 2.18, other: 2.64 }
+          - { region: "LATAM",           apparel: 1.18, home: 0.94, beauty: 0.82, other: 1.06 }
+      - id: channels
+        type: inline
+        rows:
+          - { channel: Organic Search,      attributed_gmv_m: 32.4, share_pct: 28.2 }
+          - { channel: Paid Search,         attributed_gmv_m: 24.8, share_pct: 21.6 }
+          - { channel: Email & SMS,         attributed_gmv_m: 18.6, share_pct: 16.2 }
+          - { channel: Social Ads,          attributed_gmv_m: 14.2, share_pct: 12.4 }
+          - { channel: Direct,              attributed_gmv_m: 12.4, share_pct: 10.8 }
+          - { channel: Affiliate & Creator, attributed_gmv_m:  8.6, share_pct:  7.5 }
+          - { channel: Referral,            attributed_gmv_m:  3.8, share_pct:  3.3 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "COMMERCE OPS · FY2026 TTM · GLOBAL STOREFRONT"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**GMV Performance — Trailing 12 Months**\n*$128.6M GMV · 484K orders · 7.2% over plan*"
+
+      - id: kpi-gmv
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: GMV ($M)
+        value: 128.6
+        format: number
+        decimals: 1
+        delta: 18.4
+        delta_format: percent
+        sparkline_data: gmv_trend
+        sparkline_field: gmv_m
+        sparkline_color: "$primary"
+
+      - id: kpi-orders
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Orders
+        value: 484200
+        format: number
+        delta: 14.6
+        delta_format: percent
+
+      - id: kpi-aov
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: AOV
+        value: 265.6
+        format: currency
+        currency: USD
+        delta: 3.4
+        delta_format: percent
+
+      - id: kpi-conversion
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Conversion
+        value: 3.4
+        format: percent
+        delta: 0.3
+        delta_format: percent
+
+      - id: kpi-returns
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Returns
+        value: 8.2
+        format: percent
+        delta: -0.6
+        delta_format: percent
+
+      - id: section-trend
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Monthly GMV vs Target**"
+
+      - id: chart-trend
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 360
+        chart_type: line
+        data_ref: gmv_trend
+        x_field: month
+        y_field: gmv_m
+        title: GMV ($M) vs Target — Trailing 12 Months
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-categories
+        type: rich_text
+        x: 60
+        y: 860
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top Categories**"
+
+      - id: tbl-categories
+        type: interactive_table
+        x: 60
+        y: 920
+        width: 1160
+        height: 480
+        data_ref: categories
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: category,    title: Category,    width: 360, sortable: true, formatter: badge }
+          - { field: gmv_m,       title: GMV ($M),    width: 200, sortable: true, formatter: number,   align: right }
+          - { field: orders,      title: Orders,      width: 200, sortable: true, formatter: number,   align: right }
+          - { field: aov,         title: AOV,         width: 200, sortable: true, formatter: currency, align: right }
+          - { field: growth_pct,  title: YoY %,       width: 200, sortable: true, formatter: delta,    align: right }
+
+      - id: section-skus
+        type: rich_text
+        x: 60
+        y: 1440
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top 12 SKUs**"
+
+      - id: tbl-skus
+        type: interactive_table
+        x: 60
+        y: 1500
+        width: 1160
+        height: 540
+        data_ref: top_skus
+        pagination: true
+        page_size: 12
+        filterable: true
+        exportable: true
+        columns:
+          - { field: sku,        title: SKU,           width: 200, sortable: true }
+          - { field: name,       title: Product,       width: 360, sortable: true }
+          - { field: revenue,    title: Revenue,       width: 180, sortable: true, formatter: currency, align: right }
+          - { field: units,      title: Units,         width: 140, sortable: true, formatter: number,   align: right }
+          - { field: stock,      title: Stock On-Hand, width: 160, sortable: true, formatter: number,   align: right }
+          - { field: velocity_d, title: Velocity (d),  width: 120, sortable: true, formatter: number,   align: right }
+
+      - id: section-regions
+        type: rich_text
+        x: 60
+        y: 2080
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Regional Performance ($M GMV)**"
+
+      - id: chart-regions
+        type: interactive_chart
+        x: 60
+        y: 2140
+        width: 760
+        height: 320
+        chart_type: bar
+        data_ref: regions
+        x_field: region
+        y_field: apparel
+        title: GMV by Region — Stacked by Category
+        legend: true
+        grid: true
+        animate: true
+
+      - id: chart-channels
+        type: interactive_chart
+        x: 840
+        y: 2140
+        width: 380
+        height: 320
+        chart_type: donut
+        data_ref: channels
+        x_field: channel
+        y_field: attributed_gmv_m
+        title: Marketing Attribution ($M)
+        legend: true
+        animate: true
+
+slots:
+  - { id: report_title,       path: "pages[0].layers[1].content",  type: text, hint: "Report title",       default: "**GMV Performance — Trailing 12 Months**\n*$128.6M GMV · 484K orders · 7.2% over plan*" }
+  - { id: report_eyebrow,     path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",       default: "COMMERCE OPS · FY2026 TTM · GLOBAL STOREFRONT" }
+  - { id: trend_section,      path: "pages[0].layers[7].content",  type: text, hint: "Trend heading",      default: "**Monthly GMV vs Target**" }
+  - { id: categories_section, path: "pages[0].layers[9].content",  type: text, hint: "Categories heading", default: "**Top Categories**" }
+  - { id: skus_section,       path: "pages[0].layers[11].content", type: text, hint: "SKUs heading",       default: "**Top 12 SKUs**" }
+  - { id: regions_section,    path: "pages[0].layers[13].content", type: text, hint: "Regions heading",    default: "**Regional Performance ($M GMV)**" }

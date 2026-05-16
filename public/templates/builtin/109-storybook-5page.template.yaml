@@ -1,0 +1,141 @@
+_protocol: template/v1
+
+# 5-page kids' storybook carousel — 1080×1080 square, pastel-dream theme.
+# Title → 3 scenes (illustration placeholder + caption) → The End.
+meta:
+  id: tmpl-storybook-5page
+  name: Storybook · 5 Pages
+  type: carousel
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [carousel, storybook, kids, illustration, pastel, square]
+  description: "Five-page kids' storybook with title card, three illustrated scenes with captions, and an ending card."
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+pages:
+  # ── Page 1 · Title Card ─────────────────────────────────────
+  - id: title
+    label: Title Card
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: linear, angle: 180, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: sun, type: circle, z: 5, cx: 880, cy: 220, rx: 100, ry: 100, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.7 }
+      - { id: cloud-1, type: circle, z: 6, cx: 220, cy: 200, rx: 50, ry: 50, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
+      - { id: cloud-2, type: circle, z: 6, cx: 280, cy: 200, rx: 60, ry: 60, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
+      - { id: cloud-3, type: circle, z: 6, cx: 340, cy: 200, rx: 45, ry: 45, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
+      - { id: hill, type: ellipse, z: 7, cx: 540, cy: 1080, rx: 700, ry: 220, fill: { type: solid, color: "$primary" }, opacity: 0.5 }
+      - { id: tree-trunk, type: rect, z: 8, x: 800, y: 760, width: 24, height: 100, fill: { type: solid, color: "#8B5A3C" } }
+      - { id: tree-leaves, type: circle, z: 9, cx: 812, cy: 740, rx: 60, ry: 60, fill: { type: solid, color: "$secondary" }, opacity: 0.85 }
+      - { id: kicker, type: text, z: 10, x: 60, y: 380, width: 960, height: 0, content: { type: plain, value: "A LITTLE STORY ABOUT" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 60, y: 440, width: 960, height: 0, content: { type: plain, value: "Pip and the\nMoonlit Garden" }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02, text_align: center } }
+      - { id: author, type: text, z: 12, x: 60, y: 720, width: 960, height: 0, content: { type: plain, value: "story by Eliza Hartwell · pictures by Tomo Sato" }, style: { font_family: $body, font_size: 18, font_style: italic, color: $text_muted, text_align: center } }
+      - { id: page-num, type: text, z: 13, x: 60, y: 1000, width: 960, height: 0, content: { type: plain, value: "1 of 5" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+
+  # ── Page 2 · Scene 1 ────────────────────────────────────────
+  - id: scene-1
+    label: Scene 1
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.4 }
+      - { id: img-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 3 } }
+      - { id: img-moon, type: circle, z: 7, cx: 780, cy: 200, rx: 70, ry: 70, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.9 }
+      - { id: img-moon-glow, type: circle, z: 8, cx: 780, cy: 200, rx: 100, ry: 100, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.5 }
+      - { id: img-house, type: rect, z: 9, x: 280, y: 480, width: 200, height: 160, fill: { type: solid, color: "$secondary" } }
+      - { id: img-roof, type: polygon, z: 10, points: "280,480 480,480 380,400", fill: { type: solid, color: "$primary" } }
+      - { id: img-door, type: rect, z: 11, x: 360, y: 560, width: 40, height: 80, radius: 4, fill: { type: solid, color: "$text" } }
+      - { id: img-window, type: rect, z: 11, x: 310, y: 510, width: 40, height: 40, fill: { type: solid, color: "$text" }, opacity: 0.6 }
+      - { id: img-pip, type: circle, z: 12, cx: 580, cy: 580, rx: 30, ry: 30, fill: { type: solid, color: "$primary" } }
+      - { id: img-pip-ear-l, type: circle, z: 13, cx: 560, cy: 555, rx: 10, ry: 14, fill: { type: solid, color: "$primary" } }
+      - { id: img-pip-ear-r, type: circle, z: 13, cx: 600, cy: 555, rx: 10, ry: 14, fill: { type: solid, color: "$primary" } }
+      - { id: img-label, type: text, z: 14, x: 100, y: 110, width: 200, height: 0, content: { type: plain, value: "SCENE ONE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_transform: uppercase } }
+      - { id: caption-card, type: rect, z: 20, x: 80, y: 740, width: 920, height: 240, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: caption-num, type: text, z: 21, x: 120, y: 770, width: 80, height: 0, content: { type: plain, value: "1" }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: caption-text, type: text, z: 22, x: 220, y: 790, width: 760, height: 0, content: { type: plain, value: "Pip the rabbit lived in a small wooden house at the edge of the meadow. Every night, when the moon came out, Pip would peek out the window and dream of adventures." }, style: { font_family: $heading, font_size: 26, font_weight: 600, color: $text, line_height: 1.5 } }
+      - { id: page-num, type: text, z: 30, x: 60, y: 1010, width: 960, height: 0, content: { type: plain, value: "2 of 5" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+
+  # ── Page 3 · Scene 2 ────────────────────────────────────────
+  - id: scene-2
+    label: Scene 2
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.4 }
+      - { id: img-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$secondary", width: 3 } }
+      - { id: img-grass, type: rect, z: 7, x: 80, y: 580, width: 920, height: 120, fill: { type: solid, color: "$primary" }, opacity: 0.5 }
+      - { id: img-path-1, type: ellipse, z: 8, cx: 300, cy: 660, rx: 50, ry: 16, fill: { type: solid, color: "#F5E6D3" } }
+      - { id: img-path-2, type: ellipse, z: 8, cx: 480, cy: 640, rx: 50, ry: 16, fill: { type: solid, color: "#F5E6D3" } }
+      - { id: img-path-3, type: ellipse, z: 8, cx: 660, cy: 670, rx: 50, ry: 16, fill: { type: solid, color: "#F5E6D3" } }
+      - { id: img-path-4, type: ellipse, z: 8, cx: 840, cy: 650, rx: 50, ry: 16, fill: { type: solid, color: "#F5E6D3" } }
+      - { id: img-flower-1, type: circle, z: 10, cx: 200, cy: 560, rx: 16, ry: 16, fill: { type: solid, color: "$secondary" } }
+      - { id: img-flower-1-c, type: circle, z: 11, cx: 200, cy: 560, rx: 6, ry: 6, fill: { type: solid, color: "#FFF" } }
+      - { id: img-flower-2, type: circle, z: 10, cx: 920, cy: 540, rx: 16, ry: 16, fill: { type: solid, color: "$primary" } }
+      - { id: img-flower-2-c, type: circle, z: 11, cx: 920, cy: 540, rx: 6, ry: 6, fill: { type: solid, color: "#FFF" } }
+      - { id: img-pip, type: circle, z: 12, cx: 480, cy: 580, rx: 28, ry: 28, fill: { type: solid, color: "$primary" } }
+      - { id: img-pip-ear-l, type: circle, z: 13, cx: 462, cy: 556, rx: 9, ry: 13, fill: { type: solid, color: "$primary" } }
+      - { id: img-pip-ear-r, type: circle, z: 13, cx: 498, cy: 556, rx: 9, ry: 13, fill: { type: solid, color: "$primary" } }
+      - { id: img-firefly-1, type: circle, z: 14, cx: 360, cy: 280, rx: 6, ry: 6, fill: { type: solid, color: "$secondary" } }
+      - { id: img-firefly-2, type: circle, z: 14, cx: 600, cy: 220, rx: 6, ry: 6, fill: { type: solid, color: "$secondary" } }
+      - { id: img-firefly-3, type: circle, z: 14, cx: 740, cy: 360, rx: 6, ry: 6, fill: { type: solid, color: "$secondary" } }
+      - { id: img-label, type: text, z: 15, x: 100, y: 110, width: 200, height: 0, content: { type: plain, value: "SCENE TWO" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.4, text_transform: uppercase } }
+      - { id: caption-card, type: rect, z: 20, x: 80, y: 740, width: 920, height: 240, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: caption-num, type: text, z: 21, x: 120, y: 770, width: 80, height: 0, content: { type: plain, value: "2" }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $secondary, line_height: 1 } }
+      - { id: caption-text, type: text, z: 22, x: 220, y: 790, width: 760, height: 0, content: { type: plain, value: "One quiet evening, Pip followed a trail of glowing fireflies down a path that twisted between the silver-tipped grass." }, style: { font_family: $heading, font_size: 26, font_weight: 600, color: $text, line_height: 1.5 } }
+      - { id: page-num, type: text, z: 30, x: 60, y: 1010, width: 960, height: 0, content: { type: plain, value: "3 of 5" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+
+  # ── Page 4 · Scene 3 ────────────────────────────────────────
+  - id: scene-3
+    label: Scene 3
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] }, opacity: 0.55 }
+      - { id: img-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 3 } }
+      - { id: img-arch, type: ellipse, z: 7, cx: 540, cy: 700, rx: 360, ry: 360, fill: { type: solid, color: "$secondary" }, opacity: 0.35 }
+      - { id: img-tree-l-trunk, type: rect, z: 8, x: 240, y: 460, width: 22, height: 220, fill: { type: solid, color: "#8B5A3C" } }
+      - { id: img-tree-l-top, type: circle, z: 9, cx: 251, cy: 440, rx: 70, ry: 70, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+      - { id: img-tree-r-trunk, type: rect, z: 8, x: 820, y: 460, width: 22, height: 220, fill: { type: solid, color: "#8B5A3C" } }
+      - { id: img-tree-r-top, type: circle, z: 9, cx: 831, cy: 440, rx: 70, ry: 70, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+      - { id: img-flower-cluster-1, type: circle, z: 10, cx: 380, cy: 600, rx: 24, ry: 24, fill: { type: solid, color: "$secondary" } }
+      - { id: img-flower-cluster-2, type: circle, z: 10, cx: 700, cy: 580, rx: 24, ry: 24, fill: { type: solid, color: "$secondary" } }
+      - { id: img-flower-cluster-3, type: circle, z: 10, cx: 540, cy: 620, rx: 30, ry: 30, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.9 }
+      - { id: img-stars, type: text, z: 11, x: 80, y: 200, width: 920, height: 0, content: { type: plain, value: "✦      ✧        ✦      ✧" }, style: { font_family: $body, font_size: 28, color: "#FFFFFF", text_align: center, letter_spacing: 0.4 } }
+      - { id: img-pip, type: circle, z: 12, cx: 540, cy: 540, rx: 26, ry: 26, fill: { type: solid, color: "$primary" } }
+      - { id: img-pip-ear-l, type: circle, z: 13, cx: 524, cy: 518, rx: 8, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: img-pip-ear-r, type: circle, z: 13, cx: 556, cy: 518, rx: 8, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: img-label, type: text, z: 15, x: 100, y: 110, width: 200, height: 0, content: { type: plain, value: "SCENE THREE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_transform: uppercase } }
+      - { id: caption-card, type: rect, z: 20, x: 80, y: 740, width: 920, height: 240, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: caption-num, type: text, z: 21, x: 120, y: 770, width: 80, height: 0, content: { type: plain, value: "3" }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: caption-text, type: text, z: 22, x: 220, y: 790, width: 760, height: 0, content: { type: plain, value: "The path opened into a garden full of singing flowers, and a tiny owl welcomed Pip with a soft hoot. ‘We've been waiting,' it said." }, style: { font_family: $heading, font_size: 26, font_weight: 600, color: $text, line_height: 1.5 } }
+      - { id: page-num, type: text, z: 30, x: 60, y: 1010, width: 960, height: 0, content: { type: plain, value: "4 of 5" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+
+  # ── Page 5 · The End ────────────────────────────────────────
+  - id: the-end
+    label: The End
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: linear, angle: 180, stops: [{ color: "$surface", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: glow, type: circle, z: 1, cx: 540, cy: 540, rx: 380, ry: 380, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.25 }
+      - { id: ring-1, type: circle, z: 2, cx: 540, cy: 540, rx: 280, ry: 280, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 2 }, opacity: 0.4 }
+      - { id: ring-2, type: circle, z: 3, cx: 540, cy: 540, rx: 220, ry: 220, fill: { type: solid, color: "transparent" }, stroke: { color: "$secondary", width: 2 }, opacity: 0.5 }
+      - { id: star-1, type: text, z: 4, x: 240, y: 220, width: 80, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 36, color: $secondary, text_align: center } }
+      - { id: star-2, type: text, z: 4, x: 800, y: 240, width: 80, height: 0, content: { type: plain, value: "✧" }, style: { font_family: $heading, font_size: 28, color: $primary, text_align: center } }
+      - { id: star-3, type: text, z: 4, x: 240, y: 820, width: 80, height: 0, content: { type: plain, value: "✧" }, style: { font_family: $heading, font_size: 32, color: $primary, text_align: center } }
+      - { id: star-4, type: text, z: 4, x: 800, y: 820, width: 80, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 40, color: $secondary, text_align: center } }
+      - { id: kicker, type: text, z: 10, x: 60, y: 440, width: 960, height: 0, content: { type: plain, value: "AND THAT WAS THE NIGHT" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 60, y: 490, width: 960, height: 0, content: { type: plain, value: "The End." }, style: { font_family: $heading, font_size: 132, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03, text_align: center } }
+      - { id: sub, type: text, z: 12, x: 60, y: 680, width: 960, height: 0, content: { type: plain, value: "Sweet dreams, little adventurer." }, style: { font_family: $heading, font_size: 28, font_style: italic, color: $text_muted, text_align: center, line_height: 1.4 } }
+      - { id: cred, type: text, z: 13, x: 60, y: 900, width: 960, height: 0, content: { type: plain, value: "Hartwell & Sato · Honeybee Books · 2026" }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+      - { id: page-num, type: text, z: 14, x: 60, y: 1010, width: 960, height: 0, content: { type: plain, value: "5 of 5" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.2 } }
+
+slots:
+  - { id: title,           path: "pages[0].layers[10].content.value", type: text, hint: "Story title",       default: "Pip and the\nMoonlit Garden" }
+  - { id: author,          path: "pages[0].layers[11].content.value", type: text, hint: "Story credit",      default: "story by Eliza Hartwell · pictures by Tomo Sato" }
+  - { id: scene_1_caption, path: "pages[1].layers[18].content.value", type: text, hint: "Scene 1 caption",   default: "Pip the rabbit lived in a small wooden house at the edge of the meadow. Every night, when the moon came out, Pip would peek out the window and dream of adventures." }
+  - { id: scene_2_caption, path: "pages[2].layers[22].content.value", type: text, hint: "Scene 2 caption",   default: "One quiet evening, Pip followed a trail of glowing fireflies down a path that twisted between the silver-tipped grass." }
+  - { id: scene_3_caption, path: "pages[3].layers[20].content.value", type: text, hint: "Scene 3 caption",   default: "The path opened into a garden full of singing flowers, and a tiny owl welcomed Pip with a soft hoot. ‘We've been waiting,' it said." }
+  - { id: ending,          path: "pages[4].layers[12].content.value", type: text, hint: "Ending subtitle",   default: "Sweet dreams, little adventurer." }
