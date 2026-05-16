@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/gen-catalog-index.mjs && tsc && vite build",
+    "build": "node scripts/gen-template-variants.mjs && node scripts/gen-catalog-index.mjs && tsc && vite build",
+    "gen:variants": "node scripts/gen-template-variants.mjs",
     "gen:catalog": "node scripts/gen-catalog-index.mjs",
     "build:analyze": "ANALYZE=true vite build",
     "preview": "vite preview",
