@@ -1,7 +1,109 @@
 import type { StateManager, EditorState } from '../../editor/state';
 import type { Layer } from '../../schema/types';
-import type { Keyframe } from '../../animation/types';
+import type { AnimationSpec, Keyframe } from '../../animation/types';
 import { PlaybackController } from '../../animation/keyframe-engine';
+
+// ── Pure-function API (used by MCP engine + tests) ───────────
+
+export interface TimelineTrack {
+  layerId: string;
+  layerName: string;
+  keyframes: Keyframe[];
+  duration: number;
+}
+
+export interface TimelineState {
+  currentTime: number;   // ms
+  duration: number;      // ms
+  playing: boolean;
+  tracks: TimelineTrack[];
+}
+
+/** Build timeline tracks from layer list. */
+export function buildTimelineTracks(
+  layers: { id: string; label?: string; animation?: AnimationSpec }[],
+): TimelineTrack[] {
+  return layers
+    .filter(l => l.animation?.keyframes !== undefined && (l.animation.keyframes ?? []).length > 0)
+    .map(l => ({
+      layerId: l.id,
+      layerName: l.label ?? l.id,
+      keyframes: l.animation!.keyframes!,
+      duration: l.animation!.playback?.duration ?? 1000,
+    }));
+}
+
+/** Get interpolated layer values at a given time. */
+export function interpolateAtTime(
+  keyframes: Keyframe[],
+  t: number,
+  duration: number,
+): Partial<Keyframe> {
+  if (keyframes.length === 0) return {};
+  const clampedT = Math.max(0, Math.min(duration, t));
+
+  const first = keyframes[0];
+  const last  = keyframes[keyframes.length - 1];
+
+  if (clampedT <= (first.t ?? 0)) return { ...first };
+  if (clampedT >= (last.t ?? 0))  return { ...last };
+
+  let lo = first;
+  let hi = last;
+  for (let i = 0; i < keyframes.length - 1; i++) {
+    const a = keyframes[i];
+    const b = keyframes[i + 1];
+    if ((a.t ?? 0) <= clampedT && (b.t ?? 0) >= clampedT) {
+      lo = a;
+      hi = b;
+      break;
+    }
+  }
+
+  const loT = lo.t ?? 0;
+  const hiT = hi.t ?? 0;
+  const progress = hiT === loT ? 0 : (clampedT - loT) / (hiT - loT);
+  const lerp = (a: number, b: number): number => a + (b - a) * progress;
+
+  const result: Partial<Keyframe> = { t: clampedT };
+  if (lo.opacity   !== undefined && hi.opacity   !== undefined) result.opacity   = lerp(lo.opacity,   hi.opacity);
+  if (lo.x         !== undefined && hi.x         !== undefined) result.x         = lerp(lo.x,         hi.x);
+  if (lo.y         !== undefined && hi.y         !== undefined) result.y         = lerp(lo.y,         hi.y);
+  if (lo.scale     !== undefined && hi.scale     !== undefined) result.scale     = lerp(lo.scale,     hi.scale);
+  if (lo.rotation  !== undefined && hi.rotation  !== undefined) result.rotation  = lerp(lo.rotation,  hi.rotation);
+  return result;
+}
+
+/** Render ASCII timeline preview (for MCP output). */
+export function renderTimelineASCII(tracks: TimelineTrack[], width = 60): string {
+  if (tracks.length === 0) return '(no animated layers)';
+  const maxDuration = Math.max(...tracks.map(t => t.duration));
+  const lines: string[] = [`Timeline (${maxDuration}ms)`, '─'.repeat(width)];
+
+  for (const track of tracks) {
+    const bar = Array<string>(width).fill('·');
+    for (const kf of track.keyframes) {
+      const pos = Math.min(width - 1, Math.round(((kf.t ?? 0) / maxDuration) * (width - 1)));
+      bar[pos] = '◆';
+    }
+    const label = (track.layerName + ' ').padEnd(12).slice(0, 12);
+    lines.push(`${label}|${bar.join('')}|`);
+  }
+  lines.push('─'.repeat(width));
+  return lines.join('\n');
+}
+
+/** Add or replace a keyframe in an AnimationSpec (immutable). */
+export function addKeyframe(anim: AnimationSpec, kf: Keyframe): AnimationSpec {
+  const existing = anim.keyframes ?? [];
+  const merged = [...existing.filter(k => k.t !== kf.t), kf].sort((a, b) => (a.t ?? 0) - (b.t ?? 0));
+  return { ...anim, keyframes: merged };
+}
+
+/** Remove a keyframe at a given time (immutable). */
+export function removeKeyframe(anim: AnimationSpec, t: number): AnimationSpec {
+  return { ...anim, keyframes: (anim.keyframes ?? []).filter(k => k.t !== t) };
+}
 
 const TRACK_H = 32;       // px per track row
 const HEADER_W = 120;     // px left-side label area

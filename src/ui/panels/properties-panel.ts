@@ -3,9 +3,14 @@ import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, ImageLayer, L
 import { colorPicker } from '../color-picker/color-picker';
 import { recolorSVG, extractSVGColors } from '../../utils/svg-importer';
 import { removeBackground } from '../../utils/bg-remover';
+import { attachWheelAdjustAll } from '../inputs/wheel-adjust';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
+}
+
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export class PropertiesPanelManager {
@@ -30,10 +35,7 @@ export class PropertiesPanelManager {
     const selected = this.state.getSelectedLayers();
 
     if (selected.length === 0) {
-      this.content.innerHTML = `
-        <div style="color:var(--color-text-muted);padding:16px;font-size:12px">
-          Select a layer to edit its properties
-        </div>`;
+      this.renderEmptyState();
       return;
     }
 
@@ -49,6 +51,57 @@ export class PropertiesPanelManager {
 
     const layer = selected[0];
     this.renderLayerProperties(layer);
+  }
+
+  private renderEmptyState(): void {
+    const { design, currentPageIndex } = this.state.get();
+    if (!design) {
+      this.content.innerHTML = `<div style="padding:16px;color:var(--color-text-muted);font-size:12px">No design loaded</div>`;
+      return;
+    }
+    const layerCount = this.state.getCurrentLayers().length;
+    const totalLayers = (design.pages ?? [{ layers: design.layers ?? [] }])
+      .reduce((s, p) => s + (p.layers?.length ?? 0), 0);
+    const pageCount = design.pages?.length ?? 1;
+    const { width, height } = design.document;
+    const pageLabel = design.pages?.[currentPageIndex]?.label ?? `Page ${currentPageIndex + 1}`;
+    const meta = design.meta;
+
+    this.content.innerHTML = `
+      <div class="prop-empty">
+        <div class="prop-empty-hero">
+          <div class="prop-empty-icon">&#9881;</div>
+          <div class="prop-empty-title">No selection</div>
+          <div class="prop-empty-hint">Click a layer on the canvas or in the layers panel to edit its properties.</div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-header">Document</div>
+          <div class="prop-section-body" style="padding:8px">
+            <div class="prop-info-row"><span>Name</span><span title="${esc(meta.name)}">${esc(meta.name)}</span></div>
+            <div class="prop-info-row"><span>Type</span><span>${esc(meta.type ?? 'design')}</span></div>
+            <div class="prop-info-row"><span>Size</span><span>${width} × ${height}</span></div>
+            ${pageCount > 1 ? `
+              <div class="prop-info-row"><span>Page</span><span>${esc(String(pageLabel))} <span style="color:var(--color-text-dim)">(${currentPageIndex + 1}/${pageCount})</span></span></div>
+              <div class="prop-info-row"><span>Layers (page)</span><span>${layerCount}</span></div>
+              <div class="prop-info-row"><span>Layers (all)</span><span>${totalLayers}</span></div>
+            ` : `
+              <div class="prop-info-row"><span>Layers</span><span>${layerCount}</span></div>
+            `}
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-header">Quick tips</div>
+          <div class="prop-section-body" style="padding:8px;color:var(--color-text-muted);font-size:11px;line-height:1.5">
+            <div><kbd>V</kbd> Select &middot; <kbd>R</kbd>/<kbd>C</kbd>/<kbd>T</kbd>/<kbd>L</kbd> Tools</div>
+            <div><kbd>⌘K</kbd> Command palette</div>
+            <div><kbd>⌘0</kbd> Fit canvas &middot; <kbd>⌘1</kbd> 100%</div>
+            <div><kbd>Alt</kbd>+drag handle resizes from center</div>
+            <div><kbd>Alt</kbd>+click cycles stacked layers</div>
+            <div><kbd>Shift</kbd>+<kbd>H</kbd>/<kbd>V</kbd> Flip selection</div>
+          </div>
+        </div>
+      </div>`;
+    this.bindAccordions();
   }
 
   private renderLayerProperties(layer: Layer): void {
@@ -79,11 +132,32 @@ export class PropertiesPanelManager {
     if (appearance) html += this.section('Appearance', appearance);
 
     // Transform section
+    const isLocked = !!(layer as { locked?: boolean }).locked;
     const transform = `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         ${this.renderNumberInput('z', 'Z', layer.z)}
         ${this.renderNumberInput('opacity', 'Opacity', layer.opacity ?? 1)}
         ${this.renderNumberInput('rotation', 'Rotate°', layer.rotation ?? 0)}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <button id="pp-lock-btn" title="${isLocked ? 'Unlock layer' : 'Lock layer'}"
+          style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:var(--radius-sm);
+                 border:1px solid var(--color-border);background:${isLocked ? 'var(--color-accent)' : 'transparent'};
+                 color:${isLocked ? '#fff' : 'var(--color-text)'};cursor:pointer;font-size:11px">
+          ${isLocked ? '🔒 Locked' : '🔓 Unlocked'}
+        </button>
+        <button id="pp-flip-h-btn" title="Flip horizontal"
+          style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--color-border);
+                 background:${(layer as {flip_h?:boolean}).flip_h ? 'var(--color-accent)' : 'transparent'};
+                 color:${(layer as {flip_h?:boolean}).flip_h ? '#fff' : 'var(--color-text)'};cursor:pointer;font-size:11px">
+          ↔ Flip H
+        </button>
+        <button id="pp-flip-v-btn" title="Flip vertical"
+          style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--color-border);
+                 background:${(layer as {flip_v?:boolean}).flip_v ? 'var(--color-accent)' : 'transparent'};
+                 color:${(layer as {flip_v?:boolean}).flip_v ? '#fff' : 'var(--color-text)'};cursor:pointer;font-size:11px">
+          ↕ Flip V
+        </button>
       </div>
       ${this.renderBlendModeField(layer.effects?.blend_mode)}`;
     html += this.section('Transform', transform);
@@ -282,8 +356,27 @@ export class PropertiesPanelManager {
   private renderRectFields(layer: RectLayer): string {
     let html = '';
     html += this.renderFillFields(layer.fill);
-    if (typeof layer.radius === 'number') {
-      html += this.renderNumberField('radius', 'Radius', layer.radius, 0, 500, 1);
+    // Uniform radius input — always visible, defaults to 0
+    const r = layer.radius;
+    const uniform = typeof r === 'number' ? r : (r ? '' : 0);
+    html += `<div class="prop-row">
+      <label class="prop-label">Radius</label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <input type="number" class="prop-input" data-prop="radius"
+          value="${uniform}" placeholder="${typeof r === 'object' ? 'mixed' : '0'}"
+          min="0" step="1" style="flex:1" />
+        <button class="prop-btn" data-prop-action="toggle-corners" title="Toggle per-corner radius">
+          ${typeof r === 'object' ? '⊟' : '⊞'}
+        </button>
+      </div>
+    </div>`;
+    if (typeof r === 'object' && r) {
+      html += `<div class="prop-corner-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px 8px 8px">
+        <input type="number" class="prop-input" data-prop="radius.tl" value="${r.tl ?? 0}" min="0" step="1" placeholder="TL" title="Top-left" />
+        <input type="number" class="prop-input" data-prop="radius.tr" value="${r.tr ?? 0}" min="0" step="1" placeholder="TR" title="Top-right" />
+        <input type="number" class="prop-input" data-prop="radius.bl" value="${r.bl ?? 0}" min="0" step="1" placeholder="BL" title="Bottom-left" />
+        <input type="number" class="prop-input" data-prop="radius.br" value="${r.br ?? 0}" min="0" step="1" placeholder="BR" title="Bottom-right" />
+      </div>`;
     }
     return html;
   }
@@ -293,17 +386,39 @@ export class PropertiesPanelManager {
   }
 
   private renderFillFields(fill: (RectLayer | CircleLayer)['fill']): string {
-    if (!fill || fill.type === 'none') return '';
-    if (fill.type === 'solid') {
-      return this.renderColorField('fill.color', 'Fill', fill.color);
+    const activeType = fill?.type ?? 'none';
+    const types: Array<{ key: string; label: string }> = [
+      { key: 'solid',  label: 'Solid'  },
+      { key: 'linear', label: 'Linear' },
+      { key: 'radial', label: 'Radial' },
+      { key: 'none',   label: 'None'   },
+    ];
+    const tabs = types.map(t => {
+      const active = activeType === t.key;
+      return `<button class="fill-type-btn" data-fill-type="${t.key}"
+        style="flex:1;padding:3px 0;font-size:10px;border:1px solid var(--color-border);
+               background:${active ? 'var(--color-accent)' : 'var(--color-bg)'};
+               color:${active ? '#fff' : 'var(--color-text-muted)'};
+               border-radius:3px;cursor:pointer">${t.label}</button>`;
+    }).join('');
+
+    let body = '';
+    if (!fill || fill.type === 'none') {
+      body = '';
+    } else if (fill.type === 'solid') {
+      body = this.renderColorField('fill.color', 'Fill', fill.color);
+    } else if (fill.type === 'linear') {
+      body = this.renderLinearGradientFields(fill);
+    } else if (fill.type === 'radial') {
+      body = this.renderRadialGradientFields(fill);
     }
-    if (fill.type === 'linear') {
-      return this.renderLinearGradientFields(fill);
-    }
-    if (fill.type === 'radial') {
-      return this.renderRadialGradientFields(fill);
-    }
-    return '';
+
+    return `
+      <div style="margin-bottom:6px">
+        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Fill</div>
+        <div class="fill-type-tabs" style="display:flex;gap:3px;margin-bottom:6px">${tabs}</div>
+        ${body}
+      </div>`;
   }
 
   private renderLinearGradientFields(fill: LinearGradientFill): string {
@@ -326,7 +441,11 @@ export class PropertiesPanelManager {
           Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
         </div>
         ${this.renderNumberField('fill.angle', 'Angle °', fill.angle, 0, 360, 1)}
-        <div style="font-size:11px;color:var(--color-text-muted);margin:6px 0 4px">Stops</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px">
+          <span style="font-size:11px;color:var(--color-text-muted)">Stops</span>
+          <button class="grad-add-stop-btn" style="font-size:11px;background:none;border:1px solid var(--color-border);
+            border-radius:3px;color:var(--color-text-muted);cursor:pointer;padding:1px 6px">+</button>
+        </div>
     `;
     fill.stops.forEach((stop, i) => {
       html += this.renderGradientStop(stop, i);
@@ -336,15 +455,33 @@ export class PropertiesPanelManager {
   }
 
   private renderRadialGradientFields(fill: RadialGradientFill): string {
+    const stopCss = fill.stops.map(s => `${s.color} ${s.position}%`).join(', ');
+    const previewBg = `radial-gradient(circle at ${fill.cx ?? 50}% ${fill.cy ?? 50}%, ${stopCss})`;
+    const thumbs = fill.stops.map((s, i) => this.renderGradientThumb(s.color, s.position, i)).join('');
+
     let html = `
       <div>
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px">Radial Gradient</div>
+        <div class="grad-bar-wrap" style="position:relative;margin-bottom:4px">
+          <div class="grad-preview" data-fill-type="radial"
+            style="height:20px;border-radius:4px;background:${previewBg};
+                   border:1px solid var(--color-border);cursor:crosshair">
+          </div>
+          <div class="grad-thumbs" style="position:relative;height:14px">${thumbs}</div>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:6px">
+          Click bar to add stop · Drag thumbs to move · Double-click thumb to delete
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           ${this.renderNumberInput('fill.cx', 'CX (%)', fill.cx)}
           ${this.renderNumberInput('fill.cy', 'CY (%)', fill.cy)}
         </div>
         ${this.renderNumberField('fill.radius', 'Radius (%)', fill.radius, 0, 200, 1)}
-        <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;margin-top:8px">Stops</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px">
+          <span style="font-size:11px;color:var(--color-text-muted)">Stops</span>
+          <button class="grad-add-stop-btn" style="font-size:11px;background:none;border:1px solid var(--color-border);
+            border-radius:3px;color:var(--color-text-muted);cursor:pointer;padding:1px 6px">+</button>
+        </div>
     `;
     fill.stops.forEach((stop, i) => {
       html += this.renderGradientStop(stop, i);
@@ -611,8 +748,22 @@ export class PropertiesPanelManager {
   }
 
   private bindGradientEditor(layer: Layer): void {
+    // Fill type switcher tabs
+    this.content.querySelectorAll<HTMLButtonElement>('.fill-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.switchFillType(layer.id, btn.dataset.fillType ?? 'solid');
+      });
+    });
+
     const preview = this.content.querySelector<HTMLElement>('.grad-preview');
     const thumbsContainer = this.content.querySelector<HTMLElement>('.grad-thumbs');
+
+    // + add stop button
+    const addStopBtn = this.content.querySelector<HTMLButtonElement>('.grad-add-stop-btn');
+    if (addStopBtn) {
+      addStopBtn.addEventListener('click', () => this.addGradientStop(layer.id, 50));
+    }
+
     if (!preview || !thumbsContainer) return;
 
     // Click on bar → add new stop at that position
@@ -649,6 +800,49 @@ export class PropertiesPanelManager {
         }, { once: true });
       });
     });
+  }
+
+  private switchFillType(layerId: string, toType: string): void {
+    const layers = this.state.getCurrentLayers();
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return;
+
+    const currentFill = (layer as { fill?: { type: string; color?: string; stops?: { color: string; position: number }[]; angle?: number; cx?: number; cy?: number; radius?: number } }).fill;
+
+    let newFill: unknown;
+    switch (toType) {
+      case 'solid':
+        newFill = { type: 'solid', color: currentFill?.stops?.[0]?.color ?? currentFill?.color ?? '#6c5ce7' };
+        break;
+      case 'linear':
+        newFill = {
+          type: 'linear',
+          angle: currentFill?.angle ?? 135,
+          stops: currentFill?.stops ?? [
+            { color: currentFill?.color ?? '#6c5ce7', position: 0 },
+            { color: '#a29bfe', position: 100 },
+          ],
+        };
+        break;
+      case 'radial':
+        newFill = {
+          type: 'radial',
+          cx: currentFill?.cx ?? 50,
+          cy: currentFill?.cy ?? 50,
+          radius: currentFill?.radius ?? 70,
+          stops: currentFill?.stops ?? [
+            { color: currentFill?.color ?? '#6c5ce7', position: 0 },
+            { color: '#1a1a2e', position: 100 },
+          ],
+        };
+        break;
+      case 'none':
+        newFill = { type: 'none' };
+        break;
+      default:
+        return;
+    }
+    this.applyPropertyChange(layerId, 'fill', newFill);
   }
 
   private addGradientStop(layerId: string, position: number): void {
@@ -689,6 +883,51 @@ export class PropertiesPanelManager {
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
     });
+
+    // Mouse-wheel adjusts every number field. Shift = ×10, Alt = ×0.1.
+    attachWheelAdjustAll(this.content);
+
+    // Lock toggle
+    const lockBtn = this.content.querySelector<HTMLButtonElement>('#pp-lock-btn');
+    if (lockBtn) {
+      lockBtn.addEventListener('click', () => {
+        const cur = !!(layer as { locked?: boolean }).locked;
+        this.applyPropertyChange(layer.id, 'locked', !cur);
+      });
+    }
+
+    // Toggle uniform ↔ per-corner radius
+    const toggleCornersBtn = this.content.querySelector<HTMLButtonElement>('[data-prop-action="toggle-corners"]');
+    if (toggleCornersBtn) {
+      toggleCornersBtn.addEventListener('click', () => {
+        const cur = (layer as { radius?: number | { tl: number; tr: number; br: number; bl: number } }).radius;
+        if (typeof cur === 'object' && cur) {
+          // Per-corner → uniform: collapse to max corner value
+          const max = Math.max(cur.tl ?? 0, cur.tr ?? 0, cur.br ?? 0, cur.bl ?? 0);
+          this.applyPropertyChange(layer.id, 'radius', max);
+        } else {
+          // Uniform → per-corner: expand the single value to all 4 corners
+          const v = typeof cur === 'number' ? cur : 0;
+          this.applyPropertyChange(layer.id, 'radius', { tl: v, tr: v, br: v, bl: v });
+        }
+      });
+    }
+
+    // Flip toggles
+    const flipHBtn = this.content.querySelector<HTMLButtonElement>('#pp-flip-h-btn');
+    if (flipHBtn) {
+      flipHBtn.addEventListener('click', () => {
+        const cur = !!(layer as { flip_h?: boolean }).flip_h;
+        this.applyPropertyChange(layer.id, 'flip_h', !cur);
+      });
+    }
+    const flipVBtn = this.content.querySelector<HTMLButtonElement>('#pp-flip-v-btn');
+    if (flipVBtn) {
+      flipVBtn.addEventListener('click', () => {
+        const cur = !!(layer as { flip_v?: boolean }).flip_v;
+        this.applyPropertyChange(layer.id, 'flip_v', !cur);
+      });
+    }
 
     // Auto-layout special inputs
     const wrapCb = this.content.querySelector<HTMLInputElement>('input[data-prop="wrap"]');

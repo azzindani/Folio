@@ -3,40 +3,55 @@ import type { ToolDefinition } from '../types';
 
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
-    name: 'export_design',
-    description: 'Export a design to SVG, HTML, PNG, or PDF. PNG/PDF uses headless chromium (playwright).',
+    name: 'open_in_editor',
+    description: 'Return a clickable URL that opens the Folio editor on a design. The editor live-refreshes when subsequent MCP tools edit the same file.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to .design.yaml file' },
-        format:      { type: 'string', enum: ['png', 'svg', 'html', 'pdf'] },
-        output_path: { type: 'string', description: 'Output file path (derived if omitted)' },
-        scale:       { type: 'number', description: 'Scale factor 1–3', default: 2 },
+        design_path:  { type: 'string',  description: 'Path to .design.yaml — omit to open the editor at its home page' },
+        project_path: { type: 'string',  description: 'Project dir for resolving relative design_path' },
+        editor_url:   { type: 'string',  description: 'Override editor base URL (default: $FOLIO_EDITOR_URL or http://localhost:4173)' },
+        page:         { type: 'number',  description: 'Page index to focus (1-based)' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'export_design',
+    description: 'Export design to SVG or HTML. SVG returns an inline image preview alongside the JSON result. PNG/PDF needs Puppeteer (Phase 2).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        format:       { type: 'string', enum: ['png', 'svg', 'html', 'pdf'] },
+        output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        scale:        { type: 'number', description: 'Scale factor 1–3', default: 2 },
       },
       required: ['design_path', 'format'],
     },
   },
   {
     name: 'batch_create',
-    description: 'Generate N designs from one template by providing an array of slot objects.',
+    description: 'Generate N designs from one template using an array of slot objects.',
     inputSchema: {
       type: 'object',
       properties: {
         project_path: { type: 'string', description: 'Path to project directory' },
         template_id:  { type: 'string', description: 'Template ID to use' },
-        slots_array:  { type: 'object', description: 'Array of slot objects, one per design', items: { type: 'object' } },
+        slots_array:  { type: 'object', description: 'One slot object per design', items: { type: 'object' } },
       },
       required: ['project_path', 'template_id', 'slots_array'],
     },
   },
   {
     name: 'save_as_component',
-    description: 'Extract layers from a design into a reusable .component.yaml and replace with an instance.',
+    description: 'Extract layers into .component.yaml and replace with component instance.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:    { type: 'string', description: 'Path to source .design.yaml file' },
-        layer_ids:      { type: 'object', description: 'Array of layer IDs to extract', items: { type: 'string' } },
+        design_path:    { type: 'string', description: 'Path to source .design.yaml' },
+        layer_ids:      { type: 'object', description: 'Layer IDs to extract', items: { type: 'string' } },
         component_name: { type: 'string', description: 'Name for the new component' },
         project_path:   { type: 'string', description: 'Path to project directory' },
       },
@@ -45,36 +60,215 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'export_template',
-    description: 'Export a design as a .template.yaml skeleton with named slots.',
+    description: 'Export design as .template.yaml skeleton with named slots.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path: { type: 'string', description: 'Path to source .design.yaml file' },
-        output_path: { type: 'string', description: 'Output path for .template.yaml (auto-derived if omitted)' },
+        design_path:  { type: 'string', description: 'Path to source .design.yaml' },
+        output_path:  { type: 'string', description: 'Output path for .template.yaml (auto if omitted)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
       },
       required: ['design_path'],
     },
   },
   {
     name: 'inject_template',
-    description: 'Inject slot values into a template to produce a complete .design.yaml.',
+    description: 'Inject slot values into template to produce a .design.yaml.',
     inputSchema: {
       type: 'object',
       properties: {
-        template_path: { type: 'string', description: 'Path to .template.yaml file' },
+        template_path: { type: 'string', description: 'Path to .template.yaml' },
         slots:         { type: 'object', description: 'Map of slot_id → value', properties: {} },
-        output_path:   { type: 'string', description: 'Output path for .design.yaml (auto-derived if omitted)' },
+        output_path:   { type: 'string', description: 'Output path for .design.yaml (auto if omitted)' },
       },
       required: ['template_path', 'slots'],
     },
   },
   {
     name: 'list_template_slots',
-    description: 'List injectable slots in a .template.yaml with paths, types, and hints.',
+    description: 'List injectable slots in a .template.yaml with paths, types, hints.',
     inputSchema: {
       type: 'object',
-      properties: { template_path: { type: 'string', description: 'Path to .template.yaml file' } },
+      properties: { template_path: { type: 'string', description: 'Path to .template.yaml' } },
       required: ['template_path'],
+    },
+  },
+  // ── Report tools ──────────────────────────────────────────
+  {
+    name: 'generate_report',
+    description: 'Scaffold a new report-type design with pages, navigation, and optional data sources.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path:  { type: 'string', description: 'Path to project directory' },
+        name:          { type: 'string', description: 'Report name' },
+        layout:        { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar'], default: 'paged' },
+        nav_type:      { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar' },
+        pages:         { type: 'object', description: 'Array of {id?, label} page specs', items: { type: 'object' } },
+        width:         { type: 'number', default: 1080 },
+        height:        { type: 'number', default: 1080 },
+        data_sources:  { type: 'object', description: 'Optional inline/json/csv data sources', items: { type: 'object' } },
+      },
+      required: ['project_path', 'name', 'pages'],
+    },
+  },
+  {
+    name: 'bind_data',
+    description: 'Attach or update inline datasets on a report design for $data.* / $agg.* expressions.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        datasets:     { type: 'object', description: 'Array of {id, rows[]}', items: { type: 'object' } },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'datasets'],
+    },
+  },
+  {
+    name: 'export_report',
+    description: 'Assemble a report design into a self-contained interactive HTML file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml (must be type: report)' },
+        output_path:  { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
+        theme:        { type: 'string', enum: ['light', 'dark'], default: 'dark' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  // ── Presentation tools ────────────────────────────────────
+  {
+    name: 'create_presentation',
+    description: 'Scaffold a presentation-type design (1920×1080) with slides, transitions, and presentation settings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path:  { type: 'string', description: 'Path to project directory' },
+        name:          { type: 'string', description: 'Presentation name' },
+        pages:         { type: 'object', description: 'Array of {id?, label, notes?} slide specs', items: { type: 'object' } },
+        transition:    { type: 'string', enum: ['none','fade','slide-left','slide-right','slide-up','slide-down','zoom-in','zoom-out','flip-h','flip-v','cube-left','cube-right','reveal','wipe-left','wipe-right','dissolve','morph'], default: 'fade' },
+        auto_advance:  { type: 'number', description: 'Auto-advance delay ms (0 = manual)' },
+        width:         { type: 'number', default: 1920 },
+        height:        { type: 'number', default: 1080 },
+        theme:         { type: 'string', enum: ['dark', 'light'], default: 'dark' },
+      },
+      required: ['project_path', 'name', 'pages'],
+    },
+  },
+  {
+    name: 'export_presentation',
+    description: 'Assemble a presentation/carousel/motion design into a self-contained HTML presenter with transitions, keyboard nav, and audio.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:   { type: 'string', description: 'Path to .design.yaml (must be type: presentation/carousel/motion)' },
+        output_path:   { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
+        theme:         { type: 'string', enum: ['light', 'dark'], default: 'dark' },
+        auto_advance:  { type: 'number', description: 'Override auto-advance delay ms' },
+        project_path:  { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  // ── Formula tools ─────────────────────────────────────────
+  {
+    name: 'set_formula_context',
+    description: 'Store state/data context for formula binding on a design. Used by export tools to resolve =expr bindings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        state:        { type: 'object', description: 'Key-value state variables', properties: {} },
+        data:         { type: 'object', description: 'Dataset key-value map', properties: {} },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'debug_formula',
+    description: 'Evaluate a formula expression against a given context and return the result with type info.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        formula:      { type: 'string', description: 'Formula string starting with =' },
+        state:        { type: 'object', description: 'State variables', properties: {} },
+        data:         { type: 'object', description: 'Data variables', properties: {} },
+        design_path:  { type: 'string', description: 'Optional: load context from .formula.json' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['formula'],
+    },
+  },
+  {
+    name: 'inspect_timeline',
+    description: 'Show animation keyframe tracks for a design as ASCII timeline.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        page_id:      { type: 'string', description: 'Optional page filter' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'add_keyframe',
+    description: 'Add or replace a keyframe on a layer animation timeline.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        layer_id:     { type: 'string', description: 'Target layer id' },
+        keyframe:     { type: 'object', description: '{t:ms, x?, y?, opacity?, scale?, rotation?}', properties: {} },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'layer_id', 'keyframe'],
+    },
+  },
+  {
+    name: 'export_animation',
+    description: 'Export a presentation design as GIF, MP4, or WebM animation (requires Puppeteer + optionally ffmpeg).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        type:         { type: 'string', enum: ['gif', 'mp4', 'webm'], description: 'Output format' },
+        output_path:  { type: 'string', description: 'Output file path (auto-derived if omitted)' },
+        fps:          { type: 'number', description: 'Frames per second (default 10 for gif, 30 for mp4/webm)' },
+        duration:     { type: 'number', description: 'Animation duration in ms (default 3000)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'type'],
+    },
+  },
+  {
+    name: 'setup_remote_presenter',
+    description: 'Generate remote clicker setup: client JS snippet + curl commands to control slides over HTTP.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        port:         { type: 'number', description: 'Port for the remote server (default 3737)' },
+        design_path:  { type: 'string', description: 'Optional: path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir' },
+      },
+    },
+  },
+  {
+    name: 'setup_collab',
+    description: 'Generate collaborative editing server setup: SSE file-watch server for multi-user design sync.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml to watch' },
+        port:         { type: 'number', description: 'Port for the collab server (default 3738)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
     },
   },
 ];

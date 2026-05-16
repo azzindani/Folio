@@ -406,6 +406,31 @@ export class EditorApp {
         // Invalid YAML from external editor — ignore until it's valid
       }
     });
+
+    // MCP live-refresh: when the user opens the editor with `?mcp_url=...`
+    // (typically minted by the MCP `open_in_editor` tool), subscribe to
+    // /editor/events on the MCP HTTP server and reload the design as soon
+    // as a tool call mutates the underlying YAML.
+    this.subscribeMCPLiveRefresh();
+  }
+
+  private subscribeMCPLiveRefresh(): void {
+    if (typeof location === 'undefined' || typeof EventSource === 'undefined') return;
+    void import('./mcp-events').then(({ subscribeMCPEvents, parseMCPParams }) => {
+      const params = parseMCPParams();
+      if (!params.mcpUrl) return;
+      try {
+        subscribeMCPEvents({
+          mcpUrl: params.mcpUrl,
+          designPath: params.designPath,
+          onFileChanged: (yamlContent) => {
+            try { this.loadFromYAML(yamlContent); } catch { /* invalid YAML — wait for next event */ }
+            void import('../utils/toast').then(({ showToast }) => showToast('Design updated by MCP', 'info'));
+          },
+          onError: () => { /* connection blip — EventSource auto-reconnects */ },
+        });
+      } catch { /* MCP server unreachable — silent fallback */ }
+    });
   }
 
   private buildLayout(): void {
@@ -476,7 +501,7 @@ export class EditorApp {
         <div class="left-panel-resize-handle" data-resize="left"></div>
       </div>
 
-      <div class="canvas-section">
+      <div class="canvas-section" style="position:relative">
         <div class="tab-bar-container"></div>
         <div class="viewport-area"></div>
         <div class="page-strip-section" id="page-strip-section" style="display:none">
@@ -488,39 +513,39 @@ export class EditorApp {
       <div class="properties-panel">
         <div class="mob-sheet-grip" aria-hidden="true"></div>
         <div class="right-panel-resize-handle" data-resize="right"></div>
-        <div class="rpanel-tabs">
-          <button class="rpanel-tab active" data-tab="properties">Props</button>
-          <button class="rpanel-tab" data-tab="colors">Colors</button>
-          <button class="rpanel-tab" data-tab="animate">Animate</button>
-          <button class="rpanel-tab" data-tab="timeline">Timeline</button>
-          <button class="rpanel-tab" data-tab="problems">Issues</button>
-          <button class="rpanel-tab" data-tab="a11y" title="Accessibility">A11y</button>
-        </div>
         <div class="rpanel-body">
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
           </div>
-          <div class="tab-pane" data-tab="colors" style="height:100%;overflow:hidden;display:flex;flex-direction:column">
+          <div class="tab-pane tab-pane--flex" data-tab="colors">
             <div class="color-palette-content" style="flex:1;overflow-y:auto"></div>
             <div class="color-scheme-content" style="border-top:1px solid var(--color-border)">
-              <div class="panel-header" style="padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;
-                letter-spacing:.05em;color:var(--color-text-muted)">Color Schemes</div>
+              <div class="panel-header" style="padding:6px 8px">Color Schemes</div>
             </div>
           </div>
           <div class="tab-pane" data-tab="problems">
             <div class="problems-content"></div>
           </div>
-          <div class="tab-pane" data-tab="animate" style="height:100%;overflow-y:auto">
+          <div class="tab-pane tab-pane--scroll" data-tab="animate">
             <div class="animate-content" style="height:100%"></div>
           </div>
-          <div class="tab-pane" data-tab="timeline" style="height:100%;display:flex;flex-direction:column">
+          <div class="tab-pane tab-pane--flex" data-tab="timeline">
             <div class="timeline-content" style="flex:1;overflow:hidden"></div>
           </div>
-          <div class="tab-pane" data-tab="a11y" style="height:100%">
+          <div class="tab-pane tab-pane--full" data-tab="a11y">
             <div class="a11y-content" style="height:100%"></div>
           </div>
         </div>
         <div class="minimap-container"></div>
+      </div>
+
+      <div class="r-activity-bar" role="tablist" aria-label="Right panel tabs">
+        <button class="act-btn rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">&#9881;</button>
+        <button class="act-btn rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">&#127912;</button>
+        <button class="act-btn rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">&#9889;</button>
+        <button class="act-btn rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">&#9201;</button>
+        <button class="act-btn rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">&#9888;</button>
+        <button class="act-btn rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">&#9855;</button>
       </div>
 
       <div class="status-bar">
@@ -621,36 +646,59 @@ export class EditorApp {
     const actBtns = this.container.querySelectorAll<HTMLElement>('.act-btn[data-panel]');
     const panelViews = this.container.querySelectorAll<HTMLElement>('.left-panel-view');
     const leftPanel = this.container.querySelector<HTMLElement>('.left-panel')!;
+    const app = leftPanel.closest('#app') as HTMLElement | null;
 
     let currentPanel = 'layers';
+
+    const setCollapsed = (collapsed: boolean): void => {
+      app?.classList.toggle('panel-collapsed', collapsed);
+      actBtns.forEach(b => {
+        b.setAttribute('aria-expanded', String(!collapsed && b.dataset.panel === currentPanel));
+      });
+    };
 
     actBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const panelId = btn.dataset.panel!;
+        const isCollapsed = !!app?.classList.contains('panel-collapsed');
 
         if (panelId === currentPanel) {
-          // Toggle collapse
-          leftPanel.closest('#app')?.classList.toggle('panel-collapsed');
+          setCollapsed(!isCollapsed);
           return;
         }
 
         currentPanel = panelId;
         actBtns.forEach(b => b.classList.toggle('active', b.dataset.panel === panelId));
         panelViews.forEach(v => v.classList.toggle('active', v.dataset.panel === panelId));
-        leftPanel.closest('#app')?.classList.remove('panel-collapsed');
+        setCollapsed(false);
       });
     });
+
+    // Removed: floating .lpanel-expand-btn notch. The activity bar is
+    // always visible and clicking any of its icons re-expands the panel.
   }
 
   private wireRpanelTabs(): void {
-    const tabs = this.container.querySelectorAll<HTMLElement>('.rpanel-tab');
+    const tabs = this.container.querySelectorAll<HTMLElement>('.r-activity-bar .rpanel-tab');
     const panes = this.container.querySelectorAll<HTMLElement>('.rpanel-body .tab-pane');
+    const app = this.container.closest('#app') ?? this.container;
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const tabId = tab.dataset.tab!;
+        const isActive = tab.classList.contains('active');
+        const isCollapsed = app.classList.contains('rpanel-collapsed');
+
+        // Click already-active tab while expanded → collapse
+        if (isActive && !isCollapsed) {
+          app.classList.add('rpanel-collapsed');
+          return;
+        }
+
+        // Otherwise switch to that tab and ensure panel is open
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
         panes.forEach(p => p.classList.toggle('active', p.dataset.tab === tabId));
+        app.classList.remove('rpanel-collapsed');
       });
     });
   }
@@ -659,11 +707,21 @@ export class EditorApp {
     const btn = this.container.querySelector<HTMLElement>('#theme-toggle');
     if (!btn) return;
     const root = document.documentElement;
+
+    // Restore persisted theme
+    const saved = localStorage.getItem('folio:ui-theme') ?? 'dark';
+    root.setAttribute('data-theme', saved);
+    btn.innerHTML = saved === 'light' ? '&#9790;' : '&#9788;';
+    btn.title = saved === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+
     btn.addEventListener('click', () => {
       const isLight = root.getAttribute('data-theme') === 'light';
-      root.setAttribute('data-theme', isLight ? 'dark' : 'light');
-      btn.innerHTML = isLight ? '&#9790;' : '&#9788;';
-      btn.title = isLight ? 'Switch to light theme' : 'Switch to dark theme';
+      const next = isLight ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      btn.innerHTML = next === 'light' ? '&#9790;' : '&#9788;';
+      btn.title = next === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+      localStorage.setItem('folio:ui-theme', next);
+      this.payloadEditor?.setTheme(next);
     });
   }
 
@@ -928,6 +986,12 @@ export class EditorApp {
       this.state.set('currentPageIndex', 0);
       this.state.set('dirty', false);
     });
+
+    // Auto-fit so layer corners are reachable inside the canvas-area.
+    // Without this, a 1080×1080 design at 100% zoom puts the right/bottom
+    // resize handles outside the visible canvas (clipped by overflow:hidden),
+    // making them un-clickable.
+    requestAnimationFrame(() => this.canvas?.fitToScreen?.());
   }
 
   loadFromYAML(yamlSource: string): void {

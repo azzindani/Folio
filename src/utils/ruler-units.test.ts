@@ -106,3 +106,15 @@ describe('computeRulerTicks', () => {
     expect(negative.length).toBeGreaterThan(0);
   });
 });
+
+describe('niceInterval — 10x magnitude branch (line 81)', () => {
+  it('triggers 10*magnitude (normalized ≥ 7.5) at zoom ~0.7', () => {
+    // zoom 0.7: unitsPerTick = 60/0.7 ≈ 85.7 → magnitude=10, normalized≈8.57 ≥ 7.5 → 100
+    const ticks = computeRulerTicks(0, 1080, 'px', 0.7);
+    expect(ticks.length).toBeGreaterThan(0);
+    // Tick interval should be 100px (niceInterval returns 100 for normalized≈8.57)
+    if (ticks.length >= 2) {
+      expect(ticks[1].px - ticks[0].px).toBe(100);
+    }
+  });
+});

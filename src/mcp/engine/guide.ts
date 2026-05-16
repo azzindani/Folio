@@ -1,71 +1,101 @@
-// Static engine reference returned by get_engine_guide.
-// Loaded once per session; gives the model everything it needs to generate
-// correct tool calls without guessing field names or shorthand syntax.
+// Engine reference guide — split into sections to stay within 1K output budget.
+// Default section (quick_ref) ≈200 tokens. Full guide = 4 calls ≈800 tokens total.
 
-export function buildGuide(): string {
-  return `# Folio Engine Guide
+const SECTIONS: Record<string, string> = {
 
-## Canvas Defaults
-1080x1080 (square) · 1080x1350 (portrait) · 1920x1080 (landscape)
-Units: px · z = stacking order (higher = front)
+  quick_ref: `# Folio Quick Ref
+Canvas: 1080x1080 (sq) · 1080x1350 (port) · 1920x1080 (land) · units: px
+Design types: poster (single page) | carousel (multi-page)
+z = stacking order (higher = front)
 
-## Layer Types & Required Fields
-rect    id,type,z,x,y,width,height          + fill?,stroke?,radius?,opacity?
-text    id,type,z,x,y,width,content,style   content:{type:"plain",value:"..."} style:{font_size,color,weight?,align?}
-image   id,type,z,x,y,width,height,src      src = absolute path or URL
-ellipse id,type,z,x,y,width,height          same optional fields as rect
-line    id,type,z,x1,y1,x2,y2              + stroke?
-group   id,type,z,x,y,width,height,layers[] nested layers array
-icon    id,type,z,x,y,width,height,icon     icon = lucide icon name e.g. "star"
-component id,type,z,x,y,width,height,ref   ref = component ID
+Poster workflow:
+  1. create_design(project_path, name, type="poster")
+  2. add_layers(design_path, layers_shorthand=[...])
+  3. seal_design(design_path)
 
-## Shorthand Format (layers_shorthand — PREFERRED for local models)
-Use pos:[x,y,w,h] to replace x/y/width/height in one field.
-Saves ~80% tokens vs full verbose spec. Always prefer over layers[].
+Carousel workflow:
+  1. create_task(project_path, task_name, brief, pages=[{label,hints}])
+  2. append_page(design_path, page_id, layers_shorthand=[...], task_path=...)
+     → repeat until next_action.remaining==0
+  3. seal_design(design_path)
 
-Examples:
-  {id:"bg",   type:"rect",  z:0,  pos:[0,0,1080,1080], fill:"#1A1A2E"}
-  {id:"hero", type:"image", z:5,  pos:[0,0,1080,540],  src:"/assets/photo.jpg"}
-  {id:"h1",   type:"text",  z:10, pos:[80,200,920,120], text:"Hello World", size:72, weight:700, color:"#fff"}
-  {id:"sub",  type:"text",  z:11, pos:[80,340,800,60],  text:"Subtitle",    size:24, color:"#aaa"}
-  {id:"pill", type:"rect",  z:12, pos:[80,460,200,48],  fill:"#E94560", radius:24}
-  {id:"line1",type:"line",  z:3,  x1:80, y1:600, x2:1000, y2:600, stroke:"#333"}
+Rules:
+  - Always use layers_shorthand — saves 80% tokens vs verbose layers[]
+  - Always pass task_path in append_page — enables auto-handover
+  - Call resume_task(task_path) after any context reset
+  - 3–6 layers per page is ideal for local models
+  - Load guide sections on demand: shorthand | layers | workflow`,
 
-Shorthand text fields: text, size, weight, color, align (replaces content+style objects)
-Shorthand fill:  "#hex" | "rgba(r,g,b,a)" | {type:"gradient",angle:135,stops:[{color,pos}]}
+  shorthand: `# Shorthand Syntax (layers_shorthand field)
+pos:[x,y,w,h] replaces x/y/width/height.
 
-## Design Types
-poster   Single page. layers[] live at top level. Seal immediately after adding layers.
-carousel Multi-page. Each page added via append_page. Seal after all pages done.
+Rect:   {id:"bg",    type:"rect",  z:0,  pos:[0,0,1080,1080], fill:"#1A1A2E"}
+Image:  {id:"hero",  type:"image", z:5,  pos:[0,0,1080,540],  src:"/path/img.jpg"}
+Text:   {id:"h1",    type:"text",  z:10, pos:[80,200,920,120], text:"Title", size:72, weight:700, color:"#fff"}
+Text:   {id:"sub",   type:"text",  z:11, pos:[80,340,800,60],  text:"Sub",   size:24, color:"#aaa", align:"center"}
+Pill:   {id:"pill",  type:"rect",  z:12, pos:[80,460,200,48],  fill:"#E94560", radius:24}
+Line:   {id:"div",   type:"line",  z:3,  x1:80, y1:600, x2:1000, y2:600, stroke:"#333", stroke_width:2}
+Ellipse:{id:"dot",   type:"ellipse",z:8, pos:[500,500,80,80],  fill:"#E94560"}
+Icon:   {id:"ico",   type:"icon",  z:9,  pos:[880,80,64,64],   icon:"star", color:"#E94560"}
+Group:  {id:"grp",   type:"group", z:6,  pos:[80,80,400,300],  layers:[...]}
 
-## Correct Workflow — Poster
-1. create_design(project_path, name, type="poster")
-2. add_layers(design_path, layers_shorthand=[...])   ← all layers in ONE call
-3. seal_design(design_path)
+Text shorthand fields:  text, size, weight, color, align, text_decoration:"underline"|"line-through"
+Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"gradient",angle:135,stops:[{color,pos}]}
+Stroke shorthand:       "#hex" or {color:"#hex",width:2,dash:[4,2]}
+Base fields (all types): opacity:0-1 · rotation:deg · flip_h:bool · flip_v:bool · locked:bool`,
 
-## Correct Workflow — Multi-page Carousel (128K context / Gemma 4B)
-1. create_task(project_path, task_name, brief, pages=[{label,hints},...])
-   → response.next_action tells you exactly what to call next
-2. append_page(design_path, page_id, label, layers_shorthand=[...], task_path=...)
-   → response.next_action.remaining counts pages left; follow it until remaining==0
-3. seal_design(design_path)   ← called automatically when next_action.tool=="seal_design"
+  layers: `# Layer Types — Required Fields
+rect      id type z x y width height    + fill? stroke? radius? opacity?
+text      id type z x y width           + content:{type:"plain",value:"..."} style:{font_size,color,weight?,align?}
+image     id type z x y width height src
+ellipse   id type z x y width height    + same optionals as rect
+line      id type z x1 y1 x2 y2         + stroke? stroke_width?
+group     id type z x y width height layers[]
+icon      id type z x y width height icon   (icon = lucide name e.g. "star","heart","arrow-right")
+component id type z x y width height ref    (ref = component ID from components/index.yaml)
 
-## next_action Protocol
-Every write-tool response includes next_action:{tool,params,remaining,hint}.
-ALWAYS read next_action and call it as your next tool call.
-remaining==0 means the sequence is complete — no more calls needed.
-If context resets mid-carousel: call resume_task(task_path) to recover.
+Notes:
+- id must be unique within the design (use slugs: "bg","hero","title-1")
+- z is required — use 0=background, 5=images, 10=text, 15=decorators, 20=overlays
+- All coordinates in px; origin is top-left corner
+- opacity: 0.0–1.0 (default 1.0)
+- radius: number (uniform) or [tl,tr,br,bl] (per-corner)`,
 
-## Common Mistakes to Avoid
-✗ Never return full YAML content back to the user — just call the next tool
-✗ Never skip layers_shorthand in favour of verbose layers[] — it wastes tokens
-✗ Never call seal_design before all carousel pages are appended
-✗ Never omit task_path in append_page when working on a task — breaks handover
-✗ layer id must be unique within a design — use descriptive slugs: "bg","hero","title-1"
+  workflow: `# Workflow Details
 
-## Token Budget (Gemma 4B, 128K context)
-Each layers_shorthand layer ≈ 15 tokens. A 5-layer page ≈ 75 tokens output.
-Aim for 3-6 layers per append_page call. Call add_layers for posters.
-inspect_design to check state (returns IDs only, not content — very small).
-list_tasks to find task files if task_path is unknown.`;
+next_action protocol:
+  Every write tool returns next_action:{tool,params,remaining,hint}
+  ALWAYS call next_action.tool as your very next tool call.
+  remaining==0 → sequence complete (usually seal_design or export_design)
+  remaining>0  → more pages/steps needed
+
+handover protocol:
+  Every response includes handover:{workflow_step,workflow_next,suggested_next[],carry_forward}
+  workflow_step: PROJECT→DESIGN→COMPOSE→SEAL→EXPORT
+  suggested_next: 3 concrete next tools with pre-filled params — pick the most appropriate
+  carry_forward: params to re-use in your next call
+
+Context reset recovery:
+  1. Call resume_task(task_path) → get exact next tool + params
+  2. Or call resume_design(design_path) → check carousel progress
+  3. Or call list_tasks(project_path) → find task_path if lost
+
+Patch workflow (editing sealed designs):
+  1. patch_design(design_path, selectors=[{path,value}], dry_run=true)  ← validate first
+  2. patch_design(design_path, selectors=[{path,value}])                ← apply
+  3. seal_design(design_path)
+
+Token budget for local models:
+  Gemma 4B  128K ctx → 5–8 layers/page, guide once per session
+  Qwen 9B    64K ctx → 4–6 layers/page, load guide sections only
+  Qwen 2B    32K ctx → 3–4 layers/page, shorthand section only
+  Output cap: 1K tokens/turn — use layers_shorthand always`,
+};
+
+export function buildGuide(section?: string): string {
+  if (section && section in SECTIONS) return SECTIONS[section];
+  if (section) return `Unknown section "${section}". Available: ${Object.keys(SECTIONS).join(' | ')}`;
+  return SECTIONS['quick_ref'];
 }
+
+export const GUIDE_SECTIONS = Object.keys(SECTIONS);

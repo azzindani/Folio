@@ -18,6 +18,7 @@ export class CanvasManager {
   private currentSVG: SVGSVGElement | null = null;
   private rulerH!: HTMLCanvasElement;
   private rulerV!: HTMLCanvasElement;
+  private marqueeEl: HTMLDivElement | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
@@ -103,11 +104,48 @@ export class CanvasManager {
   private bindEvents(): void {
     this.svgContainer.addEventListener('pointerdown', this.onPointerDown.bind(this));
     this.svgContainer.addEventListener('dblclick', this.onDblClick.bind(this));
+    this.svgContainer.addEventListener('pointermove', this.onCanvasHover.bind(this));
+    this.svgContainer.addEventListener('pointerleave', () => this.clearHoverBox());
     this.container.addEventListener('wheel', this.onWheel.bind(this), { passive: false });
     this.container.addEventListener('mousemove', this.onMouseMoveForAnnotations.bind(this));
     this.container.addEventListener('mouseleave', () => this.clearAnnotations());
     this.rulerH.addEventListener('pointerdown', (e) => this.startGuide(e, 'h'));
     this.rulerV.addEventListener('pointerdown', (e) => this.startGuide(e, 'v'));
+  }
+
+  private hoverBox: HTMLDivElement | null = null;
+
+  private onCanvasHover(e: PointerEvent): void {
+    // Suppress while a drag is in progress
+    if (e.buttons !== 0) return this.clearHoverBox();
+    const target = e.target as SVGElement | null;
+    if (!target?.closest) return;
+    const layerEl = target.closest('[data-layer-id]') as SVGGraphicsElement | null;
+    if (!layerEl) return this.clearHoverBox();
+    const layerId = layerEl.getAttribute('data-layer-id');
+    // Don't outline the already-selected layer (selection box already shown)
+    if (layerId && this.state.get().selectedLayerIds.includes(layerId)) {
+      return this.clearHoverBox();
+    }
+    const bbox = layerEl.getBBox?.();
+    if (!bbox) return this.clearHoverBox();
+    if (!this.hoverBox) {
+      this.hoverBox = document.createElement('div');
+      this.hoverBox.className = 'canvas-hover-box';
+      this.selectionOverlay.appendChild(this.hoverBox);
+    }
+    this.hoverBox.style.left = `${bbox.x}px`;
+    this.hoverBox.style.top = `${bbox.y}px`;
+    this.hoverBox.style.width = `${bbox.width}px`;
+    this.hoverBox.style.height = `${bbox.height}px`;
+    this.hoverBox.style.opacity = '1';
+  }
+
+  private clearHoverBox(): void {
+    if (this.hoverBox) {
+      this.hoverBox.remove();
+      this.hoverBox = null;
+    }
   }
 
   // ── Distance annotation overlay ─────────────────────────────
@@ -232,6 +270,10 @@ export class CanvasManager {
 
     if (needsRender) {
       this.render();
+      // Keep selection handles in sync with the moved/resized layer
+      if (this.state.get().selectedLayerIds.length > 0) {
+        this.updateSelectionOverlay();
+      }
     }
 
     if (changedKeys.includes('selectedLayerIds')) {
@@ -262,6 +304,11 @@ export class CanvasManager {
     // Check if we're in paged mode
     const pages = design.pages;
     const currentPageIndex = this.state.get().currentPageIndex;
+
+    // Canvas viewport stays a neutral "paper" color (white in light theme,
+    // dark gray in dark theme). The design's first bg layer renders inside
+    // the SVG as a normal layer so the user can move/edit/delete it freely
+    // — separating canvas-as-page from the editable background layer.
 
     let svg: SVGSVGElement;
 
@@ -301,6 +348,13 @@ export class CanvasManager {
     const { selectedLayerIds, design } = this.state.get();
     if (!design || selectedLayerIds.length === 0) return;
 
+    // Multi-select: single union bbox + group handles, plus thin per-layer
+    // outline so the user still sees which layers are selected.
+    if (selectedLayerIds.length > 1) {
+      this.drawMultiSelectOverlay(selectedLayerIds);
+      return;
+    }
+
     const frag = document.createDocumentFragment();
 
     for (const id of selectedLayerIds) {
@@ -339,8 +393,8 @@ export class CanvasManager {
       for (const pos of handles8) {
         const handle = document.createElement('div');
         handle.className = `selection-handle handle-${pos.cls}`;
-        handle.style.left = `${pos.x - 4}px`;
-        handle.style.top  = `${pos.y - 4}px`;
+        handle.style.left = `${pos.x - 5}px`;
+        handle.style.top  = `${pos.y - 5}px`;
         handle.style.cursor = pos.cursor;
         handle.style.pointerEvents = 'auto';
         handle.dataset.handle = pos.cls;
@@ -348,20 +402,44 @@ export class CanvasManager {
         handle.addEventListener('pointerdown', (ev) => {
           this.startResize(ev, id, pos.cls, origX, origY, origW, origH);
         });
+        // Double-click on handle opens inline text editor for text layers
+        handle.addEventListener('dblclick', (ev) => {
+          ev.stopPropagation();
+          const layer = this.state.getCurrentLayers().find(l => l.id === id);
+          if (layer?.type === 'text') {
+            const svgEl = this.svgContainer.querySelector<SVGElement>(`[data-layer-id="${id}"]`);
+            if (svgEl) this.openInlineTextEditor(layer as TextLayer, svgEl);
+          }
+        });
         frag.appendChild(handle);
       }
 
+      // Selection box absorbs clicks for dblclick (text editing) — wire
+      // pointerdown so it ALSO initiates drag on the layer underneath.
+      // Without this, clicking on a selected layer's bbox does nothing
+      // because the box covers the SVG and the SVG's pointerdown never fires.
+      box.style.pointerEvents = 'auto';
+      box.style.cursor = 'move';
+      box.style.touchAction = 'none';
+      box.addEventListener('pointerdown', (ev) => {
+        ev.stopPropagation();
+        this.startDrag(ev, id);
+      });
+      box.addEventListener('dblclick', (ev) => {
+        ev.stopPropagation();
+        const layer = this.state.getCurrentLayers().find(l => l.id === id);
+        if (layer?.type === 'text') {
+          const svgEl = this.svgContainer.querySelector<SVGElement>(`[data-layer-id="${id}"]`);
+          if (svgEl) this.openInlineTextEditor(layer as TextLayer, svgEl);
+        }
+      });
+
       const rotateHandle = document.createElement('div');
       rotateHandle.className = 'selection-handle handle-rotate';
-      rotateHandle.style.left = `${cx - 6}px`;
+      rotateHandle.style.left = `${cx - 7}px`;
       rotateHandle.style.top  = `${bbox.y - 32}px`;
       rotateHandle.style.cursor = 'grab';
       rotateHandle.style.pointerEvents = 'auto';
-      rotateHandle.style.width = '12px';
-      rotateHandle.style.height = '12px';
-      rotateHandle.style.borderRadius = '50%';
-      rotateHandle.style.background = 'var(--color-primary)';
-      rotateHandle.style.border = '2px solid #fff';
       rotateHandle.dataset.handle = 'rotate';
       rotateHandle.dataset.layerId = id;
       rotateHandle.title = 'Rotate (Shift = 15° snap)';
@@ -373,6 +451,157 @@ export class CanvasManager {
     }
 
     this.selectionOverlay.appendChild(frag);
+  }
+
+  private drawMultiSelectOverlay(selectedIds: string[]): void {
+    const frag = document.createDocumentFragment();
+    const bboxes: { id: string; bb: DOMRect | SVGRect }[] = [];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (const id of selectedIds) {
+      const el = this.svgContainer.querySelector(`[data-layer-id="${id}"]`);
+      if (!el) continue;
+      const bb = (el as SVGGraphicsElement).getBBox?.();
+      if (!bb) continue;
+      bboxes.push({ id, bb });
+      if (bb.x < minX) minX = bb.x;
+      if (bb.y < minY) minY = bb.y;
+      if (bb.x + bb.width  > maxX) maxX = bb.x + bb.width;
+      if (bb.y + bb.height > maxY) maxY = bb.y + bb.height;
+    }
+    if (bboxes.length === 0 || !isFinite(minX)) return;
+
+    // Per-layer thin outlines so user knows which layers are in the group
+    for (const { bb } of bboxes) {
+      const o = document.createElement('div');
+      o.className = 'selection-box';
+      o.style.cssText =
+        `left:${bb.x}px;top:${bb.y}px;width:${bb.width}px;height:${bb.height}px;` +
+        `outline:1px dashed color-mix(in srgb, var(--color-primary) 60%, transparent);` +
+        `outline-offset:0px;background:transparent;border:none;pointer-events:none;`;
+      frag.appendChild(o);
+    }
+
+    // Union bbox box
+    const W = maxX - minX, H = maxY - minY;
+    const unionBox = document.createElement('div');
+    unionBox.className = 'selection-box selection-box--multi';
+    unionBox.style.cssText = `left:${minX}px;top:${minY}px;width:${W}px;height:${H}px;cursor:move;pointer-events:auto;`;
+    unionBox.addEventListener('pointerdown', (ev) => {
+      ev.stopPropagation();
+      this.startGroupDrag(ev, selectedIds);
+    });
+    frag.appendChild(unionBox);
+
+    // 8 handles around union bbox — scale all selected proportionally
+    const cx = minX + W / 2;
+    const cy = minY + H / 2;
+    const handles: { cls: string; x: number; y: number; cur: string }[] = [
+      { cls: 'nw', x: minX,         y: minY,         cur: 'nw-resize' },
+      { cls: 'n',  x: cx,           y: minY,         cur: 'n-resize'  },
+      { cls: 'ne', x: minX + W,     y: minY,         cur: 'ne-resize' },
+      { cls: 'e',  x: minX + W,     y: cy,           cur: 'e-resize'  },
+      { cls: 'se', x: minX + W,     y: minY + H,     cur: 'se-resize' },
+      { cls: 's',  x: cx,           y: minY + H,     cur: 's-resize'  },
+      { cls: 'sw', x: minX,         y: minY + H,     cur: 'sw-resize' },
+      { cls: 'w',  x: minX,         y: cy,           cur: 'w-resize'  },
+    ];
+    for (const pos of handles) {
+      const h = document.createElement('div');
+      h.className = `selection-handle handle-${pos.cls}`;
+      h.style.left = `${pos.x - 5}px`;
+      h.style.top  = `${pos.y - 5}px`;
+      h.style.cursor = pos.cur;
+      h.style.pointerEvents = 'auto';
+      h.dataset.handle = pos.cls;
+      h.addEventListener('pointerdown', (ev) => {
+        ev.stopPropagation();
+        this.startGroupResize(ev, selectedIds, pos.cls, minX, minY, W, H);
+      });
+      frag.appendChild(h);
+    }
+    this.selectionOverlay.appendChild(frag);
+  }
+
+  private startGroupDrag(e: PointerEvent, ids: string[]): void {
+    const startX = e.clientX, startY = e.clientY;
+    const zoom = this.state.get().zoom;
+    const layers = this.state.getCurrentLayers().filter(l => ids.includes(l.id));
+    const origs = new Map(layers.map(l => [l.id, { x: l.x ?? 0, y: l.y ?? 0 }]));
+    let started = false;
+    const onMove = (me: PointerEvent) => {
+      const dx = (me.clientX - startX) / zoom;
+      const dy = (me.clientY - startY) / zoom;
+      if (!started && Math.abs(dx) < 3 / zoom && Math.abs(dy) < 3 / zoom) return;
+      if (!started) { started = true; this.state.beginInteraction(); }
+      for (const [id, o] of origs) {
+        this.state.updateLayer(id, { x: Math.round(o.x + dx), y: Math.round(o.y + dy) }, false);
+      }
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private startGroupResize(
+    e: PointerEvent,
+    ids: string[],
+    handle: string,
+    bx: number, by: number, bw: number, bh: number,
+  ): void {
+    const startX = e.clientX, startY = e.clientY;
+    const zoom = this.state.get().zoom;
+    const layers = this.state.getCurrentLayers().filter(l => ids.includes(l.id));
+    // Snapshot each layer's bounds relative to the union bbox
+    const origs = layers.map(l => ({
+      id: l.id,
+      rx: ((l.x ?? 0) - bx) / bw,            // relative x in [0..1]
+      ry: ((l.y ?? 0) - by) / bh,
+      rw: (typeof l.width  === 'number' ? l.width  : 0) / bw,
+      rh: (typeof l.height === 'number' ? l.height : 0) / bh,
+    }));
+    let started = false;
+    const onMove = (me: PointerEvent) => {
+      const dx = (me.clientX - startX) / zoom;
+      const dy = (me.clientY - startY) / zoom;
+      let nx = bx, ny = by, nw = bw, nh = bh;
+      if (handle.includes('w')) { nx = bx + dx; nw = bw - dx; }
+      if (handle.includes('e')) { nw = bw + dx; }
+      if (handle.includes('n')) { ny = by + dy; nh = bh - dy; }
+      if (handle.includes('s')) { nh = bh + dy; }
+      // Shift = aspect lock; Alt = from center
+      if (me.altKey) {
+        if (handle.includes('e')) { nx = bx - dx; nw = bw + 2 * dx; }
+        if (handle.includes('w')) { nx = bx + dx; nw = bw - 2 * dx; }
+        if (handle.includes('s')) { ny = by - dy; nh = bh + 2 * dy; }
+        if (handle.includes('n')) { ny = by + dy; nh = bh - 2 * dy; }
+      }
+      if (me.shiftKey) {
+        const ar = bw / (bh || 1);
+        const dom = Math.abs(dx) > Math.abs(dy) ? 'w' : 'h';
+        if (dom === 'w') nh = nw / ar; else nw = nh * ar;
+      }
+      nw = Math.max(4, nw); nh = Math.max(4, nh);
+      if (!started) { started = true; this.state.beginInteraction(); }
+      // Apply scaling to every layer relative to its position in the union
+      for (const o of origs) {
+        this.state.updateLayer(o.id, {
+          x: Math.round(nx + o.rx * nw),
+          y: Math.round(ny + o.ry * nh),
+          width:  Math.max(4, Math.round(o.rw * nw)),
+          height: Math.max(4, Math.round(o.rh * nh)),
+        } as Parameters<typeof this.state.updateLayer>[1], false);
+      }
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   }
 
   private startRotate(
@@ -399,13 +628,18 @@ export class CanvasManager {
       padding:3px 8px;border-radius:4px;pointer-events:none;z-index:500;font-family:monospace`;
     document.body.appendChild(tip);
 
+    let interactionStarted = false;
     const onMove = (me: PointerEvent) => {
+      if (!interactionStarted) {
+        interactionStarted = true;
+        this.state.beginInteraction();
+      }
       const dx = me.clientX - cx;
       const dy = me.clientY - cy;
       let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
       if (me.shiftKey) angle = Math.round(angle / 15) * 15;
       const normalized = Math.round(((angle % 360) + 360) % 360);
-      this.state.updateLayer(layerId, { rotation: normalized });
+      this.state.updateLayer(layerId, { rotation: normalized }, false);
       tip.textContent = `${normalized}°`;
       tip.style.left = `${me.clientX + 14}px`;
       tip.style.top  = `${me.clientY - 8}px`;
@@ -415,6 +649,66 @@ export class CanvasManager {
       tip.remove();
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private startMarquee(e: PointerEvent): void {
+    if (!e.shiftKey) this.state.set('selectedLayerIds', []);
+
+    const vpRect = this.viewport.getBoundingClientRect();
+    const startX = e.clientX - vpRect.left;
+    const startY = e.clientY - vpRect.top;
+
+    // Create visual marquee rect
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;border:1.5px dashed #5b9cf6;background:rgba(91,156,246,0.08);
+      pointer-events:none;z-index:100;box-sizing:border-box;`;
+    el.style.left = `${startX}px`; el.style.top = `${startY}px`;
+    el.style.width = '0'; el.style.height = '0';
+    this.viewport.appendChild(el);
+    this.marqueeEl = el;
+
+    const onMove = (ev: PointerEvent) => {
+      const cx = ev.clientX - vpRect.left;
+      const cy = ev.clientY - vpRect.top;
+      const x = Math.min(startX, cx), y = Math.min(startY, cy);
+      const w = Math.abs(cx - startX),  h = Math.abs(cy - startY);
+      el.style.left = `${x}px`; el.style.top  = `${y}px`;
+      el.style.width = `${w}px`; el.style.height = `${h}px`;
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      el.remove(); this.marqueeEl = null;
+
+      const cx = ev.clientX - vpRect.left;
+      const cy = ev.clientY - vpRect.top;
+      if (Math.abs(cx - startX) < 4 && Math.abs(cy - startY) < 4) return; // tiny drag = click
+
+      const { zoom = 1, panX = 0, panY = 0 } = this.state.get();
+      // Convert marquee corners to design coords
+      const rx1 = (Math.min(startX, cx) - panX) / zoom;
+      const ry1 = (Math.min(startY, cy) - panY) / zoom;
+      const rx2 = (Math.max(startX, cx) - panX) / zoom;
+      const ry2 = (Math.max(startY, cy) - panY) / zoom;
+
+      const hit = this.state.getCurrentLayers().filter(l => {
+        const lx = l.x ?? 0;  const ly = l.y ?? 0;
+        const lw = typeof l.width  === 'number' ? l.width  : 0;
+        const lh = typeof l.height === 'number' ? l.height : 0;
+        return lx < rx2 && lx + lw > rx1 && ly < ry2 && ly + lh > ry1;
+      }).map(l => l.id);
+
+      if (e.shiftKey) {
+        const prev = this.state.get().selectedLayerIds;
+        this.state.set('selectedLayerIds', [...new Set([...prev, ...hit])]);
+      } else {
+        this.state.set('selectedLayerIds', hit);
+      }
     };
 
     document.addEventListener('pointermove', onMove);
@@ -436,12 +730,29 @@ export class CanvasManager {
     const layerEl = target.closest('[data-layer-id]') as SVGElement | null;
 
     if (!layerEl) {
-      // Click on empty canvas — deselect
-      this.state.set('selectedLayerIds', []);
+      // Begin rubber-band / marquee selection
+      this.startMarquee(e);
       return;
     }
 
-    const layerId = layerEl.getAttribute('data-layer-id')!;
+    let layerId = layerEl.getAttribute('data-layer-id')!;
+
+    // Alt-click: cycle through stacked layers underneath the cursor.
+    // Use elementsFromPoint to enumerate layers behind the topmost; pick
+    // the next one after the currently-selected so repeated alt-clicks
+    // walk the z-stack downward.
+    if (e.altKey && !e.shiftKey) {
+      const stack = (document.elementsFromPoint?.(e.clientX, e.clientY) ?? [])
+        .map(el => (el as SVGElement | HTMLElement).closest?.('[data-layer-id]'))
+        .filter((el): el is SVGElement => !!el && this.svgContainer.contains(el))
+        .map(el => el.getAttribute('data-layer-id')!)
+        .filter((v, i, a) => v && a.indexOf(v) === i);
+      if (stack.length > 1) {
+        const cur = this.state.get().selectedLayerIds[0];
+        const idx = stack.indexOf(cur ?? '');
+        layerId = stack[(idx + 1) % stack.length];
+      }
+    }
 
     if (e.shiftKey) {
       const current = this.state.get().selectedLayerIds;
@@ -516,10 +827,17 @@ export class CanvasManager {
     const origX = layer.x ?? 0;
     const origY = layer.y ?? 0;
     const zoom = this.state.get().zoom;
+    let moved = false;
 
     const onMove = (me: PointerEvent) => {
       const dx = (me.clientX - startX) / zoom;
       const dy = (me.clientY - startY) / zoom;
+      // 3px threshold avoids accidental drags on a click
+      if (!moved && Math.abs(dx) < 3 / zoom && Math.abs(dy) < 3 / zoom) return;
+      if (!moved) {
+        moved = true;
+        this.state.beginInteraction();
+      }
       let newX = Math.round(origX + dx);
       let newY = Math.round(origY + dy);
 
@@ -536,7 +854,7 @@ export class CanvasManager {
         }
       }
 
-      this.state.updateLayer(layerId, { x: newX, y: newY });
+      this.state.updateLayer(layerId, { x: newX, y: newY }, false);
       this.drawSmartGuides(layerId, newX, newY, layer);
     };
 
@@ -564,8 +882,26 @@ export class CanvasManager {
     const startY = e.clientY;
     const zoom = this.state.get().zoom;
     const aspectRatio = origW / (origH || 1);
+    const isGroup = layer.type === 'group';
+    // Snapshot group children positions for proportional scaling
+    type GroupLayer = Layer & { layers?: Layer[] };
+    const groupChildren: Layer[] = isGroup
+      ? [...((layer as GroupLayer).layers ?? [])]
+      : [];
+    const childSnapshots = groupChildren.map(c => ({
+      id: c.id,
+      x: c.x ?? 0,
+      y: c.y ?? 0,
+      w: typeof c.width  === 'number' ? c.width  : 0,
+      h: typeof c.height === 'number' ? c.height : 0,
+    }));
+    let interactionStarted = false;
 
     const onMove = (me: PointerEvent) => {
+      if (!interactionStarted) {
+        interactionStarted = true;
+        this.state.beginInteraction();
+      }
       let dx = (me.clientX - startX) / zoom;
       let dy = (me.clientY - startY) / zoom;
 
@@ -580,15 +916,25 @@ export class CanvasManager {
       // South edge: grow height
       if (handle.includes('s')) { nh = origH + dy; }
 
+      // Alt = resize from center: every edge change mirrored on the opposite side
+      if (me.altKey) {
+        if (handle.includes('e')) { nx = origX - dx; nw = origW + 2 * dx; }
+        if (handle.includes('w')) { nx = origX + dx; nw = origW - 2 * dx; }
+        if (handle.includes('s')) { ny = origY - dy; nh = origH + 2 * dy; }
+        if (handle.includes('n')) { ny = origY + dy; nh = origH - 2 * dy; }
+      }
+
       // Shift = lock aspect ratio
       if (me.shiftKey) {
         const dominant = Math.abs(dx) > Math.abs(dy) ? 'w' : 'h';
         if (dominant === 'w') {
           nh = nw / aspectRatio;
           if (handle.includes('n')) ny = origY + origH - nh;
+          if (me.altKey) ny = origY + origH / 2 - nh / 2;
         } else {
           nw = nh * aspectRatio;
           if (handle.includes('w')) nx = origX + origW - nw;
+          if (me.altKey) nx = origX + origW / 2 - nw / 2;
         }
       }
 
@@ -596,10 +942,26 @@ export class CanvasManager {
       if (nw < 4) { if (handle.includes('w')) nx = origX + origW - 4; nw = 4; }
       if (nh < 4) { if (handle.includes('n')) ny = origY + origH - 4; nh = 4; }
 
+      const rnx = Math.round(nx), rny = Math.round(ny);
+      const rnw = Math.round(nw), rnh = Math.round(nh);
+
       this.state.updateLayer(layerId, {
-        x: Math.round(nx), y: Math.round(ny),
-        width: Math.round(nw), height: Math.round(nh),
-      } as Parameters<typeof this.state.updateLayer>[1]);
+        x: rnx, y: rny, width: rnw, height: rnh,
+      } as Parameters<typeof this.state.updateLayer>[1], false);
+
+      // Scale group children proportionally
+      if (isGroup && origW > 0 && origH > 0) {
+        const sx = rnw / origW;
+        const sy = rnh / origH;
+        for (const snap of childSnapshots) {
+          this.state.updateLayer(snap.id, {
+            x: Math.round(rnx + (snap.x - origX) * sx),
+            y: Math.round(rny + (snap.y - origY) * sy),
+            width: Math.max(4, Math.round(snap.w * sx)),
+            height: Math.max(4, Math.round(snap.h * sy)),
+          } as Parameters<typeof this.state.updateLayer>[1], false);
+        }
+      }
     };
 
     const onUp = () => {

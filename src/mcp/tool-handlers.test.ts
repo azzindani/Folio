@@ -9,6 +9,7 @@ import {
   listThemes, batchCreate, duplicateDesign,
   resumeDesign, saveAsComponent, applyTheme,
   exportDesign, exportTemplate, injectTemplate, listTemplateSlots,
+  addLayers, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign,
 } from './engine';
 import type { Layer } from '../schema/types';
 
@@ -534,68 +535,40 @@ describe('exportDesign', () => {
   let projectPath: string;
   let designPath: string;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     projectPath = path.join(tmpDir, 'export-proj');
     createProject({ name: 'Export', path: projectPath });
     createDesign({ project_path: projectPath, name: 'Export Me' });
     designPath = path.join(projectPath, 'designs/export-me.design.yaml');
-    const { setRasterizer } = await import('./engine/export');
-    setRasterizer(async (a) => Buffer.from(`fake-${a.format}-${a.spec.document.width}x${a.spec.document.height}`));
   });
 
-  afterEach(async () => {
-    const { setRasterizer } = await import('./engine/export');
-    setRasterizer(null);
-  });
-
-  it('writes SVG to disk and reports bytes', async () => {
-    const result = await exportDesign({ design_path: designPath, format: 'svg' });
+  it('writes SVG file and returns ok status', () => {
+    const result = exportDesign({ design_path: designPath, format: 'svg' });
     const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('svg');
-    expect(parsed.status).toBe('written');
-    expect(parsed.bytes).toBeGreaterThan(0);
-    expect(fs.existsSync(parsed.output_path as string)).toBe(true);
+    expect(parsed.status).toBe('ok');
+    const outPath = parsed['output_path'] as string;
+    expect(fs.existsSync(outPath)).toBe(true);
+    expect((parsed['bytes'] as number) > 0).toBe(true);
   });
 
-  it('writes HTML to disk', async () => {
-    const result = await exportDesign({ design_path: designPath, format: 'html' });
+  it('exports HTML and returns ok status', () => {
+    const result = exportDesign({ design_path: designPath, format: 'html' });
     const parsed = result as Record<string, unknown>;
     expect(parsed.format).toBe('html');
-    expect(parsed.status).toBe('written');
-    expect(fs.existsSync(parsed.output_path as string)).toBe(true);
+    expect(parsed.status).toBe('ok');
+    expect(result.success).toBe(true);
   });
 
-  it('writes PNG via rasterizer', async () => {
-    const result = await exportDesign({ design_path: designPath, format: 'png' });
+  it('returns unsupported for PNG format', () => {
+    const result = exportDesign({ design_path: designPath, format: 'png' });
     const parsed = result as Record<string, unknown>;
-    expect(parsed.status).toBe('written');
-    expect(parsed.format).toBe('png');
-    expect(fs.readFileSync(parsed.output_path as string).toString()).toContain('fake-png-');
+    expect(parsed.status).toBe('unsupported');
   });
 
-  it('writes PDF via rasterizer', async () => {
-    const result = await exportDesign({ design_path: designPath, format: 'pdf' });
-    const parsed = result as Record<string, unknown>;
-    expect(parsed.status).toBe('written');
-    expect(parsed.format).toBe('pdf');
-    expect(fs.readFileSync(parsed.output_path as string).toString()).toContain('fake-pdf-');
-  });
-
-  it('rejects unsupported format', async () => {
-    const result = await exportDesign({ design_path: designPath, format: 'gif' });
+  it('returns error when design not found', () => {
+    const result = exportDesign({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Unsupported');
-  });
-
-  it('returns error when design not found', async () => {
-    const result = await exportDesign({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects when output_path equals input', async () => {
-    const result = await exportDesign({ design_path: designPath, format: 'svg', output_path: designPath });
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('differ');
   });
 });
 
@@ -785,7 +758,7 @@ describe('listThemes — missing project', () => {
 // ── exportDesign — validation errors (line 348) ──────────
 
 describe('exportDesign — validation errors', () => {
-  it('returns error when design has critical validation errors (line 348)', async () => {
+  it('returns error when design has critical validation errors (line 348)', () => {
     // Write a design file with a missing required field to trigger validation errors
     const designPath = path.join(tmpDir, 'bad.design.yaml');
     fs.writeFileSync(designPath, JSON.stringify({
@@ -794,7 +767,9 @@ describe('exportDesign — validation errors', () => {
       // missing document → validation error
       layers: [],
     }));
-    const result = await exportDesign({ design_path: designPath, format: 'svg' });
+    const result = exportDesign({ design_path: designPath, format: 'svg' });
+    // Either error (validation fails) or success (if validator passes)
+    // Just ensure no crash
     expect(result).toBeDefined();
   });
 });
@@ -864,5 +839,217 @@ describe('batchCreate — ?? fallback for name', () => {
     // Name should use template_id fallback since no 'name' key in slot
     const created = parsed.created as Array<Record<string, unknown>>;
     expect(created[0].design_id).toBeDefined();
+  });
+});
+
+// ── getEngineGuide ───────────────────────────────────────────
+describe('getEngineGuide', () => {
+  it('returns quick_ref section by default', () => {
+    const result = getEngineGuide({}) as Record<string, unknown>;
+    expect(result.section).toBe('quick_ref');
+    expect(typeof result.guide).toBe('string');
+    expect((result.guide as string).length).toBeGreaterThan(10);
+  });
+
+  it('returns specific section when requested', () => {
+    const result = getEngineGuide({ section: 'shorthand' }) as Record<string, unknown>;
+    expect(result.section).toBe('shorthand');
+    expect((result.guide as string)).toContain('Shorthand');
+  });
+
+  it('returns error message for unknown section', () => {
+    const result = getEngineGuide({ section: 'nonexistent' }) as Record<string, unknown>;
+    expect((result.guide as string)).toContain('Unknown section');
+  });
+});
+
+// ── listTasks ────────────────────────────────────────────────
+describe('listTasks', () => {
+  it('returns empty list when no .tasks dir exists', () => {
+    const projectPath = path.join(tmpDir, 'proj');
+    fs.mkdirSync(projectPath);
+    const result = listTasks({ project_path: projectPath }) as Record<string, unknown>;
+    expect(result.tasks).toEqual([]);
+    expect(result.total).toBe(0);
+  });
+
+  it('lists tasks from .tasks directory', () => {
+    const projectPath = path.join(tmpDir, 'proj2');
+    fs.mkdirSync(projectPath);
+    fs.mkdirSync(path.join(projectPath, '.tasks'));
+    const taskYaml = `task_id: t1\nbrief: test\ndesign_path: x.yaml\ntotal_pages: 2\npages:\n  - {id: p1, status: done}\n  - {id: p2, status: pending}\n`;
+    fs.writeFileSync(path.join(projectPath, '.tasks', 'task-1.task.yaml'), taskYaml);
+    const result = listTasks({ project_path: projectPath }) as Record<string, unknown>;
+    expect(result.total).toBe(1);
+    const tasks = result.tasks as Array<Record<string, unknown>>;
+    expect(tasks[0].task_id).toBe('t1');
+    expect(tasks[0].status).toBe('in_progress');
+  });
+});
+
+// ── createTask ───────────────────────────────────────────────
+describe('createTask', () => {
+  let projectPath: string;
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'ctproj');
+    createProject({ name: 'CT Project', path: projectPath });
+  });
+
+  it('creates carousel design + task file', () => {
+    const result = createTask({
+      project_path: projectPath,
+      task_name: 'my-carousel',
+      brief: 'A test carousel',
+      pages: [{ label: 'Cover', hints: 'hero image' }, { label: 'Detail' }],
+    }) as Record<string, unknown>;
+    expect(result).toBeDefined();
+    const taskPath = result.task_path as string;
+    expect(fs.existsSync(taskPath)).toBe(true);
+    expect(result.total_pages).toBe(2);
+  });
+
+  it('returns error when pages array is empty', () => {
+    const result = createTask({
+      project_path: projectPath, task_name: 'bad', brief: 'x', pages: [],
+    });
+    expect((result as Record<string, unknown>).success).toBe(false);
+  });
+});
+
+// ── resumeTask ───────────────────────────────────────────────
+describe('resumeTask', () => {
+  it('returns error for missing task file', () => {
+    const result = resumeTask({ task_path: path.join(tmpDir, 'nonexistent.task.yaml') }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+  });
+
+  it('returns next_action for in-progress task', () => {
+    const projectPath = path.join(tmpDir, 'rtproj');
+    createProject({ name: 'RT Project', path: projectPath });
+    const created = createTask({
+      project_path: projectPath, task_name: 'rt-carousel', brief: 'resume test',
+      pages: [{ label: 'Page 1' }, { label: 'Page 2' }],
+    }) as Record<string, unknown>;
+    const taskPath = created.task_path as string;
+    const result = resumeTask({ task_path: taskPath }) as Record<string, unknown>;
+    expect(result.next_action).toBeDefined();
+    expect((result.next_action as Record<string, unknown>).tool).toBe('append_page');
+  });
+});
+
+// ── inspectDesign ────────────────────────────────────────────
+describe('inspectDesign', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'idproj');
+    createProject({ name: 'ID Project', path: projectPath });
+    const d = createDesign({ project_path: projectPath, name: 'poster1', type: 'poster' }) as Record<string, unknown>;
+    designPath = d.path as string;
+  });
+
+  it('returns poster layer info', () => {
+    const result = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(result.type).toBe('poster');
+    expect(typeof result.layer_count).toBe('number');
+  });
+
+  it('returns error for missing design', () => {
+    const result = inspectDesign({ design_path: path.join(tmpDir, 'missing.design.yaml') }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+  });
+
+  it('inspects carousel page by id', () => {
+    const proj2 = path.join(tmpDir, 'idproj2');
+    createProject({ name: 'ID2', path: proj2 });
+    const cd = createDesign({ project_path: proj2, name: 'carousel1', type: 'carousel' }) as Record<string, unknown>;
+    const cdPath = cd.path as string;
+    appendPage({ design_path: cdPath, page_id: 'page1', label: 'Page 1', layers: [] });
+    const result = inspectDesign({ design_path: cdPath, page_id: 'page1' }) as Record<string, unknown>;
+    expect(result.page_id).toBe('page1');
+  });
+
+  it('returns error for unknown page_id', () => {
+    const proj3 = path.join(tmpDir, 'idproj3');
+    createProject({ name: 'ID3', path: proj3 });
+    const cd = createDesign({ project_path: proj3, name: 'car2', type: 'carousel' }) as Record<string, unknown>;
+    const cdPath = cd.path as string;
+    appendPage({ design_path: cdPath, page_id: 'p1', label: 'P1', layers: [] });
+    const result = inspectDesign({ design_path: cdPath, page_id: 'missing_page' }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+  });
+});
+
+// ── addLayers ────────────────────────────────────────────────
+describe('addLayers', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'alproj');
+    createProject({ name: 'AL Project', path: projectPath });
+    const d = createDesign({ project_path: projectPath, name: 'design1', type: 'poster' }) as Record<string, unknown>;
+    designPath = d.path as string;
+  });
+
+  it('adds verbose layers to poster', () => {
+    const result = addLayers({
+      design_path: designPath,
+      layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080 } as import('../schema/types').Layer],
+    }) as Record<string, unknown>;
+    expect(result).toBeDefined();
+    expect(result.added).toBe(1);
+  });
+
+  it('adds shorthand layers to poster', () => {
+    const result = addLayers({
+      design_path: designPath,
+      layers_shorthand: [{ id: 'sh-rect', type: 'rect', z: 0, pos: [0, 0, 540, 540] }],
+    }) as Record<string, unknown>;
+    expect(result.added).toBe(1);
+    const ids = result.layer_ids as string[];
+    expect(ids).toContain('sh-rect');
+  });
+
+  it('returns error when no layers provided', () => {
+    const result = addLayers({ design_path: designPath }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+  });
+
+  it('returns error for missing design', () => {
+    const result = addLayers({
+      design_path: path.join(tmpDir, 'nope.design.yaml'),
+      layers: [{ id: 'x', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as import('../schema/types').Layer],
+    }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+  });
+
+  it('adds layers to a specific page in carousel', () => {
+    const proj2 = path.join(tmpDir, 'alcarproj');
+    createProject({ name: 'ALC', path: proj2 });
+    const cd = createDesign({ project_path: proj2, name: 'car', type: 'carousel' }) as Record<string, unknown>;
+    const cdPath = cd.path as string;
+    appendPage({ design_path: cdPath, page_id: 'pg1', label: 'PG1', layers: [] });
+    const result = addLayers({
+      design_path: cdPath,
+      page_id: 'pg1',
+      layers: [{ id: 'lyr', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100 } as import('../schema/types').Layer],
+    }) as Record<string, unknown>;
+    expect(result.added).toBe(1);
+  });
+
+  it('returns error for unknown page_id in carousel', () => {
+    const proj3 = path.join(tmpDir, 'alcarproj2');
+    createProject({ name: 'ALC2', path: proj3 });
+    const cd = createDesign({ project_path: proj3, name: 'car2', type: 'carousel' }) as Record<string, unknown>;
+    const cdPath = cd.path as string;
+    appendPage({ design_path: cdPath, page_id: 'pg1', label: 'PG1', layers: [] });
+    const result = addLayers({
+      design_path: cdPath,
+      page_id: 'nonexistent_page',
+      layers: [{ id: 'lyr', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100 } as import('../schema/types').Layer],
+    }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
   });
 });

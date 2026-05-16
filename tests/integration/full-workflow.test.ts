@@ -120,8 +120,8 @@ describe('Full Poster Workflow', () => {
     expect(svgString).toContain('</svg>');
   });
 
-  it('9. exports to self-contained HTML', () => {
-    const html = exportToHTML(design, { format: 'html', theme });
+  it('9. exports to self-contained HTML', async () => {
+    const html = await exportToHTML(design, { format: 'html', theme });
     expect(html).toContain('<!DOCTYPE html>');
     expect(html).toContain('<svg');
     expect(html).toContain('</svg>');

@@ -2,12 +2,15 @@ import type { Layer, DesignSpec, ThemeSpec, ComponentSpec, ComponentLayer, Compo
 import { resolveLayerTokens, type TokenResolutionContext } from '../engine/token-resolver';
 import { resolveComponent } from '../engine/component-resolver';
 import { expandPositionShorthand } from '../schema/validator';
+import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
 import { createSVGRoot, createSVGElement, resetDefIdCounter } from './svg-utils';
 import {
   renderRect, renderCircle, renderPath, renderPolygon,
   renderLine, renderText, renderImage, renderIcon,
   renderMermaid, renderChart, renderCode, renderMath, renderGroup,
   renderQRCode, renderAutoLayout,
+  renderInteractiveChart, renderInteractiveTable, renderRichText,
+  renderKpiCard, renderMap, renderEmbedCode, renderPopup, renderParticle,
 } from './layer-renderers';
 
 export interface RenderOptions {
@@ -17,6 +20,7 @@ export interface RenderOptions {
   componentRegistry?: Map<string, ComponentSpec>;
   showGrid?: boolean;
   gridConfig?: { columns: number; gutter: number; margin: number; baseline: number };
+  formulaContext?: FormulaContext;
 }
 
 // ── Render Cache for Dirty Tracking ─────────────────────────
@@ -94,13 +98,37 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'group':         el = renderGroup(layer, svg, renderLayer); break;
     case 'component':     el = renderComponentLayer(layer as ComponentLayer, svg); break;
     case 'component_list':el = renderComponentListLayer(layer as ComponentListLayer, svg); break;
-    case 'qrcode':        el = renderQRCode(layer, svg); break;
-    case 'auto_layout':   el = renderAutoLayout(layer, svg, renderLayer); break;
-    default:              el = renderPlaceholder(layer, svg); break;
+    case 'qrcode':              el = renderQRCode(layer, svg); break;
+    case 'auto_layout':         el = renderAutoLayout(layer, svg, renderLayer); break;
+    case 'interactive_chart':   el = renderInteractiveChart(layer, svg); break;
+    case 'interactive_table':   el = renderInteractiveTable(layer, svg); break;
+    case 'rich_text':           el = renderRichText(layer, svg); break;
+    case 'kpi_card':            el = renderKpiCard(layer, svg); break;
+    case 'map':                 el = renderMap(layer, svg); break;
+    case 'embed_code':          el = renderEmbedCode(layer, svg); break;
+    case 'popup':               el = renderPopup(layer, svg, renderLayer); break;
+    case 'particle':            el = renderParticle(layer, svg); break;
+    default:                    el = renderPlaceholder(layer, svg); break;
   }
 
   if (layer.clip_path_ref) {
     el.setAttribute('clip-path', `url(#cp-${layer.clip_path_ref})`);
+  }
+
+  // ── Motion path animation ─────────────────────────────────
+  if ('motion_path' in layer && layer.motion_path !== undefined) {
+    const mp = layer.motion_path;
+    const animMotion = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+    animMotion.setAttribute('dur', `${((mp.duration ?? 2000) / 1000).toFixed(3)}s`);
+    animMotion.setAttribute('repeatCount', mp.loop === true ? 'indefinite' : '1');
+    animMotion.setAttribute('calcMode', 'spline');
+    animMotion.setAttribute('keyTimes', '0;1');
+    animMotion.setAttribute('keySplines', '0.42 0 0.58 1');
+    animMotion.setAttribute('path', mp.path);
+    if (mp.auto_rotate === true) {
+      animMotion.setAttribute('rotate', 'auto');
+    }
+    el.appendChild(animMotion);
   }
 
   return el;
@@ -286,8 +314,13 @@ function renderPlaceholder(layer: Layer, _svg: SVGSVGElement): SVGElement {
   return g;
 }
 
-function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext): Layer[] {
+function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx?: FormulaContext): Layer[] {
   let prepared = layers.map(l => expandPositionShorthand(l) as Layer);
+
+  // Resolve formula bindings before token substitution
+  if (formulaCtx) {
+    prepared = resolveAllFormulas(prepared as unknown as Record<string, unknown>[], formulaCtx) as unknown as Layer[];
+  }
 
   if (ctx) {
     prepared = prepared.map(l => resolveLayerTokens(l, ctx));
@@ -314,7 +347,7 @@ export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVG
 
   // Render top-level layers (poster mode)
   if (spec.layers) {
-    const layers = prepareLayers(spec.layers, ctx);
+    const layers = prepareLayers(spec.layers, ctx, options.formulaContext);
     buildClipDefs(layers, svg);
     for (const layer of layers) {
       svg.appendChild(renderLayer(layer, svg));
@@ -398,7 +431,7 @@ export function renderPage(
     };
   }
 
-  const prepared = prepareLayers(layers, ctx);
+  const prepared = prepareLayers(layers, ctx, options.formulaContext);
   buildClipDefs(prepared, svg);
   for (const layer of prepared) {
     svg.appendChild(renderLayer(layer, svg));
