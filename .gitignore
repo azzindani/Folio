@@ -15,6 +15,7 @@ tests/ui-audit/reports/
 tests/ui-audit/vision/
 tests/ui-audit/broad/
 tests/ui-audit/template/
+tests/ui-audit/catalog/
 
 # Environment + secrets
 *.local

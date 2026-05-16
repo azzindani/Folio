@@ -2,8 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { BUILTIN_THEMES } from './builtin';
 
 describe('BUILTIN_THEMES', () => {
-  it('exports dark-tech, light-clean, ocean-blue themes', () => {
-    expect(Object.keys(BUILTIN_THEMES)).toEqual(['dark-tech', 'light-clean', 'ocean-blue']);
+  it('exports the original 3 themes plus catalog additions', () => {
+    const keys = Object.keys(BUILTIN_THEMES);
+    for (const id of ['dark-tech', 'light-clean', 'ocean-blue']) {
+      expect(keys).toContain(id);
+    }
+    // Catalog additions
+    for (const id of ['neon-bloom', 'indigo-pro', 'sunset-glow', 'mono-print', 'forest-deep']) {
+      expect(keys).toContain(id);
+    }
   });
 
   it.each(['dark-tech', 'light-clean', 'ocean-blue'])('%s has correct protocol', (id) => {

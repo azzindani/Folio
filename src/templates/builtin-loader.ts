@@ -24,7 +24,11 @@ export function loadBuiltinTemplates(): BuiltinTemplate[] {
     try {
       const spec = parseYAML(raw) as TemplateSpec;
       if (!spec || spec._protocol !== 'template/v1') continue;
-      const id = path.replace(/^.*\//, '').replace(/\.template\.yaml$/, '');
+      // Use the template's own meta.id (e.g. "tmpl-stats-card") so combos
+      // and MCP tools can reference templates by a stable name independent
+      // of file location. Fall back to the file basename if meta.id is missing.
+      const fallbackId = path.replace(/^.*\//, '').replace(/\.template\.yaml$/, '');
+      const id = (spec.meta?.id as string | undefined) ?? fallbackId;
       out.push({ id, spec });
     } catch {
       // Skip malformed templates rather than crashing the whole picker.
