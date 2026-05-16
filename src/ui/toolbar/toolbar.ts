@@ -1,6 +1,7 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
 import { exportDesign } from '../../export/exporter';
+import { EXPORT_SCALE_PRESETS, defaultScalePreset, getScalePreset } from '../../export/scale-presets';
 import { showToast } from '../../utils/toast';
 import { batchExportDialog } from '../dialogs/batch-export';
 import { exportAsTemplate } from '../../schema/template';
@@ -56,8 +57,11 @@ export class ToolbarManager {
             background:var(--color-surface-2);border:1px solid var(--color-border);
             border-radius:var(--radius-md);box-shadow:var(--shadow-md);
             min-width:140px;z-index:200;overflow:hidden">
-            <button class="export-item" data-format="svg">SVG (vector)</button>
-            <button class="export-item" data-format="png">PNG ×2</button>
+            <button class="export-item" data-format="svg">SVG (vector — unlimited resolution)</button>
+            ${EXPORT_SCALE_PRESETS.map(p => `
+              <button class="export-item" data-format="png" data-scale-preset="${p.id}" title="${p.description}">
+                ${p.label}
+              </button>`).join('')}
             <button class="export-item" data-format="pdf">PDF</button>
             <button class="export-item" data-format="html">HTML (self-contained)</button>
             <button class="export-item" data-format="html-report">Interactive Report (HTML)</button>
@@ -116,7 +120,11 @@ export class ToolbarManager {
         this.triggerTemplateExport();
         return;
       }
-      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report');
+      const scalePresetId = target.dataset.scalePreset;
+      const scale = scalePresetId
+        ? getScalePreset(scalePresetId)?.scale ?? defaultScalePreset().scale
+        : defaultScalePreset().scale;
+      this.triggerExport(format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report', scale);
     }
   }
 
@@ -168,13 +176,17 @@ export class ToolbarManager {
     }
   }
 
-  private async triggerExport(format: 'svg' | 'png' | 'pdf' | 'html' | 'html-report'): Promise<void> {
+  private async triggerExport(
+    format: 'svg' | 'png' | 'pdf' | 'html' | 'html-report',
+    scale: number,
+  ): Promise<void> {
     const { design, theme } = this.state.get();
     if (!design) return;
     try {
-      await exportDesign(design, { format, theme: theme ?? undefined, scale: 2 });
+      await exportDesign(design, { format, theme: theme ?? undefined, scale });
       const label = format === 'html-report' ? 'Interactive HTML' : format.toUpperCase();
-      showToast(`Exported as ${label}`, 'success');
+      const suffix = format === 'png' ? ` (×${scale})` : '';
+      showToast(`Exported as ${label}${suffix}`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Export failed';
       showToast(msg, 'error');

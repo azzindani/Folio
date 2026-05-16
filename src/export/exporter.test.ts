@@ -4,7 +4,7 @@
  * PNG/PDF tests are skipped (require real canvas/blob API not available in jsdom).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportToSVG, exportToHTML, downloadText, downloadBlob, exportDesign } from './exporter';
+import { exportToSVG, exportToHTML, downloadText, downloadBlob, exportDesign, exportToPNG } from './exporter';
 import type { DesignSpec, ThemeSpec } from '../schema/types';
 
 // ── Fixtures ─────────────────────────────────────────────────
@@ -415,5 +415,22 @@ describe('exportDesign', () => {
       (globalThis as unknown as { Image: unknown }).Image = OrigImage;
       (globalThis as unknown as { FileReader: unknown }).FileReader = OrigFileReader;
     }
+  });
+});
+
+// ── exportToPNG canvas-dimension guard ───────────────────────
+
+describe('exportToPNG canvas-dimension guard', () => {
+  it('throws with helpful message when scale × doc dimension exceeds canvas limit', async () => {
+    // 4000-wide doc × scale 5 = 20000px — exceeds the 16384 cap.
+    const huge = makeSpec({ document: { width: 4000, height: 1000, unit: 'px', dpi: 96 } });
+    await expect(exportToPNG(huge, { format: 'png', scale: 5 }))
+      .rejects.toThrow(/exceeds browser canvas limit/);
+  });
+
+  it('error message suggests a smaller scale', async () => {
+    const huge = makeSpec({ document: { width: 4000, height: 1000, unit: 'px', dpi: 96 } });
+    await expect(exportToPNG(huge, { format: 'png', scale: 5 }))
+      .rejects.toThrow(/Try scale/);
   });
 });

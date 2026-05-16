@@ -3,6 +3,7 @@ import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderDesign, renderPage } from '../renderer/renderer';
 import type { LoadedDataset } from '../report/data-loader';
+import { checkCanvasScale } from './canvas-limit';
 
 export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
 
@@ -21,13 +22,20 @@ export function exportToSVG(spec: DesignSpec, options: ExportOptions): string {
 
 export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
   const scale = options.scale ?? 2;
+  const { width, height } = spec.document;
+
+  // Guard against the browser canvas dimension ceiling. Without this,
+  // canvas silently produces a blank image when W×scale or H×scale
+  // exceeds ~16384px — there's no platform error to catch downstream.
+  const guard = checkCanvasScale(width, height, scale);
+  if (!guard.ok) throw new Error(guard.reason);
+
   const svg = renderForExport(spec, options);
   const svgString = new XMLSerializer().serializeToString(svg);
 
-  const { width, height } = spec.document;
   const canvas = document.createElement('canvas');
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  canvas.width  = guard.width;
+  canvas.height = guard.height;
   const ctx = canvas.getContext('2d')!;
   ctx.scale(scale, scale);
 
