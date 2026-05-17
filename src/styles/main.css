@@ -1212,9 +1212,15 @@ button:focus:not(:focus-visible) { outline: none; }
 .tmpl-dialog .dialog-body { max-height: calc(80vh - 64px); overflow-y: auto; }
 .tmpl-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  /* Tighter than the original 220px so the wide catalog modal renders
+     4-5 columns instead of 3 — more cards visible without scrolling. */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  /* Force every card in a row to share the tallest row's height so
+     short-description cards don't leave odd gaps. */
+  grid-auto-rows: 1fr;
 }
+.tmpl-card { height: 100%; }
 .tmpl-card {
   display: flex;
   flex-direction: column;
@@ -1402,7 +1408,12 @@ button:focus:not(:focus-visible) { outline: none; }
 /* Theme card preview */
 .theme-grid .tmpl-card { aspect-ratio: auto; }
 .theme-preview {
-  aspect-ratio: 4 / 3;
+  /* Fixed preview height keeps every style card (theme / palette / type
+     / effects) aligned in a row. Without this, palette cards with long
+     descriptions stretched while effect cards stayed short. */
+  aspect-ratio: auto;
+  min-height: 110px;
+  max-height: 130px;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -1410,7 +1421,7 @@ button:focus:not(:focus-visible) { outline: none; }
   border-bottom: 1px solid var(--color-border);
 }
 .theme-preview-row { display: flex; gap: 6px; align-items: center; }
-.theme-preview-h   { font-size: 28px; font-weight: 700; line-height: 1; }
+.theme-preview-h   { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .theme-preview-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
 .theme-swatches    { display: flex; gap: 4px; }
 .theme-swatch      {

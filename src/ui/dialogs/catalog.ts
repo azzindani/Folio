@@ -34,9 +34,11 @@ import {
   loadTypePackIndex, loadFullTypePack, type TypePackIndexEntry,
 } from '../../styles/type-pack-loader';
 import {
-  loadEffectsPackIndex, loadFullEffectsPack, type EffectsPackIndexEntry,
+  loadEffectsPackIndex, loadFullEffectsPack, peekEffectsPack,
+  type EffectsPackIndexEntry,
 } from '../../styles/effects-pack-loader';
 import { composeTheme } from '../../styles/compose';
+import { ensureTypePackFonts } from '../../styles/font-loader';
 
 type Tab = 'templates' | 'themes' | 'palettes' | 'type' | 'effects' | 'reports' | 'featured';
 
@@ -116,6 +118,23 @@ export class CatalogDialog {
     this.palettes     = pals;
     this.typePacks    = tps;
     this.effectsPacks = eps;
+    // Pull every family the type-pack index declares and ask the runtime
+    // loader to inject one Google Fonts link covering them all. Without
+    // this, the type-pack cards render every "Aa" in Inter because the
+    // declared family never loads.
+    const families: string[] = [];
+    for (const tp of this.typePacks) {
+      families.push(tp.families.heading, tp.families.body, tp.families.mono);
+    }
+    ensureTypePackFonts(families);
+    // Pre-resolve all effects packs in parallel so cards can preview the
+    // pack's actual shadow/glow instead of a hardcoded glyph. 43 packs
+    // = 43 tiny YAML fetches, parallel, behind the rail's first paint.
+    // Re-render only when the user is sitting on the Effects tab; other
+    // tabs don't care so we avoid extra DOM churn.
+    void Promise.all(this.effectsPacks.map(e => loadFullEffectsPack(e.id))).then(() => {
+      if (this.tab === 'effects') this.renderTab();
+    });
     this.selectedTemplateId = this.index[0]?.id ?? null;
     this.selectedThemeId    = this.themes[0]?.id ?? null;
     this.renderTab();
@@ -234,13 +253,30 @@ export class CatalogDialog {
     const tags = p.tags.slice(0, 3).map(tg =>
       `<span class="tmpl-tag">${escapeHTML(tg)}</span>`).join('');
     const selected = p.id === this.selectedPaletteId ? ' selected' : '';
-    const swatches = p.swatches.slice(0, 6).map(c =>
+    // Conventional ordering in our palette YAMLs: [bg, surface, primary,
+    // secondary, text, …]. Pull positionally with safe fallbacks so a
+    // sparse palette still produces a readable preview.
+    const bg     = p.swatches[0] ?? '#0d0d14';
+    const sf     = p.swatches[1] ?? bg;
+    const accent = p.swatches[2] ?? '#6c5ce7';
+    const second = p.swatches[3] ?? accent;
+    const text   = p.swatches[4] ?? this.contrastingText(bg);
+    const swatchStrip = p.swatches.slice(0, 6).map(c =>
       `<span class="theme-swatch" style="background:${c}" title="${escapeAttr(c)}"></span>`).join('');
-    const bg = p.swatches[0] ?? 'var(--color-surface-2)';
     return `
       <button class="tmpl-card theme-card${selected}" data-palette-id="${escapeAttr(p.id)}" type="button">
-        <div class="theme-preview" style="background:${bg};min-height:120px">
-          <div class="theme-swatches">${swatches}</div>
+        <div class="theme-preview" style="background:${bg};color:${text};padding:10px;min-height:120px;display:flex;flex-direction:column;justify-content:space-between;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:22px;font-weight:800;letter-spacing:-0.01em">Aa</span>
+            <span style="display:inline-block;width:22px;height:8px;background:${accent};border-radius:2px"></span>
+            <span style="display:inline-block;width:22px;height:8px;background:${second};border-radius:2px"></span>
+          </div>
+          <div style="font-size:11px;opacity:0.85;line-height:1.35">Headline on background — body in text.</div>
+          <div style="display:flex;align-items:center;gap:6px;justify-content:space-between">
+            <span style="background:${accent};color:${this.contrastingText(accent)};font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px">Action</span>
+            <span style="background:${sf};color:${text};font-size:10px;padding:3px 6px;border-radius:3px;opacity:0.85">surface</span>
+          </div>
+          <div class="theme-swatches">${swatchStrip}</div>
         </div>
         <div class="tmpl-meta">
           <div class="tmpl-name">${escapeHTML(p.name)}</div>
@@ -249,6 +285,19 @@ export class CatalogDialog {
         </div>
       </button>
     `;
+  }
+
+  /**
+   * Pick black/white text against a hex bg so palette cards stay legible
+   * even when authored swatches don't include a `text` slot in position 4.
+   */
+  private contrastingText(hex: string): string {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return '#FFFFFF';
+    const n = parseInt(m[1], 16);
+    const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+    // Rec. 709 luminance — same heuristic used by theme-registry.isLight.
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 140 ? '#0a0a0a' : '#FFFFFF';
   }
 
   private typePackCardHTML(t: TypePackIndexEntry): string {
@@ -277,14 +326,25 @@ export class CatalogDialog {
 
   private effectsCardHTML(e: EffectsPackIndexEntry): string {
     const selected = e.id === this.selectedEffectsPackId ? ' selected' : '';
-    // Effect cards show effect keys (shadow_card, blur_glass, …) rather
-    // than free-form tags — they describe what the pack overrides.
     const keys = e.effectKeys.slice(0, 4).map(k =>
       `<span class="tmpl-tag" style="font-family:var(--font-mono);font-size:10px">${escapeHTML(k)}</span>`).join('');
+    // Pull the actual effect strings from the resolved spec (pre-fetched
+    // in parallel after open). Falls back to the index keys list while
+    // the spec is in flight so the card never looks empty.
+    const spec = peekEffectsPack(e.id);
+    const card  = String(spec?.effects['shadow_card']  ?? '0 4px 12px rgba(0,0,0,0.25)');
+    const glow  = String(spec?.effects['shadow_glow']  ?? '0 0 24px rgba(108,92,231,0.5)');
+    const blur  = Number(spec?.effects['blur_glass']   ?? 0);
+    const inset = String(spec?.effects['shadow_inset'] ?? '');
+    // Surface tint sometimes ships as a color hint; pluck the first one
+    // we recognize to vary the card background slightly per pack.
+    const tintRaw = spec?.effects['tint_overlay'] ?? spec?.effects['highlight'] ?? '';
+    const surface = typeof tintRaw === 'string' && tintRaw.startsWith('#')
+      ? tintRaw : 'var(--color-surface-2)';
     return `
       <button class="tmpl-card theme-card${selected}" data-effects-id="${escapeAttr(e.id)}" type="button">
-        <div class="theme-preview" style="background:var(--color-surface-2);min-height:120px;display:flex;align-items:center;justify-content:center">
-          <span style="display:block;width:56px;height:56px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 24px var(--color-primary),0 0 64px color-mix(in srgb,var(--color-primary) 40%,transparent)"></span>
+        <div class="theme-preview" style="background:${surface};min-height:120px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(${Math.min(blur, 12)}px)">
+          <span style="display:block;width:56px;height:56px;border-radius:14px;background:var(--color-primary);box-shadow:${card}, ${glow}${inset ? ', ' + inset : ''}"></span>
         </div>
         <div class="tmpl-meta">
           <div class="tmpl-name">${escapeHTML(e.name)}</div>
@@ -326,19 +386,25 @@ export class CatalogDialog {
     const swatches = t.swatches.map(c =>
       `<span class="theme-swatch" style="background:${c}" title="${c}"></span>`).join('');
     const sampleColor = t.light ? '#0a0a0a' : '#ffffff';
+    // Pull the theme's actual heading family so "Aa" reads as Playfair
+    // on Editorial Cream, Anton on High Contrast, Orbitron on Cyber
+    // Synthwave, etc. — making the typography differentiation visible.
+    const headingFamily = escapeAttr(t.spec.typography.families.heading);
+    const bodyFamily    = escapeAttr(t.spec.typography.families.body);
     return `
       <button class="tmpl-card theme-card${selected}" data-theme-id="${escapeAttr(t.id)}" type="button">
         <div class="theme-preview" style="background:${t.swatches[0]};color:${sampleColor}">
           <div class="theme-preview-row">
-            <span class="theme-preview-h">Aa</span>
+            <span class="theme-preview-h" style="font-family:'${headingFamily}',sans-serif">Aa</span>
             <span class="theme-preview-dot" style="background:${t.swatches[2]}"></span>
             <span class="theme-preview-dot" style="background:${t.swatches[3]}"></span>
           </div>
+          <div style="font-family:'${bodyFamily}',sans-serif;font-size:11px;opacity:0.7;margin-top:6px">The quick brown fox</div>
           <div class="theme-swatches">${swatches}</div>
         </div>
         <div class="tmpl-meta">
           <div class="tmpl-name">${escapeHTML(t.name)}</div>
-          <div class="tmpl-sub">${t.light ? 'light' : 'dark'} · ${t.tags.length} tags</div>
+          <div class="tmpl-sub">${headingFamily} · ${bodyFamily}</div>
           <div class="tmpl-tags">${tags}</div>
         </div>
       </button>
