@@ -1495,6 +1495,81 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .catalog-rail-actions { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
 .catalog-rail-actions .btn { width: 100%; justify-content: center; padding: 8px 10px; }
+
+/* ── Catalog responsive — tablet (≤1023px) ─────────────────── */
+@media (max-width: 1023px) {
+  .catalog-overlay { padding: 16px; }
+  .catalog { width: 98vw; height: 95vh; }
+  .catalog-header { padding: 12px 14px; gap: 10px; }
+  .catalog-tabs { margin-left: 8px; gap: 4px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin; }
+  .catalog-tab { padding: 6px 10px; white-space: nowrap; flex-shrink: 0; }
+  .catalog-body { grid-template-columns: 1fr 280px; }
+  .catalog-rail { padding: 12px; }
+  .catalog-search { min-width: 180px; }
+}
+
+/* ── Catalog responsive — mobile (≤767px) ──────────────────── */
+@media (max-width: 767px) {
+  .catalog-overlay { padding: 0; }
+  .catalog {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+  .catalog-header {
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .catalog-title { font-size: 15px; flex: 1; }
+  .catalog-tabs {
+    order: 3;
+    flex: 1 0 100%;
+    margin-left: 0;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .catalog-tab { font-size: 13px; padding: 6px 12px; }
+  .catalog-filter { padding: 8px 12px; gap: 8px; }
+  .catalog-search {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  .catalog-chips { width: 100%; }
+  .catalog-count { display: none; }
+  /* Stack list above rail. Rail collapses to ~38vh preview/actions row. */
+  .catalog-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .catalog-list { padding: 12px; }
+  .catalog-rail {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding: 10px 12px;
+    max-height: 42vh;
+    gap: 8px;
+  }
+  .rail-preview { min-height: 120px; max-height: 200px; }
+  .catalog-rail-actions { flex-direction: row; flex-wrap: wrap; }
+  .catalog-rail-actions .btn { flex: 1 1 calc(50% - 3px); min-width: 0; padding: 10px 8px; font-size: 13px; }
+  /* Denser card grid so 2 columns fit comfortably on phones. */
+  .catalog-list .tmpl-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .tmpl-meta { padding: 8px 10px 10px; }
+  .tmpl-name { font-size: 13px; }
+  .tmpl-sub { font-size: 10px; }
+  /* Larger touch targets for tabs and chips. */
+  .tag-chip { padding: 5px 11px; font-size: 12px; }
+  .catalog-tab { min-height: 36px; }
+}
+
 .btn-link {
   background: transparent;
   border: none;
