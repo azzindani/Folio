@@ -3,16 +3,19 @@
 # Variables (set in .env, read by docker-compose.yml):
 #   FOLIO_DOMAIN      — public domain pointing at this VPS (DNS A record)
 #   FOLIO_ACME_EMAIL  — contact email for Let's Encrypt registration
+#   FOLIO_BASIC_USER  — (optional) username for editor HTTP Basic Auth
+#   FOLIO_BASIC_HASH  — (optional) bcrypt hash for editor HTTP Basic Auth
 #
 # Routing:
-#   /                  → folio:4173  (visual editor — vite preview)
-#   /mcp · /mcp/sse    → folio:3333  (MCP JSON-RPC + tool-result SSE)
-#   /editor/events     → folio:3333  (file-change SSE stream)
-#   /tokens/whoami     → folio:3333  (token sanity check)
+#   /                  → folio:4173  (visual editor — vite preview)  [basicauth if set]
+#   /mcp · /mcp/sse    → folio:3333  (MCP JSON-RPC + tool-result SSE) [Bearer]
+#   /editor/events     → folio:3333  (file-change SSE stream)        [basicauth if set]
+#   /tokens/whoami     → folio:3333  (token sanity check)            [Bearer]
 #   /health            → folio:3333  (unauthenticated liveness)
 #
-# Caddy terminates TLS, forwards Authorization: Bearer untouched, and adds
-# nothing else — your auth is whatever Folio's auth.ts decides.
+# Caddy terminates TLS, forwards Authorization: Bearer untouched for /mcp,
+# and gates the editor with HTTP Basic Auth when FOLIO_BASIC_USER+HASH are
+# set. The /mcp API keeps its own Bearer check inside the app.
 {
     email {$FOLIO_ACME_EMAIL}
 }
@@ -30,8 +33,13 @@
     }
 
     # Editor live-refresh SSE — disable buffering so events stream immediately.
+    # Guarded by the same Basic Auth as the editor route so an open SSE
+    # endpoint can't be used to fingerprint the deployment.
     @editor_events path /editor/events
     handle @editor_events {
+        basicauth {
+            {$FOLIO_BASIC_USER} {$FOLIO_BASIC_HASH}
+        }
         reverse_proxy folio:3333 {
             flush_interval -1
             transport http {
@@ -41,8 +49,16 @@
         }
     }
 
-    # Everything else → visual editor (vite preview).
+    # Everything else → visual editor (vite preview). Browser-level login.
+    # FOLIO_BASIC_USER + FOLIO_BASIC_HASH are required for this profile —
+    # if either is blank Caddy fails to start (intentional: a bare editor
+    # on the public internet is never what you want). To run without
+    # Basic Auth, delete the `basicauth { ... }` block here and in
+    # @editor_events above.
     handle {
+        basicauth {
+            {$FOLIO_BASIC_USER} {$FOLIO_BASIC_HASH}
+        }
         reverse_proxy folio:4173 {
             header_up Host {host}
         }

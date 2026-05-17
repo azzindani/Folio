@@ -76,6 +76,11 @@ services:
     environment:
       FOLIO_DOMAIN:     ${FOLIO_DOMAIN:?set FOLIO_DOMAIN in .env (e.g. folio.example.com)}
       FOLIO_ACME_EMAIL: ${FOLIO_ACME_EMAIL:?set FOLIO_ACME_EMAIL in .env for Let's Encrypt registration}
+      # HTTP Basic Auth in front of the editor route. Required by the
+      # Caddyfile — empty values make Caddy fail to start. Remove the
+      # basicauth blocks in caddy/Caddyfile to disable entirely.
+      FOLIO_BASIC_USER: ${FOLIO_BASIC_USER:-}
+      FOLIO_BASIC_HASH: ${FOLIO_BASIC_HASH:-}
     ports:
       - "80:80"
       - "443:443"
