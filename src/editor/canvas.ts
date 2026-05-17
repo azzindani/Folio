@@ -2,6 +2,7 @@ import { StateManager, type EditorState, type ToolId, type RulerUnit, type Guide
 import { renderDesign, renderPage } from '../renderer/renderer';
 import type { Layer, TextLayer } from '../schema/types';
 import { computeRulerTicks } from '../utils/ruler-units';
+import { composeTheme } from '../styles/compose';
 
 let guideCounter = 0;
 
@@ -265,7 +266,7 @@ export class CanvasManager {
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
     const needsRender = changedKeys.some(k =>
-      ['design', 'theme', 'currentPageIndex', 'gridVisible'].includes(k),
+      ['design', 'theme', 'palette', 'typePack', 'effectsPack', 'currentPageIndex', 'gridVisible'].includes(k),
     );
 
     if (needsRender) {
@@ -296,19 +297,24 @@ export class CanvasManager {
   }
 
   render(): void {
-    const { design, theme } = this.state.get();
+    const { design, theme, palette, typePack, effectsPack } = this.state.get();
     if (!design) return;
 
     const { width, height } = design.document;
 
-    // Check if we're in paged mode
+    // Compose the active theme with any picked overlay primitives. When
+    // nothing is picked, composeTheme returns the base theme by reference
+    // — no allocation, no behavior change.
+    const composed = theme
+      ? composeTheme(theme, {
+          palette: palette ?? undefined,
+          typePack: typePack ?? undefined,
+          effectsPack: effectsPack ?? undefined,
+        })
+      : undefined;
+
     const pages = design.pages;
     const currentPageIndex = this.state.get().currentPageIndex;
-
-    // Canvas viewport stays a neutral "paper" color (white in light theme,
-    // dark gray in dark theme). The design's first bg layer renders inside
-    // the SVG as a normal layer so the user can move/edit/delete it freely
-    // — separating canvas-as-page from the editable background layer.
 
     let svg: SVGSVGElement;
 
@@ -316,9 +322,9 @@ export class CanvasManager {
       const pageIdx = Math.min(currentPageIndex, pages.length - 1);
       const page = pages[pageIdx];
       const layers = page?.layers ?? [];
-      svg = renderPage(layers, width, height, { theme: theme ?? undefined, showGrid: this.state.get().gridVisible });
+      svg = renderPage(layers, width, height, { theme: composed, showGrid: this.state.get().gridVisible });
     } else {
-      svg = renderDesign(design, { theme: theme ?? undefined, showGrid: this.state.get().gridVisible });
+      svg = renderDesign(design, { theme: composed, showGrid: this.state.get().gridVisible });
     }
 
     // Atomic swap — no blank white frame between renders

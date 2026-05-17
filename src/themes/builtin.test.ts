@@ -66,11 +66,23 @@ describe('BUILTIN_THEMES', () => {
     expect(r).toBeGreaterThan(200);
   });
 
-  it('all themes share the same typography families', () => {
-    const { families: f1 } = BUILTIN_THEMES['dark-tech'].typography;
-    const { families: f2 } = BUILTIN_THEMES['light-clean'].typography;
-    const { families: f3 } = BUILTIN_THEMES['ocean-blue'].typography;
-    expect(f1).toEqual(f2);
-    expect(f2).toEqual(f3);
+  it('each theme has a heading/body/mono families triple', () => {
+    for (const id of Object.keys(BUILTIN_THEMES)) {
+      const f = BUILTIN_THEMES[id].typography.families;
+      expect(typeof f.heading).toBe('string'); expect(f.heading.length).toBeGreaterThan(0);
+      expect(typeof f.body).toBe('string');    expect(f.body.length).toBeGreaterThan(0);
+      expect(typeof f.mono).toBe('string');    expect(f.mono.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('themes have differentiated typography (not all identical)', () => {
+    // Reason: the original SHARED_TYPOGRAPHY made every theme render in
+    // Inter — switching themes never changed fonts. Each theme now
+    // declares its own family triple. This guards against accidentally
+    // collapsing them back to a single shared constant.
+    const keys = Object.keys(BUILTIN_THEMES);
+    const triples = keys.map(k => JSON.stringify(BUILTIN_THEMES[k].typography.families));
+    const unique = new Set(triples);
+    expect(unique.size).toBeGreaterThan(1);
   });
 });

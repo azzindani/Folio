@@ -35,6 +35,9 @@ import { ImageImportHandler } from './image-import-handler';
 import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
+import { loadFullPalette } from '../styles/palette-loader';
+import { loadFullTypePack } from '../styles/type-pack-loader';
+import { loadFullEffectsPack } from '../styles/effects-pack-loader';
 
 const SAMPLE_DESIGN: DesignSpec = {
   _protocol: 'design/v1',
@@ -995,7 +998,15 @@ export class EditorApp {
       this.state.set('selectedLayerIds', []);
       this.state.set('currentPageIndex', 0);
       this.state.set('dirty', false);
+      // Clear style overlays from a previous design so we don't carry over
+      // a Playfair type-pack into a brutalist template. Refs declared on
+      // the new spec are resolved asynchronously below and re-set on land.
+      this.state.set('palette', null);
+      this.state.set('typePack', null);
+      this.state.set('effectsPack', null);
     });
+
+    this.resolveStyleRefs(spec);
 
     // Auto-fit so layer corners are reachable inside the canvas-area.
     // Without this, a 1080×1080 design at 100% zoom puts the right/bottom
@@ -1031,17 +1042,48 @@ export class EditorApp {
   }
 
   /**
+   * Resolves any palette / type_pack / effects_pack refs declared on the
+   * design spec and sets the matching state slot once loaded. Fire-and-
+   * forget: the renderer falls back to the base theme until each ref
+   * lands, so a slow fetch never blocks the first paint.
+   */
+  private resolveStyleRefs(spec: DesignSpec): void {
+    if (spec.palette?.ref) {
+      void loadFullPalette(spec.palette.ref).then(p => {
+        if (p && this.state.get().design === spec) this.state.set('palette', p);
+      });
+    }
+    if (spec.type_pack?.ref) {
+      void loadFullTypePack(spec.type_pack.ref).then(tp => {
+        if (tp && this.state.get().design === spec) this.state.set('typePack', tp);
+      });
+    }
+    if (spec.effects_pack?.ref) {
+      void loadFullEffectsPack(spec.effects_pack.ref).then(ep => {
+        if (ep && this.state.get().design === spec) this.state.set('effectsPack', ep);
+      });
+    }
+  }
+
+  /**
    * Opens the catalog dialog and, on template pick, loads the resulting
    * design into the editor. Centralized here so toolbar, file-tree, and
    * any future surface all trigger the same flow.
    */
   openCatalog(): void {
     void catalogDialog.open({
-      onOpen: (design, label) => {
+      onOpen: (design, label, picks) => {
         const yaml = serializeYAML(design);
         this.loadFromYAML(yaml);
         const current = this.state.get().design;
         if (current) current.meta.name = label.replace(/\..*$/, '');
+        // Apply style overlay picks immediately so the canvas matches
+        // the rail preview without waiting for the async ref resolver
+        // started by loadDesign. The full specs are already cached by
+        // the dialog's per-card lookups.
+        if (picks?.palette)     this.state.set('palette',     picks.palette);
+        if (picks?.typePack)    this.state.set('typePack',    picks.typePack);
+        if (picks?.effectsPack) this.state.set('effectsPack', picks.effectsPack);
       },
     });
   }

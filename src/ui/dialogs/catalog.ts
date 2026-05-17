@@ -24,14 +24,36 @@ import { loadThemeCatalog, type ThemeCardData, getThemeById } from '../../templa
 import { injectIntoTemplate, type TemplateSpec } from '../../schema/template';
 import { serializeYAML } from '../../schema/parser';
 import { renderDesign } from '../../renderer/renderer';
-import type { DesignSpec } from '../../schema/types';
+import type { DesignSpec, PaletteSpec, TypePackSpec, EffectsPackSpec } from '../../schema/types';
 import { BUILTIN_THEMES } from '../../themes/builtin';
 import { FEATURED_COMBOS, type FeaturedCombo } from './catalog-combos';
+import {
+  loadPaletteIndex, loadFullPalette, type PaletteIndexEntry,
+} from '../../styles/palette-loader';
+import {
+  loadTypePackIndex, loadFullTypePack, type TypePackIndexEntry,
+} from '../../styles/type-pack-loader';
+import {
+  loadEffectsPackIndex, loadFullEffectsPack, type EffectsPackIndexEntry,
+} from '../../styles/effects-pack-loader';
+import { composeTheme } from '../../styles/compose';
 
-type Tab = 'templates' | 'themes' | 'reports' | 'featured';
+type Tab = 'templates' | 'themes' | 'palettes' | 'type' | 'effects' | 'reports' | 'featured';
+
+/**
+ * The catalog picks four orthogonal axes; the editor needs all of them to
+ * fully restore what the user previewed in the rail. Each pack is the
+ * fully-resolved spec, not just an id, because the loaders cache them and
+ * the editor would otherwise have to re-fetch.
+ */
+export interface CatalogPicks {
+  palette?:     PaletteSpec;
+  typePack?:    TypePackSpec;
+  effectsPack?: EffectsPackSpec;
+}
 
 interface OpenCallbacks {
-  onOpen:   (design: DesignSpec, label: string) => void;
+  onOpen:   (design: DesignSpec, label: string, picks?: CatalogPicks) => void;
   onToast?: (msg: string, kind: 'success' | 'error') => void;
 }
 
@@ -44,10 +66,21 @@ export class CatalogDialog {
   private overlay: HTMLElement | null = null;
   private cb: OpenCallbacks | null = null;
   private tab: Tab = 'templates';
-  private selectedTemplateId: string | null = null;
-  private selectedThemeId:    string | null = null;
-  private index:  CatalogIndexEntry[] = [];
-  private themes: ThemeCardData[]     = [];
+  private selectedTemplateId:    string | null = null;
+  private selectedThemeId:       string | null = null;
+  private selectedPaletteId:     string | null = null;
+  private selectedTypePackId:    string | null = null;
+  private selectedEffectsPackId: string | null = null;
+  private index:        CatalogIndexEntry[]     = [];
+  private themes:       ThemeCardData[]         = [];
+  private palettes:     PaletteIndexEntry[]     = [];
+  private typePacks:    TypePackIndexEntry[]    = [];
+  private effectsPacks: EffectsPackIndexEntry[] = [];
+  // Style overlay picks resolved lazily — full specs only fetched on demand
+  // so opening the dialog doesn't trigger N parallel YAML fetches.
+  private resolvedPalette:     PaletteSpec     | undefined;
+  private resolvedTypePack:    TypePackSpec    | undefined;
+  private resolvedEffectsPack: EffectsPackSpec | undefined;
   private filter: FilterState = { search: '', tag: null };
   private io: IntersectionObserver | null = null;
   private thumbCache = new Map<string, string>();
@@ -58,6 +91,7 @@ export class CatalogDialog {
     this.themes = loadThemeCatalog();
     this.tab = 'templates';
     this.filter = { search: '', tag: null };
+    this.resolvedPalette = this.resolvedTypePack = this.resolvedEffectsPack = undefined;
 
     // Render shell synchronously with a loading placeholder so the
     // dialog appears instantly; fill in cards once the index resolves.
@@ -70,9 +104,18 @@ export class CatalogDialog {
     this.bindShell();
     document.addEventListener('keydown', this.onKey);
 
-    // Index is fetched as a hashed asset rather than inlined into the
-    // bundle, so the first dialog-open does a one-time HTTP roundtrip.
-    this.index = await loadCatalogIndex();
+    // Load all four indices in parallel — they're independent fetches and
+    // sequential awaits would stall the first paint on the slowest one.
+    const [tpls, pals, tps, eps] = await Promise.all([
+      loadCatalogIndex(),
+      loadPaletteIndex(),
+      loadTypePackIndex(),
+      loadEffectsPackIndex(),
+    ]);
+    this.index        = tpls;
+    this.palettes     = pals;
+    this.typePacks    = tps;
+    this.effectsPacks = eps;
     this.selectedTemplateId = this.index[0]?.id ?? null;
     this.selectedThemeId    = this.themes[0]?.id ?? null;
     this.renderTab();
@@ -104,6 +147,9 @@ export class CatalogDialog {
           <div class="catalog-tabs">
             <button class="catalog-tab active" data-tab="templates">Templates</button>
             <button class="catalog-tab"        data-tab="themes">Themes</button>
+            <button class="catalog-tab"        data-tab="palettes">Palettes</button>
+            <button class="catalog-tab"        data-tab="type">Type</button>
+            <button class="catalog-tab"        data-tab="effects">Effects</button>
             <button class="catalog-tab"        data-tab="reports">Reports</button>
             <button class="catalog-tab"        data-tab="featured">Featured</button>
           </div>
@@ -119,7 +165,10 @@ export class CatalogDialog {
   }
 
   private filterBarHTML(): string {
-    if (this.tab === 'themes' || this.tab === 'featured') return '';
+    // Style overlay tabs render their own simple list; templates/reports
+    // share the search + tag chip bar.
+    if (this.tab === 'themes' || this.tab === 'featured' ||
+        this.tab === 'palettes' || this.tab === 'type' || this.tab === 'effects') return '';
     const kind = this.tab as 'templates' | 'reports';
     const tags = this.collectTags(kind);
     const chips = tags.map(tg => {
@@ -140,8 +189,110 @@ export class CatalogDialog {
       case 'templates': return this.renderIndexCards(this.filteredEntries('templates'));
       case 'reports':   return this.renderIndexCards(this.filteredEntries('reports'));
       case 'themes':    return `<div class="tmpl-grid theme-grid">${this.themes.map(t => this.themeCardHTML(t)).join('')}</div>`;
+      case 'palettes':  return this.renderStyleCards('palettes');
+      case 'type':      return this.renderStyleCards('type');
+      case 'effects':   return this.renderStyleCards('effects');
       case 'featured':  return `<div class="tmpl-grid">${FEATURED_COMBOS.map(c => this.featuredCardHTML(c)).join('')}</div>`;
     }
+  }
+
+  private renderStyleCards(kind: 'palettes' | 'type' | 'effects'): string {
+    if (kind === 'palettes') {
+      if (!this.palettes.length) return '<p class="tmpl-empty">No palettes available.</p>';
+      const cards = this.palettes.map(p => this.paletteCardHTML(p)).join('');
+      return `<div class="tmpl-grid theme-grid">${this.clearStyleChip(kind)}${cards}</div>`;
+    }
+    if (kind === 'type') {
+      if (!this.typePacks.length) return '<p class="tmpl-empty">No type packs available.</p>';
+      const cards = this.typePacks.map(t => this.typePackCardHTML(t)).join('');
+      return `<div class="tmpl-grid theme-grid">${this.clearStyleChip(kind)}${cards}</div>`;
+    }
+    if (!this.effectsPacks.length) return '<p class="tmpl-empty">No effects packs available.</p>';
+    const cards = this.effectsPacks.map(e => this.effectsCardHTML(e)).join('');
+    return `<div class="tmpl-grid theme-grid">${this.clearStyleChip(kind)}${cards}</div>`;
+  }
+
+  /**
+   * Each style tab has a "Clear" pseudo-card so users can drop an overlay
+   * without hunting through the rail. The button has no spec to load.
+   */
+  private clearStyleChip(kind: 'palettes' | 'type' | 'effects'): string {
+    return `
+      <button class="tmpl-card style-clear-card" type="button" data-style-clear="${kind}">
+        <div class="theme-preview" style="background:transparent;border:2px dashed var(--color-border);display:flex;align-items:center;justify-content:center;min-height:120px">
+          <span style="color:var(--color-text-muted);font-size:13px">✕ no overlay</span>
+        </div>
+        <div class="tmpl-meta">
+          <div class="tmpl-name">Clear</div>
+          <div class="tmpl-sub">use the theme's defaults</div>
+        </div>
+      </button>
+    `;
+  }
+
+  private paletteCardHTML(p: PaletteIndexEntry): string {
+    const tags = p.tags.slice(0, 3).map(tg =>
+      `<span class="tmpl-tag">${escapeHTML(tg)}</span>`).join('');
+    const selected = p.id === this.selectedPaletteId ? ' selected' : '';
+    const swatches = p.swatches.slice(0, 6).map(c =>
+      `<span class="theme-swatch" style="background:${c}" title="${escapeAttr(c)}"></span>`).join('');
+    const bg = p.swatches[0] ?? 'var(--color-surface-2)';
+    return `
+      <button class="tmpl-card theme-card${selected}" data-palette-id="${escapeAttr(p.id)}" type="button">
+        <div class="theme-preview" style="background:${bg};min-height:120px">
+          <div class="theme-swatches">${swatches}</div>
+        </div>
+        <div class="tmpl-meta">
+          <div class="tmpl-name">${escapeHTML(p.name)}</div>
+          <div class="tmpl-sub">${escapeHTML(p.description)}</div>
+          <div class="tmpl-tags">${tags}</div>
+        </div>
+      </button>
+    `;
+  }
+
+  private typePackCardHTML(t: TypePackIndexEntry): string {
+    const tags = t.tags.slice(0, 3).map(tg =>
+      `<span class="tmpl-tag">${escapeHTML(tg)}</span>`).join('');
+    const selected = t.id === this.selectedTypePackId ? ' selected' : '';
+    // Live-render the actual family so users see Anton vs Playfair, not a generic chip.
+    const heading = escapeHTML(t.families.heading);
+    const body    = escapeHTML(t.families.body);
+    const mono    = escapeHTML(t.families.mono);
+    return `
+      <button class="tmpl-card theme-card${selected}" data-typepack-id="${escapeAttr(t.id)}" type="button">
+        <div class="theme-preview" style="background:var(--color-surface-2);min-height:120px;padding:10px;display:flex;flex-direction:column;justify-content:center;gap:4px">
+          <div style="font-family:'${heading}',sans-serif;font-size:28px;font-weight:800;line-height:1.05;color:var(--color-text)">Aa</div>
+          <div style="font-family:'${body}',sans-serif;font-size:13px;color:var(--color-text-muted)">The quick brown fox.</div>
+          <div style="font-family:'${mono}',monospace;font-size:11px;color:var(--color-text-muted)">{ mono: 0123 }</div>
+        </div>
+        <div class="tmpl-meta">
+          <div class="tmpl-name">${escapeHTML(t.name)}</div>
+          <div class="tmpl-sub">${heading} · ${body} · ${mono}</div>
+          <div class="tmpl-tags">${tags}</div>
+        </div>
+      </button>
+    `;
+  }
+
+  private effectsCardHTML(e: EffectsPackIndexEntry): string {
+    const selected = e.id === this.selectedEffectsPackId ? ' selected' : '';
+    // Effect cards show effect keys (shadow_card, blur_glass, …) rather
+    // than free-form tags — they describe what the pack overrides.
+    const keys = e.effectKeys.slice(0, 4).map(k =>
+      `<span class="tmpl-tag" style="font-family:var(--font-mono);font-size:10px">${escapeHTML(k)}</span>`).join('');
+    return `
+      <button class="tmpl-card theme-card${selected}" data-effects-id="${escapeAttr(e.id)}" type="button">
+        <div class="theme-preview" style="background:var(--color-surface-2);min-height:120px;display:flex;align-items:center;justify-content:center">
+          <span style="display:block;width:56px;height:56px;border-radius:50%;background:var(--color-primary);box-shadow:0 0 24px var(--color-primary),0 0 64px color-mix(in srgb,var(--color-primary) 40%,transparent)"></span>
+        </div>
+        <div class="tmpl-meta">
+          <div class="tmpl-name">${escapeHTML(e.name)}</div>
+          <div class="tmpl-sub">${escapeHTML(e.description)}</div>
+          <div class="tmpl-tags">${keys}</div>
+        </div>
+      </button>
+    `;
   }
 
   private renderIndexCards(list: CatalogIndexEntry[]): string {
@@ -302,6 +453,50 @@ export class CatalogDialog {
         return;
       }
 
+      const palCard = target.closest<HTMLElement>('[data-palette-id]');
+      if (palCard) {
+        this.selectedPaletteId = palCard.dataset.paletteId!;
+        void loadFullPalette(this.selectedPaletteId).then(p => {
+          this.resolvedPalette = p;
+          this.renderTab();
+          void this.renderPreview();
+        });
+        return;
+      }
+
+      const tpCard = target.closest<HTMLElement>('[data-typepack-id]');
+      if (tpCard) {
+        this.selectedTypePackId = tpCard.dataset.typepackId!;
+        void loadFullTypePack(this.selectedTypePackId).then(tp => {
+          this.resolvedTypePack = tp;
+          this.renderTab();
+          void this.renderPreview();
+        });
+        return;
+      }
+
+      const epCard = target.closest<HTMLElement>('[data-effects-id]');
+      if (epCard) {
+        this.selectedEffectsPackId = epCard.dataset.effectsId!;
+        void loadFullEffectsPack(this.selectedEffectsPackId).then(ep => {
+          this.resolvedEffectsPack = ep;
+          this.renderTab();
+          void this.renderPreview();
+        });
+        return;
+      }
+
+      const clear = target.closest<HTMLElement>('[data-style-clear]');
+      if (clear) {
+        const kind = clear.dataset.styleClear;
+        if (kind === 'palettes') { this.selectedPaletteId = null;     this.resolvedPalette = undefined; }
+        if (kind === 'type')     { this.selectedTypePackId = null;    this.resolvedTypePack = undefined; }
+        if (kind === 'effects')  { this.selectedEffectsPackId = null; this.resolvedEffectsPack = undefined; }
+        this.renderTab();
+        void this.renderPreview();
+        return;
+      }
+
       const combo = target.closest<HTMLElement>('[data-combo-id]');
       if (combo) {
         const found = FEATURED_COMBOS.find(c => c.id === combo.dataset.comboId);
@@ -433,11 +628,22 @@ export class CatalogDialog {
     if (!preview || !pick) return;
     const tEntry = this.selectedTemplateId ? findIndexEntry(this.selectedTemplateId) : undefined;
     const th     = this.themes.find(x => x.id === this.selectedThemeId);
-    pick.innerHTML = `
-      <span class="rail-chip">${escapeHTML(tEntry?.name ?? '—')}</span>
-      <span class="rail-x">×</span>
-      <span class="rail-chip">${escapeHTML(th?.name ?? '—')}</span>
-    `;
+    const pal    = this.palettes.find(x => x.id === this.selectedPaletteId);
+    const tp     = this.typePacks.find(x => x.id === this.selectedTypePackId);
+    const ep     = this.effectsPacks.find(x => x.id === this.selectedEffectsPackId);
+
+    // Build the pick chip row. Style overlays only appear when picked so
+    // the rail stays uncluttered for the common template × theme case.
+    const chips: string[] = [
+      `<span class="rail-chip">${escapeHTML(tEntry?.name ?? '—')}</span>`,
+      `<span class="rail-x">×</span>`,
+      `<span class="rail-chip">${escapeHTML(th?.name ?? '—')}</span>`,
+    ];
+    if (pal) chips.push(`<span class="rail-x">+</span>`, `<span class="rail-chip" title="palette">🎨 ${escapeHTML(pal.name)}</span>`);
+    if (tp)  chips.push(`<span class="rail-x">+</span>`, `<span class="rail-chip" title="type pack">Aa ${escapeHTML(tp.name)}</span>`);
+    if (ep)  chips.push(`<span class="rail-x">+</span>`, `<span class="rail-chip" title="effects pack">✨ ${escapeHTML(ep.name)}</span>`);
+    pick.innerHTML = chips.join('');
+
     preview.innerHTML = '<div class="rail-empty">Loading preview…</div>';
 
     const design = await this.composedDesign();
@@ -446,7 +652,17 @@ export class CatalogDialog {
       return;
     }
     try {
-      const svg = renderDesign(design, { theme: th?.spec });
+      // composeTheme overlays the picked style primitives on top of the
+      // selected theme. With no picks it returns the base theme by ref
+      // — same behavior as before.
+      const composedTheme = th?.spec
+        ? composeTheme(th.spec, {
+            palette: this.resolvedPalette,
+            typePack: this.resolvedTypePack,
+            effectsPack: this.resolvedEffectsPack,
+          })
+        : undefined;
+      const svg = renderDesign(design, { theme: composedTheme });
       this.fitSVG(svg, design);
       preview.innerHTML = '';
       preview.appendChild(svg);
@@ -476,6 +692,13 @@ export class CatalogDialog {
     if (this.selectedThemeId) {
       design.theme = { ref: this.selectedThemeId };
     }
+    // Persist style overlay picks onto the design itself so the YAML the
+    // user copies or opens has the same look as the rail preview. The
+    // editor's resolveStyleRefs re-fetches the full specs on load.
+    if (this.selectedPaletteId)     design.palette      = { ref: this.selectedPaletteId };
+    if (this.selectedTypePackId)    design.type_pack    = { ref: this.selectedTypePackId };
+    if (this.selectedEffectsPackId) design.effects_pack = { ref: this.selectedEffectsPackId };
+
     const entry = findIndexEntry(id);
     design.meta = {
       ...design.meta,
@@ -488,8 +711,13 @@ export class CatalogDialog {
   private async handleAction(action: string): Promise<void> {
     const design = await this.composedDesign();
     if (!design) { this.toast('Pick a template first.', 'error'); return; }
+    const picks: CatalogPicks = {
+      palette:     this.resolvedPalette,
+      typePack:    this.resolvedTypePack,
+      effectsPack: this.resolvedEffectsPack,
+    };
     switch (action) {
-      case 'open':         this.cb?.onOpen(design, design.meta.name); this.close(); break;
+      case 'open':         this.cb?.onOpen(design, design.meta.name, picks); this.close(); break;
       case 'copy-mcp':     await this.copyMCPPrompt(design); break;
       case 'copy-yaml':    await this.copyYAML(design); break;
       case 'copy-payload': await this.copyJSONPayload(design); break;

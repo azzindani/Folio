@@ -1,4 +1,4 @@
-import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
+import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 
 export type ToolId =
@@ -16,6 +16,11 @@ export interface Guide {
 export interface EditorState {
   design: DesignSpec | null;
   theme: ThemeSpec | null;
+  // Style overlay picks — composed on top of `theme` at render time via
+  // composeTheme(). Null when no overlay is active.
+  palette: PaletteSpec | null;
+  typePack: TypePackSpec | null;
+  effectsPack: EffectsPackSpec | null;
   selectedLayerIds: string[];
   zoom: number;
   panX: number;
@@ -48,6 +53,9 @@ export class StateManager {
     this.state = {
       design: null,
       theme: null,
+      palette: null,
+      typePack: null,
+      effectsPack: null,
       selectedLayerIds: [],
       zoom: 1,
       panX: 0,
