@@ -137,6 +137,11 @@ export class CatalogDialog {
     });
     this.selectedTemplateId = this.index[0]?.id ?? null;
     this.selectedThemeId    = this.themes[0]?.id ?? null;
+    // refreshFilterBar() because shellHTML() was built before the index
+    // resolved — at that point collectTagsRanked returned []. Without
+    // this re-render the chips only appear after the user clicks away
+    // and back to Templates.
+    this.refreshFilterBar();
     this.renderTab();
     void this.renderPreview();
   }
@@ -189,16 +194,26 @@ export class CatalogDialog {
     if (this.tab === 'themes' || this.tab === 'featured' ||
         this.tab === 'palettes' || this.tab === 'type' || this.tab === 'effects') return '';
     const kind = this.tab as 'templates' | 'reports';
-    const tags = this.collectTags(kind);
-    const chips = tags.map(tg => {
+    // Cap visible chips. With 332 templates the raw tag set runs to
+    // ~600 entries; rendering all of them used to flood the filter bar
+    // and shove the card grid off-screen after any tab switch. Show the
+    // top-N most-common tags (a curated, useful subset) plus the
+    // currently-active filter so the user can always see + clear it.
+    const VISIBLE_CHIP_LIMIT = 24;
+    const ranked = this.collectTagsRanked(kind);
+    const visible = ranked.slice(0, VISIBLE_CHIP_LIMIT);
+    if (this.filter.tag && !visible.includes(this.filter.tag)) visible.push(this.filter.tag);
+    const overflow = Math.max(0, ranked.length - VISIBLE_CHIP_LIMIT);
+    const chips = visible.map(tg => {
       const sel = this.filter.tag === tg ? ' selected' : '';
       return `<button class="tag-chip${sel}" data-tag="${escapeAttr(tg)}" type="button">${escapeHTML(tg)}</button>`;
     }).join('');
     const clear = this.filter.tag ? `<button class="tag-chip clear" data-tag="" type="button">clear ×</button>` : '';
+    const more = overflow > 0 ? `<span class="tag-chip-more" title="${overflow} more tags hidden">+${overflow}</span>` : '';
     return `
       <input class="catalog-search" type="search" placeholder="Search ${kind}…"
              value="${escapeAttr(this.filter.search)}" data-input="search" />
-      <div class="catalog-chips">${chips}${clear}</div>
+      <div class="catalog-chips">${chips}${clear}${more}</div>
       <span class="catalog-count" data-pane="count"></span>
     `;
   }
@@ -473,6 +488,23 @@ export class CatalogDialog {
       for (const t of e.tags) set.add(t);
     }
     return [...set].sort();
+  }
+
+  /**
+   * Returns tag names ordered by how many entries reference them — most
+   * common first. Lets the filter bar surface high-signal tags like
+   * "poster" or "card" before niche one-offs.
+   */
+  private collectTagsRanked(kind: 'templates' | 'reports'): string[] {
+    const counts = new Map<string, number>();
+    const isReport = kind === 'reports';
+    for (const e of this.index) {
+      if (isReport ? e.type !== 'report' : e.type === 'report') continue;
+      for (const t of e.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([t]) => t);
   }
 
   // ── Event wiring + virtualization (filled below) ────────────
