@@ -1,0 +1,572 @@
+_protocol: template/v1
+
+# Portrait LinkedIn poster — GitHub-style project announcement card.
+# Eyebrow + display project name + tagline + status chips + description
+# + 3-feature grid + tech stack badges + GitHub URL & CTA.
+meta:
+  id: tmpl-project-card-poster
+  name: Project Card Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, project, github, portfolio, portrait, 4-5]
+  description: "Portrait 1200x1500 LinkedIn poster for announcing an open-source project or portfolio piece — display name, status chips, feature grid, tech stack, GitHub URL."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: glow-corner
+    type: circle
+    z: 3
+    cx: 1100
+    cy: 120
+    rx: 260
+    ry: 260
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.25
+
+  - id: pulse-dot
+    type: circle
+    z: 4
+    cx: 1110
+    cy: 130
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.9
+
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 110
+    width: 1040
+    height: 0
+    content: { type: plain, value: "OPEN SOURCE · NEW PROJECT" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: project-name
+    type: text
+    z: 11
+    x: 80
+    y: 180
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Folio" }
+    style:
+      font_family: $heading
+      font_size: 104
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: tagline
+    type: text
+    z: 12
+    x: 80
+    y: 310
+    width: 1040
+    height: 0
+    content: { type: plain, value: "A local-first YAML graphic design engine for LLMs and humans." }
+    style:
+      font_family: $body
+      font_size: 30
+      font_style: italic
+      color: $text_muted
+      line_height: 1.4
+
+  - id: chip-1
+    type: rect
+    z: 13
+    x: 80
+    y: 410
+    width: 160
+    height: 44
+    radius: 22
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: chip-1-text
+    type: text
+    z: 14
+    x: 80
+    y: 422
+    width: 160
+    height: 0
+    content: { type: plain, value: "v1.0.0" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $text
+      text_align: center
+
+  - id: chip-2
+    type: rect
+    z: 13
+    x: 256
+    y: 410
+    width: 180
+    height: 44
+    radius: 22
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: chip-2-text
+    type: text
+    z: 14
+    x: 256
+    y: 422
+    width: 180
+    height: 0
+    content: { type: plain, value: "MIT License" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $text
+      text_align: center
+
+  - id: chip-3
+    type: rect
+    z: 13
+    x: 452
+    y: 410
+    width: 240
+    height: 44
+    radius: 22
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: chip-3-text
+    type: text
+    z: 14
+    x: 452
+    y: 422
+    width: 240
+    height: 0
+    content: { type: plain, value: "Built with TypeScript" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $text
+      text_align: center
+
+  - id: chip-4
+    type: rect
+    z: 13
+    x: 708
+    y: 410
+    width: 180
+    height: 44
+    radius: 22
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: chip-4-text
+    type: text
+    z: 14
+    x: 708
+    y: 422
+    width: 180
+    height: 0
+    content: { type: plain, value: "★ 1.2k stars" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $accent
+      text_align: center
+
+  - id: what-label
+    type: text
+    z: 20
+    x: 80
+    y: 500
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WHAT IT DOES" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: description
+    type: text
+    z: 21
+    x: 80
+    y: 540
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Folio turns plain-text YAML into pixel-perfect posters, slides, and reports. Write a single spec, render anywhere — and let an LLM do the layout when you're tired." }
+    style:
+      font_family: $body
+      font_size: 24
+      color: $text
+      line_height: 1.5
+
+  - id: features-label
+    type: text
+    z: 30
+    x: 80
+    y: 720
+    width: 1040
+    height: 0
+    content: { type: plain, value: "FEATURES" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: feature-1-bg
+    type: rect
+    z: 31
+    x: 80
+    y: 760
+    width: 333
+    height: 200
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: feature-1-icon
+    type: circle
+    z: 32
+    cx: 116
+    cy: 796
+    rx: 16
+    ry: 16
+    fill: { type: solid, color: "$primary" }
+
+  - id: feature-1-title
+    type: text
+    z: 33
+    x: 104
+    y: 836
+    width: 285
+    height: 0
+    content: { type: plain, value: "LLM-first" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: feature-1-desc
+    type: text
+    z: 34
+    x: 104
+    y: 872
+    width: 285
+    height: 0
+    content: { type: plain, value: "Designed for AI generation. MCP tools ship in the box." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: feature-2-bg
+    type: rect
+    z: 31
+    x: 433
+    y: 760
+    width: 334
+    height: 200
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: feature-2-icon
+    type: rect
+    z: 32
+    x: 460
+    y: 780
+    width: 32
+    height: 32
+    radius: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: feature-2-title
+    type: text
+    z: 33
+    x: 457
+    y: 836
+    width: 286
+    height: 0
+    content: { type: plain, value: "Local-first" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: feature-2-desc
+    type: text
+    z: 34
+    x: 457
+    y: 872
+    width: 286
+    height: 0
+    content: { type: plain, value: "No cloud, no telemetry. Your files stay on disk." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: feature-3-bg
+    type: rect
+    z: 31
+    x: 787
+    y: 760
+    width: 333
+    height: 200
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: feature-3-icon
+    type: circle
+    z: 32
+    cx: 823
+    cy: 796
+    rx: 16
+    ry: 16
+    fill: { type: solid, color: "$secondary" }
+
+  - id: feature-3-title
+    type: text
+    z: 33
+    x: 811
+    y: 836
+    width: 285
+    height: 0
+    content: { type: plain, value: "Animated" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: feature-3-desc
+    type: text
+    z: 34
+    x: 811
+    y: 872
+    width: 285
+    height: 0
+    content: { type: plain, value: "Keyframes, page transitions, Lottie + GIF export." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: stack-label
+    type: text
+    z: 40
+    x: 80
+    y: 1020
+    width: 1040
+    height: 0
+    content: { type: plain, value: "TECH STACK" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: stack-row
+    type: text
+    z: 41
+    x: 80
+    y: 1060
+    width: 1040
+    height: 0
+    content: { type: plain, value: "[ TypeScript ]   [ Vite ]   [ Vitest ]   [ Playwright ]   [ MCP ]" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.02
+
+  - id: divider-bottom
+    type: rect
+    z: 50
+    x: 80
+    y: 1180
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: url-label
+    type: text
+    z: 51
+    x: 80
+    y: 1210
+    width: 700
+    height: 0
+    content: { type: plain, value: "REPOSITORY" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+
+  - id: github-url
+    type: text
+    z: 52
+    x: 80
+    y: 1240
+    width: 700
+    height: 0
+    content: { type: plain, value: "github.com/azzindani/folio" }
+    style:
+      font_family: $mono
+      font_size: 28
+      font_weight: 700
+      color: $text
+
+  - id: author-handle
+    type: text
+    z: 53
+    x: 80
+    y: 1290
+    width: 700
+    height: 0
+    content: { type: plain, value: "by @azzindani" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+
+  - id: cta-pill
+    type: rect
+    z: 54
+    x: 820
+    y: 1230
+    width: 300
+    height: 64
+    radius: 32
+    fill: { type: solid, color: "$primary" }
+
+  - id: cta-text
+    type: text
+    z: 55
+    x: 820
+    y: 1248
+    width: 300
+    height: 0
+    content: { type: plain, value: "★ Star if useful" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: footer-meta
+    type: text
+    z: 56
+    x: 80
+    y: 1430
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Updated May 2026 · Made with Folio" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.16
+
+animations:
+  project-name:
+    enter: { type: scale_in, duration: 700, delay: 100, easing: ease-out }
+  tagline:
+    enter: { type: fade_up, duration: 500, delay: 200, easing: ease-out }
+  chip-1:
+    enter: { type: fade_up, duration: 400, delay: 300, easing: ease-out }
+  chip-2:
+    enter: { type: fade_up, duration: 400, delay: 400, easing: ease-out }
+  chip-3:
+    enter: { type: fade_up, duration: 400, delay: 500, easing: ease-out }
+  chip-4:
+    enter: { type: fade_up, duration: 400, delay: 600, easing: ease-out }
+  pulse-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.05 }
+  feature-1-bg:
+    enter: { type: fade_up, duration: 500, delay: 750, easing: ease-out }
+  feature-2-bg:
+    enter: { type: fade_up, duration: 500, delay: 850, easing: ease-out }
+  feature-3-bg:
+    enter: { type: fade_up, duration: 500, delay: 950, easing: ease-out }
+  cta-pill:
+    enter: { type: scale_in, duration: 500, delay: 1100, easing: ease-out }
+
+slots:
+  - { id: eyebrow,      path: "layers[4].content.value",  type: text, hint: "Eyebrow label",         default: "OPEN SOURCE · NEW PROJECT" }
+  - { id: project_name, path: "layers[5].content.value",  type: text, hint: "Project name",          default: "Folio" }
+  - { id: tagline,      path: "layers[6].content.value",  type: text, hint: "Project tagline",       default: "A local-first YAML graphic design engine for LLMs and humans." }
+  - { id: chip_1,       path: "layers[8].content.value",  type: text, hint: "Status chip 1",         default: "v1.0.0" }
+  - { id: chip_2,       path: "layers[10].content.value", type: text, hint: "Status chip 2",         default: "MIT License" }
+  - { id: chip_3,       path: "layers[12].content.value", type: text, hint: "Status chip 3",         default: "Built with TypeScript" }
+  - { id: chip_4,       path: "layers[14].content.value", type: text, hint: "Status chip 4",         default: "★ 1.2k stars" }
+  - { id: description,  path: "layers[16].content.value", type: text, hint: "What it does paragraph", default: "Folio turns plain-text YAML into pixel-perfect posters, slides, and reports. Write a single spec, render anywhere — and let an LLM do the layout when you're tired." }
+  - { id: stack_row,    path: "layers[31].content.value", type: text, hint: "Tech stack row",        default: "[ TypeScript ]   [ Vite ]   [ Vitest ]   [ Playwright ]   [ MCP ]" }
+  - { id: github_url,   path: "layers[34].content.value", type: text, hint: "GitHub URL",            default: "github.com/azzindani/folio" }
+  - { id: author,       path: "layers[35].content.value", type: text, hint: "Author handle",         default: "by @azzindani" }
+  - { id: cta_text,     path: "layers[37].content.value", type: text, hint: "CTA text",              default: "★ Star if useful" }
