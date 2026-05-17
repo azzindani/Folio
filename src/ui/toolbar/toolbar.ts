@@ -34,6 +34,17 @@ export class ToolbarManager {
       </div>
 
       <div class="toolbar-center" style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-sm toolbar-catalog-btn"
+          data-action="catalog"
+          title="Open Folio Catalog — browse templates, themes, reports (Ctrl+Shift+C)"
+          aria-label="Open Folio Catalog"
+          style="display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="1" y="2" width="5" height="10" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="8" y="2" width="5" height="10" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          <span>Catalog</span>
+        </button>
         <div class="mode-toggle">
           <button class="mode-btn active" data-mode="visual">Visual</button>
           <button class="mode-btn" data-mode="payload">Payload</button>
@@ -98,9 +109,10 @@ export class ToolbarManager {
       return;
     }
 
-    const action = target.dataset.action;
+    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
+    if (action === 'catalog') { this.app.openCatalog(); return; }
 
     if (action === 'export') {
       e.stopPropagation();

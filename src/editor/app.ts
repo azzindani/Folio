@@ -28,6 +28,7 @@ import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
 import { AutoSaveManager } from './auto-save';
 import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
+import { catalogDialog } from '../ui/dialogs/catalog';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
@@ -1027,5 +1028,21 @@ export class EditorApp {
   applyTheme(themeId: string): void {
     const theme = BUILTIN_THEMES[themeId];
     if (theme) this.state.set('theme', theme);
+  }
+
+  /**
+   * Opens the catalog dialog and, on template pick, loads the resulting
+   * design into the editor. Centralized here so toolbar, file-tree, and
+   * any future surface all trigger the same flow.
+   */
+  openCatalog(): void {
+    void catalogDialog.open({
+      onOpen: (design, label) => {
+        const yaml = serializeYAML(design);
+        this.loadFromYAML(yaml);
+        const current = this.state.get().design;
+        if (current) current.meta.name = label.replace(/\..*$/, '');
+      },
+    });
   }
 }

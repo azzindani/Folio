@@ -35,6 +35,7 @@ function makeApp(): EditorApp {
     canvas: { fitToScreen: vi.fn() },
     applyTheme: vi.fn(),
     exportSVG: vi.fn(),
+    openCatalog: vi.fn(),
   } as unknown as EditorApp;
 }
 
@@ -90,6 +91,32 @@ describe('ToolbarManager', () => {
 
   it('builds export button', () => {
     expect(container.querySelector('[data-action="export"]')).not.toBeNull();
+  });
+
+  // ── Toolbar Catalog button (moved out of file-tree) ──────
+
+  it('toolbar has a Catalog button in toolbar-center', () => {
+    const btn = container.querySelector('.toolbar-center [data-action="catalog"]');
+    expect(btn).not.toBeNull();
+  });
+
+  it('Catalog button has accessible label', () => {
+    const btn = container.querySelector('[data-action="catalog"]') as HTMLElement;
+    expect(btn.getAttribute('aria-label')).toBe('Open Folio Catalog');
+  });
+
+  it('clicking the Catalog button calls app.openCatalog()', () => {
+    const btn = container.querySelector('[data-action="catalog"]') as HTMLElement;
+    btn.click();
+    expect(app.openCatalog).toHaveBeenCalledTimes(1);
+  });
+
+  it('clicking the inner icon also routes to app.openCatalog (data-action closest)', () => {
+    // SVG/text inside the button shouldn't break the click handler.
+    const svg = container.querySelector('[data-action="catalog"] svg') as Element | null;
+    expect(svg).not.toBeNull();
+    (svg as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(app.openCatalog).toHaveBeenCalled();
   });
 
   it('builds undo button', () => {
