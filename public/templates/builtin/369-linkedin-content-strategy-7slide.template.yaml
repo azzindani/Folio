@@ -1,0 +1,630 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn carousel — Content Strategy playbook (Cover + intro + 5 strategy tactics + CTA).
+# 1080×1350 portrait, sunset-glow theme.
+meta:
+  id: tmpl-linkedin-content-strategy-7slide
+  name: LinkedIn Content Strategy (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, marketing, content-strategy, sunset-glow, 4-5]
+  description: "7-slide LinkedIn carousel teaching a content strategy framework."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: cover-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: cover-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "CONTENT STRATEGY · 2026" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: cover-title
+        type: text
+        z: 12
+        x: 80
+        y: 520
+        width: 920
+        height: 0
+        content: { type: plain, value: "The Content Strategy\nThat 10×'d My Reach" }
+        style: { font_family: $heading, font_size: 86, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: cover-tagline
+        type: text
+        z: 13
+        x: 80
+        y: 880
+        width: 920
+        height: 0
+        content: { type: plain, value: "Swipe → for the 5-step playbook." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: cover-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: cover-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "1 / 7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: intro-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: intro-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: intro-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "BEFORE WE START" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: intro-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Reach isn't luck.\nIt's a system." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: intro-body
+        type: text
+        z: 13
+        x: 80
+        y: 520
+        width: 920
+        height: 0
+        content: { type: plain, value: "I posted for 18 months with crickets. Then I built a system around 5 things — pillars, hooks, cadence, repurposing, and replies. Reach went from 200 to 20,000 in 90 days." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: intro-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: intro-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "2 / 7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · 01 Pillar topics ─────────────────────────────
+  - id: pillar
+    label: Pillars
+    layers:
+      - { id: pillar-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: pillar-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: pillar-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: pillar-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Pillar topics" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: pillar-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "Pick 3 themes you'll own. Everything else is noise." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: pillar-1-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 580
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: pillar-1
+        type: text
+        z: 21
+        x: 150
+        y: 560
+        width: 850
+        height: 0
+        content: { type: plain, value: "Audit your 10 best posts — patterns will surface." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: pillar-2-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 700
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: pillar-2
+        type: text
+        z: 22
+        x: 150
+        y: 680
+        width: 850
+        height: 0
+        content: { type: plain, value: "Pick themes at the intersection of expertise + market pull." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: pillar-3-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 820
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: pillar-3
+        type: text
+        z: 23
+        x: 150
+        y: 800
+        width: 850
+        height: 0
+        content: { type: plain, value: "Rotate posts 40/40/20 — pillar 1 / pillar 2 / experiments." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: pillar-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: pillar-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "3 / 7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · 02 Hook formulas ─────────────────────────────
+  - id: hook
+    label: Hooks
+    layers:
+      - { id: hook-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: hook-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: hook-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: hook-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Hook formulas" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: hook-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "First line decides if line two gets read." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: hook-1-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 580
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: hook-1
+        type: text
+        z: 21
+        x: 150
+        y: 560
+        width: 850
+        height: 0
+        content: { type: plain, value: "Contrarian: 'Everyone says X. They're wrong because…'" }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: hook-2-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 700
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: hook-2
+        type: text
+        z: 22
+        x: 150
+        y: 680
+        width: 850
+        height: 0
+        content: { type: plain, value: "Specific number: 'I tested 47 hooks. 3 worked.'" }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: hook-3-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 820
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: hook-3
+        type: text
+        z: 23
+        x: 150
+        y: 800
+        width: 850
+        height: 0
+        content: { type: plain, value: "Open loop: 'The mistake that cost me $40k taught me one thing.'" }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: hook-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: hook-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "4 / 7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · 03 Posting cadence ───────────────────────────
+  - id: cadence
+    label: Cadence
+    layers:
+      - { id: cadence-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: cadence-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: cadence-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: cadence-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Posting cadence" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: cadence-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "Consistency > volume. Pick a rhythm you can keep." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: cadence-1-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 580
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: cadence-1
+        type: text
+        z: 21
+        x: 150
+        y: 560
+        width: 850
+        height: 0
+        content: { type: plain, value: "3 long-form posts/week — Tue/Thu/Sat 8am local." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: cadence-2-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 700
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: cadence-2
+        type: text
+        z: 22
+        x: 150
+        y: 680
+        width: 850
+        height: 0
+        content: { type: plain, value: "1 carousel/week — Wed for the algorithm boost." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: cadence-3-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 820
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: cadence-3
+        type: text
+        z: 23
+        x: 150
+        y: 800
+        width: 850
+        height: 0
+        content: { type: plain, value: "Batch on Sunday. Schedule. Never post live." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: cadence-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: cadence-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "5 / 7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · 04 Repurposing ───────────────────────────────
+  - id: repurpose
+    label: Repurpose
+    layers:
+      - { id: repurpose-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: repurpose-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: repurpose-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: repurpose-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Repurposing" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: repurpose-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "One idea → six assets. Stop reinventing." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: repurpose-1-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 580
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: repurpose-1
+        type: text
+        z: 21
+        x: 150
+        y: 560
+        width: 850
+        height: 0
+        content: { type: plain, value: "Long-form → carousel → quote graphic → reply hook." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: repurpose-2-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 700
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: repurpose-2
+        type: text
+        z: 22
+        x: 150
+        y: 680
+        width: 850
+        height: 0
+        content: { type: plain, value: "Wait 60 days, repost top performers with new framing." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: repurpose-3-dot
+        type: circle
+        z: 20
+        cx: 110
+        cy: 820
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: repurpose-3
+        type: text
+        z: 23
+        x: 150
+        y: 800
+        width: 850
+        height: 0
+        content: { type: plain, value: "Bundle 5 posts → newsletter issue. Compound." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: repurpose-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: repurpose-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "6 / 7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 7 · 05 Engagement loops + CTA ────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.95 }
+      - { id: cta-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.35)" } }
+      - { id: cta-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
+      - id: cta-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "05" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3 }
+      - id: cta-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Engagement loops" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 }
+      - id: cta-sub
+        type: text
+        z: 13
+        x: 80
+        y: 380
+        width: 920
+        height: 0
+        content: { type: plain, value: "Reply to every comment in the first 60 minutes.\nThe algorithm rewards velocity." }
+        style: { font_family: $body, font_size: 28, color: "#F5F0E8", line_height: 1.45 }
+      - id: cta-headline
+        type: text
+        z: 14
+        x: 80
+        y: 760
+        width: 920
+        height: 0
+        content: { type: plain, value: "Try one this week." }
+        style: { font_family: $heading, font_size: 88, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
+      - id: cta-btn
+        type: rect
+        z: 15
+        x: 80
+        y: 920
+        width: 320
+        height: 72
+        radius: 36
+        fill: { type: solid, color: "$primary" }
+      - id: cta-btn-text
+        type: text
+        z: 16
+        x: 80
+        y: 941
+        width: 320
+        height: 0
+        content: { type: plain, value: "Save & follow →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: cta-handle
+        type: text
+        z: 17
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#F5F0E8" }
+      - id: cta-counter
+        type: text
+        z: 18
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "7 / 7" }
+        style: { font_family: $mono, font_size: 14, color: "#F5F0E8", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover headline",       default: "The Content Strategy\nThat 10×'d My Reach" }
+  - { id: cover_tagline,  path: "pages[0].layers[4].content.value", type: text, hint: "Cover tagline",        default: "Swipe → for the 5-step playbook." }
+  - { id: intro_body,     path: "pages[1].layers[4].content.value", type: text, hint: "Intro paragraph",      default: "I posted for 18 months with crickets. Then I built a system around 5 things — pillars, hooks, cadence, repurposing, and replies. Reach went from 200 to 20,000 in 90 days." }
+  - { id: pillar_tactic_1, path: "pages[2].layers[6].content.value", type: text, hint: "Pillar tactic 1",    default: "Audit your 10 best posts — patterns will surface." }
+  - { id: hook_tactic_1,  path: "pages[3].layers[6].content.value", type: text, hint: "Hook tactic 1",        default: "Contrarian: 'Everyone says X. They're wrong because…'" }
+  - { id: cadence_tactic_1, path: "pages[4].layers[6].content.value", type: text, hint: "Cadence tactic 1",  default: "3 long-form posts/week — Tue/Thu/Sat 8am local." }
+  - { id: repurpose_tactic_1, path: "pages[5].layers[6].content.value", type: text, hint: "Repurpose tactic 1", default: "Long-form → carousel → quote graphic → reply hook." }
+  - { id: cta_headline,   path: "pages[6].layers[6].content.value", type: text, hint: "CTA headline",         default: "Try one this week." }
+  - { id: cta_btn,        path: "pages[6].layers[8].content.value", type: text, hint: "CTA button label",     default: "Save & follow →" }

@@ -1,0 +1,371 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — 5 DEI actions that move the needle. Pastel dream.
+# Cover → Intro → 3 action slides (action + outcome + how to start) → CTA.
+meta:
+  id: tmpl-linkedin-dei-actions-5slide
+  name: LinkedIn DEI Actions (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, hr, dei, inclusion, 4-5]
+  description: "5-slide LinkedIn carousel: DEI actions with measurable outcomes and starting points."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 165, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "1/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "DEI · PEOPLE STRATEGY" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 520
+        width: 960
+        height: 0
+        content: { type: plain, value: "5 DEI actions\nthat move the needle" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: tagline
+        type: text
+        z: 13
+        x: 60
+        y: 860
+        width: 960
+        height: 0
+        content: { type: plain, value: "No slogans. No panels. Just measurable change. Swipe →" }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: handle
+        type: text
+        z: 14
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "2/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "THE PRINCIPLE" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "If it isn't measured, it isn't real." }
+        style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "DEI work fails when it lives in posters and pledges. The actions below have outcomes attached and a starting move you can run this quarter." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: kicker
+        type: text
+        z: 14
+        x: 60
+        y: 860
+        width: 960
+        height: 0
+        content: { type: plain, value: "Three actions. Pick one. Run it." }
+        style: { font_family: $body, font_size: 26, font_weight: 600, color: $primary, line_height: 1.4 }
+
+  # ── Slide 3 · Action 01 ────────────────────────────────────
+  - id: action-1
+    label: Action 01
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "3/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "ACTION 01" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: action-name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Blind résumé screens." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: outcome-label
+        type: text
+        z: 20
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "MEASURABLE OUTCOME" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.36 }
+      - id: outcome-text
+        type: text
+        z: 21
+        x: 60
+        y: 500
+        width: 960
+        height: 0
+        content: { type: plain, value: "Underrepresented candidates advance to phone screen at the same rate as the majority cohort." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: start-label
+        type: text
+        z: 30
+        x: 60
+        y: 800
+        width: 960
+        height: 0
+        content: { type: plain, value: "HOW TO START" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.36 }
+      - id: start-text
+        type: text
+        z: 31
+        x: 60
+        y: 840
+        width: 960
+        height: 0
+        content: { type: plain, value: "Strip names + schools from the first review pass. Use only the work sample for the no/yes decision." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 4 · Action 02 ────────────────────────────────────
+  - id: action-2
+    label: Action 02
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "4/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "ACTION 02" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: action-name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Publish pay bands." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: outcome-label
+        type: text
+        z: 20
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "MEASURABLE OUTCOME" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.36 }
+      - id: outcome-text
+        type: text
+        z: 21
+        x: 60
+        y: 500
+        width: 960
+        height: 0
+        content: { type: plain, value: "Pay-equity gap drops below 2% within 2 cycles. Negotiation penalty for women and minorities disappears." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: start-label
+        type: text
+        z: 30
+        x: 60
+        y: 800
+        width: 960
+        height: 0
+        content: { type: plain, value: "HOW TO START" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.36 }
+      - id: start-text
+        type: text
+        z: 31
+        x: 60
+        y: 840
+        width: 960
+        height: 0
+        content: { type: plain, value: "Publish ranges on every job post and inside the company. Audit current salaries against the new bands within 30 days." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 5 · Action 03 + CTA ──────────────────────────────
+  - id: action-3
+    label: Action 03 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 165, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.28)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$secondary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "5/5" }
+        style: { font_family: $mono, font_size: 18, color: "#FFFFFF" }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "ACTION 03" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36 }
+      - id: action-name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Tie manager bonuses to retention by cohort." }
+        style: { font_family: $heading, font_size: 52, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: outcome-label
+        type: text
+        z: 20
+        x: 60
+        y: 500
+        width: 960
+        height: 0
+        content: { type: plain, value: "OUTCOME" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36 }
+      - id: outcome-text
+        type: text
+        z: 21
+        x: 60
+        y: 540
+        width: 960
+        height: 0
+        content: { type: plain, value: "Voluntary attrition for underrepresented employees matches the company average within 4 quarters." }
+        style: { font_family: $body, font_size: 26, color: "#F0F0FF", line_height: 1.5 }
+      - id: cta-heading
+        type: text
+        z: 40
+        x: 60
+        y: 850
+        width: 960
+        height: 0
+        content: { type: plain, value: "Pick one. Run it." }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 }
+      - id: cta-btn
+        type: rect
+        z: 41
+        x: 60
+        y: 1010
+        width: 280
+        height: 64
+        radius: 32
+        fill: { type: solid, color: "#FFFFFF" }
+      - id: cta-text
+        type: text
+        z: 42
+        x: 60
+        y: 1028
+        width: 280
+        height: 0
+        content: { type: plain, value: "Follow →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: "#0F172A", text_align: center }
+      - id: handle
+        type: text
+        z: 50
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+
+slots:
+  - { id: cover_title,         path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",       default: "5 DEI actions\nthat move the needle" }
+  - { id: cover_tagline,       path: "pages[0].layers[5].content.value", type: text, hint: "Cover tagline",        default: "No slogans. No panels. Just measurable change. Swipe →" }
+  - { id: intro_title,         path: "pages[1].layers[4].content.value", type: text, hint: "Intro title",          default: "If it isn't measured, it isn't real." }
+  - { id: intro_body,          path: "pages[1].layers[5].content.value", type: text, hint: "Intro body",           default: "DEI work fails when it lives in posters and pledges." }
+  - { id: action_1_name,       path: "pages[2].layers[5].content.value", type: text, hint: "Action 1 name",        default: "Blind résumé screens." }
+  - { id: action_1_outcome,    path: "pages[2].layers[7].content.value", type: text, hint: "Action 1 outcome",     default: "Underrepresented candidates advance to phone screen at the same rate." }
+  - { id: action_1_start,      path: "pages[2].layers[8].content.value", type: text, hint: "Action 1 start",       default: "Strip names + schools from the first review pass." }
+  - { id: action_2_name,       path: "pages[3].layers[5].content.value", type: text, hint: "Action 2 name",        default: "Publish pay bands." }
+  - { id: action_2_outcome,    path: "pages[3].layers[7].content.value", type: text, hint: "Action 2 outcome",     default: "Pay-equity gap drops below 2% within 2 cycles." }
+  - { id: action_2_start,      path: "pages[3].layers[8].content.value", type: text, hint: "Action 2 start",       default: "Publish ranges on every job post and inside the company." }
+  - { id: action_3_name,       path: "pages[4].layers[5].content.value", type: text, hint: "Action 3 name",        default: "Tie manager bonuses to retention by cohort." }
+  - { id: action_3_outcome,    path: "pages[4].layers[7].content.value", type: text, hint: "Action 3 outcome",     default: "Voluntary attrition for underrepresented employees matches the company average." }
+  - { id: cta_heading,         path: "pages[4].layers[8].content.value", type: text, hint: "CTA heading",          default: "Pick one. Run it." }

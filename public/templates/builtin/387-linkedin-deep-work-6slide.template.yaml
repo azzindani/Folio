@@ -1,0 +1,409 @@
+_protocol: template/v1
+
+# LinkedIn 6-slide carousel · "How I Deep Work for 4 Hours Straight" · cover, distractors, setup, protocol, summary, CTA.
+meta:
+  id: tmpl-linkedin-deep-work-6slide
+  name: LinkedIn Deep Work (6 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, productivity, deep-work, focus, forest-deep, "4-5"]
+  description: "6-slide LinkedIn carousel: distractors, setup, protocol, and CTA for sustained deep work."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 170, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: leaf-orb, type: circle, z: 3, cx: 880, cy: 220, rx: 180, ry: 180, fill: { type: solid, color: "$accent" }, opacity: 0.22 }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 360
+        width: 936
+        height: 0
+        content: { type: plain, value: "DEEP WORK · 6 SLIDES" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 72
+        y: 420
+        width: 936
+        height: 0
+        content: { type: plain, value: "How I Deep Work\nfor 4 Hours\nStraight." }
+        style: { font_family: $heading, font_size: 92, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: tagline
+        type: text
+        z: 12
+        x: 72
+        y: 880
+        width: 936
+        height: 0
+        content: { type: plain, value: "The setup. The rules. The cost." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: swipe-hint
+        type: text
+        z: 13
+        x: 72
+        y: 980
+        width: 936
+        height: 0
+        content: { type: plain, value: "Swipe → for the full protocol." }
+        style: { font_family: $body, font_size: 20, font_weight: 600, color: $primary }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "1 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · What kills focus ─────────────────────────────
+  - id: distractors
+    label: What kills focus
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "WHAT KILLS FOCUS" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Three thieves." }
+        style: { font_family: $heading, font_size: 88, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - { id: kill-1-icon, type: rect, z: 20, x: 72, y: 480, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - id: kill-1-text
+        type: text
+        z: 21
+        x: 160
+        y: 488
+        width: 860
+        height: 0
+        content: { type: plain, value: "Notifications — every ping costs 23 minutes." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - { id: kill-2-icon, type: rect, z: 20, x: 72, y: 660, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - id: kill-2-text
+        type: text
+        z: 21
+        x: 160
+        y: 668
+        width: 860
+        height: 0
+        content: { type: plain, value: "Open tabs — visible work is unfinished work." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - { id: kill-3-icon, type: rect, z: 20, x: 72, y: 840, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - id: kill-3-text
+        type: text
+        z: 21
+        x: 160
+        y: 848
+        width: 860
+        height: 0
+        content: { type: plain, value: "Ambient chat — Slack is a meeting that never ends." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "2 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · The setup ────────────────────────────────────
+  - id: setup
+    label: The setup
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE SETUP" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Build the\nenvironment." }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: rule-1-num
+        type: text
+        z: 20
+        x: 72
+        y: 580
+        width: 80
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.16 }
+      - id: rule-1-text
+        type: text
+        z: 21
+        x: 170
+        y: 574
+        width: 850
+        height: 0
+        content: { type: plain, value: "Same desk. Same chair. Same hour, every day." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: rule-2-num
+        type: text
+        z: 20
+        x: 72
+        y: 730
+        width: 80
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.16 }
+      - id: rule-2-text
+        type: text
+        z: 21
+        x: 170
+        y: 724
+        width: 850
+        height: 0
+        content: { type: plain, value: "Phone in a drawer. Laptop on airplane mode." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: rule-3-num
+        type: text
+        z: 20
+        x: 72
+        y: 880
+        width: 80
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.16 }
+      - id: rule-3-text
+        type: text
+        z: 21
+        x: 170
+        y: 874
+        width: 850
+        height: 0
+        content: { type: plain, value: "One open document. Nothing else on screen." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "3 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · The protocol ─────────────────────────────────
+  - id: protocol
+    label: The protocol
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE PROTOCOL" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Inside the\n4 hours." }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: rule-1-num
+        type: text
+        z: 20
+        x: 72
+        y: 580
+        width: 80
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.16 }
+      - id: rule-1-text
+        type: text
+        z: 21
+        x: 170
+        y: 574
+        width: 850
+        height: 0
+        content: { type: plain, value: "Define the deliverable before you start." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: rule-2-num
+        type: text
+        z: 20
+        x: 72
+        y: 730
+        width: 80
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.16 }
+      - id: rule-2-text
+        type: text
+        z: 21
+        x: 170
+        y: 724
+        width: 850
+        height: 0
+        content: { type: plain, value: "Park every new idea in a notepad — never chase it." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: rule-3-num
+        type: text
+        z: 20
+        x: 72
+        y: 880
+        width: 80
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.16 }
+      - id: rule-3-text
+        type: text
+        z: 21
+        x: 170
+        y: 874
+        width: 850
+        height: 0
+        content: { type: plain, value: "Take 5-min breaks every 90 — no screens during them." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "4 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Summary ──────────────────────────────────────
+  - id: summary
+    label: Summary
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE TAKEAWAY" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Focus is a\nritual — not\nwillpower." }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: body
+        type: text
+        z: 12
+        x: 72
+        y: 820
+        width: 936
+        height: 0
+        content: { type: plain, value: "Build the cage first. The work flows when the room is quiet." }
+        style: { font_family: $body, font_size: 30, color: $text_muted, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "5 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · CTA ──────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 200, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] }, opacity: 0.95 }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "#FFFFFF" } }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 460
+        width: 936
+        height: 0
+        content: { type: plain, value: "Save this.\nBuild your\nritual." }
+        style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
+      - id: sub
+        type: text
+        z: 12
+        x: 72
+        y: 980
+        width: 936
+        height: 0
+        content: { type: plain, value: "Follow @yourhandle for one focus playbook a week." }
+        style: { font_family: $body, font_size: 26, color: "#FFFFFF", line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "6 / 6" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,     path: "pages[0].layers[4].content.value",  type: text, hint: "Cover title",         default: "How I Deep Work\nfor 4 Hours\nStraight." }
+  - { id: cover_tagline,   path: "pages[0].layers[5].content.value",  type: text, hint: "Cover tagline",       default: "The setup. The rules. The cost." }
+  - { id: dist_heading,    path: "pages[1].layers[3].content.value",  type: text, hint: "Distractor heading",  default: "Three thieves." }
+  - { id: dist_1,          path: "pages[1].layers[5].content.value",  type: text, hint: "Distractor 1",        default: "Notifications — every ping costs 23 minutes." }
+  - { id: dist_2,          path: "pages[1].layers[7].content.value",  type: text, hint: "Distractor 2",        default: "Open tabs — visible work is unfinished work." }
+  - { id: dist_3,          path: "pages[1].layers[9].content.value",  type: text, hint: "Distractor 3",        default: "Ambient chat — Slack is a meeting that never ends." }
+  - { id: setup_rule_1,    path: "pages[2].layers[5].content.value",  type: text, hint: "Setup rule 1",        default: "Same desk. Same chair. Same hour, every day." }
+  - { id: setup_rule_2,    path: "pages[2].layers[7].content.value",  type: text, hint: "Setup rule 2",        default: "Phone in a drawer. Laptop on airplane mode." }
+  - { id: setup_rule_3,    path: "pages[2].layers[9].content.value",  type: text, hint: "Setup rule 3",        default: "One open document. Nothing else on screen." }
+  - { id: proto_rule_1,    path: "pages[3].layers[5].content.value",  type: text, hint: "Protocol rule 1",     default: "Define the deliverable before you start." }
+  - { id: proto_rule_2,    path: "pages[3].layers[7].content.value",  type: text, hint: "Protocol rule 2",     default: "Park every new idea in a notepad — never chase it." }
+  - { id: proto_rule_3,    path: "pages[3].layers[9].content.value",  type: text, hint: "Protocol rule 3",     default: "Take 5-min breaks every 90 — no screens during them." }
+  - { id: summary_heading, path: "pages[4].layers[3].content.value",  type: text, hint: "Summary heading",     default: "Focus is a\nritual — not\nwillpower." }
+  - { id: cta_heading,     path: "pages[5].layers[2].content.value",  type: text, hint: "CTA heading",         default: "Save this.\nBuild your\nritual." }
+  - { id: cta_sub,         path: "pages[5].layers[3].content.value",  type: text, hint: "CTA subline",         default: "Follow @yourhandle for one focus playbook a week." }

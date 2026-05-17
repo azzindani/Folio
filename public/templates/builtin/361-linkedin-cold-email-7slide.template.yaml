@@ -1,0 +1,425 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn carousel — cold email playbook. 1080×1350 portrait.
+meta:
+  id: tmpl-linkedin-cold-email-7slide
+  name: LinkedIn Cold Email Playbook (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, sales, cold-email, outreach, 4-5]
+  description: "7-slide LinkedIn carousel walking through cold-email fundamentals: subject line, opener, pitch, CTA."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 480
+        width: 920
+        height: 0
+        content: { type: plain, value: "THE OUTREACH PLAYBOOK" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Cold emails\nthat get replies." }
+        style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: subtitle
+        type: text
+        z: 12
+        x: 80
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "A 4-part framework B2B teams use to book meetings in 2026." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: swipe
+        type: text
+        z: 13
+        x: 80
+        y: 960
+        width: 920
+        height: 0
+        content: { type: plain, value: "Swipe → for the playbook." }
+        style: { font_family: $body, font_size: 22, font_weight: 600, color: $accent }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "1/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Why most emails get ignored
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "THE PROBLEM" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Why most cold emails get ignored." }
+        style: { font_family: $heading, font_size: 62, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 12
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "The average buyer gets 120+ emails a day. Yours competes for 2 seconds of attention. If the subject line, opener, pitch, and CTA aren't tight, you're noise.\n\nThe next 4 slides fix that — one move at a time." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "2/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · Tip 01 · Subject line ────────────────────────
+  - id: tip-subject
+    label: Subject line
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Write the subject line last." }
+        style: { font_family: $heading, font_size: 68, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: rule
+        type: text
+        z: 12
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "5 words max. Lowercase. No hype. Sound like a forward from a colleague, not a marketing blast." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 140, radius: 12, fill: { type: solid, color: "$surface" } }
+      - id: example-label
+        type: text
+        z: 14
+        x: 112
+        y: 770
+        width: 880
+        height: 0
+        content: { type: plain, value: "EXAMPLE:" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: example-text
+        type: text
+        z: 15
+        x: 112
+        y: 810
+        width: 880
+        height: 0
+        content: { type: plain, value: "quick q about your onboarding flow" }
+        style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.4 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "3/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · Tip 02 · Opener ──────────────────────────────
+  - id: tip-opener
+    label: Opener
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Open with proof you did the work." }
+        style: { font_family: $heading, font_size: 68, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: rule
+        type: text
+        z: 12
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "One specific observation about their company — never \"I hope this email finds you well.\"" }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 760, width: 920, height: 180, radius: 12, fill: { type: solid, color: "$surface" } }
+      - id: example-label
+        type: text
+        z: 14
+        x: 112
+        y: 790
+        width: 880
+        height: 0
+        content: { type: plain, value: "EXAMPLE:" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: example-text
+        type: text
+        z: 15
+        x: 112
+        y: 830
+        width: 880
+        height: 0
+        content: { type: plain, value: "Saw your team just hired 12 SDRs in Q1 — congrats." }
+        style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.45 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "4/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Tip 03 · Pitch ───────────────────────────────
+  - id: tip-pitch
+    label: Pitch
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Pitch outcomes, not features." }
+        style: { font_family: $heading, font_size: 68, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: rule
+        type: text
+        z: 12
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "One sentence. The result a customer like them saw — with a number attached." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 180, radius: 12, fill: { type: solid, color: "$surface" } }
+      - id: example-label
+        type: text
+        z: 14
+        x: 112
+        y: 770
+        width: 880
+        height: 0
+        content: { type: plain, value: "EXAMPLE:" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: example-text
+        type: text
+        z: 15
+        x: 112
+        y: 810
+        width: 880
+        height: 0
+        content: { type: plain, value: "We cut ramp time for Linear's new reps from 60 to 22 days." }
+        style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.45 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "5/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · Tip 04 · CTA ─────────────────────────────────
+  - id: tip-cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Ask one small question." }
+        style: { font_family: $heading, font_size: 68, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: rule
+        type: text
+        z: 12
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "Don't ask for a meeting on email #1. Ask for a yes/no — momentum beats calendars." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 180, radius: 12, fill: { type: solid, color: "$surface" } }
+      - id: example-label
+        type: text
+        z: 14
+        x: 112
+        y: 770
+        width: 880
+        height: 0
+        content: { type: plain, value: "EXAMPLE:" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: example-text
+        type: text
+        z: 15
+        x: 112
+        y: 810
+        width: 880
+        height: 0
+        content: { type: plain, value: "Worth a 15-min look at how we did it?" }
+        style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.45 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "6/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 7 · CTA ──────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: heading
+        type: text
+        z: 11
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "Steal this." }
+        style: { font_family: $heading, font_size: 128, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 }
+      - id: sub
+        type: text
+        z: 12
+        x: 80
+        y: 660
+        width: 920
+        height: 0
+        content: { type: plain, value: "Follow for one B2B playbook every week." }
+        style: { font_family: $body, font_size: 28, color: "#FFFFFF", line_height: 1.4 }
+      - { id: cta-btn, type: rect, z: 13, x: 80, y: 820, width: 320, height: 72, radius: 36, fill: { type: solid, color: "$primary" } }
+      - id: cta-text
+        type: text
+        z: 14
+        x: 80
+        y: 842
+        width: 320
+        height: 0
+        content: { type: plain, value: "Follow →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: handle
+        type: text
+        z: 15
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover title",          default: "Cold emails\nthat get replies." }
+  - { id: cover_subtitle, path: "pages[0].layers[4].content.value", type: text, hint: "Cover subtitle",       default: "A 4-part framework B2B teams use to book meetings in 2026." }
+  - { id: intro_body,     path: "pages[1].layers[4].content.value", type: text, hint: "Intro body",           default: "The average buyer gets 120+ emails a day." }
+  - { id: subject_rule,   path: "pages[2].layers[4].content.value", type: text, hint: "Subject rule",         default: "5 words max. Lowercase. No hype." }
+  - { id: subject_ex,     path: "pages[2].layers[7].content.value", type: text, hint: "Subject example",      default: "quick q about your onboarding flow" }
+  - { id: opener_rule,    path: "pages[3].layers[4].content.value", type: text, hint: "Opener rule",          default: "One specific observation about their company." }
+  - { id: opener_ex,      path: "pages[3].layers[7].content.value", type: text, hint: "Opener example",       default: "Saw your team just hired 12 SDRs in Q1 — congrats." }
+  - { id: pitch_rule,     path: "pages[4].layers[4].content.value", type: text, hint: "Pitch rule",           default: "One sentence. Outcome with a number." }
+  - { id: pitch_ex,       path: "pages[4].layers[7].content.value", type: text, hint: "Pitch example",        default: "We cut ramp time for Linear's new reps from 60 to 22 days." }
+  - { id: cta_rule,       path: "pages[5].layers[4].content.value", type: text, hint: "CTA rule",             default: "Ask for a yes/no — not a meeting." }
+  - { id: cta_ex,         path: "pages[5].layers[7].content.value", type: text, hint: "CTA example",          default: "Worth a 15-min look at how we did it?" }
+  - { id: final_heading,  path: "pages[6].layers[2].content.value", type: text, hint: "Final CTA heading",    default: "Steal this." }
+  - { id: final_sub,      path: "pages[6].layers[3].content.value", type: text, hint: "Final CTA sub",        default: "Follow for one B2B playbook every week." }
+  - { id: final_handle,   path: "pages[6].layers[6].content.value", type: text, hint: "Handle",               default: "@yourhandle" }

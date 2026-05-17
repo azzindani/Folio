@@ -1,0 +1,177 @@
+_protocol: template/v1
+
+# Single-page marketing quote poster — display serif italic quote with attribution.
+# LinkedIn 4:5 portrait, editorial-cream theme.
+meta:
+  id: tmpl-marketing-quote-poster
+  name: Marketing Quote Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, marketing, quote, typography, editorial-cream, 4-5]
+  description: "Single-page editorial quote poster: large italic display serif quote with attribution."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1200, height: 1500, fill: { type: solid, color: "$background" } }
+
+  - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1200, height: 12, fill: { type: solid, color: "$primary" } }
+
+  - id: accent-dot
+    type: circle
+    z: 5
+    cx: 1110
+    cy: 140
+    rx: 10
+    ry: 10
+    fill: { type: solid, color: "$accent" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 140
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ON MARKETING" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: quote-mark
+    type: text
+    z: 8
+    x: 60
+    y: 280
+    width: 360
+    height: 0
+    content: { type: plain, value: "“" }
+    style:
+      font_family: $heading
+      font_size: 360
+      font_weight: 900
+      color: $accent
+      line_height: 1.0
+      letter_spacing: -0.05
+    opacity: 0.18
+
+  - id: quote
+    type: text
+    z: 30
+    x: 100
+    y: 480
+    width: 1000
+    height: 0
+    content: { type: plain, value: "People don't buy what you do,\nthey buy why you do it." }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 500
+      color: $text
+      line_height: 1.2
+      letter_spacing: -0.02
+      font_style: italic
+
+  - id: divider
+    type: rect
+    z: 40
+    x: 100
+    y: 1080
+    width: 80
+    height: 3
+    fill: { type: solid, color: "$primary" }
+
+  - id: author
+    type: text
+    z: 41
+    x: 100
+    y: 1110
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Simon Sinek" }
+    style:
+      font_family: $body
+      font_size: 28
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: author-role
+    type: text
+    z: 42
+    x: 100
+    y: 1160
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Author, Start With Why" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      line_height: 1.4
+
+  - { id: footer-divider, type: rect, z: 50, x: 80, y: 1310, width: 1040, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.3 }
+
+  - id: handle
+    type: text
+    z: 51
+    x: 80
+    y: 1350
+    width: 700
+    height: 0
+    content: { type: plain, value: "@yourhandle · Marketing notes" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: page-mark
+    type: text
+    z: 52
+    x: 880
+    y: 1350
+    width: 240
+    height: 0
+    content: { type: plain, value: "01 / FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  accent-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.3 }
+  quote-mark:
+    loop: { type: breathe, duration: 3600 }
+  quote:
+    enter: { type: fade_up, duration: 800, delay: 200, easing: ease-out }
+  author:
+    enter: { type: fade_up, duration: 600, delay: 600, easing: ease-out }
+  author-role:
+    enter: { type: fade_up, duration: 600, delay: 750, easing: ease-out }
+
+slots:
+  - { id: eyebrow,     path: "layers[3].content.value",  type: text, hint: "Eyebrow tag",          default: "ON MARKETING" }
+  - { id: quote_mark,  path: "layers[4].content.value",  type: text, hint: "Decorative quote glyph", default: "“" }
+  - { id: quote,       path: "layers[5].content.value",  type: text, hint: "Quote body",           default: "People don't buy what you do,\nthey buy why you do it." }
+  - { id: author,      path: "layers[7].content.value",  type: text, hint: "Author name",          default: "Simon Sinek" }
+  - { id: author_role, path: "layers[8].content.value",  type: text, hint: "Author role",          default: "Author, Start With Why" }
+  - { id: handle,      path: "layers[10].content.value", type: text, hint: "Footer handle",        default: "@yourhandle · Marketing notes" }

@@ -1,0 +1,328 @@
+_protocol: template/v1
+
+# Single-page LinkedIn career milestone poster.
+# 4:5 portrait 1200×1500. forest-deep theme. Huge milestone number + caption + 3 reflection cards.
+meta:
+  id: tmpl-career-milestone-poster
+  name: Career Milestone Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, career, milestone, anniversary, 4-5]
+  description: "LinkedIn 4:5 poster marking a career milestone with a massive number and 3 reflection cards."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: linear, angle: 165, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$accent" }
+
+  - id: accent-dot
+    type: circle
+    z: 5
+    cx: 1110
+    cy: 130
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 120
+    width: 1040
+    height: 0
+    content: { type: plain, value: "MILESTONE · 2026" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: milestone-number
+    type: text
+    z: 21
+    x: 80
+    y: 220
+    width: 1040
+    height: 0
+    content: { type: plain, value: "10 years" }
+    style:
+      font_family: $heading
+      font_size: 240
+      font_weight: 900
+      color: $primary
+      line_height: 0.92
+      letter_spacing: -0.04
+
+  - id: caption
+    type: text
+    z: 22
+    x: 80
+    y: 600
+    width: 1040
+    height: 0
+    content: { type: plain, value: "...since I shipped my first line of code." }
+    style:
+      font_family: $heading
+      font_size: 40
+      font_weight: 700
+      color: $text
+      line_height: 1.25
+      letter_spacing: -0.01
+
+  - id: subcaption
+    type: text
+    z: 23
+    x: 80
+    y: 720
+    width: 1040
+    height: 0
+    content: { type: plain, value: "A decade of bug reports, late merges, and the quiet thrill of green tests." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text_muted
+      line_height: 1.5
+
+  - id: divider
+    type: rect
+    z: 10
+    x: 80
+    y: 840
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - id: reflect-label
+    type: text
+    z: 30
+    x: 80
+    y: 870
+    width: 1040
+    height: 0
+    content: { type: plain, value: "REFLECTIONS" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-1-bg
+    type: rect
+    z: 31
+    x: 80
+    y: 920
+    width: 333
+    height: 280
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-1-label
+    type: text
+    z: 32
+    x: 112
+    y: 950
+    width: 280
+    height: 0
+    content: { type: plain, value: "THINGS THAT CHANGED" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: card-1-body
+    type: text
+    z: 33
+    x: 112
+    y: 1000
+    width: 280
+    height: 0
+    content: { type: plain, value: "Tools. Languages. The size of my screens. How fast I learn to let go of code I love." }
+    style:
+      font_family: $body
+      font_size: 17
+      color: $text
+      line_height: 1.55
+
+  - id: card-2-bg
+    type: rect
+    z: 31
+    x: 433
+    y: 920
+    width: 334
+    height: 280
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-2-label
+    type: text
+    z: 32
+    x: 465
+    y: 950
+    width: 280
+    height: 0
+    content: { type: plain, value: "THINGS THAT DIDN'T" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: card-2-body
+    type: text
+    z: 33
+    x: 465
+    y: 1000
+    width: 280
+    height: 0
+    content: { type: plain, value: "The high of solving a real problem. Reading other people's code. The value of one good mentor." }
+    style:
+      font_family: $body
+      font_size: 17
+      color: $text
+      line_height: 1.55
+
+  - id: card-3-bg
+    type: rect
+    z: 31
+    x: 787
+    y: 920
+    width: 333
+    height: 280
+    radius: 16
+    fill: { type: solid, color: "$primary" }
+
+  - id: card-3-label
+    type: text
+    z: 32
+    x: 819
+    y: 950
+    width: 280
+    height: 0
+    content: { type: plain, value: "WHAT'S NEXT" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: "#FFFFFF"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: card-3-body
+    type: text
+    z: 33
+    x: 819
+    y: 1000
+    width: 280
+    height: 0
+    content: { type: plain, value: "Less code I have to remember to maintain. More work that outlives the framework it was built on." }
+    style:
+      font_family: $body
+      font_size: 17
+      color: "#FFFFFF"
+      line_height: 1.55
+
+  - id: thanks
+    type: text
+    z: 40
+    x: 80
+    y: 1260
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Here's to the next decade. Thanks for being part of it." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  - id: author
+    type: text
+    z: 60
+    x: 80
+    y: 1400
+    width: 700
+    height: 0
+    content: { type: plain, value: "@yourhandle · 17 May 2026" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.04
+
+  - id: page-mark
+    type: text
+    z: 61
+    x: 880
+    y: 1400
+    width: 240
+    height: 0
+    content: { type: plain, value: "FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  accent-band:
+    loop: { type: pulse, duration: 2400, scale: 1.0 }
+  accent-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.25 }
+  milestone-number:
+    enter: { type: scale_in, duration: 900, delay: 200, easing: ease-out }
+  card-1-bg:
+    enter: { type: fade_up, duration: 600, delay: 600, easing: ease-out }
+  card-2-bg:
+    enter: { type: fade_up, duration: 600, delay: 800, easing: ease-out }
+  card-3-bg:
+    enter: { type: fade_up, duration: 600, delay: 1000, easing: ease-out }
+
+slots:
+  - { id: eyebrow,          path: "layers[3].content.value",  type: text, hint: "Eyebrow tag",           default: "MILESTONE · 2026" }
+  - { id: milestone_number, path: "layers[4].content.value",  type: text, hint: "Big milestone number",  default: "10 years" }
+  - { id: caption,          path: "layers[5].content.value",  type: text, hint: "Caption",               default: "...since I shipped my first line of code." }
+  - { id: subcaption,       path: "layers[6].content.value",  type: text, hint: "Sub-caption",           default: "A decade of bug reports..." }
+  - { id: card_1_body,      path: "layers[11].content.value", type: text, hint: "Card 1 · changed",      default: "Tools. Languages..." }
+  - { id: card_2_body,      path: "layers[14].content.value", type: text, hint: "Card 2 · didn't",       default: "The high of solving..." }
+  - { id: card_3_body,      path: "layers[17].content.value", type: text, hint: "Card 3 · what's next",  default: "Less code I have to remember..." }
+  - { id: thanks,           path: "layers[18].content.value", type: text, hint: "Thanks line",           default: "Here's to the next decade..." }
+  - { id: author,           path: "layers[19].content.value", type: text, hint: "Handle + date",         default: "@yourhandle · 17 May 2026" }

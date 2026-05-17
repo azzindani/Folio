@@ -1,0 +1,141 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn carousel — Zero to One in 90 days founder playbook.
+# Portrait 1080×1350. Indigo-pro theme. Top accent band + pagination on every page.
+meta:
+  id: tmpl-linkedin-zero-to-one-7slide
+  name: LinkedIn · Zero to One (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, startup, founder, playbook, 4-5, indigo-pro]
+  description: "7-slide LinkedIn carousel: 90-day zero-to-one founder playbook with week-by-week breakdown."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "1 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "FOUNDER PLAYBOOK" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 520, width: 960, height: 0, content: { type: plain, value: "0 → 1\nin 90 days:\nmy playbook." }, style: { font_family: $heading, font_size: 104, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: tagline, type: text, z: 13, x: 60, y: 1000, width: 960, height: 0, content: { type: plain, value: "Swipe → for the week-by-week breakdown." }, style: { font_family: $body, font_size: 24, color: $text_muted } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 2 · What I built ─────────────────────────────────
+  - id: what-i-built
+    label: What I built
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "2 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "THE PROJECT" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "What I built." }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: body, type: text, z: 13, x: 60, y: 380, width: 960, height: 0, content: { type: plain, value: "A local-first analytics tool for indie SaaS founders. One operator, one wedge, one paid pricing tier. No funding, no team, no roadmap longer than the next two weeks. Just a clear bet that small teams want full data ownership and will pay for it." }, style: { font_family: $body, font_size: 30, color: $text, line_height: 1.45 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 3 · Week 1-2 ─────────────────────────────────────
+  - id: week-1-2
+    label: Week 1-2
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "3 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "WEEK 1 — 2 · VALIDATE" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "Talk before you build." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "20 customer calls. No pitch, just pain." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 20, cx: 90, cy: 660, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-2, type: text, z: 22, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Write the one-line problem you keep hearing." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 20, cx: 90, cy: 780, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-3, type: text, z: 23, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Pick the smallest wedge. Kill everything else." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 4 · Week 3-6 ─────────────────────────────────────
+  - id: week-3-6
+    label: Week 3-6
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "4 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "WEEK 3 — 6 · BUILD" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "Ship the ugly version." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "One feature, end-to-end. No settings page." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 20, cx: 90, cy: 660, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-2, type: text, z: 22, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Onboard 5 design partners by hand." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 20, cx: 90, cy: 780, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-3, type: text, z: 23, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Demo weekly. Ship Fridays. No exceptions." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 5 · Week 7-10 ────────────────────────────────────
+  - id: week-7-10
+    label: Week 7-10
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "5 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "WEEK 7 — 10 · CHARGE" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "Get paid before launch." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "Charge design partners. Even $20 changes everything." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 20, cx: 90, cy: 660, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-2, type: text, z: 22, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Write the landing page from real quotes." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 20, cx: 90, cy: 780, rx: 12, ry: 12, fill: { type: solid, color: "$primary" } }
+      - { id: bullet-3, type: text, z: 23, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Build the waitlist. Email it every Tuesday." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 6 · Week 11-12 Launch ────────────────────────────
+  - id: week-11-12
+    label: Week 11-12 Launch
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "6 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "WEEK 11 — 12 · LAUNCH" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "Launch loud, then iterate." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
+      - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "Pick one channel. Go deep, not wide." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 20, cx: 90, cy: 660, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
+      - { id: bullet-2, type: text, z: 22, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Reply to every comment for 48 hours." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 20, cx: 90, cy: 780, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
+      - { id: bullet-3, type: text, z: 23, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Measure activation. Fix the top drop-off." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 7 · CTA ──────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(10,8,40,0.35)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "7 / 7" }, style: { font_family: $mono, font_size: 18, color: "#E8E8FF", letter_spacing: 0.18 } }
+      - { id: heading, type: text, z: 11, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Save this." }, style: { font_family: $heading, font_size: 120, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: sub, type: text, z: 12, x: 60, y: 640, width: 960, height: 0, content: { type: plain, value: "Run this playbook on your next project." }, style: { font_family: $body, font_size: 30, color: "#F0F0FF", line_height: 1.4 } }
+      - { id: cta-btn, type: rect, z: 13, x: 60, y: 800, width: 320, height: 72, radius: 36, fill: { type: solid, color: "#FFFFFF" } }
+      - { id: cta-text, type: text, z: 14, x: 60, y: 822, width: 320, height: 0, content: { type: plain, value: "Follow →" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "#0A0828", text_align: center } }
+      - { id: handle, type: text, z: 15, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF" } }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",         default: "0 → 1\nin 90 days:\nmy playbook." }
+  - { id: cover_tagline,  path: "pages[0].layers[5].content.value", type: text, hint: "Cover tagline",          default: "Swipe → for the week-by-week breakdown." }
+  - { id: what_built,     path: "pages[1].layers[5].content.value", type: text, hint: "What I built paragraph", default: "A local-first analytics tool for indie SaaS founders." }
+  - { id: week_1_2_title, path: "pages[2].layers[4].content.value", type: text, hint: "Week 1-2 title",         default: "Talk before you build." }
+  - { id: week_3_6_title, path: "pages[3].layers[4].content.value", type: text, hint: "Week 3-6 title",         default: "Ship the ugly version." }
+  - { id: week_7_10_title,path: "pages[4].layers[4].content.value", type: text, hint: "Week 7-10 title",        default: "Get paid before launch." }
+  - { id: week_11_12_title,path: "pages[5].layers[4].content.value", type: text, hint: "Week 11-12 title",      default: "Launch loud, then iterate." }
+  - { id: cta_heading,    path: "pages[6].layers[4].content.value", type: text, hint: "CTA heading",            default: "Save this." }
+  - { id: cta_sub,        path: "pages[6].layers[5].content.value", type: text, hint: "CTA subline",            default: "Run this playbook on your next project." }
+  - { id: cta_handle,     path: "pages[6].layers[8].content.value", type: text, hint: "Footer handle",          default: "@yourhandle" }

@@ -1,0 +1,148 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn carousel — getting first 100 customers without ads.
+# Portrait 1080×1350. Forest-deep theme. Top accent band + pagination.
+meta:
+  id: tmpl-linkedin-first-100-customers-7slide
+  name: LinkedIn · First 100 Customers (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, startup, founder, gtm, growth, 4-5, forest-deep]
+  description: "7-slide LinkedIn carousel: 5 organic channels that delivered the first 100 customers."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "1 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 440, width: 960, height: 0, content: { type: plain, value: "GROWTH PLAYBOOK" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 510, width: 960, height: 0, content: { type: plain, value: "How I got\nthe first 100\ncustomers\n(without ads)." }, style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.02, letter_spacing: -0.03 } }
+      - { id: tagline, type: text, z: 13, x: 60, y: 1140, width: 960, height: 0, content: { type: plain, value: "Swipe → 5 channels, in order." }, style: { font_family: $body, font_size: 24, color: $text_muted } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 2 · Where I started ──────────────────────────────
+  - id: where-started
+    label: Where I started
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "2 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "WHERE I STARTED" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "Zero followers. Zero budget." }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: body, type: text, z: 13, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "I had a working product, $0 in ad spend, and a list of 12 people who said 'sounds interesting.' I gave myself 90 days to reach 100 paid customers. These are the 5 channels that actually moved the needle — ranked by where I spent my time, not by where the leads came from." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 3 · 01 Communities ───────────────────────────────
+  - id: communities
+    label: 01 Communities
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "3 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "CHANNEL 01" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: number, type: text, z: 20, x: 60, y: 220, width: 200, height: 0, content: { type: plain, value: "01" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: title, type: text, z: 21, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "Communities." }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 30, cx: 90, cy: 660, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-1, type: text, z: 31, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Pick 3 communities where the pain shows up daily." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 30, cx: 90, cy: 780, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-2, type: text, z: 32, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Give for 30 days before you mention the product." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 30, cx: 90, cy: 900, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-3, type: text, z: 33, x: 130, y: 880, width: 890, height: 0, content: { type: plain, value: "Reply to questions, then DM with a free fix." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 4 · 02 Cold DMs ──────────────────────────────────
+  - id: cold-dms
+    label: 02 Cold DMs
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "4 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "CHANNEL 02" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: number, type: text, z: 20, x: 60, y: 220, width: 200, height: 0, content: { type: plain, value: "02" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: title, type: text, z: 21, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "Cold DMs." }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 30, cx: 90, cy: 660, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-1, type: text, z: 31, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Reference one specific thing they shipped this month." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 30, cx: 90, cy: 780, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-2, type: text, z: 32, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Ask a question, don't pitch. The pitch comes in reply 3." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 30, cx: 90, cy: 900, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-3, type: text, z: 33, x: 130, y: 880, width: 890, height: 0, content: { type: plain, value: "20 sends per day, max. Quality beats blast." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 5 · 03 Content ───────────────────────────────────
+  - id: content
+    label: 03 Content
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "5 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "CHANNEL 03" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: number, type: text, z: 20, x: 60, y: 220, width: 200, height: 0, content: { type: plain, value: "03" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: title, type: text, z: 21, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "Content." }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 30, cx: 90, cy: 660, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-1, type: text, z: 31, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Write one tactical post per week. Just one." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 30, cx: 90, cy: 780, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-2, type: text, z: 32, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Show numbers and screenshots — not opinions." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 30, cx: 90, cy: 900, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-3, type: text, z: 33, x: 130, y: 880, width: 890, height: 0, content: { type: plain, value: "End every post with a low-friction next step." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 6 · 04 Partnerships ──────────────────────────────
+  - id: partnerships
+    label: 04 Partnerships
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "6 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "CHANNEL 04" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: number, type: text, z: 20, x: 60, y: 220, width: 200, height: 0, content: { type: plain, value: "04" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: title, type: text, z: 21, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "Partnerships." }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: dot-1, type: circle, z: 30, cx: 90, cy: 660, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-1, type: text, z: 31, x: 130, y: 640, width: 890, height: 0, content: { type: plain, value: "Find tools your customers already pay for." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-2, type: circle, z: 30, cx: 90, cy: 780, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-2, type: text, z: 32, x: 130, y: 760, width: 890, height: 0, content: { type: plain, value: "Build one integration. Co-write the launch post." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: dot-3, type: circle, z: 30, cx: 90, cy: 900, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
+      - { id: tactic-3, type: text, z: 33, x: 130, y: 880, width: 890, height: 0, content: { type: plain, value: "Trade audience. Don't trade revenue (yet)." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 7 · 05 Word of mouth + CTA ───────────────────────
+  - id: word-of-mouth
+    label: 05 Word of mouth
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(5,20,15,0.3)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "7 / 7" }, style: { font_family: $mono, font_size: 18, color: "#E8F5EE", letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 140, width: 960, height: 0, content: { type: plain, value: "CHANNEL 05" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: number, type: text, z: 20, x: 60, y: 190, width: 200, height: 0, content: { type: plain, value: "05" }, style: { font_family: $heading, font_size: 100, font_weight: 900, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: title, type: text, z: 21, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "Word of mouth." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: tactic-1, type: text, z: 31, x: 60, y: 540, width: 960, height: 0, content: { type: plain, value: "Make it embarrassingly easy to share — credit referrers loudly." }, style: { font_family: $body, font_size: 28, color: "#F0F8F3", line_height: 1.5 } }
+      - { id: divider, type: rect, z: 40, x: 60, y: 720, width: 960, height: 1, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.3 }
+      - { id: cta-heading, type: text, z: 41, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "Save this. Run it. DM me your channel #1." }, style: { font_family: $body, font_size: 28, font_weight: 700, color: "#FFFFFF", line_height: 1.4 } }
+      - { id: cta-btn, type: rect, z: 42, x: 60, y: 920, width: 320, height: 72, radius: 36, fill: { type: solid, color: "#FFFFFF" } }
+      - { id: cta-text, type: text, z: 43, x: 60, y: 942, width: 320, height: 0, content: { type: plain, value: "Follow →" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "#0F2418", text_align: center } }
+      - { id: handle, type: text, z: 15, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF" } }
+
+slots:
+  - { id: cover_title,        path: "pages[0].layers[4].content.value",  type: text, hint: "Cover headline",         default: "How I got\nthe first 100\ncustomers\n(without ads)." }
+  - { id: started_body,       path: "pages[1].layers[5].content.value",  type: text, hint: "Where started body",     default: "I had a working product, $0 in ad spend, and a list of 12 people who said 'sounds interesting.'" }
+  - { id: communities_tactic_1, path: "pages[2].layers[7].content.value", type: text, hint: "Communities tactic 1", default: "Pick 3 communities where the pain shows up daily." }
+  - { id: cold_dm_tactic_1,   path: "pages[3].layers[7].content.value",  type: text, hint: "Cold DM tactic 1",       default: "Reference one specific thing they shipped this month." }
+  - { id: content_tactic_1,   path: "pages[4].layers[7].content.value",  type: text, hint: "Content tactic 1",       default: "Write one tactical post per week. Just one." }
+  - { id: partner_tactic_1,   path: "pages[5].layers[7].content.value",  type: text, hint: "Partnerships tactic 1",  default: "Find tools your customers already pay for." }
+  - { id: wom_tactic,         path: "pages[6].layers[7].content.value",  type: text, hint: "Word-of-mouth tactic",   default: "Make it embarrassingly easy to share — credit referrers loudly." }
+  - { id: cta_heading,        path: "pages[6].layers[9].content.value",  type: text, hint: "CTA heading",            default: "Save this. Run it. DM me your channel #1." }
+  - { id: handle,             path: "pages[0].layers[6].content.value",  type: text, hint: "Footer handle",          default: "@yourhandle" }

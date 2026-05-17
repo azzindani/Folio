@@ -1,0 +1,465 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — Copywriting principles with before/after pairs.
+# 1080×1350 portrait, editorial-cream theme.
+meta:
+  id: tmpl-linkedin-copywriting-5slide
+  name: LinkedIn Copywriting Principles (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, marketing, copywriting, editorial-cream, 4-5]
+  description: "5-slide LinkedIn carousel: 3 copywriting principles with before/after example pairs."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: cover-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: cover-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "COPYWRITING · 3 PRINCIPLES" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: cover-title
+        type: text
+        z: 12
+        x: 80
+        y: 500
+        width: 920
+        height: 0
+        content: { type: plain, value: "Copy that converts\n(without being cringe)" }
+        style: { font_family: $heading, font_size: 78, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: cover-tagline
+        type: text
+        z: 13
+        x: 80
+        y: 860
+        width: 920
+        height: 0
+        content: { type: plain, value: "Swipe → before/after pairs inside." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: cover-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: cover-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "1 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: intro-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: intro-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: intro-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "BEFORE WE START" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: intro-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Cringe = vague,\nself-important,\nand desperate." }
+        style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: intro-body
+        type: text
+        z: 13
+        x: 80
+        y: 640
+        width: 920
+        height: 0
+        content: { type: plain, value: "Good copy is specific, voiced, and frictionless. Three principles, three before/after pairs." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: intro-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: intro-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "2 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · 01 Specificity ───────────────────────────────
+  - id: specificity
+    label: Specificity
+    layers:
+      - { id: spec-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: spec-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: spec-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: spec-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Specificity" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: spec-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "Numbers beat adjectives. Always." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: spec-before-label
+        type: text
+        z: 14
+        x: 80
+        y: 500
+        width: 920
+        height: 0
+        content: { type: plain, value: "BEFORE" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.36 }
+      - id: spec-before-card
+        type: rect
+        z: 15
+        x: 80
+        y: 530
+        width: 920
+        height: 130
+        radius: 8
+        fill: { type: solid, color: "$surface" }
+      - id: spec-before
+        type: text
+        z: 16
+        x: 110
+        y: 560
+        width: 860
+        height: 0
+        content: { type: plain, value: "Our tool helps teams be more productive." }
+        style: { font_family: $mono, font_size: 22, color: $text_muted, line_height: 1.55 }
+      - id: spec-after-label
+        type: text
+        z: 17
+        x: 80
+        y: 720
+        width: 920
+        height: 0
+        content: { type: plain, value: "AFTER" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: spec-after-card
+        type: rect
+        z: 18
+        x: 80
+        y: 750
+        width: 920
+        height: 130
+        radius: 8
+        fill: { type: solid, color: "$surface" }
+      - id: spec-after
+        type: text
+        z: 19
+        x: 110
+        y: 780
+        width: 860
+        height: 0
+        content: { type: plain, value: "Saves 11 hrs/week per engineer. 4-min setup." }
+        style: { font_family: $mono, font_size: 22, font_weight: 600, color: $text, line_height: 1.55 }
+      - id: spec-handle
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: spec-counter
+        type: text
+        z: 21
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "3 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · 02 Voice ─────────────────────────────────────
+  - id: voice
+    label: Voice
+    layers:
+      - { id: voice-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: voice-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: voice-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: voice-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Voice" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: voice-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "Sound like a person, not a press release." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: voice-before-label
+        type: text
+        z: 14
+        x: 80
+        y: 500
+        width: 920
+        height: 0
+        content: { type: plain, value: "BEFORE" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.36 }
+      - id: voice-before-card
+        type: rect
+        z: 15
+        x: 80
+        y: 530
+        width: 920
+        height: 130
+        radius: 8
+        fill: { type: solid, color: "$surface" }
+      - id: voice-before
+        type: text
+        z: 16
+        x: 110
+        y: 560
+        width: 860
+        height: 0
+        content: { type: plain, value: "Leveraging best-in-class synergies to drive value." }
+        style: { font_family: $mono, font_size: 22, color: $text_muted, line_height: 1.55 }
+      - id: voice-after-label
+        type: text
+        z: 17
+        x: 80
+        y: 720
+        width: 920
+        height: 0
+        content: { type: plain, value: "AFTER" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: voice-after-card
+        type: rect
+        z: 18
+        x: 80
+        y: 750
+        width: 920
+        height: 130
+        radius: 8
+        fill: { type: solid, color: "$surface" }
+      - id: voice-after
+        type: text
+        z: 19
+        x: 110
+        y: 780
+        width: 860
+        height: 0
+        content: { type: plain, value: "Two teams. One shared inbox. Half the meetings." }
+        style: { font_family: $mono, font_size: 22, font_weight: 600, color: $text, line_height: 1.55 }
+      - id: voice-handle
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: voice-counter
+        type: text
+        z: 21
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "4 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · 03 Friction + CTA ────────────────────────────
+  - id: cta
+    label: Friction + CTA
+    layers:
+      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 175, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.95 }
+      - { id: cta-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.25)" } }
+      - { id: cta-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
+      - id: cta-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3 }
+      - id: cta-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Friction" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 }
+      - id: cta-sub
+        type: text
+        z: 13
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "Remove a word, remove a doubt." }
+        style: { font_family: $body, font_size: 26, color: "#F5F0E8", line_height: 1.4 }
+      - id: cta-before-card
+        type: rect
+        z: 14
+        x: 80
+        y: 500
+        width: 920
+        height: 130
+        radius: 8
+        fill: { type: solid, color: "rgba(0,0,0,0.25)" }
+      - id: cta-before
+        type: text
+        z: 15
+        x: 110
+        y: 530
+        width: 860
+        height: 0
+        content: { type: plain, value: "BEFORE: Click here to learn more about our pricing plans." }
+        style: { font_family: $mono, font_size: 22, color: "#F5F0E8", line_height: 1.55 }
+      - id: cta-after-card
+        type: rect
+        z: 16
+        x: 80
+        y: 660
+        width: 920
+        height: 130
+        radius: 8
+        fill: { type: solid, color: "rgba(255,255,255,0.18)" }
+      - id: cta-after
+        type: text
+        z: 17
+        x: 110
+        y: 690
+        width: 860
+        height: 0
+        content: { type: plain, value: "AFTER: See pricing →" }
+        style: { font_family: $mono, font_size: 24, font_weight: 700, color: "#FFFFFF", line_height: 1.55 }
+      - id: cta-headline
+        type: text
+        z: 18
+        x: 80
+        y: 870
+        width: 920
+        height: 0
+        content: { type: plain, value: "Rewrite\none line today." }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
+      - id: cta-btn
+        type: rect
+        z: 19
+        x: 80
+        y: 1110
+        width: 320
+        height: 72
+        radius: 36
+        fill: { type: solid, color: "$primary" }
+      - id: cta-btn-text
+        type: text
+        z: 20
+        x: 80
+        y: 1131
+        width: 320
+        height: 0
+        content: { type: plain, value: "Follow for more →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: cta-handle
+        type: text
+        z: 21
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#F5F0E8" }
+      - id: cta-counter
+        type: text
+        z: 22
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "5 / 5" }
+        style: { font_family: $mono, font_size: 14, color: "#F5F0E8", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover headline",        default: "Copy that converts\n(without being cringe)" }
+  - { id: intro_body,     path: "pages[1].layers[4].content.value", type: text, hint: "Intro paragraph",       default: "Good copy is specific, voiced, and frictionless. Three principles, three before/after pairs." }
+  - { id: spec_before,    path: "pages[2].layers[7].content.value", type: text, hint: "Specificity · before",  default: "Our tool helps teams be more productive." }
+  - { id: spec_after,     path: "pages[2].layers[10].content.value", type: text, hint: "Specificity · after",  default: "Saves 11 hrs/week per engineer. 4-min setup." }
+  - { id: voice_before,   path: "pages[3].layers[7].content.value", type: text, hint: "Voice · before",        default: "Leveraging best-in-class synergies to drive value." }
+  - { id: voice_after,    path: "pages[3].layers[10].content.value", type: text, hint: "Voice · after",        default: "Two teams. One shared inbox. Half the meetings." }
+  - { id: friction_after, path: "pages[4].layers[9].content.value", type: text, hint: "Friction · after",      default: "AFTER: See pricing →" }
+  - { id: cta_headline,   path: "pages[4].layers[10].content.value", type: text, hint: "CTA headline",         default: "Rewrite\none line today." }

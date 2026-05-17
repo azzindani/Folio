@@ -1,0 +1,348 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — Newsletter growth story (start + 3 tactics + CTA).
+# 1080×1350 portrait, forest-deep theme.
+meta:
+  id: tmpl-linkedin-newsletter-growth-5slide
+  name: LinkedIn Newsletter Growth (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, marketing, newsletter, growth, forest-deep, 4-5]
+  description: "5-slide LinkedIn carousel: how I grew my newsletter to 10k subscribers."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: cover-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: cover-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "GROWTH · CASE STUDY" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: cover-title
+        type: text
+        z: 12
+        x: 80
+        y: 500
+        width: 920
+        height: 0
+        content: { type: plain, value: "How I grew\nmy newsletter\nto 10k" }
+        style: { font_family: $heading, font_size: 88, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: cover-tagline
+        type: text
+        z: 13
+        x: 80
+        y: 1000
+        width: 920
+        height: 0
+        content: { type: plain, value: "Swipe → 3 tactics, no paid acquisition." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: cover-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: cover-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "1 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Where I started ──────────────────────────────
+  - id: start
+    label: Where I started
+    layers:
+      - { id: start-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: start-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: start-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHERE I STARTED" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: start-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "47 subscribers.\nMostly friends." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: start-body
+        type: text
+        z: 13
+        x: 80
+        y: 520
+        width: 920
+        height: 0
+        content: { type: plain, value: "I launched a Substack in March 2024 about product analytics. Wrote 12 issues, got nowhere — open rates 22%, growth flat. Then I changed three things. Twelve months later: 10,247 subs, 48% open rate, no ads spent." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: start-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: start-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "2 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · Tactic 01 ────────────────────────────────────
+  - id: tactic-1
+    label: Tactic 01
+    layers:
+      - { id: t1-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: t1-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: t1-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "TACTIC 01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: t1-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Niche the niche." }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: t1-body
+        type: text
+        z: 13
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "I dropped 'analytics' and rewrote my one-liner: 'Retention math for SaaS PMs.' Specificity is a magnet. Generic newsletters don't get shared." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: t1-stat
+        type: text
+        z: 14
+        x: 80
+        y: 880
+        width: 920
+        height: 0
+        content: { type: plain, value: "→ +1,200 subs in 30 days" }
+        style: { font_family: $heading, font_size: 40, font_weight: 700, color: $accent, line_height: 1.2, letter_spacing: -0.01 }
+      - id: t1-handle
+        type: text
+        z: 15
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: t1-counter
+        type: text
+        z: 16
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "3 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · Tactic 02 ────────────────────────────────────
+  - id: tactic-2
+    label: Tactic 02
+    layers:
+      - { id: t2-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: t2-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: t2-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "TACTIC 02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: t2-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Public teardowns." }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: t2-body
+        type: text
+        z: 13
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "Every issue tore down a real product's retention curve. Founders shared. PMs forwarded internally. Each teardown brought 80–200 subs from one company." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: t2-stat
+        type: text
+        z: 14
+        x: 80
+        y: 900
+        width: 920
+        height: 0
+        content: { type: plain, value: "→ +4,800 subs in 6 months" }
+        style: { font_family: $heading, font_size: 40, font_weight: 700, color: $accent, line_height: 1.2, letter_spacing: -0.01 }
+      - id: t2-handle
+        type: text
+        z: 15
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: t2-counter
+        type: text
+        z: 16
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "4 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Tactic 03 + CTA ──────────────────────────────
+  - id: cta
+    label: Tactic 03 + CTA
+    layers:
+      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.95 }
+      - { id: cta-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.35)" } }
+      - { id: cta-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
+      - id: cta-number
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 200
+        height: 0
+        content: { type: plain, value: "TACTIC 03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3 }
+      - id: cta-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "Cross-promo swaps." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 }
+      - id: cta-body
+        type: text
+        z: 13
+        x: 80
+        y: 400
+        width: 920
+        height: 0
+        content: { type: plain, value: "Found 6 newsletters in adjacent niches. Swapped recommendations in the footer. Reciprocity scales." }
+        style: { font_family: $body, font_size: 26, color: "#EAF6E8", line_height: 1.5 }
+      - id: cta-stat
+        type: text
+        z: 14
+        x: 80
+        y: 700
+        width: 920
+        height: 0
+        content: { type: plain, value: "→ +3,200 subs in 90 days" }
+        style: { font_family: $heading, font_size: 40, font_weight: 700, color: "#FFFFFF", line_height: 1.2, letter_spacing: -0.01 }
+      - id: cta-headline
+        type: text
+        z: 15
+        x: 80
+        y: 880
+        width: 920
+        height: 0
+        content: { type: plain, value: "Want the playbook?" }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: cta-btn
+        type: rect
+        z: 16
+        x: 80
+        y: 1000
+        width: 320
+        height: 72
+        radius: 36
+        fill: { type: solid, color: "$primary" }
+      - id: cta-btn-text
+        type: text
+        z: 17
+        x: 80
+        y: 1021
+        width: 320
+        height: 0
+        content: { type: plain, value: "Subscribe →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: cta-handle
+        type: text
+        z: 18
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#EAF6E8" }
+      - id: cta-counter
+        type: text
+        z: 19
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "5 / 5" }
+        style: { font_family: $mono, font_size: 14, color: "#EAF6E8", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover headline",       default: "How I grew\nmy newsletter\nto 10k" }
+  - { id: start_body,     path: "pages[1].layers[4].content.value", type: text, hint: "Backstory paragraph",  default: "I launched a Substack in March 2024 about product analytics. Wrote 12 issues, got nowhere — open rates 22%, growth flat. Then I changed three things. Twelve months later: 10,247 subs, 48% open rate, no ads spent." }
+  - { id: t1_title,       path: "pages[2].layers[3].content.value", type: text, hint: "Tactic 1 title",       default: "Niche the niche." }
+  - { id: t1_body,        path: "pages[2].layers[4].content.value", type: text, hint: "Tactic 1 body",        default: "I dropped 'analytics' and rewrote my one-liner: 'Retention math for SaaS PMs.' Specificity is a magnet. Generic newsletters don't get shared." }
+  - { id: t2_title,       path: "pages[3].layers[3].content.value", type: text, hint: "Tactic 2 title",       default: "Public teardowns." }
+  - { id: t2_body,        path: "pages[3].layers[4].content.value", type: text, hint: "Tactic 2 body",        default: "Every issue tore down a real product's retention curve. Founders shared. PMs forwarded internally. Each teardown brought 80–200 subs from one company." }
+  - { id: cta_title,      path: "pages[4].layers[4].content.value", type: text, hint: "Tactic 3 title",       default: "Cross-promo swaps." }
+  - { id: cta_btn_text,   path: "pages[4].layers[9].content.value", type: text, hint: "CTA button label",     default: "Subscribe →" }
