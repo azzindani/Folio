@@ -6,6 +6,7 @@ import { TIER2_TOOLS } from './tier2/registry';
 import { TIER3_TOOLS } from './tier3/registry';
 import * as engine from './engine';
 import { toMCPResult } from './types';
+import { authorize, describeAuth, loadTokens } from './auth';
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition, ContextField } from './types';
 
 type Handler = (args: Record<string, unknown>) => ToolResult;
@@ -38,6 +39,19 @@ const HANDLERS: Record<string, Handler> = {
   inject_template:     (a) => engine.injectTemplate(a as Parameters<typeof engine.injectTemplate>[0]),
   list_template_slots: (a) => engine.listTemplateSlots(a as Parameters<typeof engine.listTemplateSlots>[0]),
   open_in_editor:      (a) => engine.openInEditor(a as Parameters<typeof engine.openInEditor>[0]),
+  // Phase 4/5: report · presentation · formula · animation · collab.
+  generate_report:        (a) => engine.generateReport(a as Parameters<typeof engine.generateReport>[0]),
+  bind_data:              (a) => engine.bindData(a as Parameters<typeof engine.bindData>[0]),
+  export_report:          (a) => engine.exportReport(a as Parameters<typeof engine.exportReport>[0]),
+  create_presentation:    (a) => engine.createPresentation(a as Parameters<typeof engine.createPresentation>[0]),
+  export_presentation:    (a) => engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]),
+  set_formula_context:    (a) => engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]),
+  debug_formula:          (a) => engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]),
+  inspect_timeline:       (a) => engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]),
+  add_keyframe:           (a) => engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]),
+  export_animation:       (a) => engine.exportAnimation(a as Parameters<typeof engine.exportAnimation>[0]),
+  setup_remote_presenter: (a) => engine.setupRemotePresenter(a as Parameters<typeof engine.setupRemotePresenter>[0]),
+  setup_collab:           (a) => engine.setupCollab(a as Parameters<typeof engine.setupCollab>[0]),
 };
 
 // Tools whose results signal that a .design.yaml file just changed.
@@ -59,11 +73,6 @@ const sseClients = new Set<http.ServerResponse>();
 const editorClients = new Set<http.ServerResponse>();
 
 // §3 — Auth · CORS · reply helpers
-function isAuthorized(req: http.IncomingMessage): boolean {
-  const key = process.env['FOLIO_API_KEY'];
-  if (!key) return true;
-  return (req.headers['authorization'] ?? '') === `Bearer ${key}`;
-}
 function setCORS(res: http.ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -164,10 +173,16 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   if (method === 'OPTIONS') { setCORS(res); res.writeHead(204); res.end(); return; }
 
   if (url === '/health' && method === 'GET') {
-    jsonReply(res, 200, { status: 'ok', version: '1.0.0', tiers: ['1', '2', '3'] }); return;
+    jsonReply(res, 200, { status: 'ok', version: '1.0.0', tiers: ['1', '2', '3'], auth: loadTokens().mode }); return;
   }
 
-  if (!isAuthorized(req)) { jsonReply(res, 401, { error: 'Unauthorized' }); return; }
+  const tokenName = authorize(req);
+  if (tokenName === null) { jsonReply(res, 401, { error: 'Unauthorized', hint: 'Send Authorization: Bearer <token>' }); return; }
+
+  // §7a — Whoami endpoint: clients can verify which token was accepted.
+  if (url === '/tokens/whoami' && method === 'GET') {
+    jsonReply(res, 200, { token: tokenName, auth_mode: loadTokens().mode }); return;
+  }
 
   if (url === '/mcp/sse' && method === 'GET') {
     setCORS(res);
@@ -196,6 +211,10 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     let parsed: MCPRequest;
     try { parsed = JSON.parse(body) as MCPRequest; } catch { jsonReply(res, 400, { jsonrpc: '2.0', id: 0, error: { code: -32700, message: 'Parse error' } }); return; }
     const { response, raw, toolName } = handleMCP(parsed);
+    // Audit: which named token invoked which tool. Token VALUES are never logged.
+    if (parsed.method === 'tools/call' && toolName) {
+      process.stderr.write(`[mcp] token=${tokenName} tool=${toolName} ok=${raw?.success ?? false}\n`);
+    }
     sseBroadcast(response);
     // Notify any connected editor that a design file just changed.
     if (raw && raw.success && toolName && FILE_MUTATING_TOOLS.has(toolName)) {
@@ -216,7 +235,10 @@ export function startHttpServer(): void {
     router(req, res).catch((err: unknown) => {
       jsonReply(res, 500, { error: (err as Error).message ?? 'Internal server error' });
     });
-  }).listen(port, () => { process.stderr.write(`folio-mcp-http listening on :${port}\n`); });
+  }).listen(port, () => {
+    process.stderr.write(`folio-mcp-http listening on :${port}\n`);
+    process.stderr.write(`[mcp] auth: ${describeAuth()}\n`);
+  });
 }
 
 if (process.argv[1]?.endsWith('http-server.ts') || process.argv[1]?.endsWith('http-server.js')) startHttpServer();

@@ -1,0 +1,21 @@
+# Force LF line endings on files that run inside the Docker image / on Linux.
+# Without this, Windows checkouts get CRLF and Linux bash chokes on
+# `set -euo pipefail\r` etc.
+* text=auto eol=lf
+
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+Caddyfile   text eol=lf
+
+# Binary types — leave alone.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   text eol=lf
+*.pdf   binary
+*.woff  binary
+*.woff2 binary

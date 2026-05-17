@@ -1,0 +1,95 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Folio — local & VPS-friendly compose stack.
+#
+# Two services:
+#   folio  — the design engine + MCP HTTP API (FOLIO_MODE=both → :4173 + :3333)
+#   caddy  — optional TLS terminator + reverse proxy, opt-in via profile "tls"
+#
+# Quick start (local, no TLS):
+#   cp .env.example .env
+#   docker compose up -d --build
+#   → editor:  http://localhost:4173
+#   → MCP:     http://localhost:3333/mcp  (Bearer auth — see tokens.json)
+#
+# VPS deploy with auto-HTTPS (Let's Encrypt via Caddy):
+#   1. Point your DNS at the VPS:  A  folio.mydomain.tld -> <vps-ip>
+#   2. Set FOLIO_DOMAIN=folio.mydomain.tld and FOLIO_ACME_EMAIL=you@x in .env
+#   3. docker compose --profile tls up -d --build
+#   → editor:  https://folio.mydomain.tld/
+#   → MCP:     https://folio.mydomain.tld/mcp
+#   → SSE:     https://folio.mydomain.tld/mcp/sse  +  /editor/events
+#
+# Persistence:
+#   ./folio-projects on the host is bind-mounted at /home/folio/projects in
+#   the container. All .design.yaml / .task.yaml live there and survive
+#   `docker compose down`. (Rename to a named volume by replacing the mount.)
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  folio:
+    build:
+      context: .
+      args:
+        SKIP_TESTS: ${FOLIO_SKIP_TESTS:-0}
+    image: folio:latest
+    container_name: folio
+    restart: unless-stopped
+    environment:
+      # Container role: ui | mcp | both
+      FOLIO_MODE: ${FOLIO_MODE:-both}
+      PORT: ${FOLIO_UI_PORT:-4173}
+      FOLIO_PORT: ${FOLIO_MCP_PORT:-3333}
+      FOLIO_PROJECTS_DIR: /home/folio/projects
+      FOLIO_OUTPUT_BUDGET: ${FOLIO_OUTPUT_BUDGET:-1000}
+      # Auth — pick ONE strategy. tokens.json (file) wins if multiple are set.
+      FOLIO_TOKENS_FILE: ${FOLIO_TOKENS_FILE:-}
+      FOLIO_TOKENS:      ${FOLIO_TOKENS:-}
+      FOLIO_API_KEY:     ${FOLIO_API_KEY:-}
+    ports:
+      # Exposed on the host only when running WITHOUT the tls profile. With
+      # Caddy in front you'd typically remove these and keep the engine on
+      # the internal compose network — left here so the default `up` still
+      # works for local dev without changes.
+      - "${FOLIO_UI_PORT:-4173}:4173"
+      - "${FOLIO_MCP_PORT:-3333}:3333"
+    volumes:
+      - ./folio-projects:/home/folio/projects
+      # Mount tokens.json read-only when FOLIO_TOKENS_FILE is set. The file
+      # at ./tokens.json is optional — comment out if you use FOLIO_TOKENS
+      # (inline) or FOLIO_API_KEY (single key) instead.
+      - ./tokens.json:/home/folio/tokens.json:ro
+    networks:
+      - folio_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${FOLIO_UI_PORT:-4173}/ >/dev/null 2>&1 || curl -fsS http://127.0.0.1:${FOLIO_MCP_PORT:-3333}/health >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: folio-caddy
+    profiles: ["tls"]
+    restart: unless-stopped
+    depends_on:
+      - folio
+    environment:
+      FOLIO_DOMAIN:     ${FOLIO_DOMAIN:?set FOLIO_DOMAIN in .env (e.g. folio.example.com)}
+      FOLIO_ACME_EMAIL: ${FOLIO_ACME_EMAIL:?set FOLIO_ACME_EMAIL in .env for Let's Encrypt registration}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - folio_net
+
+networks:
+  folio_net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

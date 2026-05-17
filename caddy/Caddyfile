@@ -1,0 +1,55 @@
+# Caddy reverse proxy + automatic HTTPS for Folio.
+#
+# Variables (set in .env, read by docker-compose.yml):
+#   FOLIO_DOMAIN      — public domain pointing at this VPS (DNS A record)
+#   FOLIO_ACME_EMAIL  — contact email for Let's Encrypt registration
+#
+# Routing:
+#   /                  → folio:4173  (visual editor — vite preview)
+#   /mcp · /mcp/sse    → folio:3333  (MCP JSON-RPC + tool-result SSE)
+#   /editor/events     → folio:3333  (file-change SSE stream)
+#   /tokens/whoami     → folio:3333  (token sanity check)
+#   /health            → folio:3333  (unauthenticated liveness)
+#
+# Caddy terminates TLS, forwards Authorization: Bearer untouched, and adds
+# nothing else — your auth is whatever Folio's auth.ts decides.
+{
+    email {$FOLIO_ACME_EMAIL}
+}
+
+{$FOLIO_DOMAIN} {
+    encode zstd gzip
+
+    # MCP JSON-RPC + Anthropic Custom Connector endpoint.
+    @mcp path /mcp /mcp/* /tokens/* /health
+    handle @mcp {
+        reverse_proxy folio:3333 {
+            flush_interval -1
+            header_up Host {host}
+        }
+    }
+
+    # Editor live-refresh SSE — disable buffering so events stream immediately.
+    @editor_events path /editor/events
+    handle @editor_events {
+        reverse_proxy folio:3333 {
+            flush_interval -1
+            transport http {
+                read_timeout  24h
+                write_timeout 24h
+            }
+        }
+    }
+
+    # Everything else → visual editor (vite preview).
+    handle {
+        reverse_proxy folio:4173 {
+            header_up Host {host}
+        }
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}
