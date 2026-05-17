@@ -1371,7 +1371,51 @@ button:focus:not(:focus-visible) { outline: none; }
   overflow-y: auto;
 }
 .catalog-rail-head { display: flex; flex-direction: column; gap: 6px; }
+.rail-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .rail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
+.btn-shuffle {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 120ms, border-color 120ms;
+}
+.btn-shuffle:hover { background: var(--color-surface-3); border-color: var(--color-primary); }
+.rail-chip--removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 2px;
+}
+.rail-chip-x {
+  font-size: 14px;
+  line-height: 1;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.rail-chip-x:hover { color: var(--color-error); background: color-mix(in srgb, var(--color-error) 12%, transparent); }
+.rail-hint:empty { display: none; }
+.rail-hint {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-left: 2px solid var(--color-warning);
+  border-radius: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.rail-hint code { font-family: var(--font-mono); font-size: 10px; padding: 1px 4px; background: var(--color-surface-2); border-radius: 3px; }
+.rail-hint em { color: var(--color-text); font-style: normal; font-weight: 600; }
+.rail-hint-text { color: var(--color-text-muted); }
 .rail-pick  { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .rail-chip  {
   font-size: 12px;
