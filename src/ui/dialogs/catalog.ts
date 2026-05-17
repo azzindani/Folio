@@ -303,6 +303,68 @@ export class CatalogDialog {
   }
 
   /**
+   * Renders a pick-chip with a click-target × that drops that axis.
+   * `kind` is the data-drop value: 'palette' | 'type' | 'effects'.
+   */
+  private removableChip(kind: 'palette' | 'type' | 'effects', icon: string, name: string): string {
+    return `
+      <span class="rail-chip rail-chip--removable" title="${escapeAttr(kind)} pack">
+        <span>${icon} ${escapeHTML(name)}</span>
+        <button class="rail-chip-x" data-drop="${kind}" aria-label="Remove ${escapeAttr(name)}" type="button">×</button>
+      </span>
+    `;
+  }
+
+  /**
+   * Cheap check: does the resolved template YAML reference any of the
+   * tokens an effects pack overrides? Result is memoized per template id
+   * so flipping back and forth doesn't re-scan the spec.
+   */
+  private effectTokenCache = new Map<string, boolean>();
+  private async templateUsesEffectTokens(id: string): Promise<boolean> {
+    const cached = this.effectTokenCache.get(id);
+    if (cached !== undefined) return cached;
+    let spec: TemplateSpec | undefined = peekTemplate(id);
+    spec ??= await loadFullTemplate(id);
+    if (!spec) return false;
+    // Stringify the spec once and check for any of the effect-pack token
+    // references. Cheaper and more robust than walking the layer tree.
+    const json = JSON.stringify(spec);
+    const used = /\$shadow_(card|glow|inset|text)|\$blur_(glass|backdrop)/.test(json);
+    this.effectTokenCache.set(id, used);
+    return used;
+  }
+
+  /**
+   * Pick a random combination across all four axes for the active
+   * template. Resolves the full spec for every overlay so the
+   * composed preview renders with real data, not just an id chip.
+   */
+  private async shuffle(): Promise<void> {
+    const pick = <T>(arr: T[]): T | undefined => arr[Math.floor(Math.random() * arr.length)];
+    const theme = pick(this.themes);
+    const pal   = pick(this.palettes);
+    const tp    = pick(this.typePacks);
+    const ep    = pick(this.effectsPacks);
+    if (theme) this.selectedThemeId       = theme.id;
+    if (pal)   this.selectedPaletteId     = pal.id;
+    if (tp)    this.selectedTypePackId    = tp.id;
+    if (ep)    this.selectedEffectsPackId = ep.id;
+    // Kick the lazy loaders in parallel so the rail can render the
+    // composed preview as soon as all three packs land.
+    const [resolvedPal, resolvedTp, resolvedEp] = await Promise.all([
+      pal ? loadFullPalette(pal.id)     : Promise.resolve(undefined),
+      tp  ? loadFullTypePack(tp.id)     : Promise.resolve(undefined),
+      ep  ? loadFullEffectsPack(ep.id)  : Promise.resolve(undefined),
+    ]);
+    this.resolvedPalette     = resolvedPal;
+    this.resolvedTypePack    = resolvedTp;
+    this.resolvedEffectsPack = resolvedEp;
+    this.renderTab();
+    void this.renderPreview();
+  }
+
+  /**
    * Pick black/white text against a hex bg so palette cards stay legible
    * even when authored swatches don't include a `text` slot in position 4.
    */
@@ -449,8 +511,12 @@ export class CatalogDialog {
   private railHTML(): string {
     return `
       <div class="catalog-rail-head">
-        <div class="rail-label">Live preview</div>
+        <div class="rail-label-row">
+          <div class="rail-label">Live preview</div>
+          <button class="btn-shuffle" data-action="shuffle" title="Random combination" aria-label="Shuffle">🎲 Shuffle</button>
+        </div>
         <div class="rail-pick" data-rail="pick"></div>
+        <div class="rail-hint" data-rail="hint"></div>
       </div>
       <div class="rail-preview" data-rail="preview"></div>
       <div class="catalog-rail-actions">
@@ -606,8 +672,28 @@ export class CatalogDialog {
         return;
       }
 
+      const drop = target.closest<HTMLElement>('[data-drop]');
+      if (drop) {
+        e.stopPropagation();
+        const kind = drop.dataset.drop;
+        if (kind === 'palette') { this.selectedPaletteId     = null; this.resolvedPalette     = undefined; }
+        if (kind === 'type')    { this.selectedTypePackId    = null; this.resolvedTypePack    = undefined; }
+        if (kind === 'effects') { this.selectedEffectsPackId = null; this.resolvedEffectsPack = undefined; }
+        // Re-render the active tab too so the corresponding card loses
+        // its "selected" highlight in real time.
+        this.renderTab();
+        void this.renderPreview();
+        return;
+      }
+
       const actionEl = target.closest<HTMLElement>('[data-action]');
-      if (actionEl) this.handleAction(actionEl.dataset.action!);
+      if (actionEl) {
+        if (actionEl.dataset.action === 'shuffle') {
+          void this.shuffle();
+          return;
+        }
+        void this.handleAction(actionEl.dataset.action!);
+      }
     });
 
     // Search input — live filter, debounced one tick.
@@ -723,6 +809,7 @@ export class CatalogDialog {
     if (!this.overlay) return;
     const preview = this.overlay.querySelector<HTMLElement>('[data-rail="preview"]');
     const pick    = this.overlay.querySelector<HTMLElement>('[data-rail="pick"]');
+    const hint    = this.overlay.querySelector<HTMLElement>('[data-rail="hint"]');
     if (!preview || !pick) return;
     const tEntry = this.selectedTemplateId ? findIndexEntry(this.selectedTemplateId) : undefined;
     const th     = this.themes.find(x => x.id === this.selectedThemeId);
@@ -730,17 +817,34 @@ export class CatalogDialog {
     const tp     = this.typePacks.find(x => x.id === this.selectedTypePackId);
     const ep     = this.effectsPacks.find(x => x.id === this.selectedEffectsPackId);
 
-    // Build the pick chip row. Style overlays only appear when picked so
-    // the rail stays uncluttered for the common template × theme case.
+    // Build the pick chip row. Style overlays render as removable chips —
+    // click the × to drop that axis without leaving the current tab. The
+    // template+theme chips stay non-removable since the preview needs at
+    // least those two to render anything.
     const chips: string[] = [
       `<span class="rail-chip">${escapeHTML(tEntry?.name ?? '—')}</span>`,
       `<span class="rail-x">×</span>`,
       `<span class="rail-chip">${escapeHTML(th?.name ?? '—')}</span>`,
     ];
-    if (pal) chips.push(`<span class="rail-x">+</span>`, `<span class="rail-chip" title="palette">🎨 ${escapeHTML(pal.name)}</span>`);
-    if (tp)  chips.push(`<span class="rail-x">+</span>`, `<span class="rail-chip" title="type pack">Aa ${escapeHTML(tp.name)}</span>`);
-    if (ep)  chips.push(`<span class="rail-x">+</span>`, `<span class="rail-chip" title="effects pack">✨ ${escapeHTML(ep.name)}</span>`);
+    if (pal) chips.push(`<span class="rail-x">+</span>`, this.removableChip('palette', '🎨', pal.name));
+    if (tp)  chips.push(`<span class="rail-x">+</span>`, this.removableChip('type',    'Aa', tp.name));
+    if (ep)  chips.push(`<span class="rail-x">+</span>`, this.removableChip('effects', '✨', ep.name));
     pick.innerHTML = chips.join('');
+
+    // Honest status when the picked effects pack can't visibly land on
+    // the chosen template. Currently zero of the 332 built-in templates
+    // bind $shadow_card / $shadow_glow / $blur_*; until they do, an
+    // effects pick will be silently no-op. Tell the user instead of
+    // letting it look broken.
+    if (hint) {
+      hint.innerHTML = '';
+      if (ep && this.selectedTemplateId) {
+        const usesEffectTokens = await this.templateUsesEffectTokens(this.selectedTemplateId);
+        if (!usesEffectTokens) {
+          hint.innerHTML = `<span class="rail-hint-text">✨ <em>${escapeHTML(ep.name)}</em> is selected, but this template doesn't bind <code>$shadow_*</code> / <code>$blur_*</code> tokens, so the effect won't be visible on the canvas.</span>`;
+        }
+      }
+    }
 
     preview.innerHTML = '<div class="rail-empty">Loading preview…</div>';
 
