@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "folio": {
+      "command": "bun",
+      "args": ["run", "src/mcp/index.ts"],
+      "env": {
+        "FOLIO_MCP_TIER": "3",
+        "FOLIO_OUTPUT_BUDGET": "1000"
+      }
+    }
+  }
+}
