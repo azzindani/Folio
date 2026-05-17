@@ -1,17 +1,22 @@
 import type { ThemeSpec } from '../schema/types';
 
-const SHARED_TYPOGRAPHY: ThemeSpec['typography'] = {
-  scale: {
-    display: { size: 96, weight: 800, line_height: 1.0 },
-    h1:      { size: 72, weight: 700, line_height: 1.1 },
-    h2:      { size: 48, weight: 700, line_height: 1.2 },
-    h3:      { size: 32, weight: 600, line_height: 1.3 },
-    body:    { size: 18, weight: 400, line_height: 1.6 },
-    caption: { size: 14, weight: 400, line_height: 1.5 },
-    label:   { size: 12, weight: 600, line_height: 1.0 },
-  },
-  families: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' },
-};
+const SHARED_SCALE = {
+  display: { size: 96, weight: 800, line_height: 1.0 },
+  h1:      { size: 72, weight: 700, line_height: 1.1 },
+  h2:      { size: 48, weight: 700, line_height: 1.2 },
+  h3:      { size: 32, weight: 600, line_height: 1.3 },
+  body:    { size: 18, weight: 400, line_height: 1.6 },
+  caption: { size: 14, weight: 400, line_height: 1.5 },
+  label:   { size: 12, weight: 600, line_height: 1.0 },
+} as const;
+
+function typography(
+  heading: string,
+  body: string,
+  mono: string,
+): ThemeSpec['typography'] {
+  return { scale: { ...SHARED_SCALE }, families: { heading, body, mono } };
+}
 
 const SHARED_SPACING: ThemeSpec['spacing'] = {
   unit: 8,
@@ -36,7 +41,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#8892A4',
       border: '#2A2A4A',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Space Grotesk', 'Inter', 'JetBrains Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 24px rgba(0,0,0,0.4)',
@@ -59,7 +64,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#636E72',
       border: '#DFE6E9',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Inter', 'Inter', 'IBM Plex Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 2px 16px rgba(0,0,0,0.08)',
@@ -82,7 +87,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#8892B0',
       border: '#1E3A5F',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Manrope', 'Inter', 'Fira Code'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 32px rgba(0,0,0,0.5)',
@@ -105,7 +110,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#8888BB',
       border: '#1F0040',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Audiowide', 'Manrope', 'Fira Code'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 8px 40px rgba(0,255,240,0.15)',
@@ -128,7 +133,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#94A3B8',
       border: '#334155',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Plus Jakarta Sans', 'Inter', 'JetBrains Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 6px 28px rgba(99,102,241,0.20)',
@@ -151,7 +156,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#C0A7C9',
       border: '#3E1F5A',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Bricolage Grotesque', 'DM Sans', 'IBM Plex Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 8px 32px rgba(255,107,53,0.18)',
@@ -174,7 +179,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#737373',
       border: '#D4D4D0',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Playfair Display', 'Source Serif 4', 'IBM Plex Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 1px 8px rgba(0,0,0,0.10)',
@@ -197,7 +202,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#86B8A5',
       border: '#1F4034',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Source Serif 4', 'Inter', 'Fira Code'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 24px rgba(0,0,0,0.4)',
@@ -220,7 +225,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#8B7A92',
       border: '#F3D8E5',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Quicksand', 'Quicksand', 'Fira Code'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 2px 12px rgba(0,0,0,0.06)',
@@ -243,7 +248,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#BFBFBF',
       border: '#3D3D3D',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Anton', 'Inter', 'JetBrains Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 16px rgba(0,0,0,0.6)',
@@ -266,7 +271,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#4A4A4A',
       border: '#000000',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Space Grotesk', 'IBM Plex Sans', 'IBM Plex Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '4px 4px 0 rgba(0,0,0,1)',
@@ -289,7 +294,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#A88FD1',
       border: '#3C1B66',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Orbitron', 'Manrope', 'Fira Code'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 8px 32px rgba(0,0,0,0.55)',
@@ -312,7 +317,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#6E5F4A',
       border: '#E0D5BC',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('Playfair Display', 'Source Serif 4', 'IBM Plex Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 2px 10px rgba(60,40,20,0.10)',
@@ -335,7 +340,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       text_muted: '#8893A5',
       border: '#3A4150',
     },
-    typography: SHARED_TYPOGRAPHY,
+    typography: typography('IBM Plex Sans', 'Inter', 'IBM Plex Mono'),
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 20px rgba(0,0,0,0.45)',
