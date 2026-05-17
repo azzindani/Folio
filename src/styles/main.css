@@ -1318,6 +1318,20 @@ button:focus:not(:focus-visible) { outline: none; }
   flex-wrap: wrap;
 }
 .catalog-filter:empty { display: none; }
+/* Hard cap so the filter bar never floods the body. The chip-row inside
+   is also capped in TS, but a CSS ceiling is the safety net for any
+   future code path that forgets the limit. */
+.catalog-filter { max-height: 84px; overflow-y: auto; flex-shrink: 0; }
+.tag-chip-more {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  cursor: default;
+  user-select: none;
+}
 .catalog-search {
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
