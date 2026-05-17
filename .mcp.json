@@ -1,6 +1,22 @@
 {
   "mcpServers": {
-    "folio": {
+    "folio_basic": {
+      "command": "bun",
+      "args": ["run", "src/mcp/index.ts"],
+      "env": {
+        "FOLIO_MCP_TIER": "1",
+        "FOLIO_OUTPUT_BUDGET": "1000"
+      }
+    },
+    "folio_design": {
+      "command": "bun",
+      "args": ["run", "src/mcp/index.ts"],
+      "env": {
+        "FOLIO_MCP_TIER": "2",
+        "FOLIO_OUTPUT_BUDGET": "1000"
+      }
+    },
+    "folio_export": {
       "command": "bun",
       "args": ["run", "src/mcp/index.ts"],
       "env": {
