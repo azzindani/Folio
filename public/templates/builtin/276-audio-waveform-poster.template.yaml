@@ -1,0 +1,667 @@
+_protocol: template/v1
+
+# Audio waveform feature poster (1200×1800 portrait).
+# Ocean-blue: stylized waveform (~40 rect bars), title + artist,
+# BPM + key technical metadata bottom.
+meta:
+  id: tmpl-audio-waveform-poster
+  name: Audio Waveform Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, audio, waveform, music, ocean, portrait]
+  description: "Generic audio-waveform feature poster with title, artist, BPM, and key."
+
+document:
+  width: 1200
+  height: 1800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: ocean-blue
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1800
+    fill:
+      type: linear
+      angle: 175
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: bg-bloom-top
+    type: circle
+    z: 1
+    cx: 600
+    cy: 200
+    rx: 540
+    ry: 540
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.35
+
+  - id: bg-bloom-bottom
+    type: circle
+    z: 2
+    cx: 600
+    cy: 1600
+    rx: 480
+    ry: 480
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.4
+
+  - id: top-rule
+    type: rect
+    z: 5
+    x: 80
+    y: 130
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.5
+
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 90
+    width: 1040
+    height: 0
+    content: { type: plain, value: "TIDE RECORDS · SINGLE OF THE MONTH" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: track-no
+    type: text
+    z: 11
+    x: 80
+    y: 160
+    width: 1040
+    height: 0
+    content: { type: plain, value: "TRK · 047 · A-SIDE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: wf-axis
+    type: rect
+    z: 19
+    x: 80
+    y: 800
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  - id: wf-1
+    type: rect
+    z: 20
+    x: 100
+    y: 760
+    width: 16
+    height: 80
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-2
+    type: rect
+    z: 21
+    x: 124
+    y: 720
+    width: 16
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-3
+    type: rect
+    z: 22
+    x: 148
+    y: 680
+    width: 16
+    height: 240
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-4
+    type: rect
+    z: 23
+    x: 172
+    y: 640
+    width: 16
+    height: 320
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-5
+    type: rect
+    z: 24
+    x: 196
+    y: 700
+    width: 16
+    height: 200
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-6
+    type: rect
+    z: 25
+    x: 220
+    y: 740
+    width: 16
+    height: 120
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-7
+    type: rect
+    z: 26
+    x: 244
+    y: 660
+    width: 16
+    height: 280
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-8
+    type: rect
+    z: 27
+    x: 268
+    y: 600
+    width: 16
+    height: 400
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-9
+    type: rect
+    z: 28
+    x: 292
+    y: 560
+    width: 16
+    height: 480
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-10
+    type: rect
+    z: 29
+    x: 316
+    y: 520
+    width: 16
+    height: 560
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-11
+    type: rect
+    z: 30
+    x: 340
+    y: 580
+    width: 16
+    height: 440
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-12
+    type: rect
+    z: 31
+    x: 364
+    y: 640
+    width: 16
+    height: 320
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-13
+    type: rect
+    z: 32
+    x: 388
+    y: 700
+    width: 16
+    height: 200
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-14
+    type: rect
+    z: 33
+    x: 412
+    y: 760
+    width: 16
+    height: 80
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-15
+    type: rect
+    z: 34
+    x: 436
+    y: 720
+    width: 16
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-16
+    type: rect
+    z: 35
+    x: 460
+    y: 660
+    width: 16
+    height: 280
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-17
+    type: rect
+    z: 36
+    x: 484
+    y: 600
+    width: 16
+    height: 400
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-18
+    type: rect
+    z: 37
+    x: 508
+    y: 540
+    width: 16
+    height: 520
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-19
+    type: rect
+    z: 38
+    x: 532
+    y: 480
+    width: 16
+    height: 640
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-20
+    type: rect
+    z: 39
+    x: 556
+    y: 440
+    width: 16
+    height: 720
+    fill: { type: solid, color: "$text" }
+
+  - id: wf-21
+    type: rect
+    z: 40
+    x: 580
+    y: 460
+    width: 16
+    height: 680
+    fill: { type: solid, color: "$text" }
+
+  - id: wf-22
+    type: rect
+    z: 41
+    x: 604
+    y: 500
+    width: 16
+    height: 600
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-23
+    type: rect
+    z: 42
+    x: 628
+    y: 560
+    width: 16
+    height: 480
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-24
+    type: rect
+    z: 43
+    x: 652
+    y: 620
+    width: 16
+    height: 360
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-25
+    type: rect
+    z: 44
+    x: 676
+    y: 680
+    width: 16
+    height: 240
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-26
+    type: rect
+    z: 45
+    x: 700
+    y: 720
+    width: 16
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-27
+    type: rect
+    z: 46
+    x: 724
+    y: 760
+    width: 16
+    height: 80
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-28
+    type: rect
+    z: 47
+    x: 748
+    y: 700
+    width: 16
+    height: 200
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-29
+    type: rect
+    z: 48
+    x: 772
+    y: 640
+    width: 16
+    height: 320
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-30
+    type: rect
+    z: 49
+    x: 796
+    y: 580
+    width: 16
+    height: 440
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-31
+    type: rect
+    z: 50
+    x: 820
+    y: 520
+    width: 16
+    height: 560
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-32
+    type: rect
+    z: 51
+    x: 844
+    y: 580
+    width: 16
+    height: 440
+    fill: { type: solid, color: "$secondary" }
+
+  - id: wf-33
+    type: rect
+    z: 52
+    x: 868
+    y: 640
+    width: 16
+    height: 320
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-34
+    type: rect
+    z: 53
+    x: 892
+    y: 680
+    width: 16
+    height: 240
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-35
+    type: rect
+    z: 54
+    x: 916
+    y: 720
+    width: 16
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-36
+    type: rect
+    z: 55
+    x: 940
+    y: 660
+    width: 16
+    height: 280
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-37
+    type: rect
+    z: 56
+    x: 964
+    y: 700
+    width: 16
+    height: 200
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-38
+    type: rect
+    z: 57
+    x: 988
+    y: 740
+    width: 16
+    height: 120
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-39
+    type: rect
+    z: 58
+    x: 1012
+    y: 720
+    width: 16
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: wf-40
+    type: rect
+    z: 59
+    x: 1036
+    y: 760
+    width: 16
+    height: 80
+    fill: { type: solid, color: "$primary" }
+
+  - id: title-rule
+    type: rect
+    z: 70
+    x: 540
+    y: 1240
+    width: 120
+    height: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: title
+    type: text
+    z: 71
+    x: 80
+    y: 1280
+    width: 1040
+    height: 0
+    content: { type: plain, value: "TIDE LINES" }
+    style:
+      font_family: $heading
+      font_size: 180
+      font_weight: 900
+      color: $text
+      line_height: 0.92
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: artist
+    type: text
+    z: 72
+    x: 80
+    y: 1430
+    width: 1040
+    height: 0
+    content: { type: plain, value: "by MERIDIAN GROVE" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 400
+      font_style: italic
+      color: $secondary
+      line_height: 1.0
+      letter_spacing: 0.01
+      text_align: center
+
+  - id: meta-rule
+    type: rect
+    z: 80
+    x: 80
+    y: 1560
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.5
+
+  - id: bpm-eyebrow
+    type: text
+    z: 81
+    x: 100
+    y: 1600
+    width: 320
+    height: 0
+    content: { type: plain, value: "BPM" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: bpm-value
+    type: text
+    z: 82
+    x: 100
+    y: 1630
+    width: 320
+    height: 0
+    content: { type: plain, value: "124" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 900
+      color: $text
+      letter_spacing: -0.02
+      text_align: center
+
+  - id: key-eyebrow
+    type: text
+    z: 83
+    x: 440
+    y: 1600
+    width: 320
+    height: 0
+    content: { type: plain, value: "KEY" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: key-value
+    type: text
+    z: 84
+    x: 440
+    y: 1630
+    width: 320
+    height: 0
+    content: { type: plain, value: "D♭ Minor" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 900
+      color: $primary
+      letter_spacing: -0.02
+      text_align: center
+
+  - id: duration-eyebrow
+    type: text
+    z: 85
+    x: 780
+    y: 1600
+    width: 320
+    height: 0
+    content: { type: plain, value: "DURATION" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: duration-value
+    type: text
+    z: 86
+    x: 780
+    y: 1630
+    width: 320
+    height: 0
+    content: { type: plain, value: "4:32" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 900
+      color: $text
+      letter_spacing: -0.02
+      text_align: center
+
+  - id: meta-rule-bottom
+    type: rect
+    z: 90
+    x: 80
+    y: 1730
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.5
+
+  - id: footer
+    type: text
+    z: 91
+    x: 80
+    y: 1750
+    width: 1040
+    height: 0
+    content: { type: plain, value: "MASTERED AT 96kHz · TIDE RECORDS · © 2026" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: title,  path: "layers[51].content.value", type: text, hint: "Track title",     default: "TIDE LINES" }
+  - { id: artist, path: "layers[52].content.value", type: text, hint: "Artist / band",   default: "by MERIDIAN GROVE" }
+  - { id: bpm,    path: "layers[55].content.value", type: text, hint: "Beats per minute", default: "124" }
+  - { id: key,    path: "layers[57].content.value", type: text, hint: "Musical key",     default: "D♭ Minor" }

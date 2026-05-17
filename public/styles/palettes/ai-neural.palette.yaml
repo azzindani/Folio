@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: ai-neural
+name: AI Neural
+version: "1.0.0"
+tags: [tech, ai, neural, futuristic, glow, cyber]
+description: "Deep navy, electric cyan, acid green, violet, white pulse — AI/ML brand glow."
+colors:
+  background: "#070B1A"
+  surface:    "#0E1428"
+  surface_2:  "#161E3A"
+  primary:    "#00E5FF"
+  secondary:  "#8B5CF6"
+  accent:     "#A5FF3D"
+  text:       "#F0F4FF"
+  text_muted: "#7A85A8"
+  border:     "#1F2A4A"
+  success:    "#A5FF3D"
+  warning:    "#FFB454"
+  danger:     "#FF4E70"

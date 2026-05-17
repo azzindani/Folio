@@ -1,0 +1,436 @@
+_protocol: template/v1
+
+# Concert wristband (1800×200 landscape — wristband proportions).
+# Neon-bloom: event name repeated 3×, date, venue, vertical-bar security barcode.
+meta:
+  id: tmpl-concert-wristband
+  name: Concert Wristband
+  type: ticket
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ticket, wristband, concert, music, event, neon, landscape]
+  description: "Single-use concert wristband with repeated event name, date, venue, and barcode."
+
+document:
+  width: 1800
+  height: 200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: neon-bloom
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1800
+    height: 200
+    fill:
+      type: linear
+      angle: 90
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 50 }
+        - { color: "$primary", position: 100 }
+
+  - id: bg-overlay
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1800
+    height: 200
+    fill: { type: solid, color: "$background" }
+    opacity: 0.6
+
+  - id: edge-top
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1800
+    height: 4
+    fill: { type: solid, color: "$secondary" }
+
+  - id: edge-bottom
+    type: rect
+    z: 3
+    x: 0
+    y: 196
+    width: 1800
+    height: 4
+    fill: { type: solid, color: "$secondary" }
+
+  - id: punch-hole-1
+    type: circle
+    z: 4
+    cx: 40
+    cy: 100
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "$background" }
+
+  - id: punch-hole-2
+    type: circle
+    z: 5
+    cx: 1760
+    cy: 100
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "$background" }
+
+  - id: event-name-1
+    type: text
+    z: 10
+    x: 100
+    y: 84
+    width: 480
+    height: 0
+    content: { type: plain, value: "MIDNIGHT BLOOM FEST '26" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 900
+      color: $text
+      letter_spacing: 0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: event-name-2
+    type: text
+    z: 11
+    x: 660
+    y: 84
+    width: 480
+    height: 0
+    content: { type: plain, value: "MIDNIGHT BLOOM FEST '26" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 900
+      color: $primary
+      letter_spacing: 0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: event-name-3
+    type: text
+    z: 12
+    x: 1220
+    y: 84
+    width: 480
+    height: 0
+    content: { type: plain, value: "MIDNIGHT BLOOM FEST '26" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 900
+      color: $text
+      letter_spacing: 0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: divider-1
+    type: rect
+    z: 15
+    x: 600
+    y: 56
+    width: 2
+    height: 88
+    fill: { type: solid, color: "$secondary" }
+    opacity: 0.6
+
+  - id: divider-2
+    type: rect
+    z: 16
+    x: 1160
+    y: 56
+    width: 2
+    height: 88
+    fill: { type: solid, color: "$secondary" }
+    opacity: 0.6
+
+  - id: date
+    type: text
+    z: 20
+    x: 100
+    y: 126
+    width: 480
+    height: 0
+    content: { type: plain, value: "JULY 12 · 2026 · 8:00 PM" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: venue
+    type: text
+    z: 21
+    x: 660
+    y: 126
+    width: 480
+    height: 0
+    content: { type: plain, value: "HARBORSIDE AMPHITHEATRE · LISBON" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: serial
+    type: text
+    z: 22
+    x: 1220
+    y: 126
+    width: 480
+    height: 0
+    content: { type: plain, value: "SERIAL · MBF-26-008471" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: barcode-1
+    type: rect
+    z: 30
+    x: 100
+    y: 158
+    width: 3
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-2
+    type: rect
+    z: 31
+    x: 106
+    y: 158
+    width: 1
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-3
+    type: rect
+    z: 32
+    x: 110
+    y: 158
+    width: 4
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-4
+    type: rect
+    z: 33
+    x: 117
+    y: 158
+    width: 2
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-5
+    type: rect
+    z: 34
+    x: 122
+    y: 158
+    width: 5
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-6
+    type: rect
+    z: 35
+    x: 130
+    y: 158
+    width: 1
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-7
+    type: rect
+    z: 36
+    x: 134
+    y: 158
+    width: 3
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-8
+    type: rect
+    z: 37
+    x: 140
+    y: 158
+    width: 2
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-9
+    type: rect
+    z: 38
+    x: 145
+    y: 158
+    width: 4
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-10
+    type: rect
+    z: 39
+    x: 152
+    y: 158
+    width: 1
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-11
+    type: rect
+    z: 40
+    x: 156
+    y: 158
+    width: 3
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-12
+    type: rect
+    z: 41
+    x: 162
+    y: 158
+    width: 5
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-13
+    type: rect
+    z: 42
+    x: 170
+    y: 158
+    width: 2
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-14
+    type: rect
+    z: 43
+    x: 175
+    y: 158
+    width: 3
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-15
+    type: rect
+    z: 44
+    x: 181
+    y: 158
+    width: 1
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-1
+    type: rect
+    z: 45
+    x: 1620
+    y: 158
+    width: 4
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-2
+    type: rect
+    z: 46
+    x: 1627
+    y: 158
+    width: 2
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-3
+    type: rect
+    z: 47
+    x: 1632
+    y: 158
+    width: 1
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-4
+    type: rect
+    z: 48
+    x: 1636
+    y: 158
+    width: 5
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-5
+    type: rect
+    z: 49
+    x: 1644
+    y: 158
+    width: 2
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-6
+    type: rect
+    z: 50
+    x: 1649
+    y: 158
+    width: 3
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-7
+    type: rect
+    z: 51
+    x: 1655
+    y: 158
+    width: 1
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-8
+    type: rect
+    z: 52
+    x: 1659
+    y: 158
+    width: 4
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-9
+    type: rect
+    z: 53
+    x: 1666
+    y: 158
+    width: 2
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+  - id: barcode-right-10
+    type: rect
+    z: 54
+    x: 1671
+    y: 158
+    width: 3
+    height: 28
+    fill: { type: solid, color: "$text" }
+
+slots:
+  - { id: event_name, path: "layers[7].content.value",  type: text, hint: "Event name (repeated)",     default: "MIDNIGHT BLOOM FEST '26" }
+  - { id: date,       path: "layers[12].content.value", type: text, hint: "Event date + showtime",     default: "JULY 12 · 2026 · 8:00 PM" }
+  - { id: venue,      path: "layers[13].content.value", type: text, hint: "Venue + city",              default: "HARBORSIDE AMPHITHEATRE · LISBON" }

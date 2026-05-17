@@ -1,0 +1,376 @@
+_protocol: template/v1
+
+# Now-playing share card (1080×1080 square).
+# Dark-tech: album art plate, artist + song + album,
+# progress-bar mockup with timestamps, app-logo footer.
+meta:
+  id: tmpl-music-share-card
+  name: Music Share Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, music, share, now-playing, social, square, dark]
+  description: "Now-playing share card with album art, song info, and progress bar."
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1080
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: bg-glow
+    type: circle
+    z: 1
+    cx: 540
+    cy: 540
+    rx: 460
+    ry: 460
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.18
+
+  - id: now-playing-eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 80
+    width: 920
+    height: 0
+    content: { type: plain, value: "♪  NOW PLAYING" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: now-playing-time
+    type: text
+    z: 11
+    x: 80
+    y: 80
+    width: 920
+    height: 0
+    content: { type: plain, value: "ON FOLIO PLAY" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: right
+      text_transform: uppercase
+
+  - id: art-shadow
+    type: rect
+    z: 14
+    x: 110
+    y: 170
+    width: 480
+    height: 480
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.25
+
+  - id: art-plate
+    type: rect
+    z: 15
+    x: 100
+    y: 160
+    width: 480
+    height: 480
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: art-glow
+    type: circle
+    z: 16
+    cx: 340
+    cy: 400
+    rx: 200
+    ry: 200
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 60 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.75
+
+  - id: art-ring
+    type: circle
+    z: 17
+    cx: 340
+    cy: 400
+    rx: 140
+    ry: 140
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+    opacity: 0.6
+
+  - id: art-disc-hole
+    type: circle
+    z: 18
+    cx: 340
+    cy: 400
+    rx: 24
+    ry: 24
+    fill: { type: solid, color: "$background" }
+
+  - id: art-label
+    type: text
+    z: 19
+    x: 100
+    y: 620
+    width: 480
+    height: 0
+    content: { type: plain, value: "[ ALBUM ART ]" }
+    style:
+      font_family: $mono
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: artist
+    type: text
+    z: 30
+    x: 620
+    y: 240
+    width: 380
+    height: 0
+    content: { type: plain, value: "JAPANESE BREAKFAST" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: song
+    type: text
+    z: 31
+    x: 620
+    y: 290
+    width: 380
+    height: 0
+    content: { type: plain, value: "Be Sweet" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.02
+
+  - id: album
+    type: text
+    z: 32
+    x: 620
+    y: 430
+    width: 380
+    height: 0
+    content: { type: plain, value: "from Jubilee · 2021" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: $text_muted
+      letter_spacing: 0.01
+
+  - id: artist-meta-rule
+    type: rect
+    z: 33
+    x: 620
+    y: 490
+    width: 80
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: artist-meta
+    type: text
+    z: 34
+    x: 620
+    y: 510
+    width: 380
+    height: 0
+    content: { type: plain, value: "INDIE POP · 3:36" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: progress-track
+    type: rect
+    z: 40
+    x: 80
+    y: 820
+    width: 920
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text_muted", width: 1 }
+
+  - id: progress-fill
+    type: rect
+    z: 41
+    x: 80
+    y: 820
+    width: 460
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "$primary" }
+
+  - id: progress-thumb
+    type: circle
+    z: 42
+    cx: 540
+    cy: 823
+    rx: 12
+    ry: 12
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: current-time
+    type: text
+    z: 43
+    x: 80
+    y: 850
+    width: 200
+    height: 0
+    content: { type: plain, value: "1:48" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.04
+
+  - id: total-time
+    type: text
+    z: 44
+    x: 800
+    y: 850
+    width: 200
+    height: 0
+    content: { type: plain, value: "3:36" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.04
+      text_align: right
+
+  - id: control-prev
+    type: text
+    z: 50
+    x: 420
+    y: 920
+    width: 60
+    height: 0
+    content: { type: plain, value: "⏮" }
+    style:
+      font_family: $body
+      font_size: 28
+      color: $text_muted
+      text_align: center
+
+  - id: control-play
+    type: circle
+    z: 51
+    cx: 540
+    cy: 940
+    rx: 32
+    ry: 32
+    fill: { type: solid, color: "$text" }
+
+  - id: control-play-glyph
+    type: text
+    z: 52
+    x: 510
+    y: 922
+    width: 60
+    height: 0
+    content: { type: plain, value: "▶" }
+    style:
+      font_family: $body
+      font_size: 28
+      color: $background
+      text_align: center
+
+  - id: control-next
+    type: text
+    z: 53
+    x: 600
+    y: 920
+    width: 60
+    height: 0
+    content: { type: plain, value: "⏭" }
+    style:
+      font_family: $body
+      font_size: 28
+      color: $text_muted
+      text_align: center
+
+  - id: footer-rule
+    type: rect
+    z: 60
+    x: 80
+    y: 1010
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$text" }
+    opacity: 0.3
+
+  - id: app-logo
+    type: text
+    z: 61
+    x: 80
+    y: 1030
+    width: 920
+    height: 0
+    content: { type: plain, value: "FOLIO PLAY · LISTEN ALONG" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: artist,       path: "layers[10].content.value", type: text, hint: "Artist / band",     default: "JAPANESE BREAKFAST" }
+  - { id: song,         path: "layers[11].content.value", type: text, hint: "Song title",        default: "Be Sweet" }
+  - { id: album,        path: "layers[12].content.value", type: text, hint: "Album + year",      default: "from Jubilee · 2021" }
+  - { id: current_time, path: "layers[18].content.value", type: text, hint: "Elapsed time",      default: "1:48" }
+  - { id: total_time,   path: "layers[19].content.value", type: text, hint: "Total duration",    default: "3:36" }

@@ -1,0 +1,163 @@
+_protocol: template/v1
+
+# IAB Large Leaderboard 728×90 — wide banner ad.
+# Brand mark + tagline + product visual placeholder + CTA. Corporate-slate theme.
+meta:
+  id: tmpl-ad-leaderboard-728
+  name: Ad Leaderboard 728
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ad, banner, leaderboard, iab, "728x90", landscape, corporate]
+  description: "IAB 728×90 large leaderboard ad with brand, tagline, product visual, and CTA button."
+
+document:
+  width: 728
+  height: 90
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 728
+    height: 90
+    fill: { type: solid, color: "$background" }
+
+  - id: accent-strip
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 6
+    height: 90
+    fill: { type: solid, color: "$primary" }
+
+  - id: brand-icon
+    type: rect
+    z: 2
+    x: 24
+    y: 26
+    width: 38
+    height: 38
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: brand-mark
+    type: text
+    z: 3
+    x: 24
+    y: 36
+    width: 38
+    height: 0
+    content: { type: plain, value: "▲" }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: brand-name
+    type: text
+    z: 4
+    x: 76
+    y: 24
+    width: 220
+    height: 0
+    content: { type: plain, value: "Northwind Cloud" }
+    style:
+      font_family: $heading
+      font_size: 17
+      font_weight: 800
+      color: $text
+
+  - id: tagline
+    type: text
+    z: 5
+    x: 76
+    y: 48
+    width: 260
+    height: 0
+    content: { type: plain, value: "Enterprise-grade compute. Pay by the second." }
+    style:
+      font_family: $body
+      font_size: 12
+      color: $text_muted
+
+  - id: divider
+    type: rect
+    z: 6
+    x: 360
+    y: 22
+    width: 1
+    height: 46
+    fill: { type: solid, color: "$border" }
+
+  - id: visual-frame
+    type: rect
+    z: 7
+    x: 380
+    y: 18
+    width: 180
+    height: 54
+    radius: 6
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$surface", position: 0 }
+        - { color: "$surface2", position: 100 }
+    stroke: { color: "$border", width: 1 }
+
+  - id: visual-label
+    type: text
+    z: 8
+    x: 380
+    y: 38
+    width: 180
+    height: 0
+    content: { type: plain, value: "▮▮▮▮ 99.99% uptime" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 600
+      color: $primary
+      text_align: center
+
+  - id: cta-bg
+    type: rect
+    z: 9
+    x: 588
+    y: 24
+    width: 120
+    height: 42
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: cta-text
+    type: text
+    z: 10
+    x: 588
+    y: 36
+    width: 120
+    height: 0
+    content: { type: plain, value: "Get $200 credit" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+slots:
+  - { id: brand,      path: "layers[4].content.value",  type: text, hint: "Brand name",  default: "Northwind Cloud" }
+  - { id: tagline,    path: "layers[5].content.value",  type: text, hint: "Tagline",     default: "Enterprise-grade compute. Pay by the second." }
+  - { id: cta_label,  path: "layers[10].content.value", type: text, hint: "CTA label",   default: "Get $200 credit" }

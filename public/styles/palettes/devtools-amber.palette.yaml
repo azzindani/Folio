@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: devtools-amber
+name: Devtools Amber
+version: "1.0.0"
+tags: [tech, devtools, terminal, amber, ide, cli]
+description: "Near-black, warm amber, lime accent, chrome, ash — developer tooling and terminals."
+colors:
+  background: "#0E0D0A"
+  surface:    "#16140F"
+  surface_2:  "#1F1C15"
+  primary:    "#FFB000"
+  secondary:  "#C8CCD0"
+  accent:     "#A8E055"
+  text:       "#F2E6CC"
+  text_muted: "#8A8275"
+  border:     "#2A2620"
+  success:    "#A8E055"
+  warning:    "#FFB000"
+  danger:     "#E05050"

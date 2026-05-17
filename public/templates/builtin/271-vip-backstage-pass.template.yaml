@@ -1,0 +1,335 @@
+_protocol: template/v1
+
+# VIP backstage pass (1500×1000 landscape).
+# Brutalist-mono noir-gold: VIP · BACKSTAGE big bold, holder name,
+# event + venue + date, security stripe, access-level badge.
+meta:
+  id: tmpl-vip-backstage-pass
+  name: VIP Backstage Pass
+  type: ticket
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ticket, vip, backstage, pass, concert, brutalist, landscape]
+  description: "VIP backstage pass with holder name, event, venue, date, and access-level badge."
+
+document:
+  width: 1500
+  height: 1000
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1500
+    height: 1000
+    fill: { type: solid, color: "$text" }
+
+  - id: card-body
+    type: rect
+    z: 1
+    x: 40
+    y: 40
+    width: 1420
+    height: 920
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$primary", width: 8 }
+
+  - id: header-bar
+    type: rect
+    z: 2
+    x: 40
+    y: 40
+    width: 1420
+    height: 200
+    fill: { type: solid, color: "$text" }
+
+  - id: header-stripe
+    type: rect
+    z: 3
+    x: 40
+    y: 240
+    width: 1420
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: vip
+    type: text
+    z: 10
+    x: 80
+    y: 90
+    width: 1340
+    height: 0
+    content: { type: plain, value: "VIP · BACKSTAGE" }
+    style:
+      font_family: $heading
+      font_size: 110
+      font_weight: 900
+      color: $background
+      line_height: 0.95
+      letter_spacing: -0.02
+      text_transform: uppercase
+
+  - id: pass-meta
+    type: text
+    z: 11
+    x: 80
+    y: 200
+    width: 1340
+    height: 0
+    content: { type: plain, value: "PASS NO. 0427 · ALL AREAS GRANTED" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: holder-eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 310
+    width: 1340
+    height: 0
+    content: { type: plain, value: "HOLDER" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: holder-name
+    type: text
+    z: 21
+    x: 80
+    y: 340
+    width: 1340
+    height: 0
+    content: { type: plain, value: "ALEX MORENO-DELGADO" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.01
+      text_transform: uppercase
+
+  - id: divider
+    type: rect
+    z: 25
+    x: 80
+    y: 470
+    width: 1340
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: event-eyebrow
+    type: text
+    z: 30
+    x: 80
+    y: 500
+    width: 600
+    height: 0
+    content: { type: plain, value: "EVENT" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: event-name
+    type: text
+    z: 31
+    x: 80
+    y: 528
+    width: 600
+    height: 0
+    content: { type: plain, value: "MIDNIGHT BLOOM FEST '26" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 900
+      color: $text
+      line_height: 1.1
+      letter_spacing: -0.01
+      text_transform: uppercase
+
+  - id: venue-eyebrow
+    type: text
+    z: 32
+    x: 80
+    y: 620
+    width: 600
+    height: 0
+    content: { type: plain, value: "VENUE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: venue
+    type: text
+    z: 33
+    x: 80
+    y: 648
+    width: 600
+    height: 0
+    content: { type: plain, value: "HARBORSIDE AMPHITHEATRE · LISBON" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.04
+      text_transform: uppercase
+
+  - id: date-eyebrow
+    type: text
+    z: 34
+    x: 80
+    y: 712
+    width: 600
+    height: 0
+    content: { type: plain, value: "DATE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: date
+    type: text
+    z: 35
+    x: 80
+    y: 740
+    width: 600
+    height: 0
+    content: { type: plain, value: "JULY 12 · 2026 · 8:00 PM" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.04
+      text_transform: uppercase
+
+  - id: access-card-bg
+    type: rect
+    z: 40
+    x: 820
+    y: 500
+    width: 600
+    height: 360
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: access-eyebrow
+    type: text
+    z: 41
+    x: 820
+    y: 540
+    width: 600
+    height: 0
+    content: { type: plain, value: "ACCESS LEVEL" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $background
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: access-level
+    type: text
+    z: 42
+    x: 820
+    y: 620
+    width: 600
+    height: 0
+    content: { type: plain, value: "ALL ACCESS" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: $background
+      line_height: 0.95
+      letter_spacing: -0.02
+      text_align: center
+      text_transform: uppercase
+
+  - id: access-sub
+    type: text
+    z: 43
+    x: 820
+    y: 770
+    width: 600
+    height: 0
+    content: { type: plain, value: "STAGE · GREEN ROOM · PRODUCTION" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $background
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: security-stripe
+    type: rect
+    z: 50
+    x: 40
+    y: 900
+    width: 1420
+    height: 24
+    fill:
+      type: linear
+      angle: 90
+      stops:
+        - { color: "$text", position: 0 }
+        - { color: "$primary", position: 25 }
+        - { color: "$text", position: 50 }
+        - { color: "$primary", position: 75 }
+        - { color: "$text", position: 100 }
+
+  - id: footer-text
+    type: text
+    z: 51
+    x: 80
+    y: 936
+    width: 1340
+    height: 0
+    content: { type: plain, value: "NON-TRANSFERABLE · MUST BE WORN AT ALL TIMES · PRODUCTION OFFICE +351 21 555 0148" }
+    style:
+      font_family: $mono
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+slots:
+  - { id: event_name,   path: "layers[10].content.value", type: text, hint: "Event / festival name", default: "MIDNIGHT BLOOM FEST '26" }
+  - { id: venue,        path: "layers[12].content.value", type: text, hint: "Venue + city",          default: "HARBORSIDE AMPHITHEATRE · LISBON" }
+  - { id: date,         path: "layers[14].content.value", type: text, hint: "Date + showtime",       default: "JULY 12 · 2026 · 8:00 PM" }
+  - { id: holder_name,  path: "layers[8].content.value",  type: text, hint: "Pass holder name",      default: "ALEX MORENO-DELGADO" }
+  - { id: access_level, path: "layers[16].content.value", type: text, hint: "Access level",          default: "ALL ACCESS" }
