@@ -9,7 +9,7 @@ meta:
   created: "2026-05-17"
   modified: "2026-05-17"
   generator: folio
-  tags: [web, app, screen, 404, error, landscape, high-contrast]
+  tags: [web, app, screen, "404", error, landscape, high-contrast]
   description: "404 page with huge display number, glitch decoration, friendly message, and home CTA."
 
 document:
