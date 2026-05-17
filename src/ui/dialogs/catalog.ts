@@ -23,7 +23,7 @@ import {
 import { loadThemeCatalog, type ThemeCardData, getThemeById } from '../../templates/theme-registry';
 import { injectIntoTemplate, type TemplateSpec } from '../../schema/template';
 import { serializeYAML } from '../../schema/parser';
-import { renderDesign } from '../../renderer/renderer';
+import { renderDesign, renderPage } from '../../renderer/renderer';
 import type { DesignSpec, PaletteSpec, TypePackSpec, EffectsPackSpec } from '../../schema/types';
 import { BUILTIN_THEMES } from '../../themes/builtin';
 import { FEATURED_COMBOS, type FeaturedCombo } from './catalog-combos';
@@ -84,6 +84,9 @@ export class CatalogDialog {
   private resolvedTypePack:    TypePackSpec    | undefined;
   private resolvedEffectsPack: EffectsPackSpec | undefined;
   private filter: FilterState = { search: '', tag: null };
+  /** Which page of a paged design is shown in the rail. Resets to 0
+   * whenever the selected template changes. */
+  private previewPageIndex = 0;
   private io: IntersectionObserver | null = null;
   private thumbCache = new Map<string, string>();
 
@@ -604,7 +607,18 @@ export class CatalogDialog {
       const tCard = target.closest<HTMLElement>('[data-template]');
       if (tCard) {
         this.selectedTemplateId = tCard.dataset.template!;
+        this.previewPageIndex = 0;
         this.renderTab();
+        void this.renderPreview();
+        return;
+      }
+
+      // Page-nav arrows for paged template previews in the rail.
+      const pageNav = target.closest<HTMLElement>('[data-page-nav]');
+      if (pageNav) {
+        e.stopPropagation();
+        const dir = pageNav.dataset.pageNav === 'next' ? 1 : -1;
+        this.previewPageIndex += dir;
         void this.renderPreview();
         return;
       }
@@ -864,9 +878,33 @@ export class CatalogDialog {
             effectsPack: this.resolvedEffectsPack,
           })
         : undefined;
-      const svg = renderDesign(design, { theme: composedTheme });
+      // Paged designs (carousels, decks, multi-slide LinkedIn posts) need
+      // renderPage with explicit layers — renderDesign only walks
+      // top-level spec.layers and silently produces empty SVG for paged
+      // specs. Render the currently-selected page and surface nav arrows.
+      const pages = design.pages ?? [];
+      const hasPages = pages.length > 0;
+      let svg: SVGSVGElement;
+      let nav = '';
+      if (hasPages) {
+        const idx = Math.max(0, Math.min(this.previewPageIndex, pages.length - 1));
+        this.previewPageIndex = idx;
+        const page = pages[idx];
+        const prevDisabled = idx === 0 ? 'disabled' : '';
+        const nextDisabled = idx === pages.length - 1 ? 'disabled' : '';
+        nav = `
+          <div class="rail-page-nav">
+            <button data-page-nav="prev" ${prevDisabled} aria-label="Previous page" type="button">‹</button>
+            <span class="rail-page-counter">${idx + 1} / ${pages.length}${page.label ? ' · ' + escapeHTML(page.label) : ''}</span>
+            <button data-page-nav="next" ${nextDisabled} aria-label="Next page" type="button">›</button>
+          </div>
+        `;
+        svg = renderPage(page.layers ?? [], design.document.width, design.document.height, { theme: composedTheme });
+      } else {
+        svg = renderDesign(design, { theme: composedTheme });
+      }
       this.fitSVG(svg, design);
-      preview.innerHTML = '';
+      preview.innerHTML = nav;
       preview.appendChild(svg);
     } catch (err) {
       preview.innerHTML = `<div class="rail-empty">Preview failed: ${escapeHTML((err as Error).message)}</div>`;
