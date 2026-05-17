@@ -1,11 +1,16 @@
 # Folio
 
-A self-hosted MCP server and browser-based graphic design editor that gives local LLMs structured tools to generate, edit, and export designs as plain YAML files. No cloud APIs, no subscriptions — everything runs on your machine.
+A self-hosted MCP server and browser-based graphic design editor that gives local LLMs structured tools to generate, edit, and export designs as plain YAML files. No cloud APIs, no subscriptions — everything runs on your machine or your VPS.
 
 ## Features
 
-- **41 MCP tools** across 3 servers: basic (10), design (9), export (22)
+- **38 MCP tools** across 3 tiers: basic (10), design (9), export (19)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
+- **Multiple transports** — stdio (local LM Studio / Claude Code), HTTP + SSE (Claude Connectors, Hermes, OpenClaw, any MCP-over-HTTP client)
+- **Multi-token auth** — issue named bearer tokens per connector; audit log records which token called which tool
+- **Self-hostable via Docker** — single image, compose file, optional Caddy sidecar for auto-HTTPS
+- **Browser editor over the same URL** — visual editor and MCP API share one domain when behind a reverse proxy
+- **Live SVG export** — server-side jsdom renderer writes real `.svg` files from MCP without a browser
 - **Automatic snapshots** — every write creates a `.mcp_versions/` backup before touching disk
 - **Operation receipt logging** — full audit trail at `~/.folio/ops.log`
 - **Constrained output mode** — caps tool responses at 1,000 tokens for local models (configurable)
@@ -13,7 +18,6 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 - **Context recovery** — `resume_task` and `resume_design` restore full carousel state after context resets
 - **Shorthand layer syntax** — `pos:[x,y,w,h]`, `fill:"#hex"`, `icon:"star"` — ~80% fewer tokens than verbose YAML
 - **14 layer types** — rect, circle, text, line, path, icon, image, group, mermaid, chart, code, math, component, particle
-- **Live SVG export** — server-side jsdom renderer writes real `.svg` files from MCP without a browser
 - **Interactive report HTML** — `export_report` assembles multi-page reports into a self-contained `.html` with navigation runtime, `$data.*` expression binding, and Mode A interactions
 - **Presentation engine** — `create_presentation` + `export_presentation` produce 17-transition self-contained HTML decks with keyboard nav, touch swipe, auto-advance, teleprompter mode, and audio cues
 - **Formula binding** — PowerApps-style `=expression` on any layer property; `set_formula_context` + `debug_formula` MCP tools; secure sandboxed evaluator
@@ -24,15 +28,370 @@ A self-hosted MCP server and browser-based graphic design editor that gives loca
 - **Carousel / multi-page** — incremental page-by-page generation with task state tracking
 - **dry_run validation** — `patch_design` validates all selectors before writing
 - **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, align toolbar, Monaco YAML editor with bidirectional sync
+- **Live editor refresh** — `/editor/events` SSE pushes file-change events so the browser reloads instantly when an MCP tool mutates a design
 - **Remote clicker** — `setup_remote_presenter` MCP tool generates SSE server + client JS for HTTP-controlled slide navigation
 - **Collaborative editing** — `setup_collab` MCP tool generates SSE file-watch server; multi-user design sync via `/patch` + `/events` endpoints
 - **Modular architecture** — thin MCP wrappers, zero domain logic in servers; all business logic in `engine.ts`
 
 ---
 
+## Deployment Overview
+
+| Mode | Best for | Transport | Auth | Editor |
+|---|---|---|---|---|
+| **Local stdio (LM Studio / Claude Code)** | Single user, model running on your laptop | stdio | none (process-local) | `npm run dev` separately |
+| **Local Docker** | Single user, want everything in one container | HTTP + SSE on `localhost` | tokens optional | bundled at `:4173` |
+| **VPS Docker (plain HTTP)** | Behind your own nginx/Cloudflare Tunnel | HTTP + SSE on a port | tokens **required** | bundled at `:4173` |
+| **VPS Docker + Caddy** | Public deploy, Claude.ai Custom Connector, multi-client | HTTPS auto-cert | tokens **required** | `https://your-domain/` |
+
+All four use the same Folio binary. Pick the mode that matches your situation and use the matching section below.
+
+---
+
+## Local — LM Studio (stdio)
+
+This is the original mode: LM Studio launches Folio as a subprocess, talks to it over stdio, and your designs land in `~/.folio/projects/` on the host.
+
+### Requirements
+
+- **Git** — `git --version`
+- **Bun 1.0+** — `bun --version` ([install guide](https://bun.sh/docs/installation))
+- **LM Studio** with a model that supports tool calling (Gemma 4B, Qwen 3.5, etc.)
+
+### Platform support
+
+| Platform | Status |
+|---|---|
+| Windows | Verified on Windows 11 |
+| macOS | CI/CD pipeline passes |
+| Linux | Verified end-to-end |
+
+### First run
+
+The first launch clones the repo and installs dependencies (~1–2 minutes). Subsequent launches are instant.
+
+> **Pre-install recommended (Windows):** To avoid the LM Studio connection timeout on first launch, run this once in PowerShell before connecting:
+> ```powershell
+> $d = Join-Path $env:USERPROFILE '.mcp_servers\Folio'
+> git clone https://github.com/azzindani/Folio.git $d --quiet
+> Set-Location $d; bun install --frozen-lockfile
+> ```
+> If you skip this and LM Studio times out, press **Restart** in the MCP Servers panel — it will reconnect and complete the install.
+
+### Windows (PowerShell)
+
+1. Open LM Studio → **Developer** tab (`</>`) or find it via **Integrations**
+2. Find **mcp.json** or **Edit mcp.json** → click to open
+3. Paste this config:
+
+```json
+{
+  "mcpServers": {
+    "folio_basic": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='1'; bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    },
+    "folio_design": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='2'; bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    },
+    "folio_export": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='3'; bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    }
+  }
+}
+```
+
+4. Wait for the green dot next to each server
+5. Start chatting — the model will see all 38 tools
+
+> For small models (≤32K context), use only `folio_basic` (10 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
+
+### macOS / Linux (bash)
+
+```json
+{
+  "mcpServers": {
+    "folio_basic": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "d=\"$HOME/.mcp_servers/Folio\"; if [ ! -d \"$d/.git\" ]; then rm -rf \"$d\"; git clone https://github.com/azzindani/Folio.git \"$d\" --quiet; else cd \"$d\" && git fetch origin --quiet && git reset --hard FETCH_HEAD --quiet; fi; cd \"$d\"; bun install --frozen-lockfile --quiet; FOLIO_MCP_TIER=1 bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    },
+    "folio_design": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "d=\"$HOME/.mcp_servers/Folio\"; if [ ! -d \"$d/.git\" ]; then rm -rf \"$d\"; git clone https://github.com/azzindani/Folio.git \"$d\" --quiet; else cd \"$d\" && git fetch origin --quiet && git reset --hard FETCH_HEAD --quiet; fi; cd \"$d\"; bun install --frozen-lockfile --quiet; FOLIO_MCP_TIER=2 bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    },
+    "folio_export": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "d=\"$HOME/.mcp_servers/Folio\"; if [ ! -d \"$d/.git\" ]; then rm -rf \"$d\"; git clone https://github.com/azzindani/Folio.git \"$d\" --quiet; else cd \"$d\" && git fetch origin --quiet && git reset --hard FETCH_HEAD --quiet; fi; cd \"$d\"; bun install --frozen-lockfile --quiet; FOLIO_MCP_TIER=3 bun run src/mcp/index.ts"
+      ],
+      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
+      "timeout": 600000
+    }
+  }
+}
+```
+
+---
+
+## Local — Docker
+
+For when you want the bundled editor + MCP HTTP API in one container on your laptop.
+
+```bash
+git clone https://github.com/azzindani/Folio.git
+cd Folio
+cp .env.example .env
+cp tokens.example.json tokens.json    # edit and replace the placeholder values
+docker compose up -d --build
+```
+
+This brings up a single `folio` container:
+
+| URL | What it serves |
+|---|---|
+| `http://localhost:4173/` | Visual editor |
+| `http://localhost:3333/mcp` | MCP JSON-RPC endpoint |
+| `http://localhost:3333/mcp/sse` | Tool-result SSE stream |
+| `http://localhost:3333/editor/events` | File-change SSE for live editor refresh |
+| `http://localhost:3333/health` | Liveness (no auth) |
+| `http://localhost:3333/tokens/whoami` | Returns the token name accepted on this request |
+
+Designs persist to `./folio-projects` on the host. Tear down with `docker compose down`; restart with `docker compose up -d`.
+
+---
+
+## VPS / Self-hosted Production
+
+For exposing Folio publicly so Anthropic Custom Connectors, remote Claude Code instances, Hermes, OpenClaw, or any other MCP-over-HTTP client can reach it.
+
+### One-time setup
+
+1. **Point DNS at your VPS.** Create an `A` record: `folio.your-domain.tld → <vps-ip>`. Wait for it to propagate.
+2. **Install Docker + Compose on the VPS** (any modern Linux distro).
+3. **Clone and configure:**
+   ```bash
+   git clone https://github.com/azzindani/Folio.git
+   cd Folio
+   cp .env.example .env
+   cp tokens.example.json tokens.json
+   ```
+4. **Edit `.env`:**
+   ```ini
+   FOLIO_DOMAIN=folio.your-domain.tld
+   FOLIO_ACME_EMAIL=you@your-domain.tld
+   FOLIO_MODE=both
+   FOLIO_TOKENS_FILE=/home/folio/tokens.json
+   ```
+5. **Edit `tokens.json`** — replace every placeholder with a long random string (`openssl rand -hex 32`). Keep this file out of git; `.gitignore` already excludes it.
+6. **Bring up the stack with TLS:**
+   ```bash
+   docker compose --profile tls up -d --build
+   ```
+
+Caddy will request a Let's Encrypt certificate for `FOLIO_DOMAIN` and start terminating HTTPS in under a minute. Confirm:
+
+```bash
+curl -fsS https://folio.your-domain.tld/health
+# → {"status":"ok","version":"1.0.0","tiers":["1","2","3"],"auth":"multi"}
+
+curl -H "Authorization: Bearer <one-of-your-tokens>" \
+     https://folio.your-domain.tld/tokens/whoami
+# → {"token":"claude-desktop","auth_mode":"multi"}
+```
+
+### Updating
+
+```bash
+git pull
+docker compose --profile tls up -d --build
+```
+
+The build runs unit + integration tests by default. If you want a quick redeploy, set `FOLIO_SKIP_TESTS=1` in `.env`.
+
+### Backups
+
+The only state lives in `./folio-projects` (designs, tasks, exports) and `./tokens.json`. Both are plain files — back them up with whatever you already use (rsync, restic, borg, …).
+
+---
+
+## Auth & Tokens
+
+Three modes; the first one that resolves wins:
+
+| Mode | Env / file | When to use |
+|---|---|---|
+| Multi-token from file | `FOLIO_TOKENS_FILE=/path/tokens.json` | Production. Each client gets a named token. |
+| Multi-token inline | `FOLIO_TOKENS="claude:sk-aaa,hermes:sk-bbb"` | Env-only deploys (no file mount). |
+| Single shared key | `FOLIO_API_KEY=sk-...` | Legacy / single client. |
+| Open | none set | Localhost-only / private network. |
+
+### Format of `tokens.json`
+
+```json
+{
+  "claude-desktop": "sk-folio-7f9c4...long-random...",
+  "claude-code":    "sk-folio-3a1b2...long-random...",
+  "hermes":         "sk-folio-d8e7f...long-random..."
+}
+```
+
+The **key** is the token name (shown in the audit log). The **value** is the bearer string the client sends as `Authorization: Bearer <value>`.
+
+### Generating strong tokens
+
+```bash
+openssl rand -hex 32         # → 64 hex chars, recommended
+# or
+python3 -c "import secrets; print('sk-folio-' + secrets.token_urlsafe(32))"
+```
+
+### Audit log
+
+Every authenticated `tools/call` writes one line to stderr:
+
+```
+[mcp] token=claude-desktop tool=create_design ok=true
+```
+
+Tail it with `docker compose logs -f folio` to see which connector is doing what. Token *values* are never logged.
+
+### Rotating a token
+
+1. Add a new entry to `tokens.json` (`"claude-desktop-v2": "sk-new..."`).
+2. `docker compose restart folio` (≤1 s downtime).
+3. Switch the client to the new token.
+4. Remove the old entry; restart again.
+
+---
+
+## Connecting MCP Clients
+
+All HTTP clients talk to the same JSON-RPC endpoint:
+
+```
+POST  https://your-domain/mcp
+GET   https://your-domain/mcp/sse        ← optional SSE stream of tool results
+Auth: Authorization: Bearer <token>
+```
+
+`tools/list`, `tools/call`, and `initialize` follow the standard MCP wire protocol — no Folio-specific extensions.
+
+### Anthropic Claude Connectors (claude.ai)
+
+1. Go to **Settings → Connectors → Add custom connector**.
+2. URL: `https://folio.your-domain.tld/mcp`
+3. Auth: **Bearer token**, value from `tokens.json`.
+4. Save. Claude.ai will run `tools/list` and surface all 38 tools.
+
+> Anthropic's connector requires HTTPS. Use the Caddy TLS profile (above) or front Folio with Cloudflare Tunnel / nginx + Let's Encrypt.
+
+### Claude Code (`mcp.json`)
+
+For the Claude Code CLI, either point at your hosted instance OR use the local stdio config from the LM Studio section.
+
+Hosted (HTTP transport):
+
+```json
+{
+  "mcpServers": {
+    "folio": {
+      "url": "https://folio.your-domain.tld/mcp",
+      "headers": { "Authorization": "Bearer sk-folio-..." }
+    }
+  }
+}
+```
+
+### LM Studio over HTTP (instead of stdio)
+
+LM Studio supports HTTP MCP servers since v0.3. Add to `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "folio": {
+      "url": "http://localhost:3333/mcp",
+      "headers": { "Authorization": "Bearer sk-folio-lmstudio-..." }
+    }
+  }
+}
+```
+
+Useful when you're running Folio in Docker and don't want LM Studio to clone its own copy.
+
+### Hermes, OpenClaw, and other MCP-over-HTTP agents
+
+Any client that speaks JSON-RPC over HTTP with a bearer header works. Minimal config shape:
+
+```yaml
+mcp_servers:
+  folio:
+    transport: http
+    url: https://folio.your-domain.tld/mcp
+    auth:
+      type: bearer
+      token: sk-folio-hermes-...
+```
+
+### Smoke-test with curl
+
+```bash
+# 1. Health (no auth)
+curl -s https://folio.your-domain.tld/health | jq .
+
+# 2. Who am I? (auth)
+curl -s https://folio.your-domain.tld/tokens/whoami \
+     -H "Authorization: Bearer sk-folio-..." | jq .
+
+# 3. tools/list (returns all 41 tool definitions)
+curl -s https://folio.your-domain.tld/mcp \
+     -H "Authorization: Bearer sk-folio-..." \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'
+# → 38
+
+# 4. Create a project
+curl -s https://folio.your-domain.tld/mcp \
+     -H "Authorization: Bearer sk-folio-..." \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"create_project","arguments":{"project_path":"/home/folio/projects/test","name":"test"}}}'
+```
+
+---
+
 ## Visual Editor
 
-Folio ships a full browser-based design editor accessible at `http://localhost:5173` after `npm run dev`. It operates on the same `.design.yaml` files the MCP server reads and writes — no conversion step.
+Folio ships a full browser-based design editor at `http://localhost:4173` (Docker) or `npm run dev` for local dev (`http://localhost:5173`). It operates on the same `.design.yaml` files the MCP server reads and writes — no conversion step.
+
+When deployed behind Caddy it's reachable at `https://your-domain/`. The editor opens an SSE connection to `/editor/events` and reloads the active design the moment an MCP tool mutates it, so you can run the LLM in one tab and watch its changes paint in the next.
 
 ### Canvas
 
@@ -98,7 +457,7 @@ Folio ships a full browser-based design editor accessible at `http://localhost:5
 
 ## Design Engine
 
-The engine is the layer between the YAML file and the rendered SVG. It runs in both the browser (for the visual editor) and Node/Bun (for MCP export). Every design is a `.design.yaml` file — the canvas is a live view, never the source of truth.
+The engine is the layer between the YAML file and the rendered SVG. It runs in both the browser (for the visual editor) and Bun/Node (for MCP export). Every design is a `.design.yaml` file — the canvas is a live view, never the source of truth.
 
 ### Layer Types
 
@@ -216,134 +575,26 @@ layers:
 ```
 
 ---
-## Important: Always Use Absolute File Paths
 
-> **Do not use relative paths with `project_path` or `design_path`.**
+## Important: Absolute Paths
+
+> **Always pass absolute paths to `project_path` and `design_path`.**
 >
-> The MCP server runs as a subprocess and resolves paths from its own working directory, not yours. Relative paths will silently point to the wrong location.
+> Stdio MCP servers resolve paths from their own working directory. HTTP MCP servers resolve from the container's filesystem — `~` and `$HOME` mean `/home/folio` inside the container, not your laptop.
 >
-> Always give the model the full absolute path:
+> Inside Docker, the canonical project root is `/home/folio/projects`. So:
 > ```
-> Create a design in C:\Users\you\designs\my-project
+> Create a design in /home/folio/projects/my-poster
 > ```
-> The model passes that path directly to the MCP tools. `~` expansion is not supported in all clients.
-
----
-
-## Quick Install (LM Studio)
-
-### Requirements
-
-- **Git** — `git --version`
-- **Bun 1.0+** — `bun --version` ([install guide](https://bun.sh/docs/installation))
-- **LM Studio** with a model that supports tool calling (Gemma 4B, Qwen 3.5, etc.)
-
-### Platform Support
-
-| Platform | Status |
-|---|---|
-| Windows | Untested — CI/CD pipeline passes |
-| macOS | Untested — CI/CD pipeline passes |
-| Linux | Tested — real-world verified |
-
-### First Run
-
-The first launch clones the repo and installs dependencies (~1–2 minutes). Subsequent launches are instant.
-
-> **Pre-install recommended (Windows):** To avoid the LM Studio connection timeout on first launch, run this once in PowerShell before connecting:
-> ```powershell
-> $d = Join-Path $env:USERPROFILE '.mcp_servers\Folio'
-> git clone https://github.com/azzindani/Folio.git $d --quiet
-> Set-Location $d; bun install --frozen-lockfile
+> On the host, that same directory is `./folio-projects/my-poster`.
+>
+> Outside Docker (LM Studio stdio):
 > ```
-> If you skip this and LM Studio times out, press **Restart** in the MCP Servers panel — it will reconnect and complete the install.
+> Create a design in C:\Users\you\designs\my-project   # Windows
+> Create a design in /Users/you/designs/my-project     # macOS/Linux
+> ```
 
----
-
-### Windows (PowerShell)
-
-1. Open LM Studio → **Developer** tab (`</>`) or find it via **Integrations**
-2. Find **mcp.json** or **Edit mcp.json** → click to open
-3. Paste this config:
-
-```json
-{
-  "mcpServers": {
-    "folio_basic": {
-      "command": "powershell",
-      "args": [
-        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
-        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='1'; bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    },
-    "folio_design": {
-      "command": "powershell",
-      "args": [
-        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
-        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='2'; bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    },
-    "folio_export": {
-      "command": "powershell",
-      "args": [
-        "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
-        "$d = Join-Path $env:USERPROFILE '.mcp_servers\\Folio'; $g = Join-Path $d '.git'; if (!(Test-Path $g)) { if (Test-Path $d) { Remove-Item -Recurse -Force $d }; git clone https://github.com/azzindani/Folio.git $d --quiet } else { Set-Location $d; git fetch origin --quiet; git reset --hard FETCH_HEAD --quiet }; Set-Location $d; bun install --frozen-lockfile --quiet; $env:FOLIO_MCP_TIER='3'; bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    }
-  }
-}
-```
-
-4. Wait for the green dot next to each server
-5. Start chatting — the model will see all 25 tools
-
-> For small models (≤32K context), use only `folio_basic` (10 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
-
----
-
-### macOS / Linux (bash)
-
-Replace the entries above with the bash equivalent:
-
-```json
-{
-  "mcpServers": {
-    "folio_basic": {
-      "command": "bash",
-      "args": [
-        "-c",
-        "d=\"$HOME/.mcp_servers/Folio\"; if [ ! -d \"$d/.git\" ]; then rm -rf \"$d\"; git clone https://github.com/azzindani/Folio.git \"$d\" --quiet; else cd \"$d\" && git fetch origin --quiet && git reset --hard FETCH_HEAD --quiet; fi; cd \"$d\"; bun install --frozen-lockfile --quiet; FOLIO_MCP_TIER=1 bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    },
-    "folio_design": {
-      "command": "bash",
-      "args": [
-        "-c",
-        "d=\"$HOME/.mcp_servers/Folio\"; if [ ! -d \"$d/.git\" ]; then rm -rf \"$d\"; git clone https://github.com/azzindani/Folio.git \"$d\" --quiet; else cd \"$d\" && git fetch origin --quiet && git reset --hard FETCH_HEAD --quiet; fi; cd \"$d\"; bun install --frozen-lockfile --quiet; FOLIO_MCP_TIER=2 bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    },
-    "folio_export": {
-      "command": "bash",
-      "args": [
-        "-c",
-        "d=\"$HOME/.mcp_servers/Folio\"; if [ ! -d \"$d/.git\" ]; then rm -rf \"$d\"; git clone https://github.com/azzindani/Folio.git \"$d\" --quiet; else cd \"$d\" && git fetch origin --quiet && git reset --hard FETCH_HEAD --quiet; fi; cd \"$d\"; bun install --frozen-lockfile --quiet; FOLIO_MCP_TIER=3 bun run src/mcp/index.ts"
-      ],
-      "env": { "FOLIO_OUTPUT_BUDGET": "1000" },
-      "timeout": 600000
-    }
-  }
-}
-```
+The MCP path-resolver gates every read/write to the calling user's home directory or `/tmp`. Paths outside that are rejected.
 
 ---
 
@@ -366,8 +617,6 @@ Project management, navigation, and task planning. Safe to use with any model �
 | `resume_task` | Read task state and return exact next tool call — use after any context reset |
 | `resume_design` | Read carousel generation state to continue appending pages |
 
----
-
 ### Tier 2 — Design (9 tools)
 
 Full design lifecycle — create, inspect, build, edit. All write tools create a `.mcp_versions/` snapshot before touching disk.
@@ -384,14 +633,13 @@ Full design lifecycle — create, inspect, build, edit. All write tools create a
 | `patch_design` | Apply JSON-pointer selectors to any field; supports `dry_run: true` to validate before writing |
 | `seal_design` | Mark design complete, validate all layers, freeze `_mode: complete` |
 
----
-
-### Tier 3 — Export (22 tools)
+### Tier 3 — Export (19 tools)
 
 SVG/HTML export, batch generation, templates, component extraction, report assembly, presentations, formula binding, animation, and collaboration.
 
 | Tool | Purpose |
 |---|---|
+| `open_in_editor` | Return a `http://…/?file=…&mcp_url=…` URL that opens the design in the visual editor with live MCP refresh wired up |
 | `export_design` | Export to SVG (server-side jsdom renderer) or self-contained HTML; PDF stages HTML for Puppeteer |
 | `export_template` | Export sealed design as `.template.yaml` skeleton with named `{{slot}}` placeholders |
 | `list_template_slots` | List all injectable slots in a `.template.yaml` with paths, types, and hints |
@@ -412,6 +660,7 @@ SVG/HTML export, batch generation, templates, component extraction, report assem
 | `setup_collab` | Generate SSE collaborative editing server: file-watch + `/patch` + `/events` endpoints for multi-user sync |
 
 ---
+
 ## Workflow Reference
 
 ### Poster (single page)
@@ -473,68 +722,84 @@ The exported HTML is fully self-contained — 17 CSS transition types, keyboard/
 ### Create a poster
 
 ```
-Create a project at C:\Users\me\designs\work, then make a dark tech poster with a bold headline and a red pill badge
+Create a project at /home/folio/projects/work, then make a dark tech poster with a bold headline and a red pill badge
 ```
 
 ### Build a carousel
 
 ```
-Plan a 5-slide product launch carousel at C:\Users\me\designs\launch — cover, problem, solution, features, CTA
+Plan a 5-slide product launch carousel at /home/folio/projects/launch — cover, problem, solution, features, CTA
 ```
 
 ### Resume after context reset
 
 ```
-Resume the task at C:\Users\me\designs\launch\tasks\product-launch.task.yaml
+Resume the task at /home/folio/projects/launch/tasks/product-launch.task.yaml
 ```
 
 ### Export as SVG
 
 ```
-Export C:\Users\me\designs\work\designs\poster.design.yaml as SVG
+Export /home/folio/projects/work/designs/poster.design.yaml as SVG
 ```
 
 ### Batch from template
 
 ```
-Generate 10 variations of the announcement template using the slots in C:\Users\me\designs\templates\announcement.template.yaml
+Generate 10 variations of the announcement template using the slots in /home/folio/projects/templates/announcement.template.yaml
 ```
 
 ### Patch a specific field
 
 ```
-Change the headline text in C:\Users\me\designs\work\designs\poster.design.yaml to "Q3 Results"
+Change the headline text in /home/folio/projects/work/designs/poster.design.yaml to "Q3 Results"
 ```
 
 ### Open the visual editor
 
 ```bash
-npm run dev   # → http://localhost:5173
+npm run dev   # local dev → http://localhost:5173
+# or
+docker compose up -d   # → http://localhost:4173
 ```
 
 ---
 
 ## Configuration
 
-### Token Budget
-
-Set `FOLIO_OUTPUT_BUDGET` in the `env` section of `mcp.json` to cap tool response size in tokens. Default is `1000`. When a response exceeds the budget, least-critical fields are trimmed first (artifact paths → extra suggested tools → extra progress items → backup full path).
-
-### Constrained Mode
-
-Set `MCP_CONSTRAINED_MODE=true` to reduce result set sizes for lower-memory machines. This halves list row limits, layer row limits, and search result counts.
-
-### Environment Variables
+### Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `FOLIO_OUTPUT_BUDGET` | `1000` | Max tokens per tool response |
-| `FOLIO_MCP_TIER` | `1` | Tool tier: `1` basic, `2` basic+design, `3` all |
+| `FOLIO_MODE` | `ui` (Docker default in compose: `both`) | Container role: `ui` · `mcp` · `both` |
+| `FOLIO_PORT` | `3333` | MCP HTTP port (in-container) |
+| `PORT` | `4173` | Visual editor port (in-container) |
+| `FOLIO_PROJECTS_DIR` | `/home/folio/projects` | Where designs live inside the container |
+| `FOLIO_OUTPUT_BUDGET` | `1000` | Max tokens per MCP tool response |
+| `FOLIO_MCP_TIER` | `1` | stdio mode only: `1` basic, `2` basic+design, `3` all |
 | `MCP_CONSTRAINED_MODE` | `false` | Set `true` to reduce result sizes for low-RAM machines |
+| `FOLIO_TOKENS_FILE` | unset | Path to JSON file of named tokens (highest priority) |
+| `FOLIO_TOKENS` | unset | Inline tokens `"name1:val1,name2:val2"` |
+| `FOLIO_API_KEY` | unset | Single shared bearer (legacy) |
+| `FOLIO_DOMAIN` | unset | Public hostname for the Caddy TLS profile |
+| `FOLIO_ACME_EMAIL` | unset | Let's Encrypt registration email |
+| `FOLIO_SKIP_TESTS` | `0` | Set `1` to skip the test suite during `docker build` |
+| `FOLIO_UI_PORT` | `4173` | Compose: host port mapped to the editor |
+| `FOLIO_MCP_PORT` | `3333` | Compose: host port mapped to MCP HTTP |
+
+### Token budget
+
+Set `FOLIO_OUTPUT_BUDGET` to cap tool response size in tokens. Default is `1000`. When a response exceeds the budget, least-critical fields are trimmed first (artifact paths → extra suggested tools → extra progress items → backup full path).
+
+### Constrained mode
+
+Set `MCP_CONSTRAINED_MODE=true` to reduce result set sizes for lower-memory machines. This halves list row limits, layer row limits, and search result counts.
 
 ---
 
 ## Uninstall
+
+### LM Studio (stdio install)
 
 **Step 1:** Remove from your MCP client — delete all `folio_*` entries from `mcp.json` and restart the client.
 
@@ -552,6 +817,15 @@ rm -rf ~/.mcp_servers/Folio
 rm -rf ~/.folio
 ```
 
+### Docker
+
+```bash
+docker compose --profile tls down -v   # also removes caddy_data / caddy_config
+docker rmi folio:latest
+# Optional: also delete persisted designs
+rm -rf ./folio-projects
+```
+
 ---
 
 ## Architecture
@@ -560,8 +834,10 @@ rm -rf ~/.folio
 Folio/
 ├── src/
 │   ├── mcp/
-│   │   ├── index.ts             ← entry point; selects tier via FOLIO_MCP_TIER
-│   │   ├── engine.ts            ← all 25 tool implementations (zero MCP imports)
+│   │   ├── index.ts             ← stdio entry point; selects tier via FOLIO_MCP_TIER
+│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker)
+│   │   ├── auth.ts              ← token loader (file / inline / single-key / open)
+│   │   ├── engine.ts            ← all tool implementations (zero MCP imports)
 │   │   ├── types.ts             ← ToolResult, ProgressItem, Handover, ContextField
 │   │   ├── shorthand-parser.ts  ← expands layers_shorthand → full Layer objects
 │   │   ├── engine/
@@ -570,41 +846,35 @@ Folio/
 │   │   │   ├── svg-export.ts    ← server-side SVG renderer (jsdom + renderer.ts)
 │   │   │   ├── task.ts          ← carousel task file CRUD + next-action baton
 │   │   │   └── coerce.ts        ← input coercion helpers
-│   │   ├── tier1/
-│   │   │   ├── server.ts        ← thin MCP stdio wrapper for Basic tools
-│   │   │   └── registry.ts      ← tool definitions (name, description, inputSchema)
-│   │   ├── tier2/
-│   │   │   ├── server.ts        ← thin MCP stdio wrapper for Design tools
-│   │   │   └── registry.ts
-│   │   └── tier3/
-│   │       ├── server.ts        ← thin MCP stdio wrapper for Export tools
-│   │       └── registry.ts
+│   │   ├── tier1/               ← Basic tool registry + stdio server
+│   │   ├── tier2/               ← Design tool registry + stdio server
+│   │   └── tier3/               ← Export tool registry + stdio server
 │   ├── renderer/
 │   │   ├── renderer.ts          ← renderDesign() / renderPage() → SVGSVGElement
-│   │   ├── layer-renderers.ts   ← per-type renderers (rect, text, image, icon, …)
+│   │   ├── layer-renderers.ts   ← per-type renderers
 │   │   ├── fill-renderer.ts     ← solid, linear, radial, conic, noise gradient fills
 │   │   ├── effects-renderer.ts  ← drop shadow (with spread), blur, blend mode
 │   │   ├── svg-utils.ts         ← createSVGElement, getOrCreateDefs, uniqueDefId
 │   │   ├── lucide-icons.ts      ← 80+ Lucide icon SVG paths
 │   │   └── qr/                  ← QR code encoder (no external deps)
-│   ├── schema/
-│   │   ├── types.ts             ← all TypeScript interfaces (Layer, DesignSpec, ThemeSpec, …)
-│   │   ├── parser.ts            ← YAML → DesignSpec
-│   │   ├── validator.ts         ← DesignSpec validation → ValidationError[]
-│   │   └── template.ts          ← template export / slot injection
-│   ├── engine/
-│   │   ├── token-resolver.ts    ← $token → theme value
-│   │   ├── shorthand-expander.ts← pos shorthand → x/y/width/height
-│   │   └── component-resolver.ts← component ref → inlined layers
+│   ├── schema/                  ← types + parser + validator + template
+│   ├── engine/                  ← token-resolver + shorthand-expander + component-resolver
 │   ├── editor/                  ← browser visual editor (canvas, state, interactions)
 │   ├── ui/                      ← panels, toolbar, command palette
-│   ├── export/                  ← SVG / HTML / PDF exporters; html-assembler (report runtime); mode-b-runtime; script-sandbox; puppeteer-pdf
-│   ├── themes/                  ← built-in theme definitions (dark-tech, light-clean)
+│   ├── export/                  ← SVG / HTML / PDF / animation / collab / remote-clicker
+│   ├── themes/                  ← built-in theme definitions
 │   └── utils/                   ← debug logger, ruler units
-├── tests/
-│   ├── e2e/                     ← Playwright end-to-end tests
-│   ├── visual/                  ← Playwright visual regression snapshots
-│   └── fixtures/                ← sample .design.yaml files
+├── scripts/
+│   ├── docker-entrypoint.sh     ← dispatches by $FOLIO_MODE
+│   ├── serve.sh                 ← vite preview (:4173)
+│   ├── serve-mcp.sh             ← bun run src/mcp/http-server.ts (:3333)
+│   ├── build.sh · test.sh       ← used by both host + Docker
+├── caddy/Caddyfile              ← reverse proxy + auto-HTTPS for the tls profile
+├── docker-compose.yml           ← folio + optional caddy service
+├── Dockerfile                   ← oven/bun:1-alpine, two-stage
+├── .env.example                 ← env template
+├── tokens.example.json          ← multi-token template
+├── tests/                       ← Playwright e2e + visual regression
 └── src/**/*.test.ts             ← 1,935 Vitest unit + integration tests
 ```
 
@@ -612,46 +882,44 @@ Folio/
 
 ## Development
 
-### Local Testing
+### Local
 
 ```bash
-# Install dependencies
-npm ci        # Node
-bun install   # Bun (faster)
+# Install dependencies (bun is faster)
+bun install
 
-# Run all unit + integration tests (1,870 tests)
+# Visual editor + HMR
+npm run dev                       # → http://localhost:5173
+
+# MCP stdio
+FOLIO_MCP_TIER=3 bun run src/mcp/index.ts
+
+# MCP HTTP (auth optional)
+FOLIO_API_KEY=sk-dev bun run src/mcp/http-server.ts
+
+# Unit + integration tests
 npm run test:unit
 
-# Run with coverage report
+# Coverage
 npm run test:coverage
 
-# Type check (zero errors policy)
-npm run typecheck
+# Type check + lint (zero-warning policy)
+npm run typecheck && npm run lint
 
-# Lint (zero warnings policy)
-npm run lint
-
-# E2E tests (build first)
+# E2E (build first)
 npm run build && npm run test:e2e
 ```
 
-### Run a single MCP tier locally
+### Continuing development on the VPS
+
+The image is built from sources, so editing files inside the cloned repo and re-running `docker compose --profile tls up -d --build` is the supported dev loop. For tighter cycles:
 
 ```bash
-# Tier 1 — Basic tools only (10 tools, ideal for small models)
-FOLIO_MCP_TIER=1 bun run src/mcp/index.ts
+# Skip tests during quick iteration
+FOLIO_SKIP_TESTS=1 docker compose --profile tls up -d --build
 
-# Tier 2 — Basic + Design tools (19 tools)
-FOLIO_MCP_TIER=2 bun run src/mcp/index.ts
-
-# Tier 3 — All tools (25 tools)
-FOLIO_MCP_TIER=3 bun run src/mcp/index.ts
-```
-
-### Start the visual editor
-
-```bash
-npm run dev   # → http://localhost:5173
+# Watch logs
+docker compose logs -f folio caddy
 ```
 
 ---

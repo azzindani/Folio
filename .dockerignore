@@ -26,5 +26,14 @@ tests/ui-audit/reports
 Dockerfile
 .dockerignore
 
+# Local deploy config — never bake into the image. Mount at runtime instead.
+.env
+.env.*
+!.env.example
+tokens.json
+folio-projects
+caddy_data
+caddy_config
+
 # Notebooks / docs not needed at runtime
 folio_colab.ipynb

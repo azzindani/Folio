@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 # serve-mcp.sh — Run the Folio MCP HTTP server.
 #
-# Endpoints (when FOLIO_API_KEY is set, send Authorization: Bearer <key>):
-#   POST /mcp        — JSON-RPC (initialize · tools/list · tools/call)
-#   GET  /mcp/sse    — server-sent events
-#   GET  /health     — liveness probe
+# Endpoints (when auth is configured, send Authorization: Bearer <token>):
+#   POST /mcp            — JSON-RPC (initialize · tools/list · tools/call)
+#   GET  /mcp/sse        — server-sent events (all tool responses)
+#   GET  /editor/events  — live file-change events for the visual editor
+#   GET  /health         — liveness probe (no auth)
+#   GET  /tokens/whoami  — return the token name that authenticated this request
 #
-# Used by Anthropic MCP connectors / Custom Connectors.
+# Auth modes (any one is enough — checked in this priority order):
+#   1. FOLIO_TOKENS_FILE=/path/to/tokens.json    {"name":"sk-...","other":"sk-..."}
+#   2. FOLIO_TOKENS="name:sk-...,other:sk-..."   inline named tokens
+#   3. FOLIO_API_KEY="sk-..."                    single shared bearer (legacy)
+#   (none set → server runs unauthenticated — local-only use)
+#
+# Used by Anthropic MCP connectors, Claude Code MCP, Hermes, OpenClaw, etc.
 set -euo pipefail
 
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,5 +27,12 @@ if [ ! -f "src/mcp/http-server.ts" ]; then
   exit 1
 fi
 
-echo "[serve-mcp] Folio MCP HTTP on :${FOLIO_PORT} (POST /mcp · GET /mcp/sse · GET /health)"
-exec node --loader ts-node/esm src/mcp/http-server.ts
+# Prefer bun (native TS execution, ~50ms cold start). Fall back to node + ts-node
+# when bun isn't installed (e.g. dev machines without bun).
+if command -v bun >/dev/null 2>&1; then
+  echo "[serve-mcp] Folio MCP HTTP on :${FOLIO_PORT} (POST /mcp · GET /mcp/sse · GET /editor/events · GET /health)"
+  exec bun run src/mcp/http-server.ts
+else
+  echo "[serve-mcp] Folio MCP HTTP on :${FOLIO_PORT} (node+ts-node fallback)"
+  exec node --loader ts-node/esm src/mcp/http-server.ts
+fi

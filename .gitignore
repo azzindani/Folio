@@ -33,6 +33,11 @@ tests/ui-audit/deep/
 .env
 .env.*
 !.env.example
+tokens.json
+!tokens.example.json
+
+# Self-hosted deploy state (bind-mounted into the container)
+folio-projects/
 
 # OS junk
 .DS_Store
