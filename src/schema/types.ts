@@ -802,6 +802,13 @@ export interface DesignSpec {
   _output_mode?: 'static' | 'interactive';
   state?: Record<string, StateDef>;
   scripts?: ScriptDef[];
+  /**
+   * Per-layer animations keyed by layer id. Loaded into editor state
+   * on loadDesign and applied to the SVG by injecting CSS keyframes
+   * + animation rules so static templates can ship with motion
+   * (enter, loop, exit). Used by both canvas preview and exporters.
+   */
+  animations?: Record<string, import('../animation/types').AnimationSpec>;
 }
 
 // ── Mode B — Interactive Output ─────────────────────────────

@@ -1004,6 +1004,9 @@ export class EditorApp {
       this.state.set('palette', null);
       this.state.set('typePack', null);
       this.state.set('effectsPack', null);
+      // Lift animations from the spec into state so canvas + animation
+      // panel both see them. Empty object resets any prior design's anims.
+      this.state.set('animations', spec.animations ?? {});
     });
 
     this.resolveStyleRefs(spec);

@@ -3,6 +3,7 @@ import { renderDesign, renderPage } from '../renderer/renderer';
 import type { Layer, TextLayer } from '../schema/types';
 import { computeRulerTicks } from '../utils/ruler-units';
 import { composeTheme } from '../styles/compose';
+import { generateDesignAnimationCSS } from '../animation/css-generator';
 
 let guideCounter = 0;
 
@@ -266,7 +267,7 @@ export class CanvasManager {
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
     const needsRender = changedKeys.some(k =>
-      ['design', 'theme', 'palette', 'typePack', 'effectsPack', 'currentPageIndex', 'gridVisible'].includes(k),
+      ['design', 'theme', 'palette', 'typePack', 'effectsPack', 'currentPageIndex', 'gridVisible', 'animations'].includes(k),
     );
 
     if (needsRender) {
@@ -327,6 +328,12 @@ export class CanvasManager {
       svg = renderDesign(design, { theme: composed, showGrid: this.state.get().gridVisible });
     }
 
+    // Inject animation CSS into the SVG so YAML-declared enter/loop/exit
+    // animations actually play. Empty animations map = no-op (no style
+    // node added). Re-runs on every render so live animation panel edits
+    // also take effect.
+    this.injectAnimationCSS(svg);
+
     // Atomic swap — no blank white frame between renders
     if (this.currentSVG && this.currentSVG.parentElement === this.svgContainer) {
       this.currentSVG.replaceWith(svg);
@@ -341,6 +348,21 @@ export class CanvasManager {
     this.viewport.style.height = `${height}px`;
     this.updateTransform();
     this.updateRulers();
+  }
+
+  private injectAnimationCSS(svg: SVGSVGElement): void {
+    const { animations } = this.state.get();
+    const entries = Object.entries(animations);
+    if (entries.length === 0) return;
+    // Build a Map so the generator's signature matches; keep insertion
+    // order so stagger sequences fire in the order the YAML declared.
+    const map = new Map<string, import('../animation/types').AnimationSpec>(entries);
+    const css = generateDesignAnimationCSS(map);
+    if (!css) return;
+    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.setAttribute('data-folio-animations', '');
+    style.textContent = css;
+    svg.insertBefore(style, svg.firstChild);
   }
 
   private updateTransform(): void {
