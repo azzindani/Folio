@@ -1,0 +1,351 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn listicle carousel — "5 Tips" structure.
+# Cover / Intro / Tip 01-04 / CTA. Portrait 1080×1350 (4:5).
+meta:
+  id: tmpl-linkedin-tips-listicle-7slide
+  name: LinkedIn Tips Listicle (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [linkedin, carousel, document, social, portrait, howto, listicle, 4-5]
+  description: "Seven-slide LinkedIn listicle: cover, intro, four numbered tip slides, and a CTA. 1080×1350 portrait. Light-clean theme."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "1/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: number-callout
+        type: text
+        z: 11
+        x: 90
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "5 TIPS" }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $primary, letter_spacing: 0.16, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 90
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "Better Email\nSubject Lines" }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.04, letter_spacing: -0.03 }
+      - id: subhead
+        type: text
+        z: 13
+        x: 90
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "Five small rewrites that double your open rate." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.45 }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "2/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 90
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHY IT MATTERS" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 90
+        y: 260
+        width: 920
+        height: 0
+        content: { type: plain, value: "The subject line\nis the whole email." }
+        style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.12, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 90
+        y: 600
+        width: 920
+        height: 0
+        content: { type: plain, value: "Subject lines decide whether your email gets opened. The body never gets a chance if line one fails. These five rewrites take seconds and compound across every send." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 3 · Tip 01 ───────────────────────────────────────
+  - id: tip-01
+    label: Tip 01
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "3/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: big-number
+        type: text
+        z: 11
+        x: 90
+        y: 260
+        width: 320
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $heading, font_size: 240, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: title
+        type: text
+        z: 12
+        x: 440
+        y: 380
+        width: 580
+        height: 0
+        content: { type: plain, value: "Keep it under\n7 words." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 90
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "Inbox previews cut off long lines on mobile. Short subjects get read in full and feel personal — the brain processes them in one glance." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 4 · Tip 02 ───────────────────────────────────────
+  - id: tip-02
+    label: Tip 02
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "4/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: big-number
+        type: text
+        z: 11
+        x: 90
+        y: 260
+        width: 320
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $heading, font_size: 240, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: title
+        type: text
+        z: 12
+        x: 440
+        y: 380
+        width: 580
+        height: 0
+        content: { type: plain, value: "Lead with\nthe verb." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 90
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "\"Approve the Q3 budget\" beats \"Q3 budget for your review.\" Action verbs in position one signal what you want and how long it'll take." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 5 · Tip 03 ───────────────────────────────────────
+  - id: tip-03
+    label: Tip 03
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "5/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: big-number
+        type: text
+        z: 11
+        x: 90
+        y: 260
+        width: 320
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $heading, font_size: 240, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: title
+        type: text
+        z: 12
+        x: 440
+        y: 380
+        width: 580
+        height: 0
+        content: { type: plain, value: "Drop the\nfiller words." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 90
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "Cut \"just,\" \"quick,\" \"checking in,\" and \"following up.\" They add no information and make the message feel disposable before it's opened." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 6 · Tip 04 ───────────────────────────────────────
+  - id: tip-04
+    label: Tip 04
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "6/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: big-number
+        type: text
+        z: 11
+        x: 90
+        y: 260
+        width: 320
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $heading, font_size: 240, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: title
+        type: text
+        z: 12
+        x: 440
+        y: 380
+        width: 580
+        height: 0
+        content: { type: plain, value: "Name the\ndeadline." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 90
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "\"Review by Friday\" tells the reader when, not just what. Specific dates beat \"ASAP\" — they're scannable, plannable, and harder to ignore." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+
+  # ── Slide 7 · CTA (Tip 05 + follow) ───────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 880
+        y: 1290
+        width: 140
+        height: 0
+        content: { type: plain, value: "7/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+      - id: closing
+        type: text
+        z: 11
+        x: 90
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "Try one\nthis week." }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: cta-rect
+        type: rect
+        z: 12
+        x: 90
+        y: 760
+        width: 900
+        height: 140
+        radius: 20
+        fill: { type: solid, color: "$primary" }
+      - id: cta-text
+        type: text
+        z: 13
+        x: 90
+        y: 808
+        width: 900
+        height: 0
+        content: { type: plain, value: "Follow for one writing tip a week →" }
+        style: { font_family: $body, font_size: 26, font_weight: 700, color: "#FFFFFF", text_align: center, line_height: 1.4 }
+      - id: handle
+        type: text
+        z: 14
+        x: 90
+        y: 1290
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted }
+
+slots:
+  - { id: cover_callout,  path: "pages[0].layers[3].content.value", type: text, hint: "Cover number callout",  default: "5 TIPS" }
+  - { id: cover_title,    path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",        default: "Better Email\nSubject Lines" }
+  - { id: cover_subhead,  path: "pages[0].layers[5].content.value", type: text, hint: "Cover subhead",         default: "Five small rewrites that double your open rate." }
+  - { id: intro_title,    path: "pages[1].layers[4].content.value", type: text, hint: "Intro headline",        default: "The subject line\nis the whole email." }
+  - { id: intro_body,     path: "pages[1].layers[5].content.value", type: text, hint: "Intro body",            default: "Subject lines decide whether your email gets opened. The body never gets a chance if line one fails. These five rewrites take seconds and compound across every send." }
+  - { id: tip_1_title,    path: "pages[2].layers[4].content.value", type: text, hint: "Tip 1 headline",        default: "Keep it under\n7 words." }
+  - { id: tip_1_body,     path: "pages[2].layers[5].content.value", type: text, hint: "Tip 1 body",            default: "Inbox previews cut off long lines on mobile. Short subjects get read in full and feel personal — the brain processes them in one glance." }
+  - { id: tip_2_title,    path: "pages[3].layers[4].content.value", type: text, hint: "Tip 2 headline",        default: "Lead with\nthe verb." }
+  - { id: tip_2_body,     path: "pages[3].layers[5].content.value", type: text, hint: "Tip 2 body",            default: "\"Approve the Q3 budget\" beats \"Q3 budget for your review.\" Action verbs in position one signal what you want and how long it'll take." }
+  - { id: tip_3_title,    path: "pages[4].layers[4].content.value", type: text, hint: "Tip 3 headline",        default: "Drop the\nfiller words." }
+  - { id: tip_3_body,     path: "pages[4].layers[5].content.value", type: text, hint: "Tip 3 body",            default: "Cut \"just,\" \"quick,\" \"checking in,\" and \"following up.\" They add no information and make the message feel disposable before it's opened." }
+  - { id: tip_4_title,    path: "pages[5].layers[4].content.value", type: text, hint: "Tip 4 headline",        default: "Name the\ndeadline." }
+  - { id: tip_4_body,     path: "pages[5].layers[5].content.value", type: text, hint: "Tip 4 body",            default: "\"Review by Friday\" tells the reader when, not just what. Specific dates beat \"ASAP\" — they're scannable, plannable, and harder to ignore." }
+  - { id: cta_closing,    path: "pages[6].layers[3].content.value", type: text, hint: "CTA closing line",      default: "Try one\nthis week." }
+  - { id: cta_text,       path: "pages[6].layers[5].content.value", type: text, hint: "CTA action callout",    default: "Follow for one writing tip a week →" }
+  - { id: cta_handle,     path: "pages[6].layers[6].content.value", type: text, hint: "Footer handle",         default: "@yourhandle" }
