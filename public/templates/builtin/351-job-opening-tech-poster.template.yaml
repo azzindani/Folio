@@ -1,0 +1,621 @@
+_protocol: template/v1
+
+# Single-page LinkedIn poster — tech job opening (engineer/PM/designer).
+# Hierarchy: eyebrow · role title · subtitle · chip row · bullets · about · stats · CTA.
+meta:
+  id: tmpl-job-opening-tech-poster
+  name: Tech Job Opening Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, job, hiring, recruiting, tech, portrait, 4-5]
+  description: "Single-page LinkedIn poster for a tech role: eyebrow, role title, salary/location chips, responsibilities, requirements, about, stats, and apply CTA."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # 0: full-bleed background
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  # 1: top accent band
+  - id: top-accent
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 10
+    fill: { type: solid, color: "$primary" }
+
+  # 2: thin divider under header
+  - id: header-rule
+    type: rect
+    z: 3
+    x: 80
+    y: 200
+    width: 1040
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # 3: eyebrow "WE'RE HIRING"
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 110
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WE'RE HIRING" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  # 4: role title
+  - id: role-title
+    type: text
+    z: 21
+    x: 80
+    y: 230
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Staff Software Engineer" }
+    style:
+      font_family: $heading
+      font_size: 92
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.02
+
+  # 5: subtitle
+  - id: subtitle
+    type: text
+    z: 22
+    x: 80
+    y: 360
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Build the API layer that powers 10M+ requests/day." }
+    style:
+      font_family: $body
+      font_size: 30
+      color: $text_muted
+      line_height: 1.4
+
+  # 6-9: chip row (4 chips). chip = surface rect; text = mono. Row at y=440, height 56.
+  - id: chip-1-bg
+    type: rect
+    z: 30
+    x: 80
+    y: 440
+    width: 240
+    height: 56
+    fill: { type: solid, color: "$surface" }
+    corner_radius: 10
+  - id: chip-1-text
+    type: text
+    z: 31
+    x: 80
+    y: 458
+    width: 240
+    height: 56
+    content: { type: plain, value: "Remote · US/EU" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text
+      text_align: center
+
+  - id: chip-2-bg
+    type: rect
+    z: 30
+    x: 340
+    y: 440
+    width: 200
+    height: 56
+    fill: { type: solid, color: "$surface" }
+    corner_radius: 10
+  - id: chip-2-text
+    type: text
+    z: 31
+    x: 340
+    y: 458
+    width: 200
+    height: 56
+    content: { type: plain, value: "Full-time" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text
+      text_align: center
+
+  - id: chip-3-bg
+    type: rect
+    z: 30
+    x: 560
+    y: 440
+    width: 320
+    height: 56
+    fill: { type: solid, color: "$surface" }
+    corner_radius: 10
+  - id: chip-3-text
+    type: text
+    z: 31
+    x: 560
+    y: 458
+    width: 320
+    height: 56
+    content: { type: plain, value: "$220K–$260K + equity" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text
+      text_align: center
+
+  - id: chip-4-bg
+    type: rect
+    z: 30
+    x: 900
+    y: 440
+    width: 220
+    height: 56
+    fill: { type: solid, color: "$surface" }
+    corner_radius: 10
+  - id: chip-4-text
+    type: text
+    z: 31
+    x: 900
+    y: 458
+    width: 220
+    height: 56
+    content: { type: plain, value: "5+ yrs experience" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text
+      text_align: center
+
+  # 14: "What you'll do" section header
+  - id: do-header
+    type: text
+    z: 40
+    x: 80
+    y: 550
+    width: 520
+    height: 0
+    content: { type: plain, value: "What you'll do" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $heading
+      letter_spacing: -0.01
+
+  # 15-22: 4 bullets (icon + text). y starts 600, step 56.
+  - id: do-icon-1
+    type: circle
+    z: 41
+    cx: 96
+    cy: 620
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$primary" }
+  - id: do-bullet-1
+    type: text
+    z: 42
+    x: 120
+    y: 608
+    width: 480
+    height: 0
+    content: { type: plain, value: "Design and ship the public API platform" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: do-icon-2
+    type: circle
+    z: 41
+    cx: 96
+    cy: 676
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$primary" }
+  - id: do-bullet-2
+    type: text
+    z: 42
+    x: 120
+    y: 664
+    width: 480
+    height: 0
+    content: { type: plain, value: "Own SLOs, latency budgets, and observability" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: do-icon-3
+    type: circle
+    z: 41
+    cx: 96
+    cy: 732
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$primary" }
+  - id: do-bullet-3
+    type: text
+    z: 42
+    x: 120
+    y: 720
+    width: 480
+    height: 0
+    content: { type: plain, value: "Mentor 4 engineers and lead design reviews" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: do-icon-4
+    type: circle
+    z: 41
+    cx: 96
+    cy: 788
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$primary" }
+  - id: do-bullet-4
+    type: text
+    z: 42
+    x: 120
+    y: 776
+    width: 480
+    height: 0
+    content: { type: plain, value: "Partner with product on long-horizon roadmap" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  # 23: "What we're looking for" section header (right column, x=640)
+  - id: req-header
+    type: text
+    z: 40
+    x: 640
+    y: 550
+    width: 480
+    height: 0
+    content: { type: plain, value: "What we're looking for" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $heading
+      letter_spacing: -0.01
+
+  # 24-31: 4 requirement bullets
+  - id: req-icon-1
+    type: rect
+    z: 41
+    x: 648
+    y: 612
+    width: 12
+    height: 12
+    fill: { type: solid, color: "$accent" }
+    corner_radius: 2
+  - id: req-bullet-1
+    type: text
+    z: 42
+    x: 680
+    y: 608
+    width: 440
+    height: 0
+    content: { type: plain, value: "Strong systems background (Go, Rust, or Java)" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: req-icon-2
+    type: rect
+    z: 41
+    x: 648
+    y: 668
+    width: 12
+    height: 12
+    fill: { type: solid, color: "$accent" }
+    corner_radius: 2
+  - id: req-bullet-2
+    type: text
+    z: 42
+    x: 680
+    y: 664
+    width: 440
+    height: 0
+    content: { type: plain, value: "Shipped a high-traffic API in production" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: req-icon-3
+    type: rect
+    z: 41
+    x: 648
+    y: 724
+    width: 12
+    height: 12
+    fill: { type: solid, color: "$accent" }
+    corner_radius: 2
+  - id: req-bullet-3
+    type: text
+    z: 42
+    x: 680
+    y: 720
+    width: 440
+    height: 0
+    content: { type: plain, value: "Bias for clear writing and clean interfaces" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  - id: req-icon-4
+    type: rect
+    z: 41
+    x: 648
+    y: 780
+    width: 12
+    height: 12
+    fill: { type: solid, color: "$accent" }
+    corner_radius: 2
+  - id: req-bullet-4
+    type: text
+    z: 42
+    x: 680
+    y: 776
+    width: 440
+    height: 0
+    content: { type: plain, value: "Comfort operating in ambiguous problem space" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text
+      line_height: 1.4
+
+  # 32: about section bg
+  - id: about-bg
+    type: rect
+    z: 49
+    x: 80
+    y: 880
+    width: 1040
+    height: 160
+    fill: { type: solid, color: "$surface" }
+    corner_radius: 12
+
+  # 33: about header
+  - id: about-header
+    type: text
+    z: 50
+    x: 110
+    y: 905
+    width: 980
+    height: 0
+    content: { type: plain, value: "About us" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $heading
+      letter_spacing: -0.01
+
+  # 34: about body
+  - id: about-body
+    type: text
+    z: 51
+    x: 110
+    y: 945
+    width: 980
+    height: 0
+    content: { type: plain, value: "We are a small, focused team building developer tooling that engineers actually want to use. We obsess over latency, ergonomics, and shipping things that feel right." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  # 35: stats row header
+  - id: stats-header
+    type: text
+    z: 60
+    x: 80
+    y: 1080
+    width: 1040
+    height: 0
+    content: { type: plain, value: "BY THE NUMBERS" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.28
+      text_transform: uppercase
+
+  # 36-38: 3 mini-stats. x positions: 80, 440, 800. y=1115
+  - id: stat-1
+    type: text
+    z: 61
+    x: 80
+    y: 1115
+    width: 340
+    height: 0
+    content: { type: plain, value: "Series B · $40M" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 700
+      color: $text
+      line_height: 1.4
+
+  - id: stat-2
+    type: text
+    z: 61
+    x: 440
+    y: 1115
+    width: 340
+    height: 0
+    content: { type: plain, value: "60 people · 12 countries" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 700
+      color: $text
+      line_height: 1.4
+
+  - id: stat-3
+    type: text
+    z: 61
+    x: 800
+    y: 1115
+    width: 320
+    height: 0
+    content: { type: plain, value: "Backed by a16z, Sequoia" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 700
+      color: $text
+      line_height: 1.4
+
+  # 39: bottom rule
+  - id: bottom-rule
+    type: rect
+    z: 70
+    x: 80
+    y: 1200
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+
+  # 40: CTA chip bg
+  - id: cta-bg
+    type: rect
+    z: 80
+    x: 80
+    y: 1260
+    width: 280
+    height: 80
+    fill: { type: solid, color: "$primary" }
+    corner_radius: 12
+
+  # 41: CTA text
+  - id: cta-text
+    type: text
+    z: 81
+    x: 80
+    y: 1284
+    width: 280
+    height: 80
+    content: { type: plain, value: "Apply →" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+
+  # 42: apply URL (mono, below CTA)
+  - id: apply-url
+    type: text
+    z: 82
+    x: 80
+    y: 1360
+    width: 600
+    height: 0
+    content: { type: plain, value: "jobs.example.com/staff-eng" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text_muted
+
+  # 43: recruiter handle (right)
+  - id: recruiter
+    type: text
+    z: 82
+    x: 700
+    y: 1290
+    width: 420
+    height: 0
+    content: { type: plain, value: "@alex_recruits · DMs open" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text
+      line_height: 1.4
+      text_align: right
+
+animations:
+  role-title:
+    enter: { type: fade_up, duration: 700, delay: 100 }
+  chip-1-bg:
+    enter: { type: fade_up, duration: 500, delay: 400 }
+  chip-2-bg:
+    enter: { type: fade_up, duration: 500, delay: 500 }
+  chip-3-bg:
+    enter: { type: fade_up, duration: 500, delay: 600 }
+  chip-4-bg:
+    enter: { type: fade_up, duration: 500, delay: 700 }
+  do-bullet-1:
+    enter: { type: slide_right, duration: 500, delay: 900 }
+  do-bullet-2:
+    enter: { type: slide_right, duration: 500, delay: 1000 }
+  do-bullet-3:
+    enter: { type: slide_right, duration: 500, delay: 1100 }
+  do-bullet-4:
+    enter: { type: slide_right, duration: 500, delay: 1200 }
+  cta-bg:
+    loop: { type: breathe, duration: 3000 }
+
+slots:
+  - { id: eyebrow,      path: "layers[3].content.value",  type: text, hint: "Eyebrow",            default: "WE'RE HIRING" }
+  - { id: role_title,   path: "layers[4].content.value",  type: text, hint: "Role title",         default: "Staff Software Engineer" }
+  - { id: subtitle,     path: "layers[5].content.value",  type: text, hint: "Subtitle",           default: "Build the API layer that powers 10M+ requests/day." }
+  - { id: chip_1,       path: "layers[7].content.value",  type: text, hint: "Chip 1 (location)",  default: "Remote · US/EU" }
+  - { id: chip_2,       path: "layers[9].content.value",  type: text, hint: "Chip 2 (type)",      default: "Full-time" }
+  - { id: chip_3,       path: "layers[11].content.value", type: text, hint: "Chip 3 (comp)",      default: "$220K–$260K + equity" }
+  - { id: chip_4,       path: "layers[13].content.value", type: text, hint: "Chip 4 (level)",     default: "5+ yrs experience" }
+  - { id: do_bullet_1,  path: "layers[16].content.value", type: text, hint: "Responsibility 1",   default: "Design and ship the public API platform" }
+  - { id: do_bullet_2,  path: "layers[18].content.value", type: text, hint: "Responsibility 2",   default: "Own SLOs, latency budgets, and observability" }
+  - { id: do_bullet_3,  path: "layers[20].content.value", type: text, hint: "Responsibility 3",   default: "Mentor 4 engineers and lead design reviews" }
+  - { id: do_bullet_4,  path: "layers[22].content.value", type: text, hint: "Responsibility 4",   default: "Partner with product on long-horizon roadmap" }
+  - { id: req_bullet_1, path: "layers[25].content.value", type: text, hint: "Requirement 1",      default: "Strong systems background (Go, Rust, or Java)" }
+  - { id: req_bullet_2, path: "layers[27].content.value", type: text, hint: "Requirement 2",      default: "Shipped a high-traffic API in production" }
+  - { id: about_body,   path: "layers[34].content.value", type: text, hint: "About paragraph",    default: "We are a small, focused team building developer tooling that engineers actually want to use. We obsess over latency, ergonomics, and shipping things that feel right." }
+  - { id: apply_url,    path: "layers[42].content.value", type: text, hint: "Application URL",    default: "jobs.example.com/staff-eng" }
+  - { id: recruiter,    path: "layers[43].content.value", type: text, hint: "Recruiter handle",   default: "@alex_recruits · DMs open" }
