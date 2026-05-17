@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: brushed-aluminum
+name: Brushed Aluminum
+version: "1.0.0"
+tags: [material, metal, aluminum, industrial, cool]
+description: "Cool silver with matte slate, chrome highlights and a black band — machined brushed metal."
+colors:
+  background: "#E6E8EB"
+  surface:    "#D2D6DA"
+  surface_2:  "#B4B9BF"
+  primary:    "#5A6068"
+  secondary:  "#8A9098"
+  accent:     "#3E4954"
+  text:       "#15181C"
+  text_muted: "#4E545B"
+  border:     "#9CA2AA"
+  success:    "#4F7A6C"
+  warning:    "#B07A2A"
+  danger:     "#8A3340"

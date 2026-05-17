@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: oxidized-iron
+name: Oxidized Iron
+version: "1.0.0"
+tags: [material, iron, rust, industrial, weathered]
+description: "Rust orange and dark iron over cream — corroded steel and dried-blood red."
+colors:
+  background: "#F0E6D6"
+  surface:    "#DCCEB8"
+  surface_2:  "#B89F80"
+  primary:    "#7A3318"
+  secondary:  "#3A332D"
+  accent:     "#B0552A"
+  text:       "#181311"
+  text_muted: "#5A4A40"
+  border:     "#9C7E5C"
+  success:    "#5A6A2E"
+  warning:    "#C46A24"
+  danger:     "#6E1A12"

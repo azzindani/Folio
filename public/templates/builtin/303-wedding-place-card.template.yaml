@@ -1,0 +1,64 @@
+_protocol: template/v1
+
+# Folded place card — 1000×600 landscape, pastel-dream theme.
+# Vertical fold line in the middle, guest name top half (visible when folded),
+# entrée selection glyph + table number footer.
+meta:
+  id: tmpl-wedding-place-card
+  name: Wedding Place Card (folded)
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, reception, place-card, folded, pastel, landscape]
+  description: "Folded place card with guest name, entrée selection glyph, and table number footer."
+
+document:
+  width: 1000
+  height: 600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1000, height: 600, fill: { type: solid, color: "$background" } }
+  # 1 fold line (dashed center)
+  - { id: fold-line, type: rect, z: 1, x: 60, y: 300, width: 880, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.4 }
+  # 2 fold hint TL
+  - { id: fold-hint-l, type: text, z: 2, x: 30, y: 290, width: 40, height: 0, content: { type: plain, value: "✂" }, style: { font_family: $body, font_size: 12, color: "$text_muted", text_align: center } }
+  # 3 fold hint TR
+  - { id: fold-hint-r, type: text, z: 2, x: 930, y: 290, width: 40, height: 0, content: { type: plain, value: "✂" }, style: { font_family: $body, font_size: 12, color: "$text_muted", text_align: center } }
+  # 4 top thin frame (front, visible when folded)
+  - { id: front-frame, type: rect, z: 3, x: 60, y: 40, width: 880, height: 240, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 5 small ornament above name
+  - { id: orn-top, type: text, z: 10, x: 0, y: 80, width: 1000, height: 0, content: { type: plain, value: "❀  ·  ❀" }, style: { font_family: $heading, font_size: 22, color: "$primary", text_align: center, letter_spacing: 0.4 } }
+  # 6 guest name (large, centered, visible on the front)
+  - { id: guest-name, type: text, z: 11, x: 0, y: 140, width: 1000, height: 0, content: { type: plain, value: "Charlotte Whitman" }, style: { font_family: $heading, font_size: 60, font_style: italic, font_weight: 400, color: "$text", text_align: center, line_height: 1.1, letter_spacing: -0.01 } }
+  # 7 small divider under name
+  - { id: name-rule, type: rect, z: 12, x: 450, y: 230, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 8 back half eyebrow
+  - { id: back-eyebrow, type: text, z: 20, x: 0, y: 340, width: 1000, height: 0, content: { type: plain, value: "MENU SELECTION" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7, text_transform: uppercase } }
+  # 9 entrée glyph left circle (beef)
+  - { id: ent-beef, type: circle, z: 30, cx: 360, cy: 410, rx: 22, ry: 22, fill: { type: solid, color: "$primary" } }
+  # 10 entrée glyph mid square (fish)
+  - { id: ent-fish, type: rect, z: 30, x: 478, y: 388, width: 44, height: 44, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 2 } }
+  # 11 entrée glyph right diamond (vegetarian path)
+  - { id: ent-veg, type: path, z: 30, d: "M 640 410 L 662 388 L 684 410 L 662 432 Z", fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 2 } }
+  # 12 beef label
+  - { id: lbl-beef, type: text, z: 31, x: 280, y: 446, width: 160, height: 0, content: { type: plain, value: "Beef" }, style: { font_family: $body, font_size: 14, font_weight: 600, color: "$text", text_align: center, letter_spacing: 0.3 } }
+  # 13 fish label
+  - { id: lbl-fish, type: text, z: 31, x: 420, y: 446, width: 160, height: 0, content: { type: plain, value: "Fish" }, style: { font_family: $body, font_size: 14, font_weight: 600, color: "$text", text_align: center, letter_spacing: 0.3 } }
+  # 14 vegetarian label
+  - { id: lbl-veg, type: text, z: 31, x: 580, y: 446, width: 160, height: 0, content: { type: plain, value: "Vegetarian" }, style: { font_family: $body, font_size: 14, font_weight: 600, color: "$text", text_align: center, letter_spacing: 0.3 } }
+  # 15 entrée choice indicator (text)
+  - { id: choice, type: text, z: 32, x: 0, y: 490, width: 1000, height: 0, content: { type: plain, value: "selected · Beef" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary", text_align: center } }
+  # 16 table footer
+  - { id: table-foot, type: text, z: 40, x: 0, y: 540, width: 1000, height: 0, content: { type: plain, value: "TABLE 12" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7 } }
+
+slots:
+  - { id: guest_name,   path: "layers[6].content.value",  type: text, hint: "Full guest name",        default: "Charlotte Whitman" }
+  - { id: entree_choice, path: "layers[15].content.value", type: text, hint: "Entrée selection",       default: "selected · Beef" }
+  - { id: table_number, path: "layers[16].content.value", type: text, hint: "Table number footer",    default: "TABLE 12" }

@@ -1,0 +1,113 @@
+_protocol: template/v1
+
+# Vaccination card — 1050×750 landscape, light-clean (clinical-mint).
+# CDC-style card: patient header (name+DOB), 5-row vaccine table
+# (vaccine | mfr | lot# | date | site), provider signature line, border.
+meta:
+  id: tmpl-vaccination-card
+  name: Vaccination Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, health, medical, vaccination, immunization, cdc, clinical, landscape]
+  description: "Clinical vaccination record card with patient header, 5-row vaccine table, and provider signature."
+
+document:
+  width: 1050
+  height: 750
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1050, height: 750, fill: { type: solid, color: "$background" } }
+  # 1 — outer official border
+  - { id: outer-border, type: rect, z: 1, x: 30, y: 30, width: 990, height: 690, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 3 } }
+  # 2 — inner border
+  - { id: inner-border, type: rect, z: 2, x: 40, y: 40, width: 970, height: 670, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+  # 3 — header band
+  - { id: header-band, type: rect, z: 3, x: 40, y: 40, width: 970, height: 90, fill: { type: solid, color: "$primary" } }
+  # 4 — title
+  - { id: title, type: text, z: 4, x: 60, y: 56, width: 700, height: 0, content: { type: plain, value: "INTERNATIONAL CERTIFICATE OF VACCINATION" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, line_height: 1.2 } }
+  # 5 — subtitle
+  - { id: subtitle, type: text, z: 5, x: 60, y: 92, width: 700, height: 0, content: { type: plain, value: "Official immunization record" }, style: { font_family: $body, font_size: 13, color: "#E0F2FE", line_height: 1.3 } }
+  # 6 — seal circle
+  - { id: seal, type: circle, z: 6, x: 940, y: 60, width: 50, height: 50, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$primary", width: 2 } }
+  # 7 — seal letter
+  - { id: seal-letter, type: text, z: 7, x: 940, y: 72, width: 50, height: 0, content: { type: plain, value: "Rx" }, style: { font_family: $heading, font_size: 20, font_weight: 800, color: "$primary", text_align: center, line_height: 1.2 } }
+  # 8 — patient name label
+  - { id: name-label, type: text, z: 10, x: 60, y: 160, width: 400, height: 0, content: { type: plain, value: "PATIENT NAME" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_transform: uppercase } }
+  # 9 — patient name
+  - { id: patient-name, type: text, z: 11, x: 60, y: 178, width: 600, height: 0, content: { type: plain, value: "SULLIVAN, MARGARET ELEANOR" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$text", letter_spacing: 0.02, line_height: 1.3 } }
+  # 10 — dob label
+  - { id: dob-label, type: text, z: 12, x: 720, y: 160, width: 270, height: 0, content: { type: plain, value: "DATE OF BIRTH" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_transform: uppercase } }
+  # 11 — dob value
+  - { id: dob-value, type: text, z: 13, x: 720, y: 178, width: 270, height: 0, content: { type: plain, value: "04 / 12 / 1942" }, style: { font_family: $mono, font_size: 20, font_weight: 600, color: "$text", line_height: 1.3 } }
+  # 12 — divider under patient
+  - { id: patient-rule, type: rect, z: 14, x: 60, y: 230, width: 930, height: 1, fill: { type: solid, color: "$border" } }
+  # 13 — table header bg
+  - { id: th-bg, type: rect, z: 20, x: 60, y: 250, width: 930, height: 32, fill: { type: solid, color: "$surface" } }
+  # 14 — th vaccine
+  - { id: th-vacc, type: text, z: 21, x: 76, y: 258, width: 260, height: 0, content: { type: plain, value: "VACCINE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 15 — th mfr
+  - { id: th-mfr, type: text, z: 22, x: 340, y: 258, width: 180, height: 0, content: { type: plain, value: "MANUFACTURER" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 16 — th lot
+  - { id: th-lot, type: text, z: 23, x: 525, y: 258, width: 140, height: 0, content: { type: plain, value: "LOT #" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 17 — th date
+  - { id: th-date, type: text, z: 24, x: 670, y: 258, width: 140, height: 0, content: { type: plain, value: "DATE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 18 — th site
+  - { id: th-site, type: text, z: 25, x: 820, y: 258, width: 160, height: 0, content: { type: plain, value: "SITE / ROUTE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 19 — row 1
+  - { id: r1-vacc, type: text, z: 30, x: 76, y: 298, width: 260, height: 0, content: { type: plain, value: "COVID-19 mRNA (booster)" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r1-mfr,  type: text, z: 30, x: 340, y: 298, width: 180, height: 0, content: { type: plain, value: "Pfizer-BioNTech" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r1-lot,  type: text, z: 30, x: 525, y: 298, width: 140, height: 0, content: { type: plain, value: "FK7842B" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r1-date, type: text, z: 30, x: 670, y: 298, width: 140, height: 0, content: { type: plain, value: "10/24/2025" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r1-site, type: text, z: 30, x: 820, y: 298, width: 160, height: 0, content: { type: plain, value: "L deltoid / IM" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r1-rule, type: rect, z: 31, x: 60, y: 326, width: 930, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 25 — row 2
+  - { id: r2-vacc, type: text, z: 32, x: 76, y: 340, width: 260, height: 0, content: { type: plain, value: "Influenza, quadrivalent" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r2-mfr,  type: text, z: 32, x: 340, y: 340, width: 180, height: 0, content: { type: plain, value: "Sanofi Fluzone" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r2-lot,  type: text, z: 32, x: 525, y: 340, width: 140, height: 0, content: { type: plain, value: "UJ2031A" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r2-date, type: text, z: 32, x: 670, y: 340, width: 140, height: 0, content: { type: plain, value: "09/18/2025" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r2-site, type: text, z: 32, x: 820, y: 340, width: 160, height: 0, content: { type: plain, value: "R deltoid / IM" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r2-rule, type: rect, z: 33, x: 60, y: 368, width: 930, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 31 — row 3
+  - { id: r3-vacc, type: text, z: 34, x: 76, y: 382, width: 260, height: 0, content: { type: plain, value: "Tdap (tetanus, diphtheria, pertussis)" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r3-mfr,  type: text, z: 34, x: 340, y: 382, width: 180, height: 0, content: { type: plain, value: "GSK Boostrix" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r3-lot,  type: text, z: 34, x: 525, y: 382, width: 140, height: 0, content: { type: plain, value: "9MK4C1" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r3-date, type: text, z: 34, x: 670, y: 382, width: 140, height: 0, content: { type: plain, value: "03/04/2024" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r3-site, type: text, z: 34, x: 820, y: 382, width: 160, height: 0, content: { type: plain, value: "L deltoid / IM" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r3-rule, type: rect, z: 35, x: 60, y: 410, width: 930, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 37 — row 4
+  - { id: r4-vacc, type: text, z: 36, x: 76, y: 424, width: 260, height: 0, content: { type: plain, value: "Shingles (Shingrix), dose 2" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r4-mfr,  type: text, z: 36, x: 340, y: 424, width: 180, height: 0, content: { type: plain, value: "GSK" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r4-lot,  type: text, z: 36, x: 525, y: 424, width: 140, height: 0, content: { type: plain, value: "RZ889AB" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r4-date, type: text, z: 36, x: 670, y: 424, width: 140, height: 0, content: { type: plain, value: "11/12/2023" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r4-site, type: text, z: 36, x: 820, y: 424, width: 160, height: 0, content: { type: plain, value: "R deltoid / IM" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r4-rule, type: rect, z: 37, x: 60, y: 452, width: 930, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 43 — row 5
+  - { id: r5-vacc, type: text, z: 38, x: 76, y: 466, width: 260, height: 0, content: { type: plain, value: "Pneumococcal PCV20" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r5-mfr,  type: text, z: 38, x: 340, y: 466, width: 180, height: 0, content: { type: plain, value: "Pfizer Prevnar 20" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: r5-lot,  type: text, z: 38, x: 525, y: 466, width: 140, height: 0, content: { type: plain, value: "P20-44ZX" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r5-date, type: text, z: 38, x: 670, y: 466, width: 140, height: 0, content: { type: plain, value: "05/02/2023" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  - { id: r5-site, type: text, z: 38, x: 820, y: 466, width: 160, height: 0, content: { type: plain, value: "L deltoid / IM" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  # 49 — signature label
+  - { id: sig-label, type: text, z: 50, x: 60, y: 560, width: 400, height: 0, content: { type: plain, value: "PROVIDER SIGNATURE" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_transform: uppercase } }
+  # 50 — sig line
+  - { id: sig-line, type: rect, z: 51, x: 60, y: 620, width: 400, height: 1, fill: { type: solid, color: "$text" } }
+  # 51 — clinic stamp label
+  - { id: stamp-label, type: text, z: 52, x: 600, y: 560, width: 390, height: 0, content: { type: plain, value: "CLINIC STAMP & NPI" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_transform: uppercase } }
+  # 52 — stamp box
+  - { id: stamp-box, type: rect, z: 53, x: 600, y: 580, width: 390, height: 80, fill: { type: solid, color: "transparent" }, stroke: { color: "$border", width: 1 } }
+  # 53 — stamp content
+  - { id: stamp-text, type: text, z: 54, x: 612, y: 596, width: 366, height: 0, content: { type: plain, value: "Linden Crossing Family Medicine\nNPI 1487293055 · Albany, NY" }, style: { font_family: $mono, font_size: 11, color: "$text_muted", line_height: 1.5 } }
+  # 54 — footer
+  - { id: footer, type: text, z: 60, x: 60, y: 686, width: 930, height: 0, content: { type: plain, value: "Retain this card with your personal medical records. Present at travel checkpoints when requested." }, style: { font_family: $body, font_size: 10, font_style: italic, color: "$text_muted", text_align: center, line_height: 1.3 } }
+
+slots:
+  - { id: patient_name, path: "layers[9].content.value",  type: text, hint: "Patient full name (last, first)", default: "SULLIVAN, MARGARET ELEANOR" }
+  - { id: dob,          path: "layers[11].content.value", type: text, hint: "Date of birth",                  default: "04 / 12 / 1942" }

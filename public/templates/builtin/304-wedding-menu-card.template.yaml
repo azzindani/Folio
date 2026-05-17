@@ -1,0 +1,71 @@
+_protocol: template/v1
+
+# Wedding reception menu — 1080×1500 portrait, editorial-cream theme.
+# Couple header → DINNER MENU eyebrow → 4 courses (hors d'oeuvres, salad,
+# entrée with 3 choices, dessert) → wine pairings footer.
+meta:
+  id: tmpl-wedding-menu-card
+  name: Wedding Menu Card
+  type: menu
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [menu, wedding, reception, dinner, editorial, portrait]
+  description: "Reception dinner menu with four courses, three entrée choices, and wine pairings footer."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: frame, type: rect, z: 1, x: 70, y: 70, width: 940, height: 1360, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 2 top ornament
+  - { id: orn-top, type: text, z: 5, x: 0, y: 130, width: 1080, height: 0, content: { type: plain, value: "❦  ·  ✦  ·  ❦" }, style: { font_family: $heading, font_size: 24, color: "$primary", text_align: center, letter_spacing: 0.4 } }
+  # 3 couple
+  - { id: couple, type: text, z: 10, x: 0, y: 180, width: 1080, height: 0, content: { type: plain, value: "Amelia & Jonathan" }, style: { font_family: $heading, font_size: 56, font_style: italic, color: "$text", text_align: center, line_height: 1.1 } }
+  # 4 wedding date
+  - { id: wed-date, type: text, z: 11, x: 0, y: 260, width: 1080, height: 0, content: { type: plain, value: "24 · 05 · 2026" }, style: { font_family: $body, font_size: 16, color: "$text_muted", text_align: center, letter_spacing: 0.5 } }
+  # 5 menu title
+  - { id: menu-title, type: text, z: 12, x: 0, y: 320, width: 1080, height: 0, content: { type: plain, value: "DINNER MENU" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "$primary", text_align: center, letter_spacing: 0.8 } }
+  # 6 rule under title
+  - { id: rule-1, type: rect, z: 13, x: 490, y: 380, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 7–8 hors d'oeuvres
+  - { id: c1-title, type: text, z: 20, x: 0, y: 420, width: 1080, height: 0, content: { type: plain, value: "Hors d'oeuvres" }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$primary", text_align: center } }
+  - { id: c1-body, type: text, z: 21, x: 80, y: 470, width: 920, height: 0, content: { type: plain, value: "Seared scallop on saffron crème · whipped goat cheese tartlet with fig\nLemon-thyme arancini · cured-salmon blini with crème fraîche" }, style: { font_family: $body, font_size: 16, color: "$text", text_align: center, line_height: 1.6 } }
+  # 9–10 salad
+  - { id: c2-title, type: text, z: 22, x: 0, y: 580, width: 1080, height: 0, content: { type: plain, value: "First Course" }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$primary", text_align: center } }
+  - { id: c2-body, type: text, z: 23, x: 80, y: 630, width: 920, height: 0, content: { type: plain, value: "Heirloom tomato & burrata\ngarden basil · saba reduction · Maldon salt · toasted brioche crumb" }, style: { font_family: $body, font_size: 16, color: "$text", text_align: center, line_height: 1.6 } }
+  # 11 entrée header
+  - { id: c3-title, type: text, z: 24, x: 0, y: 740, width: 1080, height: 0, content: { type: plain, value: "Entrée · choice of one" }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$primary", text_align: center } }
+  # 12 entrée 1
+  - { id: c3-1-name, type: text, z: 25, x: 80, y: 800, width: 920, height: 0, content: { type: plain, value: "Filet of beef" }, style: { font_family: $heading, font_size: 20, font_weight: 600, color: "$text", text_align: center } }
+  - { id: c3-1-desc, type: text, z: 26, x: 80, y: 832, width: 920, height: 0, content: { type: plain, value: "red-wine demi · pommes purée · charred shallot · seasonal greens" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: center } }
+  # 13 entrée 2
+  - { id: c3-2-name, type: text, z: 25, x: 80, y: 880, width: 920, height: 0, content: { type: plain, value: "Pan-seared halibut" }, style: { font_family: $heading, font_size: 20, font_weight: 600, color: "$text", text_align: center } }
+  - { id: c3-2-desc, type: text, z: 26, x: 80, y: 912, width: 920, height: 0, content: { type: plain, value: "lemon beurre blanc · braised leeks · fennel & olive tapenade" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: center } }
+  # 14 entrée 3
+  - { id: c3-3-name, type: text, z: 25, x: 80, y: 960, width: 920, height: 0, content: { type: plain, value: "Wild mushroom risotto (v)" }, style: { font_family: $heading, font_size: 20, font_weight: 600, color: "$text", text_align: center } }
+  - { id: c3-3-desc, type: text, z: 26, x: 80, y: 992, width: 920, height: 0, content: { type: plain, value: "porcini & black truffle · parmigiano reggiano · crispy sage" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: center } }
+  # 15–16 dessert
+  - { id: c4-title, type: text, z: 28, x: 0, y: 1080, width: 1080, height: 0, content: { type: plain, value: "Dessert" }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$primary", text_align: center } }
+  - { id: c4-body, type: text, z: 29, x: 80, y: 1130, width: 920, height: 0, content: { type: plain, value: "Vanilla bean panna cotta with macerated strawberries\nDark chocolate pot de crème · espresso shortbread" }, style: { font_family: $body, font_size: 16, color: "$text", text_align: center, line_height: 1.6 } }
+  # 17 rule
+  - { id: rule-2, type: rect, z: 30, x: 490, y: 1260, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 18 wine pairings label
+  - { id: wine-lbl, type: text, z: 31, x: 0, y: 1290, width: 1080, height: 0, content: { type: plain, value: "WINE PAIRINGS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$primary", text_align: center, letter_spacing: 0.7 } }
+  # 19 wine list
+  - { id: wine-body, type: text, z: 32, x: 80, y: 1330, width: 920, height: 0, content: { type: plain, value: "Domaine Leflaive Mâcon-Verzé 2021 · Tenuta San Guido Guidalberto 2020 · Veuve Clicquot Brut" }, style: { font_family: $heading, font_size: 16, font_style: italic, color: "$text", text_align: center, line_height: 1.5 } }
+  # 20 bottom ornament
+  - { id: orn-bot, type: text, z: 40, x: 0, y: 1390, width: 1080, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 22, color: "$primary", text_align: center } }
+
+slots:
+  - { id: couple_names, path: "layers[3].content.value", type: text, hint: "Couple names", default: "Amelia & Jonathan" }
+  - { id: wedding_date, path: "layers[4].content.value", type: text, hint: "Wedding date", default: "24 · 05 · 2026" }

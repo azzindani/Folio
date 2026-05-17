@@ -1,0 +1,79 @@
+_protocol: template/v1
+
+# Terms of Service header banner — 1920×1080 landscape, light-clean.
+# Web hero: "TERMS OF SERVICE" huge, last-updated, "By using {brand}"
+# subtitle, scroll-to-accept hint.
+meta:
+  id: tmpl-terms-of-service-header
+  name: Terms of Service Header
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, legal, terms, tos, web, hero, banner, landscape]
+  description: "Web TOS hero banner with huge title, last-updated date, agreement subtitle, and scroll-to-accept hint."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+  # 1 — left accent column
+  - { id: accent-col, type: rect, z: 1, x: 0, y: 0, width: 12, height: 1080, fill: { type: solid, color: "$primary" } }
+  # 2 — top nav bar bg
+  - { id: nav-bar, type: rect, z: 2, x: 0, y: 0, width: 1920, height: 80, fill: { type: solid, color: "$surface" } }
+  # 3 — nav divider
+  - { id: nav-div, type: rect, z: 3, x: 0, y: 80, width: 1920, height: 1, fill: { type: solid, color: "$border" } }
+  # 4 — brand logo mark
+  - { id: logo-mark, type: rect, z: 4, x: 120, y: 24, width: 32, height: 32, radius: 6, fill: { type: solid, color: "$primary" } }
+  # 5 — brand logo letter
+  - { id: logo-letter, type: text, z: 5, x: 120, y: 28, width: 32, height: 0, content: { type: plain, value: "F" }, style: { font_family: $heading, font_size: 18, font_weight: 800, color: "#FFFFFF", text_align: center, line_height: 1.2 } }
+  # 6 — brand name in nav
+  - { id: brand-nav, type: text, z: 6, x: 168, y: 30, width: 300, height: 0, content: { type: plain, value: "Folio Studio" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 7 — nav link 1
+  - { id: nav-1, type: text, z: 7, x: 1380, y: 32, width: 100, height: 0, content: { type: plain, value: "Product" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: center } }
+  # 8 — nav link 2
+  - { id: nav-2, type: text, z: 8, x: 1500, y: 32, width: 100, height: 0, content: { type: plain, value: "Pricing" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: center } }
+  # 9 — nav link 3 (active)
+  - { id: nav-3, type: text, z: 9, x: 1620, y: 32, width: 100, height: 0, content: { type: plain, value: "Legal" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$primary", text_align: center } }
+  # 10 — nav cta
+  - { id: nav-cta, type: rect, z: 10, x: 1740, y: 20, width: 100, height: 40, radius: 8, fill: { type: solid, color: "$primary" } }
+  # 11 — nav cta text
+  - { id: nav-cta-txt, type: text, z: 11, x: 1740, y: 30, width: 100, height: 0, content: { type: plain, value: "Sign in" }, style: { font_family: $body, font_size: 13, font_weight: 600, color: "#FFFFFF", text_align: center, line_height: 1.3 } }
+  # 12 — eyebrow / breadcrumb
+  - { id: eyebrow, type: text, z: 20, x: 160, y: 220, width: 1600, height: 0, content: { type: plain, value: "LEGAL · POLICIES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$primary", letter_spacing: 0.6, text_transform: uppercase } }
+  # 13 — title huge
+  - { id: title, type: text, z: 21, x: 160, y: 280, width: 1600, height: 0, content: { type: plain, value: "Terms of Service" }, style: { font_family: $heading, font_size: 160, font_weight: 900, color: "$text", letter_spacing: -0.03, line_height: 1 } }
+  # 14 — subtitle
+  - { id: subtitle, type: text, z: 22, x: 160, y: 480, width: 1400, height: 0, content: { type: plain, value: "By using Folio Studio, you agree to the terms set out in this document. Please read carefully — these are the rules of the road for our service." }, style: { font_family: $heading, font_size: 28, color: "$text_muted", line_height: 1.5 } }
+  # 15 — updated badge bg
+  - { id: badge-bg, type: rect, z: 30, x: 160, y: 660, width: 320, height: 56, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+  # 16 — updated badge dot
+  - { id: badge-dot, type: circle, z: 31, x: 180, y: 678, width: 16, height: 16, fill: { type: solid, color: "#10B981" } }
+  # 17 — updated text
+  - { id: updated, type: text, z: 32, x: 208, y: 678, width: 260, height: 0, content: { type: plain, value: "Last updated May 17, 2026" }, style: { font_family: $body, font_size: 14, font_weight: 600, color: "$text", line_height: 1.4 } }
+  # 18 — version pill bg
+  - { id: ver-bg, type: rect, z: 33, x: 504, y: 660, width: 140, height: 56, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+  # 19 — version pill text
+  - { id: ver-txt, type: text, z: 34, x: 504, y: 678, width: 140, height: 0, content: { type: plain, value: "v4.1" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: "$text", text_align: center, line_height: 1.4 } }
+  # 20 — divider before scroll
+  - { id: pre-scroll-div, type: rect, z: 40, x: 160, y: 800, width: 1600, height: 1, fill: { type: solid, color: "$border" } }
+  # 21 — scroll hint
+  - { id: scroll-hint, type: text, z: 41, x: 160, y: 830, width: 1600, height: 0, content: { type: plain, value: "Scroll to read · By continuing past this page you accept these terms." }, style: { font_family: $body, font_size: 15, font_style: italic, color: "$text_muted", line_height: 1.4 } }
+  # 22 — scroll arrow circle
+  - { id: scroll-circle, type: circle, z: 42, x: 928, y: 940, width: 64, height: 64, fill: { type: solid, color: "$primary" } }
+  # 23 — scroll arrow chevron
+  - { id: scroll-chev, type: text, z: 43, x: 928, y: 950, width: 64, height: 0, content: { type: plain, value: "↓" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF", text_align: center, line_height: 1.2 } }
+  # 24 — scroll label
+  - { id: scroll-lab, type: text, z: 44, x: 160, y: 1020, width: 1600, height: 0, content: { type: plain, value: "Read 14 sections · 8-minute read" }, style: { font_family: $mono, font_size: 12, color: "$text_muted", text_align: center, letter_spacing: 0.3 } }
+
+slots:
+  - { id: brand_name,  path: "layers[6].content.value",  type: text, hint: "Brand name",        default: "Folio Studio" }
+  - { id: last_updated, path: "layers[17].content.value", type: text, hint: "Last-updated label",default: "Last updated May 17, 2026" }

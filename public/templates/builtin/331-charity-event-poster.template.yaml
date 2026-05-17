@@ -1,0 +1,405 @@
+_protocol: template/v1
+
+# Charity event poster — 1080×1620 portrait, sunset-glow theme.
+# "FUNDRAISER FOR" eyebrow + cause name, huge event title, date + time
+# + venue stack, ticket price + "all proceeds benefit" footer,
+# organizer logo, decorative ribbon polygon.
+meta:
+  id: tmpl-charity-event-poster
+  name: Charity Event Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [charity, event, fundraiser, poster, sunset, portrait]
+  description: "Charity fundraiser poster with cause eyebrow, huge event title, date/time/venue stack, ticket-price + proceeds footer, decorative ribbon."
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  # ── Background gradient ───────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill:
+      type: linear
+      angle: 200
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 60 }
+        - { color: "$primary", position: 100 }
+
+  - id: bg-overlay
+    type: rect
+    z: 1
+    x: 0
+    y: 1100
+    width: 1080
+    height: 520
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$primary", position: 0, opacity: 0 }
+        - { color: "$primary", position: 100, opacity: 0.35 }
+
+  # ── Decorative ribbon (polygon) at top ────────────────────
+  - id: ribbon
+    type: path
+    z: 5
+    d: "M 60 120 L 1020 120 L 990 175 L 1020 230 L 60 230 L 90 175 Z"
+    fill: { type: solid, color: "$primary" }
+
+  - id: ribbon-text
+    type: text
+    z: 6
+    x: 60
+    y: 162
+    width: 960
+    height: 0
+    content: { type: plain, value: "FUNDRAISER FOR  ·  CLEAN WATER INITIATIVE" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.2
+
+  # ── Decorative star burst ─────────────────────────────────
+  - id: star-1
+    type: circle
+    z: 10
+    x: 80
+    y: 320
+    width: 14
+    height: 14
+    fill: { type: solid, color: "$secondary" }
+
+  - id: star-2
+    type: circle
+    z: 11
+    x: 980
+    y: 380
+    width: 22
+    height: 22
+    fill: { type: solid, color: "$primary" }
+
+  - id: star-3
+    type: circle
+    z: 12
+    x: 140
+    y: 480
+    width: 10
+    height: 10
+    fill: { type: solid, color: "$primary" }
+
+  # ── Event title HUGE ──────────────────────────────────────
+  - id: title-pre
+    type: text
+    z: 20
+    x: 60
+    y: 310
+    width: 960
+    height: 0
+    content: { type: plain, value: "ANNUAL" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: 0.15
+
+  - id: title-main
+    type: text
+    z: 21
+    x: 60
+    y: 380
+    width: 960
+    height: 0
+    content: { type: plain, value: "MOONLIGHT" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $primary
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.03
+
+  - id: title-main-2
+    type: text
+    z: 22
+    x: 60
+    y: 510
+    width: 960
+    height: 0
+    content: { type: plain, value: "GALA" }
+    style:
+      font_family: $heading
+      font_size: 200
+      font_weight: 900
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.04
+
+  - id: title-rule
+    type: rect
+    z: 23
+    x: 380
+    y: 720
+    width: 320
+    height: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: title-sub
+    type: text
+    z: 24
+    x: 60
+    y: 745
+    width: 960
+    height: 0
+    content: { type: plain, value: "An evening under the stars to bring clean water to villages worldwide" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      line_height: 1.4
+
+  # ── Date / time / venue stack ─────────────────────────────
+  - id: dt-card
+    type: rect
+    z: 30
+    x: 90
+    y: 830
+    width: 900
+    height: 320
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 3 }
+
+  - id: dt-label
+    type: text
+    z: 31
+    x: 90
+    y: 860
+    width: 900
+    height: 0
+    content: { type: plain, value: "SAVE THE DATE" }
+    style: { font_family: $body, font_size: 13, font_weight: 800, color: $primary, text_align: center, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: dt-date
+    type: text
+    z: 32
+    x: 90
+    y: 895
+    width: 900
+    height: 0
+    content: { type: plain, value: "Saturday, June 20, 2026" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1.1
+      letter_spacing: -0.01
+
+  - id: dt-time
+    type: text
+    z: 33
+    x: 90
+    y: 960
+    width: 900
+    height: 0
+    content: { type: plain, value: "7:00 PM – 11:00 PM" }
+    style:
+      font_family: $heading
+      font_size: 34
+      font_weight: 700
+      color: $primary
+      text_align: center
+      line_height: 1.2
+
+  - id: dt-rule
+    type: rect
+    z: 34
+    x: 240
+    y: 1020
+    width: 600
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: dt-venue-label
+    type: text
+    z: 35
+    x: 90
+    y: 1040
+    width: 900
+    height: 0
+    content: { type: plain, value: "VENUE" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: $text_muted, text_align: center, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: dt-venue
+    type: text
+    z: 36
+    x: 90
+    y: 1070
+    width: 900
+    height: 0
+    content: { type: plain, value: "The Fairmont Grand Ballroom" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 700
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  - id: dt-venue-addr
+    type: text
+    z: 37
+    x: 90
+    y: 1108
+    width: 900
+    height: 0
+    content: { type: plain, value: "950 Mason Street · Nob Hill · San Francisco" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      text_align: center
+      line_height: 1.3
+
+  # ── Ticket price + proceeds ───────────────────────────────
+  - id: tix-pill
+    type: rect
+    z: 40
+    x: 90
+    y: 1200
+    width: 900
+    height: 100
+    radius: 50
+    fill: { type: solid, color: "$primary" }
+
+  - id: tix-text
+    type: text
+    z: 41
+    x: 90
+    y: 1218
+    width: 900
+    height: 0
+    content: { type: plain, value: "TICKETS · $150" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.2
+
+  - id: tix-includes
+    type: text
+    z: 42
+    x: 90
+    y: 1258
+    width: 900
+    height: 0
+    content: { type: plain, value: "includes dinner · open bar · live auction · dancing" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_style: italic
+      color: "#FFFFFF"
+      opacity: 0.92
+      text_align: center
+      line_height: 1.3
+
+  - id: proceeds
+    type: text
+    z: 50
+    x: 60
+    y: 1340
+    width: 960
+    height: 0
+    content: { type: plain, value: "★  100% of proceeds benefit Clean Water Initiative  ★" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $text
+      text_align: center
+      letter_spacing: 0.05
+      line_height: 1.3
+
+  # ── Organizer logo placeholder ────────────────────────────
+  - id: org-logo-box
+    type: rect
+    z: 60
+    x: 440
+    y: 1410
+    width: 200
+    height: 90
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: org-logo-text
+    type: text
+    z: 61
+    x: 440
+    y: 1432
+    width: 200
+    height: 0
+    content: { type: plain, value: "HOPE\nFOUNDATION" }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1.2
+      letter_spacing: 0.05
+
+  - id: org-tag
+    type: text
+    z: 62
+    x: 60
+    y: 1520
+    width: 960
+    height: 0
+    content: { type: plain, value: "Hosted by Hope Foundation  ·  RSVP: hopefoundation.org/gala" }
+    style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.4 }
+
+  - id: org-rsvp
+    type: text
+    z: 63
+    x: 60
+    y: 1560
+    width: 960
+    height: 0
+    content: { type: plain, value: "BLACK TIE  ·  BY INVITATION OR ADVANCE TICKET ONLY" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $primary, text_align: center, letter_spacing: 0.5, text_transform: uppercase }
+
+slots:
+  - { id: cause_name,   path: "layers[3].content.value",  type: text, hint: "Cause name / ribbon", default: "FUNDRAISER FOR  ·  CLEAN WATER INITIATIVE" }
+  - { id: event_title,  path: "layers[8].content.value",  type: text, hint: "Event title (huge)",  default: "MOONLIGHT" }
+  - { id: event_date,   path: "layers[14].content.value", type: text, hint: "Event date",          default: "Saturday, June 20, 2026" }
+  - { id: venue,        path: "layers[18].content.value", type: text, hint: "Venue",               default: "The Fairmont Grand Ballroom" }
+  - { id: ticket_price, path: "layers[21].content.value", type: text, hint: "Ticket price line",   default: "TICKETS · $150" }

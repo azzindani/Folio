@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: old-fashioned-amber
+name: Old Fashioned Amber
+version: "1.0.0"
+tags: [beverage, whiskey, bourbon, vintage, warm]
+description: "Bourbon amber and dark walnut with cream and cherry red — speakeasy cocktail."
+colors:
+  background: "#F4E6CC"
+  surface:    "#E3CDA0"
+  surface_2:  "#C8A878"
+  primary:    "#A55B1C"
+  secondary:  "#48281A"
+  accent:     "#B62A28"
+  text:       "#1F140A"
+  text_muted: "#5A4028"
+  border:     "#B89868"
+  success:    "#6A7A2E"
+  warning:    "#D88A22"
+  danger:     "#9A201C"

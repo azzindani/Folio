@@ -1,0 +1,611 @@
+_protocol: template/v1
+
+# Volunteer hours log — 1080×1620 portrait, forest-deep theme.
+# Organization name + volunteer name header, 12-row table
+# (date × activity × hours × supervisor-initial), totals row,
+# certifying-signature line.
+meta:
+  id: tmpl-volunteer-hours-log
+  name: Volunteer Hours Log
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [volunteer, hours, log, charity, tracking, forest, portrait]
+  description: "Volunteer hours tracking log with org + volunteer header, 12-row activity table (date × activity × hours × initial), totals row, certifying signature."
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill: { type: solid, color: "$background" }
+
+  - id: top-accent
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 10
+    fill: { type: solid, color: "$primary" }
+
+  # ── Header ────────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 50
+    width: 960
+    height: 0
+    content: { type: plain, value: "VOLUNTEER SERVICE RECORD · 2026" }
+    style: { font_family: $body, font_size: 13, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: title
+    type: text
+    z: 11
+    x: 60
+    y: 85
+    width: 960
+    height: 0
+    content: { type: plain, value: "Hours Log" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.02
+
+  # ── Info row: organization + volunteer + role ─────────────
+  - id: info-bg
+    type: rect
+    z: 20
+    x: 60
+    y: 190
+    width: 960
+    height: 110
+    radius: 10
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: org-label
+    type: text
+    z: 21
+    x: 90
+    y: 205
+    width: 440
+    height: 0
+    content: { type: plain, value: "ORGANIZATION" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: org-value
+    type: text
+    z: 22
+    x: 90
+    y: 225
+    width: 440
+    height: 0
+    content: { type: plain, value: "Riverside Community Food Bank" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.2 }
+
+  - id: vol-label
+    type: text
+    z: 23
+    x: 90
+    y: 260
+    width: 440
+    height: 0
+    content: { type: plain, value: "VOLUNTEER" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: vol-value
+    type: text
+    z: 24
+    x: 90
+    y: 278
+    width: 440
+    height: 0
+    content: { type: plain, value: "Priya Ramachandran" }
+    style: { font_family: $body, font_size: 15, color: $text, line_height: 1.2 }
+
+  - id: role-label
+    type: text
+    z: 25
+    x: 560
+    y: 205
+    width: 440
+    height: 0
+    content: { type: plain, value: "ROLE" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: role-value
+    type: text
+    z: 26
+    x: 560
+    y: 225
+    width: 440
+    height: 0
+    content: { type: plain, value: "Distribution Lead · Tuesday Crew" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.2 }
+
+  - id: id-label
+    type: text
+    z: 27
+    x: 560
+    y: 260
+    width: 440
+    height: 0
+    content: { type: plain, value: "VOLUNTEER ID" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: id-value
+    type: text
+    z: 28
+    x: 560
+    y: 278
+    width: 440
+    height: 0
+    content: { type: plain, value: "RCFB-VOL-1837" }
+    style: { font_family: $mono, font_size: 15, color: $text, line_height: 1.2 }
+
+  # ── Table header ──────────────────────────────────────────
+  - id: th-bg
+    type: rect
+    z: 30
+    x: 60
+    y: 340
+    width: 960
+    height: 42
+    radius: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: th-date
+    type: text
+    z: 31
+    x: 90
+    y: 353
+    width: 130
+    height: 0
+    content: { type: plain, value: "DATE" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: th-act
+    type: text
+    z: 32
+    x: 240
+    y: 353
+    width: 540
+    height: 0
+    content: { type: plain, value: "ACTIVITY" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: th-hrs
+    type: text
+    z: 33
+    x: 790
+    y: 353
+    width: 100
+    height: 0
+    content: { type: plain, value: "HOURS" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_align: center, text_transform: uppercase }
+
+  - id: th-init
+    type: text
+    z: 34
+    x: 900
+    y: 353
+    width: 100
+    height: 0
+    content: { type: plain, value: "INITIAL" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_align: center, text_transform: uppercase }
+
+  # ── 12 data rows ─────────────────────────────────────────
+  - id: rows-block
+    type: text
+    z: 40
+    x: 90
+    y: 400
+    width: 130
+    height: 0
+    content: { type: plain, value: "2026-02-04\n2026-02-11\n2026-02-18\n2026-02-25\n2026-03-04\n2026-03-11\n2026-03-18\n2026-03-25\n2026-04-08\n2026-04-15\n2026-04-22\n2026-05-06" }
+    style: { font_family: $mono, font_size: 13, color: $text, line_height: 2.6 }
+
+  - id: rows-act
+    type: text
+    z: 41
+    x: 240
+    y: 400
+    width: 540
+    height: 0
+    content: { type: plain, value: "Food sorting & inventory\nClient intake & registration\nMobile pantry delivery — East Side\nWeekend bag-packing event\nFood sorting & inventory\nClient intake & registration\nFood drive at Whole Foods\nSenior delivery route\nMobile pantry delivery — West Side\nKids' summer meals prep\nVolunteer orientation co-lead\nGala fundraiser setup" }
+    style: { font_family: $body, font_size: 13, color: $text, line_height: 2.6 }
+
+  - id: rows-hrs
+    type: text
+    z: 42
+    x: 790
+    y: 400
+    width: 100
+    height: 0
+    content: { type: plain, value: "4.0\n3.5\n5.0\n6.0\n4.0\n3.5\n8.0\n4.5\n5.0\n5.5\n3.0\n7.0" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text, text_align: center, line_height: 2.6 }
+
+  - id: rows-init
+    type: text
+    z: 43
+    x: 900
+    y: 400
+    width: 100
+    height: 0
+    content: { type: plain, value: "EV\nMK\nEV\nDR\nEV\nMK\nEV\nDR\nEV\nMK\nEV\nDR" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, text_align: center, line_height: 2.6 }
+
+  # ── Horizontal rules between rows (decorative) ────────────
+  - id: rule-1
+    type: rect
+    z: 50
+    x: 60
+    y: 432
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-2
+    type: rect
+    z: 51
+    x: 60
+    y: 466
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-3
+    type: rect
+    z: 52
+    x: 60
+    y: 500
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-4
+    type: rect
+    z: 53
+    x: 60
+    y: 534
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-5
+    type: rect
+    z: 54
+    x: 60
+    y: 568
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-6
+    type: rect
+    z: 55
+    x: 60
+    y: 602
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-7
+    type: rect
+    z: 56
+    x: 60
+    y: 636
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-8
+    type: rect
+    z: 57
+    x: 60
+    y: 670
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-9
+    type: rect
+    z: 58
+    x: 60
+    y: 704
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-10
+    type: rect
+    z: 59
+    x: 60
+    y: 738
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-11
+    type: rect
+    z: 60
+    x: 60
+    y: 772
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-end
+    type: rect
+    z: 61
+    x: 60
+    y: 808
+    width: 960
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # ── Totals row ────────────────────────────────────────────
+  - id: tot-bg
+    type: rect
+    z: 70
+    x: 60
+    y: 820
+    width: 960
+    height: 80
+    radius: 8
+    fill: { type: solid, color: "$primary", opacity: 0.18 }
+
+  - id: tot-label
+    type: text
+    z: 71
+    x: 90
+    y: 840
+    width: 540
+    height: 0
+    content: { type: plain, value: "TOTAL HOURS LOGGED · 12 ENTRIES" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: $primary, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: tot-sub
+    type: text
+    z: 72
+    x: 90
+    y: 866
+    width: 540
+    height: 0
+    content: { type: plain, value: "February 4 – May 6, 2026" }
+    style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.3 }
+
+  - id: tot-value
+    type: text
+    z: 73
+    x: 700
+    y: 838
+    width: 290
+    height: 0
+    content: { type: plain, value: "59.0 hrs" }
+    style: { font_family: $heading, font_size: 38, font_weight: 800, color: $text, text_align: right, line_height: 1, letter_spacing: -0.02 }
+
+  # ── Stats card ────────────────────────────────────────────
+  - id: stats-card
+    type: rect
+    z: 80
+    x: 60
+    y: 940
+    width: 960
+    height: 200
+    radius: 14
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: stats-title
+    type: text
+    z: 81
+    x: 90
+    y: 960
+    width: 900
+    height: 0
+    content: { type: plain, value: "AT-A-GLANCE" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: stat-1
+    type: text
+    z: 82
+    x: 90
+    y: 1000
+    width: 200
+    height: 0
+    content: { type: plain, value: "12" }
+    style: { font_family: $heading, font_size: 42, font_weight: 800, color: $text, line_height: 1 }
+
+  - id: stat-1-lbl
+    type: text
+    z: 83
+    x: 90
+    y: 1055
+    width: 200
+    height: 0
+    content: { type: plain, value: "shifts worked" }
+    style: { font_family: $body, font_size: 13, color: $text_muted, letter_spacing: 0.3 }
+
+  - id: stat-2
+    type: text
+    z: 84
+    x: 320
+    y: 1000
+    width: 200
+    height: 0
+    content: { type: plain, value: "4.9" }
+    style: { font_family: $heading, font_size: 42, font_weight: 800, color: $text, line_height: 1 }
+
+  - id: stat-2-lbl
+    type: text
+    z: 85
+    x: 320
+    y: 1055
+    width: 200
+    height: 0
+    content: { type: plain, value: "avg hrs / shift" }
+    style: { font_family: $body, font_size: 13, color: $text_muted, letter_spacing: 0.3 }
+
+  - id: stat-3
+    type: text
+    z: 86
+    x: 550
+    y: 1000
+    width: 220
+    height: 0
+    content: { type: plain, value: "3" }
+    style: { font_family: $heading, font_size: 42, font_weight: 800, color: $text, line_height: 1 }
+
+  - id: stat-3-lbl
+    type: text
+    z: 87
+    x: 550
+    y: 1055
+    width: 220
+    height: 0
+    content: { type: plain, value: "supervisors signed" }
+    style: { font_family: $body, font_size: 13, color: $text_muted, letter_spacing: 0.3 }
+
+  - id: stat-4
+    type: text
+    z: 88
+    x: 800
+    y: 1000
+    width: 190
+    height: 0
+    content: { type: plain, value: "0" }
+    style: { font_family: $heading, font_size: 42, font_weight: 800, color: $primary, line_height: 1 }
+
+  - id: stat-4-lbl
+    type: text
+    z: 89
+    x: 800
+    y: 1055
+    width: 190
+    height: 0
+    content: { type: plain, value: "no-show events" }
+    style: { font_family: $body, font_size: 13, color: $text_muted, letter_spacing: 0.3 }
+
+  # ── Certification signature ───────────────────────────────
+  - id: cert-title
+    type: text
+    z: 100
+    x: 60
+    y: 1190
+    width: 960
+    height: 0
+    content: { type: plain, value: "CERTIFICATION OF SERVICE" }
+    style: { font_family: $body, font_size: 13, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: cert-body
+    type: text
+    z: 101
+    x: 60
+    y: 1220
+    width: 960
+    height: 0
+    content: { type: plain, value: "I certify the hours recorded above accurately reflect the volunteer's service to our organization during the period stated. This record may be used to substantiate community-service requirements, court-ordered hours, or academic credit." }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.55 }
+
+  - id: sig-line-1
+    type: rect
+    z: 110
+    x: 60
+    y: 1370
+    width: 440
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: sig-label-1
+    type: text
+    z: 111
+    x: 60
+    y: 1385
+    width: 440
+    height: 0
+    content: { type: plain, value: "VOLUNTEER COORDINATOR · PRINT + SIGN" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: sig-name-1
+    type: text
+    z: 112
+    x: 60
+    y: 1408
+    width: 440
+    height: 0
+    content: { type: plain, value: "Elena Vasquez · Coordinator" }
+    style: { font_family: $heading, font_size: 16, font_style: italic, color: $text }
+
+  - id: sig-line-2
+    type: rect
+    z: 113
+    x: 580
+    y: 1370
+    width: 440
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: sig-label-2
+    type: text
+    z: 114
+    x: 580
+    y: 1385
+    width: 440
+    height: 0
+    content: { type: plain, value: "DATE SIGNED" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: sig-name-2
+    type: text
+    z: 115
+    x: 580
+    y: 1408
+    width: 440
+    height: 0
+    content: { type: plain, value: "May 17, 2026" }
+    style: { font_family: $heading, font_size: 16, font_style: italic, color: $text }
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: foot-rule
+    type: rect
+    z: 120
+    x: 60
+    y: 1530
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: foot-text
+    type: text
+    z: 121
+    x: 60
+    y: 1555
+    width: 960
+    height: 0
+    content: { type: plain, value: "Riverside Community Food Bank  ·  EIN 91-4827361  ·  rcfb.org/volunteer" }
+    style: { font_family: $body, font_size: 12, color: $text_muted, text_align: center, line_height: 1.4 }
+
+slots:
+  - { id: organization_name, path: "layers[6].content.value",  type: text, hint: "Organization name", default: "Riverside Community Food Bank" }
+  - { id: volunteer_name,    path: "layers[8].content.value",  type: text, hint: "Volunteer name",    default: "Priya Ramachandran" }
+  - { id: role,              path: "layers[10].content.value", type: text, hint: "Role / title",      default: "Distribution Lead · Tuesday Crew" }

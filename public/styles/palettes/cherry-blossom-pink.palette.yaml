@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: cherry-blossom-pink
+name: Cherry Blossom Pink
+version: "1.0.0"
+tags: [botanical, sakura, spring, soft, japanese]
+description: "Petal pink and warm white with cherry red and leaf green — hanami sakura bloom."
+colors:
+  background: "#FFF4F5"
+  surface:    "#FBE4E8"
+  surface_2:  "#F4C9D2"
+  primary:    "#D85A78"
+  secondary:  "#5E8E5A"
+  accent:     "#E33A4A"
+  text:       "#3A1820"
+  text_muted: "#7A4A56"
+  border:     "#EFB2BC"
+  success:    "#5A9A5A"
+  warning:    "#E89A3A"
+  danger:     "#C82A38"
