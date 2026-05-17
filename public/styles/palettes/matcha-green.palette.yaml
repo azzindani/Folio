@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: matcha-green
+name: Matcha Green
+version: "1.0.0"
+tags: [beverage, matcha, tea, japanese, earthy]
+description: "Matcha powder green with warm cream, bamboo and cherry-blossom pink accent."
+colors:
+  background: "#F3EFDE"
+  surface:    "#E5DEC1"
+  surface_2:  "#CFC892"
+  primary:    "#6E8A2E"
+  secondary:  "#9A8A4A"
+  accent:     "#D88A9A"
+  text:       "#1F2418"
+  text_muted: "#4E5A38"
+  border:     "#B5AE78"
+  success:    "#5A8A38"
+  warning:    "#C49A28"
+  danger:     "#B0413A"

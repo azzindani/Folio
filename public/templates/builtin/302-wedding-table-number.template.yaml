@@ -1,0 +1,58 @@
+_protocol: template/v1
+
+# Wedding table number — 800×1100 portrait, editorial-cream theme.
+# Huge centered number inside ornate double frame, footer with couple + date.
+meta:
+  id: tmpl-wedding-table-number
+  name: Wedding Table Number
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, reception, table-number, editorial, portrait]
+  description: "Reception table number card with huge centered number, ornate frame, and theme label."
+
+document:
+  width: 800
+  height: 1100
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 800, height: 1100, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: frame-outer, type: rect, z: 1, x: 50, y: 50, width: 700, height: 1000, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+  # 2 mid frame
+  - { id: frame-mid, type: rect, z: 2, x: 68, y: 68, width: 664, height: 964, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 3 inner frame
+  - { id: frame-inner, type: rect, z: 3, x: 86, y: 86, width: 628, height: 928, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.25 } }
+  # 4 corner ornament TL
+  - { id: corn-tl, type: text, z: 5, x: 70, y: 100, width: 80, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 28, color: "$primary", text_align: center } }
+  # 5 corner ornament TR
+  - { id: corn-tr, type: text, z: 5, x: 650, y: 100, width: 80, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 28, color: "$primary", text_align: center } }
+  # 6 corner ornament BL
+  - { id: corn-bl, type: text, z: 5, x: 70, y: 960, width: 80, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 28, color: "$primary", text_align: center } }
+  # 7 corner ornament BR
+  - { id: corn-br, type: text, z: 5, x: 650, y: 960, width: 80, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 28, color: "$primary", text_align: center } }
+  # 8 eyebrow
+  - { id: eyebrow, type: text, z: 10, x: 0, y: 220, width: 800, height: 0, content: { type: plain, value: "TABLE" }, style: { font_family: $body, font_size: 24, font_weight: 700, color: "$primary", text_align: center, letter_spacing: 0.8, text_transform: uppercase } }
+  # 9 short rule top
+  - { id: rule-top, type: rect, z: 11, x: 350, y: 280, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 10 huge table number
+  - { id: number, type: text, z: 20, x: 0, y: 320, width: 800, height: 0, content: { type: plain, value: "12" }, style: { font_family: $heading, font_size: 360, font_weight: 600, font_style: italic, color: "$text", text_align: center, line_height: 1 } }
+  # 11 short rule bot
+  - { id: rule-bot, type: rect, z: 21, x: 350, y: 740, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 12 theme label
+  - { id: theme-lbl, type: text, z: 22, x: 0, y: 780, width: 800, height: 0, content: { type: plain, value: "the orchard" }, style: { font_family: $heading, font_size: 36, font_style: italic, color: "$primary", text_align: center } }
+  # 13 footer ornament
+  - { id: foot-orn, type: text, z: 30, x: 0, y: 880, width: 800, height: 0, content: { type: plain, value: "·  ·  ·" }, style: { font_family: $body, font_size: 22, color: "$text_muted", text_align: center, letter_spacing: 0.4 } }
+  # 14 couple footer
+  - { id: foot-couple, type: text, z: 31, x: 0, y: 920, width: 800, height: 0, content: { type: plain, value: "Amelia & Jonathan · 24 May 2026" }, style: { font_family: $body, font_size: 14, font_weight: 600, color: "$text_muted", text_align: center, letter_spacing: 0.5, text_transform: uppercase } }
+
+slots:
+  - { id: table_number, path: "layers[10].content.value", type: text, hint: "Table number", default: "12" }
+  - { id: table_theme,  path: "layers[12].content.value", type: text, hint: "Optional table theme/label", default: "the orchard" }

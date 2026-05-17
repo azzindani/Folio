@@ -1,0 +1,427 @@
+_protocol: template/v1
+
+# Jigsaw puzzle box-back — 1500×1100 landscape, forest-deep.
+# Title, piece-count badge, finished-image preview, completed-dimensions footer, brand logo.
+meta:
+  id: tmpl-jigsaw-puzzle-outline
+  name: Jigsaw Puzzle Outline
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, jigsaw, puzzle, box, forest, landscape, packaging]
+  description: "Jigsaw puzzle box-back design with title, large piece-count badge, finished-image preview placeholder, completed dimensions, brand logo, and decorative jigsaw silhouette."
+
+document:
+  width: 1500
+  height: 1100
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1500
+    height: 1100
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  # Decorative top stripe
+  - id: top-stripe
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1500
+    height: 14
+    fill: { type: solid, color: "$primary" }
+
+  - id: top-stripe-2
+    type: rect
+    z: 2
+    x: 0
+    y: 14
+    width: 1500
+    height: 4
+    fill: { type: solid, color: "$accent" }
+
+  # Brand mark (top-left)
+  - id: brand-bg
+    type: rect
+    z: 5
+    x: 60
+    y: 50
+    width: 200
+    height: 50
+    radius: 25
+    fill: { type: solid, color: "$primary" }
+
+  - id: brand-text
+    type: text
+    z: 6
+    x: 60
+    y: 65
+    width: 200
+    height: 0
+    content: { type: plain, value: "FOLIO PUZZLES" }
+    style:
+      font_family: $heading
+      font_size: 16
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  # Eyebrow (right)
+  - id: eyebrow
+    type: text
+    z: 7
+    x: 1100
+    y: 64
+    width: 340
+    height: 0
+    content: { type: plain, value: "★ AGES 12+  ·  EXPERT LEVEL  ★" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: "$accent"
+      text_align: right
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  # Title
+  - id: title
+    type: text
+    z: 10
+    x: 60
+    y: 150
+    width: 880
+    height: 0
+    content: { type: plain, value: "MISTY PINE FOREST" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 900
+      color: "$text"
+      letter_spacing: -0.01
+      text_transform: uppercase
+
+  - id: subtitle
+    type: text
+    z: 11
+    x: 60
+    y: 230
+    width: 880
+    height: 0
+    content: { type: plain, value: "A landscape jigsaw featuring the morning fog of the Olympic Peninsula" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: "$text_muted"
+      line_height: 1.4
+
+  - id: title-rule
+    type: rect
+    z: 12
+    x: 60
+    y: 290
+    width: 880
+    height: 3
+    fill: { type: solid, color: "$primary" }
+
+  # Piece-count badge (large, top-right)
+  - id: badge-circle
+    type: circle
+    z: 15
+    cx: 1260
+    cy: 280
+    rx: 160
+    ry: 160
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$accent", width: 4 }
+
+  - id: badge-inner-circle
+    type: circle
+    z: 16
+    cx: 1260
+    cy: 280
+    rx: 140
+    ry: 140
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "#FFFFFF", width: 2 }
+
+  - id: badge-number
+    type: text
+    z: 17
+    x: 1100
+    y: 220
+    width: 320
+    height: 0
+    content: { type: plain, value: "1000" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: -0.02
+
+  - id: badge-label
+    type: text
+    z: 18
+    x: 1100
+    y: 330
+    width: 320
+    height: 0
+    content: { type: plain, value: "PIECES" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  # Finished image preview placeholder
+  - id: preview-frame
+    type: rect
+    z: 20
+    x: 60
+    y: 360
+    width: 880
+    height: 580
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 4 }
+
+  # Jigsaw silhouette mock — irregular polygon to suggest a puzzle piece arrangement
+  - id: preview-mtn-1
+    type: polygon
+    z: 21
+    points: "80,800 220,600 360,720 500,520 660,720 820,560 920,920 80,920"
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.5
+  - id: preview-mtn-2
+    type: polygon
+    z: 22
+    points: "80,860 280,720 460,820 640,680 820,800 920,920 80,920"
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.55
+  - id: preview-mist
+    type: rect
+    z: 23
+    x: 80
+    y: 800
+    width: 840
+    height: 60
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.4
+  - id: preview-sun
+    type: circle
+    z: 24
+    cx: 720
+    cy: 480
+    rx: 60
+    ry: 60
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.7
+  - id: preview-tree-1
+    type: polygon
+    z: 25
+    points: "150,820 180,720 210,820"
+    fill: { type: solid, color: "$text" }
+    opacity: 0.6
+  - id: preview-tree-2
+    type: polygon
+    z: 25
+    points: "320,840 360,700 400,840"
+    fill: { type: solid, color: "$text" }
+    opacity: 0.6
+  - id: preview-tree-3
+    type: polygon
+    z: 25
+    points: "560,860 600,720 640,860"
+    fill: { type: solid, color: "$text" }
+    opacity: 0.6
+  - id: preview-tree-4
+    type: polygon
+    z: 25
+    points: "780,840 815,710 850,840"
+    fill: { type: solid, color: "$text" }
+    opacity: 0.6
+
+  - id: preview-label
+    type: text
+    z: 30
+    x: 60
+    y: 380
+    width: 880
+    height: 0
+    content: { type: plain, value: "FINISHED IMAGE" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 800
+      color: "$text"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  # Decorative jigsaw piece shape (bottom-right)
+  - id: deco-piece
+    type: path
+    z: 35
+    d: "M 1080 420 L 1180 420 Q 1180 400 1210 400 Q 1240 400 1240 420 L 1340 420 L 1340 520 Q 1360 520 1360 550 Q 1360 580 1340 580 L 1340 680 L 1240 680 Q 1240 700 1210 700 Q 1180 700 1180 680 L 1080 680 L 1080 580 Q 1060 580 1060 550 Q 1060 520 1080 520 Z"
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.35
+    stroke: { color: "$primary", width: 2 }
+
+  - id: deco-piece-text
+    type: text
+    z: 36
+    x: 1070
+    y: 535
+    width: 300
+    height: 0
+    content: { type: plain, value: "★" }
+    style: { font_family: $heading, font_size: 60, font_weight: 700, color: "$accent", text_align: center }
+
+  # Specs box (bottom)
+  - id: specs-bg
+    type: rect
+    z: 40
+    x: 60
+    y: 970
+    width: 1380
+    height: 80
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: specs-dim
+    type: text
+    z: 41
+    x: 90
+    y: 990
+    width: 600
+    height: 0
+    content: { type: plain, value: "FINISHED SIZE" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 800
+      color: "$accent"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: specs-dim-value
+    type: text
+    z: 42
+    x: 90
+    y: 1010
+    width: 600
+    height: 0
+    content: { type: plain, value: "27.5 × 19.7 in  (70 × 50 cm)" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 800
+      color: "#FFFFFF"
+
+  - id: specs-divider
+    type: rect
+    z: 43
+    x: 720
+    y: 985
+    width: 1
+    height: 50
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.5
+
+  - id: specs-piece
+    type: text
+    z: 44
+    x: 750
+    y: 990
+    width: 280
+    height: 0
+    content: { type: plain, value: "PIECE SIZE" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 800
+      color: "$accent"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: specs-piece-value
+    type: text
+    z: 45
+    x: 750
+    y: 1010
+    width: 280
+    height: 0
+    content: { type: plain, value: "~22 × 18 mm" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 800
+      color: "#FFFFFF"
+
+  - id: specs-divider-2
+    type: rect
+    z: 46
+    x: 1060
+    y: 985
+    width: 1
+    height: 50
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.5
+
+  - id: specs-code
+    type: text
+    z: 47
+    x: 1090
+    y: 990
+    width: 320
+    height: 0
+    content: { type: plain, value: "SKU" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 800
+      color: "$accent"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: specs-code-value
+    type: text
+    z: 48
+    x: 1090
+    y: 1010
+    width: 320
+    height: 0
+    content: { type: plain, value: "FP-1000-MPF-04" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 800
+      color: "#FFFFFF"
+
+slots:
+  - { id: title,               path: "layers[10].content.value", type: text, hint: "Puzzle title",            default: "MISTY PINE FOREST" }
+  - { id: piece_count,         path: "layers[17].content.value", type: text, hint: "Piece count number",      default: "1000" }
+  - { id: finished_dimensions, path: "layers[42].content.value", type: text, hint: "Finished dimensions",     default: "27.5 × 19.7 in  (70 × 50 cm)" }

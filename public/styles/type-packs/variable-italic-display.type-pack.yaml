@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: variable-italic-display
+name: Variable Italic Display
+version: "1.0.0"
+tags: [italic, display, editorial, playfair, variable, magazine]
+description: "Playfair Display Italic-first composition + Lora body — editorial register that leads with cursive emphasis."
+families:
+  heading: "Playfair Display"
+  body:    "Lora"
+  mono:    "Courier Prime"
+  display: "Playfair Display"
+  accent:  "Playfair Display"
+scale:
+  display:
+    size: 132
+    weight: 400
+    line_height: 1.0

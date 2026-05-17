@@ -1,0 +1,98 @@
+_protocol: template/v1
+
+# Voter info card — 1500×1000 landscape, corporate-slate theme.
+# "REGISTERED VOTER" banner, voter name + party + precinct, polling
+# location + hours, sample-ballot QR placeholder, HUGE election date.
+meta:
+  id: tmpl-voter-info-card
+  name: Voter Info Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, civic, voter, election, polling, registration, landscape, corporate]
+  description: "Voter information card with registered banner, voter details, polling location, sample-ballot QR placeholder, and election date."
+
+document:
+  width: 1500
+  height: 1000
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: "$background" } }
+  # 1 — top banner bg
+  - { id: banner-bg, type: rect, z: 1, x: 0, y: 0, width: 1500, height: 120, fill: { type: solid, color: "$primary" } }
+  # 2 — banner stars left
+  - { id: star-l, type: text, z: 2, x: 40, y: 38, width: 80, height: 0, content: { type: plain, value: "★" }, style: { font_family: $heading, font_size: 48, color: "#FFFFFF", text_align: center, line_height: 1.2 } }
+  # 3 — banner stars right
+  - { id: star-r, type: text, z: 3, x: 1380, y: 38, width: 80, height: 0, content: { type: plain, value: "★" }, style: { font_family: $heading, font_size: 48, color: "#FFFFFF", text_align: center, line_height: 1.2 } }
+  # 4 — banner title
+  - { id: banner, type: text, z: 4, x: 120, y: 32, width: 1260, height: 0, content: { type: plain, value: "REGISTERED VOTER" }, style: { font_family: $heading, font_size: 44, font_weight: 900, color: "#FFFFFF", text_align: center, letter_spacing: 0.6, line_height: 1.2 } }
+  # 5 — banner sub
+  - { id: banner-sub, type: text, z: 5, x: 120, y: 84, width: 1260, height: 0, content: { type: plain, value: "STATE OF NEW YORK · BOARD OF ELECTIONS" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "#DBEAFE", text_align: center, letter_spacing: 0.8 } }
+  # 6 — outer card border
+  - { id: card-border, type: rect, z: 6, x: 60, y: 150, width: 1380, height: 720, fill: { type: solid, color: "transparent" }, stroke: { color: "$border", width: 2 } }
+  # 7 — voter name label
+  - { id: name-lab, type: text, z: 10, x: 100, y: 180, width: 800, height: 0, content: { type: plain, value: "VOTER" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  # 8 — voter name
+  - { id: voter-name, type: text, z: 11, x: 100, y: 204, width: 1000, height: 0, content: { type: plain, value: "Margaret E. Sullivan" }, style: { font_family: $heading, font_size: 52, font_weight: 800, color: "$text", letter_spacing: -0.01, line_height: 1.1 } }
+  # 9 — party + precinct row
+  - { id: party-lab, type: text, z: 12, x: 100, y: 290, width: 360, height: 0, content: { type: plain, value: "PARTY AFFILIATION" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  - { id: party-val, type: text, z: 13, x: 100, y: 312, width: 360, height: 0, content: { type: plain, value: "Unaffiliated / Independent" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 11 — precinct
+  - { id: prec-lab, type: text, z: 14, x: 520, y: 290, width: 280, height: 0, content: { type: plain, value: "PRECINCT" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  - { id: prec-val, type: text, z: 15, x: 520, y: 312, width: 280, height: 0, content: { type: plain, value: "ED 14-04 · WD 7" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 13 — voter ID
+  - { id: vid-lab, type: text, z: 16, x: 860, y: 290, width: 280, height: 0, content: { type: plain, value: "VOTER ID" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  - { id: vid-val, type: text, z: 17, x: 860, y: 312, width: 280, height: 0, content: { type: plain, value: "NY-7741-22918" }, style: { font_family: $mono, font_size: 22, color: "$text", line_height: 1.3 } }
+  # 15 — divider
+  - { id: div, type: rect, z: 20, x: 100, y: 380, width: 1300, height: 1, fill: { type: solid, color: "$border" } }
+  # 16 — polling label
+  - { id: poll-lab, type: text, z: 21, x: 100, y: 408, width: 800, height: 0, content: { type: plain, value: "YOUR POLLING LOCATION" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$primary", letter_spacing: 0.6 } }
+  # 17 — polling location
+  - { id: poll-loc, type: text, z: 22, x: 100, y: 432, width: 800, height: 0, content: { type: plain, value: "Linden Crossing Community Center" }, style: { font_family: $heading, font_size: 30, font_weight: 800, color: "$text", line_height: 1.2 } }
+  # 18 — polling addr
+  - { id: poll-addr, type: text, z: 23, x: 100, y: 478, width: 800, height: 0, content: { type: plain, value: "218 Linden Crossing · Albany, NY 12210\nEntrance B · Gymnasium" }, style: { font_family: $body, font_size: 16, color: "$text", line_height: 1.6 } }
+  # 19 — hours label
+  - { id: hrs-lab, type: text, z: 24, x: 100, y: 590, width: 800, height: 0, content: { type: plain, value: "HOURS OF OPERATION" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$primary", letter_spacing: 0.6 } }
+  # 20 — hours val
+  - { id: hrs-val, type: text, z: 25, x: 100, y: 614, width: 800, height: 0, content: { type: plain, value: "6:00 AM – 9:00 PM · Election Day only" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 21 — QR placeholder bg
+  - { id: qr-bg, type: rect, z: 30, x: 1080, y: 408, width: 280, height: 280, radius: 12, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$text", width: 2 } }
+  # 22 — QR grid corner tl
+  - { id: qr-tl, type: rect, z: 31, x: 1100, y: 428, width: 56, height: 56, fill: { type: solid, color: "$text" } }
+  - { id: qr-tl-i, type: rect, z: 32, x: 1116, y: 444, width: 24, height: 24, fill: { type: solid, color: "#FFFFFF" } }
+  # 24 — QR grid corner tr
+  - { id: qr-tr, type: rect, z: 33, x: 1284, y: 428, width: 56, height: 56, fill: { type: solid, color: "$text" } }
+  - { id: qr-tr-i, type: rect, z: 34, x: 1300, y: 444, width: 24, height: 24, fill: { type: solid, color: "#FFFFFF" } }
+  # 26 — QR grid corner bl
+  - { id: qr-bl, type: rect, z: 35, x: 1100, y: 612, width: 56, height: 56, fill: { type: solid, color: "$text" } }
+  - { id: qr-bl-i, type: rect, z: 36, x: 1116, y: 628, width: 24, height: 24, fill: { type: solid, color: "#FFFFFF" } }
+  # 28 — QR center dot grid
+  - { id: qr-d1, type: rect, z: 37, x: 1180, y: 500, width: 20, height: 20, fill: { type: solid, color: "$text" } }
+  - { id: qr-d2, type: rect, z: 37, x: 1220, y: 500, width: 20, height: 20, fill: { type: solid, color: "$text" } }
+  - { id: qr-d3, type: rect, z: 37, x: 1260, y: 540, width: 20, height: 20, fill: { type: solid, color: "$text" } }
+  - { id: qr-d4, type: rect, z: 37, x: 1200, y: 580, width: 20, height: 20, fill: { type: solid, color: "$text" } }
+  - { id: qr-d5, type: rect, z: 37, x: 1240, y: 600, width: 20, height: 20, fill: { type: solid, color: "$text" } }
+  # 33 — QR caption
+  - { id: qr-cap, type: text, z: 40, x: 1080, y: 700, width: 280, height: 0, content: { type: plain, value: "Scan for sample ballot" }, style: { font_family: $body, font_size: 13, font_weight: 600, color: "$text", text_align: center, line_height: 1.4 } }
+  # 34 — QR caption sub
+  - { id: qr-cap-sub, type: text, z: 41, x: 1080, y: 722, width: 280, height: 0, content: { type: plain, value: "elections.ny.gov/sample/7741" }, style: { font_family: $mono, font_size: 11, color: "$text_muted", text_align: center } }
+  # 35 — bottom band HUGE date
+  - { id: date-bg, type: rect, z: 50, x: 0, y: 880, width: 1500, height: 120, fill: { type: solid, color: "$text" } }
+  # 36 — election day label
+  - { id: ed-lab, type: text, z: 51, x: 60, y: 896, width: 1380, height: 0, content: { type: plain, value: "ELECTION DAY" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "#94A3B8", letter_spacing: 0.8, text_align: center } }
+  # 37 — election day value HUGE
+  - { id: ed-val, type: text, z: 52, x: 60, y: 920, width: 1380, height: 0, content: { type: plain, value: "Tuesday · November 3, 2026" }, style: { font_family: $heading, font_size: 56, font_weight: 900, color: "$background", text_align: center, letter_spacing: -0.01, line_height: 1.1 } }
+
+slots:
+  - { id: voter_name,       path: "layers[8].content.value",  type: text, hint: "Voter full name",        default: "Margaret E. Sullivan" }
+  - { id: precinct,         path: "layers[12].content.value", type: text, hint: "Precinct / ED · WD",     default: "ED 14-04 · WD 7" }
+  - { id: polling_location, path: "layers[17].content.value", type: text, hint: "Polling location name",  default: "Linden Crossing Community Center" }
+  - { id: polling_hours,    path: "layers[20].content.value", type: text, hint: "Polling hours",          default: "6:00 AM – 9:00 PM · Election Day only" }
+  - { id: election_date,    path: "layers[37].content.value", type: text, hint: "Election date (huge)",   default: "Tuesday · November 3, 2026" }

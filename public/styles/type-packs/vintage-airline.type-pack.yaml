@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: vintage-airline
+name: Vintage Airline
+version: "1.0.0"
+tags: [vintage, travel, mid-century, poster, retro, airline]
+description: "Lustria + Special Elite — mid-century travel-poster register evoking jet-age advertising."
+families:
+  heading: "Lustria"
+  body:    "Lustria"
+  mono:    "Cutive Mono"
+  display: "Lustria"
+  accent:  "Special Elite"
+scale:
+  h1:
+    size: 64
+    weight: 700
+    line_height: 1.1

@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: phosphor-afterimage
+name: Phosphor Afterimage
+version: "1.0.0"
+tags: [crt, retro, terminal, phosphor, green, glow]
+description: "CRT-style green phosphor afterimage trails with horizontal scanline ghost."
+effects:
+  shadow_card:   "0 0 4px rgba(0,255,120,0.7), 0 0 12px rgba(0,255,120,0.45), 0 0 24px rgba(0,255,120,0.25), 2px 0 0 rgba(0,200,80,0.4)"
+  shadow_glow:   "0 0 8px rgba(0,255,120,0.75), 0 0 20px rgba(0,220,90,0.5), 3px 0 0 rgba(0,180,60,0.45)"
+  shadow_inset:  "inset 0 0 6px rgba(0,255,120,0.3), inset 0 0 16px rgba(0,180,60,0.18)"
+  shadow_text:   "0 0 6px rgba(0,255,120,0.7), 1px 0 0 rgba(0,180,60,0.5)"
+  blur_glass:    3
+  blur_backdrop: 2

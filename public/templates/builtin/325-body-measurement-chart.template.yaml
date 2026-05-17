@@ -1,0 +1,597 @@
+_protocol: template/v1
+
+# Body measurement chart — 1080×1620 portrait, pastel-dream theme.
+# Name + start-date header, 10 measurement rows × 4 date columns,
+# weight + body-fat % row for tracking progress.
+meta:
+  id: tmpl-body-measurement-chart
+  name: Body Measurement Chart
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [fitness, body, measurement, tracking, chart, portrait, pastel]
+  description: "Body measurement tracking chart with 10 rows (chest, waist, hips, biceps, thighs, etc.) across 4 date columns plus weight + body-fat % row."
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill: { type: solid, color: "$background" }
+
+  - id: top-shape
+    type: circle
+    z: 1
+    x: 920
+    y: -80
+    width: 280
+    height: 280
+    fill: { type: solid, color: "$primary", opacity: 0.18 }
+
+  - id: side-shape
+    type: circle
+    z: 2
+    x: -100
+    y: 1480
+    width: 220
+    height: 220
+    fill: { type: solid, color: "$secondary", opacity: 0.18 }
+
+  # ── Header ────────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 60
+    width: 960
+    height: 0
+    content: { type: plain, value: "PROGRESS TRACKER" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: title
+    type: text
+    z: 11
+    x: 60
+    y: 95
+    width: 960
+    height: 0
+    content: { type: plain, value: "Body Measurements" }
+    style:
+      font_family: $heading
+      font_size: 58
+      font_weight: 800
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.02
+
+  - id: name-label
+    type: text
+    z: 12
+    x: 60
+    y: 185
+    width: 480
+    height: 0
+    content: { type: plain, value: "NAME" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: name-value
+    type: text
+    z: 13
+    x: 60
+    y: 205
+    width: 480
+    height: 0
+    content: { type: plain, value: "Aisha Patel" }
+    style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, line_height: 1.3 }
+
+  - id: start-label
+    type: text
+    z: 14
+    x: 600
+    y: 185
+    width: 220
+    height: 0
+    content: { type: plain, value: "START DATE" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: start-value
+    type: text
+    z: 15
+    x: 600
+    y: 205
+    width: 220
+    height: 0
+    content: { type: plain, value: "2026-01-15" }
+    style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, line_height: 1.3 }
+
+  - id: height-label
+    type: text
+    z: 16
+    x: 840
+    y: 185
+    width: 180
+    height: 0
+    content: { type: plain, value: "HEIGHT" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: height-value
+    type: text
+    z: 17
+    x: 840
+    y: 205
+    width: 180
+    height: 0
+    content: { type: plain, value: "5'6\" / 168 cm" }
+    style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, line_height: 1.3 }
+
+  # ── Table background card ─────────────────────────────────
+  - id: table-card
+    type: rect
+    z: 20
+    x: 60
+    y: 280
+    width: 960
+    height: 1080
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  # ── Table header columns ──────────────────────────────────
+  - id: th-bg
+    type: rect
+    z: 21
+    x: 60
+    y: 280
+    width: 960
+    height: 56
+    radius: 18
+    fill: { type: solid, color: "$primary", opacity: 0.85 }
+
+  - id: th-area
+    type: text
+    z: 22
+    x: 90
+    y: 298
+    width: 220
+    height: 0
+    content: { type: plain, value: "AREA" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: th-d1
+    type: text
+    z: 23
+    x: 340
+    y: 298
+    width: 160
+    height: 0
+    content: { type: plain, value: "JAN 15" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.5, text_align: center, text_transform: uppercase }
+
+  - id: th-d2
+    type: text
+    z: 24
+    x: 510
+    y: 298
+    width: 160
+    height: 0
+    content: { type: plain, value: "FEB 15" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.5, text_align: center, text_transform: uppercase }
+
+  - id: th-d3
+    type: text
+    z: 25
+    x: 680
+    y: 298
+    width: 160
+    height: 0
+    content: { type: plain, value: "MAR 15" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.5, text_align: center, text_transform: uppercase }
+
+  - id: th-d4
+    type: text
+    z: 26
+    x: 850
+    y: 298
+    width: 160
+    height: 0
+    content: { type: plain, value: "APR 15" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.5, text_align: center, text_transform: uppercase }
+
+  # ── Rows: 10 measurement areas + weight + bf% ─────────────
+  - id: row-chest
+    type: text
+    z: 30
+    x: 90
+    y: 360
+    width: 220
+    height: 0
+    content: { type: plain, value: "Chest" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-chest-vals
+    type: text
+    z: 31
+    x: 340
+    y: 360
+    width: 670
+    height: 0
+    content: { type: plain, value: "38.0\"      37.5\"      37.0\"      36.8\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-chest-rule
+    type: rect
+    z: 32
+    x: 80
+    y: 395
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-waist
+    type: text
+    z: 33
+    x: 90
+    y: 410
+    width: 220
+    height: 0
+    content: { type: plain, value: "Waist" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-waist-vals
+    type: text
+    z: 34
+    x: 340
+    y: 410
+    width: 670
+    height: 0
+    content: { type: plain, value: "31.0\"      30.2\"      29.5\"      28.9\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-waist-rule
+    type: rect
+    z: 35
+    x: 80
+    y: 445
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-hips
+    type: text
+    z: 36
+    x: 90
+    y: 460
+    width: 220
+    height: 0
+    content: { type: plain, value: "Hips" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-hips-vals
+    type: text
+    z: 37
+    x: 340
+    y: 460
+    width: 670
+    height: 0
+    content: { type: plain, value: "40.0\"      39.5\"      39.0\"      38.6\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-hips-rule
+    type: rect
+    z: 38
+    x: 80
+    y: 495
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-bicep
+    type: text
+    z: 39
+    x: 90
+    y: 510
+    width: 220
+    height: 0
+    content: { type: plain, value: "Biceps (R)" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-bicep-vals
+    type: text
+    z: 40
+    x: 340
+    y: 510
+    width: 670
+    height: 0
+    content: { type: plain, value: "12.0\"      12.2\"      12.5\"      12.8\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-bicep-rule
+    type: rect
+    z: 41
+    x: 80
+    y: 545
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-fore
+    type: text
+    z: 42
+    x: 90
+    y: 560
+    width: 220
+    height: 0
+    content: { type: plain, value: "Forearm (R)" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-fore-vals
+    type: text
+    z: 43
+    x: 340
+    y: 560
+    width: 670
+    height: 0
+    content: { type: plain, value: "9.5\"       9.6\"       9.7\"       9.8\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-fore-rule
+    type: rect
+    z: 44
+    x: 80
+    y: 595
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-thigh
+    type: text
+    z: 45
+    x: 90
+    y: 610
+    width: 220
+    height: 0
+    content: { type: plain, value: "Thigh (R)" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-thigh-vals
+    type: text
+    z: 46
+    x: 340
+    y: 610
+    width: 670
+    height: 0
+    content: { type: plain, value: "22.0\"      22.3\"      22.6\"      22.9\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-thigh-rule
+    type: rect
+    z: 47
+    x: 80
+    y: 645
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-calf
+    type: text
+    z: 48
+    x: 90
+    y: 660
+    width: 220
+    height: 0
+    content: { type: plain, value: "Calf (R)" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-calf-vals
+    type: text
+    z: 49
+    x: 340
+    y: 660
+    width: 670
+    height: 0
+    content: { type: plain, value: "14.0\"      14.1\"      14.2\"      14.3\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-calf-rule
+    type: rect
+    z: 50
+    x: 80
+    y: 695
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-shoul
+    type: text
+    z: 51
+    x: 90
+    y: 710
+    width: 220
+    height: 0
+    content: { type: plain, value: "Shoulders" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-shoul-vals
+    type: text
+    z: 52
+    x: 340
+    y: 710
+    width: 670
+    height: 0
+    content: { type: plain, value: "42.0\"      42.5\"      43.0\"      43.4\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-shoul-rule
+    type: rect
+    z: 53
+    x: 80
+    y: 745
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-neck
+    type: text
+    z: 54
+    x: 90
+    y: 760
+    width: 220
+    height: 0
+    content: { type: plain, value: "Neck" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-neck-vals
+    type: text
+    z: 55
+    x: 340
+    y: 760
+    width: 670
+    height: 0
+    content: { type: plain, value: "13.0\"      13.0\"      13.1\"      13.2\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-neck-rule
+    type: rect
+    z: 56
+    x: 80
+    y: 795
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: row-glut
+    type: text
+    z: 57
+    x: 90
+    y: 810
+    width: 220
+    height: 0
+    content: { type: plain, value: "Glutes" }
+    style: { font_family: $body, font_size: 17, font_weight: 600, color: $text }
+
+  - id: row-glut-vals
+    type: text
+    z: 58
+    x: 340
+    y: 810
+    width: 670
+    height: 0
+    content: { type: plain, value: "41.0\"      40.5\"      40.0\"      39.6\"" }
+    style: { font_family: $mono, font_size: 15, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  # ── Weight + body-fat divider ─────────────────────────────
+  - id: total-rule
+    type: rect
+    z: 60
+    x: 80
+    y: 870
+    width: 920
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: row-weight
+    type: text
+    z: 61
+    x: 90
+    y: 890
+    width: 220
+    height: 0
+    content: { type: plain, value: "WEIGHT" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: row-weight-vals
+    type: text
+    z: 62
+    x: 340
+    y: 890
+    width: 670
+    height: 0
+    content: { type: plain, value: "152 lb     148 lb     145 lb     142 lb" }
+    style: { font_family: $mono, font_size: 18, font_weight: 700, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  - id: row-bf
+    type: text
+    z: 63
+    x: 90
+    y: 940
+    width: 220
+    height: 0
+    content: { type: plain, value: "BODY FAT %" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: row-bf-vals
+    type: text
+    z: 64
+    x: 340
+    y: 940
+    width: 670
+    height: 0
+    content: { type: plain, value: "26.0%      24.5%      23.1%      21.8%" }
+    style: { font_family: $mono, font_size: 18, font_weight: 700, color: $text, text_align: center, letter_spacing: 0.05 }
+
+  # ── Tips card ─────────────────────────────────────────────
+  - id: tips-card
+    type: rect
+    z: 70
+    x: 60
+    y: 1400
+    width: 960
+    height: 160
+    radius: 16
+    fill: { type: solid, color: "$secondary", opacity: 0.18 }
+    stroke: { color: "$secondary", width: 2 }
+
+  - id: tips-label
+    type: text
+    z: 71
+    x: 90
+    y: 1420
+    width: 900
+    height: 0
+    content: { type: plain, value: "MEASUREMENT TIPS" }
+    style: { font_family: $body, font_size: 12, font_weight: 800, color: $secondary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: tips-body
+    type: text
+    z: 72
+    x: 90
+    y: 1445
+    width: 900
+    height: 0
+    content: { type: plain, value: "Measure same time of day · relaxed muscle · tape parallel to floor · same body part L/R noted" }
+    style: { font_family: $body, font_size: 15, color: $text, line_height: 1.4 }
+
+  - id: tips-body-2
+    type: text
+    z: 73
+    x: 90
+    y: 1500
+    width: 900
+    height: 0
+    content: { type: plain, value: "Weigh-in: morning, post-bathroom, pre-meal · take photos monthly for visual reference." }
+    style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, line_height: 1.4 }
+
+slots:
+  - { id: name,        path: "layers[6].content.value",  type: text, hint: "Person's name",     default: "Aisha Patel" }
+  - { id: start_date,  path: "layers[8].content.value",  type: text, hint: "Start date",        default: "2026-01-15" }
+  - { id: height,      path: "layers[10].content.value", type: text, hint: "Height",            default: "5'6\" / 168 cm" }

@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: pencil-sketch
+name: Pencil Sketch
+version: "1.0.0"
+tags: [sketch, hand-drawn, pencil, paper, illustrative]
+description: "Slight smudgy hand-drawn shadow with graphite-on-paper register."
+effects:
+  shadow_card:   "1px 1px 0 rgba(80,60,40,0.35), 2px 2px 0 rgba(80,60,40,0.18), 3px 3px 4px rgba(80,60,40,0.1)"
+  shadow_glow:   "0 0 6px rgba(120,100,80,0.18), 0 0 12px rgba(120,100,80,0.08)"
+  shadow_inset:  "inset 1px 1px 2px rgba(80,60,40,0.18), inset -1px -1px 2px rgba(255,250,240,0.4)"
+  shadow_text:   "1px 1px 0 rgba(120,100,80,0.35)"
+  blur_glass:    2
+  blur_backdrop: 1

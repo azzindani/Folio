@@ -1,0 +1,99 @@
+_protocol: template/v1
+
+# 1099-NEC informational form — 1700×1100 landscape, mono-print theme.
+# IRS-style: payer info, recipient info, Box 1 nonemployee comp,
+# federal/state tax boxes, account #, watermark.
+meta:
+  id: tmpl-1099-form
+  name: 1099-NEC Form (Informational)
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, tax, 1099, irs, nec, form, contractor, mono, landscape]
+  description: "IRS 1099-NEC style informational form with payer/recipient blocks, nonemployee compensation, federal/state tax withholding, watermark."
+
+document:
+  width: 1700
+  height: 1100
+  unit: px
+  dpi: 96
+
+theme:
+  ref: mono-print
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1700, height: 1100, fill: { type: solid, color: "$background" } }
+  # 1 — outer border
+  - { id: outer, type: rect, z: 1, x: 40, y: 40, width: 1620, height: 1020, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 2 } }
+  # 2 — form title
+  - { id: title, type: text, z: 2, x: 60, y: 60, width: 800, height: 0, content: { type: plain, value: "Form 1099-NEC" }, style: { font_family: $heading, font_size: 36, font_weight: 800, color: "$text", line_height: 1.2 } }
+  # 3 — title sub
+  - { id: subtitle, type: text, z: 3, x: 60, y: 108, width: 800, height: 0, content: { type: plain, value: "Nonemployee Compensation" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", line_height: 1.3 } }
+  # 4 — corrected checkbox
+  - { id: corr-box, type: rect, z: 4, x: 60, y: 150, width: 18, height: 18, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: corr-lab, type: text, z: 5, x: 88, y: 150, width: 400, height: 0, content: { type: plain, value: "CORRECTED (if checked)" }, style: { font_family: $body, font_size: 11, color: "$text_muted", letter_spacing: 0.3 } }
+  # 6 — OMB & year box
+  - { id: omb-box, type: rect, z: 6, x: 1300, y: 60, width: 340, height: 110, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1.5 } }
+  - { id: omb-lab, type: text, z: 7, x: 1316, y: 70, width: 308, height: 0, content: { type: plain, value: "OMB No. 1545-0116 · Form 1099-NEC" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: omb-ty-lab, type: text, z: 8, x: 1316, y: 90, width: 308, height: 0, content: { type: plain, value: "For tax year" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: omb-ty-val, type: text, z: 9, x: 1316, y: 108, width: 308, height: 0, content: { type: plain, value: "2025" }, style: { font_family: $heading, font_size: 44, font_weight: 800, color: "$text", text_align: center, line_height: 1.1 } }
+  # 10 — payer info box
+  - { id: payer-box, type: rect, z: 10, x: 60, y: 200, width: 700, height: 200, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: payer-lab, type: text, z: 11, x: 72, y: 208, width: 680, height: 0, content: { type: plain, value: "PAYER'S name, street address, city, state, ZIP code" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: payer-val, type: text, z: 12, x: 72, y: 232, width: 680, height: 0, content: { type: plain, value: "Folio Studio Limited\n488 Mission St, Floor 12\nSan Francisco, CA 94105\nTel (415) 555-0188" }, style: { font_family: $mono, font_size: 14, color: "$text", line_height: 1.6 } }
+  # 13 — payer TIN
+  - { id: ptin-box, type: rect, z: 13, x: 60, y: 416, width: 340, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: ptin-lab, type: text, z: 14, x: 72, y: 424, width: 320, height: 0, content: { type: plain, value: "PAYER'S TIN" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: ptin-val, type: text, z: 15, x: 72, y: 444, width: 320, height: 0, content: { type: plain, value: "84-2049371" }, style: { font_family: $mono, font_size: 20, color: "$text" } }
+  # 16 — recipient TIN
+  - { id: rtin-box, type: rect, z: 16, x: 420, y: 416, width: 340, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: rtin-lab, type: text, z: 17, x: 432, y: 424, width: 320, height: 0, content: { type: plain, value: "RECIPIENT'S TIN" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: rtin-val, type: text, z: 18, x: 432, y: 444, width: 320, height: 0, content: { type: plain, value: "XXX-XX-7714" }, style: { font_family: $mono, font_size: 20, color: "$text" } }
+  # 19 — recipient name box
+  - { id: rec-box, type: rect, z: 19, x: 60, y: 500, width: 700, height: 200, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: rec-lab, type: text, z: 20, x: 72, y: 508, width: 680, height: 0, content: { type: plain, value: "RECIPIENT'S name, street address, city, state, ZIP code" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: rec-val, type: text, z: 21, x: 72, y: 532, width: 680, height: 0, content: { type: plain, value: "James K. Donovan\n412 Cherry Lane\nPortland, OR 97214" }, style: { font_family: $mono, font_size: 16, color: "$text", line_height: 1.6 } }
+  # 22 — Box 1 — nonemployee comp (highlighted)
+  - { id: b1-box, type: rect, z: 22, x: 800, y: 200, width: 840, height: 110, fill: { type: solid, color: "$surface" }, stroke: { color: "$text", width: 2 } }
+  - { id: b1-lab, type: text, z: 23, x: 812, y: 210, width: 820, height: 0, content: { type: plain, value: "1  Nonemployee compensation" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "$text" } }
+  - { id: b1-dollar, type: text, z: 24, x: 820, y: 246, width: 60, height: 0, content: { type: plain, value: "$" }, style: { font_family: $mono, font_size: 36, color: "$text_muted", line_height: 1.1 } }
+  - { id: b1-val, type: text, z: 25, x: 880, y: 240, width: 740, height: 0, content: { type: plain, value: "48,750.00" }, style: { font_family: $mono, font_size: 44, font_weight: 800, color: "$text", text_align: right, line_height: 1.1 } }
+  # 26 — Box 2 — direct sales over $5k box
+  - { id: b2-box, type: rect, z: 26, x: 800, y: 320, width: 840, height: 60, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: b2-lab, type: text, z: 27, x: 812, y: 326, width: 820, height: 0, content: { type: plain, value: "2  Payer made direct sales totalling $5,000 or more of consumer products to recipient" }, style: { font_family: $body, font_size: 11, color: "$text" } }
+  - { id: b2-check, type: rect, z: 28, x: 1600, y: 336, width: 18, height: 18, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  # 29 — Box 4 — fed tax withheld
+  - { id: b4-box, type: rect, z: 29, x: 800, y: 390, width: 410, height: 100, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1.5 } }
+  - { id: b4-lab, type: text, z: 30, x: 812, y: 398, width: 390, height: 0, content: { type: plain, value: "4  Federal income tax withheld" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: b4-val, type: text, z: 31, x: 812, y: 426, width: 390, height: 0, content: { type: plain, value: "$  0.00" }, style: { font_family: $mono, font_size: 28, color: "$text", text_align: right, line_height: 1.1 } }
+  # 32 — Box 5 state tax
+  - { id: b5-box, type: rect, z: 32, x: 1230, y: 390, width: 410, height: 100, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: b5-lab, type: text, z: 33, x: 1242, y: 398, width: 390, height: 0, content: { type: plain, value: "5  State tax withheld" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: b5-val, type: text, z: 34, x: 1242, y: 426, width: 390, height: 0, content: { type: plain, value: "$  0.00" }, style: { font_family: $mono, font_size: 28, color: "$text", text_align: right, line_height: 1.1 } }
+  # 35 — Box 6 state/payer no.
+  - { id: b6-box, type: rect, z: 35, x: 800, y: 500, width: 410, height: 100, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: b6-lab, type: text, z: 36, x: 812, y: 508, width: 390, height: 0, content: { type: plain, value: "6  State/Payer's state no." }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: b6-val, type: text, z: 37, x: 812, y: 530, width: 390, height: 0, content: { type: plain, value: "OR · 84-2049371-OR1" }, style: { font_family: $mono, font_size: 18, color: "$text", line_height: 1.4 } }
+  # 38 — Box 7 state income
+  - { id: b7-box, type: rect, z: 38, x: 1230, y: 500, width: 410, height: 100, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: b7-lab, type: text, z: 39, x: 1242, y: 508, width: 390, height: 0, content: { type: plain, value: "7  State income" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: b7-val, type: text, z: 40, x: 1242, y: 536, width: 390, height: 0, content: { type: plain, value: "$  48,750.00" }, style: { font_family: $mono, font_size: 22, color: "$text", text_align: right, line_height: 1.1 } }
+  # 41 — account # footer box
+  - { id: acct-box, type: rect, z: 41, x: 60, y: 720, width: 1580, height: 80, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: acct-lab, type: text, z: 42, x: 72, y: 728, width: 1560, height: 0, content: { type: plain, value: "Account number (see instructions)" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: acct-val, type: text, z: 43, x: 72, y: 750, width: 1560, height: 0, content: { type: plain, value: "ACCT-2025-NEC-7714-DK · FATCA filing requirement: not applicable" }, style: { font_family: $mono, font_size: 16, color: "$text", line_height: 1.4 } }
+  # 44 — watermark
+  - { id: watermark, type: text, z: 90, x: 0, y: 460, width: 1700, height: 0, content: { type: plain, value: "FOR INFORMATIONAL PURPOSES" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: "$text", text_align: center, letter_spacing: 0.2, line_height: 1 }, opacity: 0.08 }
+  # 45 — copy stamp
+  - { id: copy-stamp, type: text, z: 95, x: 60, y: 840, width: 1580, height: 0, content: { type: plain, value: "Copy B — For Recipient. This is important tax information and is being furnished to the IRS." }, style: { font_family: $body, font_size: 12, color: "$text", line_height: 1.4 } }
+  # 46 — footer agency
+  - { id: footer, type: text, z: 96, x: 60, y: 990, width: 1580, height: 0, content: { type: plain, value: "Department of the Treasury · Internal Revenue Service · www.irs.gov/Form1099NEC" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  # 47 — page footer right
+  - { id: pg, type: text, z: 97, x: 60, y: 990, width: 1580, height: 0, content: { type: plain, value: "Cat. No. 72590N" }, style: { font_family: $mono, font_size: 11, color: "$text_muted", text_align: right } }
+
+slots:
+  - { id: tax_year,       path: "layers[9].content.value",  type: text, hint: "Tax year",                default: "2025" }
+  - { id: payer_name,     path: "layers[12].content.value", type: text, hint: "Payer name & address",    default: "Folio Studio Limited\n488 Mission St, Floor 12\nSan Francisco, CA 94105\nTel (415) 555-0188" }
+  - { id: recipient_name, path: "layers[21].content.value", type: text, hint: "Recipient name & address",default: "James K. Donovan\n412 Cherry Lane\nPortland, OR 97214" }

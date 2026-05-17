@@ -1,0 +1,722 @@
+_protocol: template/v1
+
+# Pet vaccination record — 1050×750 landscape, light-clean theme.
+# Pet name + species + DOB header, owner info, 6-row vaccination
+# table (vaccine × date given × next due × veterinarian × clinic),
+# microchip number footer.
+meta:
+  id: tmpl-pet-vaccination-record
+  name: Pet Vaccination Record
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [pet, vaccination, health, vet, record, card, landscape]
+  description: "Pet vaccination record card with pet + owner info, 6-row vaccine table (vaccine, date given, next due, vet, clinic), microchip footer."
+
+document:
+  width: 1050
+  height: 750
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1050
+    height: 750
+    fill: { type: solid, color: "$background" }
+
+  - id: card
+    type: rect
+    z: 1
+    x: 20
+    y: 20
+    width: 1010
+    height: 710
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: top-accent
+    type: rect
+    z: 2
+    x: 20
+    y: 20
+    width: 1010
+    height: 8
+    radius: 4
+    fill: { type: solid, color: "$primary" }
+
+  # ── Header: title + paw icon ──────────────────────────────
+  - id: paw-circle
+    type: circle
+    z: 10
+    x: 40
+    y: 56
+    width: 60
+    height: 60
+    fill: { type: solid, color: "$primary", opacity: 0.18 }
+
+  - id: paw-text
+    type: text
+    z: 11
+    x: 40
+    y: 72
+    width: 60
+    height: 0
+    content: { type: plain, value: "🐾" }
+    style: { font_family: $heading, font_size: 28, text_align: center, line_height: 1 }
+
+  - id: title
+    type: text
+    z: 12
+    x: 120
+    y: 50
+    width: 600
+    height: 0
+    content: { type: plain, value: "VACCINATION RECORD" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $text
+      letter_spacing: 0.05
+
+  - id: subtitle
+    type: text
+    z: 13
+    x: 120
+    y: 88
+    width: 600
+    height: 0
+    content: { type: plain, value: "Official immunization history for veterinary records" }
+    style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.3 }
+
+  - id: rec-id
+    type: text
+    z: 14
+    x: 720
+    y: 50
+    width: 290
+    height: 0
+    content: { type: plain, value: "REC-VAX-2026-0473" }
+    style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, text_align: right, letter_spacing: 0.1 }
+
+  - id: rec-issued
+    type: text
+    z: 15
+    x: 720
+    y: 75
+    width: 290
+    height: 0
+    content: { type: plain, value: "ISSUED 2026-05-17" }
+    style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, text_align: right, letter_spacing: 0.3 }
+
+  # ── Pet + owner info row ──────────────────────────────────
+  - id: info-bg
+    type: rect
+    z: 20
+    x: 40
+    y: 140
+    width: 970
+    height: 110
+    radius: 10
+    fill: { type: solid, color: "$primary", opacity: 0.06 }
+
+  - id: pet-label
+    type: text
+    z: 21
+    x: 60
+    y: 155
+    width: 280
+    height: 0
+    content: { type: plain, value: "PET NAME" }
+    style: { font_family: $body, font_size: 10, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: pet-value
+    type: text
+    z: 22
+    x: 60
+    y: 175
+    width: 280
+    height: 0
+    content: { type: plain, value: "MOCHI" }
+    style: { font_family: $heading, font_size: 22, font_weight: 800, color: $text, line_height: 1.2 }
+
+  - id: pet-species-label
+    type: text
+    z: 23
+    x: 60
+    y: 215
+    width: 280
+    height: 0
+    content: { type: plain, value: "SPECIES · BREED" }
+    style: { font_family: $body, font_size: 10, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: pet-species-value
+    type: text
+    z: 24
+    x: 60
+    y: 232
+    width: 280
+    height: 0
+    content: { type: plain, value: "Cat · Domestic Shorthair" }
+    style: { font_family: $body, font_size: 13, color: $text, line_height: 1.3 }
+
+  - id: dob-label
+    type: text
+    z: 25
+    x: 360
+    y: 155
+    width: 220
+    height: 0
+    content: { type: plain, value: "DATE OF BIRTH" }
+    style: { font_family: $body, font_size: 10, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: dob-value
+    type: text
+    z: 26
+    x: 360
+    y: 175
+    width: 220
+    height: 0
+    content: { type: plain, value: "2023-08-04" }
+    style: { font_family: $heading, font_size: 22, font_weight: 800, color: $text, line_height: 1.2 }
+
+  - id: sex-label
+    type: text
+    z: 27
+    x: 360
+    y: 215
+    width: 220
+    height: 0
+    content: { type: plain, value: "SEX" }
+    style: { font_family: $body, font_size: 10, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: sex-value
+    type: text
+    z: 28
+    x: 360
+    y: 232
+    width: 220
+    height: 0
+    content: { type: plain, value: "Female · Spayed" }
+    style: { font_family: $body, font_size: 13, color: $text, line_height: 1.3 }
+
+  - id: owner-label
+    type: text
+    z: 29
+    x: 600
+    y: 155
+    width: 400
+    height: 0
+    content: { type: plain, value: "OWNER" }
+    style: { font_family: $body, font_size: 10, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: owner-value
+    type: text
+    z: 30
+    x: 600
+    y: 175
+    width: 400
+    height: 0
+    content: { type: plain, value: "Sarah Chen" }
+    style: { font_family: $heading, font_size: 22, font_weight: 800, color: $text, line_height: 1.2 }
+
+  - id: owner-contact-label
+    type: text
+    z: 31
+    x: 600
+    y: 215
+    width: 400
+    height: 0
+    content: { type: plain, value: "PHONE" }
+    style: { font_family: $body, font_size: 10, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: owner-contact-value
+    type: text
+    z: 32
+    x: 600
+    y: 232
+    width: 400
+    height: 0
+    content: { type: plain, value: "(415) 555-0213" }
+    style: { font_family: $body, font_size: 13, color: $text, line_height: 1.3 }
+
+  # ── Table header ──────────────────────────────────────────
+  - id: th-bg
+    type: rect
+    z: 40
+    x: 40
+    y: 280
+    width: 970
+    height: 36
+    radius: 6
+    fill: { type: solid, color: "$text" }
+
+  - id: th-vax
+    type: text
+    z: 41
+    x: 60
+    y: 290
+    width: 230
+    height: 0
+    content: { type: plain, value: "VACCINE" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: th-given
+    type: text
+    z: 42
+    x: 310
+    y: 290
+    width: 150
+    height: 0
+    content: { type: plain, value: "DATE GIVEN" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_align: center, text_transform: uppercase }
+
+  - id: th-next
+    type: text
+    z: 43
+    x: 480
+    y: 290
+    width: 150
+    height: 0
+    content: { type: plain, value: "NEXT DUE" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_align: center, text_transform: uppercase }
+
+  - id: th-vet
+    type: text
+    z: 44
+    x: 650
+    y: 290
+    width: 180
+    height: 0
+    content: { type: plain, value: "VETERINARIAN" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: th-clinic
+    type: text
+    z: 45
+    x: 840
+    y: 290
+    width: 160
+    height: 0
+    content: { type: plain, value: "CLINIC" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase }
+
+  # ── Row 1: FVRCP ──────────────────────────────────────────
+  - id: r1-name
+    type: text
+    z: 50
+    x: 60
+    y: 332
+    width: 230
+    height: 0
+    content: { type: plain, value: "FVRCP" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $text }
+
+  - id: r1-given
+    type: text
+    z: 51
+    x: 310
+    y: 332
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-01-12" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r1-next
+    type: text
+    z: 52
+    x: 480
+    y: 332
+    width: 150
+    height: 0
+    content: { type: plain, value: "2027-01-12" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r1-vet
+    type: text
+    z: 53
+    x: 650
+    y: 332
+    width: 180
+    height: 0
+    content: { type: plain, value: "Dr. R. Singh" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r1-clinic
+    type: text
+    z: 54
+    x: 840
+    y: 332
+    width: 160
+    height: 0
+    content: { type: plain, value: "Bay Pet Care" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r1-rule
+    type: rect
+    z: 55
+    x: 40
+    y: 360
+    width: 970
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Row 2: Rabies ─────────────────────────────────────────
+  - id: r2-name
+    type: text
+    z: 56
+    x: 60
+    y: 375
+    width: 230
+    height: 0
+    content: { type: plain, value: "Rabies (3-year)" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $text }
+
+  - id: r2-given
+    type: text
+    z: 57
+    x: 310
+    y: 375
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-01-12" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r2-next
+    type: text
+    z: 58
+    x: 480
+    y: 375
+    width: 150
+    height: 0
+    content: { type: plain, value: "2029-01-12" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r2-vet
+    type: text
+    z: 59
+    x: 650
+    y: 375
+    width: 180
+    height: 0
+    content: { type: plain, value: "Dr. R. Singh" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r2-clinic
+    type: text
+    z: 60
+    x: 840
+    y: 375
+    width: 160
+    height: 0
+    content: { type: plain, value: "Bay Pet Care" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r2-rule
+    type: rect
+    z: 61
+    x: 40
+    y: 403
+    width: 970
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Row 3: FeLV ───────────────────────────────────────────
+  - id: r3-name
+    type: text
+    z: 62
+    x: 60
+    y: 418
+    width: 230
+    height: 0
+    content: { type: plain, value: "FeLV (Leukemia)" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $text }
+
+  - id: r3-given
+    type: text
+    z: 63
+    x: 310
+    y: 418
+    width: 150
+    height: 0
+    content: { type: plain, value: "2025-12-08" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r3-next
+    type: text
+    z: 64
+    x: 480
+    y: 418
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-12-08" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r3-vet
+    type: text
+    z: 65
+    x: 650
+    y: 418
+    width: 180
+    height: 0
+    content: { type: plain, value: "Dr. R. Singh" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r3-clinic
+    type: text
+    z: 66
+    x: 840
+    y: 418
+    width: 160
+    height: 0
+    content: { type: plain, value: "Bay Pet Care" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r3-rule
+    type: rect
+    z: 67
+    x: 40
+    y: 446
+    width: 970
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Row 4: Bordetella ─────────────────────────────────────
+  - id: r4-name
+    type: text
+    z: 68
+    x: 60
+    y: 461
+    width: 230
+    height: 0
+    content: { type: plain, value: "Bordetella" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $text }
+
+  - id: r4-given
+    type: text
+    z: 69
+    x: 310
+    y: 461
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-03-04" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r4-next
+    type: text
+    z: 70
+    x: 480
+    y: 461
+    width: 150
+    height: 0
+    content: { type: plain, value: "2027-03-04" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r4-vet
+    type: text
+    z: 71
+    x: 650
+    y: 461
+    width: 180
+    height: 0
+    content: { type: plain, value: "Dr. M. Park" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r4-clinic
+    type: text
+    z: 72
+    x: 840
+    y: 461
+    width: 160
+    height: 0
+    content: { type: plain, value: "Bay Pet Care" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r4-rule
+    type: rect
+    z: 73
+    x: 40
+    y: 489
+    width: 970
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Row 5: Deworming ──────────────────────────────────────
+  - id: r5-name
+    type: text
+    z: 74
+    x: 60
+    y: 504
+    width: 230
+    height: 0
+    content: { type: plain, value: "Deworming (oral)" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $text }
+
+  - id: r5-given
+    type: text
+    z: 75
+    x: 310
+    y: 504
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-04-15" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r5-next
+    type: text
+    z: 76
+    x: 480
+    y: 504
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-07-15" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r5-vet
+    type: text
+    z: 77
+    x: 650
+    y: 504
+    width: 180
+    height: 0
+    content: { type: plain, value: "Dr. R. Singh" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r5-clinic
+    type: text
+    z: 78
+    x: 840
+    y: 504
+    width: 160
+    height: 0
+    content: { type: plain, value: "Bay Pet Care" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r5-rule
+    type: rect
+    z: 79
+    x: 40
+    y: 532
+    width: 970
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Row 6: Flea/Tick ──────────────────────────────────────
+  - id: r6-name
+    type: text
+    z: 80
+    x: 60
+    y: 547
+    width: 230
+    height: 0
+    content: { type: plain, value: "Flea & Tick Rx" }
+    style: { font_family: $body, font_size: 14, font_weight: 700, color: $text }
+
+  - id: r6-given
+    type: text
+    z: 81
+    x: 310
+    y: 547
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-05-01" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r6-next
+    type: text
+    z: 82
+    x: 480
+    y: 547
+    width: 150
+    height: 0
+    content: { type: plain, value: "2026-06-01" }
+    style: { font_family: $mono, font_size: 13, color: $text, text_align: center }
+
+  - id: r6-vet
+    type: text
+    z: 83
+    x: 650
+    y: 547
+    width: 180
+    height: 0
+    content: { type: plain, value: "Dr. M. Park" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  - id: r6-clinic
+    type: text
+    z: 84
+    x: 840
+    y: 547
+    width: 160
+    height: 0
+    content: { type: plain, value: "Bay Pet Care" }
+    style: { font_family: $body, font_size: 13, color: $text }
+
+  # ── Microchip footer ──────────────────────────────────────
+  - id: chip-bg
+    type: rect
+    z: 90
+    x: 40
+    y: 610
+    width: 970
+    height: 90
+    radius: 12
+    fill: { type: solid, color: "$primary", opacity: 0.10 }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: chip-label
+    type: text
+    z: 91
+    x: 60
+    y: 625
+    width: 600
+    height: 0
+    content: { type: plain, value: "MICROCHIP NUMBER" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: chip-value
+    type: text
+    z: 92
+    x: 60
+    y: 650
+    width: 600
+    height: 0
+    content: { type: plain, value: "985 1410 0028 3947" }
+    style: { font_family: $mono, font_size: 26, font_weight: 700, color: $text, letter_spacing: 0.2 }
+
+  - id: chip-regis
+    type: text
+    z: 93
+    x: 700
+    y: 638
+    width: 290
+    height: 0
+    content: { type: plain, value: "REGISTERED · HomeAgain" }
+    style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, text_align: right, letter_spacing: 0.3, text_transform: uppercase }
+
+  - id: chip-emerg
+    type: text
+    z: 94
+    x: 700
+    y: 660
+    width: 290
+    height: 0
+    content: { type: plain, value: "1-888-466-3242" }
+    style: { font_family: $mono, font_size: 14, color: $text, text_align: right, letter_spacing: 0.1 }
+
+slots:
+  - { id: pet_name,   path: "layers[11].content.value", type: text, hint: "Pet name",       default: "MOCHI" }
+  - { id: species,    path: "layers[13].content.value", type: text, hint: "Species + breed", default: "Cat · Domestic Shorthair" }
+  - { id: owner_name, path: "layers[19].content.value", type: text, hint: "Owner name",     default: "Sarah Chen" }
+  - { id: microchip,  path: "layers[65].content.value", type: text, hint: "Microchip number", default: "985 1410 0028 3947" }

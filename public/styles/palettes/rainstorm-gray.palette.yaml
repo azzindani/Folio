@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: rainstorm-gray
+name: Rainstorm Gray
+version: "1.0.0"
+tags: [weather, rain, moody, cool, overcast]
+description: "Slate grey and cool blue with dark teal and asphalt — steady pouring rain."
+colors:
+  background: "#DDE2E6"
+  surface:    "#C5CCD2"
+  surface_2:  "#A6AEB6"
+  primary:    "#3A4E60"
+  secondary:  "#5A7282"
+  accent:     "#2E5C68"
+  text:       "#10171C"
+  text_muted: "#48535C"
+  border:     "#8E98A0"
+  success:    "#4A7A6A"
+  warning:    "#B07A2E"
+  danger:     "#8A3A40"
