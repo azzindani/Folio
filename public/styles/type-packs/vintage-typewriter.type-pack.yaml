@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: vintage-typewriter
+name: Vintage Typewriter
+version: "1.0.0"
+tags: [vintage, typewriter, manuscript, screenplay, retro, mechanical]
+description: "Special Elite display with Courier Prime body — manuscript, screenplay, vintage typewriter register."
+families:
+  heading: "Special Elite"
+  body:    "Courier Prime"
+  mono:    "Courier Prime"
+  display: "Special Elite"
+  accent:  "Special Elite"
+scale:
+  h1:
+    size: 56
+    weight: 400
+    line_height: 1.2

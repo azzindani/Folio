@@ -1,0 +1,321 @@
+_protocol: template/v1
+
+# Login page — 1920×1080 landscape, indigo-pro theme.
+# Split layout: brand panel left, sign-in form right.
+meta:
+  id: tmpl-login-page
+  name: Login Page
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, ui, screen, login, auth, sign-in, landscape, indigo]
+  description: "Split login page with brand panel left and email/password sign-in form right."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  # ── Brand panel (left half) ───────────────────────────────
+  - id: brand-panel
+    type: rect
+    z: 5
+    x: 0
+    y: 0
+    width: 960
+    height: 1080
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+
+  - id: brand-glow
+    type: circle
+    z: 6
+    cx: 240
+    cy: 880
+    rx: 520
+    ry: 520
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.5
+
+  # ── Brand logo mark ───────────────────────────────────────
+  - id: logo-bg
+    type: rect
+    z: 10
+    x: 80
+    y: 80
+    width: 72
+    height: 72
+    radius: 18
+    fill: { type: solid, color: "rgba(255,255,255,0.18)" }
+    stroke: { color: "rgba(255,255,255,0.4)", width: 1 }
+
+  - id: logo-letter
+    type: text
+    z: 11
+    x: 80
+    y: 96
+    width: 72
+    height: 0
+    content: { type: plain, value: "F" }
+    style:
+      font_family: $heading
+      font_size: 42
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+
+  - id: brand-name
+    type: text
+    z: 12
+    x: 80
+    y: 420
+    width: 800
+    height: 0
+    content: { type: plain, value: "Folio" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 800
+      color: "#FFFFFF"
+      letter_spacing: -0.02
+      line_height: 1
+
+  - id: tagline
+    type: text
+    z: 13
+    x: 80
+    y: 530
+    width: 800
+    height: 0
+    content: { type: plain, value: "Design at the speed of thought.\nWelcome back — let's keep building." }
+    style:
+      font_family: $body
+      font_size: 26
+      color: "rgba(255,255,255,0.88)"
+      line_height: 1.4
+
+  # ── Image placeholder card ────────────────────────────────
+  - id: image-placeholder
+    type: rect
+    z: 14
+    x: 80
+    y: 720
+    width: 800
+    height: 280
+    radius: 24
+    fill: { type: solid, color: "rgba(255,255,255,0.12)" }
+    stroke: { color: "rgba(255,255,255,0.25)", width: 1 }
+
+  - id: image-placeholder-label
+    type: text
+    z: 15
+    x: 80
+    y: 838
+    width: 800
+    height: 0
+    content: { type: plain, value: "✶  Trusted by 1M+ designers" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 600
+      color: "rgba(255,255,255,0.85)"
+      text_align: center
+      letter_spacing: 0.02
+
+  # ── Form panel (right half) ───────────────────────────────
+  - id: form-heading
+    type: text
+    z: 20
+    x: 1080
+    y: 280
+    width: 720
+    height: 0
+    content: { type: plain, value: "Sign in" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $text
+      letter_spacing: -0.02
+
+  - id: form-sub
+    type: text
+    z: 21
+    x: 1080
+    y: 354
+    width: 720
+    height: 0
+    content: { type: plain, value: "Use your work email to continue." }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+
+  # Email field
+  - id: email-label
+    type: text
+    z: 22
+    x: 1080
+    y: 444
+    width: 720
+    height: 0
+    content: { type: plain, value: "Email" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.1
+
+  - id: email-input
+    type: rect
+    z: 23
+    x: 1080
+    y: 472
+    width: 720
+    height: 64
+    radius: 14
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: email-placeholder
+    type: text
+    z: 24
+    x: 1104
+    y: 490
+    width: 600
+    height: 0
+    content: { type: plain, value: "you@company.com" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+
+  # Password field
+  - id: pw-label
+    type: text
+    z: 25
+    x: 1080
+    y: 568
+    width: 720
+    height: 0
+    content: { type: plain, value: "Password" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.1
+
+  - id: pw-input
+    type: rect
+    z: 26
+    x: 1080
+    y: 596
+    width: 720
+    height: 64
+    radius: 14
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: pw-placeholder
+    type: text
+    z: 27
+    x: 1104
+    y: 614
+    width: 600
+    height: 0
+    content: { type: plain, value: "••••••••••" }
+    style:
+      font_family: $mono
+      font_size: 20
+      color: $text_muted
+
+  # Forgot link
+  - id: forgot-link
+    type: text
+    z: 28
+    x: 1080
+    y: 678
+    width: 720
+    height: 0
+    content: { type: plain, value: "Forgot password?" }
+    style:
+      font_family: $body
+      font_size: 15
+      font_weight: 600
+      color: $primary
+      text_align: right
+
+  # CTA
+  - id: cta-bg
+    type: rect
+    z: 29
+    x: 1080
+    y: 740
+    width: 720
+    height: 72
+    radius: 16
+    fill: { type: solid, color: "$primary" }
+    effects:
+      shadow:
+        - { dx: 0, dy: 12, blur: 28, color: "rgba(99,102,241,0.35)" }
+
+  - id: cta-text
+    type: text
+    z: 30
+    x: 1080
+    y: 762
+    width: 720
+    height: 0
+    content: { type: plain, value: "Sign in" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  # Footer
+  - id: signup-link
+    type: text
+    z: 31
+    x: 1080
+    y: 856
+    width: 720
+    height: 0
+    content: { type: plain, value: "New here?  Create an account →" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: brand_name, path: "layers[6].content.value", type: text, hint: "Brand name on left panel", default: "Folio" }
+  - { id: tagline,    path: "layers[7].content.value", type: text, hint: "Brand tagline (2 lines)",  default: "Design at the speed of thought.\nWelcome back — let's keep building." }

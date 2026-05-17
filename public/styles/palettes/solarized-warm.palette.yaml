@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: solarized-warm
+name: Solarized Warm
+version: "1.0.0"
+tags: [tech, solarized, ide, editor, warm, classic]
+description: "Solarized base with warm orange accent, magenta, cyan, olive — editor classic, warm side."
+colors:
+  background: "#FDF6E3"
+  surface:    "#EEE8D5"
+  surface_2:  "#E4DCC2"
+  primary:    "#CB4B16"
+  secondary:  "#D33682"
+  accent:     "#268BD2"
+  text:       "#073642"
+  text_muted: "#586E75"
+  border:     "#C9C2A8"
+  success:    "#859900"
+  warning:    "#B58900"
+  danger:     "#DC322F"

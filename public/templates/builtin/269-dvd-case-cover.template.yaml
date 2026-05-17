@@ -1,0 +1,261 @@
+_protocol: template/v1
+
+# DVD case front (1100×1600 portrait — standard DVD keep-case ratio).
+# Dark-tech: title prominent, tagline, hero image plate,
+# studio + format strip (DVD · DOLBY DIGITAL · 16:9).
+meta:
+  id: tmpl-dvd-case-cover
+  name: DVD Case Cover
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, dvd, movie, case, cover, dark, portrait]
+  description: "DVD case front with title, tagline, hero plate, and studio/format strip."
+
+document:
+  width: 1100
+  height: 1600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1100
+    height: 1600
+    fill:
+      type: linear
+      angle: 165
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: vignette
+    type: circle
+    z: 1
+    cx: 550
+    cy: 600
+    rx: 700
+    ry: 700
+    fill:
+      type: radial
+      stops:
+        - { color: "transparent", position: 0 }
+        - { color: "$background", position: 100 }
+    opacity: 0.8
+
+  - id: top-accent-stripe
+    type: rect
+    z: 2
+    x: 60
+    y: 60
+    width: 200
+    height: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: studio-eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 100
+    width: 980
+    height: 0
+    content: { type: plain, value: "ARGENT NORTH PICTURES PRESENTS" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: hero-plate
+    type: rect
+    z: 11
+    x: 60
+    y: 150
+    width: 980
+    height: 820
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.85
+
+  - id: hero-light-cone
+    type: polygon
+    z: 12
+    points: "550,180  720,940  380,940"
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.35
+
+  - id: hero-silhouette
+    type: rect
+    z: 13
+    x: 480
+    y: 600
+    width: 140
+    height: 340
+    radius: 12
+    fill: { type: solid, color: "$background" }
+    opacity: 0.95
+
+  - id: hero-silhouette-head
+    type: circle
+    z: 14
+    cx: 550
+    cy: 580
+    rx: 50
+    ry: 50
+    fill: { type: solid, color: "$background" }
+    opacity: 0.95
+
+  - id: hero-label
+    type: text
+    z: 15
+    x: 60
+    y: 944
+    width: 980
+    height: 0
+    content: { type: plain, value: "[ HERO IMAGE ]" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: title-line-1
+    type: text
+    z: 20
+    x: 60
+    y: 1040
+    width: 980
+    height: 0
+    content: { type: plain, value: "THE LAST" }
+    style:
+      font_family: $heading
+      font_size: 110
+      font_weight: 900
+      color: $text
+      line_height: 0.92
+      letter_spacing: -0.025
+      text_align: center
+      text_transform: uppercase
+
+  - id: title-line-2
+    type: text
+    z: 21
+    x: 60
+    y: 1140
+    width: 980
+    height: 0
+    content: { type: plain, value: "NAVIGATOR" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $primary
+      line_height: 0.92
+      letter_spacing: -0.03
+      text_align: center
+      text_transform: uppercase
+
+  - id: tagline-rule-left
+    type: rect
+    z: 30
+    x: 200
+    y: 1310
+    width: 100
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.7
+
+  - id: tagline-rule-right
+    type: rect
+    z: 31
+    x: 800
+    y: 1310
+    width: 100
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.7
+
+  - id: tagline
+    type: text
+    z: 32
+    x: 60
+    y: 1330
+    width: 980
+    height: 0
+    content: { type: plain, value: "Some stars only burn once." }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 400
+      font_style: italic
+      color: $text
+      letter_spacing: 0.02
+      text_align: center
+
+  - id: format-strip
+    type: rect
+    z: 40
+    x: 60
+    y: 1440
+    width: 980
+    height: 60
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: format-strip-text
+    type: text
+    z: 41
+    x: 60
+    y: 1460
+    width: 980
+    height: 0
+    content: { type: plain, value: "DVD · DOLBY DIGITAL 5.1 · 16:9 WIDESCREEN · 142 MIN" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: studio-footer
+    type: text
+    z: 42
+    x: 60
+    y: 1530
+    width: 980
+    height: 0
+    content: { type: plain, value: "ARGENT NORTH PICTURES · © 2026" }
+    style:
+      font_family: $mono
+      font_size: 11
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: title,           path: "layers[11].content.value", type: text, hint: "Title line 1 (or full)", default: "THE LAST" }
+  - { id: tagline,         path: "layers[15].content.value", type: text, hint: "Tagline",                default: "Some stars only burn once." }
+  - { id: runtime_minutes, path: "layers[17].content.value", type: text, hint: "Format/runtime strip",   default: "DVD · DOLBY DIGITAL 5.1 · 16:9 WIDESCREEN · 142 MIN" }
+  - { id: year,            path: "layers[18].content.value", type: text, hint: "Studio + year",          default: "ARGENT NORTH PICTURES · © 2026" }

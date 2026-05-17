@@ -1,0 +1,215 @@
+_protocol: template/v1
+
+# Phone wallpaper — 1170×2532 portrait (iPhone 14 Pro), galaxy-deep via indigo-pro.
+# Gradient backdrop, constellation circles + star dots, optional centered quote.
+meta:
+  id: tmpl-phone-wallpaper
+  name: Phone Wallpaper
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [wallpaper, phone, iphone, mobile, galaxy, portrait, indigo]
+  description: "Abstract iPhone wallpaper with gradient backdrop, constellation circles, scattered star dots, and optional quote."
+
+document:
+  width: 1170
+  height: 2532
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  # ── Deep-space gradient backdrop ──────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1170
+    height: 2532
+    fill:
+      type: linear
+      angle: 165
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 60 }
+        - { color: "$primary", position: 100 }
+
+  # ── Ambient radial glow ───────────────────────────────────
+  - id: glow-top
+    type: circle
+    z: 1
+    cx: 280
+    cy: 460
+    rx: 620
+    ry: 620
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.5
+
+  - id: glow-bottom
+    type: circle
+    z: 2
+    cx: 940
+    cy: 2100
+    rx: 720
+    ry: 720
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.45
+
+  # ── Large constellation ring ──────────────────────────────
+  - id: ring-outer
+    type: circle
+    z: 10
+    cx: 585
+    cy: 1266
+    rx: 480
+    ry: 480
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 1, opacity: 0.35 }
+
+  - id: ring-inner
+    type: circle
+    z: 11
+    cx: 585
+    cy: 1266
+    rx: 340
+    ry: 340
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 1, opacity: 0.25 }
+
+  # ── Star dots (scattered) ─────────────────────────────────
+  - id: star-1
+    type: circle
+    z: 20
+    cx: 180
+    cy: 320
+    rx: 4
+    ry: 4
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.85
+
+  - id: star-2
+    type: circle
+    z: 21
+    cx: 880
+    cy: 410
+    rx: 3
+    ry: 3
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.7
+
+  - id: star-3
+    type: circle
+    z: 22
+    cx: 420
+    cy: 640
+    rx: 5
+    ry: 5
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.95
+
+  - id: star-4
+    type: circle
+    z: 23
+    cx: 1020
+    cy: 880
+    rx: 3
+    ry: 3
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.6
+
+  - id: star-5
+    type: circle
+    z: 24
+    cx: 140
+    cy: 1180
+    rx: 4
+    ry: 4
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.8
+
+  - id: star-6
+    type: circle
+    z: 25
+    cx: 950
+    cy: 1620
+    rx: 3
+    ry: 3
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.7
+
+  - id: star-7
+    type: circle
+    z: 26
+    cx: 260
+    cy: 1880
+    rx: 5
+    ry: 5
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.9
+
+  - id: star-8
+    type: circle
+    z: 27
+    cx: 780
+    cy: 2160
+    rx: 4
+    ry: 4
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.75
+
+  - id: star-9
+    type: circle
+    z: 28
+    cx: 540
+    cy: 2360
+    rx: 3
+    ry: 3
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.65
+
+  # ── Center mark ───────────────────────────────────────────
+  - id: center-dot
+    type: circle
+    z: 30
+    cx: 585
+    cy: 1266
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "$accent" }
+    effects:
+      shadow:
+        - { dx: 0, dy: 0, blur: 24, color: "$accent" }
+
+  # ── Optional quote ────────────────────────────────────────
+  - id: quote
+    type: text
+    z: 40
+    x: 120
+    y: 1860
+    width: 930
+    height: 0
+    content: { type: plain, value: "Look up. We are made of stars." }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 500
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.4
+      letter_spacing: 0.02
+    opacity: 0.85
+
+slots:
+  - { id: optional_quote, path: "layers[16].content.value", type: text, hint: "Optional centered quote", default: "Look up. We are made of stars." }

@@ -1,0 +1,200 @@
+_protocol: template/v1
+
+# Notification card — 1080×400 landscape, light-clean theme.
+# App icon, app name + timestamp, headline, body (2 lines), action button row.
+meta:
+  id: tmpl-notification-card
+  name: Notification Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [notification, card, mobile, ios, alert, landscape, light]
+  description: "App notification bubble with icon, app name, timestamp, headline, body, and an action button."
+
+document:
+  width: 1080
+  height: 400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Card backdrop ─────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 400
+    fill: { type: solid, color: "$background" }
+
+  - id: card
+    type: rect
+    z: 1
+    x: 32
+    y: 32
+    width: 1016
+    height: 336
+    radius: 32
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 12, blur: 32, color: "rgba(15,23,42,0.10)" }
+
+  # ── App icon ──────────────────────────────────────────────
+  - id: app-icon
+    type: rect
+    z: 10
+    x: 64
+    y: 72
+    width: 84
+    height: 84
+    radius: 20
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+
+  - id: app-icon-letter
+    type: text
+    z: 11
+    x: 64
+    y: 90
+    width: 84
+    height: 0
+    content: { type: plain, value: "F" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+
+  # ── App name + timestamp ──────────────────────────────────
+  - id: app-name
+    type: text
+    z: 20
+    x: 176
+    y: 84
+    width: 600
+    height: 0
+    content: { type: plain, value: "FOLIO" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.18
+
+  - id: timestamp
+    type: text
+    z: 21
+    x: 800
+    y: 84
+    width: 216
+    height: 0
+    content: { type: plain, value: "now" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 500
+      color: $text_muted
+      text_align: right
+
+  # ── Headline ──────────────────────────────────────────────
+  - id: headline
+    type: text
+    z: 30
+    x: 176
+    y: 116
+    width: 840
+    height: 0
+    content: { type: plain, value: "Your design is ready to share" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 700
+      color: $text
+      letter_spacing: -0.01
+
+  # ── Body ──────────────────────────────────────────────────
+  - id: body
+    type: text
+    z: 31
+    x: 176
+    y: 162
+    width: 840
+    height: 0
+    content: { type: plain, value: "Acme Brand Kit · v2.5 has finished exporting to PDF.\nTap to view, copy a link, or send to your team." }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      line_height: 1.4
+
+  # ── Action button row ─────────────────────────────────────
+  - id: action-bg
+    type: rect
+    z: 40
+    x: 176
+    y: 276
+    width: 200
+    height: 56
+    radius: 28
+    fill: { type: solid, color: "$primary" }
+
+  - id: action-text
+    type: text
+    z: 41
+    x: 176
+    y: 290
+    width: 200
+    height: 0
+    content: { type: plain, value: "View" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: dismiss-bg
+    type: rect
+    z: 42
+    x: 396
+    y: 276
+    width: 200
+    height: 56
+    radius: 28
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: dismiss-text
+    type: text
+    z: 43
+    x: 396
+    y: 290
+    width: 200
+    height: 0
+    content: { type: plain, value: "Dismiss" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 600
+      color: $text
+      text_align: center
+
+slots:
+  - { id: app_name,     path: "layers[4].content.value",  type: text, hint: "App name (uppercase)", default: "FOLIO" }
+  - { id: timestamp,    path: "layers[5].content.value",  type: text, hint: "Timestamp",            default: "now" }
+  - { id: headline,     path: "layers[6].content.value",  type: text, hint: "Headline (1 line)",    default: "Your design is ready to share" }
+  - { id: body,         path: "layers[7].content.value",  type: text, hint: "Body (2 lines)",       default: "Acme Brand Kit · v2.5 has finished exporting to PDF.\nTap to view, copy a link, or send to your team." }
+  - { id: action_label, path: "layers[9].content.value",  type: text, hint: "Action button label",  default: "View" }

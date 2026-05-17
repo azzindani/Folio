@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: mosque-emerald
+name: Mosque Emerald
+version: "1.0.0"
+tags: [religious, islamic, mosque, emerald, gold, sacred]
+description: "Deep emerald, gold, cream, sapphire, black ink — Islamic mosque calligraphy."
+colors:
+  background: "#F5EFDD"
+  surface:    "#ECE2C2"
+  surface_2:  "#E0D2A4"
+  primary:    "#0F5A3E"
+  secondary:  "#C9A04A"
+  accent:     "#1F3A7A"
+  text:       "#0A0A0A"
+  text_muted: "#5A5040"
+  border:     "#CBBE92"
+  success:    "#0F5A3E"
+  warning:    "#C9A04A"
+  danger:     "#A83838"

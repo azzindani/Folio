@@ -1,0 +1,348 @@
+_protocol: template/v1
+
+# Lock screen widget — 1170×2532 portrait (iPhone), dark-tech theme.
+# Big clock + date, weather widget, calendar widget, notification preview.
+meta:
+  id: tmpl-lock-screen-widget
+  name: Lock Screen Widget
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [lock-screen, widget, iphone, mobile, ios, portrait, dark]
+  description: "iPhone lockscreen layout with big clock, date, weather + calendar widgets, and a notification preview."
+
+document:
+  width: 1170
+  height: 2532
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  # ── Background (dark gradient) ────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1170
+    height: 2532
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "#000000", position: 100 }
+
+  # ── Ambient glow ──────────────────────────────────────────
+  - id: glow
+    type: circle
+    z: 1
+    cx: 585
+    cy: 1900
+    rx: 720
+    ry: 720
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.3
+
+  # ── Status bar mock ───────────────────────────────────────
+  - id: status-time
+    type: text
+    z: 5
+    x: 60
+    y: 64
+    width: 200
+    height: 0
+    content: { type: plain, value: "9:41" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 700
+      color: "#FFFFFF"
+
+  - id: status-right
+    type: text
+    z: 6
+    x: 870
+    y: 64
+    width: 240
+    height: 0
+    content: { type: plain, value: "•••  📶  100%" }
+    style:
+      font_family: $body
+      font_size: 22
+      color: "#FFFFFF"
+      text_align: right
+
+  # ── Date (above clock) ────────────────────────────────────
+  - id: date
+    type: text
+    z: 10
+    x: 60
+    y: 260
+    width: 1050
+    height: 0
+    content: { type: plain, value: "Sunday, May 17" }
+    style:
+      font_family: $body
+      font_size: 34
+      font_weight: 500
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.02
+    opacity: 0.85
+
+  # ── Time (huge) ───────────────────────────────────────────
+  - id: time
+    type: text
+    z: 11
+    x: 60
+    y: 340
+    width: 1050
+    height: 0
+    content: { type: plain, value: "9:41" }
+    style:
+      font_family: $heading
+      font_size: 260
+      font_weight: 300
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: -0.06
+      line_height: 1
+
+  # ── Weather widget ────────────────────────────────────────
+  - id: weather-bg
+    type: rect
+    z: 20
+    x: 60
+    y: 780
+    width: 510
+    height: 240
+    radius: 32
+    fill: { type: solid, color: "rgba(255,255,255,0.12)" }
+    stroke: { color: "rgba(255,255,255,0.16)", width: 1 }
+
+  - id: weather-label
+    type: text
+    z: 21
+    x: 96
+    y: 816
+    width: 440
+    height: 0
+    content: { type: plain, value: "WEATHER" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: "rgba(255,255,255,0.7)"
+      letter_spacing: 0.22
+
+  - id: weather-sun
+    type: circle
+    z: 22
+    cx: 130
+    cy: 920
+    rx: 36
+    ry: 36
+    fill: { type: solid, color: "$accent" }
+
+  - id: weather-temp
+    type: text
+    z: 23
+    x: 200
+    y: 868
+    width: 340
+    height: 0
+    content: { type: plain, value: "72°" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 700
+      color: "#FFFFFF"
+      line_height: 1
+
+  - id: weather-cond
+    type: text
+    z: 24
+    x: 96
+    y: 970
+    width: 440
+    height: 0
+    content: { type: plain, value: "Sunny · H:78° L:64°" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: "rgba(255,255,255,0.8)"
+
+  # ── Calendar widget ───────────────────────────────────────
+  - id: cal-bg
+    type: rect
+    z: 30
+    x: 600
+    y: 780
+    width: 510
+    height: 240
+    radius: 32
+    fill: { type: solid, color: "rgba(255,255,255,0.12)" }
+    stroke: { color: "rgba(255,255,255,0.16)", width: 1 }
+
+  - id: cal-label
+    type: text
+    z: 31
+    x: 636
+    y: 816
+    width: 440
+    height: 0
+    content: { type: plain, value: "UP NEXT" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 700
+      color: "rgba(255,255,255,0.7)"
+      letter_spacing: 0.22
+
+  - id: cal-bar
+    type: rect
+    z: 32
+    x: 636
+    y: 856
+    width: 6
+    height: 120
+    radius: 3
+    fill: { type: solid, color: "$accent" }
+
+  - id: event-title
+    type: text
+    z: 33
+    x: 660
+    y: 856
+    width: 420
+    height: 0
+    content: { type: plain, value: "Design Review" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "#FFFFFF"
+
+  - id: event-time
+    type: text
+    z: 34
+    x: 660
+    y: 906
+    width: 420
+    height: 0
+    content: { type: plain, value: "3:00 PM – 4:00 PM" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: "rgba(255,255,255,0.8)"
+
+  - id: event-loc
+    type: text
+    z: 35
+    x: 660
+    y: 950
+    width: 420
+    height: 0
+    content: { type: plain, value: "Conference Room A" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: "rgba(255,255,255,0.6)"
+
+  # ── Notification preview card ─────────────────────────────
+  - id: notif-bg
+    type: rect
+    z: 40
+    x: 60
+    y: 2080
+    width: 1050
+    height: 200
+    radius: 28
+    fill: { type: solid, color: "rgba(255,255,255,0.14)" }
+    stroke: { color: "rgba(255,255,255,0.2)", width: 1 }
+
+  - id: notif-icon
+    type: rect
+    z: 41
+    x: 90
+    y: 2110
+    width: 64
+    height: 64
+    radius: 14
+    fill: { type: solid, color: "$primary" }
+
+  - id: notif-app
+    type: text
+    z: 42
+    x: 174
+    y: 2106
+    width: 800
+    height: 0
+    content: { type: plain, value: "Messages · now" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 600
+      color: "rgba(255,255,255,0.7)"
+
+  - id: notif-headline
+    type: text
+    z: 43
+    x: 174
+    y: 2136
+    width: 880
+    height: 0
+    content: { type: plain, value: "Sam Carter" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "#FFFFFF"
+
+  - id: notif-body
+    type: text
+    z: 44
+    x: 174
+    y: 2178
+    width: 880
+    height: 0
+    content: { type: plain, value: "Heads up — pushed the new branch. Quick look when you can?" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: "rgba(255,255,255,0.85)"
+      line_height: 1.3
+
+  # ── Flashlight + camera dots ──────────────────────────────
+  - id: fl-bg
+    type: circle
+    z: 50
+    cx: 160
+    cy: 2400
+    rx: 44
+    ry: 44
+    fill: { type: solid, color: "rgba(255,255,255,0.16)" }
+
+  - id: cam-bg
+    type: circle
+    z: 51
+    cx: 1010
+    cy: 2400
+    rx: 44
+    ry: 44
+    fill: { type: solid, color: "rgba(255,255,255,0.16)" }
+
+slots:
+  - { id: time,         path: "layers[5].content.value",  type: text, hint: "Clock (H:MM)",           default: "9:41" }
+  - { id: date,         path: "layers[4].content.value",  type: text, hint: "Date string",            default: "Sunday, May 17" }
+  - { id: weather_temp, path: "layers[10].content.value", type: text, hint: "Weather temperature",   default: "72°" }
+  - { id: event_title,  path: "layers[15].content.value", type: text, hint: "Next calendar event",   default: "Design Review" }

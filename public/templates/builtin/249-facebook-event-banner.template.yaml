@@ -1,0 +1,328 @@
+_protocol: template/v1
+
+# Facebook event cover banner — 1920×1080 landscape, editorial-cream.
+# Event name dominates left half; date/time/location row beneath;
+# host org card and RSVP CTA on the right.
+meta:
+  id: tmpl-facebook-event-banner
+  name: Facebook Event Banner
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, social, facebook, event, banner, landscape, editorial]
+  description: "Facebook event cover banner with event name, date/time/location row, host badge, and RSVP CTA."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  # ── Right accent panel ────────────────────────────────────
+  - id: right-panel
+    type: rect
+    z: 1
+    x: 1280
+    y: 0
+    width: 640
+    height: 1080
+    fill: { type: solid, color: "$primary" }
+
+  # ── Decorative left blob ──────────────────────────────────
+  - id: deco-blob
+    type: circle
+    z: 2
+    cx: 120
+    cy: 980
+    rx: 280
+    ry: 280
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.18
+
+  # ── Eyebrow ───────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 100
+    y: 140
+    width: 1100
+    height: 0
+    content: { type: plain, value: "YOU'RE INVITED · IN-PERSON & ONLINE" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  # ── Eyebrow rule ──────────────────────────────────────────
+  - id: eyebrow-rule
+    type: rect
+    z: 11
+    x: 100
+    y: 190
+    width: 80
+    height: 4
+    radius: 2
+    fill: { type: solid, color: "$accent" }
+
+  # ── Event name ────────────────────────────────────────────
+  - id: event-name
+    type: text
+    z: 12
+    x: 100
+    y: 240
+    width: 1140
+    height: 0
+    content: { type: plain, value: "Hometown\nBook Fair 2026" }
+    style:
+      font_family: $heading
+      font_size: 132
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.03
+
+  # ── Date row label ────────────────────────────────────────
+  - id: date-label
+    type: text
+    z: 20
+    x: 100
+    y: 600
+    width: 360
+    height: 0
+    content: { type: plain, value: "DATE" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: date-value
+    type: text
+    z: 21
+    x: 100
+    y: 630
+    width: 360
+    height: 0
+    content: { type: plain, value: "Saturday\nJune 13" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 700
+      color: $text
+      line_height: 1.15
+
+  # ── Time row label ────────────────────────────────────────
+  - id: time-label
+    type: text
+    z: 22
+    x: 500
+    y: 600
+    width: 360
+    height: 0
+    content: { type: plain, value: "TIME" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: time-value
+    type: text
+    z: 23
+    x: 500
+    y: 630
+    width: 360
+    height: 0
+    content: { type: plain, value: "10:00 AM\n– 6:00 PM" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 700
+      color: $text
+      line_height: 1.15
+
+  # ── Location row label ────────────────────────────────────
+  - id: loc-label
+    type: text
+    z: 24
+    x: 900
+    y: 600
+    width: 360
+    height: 0
+    content: { type: plain, value: "WHERE" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: loc-value
+    type: text
+    z: 25
+    x: 900
+    y: 630
+    width: 360
+    height: 0
+    content: { type: plain, value: "Riverside\nCommunity Hall" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 700
+      color: $text
+      line_height: 1.15
+
+  # ── Bottom divider ────────────────────────────────────────
+  - id: bottom-divider
+    type: rect
+    z: 30
+    x: 100
+    y: 860
+    width: 1140
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Hosted-by label ───────────────────────────────────────
+  - id: hosted-label
+    type: text
+    z: 31
+    x: 100
+    y: 900
+    width: 600
+    height: 0
+    content: { type: plain, value: "HOSTED BY" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: hosted-org
+    type: text
+    z: 32
+    x: 100
+    y: 928
+    width: 800
+    height: 0
+    content: { type: plain, value: "Riverside Public Library Foundation" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  # ── RSVP CTA box on right ─────────────────────────────────
+  - id: rsvp-label
+    type: text
+    z: 40
+    x: 1340
+    y: 380
+    width: 520
+    height: 0
+    content: { type: plain, value: "RSVP" }
+    style:
+      font_family: $mono
+      font_size: 24
+      font_weight: 800
+      color: "#FFFFFF"
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+      line_height: 1.3
+
+  - id: rsvp-big
+    type: text
+    z: 41
+    x: 1340
+    y: 430
+    width: 520
+    height: 0
+    content: { type: plain, value: "Free\nTickets" }
+    style:
+      font_family: $heading
+      font_size: 88
+      font_weight: 800
+      color: "#FFFFFF"
+      line_height: 1
+      letter_spacing: -0.03
+      text_align: center
+
+  - id: rsvp-url
+    type: text
+    z: 42
+    x: 1340
+    y: 660
+    width: 520
+    height: 0
+    content: { type: plain, value: "facebook.com/events/hbf26" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 600
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+
+  - id: rsvp-cta-pill
+    type: rect
+    z: 43
+    x: 1380
+    y: 740
+    width: 440
+    height: 80
+    radius: 40
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: rsvp-cta-text
+    type: text
+    z: 44
+    x: 1380
+    y: 758
+    width: 440
+    height: 0
+    content: { type: plain, value: "TAP TO JOIN  →" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.04
+
+slots:
+  - { id: event_name, path: "layers[5].content.value",  type: text, hint: "Event name (2 lines)", default: "Hometown\nBook Fair 2026" }
+  - { id: event_date, path: "layers[7].content.value",  type: text, hint: "Event date",           default: "Saturday\nJune 13" }
+  - { id: event_time, path: "layers[9].content.value",  type: text, hint: "Event time",           default: "10:00 AM\n– 6:00 PM" }
+  - { id: location,   path: "layers[11].content.value", type: text, hint: "Venue / location",     default: "Riverside\nCommunity Hall" }
+  - { id: host_org,   path: "layers[14].content.value", type: text, hint: "Hosting organisation", default: "Riverside Public Library Foundation" }

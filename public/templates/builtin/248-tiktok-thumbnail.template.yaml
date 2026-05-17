@@ -1,0 +1,224 @@
+_protocol: template/v1
+
+# TikTok thumbnail — 1080×1920 portrait, cyber-synthwave theme.
+# Text-on-top hook, emoji + number badge, creator handle, and a
+# sound-name overlay near the bottom.
+meta:
+  id: tmpl-tiktok-thumbnail
+  name: TikTok Thumbnail
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, social, tiktok, video, thumbnail, portrait, synthwave]
+  description: "TikTok video cover/thumbnail with text hook, viral-stat badge, creator handle, and sound overlay."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill:
+      type: linear
+      angle: 170
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  # ── Synth grid lines ──────────────────────────────────────
+  - id: grid-h1
+    type: rect
+    z: 1
+    x: 0
+    y: 1300
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.4
+
+  - id: grid-h2
+    type: rect
+    z: 1
+    x: 0
+    y: 1500
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.3
+
+  - id: grid-h3
+    type: rect
+    z: 1
+    x: 0
+    y: 1700
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.2
+
+  # ── Neon halo ─────────────────────────────────────────────
+  - id: neon-glow
+    type: circle
+    z: 2
+    cx: 540
+    cy: 700
+    rx: 540
+    ry: 540
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.28
+
+  # ── Viral stat badge ──────────────────────────────────────
+  - id: badge-bg
+    type: rect
+    z: 10
+    x: 80
+    y: 140
+    width: 360
+    height: 96
+    radius: 24
+    fill: { type: solid, color: "$primary" }
+
+  - id: badge-text
+    type: text
+    z: 11
+    x: 80
+    y: 165
+    width: 360
+    height: 0
+    content: { type: plain, value: "🔥 2.7M VIEWS" }
+    style:
+      font_family: $heading
+      font_size: 34
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.02
+
+  # ── Top accent stripe ─────────────────────────────────────
+  - id: stripe
+    type: rect
+    z: 12
+    x: 80
+    y: 260
+    width: 80
+    height: 8
+    radius: 4
+    fill: { type: solid, color: "$accent" }
+
+  # ── Main hook ─────────────────────────────────────────────
+  - id: hook
+    type: text
+    z: 20
+    x: 60
+    y: 580
+    width: 960
+    height: 0
+    content: { type: plain, value: "POV:\nyou opened\nthe AI app." }
+    style:
+      font_family: $heading
+      font_size: 200
+      font_weight: 900
+      color: "$text"
+      line_height: 1
+      letter_spacing: -0.04
+      text_align: center
+
+  # ── Hook outline / shadow stamp ───────────────────────────
+  - id: hook-tag
+    type: text
+    z: 21
+    x: 60
+    y: 1180
+    width: 960
+    height: 0
+    content: { type: plain, value: "#PromptHack" }
+    style:
+      font_family: $mono
+      font_size: 44
+      font_weight: 800
+      color: $accent
+      text_align: center
+      line_height: 1.2
+      letter_spacing: 0.02
+
+  # ── Creator handle pill ───────────────────────────────────
+  - id: creator-pill
+    type: rect
+    z: 30
+    x: 240
+    y: 1740
+    width: 600
+    height: 70
+    radius: 35
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: creator-handle
+    type: text
+    z: 31
+    x: 240
+    y: 1758
+    width: 600
+    height: 0
+    content: { type: plain, value: "@ai_promptlab" }
+    style:
+      font_family: $mono
+      font_size: 30
+      font_weight: 700
+      color: "$text"
+      text_align: center
+      line_height: 1.3
+
+  # ── Sound overlay ─────────────────────────────────────────
+  - id: sound-icon
+    type: text
+    z: 40
+    x: 60
+    y: 1840
+    width: 60
+    height: 0
+    content: { type: plain, value: "♫" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 700
+      color: "$text"
+      line_height: 1
+
+  - id: sound-name
+    type: text
+    z: 41
+    x: 120
+    y: 1850
+    width: 900
+    height: 0
+    content: { type: plain, value: "original sound — ai_promptlab" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 500
+      color: "$text"
+      line_height: 1.3
+
+slots:
+  - { id: hook,           path: "layers[8].content.value",  type: text, hint: "Main hook text (3 lines)", default: "POV:\nyou opened\nthe AI app." }
+  - { id: creator_handle, path: "layers[11].content.value", type: text, hint: "Creator handle",          default: "@ai_promptlab" }
+  - { id: sound_name,     path: "layers[13].content.value", type: text, hint: "Sound name overlay",      default: "original sound — ai_promptlab" }

@@ -1,0 +1,206 @@
+_protocol: template/v1
+
+# Instagram Reels / Stories cover — 1080×1920 portrait, sunset-glow.
+# Vertical hook layout: huge headline mid-screen, viewer-count badge
+# top, "WATCH NOW" CTA pill bottom, creator handle in the footer.
+meta:
+  id: tmpl-instagram-reels-cover
+  name: Instagram Reels Cover
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, social, instagram, reels, stories, portrait, sunset]
+  description: "Instagram Reels/Stories cover with huge hook headline, viewer count badge, and watch-now CTA."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  # ── Gradient background ───────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill:
+      type: linear
+      angle: 160
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 55 }
+        - { color: "$accent", position: 100 }
+
+  # ── Soft top glow ─────────────────────────────────────────
+  - id: top-glow
+    type: circle
+    z: 1
+    cx: 540
+    cy: 200
+    rx: 600
+    ry: 600
+    fill:
+      type: radial
+      stops:
+        - { color: "#FFFFFF", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.22
+
+  # ── Bottom shadow gradient ────────────────────────────────
+  - id: bottom-shade
+    type: rect
+    z: 2
+    x: 0
+    y: 1200
+    width: 1080
+    height: 720
+    fill:
+      type: linear
+      angle: 180
+      stops:
+        - { color: "transparent", position: 0 }
+        - { color: "#000000", position: 100 }
+    opacity: 0.45
+
+  # ── Viewer count badge ────────────────────────────────────
+  - id: viewer-pill
+    type: rect
+    z: 10
+    x: 360
+    y: 120
+    width: 360
+    height: 64
+    radius: 32
+    fill: { type: solid, color: "#FFFFFF" }
+    opacity: 0.92
+
+  - id: viewer-dot
+    type: circle
+    z: 11
+    cx: 410
+    cy: 152
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "#FF3B30" }
+
+  - id: viewer-count
+    type: text
+    z: 12
+    x: 430
+    y: 135
+    width: 290
+    height: 0
+    content: { type: plain, value: "● 12.4K WATCHING" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 800
+      color: "#1A1A1A"
+      letter_spacing: 0.18
+      text_transform: uppercase
+      line_height: 1.3
+
+  # ── Hook headline ─────────────────────────────────────────
+  - id: hook-headline
+    type: text
+    z: 20
+    x: 80
+    y: 600
+    width: 920
+    height: 0
+    content: { type: plain, value: "I quit my\n$200K job\nin 30 days." }
+    style:
+      font_family: $heading
+      font_size: 180
+      font_weight: 900
+      color: "#FFFFFF"
+      line_height: 1
+      letter_spacing: -0.04
+      text_align: center
+
+  # ── Underline accent ──────────────────────────────────────
+  - id: underline
+    type: rect
+    z: 21
+    x: 380
+    y: 1230
+    width: 320
+    height: 8
+    radius: 4
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Subhead ───────────────────────────────────────────────
+  - id: subhead
+    type: text
+    z: 22
+    x: 80
+    y: 1280
+    width: 920
+    height: 0
+    content: { type: plain, value: "Here's exactly how →" }
+    style:
+      font_family: $body
+      font_size: 44
+      font_weight: 500
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+      letter_spacing: -0.01
+
+  # ── Watch-now CTA pill ────────────────────────────────────
+  - id: cta-pill
+    type: rect
+    z: 30
+    x: 240
+    y: 1620
+    width: 600
+    height: 120
+    radius: 60
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: cta-text
+    type: text
+    z: 31
+    x: 240
+    y: 1652
+    width: 600
+    height: 0
+    content: { type: plain, value: "▶  WATCH NOW" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $primary
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.04
+
+  # ── Creator handle ────────────────────────────────────────
+  - id: creator-handle
+    type: text
+    z: 40
+    x: 80
+    y: 1810
+    width: 920
+    height: 0
+    content: { type: plain, value: "@careerpivot.daily" }
+    style:
+      font_family: $mono
+      font_size: 28
+      font_weight: 600
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+
+slots:
+  - { id: hook_headline, path: "layers[6].content.value",  type: text, hint: "Hook headline (3 lines)", default: "I quit my\n$200K job\nin 30 days." }
+  - { id: viewer_count,  path: "layers[5].content.value",  type: text, hint: "Viewer count badge",      default: "● 12.4K WATCHING" }
+  - { id: creator_handle,path: "layers[11].content.value", type: text, hint: "Creator handle",          default: "@careerpivot.daily" }

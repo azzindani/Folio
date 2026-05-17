@@ -1,0 +1,486 @@
+_protocol: template/v1
+
+# Brand guidelines page — 1240×1754 (A4), editorial-cream theme.
+# Company + version eyebrow, 4 color swatches with hex, 3 type specimens, logo grid.
+meta:
+  id: tmpl-brand-guidelines-page
+  name: Brand Guidelines Page
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [brand, guidelines, style-guide, identity, a4, editorial, cream]
+  description: "A4 brand guidelines page with color swatches, type specimens, and a logo construction grid."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # ── Eyebrow + version ─────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 5
+    x: 80
+    y: 90
+    width: 800
+    height: 0
+    content: { type: plain, value: "ACME CO · BRAND GUIDELINES" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.3
+
+  - id: version
+    type: text
+    z: 6
+    x: 360
+    y: 90
+    width: 800
+    height: 0
+    content: { type: plain, value: "v1.0 · 2026" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      text_align: right
+      letter_spacing: 0.2
+
+  - id: rule-top
+    type: line
+    z: 7
+    x1: 80
+    y1: 130
+    x2: 1160
+    y2: 130
+    stroke: { color: "$border", width: 1 }
+
+  - id: page-title
+    type: text
+    z: 8
+    x: 80
+    y: 170
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Visual identity\nat a glance." }
+    style:
+      font_family: $heading
+      font_size: 90
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.025
+
+  # ── Section: Palette ──────────────────────────────────────
+  - id: sec1-label
+    type: text
+    z: 10
+    x: 80
+    y: 400
+    width: 1080
+    height: 0
+    content: { type: plain, value: "01 — PALETTE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+
+  - id: sec1-rule
+    type: line
+    z: 11
+    x1: 80
+    y1: 426
+    x2: 1160
+    y2: 426
+    stroke: { color: "$border", width: 1 }
+
+  # 4 swatches
+  - id: sw1
+    type: rect
+    z: 12
+    x: 80
+    y: 460
+    width: 260
+    height: 260
+    radius: 8
+    fill: { type: solid, color: "#0F172A" }
+  - id: sw1-name
+    type: text
+    z: 13
+    x: 80
+    y: 736
+    width: 260
+    height: 0
+    content: { type: plain, value: "Ink" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+  - id: sw1-hex
+    type: text
+    z: 14
+    x: 80
+    y: 768
+    width: 260
+    height: 0
+    content: { type: plain, value: "#0F172A" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.1
+
+  - id: sw2
+    type: rect
+    z: 15
+    x: 360
+    y: 460
+    width: 260
+    height: 260
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+  - id: sw2-name
+    type: text
+    z: 16
+    x: 360
+    y: 736
+    width: 260
+    height: 0
+    content: { type: plain, value: "Brand" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+  - id: sw2-hex
+    type: text
+    z: 17
+    x: 360
+    y: 768
+    width: 260
+    height: 0
+    content: { type: plain, value: "#7C3AED" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.1
+
+  - id: sw3
+    type: rect
+    z: 18
+    x: 640
+    y: 460
+    width: 260
+    height: 260
+    radius: 8
+    fill: { type: solid, color: "$accent" }
+  - id: sw3-name
+    type: text
+    z: 19
+    x: 640
+    y: 736
+    width: 260
+    height: 0
+    content: { type: plain, value: "Accent" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+  - id: sw3-hex
+    type: text
+    z: 20
+    x: 640
+    y: 768
+    width: 260
+    height: 0
+    content: { type: plain, value: "#F59E0B" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.1
+
+  - id: sw4
+    type: rect
+    z: 21
+    x: 920
+    y: 460
+    width: 240
+    height: 260
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+  - id: sw4-name
+    type: text
+    z: 22
+    x: 920
+    y: 736
+    width: 240
+    height: 0
+    content: { type: plain, value: "Paper" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+  - id: sw4-hex
+    type: text
+    z: 23
+    x: 920
+    y: 768
+    width: 240
+    height: 0
+    content: { type: plain, value: "#FAF6EE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.1
+
+  # ── Section: Typography ───────────────────────────────────
+  - id: sec2-label
+    type: text
+    z: 30
+    x: 80
+    y: 850
+    width: 1080
+    height: 0
+    content: { type: plain, value: "02 — TYPOGRAPHY" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+
+  - id: sec2-rule
+    type: line
+    z: 31
+    x1: 80
+    y1: 876
+    x2: 1160
+    y2: 876
+    stroke: { color: "$border", width: 1 }
+
+  - id: type-heading
+    type: text
+    z: 32
+    x: 80
+    y: 910
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Aa  The quick brown fox" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 800
+      color: $text
+      letter_spacing: -0.025
+      line_height: 1
+
+  - id: type-heading-meta
+    type: text
+    z: 33
+    x: 80
+    y: 1010
+    width: 1080
+    height: 0
+    content: { type: plain, value: "HEADING · Serif Display · 700/800 · -2.5% tracking" }
+    style:
+      font_family: $mono
+      font_size: 12
+      color: $text_muted
+      letter_spacing: 0.18
+
+  - id: type-body
+    type: text
+    z: 34
+    x: 80
+    y: 1060
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Bb  Designed for clarity at any size — body copy reads cleanly across print and screen." }
+    style:
+      font_family: $body
+      font_size: 28
+      font_weight: 400
+      color: $text
+      line_height: 1.4
+
+  - id: type-body-meta
+    type: text
+    z: 35
+    x: 80
+    y: 1140
+    width: 1080
+    height: 0
+    content: { type: plain, value: "BODY · Humanist Sans · 400/500 · 140% leading" }
+    style:
+      font_family: $mono
+      font_size: 12
+      color: $text_muted
+      letter_spacing: 0.18
+
+  - id: type-mono
+    type: text
+    z: 36
+    x: 80
+    y: 1190
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Cc  $ folio export --format pdf  // numerals: 0123456789" }
+    style:
+      font_family: $mono
+      font_size: 22
+      color: $text
+      line_height: 1.4
+
+  - id: type-mono-meta
+    type: text
+    z: 37
+    x: 80
+    y: 1242
+    width: 1080
+    height: 0
+    content: { type: plain, value: "MONO · Geometric Mono · 400/700 · for code & data" }
+    style:
+      font_family: $mono
+      font_size: 12
+      color: $text_muted
+      letter_spacing: 0.18
+
+  # ── Section: Logo construction ────────────────────────────
+  - id: sec3-label
+    type: text
+    z: 50
+    x: 80
+    y: 1330
+    width: 1080
+    height: 0
+    content: { type: plain, value: "03 — LOGO CONSTRUCTION" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+
+  - id: sec3-rule
+    type: line
+    z: 51
+    x1: 80
+    y1: 1356
+    x2: 1160
+    y2: 1356
+    stroke: { color: "$border", width: 1 }
+
+  - id: grid-bg
+    type: rect
+    z: 52
+    x: 80
+    y: 1390
+    width: 1080
+    height: 280
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  # Grid lines (subtle construction)
+  - id: grid-v1
+    type: line
+    z: 53
+    x1: 350
+    y1: 1390
+    x2: 350
+    y2: 1670
+    stroke: { color: "$border", width: 1 }
+  - id: grid-v2
+    type: line
+    z: 54
+    x1: 890
+    y1: 1390
+    x2: 890
+    y2: 1670
+    stroke: { color: "$border", width: 1 }
+  - id: grid-h1
+    type: line
+    z: 55
+    x1: 80
+    y1: 1530
+    x2: 1160
+    y2: 1530
+    stroke: { color: "$border", width: 1 }
+
+  # Logo mark in center
+  - id: logo-mark
+    type: rect
+    z: 56
+    x: 540
+    y: 1450
+    width: 160
+    height: 160
+    radius: 36
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$accent", position: 100 }
+
+  - id: logo-letter
+    type: text
+    z: 57
+    x: 540
+    y: 1474
+    width: 160
+    height: 0
+    content: { type: plain, value: "A" }
+    style:
+      font_family: $heading
+      font_size: 100
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+
+  - id: logo-caption
+    type: text
+    z: 58
+    x: 80
+    y: 1700
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Mark sits on a 3×3 grid · 36px corner radius · 1:1 ratio · minimum 24px clear space" }
+    style:
+      font_family: $mono
+      font_size: 12
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.12
+
+slots:
+  - { id: company_name, path: "layers[1].content.value", type: text, hint: "Company name in eyebrow",    default: "ACME CO · BRAND GUIDELINES" }
+  - { id: version,      path: "layers[2].content.value", type: text, hint: "Version + year string",      default: "v1.0 · 2026" }

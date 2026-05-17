@@ -1,0 +1,185 @@
+_protocol: template/v1
+
+# Native ad card 600×400 — feed-style sponsored content.
+# Sponsored eyebrow + headline + image placeholder + byline row. Light-clean theme.
+meta:
+  id: tmpl-ad-native-card
+  name: Ad Native Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ad, native, sponsored, "600x400", landscape, "light-clean"]
+  description: "Native sponsored content card 600×400 with eyebrow label, headline, image placeholder, brand byline, and read-time badge."
+
+document:
+  width: 600
+  height: 400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 600
+    height: 400
+    radius: 12
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 8, blur: 24, color: "rgba(0,0,0,0.08)" }
+
+  - id: image-frame
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 240
+    height: 400
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$surface", position: 0 }
+        - { color: "$surface2", position: 100 }
+
+  - id: image-icon
+    type: text
+    z: 2
+    x: 0
+    y: 180
+    width: 240
+    height: 0
+    content: { type: plain, value: "◐" }
+    style:
+      font_family: $heading
+      font_size: 56
+      color: $primary
+      text_align: center
+
+  - id: image-caption
+    type: text
+    z: 3
+    x: 0
+    y: 256
+    width: 240
+    height: 0
+    content: { type: plain, value: "article hero" }
+    style:
+      font_family: $body
+      font_size: 12
+      color: $text_muted
+      text_align: center
+
+  - id: eyebrow-pill
+    type: rect
+    z: 4
+    x: 272
+    y: 36
+    width: 96
+    height: 24
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: eyebrow-text
+    type: text
+    z: 5
+    x: 272
+    y: 42
+    width: 96
+    height: 0
+    content: { type: plain, value: "SPONSORED" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.18
+
+  - id: headline
+    type: text
+    z: 6
+    x: 272
+    y: 84
+    width: 304
+    height: 0
+    content: { type: plain, value: "How 4 founders\nbuilt a $10M\nremote-first SaaS." }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $text
+      line_height: 1.12
+      letter_spacing: -0.02
+
+  - id: divider
+    type: rect
+    z: 7
+    x: 272
+    y: 296
+    width: 304
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: byline-dot
+    type: circle
+    z: 8
+    cx: 286
+    cy: 326
+    rx: 12
+    ry: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: byline-brand
+    type: text
+    z: 9
+    x: 308
+    y: 320
+    width: 200
+    height: 0
+    content: { type: plain, value: "Lattice for Startups" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: $text
+
+  - id: readtime-badge
+    type: rect
+    z: 10
+    x: 488
+    y: 314
+    width: 88
+    height: 26
+    radius: 13
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: readtime-text
+    type: text
+    z: 11
+    x: 488
+    y: 321
+    width: 88
+    height: 0
+    content: { type: plain, value: "⏱  6 min read" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: brand,                path: "layers[9].content.value",  type: text, hint: "Sponsor / publisher name",   default: "Lattice for Startups" }
+  - { id: headline,             path: "layers[6].content.value",  type: text, hint: "Article headline (3 lines)", default: "How 4 founders\nbuilt a $10M\nremote-first SaaS." }
+  - { id: read_time_minutes,    path: "layers[11].content.value", type: text, hint: "Read-time badge text",        default: "⏱  6 min read" }

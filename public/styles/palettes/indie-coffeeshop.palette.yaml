@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: indie-coffeeshop
+name: Indie Coffeeshop
+version: "1.0.0"
+tags: [music, indie, coffeeshop, cozy, acoustic, warm]
+description: "Warm cream, espresso, sage, dusty pink, olive — acoustic indie cafe afternoon."
+colors:
+  background: "#F4ECDD"
+  surface:    "#EBE0CC"
+  surface_2:  "#E0D2B8"
+  primary:    "#5A3A24"
+  secondary:  "#8A9A6E"
+  accent:     "#C99A9A"
+  text:       "#332419"
+  text_muted: "#7A6A55"
+  border:     "#CDBC9A"
+  success:    "#7A8A4A"
+  warning:    "#C88A3A"
+  danger:     "#B05038"

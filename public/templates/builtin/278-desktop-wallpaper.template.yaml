@@ -1,0 +1,194 @@
+_protocol: template/v1
+
+# Desktop wallpaper — 2560×1440 landscape (1440p), ocean-blue theme.
+# Gradient + overlapping geometric shapes; minimal brand mark in corner.
+meta:
+  id: tmpl-desktop-wallpaper
+  name: Desktop Wallpaper
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [wallpaper, desktop, 1440p, geometric, ocean, landscape]
+  description: "Abstract 1440p desktop wallpaper with gradient, overlapping circles and polygons, and a corner brand mark."
+
+document:
+  width: 2560
+  height: 1440
+  unit: px
+  dpi: 96
+
+theme:
+  ref: ocean-blue
+
+layers:
+  # ── Background gradient ───────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 2560
+    height: 1440
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 55 }
+        - { color: "$primary", position: 100 }
+
+  # ── Soft glows ────────────────────────────────────────────
+  - id: glow-a
+    type: circle
+    z: 1
+    cx: 1900
+    cy: 1100
+    rx: 900
+    ry: 900
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.45
+
+  - id: glow-b
+    type: circle
+    z: 2
+    cx: 480
+    cy: 280
+    rx: 720
+    ry: 720
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.35
+
+  # ── Geometric circles ─────────────────────────────────────
+  - id: shape-circle-a
+    type: circle
+    z: 10
+    cx: 1200
+    cy: 720
+    rx: 380
+    ry: 380
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+    opacity: 0.75
+
+  - id: shape-circle-b
+    type: circle
+    z: 11
+    cx: 1480
+    cy: 820
+    rx: 260
+    ry: 260
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.55
+
+  - id: shape-circle-outline
+    type: circle
+    z: 12
+    cx: 980
+    cy: 560
+    rx: 220
+    ry: 220
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 3, opacity: 0.7 }
+
+  # ── Polygon (hex) ─────────────────────────────────────────
+  - id: shape-hex
+    type: polygon
+    z: 13
+    points: "1800,420 1980,520 1980,720 1800,820 1620,720 1620,520"
+    fill:
+      type: linear
+      angle: 90
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "$primary", position: 100 }
+    opacity: 0.6
+
+  # ── Diagonal accent triangle ──────────────────────────────
+  - id: shape-tri
+    type: polygon
+    z: 14
+    points: "320,1000 720,1240 320,1320"
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.5
+
+  # ── Thin sweeping arcs (lines) ────────────────────────────
+  - id: line-a
+    type: line
+    z: 15
+    x1: 0
+    y1: 200
+    x2: 2560
+    y2: 980
+    stroke: { color: "$accent", width: 2, opacity: 0.25 }
+
+  - id: line-b
+    type: line
+    z: 16
+    x1: 0
+    y1: 520
+    x2: 2560
+    y2: 1300
+    stroke: { color: "$accent", width: 2, opacity: 0.18 }
+
+  # ── Corner brand mark ─────────────────────────────────────
+  - id: mark-bg
+    type: rect
+    z: 50
+    x: 80
+    y: 1300
+    width: 64
+    height: 64
+    radius: 16
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "$secondary", position: 100 }
+
+  - id: mark-letter
+    type: text
+    z: 51
+    x: 80
+    y: 1318
+    width: 64
+    height: 0
+    content: { type: plain, value: "F" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+
+  - id: brand-mark
+    type: text
+    z: 52
+    x: 160
+    y: 1322
+    width: 400
+    height: 0
+    content: { type: plain, value: "Folio" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "#FFFFFF"
+      letter_spacing: 0.04
+
+slots:
+  - { id: brand_mark, path: "layers[13].content.value", type: text, hint: "Brand mark (corner)", default: "Folio" }

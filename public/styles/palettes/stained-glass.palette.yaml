@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: stained-glass
+name: Stained Glass
+version: "1.0.0"
+tags: [religious, christian, cathedral, stained, jewel, sacred]
+description: "Deep cobalt, ruby red, emerald, amber gold, ivory — cathedral stained-glass window."
+colors:
+  background: "#F5EFE0"
+  surface:    "#EBE3CC"
+  surface_2:  "#DDD3B0"
+  primary:    "#1F3A8A"
+  secondary:  "#B0273D"
+  accent:     "#1F7A4D"
+  text:       "#1A1410"
+  text_muted: "#5A5040"
+  border:     "#C8BC9A"
+  success:    "#1F7A4D"
+  warning:    "#D4A02A"
+  danger:     "#B0273D"

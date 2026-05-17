@@ -1,0 +1,189 @@
+_protocol: template/v1
+
+# IAB Half-Page 300×600 — tall ad unit.
+# Brand → headline → image placeholder → 3 features → CTA. Editorial-cream theme.
+meta:
+  id: tmpl-ad-half-page
+  name: Ad Half Page
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ad, banner, "half-page", iab, "300x600", portrait, editorial]
+  description: "IAB 300×600 half-page ad with brand, headline, image placeholder, three feature bullets, and CTA."
+
+document:
+  width: 300
+  height: 600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 300
+    height: 600
+    fill: { type: solid, color: "$background" }
+
+  - id: border-frame
+    type: rect
+    z: 1
+    x: 8
+    y: 8
+    width: 284
+    height: 584
+    radius: 4
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: brand-rule
+    type: rect
+    z: 2
+    x: 24
+    y: 32
+    width: 24
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: brand
+    type: text
+    z: 3
+    x: 56
+    y: 24
+    width: 220
+    height: 0
+    content: { type: plain, value: "LE TEMPS · No. 24" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.22
+
+  - id: headline
+    type: text
+    z: 4
+    x: 24
+    y: 64
+    width: 252
+    height: 0
+    content: { type: plain, value: "The journal\nfor curious\nminds." }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 700
+      color: $text
+      line_height: 1.08
+      letter_spacing: -0.02
+
+  - id: image-frame
+    type: rect
+    z: 5
+    x: 24
+    y: 220
+    width: 252
+    height: 160
+    radius: 4
+    fill:
+      type: linear
+      angle: 135
+      stops:
+        - { color: "$surface", position: 0 }
+        - { color: "$surface2", position: 100 }
+    stroke: { color: "$border", width: 1 }
+
+  - id: image-label
+    type: text
+    z: 6
+    x: 24
+    y: 290
+    width: 252
+    height: 0
+    content: { type: plain, value: "✦  cover art" }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text_muted
+      text_align: center
+
+  - id: feature-1
+    type: text
+    z: 7
+    x: 24
+    y: 404
+    width: 252
+    height: 0
+    content: { type: plain, value: "01 — Long-form essays" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $text
+
+  - id: feature-2
+    type: text
+    z: 8
+    x: 24
+    y: 432
+    width: 252
+    height: 0
+    content: { type: plain, value: "02 — Weekly print delivery" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $text
+
+  - id: feature-3
+    type: text
+    z: 9
+    x: 24
+    y: 460
+    width: 252
+    height: 0
+    content: { type: plain, value: "03 — Ad-free reader app" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $text
+
+  - id: cta-bg
+    type: rect
+    z: 10
+    x: 24
+    y: 510
+    width: 252
+    height: 48
+    radius: 0
+    fill: { type: solid, color: "$text" }
+
+  - id: cta-text
+    type: text
+    z: 11
+    x: 24
+    y: 526
+    width: 252
+    height: 0
+    content: { type: plain, value: "Subscribe — €9/mo" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $background
+      text_align: center
+      letter_spacing: 0.04
+
+slots:
+  - { id: brand,     path: "layers[3].content.value",  type: text, hint: "Brand line",   default: "LE TEMPS · No. 24" }
+  - { id: headline,  path: "layers[4].content.value",  type: text, hint: "Headline (3 lines)", default: "The journal\nfor curious\nminds." }
+  - { id: feature_1, path: "layers[7].content.value",  type: text, hint: "Feature 1",    default: "01 — Long-form essays" }
+  - { id: feature_2, path: "layers[8].content.value",  type: text, hint: "Feature 2",    default: "02 — Weekly print delivery" }
+  - { id: feature_3, path: "layers[9].content.value",  type: text, hint: "Feature 3",    default: "03 — Ad-free reader app" }
+  - { id: cta_label, path: "layers[11].content.value", type: text, hint: "CTA label",    default: "Subscribe — €9/mo" }
