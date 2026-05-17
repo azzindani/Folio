@@ -987,10 +987,24 @@ export function renderKpiCard(layer: KpiCardLayer, _svg: SVGSVGElement): SVGElem
   return fo;
 }
 
+// Cache by (currency, decimals). Constructing Intl.NumberFormat is expensive
+// on cold workers — Node lazy-loads ICU data on first currency-style call,
+// which is the root cause of the Windows CI timeout this cache fixes.
+const _currencyFormatters = new Map<string, Intl.NumberFormat>();
+function getCurrencyFormatter(currency: string, dec: number): Intl.NumberFormat {
+  const key = `${currency}|${dec}`;
+  let fmt = _currencyFormatters.get(key);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: dec });
+    _currencyFormatters.set(key, fmt);
+  }
+  return fmt;
+}
+
 function formatKpiValue(value: number, format?: string, currency?: string, decimals?: number): string {
   const dec = decimals ?? 0;
   if (format === 'currency') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency ?? 'USD', maximumFractionDigits: dec }).format(value);
+    return getCurrencyFormatter(currency ?? 'USD', dec).format(value);
   }
   if (format === 'percent') {
     return `${value >= 0 ? '+' : ''}${value.toFixed(dec)}%`;

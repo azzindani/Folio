@@ -1014,7 +1014,11 @@ describe('renderRichText', () => {
   });
 });
 
-describe('renderKpiCard', () => {
+// 15s suite timeout: the first currency-style Intl.NumberFormat call on a
+// cold Windows CI worker triggers ICU data load which has been observed
+// to exceed the default 5s budget. The formatter cache in layer-renderers.ts
+// confines that cost to a single call per (currency, decimals) tuple.
+describe('renderKpiCard', { timeout: 15000 }, () => {
   it('renders a foreignObject with folio-kpi card', () => {
     const layer: KpiCardLayer = {
       id: 'kpi1', type: 'kpi_card', z: 0,
