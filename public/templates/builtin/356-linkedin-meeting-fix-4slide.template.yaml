@@ -1,0 +1,267 @@
+_protocol: template/v1
+
+# 4-slide LinkedIn carousel — Fix your meetings.
+# Cover → what goes wrong → the 3 rules → CTA. Brutalist tone.
+meta:
+  id: tmpl-linkedin-meeting-fix
+  name: LinkedIn · Meeting Fix (4 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, leadership, management, meetings, productivity, 4-5]
+  description: "4-slide LinkedIn carousel diagnosing why meetings fail and prescribing three brutalist-styled rules."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+pages:
+  # ── Slide 1 · Cover ──────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 220
+        width: 920
+        height: 0
+        content: { type: plain, value: "READ THIS BEFORE THE STANDUP" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 280
+        width: 920
+        height: 0
+        content: { type: plain, value: "Your meetings\nare bad.\n\nHere's the fix." }
+        style: { font_family: $heading, font_size: 104, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.04 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "1/4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · What goes wrong ────────────────────────────
+  - id: wrong
+    label: What goes wrong
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHAT GOES WRONG" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 260
+        width: 920
+        height: 0
+        content: { type: plain, value: "Three failures\nshow up every time." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - { id: bullet-1-dot, type: rect, z: 20, x: 80, y: 600, width: 32, height: 32, fill: { type: solid, color: "$primary" } }
+      - id: bullet-1-text
+        type: text
+        z: 21
+        x: 140
+        y: 600
+        width: 880
+        height: 0
+        content: { type: plain, value: "No agenda. No decision. No record." }
+        style: { font_family: $body, font_size: 28, font_weight: 700, color: $text, line_height: 1.5 }
+      - { id: bullet-2-dot, type: rect, z: 20, x: 80, y: 720, width: 32, height: 32, fill: { type: solid, color: "$primary" } }
+      - id: bullet-2-text
+        type: text
+        z: 21
+        x: 140
+        y: 720
+        width: 880
+        height: 0
+        content: { type: plain, value: "Eight people, two of them needed." }
+        style: { font_family: $body, font_size: 28, font_weight: 700, color: $text, line_height: 1.5 }
+      - { id: bullet-3-dot, type: rect, z: 20, x: 80, y: 840, width: 32, height: 32, fill: { type: solid, color: "$primary" } }
+      - id: bullet-3-text
+        type: text
+        z: 21
+        x: 140
+        y: 840
+        width: 880
+        height: 0
+        content: { type: plain, value: "It ends and nobody knows what to do next." }
+        style: { font_family: $body, font_size: 28, font_weight: 700, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "2/4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · The 3 rules ────────────────────────────────
+  - id: rules
+    label: The rules
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "THE 3 RULES" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 260
+        width: 920
+        height: 0
+        content: { type: plain, value: "Apply all three.\nEvery time." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - { id: card-1-bg,  type: rect, z: 15, x: 80, y: 500, width: 920, height: 200, fill: { type: solid, color: "$surface" } }
+      - id: card-1-num
+        type: text
+        z: 16
+        x: 112
+        y: 528
+        width: 200
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 26, font_weight: 700, color: $primary }
+      - id: card-1-text
+        type: text
+        z: 17
+        x: 112
+        y: 588
+        width: 856
+        height: 0
+        content: { type: plain, value: "One owner.\nNamed in the invite." }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $text, line_height: 1.2, letter_spacing: -0.02 }
+      - { id: card-2-bg,  type: rect, z: 15, x: 80, y: 730, width: 920, height: 200, fill: { type: solid, color: "$surface" } }
+      - id: card-2-num
+        type: text
+        z: 16
+        x: 112
+        y: 758
+        width: 200
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 26, font_weight: 700, color: $primary }
+      - id: card-2-text
+        type: text
+        z: 17
+        x: 112
+        y: 818
+        width: 856
+        height: 0
+        content: { type: plain, value: "One outcome.\nNot a discussion — a decision." }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $text, line_height: 1.2, letter_spacing: -0.02 }
+      - { id: card-3-bg,  type: rect, z: 15, x: 80, y: 960, width: 920, height: 200, fill: { type: solid, color: "$surface" } }
+      - id: card-3-num
+        type: text
+        z: 16
+        x: 112
+        y: 988
+        width: 200
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 26, font_weight: 700, color: $primary }
+      - id: card-3-text
+        type: text
+        z: 17
+        x: 112
+        y: 1048
+        width: 856
+        height: 0
+        content: { type: plain, value: "One artifact.\nWritten before anyone leaves." }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $text, line_height: 1.2, letter_spacing: -0.02 }
+      - id: pagination
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "3/4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · CTA ────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
+      - id: heading
+        type: text
+        z: 11
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "Run your\nnext meeting\nthis way." }
+        style: { font_family: $heading, font_size: 120, font_weight: 900, color: "#FFFFFF", line_height: 0.98, letter_spacing: -0.04 }
+      - id: sub
+        type: text
+        z: 12
+        x: 80
+        y: 940
+        width: 920
+        height: 0
+        content: { type: plain, value: "Owner. Outcome. Artifact." }
+        style: { font_family: $mono, font_size: 26, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.1 }
+      - { id: cta-btn,   type: rect, z: 13, x: 80, y: 1020, width: 320, height: 72, radius: 0, fill: { type: solid, color: "$primary" }, stroke: { color: "#FFFFFF", width: 3 } }
+      - id: cta-text
+        type: text
+        z: 14
+        x: 80
+        y: 1042
+        width: 320
+        height: 0
+        content: { type: plain, value: "Follow for more →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "4/4" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover headline",         default: "Your meetings\nare bad.\n\nHere's the fix." }
+  - { id: wrong_headline, path: "pages[1].layers[3].content.value", type: text, hint: "What-goes-wrong headline", default: "Three failures\nshow up every time." }
+  - { id: wrong_bullet_1, path: "pages[1].layers[5].content.value", type: text, hint: "Wrong bullet 1",         default: "No agenda. No decision. No record." }
+  - { id: wrong_bullet_2, path: "pages[1].layers[7].content.value", type: text, hint: "Wrong bullet 2",         default: "Eight people, two of them needed." }
+  - { id: wrong_bullet_3, path: "pages[1].layers[9].content.value", type: text, hint: "Wrong bullet 3",         default: "It ends and nobody knows what to do next." }
+  - { id: rule_1_text,    path: "pages[2].layers[6].content.value", type: text, hint: "Rule 01",                default: "One owner.\nNamed in the invite." }
+  - { id: rule_2_text,    path: "pages[2].layers[9].content.value", type: text, hint: "Rule 02",                default: "One outcome.\nNot a discussion — a decision." }
+  - { id: rule_3_text,    path: "pages[2].layers[12].content.value", type: text, hint: "Rule 03",               default: "One artifact.\nWritten before anyone leaves." }
+  - { id: cta_heading,    path: "pages[3].layers[2].content.value", type: text, hint: "CTA heading",            default: "Run your\nnext meeting\nthis way." }

@@ -1,0 +1,208 @@
+_protocol: template/v1
+
+# Single-page LinkedIn poster — customer testimonial pull-quote. 1200×1500 editorial cream.
+meta:
+  id: tmpl-customer-testimonial-poster
+  name: Customer Testimonial Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, sales, testimonial, social-proof, customer, portrait, 4-5]
+  description: "Single-page testimonial poster with an editorial pull-quote, avatar, and attribution."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 10
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-quote
+    type: text
+    z: 3
+    x: 60
+    y: 200
+    width: 400
+    height: 0
+    content: { type: plain, value: "“" }
+    style:
+      font_family: $heading
+      font_size: 360
+      font_weight: 900
+      color: $primary
+      line_height: 1
+      letter_spacing: -0.05
+    opacity: 0.18
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 160
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WHAT OUR CUSTOMERS SAY" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: quote
+    type: text
+    z: 21
+    x: 80
+    y: 420
+    width: 1040
+    height: 0
+    content: { type: plain, value: "We replaced three tools, cut onboarding from six weeks to four days, and our team actually likes using it. The ROI showed up in the first month." }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 600
+      color: $text
+      line_height: 1.3
+      letter_spacing: -0.01
+      font_style: italic
+
+  - id: divider
+    type: rect
+    z: 10
+    x: 80
+    y: 1100
+    width: 240
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: avatar-bg
+    type: circle
+    z: 30
+    cx: 140
+    cy: 1240
+    rx: 60
+    ry: 60
+    fill: { type: solid, color: "$primary" }
+
+  - id: avatar-initials
+    type: text
+    z: 31
+    x: 80
+    y: 1212
+    width: 120
+    height: 0
+    content: { type: plain, value: "SR" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.02
+
+  - id: name
+    type: text
+    z: 32
+    x: 230
+    y: 1200
+    width: 880
+    height: 0
+    content: { type: plain, value: "Sara Romero" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 800
+      color: $text
+      line_height: 1.2
+      letter_spacing: -0.01
+
+  - id: role
+    type: text
+    z: 33
+    x: 230
+    y: 1248
+    width: 880
+    height: 0
+    content: { type: plain, value: "VP of Revenue Operations · Linear" }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      line_height: 1.3
+
+  - id: author
+    type: text
+    z: 70
+    x: 80
+    y: 1400
+    width: 700
+    height: 0
+    content: { type: plain, value: "@yourhandle" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: $text
+      line_height: 1.4
+
+  - id: page-mark
+    type: text
+    z: 72
+    x: 880
+    y: 1400
+    width: 240
+    height: 0
+    content: { type: plain, value: "01 / FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  deco-quote:
+    loop: { type: float, duration: 4000 }
+  eyebrow:
+    enter: { type: fade_down, duration: 500, delay: 100, easing: ease-out }
+  quote:
+    enter: { type: fade_up, duration: 800, delay: 200, easing: ease-out }
+  avatar-bg:
+    enter: { type: scale_in, duration: 600, delay: 800, easing: ease-out }
+  name:
+    enter: { type: fade_up, duration: 500, delay: 1000, easing: ease-out }
+  role:
+    enter: { type: fade_up, duration: 500, delay: 1150, easing: ease-out }
+
+slots:
+  - { id: eyebrow,     path: "layers[3].content.value", type: text, hint: "Eyebrow tag",        default: "WHAT OUR CUSTOMERS SAY" }
+  - { id: quote,       path: "layers[4].content.value", type: text, hint: "Pull-quote",         default: "We replaced three tools, cut onboarding from six weeks to four days, and our team actually likes using it. The ROI showed up in the first month." }
+  - { id: initials,    path: "layers[7].content.value", type: text, hint: "Avatar initials",    default: "SR" }
+  - { id: name,        path: "layers[8].content.value", type: text, hint: "Customer name",      default: "Sara Romero" }
+  - { id: role,        path: "layers[9].content.value", type: text, hint: "Role · company",     default: "VP of Revenue Operations · Linear" }
+  - { id: author,      path: "layers[10].content.value", type: text, hint: "Author handle",     default: "@yourhandle" }

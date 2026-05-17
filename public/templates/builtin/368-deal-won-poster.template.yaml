@@ -1,0 +1,397 @@
+_protocol: template/v1
+
+# Single-page LinkedIn poster — closed-won deal announcement. 1200×1500 forest deep.
+meta:
+  id: tmpl-deal-won-poster
+  name: Deal Won Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, sales, deal-won, closed, announcement, portrait, 4-5]
+  description: "Closed-won deal announcement poster with company name, ARR stat, and 3 fact cards."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill:
+      type: linear
+      angle: 165
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: accent-dot
+    type: circle
+    z: 5
+    cx: 1110
+    cy: 130
+    rx: 10
+    ry: 10
+    fill: { type: solid, color: "$accent" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 120
+    width: 1040
+    height: 0
+    content: { type: plain, value: "DEAL CLOSED · 2026" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: company-name
+    type: text
+    z: 21
+    x: 80
+    y: 220
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Acme Corp" }
+    style:
+      font_family: $heading
+      font_size: 110
+      font_weight: 900
+      color: $text
+      line_height: 0.95
+      letter_spacing: -0.04
+
+  - id: subtitle
+    type: text
+    z: 22
+    x: 80
+    y: 380
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Welcome to the family." }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 600
+      color: $accent
+      line_height: 1.2
+      letter_spacing: -0.01
+
+  - id: divider-1
+    type: rect
+    z: 10
+    x: 80
+    y: 480
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - id: arr-label
+    type: text
+    z: 30
+    x: 80
+    y: 520
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ANNUAL CONTRACT VALUE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: arr-value
+    type: text
+    z: 31
+    x: 80
+    y: 560
+    width: 1040
+    height: 0
+    content: { type: plain, value: "$240k ARR" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 900
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.03
+
+  - id: divider-2
+    type: rect
+    z: 10
+    x: 80
+    y: 700
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - { id: card-1-bg, type: rect, z: 40, x: 80, y: 740, width: 320, height: 200, radius: 12, fill: { type: solid, color: "$surface" } }
+  - id: card-1-label
+    type: text
+    z: 41
+    x: 108
+    y: 770
+    width: 280
+    height: 0
+    content: { type: plain, value: "STARTED" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+      text_transform: uppercase
+  - id: card-1-value
+    type: text
+    z: 42
+    x: 108
+    y: 808
+    width: 280
+    height: 0
+    content: { type: plain, value: "Jan 2026" }
+    style:
+      font_family: $heading
+      font_size: 34
+      font_weight: 800
+      color: $text
+      line_height: 1.1
+      letter_spacing: -0.01
+  - id: card-1-sub
+    type: text
+    z: 43
+    x: 108
+    y: 870
+    width: 280
+    height: 0
+    content: { type: plain, value: "First touch on 14 Jan" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      line_height: 1.4
+
+  - { id: card-2-bg, type: rect, z: 40, x: 440, y: 740, width: 320, height: 200, radius: 12, fill: { type: solid, color: "$surface" } }
+  - id: card-2-label
+    type: text
+    z: 41
+    x: 468
+    y: 770
+    width: 280
+    height: 0
+    content: { type: plain, value: "TEAM SIZE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+      text_transform: uppercase
+  - id: card-2-value
+    type: text
+    z: 42
+    x: 468
+    y: 808
+    width: 280
+    height: 0
+    content: { type: plain, value: "120 seats" }
+    style:
+      font_family: $heading
+      font_size: 34
+      font_weight: 800
+      color: $text
+      line_height: 1.1
+      letter_spacing: -0.01
+  - id: card-2-sub
+    type: text
+    z: 43
+    x: 468
+    y: 870
+    width: 280
+    height: 0
+    content: { type: plain, value: "Rolling out across 4 regions" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      line_height: 1.4
+
+  - { id: card-3-bg, type: rect, z: 40, x: 800, y: 740, width: 320, height: 200, radius: 12, fill: { type: solid, color: "$surface" } }
+  - id: card-3-label
+    type: text
+    z: 41
+    x: 828
+    y: 770
+    width: 280
+    height: 0
+    content: { type: plain, value: "USE CASE" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.32
+      text_transform: uppercase
+  - id: card-3-value
+    type: text
+    z: 42
+    x: 828
+    y: 808
+    width: 280
+    height: 0
+    content: { type: plain, value: "Rev Ops" }
+    style:
+      font_family: $heading
+      font_size: 34
+      font_weight: 800
+      color: $text
+      line_height: 1.1
+      letter_spacing: -0.01
+  - id: card-3-sub
+    type: text
+    z: 43
+    x: 828
+    y: 870
+    width: 280
+    height: 0
+    content: { type: plain, value: "Pipeline + forecasting" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      line_height: 1.4
+
+  - id: thanks-label
+    type: text
+    z: 50
+    x: 80
+    y: 1020
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WHY THEY CHOSE US" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: thanks-body
+    type: text
+    z: 51
+    x: 80
+    y: 1060
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Faster setup than the incumbent, a roadmap that matched their 18-month plan, and a champion who fought for us in procurement." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  - { id: cta-chip-bg, type: rect, z: 60, x: 80, y: 1240, width: 240, height: 56, radius: 28, fill: { type: solid, color: "$primary" } }
+  - id: cta-chip-text
+    type: text
+    z: 61
+    x: 80
+    y: 1256
+    width: 240
+    height: 0
+    content: { type: plain, value: "We're hiring →" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: author
+    type: text
+    z: 70
+    x: 80
+    y: 1400
+    width: 700
+    height: 0
+    content: { type: plain, value: "@yourhandle · closed by @rep-name" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: $text
+      line_height: 1.4
+
+  - id: page-mark
+    type: text
+    z: 72
+    x: 880
+    y: 1400
+    width: 240
+    height: 0
+    content: { type: plain, value: "01 / FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  accent-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.3 }
+  company-name:
+    enter: { type: fade_up, duration: 800, delay: 100, easing: ease-out }
+  subtitle:
+    enter: { type: fade_up, duration: 600, delay: 300, easing: ease-out }
+  arr-value:
+    enter: { type: scale_in, duration: 700, delay: 400, easing: ease-out }
+  card-1-bg:
+    enter: { type: fade_up, duration: 500, delay: 700, easing: ease-out }
+  card-2-bg:
+    enter: { type: fade_up, duration: 500, delay: 850, easing: ease-out }
+  card-3-bg:
+    enter: { type: fade_up, duration: 500, delay: 1000, easing: ease-out }
+  cta-chip-bg:
+    loop: { type: breathe, duration: 2400, scale: 1.04 }
+
+slots:
+  - { id: eyebrow,        path: "layers[3].content.value",  type: text, hint: "Eyebrow tag",        default: "DEAL CLOSED · 2026" }
+  - { id: company_name,   path: "layers[4].content.value",  type: text, hint: "Customer company",   default: "Acme Corp" }
+  - { id: subtitle,       path: "layers[5].content.value",  type: text, hint: "Welcome subtitle",   default: "Welcome to the family." }
+  - { id: arr_value,      path: "layers[8].content.value",  type: text, hint: "ARR value",          default: "$240k ARR" }
+  - { id: card_1_value,   path: "layers[12].content.value", type: text, hint: "Card 1 value",       default: "Jan 2026" }
+  - { id: card_2_value,   path: "layers[16].content.value", type: text, hint: "Card 2 value",       default: "120 seats" }
+  - { id: card_3_value,   path: "layers[20].content.value", type: text, hint: "Card 3 value",       default: "Rev Ops" }
+  - { id: thanks_body,    path: "layers[23].content.value", type: text, hint: "Why they chose us",  default: "Faster setup than the incumbent." }
+  - { id: cta_chip,       path: "layers[25].content.value", type: text, hint: "CTA chip",           default: "We're hiring →" }
+  - { id: author,         path: "layers[26].content.value", type: text, hint: "Author line",        default: "@yourhandle · closed by @rep-name" }

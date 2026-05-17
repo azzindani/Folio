@@ -1,0 +1,404 @@
+_protocol: template/v1
+
+# 6-slide LinkedIn carousel — SBI Feedback Framework.
+# Cover → why feedback fails → S / B / I component slides → CTA.
+meta:
+  id: tmpl-linkedin-feedback-framework
+  name: LinkedIn · SBI Feedback Framework (6 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, leadership, management, feedback, sbi, 4-5]
+  description: "6-slide LinkedIn carousel teaching the Situation-Behavior-Impact feedback framework with letter marks and bullets."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+pages:
+  # ── Slide 1 · Cover ──────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 220
+        width: 920
+        height: 0
+        content: { type: plain, value: "FOR MANAGERS WHO 1:1" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 280
+        width: 920
+        height: 0
+        content: { type: plain, value: "The SBI Feedback\nFramework" }
+        style: { font_family: $heading, font_size: 92, font_weight: 800, color: $text, line_height: 1.04, letter_spacing: -0.03 }
+      - id: subtitle
+        type: text
+        z: 12
+        x: 80
+        y: 620
+        width: 920
+        height: 0
+        content: { type: plain, value: "Situation · Behavior · Impact" }
+        style: { font_family: $body, font_size: 30, color: $text_muted, line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "1/6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Why feedback fails ─────────────────────────
+  - id: why-fails
+    label: Why feedback fails
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHY MOST FEEDBACK FAILS" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 260
+        width: 920
+        height: 0
+        content: { type: plain, value: "It's vague,\nor it's personal." }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - { id: bullet-1-dot, type: circle, z: 20, cx: 100, cy: 700, rx: 10, ry: 10, fill: { type: solid, color: "$primary" } }
+      - id: bullet-1-text
+        type: text
+        z: 21
+        x: 140
+        y: 682
+        width: 880
+        height: 0
+        content: { type: plain, value: "\"Be more proactive\" → no example, no action." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - { id: bullet-2-dot, type: circle, z: 20, cx: 100, cy: 800, rx: 10, ry: 10, fill: { type: solid, color: "$primary" } }
+      - id: bullet-2-text
+        type: text
+        z: 21
+        x: 140
+        y: 782
+        width: 880
+        height: 0
+        content: { type: plain, value: "\"You're abrasive\" → attacks identity, not behavior." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - { id: bullet-3-dot, type: circle, z: 20, cx: 100, cy: 900, rx: 10, ry: 10, fill: { type: solid, color: "$primary" } }
+      - id: bullet-3-text
+        type: text
+        z: 21
+        x: 140
+        y: 882
+        width: 880
+        height: 0
+        content: { type: plain, value: "Six weeks late → the moment is gone." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "2/6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · S ──────────────────────────────────────────
+  - id: situation
+    label: Situation
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: letter
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "S" }
+        style: { font_family: $heading, font_size: 280, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Situation" }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: lede
+        type: text
+        z: 12
+        x: 80
+        y: 640
+        width: 920
+        height: 0
+        content: { type: plain, value: "Anchor in time and place. No anchor, no learning." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.5 }
+      - { id: bullet-1-dot, type: circle, z: 20, cx: 100, cy: 820, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-1-text
+        type: text
+        z: 21
+        x: 132
+        y: 802
+        width: 888
+        height: 0
+        content: { type: plain, value: "\"In Tuesday's planning review…\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: bullet-2-dot, type: circle, z: 20, cx: 100, cy: 900, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-2-text
+        type: text
+        z: 21
+        x: 132
+        y: 882
+        width: 888
+        height: 0
+        content: { type: plain, value: "\"When the customer raised the SLA question…\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: bullet-3-dot, type: circle, z: 20, cx: 100, cy: 980, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-3-text
+        type: text
+        z: 21
+        x: 132
+        y: 962
+        width: 888
+        height: 0
+        content: { type: plain, value: "Specific. Recent. Recognizable." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "3/6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · B ──────────────────────────────────────────
+  - id: behavior
+    label: Behavior
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: letter
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "B" }
+        style: { font_family: $heading, font_size: 280, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Behavior" }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: lede
+        type: text
+        z: 12
+        x: 80
+        y: 640
+        width: 920
+        height: 0
+        content: { type: plain, value: "Describe the action. Camera-roll honest, not character-judgment." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.5 }
+      - { id: bullet-1-dot, type: circle, z: 20, cx: 100, cy: 820, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-1-text
+        type: text
+        z: 21
+        x: 132
+        y: 802
+        width: 888
+        height: 0
+        content: { type: plain, value: "\"You cut Maya off mid-sentence three times.\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: bullet-2-dot, type: circle, z: 20, cx: 100, cy: 900, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-2-text
+        type: text
+        z: 21
+        x: 132
+        y: 882
+        width: 888
+        height: 0
+        content: { type: plain, value: "Not: \"You were rude.\" That's a label, not a behavior." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: bullet-3-dot, type: circle, z: 20, cx: 100, cy: 980, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-3-text
+        type: text
+        z: 21
+        x: 132
+        y: 962
+        width: 888
+        height: 0
+        content: { type: plain, value: "Observable. Repeatable. Changeable." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "4/6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · I ──────────────────────────────────────────
+  - id: impact
+    label: Impact
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: letter
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "I" }
+        style: { font_family: $heading, font_size: 280, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Impact" }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: lede
+        type: text
+        z: 12
+        x: 80
+        y: 640
+        width: 920
+        height: 0
+        content: { type: plain, value: "Name the consequence on the team, the work, or you." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.5 }
+      - { id: bullet-1-dot, type: circle, z: 20, cx: 100, cy: 820, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-1-text
+        type: text
+        z: 21
+        x: 132
+        y: 802
+        width: 888
+        height: 0
+        content: { type: plain, value: "\"Maya stopped contributing for the rest of the meeting.\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: bullet-2-dot, type: circle, z: 20, cx: 100, cy: 900, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-2-text
+        type: text
+        z: 21
+        x: 132
+        y: 882
+        width: 888
+        height: 0
+        content: { type: plain, value: "\"I lost a perspective I needed for the decision.\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: bullet-3-dot, type: circle, z: 20, cx: 100, cy: 980, rx: 8, ry: 8, fill: { type: solid, color: "$accent" } }
+      - id: bullet-3-text
+        type: text
+        z: 21
+        x: 132
+        y: 962
+        width: 888
+        height: 0
+        content: { type: plain, value: "End with: \"Does that land the way I see it?\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "5/6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · CTA ────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: heading
+        type: text
+        z: 11
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "Save this." }
+        style: { font_family: $heading, font_size: 128, font_weight: 900, color: "#FFFFFF", line_height: 1, letter_spacing: -0.04 }
+      - id: sub
+        type: text
+        z: 12
+        x: 80
+        y: 660
+        width: 920
+        height: 0
+        content: { type: plain, value: "Use it in your next 1:1. Watch what changes." }
+        style: { font_family: $body, font_size: 30, color: "#F0F0FF", line_height: 1.45 }
+      - { id: cta-btn,   type: rect, z: 13, x: 80, y: 820, width: 320, height: 72, radius: 36, fill: { type: solid, color: "$primary" } }
+      - id: cta-text
+        type: text
+        z: 14
+        x: 80
+        y: 842
+        width: 320
+        height: 0
+        content: { type: plain, value: "Follow →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "6/6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+slots:
+  - { id: cover_title,        path: "pages[0].layers[3].content.value", type: text, hint: "Cover title",         default: "The SBI Feedback\nFramework" }
+  - { id: cover_subtitle,     path: "pages[0].layers[4].content.value", type: text, hint: "Cover subtitle",      default: "Situation · Behavior · Impact" }
+  - { id: why_headline,       path: "pages[1].layers[3].content.value", type: text, hint: "Why-fails headline",  default: "It's vague,\nor it's personal." }
+  - { id: why_bullet_1,       path: "pages[1].layers[5].content.value", type: text, hint: "Why-fails bullet 1",  default: "\"Be more proactive\" → no example, no action." }
+  - { id: situation_bullet_1, path: "pages[2].layers[6].content.value", type: text, hint: "Situation example 1", default: "\"In Tuesday's planning review…\"" }
+  - { id: behavior_bullet_1,  path: "pages[3].layers[6].content.value", type: text, hint: "Behavior example 1",  default: "\"You cut Maya off mid-sentence three times.\"" }
+  - { id: impact_bullet_1,    path: "pages[4].layers[6].content.value", type: text, hint: "Impact example 1",    default: "\"Maya stopped contributing for the rest of the meeting.\"" }
+  - { id: cta_heading,        path: "pages[5].layers[2].content.value", type: text, hint: "CTA heading",         default: "Save this." }
+  - { id: cta_sub,            path: "pages[5].layers[3].content.value", type: text, hint: "CTA subline",         default: "Use it in your next 1:1. Watch what changes." }

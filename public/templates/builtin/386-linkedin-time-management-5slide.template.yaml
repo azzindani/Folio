@@ -1,0 +1,332 @@
+_protocol: template/v1
+
+# LinkedIn 5-slide carousel · "3 Time Hacks That Saved My Week" · cover, intro, 3 hacks, CTA collapsed into hack-3 ending.
+meta:
+  id: tmpl-linkedin-time-management-5slide
+  name: LinkedIn Time Management (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, productivity, time-management, light-clean, "4-5"]
+  description: "5-slide LinkedIn carousel: 3 time-management hacks with 2-bullet rules each."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: side-rule, type: rect, z: 3, x: 72, y: 380, width: 6, height: 220, fill: { type: solid, color: "$accent" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 110
+        y: 380
+        width: 900
+        height: 0
+        content: { type: plain, value: "TIME MANAGEMENT" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 110
+        y: 440
+        width: 900
+        height: 0
+        content: { type: plain, value: "3 Time Hacks\nThat Saved\nMy Week." }
+        style: { font_family: $heading, font_size: 92, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: tagline
+        type: text
+        z: 12
+        x: 110
+        y: 820
+        width: 900
+        height: 0
+        content: { type: plain, value: "Small shifts. Big calendar wins." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: swipe-hint
+        type: text
+        z: 13
+        x: 110
+        y: 920
+        width: 900
+        height: 0
+        content: { type: plain, value: "Swipe → to steal them all." }
+        style: { font_family: $body, font_size: 20, font_weight: 600, color: $accent }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "1 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE PROBLEM" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Your calendar\nis full." }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: body
+        type: text
+        z: 12
+        x: 72
+        y: 600
+        width: 936
+        height: 0
+        content: { type: plain, value: "Meetings stacked. Notifications cascading. Real work pushed to nights and weekends." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: pivot
+        type: text
+        z: 13
+        x: 72
+        y: 920
+        width: 936
+        height: 0
+        content: { type: plain, value: "Three habits put me back in control →" }
+        style: { font_family: $heading, font_size: 30, font_weight: 700, color: $primary, line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "2 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · 01 Timeboxing ────────────────────────────────
+  - id: hack-1
+    label: 01 Timeboxing
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 200
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.32 }
+      - id: hack-name
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Timeboxing." }
+        style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: lede
+        type: text
+        z: 12
+        x: 72
+        y: 380
+        width: 936
+        height: 0
+        content: { type: plain, value: "Every task gets a fixed slot — and it ends when the slot ends." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - { id: rule-1-dot, type: circle, z: 20, cx: 100, cy: 640, rx: 14, ry: 14, fill: { type: solid, color: "$primary" } }
+      - id: rule-1-text
+        type: text
+        z: 21
+        x: 140
+        y: 620
+        width: 880
+        height: 0
+        content: { type: plain, value: "Calendar the task — name it, size it, ship it." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - { id: rule-2-dot, type: circle, z: 20, cx: 100, cy: 760, rx: 14, ry: 14, fill: { type: solid, color: "$primary" } }
+      - id: rule-2-text
+        type: text
+        z: 21
+        x: 140
+        y: 740
+        width: 880
+        height: 0
+        content: { type: plain, value: "When the box closes, you stop — even if imperfect." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "3 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · 02 Single-tasking ────────────────────────────
+  - id: hack-2
+    label: 02 Single-tasking
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 200
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.32 }
+      - id: hack-name
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "Single-tasking." }
+        style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: lede
+        type: text
+        z: 12
+        x: 72
+        y: 380
+        width: 936
+        height: 0
+        content: { type: plain, value: "One tab. One goal. No “quick checks”." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - { id: rule-1-dot, type: circle, z: 20, cx: 100, cy: 640, rx: 14, ry: 14, fill: { type: solid, color: "$primary" } }
+      - id: rule-1-text
+        type: text
+        z: 21
+        x: 140
+        y: 620
+        width: 880
+        height: 0
+        content: { type: plain, value: "Close every tab unrelated to the active task." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - { id: rule-2-dot, type: circle, z: 20, cx: 100, cy: 760, rx: 14, ry: 14, fill: { type: solid, color: "$primary" } }
+      - id: rule-2-text
+        type: text
+        z: 21
+        x: 140
+        y: 740
+        width: 880
+        height: 0
+        content: { type: plain, value: "Park new ideas in a notebook — don't chase them." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "4 / 5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · 03 No-meeting Wednesdays + CTA ───────────────
+  - id: hack-3
+    label: 03 No-meeting Wednesdays
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 200, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] }, opacity: 0.94 }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "#FFFFFF" } }
+      - id: number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 200
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.32 }
+      - id: hack-name
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "No-meeting\nWednesdays." }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
+      - { id: rule-1-dot, type: circle, z: 20, cx: 100, cy: 660, rx: 14, ry: 14, fill: { type: solid, color: "#FFFFFF" } }
+      - id: rule-1-text
+        type: text
+        z: 21
+        x: 140
+        y: 640
+        width: 880
+        height: 0
+        content: { type: plain, value: "Block the day — the whole day, not “most of it”." }
+        style: { font_family: $body, font_size: 28, color: "#FFFFFF", line_height: 1.5 }
+      - { id: rule-2-dot, type: circle, z: 20, cx: 100, cy: 780, rx: 14, ry: 14, fill: { type: solid, color: "#FFFFFF" } }
+      - id: rule-2-text
+        type: text
+        z: 21
+        x: 140
+        y: 760
+        width: 880
+        height: 0
+        content: { type: plain, value: "Tell the team once — then defend the calendar always." }
+        style: { font_family: $body, font_size: 28, color: "#FFFFFF", line_height: 1.5 }
+      - id: cta
+        type: text
+        z: 30
+        x: 72
+        y: 980
+        width: 936
+        height: 0
+        content: { type: plain, value: "Try one this week → tell me how it goes." }
+        style: { font_family: $heading, font_size: 32, font_weight: 700, color: "#FFFFFF", line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "5 / 5" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value",  type: text, hint: "Cover title",          default: "3 Time Hacks\nThat Saved\nMy Week." }
+  - { id: cover_tagline,  path: "pages[0].layers[5].content.value",  type: text, hint: "Cover tagline",        default: "Small shifts. Big calendar wins." }
+  - { id: intro_heading,  path: "pages[1].layers[3].content.value",  type: text, hint: "Intro heading",        default: "Your calendar\nis full." }
+  - { id: intro_body,     path: "pages[1].layers[4].content.value",  type: text, hint: "Intro body",           default: "Meetings stacked. Notifications cascading. Real work pushed to nights and weekends." }
+  - { id: hack_1_name,    path: "pages[2].layers[3].content.value",  type: text, hint: "Hack 1 name",          default: "Timeboxing." }
+  - { id: hack_1_rule_1,  path: "pages[2].layers[6].content.value",  type: text, hint: "Hack 1 rule 1",        default: "Calendar the task — name it, size it, ship it." }
+  - { id: hack_1_rule_2,  path: "pages[2].layers[8].content.value",  type: text, hint: "Hack 1 rule 2",        default: "When the box closes, you stop — even if imperfect." }
+  - { id: hack_2_name,    path: "pages[3].layers[3].content.value",  type: text, hint: "Hack 2 name",          default: "Single-tasking." }
+  - { id: hack_2_rule_1,  path: "pages[3].layers[6].content.value",  type: text, hint: "Hack 2 rule 1",        default: "Close every tab unrelated to the active task." }
+  - { id: hack_2_rule_2,  path: "pages[3].layers[8].content.value",  type: text, hint: "Hack 2 rule 2",        default: "Park new ideas in a notebook — don't chase them." }
+  - { id: hack_3_name,    path: "pages[4].layers[3].content.value",  type: text, hint: "Hack 3 name",          default: "No-meeting\nWednesdays." }
+  - { id: hack_3_rule_1,  path: "pages[4].layers[5].content.value",  type: text, hint: "Hack 3 rule 1",        default: "Block the day — the whole day, not “most of it”." }
+  - { id: hack_3_rule_2,  path: "pages[4].layers[7].content.value",  type: text, hint: "Hack 3 rule 2",        default: "Tell the team once — then defend the calendar always." }
+  - { id: cta,            path: "pages[4].layers[8].content.value",  type: text, hint: "CTA",                  default: "Try one this week → tell me how it goes." }

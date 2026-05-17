@@ -1,0 +1,336 @@
+_protocol: template/v1
+
+# LinkedIn 4-slide carousel · "Inbox Zero in 20 minutes/day" · cover, problem, 4-D method 2×2 grid, CTA.
+meta:
+  id: tmpl-linkedin-email-zero-4slide
+  name: LinkedIn Email Zero (4 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, productivity, inbox-zero, email, high-contrast, "4-5"]
+  description: "4-slide LinkedIn carousel: the 4-D method (Delete/Delegate/Defer/Do) as a 2×2 grid."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - { id: corner-block, type: rect, z: 3, x: 880, y: 80, width: 160, height: 160, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 380
+        width: 936
+        height: 0
+        content: { type: plain, value: "INBOX ZERO" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 72
+        y: 440
+        width: 936
+        height: 0
+        content: { type: plain, value: "Inbox Zero\nin 20 minutes\na day." }
+        style: { font_family: $heading, font_size: 100, font_weight: 900, color: $text, line_height: 0.98, letter_spacing: -0.03 }
+      - id: tagline
+        type: text
+        z: 12
+        x: 72
+        y: 880
+        width: 936
+        height: 0
+        content: { type: plain, value: "One method. Four moves. Zero clutter." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: swipe-hint
+        type: text
+        z: 13
+        x: 72
+        y: 980
+        width: 936
+        height: 0
+        content: { type: plain, value: "Swipe → for the 4-D method." }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: $primary }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "1 / 4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Why your inbox is broken ─────────────────────
+  - id: problem
+    label: Why your inbox is broken
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "WHY IT'S BROKEN" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "You treat every\nemail as a\ndecision." }
+        style: { font_family: $heading, font_size: 80, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: body
+        type: text
+        z: 12
+        x: 72
+        y: 760
+        width: 936
+        height: 0
+        content: { type: plain, value: "Then re-decide it on every refresh. The inbox isn't a task list — it's a queue." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+      - id: pivot
+        type: text
+        z: 13
+        x: 72
+        y: 1020
+        width: 936
+        height: 0
+        content: { type: plain, value: "Decide once. Move on. →" }
+        style: { font_family: $heading, font_size: 30, font_weight: 700, color: $primary, line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "2 / 4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · 4-D method 2×2 grid ──────────────────────────
+  - id: method
+    label: The 4-D method
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 140
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE METHOD" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 200
+        width: 936
+        height: 0
+        content: { type: plain, value: "The 4-D rule." }
+        style: { font_family: $heading, font_size: 72, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+
+      # Grid cell 1 · Delete (top-left)
+      - { id: cell-1-bg, type: rect, z: 20, x: 72, y: 380, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: cell-1-bar, type: rect, z: 21, x: 72, y: 380, width: 468, height: 8, fill: { type: solid, color: "$primary" } }
+      - id: cell-1-label
+        type: text
+        z: 22
+        x: 100
+        y: 420
+        width: 412
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.24 }
+      - id: cell-1-title
+        type: text
+        z: 23
+        x: 100
+        y: 460
+        width: 412
+        height: 0
+        content: { type: plain, value: "Delete" }
+        style: { font_family: $heading, font_size: 48, font_weight: 800, color: $text, letter_spacing: -0.02 }
+      - id: cell-1-body
+        type: text
+        z: 24
+        x: 100
+        y: 540
+        width: 412
+        height: 0
+        content: { type: plain, value: "If it doesn't matter in 30 days, it doesn't matter today." }
+        style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.5 }
+
+      # Grid cell 2 · Delegate (top-right)
+      - { id: cell-2-bg, type: rect, z: 20, x: 564, y: 380, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: cell-2-bar, type: rect, z: 21, x: 564, y: 380, width: 468, height: 8, fill: { type: solid, color: "$primary" } }
+      - id: cell-2-label
+        type: text
+        z: 22
+        x: 592
+        y: 420
+        width: 412
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.24 }
+      - id: cell-2-title
+        type: text
+        z: 23
+        x: 592
+        y: 460
+        width: 412
+        height: 0
+        content: { type: plain, value: "Delegate" }
+        style: { font_family: $heading, font_size: 48, font_weight: 800, color: $text, letter_spacing: -0.02 }
+      - id: cell-2-body
+        type: text
+        z: 24
+        x: 592
+        y: 540
+        width: 412
+        height: 0
+        content: { type: plain, value: "Forward in one sentence. Add the owner. Move on." }
+        style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.5 }
+
+      # Grid cell 3 · Defer (bottom-left)
+      - { id: cell-3-bg, type: rect, z: 20, x: 72, y: 790, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: cell-3-bar, type: rect, z: 21, x: 72, y: 790, width: 468, height: 8, fill: { type: solid, color: "$primary" } }
+      - id: cell-3-label
+        type: text
+        z: 22
+        x: 100
+        y: 830
+        width: 412
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.24 }
+      - id: cell-3-title
+        type: text
+        z: 23
+        x: 100
+        y: 870
+        width: 412
+        height: 0
+        content: { type: plain, value: "Defer" }
+        style: { font_family: $heading, font_size: 48, font_weight: 800, color: $text, letter_spacing: -0.02 }
+      - id: cell-3-body
+        type: text
+        z: 24
+        x: 100
+        y: 950
+        width: 412
+        height: 0
+        content: { type: plain, value: "Snooze to a calendar slot — not back into the inbox." }
+        style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.5 }
+
+      # Grid cell 4 · Do (bottom-right)
+      - { id: cell-4-bg, type: rect, z: 20, x: 564, y: 790, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: cell-4-bar, type: rect, z: 21, x: 564, y: 790, width: 468, height: 8, fill: { type: solid, color: "#FFFFFF" } }
+      - id: cell-4-label
+        type: text
+        z: 22
+        x: 592
+        y: 830
+        width: 412
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.24 }
+      - id: cell-4-title
+        type: text
+        z: 23
+        x: 592
+        y: 870
+        width: 412
+        height: 0
+        content: { type: plain, value: "Do" }
+        style: { font_family: $heading, font_size: 48, font_weight: 800, color: "#FFFFFF", letter_spacing: -0.02 }
+      - id: cell-4-body
+        type: text
+        z: 24
+        x: 592
+        y: 950
+        width: 412
+        height: 0
+        content: { type: plain, value: "If under 2 minutes — reply now and archive." }
+        style: { font_family: $body, font_size: 20, color: "#FFFFFF", line_height: 1.5 }
+
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "3 / 4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · CTA ──────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "#FFFFFF" } }
+      - id: heading
+        type: text
+        z: 11
+        x: 72
+        y: 460
+        width: 936
+        height: 0
+        content: { type: plain, value: "Decide once.\nArchive twice.\nNever read it again." }
+        style: { font_family: $heading, font_size: 80, font_weight: 900, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
+      - id: sub
+        type: text
+        z: 12
+        x: 72
+        y: 980
+        width: 936
+        height: 0
+        content: { type: plain, value: "Save this · Follow for one productivity move per week." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 50
+        x: 72
+        y: 1280
+        width: 936
+        height: 0
+        content: { type: plain, value: "4 / 4" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value",  type: text, hint: "Cover title",          default: "Inbox Zero\nin 20 minutes\na day." }
+  - { id: cover_tagline,  path: "pages[0].layers[5].content.value",  type: text, hint: "Cover tagline",        default: "One method. Four moves. Zero clutter." }
+  - { id: prob_heading,   path: "pages[1].layers[3].content.value",  type: text, hint: "Problem heading",      default: "You treat every\nemail as a\ndecision." }
+  - { id: prob_body,      path: "pages[1].layers[4].content.value",  type: text, hint: "Problem body",         default: "Then re-decide it on every refresh. The inbox isn't a task list — it's a queue." }
+  - { id: cell_1_title,   path: "pages[2].layers[7].content.value",  type: text, hint: "Cell 1 title",         default: "Delete" }
+  - { id: cell_1_body,    path: "pages[2].layers[8].content.value",  type: text, hint: "Cell 1 body",          default: "If it doesn't matter in 30 days, it doesn't matter today." }
+  - { id: cell_2_title,   path: "pages[2].layers[12].content.value", type: text, hint: "Cell 2 title",         default: "Delegate" }
+  - { id: cell_2_body,    path: "pages[2].layers[13].content.value", type: text, hint: "Cell 2 body",          default: "Forward in one sentence. Add the owner. Move on." }
+  - { id: cell_3_title,   path: "pages[2].layers[17].content.value", type: text, hint: "Cell 3 title",         default: "Defer" }
+  - { id: cell_3_body,    path: "pages[2].layers[18].content.value", type: text, hint: "Cell 3 body",          default: "Snooze to a calendar slot — not back into the inbox." }
+  - { id: cell_4_title,   path: "pages[2].layers[22].content.value", type: text, hint: "Cell 4 title",         default: "Do" }
+  - { id: cell_4_body,    path: "pages[2].layers[23].content.value", type: text, hint: "Cell 4 body",          default: "If under 2 minutes — reply now and archive." }
+  - { id: cta_heading,    path: "pages[3].layers[2].content.value",  type: text, hint: "CTA heading",          default: "Decide once.\nArchive twice.\nNever read it again." }
+  - { id: cta_sub,        path: "pages[3].layers[3].content.value",  type: text, hint: "CTA subline",          default: "Save this · Follow for one productivity move per week." }

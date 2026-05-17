@@ -1,0 +1,342 @@
+_protocol: template/v1
+
+# New hire welcome poster — eyebrow, big name display, role, avatar, 3 fact cards, CTA.
+# 4:5 LinkedIn portrait, sunset-glow theme. 5 staggered enter animations.
+meta:
+  id: tmpl-new-hire-welcome-poster
+  name: New Hire Welcome Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, hr, welcome, new-hire, onboarding, portrait, 4-5]
+  description: "LinkedIn 4:5 new-hire announcement with display name, avatar, and three fact cards."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill:
+      type: linear
+      angle: 145
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 120
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WELCOME ABOARD" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: name
+    type: text
+    z: 21
+    x: 80
+    y: 200
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Maya Patel" }
+    style:
+      font_family: $heading
+      font_size: 104
+      font_weight: 900
+      color: $text
+      line_height: 1
+      letter_spacing: -0.04
+
+  - id: role
+    type: text
+    z: 22
+    x: 80
+    y: 340
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Senior Product Designer" }
+    style:
+      font_family: $body
+      font_size: 30
+      font_weight: 600
+      color: $text_muted
+      line_height: 1.3
+
+  - id: avatar-ring
+    type: circle
+    z: 30
+    cx: 600
+    cy: 700
+    rx: 180
+    ry: 180
+    fill: { type: solid, color: "$primary" }
+
+  - id: avatar-initials
+    type: text
+    z: 31
+    x: 400
+    y: 660
+    width: 400
+    height: 0
+    content: { type: plain, value: "MP" }
+    style:
+      font_family: $heading
+      font_size: 120
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.02
+
+  - id: card-1-bg
+    type: rect
+    z: 40
+    x: 80
+    y: 980
+    width: 333
+    height: 220
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-1-label
+    type: text
+    z: 41
+    x: 110
+    y: 1010
+    width: 273
+    height: 0
+    content: { type: plain, value: "JOINING" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: card-1-value
+    type: text
+    z: 42
+    x: 110
+    y: 1050
+    width: 273
+    height: 0
+    content: { type: plain, value: "Design Systems" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 700
+      color: $text
+      line_height: 1.15
+
+  - id: card-1-sub
+    type: text
+    z: 43
+    x: 110
+    y: 1130
+    width: 273
+    height: 0
+    content: { type: plain, value: "Reports to @alex-rios" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: card-2-bg
+    type: rect
+    z: 40
+    x: 433
+    y: 980
+    width: 334
+    height: 220
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-2-label
+    type: text
+    z: 41
+    x: 463
+    y: 1010
+    width: 274
+    height: 0
+    content: { type: plain, value: "BASED IN" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: card-2-value
+    type: text
+    z: 42
+    x: 463
+    y: 1050
+    width: 274
+    height: 0
+    content: { type: plain, value: "Lisbon, PT" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 700
+      color: $text
+      line_height: 1.15
+
+  - id: card-2-sub
+    type: text
+    z: 43
+    x: 463
+    y: 1130
+    width: 274
+    height: 0
+    content: { type: plain, value: "Remote · UTC+0" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: card-3-bg
+    type: rect
+    z: 40
+    x: 787
+    y: 980
+    width: 333
+    height: 220
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-3-label
+    type: text
+    z: 41
+    x: 817
+    y: 1010
+    width: 273
+    height: 0
+    content: { type: plain, value: "FUN FACT" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: card-3-value
+    type: text
+    z: 42
+    x: 817
+    y: 1050
+    width: 273
+    height: 0
+    content: { type: plain, value: "Sourdough geek" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 700
+      color: $text
+      line_height: 1.15
+
+  - id: card-3-sub
+    type: text
+    z: 43
+    x: 817
+    y: 1130
+    width: 273
+    height: 0
+    content: { type: plain, value: "Ask about her starter" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+  - id: cta-text
+    type: text
+    z: 50
+    x: 80
+    y: 1300
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Say hi →" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $primary
+      line_height: 1
+      letter_spacing: -0.02
+
+  - id: handle
+    type: text
+    z: 51
+    x: 80
+    y: 1410
+    width: 1040
+    height: 0
+    content: { type: plain, value: "@yourcompany · welcome to the team" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.2
+
+animations:
+  name:
+    enter: { type: fade_up, duration: 700, delay: 100, easing: ease-out }
+  role:
+    enter: { type: fade_up, duration: 500, delay: 300, easing: ease-out }
+  avatar-ring:
+    enter: { type: scale_in, duration: 600, delay: 200, easing: ease-out }
+  card-1-bg:
+    enter: { type: fade_up, duration: 500, delay: 500, easing: ease-out }
+  card-2-bg:
+    enter: { type: fade_up, duration: 500, delay: 700, easing: ease-out }
+  card-3-bg:
+    enter: { type: fade_up, duration: 500, delay: 900, easing: ease-out }
+
+slots:
+  - { id: eyebrow,    path: "layers[2].content.value",  type: text, hint: "Eyebrow",          default: "WELCOME ABOARD" }
+  - { id: name,       path: "layers[3].content.value",  type: text, hint: "Hire name",        default: "Maya Patel" }
+  - { id: role,       path: "layers[4].content.value",  type: text, hint: "Role title",       default: "Senior Product Designer" }
+  - { id: initials,   path: "layers[6].content.value",  type: text, hint: "Avatar initials",  default: "MP" }
+  - { id: team,       path: "layers[9].content.value",  type: text, hint: "Joining team",     default: "Design Systems" }
+  - { id: team_sub,   path: "layers[10].content.value", type: text, hint: "Reports to",       default: "Reports to @alex-rios" }
+  - { id: location,   path: "layers[13].content.value", type: text, hint: "Location",         default: "Lisbon, PT" }
+  - { id: tz,         path: "layers[14].content.value", type: text, hint: "Timezone",         default: "Remote · UTC+0" }
+  - { id: fun_fact,   path: "layers[17].content.value", type: text, hint: "Fun fact",         default: "Sourdough geek" }
+  - { id: fun_sub,    path: "layers[18].content.value", type: text, hint: "Fun fact sub",     default: "Ask about her starter" }
+  - { id: cta,        path: "layers[19].content.value", type: text, hint: "CTA text",         default: "Say hi →" }
+  - { id: handle,     path: "layers[20].content.value", type: text, hint: "Footer handle",    default: "@yourcompany · welcome to the team" }

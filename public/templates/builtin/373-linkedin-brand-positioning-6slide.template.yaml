@@ -1,0 +1,483 @@
+_protocol: template/v1
+
+# 6-slide LinkedIn carousel — Brand positioning framework (FOR / WHO / VS / SO THAT).
+# 1080×1350 portrait, indigo-pro theme.
+meta:
+  id: tmpl-linkedin-brand-positioning-6slide
+  name: LinkedIn Brand Positioning (6 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, marketing, branding, positioning, indigo-pro, 4-5]
+  description: "6-slide LinkedIn carousel: a 4-quadrant positioning framework with fill-in-the-blank templates."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 145, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: cover-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - { id: cover-grid-h, type: rect, z: 4, x: 80, y: 660, width: 920, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.25 }
+      - { id: cover-grid-v, type: rect, z: 4, x: 540, y: 460, width: 1, height: 400, fill: { type: solid, color: "$text_muted" }, opacity: 0.25 }
+      - id: cover-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "POSITIONING · FRAMEWORK" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: cover-title
+        type: text
+        z: 12
+        x: 80
+        y: 420
+        width: 920
+        height: 0
+        content: { type: plain, value: "The Positioning\nFramework" }
+        style: { font_family: $heading, font_size: 90, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: cover-tagline
+        type: text
+        z: 13
+        x: 80
+        y: 940
+        width: 920
+        height: 0
+        content: { type: plain, value: "FOR / WHO / VS / SO THAT" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: cover-sub
+        type: text
+        z: 14
+        x: 80
+        y: 1000
+        width: 920
+        height: 0
+        content: { type: plain, value: "Swipe → fill in the four blanks." }
+        style: { font_family: $body, font_size: 24, color: $text_muted, line_height: 1.4 }
+      - id: cover-handle
+        type: text
+        z: 15
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: cover-counter
+        type: text
+        z: 16
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "1 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Why positioning matters ──────────────────────
+  - id: why
+    label: Why positioning
+    layers:
+      - { id: why-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: why-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: why-eyebrow
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHY POSITIONING MATTERS" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.34, text_transform: uppercase }
+      - id: why-title
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "If you can't say it\nin one sentence,\nthe market won't either." }
+        style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: why-body
+        type: text
+        z: 13
+        x: 80
+        y: 680
+        width: 920
+        height: 0
+        content: { type: plain, value: "Positioning isn't a tagline. It's the one sentence your customer uses to explain you to a colleague when you're not in the room. Get it right, and pipeline gets easier." }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 }
+      - id: why-handle
+        type: text
+        z: 14
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: why-counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "2 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · FOR ──────────────────────────────────────────
+  - id: for
+    label: FOR
+    layers:
+      - { id: for-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: for-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: for-label
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "QUADRANT 01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: for-glyph
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "FOR" }
+        style: { font_family: $heading, font_size: 200, font_weight: 900, color: $accent, line_height: 0.95, letter_spacing: -0.05 }
+      - id: for-desc
+        type: text
+        z: 13
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Who is this for? Be specific enough that the wrong person disqualifies themselves in 3 seconds." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.5 }
+      - id: for-template-label
+        type: text
+        z: 14
+        x: 80
+        y: 780
+        width: 920
+        height: 0
+        content: { type: plain, value: "TEMPLATE" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: for-card
+        type: rect
+        z: 15
+        x: 80
+        y: 820
+        width: 920
+        height: 220
+        radius: 12
+        fill: { type: solid, color: "$surface" }
+      - id: for-template
+        type: text
+        z: 16
+        x: 110
+        y: 860
+        width: 860
+        height: 0
+        content: { type: plain, value: "FOR _______ (specific role/title)\nin _______ (industry/company stage)" }
+        style: { font_family: $mono, font_size: 24, color: $text, line_height: 1.55 }
+      - id: for-handle
+        type: text
+        z: 17
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: for-counter
+        type: text
+        z: 18
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "3 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · WHO ──────────────────────────────────────────
+  - id: who
+    label: WHO
+    layers:
+      - { id: who-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: who-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: who-label
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "QUADRANT 02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: who-glyph
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHO" }
+        style: { font_family: $heading, font_size: 200, font_weight: 900, color: $accent, line_height: 0.95, letter_spacing: -0.05 }
+      - id: who-desc
+        type: text
+        z: 13
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "What pain are they hired to solve? Name the job-to-be-done, not the demographic." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.5 }
+      - id: who-template-label
+        type: text
+        z: 14
+        x: 80
+        y: 780
+        width: 920
+        height: 0
+        content: { type: plain, value: "TEMPLATE" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: who-card
+        type: rect
+        z: 15
+        x: 80
+        y: 820
+        width: 920
+        height: 220
+        radius: 12
+        fill: { type: solid, color: "$surface" }
+      - id: who-template
+        type: text
+        z: 16
+        x: 110
+        y: 860
+        width: 860
+        height: 0
+        content: { type: plain, value: "WHO struggle to _______ (specific job)\nbecause _______ (root cause)" }
+        style: { font_family: $mono, font_size: 24, color: $text, line_height: 1.55 }
+      - id: who-handle
+        type: text
+        z: 17
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: who-counter
+        type: text
+        z: 18
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "4 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · VS ───────────────────────────────────────────
+  - id: vs
+    label: VS
+    layers:
+      - { id: vs-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: vs-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: vs-label
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "QUADRANT 03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.3 }
+      - id: vs-glyph
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "VS" }
+        style: { font_family: $heading, font_size: 200, font_weight: 900, color: $secondary, line_height: 0.95, letter_spacing: -0.05 }
+      - id: vs-desc
+        type: text
+        z: 13
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "What's the obvious alternative they'd use instead? Name your real competitor (often a spreadsheet)." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.5 }
+      - id: vs-template-label
+        type: text
+        z: 14
+        x: 80
+        y: 780
+        width: 920
+        height: 0
+        content: { type: plain, value: "TEMPLATE" }
+        style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: vs-card
+        type: rect
+        z: 15
+        x: 80
+        y: 820
+        width: 920
+        height: 220
+        radius: 12
+        fill: { type: solid, color: "$surface" }
+      - id: vs-template
+        type: text
+        z: 16
+        x: 110
+        y: 860
+        width: 860
+        height: 0
+        content: { type: plain, value: "Unlike _______ (alternative),\nwe _______ (key difference)" }
+        style: { font_family: $mono, font_size: 24, color: $text, line_height: 1.55 }
+      - id: vs-handle
+        type: text
+        z: 17
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: vs-counter
+        type: text
+        z: 18
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "5 / 6" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · SO THAT + CTA ────────────────────────────────
+  - id: cta
+    label: SO THAT + CTA
+    layers:
+      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 175, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] }, opacity: 0.95 }
+      - { id: cta-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.30)" } }
+      - { id: cta-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$secondary" } }
+      - id: cta-label
+        type: text
+        z: 11
+        x: 80
+        y: 180
+        width: 920
+        height: 0
+        content: { type: plain, value: "QUADRANT 04" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3 }
+      - id: cta-glyph
+        type: text
+        z: 12
+        x: 80
+        y: 240
+        width: 920
+        height: 0
+        content: { type: plain, value: "SO THAT" }
+        style: { font_family: $heading, font_size: 130, font_weight: 900, color: "#FFFFFF", line_height: 0.95, letter_spacing: -0.04 }
+      - id: cta-desc
+        type: text
+        z: 13
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "What outcome do they get? The end-state, not the feature." }
+        style: { font_family: $body, font_size: 26, color: "#E8EAF6", line_height: 1.5 }
+      - id: cta-card
+        type: rect
+        z: 14
+        x: 80
+        y: 640
+        width: 920
+        height: 220
+        radius: 12
+        fill: { type: solid, color: "rgba(255,255,255,0.14)" }
+      - id: cta-template
+        type: text
+        z: 15
+        x: 110
+        y: 680
+        width: 860
+        height: 0
+        content: { type: plain, value: "SO THAT _______ (outcome)\nwithout _______ (typical cost)" }
+        style: { font_family: $mono, font_size: 24, color: "#FFFFFF", line_height: 1.55 }
+      - id: cta-headline
+        type: text
+        z: 16
+        x: 80
+        y: 920
+        width: 920
+        height: 0
+        content: { type: plain, value: "Fill these in\nbefore Friday." }
+        style: { font_family: $heading, font_size: 70, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.03 }
+      - id: cta-btn
+        type: rect
+        z: 17
+        x: 80
+        y: 1140
+        width: 320
+        height: 72
+        radius: 36
+        fill: { type: solid, color: "$primary" }
+      - id: cta-btn-text
+        type: text
+        z: 18
+        x: 80
+        y: 1161
+        width: 320
+        height: 0
+        content: { type: plain, value: "Save the framework →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: cta-handle
+        type: text
+        z: 19
+        x: 80
+        y: 1280
+        width: 600
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#E8EAF6" }
+      - id: cta-counter
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 120
+        height: 0
+        content: { type: plain, value: "6 / 6" }
+        style: { font_family: $mono, font_size: 14, color: "#E8EAF6", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[5].content.value", type: text, hint: "Cover headline",         default: "The Positioning\nFramework" }
+  - { id: why_body,       path: "pages[1].layers[4].content.value", type: text, hint: "Why positioning body",   default: "Positioning isn't a tagline. It's the one sentence your customer uses to explain you to a colleague when you're not in the room. Get it right, and pipeline gets easier." }
+  - { id: for_template,   path: "pages[2].layers[7].content.value", type: text, hint: "FOR template sentence",  default: "FOR _______ (specific role/title)\nin _______ (industry/company stage)" }
+  - { id: who_template,   path: "pages[3].layers[7].content.value", type: text, hint: "WHO template sentence",  default: "WHO struggle to _______ (specific job)\nbecause _______ (root cause)" }
+  - { id: vs_template,    path: "pages[4].layers[7].content.value", type: text, hint: "VS template sentence",   default: "Unlike _______ (alternative),\nwe _______ (key difference)" }
+  - { id: cta_template,   path: "pages[5].layers[7].content.value", type: text, hint: "SO THAT template",       default: "SO THAT _______ (outcome)\nwithout _______ (typical cost)" }
+  - { id: cta_headline,   path: "pages[5].layers[8].content.value", type: text, hint: "CTA headline",           default: "Fill these in\nbefore Friday." }
+  - { id: cta_btn_text,   path: "pages[5].layers[10].content.value", type: text, hint: "CTA button label",      default: "Save the framework →" }

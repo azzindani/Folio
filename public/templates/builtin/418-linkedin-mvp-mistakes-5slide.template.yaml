@@ -1,0 +1,109 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — 4 MVP mistakes founders make.
+# Portrait 1080×1350. High-contrast theme. ✗ glyph for each mistake.
+# Layout: Cover (with mini-intro) → 4 mistake slides (last includes CTA).
+meta:
+  id: tmpl-linkedin-mvp-mistakes-5slide
+  name: LinkedIn · MVP Mistakes (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, startup, founder, mvp, mistakes, 4-5, high-contrast]
+  description: "5-slide LinkedIn carousel: 4 MVP mistakes with one-line lessons."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+pages:
+  # ── Slide 1 · Cover + intro ────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 14, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "1 / 5" }, style: { font_family: $mono, font_size: 18, color: $text, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "LESSONS LEARNED" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 430, width: 960, height: 0, content: { type: plain, value: "4 MVP\nMistakes\nI've Made\n(So You Don't)" }, style: { font_family: $heading, font_size: 88, font_weight: 900, color: $text, line_height: 1.02, letter_spacing: -0.03 } }
+      - { id: intro, type: text, z: 13, x: 60, y: 1020, width: 960, height: 0, content: { type: plain, value: "I've shipped 3 MVPs. None went the way I planned. Each cost me real time and money — here are the 4 mistakes I see every week on founder calls. Swipe →" }, style: { font_family: $body, font_size: 24, color: $text_muted, line_height: 1.5 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 2 · Mistake 1 ────────────────────────────────────
+  - id: mistake-1
+    label: Mistake 1
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 14, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "2 / 5" }, style: { font_family: $mono, font_size: 18, color: $text, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "MISTAKE 01" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: glyph, type: text, z: 20, x: 60, y: 240, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 160, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: mistake-text, type: text, z: 21, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Building for 6 months\nbefore showing anyone." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: lesson-label, type: text, z: 22, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "LESSON" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: lesson-text, type: text, z: 23, x: 60, y: 800, width: 960, height: 0, content: { type: plain, value: "If you can't demo it in 90 days, the scope is wrong — not the timeline." }, style: { font_family: $body, font_size: 30, color: $text, line_height: 1.45 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 3 · Mistake 2 ────────────────────────────────────
+  - id: mistake-2
+    label: Mistake 2
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 14, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "3 / 5" }, style: { font_family: $mono, font_size: 18, color: $text, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "MISTAKE 02" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: glyph, type: text, z: 20, x: 60, y: 240, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 160, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: mistake-text, type: text, z: 21, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Adding features\ninstead of removing them." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: lesson-label, type: text, z: 22, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "LESSON" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: lesson-text, type: text, z: 23, x: 60, y: 800, width: 960, height: 0, content: { type: plain, value: "Every feature on the roadmap is a tax on the one that already works." }, style: { font_family: $body, font_size: 30, color: $text, line_height: 1.45 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 4 · Mistake 3 ────────────────────────────────────
+  - id: mistake-3
+    label: Mistake 3
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 14, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "4 / 5" }, style: { font_family: $mono, font_size: 18, color: $text, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "MISTAKE 03" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: glyph, type: text, z: 20, x: 60, y: 240, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 160, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: mistake-text, type: text, z: 21, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Listening to everyone\nwho isn't your customer." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: lesson-label, type: text, z: 22, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "LESSON" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: lesson-text, type: text, z: 23, x: 60, y: 800, width: 960, height: 0, content: { type: plain, value: "Filter feedback by 'have you paid yet?' — that one question cuts the noise in half." }, style: { font_family: $body, font_size: 30, color: $text, line_height: 1.45 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 5 · Mistake 4 + CTA ──────────────────────────────
+  - id: mistake-4-cta
+    label: Mistake 4 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 14, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "5 / 5" }, style: { font_family: $mono, font_size: 18, color: $text, letter_spacing: 0.18 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 140, width: 960, height: 0, content: { type: plain, value: "MISTAKE 04" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: glyph, type: text, z: 20, x: 60, y: 200, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 140, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: mistake-text, type: text, z: 21, x: 60, y: 400, width: 960, height: 0, content: { type: plain, value: "Confusing motion\nwith progress." }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: lesson-label, type: text, z: 22, x: 60, y: 660, width: 960, height: 0, content: { type: plain, value: "LESSON" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: lesson-text, type: text, z: 23, x: 60, y: 700, width: 960, height: 0, content: { type: plain, value: "Activated users beat shipped tickets. Pick one metric and ignore the rest." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.45 } }
+      - { id: cta-divider, type: rect, z: 24, x: 60, y: 920, width: 960, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.3 }
+      - { id: cta-text, type: text, z: 25, x: 60, y: 970, width: 960, height: 0, content: { type: plain, value: "Save this carousel. Follow for more founder lessons." }, style: { font_family: $body, font_size: 26, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: cta-btn, type: rect, z: 26, x: 60, y: 1070, width: 280, height: 64, radius: 32, fill: { type: solid, color: "$primary" } }
+      - { id: cta-btn-text, type: text, z: 27, x: 60, y: 1090, width: 280, height: 0, content: { type: plain, value: "Follow →" }, style: { font_family: $body, font_size: 20, font_weight: 700, color: "#FFFFFF", text_align: center } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+slots:
+  - { id: cover_title,     path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",     default: "4 MVP\nMistakes\nI've Made\n(So You Don't)" }
+  - { id: cover_intro,     path: "pages[0].layers[5].content.value", type: text, hint: "Cover intro",        default: "I've shipped 3 MVPs. None went the way I planned." }
+  - { id: mistake_1_text,  path: "pages[1].layers[5].content.value", type: text, hint: "Mistake 1 text",     default: "Building for 6 months\nbefore showing anyone." }
+  - { id: mistake_1_lesson,path: "pages[1].layers[7].content.value", type: text, hint: "Mistake 1 lesson",   default: "If you can't demo it in 90 days, the scope is wrong — not the timeline." }
+  - { id: mistake_2_text,  path: "pages[2].layers[5].content.value", type: text, hint: "Mistake 2 text",     default: "Adding features\ninstead of removing them." }
+  - { id: mistake_2_lesson,path: "pages[2].layers[7].content.value", type: text, hint: "Mistake 2 lesson",   default: "Every feature on the roadmap is a tax on the one that already works." }
+  - { id: mistake_3_text,  path: "pages[3].layers[5].content.value", type: text, hint: "Mistake 3 text",     default: "Listening to everyone\nwho isn't your customer." }
+  - { id: mistake_3_lesson,path: "pages[3].layers[7].content.value", type: text, hint: "Mistake 3 lesson",   default: "Filter feedback by 'have you paid yet?'" }
+  - { id: mistake_4_text,  path: "pages[4].layers[5].content.value", type: text, hint: "Mistake 4 text",     default: "Confusing motion\nwith progress." }
+  - { id: mistake_4_lesson,path: "pages[4].layers[7].content.value", type: text, hint: "Mistake 4 lesson",   default: "Activated users beat shipped tickets." }
+  - { id: cta_text,        path: "pages[4].layers[9].content.value", type: text, hint: "CTA line",           default: "Save this carousel. Follow for more founder lessons." }

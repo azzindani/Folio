@@ -1,0 +1,397 @@
+_protocol: template/v1
+
+# Single-page campaign results poster — 2×2 stat grid with caption.
+# LinkedIn 4:5 portrait, cyber-synthwave theme.
+meta:
+  id: tmpl-campaign-results-poster
+  name: Campaign Results Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, marketing, campaign, results, stats, cyber-synthwave, 4-5]
+  description: "Single-page campaign recap poster: eyebrow, headline, 4-stat grid (2×2), and campaign metadata footer."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+layers:
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1200, height: 1500, fill: { type: linear, angle: 165, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+
+  - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1200, height: 12, fill: { type: solid, color: "$primary" } }
+
+  - id: accent-dot
+    type: circle
+    z: 5
+    cx: 1110
+    cy: 140
+    rx: 10
+    ry: 10
+    fill: { type: solid, color: "$accent" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 140
+    width: 1040
+    height: 0
+    content: { type: plain, value: "CAMPAIGN RESULTS" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: title
+    type: text
+    z: 21
+    x: 80
+    y: 200
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Q1 Campaign\nBy the numbers" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: $text
+      line_height: 0.98
+      letter_spacing: -0.03
+
+  - id: subtitle
+    type: text
+    z: 22
+    x: 80
+    y: 410
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Cross-channel — organic + paid social + newsletter." }
+    style:
+      font_family: $body
+      font_size: 24
+      color: $text_muted
+      line_height: 1.4
+
+  # ── 2×2 Stat Grid ──────────────────────────────────────────
+  # Tile 1 · Reach (top-left)
+  - id: stat-1-card
+    type: rect
+    z: 30
+    x: 80
+    y: 500
+    width: 510
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.95
+
+  - id: stat-1-label
+    type: text
+    z: 31
+    x: 110
+    y: 530
+    width: 450
+    height: 0
+    content: { type: plain, value: "TOTAL REACH" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: stat-1-value
+    type: text
+    z: 32
+    x: 110
+    y: 580
+    width: 450
+    height: 0
+    content: { type: plain, value: "3.2M" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: stat-1-caption
+    type: text
+    z: 33
+    x: 110
+    y: 770
+    width: 450
+    height: 0
+    content: { type: plain, value: "impressions across LinkedIn, X, and newsletter" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      line_height: 1.45
+
+  # Tile 2 · CTR (top-right)
+  - id: stat-2-card
+    type: rect
+    z: 30
+    x: 610
+    y: 500
+    width: 510
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$secondary", width: 1 }
+    opacity: 0.95
+
+  - id: stat-2-label
+    type: text
+    z: 31
+    x: 640
+    y: 530
+    width: 450
+    height: 0
+    content: { type: plain, value: "CLICK-THROUGH" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: stat-2-value
+    type: text
+    z: 32
+    x: 640
+    y: 580
+    width: 450
+    height: 0
+    content: { type: plain, value: "4.7%" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $secondary
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: stat-2-caption
+    type: text
+    z: 33
+    x: 640
+    y: 770
+    width: 450
+    height: 0
+    content: { type: plain, value: "blended CTR — 3.1× industry benchmark" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      line_height: 1.45
+
+  # Tile 3 · CAC (bottom-left)
+  - id: stat-3-card
+    type: rect
+    z: 30
+    x: 80
+    y: 890
+    width: 510
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$accent", width: 1 }
+    opacity: 0.95
+
+  - id: stat-3-label
+    type: text
+    z: 31
+    x: 110
+    y: 920
+    width: 450
+    height: 0
+    content: { type: plain, value: "BLENDED CAC" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: stat-3-value
+    type: text
+    z: 32
+    x: 110
+    y: 970
+    width: 450
+    height: 0
+    content: { type: plain, value: "$120" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $accent
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: stat-3-caption
+    type: text
+    z: 33
+    x: 110
+    y: 1160
+    width: 450
+    height: 0
+    content: { type: plain, value: "down 38% from Q4 — organic share now 62%" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      line_height: 1.45
+
+  # Tile 4 · Deals (bottom-right)
+  - id: stat-4-card
+    type: rect
+    z: 30
+    x: 610
+    y: 890
+    width: 510
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.95
+
+  - id: stat-4-label
+    type: text
+    z: 31
+    x: 640
+    y: 920
+    width: 450
+    height: 0
+    content: { type: plain, value: "CLOSED-WON" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: stat-4-value
+    type: text
+    z: 32
+    x: 640
+    y: 970
+    width: 450
+    height: 0
+    content: { type: plain, value: "12" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: stat-4-caption
+    type: text
+    z: 33
+    x: 640
+    y: 1160
+    width: 450
+    height: 0
+    content: { type: plain, value: "deals sourced — $480K pipeline, $186K closed" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      line_height: 1.45
+
+  # ── Footer ─────────────────────────────────────────────────
+  - { id: divider, type: rect, z: 40, x: 80, y: 1310, width: 1040, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.3 }
+
+  - id: campaign-name
+    type: text
+    z: 50
+    x: 80
+    y: 1350
+    width: 700
+    height: 0
+    content: { type: plain, value: "Operation Liftoff · Q1 2026" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: $text
+      line_height: 1.4
+
+  - id: campaign-dates
+    type: text
+    z: 51
+    x: 80
+    y: 1390
+    width: 700
+    height: 0
+    content: { type: plain, value: "01 Jan 2026 → 31 Mar 2026 · prepared by Marketing Ops" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      line_height: 1.4
+
+  - id: page-mark
+    type: text
+    z: 52
+    x: 880
+    y: 1390
+    width: 240
+    height: 0
+    content: { type: plain, value: "01 / FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  accent-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.3 }
+  title:
+    enter: { type: fade_up, duration: 700, delay: 100, easing: ease-out }
+  stat-1-value:
+    enter: { type: scale_in, duration: 600, delay: 300, easing: ease-out }
+  stat-2-value:
+    enter: { type: scale_in, duration: 600, delay: 450, easing: ease-out }
+  stat-3-value:
+    enter: { type: scale_in, duration: 600, delay: 600, easing: ease-out }
+  stat-4-value:
+    enter: { type: scale_in, duration: 600, delay: 750, easing: ease-out }
+
+slots:
+  - { id: eyebrow,        path: "layers[3].content.value",  type: text, hint: "Eyebrow tag",           default: "CAMPAIGN RESULTS" }
+  - { id: title,          path: "layers[4].content.value",  type: text, hint: "Headline",              default: "Q1 Campaign\nBy the numbers" }
+  - { id: subtitle,       path: "layers[5].content.value",  type: text, hint: "Subtitle",              default: "Cross-channel — organic + paid social + newsletter." }
+  - { id: stat_1_value,   path: "layers[8].content.value",  type: text, hint: "Stat 1 value",          default: "3.2M" }
+  - { id: stat_1_caption, path: "layers[9].content.value",  type: text, hint: "Stat 1 caption",        default: "impressions across LinkedIn, X, and newsletter" }
+  - { id: stat_2_value,   path: "layers[12].content.value", type: text, hint: "Stat 2 value",          default: "4.7%" }
+  - { id: stat_2_caption, path: "layers[13].content.value", type: text, hint: "Stat 2 caption",        default: "blended CTR — 3.1× industry benchmark" }
+  - { id: stat_3_value,   path: "layers[16].content.value", type: text, hint: "Stat 3 value",          default: "$120" }
+  - { id: stat_3_caption, path: "layers[17].content.value", type: text, hint: "Stat 3 caption",        default: "down 38% from Q4 — organic share now 62%" }
+  - { id: stat_4_value,   path: "layers[20].content.value", type: text, hint: "Stat 4 value",          default: "12" }
+  - { id: stat_4_caption, path: "layers[21].content.value", type: text, hint: "Stat 4 caption",        default: "deals sourced — $480K pipeline, $186K closed" }
+  - { id: campaign_name,  path: "layers[23].content.value", type: text, hint: "Campaign name",         default: "Operation Liftoff · Q1 2026" }
+  - { id: campaign_dates, path: "layers[24].content.value", type: text, hint: "Dates + author",        default: "01 Jan 2026 → 31 Mar 2026 · prepared by Marketing Ops" }
