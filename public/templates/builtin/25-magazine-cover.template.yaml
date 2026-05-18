@@ -211,7 +211,7 @@ layers:
     type: text
     z: 25
     x: 640
-    y: 360
+    y: 620
     width: 360
     height: 0
     content: { type: plain, value: "INTERVIEW" }
@@ -228,7 +228,7 @@ layers:
     type: text
     z: 26
     x: 640
-    y: 386
+    y: 646
     width: 360
     height: 0
     content: { type: plain, value: "Mira, on Patience" }
@@ -245,7 +245,7 @@ layers:
     type: text
     z: 27
     x: 640
-    y: 442
+    y: 702
     width: 360
     height: 0
     content: { type: plain, value: "A long conversation with the editor on craft, doubt, and slow software." }

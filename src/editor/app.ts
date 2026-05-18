@@ -19,7 +19,7 @@ import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
-import type { DesignSpec } from '../schema/types';
+import type { DesignSpec, ThemeSpec } from '../schema/types';
 import { fileWatcher } from '../fs/file-watcher';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { PanelResizer } from '../ui/resize/panel-resizer';
@@ -431,11 +431,25 @@ export class EditorApp {
     if (typeof location === 'undefined' || typeof EventSource === 'undefined') return;
     void import('./mcp-events').then(({ subscribeMCPEvents, parseMCPParams }) => {
       const params = parseMCPParams();
+
+      // Jupyter-style ?token=: stash for fetches and SSE. Stick in
+      // sessionStorage so reload-without-token-in-URL still authenticates.
+      const urlToken = new URLSearchParams(location.search).get('token');
+      if (urlToken) {
+        try { sessionStorage.setItem('folio_editor_token', urlToken); } catch { /* private mode */ }
+      }
+
+      // Initial load: open_in_editor produces URLs with ?file=/abs/path
+      // pointing at a design YAML on disk. Fetch via /__project_files/*.
+      if (params.designPath) void this.loadFromQueryParam(params.designPath);
+
       if (!params.mcpUrl) return;
       try {
         subscribeMCPEvents({
           mcpUrl: params.mcpUrl,
           designPath: params.designPath,
+          // EventSource doesn't support headers — pass the token in the URL.
+          token: this.readEditorToken(),
           onFileChanged: (yamlContent) => {
             try { this.loadFromYAML(yamlContent); } catch { /* invalid YAML — wait for next event */ }
             void import('../utils/toast').then(({ showToast }) => showToast('Design updated by MCP', 'info'));
@@ -444,6 +458,54 @@ export class EditorApp {
         });
       } catch { /* MCP server unreachable — silent fallback */ }
     });
+  }
+
+  private readEditorToken(): string | undefined {
+    try {
+      const fromUrl = new URLSearchParams(location.search).get('token');
+      if (fromUrl) return fromUrl;
+      const fromStore = sessionStorage.getItem('folio_editor_token');
+      return fromStore ?? undefined;
+    } catch { return undefined; }
+  }
+
+  private async loadFromQueryParam(absDesignPath: string): Promise<void> {
+    // Map container-side absolute path → relative URL under /files/. The
+    // host's bind-mount makes /home/folio/projects/<x> visible at /files/<x>.
+    const PROJECTS_PREFIX = '/home/folio/projects/';
+    let rel: string;
+    if (absDesignPath.startsWith(PROJECTS_PREFIX)) {
+      rel = absDesignPath.slice(PROJECTS_PREFIX.length);
+    } else {
+      // Local dev: project paths may live anywhere on disk. Fall back to
+      // the basename — the user can still use Files panel to open it.
+      // eslint-disable-next-line no-console
+      console.warn('[editor] ?file= path is outside FOLIO_PROJECTS_DIR; cannot auto-load:', absDesignPath);
+      return;
+    }
+    // /__project_files/* is served by the editor's own static-server and
+    // shares its auth scope (no separate Caddy basic_auth realm to confuse
+    // the browser). Avoids fetch-vs-cached-basic-auth quirks.
+    const url = `/__project_files/${rel.split('/').map(encodeURIComponent).join('/')}`;
+    const token = this.readEditorToken();
+    try {
+      const r = await fetch(url, {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!r.ok) {
+        // eslint-disable-next-line no-console
+        console.warn(`[editor] could not fetch ?file= target: ${r.status} ${url}`);
+        return;
+      }
+      const yamlContent = await r.text();
+      this.loadFromYAML(yamlContent);
+      void import('../utils/toast').then(({ showToast }) => showToast(`Loaded ${rel.split('/').pop() ?? rel}`, 'success'));
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[editor] ?file= load failed:', err);
+    }
   }
 
   private buildLayout(): void {
@@ -992,12 +1054,23 @@ export class EditorApp {
       console.warn('Design validation warnings:', criticalErrors);
     }
 
+    // Resolve the spec's theme.ref against the builtin registry. Without
+    // this, state.theme stays at whatever the previous design used, so a
+    // YAML declaring `theme: { ref: editorial-cream }` renders against the
+    // prior dark theme (background dark, $text dark → invisible).
+    const themeAny = spec.theme as { ref?: string; colors?: unknown } | undefined;
+    const themeRef = themeAny && 'ref' in themeAny ? themeAny.ref : undefined;
+    const resolvedTheme = themeRef && BUILTIN_THEMES[themeRef]
+      ? BUILTIN_THEMES[themeRef]
+      : (themeAny && 'colors' in themeAny ? (themeAny as ThemeSpec) : undefined);
+
     this.state.batch(() => {
       this.state.set('design', spec);
       this.state.set('yamlSource', serializeYAML(spec));
       this.state.set('selectedLayerIds', []);
       this.state.set('currentPageIndex', 0);
       this.state.set('dirty', false);
+      if (resolvedTheme) this.state.set('theme', resolvedTheme);
       // Clear style overlays from a previous design so we don't carry over
       // a Playfair type-pack into a brutalist template. Refs declared on
       // the new spec are resolved asynchronously below and re-set on land.

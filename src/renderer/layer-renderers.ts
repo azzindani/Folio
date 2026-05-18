@@ -312,11 +312,13 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     const value = layer.content.value;
     const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
 
-    // Compute x anchor
-    const anchor = style.align === 'center' ? 'middle' : style.align === 'right' ? 'end' : 'start';
+    // Compute x anchor — `text_align` is the dominant authored form in
+    // templates, `align` is the legacy field; honour either.
+    const alignVal = style.text_align ?? style.align;
+    const anchor = alignVal === 'center' ? 'middle' : alignVal === 'right' ? 'end' : 'start';
     let textX = layer.x ?? 0;
-    if (style.align === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
-    else if (style.align === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
+    if (alignVal === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
+    else if (alignVal === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
 
     // Compute y anchor (vertical align within layer height)
     let textY = (layer.y ?? 0) + fontSize;
@@ -334,7 +336,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       textEl.setAttribute('text-decoration', style.text_decoration);
     }
     if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
-    if (style.align) textEl.setAttribute('text-anchor', anchor);
+    if (alignVal) textEl.setAttribute('text-anchor', anchor);
 
     const textColor = style.color
       ? resolveColorOrGradient(style.color, getOrCreateDefs(svg))
@@ -365,6 +367,16 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
 
 // ── Image ───────────────────────────────────────────────────
 export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
+  // No src → render a styled dashed-frame placeholder. Cleaner than the
+  // browser's broken-image icon and matches the chart placeholder card
+  // (foreignObject with dashed border + neutral label).
+  const hasSrc = typeof layer.src === 'string' && layer.src.trim().length > 0;
+  if (!hasSrc) {
+    const w = typeof layer.width === 'number' ? layer.width : 100;
+    const h = typeof layer.height === 'number' ? layer.height : 100;
+    return makeImagePlaceholder(layer, w, h, svg);
+  }
+
   const el = createSVGElement('image', {
     x: layer.x ?? 0,
     y: layer.y ?? 0,
@@ -381,6 +393,51 @@ export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
   return el;
+}
+
+function makeImagePlaceholder(layer: ImageLayer, w: number, h: number, svg: SVGSVGElement): SVGElement {
+  const fo = createSVGElement('foreignObject', {
+    x: layer.x ?? 0,
+    y: layer.y ?? 0,
+    width: w,
+    height: h,
+  });
+  const div = document.createElement('div');
+  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  div.style.cssText = [
+    'display:flex',
+    'flex-direction:column',
+    'align-items:center',
+    'justify-content:center',
+    'gap:8px',
+    'width:100%',
+    'height:100%',
+    'box-sizing:border-box',
+    'background:rgba(128,128,160,0.06)',
+    'border:1px dashed rgba(128,128,160,0.35)',
+    'border-radius:8px',
+    'color:rgba(128,128,160,0.85)',
+    'font-family:Inter, sans-serif',
+    'font-size:11px',
+    'letter-spacing:0.06em',
+    'text-transform:uppercase',
+  ].join(';');
+  const icon = document.createElement('div');
+  icon.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  icon.style.cssText = 'font-size:24px;line-height:1;opacity:0.7;';
+  icon.textContent = '🖼';
+  const label = document.createElement('div');
+  label.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  // Caller may pass `alt` via shorthand expansion even though it's not in
+  // the typed schema; fall back to a neutral string.
+  const alt = (layer as ImageLayer & { alt?: string }).alt;
+  label.textContent = alt ?? 'image';
+  div.appendChild(icon);
+  div.appendChild(label);
+  fo.appendChild(div);
+  applyCommonAttributes(fo, layer);
+  if (layer.effects) applyEffects(fo, layer.effects, svg);
+  return fo;
 }
 
 // ── Icon ────────────────────────────────────────────────────
@@ -850,8 +907,38 @@ function makeForeignObject(
 
   const placeholder = document.createElement('div');
   placeholder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#8892A4;font-family:monospace;font-size:12px;';
-  placeholder.textContent = placeholderLabel;
+  // A neutral styled card so static exports (PNG/PDF/SVG) don't show
+  // the literal `[Chart: bar]` text. The interactive runtime replaces
+  // this whole foreignObject's content once Plotly/Tabulator mount.
+  placeholder.style.cssText = [
+    'display:flex',
+    'flex-direction:column',
+    'align-items:center',
+    'justify-content:center',
+    'gap:8px',
+    'height:100%',
+    'width:100%',
+    'box-sizing:border-box',
+    'background:rgba(128,128,160,0.06)',
+    'border:1px dashed rgba(128,128,160,0.35)',
+    'border-radius:8px',
+    'color:rgba(128,128,160,0.85)',
+    'font-family:Inter, sans-serif',
+    'font-size:11px',
+    'letter-spacing:0.06em',
+    'text-transform:uppercase',
+  ].join(';');
+  // Strip the bracketed legacy label form, e.g. "[Chart: bar]" → "bar".
+  const cleaned = placeholderLabel.replace(/^\[(.*?):\s*/, '').replace(/\]$/, '').trim();
+  const icon = document.createElement('div');
+  icon.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  icon.style.cssText = 'font-size:24px;line-height:1;opacity:0.7;';
+  icon.textContent = '◧';
+  const label = document.createElement('div');
+  label.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  label.textContent = cleaned || placeholderLabel;
+  placeholder.appendChild(icon);
+  placeholder.appendChild(label);
   container.appendChild(placeholder);
   fo.appendChild(container);
 
@@ -929,14 +1016,29 @@ export function renderRichText(layer: RichTextLayer, _svg: SVGSVGElement): SVGEl
   if (layer.format === 'html') {
     container.innerHTML = layer.content;
   } else {
-    // Markdown placeholder — marked.js renders this in report runtime
+    // Eager markdown render. We also keep the source in a dataset attr
+    // so the report runtime can re-render after data-binding without
+    // re-parsing the engine output.
     container.dataset['markdownSrc'] = layer.content;
     container.dataset['renderType'] = 'markdown';
-    const pre = document.createElement('pre');
-    pre.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-    pre.style.cssText = 'white-space:pre-wrap;margin:0;font-size:inherit;color:inherit;';
-    pre.textContent = layer.content;
-    container.appendChild(pre);
+    // Initial paint = literal text inside an inline-styled span; once
+    // marked.js loads (lazy chunk) we swap it for parsed HTML. The
+    // wrapper keeps font/colour inheritance and avoids the raw `<pre>`
+    // look that surfaced as `**asterisks**` in static exports.
+    const initial = document.createElement('span');
+    initial.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    initial.style.cssText = 'white-space:pre-wrap;display:block;';
+    initial.textContent = layer.content;
+    container.appendChild(initial);
+    import('marked').then(({ marked }) => {
+      const html = marked.parse(layer.content, { gfm: true, breaks: true });
+      // marked@18 returns a string for non-async input.
+      container.innerHTML = typeof html === 'string' ? html : layer.content;
+      container.dataset['markdownSrc'] = layer.content;
+      container.dataset['renderType'] = 'markdown';
+    }).catch(() => {
+      // marked unavailable — leave the plain-text fallback in place.
+    });
   }
 
   fo.appendChild(container);

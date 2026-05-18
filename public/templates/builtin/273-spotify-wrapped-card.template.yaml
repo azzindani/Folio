@@ -137,7 +137,7 @@ layers:
     type: text
     z: 22
     x: 80
-    y: 800
+    y: 840
     width: 920
     height: 0
     content: { type: plain, value: "TOP 1% OF LISTENERS WORLDWIDE" }

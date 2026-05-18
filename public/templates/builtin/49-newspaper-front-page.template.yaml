@@ -47,14 +47,14 @@ layers:
   - id: nameplate
     type: text
     z: 5
-    x: 60
+    x: 40
     y: 60
-    width: 960
+    width: 1000
     height: 0
     content: { type: plain, value: "The Daily Gazette" }
     style:
       font_family: $heading
-      font_size: 110
+      font_size: 92
       font_weight: 900
       color: $text
       line_height: 1

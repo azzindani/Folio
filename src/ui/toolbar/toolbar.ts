@@ -5,6 +5,7 @@ import { EXPORT_SCALE_PRESETS, defaultScalePreset, getScalePreset } from '../../
 import { showToast } from '../../utils/toast';
 import { batchExportDialog } from '../dialogs/batch-export';
 import { exportAsTemplate } from '../../schema/template';
+import { BUILTIN_THEMES } from '../../themes/builtin';
 
 export class ToolbarManager {
   private container: HTMLElement;
@@ -56,9 +57,9 @@ export class ToolbarManager {
           style="background:var(--color-surface-2);border:1px solid var(--color-border);
                  border-radius:var(--radius-sm);color:var(--color-text);font-size:12px;
                  padding:3px 6px;cursor:pointer">
-          <option value="dark-tech">Dark Tech</option>
-          <option value="light-clean">Light Clean</option>
-          <option value="ocean-blue">Ocean Blue</option>
+          ${Object.entries(BUILTIN_THEMES).map(([id, spec]) =>
+            `<option value="${id}">${spec.name ?? id}</option>`
+          ).join('')}
         </select>
         <button class="btn btn-sm" data-action="undo" title="Undo (Ctrl+Z)">&#8617;</button>
         <button class="btn btn-sm" data-action="redo" title="Redo (Ctrl+Shift+Z)">&#8618;</button>

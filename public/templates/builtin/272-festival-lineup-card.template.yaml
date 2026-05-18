@@ -207,7 +207,7 @@ layers:
     content: { type: plain, value: "RIVER COBALT · OLAYA RIOS · NORTHWAY · KOPI LUWAK" }
     style:
       font_family: $heading
-      font_size: 42
+      font_size: 32
       font_weight: 800
       color: $text
       line_height: 1.25
@@ -219,13 +219,13 @@ layers:
     type: text
     z: 41
     x: 80
-    y: 1000
+    y: 970
     width: 920
     height: 0
     content: { type: plain, value: "BLOND APE · DEEP MERIDIAN · LANTERN BOY · MERA" }
     style:
       font_family: $heading
-      font_size: 42
+      font_size: 32
       font_weight: 800
       color: $text
       line_height: 1.25

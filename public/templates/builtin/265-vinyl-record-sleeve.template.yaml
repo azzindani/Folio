@@ -89,13 +89,13 @@ layers:
     type: text
     z: 20
     x: 100
-    y: 360
+    y: 380
     width: 1300
     height: 0
     content: { type: plain, value: "Letters" }
     style:
       font_family: $heading
-      font_size: 220
+      font_size: 200
       font_weight: 400
       font_style: italic
       color: $text
@@ -106,13 +106,13 @@ layers:
     type: text
     z: 21
     x: 100
-    y: 580
-    width: 1300
+    y: 520
+    width: 1340
     height: 0
     content: { type: plain, value: "from the Coast" }
     style:
       font_family: $heading
-      font_size: 220
+      font_size: 180
       font_weight: 400
       font_style: italic
       color: $primary

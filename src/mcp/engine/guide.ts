@@ -8,22 +8,41 @@ Canvas: 1080x1080 (sq) · 1080x1350 (port) · 1920x1080 (land) · units: px
 Design types: poster (single page) | carousel (multi-page)
 z = stacking order (higher = front)
 
+⚠️ EVERY sized layer (rect, image, ellipse, icon, group, chart, kpi_card…)
+   MUST have a positive width AND height — or use pos:[x,y,w,h]. Without
+   dimensions the layer renders INVISIBLY. add_layers now rejects 0-dim
+   layers with a clear error, but get it right first to save round-trips.
+
+✅ Minimum-viable poster (use this shape — it works first try):
+   add_layers(design_path=..., layers_shorthand=[
+     {id:"bg",       type:"rect", z:0,  pos:[0,0,1080,1080],    fill:"#1a2e0d"},
+     {id:"headline", type:"text", z:10, pos:[80,180,920,160],
+        text:"SAVE THE RAINFOREST", size:84, weight:800, color:"#a8d68a", align:"center"},
+     {id:"body",     type:"text", z:10, pos:[120,520,840,200],
+        text:"Each year we lose…", size:32, color:"#e8f0d8", align:"center"},
+     {id:"cta",      type:"text", z:10, pos:[80,900,920,60],
+        text:"ACT NOW", size:28, weight:700, color:"#ffd54f", align:"center"},
+   ])
+
 Poster workflow:
-  1. create_design(project_path, name, type="poster")
-  2. add_layers(design_path, layers_shorthand=[...])
+  1. create_design(project_path, name, type="poster", width, height)
+  2. add_layers(design_path, layers_shorthand=[…])
   3. seal_design(design_path)
+  4. export_design(design_path, format="svg")
+  5. open_in_editor(design_path) → returns clickable token-URL
 
 Carousel workflow:
   1. create_task(project_path, task_name, brief, pages=[{label,hints}])
-  2. append_page(design_path, page_id, layers_shorthand=[...], task_path=...)
+  2. append_page(design_path, page_id, layers_shorthand=[…], task_path=…)
      → repeat until next_action.remaining==0
   3. seal_design(design_path)
 
 Rules:
-  - Always use layers_shorthand — saves 80% tokens vs verbose layers[]
+  - Always use layers_shorthand (verbose works too but is 5× the tokens)
+  - Every sized layer needs pos:[x,y,w,h] OR width+height — no exceptions
   - Always pass task_path in append_page — enables auto-handover
   - Call resume_task(task_path) after any context reset
-  - 3–6 layers per page is ideal for local models
+  - 3–8 layers per page is ideal
   - Load guide sections on demand: shorthand | layers | workflow`,
 
   shorthand: `# Shorthand Syntax (layers_shorthand field)

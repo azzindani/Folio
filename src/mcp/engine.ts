@@ -3,12 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, ThemeSpec, Layer, Page } from '../schema/types';
 import type { ToolResult } from './types';
+import { BUILTIN_THEMES } from '../themes/builtin';
+import { mintEditorToken } from './oauth';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
 import {
-  resolvePath, resolveDesignPath, snapshot, readYAML, writeYAML,
+  resolveDesignPath, resolveProjectPath, snapshot, readYAML, writeYAML,
   generateId, errResult, okResult, LIMITS,
   pOk, pWarn, pInfo,
   buildContext, buildHandover,
@@ -87,11 +89,36 @@ export function createProject(args: { name: string; path: string; theme?: string
   const op = 'create_project';
   const progress: ProgressItem[] = [];
   let projectDir: string;
-  try { projectDir = resolvePath(args.path); } catch (e) {
-    return errResult(op, (e as Error).message, 'Provide a path inside your home directory.');
+  try {
+    // resolveProjectPath accepts:
+    //  - bare names ("my-project")           → FOLIO_PROJECTS_DIR/my-project
+    //  - absolute paths under allowed roots  → unchanged
+    //  - ~ paths                             → expanded
+    projectDir = resolveProjectPath(args.path);
+  } catch (e) {
+    return errResult(op, (e as Error).message, `Use a bare project name (e.g. "${args.name}") or an absolute path under ${process.env['FOLIO_PROJECTS_DIR'] ?? '~'}`);
   }
   if (fs.existsSync(projectDir)) {
-    return errResult(op, `Directory already exists: ${projectDir}`, 'Choose a different path or delete the existing directory.', progress);
+    // Idempotent: if the dir already holds a valid project.yaml, treat as
+    // success so the LLM can re-run the same prompt without manual cleanup.
+    // Only block when the dir exists but is NOT a Folio project.
+    const projectYaml = path.join(projectDir, 'project.yaml');
+    if (fs.existsSync(projectYaml)) {
+      progress.push(pOk('Project already exists — reusing', projectDir));
+      const existing = readYAML<{ meta?: { id?: string }; config?: { default_canvas?: string } }>(projectYaml);
+      const context = buildContext(op, `Reused existing project at ${projectDir}`, [
+        { type: 'project', path: projectDir, role: 'reused' },
+      ]);
+      const handover = buildHandover('PROJECT', { project_path: projectDir });
+      return okResult(op, {
+        project_id: existing.meta?.id ?? 'unknown',
+        path: projectDir,
+        canvas: existing.config?.default_canvas,
+        reused: true,
+        progress, context, handover,
+      });
+    }
+    return errResult(op, `Directory already exists but is not a Folio project: ${projectDir}`, 'Choose a different path or delete the existing directory.', progress);
   }
 
   const [width, height] = (args.canvas ?? '1080x1080').split('x').map(Number);
@@ -154,12 +181,16 @@ export function listThemes(args: { project_path: string }): ToolResult {
   const progress: ProgressItem[] = [];
   const projectPath = path.join(args.project_path, 'project.yaml');
   if (!fs.existsSync(projectPath)) return errResult(op, `Project not found: ${projectPath}`, 'Run create_project first.');
-  const project = readYAML<{ themes: unknown[] }>(projectPath);
+  const project = readYAML<{ themes: { id: string }[] }>(projectPath);
   const themes = project.themes ?? [];
-  progress.push(pOk(`Found ${themes.length} theme(s)`));
+  const seededIds = new Set(themes.map(t => t.id));
+  // Surface builtin themes that aren't yet seeded so the agent knows the
+  // full menu — apply_theme will auto-write them on demand.
+  const available_builtins = Object.keys(BUILTIN_THEMES).filter(id => !seededIds.has(id));
+  progress.push(pOk(`Found ${themes.length} theme(s) on disk, ${available_builtins.length} builtin(s) available on demand`));
   const context = buildContext(op, `Listed ${themes.length} theme(s)`);
   const handover = buildHandover('PROJECT', { project_path: args.project_path });
-  return okResult(op, { themes, progress, context, handover });
+  return okResult(op, { themes, available_builtins, progress, context, handover });
 }
 
 export function applyTheme(args: { project_path: string; theme_id: string }): ToolResult {
@@ -168,10 +199,29 @@ export function applyTheme(args: { project_path: string; theme_id: string }): To
   const projectPath = path.join(args.project_path, 'project.yaml');
   if (!fs.existsSync(projectPath)) return errResult(op, `Project not found: ${projectPath}`, 'Run create_project first.');
 
-  const project = readYAML<{ config: { default_theme: string }; themes: { id: string; active: boolean }[]; designs: unknown[] }>(projectPath);
+  const project = readYAML<{ config: { default_theme: string }; themes: { id: string; path?: string; active: boolean }[]; designs: unknown[] }>(projectPath);
   const themes = project.themes ?? [];
-  const themeEntry = themes.find(t => t.id === args.theme_id);
-  if (!themeEntry) return errResult(op, `Theme not found: ${args.theme_id}`, `Available: ${themes.map(t => t.id).join(', ')}`, progress);
+  let themeEntry = themes.find(t => t.id === args.theme_id);
+
+  // Auto-seed builtin themes: an LLM agent can request any of the 14 builtins
+  // even if the project was created with only the default seeded. Lazily
+  // write the YAML and register it in project.themes before activation.
+  if (!themeEntry && BUILTIN_THEMES[args.theme_id]) {
+    const themeDir = path.join(args.project_path, 'themes');
+    fs.mkdirSync(themeDir, { recursive: true });
+    const relPath = `themes/${args.theme_id}.theme.yaml`;
+    const absPath = path.join(args.project_path, relPath);
+    writeYAML(absPath, BUILTIN_THEMES[args.theme_id]);
+    themeEntry = { id: args.theme_id, path: relPath, active: false };
+    themes.push(themeEntry);
+    project.themes = themes;
+    progress.push(pOk(`Seeded builtin theme "${args.theme_id}"`, relPath));
+  }
+
+  if (!themeEntry) {
+    const available = [...themes.map(t => t.id), ...Object.keys(BUILTIN_THEMES)];
+    return errResult(op, `Theme not found: ${args.theme_id}`, `Available: ${available.join(', ')}`, progress);
+  }
 
   const bak = snapshot(projectPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
@@ -434,6 +484,21 @@ export function addLayers(args: {
     : (args.layers ?? []);
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, args.layers_shorthand?.length ? 'via shorthand' : 'verbose'));
 
+  const invalid = incoming.find(l => !l?.type || !VALID_LAYER_TYPES.has(l.type));
+  if (invalid) {
+    return errResult(
+      op,
+      `Invalid layer.type: "${invalid.type}" (id: ${invalid.id ?? '?'})`,
+      `Allowed: ${[...VALID_LAYER_TYPES].join(', ')}`,
+    );
+  }
+  // Catch dimension omissions early — silently-invisible layers are the
+  // single most common LLM authoring failure mode in verbose mode.
+  for (const l of incoming) {
+    const dimMsg = dimError(l);
+    if (dimMsg) return errResult(op, dimMsg, 'Pass explicit width + height (px) on every sized layer, or use pos:[x,y,w,h] shorthand.');
+  }
+
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const spec = readYAML<DesignSpec>(dPath);
@@ -573,11 +638,53 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, next_action, progress, context, handover }, bak);
 }
 
+// Known layer types — kept in sync with LayerType in src/schema/types.ts.
+// Used to reject garbage like type:"frobozz" before it lands on disk.
+const VALID_LAYER_TYPES = new Set([
+  'rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line',
+  'text', 'image', 'icon', 'component', 'component_list',
+  'mermaid', 'chart', 'code', 'math', 'group', 'qrcode',
+  'auto_layout', 'interactive_chart', 'interactive_table',
+  'rich_text', 'kpi_card', 'map', 'embed_code', 'popup', 'particle',
+]);
+
+// Layer types that render INVISIBLY when width or height is 0 / missing.
+// LLM agents commonly omit these in verbose form, producing a blank canvas
+// that no test catches. Reject at write time with an actionable error so
+// the agent fixes the YAML immediately instead of debugging from the SVG.
+const SIZED_LAYER_TYPES = new Set([
+  'rect', 'circle', 'ellipse', 'image', 'icon', 'group',
+  'chart', 'interactive_chart', 'interactive_table', 'rich_text', 'kpi_card',
+  'mermaid', 'code', 'math', 'qrcode', 'map', 'embed_code',
+]);
+
+function dimError(l: Layer): string | null {
+  if (!SIZED_LAYER_TYPES.has(l.type)) return null;
+  const w = (l as Layer & { width?: number }).width;
+  const h = (l as Layer & { height?: number }).height;
+  // pos:[x,y,w,h] shorthand still pending expansion — accept it.
+  const pos = (l as Layer & { pos?: number[] }).pos;
+  if (Array.isArray(pos) && pos.length >= 4 && pos[2] && pos[3]) return null;
+  if (typeof w !== 'number' || w <= 0) return `Layer "${l.id}" (${l.type}) needs a positive width — got ${w}`;
+  if (typeof h !== 'number' || h <= 0) return `Layer "${l.id}" (${l.type}) needs a positive height — got ${h}`;
+  return null;
+}
+
 export function addLayer(args: { design_path: string; page_id?: string; layer: Layer; project_path?: string }): ToolResult {
   const op = 'add_layer';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  if (!args.layer || !args.layer.type || !VALID_LAYER_TYPES.has(args.layer.type)) {
+    return errResult(
+      op,
+      `Invalid layer.type: "${args.layer?.type}"`,
+      `Allowed: ${[...VALID_LAYER_TYPES].join(', ')}`,
+    );
+  }
+  const dimMsg = dimError(args.layer);
+  if (dimMsg) return errResult(op, dimMsg, 'Pass explicit width + height (px) or use pos:[x,y,w,h] shorthand.');
 
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
@@ -710,10 +817,14 @@ export function exportDesign(args: { design_path: string; format: string; output
     }
   }
   if (args.format === 'pdf') {
-    // PDF via Puppeteer is async — export HTML first, then call exportToPuppeteerPDF separately
+    // PDF via Puppeteer is async — we can stage the HTML synchronously but
+    // the actual PDF requires a separate Node call. Returning success:true
+    // misleads agents into thinking the file exists. Return success:false
+    // with the staged HTML path in the error context so the caller can
+    // either consume the HTML or invoke the Puppeteer step themselves.
     const htmlPath = outPath.replace(/\.pdf$/, '-puppeteer.html');
+    let htmlOk = false;
     try {
-      
       const datasets = new Map<string, LoadedDataset>();
       const sources: { id: string; rows?: Record<string, unknown>[] }[] = spec.report?.data?.sources ?? [];
       for (const src of sources) {
@@ -723,16 +834,36 @@ export function exportDesign(args: { design_path: string; format: string; output
       fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
       fs.writeFileSync(htmlPath, html, 'utf-8');
       progress.push(pOk('HTML staged for Puppeteer PDF', path.basename(htmlPath)));
-    } catch {
-      progress.push(pWarn('HTML staging failed; PDF may be incomplete'));
+      htmlOk = true;
+    } catch (err) {
+      progress.push(pWarn(`HTML staging failed: ${(err as Error).message}`));
     }
-    const context = buildContext(op, `PDF requires async Puppeteer step`, [{ type: 'html', path: htmlPath, role: 'pdf-stage' }]);
-    const handover = buildHandover('EXPORT', { design_path: dPath, html_path: htmlPath });
-    return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'puppeteer_required', html_path: htmlPath, hint: 'Call exportToPuppeteerPDF(htmlPath, outputPath) from Node to complete.', progress, context, handover });
+    return errResult(
+      op,
+      'PDF export requires a separate Puppeteer step',
+      htmlOk
+        ? `HTML staged at ${htmlPath}. Run exportToPuppeteerPDF(htmlPath, '${outPath}') in Node to produce the PDF.`
+        : 'HTML staging failed — see progress.',
+      progress,
+    );
   }
-  const context = buildContext(op, `Export format ${args.format} not supported`);
-  const handover = buildHandover('EXPORT', { design_path: dPath });
-  return okResult(op, { format: args.format, status: 'unsupported', hint: `Supported formats: svg, html, pdf`, progress, context, handover });
+  // PNG: declared in the tier3 input schema but not yet implemented in the
+  // pure-Node engine path. Surface this clearly with success:false so
+  // agents don't silently move on as if a file was produced.
+  if (args.format === 'png') {
+    return errResult(
+      op,
+      'PNG export is not implemented in the MCP engine',
+      'Use format="svg" or "html" today, or open the editor (open_in_editor) to export PNG from the toolbar. PNG via Puppeteer is on the roadmap.',
+      progress,
+    );
+  }
+  return errResult(
+    op,
+    `Unsupported export format: ${args.format}`,
+    `Supported formats: svg, html. PDF requires a separate Puppeteer step. PNG is not yet implemented in the engine.`,
+    progress,
+  );
 }
 
 export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {
@@ -1368,6 +1499,10 @@ export function openInEditor(args: {
   // Live-refresh: tell the editor to subscribe to MCP file-change events.
   const mcpUrl = process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`;
   params.set('mcp_url', mcpUrl);
+  // Self-contained URL — embed a fresh 1h token so the user can open the
+  // link without re-entering basic-auth. The editor reads it, stores it,
+  // and presents it on every /__project_files + /editor/events call.
+  params.set('token', mintEditorToken('default'));
 
   const url = params.toString() ? `${baseUrl}/?${params.toString()}` : baseUrl;
   progress.push(pOk('Editor URL', url));

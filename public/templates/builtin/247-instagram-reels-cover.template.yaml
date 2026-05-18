@@ -131,7 +131,7 @@ layers:
     type: rect
     z: 21
     x: 380
-    y: 1230
+    y: 1320
     width: 320
     height: 8
     radius: 4
@@ -142,7 +142,7 @@ layers:
     type: text
     z: 22
     x: 80
-    y: 1280
+    y: 1370
     width: 920
     height: 0
     content: { type: plain, value: "Here's exactly how →" }

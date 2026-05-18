@@ -544,7 +544,9 @@ export class CatalogDialog {
       return (
         e.name.toLowerCase().includes(q) ||
         e.id.toLowerCase().includes(q) ||
-        e.tags.some(t => t.toLowerCase().includes(q))
+        // Tags may slip through as numbers (e.g. the 1099 form template
+        // lists `1099` unquoted in YAML); coerce so search doesn't throw.
+        e.tags.some(t => String(t).toLowerCase().includes(q))
       );
     });
   }
@@ -554,7 +556,7 @@ export class CatalogDialog {
     const isReport = kind === 'reports';
     for (const e of this.index) {
       if (isReport ? e.type !== 'report' : e.type === 'report') continue;
-      for (const t of e.tags) set.add(t);
+      for (const t of e.tags) set.add(String(t));
     }
     return [...set].sort();
   }

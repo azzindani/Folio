@@ -18,6 +18,9 @@ export interface MCPEventOptions {
   /** Absolute path of the design file currently open in the editor.
    *  Pass undefined to receive every file_changed event. */
   designPath?: string;
+  /** Optional bearer token. EventSource doesn't support custom headers,
+   *  so it's appended as `?token=` on the SSE URL. */
+  token?: string;
   /** Called with the new YAML content of the watched file. */
   onFileChanged: (yamlContent: string, payload: FileChangedPayload) => void;
   /** Optional: called when the SSE connection is established. */
@@ -41,8 +44,9 @@ export interface MCPEventSubscription {
 
 /** Open a subscription to the MCP server's editor-events stream. */
 export function subscribeMCPEvents(opts: MCPEventOptions): MCPEventSubscription {
-  const url = new URL('/editor/events', opts.mcpUrl).toString();
-  const es = new EventSource(url);
+  const u = new URL('/editor/events', opts.mcpUrl);
+  if (opts.token) u.searchParams.set('token', opts.token);
+  const es = new EventSource(u.toString());
 
   if (opts.onOpen) es.addEventListener('open', () => opts.onOpen!());
   if (opts.onError) es.addEventListener('error', (e) => opts.onError!(e));

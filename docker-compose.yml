@@ -44,6 +44,15 @@ services:
       FOLIO_TOKENS_FILE: ${FOLIO_TOKENS_FILE:-}
       FOLIO_TOKENS:      ${FOLIO_TOKENS:-}
       FOLIO_API_KEY:     ${FOLIO_API_KEY:-}
+      # OAuth client (claude.ai Custom Connector). Both optional; empty
+      # FOLIO_OAUTH_CLIENT_SECRET keeps the client public (PKCE-only).
+      FOLIO_OAUTH_CLIENT_ID:     ${FOLIO_OAUTH_CLIENT_ID:-claude-ai}
+      FOLIO_OAUTH_CLIENT_SECRET: ${FOLIO_OAUTH_CLIENT_SECRET:-}
+      # Public URLs the engine bakes into open_in_editor + editor mcp_url.
+      # Without these the engine would emit http://localhost:4173 even on
+      # production deployments. Derive from FOLIO_DOMAIN when set.
+      FOLIO_EDITOR_URL:      ${FOLIO_EDITOR_URL:-${FOLIO_DOMAIN:+https://${FOLIO_DOMAIN}}}
+      FOLIO_MCP_PUBLIC_URL:  ${FOLIO_MCP_PUBLIC_URL:-${FOLIO_DOMAIN:+https://${FOLIO_DOMAIN}}}
     ports:
       # Exposed on the host only when running WITHOUT the tls profile. With
       # Caddy in front you'd typically remove these and keep the engine on

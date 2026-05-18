@@ -7,6 +7,37 @@ import { TIER3_TOOLS } from './tier3/registry';
 import * as engine from './engine';
 import { toMCPResult } from './types';
 import { authorize, describeAuth, loadTokens } from './auth';
+import { handleOAuth } from './oauth';
+import * as nodePath from 'path';
+
+/**
+ * Normalize project-path-ish arguments so bare names ("my-project") and
+ * commonly-misguessed paths like /var/folio/projects/<x> resolve to
+ * FOLIO_PROJECTS_DIR/<x>. Absolute paths under the allowed roots pass
+ * through untouched.
+ */
+function normalizeProjectPaths(args: Record<string, unknown>): Record<string, unknown> {
+  const base = process.env['FOLIO_PROJECTS_DIR'];
+  if (!base) return args;
+  const out: Record<string, unknown> = { ...args };
+  const fields = ['project_path', 'path'];
+  for (const f of fields) {
+    const v = out[f];
+    if (typeof v !== 'string' || v.length === 0) continue;
+    if (nodePath.isAbsolute(v)) {
+      // Rebase common bad guesses ("/var/folio/projects/<x>",
+      // "/srv/folio/<x>", etc.) to FOLIO_PROJECTS_DIR.
+      const m = v.match(/[\/\\]projects[\/\\]([^\/\\]+(?:[\/\\][^\/\\]+)*)$/);
+      if (m && m[1] && !v.startsWith(base)) {
+        out[f] = nodePath.join(base, m[1]);
+      }
+    } else if (!v.startsWith('~/')) {
+      // Bare name → FOLIO_PROJECTS_DIR/<name>
+      out[f] = nodePath.join(base, v);
+    }
+  }
+  return out;
+}
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition, ContextField } from './types';
 
 type Handler = (args: Record<string, unknown>) => ToolResult;
@@ -100,7 +131,12 @@ function handleMCP(req: MCPRequest): DispatchResult {
       return { response: { jsonrpc: '2.0', id, result: { tools: ALL_TOOLS } } };
     case 'tools/call': {
       const name = (params as { name?: string } | undefined)?.name ?? '';
-      const args = (params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {};
+      const rawArgs = (params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {};
+      // LLM-friendliness: resolve bare project names like "my-project" to
+      // FOLIO_PROJECTS_DIR/my-project. Lets agents write `project_path:
+      // "rainforest"` instead of demanding the full container-side path.
+      // Does NOT touch absolute paths or paths already in allowed roots.
+      const args = normalizeProjectPaths(rawArgs);
       const fn = HANDLERS[name];
       if (!fn) return { response: { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) }, toolName: name };
       try {
@@ -169,22 +205,40 @@ function findChangedDesignPath(result: ToolResult): string | null {
 async function router(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   const url = req.url ?? '/';
   const method = req.method ?? 'GET';
+  // Path without the query string — used for route matching so that
+  // ?token=... on /editor/events doesn't break the exact-match checks
+  // below. Keep `url` available for OAuth/query-param extraction.
+  const pathOnly = url.split('?')[0] ?? url;
 
   if (method === 'OPTIONS') { setCORS(res); res.writeHead(204); res.end(); return; }
 
-  if (url === '/health' && method === 'GET') {
+  if (pathOnly === '/health' && method === 'GET') {
     jsonReply(res, 200, { status: 'ok', version: '1.0.0', tiers: ['1', '2', '3'], auth: loadTokens().mode }); return;
+  }
+
+  // OAuth and well-known endpoints run BEFORE the bearer check so the
+  // claude.ai connector setup can discover metadata, register, and walk
+  // the authorize/token dance without already having a token.
+  if (await handleOAuth(req, res)) return;
+
+  // EventSource has no way to send Authorization headers, so /editor/events
+  // also accepts ?token=<x>. We synthesize a Bearer header from the query
+  // param so the standard authorize() path validates it the same way.
+  if (pathOnly === '/editor/events' && method === 'GET' && !req.headers['authorization']) {
+    const qs = url.split('?')[1] ?? '';
+    const tok = new URLSearchParams(qs).get('token');
+    if (tok) req.headers['authorization'] = `Bearer ${tok}`;
   }
 
   const tokenName = authorize(req);
   if (tokenName === null) { jsonReply(res, 401, { error: 'Unauthorized', hint: 'Send Authorization: Bearer <token>' }); return; }
 
   // §7a — Whoami endpoint: clients can verify which token was accepted.
-  if (url === '/tokens/whoami' && method === 'GET') {
+  if (pathOnly === '/tokens/whoami' && method === 'GET') {
     jsonReply(res, 200, { token: tokenName, auth_mode: loadTokens().mode }); return;
   }
 
-  if (url === '/mcp/sse' && method === 'GET') {
+  if (pathOnly === '/mcp/sse' && method === 'GET') {
     setCORS(res);
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     res.write(`data: {"status":"connected"}\n\n`);
@@ -196,7 +250,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   // Editor live-refresh stream. The editor URL minted by open_in_editor
   // includes ?mcp_url=<base>; the editor opens an EventSource against
   // <base>/editor/events and reloads the design when file_changed fires.
-  if (url === '/editor/events' && method === 'GET') {
+  if (pathOnly === '/editor/events' && method === 'GET') {
     setCORS(res);
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
     res.write(`event: connected\ndata: {"status":"connected"}\n\n`);
@@ -205,7 +259,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     return;
   }
 
-  if (url === '/mcp' && method === 'POST') {
+  if (pathOnly === '/mcp' && method === 'POST') {
     let body: string;
     try { body = await readBody(req); } catch { jsonReply(res, 400, { error: 'Failed to read request body' }); return; }
     let parsed: MCPRequest;

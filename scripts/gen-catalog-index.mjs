@@ -31,7 +31,10 @@ function summarize(spec, file) {
     id:        meta.id ?? path.basename(file, '.template.yaml'),
     name:      meta.name ?? meta.id ?? path.basename(file, '.template.yaml'),
     type:      meta.type ?? 'poster',
-    tags:      Array.isArray(meta.tags) ? meta.tags : [],
+    // YAML loaders parse unquoted numeric scalars like `404`/`1099` as
+    // Number; downstream string ops (toLowerCase, includes) throw. Coerce
+    // every tag to string at index-generation time.
+    tags:      Array.isArray(meta.tags) ? meta.tags.map(t => String(t)) : [],
     width:     Number(doc.width  ?? 0),
     height:    Number(doc.height ?? 0),
     slots:     Array.isArray(spec.slots) ? spec.slots.length : 0,

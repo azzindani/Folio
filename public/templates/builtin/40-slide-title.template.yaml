@@ -67,7 +67,7 @@ layers:
     type: text
     z: 11
     x: 120
-    y: 620
+    y: 690
     width: 1400
     height: 0
     content: { type: plain, value: "Local-first, LLM-native, infinitely composable" }
