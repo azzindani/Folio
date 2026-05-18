@@ -560,15 +560,17 @@ describe('exportDesign', () => {
     expect(result.success).toBe(true);
   });
 
+  // Bumped timeout: resvg's native binding cold-load + first render() runs
+  // ~8s on the Windows CI runner (well within the 5s vitest default on
+  // Linux/macOS). Linux/macOS finish in <300ms; the extra headroom is
+  // Windows-specific but it's harmless to apply everywhere.
   it('returns success:true with PNG bytes for format=png', () => {
-    // Server-side rasterizer (@resvg/resvg-js) wired into exportDesign;
-    // previously this returned success:false with a "not implemented" hint.
     const result = exportDesign({ design_path: designPath, format: 'png' });
     expect(result.success).toBe(true);
     expect((result as Record<string, unknown>).format).toBe('png');
     const bytes = (result as Record<string, unknown>).bytes as number;
     expect(bytes).toBeGreaterThan(100);
-  });
+  }, 30_000);
 
   it('returns error when design not found', () => {
     const result = exportDesign({ design_path: path.join(tmpDir, 'no.yaml'), format: 'svg' });
