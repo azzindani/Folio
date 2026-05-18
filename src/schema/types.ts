@@ -4,8 +4,10 @@ import type { AnimationSpec } from '../animation/types';
 export type LayerType =
   | 'rect'
   | 'circle'
+  | 'ellipse'
   | 'path'
   | 'polygon'
+  | 'polyline'
   | 'line'
   | 'text'
   | 'image'
@@ -149,6 +151,7 @@ export interface TextStyle {
   line_height?: number;
   letter_spacing?: number;
   align?: 'left' | 'center' | 'right';
+  text_align?: 'left' | 'center' | 'right';
   vertical_align?: 'top' | 'middle' | 'bottom';
   text_decoration?: 'none' | 'underline' | 'line-through';
 }
@@ -271,7 +274,8 @@ export interface RectLayer extends BaseLayer {
 }
 
 export interface CircleLayer extends BaseLayer {
-  type: 'circle';
+  // `ellipse` is accepted as an alias — same shape (rx/ry), same renderer.
+  type: 'circle' | 'ellipse';
   cx?: number;
   cy?: number;
   rx?: number;
@@ -281,7 +285,8 @@ export interface CircleLayer extends BaseLayer {
 }
 
 export interface PathLayer extends BaseLayer {
-  type: 'path';
+  // `polyline` is accepted as an alias — both go through the same renderer.
+  type: 'path' | 'polyline';
   d: string;
   fill?: Fill;
   stroke?: Stroke;

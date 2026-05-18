@@ -4,15 +4,37 @@ import * as os from 'os';
 import yaml from 'js-yaml';
 import type { ToolResult, ProgressItem, ContextField, Handover, SuggestedNext } from '../types';
 
-// §18 — reject paths outside user home or OS temp
+// §18 — reject paths outside the allowed roots. Three roots accepted:
+//   1. user home dir
+//   2. OS temp dir
+//   3. FOLIO_PROJECTS_DIR (set when running in docker where projects/ is
+//      bind-mounted to /home/folio/projects but also so LLMs guessing
+//      "/var/folio/projects/<x>" / similar paths get a useful error).
+//
+// Bare names like "my-project" or "designs/foo.design.yaml" are not absolute
+// and the caller is expected to resolve them against a project_path first;
+// resolveDesignPath() and resolveProjectPath() do this lookup.
 export function resolvePath(filePath: string): string {
   const resolved = path.resolve(filePath);
   const home = os.homedir();
   const tmp = os.tmpdir();
-  const underHome = resolved.startsWith(home + path.sep) || resolved === home;
-  const underTmp  = resolved.startsWith(tmp  + path.sep) || resolved === tmp;
-  if (!underHome && !underTmp) throw new Error(`Path outside allowed home directory: ${filePath}`);
-  return resolved;
+  const projects = process.env['FOLIO_PROJECTS_DIR'];
+  const under = (root: string): boolean =>
+    resolved === root || resolved.startsWith(root + path.sep);
+  if (under(home) || under(tmp)) return resolved;
+  if (projects && under(path.resolve(projects))) return resolved;
+  throw new Error(`Path outside allowed directories: ${filePath}`);
+}
+
+// Resolve a project path. Bare names like "my-project" are treated as
+// relative to FOLIO_PROJECTS_DIR so LLM agents don't need to know the
+// absolute path. Absolute paths pass through resolvePath() unchanged.
+export function resolveProjectPath(projectPath: string): string {
+  if (path.isAbsolute(projectPath)) return resolvePath(projectPath);
+  if (projectPath.startsWith('~/')) return resolvePath(path.join(os.homedir(), projectPath.slice(2)));
+  const base = process.env['FOLIO_PROJECTS_DIR'];
+  if (base) return resolvePath(path.join(base, projectPath));
+  return resolvePath(projectPath);
 }
 
 // Resolve design_path relative to project_path when path is partial/relative.

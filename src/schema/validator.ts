@@ -6,13 +6,17 @@ export interface ValidationError {
   message: string;
 }
 
+// Keep in sync with LayerType in src/schema/types.ts. The renderer accepts
+// `ellipse`/`polyline` as aliases for circle/path; `particle` is a real
+// layer type added in Phase 4. Validator drift here = silent rejection of
+// otherwise-valid designs in export_design.
 const VALID_LAYER_TYPES = new Set([
-  'rect', 'circle', 'path', 'polygon', 'line',
+  'rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line',
   'text', 'image', 'icon', 'component', 'component_list',
   'mermaid', 'chart', 'code', 'math', 'group',
   'qrcode', 'auto_layout',
   'interactive_chart', 'interactive_table', 'rich_text',
-  'kpi_card', 'map', 'embed_code', 'popup',
+  'kpi_card', 'map', 'embed_code', 'popup', 'particle',
 ]);
 
 const VALID_FILL_TYPES = new Set([

@@ -296,9 +296,9 @@ layers:
   - id: stub-label
     type: text
     z: 30
-    x: 1300
-    y: 100
-    width: 280
+    x: 1280
+    y: 250
+    width: 240
     height: 0
     rotation: 90
     content: { type: plain, value: "ADMIT ONE" }

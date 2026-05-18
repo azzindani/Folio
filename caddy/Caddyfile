@@ -7,12 +7,16 @@
 #   FOLIO_BASIC_HASH  — (optional) bcrypt hash for editor HTTP Basic Auth
 #
 # Routing:
-#   /                  → folio:4173  (visual editor — vite preview)  [basicauth if set]
-#   /mcp · /mcp/sse    → folio:3333  (MCP JSON-RPC + tool-result SSE) [Bearer]
-#   /editor/events     → folio:3333  (file-change SSE stream)        [basicauth if set]
-#   /tokens/whoami     → folio:3333  (token sanity check)            [Bearer]
-#   /files · /files/*  → /srv/files  (read-only project + export browser) [basicauth]
-#   /health            → folio:3333  (unauthenticated liveness)
+#   /                       → folio:4173  (visual editor — vite preview)  [basicauth or ?token / cookie]
+#   /mcp · /mcp/sse         → folio:3333  (MCP JSON-RPC + tool-result SSE) [Bearer]
+#   /.well-known/oauth-*    → folio:3333  (OAuth metadata)                [public]
+#   /oauth/*                → folio:3333  (OAuth authorize/token/register) [public]
+#   /editor/events?token=*  → folio:3333  (file-change SSE)               [token-validated by MCP]
+#   /editor/events          → folio:3333  (SSE, no token)                 [basicauth]
+#   /__project_files/*      → folio:4173  (design YAML fetch)             [token or cookie]
+#   /tokens/whoami          → folio:3333  (token sanity check)            [Bearer]
+#   /files · /files/*       → /srv/files  (read-only file browser)        [basicauth]
+#   /health                 → folio:3333  (unauthenticated liveness)
 #
 # Caddy terminates TLS, forwards Authorization: Bearer untouched for /mcp,
 # and gates the editor with HTTP Basic Auth when FOLIO_BASIC_USER+HASH are
@@ -33,6 +37,22 @@
         }
     }
 
+    # OAuth 2.0 surface for claude.ai's Custom Connector. /.well-known/* and
+    # /oauth/* must NOT be behind basicauth — claude.ai walks them
+    # unauthenticated to discover, register, and complete the PKCE dance.
+    # The bearer token issued by /oauth/token then gates /mcp.
+    @oauth path /.well-known/oauth-* /oauth/*
+    handle @oauth {
+        reverse_proxy folio:3333 {
+            flush_interval -1
+            header_up Host {host}
+            # Forward proto/host so the engine builds absolute URLs in the
+            # OAuth metadata response that point back to the public domain.
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+
     # File browser for rendered exports / project assets. Behind the same
     # Basic Auth as the editor — gives a clickable HTML index at /files/
     # so you can download PNG/SVG/PDF outputs from a browser without SCP.
@@ -46,9 +66,25 @@
         file_server browse
     }
 
-    # Editor live-refresh SSE — disable buffering so events stream immediately.
-    # Guarded by the same Basic Auth as the editor route so an open SSE
-    # endpoint can't be used to fingerprint the deployment.
+    # Jupyter-style URL-token bypass on /editor/events — requests with
+    # ?token=* skip basic_auth and delegate to the MCP server which
+    # validates the token (open_in_editor mints a fresh 1h token and
+    # embeds it in the editor URL it returns).
+    @editor_events_with_token {
+        path /editor/events
+        query token=*
+    }
+    handle @editor_events_with_token {
+        reverse_proxy folio:3333 {
+            flush_interval -1
+            transport http {
+                read_timeout  24h
+                write_timeout 24h
+            }
+        }
+    }
+
+    # Fallback: SSE without a token → standard Basic Auth.
     @editor_events path /editor/events
     handle @editor_events {
         basicauth {
@@ -60,6 +96,26 @@
                 read_timeout  24h
                 write_timeout 24h
             }
+        }
+    }
+
+    # Initial editor load with ?token=* → bypass basic_auth. Static-server
+    # validates the token, sets a folio_session cookie, returns the editor
+    # HTML. Subsequent same-tab navigation rides the cookie matcher below.
+    @editor_with_token query token=*
+    handle @editor_with_token {
+        reverse_proxy folio:4173 {
+            header_up Host {host}
+        }
+    }
+
+    # Once /__token=… set folio_session, the browser carries it on every
+    # same-origin request (asset chunks, /favicon.ico, /__project_files/*).
+    # Let those through without re-challenging — Caddy substring-matches.
+    @editor_with_session header Cookie *folio_session=*
+    handle @editor_with_session {
+        reverse_proxy folio:4173 {
+            header_up Host {host}
         }
     }
 

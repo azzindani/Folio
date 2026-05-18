@@ -84,7 +84,11 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
   let el: SVGElement;
   switch (layer.type) {
     case 'rect':          el = renderRect(layer, svg); break;
-    case 'circle':        el = renderCircle(layer, svg); break;
+    // renderCircle already emits an <ellipse> element with rx/ry, so
+    // templates authored as `type: ellipse` map cleanly to it.
+    case 'circle':
+    case 'ellipse':       el = renderCircle(layer, svg); break;
+    case 'polyline':      el = renderPath(layer, svg); break;
     case 'path':          el = renderPath(layer, svg); break;
     case 'polygon':       el = renderPolygon(layer, svg); break;
     case 'line':          el = renderLine(layer, svg); break;

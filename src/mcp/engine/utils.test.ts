@@ -40,8 +40,8 @@ describe('resolvePath', () => {
     expect(resolvePath(p)).toBe(p);
   });
 
-  it('throws for path outside home and tmp', () => {
-    expect(() => resolvePath('/etc/passwd')).toThrow('Path outside allowed home directory');
+  it('throws for path outside home, tmp, and FOLIO_PROJECTS_DIR', () => {
+    expect(() => resolvePath('/etc/passwd')).toThrow('Path outside allowed directories');
   });
 });
 

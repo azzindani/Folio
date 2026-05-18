@@ -18,6 +18,7 @@
 // Wire usage: `Authorization: Bearer <token>` on every authed endpoint.
 import * as fs from 'fs';
 import type * as http from 'http';
+import { resolveOAuthToken } from './oauth';
 
 export interface TokenRegistry {
   readonly mode: 'open' | 'single' | 'multi';
@@ -91,7 +92,10 @@ export function authorize(req: http.IncomingMessage): string | null {
   if (presented.length === 0) return null;
 
   const name = registry.tokens.get(presented);
-  return name ?? null;
+  if (name) return name;
+  // Fall back to OAuth-issued access tokens. The token is opaque random
+  // bytes mapped to whichever principal authenticated at /oauth/authorize.
+  return resolveOAuthToken(presented);
 }
 
 /** Describe the active auth configuration for the startup banner. */

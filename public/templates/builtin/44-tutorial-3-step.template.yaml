@@ -125,9 +125,9 @@ layers:
   - id: step1_title
     type: text
     z: 15
-    x: 80
+    x: 280
     y: 380
-    width: 700
+    width: 500
     height: 0
     content: { type: plain, value: "Write your spec" }
     style:
@@ -140,9 +140,9 @@ layers:
   - id: step1_desc
     type: text
     z: 16
-    x: 80
+    x: 280
     y: 440
-    width: 700
+    width: 500
     height: 0
     content: { type: plain, value: "Open any text editor. Describe your design with semantic YAML — sizes, colors, layout. The shorthand expander fills the rest." }
     style:
@@ -213,9 +213,9 @@ layers:
   - id: step2_title
     type: text
     z: 15
-    x: 80
+    x: 280
     y: 740
-    width: 700
+    width: 500
     height: 0
     content: { type: plain, value: "Preview & tweak" }
     style:
@@ -228,9 +228,9 @@ layers:
   - id: step2_desc
     type: text
     z: 16
-    x: 80
+    x: 280
     y: 800
-    width: 700
+    width: 500
     height: 0
     content: { type: plain, value: "Hit save and the editor live-reloads. Drag layers, adjust tokens — every change is reflected in the YAML payload instantly." }
     style:
@@ -302,9 +302,9 @@ layers:
   - id: step3_title
     type: text
     z: 15
-    x: 80
+    x: 280
     y: 1100
-    width: 700
+    width: 500
     height: 0
     content: { type: plain, value: "Export & ship" }
     style:
@@ -317,9 +317,9 @@ layers:
   - id: step3_desc
     type: text
     z: 16
-    x: 80
+    x: 280
     y: 1160
-    width: 700
+    width: 500
     height: 0
     content: { type: plain, value: "Choose SVG, PNG, PDF, or interactive HTML. Folio renders deterministically — share the file, share the result." }
     style:

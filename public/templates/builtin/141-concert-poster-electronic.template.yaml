@@ -222,7 +222,7 @@ layers:
     type: text
     z: 24
     x: 60
-    y: 580
+    y: 660
     width: 1080
     height: 0
     content: { type: plain, value: "[ LIVE A/V SET ]" }

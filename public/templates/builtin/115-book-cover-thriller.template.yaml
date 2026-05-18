@@ -136,7 +136,7 @@ layers:
     type: text
     z: 25
     x: 120
-    y: 1940
+    y: 1900
     width: 1360
     height: 0
     content: { type: plain, value: "A NOVEL" }
@@ -152,13 +152,13 @@ layers:
     type: text
     z: 30
     x: 120
-    y: 2000
+    y: 1960
     width: 1360
     height: 0
     content: { type: plain, value: "THE LAST" }
     style:
       font_family: $heading
-      font_size: 200
+      font_size: 170
       font_weight: 900
       color: $text
       line_height: 0.92
@@ -169,13 +169,13 @@ layers:
     type: text
     z: 31
     x: 120
-    y: 2180
+    y: 2110
     width: 1360
     height: 0
     content: { type: plain, value: "WITNESS" }
     style:
       font_family: $heading
-      font_size: 200
+      font_size: 170
       font_weight: 900
       color: "$primary"
       line_height: 0.92
@@ -186,7 +186,7 @@ layers:
     type: rect
     z: 40
     x: 0
-    y: 2360
+    y: 2330
     width: 1600
     height: 2
     fill: { type: solid, color: "$primary" }
@@ -195,7 +195,7 @@ layers:
     type: text
     z: 41
     x: 120
-    y: 2375
+    y: 2355
     width: 1360
     height: 0
     content: { type: plain, value: "NO ONE WALKS AWAY CLEAN." }

@@ -560,10 +560,12 @@ describe('exportDesign', () => {
     expect(result.success).toBe(true);
   });
 
-  it('returns unsupported for PNG format', () => {
+  it('returns success:false for PNG format (not implemented in engine)', () => {
+    // PNG used to return success:true with status:"unsupported" — that lied
+    // to callers. We now return success:false with an actionable hint.
     const result = exportDesign({ design_path: designPath, format: 'png' });
-    const parsed = result as Record<string, unknown>;
-    expect(parsed.status).toBe('unsupported');
+    expect(result.success).toBe(false);
+    expect(JSON.stringify(result)).toMatch(/not implemented|Unsupported/i);
   });
 
   it('returns error when design not found', () => {
