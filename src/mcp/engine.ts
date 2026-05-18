@@ -5,6 +5,7 @@ import type { DesignSpec, ThemeSpec, Layer, Page } from '../schema/types';
 import type { ToolResult } from './types';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { mintEditorToken } from './oauth';
+import { Resvg } from '@resvg/resvg-js';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
@@ -847,16 +848,35 @@ export function exportDesign(args: { design_path: string; format: string; output
       progress,
     );
   }
-  // PNG: declared in the tier3 input schema but not yet implemented in the
-  // pure-Node engine path. Surface this clearly with success:false so
-  // agents don't silently move on as if a file was produced.
   if (args.format === 'png') {
-    return errResult(
-      op,
-      'PNG export is not implemented in the MCP engine',
-      'Use format="svg" or "html" today, or open the editor (open_in_editor) to export PNG from the toolbar. PNG via Puppeteer is on the roadmap.',
-      progress,
-    );
+    try {
+      const svgStr = renderToSVGString(spec);
+      // @resvg/resvg-js is a pure-Rust SVG renderer; prebuilt binaries
+      // ship for linux-x64-musl (alpine), linux-x64-gnu, darwin, win32.
+      const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;
+      // resvg's `fitTo: { mode: 'zoom' }` scales the rendered raster while
+      // keeping the SVG viewBox aspect ratio.
+      const rendered = new Resvg(svgStr, {
+        fitTo: { mode: 'zoom', value: scale },
+        background: 'rgba(0,0,0,0)',
+        font: { loadSystemFonts: true },
+      }).render();
+      const png = rendered.asPng();
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, png);
+      progress.push(pOk('PNG written', `${path.basename(outPath)} (${png.length} bytes @ ${scale}×)`));
+      const context = buildContext(op, `PNG exported for "${spec.meta.name}"`, [
+        { type: 'png', path: outPath, role: 'output' },
+      ]);
+      const handover = buildHandover('EXPORT', { design_path: dPath });
+      const _attachments = [
+        { type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' },
+        { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/png', text: path.basename(outPath) } },
+      ];
+      return okResult(op, { format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, progress, context, handover, _attachments });
+    } catch (err) {
+      return errResult(op, `PNG render failed: ${(err as Error).message}`, 'Try format="svg" to verify the design renders; PNG layer = SVG layer + resvg rasterizer.', progress);
+    }
   }
   return errResult(
     op,

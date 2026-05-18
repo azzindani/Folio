@@ -560,12 +560,14 @@ describe('exportDesign', () => {
     expect(result.success).toBe(true);
   });
 
-  it('returns success:false for PNG format (not implemented in engine)', () => {
-    // PNG used to return success:true with status:"unsupported" — that lied
-    // to callers. We now return success:false with an actionable hint.
+  it('returns success:true with PNG bytes for format=png', () => {
+    // Server-side rasterizer (@resvg/resvg-js) wired into exportDesign;
+    // previously this returned success:false with a "not implemented" hint.
     const result = exportDesign({ design_path: designPath, format: 'png' });
-    expect(result.success).toBe(false);
-    expect(JSON.stringify(result)).toMatch(/not implemented|Unsupported/i);
+    expect(result.success).toBe(true);
+    expect((result as Record<string, unknown>).format).toBe('png');
+    const bytes = (result as Record<string, unknown>).bytes as number;
+    expect(bytes).toBeGreaterThan(100);
   });
 
   it('returns error when design not found', () => {
