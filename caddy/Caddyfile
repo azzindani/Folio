@@ -11,6 +11,7 @@
 #   /mcp · /mcp/sse    → folio:3333  (MCP JSON-RPC + tool-result SSE) [Bearer]
 #   /editor/events     → folio:3333  (file-change SSE stream)        [basicauth if set]
 #   /tokens/whoami     → folio:3333  (token sanity check)            [Bearer]
+#   /files · /files/*  → /srv/files  (read-only project + export browser) [basicauth]
 #   /health            → folio:3333  (unauthenticated liveness)
 #
 # Caddy terminates TLS, forwards Authorization: Bearer untouched for /mcp,
@@ -30,6 +31,19 @@
             flush_interval -1
             header_up Host {host}
         }
+    }
+
+    # File browser for rendered exports / project assets. Behind the same
+    # Basic Auth as the editor — gives a clickable HTML index at /files/
+    # so you can download PNG/SVG/PDF outputs from a browser without SCP.
+    # `browse` shows a directory listing; remove it for read-only deep links.
+    @files path /files /files/*
+    handle @files {
+        basicauth {
+            {$FOLIO_BASIC_USER} {$FOLIO_BASIC_HASH}
+        }
+        root * /srv
+        file_server browse
     }
 
     # Editor live-refresh SSE — disable buffering so events stream immediately.
