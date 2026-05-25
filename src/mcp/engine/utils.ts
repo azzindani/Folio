@@ -46,7 +46,26 @@ export function resolveDesignPath(designPath: string, projectPath?: string): str
   return resolvePath(designPath);
 }
 
-// §19 — atomic snapshot with Windows collision guard
+// §19 — atomic snapshot with Windows collision guard + retention cap.
+// Each mutating tool call writes one .bak per touched file; without a cap
+// the .mcp_versions/ dir grows unboundedly under heavy MCP use.
+// Override the per-file retention via FOLIO_SNAPSHOT_KEEP (default 20).
+const SNAPSHOT_KEEP_DEFAULT = 20;
+
+function pruneSnapshots(versionsDir: string, stem: string): void {
+  let keep = parseInt(process.env['FOLIO_SNAPSHOT_KEEP'] ?? '', 10);
+  if (!Number.isFinite(keep) || keep < 1) keep = SNAPSHOT_KEEP_DEFAULT;
+  try {
+    const entries = fs.readdirSync(versionsDir)
+      .filter(n => n.startsWith(`${stem}_`) && n.endsWith('.bak'))
+      .map(n => ({ name: n, mtime: fs.statSync(path.join(versionsDir, n)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime); // newest first
+    for (const e of entries.slice(keep)) {
+      try { fs.unlinkSync(path.join(versionsDir, e.name)); } catch { /* best-effort */ }
+    }
+  } catch { /* never fail the write on a prune error */ }
+}
+
 export function snapshot(filePath: string): string {
   const p = resolvePath(filePath);
   const versionsDir = path.join(path.dirname(p), '.mcp_versions');
@@ -68,6 +87,8 @@ export function snapshot(filePath: string): string {
     try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
     throw err;
   }
+  // Prune oldest snapshots so the dir doesn't grow without bound.
+  pruneSnapshots(versionsDir, stem);
   return backupPath;
 }
 
@@ -208,11 +229,26 @@ export function buildHandover(step: string, carryForward: Record<string, unknown
 
 // ── Operation Receipt Logging ─────────────────────────────────
 const OPS_LOG = path.join(os.homedir(), '.folio', 'ops.log');
+// Rotate when ops.log crosses this size. The current file gets renamed to
+// ops.log.1 (overwriting any previous .1) — single-rotation is enough
+// telemetry without unbounded disk growth.
+const OPS_LOG_MAX_BYTES = 5 * 1024 * 1024; // 5 MiB
+
+function rotateOpsLogIfBig(): void {
+  try {
+    const st = fs.statSync(OPS_LOG);
+    if (st.size <= OPS_LOG_MAX_BYTES) return;
+    const rotated = `${OPS_LOG}.1`;
+    try { fs.unlinkSync(rotated); } catch { /* may not exist */ }
+    fs.renameSync(OPS_LOG, rotated);
+  } catch { /* file may not exist yet — appendFileSync will create it */ }
+}
 
 export function appendOpLog(entry: {
   op: string; success: boolean; file?: string; backup?: string; token_estimate?: number;
 }): void {
   try {
+    rotateOpsLogIfBig();
     const line = JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n';
     fs.mkdirSync(path.dirname(OPS_LOG), { recursive: true });
     fs.appendFileSync(OPS_LOG, line, 'utf-8');

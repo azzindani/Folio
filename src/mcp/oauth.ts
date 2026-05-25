@@ -74,6 +74,11 @@ interface RegisteredClient {
 
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
 const ACCESS_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+// Dynamic-client-registration cap. Without these, every /oauth/register
+// call leaked a Map entry — DoS surface for any anon caller. 7-day TTL
+// matches most agent rotation cycles; hard cap kicks in earlier under spam.
+const REGISTERED_CLIENT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const REGISTERED_CLIENT_MAX    = 256;
 
 const authCodes = new Map<string, AuthCode>();
 const accessTokens = loadPersistedTokens();
@@ -111,6 +116,21 @@ function reapExpired(): void {
   let mutated = false;
   for (const [k, v] of accessTokens) if (v.expires_at < now) { accessTokens.delete(k); mutated = true; }
   if (mutated) persistTokens(accessTokens);
+  // Reap aged + over-cap DCR clients. Pin clients seeded from env
+  // (STATIC_CLIENT_ID) so an admin-configured pair is never evicted.
+  for (const [id, c] of registeredClients) {
+    if (id === STATIC_CLIENT_ID) continue;
+    if (now - c.created_at > REGISTERED_CLIENT_TTL_MS) registeredClients.delete(id);
+  }
+  if (registeredClients.size > REGISTERED_CLIENT_MAX) {
+    const ordered = [...registeredClients.entries()]
+      .filter(([id]) => id !== STATIC_CLIENT_ID)
+      .sort((a, b) => a[1].created_at - b[1].created_at);
+    while (registeredClients.size > REGISTERED_CLIENT_MAX && ordered.length > 0) {
+      const head = ordered.shift();
+      if (head) registeredClients.delete(head[0]);
+    }
+  }
 }
 
 /**
