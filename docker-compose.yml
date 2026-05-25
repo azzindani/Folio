@@ -33,6 +33,15 @@ services:
     image: folio:latest
     container_name: folio
     restart: unless-stopped
+    # Memory ceiling — capped well above measured steady state (~230 MiB
+    # idle, ~400 MiB during PNG export). Stops a runaway leak from
+    # consuming all host RAM. Override via FOLIO_MEM_LIMIT (e.g. "2g").
+    mem_limit: ${FOLIO_MEM_LIMIT:-1g}
+    memswap_limit: ${FOLIO_MEM_LIMIT:-1g}
+    # Bun's native Node API hits a fork at the system level — keep the
+    # default OOM kill policy so the container restarts if it blows the cap
+    # rather than dragging the whole host into thrashing.
+    oom_kill_disable: false
     environment:
       # Container role: ui | mcp | both
       FOLIO_MODE: ${FOLIO_MODE:-both}
