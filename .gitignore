@@ -34,6 +34,7 @@ tests/ui-audit/vision/
 tests/ui-audit/broad/
 tests/ui-audit/template/
 tests/ui-audit/catalog/
+tests/ui-audit/catalog-cards/
 tests/ui-audit/deep/
 
 # Environment + secrets
