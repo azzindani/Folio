@@ -445,9 +445,17 @@ export class CatalogDialog {
       .map(tg => `<span class="tmpl-tag">${escapeHTML(tg)}</span>`).join('');
     const pageInfo = e.pages > 0 ? ` · ${e.pages} pages` : '';
     const selected = e.id === this.selectedTemplateId ? ' selected' : '';
+    // Report dashboards render faint at thumbnail scale and read as generic
+    // grey skeletons. A corner type-badge + a flat surface frame makes them
+    // identifiable at a glance. The badge sits on .tmpl-card (not the thumb)
+    // because hydrateCard overwrites the thumb's innerHTML on hydration.
+    const isReport = e.type === 'report';
+    const badge = isReport ? `<span class="tmpl-thumb-badge">Report</span>` : '';
+    const thumbCls = isReport ? 'tmpl-thumb tmpl-thumb--report' : 'tmpl-thumb';
     return `
       <button class="tmpl-card${selected}" data-template="${escapeAttr(e.id)}" type="button">
-        <div class="tmpl-thumb" data-template-thumb="${escapeAttr(e.id)}">
+        ${badge}
+        <div class="${thumbCls}" data-template-thumb="${escapeAttr(e.id)}">
           <span class="tmpl-thumb-dim">${e.width} × ${e.height}</span>
         </div>
         <div class="tmpl-meta">

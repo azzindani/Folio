@@ -1228,12 +1228,19 @@ button:focus:not(:focus-visible) { outline: none; }
      4-5 columns instead of 3 — more cards visible without scrolling. */
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
-  /* Force every card in a row to share the tallest row's height so
-     short-description cards don't leave odd gaps. */
-  grid-auto-rows: 1fr;
+  /* Each row sizes to its own content (default `auto`). The earlier
+     `1fr` equalized EVERY row to the tallest in the whole grid, so a
+     single portrait template (A4 / phone / long infographic) inflated
+     all 300+ cards to ~870px. Within-row uniformity is still preserved
+     by grid's default `align-items: stretch`. */
+  grid-auto-rows: auto;
 }
 .tmpl-card { height: 100%; }
 .tmpl-card {
+  /* Anchor for the absolutely-positioned type badge (e.g. "Report"),
+     which must live outside .tmpl-thumb because hydrateCard replaces the
+     thumb's innerHTML with the rendered SVG and would wipe it. */
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--color-surface-2);
@@ -1258,17 +1265,51 @@ button:focus:not(:focus-visible) { outline: none; }
 .tmpl-thumb {
   position: relative;
   aspect-ratio: 4 / 3;
+  /* Hard cap so a tall portrait design can never grow the card. The
+     hydrated preview SVG is absolutely positioned (below) so it can't
+     dictate the box height — it letterboxes into this fixed 4/3 frame. */
+  overflow: hidden;
   background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid var(--color-border);
 }
+/* Fill the fixed-ratio thumb without contributing to its intrinsic size.
+   preserveAspectRatio="xMidYMid meet" (set in hydrateCard) centres and
+   fits the design inside the frame regardless of its aspect ratio. */
+.tmpl-thumb svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 .tmpl-thumb-dim {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--color-text-muted);
   letter-spacing: 0.05em;
+}
+/* Reports: flat neutral frame (vs. the gradient) so the light, low-contrast
+   dashboard SVGs sit on a calmer ground and read as a distinct content type. */
+.tmpl-thumb--report {
+  background: var(--color-surface);
+}
+/* Corner type badge — anchored to .tmpl-card so it survives thumb hydration. */
+.tmpl-thumb-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 1;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  pointer-events: none;
 }
 .tmpl-meta { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
 .tmpl-name { font-size: 14px; font-weight: 600; color: var(--color-text); }
@@ -1333,7 +1374,9 @@ button:focus:not(:focus-visible) { outline: none; }
 /* Hard cap so the filter bar never floods the body. The chip-row inside
    is also capped in TS, but a CSS ceiling is the safety net for any
    future code path that forgets the limit. */
-.catalog-filter { max-height: 84px; overflow-y: auto; flex-shrink: 0; }
+/* Chips now scroll horizontally (see .catalog-chips), so the bar stays a
+   single row — no vertical cap or scroll needed. */
+.catalog-filter { flex-shrink: 0; }
 .tag-chip-more {
   font-size: 11px;
   padding: 3px 9px;
@@ -1355,7 +1398,23 @@ button:focus:not(:focus-visible) { outline: none; }
   flex: 0 0 auto;
 }
 .catalog-search:focus { outline: 1px solid var(--color-primary); }
-.catalog-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+/* Single horizontal-scroll strip instead of a wrapping block. With 24
+   curated chips the wrap used to push the filter bar to ~3 rows and shove
+   the card grid down; a one-row scroller keeps the bar ~40px tall. Users
+   who want a specific tag use the search box right beside it. */
+.catalog-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+.catalog-chips::-webkit-scrollbar { height: 5px; }
+.catalog-chips::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+.catalog-chips .tag-chip { flex: 0 0 auto; white-space: nowrap; }
 .tag-chip {
   font-size: 11px;
   padding: 3px 9px;
@@ -1573,13 +1632,17 @@ button:focus:not(:focus-visible) { outline: none; }
 .btn-link {
   background: transparent;
   border: none;
-  color: var(--color-text-muted);
-  font-size: 11px;
-  padding: 4px;
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px;
   cursor: pointer;
   text-align: center;
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
 }
-.btn-link:hover { color: var(--color-primary); }
+.btn-link:hover { color: var(--color-primary); text-decoration-color: var(--color-primary); }
 
 .tmpl-card.selected {
   border-color: var(--color-primary);
