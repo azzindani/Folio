@@ -19,7 +19,9 @@ fi
 
 if command -v bun >/dev/null 2>&1; then
   echo "[serve] static server on http://${HOST}:${PORT} (bun)"
-  exec bun run src/editor/static-server.ts
+  # --smol: smaller heap + more aggressive GC for a lower long-lived footprint
+  # in the memory-capped container.
+  exec bun --smol run src/editor/static-server.ts
 else
   echo "[serve] static server on http://${HOST}:${PORT} (vite preview fallback)"
   exec npx vite preview --host "${HOST}" --port "${PORT}"

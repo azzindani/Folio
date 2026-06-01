@@ -20,6 +20,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type * as http from 'http';
 import { loadTokens } from './auth';
+import { readBodyCapped } from '../utils/http-body';
+
+// OAuth bodies are public (pre-auth) and tiny — login forms, code exchanges,
+// and DCR JSON. Cap them small so an unauthenticated client can't OOM the
+// container with a giant POST to /oauth/*.
+const OAUTH_MAX_BODY_BYTES = Number(process.env['FOLIO_OAUTH_MAX_BODY_BYTES'] ?? 256 * 1024);
 
 // Disk-backed access-token store. In-memory only meant every container
 // rebuild forced claude.ai to re-OAuth from scratch — annoying when the
@@ -171,12 +177,7 @@ function setCORS(res: http.ServerResponse): void {
 }
 
 function readBody(req: http.IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (c: Buffer) => { data += c.toString('utf8'); });
-    req.on('end', () => resolve(data));
-    req.on('error', reject);
-  });
+  return readBodyCapped(req, OAUTH_MAX_BODY_BYTES);
 }
 
 function json(res: http.ServerResponse, status: number, body: unknown): void {
