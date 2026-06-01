@@ -4,7 +4,6 @@ import * as path from 'path';
 import type { DesignSpec, ThemeSpec, Layer, Page } from '../schema/types';
 import type { ToolResult } from './types';
 import { BUILTIN_THEMES } from '../themes/builtin';
-import { mintEditorToken } from './oauth';
 import { Resvg } from '@resvg/resvg-js';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
@@ -17,6 +16,7 @@ import {
   buildContext, buildHandover,
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
+import { buildEditorLink } from './engine/editor-link';
 import { renderToSVGString } from './engine/svg-export';
 import { expandShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
@@ -57,11 +57,18 @@ export function createDesign(args: { project_path: string; name: string; type?: 
   writeYAML(designPath, spec);
   progress.push(pOk(`Created ${type} scaffold`, path.basename(designPath)));
 
+  // Self-contained editor link (fresh token) — design is openable immediately.
+  const link = buildEditorLink(designPath);
+  progress.push(pOk('Editor link', link.open_url));
+
   const projectPath = path.join(args.project_path, 'project.yaml');
-  const next_action: NextAction | undefined = type === 'carousel' ? {
+  const next_action: NextAction = type === 'carousel' ? {
     tool: 'append_page', params: { design_path: designPath, page_id: 'page_1', label: 'Page 1' },
-    remaining: 1, hint: 'Add pages with append_page, then seal_design.',
-  } : undefined;
+    remaining: 1, hint: 'Add pages with append_page (repeat per page), then seal_design.',
+  } : {
+    tool: 'add_layers', params: { design_path: designPath },
+    remaining: 1, hint: 'Add 3–8 layers with add_layers (use layers_shorthand), then seal_design.',
+  };
 
   if (fs.existsSync(projectPath)) {
     const bak = snapshot(projectPath);
@@ -74,14 +81,14 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     const context = buildContext(op, `Created ${type} design "${args.name}"`, [
       { type: 'design', path: designPath, role: 'created' },
     ]);
-    const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path });
-    return okResult(op, { design_id: spec.meta.id, path: designPath, ...(next_action ? { next_action } : {}), progress, context, handover }, bak);
+    const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path }, { type: type as 'poster' | 'carousel' });
+    return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
   }
   const context = buildContext(op, `Created ${type} design "${args.name}"`, [
     { type: 'design', path: designPath, role: 'created' },
   ]);
-  const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path });
-  return okResult(op, { design_id: spec.meta.id, path: designPath, ...(next_action ? { next_action } : {}), progress, context, handover });
+  const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path }, { type: type as 'poster' | 'carousel' });
+  return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] });
 }
 
 // ── Tier 1 — Project Management ──────────────────────────────
@@ -572,8 +579,9 @@ export function appendPage(args: {
   const remaining = next_action ? next_action.remaining : 0;
   const handover = buildHandover(remaining === 0 ? 'SEAL' : 'COMPOSE', {
     design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}),
-  });
-  return okResult(op, { page_id: pageId, page_count: spec.pages.length, ...(next_action ? { next_action } : {}), progress, context, handover }, bak);
+  }, { type: 'carousel' });
+  const link = buildEditorLink(dPath, { page: spec.pages.length - 1 });
+  return okResult(op, { page_id: pageId, page_count: spec.pages.length, open_url: link.open_url, editor_url: link.editor_url, ...(next_action ? { next_action } : {}), progress, context, handover, _attachments: [link.attachment] }, bak);
 }
 
 export function patchDesign(args: { design_path: string; selectors: { path: string; value: unknown }[]; dry_run?: boolean; project_path?: string }): ToolResult {
@@ -631,12 +639,14 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   writeYAML(dPath, spec);
   progress.push(pOk('Design sealed', `${spec.pages?.length ?? 0} page(s), ${spec.layers?.length ?? 0} root layer(s)`));
 
-  const next_action: NextAction = { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: 'Export with export_design or open in editor.' };
+  const link = buildEditorLink(dPath);
+  progress.push(pOk('Editor link', link.open_url));
+  const next_action: NextAction = { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: `Export with export_design, or open the design now: ${link.open_url}` };
   const context = buildContext(op, `Sealed design "${spec.meta.name}"`, [
     { type: 'design', path: dPath, role: 'sealed' },
   ]);
-  const handover = buildHandover('SEAL', { design_path: dPath });
-  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, next_action, progress, context, handover }, bak);
+  const handover = buildHandover('SEAL', { design_path: dPath }, { type: spec.meta.type });
+  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, open_url: link.open_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
 }
 
 // Known layer types — kept in sync with LayerType in src/schema/types.ts.
@@ -774,6 +784,7 @@ export function exportDesign(args: { design_path: string; format: string; output
   if (criticals.length > 0) return errResult(op, `Validation errors: ${criticals.map(e => e.message).join('; ')}`, 'Fix errors then retry.', progress);
 
   const outPath = args.output_path ?? dPath.replace('.design.yaml', `.${args.format}`);
+  const link = buildEditorLink(dPath);
   if (args.format === 'svg') {
     try {
       const svgStr = renderToSVGString(spec);
@@ -790,8 +801,9 @@ export function exportDesign(args: { design_path: string; format: string; output
       const _attachments = [
         { type: 'image' as const, data: Buffer.from(svgStr, 'utf-8').toString('base64'), mimeType: 'image/svg+xml' },
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/svg+xml', text: path.basename(outPath) } },
+        link.attachment,
       ];
-      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, progress, context, handover, _attachments });
+      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, editor_url: link.editor_url, progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
     }
@@ -812,7 +824,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       progress.push(pOk('HTML written', path.basename(outPath)));
       const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, progress, context, handover });
+      return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, open_url: link.open_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
     } catch (err) {
       return errResult(op, `HTML export failed: ${(err as Error).message}`, 'Check design spec.', progress);
     }
@@ -1505,7 +1517,6 @@ export function openInEditor(args: {
 }): ToolResult {
   const op = 'open_in_editor';
   const progress: ProgressItem[] = [];
-  const baseUrl = (args.editor_url ?? process.env['FOLIO_EDITOR_URL'] ?? 'http://localhost:4173').replace(/\/+$/, '');
 
   let dPath = '';
   if (args.design_path) {
@@ -1513,36 +1524,24 @@ export function openInEditor(args: {
     if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
   }
 
-  const params = new URLSearchParams();
-  if (dPath) params.set('file', dPath);
-  if (typeof args.page === 'number') params.set('page', String(args.page));
-  // Live-refresh: tell the editor to subscribe to MCP file-change events.
-  const mcpUrl = process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`;
-  params.set('mcp_url', mcpUrl);
-  // Self-contained URL — embed a fresh 1h token so the user can open the
-  // link without re-entering basic-auth. The editor reads it, stores it,
-  // and presents it on every /__project_files + /editor/events call.
-  params.set('token', mintEditorToken('default'));
-
-  const url = params.toString() ? `${baseUrl}/?${params.toString()}` : baseUrl;
-  progress.push(pOk('Editor URL', url));
-
-  const _attachments = [
-    { type: 'resource' as const, resource: { uri: url, mimeType: 'text/html', text: `Open Folio editor → ${url}` } },
-  ];
+  const link = buildEditorLink(dPath || undefined, {
+    ...(typeof args.page === 'number' ? { page: args.page } : {}),
+    ...(args.editor_url ? { editorUrl: args.editor_url } : {}),
+  });
+  progress.push(pOk('Editor URL', link.open_url));
 
   const context = buildContext(op, `Editor link generated`,
     dPath ? [{ type: 'design', path: dPath, role: 'opened' }] : []);
   const handover = buildHandover('EXPORT', dPath ? { design_path: dPath } : {});
 
   return okResult(op, {
-    url,
-    editor_url: baseUrl,
+    url: link.open_url,
+    editor_url: link.editor_url,
     design_path: dPath || undefined,
-    hint: `Open ${url} in a browser. The editor will live-refresh as MCP edits the file.`,
+    hint: `Open ${link.open_url} in a browser. The editor will live-refresh as MCP edits the file.`,
     progress,
     context,
     handover,
-    _attachments,
+    _attachments: [link.attachment],
   });
 }

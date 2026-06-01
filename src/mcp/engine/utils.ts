@@ -217,14 +217,59 @@ const HANDOVER_MAP: Record<string, { next: string; suggestions: SuggestedNext[] 
   },
 };
 
-export function buildHandover(step: string, carryForward: Record<string, unknown>): Handover {
+// Type-aware suggestion overrides. The static HANDOVER_MAP is keyed only by
+// workflow step, so it used to suggest the carousel-only `append_page` even
+// for a poster (a real wrong-tool hand-off). When the caller knows the design
+// type, these overrides pick the correct next tools per type.
+const ADD_LAYERS: SuggestedNext = { tool: 'add_layers', tier: 2, reason: 'add layers to this page using shorthand syntax' };
+const APPEND_PAGE: SuggestedNext = { tool: 'append_page', tier: 2, reason: 'add the next page to this carousel' };
+const SEAL: SuggestedNext = { tool: 'seal_design', tier: 2, reason: 'finalize when all content is added' };
+const INSPECT: SuggestedNext = { tool: 'inspect_design', tier: 2, reason: 'inspect current design state' };
+const EXPORT: SuggestedNext = { tool: 'export_design', tier: 3, reason: 'export as SVG or HTML' };
+const OPEN: SuggestedNext = { tool: 'open_in_editor', tier: 3, reason: 'open this design in the editor' };
+
+const TYPE_SUGGESTIONS: Record<string, Record<'poster' | 'carousel', SuggestedNext[]>> = {
+  DESIGN: {
+    poster:   [ADD_LAYERS, INSPECT],
+    carousel: [APPEND_PAGE, INSPECT],
+  },
+  COMPOSE: {
+    poster:   [SEAL, ADD_LAYERS, INSPECT],
+    carousel: [APPEND_PAGE, SEAL, INSPECT],
+  },
+  SEAL: {
+    poster:   [EXPORT, OPEN],
+    carousel: [EXPORT, OPEN],
+  },
+};
+
+export function buildHandover(
+  step: string,
+  carryForward: Record<string, unknown>,
+  opts?: { type?: 'poster' | 'carousel' },
+): Handover {
   const entry = HANDOVER_MAP[step] ?? HANDOVER_MAP['PROJECT'];
-  // Inject carry_forward into suggested_next params
-  const suggested_next = entry.suggestions.map(s => ({
+  const typed = opts?.type ? TYPE_SUGGESTIONS[step]?.[opts.type] : undefined;
+  const base = typed ?? entry.suggestions;
+  // Only forward params each tool actually accepts — avoids smearing
+  // design_path onto project-scoped tools (e.g. list_designs/create_task).
+  const suggested_next = base.map(s => ({
     ...s,
-    params: { ...carryForward, ...(s.params ?? {}) },
+    params: { ...pickParamsFor(s.tool, carryForward), ...(s.params ?? {}) },
   }));
   return { workflow_step: step, workflow_next: entry.next, suggested_next, carry_forward: carryForward };
+}
+
+// Per-tool carry_forward param allowlist. Tools not listed get the full
+// carry_forward (safe default for design-scoped tools).
+const PROJECT_SCOPED = new Set(['create_design', 'create_task', 'list_designs', 'list_themes', 'apply_theme', 'list_tasks']);
+function pickParamsFor(tool: string, carry: Record<string, unknown>): Record<string, unknown> {
+  if (PROJECT_SCOPED.has(tool)) {
+    const out: Record<string, unknown> = {};
+    if ('project_path' in carry) out['project_path'] = carry['project_path'];
+    return out;
+  }
+  return carry;
 }
 
 // ── Operation Receipt Logging ─────────────────────────────────

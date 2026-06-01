@@ -1,33 +1,10 @@
 // §14 — thin MCP wrapper; zero domain logic. One-line calls into engine.
 import * as readline from 'readline';
 import { TIER3_TOOLS } from './registry';
-import * as engine from '../engine';
 import { toMCPResult } from '../types';
 import { appendOpLog } from '../engine/utils';
-import type { MCPRequest, MCPResponse, ToolResult } from '../types';
-
-type Handler = (args: Record<string, unknown>) => ToolResult;
-
-const HANDLERS: Record<string, Handler> = {
-  export_design:       (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
-  batch_create:        (a) => engine.batchCreate(a as Parameters<typeof engine.batchCreate>[0]),
-  save_as_component:   (a) => engine.saveAsComponent(a as Parameters<typeof engine.saveAsComponent>[0]),
-  export_template:     (a) => engine.exportTemplate(a as Parameters<typeof engine.exportTemplate>[0]),
-  inject_template:     (a) => engine.injectTemplate(a as Parameters<typeof engine.injectTemplate>[0]),
-  list_template_slots: (a) => engine.listTemplateSlots(a as Parameters<typeof engine.listTemplateSlots>[0]),
-  generate_report:      (a) => engine.generateReport(a as Parameters<typeof engine.generateReport>[0]),
-  bind_data:            (a) => engine.bindData(a as Parameters<typeof engine.bindData>[0]),
-  export_report:        (a) => engine.exportReport(a as Parameters<typeof engine.exportReport>[0]),
-  create_presentation:  (a) => engine.createPresentation(a as Parameters<typeof engine.createPresentation>[0]),
-  export_presentation:  (a) => engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]),
-  set_formula_context:  (a) => engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]),
-  debug_formula:        (a) => engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]),
-  inspect_timeline:       (a) => engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]),
-  add_keyframe:           (a) => engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]),
-  export_animation:       (a) => engine.exportAnimation(a as Parameters<typeof engine.exportAnimation>[0]),
-  setup_remote_presenter: (a) => engine.setupRemotePresenter(a as Parameters<typeof engine.setupRemotePresenter>[0]),
-  setup_collab:           (a) => engine.setupCollab(a as Parameters<typeof engine.setupCollab>[0]),
-};
+import { TIER3_HANDLERS as HANDLERS } from '../handlers';
+import type { MCPRequest, MCPResponse } from '../types';
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }
 

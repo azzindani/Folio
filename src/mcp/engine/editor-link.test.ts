@@ -1,0 +1,67 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { buildEditorLink } from './editor-link';
+import { buildHandover } from './utils';
+import { createDesign, sealDesign } from '../engine';
+
+describe('buildEditorLink', () => {
+  it('builds a tokenized, self-contained editor URL', () => {
+    const link = buildEditorLink('/tmp/x.design.yaml');
+    expect(link.open_url).toContain('file=');
+    expect(link.open_url).toContain('mcp_url=');
+    expect(link.open_url).toMatch(/[?&]token=/);
+    expect(link.attachment).toMatchObject({ type: 'resource' });
+  });
+
+  it('mints a UNIQUE token on every call', () => {
+    const a = buildEditorLink('/tmp/x.design.yaml').open_url;
+    const b = buildEditorLink('/tmp/x.design.yaml').open_url;
+    const tok = (u: string) => (u.match(/token=([^&]+)/) ?? [])[1];
+    expect(tok(a)).toBeTruthy();
+    expect(tok(a)).not.toBe(tok(b));
+  });
+
+  it('encodes a page index when given', () => {
+    expect(buildEditorLink('/tmp/x.design.yaml', { page: 2 }).open_url).toContain('page=2');
+  });
+});
+
+describe('design tools surface an editor open_url', () => {
+  let tmp: string;
+  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-el-')); });
+  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+
+  it('create_design returns open_url + a resource attachment + a correct next_action', () => {
+    const r = createDesign({ project_path: tmp, name: 'P', type: 'poster' }) as Record<string, unknown>;
+    expect(typeof r['open_url']).toBe('string');
+    expect((r['open_url'] as string)).toMatch(/token=/);
+    expect((r['next_action'] as { tool: string }).tool).toBe('add_layers');
+    expect(Array.isArray(r['_attachments'])).toBe(true);
+  });
+
+  it('carousel create_design routes next_action to append_page', () => {
+    const r = createDesign({ project_path: tmp, name: 'C', type: 'carousel' }) as Record<string, unknown>;
+    expect((r['next_action'] as { tool: string }).tool).toBe('append_page');
+  });
+
+  it('seal_design returns an open_url', () => {
+    const d = createDesign({ project_path: tmp, name: 'S', type: 'poster' })['path'] as string;
+    const r = sealDesign({ design_path: d }) as Record<string, unknown>;
+    expect((r['open_url'] as string)).toMatch(/token=/);
+  });
+});
+
+describe('type-aware handover', () => {
+  it('does NOT suggest append_page for a poster', () => {
+    const hw = buildHandover('DESIGN', { design_path: '/x.yaml' }, { type: 'poster' });
+    expect(hw.suggested_next.map(s => s.tool)).not.toContain('append_page');
+    expect(hw.suggested_next.map(s => s.tool)).toContain('add_layers');
+  });
+
+  it('suggests append_page for a carousel', () => {
+    const hw = buildHandover('DESIGN', { design_path: '/x.yaml' }, { type: 'carousel' });
+    expect(hw.suggested_next.map(s => s.tool)).toContain('append_page');
+  });
+});

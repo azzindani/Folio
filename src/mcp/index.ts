@@ -23,16 +23,22 @@
 import { startTier1 } from './tier1/server';
 import { startTier2 } from './tier2/server';
 import { startTier3 } from './tier3/server';
+import { startAll } from './all/server';
 
 export * from './types';
 export * from './engine';
 
+// Tiers 1/2/3 are EXCLUSIVE (register all three for the full union, no dupes).
+// `all` (or `0`) serves every tool from one registration — simplest for a
+// single-server client; matches the HTTP server's full surface.
 const tier = process.env['FOLIO_MCP_TIER'] ?? '1';
 switch (tier) {
   case '1': startTier1(); break;
   case '2': startTier2(); break;
   case '3': startTier3(); break;
+  case 'all':
+  case '0': startAll(); break;
   default:
-    process.stderr.write(`Unknown FOLIO_MCP_TIER="${tier}". Use 1, 2, or 3.\n`);
+    process.stderr.write(`Unknown FOLIO_MCP_TIER="${tier}". Use 1, 2, 3, or all.\n`);
     process.exit(1);
 }
