@@ -230,7 +230,7 @@ layers:
     type: text
     z: 40
     x: 240
-    y: 1200
+    y: 1090
     width: 2000
     height: 0
     content: { type: plain, value: "ISSUED" }
@@ -247,7 +247,7 @@ layers:
     type: text
     z: 41
     x: 240
-    y: 1232
+    y: 1122
     width: 2000
     height: 0
     content: { type: plain, value: "May 16, 2026" }

@@ -144,7 +144,7 @@ layers:
   - id: div-top-leaf
     type: path
     z: 18
-    d: "M 388 192 Q 400 200 412 192 Q 400 208 388 192 Z"
+    d: "M 370 184 Q 400 200 430 184 Q 400 216 370 184 Z"
     fill: { type: solid, color: "$primary" }
 
   - id: div-top-r

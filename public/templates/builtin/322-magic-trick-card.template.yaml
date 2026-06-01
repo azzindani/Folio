@@ -278,9 +278,9 @@ layers:
   - id: patter-title
     type: text
     z: 23
-    x: 110
+    x: 60
     y: 980
-    width: 880
+    width: 960
     height: 0
     content: { type: plain, value: "PATTER SCRIPT" }
     style:

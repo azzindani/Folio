@@ -34,7 +34,7 @@ pages:
       - { id: hero-line-2, type: rect, z: 8, x: 60, y: 1138, width: 960, height: 2, fill: { type: solid, color: "$primary" } }
       - { id: vol-bar, type: rect, z: 10, x: 60, y: 80, width: 200, height: 36, fill: { type: solid, color: "$primary" } }
       - { id: vol, type: text, z: 11, x: 60, y: 90, width: 200, height: 0, content: { type: plain, value: "ISSUE 09" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $background, text_align: center, letter_spacing: 0.5 } }
-      - { id: date, type: text, z: 12, x: 880, y: 90, width: 140, height: 0, content: { type: plain, value: "MAY 2026" }, style: { font_family: $mono, font_size: 12, color: "$background", text_align: right, letter_spacing: 0.3, opacity: 0.7 } }
+      - { id: date, type: text, z: 12, x: 820, y: 90, width: 140, height: 0, content: { type: plain, value: "MAY 2026" }, style: { font_family: $mono, font_size: 12, color: "$background", text_align: right, letter_spacing: 0.3, opacity: 0.7 } }
       - { id: corner-tl, type: text, z: 13, x: 80, y: 1080, width: 200, height: 0, content: { type: plain, value: "+" }, style: { font_family: $mono, font_size: 28, color: "$background", opacity: 0.6 } }
       - { id: corner-tr, type: text, z: 13, x: 880, y: 1080, width: 100, height: 0, content: { type: plain, value: "+" }, style: { font_family: $mono, font_size: 28, color: "$background", text_align: right, opacity: 0.6 } }
       - { id: title, type: text, z: 20, x: 60, y: 1180, width: 960, height: 0, content: { type: plain, value: "GREY HOURS" }, style: { font_family: $heading, font_size: 88, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.02 } }

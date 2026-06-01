@@ -101,10 +101,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Player Performance — Competitive Season**\n*KDA trajectory, agent mastery, tournament results, and map proficiency.*"
+        content: "**Player Performance — Competitive Season**\n*KDA trajectory, agent mastery, tournament results, and map win rate.*"
 
       - id: kpi-kda
         type: kpi_card

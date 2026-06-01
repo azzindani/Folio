@@ -105,7 +105,8 @@ layers:
     y: 290
     width: 252
     height: 0
-    content: { type: plain, value: "✦  cover art" }
+    content: { type: plain, value: "Cover art" }
+    opacity: 0.3
     style:
       font_family: $body
       font_size: 13

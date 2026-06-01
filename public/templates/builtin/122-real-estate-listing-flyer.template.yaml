@@ -54,12 +54,12 @@ layers:
     y: 430
     width: 1120
     height: 0
-    content: { type: plain, value: "[ PROPERTY PHOTO ]" }
+    content: { type: plain, value: "Property photo" }
     style:
       font_family: $body
-      font_size: 22
+      font_size: 16
       font_weight: 700
-      color: "rgba(255,255,255,0.55)"
+      color: "rgba(255,255,255,0.3)"
       letter_spacing: 0.5
       text_align: center
       text_transform: uppercase

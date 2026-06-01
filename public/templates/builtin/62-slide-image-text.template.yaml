@@ -51,13 +51,13 @@ layers:
     type: text
     z: 6
     x: 80
-    y: 480
+    y: 380
     width: 820
     height: 0
     content: { type: plain, value: "▢" }
     style:
       font_family: $body
-      font_size: 96
+      font_size: 240
       color: $text_muted
       text_align: center
       opacity: 0.4

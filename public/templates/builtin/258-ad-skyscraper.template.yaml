@@ -107,7 +107,7 @@ layers:
     y: 242
     width: 136
     height: 0
-    content: { type: plain, value: "✓ AI pair\nprogrammer" }
+    content: { type: plain, value: "✓ AI copilot" }
     style:
       font_family: $body
       font_size: 12
@@ -123,7 +123,7 @@ layers:
     y: 322
     width: 136
     height: 0
-    content: { type: plain, value: "✓ 1-click\ndeploy" }
+    content: { type: plain, value: "✓ 1-click deploy" }
     style:
       font_family: $body
       font_size: 12
@@ -139,7 +139,7 @@ layers:
     y: 402
     width: 136
     height: 0
-    content: { type: plain, value: "✓ Real-time\ncollab" }
+    content: { type: plain, value: "✓ Live collab" }
     style:
       font_family: $body
       font_size: 12
@@ -179,7 +179,7 @@ layers:
 slots:
   - { id: brand,      path: "layers[3].content.value",  type: text, hint: "Brand name",   default: "◆ Pulse OS" }
   - { id: headline,   path: "layers[4].content.value",  type: text, hint: "Headline (3 short lines)", default: "Code\nlike it's\n2030." }
-  - { id: benefit_1,  path: "layers[6].content.value",  type: text, hint: "Benefit 1",    default: "✓ AI pair\nprogrammer" }
-  - { id: benefit_2,  path: "layers[7].content.value",  type: text, hint: "Benefit 2",    default: "✓ 1-click\ndeploy" }
-  - { id: benefit_3,  path: "layers[8].content.value",  type: text, hint: "Benefit 3",    default: "✓ Real-time\ncollab" }
+  - { id: benefit_1,  path: "layers[6].content.value",  type: text, hint: "Benefit 1",    default: "✓ AI copilot" }
+  - { id: benefit_2,  path: "layers[7].content.value",  type: text, hint: "Benefit 2",    default: "✓ 1-click deploy" }
+  - { id: benefit_3,  path: "layers[8].content.value",  type: text, hint: "Benefit 3",    default: "✓ Live collab" }
   - { id: cta_label,  path: "layers[10].content.value", type: text, hint: "CTA label",    default: "Start free →" }

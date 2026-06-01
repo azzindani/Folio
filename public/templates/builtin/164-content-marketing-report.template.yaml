@@ -99,10 +99,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Content Marketing — Q1 2026**\n*Publishing output, pageview trend, top performers, channel mix, and topic engagement.*"
+        content: "**Content Marketing — Q1 2026**\n*Publishing output, pageview trend, top performers, and channel mix.*"
 
       - id: kpi-pieces
         type: kpi_card

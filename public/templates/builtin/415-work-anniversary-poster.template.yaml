@@ -82,7 +82,7 @@ layers:
       font_family: $heading
       font_size: 240
       font_weight: 900
-      color: $primary
+      color: "#c45c8a"
       line_height: 0.95
       letter_spacing: -0.05
 

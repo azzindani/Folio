@@ -132,7 +132,7 @@ layers:
     y: 510
     width: 800
     height: 0
-    content: { type: plain, value: "[ pet photo here ]" }
+    content: { type: plain, value: "Pet photo here" }
     style:
       font_family: $body
       font_size: 22
@@ -142,6 +142,7 @@ layers:
       line_height: 1.3
       letter_spacing: 0.2
       text_transform: uppercase
+      opacity: 0.3
 
   # ── Pet name + breed ──────────────────────────────────────
   - id: pet-name

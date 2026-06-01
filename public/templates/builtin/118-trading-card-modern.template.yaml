@@ -120,7 +120,8 @@ layers:
     y: 500
     width: 930
     height: 0
-    content: { type: plain, value: "[ CHARACTER ART ]" }
+    opacity: 0.3
+    content: { type: plain, value: "Character art" }
     style:
       font_family: $body
       font_size: 18

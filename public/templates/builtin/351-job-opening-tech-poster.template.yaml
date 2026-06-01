@@ -91,7 +91,7 @@ layers:
     type: text
     z: 22
     x: 80
-    y: 360
+    y: 480
     width: 1040
     height: 0
     content: { type: plain, value: "Build the API layer that powers 10M+ requests/day." }

@@ -52,13 +52,13 @@ layers:
     type: text
     z: 6
     x: 60
-    y: 380
+    y: 220
     width: 960
     height: 0
     content: { type: plain, value: "🛍️" }
     style:
       font_family: $heading
-      font_size: 140
+      font_size: 380
       color: "#FFFFFF"
       text_align: center
 
@@ -213,7 +213,7 @@ layers:
     width: 100
     height: 44
     radius: 22
-    fill: { type: solid, color: "$surface" }
+    fill: { type: solid, color: "#D4A373" }
     stroke: { color: "$primary", width: 2 }
 
   - id: pill-2
@@ -224,7 +224,7 @@ layers:
     width: 100
     height: 44
     radius: 22
-    fill: { type: solid, color: "$surface" }
+    fill: { type: solid, color: "#A8C5A0" }
     stroke: { color: "$border", width: 1 }
 
   - id: pill-3
@@ -235,7 +235,7 @@ layers:
     width: 100
     height: 44
     radius: 22
-    fill: { type: solid, color: "$surface" }
+    fill: { type: solid, color: "#B5C8E2" }
     stroke: { color: "$border", width: 1 }
 
   # 17 — CTA button background

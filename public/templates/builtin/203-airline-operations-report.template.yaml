@@ -94,10 +94,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Daily Operations — Network Performance**\n*Flights, on-time arrivals, cancellations, load factor, fuel, hub and route performance.*"
+        content: "**Daily Operations — Network Performance**\n*Flights, on-time arrivals, cancellations, load factor, and fuel efficiency.*"
 
       - id: kpi-flights
         type: kpi_card

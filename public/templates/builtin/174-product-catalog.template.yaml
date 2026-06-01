@@ -28,7 +28,7 @@ pages:
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
       - { id: hero-image, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 1100, fill: { type: linear, angle: 165, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.9 }
-      - { id: hero-text, type: text, z: 2, x: 0, y: 540, width: 1240, height: 0, content: { type: plain, value: "[ hero campaign image ]" }, style: { font_family: $body, font_size: 18, color: "#FFFFFF", text_align: center, font_style: italic, opacity: 0.7 } }
+      - { id: hero-text, type: text, z: 2, x: 0, y: 540, width: 1240, height: 0, content: { type: plain, value: "Hero campaign image" }, style: { font_family: $body, font_size: 18, color: "#FFFFFF", text_align: center, font_style: italic, opacity: 0.3 } }
       - { id: brand, type: text, z: 10, x: 80, y: 80, width: 1080, height: 0, content: { type: plain, value: "◇ HARLOW & CO" }, style: { font_family: $heading, font_size: 30, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4 } }
       - { id: cat-label, type: text, z: 11, x: 80, y: 880, width: 1080, height: 0, content: { type: plain, value: "AUTUMN — WINTER 2026" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: title, type: text, z: 12, x: 80, y: 940, width: 1080, height: 0, content: { type: plain, value: "The Catalogue" }, style: { font_family: $heading, font_size: 110, font_weight: 700, color: "#FFFFFF", line_height: 1, font_style: italic, letter_spacing: -0.02 } }

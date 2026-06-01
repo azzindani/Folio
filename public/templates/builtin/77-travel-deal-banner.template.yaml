@@ -85,35 +85,36 @@ layers:
       letter_spacing: -0.04
 
   # --- RIGHT TOP: destination + plane icon ---
-  # plane body (rect) + 2 wings (rects rotated would be ideal — use 2 small angled rects)
   - id: plane-body
-    type: rect
+    type: text
     z: 20
     x: 760
-    y: 142
-    width: 60
-    height: 14
-    radius: 7
-    fill: { type: solid, color: "$accent" }
+    y: 80
+    width: 80
+    height: 0
+    content: { type: plain, value: "✈" }
+    style:
+      font_family: $body
+      font_size: 72
+      color: $accent
+      text_align: center
 
   - id: plane-wing
     type: rect
     z: 21
-    x: 778
-    y: 130
-    width: 22
-    height: 36
-    radius: 4
+    x: 0
+    y: 0
+    width: 0
+    height: 0
     fill: { type: solid, color: "$accent" }
 
   - id: plane-tail
     type: rect
     z: 22
-    x: 810
-    y: 134
-    width: 12
-    height: 26
-    radius: 3
+    x: 0
+    y: 0
+    width: 0
+    height: 0
     fill: { type: solid, color: "$accent" }
 
   - id: destination

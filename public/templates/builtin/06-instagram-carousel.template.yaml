@@ -75,7 +75,7 @@ pages:
         width: 960
         height: 0
         content: { type: plain, value: "Swipe → for the playbook." }
-        style: { font_family: $body, font_size: 24, color: $text_muted }
+        style: { font_family: $body, font_size: 24, color: "#AAAAAA" }
       - id: handle
         type: text
         z: 14

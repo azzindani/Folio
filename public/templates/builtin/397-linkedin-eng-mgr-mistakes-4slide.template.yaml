@@ -33,7 +33,7 @@ pages:
       - { id: eyebrow, type: text, z: 11, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "MANAGEMENT" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
       - { id: title-num, type: text, z: 12, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "4" }, style: { font_family: $heading, font_size: 280, font_weight: 900, color: $text, line_height: 0.85, letter_spacing: -0.05 } }
       - { id: title-text, type: text, z: 13, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "MISTAKES\nNEW ENG MANAGERS\nMAKE." }, style: { font_family: $heading, font_size: 56, font_weight: 900, color: $text, line_height: 1.05, letter_spacing: -0.02, text_transform: uppercase } }
-      - { id: corner-text, type: text, z: 14, x: 60, y: 1212, width: 200, height: 0, content: { type: plain, value: "READ →" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text, text_align: center, letter_spacing: 0.2 } }
+      - { id: corner-text, type: text, z: 14, x: 60, y: 1212, width: 200, height: 0, content: { type: plain, value: "READ →" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "$background", text_align: center, letter_spacing: 0.2 } }
 
   # ── 2 · Mistake 01 ────────────────────────────────────────
   - id: mistake-1

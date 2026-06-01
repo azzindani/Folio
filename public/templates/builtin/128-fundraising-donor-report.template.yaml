@@ -103,7 +103,7 @@ pages:
         font_size: 40
         font_weight: 700
         line_height: 1.2
-        content: "**A Year of Generosity — FY2026**\n*Together, our 4,846 donors funded literacy programs, food security, and youth mentorship in 14 communities.*"
+        content: "**A Year of Generosity — FY2026**\n*4,846 donors funded literacy, food security, and youth mentorship across 14 communities.*"
 
       - id: kpi-raised
         type: kpi_card

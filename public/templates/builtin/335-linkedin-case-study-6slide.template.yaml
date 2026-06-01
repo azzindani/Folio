@@ -28,7 +28,7 @@ pages:
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-bar, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
-      - { id: logo-rect, type: rect, z: 2, x: 80, y: 120, width: 220, height: 80, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$text_muted", width: 1 } }
+      - { id: logo-rect, type: rect, z: 2, x: 80, y: 120, width: 220, height: 80, radius: 8, fill: { type: solid, color: "$surface" }, stroke: { color: "$text_muted", width: 1 }, opacity: 0.3 }
       - id: logo-label
         type: text
         z: 3
@@ -36,7 +36,8 @@ pages:
         y: 142
         width: 220
         height: 0
-        content: { type: plain, value: "CLIENT LOGO" }
+        opacity: 0.3
+        content: { type: plain, value: "Client logo" }
         style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.18, text_align: center, text_transform: uppercase }
       - id: eyebrow
         type: text

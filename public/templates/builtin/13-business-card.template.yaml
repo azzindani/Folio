@@ -124,6 +124,26 @@ layers:
       color: $text
       line_height: 1.4
 
+  # Right-side accent panel balances the left-weighted contact column.
+  - id: accent-panel
+    type: rect
+    z: 3
+    x: 800
+    y: 0
+    width: 250
+    height: 600
+    fill: { type: solid, color: "$primary" }
+
+  - id: accent-mark
+    type: rect
+    z: 4
+    x: 890
+    y: 272
+    width: 70
+    height: 70
+    radius: 8
+    fill: { type: solid, color: "$background" }
+
 slots:
   - { id: name,    path: "layers[2].content.value", type: text, hint: "Full name",        default: "Jordan Aldwin" }
   - { id: title,   path: "layers[3].content.value", type: text, hint: "Job title",        default: "Principal Product Designer" }
