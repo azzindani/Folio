@@ -8,7 +8,16 @@ import * as engine from './engine';
 import { toMCPResult } from './types';
 import { authorize, describeAuth, loadTokens } from './auth';
 import { handleOAuth } from './oauth';
+import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
 import * as nodePath from 'path';
+
+// Cap the /mcp request body so a single large POST can't buffer unboundedly
+// into the heap and OOM the memory-capped container. 32 MiB is generous for a
+// big multi-page add_layers call; raise via FOLIO_MAX_BODY_BYTES if needed.
+const MAX_BODY_BYTES = Number(process.env['FOLIO_MAX_BODY_BYTES'] ?? 32 * 1024 * 1024);
+// Above this, editorBroadcast won't read a changed file into memory to fan out
+// to every connected editor (it sends a path-only event; the editor refetches).
+const MAX_BROADCAST_BYTES = Number(process.env['FOLIO_MAX_BROADCAST_BYTES'] ?? 16 * 1024 * 1024);
 
 /**
  * Normalize project-path-ish arguments so bare names ("my-project") and
@@ -151,14 +160,9 @@ function handleMCP(req: MCPRequest): DispatchResult {
   }
 }
 
-// §5 — Read full request body
+// §5 — Read full request body, bounded to MAX_BODY_BYTES (see top of file).
 function readBody(req: http.IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (c: Buffer) => chunks.push(c));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
+  return readBodyCapped(req, MAX_BODY_BYTES);
 }
 
 // §6 — Broadcast to all open SSE connections
@@ -175,7 +179,12 @@ function sseBroadcast(data: unknown): void {
 function editorBroadcast(event: 'file_changed' | 'file_removed', filePath: string, op: string): void {
   let content: string | null = null;
   if (event === 'file_changed' && filePath) {
-    try { content = fs.readFileSync(filePath, 'utf-8'); } catch { content = null; }
+    // Skip files above the cap: reading a huge design into memory and fanning
+    // it out to every connected editor is a memory/CPU multiplier. The event
+    // still fires with content:null so the editor knows the file changed.
+    try {
+      if (fs.statSync(filePath).size <= MAX_BROADCAST_BYTES) content = fs.readFileSync(filePath, 'utf-8');
+    } catch { content = null; }
   }
   const payload = `event: ${event}\ndata: ${JSON.stringify({ event, op, path: filePath, content, ts: Date.now() })}\n\n`;
   for (const client of editorClients) {
@@ -261,7 +270,15 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
 
   if (pathOnly === '/mcp' && method === 'POST') {
     let body: string;
-    try { body = await readBody(req); } catch { jsonReply(res, 400, { error: 'Failed to read request body' }); return; }
+    try { body = await readBody(req); }
+    catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        jsonReply(res, 413, { error: 'Payload too large', hint: `Body exceeds ${MAX_BODY_BYTES} bytes (raise FOLIO_MAX_BODY_BYTES).` });
+        return;
+      }
+      jsonReply(res, 400, { error: 'Failed to read request body' });
+      return;
+    }
     let parsed: MCPRequest;
     try { parsed = JSON.parse(body) as MCPRequest; } catch { jsonReply(res, 400, { jsonrpc: '2.0', id: 0, error: { code: -32700, message: 'Parse error' } }); return; }
     const { response, raw, toolName } = handleMCP(parsed);

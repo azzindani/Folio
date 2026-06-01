@@ -1,4 +1,9 @@
 import * as http from 'http';
+import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
+
+// Remote-clicker commands are tiny JSON ({type, slide?}); cap hard so a
+// stray client can't buffer a large body into the heap.
+const COMMAND_MAX_BODY_BYTES = Number(process.env['FOLIO_REMOTE_MAX_BODY_BYTES'] ?? 64 * 1024);
 
 export interface RemoteServerHandle {
   port: number;
@@ -16,11 +21,13 @@ type SSEClient = { res: http.ServerResponse; alive: boolean };
 export function startRemoteServer(port = 0): Promise<RemoteServerHandle> {
   const clients: SSEClient[] = [];
 
+  // Write to live clients; drop dead/erroring ones in place so the array
+  // never accumulates stale connections.
   function broadcast(data: string): void {
-    for (const c of clients) {
-      if (c.alive) {
-        try { c.res.write(`data: ${data}\n\n`); } catch { c.alive = false; }
-      }
+    for (let i = clients.length - 1; i >= 0; i--) {
+      const c = clients[i];
+      if (!c.alive) { clients.splice(i, 1); continue; }
+      try { c.res.write(`data: ${data}\n\n`); } catch { clients.splice(i, 1); }
     }
   }
 
@@ -40,23 +47,24 @@ export function startRemoteServer(port = 0): Promise<RemoteServerHandle> {
       res.write('data: {"type":"connected"}\n\n');
       const client: SSEClient = { res, alive: true };
       clients.push(client);
-      req.on('close', () => { client.alive = false; });
+      req.on('close', () => {
+        client.alive = false;
+        const i = clients.indexOf(client);
+        if (i >= 0) clients.splice(i, 1);
+      });
       return;
     }
 
     if (req.method === 'POST' && req.url === '/command') {
-      let body = '';
-      req.on('data', chunk => { body += String(chunk); });
-      req.on('end', () => {
-        try {
-          const cmd = JSON.parse(body) as RemoteCommand;
-          broadcast(JSON.stringify(cmd));
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true }));
-        } catch {
-          res.writeHead(400);
-          res.end(JSON.stringify({ error: 'Invalid JSON' }));
-        }
+      readBodyCapped(req, COMMAND_MAX_BODY_BYTES).then(body => {
+        const cmd = JSON.parse(body) as RemoteCommand;
+        broadcast(JSON.stringify(cmd));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      }).catch(err => {
+        const tooLarge = err instanceof PayloadTooLargeError;
+        res.writeHead(tooLarge ? 413 : 400);
+        res.end(JSON.stringify({ error: tooLarge ? 'Payload too large' : 'Invalid JSON' }));
       });
       return;
     }

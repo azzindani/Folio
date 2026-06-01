@@ -31,7 +31,10 @@ fi
 # when bun isn't installed (e.g. dev machines without bun).
 if command -v bun >/dev/null 2>&1; then
   echo "[serve-mcp] Folio MCP HTTP on :${FOLIO_PORT} (POST /mcp · GET /mcp/sse · GET /editor/events · GET /health)"
-  exec bun run src/mcp/http-server.ts
+  # --smol: smaller heap + more aggressive GC. This server is long-lived in a
+  # memory-capped container, so a lower steady-state footprint beats the
+  # marginal CPU cost.
+  exec bun --smol run src/mcp/http-server.ts
 else
   echo "[serve-mcp] Folio MCP HTTP on :${FOLIO_PORT} (node+ts-node fallback)"
   exec node --loader ts-node/esm src/mcp/http-server.ts
