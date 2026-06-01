@@ -246,10 +246,14 @@ const TYPE_SUGGESTIONS: Record<string, Record<'poster' | 'carousel', SuggestedNe
 export function buildHandover(
   step: string,
   carryForward: Record<string, unknown>,
-  opts?: { type?: 'poster' | 'carousel' },
+  opts?: { type?: 'poster' | 'carousel' | 'motion' | 'report' | 'presentation' },
 ): Handover {
   const entry = HANDOVER_MAP[step] ?? HANDOVER_MAP['PROJECT'];
-  const typed = opts?.type ? TYPE_SUGGESTIONS[step]?.[opts.type] : undefined;
+  // Only poster/carousel have type-specific suggestion sets; other design
+  // types (motion/report/presentation) fall back to the step's default.
+  const typed = opts?.type === 'poster' || opts?.type === 'carousel'
+    ? TYPE_SUGGESTIONS[step]?.[opts.type]
+    : undefined;
   const base = typed ?? entry.suggestions;
   // Only forward params each tool actually accepts — avoids smearing
   // design_path onto project-scoped tools (e.g. list_designs/create_task).
