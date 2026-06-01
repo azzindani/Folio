@@ -24,17 +24,21 @@ z = stacking order (higher = front)
         text:"ACT NOW", size:28, weight:700, color:"#ffd54f", align:"center"},
    ])
 
+Follow next_action: every write tool returns next_action:{tool,params} — call
+it as your next tool call. create_design/append_page/seal_design/export_design
+each also return open_url — a clickable, unique-token editor link (no separate
+open_in_editor call needed; use that only to re-open or focus a page).
+
 Poster workflow:
-  1. create_design(project_path, name, type="poster", width, height)
-  2. add_layers(design_path, layers_shorthand=[…])
-  3. seal_design(design_path)
-  4. export_design(design_path, format="svg")
-  5. open_in_editor(design_path) → returns clickable token-URL
+  1. create_design(project_path, name, type="poster", width, height)  → next_action: add_layers
+  2. add_layers(design_path, layers_shorthand=[…])                     → next_action: seal_design
+  3. seal_design(design_path)                                          → returns open_url
+  4. export_design(design_path, format="svg")   (optional)
 
 Carousel workflow:
   1. create_task(project_path, task_name, brief, pages=[{label,hints}])
   2. append_page(design_path, page_id, layers_shorthand=[…], task_path=…)
-     → repeat until next_action.remaining==0
+     → repeat until next_action.remaining==0 (each call returns open_url for the new page)
   3. seal_design(design_path)
 
 Rules:

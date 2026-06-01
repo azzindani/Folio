@@ -4,7 +4,7 @@ import type { ToolDefinition } from '../types';
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
     name: 'open_in_editor',
-    description: 'Return a clickable URL that opens the Folio editor on a design. The editor live-refreshes when subsequent MCP tools edit the same file.',
+    description: 'Return a clickable, token-embedded URL that opens a design in the Folio editor (live-refreshes as later tools edit the file). NOTE: create_design/append_page/seal_design/export_design already return this as open_url — only call this to re-open, focus a page, or open the editor home.',
     inputSchema: {
       type: 'object',
       properties: {

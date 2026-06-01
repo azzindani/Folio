@@ -1,25 +1,10 @@
 // §14 — thin MCP wrapper; zero domain logic. One-line calls into engine.
 import * as readline from 'readline';
 import { TIER1_TOOLS } from './registry';
-import * as engine from '../engine';
 import { toMCPResult } from '../types';
 import { appendOpLog } from '../engine/utils';
-import type { MCPRequest, MCPResponse, ToolResult } from '../types';
-
-type Handler = (args: Record<string, unknown>) => ToolResult;
-
-const HANDLERS: Record<string, Handler> = {
-  get_engine_guide:  (_a) => engine.getEngineGuide({}),
-  list_tasks:        (a) => engine.listTasks(a as Parameters<typeof engine.listTasks>[0]),
-  create_project:    (a) => engine.createProject(a as Parameters<typeof engine.createProject>[0]),
-  list_designs:      (a) => engine.listDesigns(a as Parameters<typeof engine.listDesigns>[0]),
-  list_themes:       (a) => engine.listThemes(a as Parameters<typeof engine.listThemes>[0]),
-  apply_theme:       (a) => engine.applyTheme(a as Parameters<typeof engine.applyTheme>[0]),
-  duplicate_design:  (a) => engine.duplicateDesign(a as Parameters<typeof engine.duplicateDesign>[0]),
-  resume_design:     (a) => engine.resumeDesign(a as Parameters<typeof engine.resumeDesign>[0]),
-  create_task:       (a) => engine.createTask(a as Parameters<typeof engine.createTask>[0]),
-  resume_task:       (a) => engine.resumeTask(a as Parameters<typeof engine.resumeTask>[0]),
-};
+import { TIER1_HANDLERS as HANDLERS } from '../handlers';
+import type { MCPRequest, MCPResponse } from '../types';
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }
 

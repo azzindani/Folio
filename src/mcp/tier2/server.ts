@@ -1,24 +1,10 @@
 // §14 — thin MCP wrapper; zero domain logic. One-line calls into engine.
 import * as readline from 'readline';
 import { TIER2_TOOLS } from './registry';
-import * as engine from '../engine';
 import { toMCPResult } from '../types';
 import { appendOpLog } from '../engine/utils';
-import type { MCPRequest, MCPResponse, ToolResult } from '../types';
-
-type Handler = (args: Record<string, unknown>) => ToolResult;
-
-const HANDLERS: Record<string, Handler> = {
-  inspect_design: (a) => engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]),
-  add_layers:     (a) => engine.addLayers(a as Parameters<typeof engine.addLayers>[0]),
-  create_design:  (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
-  append_page:   (a) => engine.appendPage(a as Parameters<typeof engine.appendPage>[0]),
-  patch_design:  (a) => engine.patchDesign(a as Parameters<typeof engine.patchDesign>[0]),
-  seal_design:   (a) => engine.sealDesign(a as Parameters<typeof engine.sealDesign>[0]),
-  add_layer:     (a) => engine.addLayer(a as Parameters<typeof engine.addLayer>[0]),
-  update_layer:  (a) => engine.updateLayer(a as Parameters<typeof engine.updateLayer>[0]),
-  remove_layer:  (a) => engine.removeLayer(a as Parameters<typeof engine.removeLayer>[0]),
-};
+import { TIER2_HANDLERS as HANDLERS } from '../handlers';
+import type { MCPRequest, MCPResponse } from '../types';
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }
 

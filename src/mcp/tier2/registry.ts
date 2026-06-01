@@ -4,7 +4,7 @@ import type { ToolDefinition } from '../types';
 export const TIER2_TOOLS: ToolDefinition[] = [
   {
     name: 'inspect_design',
-    description: 'Surgical read: layer IDs, types, z-order, positions. Low token cost.',
+    description: 'Read a design\'s structure (layer IDs, types, z-order, positions) cheaply. Use to verify state before seal_design, or to find a layer_id for update_layer/remove_layer/patch_design. Read-only.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -17,7 +17,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'add_layers',
-    description: 'Add multiple layers at once. Use layers_shorthand for 80% token savings.',
+    description: 'Compose a poster (or one carousel page) by adding 3–8 layers in one call. ALWAYS use layers_shorthand (pos:[x,y,w,h] — 80% fewer tokens); every sized layer needs width+height or it renders invisibly. Returns a clickable open_url. → then seal_design (follow the returned next_action).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -33,7 +33,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'create_design',
-    description: 'Create a new design file scaffold. Returns design_id and path.',
+    description: 'Create a new design and get a clickable editor open_url (unique token) to view it immediately. type="poster" = single page → next_action is add_layers. type="carousel" = multi-page → next_action is append_page (repeat per page). Always follow the returned next_action.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -49,7 +49,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'append_page',
-    description: 'Append a page to carousel. Accepts template+slots or raw layers.',
+    description: 'Add ONE page to a carousel — raw layers_shorthand, or template_ref+slots. Pass task_path to enable auto-handover. Repeat until next_action.remaining==0, then seal_design. Returns an open_url that opens to the new page.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -68,7 +68,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'patch_design',
-    description: 'Surgical field update via dot-path selectors. Snapshots before write.',
+    description: 'Edit a SEALED design via dot-path selectors (e.g. layers[3].style.color). Run dry_run=true first to validate paths, then apply, then seal_design again. Snapshots before write.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -86,7 +86,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'seal_design',
-    description: 'Mark design complete. Sets _mode to "complete". Call after all layers added.',
+    description: 'Finalize a design (poster: after add_layers; carousel: after the last append_page). Returns the editor open_url. → next_action is export_design; you can also open_in_editor. Edit a sealed design only via patch_design.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -98,7 +98,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'add_layer',
-    description: 'Add a single layer to a design or page.',
+    description: 'Add ONE layer. Prefer add_layers (plural) to add several at once — fewer round-trips. Sized layers need width+height.',
     inputSchema: {
       type: 'object',
       properties: {

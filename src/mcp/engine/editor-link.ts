@@ -1,0 +1,55 @@
+// Shared editor-link builder.
+//
+// Every design-producing tool (create_design, append_page, seal_design,
+// export_design) returns a self-contained, tokenized URL the user can click
+// to open the design in the Folio editor — same mechanism open_in_editor uses,
+// surfaced everywhere so a design is openable the moment it exists.
+//
+// Each call mints a FRESH unique editor token (1h TTL), so the link is
+// self-authenticating and not shared/replayed across designs.
+import { mintEditorToken } from '../oauth';
+import type { AttachmentBlock } from '../types';
+
+export interface EditorLink {
+  /** Clickable, token-embedded URL that opens this design in the editor. */
+  open_url: string;
+  /** Base editor URL (no query) — for clients that build their own links. */
+  editor_url: string;
+  /** MCP resource block so capable clients render a rich, clickable preview. */
+  attachment: AttachmentBlock;
+}
+
+/**
+ * Build a self-contained editor URL for a design.
+ * @param designPath absolute path to the *.design.yaml (omit for a bare editor link)
+ * @param opts.page  optional page index to open on (carousels)
+ * @param opts.editorUrl override base URL (default: $FOLIO_EDITOR_URL or localhost:4173)
+ */
+export function buildEditorLink(
+  designPath?: string,
+  opts?: { page?: number; editorUrl?: string },
+): EditorLink {
+  const editor_url = (opts?.editorUrl ?? process.env['FOLIO_EDITOR_URL'] ?? 'http://localhost:4173')
+    .replace(/\/+$/, '');
+
+  const params = new URLSearchParams();
+  if (designPath) params.set('file', designPath);
+  if (typeof opts?.page === 'number') params.set('page', String(opts.page));
+  // Live-refresh: tell the editor which MCP server to subscribe to for
+  // file-change events, so it hot-reloads as further tool calls edit the file.
+  const mcpUrl = process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`;
+  params.set('mcp_url', mcpUrl);
+  // Fresh unique 1h token per call — self-authenticating, no basic-auth prompt.
+  params.set('token', mintEditorToken('default'));
+
+  const open_url = params.toString() ? `${editor_url}/?${params.toString()}` : editor_url;
+
+  return {
+    open_url,
+    editor_url,
+    attachment: {
+      type: 'resource',
+      resource: { uri: open_url, mimeType: 'text/html', text: `Open in Folio editor → ${open_url}` },
+    },
+  };
+}
