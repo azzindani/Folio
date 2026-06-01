@@ -7,10 +7,15 @@ dist/
 # Claude Code project state (per-machine)
 .claude/
 
-# Per-session test/audit output — screenshots, results.json, probe scripts,
-# the use-case issue tracker. Specs and source live under tests/use-case/
-# and src/; everything in tools/ is regenerated per-run.
-tools/
+# Per-session test/audit output — screenshots, results.json, agent batches,
+# the use-case issue tracker — is regenerated per-run and not committed.
+# EXCEPTION: the reusable audit/verification SCRIPTS + docs under tools/audit/
+# (*.mjs, *.md) ARE tracked — they're the toolkit, not the output.
+tools/*
+!tools/audit/
+tools/audit/*
+!tools/audit/*.mjs
+!tools/audit/*.md
 
 # Generated indices — single source of truth is the YAML files under
 # public/styles/ and public/templates/. The four index JSONs are
