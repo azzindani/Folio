@@ -73,7 +73,8 @@ layers:
     y: 1020
     width: 1280
     height: 0
-    content: { type: plain, value: "[ COVER IMAGE ]" }
+    opacity: 0.3
+    content: { type: plain, value: "Cover image" }
     style:
       font_family: $body
       font_size: 18

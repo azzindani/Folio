@@ -193,7 +193,8 @@ layers:
     y: 870
     width: 600
     height: 0
-    content: { type: plain, value: "[ ILLUSTRATION ]" }
+    opacity: 0.3
+    content: { type: plain, value: "Illustration" }
     style:
       font_family: $body
       font_size: 12

@@ -71,7 +71,8 @@ layers:
     y: 256
     width: 240
     height: 0
-    content: { type: plain, value: "article hero" }
+    content: { type: plain, value: "" }
+    opacity: 0
     style:
       font_family: $body
       font_size: 12

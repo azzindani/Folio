@@ -117,10 +117,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Climate Action Tracker 2025**\n*Global temperature, atmospheric CO2, sea level, sea ice, and renewable energy progress.*"
+        content: "**Climate Action Tracker 2025**\n*Temperature anomaly, CO2 concentration, sea level, and renewable energy progress.*"
 
       - id: kpi-temp
         type: kpi_card

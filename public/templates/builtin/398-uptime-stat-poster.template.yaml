@@ -46,7 +46,7 @@ layers:
     width: 1040
     height: 0
     content: { type: plain, value: "99.99%" }
-    style: { font_family: $heading, font_size: 260, font_weight: 900, color: $primary, line_height: 0.95, letter_spacing: -0.05 }
+    style: { font_family: $heading, font_size: 200, font_weight: 900, color: $primary, line_height: 0.95, letter_spacing: -0.05 }
 
   - id: caption
     type: text

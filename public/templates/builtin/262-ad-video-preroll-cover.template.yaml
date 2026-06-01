@@ -119,7 +119,7 @@ layers:
   - id: play-ring
     type: circle
     z: 8
-    cx: 960
+    cx: 1840
     cy: 880
     rx: 56
     ry: 56
@@ -129,7 +129,7 @@ layers:
   - id: play-arrow
     type: text
     z: 9
-    x: 880
+    x: 1760
     y: 850
     width: 160
     height: 0

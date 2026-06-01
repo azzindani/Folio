@@ -159,7 +159,8 @@ layers:
     y: 1010
     width: 1040
     height: 0
-    content: { type: plain, value: "[ HERO SCENE PLACEHOLDER ]" }
+    opacity: 0.3
+    content: { type: plain, value: "Hero scene" }
     style:
       font_family: $mono
       font_size: 14

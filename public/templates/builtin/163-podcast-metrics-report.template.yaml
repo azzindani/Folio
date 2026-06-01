@@ -96,10 +96,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Channel Analytics — Q1 2026**\n*Downloads, subscriber growth, episode performance, listener mix, and sponsor results.*"
+        content: "**Channel Analytics — Q1 2026**\n*Downloads, subscriber growth, episode performance, and listener demographics.*"
 
       - id: kpi-downloads
         type: kpi_card

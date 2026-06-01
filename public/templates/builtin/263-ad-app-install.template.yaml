@@ -179,7 +179,8 @@ layers:
     y: 412
     width: 760
     height: 0
-    content: { type: plain, value: "📱  in-app preview" }
+    content: { type: plain, value: "App screenshot" }
+    opacity: 0.3
     style:
       font_family: $body
       font_size: 18

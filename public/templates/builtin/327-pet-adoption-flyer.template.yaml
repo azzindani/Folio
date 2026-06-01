@@ -113,7 +113,7 @@ layers:
     y: 450
     width: 900
     height: 0
-    content: { type: plain, value: "[ pet photo here ]" }
+    content: { type: plain, value: "Pet photo here" }
     style:
       font_family: $body
       font_size: 24
@@ -122,6 +122,7 @@ layers:
       text_align: center
       letter_spacing: 0.2
       text_transform: uppercase
+      opacity: 0.3
 
   # ── ADOPT ME badge (overlapping top-right of photo) ───────
   - id: adopt-badge-bg

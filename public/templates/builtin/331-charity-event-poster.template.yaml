@@ -370,7 +370,7 @@ layers:
     content: { type: plain, value: "HOPE\nFOUNDATION" }
     style:
       font_family: $heading
-      font_size: 18
+      font_size: 16
       font_weight: 800
       color: $primary
       text_align: center

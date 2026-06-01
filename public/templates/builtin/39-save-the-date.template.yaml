@@ -65,7 +65,7 @@ layers:
     y: 180
     width: 920
     height: 0
-    content: { type: plain, value: "S A V E   T H E   D A T E" }
+    content: { type: plain, value: "SAVE THE DATE" }
     style:
       font_family: $body
       font_size: 18
@@ -73,7 +73,6 @@ layers:
       color: $primary
       text_align: center
       letter_spacing: 0.6
-      text_transform: uppercase
 
   - id: name-a
     type: text

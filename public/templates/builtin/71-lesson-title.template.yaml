@@ -81,7 +81,7 @@ layers:
     type: text
     z: 12
     x: 160
-    y: 480
+    y: 560
     width: 1600
     height: 0
     content: { type: plain, value: "Understand how JavaScript scopes variables and how closures capture state across function boundaries." }

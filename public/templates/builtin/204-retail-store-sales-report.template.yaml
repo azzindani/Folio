@@ -96,10 +96,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Store Sales Dashboard — Daily**\n*Sales, traffic, conversion, basket, category mix, inventory health, and promotion lift.*"
+        content: "**Store Sales Dashboard — Daily**\n*Sales, traffic, conversion, basket size, category mix, and inventory health.*"
 
       - id: kpi-sales
         type: kpi_card

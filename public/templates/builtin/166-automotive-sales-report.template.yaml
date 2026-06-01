@@ -100,10 +100,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.15
-        content: "**Dealership Sales — Trailing 12 Months**\n*Volume, revenue, gross profit, inventory aging, model mix, and sales rep leaderboard.*"
+        content: "**Dealership Sales — Trailing 12 Months**\n*Volume, revenue, gross profit, inventory aging, and model mix.*"
 
       - id: kpi-units
         type: kpi_card

@@ -146,7 +146,8 @@ layers:
     y: 620
     width: 480
     height: 0
-    content: { type: plain, value: "[ ALBUM ART ]" }
+    opacity: 0.3
+    content: { type: plain, value: "Album art" }
     style:
       font_family: $mono
       font_size: 11

@@ -302,7 +302,8 @@ layers:
     y: 470
     width: 240
     height: 0
-    content: { type: plain, value: "PHOTOGRAPH" }
+    opacity: 0.3
+    content: { type: plain, value: "Photo" }
     style:
       font_family: $body
       font_size: 11

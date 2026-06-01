@@ -97,10 +97,10 @@ pages:
         height: 120
         format: markdown
         font_family: Playfair Display
-        font_size: 42
+        font_size: 32
         font_weight: 700
         line_height: 1.2
-        content: "**Sustainability Report — 2025**\n*Our progress toward net-zero by 2040, inclusive workplaces, and measurable community impact.*"
+        content: "**Sustainability Report — 2025**\n*Progress toward net-zero, inclusive workplaces, and community impact.*"
 
       - id: kpi-co2
         type: kpi_card

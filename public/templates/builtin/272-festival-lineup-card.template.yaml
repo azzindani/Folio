@@ -253,9 +253,9 @@ layers:
     content: { type: plain, value: "CIRCA · TIDAL FERRY · KIN UP NORTH · OWL EYE · COTTON FOG · GLINT" }
     style:
       font_family: $mono
-      font_size: 18
+      font_size: 22
       font_weight: 700
-      color: $text_muted
+      color: "#FFFFFF"
       line_height: 1.6
       letter_spacing: 0.32
       text_align: center
@@ -265,15 +265,15 @@ layers:
     type: text
     z: 51
     x: 80
-    y: 1180
+    y: 1190
     width: 920
     height: 0
     content: { type: plain, value: "PORTRAIT MODE · IRIS FALL · HALF MOON HIGH · NUEVO PARQUE · ZÉ MARI" }
     style:
       font_family: $mono
-      font_size: 18
+      font_size: 22
       font_weight: 700
-      color: $text_muted
+      color: "#FFFFFF"
       line_height: 1.6
       letter_spacing: 0.32
       text_align: center
@@ -336,24 +336,24 @@ layers:
   - id: stage-east
     type: rect
     z: 64
-    x: 140
-    y: 1540
-    width: 200
-    height: 80
+    x: 120
+    y: 1530
+    width: 240
+    height: 100
     fill: { type: solid, color: "$secondary" }
     opacity: 0.4
 
   - id: stage-east-label
     type: text
     z: 65
-    x: 140
-    y: 1568
-    width: 200
+    x: 120
+    y: 1565
+    width: 240
     height: 0
     content: { type: plain, value: "EAST TENT" }
     style:
       font_family: $mono
-      font_size: 12
+      font_size: 16
       font_weight: 800
       color: $text
       letter_spacing: 0.42
@@ -363,24 +363,24 @@ layers:
   - id: stage-west
     type: rect
     z: 66
-    x: 740
-    y: 1540
-    width: 200
-    height: 80
+    x: 720
+    y: 1530
+    width: 240
+    height: 100
     fill: { type: solid, color: "$secondary" }
     opacity: 0.4
 
   - id: stage-west-label
     type: text
     z: 67
-    x: 740
-    y: 1568
-    width: 200
+    x: 720
+    y: 1565
+    width: 240
     height: 0
     content: { type: plain, value: "WEST DOCK" }
     style:
       font_family: $mono
-      font_size: 12
+      font_size: 16
       font_weight: 800
       color: $text
       letter_spacing: 0.42

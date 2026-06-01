@@ -126,13 +126,13 @@ layers:
     type: text
     z: 11
     x: 60
-    y: 615
+    y: 460
     width: 640
     height: 0
     content: { type: plain, value: "👗" }
     style:
       font_family: $heading
-      font_size: 140
+      font_size: 320
       color: $text_muted
       text_align: center
       opacity: 0.6

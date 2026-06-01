@@ -127,7 +127,8 @@ layers:
     y: 944
     width: 980
     height: 0
-    content: { type: plain, value: "[ HERO IMAGE ]" }
+    opacity: 0.3
+    content: { type: plain, value: "Hero image" }
     style:
       font_family: $mono
       font_size: 12

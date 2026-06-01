@@ -98,7 +98,7 @@ pages:
         font_size: 42
         font_weight: 700
         line_height: 1.15
-        content: "**Farm Yield Analytics — 2025 Season**\n*Acres, yields, revenue, cost, profitability, weather impact, and soil health.*"
+        content: "**Farm Yield Analytics — 2025 Season**\n*Acres, yields, revenue, cost, profitability, and weather impact.*"
 
       - id: kpi-acres
         type: kpi_card

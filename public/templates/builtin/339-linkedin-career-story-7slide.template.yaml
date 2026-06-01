@@ -31,10 +31,10 @@ pages:
       - id: avatar-ring
         type: circle
         z: 2
-        cx: 150
+        cx: 180
         cy: 1180
-        rx: 56
-        ry: 56
+        rx: 90
+        ry: 90
         fill: { type: solid, color: "$surface" }
         stroke: { color: "$primary", width: 3 }
       - id: eyebrow

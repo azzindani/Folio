@@ -231,7 +231,7 @@ layers:
     y: 1410
     width: 1040
     height: 0
-    content: { type: plain, value: "What we believe at <Team>" }
+    content: { type: plain, value: "What we believe at our team" }
     style:
       font_family: $mono
       font_size: 14
@@ -261,4 +261,4 @@ slots:
   - { id: value_2_desc, path: "layers[11].content.value", type: text, hint: "Value 2 description", default: "Disagree in the room. Decide and commit. Bad news travels in straight lines, not whispers." }
   - { id: value_3_name, path: "layers[14].content.value", type: text, hint: "Value 3 name",       default: "Own it together." }
   - { id: value_3_desc, path: "layers[15].content.value", type: text, hint: "Value 3 description", default: "There is no \"your half.\" If it touches the team, it's the team's. Credit and blame travel as one." }
-  - { id: footer,       path: "layers[16].content.value", type: text, hint: "Footer line",        default: "What we believe at <Team>" }
+  - { id: footer,       path: "layers[16].content.value", type: text, hint: "Footer line",        default: "What we believe at our team" }

@@ -201,8 +201,8 @@ layers:
   - id: bust-head
     type: circle
     z: 30
-    cx: 200
-    cy: 280
+    cx: 860
+    cy: 560
     rx: 90
     ry: 90
     fill: { type: solid, color: "$surface2" }
@@ -211,8 +211,8 @@ layers:
   - id: bust-neck
     type: rect
     z: 31
-    x: 168
-    y: 360
+    x: 828
+    y: 640
     width: 64
     height: 80
     fill: { type: solid, color: "$surface2" }
@@ -221,8 +221,8 @@ layers:
   - id: bust-shoulders
     type: rect
     z: 32
-    x: 100
-    y: 430
+    x: 760
+    y: 710
     width: 200
     height: 60
     radius: 30
@@ -233,8 +233,8 @@ layers:
   - id: bust-eye
     type: circle
     z: 33
-    cx: 230
-    cy: 280
+    cx: 890
+    cy: 560
     rx: 6
     ry: 6
     fill: { type: solid, color: "$primary" }
@@ -270,9 +270,9 @@ layers:
   - id: title
     type: text
     z: 50
-    x: 80
+    x: 24
     y: 180
-    width: 920
+    width: 1032
     height: 0
     content: { type: plain, value: "ΑESTHETIC" }
     style:
@@ -282,7 +282,7 @@ layers:
       color: "$accent"
       line_height: 1
       letter_spacing: 0.04
-      text_align: right
+      text_align: left
       text_transform: uppercase
 
   # ── Tagline ────────────────────────────────────────────────
