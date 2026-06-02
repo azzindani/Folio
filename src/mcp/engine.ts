@@ -19,7 +19,7 @@ import { buildGuide } from './engine/guide';
 import { buildEditorLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, diagnoseLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -539,12 +539,14 @@ export function addLayers(args: {
   writeYAML(dPath, spec);
   progress.push(pOk(`Added ${incoming.length} layer(s)`, incoming.map(l => l.id).join(', ')));
 
-  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: 0, hint: 'Layers added. Call seal_design or add more layers.' };
+  const notes = diagnoseLayers(incoming);
+  for (const n of notes) progress.push(pInfo('Layer note', n));
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: 0, hint: notes.length ? `Layers added with ${notes.length} note(s) to address — see notes — then seal_design.` : 'Layers added. Call seal_design or add more layers.' };
   const context = buildContext(op, `Added ${incoming.length} layer(s) to ${path.basename(dPath)}`, [
     { type: 'design', path: dPath, role: 'updated' },
   ]);
   const handover = buildHandover('COMPOSE', { design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}) });
-  return okResult(op, { added: incoming.length, layer_ids: incoming.map(l => l.id), next_action, progress, context, handover }, bak);
+  return okResult(op, { added: incoming.length, layer_ids: incoming.map(l => l.id), ...(notes.length ? { notes } : {}), next_action, progress, context, handover }, bak);
 }
 
 export function appendPage(args: {
@@ -580,6 +582,9 @@ export function appendPage(args: {
   writeYAML(dPath, spec);
   progress.push(pOk(`Appended page "${pageId}"`, `total: ${spec.pages.length} page(s)`));
 
+  const notes = diagnoseLayers(layers);
+  for (const n of notes) progress.push(pInfo('Layer note', n));
+
   let next_action: NextAction | undefined;
   if (args.task_path && fs.existsSync(args.task_path)) {
     const taskSpec = readTask(args.task_path);
@@ -597,7 +602,7 @@ export function appendPage(args: {
     design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}),
   }, { type: 'carousel' });
   const link = buildEditorLink(dPath, { page: spec.pages.length - 1 });
-  return okResult(op, { page_id: pageId, page_count: spec.pages.length, open_url: link.open_url, editor_url: link.editor_url, ...(next_action ? { next_action } : {}), progress, context, handover, _attachments: [link.attachment] }, bak);
+  return okResult(op, { page_id: pageId, page_count: spec.pages.length, open_url: link.open_url, editor_url: link.editor_url, ...(notes.length ? { notes } : {}), ...(next_action ? { next_action } : {}), progress, context, handover, _attachments: [link.attachment] }, bak);
 }
 
 export function patchDesign(args: { design_path: string; selectors: { path: string; value: unknown }[]; dry_run?: boolean; project_path?: string }): ToolResult {
@@ -788,6 +793,34 @@ export function removeLayer(args: { design_path: string; layer_id: string; proje
 
 // ── Tier 3 — Export & Templates ──────────────────────────────
 
+// Blank image srcs pointing at a local file we can't find, so the renderer
+// shows its placeholder frame instead of a blank gap on export. Mutates the
+// (export-only, non-persisted) spec and returns a note per blanked layer so
+// the caller can tell the model to fix the asset. Skips http(s)/data/file URIs.
+function flagMissingImages(spec: DesignSpec, baseDirs: string[]): string[] {
+  const notes: string[] = [];
+  const dirs = baseDirs.filter(Boolean);
+  const visit = (layers: Layer[] | undefined): void => {
+    for (const l of layers ?? []) {
+      if (l.type === 'image') {
+        const img = l as Layer & { src?: string };
+        const src = img.src;
+        if (typeof src === 'string' && src.trim() && !/^(https?:|data:|file:|\/\/)/i.test(src)) {
+          const found = dirs.some(d => { try { return fs.existsSync(path.resolve(d, src)); } catch { return false; } });
+          if (!found) {
+            img.src = '';
+            notes.push(`image "${l.id}": asset "${src}" not found — exported as a placeholder frame. Use a real file path, an https:// URL, or swap it for a fill/shape/icon.`);
+          }
+        }
+      }
+      if (l.type === 'group') visit((l as Layer & { layers?: Layer[] }).layers);
+    }
+  };
+  visit(spec.layers);
+  for (const p of spec.pages ?? []) visit((p as Page & { layers?: Layer[] }).layers);
+  return notes;
+}
+
 export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number; project_path?: string }): ToolResult {
   const op = 'export_design';
   const progress: ProgressItem[] = [];
@@ -798,6 +831,12 @@ export function exportDesign(args: { design_path: string; format: string; output
   progress.push(pOk('Loaded design', path.basename(dPath)));
   const criticals = validateDesignSpec(spec).filter(e => e.severity === 'error');
   if (criticals.length > 0) return errResult(op, `Validation errors: ${criticals.map(e => e.message).join('; ')}`, 'Fix errors then retry.', progress);
+
+  const assetNotes = flagMissingImages(spec, [
+    path.dirname(dPath), path.dirname(path.dirname(dPath)),
+    ...(args.project_path ? [args.project_path, path.join(args.project_path, 'assets')] : []),
+  ]);
+  for (const n of assetNotes) progress.push(pInfo('Missing asset', n));
 
   const outPath = args.output_path ?? dPath.replace('.design.yaml', `.${args.format}`);
   const link = buildEditorLink(dPath);
@@ -819,7 +858,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/svg+xml', text: path.basename(outPath) } },
         link.attachment,
       ];
-      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, editor_url: link.editor_url, progress, context, handover, _attachments });
+      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
     }
@@ -908,7 +947,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' },
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/png', text: path.basename(outPath) } },
       ];
-      return okResult(op, { format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, progress, context, handover, _attachments });
+      return okResult(op, { format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `PNG render failed: ${(err as Error).message}`, 'Try format="svg" to verify the design renders; PNG layer = SVG layer + resvg rasterizer.', progress);
     }

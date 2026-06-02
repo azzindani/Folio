@@ -9,7 +9,7 @@ import type {
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
-import { LUCIDE_ICONS } from './lucide-icons';
+import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 import { encodeQR } from './qr/encode';
 
 // Word-wrap plain text into lines that fit within maxWidth.
@@ -395,49 +395,56 @@ export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
   return el;
 }
 
+// Native-SVG placeholder (rect + glyph + label). Built from primitives, not a
+// foreignObject — so it renders in server-side PNG export (resvg) too, not
+// just the editor's browser SVG. Shown for an image layer with no/unresolved
+// src, so a small model's missing-photo reference reads as an intentional
+// frame instead of a blank hole.
 function makeImagePlaceholder(layer: ImageLayer, w: number, h: number, svg: SVGSVGElement): SVGElement {
-  const fo = createSVGElement('foreignObject', {
-    x: layer.x ?? 0,
-    y: layer.y ?? 0,
-    width: w,
-    height: h,
-  });
-  const div = document.createElement('div');
-  div.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  div.style.cssText = [
-    'display:flex',
-    'flex-direction:column',
-    'align-items:center',
-    'justify-content:center',
-    'gap:8px',
-    'width:100%',
-    'height:100%',
-    'box-sizing:border-box',
-    'background:rgba(128,128,160,0.06)',
-    'border:1px dashed rgba(128,128,160,0.35)',
-    'border-radius:8px',
-    'color:rgba(128,128,160,0.85)',
-    'font-family:Inter, sans-serif',
-    'font-size:11px',
-    'letter-spacing:0.06em',
-    'text-transform:uppercase',
-  ].join(';');
-  const icon = document.createElement('div');
-  icon.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  icon.style.cssText = 'font-size:24px;line-height:1;opacity:0.7;';
-  icon.textContent = '🖼';
-  const label = document.createElement('div');
-  label.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-  // Caller may pass `alt` via shorthand expansion even though it's not in
-  // the typed schema; fall back to a neutral string.
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+  const stroke = 'rgba(128,128,160,0.45)';
+  const g = createSVGElement('g', { transform: `translate(${x}, ${y})` });
+
+  g.appendChild(createSVGElement('rect', {
+    x: 0, y: 0, width: w, height: h, rx: '8',
+    fill: 'rgba(128,128,160,0.06)', stroke, 'stroke-width': '1.5', 'stroke-dasharray': '6 4',
+  }));
+
+  // Lucide "image" glyph, scaled into the box and centred in the upper area.
+  const glyph = Math.max(16, Math.min(w, h) * 0.32);
+  const ns = 'http://www.w3.org/2000/svg';
+  const iconSvg = document.createElementNS(ns, 'svg') as SVGSVGElement;
+  iconSvg.setAttribute('viewBox', '0 0 24 24');
+  iconSvg.setAttribute('width', String(glyph));
+  iconSvg.setAttribute('height', String(glyph));
+  iconSvg.setAttribute('x', String((w - glyph) / 2));
+  iconSvg.setAttribute('y', String(h / 2 - glyph * 0.7));
+  iconSvg.setAttribute('stroke', stroke);
+  iconSvg.setAttribute('stroke-width', '2');
+  iconSvg.setAttribute('stroke-linecap', 'round');
+  iconSvg.setAttribute('stroke-linejoin', 'round');
+  iconSvg.setAttribute('fill', 'none');
+  iconSvg.innerHTML = LUCIDE_ICONS['image'];
+  g.appendChild(iconSvg);
+
+  // Caller may pass `alt` via shorthand even though it's not in the typed
+  // schema; fall back to a neutral label.
   const alt = (layer as ImageLayer & { alt?: string }).alt;
+  const label = createSVGElement('text', {
+    x: w / 2, y: h / 2 + glyph * 0.55,
+    'text-anchor': 'middle',
+    'font-family': 'Inter, sans-serif',
+    'font-size': String(Math.max(10, Math.min(18, w * 0.04))),
+    fill: 'rgba(128,128,160,0.85)',
+    'letter-spacing': '0.06em',
+  });
   label.textContent = alt ?? 'image';
-  div.appendChild(icon);
-  div.appendChild(label);
-  fo.appendChild(div);
-  applyCommonAttributes(fo, layer);
-  if (layer.effects) applyEffects(fo, layer.effects, svg);
-  return fo;
+  g.appendChild(label);
+
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, svg);
+  return g;
 }
 
 // ── Icon ────────────────────────────────────────────────────
@@ -450,7 +457,11 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
   const g = createSVGElement('g');
   g.setAttribute('transform', `translate(${x}, ${y})`);
 
-  const inner = LUCIDE_ICONS[layer.name];
+  // Tolerate synonyms / separators a model emits ("coffee_cup", "photo") by
+  // resolving to the nearest real icon; only fall back to the placeholder when
+  // there's no confident match.
+  const resolved = resolveIconName(layer.name);
+  const inner = resolved ? LUCIDE_ICONS[resolved] : undefined;
 
   if (inner) {
     // Real Lucide icon — embed scaled SVG as nested <svg>

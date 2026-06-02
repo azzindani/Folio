@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, diagnoseLayers, type ShorthandLayer } from './shorthand-parser';
+import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
   it('expands rect with pos shorthand', () => {
@@ -566,6 +567,20 @@ describe('expandShorthandLayers — verbose-schema field aliases (small-model ro
     expect(t.style?.font_size).toBe(10);
   });
 
+  it('sizes an icon to its box when no explicit size is given', () => {
+    const [i] = expandShorthandLayers([
+      { type: 'icon', pos: [300, 400, 200, 200], symbol: 'coffee_cup' },
+    ] as unknown as ShorthandLayer[]) as Array<{ size?: number }>;
+    expect(i.size).toBe(200); // min(200,200), not the 24 default
+  });
+
+  it('keeps an explicit icon size over the box default', () => {
+    const [i] = expandShorthandLayers([
+      { type: 'icon', pos: [0, 0, 200, 200], icon: 'star', size: 40 },
+    ] as unknown as ShorthandLayer[]) as Array<{ size?: number }>;
+    expect(i.size).toBe(40);
+  });
+
   it('regression: renders the exact dict payload the nemotron model sent', () => {
     // Replays the live small-model add_layers call that previously produced a
     // blank poster — content/font_size/symbol were dropped. Now they survive.
@@ -578,5 +593,71 @@ describe('expandShorthandLayers — verbose-schema field aliases (small-model ro
     expect(byId['title'].content?.value).toBe('Morning Coffee');
     expect(byId['description'].content?.value).toContain('perfect cup');
     expect(byId['icon'].name).toBe('coffee_cup');
+  });
+});
+
+describe('expandFill — tolerates the gradient shapes small models send', () => {
+  it('maps type:"gradient" + stops{pos:0-1} → linear + position:0-100', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 100, 100], fill: { type: 'gradient', angle: 135, stops: [{ color: '#1A1A2E', pos: 0 }, { color: '#0f3057', pos: 1 }] } },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; angle?: number; stops?: { color: string; position: number }[] } }>;
+    expect(r.fill?.type).toBe('linear');
+    expect(r.fill?.angle).toBe(135);
+    expect(r.fill?.stops).toEqual([{ color: '#1A1A2E', position: 0 }, { color: '#0f3057', position: 100 }]);
+  });
+
+  it('keeps 0-100 positions as-is and defaults a missing angle', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 10, 10], fill: { type: 'linear', stops: [{ color: '#000', position: 0 }, { color: '#fff', position: 50 }] } },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; angle?: number; stops?: { position: number }[] } }>;
+    expect(r.fill?.type).toBe('linear');
+    expect(r.fill?.angle).toBe(135);
+    expect(r.fill?.stops?.[1].position).toBe(50);
+  });
+
+  it('maps radial-gradient and carries center/radius', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'circle', pos: [0, 0, 10, 10], fill: { type: 'radial-gradient', cx: 50, cy: 50, radius: 70, stops: [{ color: '#fff', pos: 0 }, { color: '#000', pos: 1 }] } },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; cx?: number; radius?: number } }>;
+    expect(r.fill?.type).toBe('radial');
+    expect(r.fill?.cx).toBe(50);
+    expect(r.fill?.radius).toBe(70);
+  });
+});
+
+describe('diagnoseLayers — self-correction notes for the tool loop', () => {
+  it('flags an unknown icon, a local image src, and empty text', () => {
+    const layers: Layer[] = [
+      { id: 'ico', type: 'icon', z: 0, x: 0, y: 0, name: 'coffee_cup', size: 24 },
+      { id: 'pic', type: 'image', z: 0, x: 0, y: 0, width: 10, height: 10, src: 'coffee.jpg' },
+      { id: 'cap', type: 'text', z: 0, x: 0, y: 0, width: 10, height: 10, content: { type: 'plain', value: '' } },
+    ] as unknown as Layer[];
+    const notes = diagnoseLayers(layers);
+    expect(notes.find(n => n.includes('ico') && n.includes('not a known icon'))).toBeTruthy();
+    expect(notes.find(n => n.includes('pic') && n.includes('local file'))).toBeTruthy();
+    expect(notes.find(n => n.includes('cap') && n.includes('empty'))).toBeTruthy();
+  });
+
+  it('stays silent for a well-formed set (resolved icon, URL image, real text)', () => {
+    const layers: Layer[] = [
+      { id: 'ico', type: 'icon', z: 0, x: 0, y: 0, name: 'star', size: 24 },
+      { id: 'pic', type: 'image', z: 0, x: 0, y: 0, width: 10, height: 10, src: 'https://example.com/a.png' },
+      { id: 'cap', type: 'text', z: 0, x: 0, y: 0, width: 10, height: 10, content: { type: 'plain', value: 'Hi' } },
+    ] as unknown as Layer[];
+    expect(diagnoseLayers(layers)).toEqual([]);
+  });
+
+  it('accepts a synonym icon name without a note', () => {
+    const layers = [{ id: 'i', type: 'icon', z: 0, x: 0, y: 0, name: 'photo', size: 24 }] as unknown as Layer[];
+    expect(diagnoseLayers(layers)).toEqual([]);
+  });
+
+  it('recurses into groups', () => {
+    const layers = [
+      { id: 'g', type: 'group', z: 0, x: 0, y: 0, width: 10, height: 10, layers: [
+        { id: 'inner', type: 'icon', z: 0, x: 0, y: 0, name: 'definitely_not_an_icon', size: 24 },
+      ] },
+    ] as unknown as Layer[];
+    expect(diagnoseLayers(layers).some(n => n.includes('inner'))).toBe(true);
   });
 });

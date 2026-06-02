@@ -53,7 +53,18 @@ Rules:
   - Always pass task_path in append_page — enables auto-handover
   - Call resume_task(task_path) after any context reset
   - 3–8 layers per page is ideal
-  - Load guide sections on demand: shorthand | layers | workflow`,
+  - Load guide sections on demand: shorthand | layers | workflow
+
+🎨 Make it RENDER (avoid blank posters):
+  - NO photos: you can't supply image files. A bare src like "coffee.jpg"
+    shows a placeholder frame. Build visuals from rect/ellipse/line/icon +
+    fills/gradients instead. Only use type:"image" with a real https:// URL.
+  - Icons: use a real name (star, heart, check, user, mail, image, arrow-right,
+    map-pin, zap, award, calendar, phone, shopping-cart). Unknown names render
+    as a labeled placeholder. Synonyms are tolerated (photo→image, gear→settings).
+  - Put real copy in every text layer — empty text renders nothing.
+  - add_layers returns notes:[…] when something won't render as intended —
+    read them and fix in your next call.`,
 
   shorthand: `# Shorthand Syntax (layers_shorthand field)
 pos:[x,y,w,h] replaces x/y/width/height.
@@ -69,8 +80,12 @@ Icon:   {id:"ico",   type:"icon",  z:9,  pos:[880,80,64,64],   icon:"star", colo
 Group:  {id:"grp",   type:"group", z:6,  pos:[80,80,400,300],  layers:[...]}
 
 Text shorthand fields:  text, size, weight, color, align, text_decoration:"underline"|"line-through"
-Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"gradient",angle:135,stops:[{color,pos}]}
+  Aliases accepted: content→text, font_size→size, symbol→icon, url/href→src.
+Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"linear",angle:135,stops:[{color:"#a",position:0},{color:"#b",position:100}]}
+  (position is 0–100; "gradient"/pos:0-1 are tolerated and normalized)
 Stroke shorthand:       "#hex" or {color:"#hex",width:2,dash:[4,2]}
+Image:  use a real https:// URL only — a local filename renders a placeholder.
+Icon:   icon:"<real-lucide-name>" — unknown names render a labeled placeholder.
 Base fields (all types): opacity:0-1 · rotation:deg · flip_h:bool · flip_v:bool · locked:bool`,
 
   layers: `# Layer Types — Required Fields
