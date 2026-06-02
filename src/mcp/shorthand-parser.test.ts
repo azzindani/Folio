@@ -477,3 +477,37 @@ describe('coerceShorthandLayers — accepts the shapes small models actually sen
     expect(coerceShorthandLayers(42)).toEqual([]);
   });
 });
+
+describe('expandShorthandLayers — visible defaults (no blank designs)', () => {
+  it('gives text a theme color token and a size proportional to its box', () => {
+    const [t] = expandShorthandLayers([
+      { type: 'text', pos: [0, 0, 800, 180], text: 'HELLO' },
+    ] as unknown as ShorthandLayer[]) as Array<{ style?: { color?: string; font_size?: number } }>;
+    expect(t.style?.color).toBe('$text');
+    expect(t.style?.font_size).toBe(90); // 180 * 0.5
+  });
+
+  it('falls back to size 48 when the text box has no height', () => {
+    const [t] = expandShorthandLayers([
+      { type: 'text', text: 'HI' },
+    ] as unknown as ShorthandLayer[]) as Array<{ style?: { font_size?: number } }>;
+    expect(t.style?.font_size).toBe(48);
+  });
+
+  it('gives an unfilled shape a theme surface fill', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 1080, 1080] },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { color?: string } }>;
+    expect(r.fill?.color).toBe('$surface');
+  });
+
+  it('does not override an explicit fill/color/size', () => {
+    const [r, t] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 10, 10], fill: '#abc' },
+      { type: 'text', pos: [0, 0, 10, 40], text: 'x', color: '#f00', size: 12 },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { color?: string }; style?: { color?: string; font_size?: number } }>;
+    expect(r.fill?.color).toBe('#abc');
+    expect(t.style?.color).toBe('#f00');
+    expect(t.style?.font_size).toBe(12);
+  });
+});
