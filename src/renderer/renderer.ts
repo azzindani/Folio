@@ -349,9 +349,15 @@ export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVG
     };
   }
 
-  // Render top-level layers (poster mode)
-  if (spec.layers) {
-    const layers = prepareLayers(spec.layers, ctx, options.formulaContext);
+  // Render top-level layers (poster mode). Carousels keep their content on
+  // pages[] rather than root layers; fall back to the first page so a
+  // whole-design render is never silently blank. Callers that need every page
+  // (export, presentation) iterate pages themselves via renderPage.
+  const rootLayers = (spec.layers && spec.layers.length)
+    ? spec.layers
+    : (spec.pages?.[0]?.layers ?? spec.layers);
+  if (rootLayers) {
+    const layers = prepareLayers(rootLayers, ctx, options.formulaContext);
     buildClipDefs(layers, svg);
     for (const layer of layers) {
       svg.appendChild(renderLayer(layer, svg));
