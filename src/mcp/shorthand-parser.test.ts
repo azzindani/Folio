@@ -638,6 +638,24 @@ describe('terse single-letter keys (token-saving small-model shorthand)', () => 
     expect(t.style?.color).toBe('#333');
   });
 
+  it('maps name→icon for an explicit icon layer (and diagnoses an unreal name)', () => {
+    const [ic] = expandShorthandLayers(coerceShorthandLayers({
+      mug: { type: 'icon', name: 'coffee mug', pos: [0, 0, 100, 100] },
+    })) as Array<{ type?: string; name?: string }>;
+    expect(ic.type).toBe('icon');
+    expect(ic.name).toBe('coffee mug'); // honored, not silently 'circle'
+    expect(diagnoseLayers(expandShorthandLayers(coerceShorthandLayers({
+      mug: { type: 'icon', name: 'coffee mug', pos: [0, 0, 100, 100] },
+    }))).some(n => n.includes('coffee mug'))).toBe(true);
+  });
+
+  it('does not turn a stray-named rect into an icon', () => {
+    const [r] = expandShorthandLayers(coerceShorthandLayers({
+      box: { type: 'rect', name: 'whatever', pos: [0, 0, 10, 10], fill: '#abc' },
+    })) as Array<{ type?: string }>;
+    expect(r.type).toBe('rect');
+  });
+
   it('disambiguates s: number→size, string→src', () => {
     const [txt, img] = expandShorthandLayers(coerceShorthandLayers({
       h: { p: [0, 0, 100, 50], t: 'text', c: 'Hi', s: 60 },
@@ -676,6 +694,14 @@ describe('expandFill — parses CSS gradient strings', () => {
     expect(r.fill?.angle).toBe(135);
     expect(r.fill?.stops?.[0].position).toBe(10);
     expect(r.fill?.stops?.[1].position).toBe(90);
+  });
+
+  it('turns a bare "gradient" keyword into a themed $primary→$surface gradient', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 10, 10], fill: 'gradient' },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; stops?: { color: string; position: number }[] } }>;
+    expect(r.fill?.type).toBe('linear');
+    expect(r.fill?.stops).toEqual([{ color: '$primary', position: 0 }, { color: '$surface', position: 100 }]);
   });
 
   it('leaves a plain hex string as a solid fill', () => {
