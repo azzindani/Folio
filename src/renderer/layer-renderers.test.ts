@@ -227,6 +227,16 @@ describe('renderImage', () => {
     const el = renderImage(layer, makeSVG());
     expect(el.getAttribute('preserveAspectRatio')).toBeNull();
   });
+
+  it('renders a native-SVG placeholder (not foreignObject) when src is empty', () => {
+    // Native primitives so it survives resvg PNG export, unlike a foreignObject.
+    const layer = { id: 'ph', type: 'image', z: 0, x: 10, y: 20, width: 300, height: 200, src: '' } as unknown as ImageLayer;
+    const el = renderImage(layer, makeSVG());
+    expect(el.tagName).toBe('g');
+    expect(el.querySelector('rect')).not.toBeNull();
+    expect(el.querySelector('text')?.textContent).toBe('image');
+    expect(el.getAttribute('data-layer-id')).toBe('ph');
+  });
 });
 
 // ── Icon ────────────────────────────────────────────────────
@@ -907,6 +917,14 @@ describe('renderIcon — fallback for unknown icon', () => {
     expect(el.querySelector('rect')).not.toBeNull();
     const text = el.querySelector('text');
     expect(text?.textContent).toBe('__nonexistent_icon__');
+  });
+
+  it('resolves a synonym name to a real Lucide icon (no placeholder)', () => {
+    const layer = { id: 'syn', type: 'icon', z: 0, name: 'photo', size: 32, x: 0, y: 0 } as unknown as IconLayer;
+    const el = renderIcon(layer, makeSVG());
+    // 'photo' → 'image': a nested <svg> glyph, not the dashed-rect placeholder.
+    expect(el.querySelector('svg')).not.toBeNull();
+    expect(el.querySelector('text')).toBeNull();
   });
 });
 

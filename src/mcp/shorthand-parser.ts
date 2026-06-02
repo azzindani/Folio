@@ -1,4 +1,5 @@
 import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
+import { resolveIconName } from '../renderer/lucide-icons';
 
 /**
  * Semantic Shorthand Parser
@@ -78,7 +79,32 @@ function expandFill(fill: string | Fill): Fill {
   if (typeof fill === 'string') {
     return { type: 'solid', color: fill };
   }
-  return fill;
+  return normalizeGradientFill(fill);
+}
+
+// The validator accepts solid/linear/radial/conic/noise/multi/none — NOT the
+// natural word "gradient" small models (and older guide examples) reach for,
+// and it wants stops as {color, position:0-100}, not {color, pos:0-1}. Map both
+// so a model's instinctive gradient survives export instead of hard-failing.
+function normalizeGradientFill(fill: Fill): Fill {
+  const f = fill as unknown as Record<string, unknown>;
+  const t = typeof f['type'] === 'string' ? (f['type'] as string).toLowerCase() : '';
+  const isGrad = /^(gradient|linear|radial|conic)/.test(t) || t === 'linear-gradient';
+  if (!isGrad || !Array.isArray(f['stops'])) return fill;
+  const kind: 'linear' | 'radial' | 'conic' = t.startsWith('radial') ? 'radial' : t.startsWith('conic') ? 'conic' : 'linear';
+  const raw = (f['stops'] as Record<string, unknown>[]).map(s => ({
+    color: typeof s['color'] === 'string' ? s['color'] : '#000000',
+    position: Number(s['position'] ?? s['pos'] ?? s['offset'] ?? s['stop'] ?? 0),
+  }));
+  const maxP = raw.reduce((m, s) => Math.max(m, Number.isFinite(s.position) ? s.position : 0), 0);
+  const scale = maxP > 0 && maxP <= 1 ? 100 : 1; // {pos:0..1} → {position:0..100}
+  const stops = raw.map(s => ({ color: s.color, position: Math.max(0, Math.min(100, Math.round((Number.isFinite(s.position) ? s.position : 0) * scale))) }));
+  if (kind === 'linear') return { type: 'linear', angle: typeof f['angle'] === 'number' ? f['angle'] : 135, stops } as unknown as Fill;
+  const out: Record<string, unknown> = { type: kind, stops };
+  if (typeof f['cx'] === 'number') out['cx'] = f['cx'];
+  if (typeof f['cy'] === 'number') out['cy'] = f['cy'];
+  if (kind === 'radial' && typeof f['radius'] === 'number') out['radius'] = f['radius'];
+  return out as unknown as Fill;
 }
 
 // ── Expand stroke shorthand ─────────────────────────────────
@@ -147,14 +173,20 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         stroke: sh.stroke ? expandStroke(sh.stroke) : { color: sh.color ?? '#000', width: 2 },
       } as Layer;
 
-    case 'icon':
+    case 'icon': {
+      // Size to the box when the model gave one but no explicit size — a 24px
+      // icon dropped in a 200×200 box reads as a stray dot. Fall back to 24.
+      const boxW = typeof pos.width === 'number' ? pos.width : undefined;
+      const boxH = typeof pos.height === 'number' ? pos.height : undefined;
+      const boxSize = boxW && boxH ? Math.min(boxW, boxH) : undefined;
       return {
         ...base,
         type: 'icon',
         name: sh.icon ?? sh.text ?? 'circle',
-        size: sh.icon_size ?? sh.size ?? 24,
+        size: sh.icon_size ?? sh.size ?? boxSize ?? 24,
         color: sh.color,
       } as Layer;
+    }
 
     case 'path':
       return {
@@ -349,6 +381,40 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
     }
     return expandShorthand(applyVisibleDefaults({ ...sh, id, type, z: sh.z ?? i }, type));
   });
+}
+
+// A few popular icon names to offer when a model picks one that doesn't exist.
+const SUGGESTED_ICONS = 'image, star, heart, check, arrow-right, user, mail, calendar, clock, zap, award, map-pin, phone, shopping-cart';
+
+// Inspect expanded layers for things that render but not the way the model
+// likely intended — an unknown icon name (→ placeholder), a local image src
+// (renders only if the asset exists), or empty text. Returns one actionable
+// note per issue so a tool response can direct the model's next call. This is
+// the self-correction signal for the multi-tool loop: the design still saves,
+// and the model is told exactly what to fix.
+export function diagnoseLayers(layers: Layer[]): string[] {
+  const notes: string[] = [];
+  const walk = (ls: Layer[] | undefined): void => {
+    for (const l of ls ?? []) {
+      if (l.type === 'icon') {
+        const name = (l as Layer & { name?: string }).name ?? '';
+        const hit = resolveIconName(name);
+        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a labeled placeholder. Use a real name, e.g.: ${SUGGESTED_ICONS}.`);
+      } else if (l.type === 'image') {
+        const src = (l as Layer & { src?: string }).src ?? '';
+        if (src && !/^(https?:|data:|file:|\/\/)/i.test(src)) {
+          notes.push(`image "${l.id}": src "${src}" is a local file — it renders only if that asset exists in the project, else a placeholder frame shows. Use an https:// URL, or replace the photo with a fill/gradient/shape/icon you can render directly.`);
+        }
+      } else if (l.type === 'text') {
+        const v = (l as Layer & { content?: { value?: string } }).content?.value;
+        if (typeof v === 'string' && v.trim() === '') notes.push(`text "${l.id}": value is empty — put the copy in the "content" (or "text") field.`);
+      } else if (l.type === 'group') {
+        walk((l as Layer & { layers?: Layer[] }).layers);
+      }
+    }
+  };
+  walk(layers);
+  return notes;
 }
 
 /**

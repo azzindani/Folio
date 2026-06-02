@@ -1,5 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { buildIconSVG, LUCIDE_ICONS, ALL_ICON_NAMES } from './lucide-icons';
+import { buildIconSVG, LUCIDE_ICONS, ALL_ICON_NAMES, resolveIconName } from './lucide-icons';
+
+describe('resolveIconName — tolerates the names small models emit', () => {
+  it('passes through an exact canonical id', () => {
+    expect(resolveIconName('arrow-right')).toBe('arrow-right');
+  });
+  it('normalizes separators and case (coffee_cup stays unresolved, photo→image)', () => {
+    expect(resolveIconName('Arrow_Right')).toBe('arrow-right');
+    expect(resolveIconName('arrow right')).toBe('arrow-right');
+  });
+  it('maps common synonyms to canonical ids', () => {
+    expect(resolveIconName('photo')).toBe('image');
+    expect(resolveIconName('email')).toBe('mail');
+    expect(resolveIconName('gear')).toBe('settings');
+    expect(resolveIconName('person')).toBe('user');
+    expect(resolveIconName('bolt')).toBe('zap');
+    expect(resolveIconName('location')).toBe('map-pin');
+  });
+  it('strips an "icon-" prefix', () => {
+    expect(resolveIconName('icon-home')).toBe('home');
+  });
+  it('handles singular/plural drift', () => {
+    expect(resolveIconName('layer')).toBe('layers');
+    expect(resolveIconName('stars')).toBe('star');
+  });
+  it('resolves via a single known hyphen-token', () => {
+    expect(resolveIconName('trash-can')).toBe('trash');
+  });
+  it('returns null (→ honest placeholder) when there is no confident match', () => {
+    expect(resolveIconName('coffee_cup')).toBeNull();
+    expect(resolveIconName('nonexistent-xyz')).toBeNull();
+    expect(resolveIconName('')).toBeNull();
+  });
+});
 
 describe('buildIconSVG', () => {
   it('returns null for unknown icon', () => {

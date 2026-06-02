@@ -257,6 +257,73 @@ export const LUCIDE_ICONS: Record<string, string> = {
 /** All icon names sorted alphabetically for the browser. */
 export const ALL_ICON_NAMES: string[] = Object.keys(LUCIDE_ICONS).sort();
 
+// Synonyms a model reaches for that aren't the canonical Lucide id. Keyed by
+// the de-hyphenated lowercase form so "e-mail", "email" and "E Mail" all hit.
+const ICON_ALIASES: Record<string, string> = {
+  photo: 'image', picture: 'image', pic: 'image', img: 'image', camera: 'image', gallery: 'image',
+  email: 'mail', envelope: 'mail', inbox: 'inbox',
+  telephone: 'phone', call: 'phone', mobile: 'smartphone',
+  house: 'home',
+  person: 'user', profile: 'user', account: 'user', avatar: 'user',
+  people: 'users', group: 'users', team: 'users',
+  favorite: 'star', favourite: 'star', rating: 'star',
+  like: 'heart', love: 'heart',
+  gear: 'settings', cog: 'settings', setting: 'settings', config: 'settings', options: 'sliders',
+  magnifier: 'search', find: 'search',
+  bin: 'trash', delete: 'trash', remove: 'trash',
+  warning: 'alert-triangle', warn: 'alert-triangle', caution: 'alert-triangle',
+  error: 'alert-circle', danger: 'alert-circle',
+  tick: 'check', done: 'check', ok: 'check', checkmark: 'check', success: 'check-circle',
+  close: 'x', cancel: 'x',
+  location: 'map-pin', place: 'map-pin', marker: 'map-pin', address: 'map-pin',
+  chart: 'bar-chart', graph: 'bar-chart', analytics: 'bar-chart',
+  time: 'clock', schedule: 'calendar', date: 'calendar',
+  cart: 'shopping-cart', basket: 'shopping-cart', bag: 'shopping-bag',
+  money: 'dollar-sign', cash: 'dollar-sign', price: 'dollar-sign', dollar: 'dollar-sign', payment: 'credit-card',
+  lightning: 'zap', bolt: 'zap', flash: 'zap', energy: 'zap', power: 'zap',
+  fire: 'flame',
+  trophy: 'award', medal: 'award', prize: 'award',
+  brush: 'palette', paint: 'palette', color: 'palette',
+  document: 'file-text', doc: 'file-text', page: 'file',
+  message: 'message-square', chat: 'message-circle', comment: 'message-circle',
+  notification: 'bell', alarm: 'bell',
+  weather: 'cloud', rain: 'cloud-rain', snow: 'cloud-snow',
+  music: 'volume-2', sound: 'volume-2',
+};
+
+const ICON_NAME_SET = new Set(Object.keys(LUCIDE_ICONS));
+
+function normalizeIconKey(s: string): string {
+  return s.trim().toLowerCase().replace(/[\s_.]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+/**
+ * Resolve a model-supplied icon name to a real Lucide id, tolerating the
+ * synonyms, separators (coffee_cup / "Coffee Cup"), plurals and "icon-"
+ * prefixes small models emit. Returns null when there's no confident match —
+ * the caller then renders an honest placeholder rather than a wrong-but-
+ * plausible icon.
+ */
+export function resolveIconName(raw: string): string | null {
+  if (!raw || typeof raw !== 'string') return null;
+  if (ICON_NAME_SET.has(raw)) return raw;
+  const key = normalizeIconKey(raw);
+  if (ICON_NAME_SET.has(key)) return key;
+  const noPrefix = key.replace(/^icon-/, '');
+  if (ICON_NAME_SET.has(noPrefix)) return noPrefix;
+  const flat = key.replace(/-/g, '');
+  if (ICON_ALIASES[flat]) return ICON_ALIASES[flat];
+  if (key.endsWith('s') && ICON_NAME_SET.has(key.slice(0, -1))) return key.slice(0, -1);
+  if (ICON_NAME_SET.has(`${key}s`)) return `${key}s`;
+  // Exactly one hyphen-token is itself a known icon → use it ("trash-can"→trash).
+  const tokens = key.split('-').filter(Boolean);
+  if (tokens.length > 1) {
+    const hits = tokens.map(t => (ICON_NAME_SET.has(t) ? t : ICON_ALIASES[t])).filter(Boolean) as string[];
+    if (hits.length === 1) return hits[0];
+  }
+  return null;
+}
+
 /**
  * Build an SVG element for a given icon.
  * Returns null if the icon name is not found.
