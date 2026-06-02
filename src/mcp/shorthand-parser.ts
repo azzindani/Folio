@@ -77,7 +77,19 @@ function expandPosition(sh: ShorthandLayer): Partial<Layer> {
 // ── Expand fill shorthand ───────────────────────────────────
 function expandFill(fill: string | Fill): Fill {
   if (typeof fill === 'string') {
-    return parseCssGradient(fill) ?? { type: 'solid', color: fill };
+    const css = parseCssGradient(fill);
+    if (css) return css;
+    // A bare keyword ("gradient"/"linear"/"radial") with no colors — a model
+    // saying "make it a gradient" without specifying one. Render a sensible
+    // theme-token gradient instead of an invalid solid color (which is black).
+    const bare = fill.trim().toLowerCase();
+    if (bare === 'gradient' || bare === 'linear' || bare === 'linear-gradient') {
+      return { type: 'linear', angle: 135, stops: [{ color: '$primary', position: 0 }, { color: '$surface', position: 100 }] } as unknown as Fill;
+    }
+    if (bare === 'radial' || bare === 'radial-gradient') {
+      return { type: 'radial', stops: [{ color: '$primary', position: 0 }, { color: '$surface', position: 100 }] } as unknown as Fill;
+    }
+    return { type: 'solid', color: fill };
   }
   return normalizeGradientFill(fill);
 }
@@ -376,6 +388,10 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
     const sym = out.symbol ?? out.glyph;
     if (typeof sym === 'string') out.icon = sym;
   }
+  // `name` → icon name, but only for explicit icon layers — the expanded
+  // schema uses `name` for the icon, so a model reasonably puts it there.
+  // Gated on type to avoid turning a stray-named rect into an icon.
+  if (out.icon === undefined && out.type === 'icon' && typeof r['name'] === 'string') out.icon = r['name'] as string;
   // url / href → src
   if (out.src === undefined) {
     const u = out.url ?? out.href;
