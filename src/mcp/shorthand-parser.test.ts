@@ -668,6 +668,29 @@ describe('feature_grid preset (model gives content, engine owns layout)', () => 
     expect(flat).toContain('End-to-end encrypted notes');
   });
 
+  it('absorbs the GPT-OSS vocabulary: bare object + preset + benefit + bg_gradient', () => {
+    // The exact shape the lab model sent — a single object (not a {id:layer}
+    // dict) keyed with `preset`, item desc as `benefit`, bg as a color list.
+    const out = expandShorthandLayers(coerceShorthandLayers({
+      preset: 'feature_grid', title: 'Vellum Fitness', subtitle: 'Track your workouts',
+      bg_gradient: ['#ff7e5f', '#feb47b'],
+      items: [
+        { icon: 'zap', title: 'Yoga Sessions', benefit: 'Improve flexibility' },
+        { icon: 'star', title: 'Running Tracker', benefit: 'Monitor distance' },
+      ],
+    })) as Array<Layer & { type?: string; layers?: Layer[] }>;
+    expect(out).toHaveLength(1);            // one feature_grid, NOT exploded into keys
+    const g = out[0];
+    expect(g.type).toBe('group');
+    const flat = JSON.stringify(g);
+    expect(flat).toContain('Vellum Fitness');
+    expect(flat).toContain('Improve flexibility'); // benefit→desc survived
+    const bg = (g.layers ?? []).find(l => l.type === 'rect') as Layer & { fill?: { type?: string } };
+    expect(bg.fill?.type).toBe('linear');   // bg_gradient list → linear gradient
+    const row = (g.layers ?? []).find(l => l.type === 'auto_layout') as Layer & { layers?: Layer[] };
+    expect(row.layers).toHaveLength(2);
+  });
+
   it('infers feature_grid from an items array and accepts the `cards` alias', () => {
     const [a] = expandShorthandLayers(coerceShorthandLayers({
       x: { pos: [0, 0, 1080, 1080], title: 'Hi', items: [{ icon: 'star', title: 'One', desc: 'd' }] },
