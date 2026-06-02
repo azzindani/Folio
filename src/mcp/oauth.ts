@@ -33,11 +33,16 @@ const OAUTH_MAX_BODY_BYTES = Number(process.env['FOLIO_OAUTH_MAX_BODY_BYTES'] ??
 // shorter than any reasonable restart window, so the loss is invisible).
 const STATE_DIR = process.env['FOLIO_OAUTH_STATE_DIR'] ?? path.join(process.env['FOLIO_PROJECTS_DIR'] ?? '/tmp', '.oauth-state');
 const TOKENS_FILE = path.join(STATE_DIR, 'access-tokens.json');
+// Refresh tokens live in a sibling file. Without a refresh grant, claude.ai had
+// to re-run the full authorize flow every time the 24h access token expired —
+// the "asks auth every time" pain. A long-lived, rotating refresh token lets it
+// silently mint new access tokens instead.
+const REFRESH_TOKENS_FILE = path.join(STATE_DIR, 'refresh-tokens.json');
 
-function loadPersistedTokens(): Map<string, { principal: string; expires_at: number }> {
+function loadPersistedTokens(file: string = TOKENS_FILE): Map<string, { principal: string; expires_at: number }> {
   try {
-    if (!fs.existsSync(TOKENS_FILE)) return new Map();
-    const raw = fs.readFileSync(TOKENS_FILE, 'utf-8');
+    if (!fs.existsSync(file)) return new Map();
+    const raw = fs.readFileSync(file, 'utf-8');
     const parsed = JSON.parse(raw) as Record<string, { principal: string; expires_at: number }>;
     const now = Date.now();
     const m = new Map<string, { principal: string; expires_at: number }>();
@@ -46,19 +51,19 @@ function loadPersistedTokens(): Map<string, { principal: string; expires_at: num
     }
     return m;
   } catch (err) {
-    process.stderr.write(`[oauth] failed to load persisted tokens: ${(err as Error).message}\n`);
+    process.stderr.write(`[oauth] failed to load persisted tokens (${file}): ${(err as Error).message}\n`);
     return new Map();
   }
 }
 
-function persistTokens(tokens: Map<string, { principal: string; expires_at: number }>): void {
+function persistTokens(tokens: Map<string, { principal: string; expires_at: number }>, file: string = TOKENS_FILE): void {
   try {
     fs.mkdirSync(STATE_DIR, { recursive: true });
     const obj: Record<string, { principal: string; expires_at: number }> = {};
     for (const [k, v] of tokens) obj[k] = v;
-    fs.writeFileSync(TOKENS_FILE, JSON.stringify(obj), 'utf-8');
+    fs.writeFileSync(file, JSON.stringify(obj), 'utf-8');
   } catch (err) {
-    process.stderr.write(`[oauth] failed to persist tokens: ${(err as Error).message}\n`);
+    process.stderr.write(`[oauth] failed to persist tokens (${file}): ${(err as Error).message}\n`);
   }
 }
 
@@ -80,6 +85,8 @@ interface RegisteredClient {
 
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
 const ACCESS_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+// Refresh tokens outlive access tokens by far; claude.ai rotates them silently.
+const REFRESH_TOKEN_TTL_MS = Number(process.env['FOLIO_REFRESH_TOKEN_TTL_MS'] ?? 30 * 24 * 60 * 60 * 1000);
 // Dynamic-client-registration cap. Without these, every /oauth/register
 // call leaked a Map entry — DoS surface for any anon caller. 7-day TTL
 // matches most agent rotation cycles; hard cap kicks in earlier under spam.
@@ -88,6 +95,7 @@ const REGISTERED_CLIENT_MAX    = 256;
 
 const authCodes = new Map<string, AuthCode>();
 const accessTokens = loadPersistedTokens();
+const refreshTokens = loadPersistedTokens(REFRESH_TOKENS_FILE);
 const registeredClients = new Map<string, RegisteredClient>();
 
 // Seed a static client from env so deployments can pin a known
@@ -122,6 +130,9 @@ function reapExpired(): void {
   let mutated = false;
   for (const [k, v] of accessTokens) if (v.expires_at < now) { accessTokens.delete(k); mutated = true; }
   if (mutated) persistTokens(accessTokens);
+  let refreshMutated = false;
+  for (const [k, v] of refreshTokens) if (v.expires_at < now) { refreshTokens.delete(k); refreshMutated = true; }
+  if (refreshMutated) persistTokens(refreshTokens, REFRESH_TOKENS_FILE);
   // Reap aged + over-cap DCR clients. Pin clients seeded from env
   // (STATIC_CLIENT_ID) so an admin-configured pair is never evicted.
   for (const [id, c] of registeredClients) {
@@ -233,7 +244,7 @@ function handleMetadata(req: http.IncomingMessage, res: http.ServerResponse): vo
     token_endpoint: `${base}/oauth/token`,
     registration_endpoint: `${base}/oauth/register`,
     response_types_supported: ['code'],
-    grant_types_supported: ['authorization_code'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
     code_challenge_methods_supported: ['S256'],
     token_endpoint_auth_methods_supported: ['none', 'client_secret_post', 'client_secret_basic'],
     scopes_supported: ['mcp'],
@@ -266,7 +277,7 @@ async function handleRegister(req: http.IncomingMessage, res: http.ServerRespons
     client_id: clientId,
     ...(clientSecret ? { client_secret: clientSecret } : {}),
     redirect_uris: redirectUris,
-    grant_types: ['authorization_code'],
+    grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
     token_endpoint_auth_method: clientSecret ? 'client_secret_post' : 'none',
   });
@@ -360,10 +371,49 @@ async function handleAuthorizePost(req: http.IncomingMessage, res: http.ServerRe
 
 // ── Endpoint: POST /oauth/token → exchange code for access_token ─────────
 
+// Mint an access+refresh pair for a principal and persist both. The access
+// token gates /mcp for 24h; the refresh token (30d, single-use/rotating) lets
+// the client mint the next access token without re-running the authorize flow.
+function issueTokenPair(principal: string, scope: string): {
+  access_token: string; token_type: 'Bearer'; expires_in: number; refresh_token: string; scope: string;
+} {
+  const accessToken = randomToken(32);
+  accessTokens.set(accessToken, { principal, expires_at: Date.now() + ACCESS_TOKEN_TTL_MS });
+  persistTokens(accessTokens);
+  const refreshToken = randomToken(32);
+  refreshTokens.set(refreshToken, { principal, expires_at: Date.now() + REFRESH_TOKEN_TTL_MS });
+  persistTokens(refreshTokens, REFRESH_TOKENS_FILE);
+  return {
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: Math.floor(ACCESS_TOKEN_TTL_MS / 1000),
+    refresh_token: refreshToken,
+    scope,
+  };
+}
+
 async function handleToken(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   const body = parseForm(await readBody(req));
-  if (body['grant_type'] !== 'authorization_code') {
-    json(res, 400, { error: 'unsupported_grant_type', error_description: 'Only authorization_code is supported.' });
+  const grant = body['grant_type'];
+
+  // Refresh grant — rotate (single-use) and issue a fresh access token so
+  // claude.ai never has to re-authorize when its 24h access token lapses.
+  if (grant === 'refresh_token') {
+    const presented = body['refresh_token'] ?? '';
+    const rec = refreshTokens.get(presented);
+    if (!rec || rec.expires_at < Date.now()) {
+      refreshTokens.delete(presented);
+      persistTokens(refreshTokens, REFRESH_TOKENS_FILE);
+      json(res, 400, { error: 'invalid_grant', error_description: 'Refresh token is missing, expired, or revoked.' });
+      return;
+    }
+    refreshTokens.delete(presented); // rotate: invalidate the used refresh token
+    json(res, 200, issueTokenPair(rec.principal, body['scope'] ?? 'mcp'));
+    return;
+  }
+
+  if (grant !== 'authorization_code') {
+    json(res, 400, { error: 'unsupported_grant_type', error_description: 'Supported grants: authorization_code, refresh_token.' });
     return;
   }
   const code = body['code'] ?? '';
@@ -400,19 +450,9 @@ async function handleToken(req: http.IncomingMessage, res: http.ServerResponse):
     }
   }
 
-  const accessToken = randomToken(32);
-  accessTokens.set(accessToken, {
-    principal: record.principal,
-    expires_at: Date.now() + ACCESS_TOKEN_TTL_MS,
-  });
-  // Persist so a container rebuild doesn't force claude.ai to re-OAuth.
-  persistTokens(accessTokens);
-  json(res, 200, {
-    access_token: accessToken,
-    token_type: 'Bearer',
-    expires_in: Math.floor(ACCESS_TOKEN_TTL_MS / 1000),
-    scope: record.scope ?? 'mcp',
-  });
+  // Issue access + refresh (both persisted, so a container bounce never forces
+  // claude.ai to re-OAuth — it refreshes silently).
+  json(res, 200, issueTokenPair(record.principal, record.scope ?? 'mcp'));
 }
 
 // ── Dispatch ─────────────────────────────────────────────────────────────
