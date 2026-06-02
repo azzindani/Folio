@@ -231,7 +231,20 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const Y = sh.pos?.[1] ?? (typeof sh.y === 'number' ? sh.y : 0);
   const W = sh.pos?.[2] ?? (typeof sh.width === 'number' ? sh.width : 1080);
   const H = sh.pos?.[3] ?? (typeof sh.height === 'number' ? sh.height : 1080);
-  const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
+  // Accept a string, or {text}/{value} (models sometimes wrap a field).
+  const str = (v: unknown, d = ''): string => {
+    if (typeof v === 'string') return v;
+    if (v && typeof v === 'object') { const o = v as Record<string, unknown>; if (typeof o['text'] === 'string') return o['text']; if (typeof o['value'] === 'string') return o['value']; }
+    return d;
+  };
+  // bg from `bg`, or a `bg_gradient` color list / {colors:[…]} the model sends.
+  let bgFill: string | Fill | undefined = r['bg'] as string | Fill | undefined;
+  if (bgFill === undefined && r['bg_gradient'] !== undefined) {
+    const g = r['bg_gradient'];
+    const colors = Array.isArray(g) ? g : (g && typeof g === 'object' && Array.isArray((g as Record<string, unknown>)['colors']) ? (g as Record<string, unknown>)['colors'] as unknown[] : []);
+    const hex = colors.filter(c => typeof c === 'string') as string[];
+    if (hex.length >= 2) bgFill = `linear-gradient(135deg, ${hex.join(', ')})`;
+  }
   const cardFill  = str(r['card_fill'], '$surface');
   const accent    = str(r['accent'], '$primary');
   const textColor = str(r['text_color'] ?? r['color'], '$text');
@@ -240,7 +253,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const items = (rawItems as Record<string, unknown>[]).slice(0, 5).map(it => ({
     icon: str(it['icon'] ?? it['symbol']),
     title: str(it['title'] ?? it['label'] ?? it['name']),
-    desc: str(it['desc'] ?? it['description'] ?? it['text'] ?? it['body']),
+    desc: str(it['desc'] ?? it['description'] ?? it['text'] ?? it['body'] ?? it['benefit']),
   }));
   const N = Math.max(1, items.length);
   const M = Math.round(W * 0.07);
@@ -248,8 +261,8 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const rowY = Math.round(H * 0.42), rowH = H - rowY - M;
   const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
   const layers: Layer[] = [];
-  if (r['bg'] !== undefined) {
-    layers.push({ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(r['bg'] as string | Fill) } as unknown as Layer);
+  if (bgFill !== undefined) {
+    layers.push({ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bgFill) } as unknown as Layer);
   }
   const title = str(r['title']);
   if (title) layers.push({ id: `${id}_title`, type: 'text', z: 5, x: X + M, y: Y + Math.round(H * 0.11), width: W - 2 * M, height: Math.round(H * 0.13),
@@ -260,7 +273,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
     if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: 60, height: 60, name: it.icon, size: 60, color: accent } as unknown as Layer);
-    if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: cardW - 60, height: 48,
+    if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: cardW - 60, height: 90,
       content: { type: 'plain', value: it.title }, style: { font_size: 30, font_weight: 700, color: textColor, align: 'center' } } as unknown as Layer);
     if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: cardW - 60, height: 110,
       content: { type: 'plain', value: it.desc }, style: { font_size: 21, color: muted, align: 'center' } } as unknown as Layer);
@@ -502,7 +515,15 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   };
   if (input == null) return [];
   if (Array.isArray(input)) return input.map(v => one(v));
-  if (typeof input === 'object') return Object.entries(input as Record<string, unknown>).map(([id, v]) => one(v, id));
+  if (typeof input === 'object') {
+    const obj = input as Record<string, unknown>;
+    // A bare object that is itself ONE layer — it carries a layer type
+    // (type/preset as a string) — not a {id: layer} dict. Without this, a model
+    // that sends a single {preset:"feature_grid", title, items:[…]} object has
+    // each key exploded into its own layer (title/items become stray texts).
+    if (typeof obj['type'] === 'string' || typeof obj['preset'] === 'string') return [one(obj)];
+    return Object.entries(obj).map(([id, v]) => one(v, id));
+  }
   return [];
 }
 
@@ -522,7 +543,7 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
     if (r[canonical] !== undefined) return;
     for (const k of keys) if (r[k] !== undefined) { r[canonical] = r[k]; return; }
   };
-  alias('type', 't');
+  alias('type', 't', 'preset');
   alias('pos', 'p');
   alias('fill', 'f');
   alias('width', 'w');
@@ -704,6 +725,7 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'chart', 'data', 'spec', 'value', 'label', 'delta', 'format', 'ref', 'slots', 'variant', 'overrides',
   // feature_grid preset
   'items', 'features', 'title', 'subtitle', 'card_fill', 'accent', 'text_color', 'muted', 'bg', 'columns',
+  'preset', 'bg_gradient', 'benefit',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
