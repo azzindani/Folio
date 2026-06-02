@@ -39,6 +39,16 @@ export interface ShorthandLayer {
   src?: string;
   icon?: string;
   icon_size?: number;
+  // Verbose-schema aliases small models reach for instead of the terse
+  // shorthand names above. normalizeShorthandAliases maps these onto text /
+  // size / icon / src so the content the model provided isn't dropped.
+  content?: string | { value?: string };
+  font_size?: number;
+  fontSize?: number;
+  symbol?: string;
+  glyph?: string;
+  url?: string;
+  href?: string;
   d?: string;
   sides?: number;
   x1?: number; y1?: number; x2?: number; y2?: number;
@@ -251,6 +261,39 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   return [];
 }
 
+// Small models name fields after the *verbose* output schema (content,
+// font_size, symbol, url) rather than the terse shorthand vocabulary
+// (text, size, icon, src). Without this, a model that sends
+// {type:'text', content:'Morning Coffee', font_size:80} renders blank — the
+// expander only reads `text`/`size`, so the copy and size are silently
+// dropped. Map the aliases onto the canonical fields. The canonical field
+// always wins when both are present; this never overwrites it.
+function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
+  const out: ShorthandLayer = { ...sh };
+  // content (plain string or {value}) → text
+  if (out.text === undefined && out.content !== undefined) {
+    const c = out.content;
+    if (typeof c === 'string') out.text = c;
+    else if (c && typeof c === 'object' && typeof c.value === 'string') out.text = c.value;
+  }
+  // font_size / fontSize → size
+  if (out.size === undefined) {
+    const fs = out.font_size ?? out.fontSize;
+    if (typeof fs === 'number') out.size = fs;
+  }
+  // symbol / glyph → icon name
+  if (out.icon === undefined) {
+    const sym = out.symbol ?? out.glyph;
+    if (typeof sym === 'string') out.icon = sym;
+  }
+  // url / href → src
+  if (out.src === undefined) {
+    const u = out.url ?? out.href;
+    if (typeof u === 'string') out.src = u;
+  }
+  return out;
+}
+
 // Infer a layer type from the fields a small model actually provided, for when
 // it omits `type` (a common failure: it emits {pos, text} and expects "text").
 function inferLayerType(sh: ShorthandLayer): string {
@@ -291,7 +334,11 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
   // styling — so the design still renders with content instead of blank.
   const seen = new Set<string>();
   for (const l of layers) if (l.id) seen.add(l.id);
-  return layers.map((sh, i) => {
+  return layers.map((raw, i) => {
+    // Map verbose-schema aliases (content/font_size/symbol/url) onto the
+    // canonical shorthand fields before inferring type or applying defaults,
+    // so inference sees `text`/`icon`/`src` and the model's content survives.
+    const sh = normalizeShorthandAliases(raw);
     const type = sh.type ?? inferLayerType(sh);
     let id = sh.id;
     if (!id) {

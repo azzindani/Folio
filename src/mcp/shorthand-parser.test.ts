@@ -511,3 +511,72 @@ describe('expandShorthandLayers — visible defaults (no blank designs)', () => 
     expect(t.style?.font_size).toBe(12);
   });
 });
+
+describe('expandShorthandLayers — verbose-schema field aliases (small-model robustness)', () => {
+  it('maps content + font_size onto the text value and size', () => {
+    const [t] = expandShorthandLayers([
+      { type: 'text', pos: [200, 50, 800, 150], content: 'Morning Coffee', font_size: 80, color: '#333' },
+    ] as unknown as ShorthandLayer[]) as Array<{ content?: { value?: string }; style?: { font_size?: number; color?: string } }>;
+    expect(t.content?.value).toBe('Morning Coffee');
+    expect(t.style?.font_size).toBe(80); // honored, not the height*0.5 default
+    expect(t.style?.color).toBe('#333');
+  });
+
+  it('reads content given as a {value} object', () => {
+    const [t] = expandShorthandLayers([
+      { type: 'text', pos: [0, 0, 10, 40], content: { value: 'Hello' } },
+    ] as unknown as ShorthandLayer[]) as Array<{ content?: { value?: string } }>;
+    expect(t.content?.value).toBe('Hello');
+  });
+
+  it('maps symbol/glyph onto the icon name', () => {
+    const [a, b] = expandShorthandLayers([
+      { type: 'icon', pos: [0, 0, 24, 24], symbol: 'coffee' },
+      { type: 'icon', pos: [0, 0, 24, 24], glyph: 'star' },
+    ] as unknown as ShorthandLayer[]) as Array<{ name?: string }>;
+    expect(a.name).toBe('coffee');
+    expect(b.name).toBe('star');
+  });
+
+  it('maps url/href onto image src', () => {
+    const [a, b] = expandShorthandLayers([
+      { type: 'image', pos: [0, 0, 10, 10], url: 'a.png' },
+      { type: 'image', pos: [0, 0, 10, 10], href: 'b.png' },
+    ] as unknown as ShorthandLayer[]) as Array<{ src?: string }>;
+    expect(a.src).toBe('a.png');
+    expect(b.src).toBe('b.png');
+  });
+
+  it('infers type from an alias when the model omits type', () => {
+    const [t, i] = expandShorthandLayers([
+      { pos: [0, 0, 100, 50], content: 'Headline' }, // → text via content
+      { pos: [0, 0, 24, 24], symbol: 'bolt' },        // → icon via symbol
+    ] as unknown as ShorthandLayer[]) as Array<{ type?: string; content?: { value?: string }; name?: string }>;
+    expect(t.type).toBe('text');
+    expect(t.content?.value).toBe('Headline');
+    expect(i.type).toBe('icon');
+    expect(i.name).toBe('bolt');
+  });
+
+  it('lets the canonical field win over its alias', () => {
+    const [t] = expandShorthandLayers([
+      { type: 'text', pos: [0, 0, 10, 40], text: 'canonical', content: 'alias', size: 10, font_size: 99 },
+    ] as unknown as ShorthandLayer[]) as Array<{ content?: { value?: string }; style?: { font_size?: number } }>;
+    expect(t.content?.value).toBe('canonical');
+    expect(t.style?.font_size).toBe(10);
+  });
+
+  it('regression: renders the exact dict payload the nemotron model sent', () => {
+    // Replays the live small-model add_layers call that previously produced a
+    // blank poster — content/font_size/symbol were dropped. Now they survive.
+    const out = expandShorthandLayers(coerceShorthandLayers({
+      title:       { pos: [200, 50, 800, 150], type: 'text', content: 'Morning Coffee', font_size: 80, color: '#333' },
+      description: { pos: [100, 850, 800, 150], type: 'text', content: 'Start your day with a perfect cup of coffee.', font_size: 30, color: '#555' },
+      icon:        { pos: [300, 400, 200, 200], type: 'icon', symbol: 'coffee_cup' },
+    })) as Array<{ id?: string; content?: { value?: string }; name?: string }>;
+    const byId = Object.fromEntries(out.map(l => [l.id, l]));
+    expect(byId['title'].content?.value).toBe('Morning Coffee');
+    expect(byId['description'].content?.value).toContain('perfect cup');
+    expect(byId['icon'].name).toBe('coffee_cup');
+  });
+});
