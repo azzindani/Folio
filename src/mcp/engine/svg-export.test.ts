@@ -45,3 +45,23 @@ describe('renderToSVGString', () => {
     expect(svg.toUpperCase()).toContain('16213E');
   });
 });
+
+describe('renderToSVGString — stateless across designs (gradient defs not leaked)', () => {
+  it('emits the gradient def even when a prior design used the same layer id', () => {
+    const mk = (stop: string) => ({
+      _protocol: 'design/v1',
+      meta: { id: 'd', name: 'D', type: 'poster', created: '2024-01-01', modified: '2024-01-01' },
+      document: { width: 100, height: 100, unit: 'px' },
+      layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100,
+        fill: { type: 'linear', angle: 135, stops: [{ color: stop, position: 0 }, { color: '#000000', position: 100 }] } }],
+    } as unknown as DesignSpec);
+    // Render design A, then a DIFFERENT design B that reuses layer id "bg".
+    renderToSVGString(mk('#ff0000'));
+    const svgB = renderToSVGString(mk('#00ff00'));
+    // B references a gradient AND ships its definition (no dead url ref).
+    const ref = svgB.match(/url\(#([\w-]+)\)/);
+    expect(ref).not.toBeNull();
+    expect(svgB).toContain(`id="${ref![1]}"`);
+    expect(svgB.toLowerCase()).toContain('lineargradient');
+  });
+});
