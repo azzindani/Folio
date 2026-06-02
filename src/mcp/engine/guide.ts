@@ -103,6 +103,18 @@ repeat:[{...},{...}] → one copy per row; {{key}} tokens fill from the row.
      width:280, height:360, layers:[{type:"text", width:240, height:50, text:"{{name}} {{price}}", size:30}]}
 Combine with a row/grid container to lay out the copies automatically.
 
+## Presets (engine owns the layout — you supply only content)
+feature_grid: a complete feature poster in ONE layer — title, subtitle, and a
+row of cards. You give content + colors; the engine positions everything (no
+coordinates to get wrong). Best way to build a feature/benefit poster.
+  {type:"feature_grid", pos:[0,0,1080,1080], bg:"gradient",
+    title:"Nova", subtitle:"Your next-gen companion",
+    items:[
+      {icon:"zap",          title:"Fast Sync",   desc:"Instantly sync across devices"},
+      {icon:"calendar",     title:"Smart Planner",desc:"AI-driven scheduling"},
+      {icon:"shield-check", title:"Secure Vault", desc:"End-to-end encrypted"}]}
+  Optional: card_fill, accent (icon), text_color, muted (default to theme tokens).
+
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
            (label/value/name/count also map to x/y; or pass a raw vega-lite spec:{...})
