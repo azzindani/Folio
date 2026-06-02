@@ -79,6 +79,23 @@ Ellipse:{id:"dot",   type:"ellipse",z:8, pos:[500,500,80,80],  fill:"#E94560"}
 Icon:   {id:"ico",   type:"icon",  z:9,  pos:[880,80,64,64],   icon:"star", color:"#E94560"}
 Group:  {id:"grp",   type:"group", z:6,  pos:[80,80,400,300],  layers:[...]}
 
+## Auto-layout (declarative layout — DON'T hand-compute child x/y)
+For complex designs (cards, grids, rows, sections) use a container. Give the
+CONTAINER a pos:[x,y,w,h]; give each CHILD only its width+height (the engine
+flows child x/y for you).
+Row:    {id:"feats", type:"row",    pos:[80,400,920,300], gap:24, justify:"space-between", layers:[...]}
+Column: {id:"side",  type:"column", pos:[80,80,300,900],  gap:16, align:"center",          layers:[...]}
+Grid:   {id:"gal",   type:"grid",   pos:[80,80,920,800],  gap:20, layers:[...]}   (wraps to rows)
+Fields: direction(row|column) · gap · padding · align(start|center|end|stretch) ·
+        justify(start|center|end|space-between|space-around) · wrap · fill · radius
+Example — 3 feature cards in a row, each a column of icon+title+body:
+  {id:"row", type:"row", pos:[60,500,960,360], gap:30, layers:[
+    {type:"column", width:300, height:360, gap:12, padding:24, fill:"#16213E", radius:16, layers:[
+      {type:"icon", width:48, height:48, icon:"zap", color:"#E94560"},
+      {type:"text", width:252, height:40, text:"Fast",  size:32, weight:700},
+      {type:"text", width:252, height:120, text:"Sub-100ms renders.", size:20}]},
+    ... ×3 ]}
+
 Text shorthand fields:  text, size, weight, color, align, text_decoration:"underline"|"line-through"
   Aliases accepted: content→text, font_size→size, symbol→icon, url/href→src.
 Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"linear",angle:135,stops:[{color:"#a",position:0},{color:"#b",position:100}]}
