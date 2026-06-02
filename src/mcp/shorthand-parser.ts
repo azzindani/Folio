@@ -58,6 +58,13 @@ export interface ShorthandLayer {
   language?: string;
   expression?: string;
   layers?: ShorthandLayer[];
+  // Auto-layout (flexbox) container fields. type "row"/"column"/"stack"/"grid"
+  // is normalized to auto_layout with the right direction/wrap.
+  direction?: 'row' | 'column';
+  gap?: number;
+  padding?: number | { top: number; right: number; bottom: number; left: number };
+  justify?: string;
+  wrap?: boolean;
   [key: string]: unknown;
 }
 
@@ -163,6 +170,23 @@ function expandStroke(stroke: string | { color: string; width: number }): { colo
     return { color: stroke, width: 2 };
   }
   return stroke;
+}
+
+// Map loose align/justify words a model uses onto the schema's enums.
+function mapAlignItems(v: string): 'start' | 'center' | 'end' | 'stretch' {
+  const s = v.toLowerCase();
+  if (s === 'center' || s === 'middle') return 'center';
+  if (s === 'end' || s === 'right' || s === 'bottom') return 'end';
+  if (s === 'stretch' || s === 'fill') return 'stretch';
+  return 'start';
+}
+function mapJustify(v: string): 'start' | 'center' | 'end' | 'space-between' | 'space-around' {
+  const s = v.toLowerCase().replace(/[_\s]/g, '-');
+  if (s === 'center' || s === 'middle') return 'center';
+  if (s === 'end' || s === 'right' || s === 'bottom') return 'end';
+  if (s.includes('between')) return 'space-between';
+  if (s.includes('around') || s === 'evenly' || s === 'space-evenly') return 'space-around';
+  return 'start';
 }
 
 // ── Main expansion function ─────────────────────────────────
@@ -289,7 +313,26 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
       return {
         ...base,
         type: 'group',
-        layers: (sh.layers ?? []).map(expandShorthand),
+        // Route children through the full pipeline (coerce → normalize aliases →
+        // infer type → ids → visible defaults), so nested layers get the same
+        // small-model robustness as top-level ones.
+        layers: expandShorthandLayers(coerceShorthandLayers(sh.layers)),
+      } as Layer;
+
+    case 'auto_layout':
+      return {
+        ...base,
+        type: 'auto_layout',
+        direction: sh.direction === 'row' ? 'row' : 'column',
+        ...(typeof sh.gap === 'number' ? { gap: sh.gap } : {}),
+        ...(sh.padding !== undefined ? { padding: sh.padding } : {}),
+        ...(typeof sh.align === 'string' ? { align_items: mapAlignItems(sh.align) } : {}),
+        ...(typeof sh.justify === 'string' ? { justify_content: mapJustify(sh.justify) } : {}),
+        ...(typeof sh.wrap === 'boolean' ? { wrap: sh.wrap } : {}),
+        ...(sh.fill ? { fill: expandFill(sh.fill) } : {}),
+        ...(sh.stroke ? { stroke: expandStroke(sh.stroke) } : {}),
+        ...(sh.radius !== undefined ? { radius: sh.radius } : {}),
+        layers: expandShorthandLayers(coerceShorthandLayers(sh.layers)),
       } as Layer;
 
     default:
@@ -301,6 +344,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
 // Layer types the compact-string parser recognizes as an explicit prefix.
 const KNOWN_SHORTHAND_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'text', 'line', 'icon', 'path', 'polygon', 'image', 'mermaid', 'code', 'math', 'group',
+  'auto_layout', 'row', 'column', 'stack', 'grid',
 ]);
 
 // Parse a compact layer string a small model tends to emit, e.g.
@@ -365,6 +409,13 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
   alias('width', 'w');
   alias('height', 'h');
   alias('color', 'col');
+  // Container type aliases → auto_layout (flexbox). The model declares a
+  // row/column/grid and the engine flows child positions, so it doesn't have
+  // to compute coordinates for every element in a complex layout.
+  const ct = typeof out.type === 'string' ? out.type.toLowerCase() : '';
+  if (ct === 'row' || ct === 'hstack') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'row'; }
+  else if (ct === 'column' || ct === 'col' || ct === 'stack' || ct === 'vstack') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'column'; }
+  else if (ct === 'grid') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'row'; if (out.wrap === undefined) out.wrap = true; }
   // `c` → text content
   if (out.text === undefined && typeof r['c'] === 'string') out.text = r['c'] as string;
   // `s` is ambiguous: a number is a font size, a string is an image src.
@@ -403,6 +454,12 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
 // Infer a layer type from the fields a small model actually provided, for when
 // it omits `type` (a common failure: it emits {pos, text} and expects "text").
 function inferLayerType(sh: ShorthandLayer): string {
+  // A layer with children is a container: auto_layout if it has layout hints
+  // (direction/gap/justify/wrap), otherwise a plain group.
+  if (Array.isArray(sh.layers)) {
+    return (sh.direction !== undefined || sh.gap !== undefined || sh.justify !== undefined || sh.wrap !== undefined)
+      ? 'auto_layout' : 'group';
+  }
   if (sh.text !== undefined) return 'text';
   if (sh.src !== undefined) return 'image';
   if (sh.icon !== undefined) return 'icon';
@@ -467,6 +524,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'font', 'size', 'weight', 'color', 'align', 'text_decoration', 'src', 'fit',
   'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
   'definition', 'code', 'language', 'expression', 'layers',
+  // auto_layout / container
+  'direction', 'gap', 'padding', 'justify', 'wrap',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',

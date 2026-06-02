@@ -625,6 +625,55 @@ describe('expandFill — tolerates the gradient shapes small models send', () =>
   });
 });
 
+describe('auto-layout containers (declarative complex layout)', () => {
+  it('maps row/column/stack/grid → auto_layout with direction/wrap', () => {
+    const out = expandShorthandLayers(coerceShorthandLayers({
+      a: { type: 'row', pos: [0, 0, 900, 200], gap: 24, layers: [] },
+      b: { type: 'column', pos: [0, 0, 200, 900], layers: [] },
+      c: { type: 'stack', pos: [0, 0, 200, 900], layers: [] },
+      d: { type: 'grid', pos: [0, 0, 900, 900], layers: [] },
+    })) as Array<{ type?: string; direction?: string; wrap?: boolean; gap?: number }>;
+    const [a, b, c, d] = out;
+    expect(a.type).toBe('auto_layout'); expect(a.direction).toBe('row'); expect(a.gap).toBe(24);
+    expect(b.direction).toBe('column');
+    expect(c.direction).toBe('column');
+    expect(d.direction).toBe('row'); expect(d.wrap).toBe(true);
+  });
+
+  it('maps align/justify words onto the schema enums', () => {
+    const [a] = expandShorthandLayers(coerceShorthandLayers({
+      bar: { type: 'row', pos: [0, 0, 900, 100], align: 'middle', justify: 'between', layers: [] },
+    })) as Array<{ align_items?: string; justify_content?: string }>;
+    expect(a.align_items).toBe('center');
+    expect(a.justify_content).toBe('space-between');
+  });
+
+  it('normalizes nested children through the full pipeline (aliases, types, defaults)', () => {
+    const [row] = expandShorthandLayers(coerceShorthandLayers({
+      cards: { type: 'row', pos: [0, 0, 900, 300], gap: 20, layers: {
+        card1: { type: 'rect', pos: [0, 0, 280, 300], fill: '#222' },
+        title: { content: 'Hi', size: 40, pos: [0, 0, 280, 60] }, // content→text, inferred text
+        ico: { type: 'icon', symbol: 'photo', pos: [0, 0, 60, 60] }, // symbol→icon, photo→image
+      } },
+    })) as Array<{ type?: string; layers?: Array<{ id?: string; type?: string; content?: { value?: string }; name?: string }> }>;
+    expect(row.type).toBe('auto_layout');
+    const kids = row.layers ?? [];
+    expect(kids).toHaveLength(3);
+    expect(kids.find(k => k.id === 'title')?.type).toBe('text');
+    expect(kids.find(k => k.id === 'title')?.content?.value).toBe('Hi');
+    expect(kids.find(k => k.id === 'ico')?.name).toBe('photo'); // resolved at render
+  });
+
+  it('infers auto_layout from layers+direction, group from layers alone', () => {
+    const [al, grp] = expandShorthandLayers([
+      { pos: [0, 0, 900, 100], direction: 'row', layers: [] },
+      { pos: [0, 0, 100, 100], layers: [] },
+    ] as unknown as ShorthandLayer[]) as Array<{ type?: string }>;
+    expect(al.type).toBe('auto_layout');
+    expect(grp.type).toBe('group');
+  });
+});
+
 describe('terse single-letter keys (token-saving small-model shorthand)', () => {
   it('maps p/t/f/c/col → pos/type/fill/text/color', () => {
     const [t] = expandShorthandLayers(coerceShorthandLayers({
