@@ -276,6 +276,45 @@ describe('StateManager', () => {
       const grp = topLayers.find(l => l.id === 'grp') as { layers: Layer[] };
       expect(grp?.layers[0].x).toBe(42);
     });
+
+    // Regression: recursion was gated on type==='group', so auto_layout
+    // children couldn't be moved, renamed or deleted — the editor felt frozen
+    // on any layout-based design.
+    it('updateLayer updates a nested child inside an auto_layout', () => {
+      const sm = new StateManager();
+      const row: Layer = {
+        id: 'row', type: 'auto_layout', z: 0, direction: 'row',
+        layers: [{ id: 'cell', type: 'rect', z: 0, x: 0 } as Layer],
+      } as unknown as Layer;
+      sm.set('design', makeDesign([row]));
+      sm.updateLayer('cell', { x: 77 });
+      const grp = (sm.get().design?.layers ?? []).find(l => l.id === 'row') as { layers: Layer[] };
+      expect(grp?.layers[0].x).toBe(77);
+    });
+
+    it('removeLayer removes a nested child inside an auto_layout', () => {
+      const sm = new StateManager();
+      const row: Layer = {
+        id: 'row', type: 'auto_layout', z: 0, direction: 'row',
+        layers: [{ id: 'cell', type: 'rect', z: 0 } as Layer, { id: 'keep', type: 'rect', z: 1 } as Layer],
+      } as unknown as Layer;
+      sm.set('design', makeDesign([row]));
+      sm.removeLayer('cell');
+      const grp = (sm.get().design?.layers ?? []).find(l => l.id === 'row') as { layers: Layer[] };
+      expect(grp.layers.map(l => l.id)).toEqual(['keep']);
+    });
+
+    it('renameLayer renames a nested child inside an auto_layout', () => {
+      const sm = new StateManager();
+      const row: Layer = {
+        id: 'row', type: 'auto_layout', z: 0, direction: 'row',
+        layers: [{ id: 'cell', type: 'rect', z: 0 } as Layer],
+      } as unknown as Layer;
+      sm.set('design', makeDesign([row]));
+      sm.renameLayer('cell', 'cell2');
+      const grp = (sm.get().design?.layers ?? []).find(l => l.id === 'row') as { layers: Layer[] };
+      expect(grp.layers[0].id).toBe('cell2');
+    });
   });
 
   describe('set() undo control', () => {
