@@ -29,4 +29,19 @@ describe('renderToSVGString', () => {
     expect(typeof r1).toBe('string');
     expect(typeof r2).toBe('string');
   });
+
+  it('resolves theme color tokens via the referenced builtin theme', () => {
+    // $surface must render as the dark-tech color (#16213E), not the literal
+    // token — otherwise it falls back to black and content is invisible.
+    const themed = {
+      ...minimalDesign,
+      theme: { ref: 'dark-tech' },
+      layers: [
+        { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100, fill: { type: 'solid', color: '$surface' } },
+      ],
+    } as unknown as DesignSpec;
+    const svg = renderToSVGString(themed);
+    expect(svg).not.toContain('$surface');
+    expect(svg.toUpperCase()).toContain('16213E');
+  });
 });

@@ -262,10 +262,33 @@ function inferLayerType(sh: ShorthandLayer): string {
   return 'rect'; // a positioned box is the safe default
 }
 
+const FILLABLE_SHAPES = new Set(['rect', 'circle', 'ellipse', 'polygon']);
+
+// Give an under-specified layer visible, theme-aware styling so a small model's
+// bare {pos,text} layers don't render blank (invisible black 16px text on the
+// dark default theme, or an unfilled — transparent — background rect). Uses
+// theme color tokens ($text/$surface) so it adapts to whatever theme is active,
+// and sizes text relative to its box. Never overrides values the model gave.
+function applyVisibleDefaults(sh: ShorthandLayer, type: string): ShorthandLayer {
+  const out = { ...sh };
+  if (type === 'text') {
+    if (out.color === undefined) out.color = '$text';
+    if (out.size === undefined) {
+      const h = typeof out.pos?.[3] === 'number' ? out.pos[3]
+        : typeof out.height === 'number' ? out.height : undefined;
+      out.size = h ? Math.max(28, Math.min(120, Math.round(h * 0.5))) : 48;
+    }
+  } else if (FILLABLE_SHAPES.has(type) && out.fill === undefined && out.color === undefined) {
+    out.fill = '$surface';
+  }
+  return out;
+}
+
 export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
   // Small models frequently omit the required id/type/z on shorthand layers.
   // Rather than reject the whole call, infer type from the fields, auto-assign
-  // a unique id, and default z to stacking order — so the design still renders.
+  // a unique id, default z to stacking order, and apply visible theme-aware
+  // styling — so the design still renders with content instead of blank.
   const seen = new Set<string>();
   for (const l of layers) if (l.id) seen.add(l.id);
   return layers.map((sh, i) => {
@@ -277,7 +300,7 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
       while (seen.has(id)) { n++; id = `${type}_${n}`; }
       seen.add(id);
     }
-    return expandShorthand({ ...sh, id, type, z: sh.z ?? i });
+    return expandShorthand(applyVisibleDefaults({ ...sh, id, type, z: sh.z ?? i }, type));
   });
 }
 
