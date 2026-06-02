@@ -167,9 +167,13 @@ export function resolveLayerTokens(layer: Layer, ctx: TokenResolutionContext): L
     };
   }
 
-  // Recurse into group children
-  if (layer.type === 'group' && 'layers' in layer) {
-    resolved['layers'] = layer.layers.map((child: Layer) => resolveLayerTokens(child, ctx));
+  // Recurse into any container's children — group AND auto_layout (and any
+  // future layer carrying a `layers` array). Previously only `group` recursed,
+  // so $-tokens ($text/$primary…) inside an auto_layout (cards, rows, columns,
+  // feature_grid) never resolved and fell back to black.
+  const nested = (layer as unknown as { layers?: unknown }).layers;
+  if (Array.isArray(nested)) {
+    resolved['layers'] = (nested as Layer[]).map(child => resolveLayerTokens(child, ctx));
   }
 
   return resolved as unknown as Layer;

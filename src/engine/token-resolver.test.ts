@@ -387,3 +387,20 @@ describe('resolveFill — resolveStringValue non-token path (line 77)', () => {
     }
   });
 });
+
+describe('resolveLayerTokens — recurses into auto_layout children (not just group)', () => {
+  it('resolves $text on text nested inside an auto_layout column inside a row', () => {
+    const tree = {
+      id: 'row', type: 'auto_layout', z: 0, x: 0, y: 0, width: 900, height: 300, direction: 'row',
+      layers: [
+        { id: 'col', type: 'auto_layout', z: 0, x: 0, y: 0, width: 300, height: 300, direction: 'column',
+          layers: [
+            { id: 'title', type: 'text', z: 0, x: 0, y: 0, width: 240, height: 44,
+              content: { type: 'plain', value: 'Hi' }, style: { font_size: 30, color: '$text' } },
+          ] },
+      ],
+    } as unknown as Layer;
+    const resolved = resolveLayerTokens(tree, ctx) as unknown as { layers: { layers: { style: { color: string } }[] }[] };
+    expect(resolved.layers[0].layers[0].style.color).toBe('#FFFFFF'); // $text → theme text, not left as token
+  });
+});
