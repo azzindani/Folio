@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, compressDesignContext, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, type ShorthandLayer } from './shorthand-parser';
 
 describe('expandShorthand', () => {
   it('expands rect with pos shorthand', () => {
@@ -437,5 +437,43 @@ describe('expandShorthandLayers — infers missing type/id/z (small-model robust
     const ids = out.map(l => l.id);
     expect(new Set(ids).size).toBe(2);     // unique
     expect(ids).toContain('text_1');
+  });
+});
+
+describe('coerceShorthandLayers — accepts the shapes small models actually send', () => {
+  // Exactly the dict-of-compact-strings the harness model emitted.
+  it('coerces a {id: "type:[pos]:text"} dict', () => {
+    const out = expandShorthandLayers(coerceShorthandLayers({
+      bg: 'pos:[0,0,1080,1080]',
+      headline: 'text:[200,200,800,200]:BREWED TO PERFECTION',
+      cta: 'text:[200,500,800,100]:VISIT US TODAY!',
+    }));
+    expect(out.map(l => l.id)).toEqual(['bg', 'headline', 'cta']);
+    expect(out.map(l => l.type)).toEqual(['rect', 'text', 'text']);
+    const headline = out[1] as { content?: { value?: string } };
+    expect(headline.content?.value).toBe('BREWED TO PERFECTION');
+  });
+
+  it('coerces a {id: {object}} dict, using the key as id', () => {
+    const out = coerceShorthandLayers({ hero: { pos: [0, 0, 100, 100], text: 'Hi' } });
+    expect(out[0].id).toBe('hero');
+    expect(out[0].text).toBe('Hi');
+  });
+
+  it('coerces an array of compact strings', () => {
+    const out = coerceShorthandLayers(['rect:[0,0,10,10]', 'text:[1,1,5,5]:Yo']);
+    expect(out[0].type).toBe('rect');
+    expect(out[1].type).toBe('text');
+    expect(out[1].text).toBe('Yo');
+  });
+
+  it('passes the canonical array of objects through unchanged', () => {
+    const out = coerceShorthandLayers([{ id: 'a', type: 'rect', z: 0, pos: [0, 0, 1, 1] }]);
+    expect(out[0]).toMatchObject({ id: 'a', type: 'rect' });
+  });
+
+  it('returns [] for null/garbage', () => {
+    expect(coerceShorthandLayers(null)).toEqual([]);
+    expect(coerceShorthandLayers(42)).toEqual([]);
   });
 });
