@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, diagnoseLayers, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -622,6 +622,80 @@ describe('expandFill — tolerates the gradient shapes small models send', () =>
     expect(r.fill?.type).toBe('radial');
     expect(r.fill?.cx).toBe(50);
     expect(r.fill?.radius).toBe(70);
+  });
+});
+
+describe('terse single-letter keys (token-saving small-model shorthand)', () => {
+  it('maps p/t/f/c/col → pos/type/fill/text/color', () => {
+    const [t] = expandShorthandLayers(coerceShorthandLayers({
+      headline: { p: [200, 200, 800, 150], t: 'text', c: 'BREW AND CO', s: 80, col: '#333' },
+    })) as Array<{ type?: string; x?: number; width?: number; content?: { value?: string }; style?: { font_size?: number; color?: string } }>;
+    expect(t.type).toBe('text');
+    expect(t.x).toBe(200);
+    expect(t.width).toBe(800);
+    expect(t.content?.value).toBe('BREW AND CO');
+    expect(t.style?.font_size).toBe(80);
+    expect(t.style?.color).toBe('#333');
+  });
+
+  it('disambiguates s: number→size, string→src', () => {
+    const [txt, img] = expandShorthandLayers(coerceShorthandLayers({
+      h: { p: [0, 0, 100, 50], t: 'text', c: 'Hi', s: 60 },
+      pic: { p: [0, 0, 100, 100], t: 'image', s: 'photo.png' },
+    })) as Array<{ type?: string; style?: { font_size?: number }; src?: string }>;
+    expect(txt.type).toBe('text');
+    expect(txt.style?.font_size).toBe(60);
+    expect(img.type).toBe('image');
+    expect(img.src).toBe('photo.png');
+  });
+
+  it('maps w/h → width/height when no pos array', () => {
+    const [r] = expandShorthandLayers(coerceShorthandLayers({
+      bg: { x: 0, y: 0, w: 1080, h: 720, t: 'rect', f: '#123456' },
+    })) as Array<{ width?: number; height?: number; fill?: { color?: string } }>;
+    expect(r.width).toBe(1080);
+    expect(r.height).toBe(720);
+    expect(r.fill?.color).toBe('#123456');
+  });
+});
+
+describe('expandFill — parses CSS gradient strings', () => {
+  it('parses linear-gradient(to right, …) → linear with mapped angle + stops', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 100, 100], fill: 'linear-gradient(to right, #f5c6a5, #e0a96d)' },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; angle?: number; stops?: { color: string; position: number }[] } }>;
+    expect(r.fill?.type).toBe('linear');
+    expect(r.fill?.angle).toBe(90); // "to right"
+    expect(r.fill?.stops).toEqual([{ color: '#f5c6a5', position: 0 }, { color: '#e0a96d', position: 100 }]);
+  });
+
+  it('parses a 135deg gradient with explicit stop percentages', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 10, 10], fill: 'linear-gradient(135deg, #000 10%, #fff 90%)' },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; angle?: number; stops?: { position: number }[] } }>;
+    expect(r.fill?.angle).toBe(135);
+    expect(r.fill?.stops?.[0].position).toBe(10);
+    expect(r.fill?.stops?.[1].position).toBe(90);
+  });
+
+  it('leaves a plain hex string as a solid fill', () => {
+    const [r] = expandShorthandLayers([
+      { type: 'rect', pos: [0, 0, 10, 10], fill: '#abc' },
+    ] as unknown as ShorthandLayer[]) as Array<{ fill?: { type?: string; color?: string } }>;
+    expect(r.fill?.type).toBe('solid');
+    expect(r.fill?.color).toBe('#abc');
+  });
+});
+
+describe('diagnoseShorthandKeys — flags silently-ignored fields', () => {
+  it('notes truly unknown keys but not known aliases', () => {
+    const notes = diagnoseShorthandKeys([
+      { id: 'a', t: 'text', c: 'Hi', p: [0, 0, 1, 1], wobble: 3 } as unknown as ShorthandLayer,
+      { id: 'b', type: 'rect', pos: [0, 0, 1, 1] } as unknown as ShorthandLayer,
+    ]);
+    expect(notes).toHaveLength(1); // layer "b" is clean; t/c/p on "a" are known aliases
+    expect(notes[0]).toContain('"a"');
+    expect(notes[0]).toContain('[wobble]'); // only the genuinely-unknown key is listed
   });
 });
 
