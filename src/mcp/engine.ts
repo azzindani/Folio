@@ -884,10 +884,17 @@ export function exportDesign(args: { design_path: string; format: string; output
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;
       // resvg's `fitTo: { mode: 'zoom' }` scales the rendered raster while
       // keeping the SVG viewBox aspect ratio.
+      // Bundle a fallback font: the container runs as non-root (can't install
+      // system fonts) so loadSystemFonts finds none and text renders blank.
+      // src/mcp/fonts/DejaVuSans.ttf ships in the runtime image (COPY src);
+      // point resvg at it so PNG export shows text even when the design's font
+      // isn't installed.
+      const fontFiles = [path.resolve(process.cwd(), 'src/mcp/fonts/DejaVuSans.ttf')]
+        .filter(f => fs.existsSync(f));
       const rendered = new Resvg(svgStr, {
         fitTo: { mode: 'zoom', value: scale },
         background: 'rgba(0,0,0,0)',
-        font: { loadSystemFonts: true },
+        font: { loadSystemFonts: true, fontFiles, defaultFontFamily: 'DejaVu Sans' },
       }).render();
       const png = rendered.asPng();
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
