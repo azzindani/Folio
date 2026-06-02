@@ -19,7 +19,7 @@ import { buildGuide } from './engine/guide';
 import { buildEditorLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -497,12 +497,15 @@ export function addLayers(args: {
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
-  if (!args.layers?.length && !args.layers_shorthand?.length) return errResult(op, 'No layers provided', 'Pass layers or layers_shorthand array.');
+  // Coerce the many shapes a small model sends (array of objects, array of
+  // compact strings, or a {id: "type:[pos]:text"} dict) into canonical layers.
+  const shorthand = coerceShorthandLayers(args.layers_shorthand as unknown);
+  if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
 
-  const incoming: Layer[] = args.layers_shorthand?.length
-    ? expandShorthandLayers(args.layers_shorthand)
+  const incoming: Layer[] = shorthand.length
+    ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
-  progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, args.layers_shorthand?.length ? 'via shorthand' : 'verbose'));
+  progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
 
   const invalid = incoming.find(l => !l?.type || !VALID_LAYER_TYPES.has(l.type));
   if (invalid) {
@@ -554,10 +557,11 @@ export function appendPage(args: {
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
 
-  const layers: Layer[] = args.layers_shorthand?.length
-    ? expandShorthandLayers(args.layers_shorthand)
+  const pageShorthand = coerceShorthandLayers(args.layers_shorthand as unknown);
+  const layers: Layer[] = pageShorthand.length
+    ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
-  progress.push(pInfo(`Page has ${layers.length} layer(s)`, args.layers_shorthand?.length ? 'via shorthand' : 'verbose'));
+  progress.push(pInfo(`Page has ${layers.length} layer(s)`, pageShorthand.length ? 'via shorthand' : 'verbose'));
 
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));

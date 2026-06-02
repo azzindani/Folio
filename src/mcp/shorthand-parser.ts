@@ -206,6 +206,51 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
   }
 }
 
+// Layer types the compact-string parser recognizes as an explicit prefix.
+const KNOWN_SHORTHAND_TYPES = new Set([
+  'rect', 'circle', 'ellipse', 'text', 'line', 'icon', 'path', 'polygon', 'image', 'mermaid', 'code', 'math', 'group',
+]);
+
+// Parse a compact layer string a small model tends to emit, e.g.
+// "text:[200,200,800,200]:BREWED TO PERFECTION", "pos:[0,0,1080,1080]", or
+// "rect:[0,0,100,100]". Pulls out pos, an explicit type prefix (ignoring a
+// literal "pos:" lead), and trailing text. Type is left for inference when the
+// prefix isn't a known type.
+function parseCompactLayer(s: string): ShorthandLayer {
+  const out: ShorthandLayer = {};
+  const m = s.match(/\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]/);
+  if (m && m.index !== undefined) {
+    out.pos = [Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4])];
+    const prefix = s.slice(0, m.index).replace(/[:\s]+$/, '').trim().toLowerCase();
+    if (KNOWN_SHORTHAND_TYPES.has(prefix)) out.type = prefix;
+    const suffix = s.slice(m.index + m[0].length).replace(/^[:\s]+/, '').trim();
+    if (suffix) out.text = suffix;
+  } else if (s.trim()) {
+    out.text = s.trim(); // no bracket → treat the whole string as a text label
+  }
+  return out;
+}
+
+// Coerce the various shapes a model sends for layers_shorthand into a canonical
+// ShorthandLayer[]. Accepts: the documented array of objects; an array of
+// compact strings; or an object/dict mapping id → object | compact-string
+// (e.g. {bg:"pos:[…]", headline:"text:[…]:Hello"} — a common small-model form).
+export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
+  const one = (v: unknown, id?: string): ShorthandLayer => {
+    if (typeof v === 'string') { const p = parseCompactLayer(v); return id ? { id, ...p } : p; }
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const obj = { ...(v as Record<string, unknown>) } as ShorthandLayer;
+      if (id && obj.id === undefined) obj.id = id;
+      return obj;
+    }
+    return (id ? { id } : {}) as ShorthandLayer;
+  };
+  if (input == null) return [];
+  if (Array.isArray(input)) return input.map(v => one(v));
+  if (typeof input === 'object') return Object.entries(input as Record<string, unknown>).map(([id, v]) => one(v, id));
+  return [];
+}
+
 // Infer a layer type from the fields a small model actually provided, for when
 // it omits `type` (a common failure: it emits {pos, text} and expects "text").
 function inferLayerType(sh: ShorthandLayer): string {
