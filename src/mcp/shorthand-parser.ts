@@ -11,9 +11,11 @@ import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
  */
 
 export interface ShorthandLayer {
-  id: string;
-  type: string;
-  z: number;
+  // id/type are optional: small models often omit them. expandShorthandLayers
+  // infers a type from the fields present and auto-assigns a unique id.
+  id?: string;
+  type?: string;
+  z?: number;
   pos?: [number, number, number, number];
   x?: number;
   y?: number;
@@ -204,8 +206,34 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
   }
 }
 
+// Infer a layer type from the fields a small model actually provided, for when
+// it omits `type` (a common failure: it emits {pos, text} and expects "text").
+function inferLayerType(sh: ShorthandLayer): string {
+  if (sh.text !== undefined) return 'text';
+  if (sh.src !== undefined) return 'image';
+  if (sh.icon !== undefined) return 'icon';
+  if (sh.d !== undefined) return 'path';
+  if ((sh as Record<string, unknown>)['x1'] !== undefined) return 'line';
+  return 'rect'; // a positioned box is the safe default
+}
+
 export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
-  return layers.map(expandShorthand);
+  // Small models frequently omit the required id/type/z on shorthand layers.
+  // Rather than reject the whole call, infer type from the fields, auto-assign
+  // a unique id, and default z to stacking order — so the design still renders.
+  const seen = new Set<string>();
+  for (const l of layers) if (l.id) seen.add(l.id);
+  return layers.map((sh, i) => {
+    const type = sh.type ?? inferLayerType(sh);
+    let id = sh.id;
+    if (!id) {
+      let n = i + 1;
+      id = `${type}_${n}`;
+      while (seen.has(id)) { n++; id = `${type}_${n}`; }
+      seen.add(id);
+    }
+    return expandShorthand({ ...sh, id, type, z: sh.z ?? i });
+  });
 }
 
 /**
