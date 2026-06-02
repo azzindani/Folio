@@ -185,8 +185,9 @@ export class StateManager {
         if (l.id === layerId) {
           return { ...l, ...updates } as Layer;
         }
-        if (l.type === 'group' && 'layers' in l) {
-          return { ...l, layers: updateInArray(l.layers) } as Layer;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) {
+          return { ...l, layers: updateInArray(kids) } as Layer;
         }
         return l;
       });
@@ -231,8 +232,9 @@ export class StateManager {
     const renameInArray = (layers: Layer[]): Layer[] =>
       layers.map(l => {
         if (l.id === layerId) return { ...l, id: newId } as Layer;
-        if (l.type === 'group' && 'layers' in l) {
-          return { ...l, layers: renameInArray(l.layers) } as Layer;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) {
+          return { ...l, layers: renameInArray(kids) } as Layer;
         }
         return l;
       });
@@ -265,8 +267,9 @@ export class StateManager {
 
     const removeFromArray = (layers: Layer[]): Layer[] =>
       layers.filter(l => l.id !== layerId).map(l => {
-        if (l.type === 'group' && 'layers' in l) {
-          return { ...l, layers: removeFromArray(l.layers) } as Layer;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) {
+          return { ...l, layers: removeFromArray(kids) } as Layer;
         }
         return l;
       });

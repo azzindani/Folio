@@ -53,25 +53,25 @@ export class InteractionManager {
     }).draggable({
       listeners: {
         start: (event) => {
-          const layerId = this.getLayerId(event.target);
-          if (!layerId) return;
-          const layer = this.findLayer(layerId);
+          const grabbedId = this.getLayerId(event.target);
+          if (!grabbedId) return;
+          // Move the nearest freely-positioned block, not a flex-managed child.
+          const targetId = this.resolveDragTarget(grabbedId);
+          const layer = this.findLayer(targetId);
           if (layer?.locked) return;
-          draggedId = layerId;
-          this.state.set('selectedLayerIds', [layerId]);
+          draggedId = targetId;
+          this.state.set('selectedLayerIds', [targetId]);
         },
         move: (event) => {
-          const layerId = this.getLayerId(event.target);
-          if (!layerId) return;
-
-          const layer = this.findLayer(layerId);
+          if (!draggedId) return;
+          const layer = this.findLayer(draggedId);
           if (!layer || layer.locked) return;
 
           const zoom = this.state.get().zoom;
           const dx = event.dx / zoom;
           const dy = event.dy / zoom;
 
-          this.state.updateLayer(layerId, {
+          this.state.updateLayer(draggedId, {
             x: Math.round((layer.x ?? 0) + dx),
             y: Math.round((layer.y ?? 0) + dy),
           });
@@ -189,8 +189,46 @@ export class InteractionManager {
     return layerEl.getAttribute?.('data-layer-id') ?? null;
   }
 
+  // Find a layer by id ANYWHERE in the tree (groups, auto_layout, …).
+  // A flat top-level lookup made every nested layer un-draggable/un-resizable:
+  // the handler resolved `undefined` and silently bailed.
   private findLayer(id: string): Layer | undefined {
-    return this.state.getCurrentLayers().find(l => l.id === id);
+    const walk = (layers: Layer[]): Layer | undefined => {
+      for (const l of layers) {
+        if (l.id === id) return l;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) { const hit = walk(kids); if (hit) return hit; }
+      }
+      return undefined;
+    };
+    return walk(this.state.getCurrentLayers());
+  }
+
+  // Ancestor chain from a root layer down to `id` (inclusive), or null.
+  private findPath(id: string): Layer[] | null {
+    const walk = (layers: Layer[], trail: Layer[]): Layer[] | null => {
+      for (const l of layers) {
+        const next = [...trail, l];
+        if (l.id === id) return next;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) { const hit = walk(kids, next); if (hit) return hit; }
+      }
+      return null;
+    };
+    return walk(this.state.getCurrentLayers(), []);
+  }
+
+  // The layer the user should MOVE when grabbing `id`. A child of an auto_layout
+  // is positioned by the engine (flex) — dragging it just snaps back on render.
+  // So climb while the parent is an auto_layout and return the outermost
+  // layout-managed block (which IS freely positioned). Group children and
+  // top-level layers return themselves.
+  private resolveDragTarget(id: string): string {
+    const path = this.findPath(id);
+    if (!path || path.length === 0) return id;
+    let i = path.length - 1;
+    while (i > 0 && path[i - 1].type === 'auto_layout') i--;
+    return path[i].id;
   }
 }
 

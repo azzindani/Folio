@@ -400,6 +400,63 @@ describe('InteractionManager — drag and resize callbacks', () => {
     expect(() => getDraggableListeners(0).end()).not.toThrow();
     manager.disable();
   });
+
+  it('dragging an auto_layout child moves the containing block, not the child', () => {
+    // Regression: flat findLayer + group-only state recursion made every
+    // auto_layout descendant un-draggable. A flex child also snaps back if moved
+    // directly, so the drag must target the freely-positioned block.
+    const row = {
+      id: 'row', type: 'auto_layout', z: 0, x: 100, y: 100, width: 600, height: 200,
+      direction: 'row',
+      layers: [{ id: 'card', type: 'rect', z: 0, x: 110, y: 110, width: 200, height: 180 }],
+    } as unknown as Layer;
+    state.set('design', makeDesignWithLayers([row]));
+    state.set('zoom', 1, false);
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const childEl = document.createElement('div');
+    childEl.setAttribute('data-layer-id', 'card');
+    getDraggableListeners(0).start({ target: childEl });
+    // Grabbing the flex child selects + drags the block.
+    expect(state.get().selectedLayerIds).toEqual(['row']);
+    getDraggableListeners(0).move({ target: childEl, dx: 30, dy: 15 });
+
+    const moved = state.getCurrentLayers().find(l => l.id === 'row');
+    expect(moved?.x).toBe(130);
+    expect(moved?.y).toBe(115);
+    manager.disable();
+  });
+
+  it('dragging a group child moves the child itself (groups are not flex)', () => {
+    const grp = {
+      id: 'grp', type: 'group', z: 0, x: 0, y: 0, width: 400, height: 400,
+      layers: [{ id: 'gchild', type: 'rect', z: 0, x: 50, y: 60, width: 100, height: 100 }],
+    } as unknown as Layer;
+    state.set('design', makeDesignWithLayers([grp]));
+    state.set('zoom', 1, false);
+    const manager = new InteractionManager(container, state);
+    manager.enable();
+
+    const childEl = document.createElement('div');
+    childEl.setAttribute('data-layer-id', 'gchild');
+    getDraggableListeners(0).start({ target: childEl });
+    expect(state.get().selectedLayerIds).toEqual(['gchild']);
+    getDraggableListeners(0).move({ target: childEl, dx: 10, dy: 20 });
+
+    const findNested = (layers: Layer[], id: string): Layer | undefined => {
+      for (const l of layers) {
+        if (l.id === id) return l;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) { const hit = findNested(kids, id); if (hit) return hit; }
+      }
+      return undefined;
+    };
+    const child = findNested(state.getCurrentLayers(), 'gchild');
+    expect(child?.x).toBe(60);
+    expect(child?.y).toBe(80);
+    manager.disable();
+  });
 });
 
 describe('InteractionManager — computeResize', () => {
