@@ -1,7 +1,7 @@
 // Server-side DOM shim. Importing this module sets up jsdom globals so any
 // later code (renderer, html-assembler) can call document/XMLSerializer.
 import { JSDOM } from 'jsdom';
-import { renderDesign } from '../../renderer/renderer';
+import { renderDesign, invalidateCache } from '../../renderer/renderer';
 import { BUILTIN_THEMES } from '../../themes/builtin';
 import type { DesignSpec, ThemeSpec, ComponentSpec } from '../../schema/types';
 
@@ -30,6 +30,12 @@ export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../
   // unresolved and they fall back to black — invisible content. Default to the
   // referenced builtin theme; callers can pass a custom ThemeSpec to override.
   const resolvedTheme = theme ?? (spec.theme?.ref ? BUILTIN_THEMES[spec.theme.ref] : undefined);
+  // Server-side export is stateless and the MCP process is long-lived: the
+  // render cache (keyed by layer.id) would otherwise leak across designs —
+  // a same-id+same-hash layer reuses a prior render's element WITHOUT
+  // re-emitting its gradient/<defs>, leaving a dead url(#…) ref (e.g. every
+  // feature_grid's "feature_grid_1_bg"). Clear it so each export is clean.
+  invalidateCache();
   const svgEl = renderDesign(spec, { formulaContext, theme: resolvedTheme, componentRegistry });
   let raw = (serializer as { serializeToString(el: Node): string }).serializeToString(svgEl);
   raw = raw.replace(/(<svg[^>]*?) xmlns="http:\/\/www\.w3\.org\/2000\/svg"/, '$1');
