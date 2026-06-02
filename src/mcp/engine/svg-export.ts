@@ -3,7 +3,7 @@
 import { JSDOM } from 'jsdom';
 import { renderDesign } from '../../renderer/renderer';
 import { BUILTIN_THEMES } from '../../themes/builtin';
-import type { DesignSpec, ThemeSpec } from '../../schema/types';
+import type { DesignSpec, ThemeSpec, ComponentSpec } from '../../schema/types';
 
 let serializer: { serializeToString(el: Node): string } | null = null;
 
@@ -23,14 +23,14 @@ export function ensureDOM(): void {
 // browser-style rendering anywhere in Node.
 ensureDOM();
 
-export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext, theme?: ThemeSpec): string {
+export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext, theme?: ThemeSpec, componentRegistry?: Map<string, ComponentSpec>): string {
   ensureDOM();
   // Resolve the design's theme so color/typography tokens ($surface, $text…)
   // render with real values. Without a theme, renderDesign leaves tokens
   // unresolved and they fall back to black — invisible content. Default to the
   // referenced builtin theme; callers can pass a custom ThemeSpec to override.
   const resolvedTheme = theme ?? (spec.theme?.ref ? BUILTIN_THEMES[spec.theme.ref] : undefined);
-  const svgEl = renderDesign(spec, { formulaContext, theme: resolvedTheme });
+  const svgEl = renderDesign(spec, { formulaContext, theme: resolvedTheme, componentRegistry });
   let raw = (serializer as { serializeToString(el: Node): string }).serializeToString(svgEl);
   raw = raw.replace(/(<svg[^>]*?) xmlns="http:\/\/www\.w3\.org\/2000\/svg"/, '$1');
   if (!raw.includes('xmlns=')) raw = raw.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');

@@ -96,6 +96,20 @@ Example — 3 feature cards in a row, each a column of icon+title+body:
       {type:"text", width:252, height:120, text:"Sub-100ms renders.", size:20}]},
     ... ×3 ]}
 
+## Repeat (one template × N — don't copy-paste layers)
+repeat:N → N copies (ids <id>_1..N); {{i}} = 1-based index.
+repeat:[{...},{...}] → one copy per row; {{key}} tokens fill from the row.
+  {id:"plan", type:"column", repeat:[{name:"Free",price:"$0"},{name:"Pro",price:"$9"}],
+     width:280, height:360, layers:[{type:"text", width:240, height:50, text:"{{name}} {{price}}", size:30}]}
+Combine with a row/grid container to lay out the copies automatically.
+
+## Data-viz + reuse
+Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
+           (label/value/name/count also map to x/y; or pass a raw vega-lite spec:{...})
+KPI:       {type:"kpi_card", pos:[..], label:"Revenue", value:"$1.2M", delta:"+12%", icon:"dollar-sign", fill:"#16213E"}
+Component: {type:"component", pos:[..], ref:"<saved-id>", slots:{...}}  (make one via save_as_component)
+  NOTE: chart + kpi_card render in the editor & HTML export but NOT in PNG (they use foreignObject).
+
 Text shorthand fields:  text, size, weight, color, align, text_decoration:"underline"|"line-through"
   Aliases accepted: content→text, font_size→size, symbol→icon, url/href→src.
 Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"linear",angle:135,stops:[{color:"#a",position:0},{color:"#b",position:100}]}

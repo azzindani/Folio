@@ -1,7 +1,7 @@
 // §14 — pure domain logic, zero MCP imports
 import * as fs from 'fs';
 import * as path from 'path';
-import type { DesignSpec, ThemeSpec, Layer, Page } from '../schema/types';
+import type { DesignSpec, ThemeSpec, Layer, Page, ComponentSpec } from '../schema/types';
 import type { ToolResult } from './types';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { Resvg } from '@resvg/resvg-js';
@@ -821,6 +821,24 @@ function flagMissingImages(spec: DesignSpec, baseDirs: string[]): string[] {
   return notes;
 }
 
+// Load the project's saved components into a registry so `type:component`
+// layers resolve during export (the renderer needs componentRegistry; without
+// it a component renders empty). Best-effort — returns undefined on any miss.
+function loadComponentRegistry(projectDir: string | undefined): Map<string, ComponentSpec> | undefined {
+  if (!projectDir) return undefined;
+  const indexPath = path.join(projectDir, 'components/index.yaml');
+  if (!fs.existsSync(indexPath)) return undefined;
+  try {
+    const index = readYAML<{ components?: { id: string; path: string }[] }>(indexPath);
+    const reg = new Map<string, ComponentSpec>();
+    for (const entry of index.components ?? []) {
+      const cPath = path.join(projectDir, entry.path);
+      if (fs.existsSync(cPath)) reg.set(entry.id, readYAML<ComponentSpec>(cPath));
+    }
+    return reg.size ? reg : undefined;
+  } catch { return undefined; }
+}
+
 export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number; project_path?: string }): ToolResult {
   const op = 'export_design';
   const progress: ProgressItem[] = [];
@@ -838,11 +856,14 @@ export function exportDesign(args: { design_path: string; format: string; output
   ]);
   for (const n of assetNotes) progress.push(pInfo('Missing asset', n));
 
+  // Load project components so `type:component` layers resolve in the export.
+  const componentRegistry = loadComponentRegistry(args.project_path ?? path.dirname(path.dirname(dPath)));
+
   const outPath = args.output_path ?? dPath.replace('.design.yaml', `.${args.format}`);
   const link = buildEditorLink(dPath);
   if (args.format === 'svg') {
     try {
-      const svgStr = renderToSVGString(spec);
+      const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, svgStr, 'utf-8');
       progress.push(pOk('SVG written', path.basename(outPath)));
@@ -873,7 +894,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       }
       const html: string = spec.meta.type === 'report'
         ? assembleReportHTML(spec, datasets, {})
-        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title></head><body>${renderToSVGString(spec)}</body></html>`;
+        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title></head><body>${renderToSVGString(spec, undefined, undefined, componentRegistry)}</body></html>`;
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, html, 'utf-8');
       progress.push(pOk('HTML written', path.basename(outPath)));
@@ -917,7 +938,7 @@ export function exportDesign(args: { design_path: string; format: string; output
   }
   if (args.format === 'png') {
     try {
-      const svgStr = renderToSVGString(spec);
+      const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       // @resvg/resvg-js is a pure-Rust SVG renderer; prebuilt binaries
       // ship for linux-x64-musl (alpine), linux-x64-gnu, darwin, win32.
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;

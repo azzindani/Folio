@@ -65,6 +65,9 @@ export interface ShorthandLayer {
   padding?: number | { top: number; right: number; bottom: number; left: number };
   justify?: string;
   wrap?: boolean;
+  // Repeat this layer: a count (N identical copies) or an array of data
+  // objects (one copy per item, with {{key}} tokens substituted from the item).
+  repeat?: number | Record<string, unknown>[];
   [key: string]: unknown;
 }
 
@@ -187,6 +190,34 @@ function mapJustify(v: string): 'start' | 'center' | 'end' | 'space-between' | '
   if (s.includes('between')) return 'space-between';
   if (s.includes('around') || s === 'evenly' || s === 'space-evenly') return 'space-around';
   return 'start';
+}
+
+// Build a minimal Vega-Lite spec from compact chart shorthand. A model writes
+// {chart:"bar", data:[{x,y}...]} and gets a real spec; a raw `spec` passes
+// through. Rows are normalized so label/value (and friends) map to x/y.
+function buildChartSpec(sh: ShorthandLayer): Record<string, unknown> {
+  const raw = (sh as Record<string, unknown>)['spec'];
+  if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
+  const kind = typeof sh.chart === 'string' ? sh.chart.toLowerCase() : 'bar';
+  const rows = Array.isArray((sh as Record<string, unknown>)['data'])
+    ? ((sh as Record<string, unknown>)['data'] as Record<string, unknown>[]) : [];
+  const values = (rows.length ? rows : [{ x: 'A', y: 1 }]).map(r => {
+    const x = r['x'] ?? r['label'] ?? r['name'] ?? r['category'] ?? r['key'] ?? '';
+    const yr = r['y'] ?? r['value'] ?? r['count'] ?? r['amount'] ?? r['v'] ?? 0;
+    return { x, y: typeof yr === 'number' ? yr : Number(yr) || 0 };
+  });
+  if (kind === 'pie' || kind === 'donut') {
+    return {
+      mark: { type: 'arc', innerRadius: kind === 'donut' ? 60 : 0 },
+      encoding: { theta: { field: 'y', type: 'quantitative' }, color: { field: 'x', type: 'nominal' } },
+      data: { values },
+    };
+  }
+  return {
+    mark: kind === 'line' ? 'line' : kind === 'area' ? 'area' : 'bar',
+    encoding: { x: { field: 'x', type: 'nominal' }, y: { field: 'y', type: 'quantitative' } },
+    data: { values },
+  };
 }
 
 // ── Main expansion function ─────────────────────────────────
@@ -319,6 +350,37 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         layers: expandShorthandLayers(coerceShorthandLayers(sh.layers)),
       } as Layer;
 
+    case 'component':
+      return {
+        ...base,
+        type: 'component',
+        ref: typeof sh.ref === 'string' ? sh.ref : '',
+        ...(sh.slots && typeof sh.slots === 'object' ? { slots: sh.slots } : {}),
+        ...(typeof sh.variant === 'string' ? { variant: sh.variant } : {}),
+        ...(sh.overrides && typeof sh.overrides === 'object' ? { overrides: sh.overrides } : {}),
+      } as Layer;
+
+    case 'chart':
+      return {
+        ...base,
+        type: 'chart',
+        spec: buildChartSpec(sh),
+      } as Layer;
+
+    case 'kpi_card':
+      return {
+        ...base,
+        type: 'kpi_card',
+        label: typeof sh.label === 'string' ? sh.label : (sh.text ?? ''),
+        value: (sh.value as string | number) ?? '',
+        ...(sh.format ? { format: sh.format } : {}),
+        ...(sh.delta !== undefined ? { delta: sh.delta as string | number } : {}),
+        ...(sh.icon ? { icon: sh.icon } : {}),
+        ...(sh.fill ? { background: typeof sh.fill === 'string' ? sh.fill : undefined } : {}),
+        ...(sh.color ? { text_color: sh.color } : {}),
+        ...(typeof sh.radius === 'number' ? { border_radius: sh.radius } : {}),
+      } as Layer;
+
     case 'auto_layout':
       return {
         ...base,
@@ -344,7 +406,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
 // Layer types the compact-string parser recognizes as an explicit prefix.
 const KNOWN_SHORTHAND_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'text', 'line', 'icon', 'path', 'polygon', 'image', 'mermaid', 'code', 'math', 'group',
-  'auto_layout', 'row', 'column', 'stack', 'grid',
+  'auto_layout', 'row', 'column', 'stack', 'grid', 'chart', 'kpi_card', 'component',
 ]);
 
 // Parse a compact layer string a small model tends to emit, e.g.
@@ -490,7 +552,52 @@ function applyVisibleDefaults(sh: ShorthandLayer, type: string): ShorthandLayer 
   return out;
 }
 
+const REPEAT_CAP = 200; // backstop against a runaway repeat count
+
+// Deep-substitute {{key}} tokens in every string field (recursing into nested
+// layers) with values from a data row. Used by repeat with a data array.
+function substituteTokens(sh: ShorthandLayer, data: Record<string, unknown>): ShorthandLayer {
+  const sub = (v: unknown): unknown => {
+    if (typeof v === 'string') return v.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, k) => {
+      const val = data[k];
+      return val === undefined || val === null ? '' : String(val);
+    });
+    if (Array.isArray(v)) return v.map(sub);
+    if (v && typeof v === 'object') {
+      const o: Record<string, unknown> = {};
+      for (const [k, vv] of Object.entries(v as Record<string, unknown>)) o[k] = sub(vv);
+      return o;
+    }
+    return v;
+  };
+  return sub(sh) as ShorthandLayer;
+}
+
+// Expand any layer carrying `repeat` into multiple layers BEFORE normalization:
+// a number → N identical copies; a data array → one copy per row with {{key}}
+// tokens filled in. Copies get unique ids (<id>_1..N). Nested children repeat
+// naturally because container children also flow through expandShorthandLayers.
+function expandRepeats(layers: ShorthandLayer[]): ShorthandLayer[] {
+  const out: ShorthandLayer[] = [];
+  for (const sh of layers) {
+    if (!sh || typeof sh !== 'object' || sh.repeat === undefined) { out.push(sh); continue; }
+    const { repeat, ...rest } = sh;
+    const rows: (Record<string, unknown> | null)[] = Array.isArray(repeat)
+      ? repeat.slice(0, REPEAT_CAP)
+      : Array.from({ length: Math.max(0, Math.min(REPEAT_CAP, Math.floor(Number(repeat) || 0))) }, () => null);
+    rows.forEach((row, i) => {
+      // Both numeric and data repeats expose {{i}}/{{n}} (1-based index);
+      // data repeats add the row's own keys.
+      const base = substituteTokens(rest as ShorthandLayer, { ...(row ?? {}), i: i + 1, n: i + 1 });
+      if (typeof rest.id === 'string') base.id = `${rest.id}_${i + 1}`;
+      out.push(base);
+    });
+  }
+  return out;
+}
+
 export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
+  layers = expandRepeats(layers);
   // Small models frequently omit the required id/type/z on shorthand layers.
   // Rather than reject the whole call, infer type from the fields, auto-assign
   // a unique id, default z to stacking order, and apply visible theme-aware
@@ -525,7 +632,9 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
   'definition', 'code', 'language', 'expression', 'layers',
   // auto_layout / container
-  'direction', 'gap', 'padding', 'justify', 'wrap',
+  'direction', 'gap', 'padding', 'justify', 'wrap', 'repeat',
+  // chart / kpi_card / component
+  'chart', 'data', 'spec', 'value', 'label', 'delta', 'format', 'ref', 'slots', 'variant', 'overrides',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
