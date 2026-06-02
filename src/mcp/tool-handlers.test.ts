@@ -78,6 +78,13 @@ describe('createDesign', () => {
     const designPath = path.join(projectPath, 'designs/my-carousel.design.yaml');
     expect(fs.existsSync(designPath)).toBe(true);
   });
+
+  it('returns a clean error (no crash) when project_path is missing', () => {
+    // Small model omitted project_path (or passed it as `path`).
+    const result = createDesign({ name: 'Orphan' } as Parameters<typeof createDesign>[0]);
+    expect(result.success).toBe(false);
+    expect(String((result as Record<string, unknown>).error)).toContain('project_path');
+  });
 });
 
 describe('listDesigns', () => {

@@ -54,6 +54,18 @@ export function normalizeProjectPaths(args: Record<string, unknown>): Record<str
   };
 
   const out: Record<string, unknown> = { ...args };
+
+  // Small models frequently reuse create_project's `path` argument when calling
+  // design tools that actually expect `project_path` (the param names differ),
+  // leaving project_path undefined → a crash on path.join(undefined, …). If
+  // project_path is absent, fall back to a top-level `path`. `path` is a real
+  // argument only on create_project (which ignores project_path), so copying it
+  // is safe for every tool.
+  if ((out['project_path'] === undefined || out['project_path'] === '') &&
+      typeof out['path'] === 'string' && out['path'].length > 0) {
+    out['project_path'] = out['path'];
+  }
+
   for (const f of ['project_path', 'path', 'design_path']) {
     const v = out[f];
     if (typeof v !== 'string' || v.length === 0) continue;

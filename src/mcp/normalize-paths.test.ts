@@ -52,6 +52,18 @@ describe('normalizeProjectPaths', () => {
     expect(normalizeProjectPaths({ design_path: p }).design_path).toBe(p);
   });
 
+  // A small model reuses create_project's `path` arg on create_design (which
+  // wants project_path) → project_path was undefined → path.join crash.
+  it('aliases a stray `path` to project_path when project_path is absent', () => {
+    const out = normalizeProjectPaths({ name: 'Coffee', path: 'coffee-demo' });
+    expect(out.project_path).toBe(path.join(PROJECTS, 'coffee-demo'));
+  });
+
+  it('does not override an explicit project_path with `path`', () => {
+    const out = normalizeProjectPaths({ project_path: 'real-proj', path: 'ignored' });
+    expect(out.project_path).toBe(path.join(PROJECTS, 'real-proj'));
+  });
+
   it('leaves a relative design_path for the engine to resolve', () => {
     expect(normalizeProjectPaths({ design_path: 'designs/x.design.yaml' }).design_path)
       .toBe('designs/x.design.yaml');
