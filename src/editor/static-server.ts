@@ -30,11 +30,57 @@ function loadValidTokens(): Map<string, { principal: string; expires_at: number 
   } catch { return new Map(); }
 }
 
-function isValidToken(token: string): boolean {
-  const tokens = loadValidTokens();
-  const rec = tokens.get(token);
-  return !!rec && rec.expires_at > Date.now();
+// Static "lab" bearer tokens — the SAME secrets the MCP and the Harnesses lab
+// use (FOLIO_TOKENS_FILE / FOLIO_TOKENS / FOLIO_API_KEY). Mirrors the parsing in
+// src/mcp/auth.ts so one token opens both the MCP and the editor. Read inline
+// (not imported) to keep the editor process free of MCP/OAuth module side-effects.
+function loadStaticTokens(): Set<string> {
+  const out = new Set<string>();
+  const file = process.env['FOLIO_TOKENS_FILE'];
+  if (file) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>;
+      for (const v of Object.values(parsed)) if (typeof v === 'string' && v.length > 0) out.add(v);
+    } catch { /* missing/invalid file → no static tokens from here */ }
+  }
+  const inline = process.env['FOLIO_TOKENS'];
+  if (inline) {
+    for (const pair of inline.split(',')) {
+      const value = pair.split(':').slice(1).join(':').trim();
+      if (value.length > 0) out.add(value);
+    }
+  }
+  const single = process.env['FOLIO_API_KEY'];
+  if (single && single.length > 0) out.add(single);
+  return out;
 }
+
+// True when ANY auth is configured. When false (no tokens anywhere) the editor
+// serves openly — same posture as the MCP's unauthenticated mode — so a local
+// run isn't locked out of its own UI.
+function authConfigured(): boolean {
+  return loadStaticTokens().size > 0;
+}
+
+function isValidToken(token: string): boolean {
+  if (!token) return false;
+  // 1. OAuth-issued / open_in_editor access token (access-tokens.json, expiring).
+  const rec = loadValidTokens().get(token);
+  if (rec && rec.expires_at > Date.now()) return true;
+  // 2. Static lab/MCP bearer — never expires; one token for MCP + editor.
+  return loadStaticTokens().has(token);
+}
+
+// Cookie lifetime for the editor session. 30 days so the lab token, pasted once
+// via ?token=, keeps the editor open without re-prompting (was 1h).
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+
+// Shown when the editor is opened without a valid token (no Bearer / ?token= /
+// cookie). Replaces the reverse-proxy's HTTP Basic Auth prompt with a plain
+// token model — no username/password.
+const UNAUTHORIZED_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — access token required</title>
+<style>body{font:16px/1.55 system-ui,-apple-system,sans-serif;background:#0A0E27;color:#E8F0FF;display:grid;place-items:center;min-height:100vh;margin:0}.card{max-width:440px;padding:36px;background:#141A3A;border-radius:18px}h2{margin:0 0 12px}code{background:#0A0E27;padding:2px 7px;border-radius:6px;color:#22D3EE}p{color:#B8C0D9}</style></head>
+<body><div class="card"><h2>Folio editor</h2><p>This editor is protected by an access token. Open it with your token appended to the URL:</p><p><code>?token=YOUR_TOKEN</code></p><p>The link returned by <code>open_in_editor</code> already includes one. After the first load your session is remembered for 30 days — no username or password.</p></div></body></html>`;
 
 function parseCookies(header: string | undefined): Record<string, string> {
   if (!header) return {};
@@ -135,9 +181,28 @@ Bun.serve({
       // navigation away from this URL keeps the session alive without
       // re-attaching ?token= on every fetch.
       if (qtoken && !cookie) {
-        headers['Set-Cookie'] = `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600`;
+        headers['Set-Cookie'] = `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`;
       }
       return new Response(body, { status: 200, headers });
+    }
+
+    // ── Editor auth gate ────────────────────────────────────────────────
+    // The shared reverse-proxy no longer challenges Folio with HTTP Basic Auth,
+    // so this server is the SOLE gate for the editor bundle. Require a valid
+    // token via Bearer header, ?token= query, or folio_session cookie. When no
+    // tokens are configured at all, serve openly (matches the MCP's open mode).
+    {
+      const authHeader = req.headers.get('authorization') ?? '';
+      const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookieTok = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookieTok;
+      if (authConfigured() && !isValidToken(presented)) {
+        return new Response(UNAUTHORIZED_HTML, {
+          status: 401,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      }
     }
 
     // Side-effect: when a ?token= is present on the initial editor load,
@@ -146,7 +211,7 @@ Bun.serve({
     const initialToken = url.searchParams.get('token');
     const hasSessionCookie = !!parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'];
     const setSessionCookie = initialToken && isValidToken(initialToken) && !hasSessionCookie
-      ? `folio_session=${encodeURIComponent(initialToken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600`
+      ? `folio_session=${encodeURIComponent(initialToken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`
       : null;
 
     let target = safeJoin(url.pathname === '/' ? '/index.html' : url.pathname);
