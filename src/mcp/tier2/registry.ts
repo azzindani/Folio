@@ -17,7 +17,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'add_layers',
-    description: 'Compose a poster (or one carousel page) by adding 3–8 layers in one call. ALWAYS use layers_shorthand (pos:[x,y,w,h] — 80% fewer tokens); every sized layer needs width+height or it renders invisibly. Returns a clickable open_url. → then seal_design (follow the returned next_action).',
+    description: 'Compose a poster (or one carousel page) in one call via layers_shorthand. FEATURE / BENEFIT / "CARDS" POSTER? Send ONE feature_grid layer — {type:"feature_grid", title, subtitle, bg:"gradient", items:[{icon,title,desc}]} — the engine lays out the background, title and evenly-spaced cards. Do NOT hand-place card coordinates (they collide into an illegible pile or render blank — the #1 small-model failure). For simple text posters use 3–8 hand-placed layers (pos:[x,y,w,h]); always include a full-canvas background rect, and every sized layer needs width+height or it renders invisibly. Returns a clickable open_url. → then seal_design (follow the returned next_action).',
     inputSchema: {
       type: 'object',
       properties: {

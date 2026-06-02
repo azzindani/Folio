@@ -207,6 +207,8 @@ export const LUCIDE_ICONS: Record<string, string> = {
   'droplet':         '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>',
   'umbrella':        '<path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/>',
   'leaf':            '<path d="M17 8C8 10 5.9 16.17 3.82 20.9C4.5 21.26 5.21 21.5 6 21.5c3.5 0 7-2 10-5 3-3 4.5-6.5 1-8.5z"/><path d="M3.82 20.9C5 20 10.1 17 14 14"/>',
+  'coffee':          '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>',
+  'truck':           '<path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"/><path d="M14 9h4l4 4v4c0 .6-.4 1-1 1h-2"/><circle cx="7" cy="18" r="2"/><path d="M15 18H9"/><circle cx="17" cy="18" r="2"/>',
   'snowflake':       '<line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/>',
   'flame':           '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
 
@@ -289,6 +291,8 @@ const ICON_ALIASES: Record<string, string> = {
   notification: 'bell', alarm: 'bell',
   weather: 'cloud', rain: 'cloud-rain', snow: 'cloud-snow',
   music: 'volume-2', sound: 'volume-2',
+  cup: 'coffee', mug: 'coffee', espresso: 'coffee', latte: 'coffee', cafe: 'coffee', coffeebean: 'coffee', bean: 'coffee', beans: 'coffee', drink: 'coffee',
+  delivery: 'truck', shipping: 'truck', ship: 'truck', deliverytruck: 'truck', van: 'truck', logistics: 'truck',
 };
 
 const ICON_NAME_SET = new Set(Object.keys(LUCIDE_ICONS));

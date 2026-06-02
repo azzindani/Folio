@@ -1044,6 +1044,19 @@ describe('addLayers', () => {
     expect(result.success).toBe(false);
   });
 
+  it('rejects a STRING layers_shorthand with the feature_grid JSON shape', () => {
+    // Weak models pick feature_grid but encode it as a flat string. Don't
+    // silently make one junk text layer — error with the exact array shape.
+    const result = addLayers({
+      design_path: designPath,
+      layers_shorthand: 'feature_grid:0,0,1080,1080:title=Brew Lab:items=icon=coffee:title=Fresh:desc=Sourced' as unknown as import('./shorthand-parser').ShorthandLayer[],
+    }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+    expect(String(result.error)).toContain('STRING');
+    expect(String(result.hint)).toContain('feature_grid');
+    expect(String(result.hint)).toContain('items');
+  });
+
   it('returns error for missing design', () => {
     const result = addLayers({
       design_path: path.join(tmpDir, 'nope.design.yaml'),

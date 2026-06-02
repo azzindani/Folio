@@ -73,7 +73,7 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     remaining: 1, hint: 'Add pages with append_page (repeat per page), then seal_design.',
   } : {
     tool: 'add_layers', params: { design_path: designPath },
-    remaining: 1, hint: 'Add 3–8 layers with add_layers (use layers_shorthand), then seal_design.',
+    remaining: 1, hint: 'Add content with add_layers. For a feature/benefit/cards poster send ONE feature_grid layer ({type:"feature_grid", title, subtitle, bg:"gradient", items:[{icon,title,desc}]}) — the engine lays out background, title and cards (don\'t hand-place card coordinates). For a simple text poster use 3–8 shorthand layers incl. a full-canvas background rect. Then seal_design.',
   };
 
   if (fs.existsSync(projectPath)) {
@@ -499,7 +499,18 @@ export function addLayers(args: {
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   // Coerce the many shapes a small model sends (array of objects, array of
   // compact strings, or a {id: "type:[pos]:text"} dict) into canonical layers.
-  const shorthand = coerceShorthandLayers(args.layers_shorthand as unknown);
+  const rawShorthand = args.layers_shorthand as unknown;
+  // Weak models reach for feature_grid (good) but encode the whole object as a
+  // flat string ("feature_grid:0,0,1080,1080:title=…:items=icon=…"). That has no
+  // [x,y,w,h] bracket, so it parses to one junk text layer or coerces to nothing.
+  // Catch the string up front and show the exact JSON shape so the next call is
+  // right — far better than a misleading "No layers provided".
+  if (typeof rawShorthand === 'string') {
+    return errResult(op,
+      'layers_shorthand was a STRING — it must be a JSON array of layer objects, not an encoded string.',
+      'Send an array. Feature/benefit/cards poster → one feature_grid: layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"gradient", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
+  }
+  const shorthand = coerceShorthandLayers(rawShorthand);
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
 
   const incoming: Layer[] = shorthand.length

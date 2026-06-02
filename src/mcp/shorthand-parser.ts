@@ -85,10 +85,29 @@ function expandPosition(sh: ShorthandLayer): Partial<Layer> {
 }
 
 // ── Expand fill shorthand ───────────────────────────────────
+// Models pipe/comma-join a gradient keyword and its colors —
+// "gradient|#3E2723|#FFCC80", "linear|#a|#b|#c", or just "#a,#b". Collect the
+// hex stops (evenly spaced) into a real gradient. Returns null when it isn't
+// one (a lone "#fff" or an rgba() with no second color stays solid).
+function parseDelimitedGradient(s: string): Fill | null {
+  const t = s.trim();
+  const hexes = t.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+  const startsKeyword = /^(gradient|linear|radial)\b/i.test(t);
+  const hasSep = /[|,;]/.test(t);
+  if (hexes.length < 2 || !(startsKeyword || hasSep)) return null;
+  const radial = /^radial\b/i.test(t);
+  const stops = hexes.map((color, i) => ({ color, position: Math.round((i / (hexes.length - 1)) * 100) }));
+  return (radial
+    ? { type: 'radial', stops }
+    : { type: 'linear', angle: 135, stops }) as unknown as Fill;
+}
+
 function expandFill(fill: string | Fill): Fill {
   if (typeof fill === 'string') {
     const css = parseCssGradient(fill);
     if (css) return css;
+    const delim = parseDelimitedGradient(fill);
+    if (delim) return delim;
     // A bare keyword ("gradient"/"linear"/"radial") with no colors — a model
     // saying "make it a gradient" without specifying one. Render a sensible
     // theme-token gradient instead of an invalid solid color (which is black).
@@ -747,6 +766,56 @@ export function diagnoseShorthandKeys(raw: ShorthandLayer[]): string[] {
 // A few popular icon names to offer when a model picks one that doesn't exist.
 const SUGGESTED_ICONS = 'image, star, heart, check, arrow-right, user, mail, calendar, clock, zap, award, map-pin, phone, shopping-cart';
 
+// Resolve a layer's bounding box from either pos:[x,y,w,h] or x/y/width/height.
+// Returns null when any component is non-numeric (e.g. width:"auto") — we can't
+// reason about overlap without a concrete box.
+interface Box { x: number; y: number; w: number; h: number }
+function layerBox(l: Layer): Box | null {
+  const a = l as Layer & { pos?: unknown; x?: number; y?: number; width?: number | 'auto'; height?: number | 'auto' };
+  if (Array.isArray(a.pos) && a.pos.length === 4 && a.pos.every(n => typeof n === 'number')) {
+    const [x, y, w, h] = a.pos as number[];
+    return { x, y, w, h };
+  }
+  if (typeof a.x === 'number' && typeof a.y === 'number' && typeof a.width === 'number' && typeof a.height === 'number') {
+    return { x: a.x, y: a.y, w: a.width, h: a.height };
+  }
+  return null;
+}
+
+function overlapRatio(a: Box, b: Box): number {
+  const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  const inter = ix * iy;
+  const minArea = Math.min(a.w * a.h, b.w * b.h);
+  return minArea > 0 ? inter / minArea : 0;
+}
+
+// Detect hand-placed TOP-LEVEL text layers whose boxes collide. Overlapping
+// text is almost never intentional — it renders as an illegible pile (the
+// classic small-model failure: hand-placing N card headings at the same spot).
+// We check only top-level text siblings (shared canvas coords); container
+// children are positioned by the engine and must not be flagged. Returns one
+// note that steers toward the preset / container that owns layout.
+export function detectTextOverlap(layers: Layer[]): string | null {
+  const boxed = layers
+    .filter(l => l.type === 'text')
+    .map(l => ({ id: l.id, box: layerBox(l) }))
+    .filter((t): t is { id: string; box: Box } => t.box !== null);
+  const colliding = new Set<string>();
+  for (let i = 0; i < boxed.length; i++) {
+    for (let j = i + 1; j < boxed.length; j++) {
+      if (overlapRatio(boxed[i].box, boxed[j].box) >= 0.35) {
+        colliding.add(boxed[i].id);
+        colliding.add(boxed[j].id);
+      }
+    }
+  }
+  if (colliding.size < 2) return null;
+  const ids = [...colliding];
+  const shown = ids.slice(0, 6).join(', ') + (ids.length > 6 ? '…' : '');
+  return `${ids.length} text layers overlap (${shown}) — hand-placed coordinates collide, so they render on top of each other illegibly. For cards/columns/rows DON'T hand-place x/y: use the feature_grid preset ({type:"feature_grid", title, subtitle, items:[{icon,title,desc}]}) or a row/column container — the engine spaces them with no overlap.`;
+}
+
 // Inspect expanded layers for things that render but not the way the model
 // likely intended — an unknown icon name (→ placeholder), a local image src
 // (renders only if the asset exists), or empty text. Returns one actionable
@@ -769,12 +838,20 @@ export function diagnoseLayers(layers: Layer[]): string[] {
       } else if (l.type === 'text') {
         const v = (l as Layer & { content?: { value?: string } }).content?.value;
         if (typeof v === 'string' && v.trim() === '') notes.push(`text "${l.id}": value is empty — put the copy in the "content" (or "text") field.`);
+        // A model that picked feature_grid but encoded it as a flat string lands
+        // here as one text layer holding the raw DSL ("…items=icon=…:title=…").
+        // Tell it the JSON shape so the next call is a real preset, not a blob.
+        else if (typeof v === 'string' && (/\bitems\s*=/.test(v) || (/\btitle\s*=/.test(v) && /\bdesc\s*=/.test(v)) || /^\s*feature_grid\s*:/.test(v))) {
+          notes.push(`text "${l.id}": the content looks like a feature_grid encoded as a string. Send it as a JSON object, not a colon/equals string: {type:"feature_grid", title:"…", subtitle:"…", bg:"gradient", items:[{icon:"…", title:"…", desc:"…"}]}.`);
+        }
       } else if (l.type === 'group') {
         walk((l as Layer & { layers?: Layer[] }).layers);
       }
     }
   };
   walk(layers);
+  const overlap = detectTextOverlap(layers);
+  if (overlap) notes.unshift(overlap);
   return notes;
 }
 
