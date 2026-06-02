@@ -9,7 +9,7 @@ import { toMCPResult } from './types';
 import { authorize, describeAuth, loadTokens } from './auth';
 import { handleOAuth } from './oauth';
 import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
-import * as nodePath from 'path';
+import { normalizeProjectPaths } from './normalize-paths';
 
 // Cap the /mcp request body so a single large POST can't buffer unboundedly
 // into the heap and OOM the memory-capped container. 32 MiB is generous for a
@@ -19,34 +19,6 @@ const MAX_BODY_BYTES = Number(process.env['FOLIO_MAX_BODY_BYTES'] ?? 32 * 1024 *
 // to every connected editor (it sends a path-only event; the editor refetches).
 const MAX_BROADCAST_BYTES = Number(process.env['FOLIO_MAX_BROADCAST_BYTES'] ?? 16 * 1024 * 1024);
 
-/**
- * Normalize project-path-ish arguments so bare names ("my-project") and
- * commonly-misguessed paths like /var/folio/projects/<x> resolve to
- * FOLIO_PROJECTS_DIR/<x>. Absolute paths under the allowed roots pass
- * through untouched.
- */
-function normalizeProjectPaths(args: Record<string, unknown>): Record<string, unknown> {
-  const base = process.env['FOLIO_PROJECTS_DIR'];
-  if (!base) return args;
-  const out: Record<string, unknown> = { ...args };
-  const fields = ['project_path', 'path'];
-  for (const f of fields) {
-    const v = out[f];
-    if (typeof v !== 'string' || v.length === 0) continue;
-    if (nodePath.isAbsolute(v)) {
-      // Rebase common bad guesses ("/var/folio/projects/<x>",
-      // "/srv/folio/<x>", etc.) to FOLIO_PROJECTS_DIR.
-      const m = v.match(/[\/\\]projects[\/\\]([^\/\\]+(?:[\/\\][^\/\\]+)*)$/);
-      if (m && m[1] && !v.startsWith(base)) {
-        out[f] = nodePath.join(base, m[1]);
-      }
-    } else if (!v.startsWith('~/')) {
-      // Bare name → FOLIO_PROJECTS_DIR/<name>
-      out[f] = nodePath.join(base, v);
-    }
-  }
-  return out;
-}
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition, ContextField } from './types';
 
 type Handler = (args: Record<string, unknown>) => ToolResult;
@@ -141,10 +113,11 @@ function handleMCP(req: MCPRequest): DispatchResult {
     case 'tools/call': {
       const name = (params as { name?: string } | undefined)?.name ?? '';
       const rawArgs = (params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {};
-      // LLM-friendliness: resolve bare project names like "my-project" to
-      // FOLIO_PROJECTS_DIR/my-project. Lets agents write `project_path:
-      // "rainforest"` instead of demanding the full container-side path.
-      // Does NOT touch absolute paths or paths already in allowed roots.
+      // LLM-friendliness: rewrite project_path/path/design_path so a design
+      // always lands under FOLIO_PROJECTS_DIR — the only root the editor can
+      // serve. Resolves bare names ("rainforest"), misguessed ".../projects/x"
+      // paths, and paths an LLM rooted at HOME instead of the projects dir
+      // (e.g. /home/folio/AIPosterProject). See normalizeProjectPaths.
       const args = normalizeProjectPaths(rawArgs);
       const fn = HANDLERS[name];
       if (!fn) return { response: { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) }, toolName: name };
