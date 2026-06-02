@@ -668,6 +668,39 @@ describe('chart / kpi_card / component shorthand (data-viz + reuse)', () => {
   });
 });
 
+describe('children→layers alias + shape/corner_radius (UI-tree vocabulary)', () => {
+  it('maps `children` to `layers` at every nesting level', () => {
+    const [row] = expandShorthandLayers(coerceShorthandLayers({
+      r: { type: 'row', pos: [0, 0, 900, 300], gap: 20, children: [
+        { type: 'column', width: 280, height: 300, children: [
+          { type: 'text', width: 240, height: 50, text: 'Hi', size: 28 },
+        ] },
+      ] },
+    })) as Array<{ type?: string; layers?: Array<{ type?: string; layers?: Array<{ content?: { value?: string } }> }> }>;
+    expect(row.type).toBe('auto_layout');
+    expect(row.layers).toHaveLength(1);
+    expect(row.layers?.[0].type).toBe('auto_layout');
+    expect(row.layers?.[0].layers?.[0].content?.value).toBe('Hi');
+  });
+
+  it('maps type "shape"/"box" → rect and corner_radius → radius', () => {
+    const [a, b] = expandShorthandLayers(coerceShorthandLayers({
+      s: { type: 'shape', pos: [0, 0, 100, 100], fill: '#abc', corner_radius: 12 },
+      x: { type: 'box', pos: [0, 0, 50, 50], fill: '#def' },
+    })) as Array<{ type?: string; radius?: number }>;
+    expect(a.type).toBe('rect');
+    expect(a.radius).toBe(12);
+    expect(b.type).toBe('rect');
+  });
+
+  it('canonical layers wins over children if both present', () => {
+    const [g] = expandShorthandLayers(coerceShorthandLayers({
+      grp: { type: 'group', pos: [0, 0, 100, 100], layers: [{ type: 'rect', pos: [0, 0, 10, 10] }], children: [] },
+    })) as Array<{ layers?: unknown[] }>;
+    expect(g.layers).toHaveLength(1);
+  });
+});
+
 describe('repeat (one template × N, with optional data binding)', () => {
   it('repeats a layer N times with unique ids', () => {
     const out = expandShorthandLayers(coerceShorthandLayers({

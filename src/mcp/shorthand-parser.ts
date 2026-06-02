@@ -471,6 +471,11 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
   alias('width', 'w');
   alias('height', 'h');
   alias('color', 'col');
+  alias('radius', 'corner_radius', 'cornerRadius', 'borderRadius');
+  // `children` → `layers` — the UI-tree word strong models reach for. Without
+  // this, nested container content is silently dropped and the model concludes
+  // "nesting isn't supported". Runs at every level (expansion recurses).
+  if (out.layers === undefined && Array.isArray(r['children'])) out.layers = r['children'] as ShorthandLayer[];
   // Container type aliases → auto_layout (flexbox). The model declares a
   // row/column/grid and the engine flows child positions, so it doesn't have
   // to compute coordinates for every element in a complex layout.
@@ -478,6 +483,7 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
   if (ct === 'row' || ct === 'hstack') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'row'; }
   else if (ct === 'column' || ct === 'col' || ct === 'stack' || ct === 'vstack') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'column'; }
   else if (ct === 'grid') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'row'; if (out.wrap === undefined) out.wrap = true; }
+  else if (ct === 'shape' || ct === 'box' || ct === 'container') { out.type = 'rect'; }
   // `c` → text content
   if (out.text === undefined && typeof r['c'] === 'string') out.text = r['c'] as string;
   // `s` is ambiguous: a number is a font size, a string is an image src.
@@ -632,7 +638,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
   'definition', 'code', 'language', 'expression', 'layers',
   // auto_layout / container
-  'direction', 'gap', 'padding', 'justify', 'wrap', 'repeat',
+  'direction', 'gap', 'padding', 'justify', 'wrap', 'repeat', 'children', 'valign',
+  'corner_radius', 'cornerRadius', 'borderRadius',
   // chart / kpi_card / component
   'chart', 'data', 'spec', 'value', 'label', 'delta', 'format', 'ref', 'slots', 'variant', 'overrides',
   // aliases (verbose + terse)
