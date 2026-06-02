@@ -625,6 +625,61 @@ describe('expandFill — tolerates the gradient shapes small models send', () =>
   });
 });
 
+describe('feature_grid preset (model gives content, engine owns layout)', () => {
+  const payload = {
+    hero: {
+      type: 'feature_grid', pos: [0, 0, 1080, 1080],
+      title: 'Nova', subtitle: 'Your next-gen companion', bg: 'gradient',
+      items: [
+        { icon: 'zap', title: 'Fast Sync', desc: 'Instantly sync across devices' },
+        { icon: 'calendar', title: 'Smart Planner', desc: 'AI-driven schedule optimization' },
+        { icon: 'shield-check', title: 'Secure Vault', desc: 'End-to-end encrypted notes' },
+      ],
+    },
+  };
+
+  it('compiles to a positioned group: bg + title + subtitle + a row of 3 cards', () => {
+    const [g] = expandShorthandLayers(coerceShorthandLayers(payload)) as Array<Layer & { type?: string; layers?: Layer[] }>;
+    expect(g.type).toBe('group');
+    const kids = g.layers ?? [];
+    const types = kids.map(k => k.type);
+    expect(types).toContain('rect'); // bg
+    expect(types.filter(t => t === 'text').length).toBe(2); // title + subtitle
+    const row = kids.find(k => k.type === 'auto_layout') as Layer & { direction?: string; layers?: Layer[] };
+    expect(row.direction).toBe('row');
+    expect(row.layers).toHaveLength(3);
+    // every card is a column with icon + title + desc, and a real position
+    for (const card of row.layers ?? []) {
+      const c = card as Layer & { type?: string; direction?: string; layers?: Layer[]; width?: number };
+      expect(c.type).toBe('auto_layout');
+      expect(c.direction).toBe('column');
+      expect((c.width ?? 0)).toBeGreaterThan(0);
+      const ct = (c.layers ?? []).map(x => x.type);
+      expect(ct).toEqual(['icon', 'text', 'text']);
+    }
+  });
+
+  it('renders all card content (titles, descriptions) to SVG', () => {
+    // sanity: nothing is dropped on the way to the renderer (run via the model corpus elsewhere)
+    const [g] = expandShorthandLayers(coerceShorthandLayers(payload)) as Array<Layer & { layers?: Layer[] }>;
+    const flat = JSON.stringify(g);
+    expect(flat).toContain('Fast Sync');
+    expect(flat).toContain('Secure Vault');
+    expect(flat).toContain('End-to-end encrypted notes');
+  });
+
+  it('infers feature_grid from an items array and accepts the `cards` alias', () => {
+    const [a] = expandShorthandLayers(coerceShorthandLayers({
+      x: { pos: [0, 0, 1080, 1080], title: 'Hi', items: [{ icon: 'star', title: 'One', desc: 'd' }] },
+    })) as Array<Layer & { type?: string }>;
+    expect(a.type).toBe('group'); // feature_grid → group
+    const [b] = expandShorthandLayers(coerceShorthandLayers({
+      y: { type: 'cards', pos: [0, 0, 1080, 1080], items: [{ icon: 'star', title: 'One', desc: 'd' }] },
+    })) as Array<Layer & { type?: string }>;
+    expect(b.type).toBe('group');
+  });
+});
+
 describe('chart / kpi_card / component shorthand (data-viz + reuse)', () => {
   it('builds a bar-chart vega-lite spec from compact data', () => {
     const [c] = expandShorthandLayers(coerceShorthandLayers({

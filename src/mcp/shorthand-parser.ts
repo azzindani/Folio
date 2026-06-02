@@ -220,6 +220,59 @@ function buildChartSpec(sh: ShorthandLayer): Record<string, unknown> {
   };
 }
 
+// Compile a `feature_grid` preset into a fully-positioned layer tree. The model
+// supplies ONLY content (title, subtitle, items[{icon,title,desc}]) + optional
+// colors; the engine owns every coordinate, size and z — so a model that can't
+// reliably place a row of cards by hand still gets a correct layout. Sizes are
+// derived from the box, defaulting to a 1080² canvas.
+function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const X = sh.pos?.[0] ?? (typeof sh.x === 'number' ? sh.x : 0);
+  const Y = sh.pos?.[1] ?? (typeof sh.y === 'number' ? sh.y : 0);
+  const W = sh.pos?.[2] ?? (typeof sh.width === 'number' ? sh.width : 1080);
+  const H = sh.pos?.[3] ?? (typeof sh.height === 'number' ? sh.height : 1080);
+  const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
+  const cardFill  = str(r['card_fill'], '$surface');
+  const accent    = str(r['accent'], '$primary');
+  const textColor = str(r['text_color'] ?? r['color'], '$text');
+  const muted     = str(r['muted'], textColor);
+  const rawItems = Array.isArray(r['items']) ? r['items'] : Array.isArray(r['cards']) ? r['cards'] : Array.isArray(r['features']) ? r['features'] : [];
+  const items = (rawItems as Record<string, unknown>[]).slice(0, 5).map(it => ({
+    icon: str(it['icon'] ?? it['symbol']),
+    title: str(it['title'] ?? it['label'] ?? it['name']),
+    desc: str(it['desc'] ?? it['description'] ?? it['text'] ?? it['body']),
+  }));
+  const N = Math.max(1, items.length);
+  const M = Math.round(W * 0.07);
+  const gap = Math.round(M * 0.4);
+  const rowY = Math.round(H * 0.42), rowH = H - rowY - M;
+  const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
+  const layers: Layer[] = [];
+  if (r['bg'] !== undefined) {
+    layers.push({ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(r['bg'] as string | Fill) } as unknown as Layer);
+  }
+  const title = str(r['title']);
+  if (title) layers.push({ id: `${id}_title`, type: 'text', z: 5, x: X + M, y: Y + Math.round(H * 0.11), width: W - 2 * M, height: Math.round(H * 0.13),
+    content: { type: 'plain', value: title }, style: { font_size: Math.round(W * 0.08), font_weight: 800, color: textColor, align: 'center' } } as unknown as Layer);
+  const subtitle = str(r['subtitle']);
+  if (subtitle) layers.push({ id: `${id}_subtitle`, type: 'text', z: 5, x: X + M, y: Y + Math.round(H * 0.26), width: W - 2 * M, height: Math.round(H * 0.06),
+    content: { type: 'plain', value: subtitle }, style: { font_size: Math.round(W * 0.03), color: muted, align: 'center' } } as unknown as Layer);
+  const cards: Layer[] = items.map((it, i) => {
+    const kids: Layer[] = [];
+    if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: 60, height: 60, name: it.icon, size: 60, color: accent } as unknown as Layer);
+    if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: cardW - 60, height: 48,
+      content: { type: 'plain', value: it.title }, style: { font_size: 30, font_weight: 700, color: textColor, align: 'center' } } as unknown as Layer);
+    if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: cardW - 60, height: 110,
+      content: { type: 'plain', value: it.desc }, style: { font_size: 21, color: muted, align: 'center' } } as unknown as Layer);
+    return { id: `${id}_card${i}`, type: 'auto_layout', z: i, x: 0, y: 0, width: cardW, height: rowH, direction: 'column',
+      gap: 16, padding: 28, align_items: 'center', justify_content: 'center', radius: 18,
+      fill: expandFill(cardFill), layers: kids } as unknown as Layer;
+  });
+  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 10, x: X + M, y: Y + rowY, width: W - 2 * M, height: rowH,
+    direction: 'row', gap, justify_content: 'space-between', align_items: 'stretch', layers: cards } as unknown as Layer);
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -350,6 +403,9 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         layers: expandShorthandLayers(coerceShorthandLayers(sh.layers)),
       } as Layer;
 
+    case 'feature_grid':
+      return buildFeatureGrid(sh, String(sh.id ?? 'feature_grid'), typeof sh.z === 'number' ? sh.z : 0);
+
     case 'component':
       return {
         ...base,
@@ -407,6 +463,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
 const KNOWN_SHORTHAND_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'text', 'line', 'icon', 'path', 'polygon', 'image', 'mermaid', 'code', 'math', 'group',
   'auto_layout', 'row', 'column', 'stack', 'grid', 'chart', 'kpi_card', 'component',
+  'feature_grid', 'cards', 'card_grid', 'features',
 ]);
 
 // Parse a compact layer string a small model tends to emit, e.g.
@@ -484,6 +541,7 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
   else if (ct === 'column' || ct === 'col' || ct === 'stack' || ct === 'vstack') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'column'; }
   else if (ct === 'grid') { out.type = 'auto_layout'; if (out.direction === undefined) out.direction = 'row'; if (out.wrap === undefined) out.wrap = true; }
   else if (ct === 'shape' || ct === 'box' || ct === 'container') { out.type = 'rect'; }
+  else if (ct === 'cards' || ct === 'card_grid' || ct === 'card-grid' || ct === 'features' || ct === 'feature-grid' || ct === 'featuregrid') { out.type = 'feature_grid'; }
   // `c` → text content
   if (out.text === undefined && typeof r['c'] === 'string') out.text = r['c'] as string;
   // `s` is ambiguous: a number is a font size, a string is an image src.
@@ -522,6 +580,8 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
 // Infer a layer type from the fields a small model actually provided, for when
 // it omits `type` (a common failure: it emits {pos, text} and expects "text").
 function inferLayerType(sh: ShorthandLayer): string {
+  // An items array is the feature_grid preset (model sent content, no type).
+  if (Array.isArray((sh as Record<string, unknown>)['items'])) return 'feature_grid';
   // A layer with children is a container: auto_layout if it has layout hints
   // (direction/gap/justify/wrap), otherwise a plain group.
   if (Array.isArray(sh.layers)) {
@@ -642,6 +702,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'corner_radius', 'cornerRadius', 'borderRadius',
   // chart / kpi_card / component
   'chart', 'data', 'spec', 'value', 'label', 'delta', 'format', 'ref', 'slots', 'variant', 'overrides',
+  // feature_grid preset
+  'items', 'features', 'title', 'subtitle', 'card_fill', 'accent', 'text_color', 'muted', 'bg', 'columns',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
