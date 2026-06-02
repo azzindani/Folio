@@ -405,3 +405,37 @@ describe('expandShorthand — additional branch coverage', () => {
     }
   });
 });
+
+describe('expandShorthandLayers — infers missing type/id/z (small-model robustness)', () => {
+  // Exactly what the harness small model emitted: an array of layers with only
+  // pos (+text), no type/id/z. Previously rejected with "Invalid layer.type".
+  it('infers type from fields, auto-assigns ids, defaults z to order', () => {
+    const layers = [
+      { pos: [0, 0, 1080, 1080] },
+      { pos: [200, 200, 800, 200], text: 'GET FIT NOW' },
+      { pos: [200, 400, 800, 100], text: 'STRENGTH TRAINING' },
+    ] as unknown as ShorthandLayer[];
+    const out = expandShorthandLayers(layers);
+    expect(out.map(l => l.type)).toEqual(['rect', 'text', 'text']);
+    expect(out.map(l => l.id)).toEqual(['rect_1', 'text_2', 'text_3']);
+    expect(out.map(l => l.z)).toEqual([0, 1, 2]);
+  });
+
+  it('infers image from src and icon from icon', () => {
+    const out = expandShorthandLayers([
+      { pos: [0, 0, 100, 100], src: '/a.png' },
+      { pos: [0, 0, 64, 64], icon: 'star' },
+    ] as unknown as ShorthandLayer[]);
+    expect(out.map(l => l.type)).toEqual(['image', 'icon']);
+  });
+
+  it('does not collide auto-ids with user-provided ids', () => {
+    const out = expandShorthandLayers([
+      { text: 'A' },                       // would be text_1
+      { id: 'text_1', text: 'B' },         // explicit text_1
+    ] as unknown as ShorthandLayer[]);
+    const ids = out.map(l => l.id);
+    expect(new Set(ids).size).toBe(2);     // unique
+    expect(ids).toContain('text_1');
+  });
+});
