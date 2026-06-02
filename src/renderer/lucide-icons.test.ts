@@ -27,6 +27,14 @@ describe('resolveIconName — tolerates the names small models emit', () => {
   it('resolves via a single known hyphen-token', () => {
     expect(resolveIconName('trash-can')).toBe('trash');
   });
+  it('resolves the product-icon names models emit (coffee/truck families)', () => {
+    expect(resolveIconName('coffee')).toBe('coffee');
+    expect(resolveIconName('truck')).toBe('truck');
+    expect(resolveIconName('coffee-bean')).toBe('coffee');
+    expect(resolveIconName('delivery-truck')).toBe('truck');
+    expect(resolveIconName('espresso')).toBe('coffee');
+    expect(resolveIconName('shipping')).toBe('truck');
+  });
   it('returns null (→ honest placeholder) when there is no confident match', () => {
     expect(resolveIconName('coffee_cup')).toBeNull();
     expect(resolveIconName('nonexistent-xyz')).toBeNull();

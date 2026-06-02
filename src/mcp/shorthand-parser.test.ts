@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -33,6 +33,38 @@ describe('expandShorthand', () => {
     if (result.type === 'rect') {
       expect(result.fill?.type).toBe('linear');
     }
+  });
+
+  it('expands a pipe-delimited gradient string ("gradient|#a|#b")', () => {
+    const sh: ShorthandLayer = { id: 'g', type: 'rect', z: 0, pos: [0, 0, 100, 100], fill: 'gradient|#3E2723|#FFCC80' };
+    const result = expandShorthand(sh);
+    if (result.type === 'rect') {
+      expect(result.fill?.type).toBe('linear');
+      const stops = (result.fill as { stops: { color: string; position: number }[] }).stops;
+      expect(stops).toEqual([{ color: '#3E2723', position: 0 }, { color: '#FFCC80', position: 100 }]);
+    }
+  });
+
+  it('expands a comma-joined hex pair into a linear gradient', () => {
+    const sh: ShorthandLayer = { id: 'g', type: 'rect', z: 0, pos: [0, 0, 100, 100], fill: '#112233,#445566,#778899' };
+    const result = expandShorthand(sh);
+    if (result.type === 'rect') {
+      expect(result.fill?.type).toBe('linear');
+      const stops = (result.fill as { stops: { position: number }[] }).stops;
+      expect(stops.map(s => s.position)).toEqual([0, 50, 100]);
+    }
+  });
+
+  it('keeps a lone hex / rgba as a solid fill (not a gradient)', () => {
+    const hex = expandShorthand({ id: 's', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: '#abcdef' }) as { fill?: unknown };
+    expect(hex.fill).toEqual({ type: 'solid', color: '#abcdef' });
+    const rgba = expandShorthand({ id: 's', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: 'rgba(0,0,0,0.5)' }) as { fill?: unknown };
+    expect(rgba.fill).toEqual({ type: 'solid', color: 'rgba(0,0,0,0.5)' });
+  });
+
+  it('parses a radial keyword form ("radial|#a|#b")', () => {
+    const result = expandShorthand({ id: 'g', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: 'radial|#000000|#ffffff' }) as { fill?: { type?: string } };
+    expect(result.fill?.type).toBe('radial');
   });
 
   it('expands text with shorthand props', () => {
@@ -1005,5 +1037,70 @@ describe('diagnoseLayers — self-correction notes for the tool loop', () => {
       ] },
     ] as unknown as Layer[];
     expect(diagnoseLayers(layers).some(n => n.includes('inner'))).toBe(true);
+  });
+});
+
+describe('detectTextOverlap — catches hand-placed colliding cards (small-model failure)', () => {
+  it('flags top-level text layers piled at the same spot and steers to the preset', () => {
+    // The exact failure: three card headings hand-placed at overlapping coords.
+    const layers = [
+      { id: 'c1-h', type: 'text', z: 10, pos: [120, 840, 300, 60], content: { type: 'plain', value: 'Single Origin' } },
+      { id: 'c2-h', type: 'text', z: 10, pos: [130, 845, 300, 60], content: { type: 'plain', value: 'Monthly Box' } },
+      { id: 'c3-h', type: 'text', z: 10, pos: [125, 850, 300, 60], content: { type: 'plain', value: 'Guaranteed' } },
+    ] as unknown as Layer[];
+    const note = detectTextOverlap(layers);
+    expect(note).not.toBeNull();
+    expect(note).toContain('feature_grid');
+    expect(note).toContain('overlap');
+    // and it surfaces first in diagnoseLayers
+    expect(diagnoseLayers(layers)[0]).toContain('feature_grid');
+  });
+
+  it('stays silent for a well-spaced poster (title / subtitle / cta)', () => {
+    const layers = [
+      { id: 'h',   type: 'text', z: 10, pos: [80, 180, 920, 160], content: { type: 'plain', value: 'Headline' } },
+      { id: 'sub', type: 'text', z: 10, pos: [120, 520, 840, 80], content: { type: 'plain', value: 'Subtitle' } },
+      { id: 'cta', type: 'text', z: 10, pos: [80, 900, 920, 60], content: { type: 'plain', value: 'Act now' } },
+    ] as unknown as Layer[];
+    expect(detectTextOverlap(layers)).toBeNull();
+  });
+
+  it('does not flag overlap inside a container (engine owns child layout)', () => {
+    // Two overlapping texts nested in a group — positioned by the engine, not
+    // hand-placed siblings. detectTextOverlap only inspects the top level.
+    const layers = [
+      { id: 'col', type: 'auto_layout', z: 0, pos: [0, 0, 400, 400], layers: [
+        { id: 'a', type: 'text', z: 1, pos: [0, 0, 200, 100], content: { type: 'plain', value: 'A' } },
+        { id: 'b', type: 'text', z: 1, pos: [0, 0, 200, 100], content: { type: 'plain', value: 'B' } },
+      ] },
+    ] as unknown as Layer[];
+    expect(detectTextOverlap(layers)).toBeNull();
+  });
+
+  it('ignores text layers without a resolvable box (width:auto)', () => {
+    const layers = [
+      { id: 'a', type: 'text', z: 1, x: 0, y: 0, width: 'auto', height: 'auto', content: { type: 'plain', value: 'A' } },
+      { id: 'b', type: 'text', z: 1, x: 0, y: 0, width: 'auto', height: 'auto', content: { type: 'plain', value: 'B' } },
+    ] as unknown as Layer[];
+    expect(detectTextOverlap(layers)).toBeNull();
+  });
+});
+
+describe('diagnoseLayers — feature_grid encoded as a string (weak-model failure)', () => {
+  it('flags a text layer holding feature_grid DSL and shows the JSON shape', () => {
+    const layers = [
+      { id: 'feature_grid', type: 'text', z: 0, x: 0, y: 0, width: 100, height: 100,
+        content: { type: 'plain', value: '0,0,1080,1080:title=Brew Lab:items=icon=coffee:title=Fresh:desc=Sourced' } },
+    ] as unknown as Layer[];
+    const notes = diagnoseLayers(layers);
+    expect(notes.some(n => n.includes('feature_grid') && n.includes('JSON object'))).toBe(true);
+  });
+
+  it('does not flag normal prose that happens to contain the word items', () => {
+    const layers = [
+      { id: 't', type: 'text', z: 0, x: 0, y: 0, width: 100, height: 100,
+        content: { type: 'plain', value: 'Our menu has many items to choose from' } },
+    ] as unknown as Layer[];
+    expect(diagnoseLayers(layers)).toEqual([]);
   });
 });

@@ -13,7 +13,22 @@ z = stacking order (higher = front)
    dimensions the layer renders INVISIBLY. add_layers now rejects 0-dim
    layers with a clear error, but get it right first to save round-trips.
 
-✅ Minimum-viable poster (use this shape — it works first try):
+🃏 Feature / benefit / product poster with CARDS? Use the feature_grid PRESET —
+   ONE layer. The engine positions the title, subtitle and every card for you.
+   NEVER hand-place card x/y as separate rect+text layers — they collide into an
+   unreadable pile (the #1 small-model failure). Content only, no coordinates:
+   add_layers(design_path=..., layers_shorthand=[
+     {type:"feature_grid", pos:[0,0,1080,1080], bg:"gradient",
+       title:"Brew Lab", subtitle:"Freshly roasted beans, delivered monthly",
+       items:[
+         {icon:"coffee", title:"Single Origin", desc:"Ethically sourced beans"},
+         {icon:"truck",  title:"Monthly Box",   desc:"Delivered to your door"},
+         {icon:"award",  title:"Guaranteed",    desc:"Love it or full refund"}]}
+   ])   ← title auto-wraps & auto-sizes; cards are evenly spaced. See: presets.
+
+✅ Minimum-viable poster — for SIMPLE text posters only (no cards/columns).
+   For anything with repeated cards/columns/rows use feature_grid or a container
+   (§ auto-layout) — hand-placed coordinates are where small models break:
    add_layers(design_path=..., layers_shorthand=[
      {id:"bg",       type:"rect", z:0,  pos:[0,0,1080,1080],    fill:"#1a2e0d"},
      {id:"headline", type:"text", z:10, pos:[80,180,920,160],
