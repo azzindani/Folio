@@ -41,6 +41,20 @@ describe('createProject', () => {
     const result = createProject({ name: 'Test', path: path.join(tmpDir, 'existing') });
     expect(result.success).toBe(false);
   });
+
+  it('defaults the path to the name (whitespace→hyphens, case kept) under FOLIO_PROJECTS_DIR', () => {
+    const prev = process.env['FOLIO_PROJECTS_DIR'];
+    process.env['FOLIO_PROJECTS_DIR'] = tmpDir;
+    try {
+      const result = createProject({ name: 'My Project' }); // no path
+      expect(result.success).toBe(true);
+      const dir = path.join(tmpDir, 'My-Project');
+      expect(fs.existsSync(path.join(dir, 'project.yaml'))).toBe(true);
+    } finally {
+      if (prev === undefined) delete process.env['FOLIO_PROJECTS_DIR'];
+      else process.env['FOLIO_PROJECTS_DIR'] = prev;
+    }
+  });
 });
 
 describe('createDesign', () => {

@@ -37,7 +37,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        project_path: { type: 'string', description: 'Path to project directory' },
+        project_path: { type: 'string', description: 'Project name (bare, e.g. "ai-poster") or path to the project dir. A bare name is placed in the projects dir automatically — do not build absolute /home/... paths.' },
         name:         { type: 'string', description: 'Design name' },
         type:         { type: 'string', enum: ['poster', 'carousel'], default: 'poster' },
         width:        { type: 'number', description: 'Canvas width px', default: 1080 },

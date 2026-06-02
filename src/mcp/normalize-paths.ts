@@ -2,6 +2,18 @@ import * as path from 'path';
 import * as os from 'os';
 
 /**
+ * Turn a bare project name into a single safe path segment: collapse runs of
+ * whitespace to hyphens (so "Small Model Poster" → "Small-Model-Poster") but
+ * preserve case — Linux filesystems are case-sensitive, so lowercasing would
+ * desync a reference from a dir created with different casing. Used in BOTH
+ * the create_project default path and the bare-name branch below, so the same
+ * name always maps to the same directory no matter which tool sees it.
+ */
+export function bareNameSegment(name: string): string {
+  return name.trim().replace(/\s+/g, '-');
+}
+
+/**
  * Normalize project-path-ish tool arguments so a design always lands somewhere
  * the editor can actually serve (FOLIO_PROJECTS_DIR). The editor only mounts
  * that single root at /__project_files/*, so a design created anywhere else
@@ -48,10 +60,11 @@ export function normalizeProjectPaths(args: Record<string, unknown>): Record<str
     if (path.isAbsolute(v)) {
       out[f] = rebaseAbsolute(v);
     } else if (f !== 'design_path' && !v.startsWith('~/')) {
-      // Bare project name → <projects>/<name>. A relative design_path
+      // Bare project name → <projects>/<name> (whitespace collapsed so the
+      // segment matches create_project's default). A relative design_path
       // ("designs/foo.design.yaml") is left for the engine to resolve against
       // project_path.
-      out[f] = path.join(projects, v);
+      out[f] = path.join(projects, bareNameSegment(v));
     }
   }
   return out;

@@ -29,8 +29,14 @@ it as your next tool call. create_design/append_page/seal_design/export_design
 each also return open_url — a clickable, unique-token editor link (no separate
 open_in_editor call needed; use that only to re-open or focus a page).
 
+📁 Paths: pass project_path / path as a short BARE NAME ("ai-poster"). The
+   engine places it in the projects dir automatically. NEVER build absolute
+   paths like /home/... — you can't know the container layout and a wrong
+   guess makes the editor link open empty.
+
 Poster workflow:
-  1. create_design(project_path, name, type="poster", width, height)  → next_action: add_layers
+  0. create_project(name="ai-poster")                                  → bare name; path optional
+  1. create_design(project_path="ai-poster", name, type="poster", …)   → next_action: add_layers
   2. add_layers(design_path, layers_shorthand=[…])                     → next_action: seal_design
   3. seal_design(design_path)                                          → returns open_url
   4. export_design(design_path, format="svg")   (optional)

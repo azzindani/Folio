@@ -32,12 +32,12 @@ export const TIER1_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        name:   { type: 'string', description: 'Project name' },
-        path:   { type: 'string', description: 'Absolute directory path for the project' },
+        name:   { type: 'string', description: 'Project name, e.g. "ai-poster"' },
+        path:   { type: 'string', description: 'Optional — defaults to the name. Pass a short BARE NAME like "ai-poster" (the engine places it in the projects dir automatically). Do NOT build absolute /home/... paths — you can\'t know the container layout.' },
         theme:  { type: 'string', description: 'Theme ID (default: dark-tech)', default: 'dark-tech' },
         canvas: { type: 'string', description: 'Canvas size e.g. "1080x1080"', default: '1080x1080' },
       },
-      required: ['name', 'path'],
+      required: ['name'],
     },
   },
   {

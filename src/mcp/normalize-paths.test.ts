@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
-import { normalizeProjectPaths } from './normalize-paths';
+import { normalizeProjectPaths, bareNameSegment } from './normalize-paths';
 
 // Simulate the deployed topology: a projects dir nested under HOME, e.g.
 // HOME=/home/folio, FOLIO_PROJECTS_DIR=/home/folio/projects.
@@ -16,6 +16,14 @@ describe('normalizeProjectPaths', () => {
   it('rebases a bare project name under the projects dir', () => {
     expect(normalizeProjectPaths({ project_path: 'my-project' }).project_path)
       .toBe(path.join(PROJECTS, 'my-project'));
+  });
+
+  // A small model reuses the same name for create_project (default path) and
+  // create_design (bare project_path); both must resolve to one directory.
+  it('collapses whitespace (case preserved) so a spaced name maps consistently', () => {
+    expect(bareNameSegment('Small Model Poster')).toBe('Small-Model-Poster');
+    expect(normalizeProjectPaths({ project_path: 'Small Model Poster' }).project_path)
+      .toBe(path.join(PROJECTS, 'Small-Model-Poster'));
   });
 
   it('rebases a misguessed /…/projects/<x> absolute path', () => {

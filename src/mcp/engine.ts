@@ -17,6 +17,7 @@ import {
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
 import { buildEditorLink } from './engine/editor-link';
+import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
 import { expandShorthandLayers } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
@@ -93,18 +94,24 @@ export function createDesign(args: { project_path: string; name: string; type?: 
 
 // ── Tier 1 — Project Management ──────────────────────────────
 
-export function createProject(args: { name: string; path: string; theme?: string; canvas?: string }): ToolResult {
+export function createProject(args: { name: string; path?: string; theme?: string; canvas?: string }): ToolResult {
   const op = 'create_project';
   const progress: ProgressItem[] = [];
+  // `path` is optional: a small model shouldn't have to know the container
+  // layout. When omitted, fall back to the name as a bare segment (same
+  // transform normalizeProjectPaths applies to a bare project_path, so both
+  // tools map the same name to the same dir) — resolveProjectPath then places
+  // it under FOLIO_PROJECTS_DIR, the only root the editor serves.
+  const requestedPath = args.path ?? bareNameSegment(args.name);
   let projectDir: string;
   try {
     // resolveProjectPath accepts:
     //  - bare names ("my-project")           → FOLIO_PROJECTS_DIR/my-project
     //  - absolute paths under allowed roots  → unchanged
     //  - ~ paths                             → expanded
-    projectDir = resolveProjectPath(args.path);
+    projectDir = resolveProjectPath(requestedPath);
   } catch (e) {
-    return errResult(op, (e as Error).message, `Use a bare project name (e.g. "${args.name}") or an absolute path under ${process.env['FOLIO_PROJECTS_DIR'] ?? '~'}`);
+    return errResult(op, (e as Error).message, `Just pass a bare project name (e.g. "${args.name}") — the engine places it in the projects dir. Don't build absolute /home/... paths.`);
   }
   if (fs.existsSync(projectDir)) {
     // Idempotent: if the dir already holds a valid project.yaml, treat as
