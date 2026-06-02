@@ -583,6 +583,40 @@ describe('renderAutoLayout', () => {
     expect(el.children.length).toBe(2);
   });
 
+  it('flex-distributes children that omit a main-axis size (no overlap)', () => {
+    const children = [
+      { id: 'k1', type: 'rect', z: 0, x: 0, y: 0, height: 100 },
+      { id: 'k2', type: 'rect', z: 1, x: 0, y: 0, height: 100 },
+      { id: 'k3', type: 'rect', z: 2, x: 0, y: 0, height: 100 },
+    ];
+    const layer = {
+      id: 'flexrow', type: 'auto_layout', z: 0, x: 0, y: 0, width: 920, height: 200,
+      direction: 'row', gap: 20, layers: children as unknown as Layer[],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const rects = Array.from(el.querySelectorAll('rect'));
+    expect(rects.length).toBe(3);
+    const xs = rects.map(r => Number(r.getAttribute('x')));
+    const ws = rects.map(r => Number(r.getAttribute('width')));
+    expect(ws.every(w => w > 250 && w < 320)).toBe(true); // (920-40)/3 ≈ 293 each
+    expect(xs[0]).toBeLessThan(xs[1]);                      // distinct, not collapsed
+    expect(xs[1]).toBeLessThan(xs[2]);
+  });
+
+  it('leaves children that specify their own size untouched', () => {
+    const children = [
+      { id: 'f1', type: 'rect', z: 0, x: 0, y: 0, width: 80, height: 40 },
+      { id: 'f2', type: 'rect', z: 1, x: 0, y: 0, width: 80, height: 40 },
+    ];
+    const layer = {
+      id: 'fixedrow', type: 'auto_layout', z: 0, x: 0, y: 0, width: 400, height: 60,
+      direction: 'row', gap: 10, layers: children as unknown as Layer[],
+    } as unknown as AutoLayoutLayer;
+    const el = renderAutoLayout(layer, makeSVG(), simpleRenderFn);
+    const ws = Array.from(el.querySelectorAll('rect')).map(r => Number(r.getAttribute('width')));
+    expect(ws).toEqual([80, 80]);
+  });
+
   it('lays out children in a column', () => {
     const children: RectLayer[] = [
       { id: 'd1', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 50 },
