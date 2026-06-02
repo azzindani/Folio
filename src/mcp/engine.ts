@@ -37,6 +37,11 @@ import { tryFfmpeg } from '../export/animation-export';
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
   const op = 'create_design';
   const progress: ProgressItem[] = [];
+  // Guard the required args with actionable messages — a small model that omits
+  // project_path (or passes it as `path`) would otherwise hit a raw
+  // path.join(undefined) crash and tend to hallucinate a fake result.
+  if (!args.project_path) return errResult(op, 'create_design needs project_path', 'Pass project_path = the project name (e.g. "ai-poster"). Run create_project first, then reuse the path it returns.', progress);
+  if (!args.name) return errResult(op, 'create_design needs a name', 'Pass name = the design name (e.g. "hero").', progress);
   const type = args.type ?? 'poster';
   const designId = args.name.toLowerCase().replace(/\s+/g, '-');
   const designPath = path.join(args.project_path, `designs/${designId}.design.yaml`);
