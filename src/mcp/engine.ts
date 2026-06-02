@@ -19,7 +19,7 @@ import { buildGuide } from './engine/guide';
 import { buildEditorLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, diagnoseLayers } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -539,7 +539,7 @@ export function addLayers(args: {
   writeYAML(dPath, spec);
   progress.push(pOk(`Added ${incoming.length} layer(s)`, incoming.map(l => l.id).join(', ')));
 
-  const notes = diagnoseLayers(incoming);
+  const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming)];
   for (const n of notes) progress.push(pInfo('Layer note', n));
   const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: 0, hint: notes.length ? `Layers added with ${notes.length} note(s) to address — see notes — then seal_design.` : 'Layers added. Call seal_design or add more layers.' };
   const context = buildContext(op, `Added ${incoming.length} layer(s) to ${path.basename(dPath)}`, [
@@ -582,7 +582,7 @@ export function appendPage(args: {
   writeYAML(dPath, spec);
   progress.push(pOk(`Appended page "${pageId}"`, `total: ${spec.pages.length} page(s)`));
 
-  const notes = diagnoseLayers(layers);
+  const notes = [...(pageShorthand.length ? diagnoseShorthandKeys(pageShorthand) : []), ...diagnoseLayers(layers)];
   for (const n of notes) progress.push(pInfo('Layer note', n));
 
   let next_action: NextAction | undefined;

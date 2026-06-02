@@ -77,9 +77,47 @@ function expandPosition(sh: ShorthandLayer): Partial<Layer> {
 // ── Expand fill shorthand ───────────────────────────────────
 function expandFill(fill: string | Fill): Fill {
   if (typeof fill === 'string') {
-    return { type: 'solid', color: fill };
+    return parseCssGradient(fill) ?? { type: 'solid', color: fill };
   }
   return normalizeGradientFill(fill);
+}
+
+// Parse a CSS gradient string — small models write fills like
+// "linear-gradient(to right, #f5c6a5, #e0a96d)" — into the schema's
+// {type:'linear', angle, stops} form. Returns null for non-gradient strings.
+function parseCssGradient(s: string): Fill | null {
+  const m = s.trim().match(/^(linear|radial|conic)-gradient\s*\((.*)\)\s*$/i);
+  if (!m) return null;
+  const kind = m[1].toLowerCase();
+  // Split on top-level commas (don't split inside rgb()/hsl()).
+  const parts = m[2].split(/,(?![^(]*\))/).map(p => p.trim()).filter(Boolean);
+  let angle = 135;
+  const colorTokens: string[] = [];
+  for (const p of parts) {
+    const d = p.toLowerCase();
+    if (/deg\s*$/.test(d)) { angle = parseFloat(d); continue; }
+    if (/^(to|at|circle|ellipse|closest|farthest|from)\b/.test(d)) {
+      if (d.includes('right') && d.includes('bottom')) angle = 135;
+      else if (d.includes('right') && d.includes('top')) angle = 45;
+      else if (d.includes('left') && d.includes('bottom')) angle = 225;
+      else if (d.includes('left') && d.includes('top')) angle = 315;
+      else if (d.includes('right')) angle = 90;
+      else if (d.includes('left')) angle = 270;
+      else if (d.includes('bottom')) angle = 180;
+      else if (d.includes('top')) angle = 0;
+      continue;
+    }
+    colorTokens.push(p);
+  }
+  if (colorTokens.length < 2) return null;
+  const stops = colorTokens.map((c, i) => {
+    const mm = c.match(/^(.+?)\s+(\d+(?:\.\d+)?)%$/); // "#abc 50%"
+    const color = mm ? mm[1].trim() : c.split(/\s+/)[0];
+    const position = mm ? Math.round(Number(mm[2])) : Math.round((i / (colorTokens.length - 1)) * 100);
+    return { color, position };
+  });
+  if (kind === 'linear') return { type: 'linear', angle, stops } as unknown as Fill;
+  return { type: kind === 'radial' ? 'radial' : 'conic', stops } as unknown as Fill;
 }
 
 // The validator accepts solid/linear/radial/conic/noise/multi/none — NOT the
@@ -302,6 +340,26 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
 // always wins when both are present; this never overwrites it.
 function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
   const out: ShorthandLayer = { ...sh };
+  const r = out as Record<string, unknown>;
+  // Terse single-/short-char keys small models emit to save tokens
+  // (p/t/f/w/h/col). Canonical key wins when already present.
+  const alias = (canonical: string, ...keys: string[]): void => {
+    if (r[canonical] !== undefined) return;
+    for (const k of keys) if (r[k] !== undefined) { r[canonical] = r[k]; return; }
+  };
+  alias('type', 't');
+  alias('pos', 'p');
+  alias('fill', 'f');
+  alias('width', 'w');
+  alias('height', 'h');
+  alias('color', 'col');
+  // `c` → text content
+  if (out.text === undefined && typeof r['c'] === 'string') out.text = r['c'] as string;
+  // `s` is ambiguous: a number is a font size, a string is an image src.
+  if (r['s'] !== undefined) {
+    if (typeof r['s'] === 'number' && out.size === undefined) out.size = r['s'] as number;
+    else if (typeof r['s'] === 'string' && out.src === undefined) out.src = r['s'] as string;
+  }
   // content (plain string or {value}) → text
   if (out.text === undefined && out.content !== undefined) {
     const c = out.content;
@@ -381,6 +439,34 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
     }
     return expandShorthand(applyVisibleDefaults({ ...sh, id, type, z: sh.z ?? i }, type));
   });
+}
+
+// Every shorthand key the expander understands — canonical fields plus the
+// aliases normalizeShorthandAliases maps. A key outside this set is silently
+// ignored on expansion, so diagnoseShorthandKeys flags it for the model.
+const KNOWN_SHORTHAND_KEYS = new Set<string>([
+  // canonical
+  'id', 'type', 'z', 'pos', 'x', 'y', 'width', 'height', 'opacity', 'rotation',
+  'flip_h', 'flip_v', 'visible', 'locked', 'fill', 'stroke', 'radius', 'text',
+  'font', 'size', 'weight', 'color', 'align', 'text_decoration', 'src', 'fit',
+  'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
+  'definition', 'code', 'language', 'expression', 'layers',
+  // aliases (verbose + terse)
+  'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
+  't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
+]);
+
+// Flag shorthand keys the expander doesn't recognize (so they aren't silently
+// dropped — the failure mode where a model sends {t:"text"} and gets a rect).
+// Runs on the raw coerced shorthand, before expansion.
+export function diagnoseShorthandKeys(raw: ShorthandLayer[]): string[] {
+  const notes: string[] = [];
+  raw.forEach((sh, i) => {
+    if (!sh || typeof sh !== 'object') return;
+    const unknown = Object.keys(sh).filter(k => !KNOWN_SHORTHAND_KEYS.has(k));
+    if (unknown.length) notes.push(`layer "${sh.id ?? i}": unrecognized field(s) [${unknown.join(', ')}] were ignored. Shorthand fields: pos, type, fill, text, size, color, src, icon (verbose content/font_size/symbol/url and terse p/t/f/w/h/c/s/col are accepted).`);
+  });
+  return notes;
 }
 
 // A few popular icon names to offer when a model picks one that doesn't exist.
