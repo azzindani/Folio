@@ -810,6 +810,24 @@ export function renderAutoLayout(
   const containerCross = isRow ? h : w;
   const availableMain  = containerMain  - mainPadStart - mainPadEnd;
   const availableCross = containerCross - crossPadStart - (isRow ? pad.bottom : pad.right);
+
+  // Flexbox-style sizing for children that omit dimensions. Models expect a
+  // container to distribute space, but Folio sizes children from their own
+  // width/height — so a row of 3 sizeless columns would collapse onto each
+  // other. Children with no main-axis size share the leftover main space
+  // equally (flex-grow:1); children with no cross-axis size fill the cross.
+  // Skipped when wrapping (wrap needs intrinsic sizes). Sized children are
+  // left untouched.
+  if (!layer.wrap && availableMain > 0) {
+    const flexIdx = sorted.map((_, i) => i).filter(i => !(mainSizes[i] > 0));
+    if (flexIdx.length) {
+      const fixed = mainSizes.reduce((s, v) => s + (v > 0 ? v : 0), 0);
+      const gaps = Math.max(0, sorted.length - 1) * gap;
+      const share = Math.max(0, (availableMain - fixed - gaps) / flexIdx.length);
+      for (const i of flexIdx) mainSizes[i] = share;
+    }
+    for (let i = 0; i < crossSizes.length; i++) if (!(crossSizes[i] > 0)) crossSizes[i] = availableCross;
+  }
   const totalMain = mainSizes.reduce((s, v) => s + v, 0) + Math.max(0, sorted.length - 1) * gap;
 
   const calcCursor = (total: number, count: number, sizes: number[]): { start: number; dynGap: number } => {
@@ -829,12 +847,17 @@ export function renderAutoLayout(
       case 'end':    crossPos = cc + trackCross - crossSizes[cIdx]; break;
       default:       crossPos = cc;
     }
+    // Apply the layout-computed sizes (== the child's own size when it set
+    // one; the flex/fill value otherwise) so flexed/filled children actually
+    // render at their distributed size and nested containers know their box.
+    const mainSize  = mainSizes[cIdx];
+    const crossSize = align === 'stretch' ? trackCross : crossSizes[cIdx];
     const placed: Layer = {
       ...child,
       x: isRow ? x + mc : x + crossPos,
       y: isRow ? y + crossPos : y + mc,
-      ...(align === 'stretch' &&  isRow ? { height: trackCross } : {}),
-      ...(align === 'stretch' && !isRow ? { width:  trackCross } : {}),
+      width:  isRow ? mainSize : crossSize,
+      height: isRow ? crossSize : mainSize,
     };
     g.appendChild(renderChild(placed, svg));
   };
