@@ -599,6 +599,62 @@ describe('exportDesign', () => {
   });
 });
 
+// ── exportDesign — carousel (one file per page) ──────────
+// Regression: a carousel keeps its content on pages[], not root layers, so a
+// whole-spec render used to emit a blank 92-byte <svg/> wrapper. Export must
+// walk every page and write one non-empty file per page.
+describe('exportDesign — carousel', () => {
+  let projectPath: string;
+  let designPath: string;
+
+  beforeEach(() => {
+    projectPath = path.join(tmpDir, 'carousel-export');
+    createProject({ name: 'Carousel Export', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Deck', type: 'carousel' });
+    designPath = path.join(projectPath, 'designs/deck.design.yaml');
+    appendPage({ design_path: designPath, page_id: 'page_1', label: 'One', layers_shorthand: [
+      { id: 'bg1', type: 'rect', z: 0, pos: [0, 0, 1080, 1080], fill: '#101030' },
+      { id: 't1', type: 'text', z: 10, pos: [80, 80, 920, 200], text: 'PAGE ONE HEADLINE', size: 60, color: '#ffffff' },
+    ] });
+    appendPage({ design_path: designPath, page_id: 'page_2', label: 'Two', layers_shorthand: [
+      { id: 'bg2', type: 'rect', z: 0, pos: [0, 0, 1080, 1080], fill: '#301010' },
+      { id: 't2', type: 'text', z: 10, pos: [80, 80, 920, 200], text: 'PAGE TWO HEADLINE', size: 60, color: '#ffffff' },
+    ] });
+  });
+
+  it('exports one SVG per page with real content', () => {
+    const result = exportDesign({ design_path: designPath, format: 'svg' });
+    expect(result.success).toBe(true);
+    const parsed = result as Record<string, unknown>;
+    expect(parsed.format).toBe('svg');
+    expect(parsed['pages']).toBe(2);
+    const outPaths = parsed['output_paths'] as string[];
+    expect(outPaths).toHaveLength(2);
+    for (const p of outPaths) expect(fs.existsSync(p)).toBe(true);
+    const svg1 = fs.readFileSync(outPaths[0], 'utf-8');
+    const svg2 = fs.readFileSync(outPaths[1], 'utf-8');
+    // The bug produced a 92-byte empty wrapper; assert real per-page content.
+    expect(svg1.length).toBeGreaterThan(300);
+    expect(svg1).toContain('PAGE ONE HEADLINE');
+    expect(svg2).toContain('PAGE TWO HEADLINE');
+    // Each page is its own frame — no bleed between pages.
+    expect(svg1).not.toContain('PAGE TWO HEADLINE');
+  });
+
+  it('exports one PNG per page', () => {
+    const result = exportDesign({ design_path: designPath, format: 'png' });
+    expect(result.success).toBe(true);
+    const parsed = result as Record<string, unknown>;
+    expect(parsed['pages']).toBe(2);
+    const outPaths = parsed['output_paths'] as string[];
+    expect(outPaths).toHaveLength(2);
+    for (const p of outPaths) {
+      expect(fs.existsSync(p)).toBe(true);
+      expect(fs.statSync(p).size).toBeGreaterThan(100);
+    }
+  }, 30_000);
+});
+
 // ── Template tools ─────────────────────────────────────────
 function makeDesignFile(dir: string): string {
   const p = path.join(dir, 'test.design.yaml');

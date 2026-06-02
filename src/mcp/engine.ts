@@ -870,12 +870,44 @@ export function exportDesign(args: { design_path: string; format: string; output
   // Load project components so `type:component` layers resolve in the export.
   const componentRegistry = loadComponentRegistry(args.project_path ?? path.dirname(path.dirname(dPath)));
 
+  // Carousels store their content on `pages[]`, not root `layers` — renderDesign
+  // only walks root layers, so a whole-spec render of a carousel is blank. Render
+  // each page as a synthetic single-page spec (its layers promoted to the root)
+  // and emit one file per page. `multiPage` is false for posters/reports.
+  const pages = spec.pages ?? [];
+  const multiPage = pages.length > 0;
+  const renderPageSVG = (page: Page): string =>
+    renderToSVGString(
+      { ...spec, layers: page.layers ?? [], pages: undefined } as DesignSpec,
+      undefined, undefined, componentRegistry,
+    );
+
   const outPath = args.output_path ?? dPath.replace('.design.yaml', `.${args.format}`);
   const link = buildEditorLink(dPath);
   if (args.format === 'svg') {
     try {
-      const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      // Carousel → one SVG per page (`<base>-p1.svg`, `-p2.svg`, …).
+      if (multiPage) {
+        const base = outPath.replace(/\.svg$/i, '');
+        const outPaths: string[] = [];
+        const _attachments: unknown[] = [];
+        let totalBytes = 0;
+        pages.forEach((page, i) => {
+          const svgStr = renderPageSVG(page);
+          const pPath = `${base}-p${i + 1}.svg`;
+          fs.writeFileSync(pPath, svgStr, 'utf-8');
+          outPaths.push(pPath);
+          totalBytes += svgStr.length;
+          progress.push(pOk(`SVG page ${i + 1}/${pages.length}`, `${path.basename(pPath)} (${svgStr.length} bytes)`));
+          _attachments.push({ type: 'image' as const, data: Buffer.from(svgStr, 'utf-8').toString('base64'), mimeType: 'image/svg+xml' });
+        });
+        _attachments.push(link.attachment);
+        const context = buildContext(op, `SVG exported for "${spec.meta.name}" — ${outPaths.length} page(s)`, outPaths.map(p => ({ type: 'svg', path: p, role: 'output' })));
+        const handover = buildHandover('EXPORT', { design_path: dPath });
+        return okResult(op, { format: 'svg', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, open_url: link.open_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+      }
+      const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.writeFileSync(outPath, svgStr, 'utf-8');
       progress.push(pOk('SVG written', path.basename(outPath)));
       const context = buildContext(op, `SVG exported for "${spec.meta.name}"`, [
@@ -903,9 +935,15 @@ export function exportDesign(args: { design_path: string; format: string; output
       for (const src of sources) {
         if (src.rows) datasets.set(src.id, { id: src.id, rows: src.rows });
       }
+      // Carousel → stack every page's SVG vertically so the single HTML doc
+      // shows the whole deck (whole-spec render would be blank — pages aren't
+      // root layers). Poster/report keep their existing single-body render.
+      const body = multiPage
+        ? pages.map((page, i) => `<div class="folio-page" data-page="${i + 1}">${renderPageSVG(page)}</div>`).join('\n')
+        : renderToSVGString(spec, undefined, undefined, componentRegistry);
       const html: string = spec.meta.type === 'report'
         ? assembleReportHTML(spec, datasets, {})
-        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title></head><body>${renderToSVGString(spec, undefined, undefined, componentRegistry)}</body></html>`;
+        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title><style>body{margin:0}.folio-page{display:block;margin:0 auto}.folio-page+.folio-page{margin-top:16px}</style></head><body>${body}</body></html>`;
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, html, 'utf-8');
       progress.push(pOk('HTML written', path.basename(outPath)));
@@ -949,12 +987,9 @@ export function exportDesign(args: { design_path: string; format: string; output
   }
   if (args.format === 'png') {
     try {
-      const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       // @resvg/resvg-js is a pure-Rust SVG renderer; prebuilt binaries
       // ship for linux-x64-musl (alpine), linux-x64-gnu, darwin, win32.
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;
-      // resvg's `fitTo: { mode: 'zoom' }` scales the rendered raster while
-      // keeping the SVG viewBox aspect ratio.
       // Bundle a fallback font: the container runs as non-root (can't install
       // system fonts) so loadSystemFonts finds none and text renders blank.
       // src/mcp/fonts/DejaVuSans.ttf ships in the runtime image (COPY src);
@@ -962,13 +997,35 @@ export function exportDesign(args: { design_path: string; format: string; output
       // isn't installed.
       const fontFiles = [path.resolve(process.cwd(), 'src/mcp/fonts/DejaVuSans.ttf')]
         .filter(f => fs.existsSync(f));
-      const rendered = new Resvg(svgStr, {
-        fitTo: { mode: 'zoom', value: scale },
-        background: 'rgba(0,0,0,0)',
-        font: { loadSystemFonts: true, fontFiles, defaultFontFamily: 'DejaVu Sans' },
-      }).render();
-      const png = rendered.asPng();
+      // resvg's `fitTo: { mode: 'zoom' }` scales the rendered raster while
+      // keeping the SVG viewBox aspect ratio.
+      const rasterize = (svgStr: string): Buffer =>
+        Buffer.from(new Resvg(svgStr, {
+          fitTo: { mode: 'zoom', value: scale },
+          background: 'rgba(0,0,0,0)',
+          font: { loadSystemFonts: true, fontFiles, defaultFontFamily: 'DejaVu Sans' },
+        }).render().asPng());
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      // Carousel → one PNG per page (`<base>-p1.png`, `-p2.png`, …).
+      if (multiPage) {
+        const base = outPath.replace(/\.png$/i, '');
+        const outPaths: string[] = [];
+        const _attachments: unknown[] = [];
+        let totalBytes = 0;
+        pages.forEach((page, i) => {
+          const png = rasterize(renderPageSVG(page));
+          const pPath = `${base}-p${i + 1}.png`;
+          fs.writeFileSync(pPath, png);
+          outPaths.push(pPath);
+          totalBytes += png.length;
+          progress.push(pOk(`PNG page ${i + 1}/${pages.length}`, `${path.basename(pPath)} (${png.length} bytes @ ${scale}×)`));
+          _attachments.push({ type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' });
+        });
+        const context = buildContext(op, `PNG exported for "${spec.meta.name}" — ${outPaths.length} page(s)`, outPaths.map(p => ({ type: 'png', path: p, role: 'output' })));
+        const handover = buildHandover('EXPORT', { design_path: dPath });
+        return okResult(op, { format: 'png', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, scale, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+      }
+      const png = rasterize(renderToSVGString(spec, undefined, undefined, componentRegistry));
       fs.writeFileSync(outPath, png);
       progress.push(pOk('PNG written', `${path.basename(outPath)} (${png.length} bytes @ ${scale}×)`));
       const context = buildContext(op, `PNG exported for "${spec.meta.name}"`, [
@@ -987,7 +1044,7 @@ export function exportDesign(args: { design_path: string; format: string; output
   return errResult(
     op,
     `Unsupported export format: ${args.format}`,
-    `Supported formats: svg, html. PDF requires a separate Puppeteer step. PNG is not yet implemented in the engine.`,
+    `Supported formats: svg, png, html. PDF requires a separate Puppeteer step.`,
     progress,
   );
 }

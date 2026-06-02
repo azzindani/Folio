@@ -18,14 +18,14 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'export_design',
-    description: 'Export design to SVG or HTML. svg/html produce real files. pdf stages an HTML for Puppeteer and returns success:false. png is not yet implemented in the engine — use the editor for PNG.',
+    description: 'Export a design to SVG, PNG or HTML (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf stages an HTML for Puppeteer and returns success:false.',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        // Only svg/html are fully implemented; pdf/png return success:false
-        // with actionable hints. Keep them in the enum so the caller can
-        // discover the surface, but the result will not lie about output.
+        // svg/png/html produce real files; a carousel yields one file per page.
+        // pdf returns success:false with the staged-HTML path so the caller can
+        // run the Puppeteer step. Keep all in the enum for discoverability.
         format:       { type: 'string', enum: ['svg', 'html', 'pdf', 'png'] },
         output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
