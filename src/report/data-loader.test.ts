@@ -121,3 +121,41 @@ describe('loadAllSources', () => {
     expect(map.get('b')?.rows[0]).toMatchObject({ y: 2 });
   });
 });
+
+describe('loadDataSource — query (http)', () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => { globalThis.fetch = realFetch; });
+  const mockFetch = (body: unknown, ok = true): void => {
+    globalThis.fetch = (async () => ({ ok, status: ok ? 200 : 500, statusText: ok ? 'OK' : 'Error', json: async () => body })) as unknown as typeof fetch;
+  };
+
+  it('fetches a top-level JSON array', async () => {
+    mockFetch([{ t: 'BBRI', y: 6.8 }, { t: 'BMRI', y: 6.1 }]);
+    const res = await loadDataSource({ id: 'q', type: 'query', engine: 'http', url: 'https://x/data.json' });
+    expect(res.rows).toHaveLength(2);
+    expect(res.rows[0]).toMatchObject({ t: 'BBRI' });
+  });
+
+  it('extracts a nested array via the pick path', async () => {
+    mockFetch({ data: { items: [{ a: 1 }] } });
+    const res = await loadDataSource({ id: 'q', type: 'query', engine: 'http', url: 'https://x', query: 'data.items' });
+    expect(res.rows).toEqual([{ a: 1 }]);
+  });
+
+  it('also resolves the api type via http fetch', async () => {
+    mockFetch([{ a: 1 }]);
+    const res = await loadDataSource({ id: 'q', type: 'api', url: 'https://x' });
+    expect(res.rows).toEqual([{ a: 1 }]);
+  });
+
+  it('throws on a non-ok response', async () => {
+    mockFetch(null, false);
+    await expect(loadDataSource({ id: 'q', type: 'query', engine: 'http', url: 'https://x' })).rejects.toThrow(/500/);
+  });
+
+  it('sql engine falls back to cached rows, else throws about a connector', async () => {
+    const cached = await loadDataSource({ id: 'q', type: 'query', engine: 'sql', query: 'SELECT 1', rows: [{ n: 1 }] });
+    expect(cached.rows).toEqual([{ n: 1 }]);
+    await expect(loadDataSource({ id: 'q', type: 'query', engine: 'sql', query: 'SELECT 1' })).rejects.toThrow(/connector/);
+  });
+});

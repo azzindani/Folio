@@ -4,6 +4,7 @@ import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
+import { DataPanelManager } from '../ui/panels/data-panel';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
 import { FileTreeManager } from '../ui/panels/file-tree';
 import { PageStrip } from '../ui/panels/page-strip';
@@ -203,6 +204,7 @@ export class EditorApp {
   fileTree!: FileTreeManager;
   private layerPanel!: LayerPanelManager;
   private propertiesPanel!: PropertiesPanelManager;
+  private dataPanel!: DataPanelManager;
   private problemsPanel!: ProblemsPanelManager;
   private iconBrowser!: IconBrowserManager;
   private findReplace!: FindReplaceManager;
@@ -296,6 +298,9 @@ export class EditorApp {
       this.container.querySelector('.properties-content')!,
       this.state,
     );
+
+    const dataContainer = this.container.querySelector<HTMLElement>('.data-content');
+    if (dataContainer) this.dataPanel = new DataPanelManager(dataContainer, this.state);
 
     this.problemsPanel = new ProblemsPanelManager(
       this.container.querySelector('.problems-content')!,
@@ -592,6 +597,9 @@ export class EditorApp {
           <div class="tab-pane active" data-tab="properties">
             <div class="properties-content"></div>
           </div>
+          <div class="tab-pane tab-pane--scroll" data-tab="data">
+            <div class="data-content" style="height:100%;overflow-y:auto"></div>
+          </div>
           <div class="tab-pane tab-pane--flex" data-tab="colors">
             <div class="color-palette-content" style="flex:1;overflow-y:auto"></div>
             <div class="color-scheme-content" style="border-top:1px solid var(--color-border)">
@@ -616,6 +624,7 @@ export class EditorApp {
 
       <div class="r-activity-bar" role="tablist" aria-label="Right panel tabs">
         <button class="act-btn rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">&#9881;</button>
+        <button class="act-btn rpanel-tab" data-tab="data" title="Data" aria-label="Data">&#9638;</button>
         <button class="act-btn rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">&#127912;</button>
         <button class="act-btn rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">&#9889;</button>
         <button class="act-btn rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">&#9201;</button>

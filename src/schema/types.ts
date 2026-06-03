@@ -409,7 +409,9 @@ export interface AutoLayoutLayer extends BaseLayer {
 }
 
 // ── Data Binding Types ──────────────────────────────────────
-export type DataSourceType = 'csv' | 'excel' | 'json' | 'inline' | 'api';
+export type DataSourceType = 'csv' | 'excel' | 'json' | 'inline' | 'api' | 'query';
+/** Query engine for type:'query' sources. http = fetch a JSON endpoint; sql/duckdb need a configured connector. */
+export type QueryEngine = 'http' | 'sql' | 'duckdb';
 export type AggregateOp = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'groupby' | 'filter' | 'sort';
 
 export interface DataSource {
@@ -422,6 +424,13 @@ export interface DataSource {
   delimiter?: string;
   rows?: Record<string, unknown>[];
   url?: string;
+  /** type:'query' — the engine to run against. */
+  engine?: QueryEngine;
+  /** type:'query' — SQL text (sql/duckdb) or a JSONPath/key for http extraction. */
+  query?: string;
+  /** type:'query' — named connection (resolved server-side; creds never enter the design). */
+  connection?: string;
+  /** Last-fetched rows cached on the source (so the export bakes a snapshot even for query sources). */
 }
 
 export interface DataSpec {
