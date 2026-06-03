@@ -238,6 +238,7 @@ Interactive components (flow reports — all in add_layers, each takes span + th
   progress     → {type:"progress", span:4, label, value:72, max:100, style:"bar"|"radial", unit:"%"}
   tooltip      → {type:"tooltip", span:2, icon:"i", content:"markdown shown on hover"}
   These render in the editor canvas too (studio-editable). Containers (tabs/accordion/popup) hold child layers that each take their own span.
+  Studio editing of flow layers: charts + tables render real previews on the canvas; drag a component body to REORDER it, drag side handles to set its span (1–12, snaps to the grid), drag the bottom handle to set an explicit row height. In the Properties panel, flow layers expose Span + Height (not x/y). Set an explicit height via the flow_h field (e.g. {type:"interactive_chart", span:8, flow_h:420, …}); otherwise height auto-estimates per type.
 
 Token budget for local models:
   Gemma 4B  128K ctx → 5–8 layers/page, guide once per session

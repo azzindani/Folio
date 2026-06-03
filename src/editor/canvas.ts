@@ -1,6 +1,7 @@
 import { StateManager, type EditorState, type ToolId, type RulerUnit, type Guide } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
-import { computeFlowLayout } from '../renderer/flow-layout';
+import { computeFlowLayout, flowGridMetrics, flowColumnX, type FlowGridMetrics } from '../renderer/flow-layout';
+import { widthToSpan, computeInsertIndex, insertIndicatorRect, type FlowRect } from './flow-edit';
 import { setPreviewContext } from '../renderer/render-context';
 import type { Layer, TextLayer } from '../schema/types';
 import { computeRulerTicks } from '../utils/ruler-units';
@@ -23,6 +24,11 @@ export class CanvasManager {
   private rulerH!: HTMLCanvasElement;
   private rulerV!: HTMLCanvasElement;
   private marqueeEl: HTMLDivElement | null = null;
+  // Flow-report direct-manipulation state (drag-to-reorder + span/height resize).
+  private flowOverlay!: HTMLDivElement;
+  private flowActive = false;
+  private flowMetrics: FlowGridMetrics | null = null;
+  private flowContentHeight = 0;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
@@ -40,6 +46,16 @@ export class CanvasManager {
     this.svgContainer.className = 'canvas-svg-container';
     this.svgContainer.style.position = 'relative';
 
+    // Flow-edit aids (12-col grid, drag ghost, insertion bar). Separate from
+    // selectionOverlay because updateSelectionOverlay() clears that one on every
+    // render — these need to persist across the live re-renders of a resize.
+    this.flowOverlay = document.createElement('div');
+    this.flowOverlay.className = 'canvas-flow-overlay';
+    this.flowOverlay.style.position = 'absolute';
+    this.flowOverlay.style.inset = '0';
+    this.flowOverlay.style.pointerEvents = 'none';
+    this.flowOverlay.style.zIndex = '88';
+
     this.selectionOverlay = document.createElement('div');
     this.selectionOverlay.className = 'canvas-selection-overlay';
     this.selectionOverlay.style.position = 'absolute';
@@ -48,6 +64,7 @@ export class CanvasManager {
     this.selectionOverlay.style.zIndex = '90';
 
     this.viewport.appendChild(this.svgContainer);
+    this.viewport.appendChild(this.flowOverlay);
     this.viewport.appendChild(this.selectionOverlay);
     this.container.appendChild(this.viewport);
     this.buildRulers();
@@ -326,6 +343,10 @@ export class CanvasManager {
     // (the Chart.js/Tabulator runtime only exists in exported HTML).
     setPreviewContext({ sources: report?.data?.sources, accent: report?.accent });
 
+    // Reset flow-edit geometry; the isFlow branch below re-enables it.
+    this.flowActive = false;
+    this.flowMetrics = null;
+
     let svg: SVGSVGElement;
     let renderW = width;
     let renderH = height;
@@ -341,6 +362,11 @@ export class CanvasManager {
         const fl = computeFlowLayout(layers, { containerWidth: cw });
         renderW = fl.width;
         renderH = fl.height;
+        // Cache geometry so drag-to-reorder + span/height resize map cursor
+        // deltas to the same grid the layout used.
+        this.flowActive = true;
+        this.flowMetrics = flowGridMetrics({ containerWidth: cw });
+        this.flowContentHeight = renderH;
         svg = renderPage(layers, renderW, renderH, { theme: composed, showGrid: false });
       } else {
         svg = renderPage(layers, width, height, { theme: composed, showGrid: this.state.get().gridVisible });
@@ -483,20 +509,24 @@ export class CanvasManager {
         }
       });
 
-      const rotateHandle = document.createElement('div');
-      rotateHandle.className = 'selection-handle handle-rotate';
-      rotateHandle.style.left = `${cx - 7}px`;
-      rotateHandle.style.top  = `${bbox.y - 32}px`;
-      rotateHandle.style.cursor = 'grab';
-      rotateHandle.style.pointerEvents = 'auto';
-      rotateHandle.dataset.handle = 'rotate';
-      rotateHandle.dataset.layerId = id;
-      rotateHandle.title = 'Rotate (Shift = 15° snap)';
-      rotateHandle.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        this.startRotate(e, id, bbox);
-      });
-      frag.appendChild(rotateHandle);
+      // Flow components reflow by span + order — rotation is meaningless, so
+      // omit the rotate handle there.
+      if (!this.flowActive) {
+        const rotateHandle = document.createElement('div');
+        rotateHandle.className = 'selection-handle handle-rotate';
+        rotateHandle.style.left = `${cx - 7}px`;
+        rotateHandle.style.top  = `${bbox.y - 32}px`;
+        rotateHandle.style.cursor = 'grab';
+        rotateHandle.style.pointerEvents = 'auto';
+        rotateHandle.dataset.handle = 'rotate';
+        rotateHandle.dataset.layerId = id;
+        rotateHandle.title = 'Rotate (Shift = 15° snap)';
+        rotateHandle.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          this.startRotate(e, id, bbox);
+        });
+        frag.appendChild(rotateHandle);
+      }
     }
 
     this.selectionOverlay.appendChild(frag);
@@ -871,6 +901,13 @@ export class CanvasManager {
     const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
     if (!layer || layer.locked) return;
 
+    // Flow reports position by document order + span, not x/y — translating a
+    // layer just snaps back on the next layout. Drag means "reorder" instead.
+    if (this.flowActive && this.flowMetrics) {
+      this.startFlowReorder(e, layerId);
+      return;
+    }
+
     const startX = e.clientX;
     const startY = e.clientY;
     const origX = layer.x ?? 0;
@@ -926,6 +963,13 @@ export class CanvasManager {
     const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
     if (!layer || layer.locked) return;
     e.stopPropagation();
+
+    // Flow reports: resize maps to grid span (E/W) + explicit row height (N/S),
+    // not free width/height which the layout would overwrite.
+    if (this.flowActive && this.flowMetrics) {
+      this.startFlowResize(e, layerId, handle, origW, origH);
+      return;
+    }
 
     const startX = e.clientX;
     const startY = e.clientY;
@@ -1040,6 +1084,141 @@ export class CanvasManager {
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
   }
+
+  // ── Flow-report direct manipulation ─────────────────────────
+  private flowAccent(): string {
+    const a = this.state.get().design?.report?.accent;
+    return typeof a === 'string' && a.trim() && !a.startsWith('$') ? a : '#6c5ce7';
+  }
+
+  private clientToCanvas(clientX: number, clientY: number): { x: number; y: number } {
+    const r = this.viewport.getBoundingClientRect();
+    const zoom = this.state.get().zoom || 1;
+    return { x: (clientX - r.left) / zoom, y: (clientY - r.top) / zoom };
+  }
+
+  // Computed geometry of each top-level layer, in document (reading) order.
+  private flowTopLevelRects(excludeId?: string): FlowRect[] {
+    const num = (v: unknown): number => (typeof v === 'number' ? v : 0);
+    const out: FlowRect[] = [];
+    for (const l of this.state.getCurrentLayers()) {
+      if (l.id === excludeId) continue;
+      const r = l as unknown as Record<string, unknown>;
+      out.push({ id: l.id, x: num(r['x']), y: num(r['y']), width: num(r['width']), height: num(r['height']) });
+    }
+    return out;
+  }
+
+  private clearFlowOverlay(): void { this.flowOverlay.innerHTML = ''; }
+
+  // Drag a flow component to reorder it (ghost follows cursor, insertion bar
+  // marks the drop slot, commit on release).
+  private startFlowReorder(e: PointerEvent, layerId: string): void {
+    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    const r = layer as unknown as Record<string, unknown> | undefined;
+    const lw = typeof r?.['width'] === 'number' ? (r['width'] as number) : 200;
+    const lh = typeof r?.['height'] === 'number' ? (r['height'] as number) : 80;
+    const draggedEl = this.svgContainer.querySelector<HTMLElement & SVGElement>(`[data-layer-id="${layerId}"]`);
+    const accent = this.flowAccent();
+    const startX = e.clientX, startY = e.clientY;
+    let moved = false, targetIndex = -1;
+    let ghost: HTMLDivElement | null = null, indicator: HTMLDivElement | null = null;
+
+    const onMove = (me: PointerEvent): void => {
+      const dx = me.clientX - startX, dy = me.clientY - startY;
+      if (!moved && Math.hypot(dx, dy) < 4) return;
+      if (!moved) {
+        moved = true;
+        if (draggedEl) draggedEl.style.opacity = '0.35';
+        ghost = document.createElement('div');
+        ghost.style.cssText = `position:absolute;width:${lw}px;height:${Math.min(lh, 160)}px;border:2px dashed ${accent};background:${accent}1f;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#e8e8f4;font:600 12px Inter,sans-serif;text-transform:uppercase;letter-spacing:.06em;pointer-events:none;`;
+        ghost.textContent = String(layer?.type ?? 'layer').replace(/_/g, ' ');
+        indicator = document.createElement('div');
+        indicator.style.cssText = `position:absolute;width:4px;border-radius:2px;background:${accent};box-shadow:0 0 10px ${accent};pointer-events:none;display:none;`;
+        this.flowOverlay.appendChild(ghost);
+        this.flowOverlay.appendChild(indicator);
+      }
+      const c = this.clientToCanvas(me.clientX, me.clientY);
+      if (ghost) { ghost.style.left = `${c.x - lw / 2}px`; ghost.style.top = `${c.y - Math.min(lh, 160) / 2}px`; }
+      const rects = this.flowTopLevelRects(layerId);
+      targetIndex = computeInsertIndex(rects, c);
+      const ind = insertIndicatorRect(rects, targetIndex);
+      if (indicator && ind) {
+        indicator.style.display = 'block';
+        indicator.style.left = `${ind.x - 2}px`;
+        indicator.style.top = `${ind.y}px`;
+        indicator.style.height = `${ind.height}px`;
+      } else if (indicator) {
+        indicator.style.display = 'none';
+      }
+    };
+    const onUp = (): void => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (draggedEl) draggedEl.style.opacity = '';
+      this.clearFlowOverlay();
+      if (moved && targetIndex >= 0) this.state.reorderLayer(layerId, targetIndex);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  // Resize a flow component: E/W handles snap width to grid span (1–12),
+  // N/S handles set an explicit row height (flow_h). Corners do both.
+  private startFlowResize(e: PointerEvent, layerId: string, handle: string, origW: number, origH: number): void {
+    const m = this.flowMetrics;
+    if (!m) return;
+    const startX = e.clientX, startY = e.clientY;
+    const zoom = this.state.get().zoom || 1;
+    const horiz = handle.includes('e') || handle.includes('w');
+    const vert = handle.includes('n') || handle.includes('s');
+    let started = false;
+
+    const onMove = (me: PointerEvent): void => {
+      const dx = (me.clientX - startX) / zoom;
+      const dy = (me.clientY - startY) / zoom;
+      if (!started) {
+        if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+        started = true;
+        this.state.beginInteraction();
+        this.showFlowGrid();
+      }
+      const updates: Record<string, unknown> = {};
+      if (horiz) {
+        const newW = handle.includes('w') ? origW - dx : origW + dx;
+        updates['span'] = widthToSpan(newW, m);
+      }
+      if (vert) {
+        const newH = handle.includes('n') ? origH - dy : origH + dy;
+        updates['flow_h'] = Math.max(40, Math.round(newH));
+      }
+      if (Object.keys(updates).length > 0) {
+        this.state.updateLayer(layerId, updates as Parameters<typeof this.state.updateLayer>[1], false);
+      }
+    };
+    const onUp = (): void => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      this.hideFlowGrid();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private showFlowGrid(): void {
+    if (!this.flowMetrics) return;
+    this.clearFlowOverlay();
+    const m = this.flowMetrics;
+    const h = this.flowContentHeight || 1000;
+    const accent = this.flowAccent();
+    for (let i = 0; i < 12; i++) {
+      const col = document.createElement('div');
+      col.style.cssText = `position:absolute;left:${flowColumnX(i, m)}px;top:0;width:${m.colW}px;height:${h}px;background:${accent}14;border-left:1px solid ${accent}3a;border-right:1px solid ${accent}3a;pointer-events:none;`;
+      this.flowOverlay.appendChild(col);
+    }
+  }
+
+  private hideFlowGrid(): void { this.clearFlowOverlay(); }
 
   private drawSmartGuides(
     draggedId: string,

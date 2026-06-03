@@ -238,6 +238,10 @@ export interface BaseLayer {
   pos?: PositionShorthand;
   /** Flow-report grid span (1–12 columns). Ignored outside flow/scroll reports. */
   span?: number;
+  /** Flow-report explicit row height override (px). Source of truth honored by
+   *  computeFlowLayout (the computed `height` is rewritten each layout pass, so
+   *  a user-resized height lives here instead). Ignored outside flow reports. */
+  flow_h?: number;
   rotation?: number;
   flip_h?: boolean;
   flip_v?: boolean;

@@ -144,6 +144,45 @@ describe('StateManager', () => {
       expect(sm.get().design?.layers).toHaveLength(2);
     });
 
+    const ids = (sm: StateManager): string[] => sm.getCurrentLayers().map(l => l.id);
+
+    it('reorderLayer moves a layer to a new index and is undoable', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([
+        { id: 'a', type: 'rect', z: 0 } as Layer,
+        { id: 'b', type: 'rect', z: 1 } as Layer,
+        { id: 'c', type: 'rect', z: 2 } as Layer,
+      ]));
+      sm.reorderLayer('a', 2); // a → end (after removal, index 2 == last)
+      expect(ids(sm)).toEqual(['b', 'c', 'a']);
+      sm.undo();
+      expect(ids(sm)).toEqual(['a', 'b', 'c']);
+    });
+
+    it('reorderLayer is a no-op (no undo entry) when position is unchanged', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([
+        { id: 'a', type: 'rect', z: 0 } as Layer,
+        { id: 'b', type: 'rect', z: 1 } as Layer,
+      ]));
+      const canUndoBefore = sm.canUndo();
+      sm.reorderLayer('a', 0); // already at 0
+      expect(ids(sm)).toEqual(['a', 'b']);
+      expect(sm.canUndo()).toBe(canUndoBefore);
+    });
+
+    it('reorderLayer clamps an out-of-range target index', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([
+        { id: 'a', type: 'rect', z: 0 } as Layer,
+        { id: 'b', type: 'rect', z: 1 } as Layer,
+      ]));
+      sm.reorderLayer('b', 99);
+      expect(ids(sm)).toEqual(['a', 'b']);
+      sm.reorderLayer('b', -5);
+      expect(ids(sm)).toEqual(['b', 'a']);
+    });
+
     it('removeLayer removes a layer', () => {
       const sm = new StateManager();
       sm.set('design', makeDesign([

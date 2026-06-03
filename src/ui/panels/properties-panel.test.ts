@@ -868,3 +868,57 @@ describe('PropertiesPanelManager — flip buttons (lines 828-836)', () => {
     expect(updated.flip_v).toBe(false);
   });
 });
+
+// ── Flow-report position fields (Span + Height instead of X/Y/W/H) ──
+describe('PropertiesPanelManager — flow report layer', () => {
+  afterEach(() => { document.querySelectorAll('div').forEach(el => el.remove()); });
+
+  function flowDesign(layers: Layer[]): DesignSpec {
+    return {
+      _protocol: 'design/v1',
+      meta: { id: 'f', name: 'Flow', type: 'report', created: '', modified: '' },
+      document: { width: 1200, height: 100, unit: 'px', dpi: 96 },
+      pages: [{ id: 'p', label: 'P', layers }],
+      report: { layout: 'flow' },
+    } as unknown as DesignSpec;
+  }
+  function setupFlow(layers: Layer[]) {
+    const state = new StateManager();
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = '<div class="properties-content"></div>';
+    document.body.appendChild(wrapper);
+    const panel = new PropertiesPanelManager(wrapper, state);
+    state.set('design', flowDesign(layers), false);
+    return { state, panel, wrapper };
+  }
+  const chart = (over: Partial<Layer> = {}): Layer =>
+    ({ id: 'pbar', type: 'interactive_chart', z: 0, chart_type: 'bar', data_ref: 'ds', span: 7, ...over }) as unknown as Layer;
+
+  it('shows Span + Height inputs, not free X/Y/W', () => {
+    const { state, wrapper } = setupFlow([chart()]);
+    state.set('selectedLayerIds', ['pbar']);
+    expect(wrapper.querySelector('.prop-input[data-prop="span"]')).not.toBeNull();
+    expect(wrapper.querySelector('.prop-input[data-prop="flow_h"]')).not.toBeNull();
+    expect(wrapper.querySelector('.prop-input[data-prop="x"]')).toBeNull();
+    expect(wrapper.querySelector('.prop-input[data-prop="width"]')).toBeNull();
+  });
+
+  it('editing the Span input updates layer.span', () => {
+    const { state, wrapper } = setupFlow([chart()]);
+    state.set('selectedLayerIds', ['pbar']);
+    const span = wrapper.querySelector<HTMLInputElement>('.prop-input[data-prop="span"]')!;
+    expect(span.value).toBe('7');
+    span.value = '5';
+    span.dispatchEvent(new Event('input'));
+    expect((state.getCurrentLayers().find(l => l.id === 'pbar') as unknown as { span: number }).span).toBe(5);
+  });
+
+  it('editing Height sets flow_h', () => {
+    const { state, wrapper } = setupFlow([chart()]);
+    state.set('selectedLayerIds', ['pbar']);
+    const h = wrapper.querySelector<HTMLInputElement>('.prop-input[data-prop="flow_h"]')!;
+    h.value = '420';
+    h.dispatchEvent(new Event('input'));
+    expect((state.getCurrentLayers().find(l => l.id === 'pbar') as unknown as { flow_h: number }).flow_h).toBe(420);
+  });
+});
