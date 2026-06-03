@@ -13,31 +13,48 @@ z = stacking order (higher = front)
    dimensions the layer renders INVISIBLY. add_layers now rejects 0-dim
    layers with a clear error, but get it right first to save round-trips.
 
-🃏 Feature / benefit / product poster with CARDS? Use the feature_grid PRESET —
-   ONE layer. The engine positions the title, subtitle and every card for you.
-   NEVER hand-place card x/y as separate rect+text layers — they collide into an
-   unreadable pile (the #1 small-model failure). Content only, no coordinates:
+🎨 DESIGN LIKE A HUMAN — not an AI template. The #1 tell of AI-generated design
+   is a dark-navy canvas + blue/purple GRADIENT + one glowing accent + centered
+   text. Avoid that. Make it look art-directed:
+   • CANVAS: flat solid — NO gradient by default. Warm off-white #FAF5EC / #FFFBEB,
+     near-black #0A0A0A, or a deep editorial hue. Gradient only if the topic earns it.
+   • TYPE IS THE DESIGN: headline 4–5× the body (e.g. 100 vs 26). Pair fonts per
+     layer via \`font\`: display "Playfair Display"/"Bebas Neue"/"Anton" · body
+     "Source Serif 4"/"Inter" · LABELS "IBM Plex Mono"/"JetBrains Mono".
+   • Tight headlines: lh:1.0–1.05, track:-1..-2. Mono labels: UPPERCASE, track:1.5.
+   • ONE accent color, used 1–2× (a stat, a rule) — never on everything.
+   • ASYMMETRY + whitespace: left-anchor at x:80–100, leave a column empty. Don't
+     center everything. Depth via a 2–4px RULE/line, NOT glows or soft shadows.
+   • radius: 0 (editorial/print) OR 999 (pills) — avoid the 8–16 "templated" middle.
+
+✅ Editorial poster recipe (flat canvas · serif hero ~4:1 · mono label · one accent · asymmetric):
    add_layers(design_path=..., layers_shorthand=[
-     {type:"feature_grid", pos:[0,0,1080,1080], bg:"gradient",
+     {id:"bg",   type:"rect", z:0,  pos:[0,0,1080,1350], fill:"#FAF5EC"},
+     {id:"kick", type:"text", z:10, pos:[96,110,820,30], text:"FIELD NOTES — NO. 01",
+        size:20, weight:600, color:"#6E5F4A", font:"IBM Plex Mono", track:1.5},
+     {id:"rule", type:"rect", z:10, pos:[96,158,820,2], fill:"#2A2218"},
+     {id:"tick", type:"rect", z:11, pos:[96,156,140,7], fill:"#B8543C"},
+     {id:"head", type:"text", z:10, pos:[96,250,880,470], text:"A headline that does the work.",
+        size:108, weight:800, color:"#2A2218", font:"Playfair Display", lh:1.02},
+     {id:"body", type:"text", z:10, pos:[96,780,560,230], text:"One clear idea. Left column, right side breathes.",
+        size:27, color:"#2A2218", font:"Source Serif 4"},
+     {id:"stat", type:"text", z:10, pos:[96,1060,640,120], text:"61% → 89%",
+        size:92, weight:800, color:"#B8543C", font:"Playfair Display"} ])
+   Other moods (same recipe, swap palette+fonts): BOLD POSTER bg #0A0A0A / accent
+   #FF3D00 / Anton+Inter · SWISS bg #F0F0F0 / red #D02020 / Space Grotesk · WARM
+   bg #FFFBEB / terracotta #9A3412 / Playfair. Pick a palette that fits the topic.
+
+🃏 CARDS / features / benefits? Use the feature_grid PRESET — ONE layer; the engine
+   positions title + cards (NEVER hand-place card x/y — they collide into a pile).
+   Give a FLAT bg + accent, not "gradient":
+   add_layers(design_path=..., layers_shorthand=[
+     {type:"feature_grid", pos:[0,0,1080,1080], bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA",
        title:"Brew Lab", subtitle:"Freshly roasted beans, delivered monthly",
        items:[
          {icon:"coffee", title:"Single Origin", desc:"Ethically sourced beans"},
          {icon:"truck",  title:"Monthly Box",   desc:"Delivered to your door"},
          {icon:"award",  title:"Guaranteed",    desc:"Love it or full refund"}]}
-   ])   ← title auto-wraps & auto-sizes; cards are evenly spaced. See: presets.
-
-✅ Minimum-viable poster — for SIMPLE text posters only (no cards/columns).
-   For anything with repeated cards/columns/rows use feature_grid or a container
-   (§ auto-layout) — hand-placed coordinates are where small models break:
-   add_layers(design_path=..., layers_shorthand=[
-     {id:"bg",       type:"rect", z:0,  pos:[0,0,1080,1080],    fill:"#1a2e0d"},
-     {id:"headline", type:"text", z:10, pos:[80,180,920,160],
-        text:"SAVE THE RAINFOREST", size:84, weight:800, color:"#a8d68a", align:"center"},
-     {id:"body",     type:"text", z:10, pos:[120,520,840,200],
-        text:"Each year we lose…", size:32, color:"#e8f0d8", align:"center"},
-     {id:"cta",      type:"text", z:10, pos:[80,900,920,60],
-        text:"ACT NOW", size:28, weight:700, color:"#ffd54f", align:"center"},
-   ])
+   ])   ← title auto-wraps & auto-sizes; cards evenly spaced. card_fill/accent/text_color optional.
 
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
@@ -122,13 +139,14 @@ Combine with a row/grid container to lay out the copies automatically.
 feature_grid: a complete feature poster in ONE layer — title, subtitle, and a
 row of cards. You give content + colors; the engine positions everything (no
 coordinates to get wrong). Best way to build a feature/benefit poster.
-  {type:"feature_grid", pos:[0,0,1080,1080], bg:"gradient",
+  {type:"feature_grid", pos:[0,0,1080,1080], bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA",
     title:"Nova", subtitle:"Your next-gen companion",
     items:[
       {icon:"zap",          title:"Fast Sync",   desc:"Instantly sync across devices"},
       {icon:"calendar",     title:"Smart Planner",desc:"AI-driven scheduling"},
       {icon:"shield-check", title:"Secure Vault", desc:"End-to-end encrypted"}]}
-  Optional: card_fill, accent (icon), text_color, muted (default to theme tokens).
+  Optional: card_fill, accent (icon), text_color, muted. Prefer a FLAT bg hex over
+  bg:"gradient" — a flat canvas + one accent reads designed, not AI-generated.
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
@@ -137,8 +155,10 @@ KPI:       {type:"kpi_card", pos:[..], label:"Revenue", value:"$1.2M", delta:"+1
 Component: {type:"component", pos:[..], ref:"<saved-id>", slots:{...}}  (make one via save_as_component)
   NOTE: chart + kpi_card render in the editor & HTML export but NOT in PNG (they use foreignObject).
 
-Text shorthand fields:  text, size, weight, color, align, text_decoration:"underline"|"line-through"
-  Aliases accepted: content→text, font_size→size, symbol→icon, url/href→src.
+Text shorthand fields:  text, font, size, weight, color, align, line_height, letter_spacing, text_decoration:"underline"|"line-through"
+  font = any family ("Playfair Display","Bebas Neue","Inter","IBM Plex Mono"…) — set it per layer for real type hierarchy.
+  line_height (alias lh): 1.0–1.05 tight display, 1.5 body.  letter_spacing (alias track): -2..-1 big headlines, +1.5 uppercase mono labels.
+  Aliases accepted: content→text, font_size→size, symbol→icon, url/href→src, lh→line_height, track/tracking→letter_spacing.
 Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"linear",angle:135,stops:[{color:"#a",position:0},{color:"#b",position:100}]}
   (position is 0–100; "gradient"/pos:0-1 are tolerated and normalized)
 Stroke shorthand:       "#hex" or {color:"#hex",width:2,dash:[4,2]}
