@@ -45,6 +45,7 @@ export const TIER3_HANDLERS: Record<string, Handler> = {
   generate_report:     (a) => engine.generateReport(a as Parameters<typeof engine.generateReport>[0]),
   bind_data:           (a) => engine.bindData(a as Parameters<typeof engine.bindData>[0]),
   export_report:       (a) => engine.exportReport(a as Parameters<typeof engine.exportReport>[0]),
+  validate_report:     (a) => engine.validateReportDesign(a as Parameters<typeof engine.validateReportDesign>[0]),
   create_presentation: (a) => engine.createPresentation(a as Parameters<typeof engine.createPresentation>[0]),
   export_presentation: (a) => engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]),
   set_formula_context: (a) => engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]),

@@ -146,6 +146,18 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       required: ['design_path'],
     },
   },
+  {
+    name: 'validate_report',
+    description: 'Lint an interactive report\'s cross-references BEFORE exporting: every chart/table/filter resolves to a real dataset + field, buttons open existing modals, transforms group by present fields. Returns {ok, errors, warnings, diagnostics[]}. Call after add_layers to catch silent breakage.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml (must be type: report)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
   // ── Presentation tools ────────────────────────────────────
   {
     name: 'create_presentation',

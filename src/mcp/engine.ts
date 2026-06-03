@@ -7,6 +7,8 @@ import { BUILTIN_THEMES } from '../themes/builtin';
 import { Resvg } from '@resvg/resvg-js';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
+import { validateReport, type ReportDiagnostic } from '../report/report-validator';
+import { computeGroupAgg, type GroupAggOp } from '../report/aggregator';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
 import {
@@ -552,12 +554,16 @@ export function addLayers(args: {
 
   const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming)];
   for (const n of notes) progress.push(pInfo('Layer note', n));
+  // Report cross-reference diagnostics (charts→datasets, buttons→modals, …) so
+  // the LLM building the report sees broken refs immediately, not at export.
+  const diagnostics = spec.meta.type === 'report' ? validateReport(spec) : [];
+  for (const d of diagnostics) progress.push(pWarn(`[${d.code}] ${d.message}`, d.fix));
   const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: 0, hint: notes.length ? `Layers added with ${notes.length} note(s) to address — see notes — then seal_design.` : 'Layers added. Call seal_design or add more layers.' };
   const context = buildContext(op, `Added ${incoming.length} layer(s) to ${path.basename(dPath)}`, [
     { type: 'design', path: dPath, role: 'updated' },
   ]);
   const handover = buildHandover('COMPOSE', { design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}) });
-  return okResult(op, { added: incoming.length, layer_ids: incoming.map(l => l.id), ...(notes.length ? { notes } : {}), next_action, progress, context, handover }, bak);
+  return okResult(op, { added: incoming.length, layer_ids: incoming.map(l => l.id), ...(notes.length ? { notes } : {}), ...(diagnostics.length ? { diagnostics } : {}), next_action, progress, context, handover }, bak);
 }
 
 export function appendPage(args: {
@@ -1402,10 +1408,25 @@ export function exportReport(args: {
 
   try {
     
+    // Resolve datasets: inline/query → baked rows; transform → aggregate its
+    // upstream synchronously so group-by charts populate in the export (not just
+    // the editor preview).
     const datasets = new Map<string, LoadedDataset>();
-    const sources: { id: string; rows?: Record<string, unknown>[] }[] = spec.report?.data?.sources ?? [];
-    for (const src of sources) {
-      if (src.rows) datasets.set(src.id, { id: src.id, rows: src.rows });
+    const allSources = spec.report?.data?.sources ?? [];
+    for (const src of allSources) {
+      if (src.type !== 'transform' && Array.isArray(src.rows)) datasets.set(src.id, { id: src.id, rows: src.rows });
+    }
+    for (const src of allSources) {
+      if (src.type !== 'transform') continue;
+      const fromRows = datasets.get(src.from ?? '')?.rows ?? [];
+      const rows = src.group_by ? computeGroupAgg(fromRows, src.group_by, (src.agg ?? 'sum') as GroupAggOp, src.value) : (src.rows ?? []);
+      datasets.set(src.id, { id: src.id, rows });
+    }
+
+    // Cross-reference validation — surfaced as diagnostics, never blocks export.
+    const diagnostics = validateReport(spec);
+    for (const issue of diagnostics) {
+      progress.push(pWarn(`[${issue.code}] ${issue.message}`, issue.fix));
     }
 
     const html: string = assembleReportHTML(spec, datasets, { theme: args.theme ?? 'dark' });
@@ -1413,14 +1434,40 @@ export function exportReport(args: {
     fs.writeFileSync(outPath, html, 'utf-8');
     progress.push(pOk('Report HTML written', path.basename(outPath)));
 
-    const context = buildContext(op, `Report exported as HTML: ${path.basename(outPath)}`, [
+    const errors = diagnostics.filter(x => x.severity === 'error').length;
+    const summary = diagnostics.length
+      ? `Report exported with ${errors} error(s) + ${diagnostics.length - errors} warning(s) — see diagnostics`
+      : `Report exported as HTML: ${path.basename(outPath)}`;
+    const context = buildContext(op, summary, [
       { type: 'html', path: outPath, role: 'report-output' },
     ]);
     const handover = buildHandover('EXPORT', { output_path: outPath });
-    return okResult(op, { output_path: outPath, output_file: path.basename(outPath), bytes: html.length, progress, context, handover });
+    return okResult(op, { output_path: outPath, output_file: path.basename(outPath), bytes: html.length, diagnostics, progress, context, handover });
   } catch (err) {
     return errResult(op, `HTML assembly failed: ${(err as Error).message}`, 'Ensure design has pages.', progress);
   }
+}
+
+// Standalone cross-reference linter for an interactive report — call anytime to
+// check charts/tables/filters/buttons/transforms resolve before exporting.
+export function validateReportDesign(args: {
+  design_path: string;
+  project_path?: string;
+}): ToolResult {
+  const op = 'validate_report';
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+  const spec = readYAML<DesignSpec>(dPath);
+  if (spec.meta.type !== 'report') return errResult(op, 'Design is not type "report"', 'validate_report only applies to reports.');
+
+  const diagnostics: ReportDiagnostic[] = validateReport(spec);
+  const errors = diagnostics.filter(d => d.severity === 'error').length;
+  const warnings = diagnostics.length - errors;
+  const progress: ProgressItem[] = diagnostics.length
+    ? diagnostics.map(d => (d.severity === 'error' ? pWarn(`[${d.code}] ${d.message}`, d.fix) : pInfo('warning', `[${d.code}] ${d.message}`)))
+    : [pOk('No issues', 'All datasets, fields, and action targets resolve')];
+  const context = buildContext(op, diagnostics.length ? `${errors} error(s), ${warnings} warning(s)` : 'Report is valid');
+  return okResult(op, { ok: errors === 0, errors, warnings, diagnostics, progress, context });
 }
 
 // ── Formula tools ─────────────────────────────────────────────
