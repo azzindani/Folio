@@ -31,11 +31,11 @@ export function buildSandboxSrcdoc(scripts: ScriptDef[]): string {
   function _safe(code,ctx){
     var fn=new Function(
       'state','data','event','console',
-      'window','document','fetch','eval','require','XMLHttpRequest',
+      'window','document','fetch','require','XMLHttpRequest',
       '"use strict";'+code
     );
     return fn(ctx.state,ctx.data,ctx.event,_safeConsole,
-      undefined,undefined,undefined,undefined,undefined,undefined);
+      undefined,undefined,undefined,undefined,undefined);
   }
   var _safeConsole={log:function(){},warn:function(){},error:function(){}};
   window.addEventListener('message',function(e){
