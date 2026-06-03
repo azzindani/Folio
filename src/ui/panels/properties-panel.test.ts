@@ -922,3 +922,71 @@ describe('PropertiesPanelManager — flow report layer', () => {
     expect((state.getCurrentLayers().find(l => l.id === 'pbar') as unknown as { flow_h: number }).flow_h).toBe(420);
   });
 });
+
+// ── Report-component property inspector ──────────────────────
+describe('PropertiesPanelManager — report component fields', () => {
+  afterEach(() => { document.querySelectorAll('div').forEach(el => el.remove()); });
+
+  function reportDesign(layers: Layer[]): DesignSpec {
+    return {
+      _protocol: 'design/v1',
+      meta: { id: 'r', name: 'R', type: 'report', created: '', modified: '' },
+      document: { width: 1200, height: 100, unit: 'px', dpi: 96 },
+      pages: [{ id: 'p', label: 'P', layers }],
+      report: { layout: 'flow', data: { sources: [{ id: 'stocks', type: 'inline', rows: [{ ticker: 'BBRI', sector: 'Banking', yield: 6.8 }] }] } },
+    } as unknown as DesignSpec;
+  }
+  function setupR(layers: Layer[]) {
+    const state = new StateManager();
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = '<div class="properties-content"></div>';
+    document.body.appendChild(wrapper);
+    const panel = new PropertiesPanelManager(wrapper, state);
+    state.set('design', reportDesign(layers), false);
+    return { state, wrapper, panel };
+  }
+  const get = (state: StateManager, id: string) => state.getCurrentLayers().find(l => l.id === id) as unknown as Record<string, unknown>;
+
+  it('renders chart fields with dataset-derived field pickers', () => {
+    const { state, wrapper } = setupR([{ id: 'ch', type: 'interactive_chart', z: 0, chart_type: 'bar', data_ref: 'stocks', x_field: 'ticker', y_field: 'yield' } as unknown as Layer]);
+    state.set('selectedLayerIds', ['ch']);
+    expect(wrapper.querySelector('.prop-select[data-prop="chart_type"]')).not.toBeNull();
+    const xField = wrapper.querySelector<HTMLSelectElement>('.prop-select[data-prop="x_field"]')!;
+    expect([...xField.options].map(o => o.value)).toContain('sector');
+  });
+
+  it('changing chart_type via the select updates the layer', () => {
+    const { state, wrapper } = setupR([{ id: 'ch', type: 'interactive_chart', z: 0, chart_type: 'bar', data_ref: 'stocks' } as unknown as Layer]);
+    state.set('selectedLayerIds', ['ch']);
+    const seln = wrapper.querySelector<HTMLSelectElement>('.prop-select[data-prop="chart_type"]')!;
+    seln.value = 'line';
+    seln.dispatchEvent(new Event('change'));
+    expect(get(state, 'ch').chart_type).toBe('line');
+  });
+
+  it('a boolean checkbox writes a real boolean', () => {
+    const { state, wrapper } = setupR([{ id: 't', type: 'interactive_table', z: 0, data_ref: 'stocks', columns: [{ field: 'ticker', title: 'T' }] } as unknown as Layer]);
+    state.set('selectedLayerIds', ['t']);
+    const cb = wrapper.querySelector<HTMLInputElement>('input.prop-check[data-prop="row_detail"]')!;
+    cb.checked = true;
+    cb.dispatchEvent(new Event('change'));
+    expect(get(state, 't').row_detail).toBe(true);
+  });
+
+  it('Add column appends a column to the table', () => {
+    const { state, wrapper } = setupR([{ id: 't', type: 'interactive_table', z: 0, data_ref: 'stocks', columns: [{ field: 'ticker', title: 'T' }] } as unknown as Layer]);
+    state.set('selectedLayerIds', ['t']);
+    const before = (get(state, 't').columns as unknown[]).length;
+    wrapper.querySelector<HTMLButtonElement>('[data-arr-action="add-col"]')!.click();
+    expect((get(state, 't').columns as unknown[]).length).toBe(before + 1);
+  });
+
+  it('editing a nested column field via dotted data-prop updates it', () => {
+    const { state, wrapper } = setupR([{ id: 't', type: 'interactive_table', z: 0, data_ref: 'stocks', columns: [{ field: 'ticker', title: 'Ticker' }] } as unknown as Layer]);
+    state.set('selectedLayerIds', ['t']);
+    const titleInput = wrapper.querySelector<HTMLInputElement>('.prop-input[data-prop="columns.0.title"]')!;
+    titleInput.value = 'Symbol';
+    titleInput.dispatchEvent(new Event('input'));
+    expect((get(state, 't').columns as Record<string, unknown>[])[0].title).toBe('Symbol');
+  });
+});

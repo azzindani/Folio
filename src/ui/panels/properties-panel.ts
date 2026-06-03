@@ -6,6 +6,7 @@ import { removeBackground } from '../../utils/bg-remover';
 import { attachWheelAdjustAll } from '../inputs/wheel-adjust';
 import { flowGridMetrics } from '../../renderer/flow-layout';
 import { widthToSpan } from '../../editor/flow-edit';
+import { renderReportFields, hasReportFields, type DatasetInfo } from './report-fields';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -131,6 +132,11 @@ export class PropertiesPanelManager {
       case 'image':       appearance = this.renderImageFields(layer as ImageLayer); break;
       case 'auto_layout': appearance = this.renderAutoLayoutFields(layer as import('../../schema/types').AutoLayoutLayer); break;
     }
+    // Interactive report components (chart/table/kpi/button/tabs/…) get a
+    // schema-driven property form keyed off the bound datasets.
+    if (!appearance && hasReportFields(layer.type)) {
+      appearance = renderReportFields(layer, this.reportDatasets());
+    }
     if (appearance) html += this.section('Appearance', appearance);
 
     // Transform section
@@ -172,13 +178,69 @@ export class PropertiesPanelManager {
     // Effects section — shadows + blur
     html += this.section('Effects', this.renderEffectsFields(layer), true);
 
+    // The panel re-renders on every design change (incl. the edits it triggers
+    // itself), which would clobber the field being typed in. Capture the focused
+    // field + caret and restore them after the rebuild so editing stays smooth
+    // AND linked pickers (e.g. x/y options after a data_ref change) refresh.
+    const focus = this.captureFocus();
     this.content.innerHTML = html;
     this.bindInputs(layer);
     this.bindColorWells(layer);
     this.bindGradientEditor(layer);
     this.bindEffectsButtons(layer);
+    this.bindReportArrays(layer);
     this.bindAccordions();
     if (layer.type === 'image') this.bindSVGRecolor(layer as ImageLayer);
+    this.restoreFocus(focus);
+  }
+
+  private captureFocus(): { prop: string; start: number | null; end: number | null } | null {
+    const el = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+    if (!el || !this.content.contains(el) || !el.dataset?.prop) return null;
+    let start: number | null = null, end: number | null = null;
+    try { start = el.selectionStart; end = el.selectionEnd; } catch { /* number inputs reject selection API */ }
+    return { prop: el.dataset.prop, start, end };
+  }
+
+  private restoreFocus(f: { prop: string; start: number | null; end: number | null } | null): void {
+    if (!f) return;
+    const el = this.content.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-prop="${CSS.escape(f.prop)}"]`);
+    if (!el) return;
+    el.focus();
+    try { if (f.start != null) el.setSelectionRange(f.start, f.end ?? f.start); } catch { /* unsupported input type */ }
+  }
+
+  // Add/remove buttons for the report-component array editors (table columns,
+  // toggle options, tabs, accordion items). Field-level edits inside each array
+  // element flow through the generic .prop-input handler via dotted data-prop.
+  private bindReportArrays(layer: Layer): void {
+    const defaults: Record<string, { prop: string; make?: () => unknown }> = {
+      'add-col': { prop: 'columns', make: () => ({ field: '', title: 'Column', align: 'left' }) },
+      'del-col': { prop: 'columns' },
+      'add-opt': { prop: 'options', make: () => 'Option' },
+      'del-opt': { prop: 'options' },
+      'add-tab': { prop: 'tabs', make: () => ({ label: 'Tab', layers: [] }) },
+      'del-tab': { prop: 'tabs' },
+      'add-acc': { prop: 'items', make: () => ({ title: 'Section', body: '' }) },
+      'del-acc': { prop: 'items' },
+    };
+    this.content.querySelectorAll<HTMLButtonElement>('[data-arr-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const action = btn.dataset.arrAction!;
+        const def = defaults[action];
+        if (!def) return;
+        const cur = this.state.getCurrentLayers().find(l => l.id === layer.id) as unknown as Record<string, unknown> | undefined;
+        const arr = Array.isArray(cur?.[def.prop]) ? [...(cur![def.prop] as unknown[])] : [];
+        if (action.startsWith('add-')) {
+          arr.push(def.make ? def.make() : null);
+        } else {
+          const idx = Number(btn.dataset.arrIndex);
+          if (Number.isInteger(idx) && idx >= 0 && idx < arr.length) arr.splice(idx, 1);
+        }
+        this.applyPropertyChange(layer.id, def.prop, arr);
+      });
+    });
   }
 
   private renderBooleanOpsSection(): string {
@@ -343,6 +405,19 @@ export class PropertiesPanelManager {
       header.addEventListener('click', () => {
         header.closest('.prop-section')?.classList.toggle('collapsed');
       });
+    });
+  }
+
+  // Bound datasets (id + column names) for the report-component field pickers.
+  // Columns come from a source's inline rows; file/query sources expose [] (the
+  // picker falls back to a free-text current value).
+  private reportDatasets(): DatasetInfo[] {
+    const sources = this.state.get().design?.report?.data?.sources;
+    if (!Array.isArray(sources)) return [];
+    return sources.map(s => {
+      const rows = (s as { rows?: Record<string, unknown>[] }).rows;
+      const columns = Array.isArray(rows) && rows[0] ? Object.keys(rows[0]) : [];
+      return { id: s.id, columns };
     });
   }
 
@@ -927,6 +1002,13 @@ export class PropertiesPanelManager {
 
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
+    });
+
+    // Boolean checkboxes (report-component forms) write a real boolean.
+    this.content.querySelectorAll<HTMLInputElement>('input.prop-check[data-prop]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        this.applyPropertyChange(layer.id, cb.dataset.prop!, cb.checked);
+      });
     });
 
     // Mouse-wheel adjusts every number field. Shift = ×10, Alt = ×0.1.
