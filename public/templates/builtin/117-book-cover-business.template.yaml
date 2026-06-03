@@ -48,13 +48,7 @@ layers:
     y: 200
     width: 480
     height: 480
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: geo-square-2
     type: rect
     z: 6

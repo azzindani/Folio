@@ -70,13 +70,7 @@ layers:
     width: 920
     height: 480
     radius: 24
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $surface2 }
   - id: photo-icon
     type: text
     z: 11

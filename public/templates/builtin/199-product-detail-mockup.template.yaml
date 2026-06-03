@@ -55,13 +55,7 @@ layers:
     width: 880
     height: 880
     radius: 24
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
-
+    fill: { type: solid, color: $surface }
   - id: img-shape
     type: circle
     z: 11

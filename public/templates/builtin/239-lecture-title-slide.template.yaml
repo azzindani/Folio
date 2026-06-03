@@ -40,13 +40,7 @@ layers:
     y: 0
     width: 1920
     height: 1080
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Decorative left rail ──────────────────────────────────
   - id: rail
     type: rect
@@ -274,13 +268,7 @@ layers:
     width: 200
     height: 200
     radius: 0
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: logo-mark
     type: text
     z: 41

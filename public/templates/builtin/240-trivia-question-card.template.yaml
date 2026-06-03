@@ -40,11 +40,7 @@ layers:
     cy: 540
     rx: 600
     ry: 600
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$background", position: 100 }
+    fill: { type: solid, color: $primary }
     opacity: 0.18
 
   - id: bg-grid-h

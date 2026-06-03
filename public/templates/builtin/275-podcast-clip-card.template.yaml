@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1080
     height: 1080
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: bg-bloom
     type: circle
     z: 1
@@ -44,11 +38,7 @@ layers:
     cy: 200
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.5
 
   - id: top-rule

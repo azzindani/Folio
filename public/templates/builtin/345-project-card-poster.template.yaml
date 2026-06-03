@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1200
     height: 1500
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: accent-band
     type: rect
     z: 2
@@ -53,11 +47,7 @@ layers:
     cy: 120
     rx: 260
     ry: 260
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.25
 
   - id: pulse-dot

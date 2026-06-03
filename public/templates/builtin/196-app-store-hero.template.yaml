@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1080
     height: 1920
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glow
     type: circle
     z: 1
@@ -44,11 +38,7 @@ layers:
     cy: 1100
     rx: 700
     ry: 700
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.4
 
   # ── App icon ──────────────────────────────────────────────
@@ -71,12 +61,7 @@ layers:
     width: 400
     height: 400
     radius: 88
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
+    fill: { type: solid, color: $primary }
     effects:
       shadow:
         - { dx: 0, dy: 32, blur: 64, color: "rgba(0,0,0,0.35)" }

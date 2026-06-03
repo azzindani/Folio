@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 1200
     height: 675
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glow
     type: circle
     z: 1
@@ -43,11 +37,7 @@ layers:
     cy: 540
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   - id: accent-stripe

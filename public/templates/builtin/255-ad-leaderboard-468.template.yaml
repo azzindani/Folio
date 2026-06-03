@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 468
     height: 60
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: accent-bar
     type: rect
     z: 1

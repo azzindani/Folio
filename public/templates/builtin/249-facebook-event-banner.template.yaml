@@ -51,11 +51,7 @@ layers:
     cy: 980
     rx: 280
     ry: 280
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.18
 
   # ── Eyebrow ───────────────────────────────────────────────

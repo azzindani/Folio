@@ -90,12 +90,7 @@ layers:
     width: 252
     height: 160
     radius: 4
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$border", width: 1 }
 
   - id: image-label

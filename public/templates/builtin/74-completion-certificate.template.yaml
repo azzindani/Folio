@@ -365,11 +365,7 @@ layers:
     cy: 1390
     rx: 110
     ry: 110
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "#9C7A2E", position: 100 }
+    fill: { type: solid, color: $accent }
     opacity: 0.95
 
   - id: seal-ring
@@ -390,12 +386,7 @@ layers:
     cy: 1390
     rx: 70
     ry: 70
-    fill:
-      type: radial
-      stops:
-        - { color: "#F4D58D", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: "#F4D58D" }
   - id: seal-icon
     type: text
     z: 73

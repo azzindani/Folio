@@ -40,13 +40,7 @@ layers:
     y: 0
     width: 960
     height: 1080
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: brand-glow
     type: circle
     z: 6
@@ -54,11 +48,7 @@ layers:
     cy: 880
     rx: 520
     ry: 520
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.5
 
   # ── Brand logo mark ───────────────────────────────────────

@@ -109,12 +109,7 @@ layers:
     width: 180
     height: 54
     radius: 6
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$border", width: 1 }
 
   - id: visual-label

@@ -39,12 +39,7 @@ layers:
     width: 820
     height: 920
     radius: 0
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$border", width: 1 }
 
   - id: image-placeholder-icon

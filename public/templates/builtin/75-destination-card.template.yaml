@@ -39,14 +39,7 @@ layers:
     y: 0
     width: 1080
     height: 675
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 60 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: photo-overlay
     type: rect
     z: 6
@@ -54,13 +47,7 @@ layers:
     y: 475
     width: 1080
     height: 200
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "transparent", position: 0 }
-        - { color: "$background", position: 100 }
-
+    fill: { type: solid, color: $background }
   # --- star rating badge (top-right) ---
   - id: rating-badge
     type: rect

@@ -55,13 +55,7 @@ layers:
     width: 84
     height: 84
     radius: 20
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: app-icon-letter
     type: text
     z: 11

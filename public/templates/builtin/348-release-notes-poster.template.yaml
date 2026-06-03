@@ -46,11 +46,7 @@ layers:
     cy: 200
     rx: 70
     ry: 70
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   - id: eyebrow

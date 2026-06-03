@@ -41,14 +41,7 @@ layers:
     y: 0
     width: 1000
     height: 900
-    fill:
-      type: linear
-      angle: 165
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 60 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   # ── Decorative leaf shapes ────────────────────────────────
   - id: leaf-1
     type: circle

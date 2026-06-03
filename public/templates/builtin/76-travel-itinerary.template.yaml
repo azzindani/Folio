@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 1080
     height: 1620
-    fill:
-      type: linear
-      angle: 200
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # --- header eyebrow + trip name + date range ---
   - id: eyebrow
     type: text

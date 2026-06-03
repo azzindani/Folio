@@ -28,7 +28,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: $primary } }
       - { id: deco-cloud-1, type: circle, z: 1, cx: 220, cy: 240, rx: 130, ry: 130, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.7 }
       - { id: deco-cloud-2, type: circle, z: 1, cx: 1280, cy: 320, rx: 110, ry: 110, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.55 }
       - { id: deco-sun, type: circle, z: 1, cx: 1320, cy: 180, rx: 90, ry: 90, fill: { type: solid, color: "$secondary" }, opacity: 0.85 }
@@ -47,7 +47,7 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
       - { id: corner-deco, type: circle, z: 1, cx: 80, cy: 80, rx: 60, ry: 60, fill: { type: solid, color: "$primary" }, opacity: 0.2 }
       - { id: image-frame, type: rect, z: 10, x: 120, y: 160, width: 1260, height: 880, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 } }
-      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.4 }
+      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: solid, color: $primary }, opacity: 0.4 }
       - { id: image-placeholder, type: text, z: 12, x: 120, y: 580, width: 1260, height: 0, content: { type: plain, value: "[ a sleepy starry sky over the village ]" }, style: { font_family: $body, font_size: 24, color: $text_muted, text_align: center, font_style: italic } }
       - { id: chapter-mark, type: text, z: 20, x: 120, y: 1120, width: 1260, height: 0, content: { type: plain, value: "ONE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
       - { id: story-line, type: text, z: 21, x: 200, y: 1180, width: 1100, height: 0, content: { type: plain, value: "Once upon a quiet evening, a tiny star woke up in a sky full of sleeping suns." }, style: { font_family: $heading, font_size: 44, font_style: italic, color: $text, text_align: center, line_height: 1.4 } }
@@ -60,7 +60,7 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
       - { id: corner-deco, type: circle, z: 1, cx: 1420, cy: 80, rx: 60, ry: 60, fill: { type: solid, color: "$secondary" }, opacity: 0.25 }
       - { id: image-frame, type: rect, z: 10, x: 120, y: 160, width: 1260, height: 880, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 } }
-      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.35 }
+      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: solid, color: $secondary }, opacity: 0.35 }
       - { id: image-placeholder, type: text, z: 12, x: 120, y: 580, width: 1260, height: 0, content: { type: plain, value: "[ the little star drifts past curious clouds ]" }, style: { font_family: $body, font_size: 24, color: $text_muted, text_align: center, font_style: italic } }
       - { id: chapter-mark, type: text, z: 20, x: 120, y: 1120, width: 1260, height: 0, content: { type: plain, value: "TWO" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
       - { id: story-line, type: text, z: 21, x: 200, y: 1180, width: 1100, height: 0, content: { type: plain, value: "She tiptoed across the clouds, asking each one if it had ever seen the moon." }, style: { font_family: $heading, font_size: 44, font_style: italic, color: $text, text_align: center, line_height: 1.4 } }
@@ -73,7 +73,7 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
       - { id: corner-deco, type: circle, z: 1, cx: 80, cy: 1420, rx: 60, ry: 60, fill: { type: solid, color: "$primary" }, opacity: 0.25 }
       - { id: image-frame, type: rect, z: 10, x: 120, y: 160, width: 1260, height: 880, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 } }
-      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: linear, angle: 45, stops: [{ color: "$primary", position: 0 }, { color: "$surface", position: 100 }] }, opacity: 0.5 }
+      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: solid, color: $primary }, opacity: 0.5 }
       - { id: image-placeholder, type: text, z: 12, x: 120, y: 580, width: 1260, height: 0, content: { type: plain, value: "[ a wise old owl points the way ]" }, style: { font_family: $body, font_size: 24, color: $text_muted, text_align: center, font_style: italic } }
       - { id: chapter-mark, type: text, z: 20, x: 120, y: 1120, width: 1260, height: 0, content: { type: plain, value: "THREE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
       - { id: story-line, type: text, z: 21, x: 200, y: 1180, width: 1100, height: 0, content: { type: plain, value: "An owl with kind eyes pointed his wing toward a hill made entirely of silver light." }, style: { font_family: $heading, font_size: 42, font_style: italic, color: $text, text_align: center, line_height: 1.4 } }
@@ -86,7 +86,7 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
       - { id: corner-deco, type: circle, z: 1, cx: 1420, cy: 1420, rx: 60, ry: 60, fill: { type: solid, color: "$secondary" }, opacity: 0.25 }
       - { id: image-frame, type: rect, z: 10, x: 120, y: 160, width: 1260, height: 880, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 } }
-      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: linear, angle: 90, stops: [{ color: "$secondary", position: 0 }, { color: "$surface", position: 100 }] }, opacity: 0.45 }
+      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: solid, color: $secondary }, opacity: 0.45 }
       - { id: image-placeholder, type: text, z: 12, x: 120, y: 580, width: 1260, height: 0, content: { type: plain, value: "[ a great rushing river of stars ]" }, style: { font_family: $body, font_size: 24, color: $text_muted, text_align: center, font_style: italic } }
       - { id: chapter-mark, type: text, z: 20, x: 120, y: 1120, width: 1260, height: 0, content: { type: plain, value: "FOUR" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
       - { id: story-line, type: text, z: 21, x: 200, y: 1180, width: 1100, height: 0, content: { type: plain, value: "But the river of stars rushed by so fast that even the bravest could not cross alone." }, style: { font_family: $heading, font_size: 40, font_style: italic, color: $text, text_align: center, line_height: 1.4 } }
@@ -96,10 +96,10 @@ pages:
   - id: climax
     label: Climax
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: linear, angle: 135, stops: [{ color: "$background", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.55 }
-      - { id: glow, type: circle, z: 1, cx: 750, cy: 600, rx: 480, ry: 480, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.6 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: $background }, opacity: 0.55 }
+      - { id: glow, type: circle, z: 1, cx: 750, cy: 600, rx: 480, ry: 480, fill: { type: none }, opacity: 0.6 }
       - { id: image-frame, type: rect, z: 10, x: 120, y: 160, width: 1260, height: 880, radius: 28, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$primary", width: 3 } }
-      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.5 }
+      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: solid, color: $secondary }, opacity: 0.5 }
       - { id: image-placeholder, type: text, z: 12, x: 120, y: 580, width: 1260, height: 0, content: { type: plain, value: "[ she leaps with all her tiny might ]" }, style: { font_family: $body, font_size: 24, color: $text_muted, text_align: center, font_style: italic } }
       - { id: chapter-mark, type: text, z: 20, x: 120, y: 1120, width: 1260, height: 0, content: { type: plain, value: "FIVE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
       - { id: story-line, type: text, z: 21, x: 160, y: 1180, width: 1180, height: 0, content: { type: plain, value: "So she closed her eyes, made a wish, and leaped — and the river caught her in its arms." }, style: { font_family: $heading, font_size: 40, font_style: italic, font_weight: 700, color: $text, text_align: center, line_height: 1.4 } }
@@ -113,7 +113,7 @@ pages:
       - { id: corner-deco-1, type: circle, z: 1, cx: 80, cy: 80, rx: 50, ry: 50, fill: { type: solid, color: "$secondary" }, opacity: 0.3 }
       - { id: corner-deco-2, type: circle, z: 1, cx: 1420, cy: 80, rx: 50, ry: 50, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
       - { id: image-frame, type: rect, z: 10, x: 120, y: 160, width: 1260, height: 880, radius: 28, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 } }
-      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: linear, angle: 180, stops: [{ color: "$surface", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.5 }
+      - { id: image-inner, type: rect, z: 11, x: 160, y: 200, width: 1180, height: 800, radius: 16, fill: { type: solid, color: $surface }, opacity: 0.5 }
       - { id: image-placeholder, type: text, z: 12, x: 120, y: 580, width: 1260, height: 0, content: { type: plain, value: "[ the moon smiles down on a new friend ]" }, style: { font_family: $body, font_size: 24, color: $text_muted, text_align: center, font_style: italic } }
       - { id: chapter-mark, type: text, z: 20, x: 120, y: 1120, width: 1260, height: 0, content: { type: plain, value: "SIX" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
       - { id: story-line, type: text, z: 21, x: 200, y: 1180, width: 1100, height: 0, content: { type: plain, value: "The moon was waiting all along, and welcomed the little star home with a quiet song." }, style: { font_family: $heading, font_size: 40, font_style: italic, color: $text, text_align: center, line_height: 1.4 } }
@@ -123,7 +123,7 @@ pages:
   - id: end-page
     label: The End
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: linear, angle: 180, stops: [{ color: "$surface", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: $surface } }
       - { id: deco-star-1, type: circle, z: 1, cx: 200, cy: 220, rx: 6, ry: 6, fill: { type: solid, color: "$secondary" } }
       - { id: deco-star-2, type: circle, z: 1, cx: 1280, cy: 320, rx: 5, ry: 5, fill: { type: solid, color: "$secondary" } }
       - { id: deco-star-3, type: circle, z: 1, cx: 1340, cy: 180, rx: 8, ry: 8, fill: { type: solid, color: "$secondary" } }

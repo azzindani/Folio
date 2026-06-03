@@ -25,10 +25,10 @@ layers:
   - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
 
   # ── Top pastel arc ───────────────────────────────────────
-  - { id: top-arc, type: circle, z: 2, cx: 540, cy: -200, rx: 720, ry: 720, fill: { type: radial, stops: [ { color: "$primary", position: 0 }, { color: "transparent", position: 100 } ] }, opacity: 0.45 }
+  - { id: top-arc, type: circle, z: 2, cx: 540, cy: -200, rx: 720, ry: 720, fill: { type: none }, opacity: 0.45 }
 
-  - { id: side-blob-l, type: circle, z: 2, cx: -120, cy: 1400, rx: 300, ry: 300, fill: { type: radial, stops: [ { color: "$secondary", position: 0 }, { color: "transparent", position: 100 } ] }, opacity: 0.4 }
-  - { id: side-blob-r, type: circle, z: 2, cx: 1200, cy: 1340, rx: 300, ry: 300, fill: { type: radial, stops: [ { color: "$accent", position: 0 }, { color: "transparent", position: 100 } ] }, opacity: 0.4 }
+  - { id: side-blob-l, type: circle, z: 2, cx: -120, cy: 1400, rx: 300, ry: 300, fill: { type: none }, opacity: 0.4 }
+  - { id: side-blob-r, type: circle, z: 2, cx: 1200, cy: 1340, rx: 300, ry: 300, fill: { type: none }, opacity: 0.4 }
 
   # ── Baby-themed icons (simple geo shapes) ────────────────
   # bottle (left)

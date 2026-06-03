@@ -53,13 +53,7 @@ layers:
     y: 40
     width: 14
     height: 520
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   # ── Stub panel surface ────────────────────────────────────
   - id: stub-panel
     type: rect

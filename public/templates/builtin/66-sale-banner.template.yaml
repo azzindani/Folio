@@ -29,14 +29,7 @@ layers:
     y: 0
     width: 1500
     height: 750
-    fill:
-      type: linear
-      angle: 110
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 50 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $background }
   # 1 — soft accent orb (top-right)
   - id: glow
     type: circle
@@ -45,11 +38,7 @@ layers:
     cy: 180
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.55
 
   # 2 — eyebrow ("FLASH SALE")

@@ -39,14 +39,7 @@ layers:
     y: 0
     width: 1240
     height: 880
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "#5C7A66", position: 50 }
-        - { color: "#2E3D33", position: 100 }
-
+    fill: { type: solid, color: $secondary }
   - id: hero-photo-hint
     type: text
     z: 6

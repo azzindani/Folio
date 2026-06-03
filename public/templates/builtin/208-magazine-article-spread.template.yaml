@@ -28,7 +28,7 @@ pages:
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 2480, height: 1754, fill: { type: solid, color: "$background" } }
       - { id: left-panel, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$surface" } }
-      - { id: left-photo, type: rect, z: 2, x: 100, y: 140, width: 1040, height: 1380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.85, stroke: { color: "$text", width: 1 } }
+      - { id: left-photo, type: rect, z: 2, x: 100, y: 140, width: 1040, height: 1380, fill: { type: solid, color: $primary }, opacity: 0.85, stroke: { color: "$text", width: 1 } }
       - { id: left-photo-placeholder, type: text, z: 3, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "Portrait of the subject in their studio" }, style: { font_family: $body, font_size: 18, color: "#FFFFFF", text_align: center, font_style: italic, opacity: 0.3, letter_spacing: 0.2 } }
       - { id: kicker, type: text, z: 10, x: 1340, y: 140, width: 1040, height: 0, content: { type: plain, value: "PROFILE  ·  THE QUIET ISSUE" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
       - { id: rule-top, type: rect, z: 11, x: 1340, y: 180, width: 120, height: 4, fill: { type: solid, color: "$primary" } }
@@ -68,8 +68,8 @@ pages:
     label: Image Spread
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 2480, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: hero-image, type: rect, z: 10, x: 0, y: 0, width: 1860, height: 1754, fill: { type: linear, angle: 145, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.92 }
-      - { id: hero-overlay, type: rect, z: 11, x: 0, y: 0, width: 1860, height: 1754, fill: { type: linear, angle: 180, stops: [{ color: "transparent", position: 0 }, { color: "$text", position: 100 }] }, opacity: 0.25 }
+      - { id: hero-image, type: rect, z: 10, x: 0, y: 0, width: 1860, height: 1754, fill: { type: solid, color: $secondary }, opacity: 0.92 }
+      - { id: hero-overlay, type: rect, z: 11, x: 0, y: 0, width: 1860, height: 1754, fill: { type: solid, color: $text }, opacity: 0.25 }
       - { id: hero-placeholder, type: text, z: 12, x: 0, y: 800, width: 1860, height: 0, content: { type: plain, value: "[ full-bleed image — Garrick's drawing table at golden hour ]" }, style: { font_family: $body, font_size: 22, color: "#FFFFFF", text_align: center, font_style: italic, opacity: 0.95, letter_spacing: 0.2 } }
       - { id: hero-credit, type: text, z: 13, x: 60, y: 1700, width: 1740, height: 0, content: { type: plain, value: "PHOTOGRAPH · MILO TARRANT FOR MARGINALIA" }, style: { font_family: $mono, font_size: 11, color: "#FFFFFF", opacity: 0.85, letter_spacing: 0.5 } }
       - { id: side-panel, type: rect, z: 20, x: 1860, y: 0, width: 620, height: 1754, fill: { type: solid, color: "$background" } }

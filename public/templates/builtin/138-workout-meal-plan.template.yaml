@@ -26,9 +26,9 @@ pages:
   - id: cover
     label: Cover · Week 01
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: linear, angle: 180, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
-      - { id: hero-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1100, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
-      - { id: glow, type: circle, z: 2, cx: 920, cy: 280, rx: 280, ry: 280, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.25 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: $background } }
+      - { id: hero-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1100, fill: { type: solid, color: $primary } }
+      - { id: glow, type: circle, z: 2, cx: 920, cy: 280, rx: 280, ry: 280, fill: { type: none }, opacity: 0.25 }
       - { id: brand-mark, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "◆ FORGE STRENGTH" }, style: { font_family: $heading, font_size: 20, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase } }
       - { id: week-pill, type: rect, z: 11, x: 80, y: 200, width: 200, height: 40, radius: 20, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
       - { id: week-text, type: text, z: 12, x: 80, y: 212, width: 200, height: 0, content: { type: plain, value: "WEEK 01 OF 12" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, text_align: center } }
@@ -55,7 +55,7 @@ pages:
     label: Monday · Push
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
-      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $primary } }
       - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "MONDAY  ·  DAY 01" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Push Day." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
       - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 300, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
@@ -105,7 +105,7 @@ pages:
     label: Tuesday · Pull
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
-      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $secondary } }
       - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "TUESDAY  ·  DAY 02" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Pull Day." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
       - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 280, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
@@ -155,7 +155,7 @@ pages:
     label: Wednesday · Legs
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
-      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $primary } }
       - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "WEDNESDAY  ·  DAY 03" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Leg Day." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
       - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 280, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
@@ -205,7 +205,7 @@ pages:
     label: Thursday · Push 2
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
-      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $secondary } }
       - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "THURSDAY  ·  DAY 04" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Push II." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
       - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 240, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
@@ -255,7 +255,7 @@ pages:
     label: Friday · Full Body
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
-      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $primary } }
       - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "FRIDAY  ·  DAY 05" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Full Body." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
       - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 240, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
@@ -305,7 +305,7 @@ pages:
     label: Weekend & Grocery
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
-      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $secondary } }
       - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "WEEKEND  ·  DAYS 06-07" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Rest & prep." }, style: { font_family: $heading, font_size: 88, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
       - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 280, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }

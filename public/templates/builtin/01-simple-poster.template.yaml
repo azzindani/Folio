@@ -27,13 +27,7 @@ layers:
     y: 0
     width: 1080
     height: 1080
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: accent-circle
     type: circle
     z: 5
@@ -41,11 +35,7 @@ layers:
     cy: 200
     rx: 220
     ry: 220
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.45
 
   - id: headline

@@ -352,7 +352,7 @@ pages:
   - id: cta
     label: CTA
     layers:
-      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary } }
       - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
       - id: heading
         type: text

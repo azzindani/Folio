@@ -32,13 +32,7 @@ layers:
     y: 0
     width: 1080
     height: 1350
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── atmospheric glow blobs
   - id: glow-a
     type: circle
@@ -47,11 +41,7 @@ layers:
     cy: 280
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.45
 
   - id: glow-b
@@ -61,11 +51,7 @@ layers:
     cy: 1080
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.4
 
   # ── PHOTO-FRAME PLACEHOLDERS (6 frames at varied rotations & sizes)

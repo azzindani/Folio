@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1280
     height: 720
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # --- diagonal accent stripe behind photo ---
   - id: accent-stripe
     type: rect
@@ -46,12 +40,7 @@ layers:
     width: 600
     height: 80
     rotation: -18
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
+    fill: { type: solid, color: $primary }
     opacity: 0.85
 
   # --- photo (left, large circle) ---
@@ -72,12 +61,7 @@ layers:
     cy: 360
     rx: 168
     ry: 168
-    fill:
-      type: radial
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $surface2 }
   - id: photo-initial
     type: text
     z: 12

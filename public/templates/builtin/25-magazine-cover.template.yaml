@@ -86,13 +86,7 @@ layers:
     width: 920
     height: 1000
     radius: 6
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: photo-vignette
     type: rect
     z: 11
@@ -101,13 +95,7 @@ layers:
     width: 920
     height: 400
     radius: 6
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "rgba(0,0,0,0)", position: 0 }
-        - { color: "rgba(0,0,0,0.55)", position: 100 }
-
+    fill: { type: solid, color: "" }
   - id: photo-icon
     type: text
     z: 12
@@ -313,11 +301,7 @@ layers:
     cy: 460
     rx: 110
     ry: 110
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "$primary", position: 100 }
+    fill: { type: solid, color: $accent }
     stroke: { color: "#FFFFFF", width: 4 }
     rotation: -14
     effects:

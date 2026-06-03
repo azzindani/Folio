@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
       - { id: cover-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
       - id: cover-eyebrow
         type: text
@@ -542,7 +542,7 @@ pages:
   - id: cta
     label: CTA
     layers:
-      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.95 }
+      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary }, opacity: 0.95 }
       - { id: cta-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.35)" } }
       - { id: cta-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
       - id: cta-number

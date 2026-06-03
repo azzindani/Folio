@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 1500
     height: 750
-    fill:
-      type: linear
-      angle: 110
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # --- decorative pastel splash circle right ---
   - id: splash
     type: circle
@@ -44,11 +38,7 @@ layers:
     cy: 120
     rx: 220
     ry: 220
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.5
 
   # --- LEFT: big price ---

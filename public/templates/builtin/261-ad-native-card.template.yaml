@@ -43,13 +43,7 @@ layers:
     y: 0
     width: 240
     height: 400
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
-
+    fill: { type: solid, color: $surface }
   - id: image-icon
     type: text
     z: 2

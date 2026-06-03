@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 800
     height: 400
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: panel-divider-1
     type: rect
     z: 1
@@ -80,11 +74,7 @@ layers:
     cy: 200
     rx: 180
     ry: 180
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.45
 
   - id: front-cover-plate
@@ -104,13 +94,7 @@ layers:
     cy: 170
     rx: 70
     ry: 70
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: front-cover-line-1
     type: rect
     z: 8

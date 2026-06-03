@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1080
     height: 1080
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: card
     type: rect
     z: 10
@@ -58,11 +52,7 @@ layers:
     cy: 240
     rx: 200
     ry: 200
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   - id: label

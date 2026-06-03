@@ -40,11 +40,7 @@ layers:
     cy: 200
     rx: 120
     ry: 120
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.25
 
   - id: leaf-2
@@ -54,11 +50,7 @@ layers:
     cy: 280
     rx: 90
     ry: 90
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.22
 
   - id: leaf-3
@@ -68,11 +60,7 @@ layers:
     cy: 1180
     rx: 110
     ry: 110
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.22
 
   - id: leaf-4
@@ -82,11 +70,7 @@ layers:
     cy: 1100
     rx: 130
     ry: 130
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.2
 
   # ── Greeting (large display) ─────────────────────────────

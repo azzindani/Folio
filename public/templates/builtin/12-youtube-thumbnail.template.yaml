@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 1280
     height: 720
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glow-cyan
     type: circle
     z: 2
@@ -43,11 +37,7 @@ layers:
     cy: 200
     rx: 420
     ry: 420
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.45
 
   - id: glow-magenta
@@ -57,11 +47,7 @@ layers:
     cy: 560
     rx: 460
     ry: 460
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.4
 
   - id: noise-overlay
@@ -140,11 +126,7 @@ layers:
     cy: 360
     rx: 230
     ry: 230
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.55
 
   - id: face-ring
@@ -164,13 +146,7 @@ layers:
     cy: 360
     rx: 188
     ry: 188
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $surface2 }
   - id: face-mark
     type: text
     z: 15

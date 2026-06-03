@@ -653,13 +653,7 @@ layers:
     width: 280
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "#D69A3C", position: 100 }
-
+    fill: { type: solid, color: $accent }
   - id: champ-trophy
     type: text
     z: 81

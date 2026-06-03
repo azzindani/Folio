@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1920
     height: 1080
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: accent-ring-outer
     type: circle
     z: 5

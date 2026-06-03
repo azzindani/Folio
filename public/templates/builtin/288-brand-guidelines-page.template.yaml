@@ -443,13 +443,7 @@ layers:
     width: 160
     height: 160
     radius: 36
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: logo-letter
     type: text
     z: 57

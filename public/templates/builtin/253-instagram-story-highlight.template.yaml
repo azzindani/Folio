@@ -31,13 +31,7 @@ layers:
     y: 0
     width: 1080
     height: 1920
-    fill:
-      type: linear
-      angle: 170
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Soft top-left blob ────────────────────────────────────
   - id: blob-1
     type: circle
@@ -46,11 +40,7 @@ layers:
     cy: 220
     rx: 240
     ry: 240
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.32
 
   # ── Soft bottom-right blob ────────────────────────────────
@@ -61,11 +51,7 @@ layers:
     cy: 1700
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.3
 
   # ── Outer color border ring ───────────────────────────────
@@ -98,11 +84,7 @@ layers:
     cy: 880
     rx: 308
     ry: 308
-    fill:
-      type: radial
-      stops:
-        - { color: "#FFFFFF", position: 0 }
-        - { color: "$surface", position: 100 }
+    fill: { type: solid, color: "#FFFFFF" }
     stroke: { color: "$accent", width: 4 }
 
   # ── Decorative tiny circles around ring ───────────────────

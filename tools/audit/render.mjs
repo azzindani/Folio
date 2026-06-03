@@ -22,7 +22,14 @@ const TPL_DIR   = path.join(ROOT, 'public', 'templates', 'builtin');
 // Use a non-standard port — :4173 may be held by a Docker container in
 // this dev environment, which would serve a stale build.
 const PORT      = Number(process.env.FOLIO_AUDIT_PORT ?? 4273);
-const BASE_URL  = `http://localhost:${PORT}`;
+// FOLIO_AUDIT_BASE_URL lets us render against an already-running editor (e.g.
+// the live deployment) instead of a local vite preview — current engine, no
+// local build needed. FOLIO_AUDIT_TOKEN is appended as ?token= on first nav
+// (the editor 302s it into a session cookie). When BASE_URL is unset we fall
+// back to spawning a local preview on :PORT.
+const EXTERNAL_BASE = process.env.FOLIO_AUDIT_BASE_URL ?? null;
+const AUDIT_TOKEN   = process.env.FOLIO_AUDIT_TOKEN ?? null;
+const BASE_URL  = EXTERNAL_BASE ?? `http://localhost:${PORT}`;
 
 // Each render is timeboxed; some templates pull heavy renderers
 // (mermaid, vega-lite) on first use, so the first few may be slow.
@@ -260,7 +267,7 @@ async function main() {
   }
   templates = templates.slice(0, args.limit);
 
-  const serverProc = await ensureServer();
+  const serverProc = EXTERNAL_BASE ? null : await ensureServer();
   const browser = await chromium.launch({ headless: true });
 
   // Hide non-canvas chrome on every page — applied once per page below.
@@ -274,7 +281,8 @@ async function main() {
   async function newWorker() {
     const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
     const page = await ctx.newPage();
-    await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
+    const navUrl = AUDIT_TOKEN ? `${BASE_URL}/?token=${encodeURIComponent(AUDIT_TOKEN)}` : `${BASE_URL}/`;
+    await page.goto(navUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => !!(window).__folio?.loadFromYAML, { timeout: 30_000 });
     await page.addStyleTag({ content: HIDE_CHROME_CSS });
     return { ctx, page };

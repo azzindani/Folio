@@ -53,13 +53,7 @@ layers:
     width: 96
     height: 96
     radius: 20
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: logo-mark
     type: text
     z: 6

@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 160
     height: 600
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glow
     type: circle
     z: 1
@@ -43,11 +37,7 @@ layers:
     cy: 80
     rx: 120
     ry: 120
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   - id: accent-top

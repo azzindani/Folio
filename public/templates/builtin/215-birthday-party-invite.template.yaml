@@ -22,7 +22,7 @@ theme:
   ref: sunset-glow
 
 layers:
-  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: linear, angle: 160, stops: [ { color: "$background", position: 0 }, { color: "$surface", position: 100 } ] } }
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: $background } }
 
   # ── Confetti dot field ───────────────────────────────────
   - { id: conf-1,  type: circle, z: 2, cx: 120,  cy: 180,  rx: 14, ry: 14, fill: { type: solid, color: "$primary" },   opacity: 0.85 }

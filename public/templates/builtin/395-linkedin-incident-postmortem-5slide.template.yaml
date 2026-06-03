@@ -103,7 +103,7 @@ pages:
   - id: cta
     label: CTA
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$text", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $text } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 14, fill: { type: solid, color: "$accent" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "05 / 05" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.2 } }
       - { id: eyebrow, type: text, z: 11, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "THE LESSON" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.34, text_transform: uppercase } }

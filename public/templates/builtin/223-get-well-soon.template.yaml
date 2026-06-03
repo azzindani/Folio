@@ -23,7 +23,7 @@ theme:
 
 layers:
   # 0 bg
-  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: linear, angle: 180, stops: [ { color: "$background", position: 0 }, { color: "$surface", position: 100 } ] } }
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: $background } }
 
   # 1-7 — sunshine top-right (center + rays as rects)
   - { id: sun-core, type: circle, z: 5, cx: 880, cy: 200, rx: 80, ry: 80, fill: { type: solid, color: "$accent" }, opacity: 0.85 }

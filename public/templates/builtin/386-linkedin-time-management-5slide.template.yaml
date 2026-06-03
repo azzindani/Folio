@@ -256,7 +256,7 @@ pages:
   - id: hack-3
     label: 03 No-meeting Wednesdays
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 200, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] }, opacity: 0.94 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary }, opacity: 0.94 }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "#FFFFFF" } }
       - id: number
         type: text

@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 1200
     height: 628
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glow
     type: circle
     z: 1
@@ -43,11 +37,7 @@ layers:
     cy: 100
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.32
 
   - id: app-icon
@@ -58,12 +48,7 @@ layers:
     width: 160
     height: 160
     radius: 36
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
+    fill: { type: solid, color: $primary }
     effects:
       shadow:
         - { dx: 0, dy: 12, blur: 32, color: "rgba(99,102,241,0.45)" }
@@ -161,12 +146,7 @@ layers:
     width: 760
     height: 256
     radius: 16
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$border", width: 1 }
     effects:
       shadow:

@@ -25,7 +25,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 170, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: leaf-orb, type: circle, z: 3, cx: 880, cy: 220, rx: 180, ry: 180, fill: { type: solid, color: "$accent" }, opacity: 0.22 }
       - id: eyebrow
@@ -361,7 +361,7 @@ pages:
   - id: cta
     label: CTA
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 200, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] }, opacity: 0.95 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary }, opacity: 0.95 }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "#FFFFFF" } }
       - id: heading
         type: text

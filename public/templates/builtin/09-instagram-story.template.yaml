@@ -27,14 +27,7 @@ layers:
     y: 0
     width: 1080
     height: 1920
-    fill:
-      type: linear
-      angle: 200
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 60 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: sticker
     type: circle
     z: 5
@@ -42,11 +35,7 @@ layers:
     cy: 260
     rx: 180
     ry: 180
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.55
 
   - id: headline

@@ -26,8 +26,8 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: linear, angle: 165, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 50 }, { color: "$background", position: 100 }] } }
-      - { id: sun, type: circle, z: 1, cx: 940, cy: 380, rx: 220, ry: 220, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.55 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: $primary } }
+      - { id: sun, type: circle, z: 1, cx: 940, cy: 380, rx: 220, ry: 220, fill: { type: none }, opacity: 0.55 }
       - { id: mt-1, type: rect, z: 2, x: 0, y: 880, width: 600, height: 320, transform: { rotate: -8 }, fill: { type: solid, color: "$text" }, opacity: 0.25 }
       - { id: mt-2, type: rect, z: 3, x: 400, y: 900, width: 800, height: 300, transform: { rotate: 6 }, fill: { type: solid, color: "$text" }, opacity: 0.35 }
       - { id: kicker-pill, type: rect, z: 10, x: 100, y: 140, width: 220, height: 40, radius: 20, fill: { type: solid, color: "rgba(255,255,255,0.9)" } }
@@ -57,7 +57,7 @@ pages:
     label: Day 1 · Jimbocho & Asakusa
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: solid, color: $primary } }
       - { id: day-tag, type: text, z: 10, x: 100, y: 100, width: 600, height: 0, content: { type: plain, value: "DAY 01  ·  FRIDAY OCT 9" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Old books, old temple." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
       - { id: morn-block, type: rect, z: 20, x: 100, y: 320, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
@@ -91,7 +91,7 @@ pages:
     label: Day 2 · Yanaka & Ueno
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: solid, color: $primary } }
       - { id: day-tag, type: text, z: 10, x: 100, y: 100, width: 600, height: 0, content: { type: plain, value: "DAY 02  ·  SATURDAY OCT 10" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Slow streets & a museum." }, style: { font_family: $heading, font_size: 52, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
       - { id: morn-block, type: rect, z: 20, x: 100, y: 320, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
@@ -125,7 +125,7 @@ pages:
     label: Day 3 · Shibuya & Daikanyama
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: solid, color: $primary } }
       - { id: day-tag, type: text, z: 10, x: 100, y: 100, width: 600, height: 0, content: { type: plain, value: "DAY 03  ·  SUNDAY OCT 11" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: day-title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Bookshops & a long lunch." }, style: { font_family: $heading, font_size: 52, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
       - { id: morn-block, type: rect, z: 20, x: 100, y: 320, width: 1040, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
@@ -159,7 +159,7 @@ pages:
     label: Packing & Emergency
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: linear, angle: 90, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hdr-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 240, fill: { type: solid, color: $primary } }
       - { id: tag, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "BEFORE YOU GO  ·  EMERGENCY INFO" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
       - { id: title, type: text, z: 11, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "Pack & prepare." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 } }
       - { id: pack-label, type: text, z: 20, x: 100, y: 320, width: 1040, height: 0, content: { type: plain, value: "PACKING LIST · OCTOBER WEATHER (12-22°C)" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }

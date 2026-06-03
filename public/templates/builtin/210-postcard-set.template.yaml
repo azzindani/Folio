@@ -26,8 +26,8 @@ pages:
   - id: tokyo
     label: Tokyo
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
-      - { id: bg-glow, type: circle, z: 1, cx: 1200, cy: 200, rx: 280, ry: 280, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.5 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: $primary } }
+      - { id: bg-glow, type: circle, z: 1, cx: 1200, cy: 200, rx: 280, ry: 280, fill: { type: none }, opacity: 0.5 }
       - { id: frame-outer, type: rect, z: 10, x: 60, y: 60, width: 1380, height: 880, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 4 } }
       - { id: frame-inner, type: rect, z: 11, x: 90, y: 90, width: 1320, height: 820, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 1 }, opacity: 0.5 }
       - { id: stamp-box, type: rect, z: 20, x: 1240, y: 120, width: 160, height: 200, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$text", width: 2 } }
@@ -47,8 +47,8 @@ pages:
   - id: lisbon
     label: Lisbon
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: linear, angle: 160, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
-      - { id: bg-glow, type: circle, z: 1, cx: 250, cy: 280, rx: 320, ry: 320, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.45 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: $secondary } }
+      - { id: bg-glow, type: circle, z: 1, cx: 250, cy: 280, rx: 320, ry: 320, fill: { type: none }, opacity: 0.45 }
       - { id: frame-outer, type: rect, z: 10, x: 60, y: 60, width: 1380, height: 880, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 4 } }
       - { id: frame-inner, type: rect, z: 11, x: 90, y: 90, width: 1320, height: 820, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 1 }, opacity: 0.5 }
       - { id: stamp-box, type: rect, z: 20, x: 1240, y: 120, width: 160, height: 200, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$text", width: 2 } }
@@ -68,9 +68,9 @@ pages:
   - id: reykjavik
     label: Reykjavik
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: linear, angle: 200, stops: [{ color: "$primary", position: 0 }, { color: "$text", position: 100 }] } }
-      - { id: bg-glow, type: circle, z: 1, cx: 750, cy: 100, rx: 380, ry: 380, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.55 }
-      - { id: aurora, type: rect, z: 2, x: 0, y: 80, width: 1500, height: 280, fill: { type: linear, angle: 90, stops: [{ color: "transparent", position: 0 }, { color: "$secondary", position: 50 }, { color: "transparent", position: 100 }] }, opacity: 0.4 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: $primary } }
+      - { id: bg-glow, type: circle, z: 1, cx: 750, cy: 100, rx: 380, ry: 380, fill: { type: none }, opacity: 0.55 }
+      - { id: aurora, type: rect, z: 2, x: 0, y: 80, width: 1500, height: 280, fill: { type: solid, color: $secondary }, opacity: 0.4 }
       - { id: frame-outer, type: rect, z: 10, x: 60, y: 60, width: 1380, height: 880, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 4 } }
       - { id: frame-inner, type: rect, z: 11, x: 90, y: 90, width: 1320, height: 820, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 1 }, opacity: 0.5 }
       - { id: stamp-box, type: rect, z: 20, x: 1240, y: 120, width: 160, height: 200, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$text", width: 2 } }
@@ -90,8 +90,8 @@ pages:
   - id: marrakech
     label: Marrakech
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: linear, angle: 150, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
-      - { id: bg-glow, type: circle, z: 1, cx: 320, cy: 800, rx: 380, ry: 380, fill: { type: radial, stops: [{ color: "#FFD27A", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.55 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: $primary } }
+      - { id: bg-glow, type: circle, z: 1, cx: 320, cy: 800, rx: 380, ry: 380, fill: { type: none }, opacity: 0.55 }
       - { id: deco-arch, type: rect, z: 2, x: 1100, y: 200, width: 280, height: 600, radius: 140, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.12 }
       - { id: frame-outer, type: rect, z: 10, x: 60, y: 60, width: 1380, height: 880, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 4 } }
       - { id: frame-inner, type: rect, z: 11, x: 90, y: 90, width: 1320, height: 820, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 1 }, opacity: 0.5 }
@@ -112,8 +112,8 @@ pages:
   - id: buenos-aires
     label: Buenos Aires
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: linear, angle: 120, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
-      - { id: bg-glow, type: circle, z: 1, cx: 1180, cy: 800, rx: 380, ry: 380, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.4 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: $secondary } }
+      - { id: bg-glow, type: circle, z: 1, cx: 1180, cy: 800, rx: 380, ry: 380, fill: { type: none }, opacity: 0.4 }
       - { id: deco-stripe-1, type: rect, z: 2, x: 0, y: 460, width: 1500, height: 8, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.18 }
       - { id: deco-stripe-2, type: rect, z: 2, x: 0, y: 484, width: 1500, height: 8, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.12 }
       - { id: frame-outer, type: rect, z: 10, x: 60, y: 60, width: 1380, height: 880, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 4 } }
@@ -135,8 +135,8 @@ pages:
   - id: hanoi
     label: Hanoi
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: linear, angle: 145, stops: [{ color: "$primary", position: 0 }, { color: "$text", position: 100 }] } }
-      - { id: bg-glow, type: circle, z: 1, cx: 300, cy: 240, rx: 320, ry: 320, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.6 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1000, fill: { type: solid, color: $primary } }
+      - { id: bg-glow, type: circle, z: 1, cx: 300, cy: 240, rx: 320, ry: 320, fill: { type: none }, opacity: 0.6 }
       - { id: deco-lantern-1, type: circle, z: 2, cx: 1140, cy: 320, rx: 40, ry: 40, fill: { type: solid, color: "$secondary" }, opacity: 0.75 }
       - { id: deco-lantern-2, type: circle, z: 2, cx: 1230, cy: 420, rx: 28, ry: 28, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.6 }
       - { id: deco-lantern-3, type: circle, z: 2, cx: 1300, cy: 540, rx: 34, ry: 34, fill: { type: solid, color: "$secondary" }, opacity: 0.55 }

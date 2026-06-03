@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 300
     height: 250
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: hook
     type: text
     z: 1
@@ -59,12 +53,7 @@ layers:
     width: 112
     height: 112
     radius: 10
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$border", width: 1 }
 
   - id: product-icon

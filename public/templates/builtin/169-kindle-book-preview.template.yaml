@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Book Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: $primary } }
       - { id: top-frame, type: rect, z: 1, x: 60, y: 60, width: 960, height: 1800, fill: { type: solid, color: "transparent" }, stroke: { color: "#FFFFFF", width: 2 }, opacity: 0.6 }
       - { id: emblem, type: text, z: 10, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 64, color: "#FFFFFF", text_align: center, opacity: 0.9 } }
       - { id: imprint, type: text, z: 11, x: 60, y: 320, width: 960, height: 0, content: { type: plain, value: "HARROW & SONS PUBLISHING" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.6, opacity: 0.85 } }

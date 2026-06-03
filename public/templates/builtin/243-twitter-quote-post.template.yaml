@@ -31,13 +31,7 @@ layers:
     y: 0
     width: 1200
     height: 675
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Decorative radial glow ────────────────────────────────
   - id: glow
     type: circle
@@ -46,11 +40,7 @@ layers:
     cy: 100
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.18
 
   # ── Accent bar top ────────────────────────────────────────
@@ -61,13 +51,7 @@ layers:
     y: 0
     width: 1200
     height: 4
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   # ── Giant opening quote glyph ─────────────────────────────
   - id: quote-glyph
     type: text

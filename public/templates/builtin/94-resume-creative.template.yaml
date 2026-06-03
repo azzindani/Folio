@@ -62,12 +62,7 @@ layers:
     cy: 200
     rx: 88
     ry: 88
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $secondary }
   - id: avatar-emoji
     type: text
     z: 7
