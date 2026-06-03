@@ -27,7 +27,7 @@ pages:
     label: Cover
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: hero-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 1100, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: hero-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 1100, fill: { type: solid, color: "$primary" } }
       - { id: glow, type: circle, z: 2, cx: 980, cy: 280, rx: 320, ry: 320, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.25 }
       - { id: brand-mark, type: text, z: 10, x: 100, y: 140, width: 600, height: 0, content: { type: plain, value: "◆ HALCYON" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase } }
       - { id: tag-pill, type: rect, z: 11, x: 1000, y: 140, width: 160, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.18)" } }
@@ -171,7 +171,7 @@ pages:
       - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "05 · IN THEIR WORDS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
       - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "What Zephyr had to say." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
       - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
-      - { id: q-card, type: rect, z: 20, x: 100, y: 380, width: 1040, height: 460, radius: 16, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: q-card, type: rect, z: 20, x: 100, y: 380, width: 1040, height: 460, radius: 16, fill: { type: solid, color: "$primary" } }
       - { id: q-mark, type: text, z: 21, x: 140, y: 400, width: 100, height: 0, content: { type: plain, value: "“" }, style: { font_family: $heading, font_size: 120, font_weight: 800, color: "#FFFFFF", opacity: 0.4, line_height: 1 } }
       - { id: q-body, type: text, z: 22, x: 140, y: 530, width: 960, height: 0, content: { type: plain, value: "Halcyon's team understood our regulatory constraints from day one. The shadow-mode period meant we could prove the model on live traffic without exposing customers to risk. By the time we cutover, the data spoke for itself — fewer fraud losses, fewer angry customers, and a risk team that finally has time to do strategic work." }, style: { font_family: $heading, font_size: 24, font_style: italic, color: "#FFFFFF", line_height: 1.55 } }
       - { id: q-attrib-name, type: text, z: 23, x: 140, y: 770, width: 960, height: 0, content: { type: plain, value: "Henrik Lindqvist" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.2 } }

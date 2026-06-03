@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$primary" } }
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "rgba(0,0,0,0.3)" } }
       - { id: corner-mark, type: rect, z: 2, x: 80, y: 80, width: 60, height: 4, fill: { type: solid, color: "#FFFFFF" } }
       - { id: corner-mark-2, type: rect, z: 3, x: 80, y: 80, width: 4, height: 60, fill: { type: solid, color: "#FFFFFF" } }
@@ -147,21 +147,21 @@ pages:
       - { id: page-kicker, type: text, z: 10, x: 80, y: 160, width: 1080, height: 0, content: { type: plain, value: "KEYNOTE SPEAKERS" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
       - { id: page-title, type: text, z: 11, x: 80, y: 220, width: 1080, height: 0, content: { type: plain, value: "Three people you came here for." }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
       - { id: k1-card, type: rect, z: 20, x: 80, y: 400, width: 1080, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
-      - { id: k1-avatar, type: circle, z: 21, cx: 220, cy: 590, rx: 100, ry: 100, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: k1-avatar, type: circle, z: 21, cx: 220, cy: 590, rx: 100, ry: 100, fill: { type: solid, color: "$primary" } }
       - { id: k1-initial, type: text, z: 22, x: 140, y: 552, width: 160, height: 0, content: { type: plain, value: "MR" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", text_align: center } }
       - { id: k1-name, type: text, z: 23, x: 360, y: 440, width: 760, height: 0, content: { type: plain, value: "Maya Reyes" }, style: { font_family: $heading, font_size: 36, font_weight: 800, color: $text, line_height: 1.1 } }
       - { id: k1-role, type: text, z: 24, x: 360, y: 490, width: 760, height: 0, content: { type: plain, value: "Founder & CEO · Northwind" }, style: { font_family: $body, font_size: 20, color: $primary, line_height: 1.4 } }
       - { id: k1-talk, type: text, z: 25, x: 360, y: 540, width: 760, height: 0, content: { type: plain, value: "DAY 1 · 09:00 — \"Shipping at 100x\"" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 0.3 } }
       - { id: k1-bio, type: text, z: 26, x: 360, y: 600, width: 760, height: 0, content: { type: plain, value: "Maya built Northwind from a hackday prototype to a 280-person company shipping weekly. Before that, she led ops at Flexport. She believes the cultural side of velocity is harder than the technical side, and has a 200-slide deck to prove it." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.6 } }
       - { id: k2-card, type: rect, z: 30, x: 80, y: 820, width: 1080, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
-      - { id: k2-avatar, type: circle, z: 31, cx: 220, cy: 1010, rx: 100, ry: 100, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: k2-avatar, type: circle, z: 31, cx: 220, cy: 1010, rx: 100, ry: 100, fill: { type: solid, color: "$secondary" } }
       - { id: k2-initial, type: text, z: 32, x: 140, y: 972, width: 160, height: 0, content: { type: plain, value: "KP" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", text_align: center } }
       - { id: k2-name, type: text, z: 33, x: 360, y: 860, width: 760, height: 0, content: { type: plain, value: "Kjell Perkins" }, style: { font_family: $heading, font_size: 36, font_weight: 800, color: $text, line_height: 1.1 } }
       - { id: k2-role, type: text, z: 34, x: 360, y: 910, width: 760, height: 0, content: { type: plain, value: "CTO · Ramp" }, style: { font_family: $body, font_size: 20, color: $primary, line_height: 1.4 } }
       - { id: k2-talk, type: text, z: 35, x: 360, y: 960, width: 760, height: 0, content: { type: plain, value: "DAY 2 · 09:00 — \"CI Time is Engineering Time\"" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 0.3 } }
       - { id: k2-bio, type: text, z: 36, x: 360, y: 1020, width: 760, height: 0, content: { type: plain, value: "Kjell has spent five years auditing CI pipelines at fintech scale. He's the rare engineering leader who can name the exact dollar cost of a slow test suite, and will spend 45 minutes telling you why caching is harder than you think." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.6 } }
       - { id: k3-card, type: rect, z: 40, x: 80, y: 1240, width: 1080, height: 380, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
-      - { id: k3-avatar, type: circle, z: 41, cx: 220, cy: 1430, rx: 100, ry: 100, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: k3-avatar, type: circle, z: 41, cx: 220, cy: 1430, rx: 100, ry: 100, fill: { type: solid, color: "$primary" } }
       - { id: k3-initial, type: text, z: 42, x: 140, y: 1392, width: 160, height: 0, content: { type: plain, value: "AV" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", text_align: center } }
       - { id: k3-name, type: text, z: 43, x: 360, y: 1280, width: 760, height: 0, content: { type: plain, value: "Dr. Aisha Vandervelde" }, style: { font_family: $heading, font_size: 36, font_weight: 800, color: $text, line_height: 1.1 } }
       - { id: k3-role, type: text, z: 44, x: 360, y: 1330, width: 760, height: 0, content: { type: plain, value: "Professor of CS · Stanford" }, style: { font_family: $body, font_size: 20, color: $primary, line_height: 1.4 } }
@@ -216,7 +216,7 @@ pages:
       - { id: page-title, type: text, z: 11, x: 80, y: 220, width: 1080, height: 0, content: { type: plain, value: "ShipCraft 2026 is made possible by the companies below — every dollar goes into keeping student and indie tickets free." }, style: { font_family: $heading, font_size: 32, font_weight: 600, color: $text, line_height: 1.4 } }
       - { id: tier-1-label, type: text, z: 20, x: 80, y: 460, width: 1080, height: 0, content: { type: plain, value: "PRESENTING SPONSOR" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
       - { id: tier-1-divider, type: rect, z: 21, x: 80, y: 490, width: 60, height: 3, fill: { type: solid, color: "$primary" } }
-      - { id: tier-1-card, type: rect, z: 22, x: 80, y: 520, width: 1080, height: 180, radius: 16, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: tier-1-card, type: rect, z: 22, x: 80, y: 520, width: 1080, height: 180, radius: 16, fill: { type: solid, color: "$primary" } }
       - { id: tier-1-logo, type: text, z: 23, x: 80, y: 580, width: 1080, height: 0, content: { type: plain, value: "◆ NORTHWIND" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.04 } }
       - { id: tier-2-label, type: text, z: 30, x: 80, y: 760, width: 1080, height: 0, content: { type: plain, value: "PLATINUM SPONSORS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
       - { id: tier-2-divider, type: rect, z: 31, x: 80, y: 790, width: 60, height: 3, fill: { type: solid, color: "$primary" } }
