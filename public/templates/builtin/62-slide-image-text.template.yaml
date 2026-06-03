@@ -38,7 +38,7 @@ layers:
     y: 80
     width: 820
     height: 920
-    radius: 16
+    radius: 0
     fill:
       type: linear
       angle: 135

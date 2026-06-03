@@ -183,7 +183,7 @@ pages:
         y: 620
         width: 936
         height: 540
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: t1-dialog-label
         type: text
@@ -271,7 +271,7 @@ pages:
         y: 620
         width: 936
         height: 540
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: t2-dialog-label
         type: text
@@ -350,7 +350,7 @@ pages:
         y: 560
         width: 936
         height: 280
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "#FFFFFF" }
       - id: t3-dialog
         type: text

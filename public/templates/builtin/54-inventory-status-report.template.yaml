@@ -74,9 +74,10 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
         color: "$text_muted"
+        letter_spacing: 1
         content: "INVENTORY SNAPSHOT · 6 WAREHOUSES · WEEK 50"
 
       - id: hero-ov
@@ -84,12 +85,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 80
+        height: 90
         format: markdown
         font_family: Playfair Display
-        font_size: 44
-        font_weight: 700
-        line_height: 1.1
+        font_size: 68
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
         content: "**Inventory Status — Network Overview**"
 
       - id: kpi-total
@@ -147,7 +149,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Stock by Category**"
 
       - id: chart-categories
@@ -179,6 +183,24 @@ pages:
         legend: true
         animate: true
 
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 26
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 23
+        width: 150
+        height: 6
+        fill: { type: solid, color: "$primary" }
+
   - id: warehouses
     label: "By Warehouse"
     layers:
@@ -189,9 +211,10 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
         color: "$text_muted"
+        letter_spacing: 1
         content: "WAREHOUSE ROSTER · UTILIZATION · CAPACITY STATUS"
 
       - id: hero-wh
@@ -199,12 +222,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 80
+        height: 90
         format: markdown
         font_family: Playfair Display
-        font_size: 44
-        font_weight: 700
-        line_height: 1.1
+        font_size: 68
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
         content: "**Warehouse Inventory Detail**"
 
       - id: section-wh-table
@@ -216,7 +240,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Per-Warehouse Summary**"
 
       - id: tbl-warehouses
@@ -247,9 +273,10 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
         color: "$text_muted"
+        letter_spacing: 1
         content: "REORDER QUEUE · DAYS OF SUPPLY · PRIORITY ACTIONS"
 
       - id: hero-ls
@@ -257,12 +284,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 80
+        height: 90
         format: markdown
         font_family: Playfair Display
-        font_size: 44
-        font_weight: 700
-        line_height: 1.1
+        font_size: 68
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
         content: "**Low Stock — Action Items**"
 
       - id: narrative-ls

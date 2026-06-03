@@ -311,7 +311,7 @@ pages:
         y: 760
         width: 900
         height: 140
-        radius: 20
+        radius: 0
         fill: { type: solid, color: "$primary" }
       - id: cta-text
         type: text

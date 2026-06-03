@@ -73,7 +73,7 @@ layers:
     y: 180
     width: 570
     height: 300
-    radius: 20
+    radius: 0
     fill: { type: solid, color: "$surface2" }
     stroke: { color: "$border", width: 1 }
     effects:
@@ -177,7 +177,7 @@ layers:
     y: 180
     width: 570
     height: 300
-    radius: 20
+    radius: 0
     fill: { type: solid, color: "$surface2" }
     stroke: { color: "$border", width: 1 }
     effects:
@@ -281,7 +281,7 @@ layers:
     y: 510
     width: 570
     height: 300
-    radius: 20
+    radius: 0
     fill: { type: solid, color: "$surface2" }
     stroke: { color: "$border", width: 1 }
     effects:
@@ -385,7 +385,7 @@ layers:
     y: 510
     width: 570
     height: 300
-    radius: 20
+    radius: 0
     fill: { type: solid, color: "$surface2" }
     stroke: { color: "$border", width: 1 }
     effects:

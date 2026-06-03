@@ -49,23 +49,30 @@ pages:
       - id: hero
         type: rich_text
         x: 60
-        y: 40
+        y: 44
         width: 1160
-        height: 60
+        height: 64
         format: markdown
-        font_size: 36
-        font_weight: 700
+        font_family: Playfair Display
+        font_size: 52
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
+        color: "$text"
         content: "**Quarterly Performance**"
 
       - id: eyebrow
         type: rich_text
         x: 60
-        y: 12
+        y: 16
         width: 1160
-        height: 28
+        height: 22
         format: markdown
+        font_family: "$mono"
         font_size: 12
-        color: "#94a3b8"
+        font_weight: 600
+        letter_spacing: 1
+        color: "$primary"
         content: "Q4 2025 · ALL REGIONS"
 
       - id: kpi-revenue
@@ -133,6 +140,24 @@ pages:
         y_field: value
         title: Monthly Revenue Trend
         y_format: currency
+
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 120
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 117
+        width: 140
+        height: 6
+        fill: { type: solid, color: "$primary" }
 
 slots:
   - { id: title,         path: "pages[0].layers[0].content",        type: text,   hint: "Dashboard title",       default: "**Quarterly Performance**" }

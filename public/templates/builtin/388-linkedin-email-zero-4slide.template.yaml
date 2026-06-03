@@ -152,7 +152,7 @@ pages:
         style: { font_family: $heading, font_size: 72, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.03 }
 
       # Grid cell 1 · Delete (top-left)
-      - { id: cell-1-bg, type: rect, z: 20, x: 72, y: 380, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: cell-1-bg, type: rect, z: 20, x: 72, y: 380, width: 468, height: 380, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: cell-1-bar, type: rect, z: 21, x: 72, y: 380, width: 468, height: 8, fill: { type: solid, color: "$primary" } }
       - id: cell-1-label
         type: text
@@ -183,7 +183,7 @@ pages:
         style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.5 }
 
       # Grid cell 2 · Delegate (top-right)
-      - { id: cell-2-bg, type: rect, z: 20, x: 564, y: 380, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: cell-2-bg, type: rect, z: 20, x: 564, y: 380, width: 468, height: 380, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: cell-2-bar, type: rect, z: 21, x: 564, y: 380, width: 468, height: 8, fill: { type: solid, color: "$primary" } }
       - id: cell-2-label
         type: text
@@ -214,7 +214,7 @@ pages:
         style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.5 }
 
       # Grid cell 3 · Defer (bottom-left)
-      - { id: cell-3-bg, type: rect, z: 20, x: 72, y: 790, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: cell-3-bg, type: rect, z: 20, x: 72, y: 790, width: 468, height: 380, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: cell-3-bar, type: rect, z: 21, x: 72, y: 790, width: 468, height: 8, fill: { type: solid, color: "$primary" } }
       - id: cell-3-label
         type: text
@@ -245,7 +245,7 @@ pages:
         style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.5 }
 
       # Grid cell 4 · Do (bottom-right)
-      - { id: cell-4-bg, type: rect, z: 20, x: 564, y: 790, width: 468, height: 380, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: cell-4-bg, type: rect, z: 20, x: 564, y: 790, width: 468, height: 380, radius: 0, fill: { type: solid, color: "$primary" } }
       - { id: cell-4-bar, type: rect, z: 21, x: 564, y: 790, width: 468, height: 8, fill: { type: solid, color: "#FFFFFF" } }
       - id: cell-4-label
         type: text

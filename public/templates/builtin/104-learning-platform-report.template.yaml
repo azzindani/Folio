@@ -89,9 +89,11 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: "$mono"
         font_size: 12
-        color: "$text_muted"
+        font_weight: 600
+        letter_spacing: 1
+        color: "$primary"
         content: "LEARNING PLATFORM · Q2 FY2026 · ACADEMY"
 
       - id: hero
@@ -99,12 +101,14 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 80
+        height: 88
         format: markdown
         font_family: Playfair Display
-        font_size: 44
-        font_weight: 700
-        line_height: 1.1
+        font_size: 56
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
+        color: "$text"
         content: "**Course Analytics — Quarterly Review**"
 
       - id: kpi-learners
@@ -168,8 +172,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Enrollment Trend — Last 12 Weeks**"
 
       - id: chart-enrollment
@@ -195,8 +200,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Top 10 Courses**"
 
       - id: tbl-courses
@@ -224,8 +230,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Cohort Retention — % of W0 Learners Active**"
 
       - id: chart-cohort
@@ -251,8 +258,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Module Drop-off Points**"
 
       - id: tbl-dropoffs
@@ -279,8 +287,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Learner Voice**"
 
       - id: quote-1
@@ -327,6 +336,24 @@ pages:
           > *"Office hours saved this course for me. The recorded videos are great but the live Q&A is what turned passive watching into actual learning."*
           >
           > — Aiko M., Product Lead · Osaka
+
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 162
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 159
+        width: 140
+        height: 6
+        fill: { type: solid, color: "$primary" }
 
 slots:
   - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**Course Analytics — Quarterly Review**" }

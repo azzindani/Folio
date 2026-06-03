@@ -29,10 +29,12 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "1 / 5" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
-      - { id: eyebrow, type: text, z: 11, x: 60, y: 480, width: 960, height: 0, content: { type: plain, value: "FOUNDER FRAMEWORK" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
-      - { id: title, type: text, z: 12, x: 60, y: 540, width: 960, height: 0, content: { type: plain, value: "Bootstrap\nvs VC.\nAn honest\nbreakdown." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 430, width: 960, height: 0, content: { type: plain, value: "FOUNDER FRAMEWORK" }, style: { font_family: $mono, font_size: 18, font_weight: 600, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 510, width: 960, height: 0, content: { type: plain, value: "Bootstrap\nvs VC.\nAn honest\nbreakdown." }, style: { font_family: "Playfair Display", font_size: 136, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
       - { id: tagline, type: text, z: 13, x: 60, y: 1100, width: 960, height: 0, content: { type: plain, value: "Swipe → pick the right path for your company." }, style: { font_family: $body, font_size: 24, color: $text_muted } }
       - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+      - { id: rule-top, type: rect, z: 12, x: 60, y: 480, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 13, x: 60, y: 477, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
 
   # ── Slide 2 · When to bootstrap ────────────────────────────
   - id: bootstrap
@@ -41,8 +43,8 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "2 / 5" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
-      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "PATH 01 · BOOTSTRAP" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
-      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "When to bootstrap." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "PATH 01 · BOOTSTRAP" }, style: { font_family: $mono, font_size: 16, font_weight: 600, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "When to bootstrap." }, style: { font_family: "Playfair Display", font_size: 76, font_weight: 800, color: $text, line_height: 1.04, letter_spacing: -0.02 } }
       - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
       - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "Your market is small, sharp, and pays day one." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
       - { id: dot-2, type: circle, z: 20, cx: 90, cy: 720, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
@@ -58,8 +60,8 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "3 / 5" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
-      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "PATH 02 · VENTURE" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32, text_transform: uppercase } }
-      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "When to raise." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "PATH 02 · VENTURE" }, style: { font_family: $mono, font_size: 16, font_weight: 600, color: $secondary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "When to raise." }, style: { font_family: "Playfair Display", font_size: 76, font_weight: 800, color: $text, line_height: 1.04, letter_spacing: -0.02 } }
       - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$secondary" } }
       - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "Winner-takes-most market. Speed is a moat." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
       - { id: dot-2, type: circle, z: 20, cx: 90, cy: 720, rx: 12, ry: 12, fill: { type: solid, color: "$secondary" } }
@@ -75,8 +77,8 @@ pages:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "4 / 5" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
-      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "PATH 03 · HYBRID" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase } }
-      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "The hybrid path." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "PATH 03 · HYBRID" }, style: { font_family: $mono, font_size: 16, font_weight: 600, color: $accent, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "The hybrid path." }, style: { font_family: "Playfair Display", font_size: 76, font_weight: 800, color: $text, line_height: 1.04, letter_spacing: -0.02 } }
       - { id: dot-1, type: circle, z: 20, cx: 90, cy: 540, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
       - { id: bullet-1, type: text, z: 21, x: 130, y: 520, width: 890, height: 0, content: { type: plain, value: "Bootstrap to product-market fit. Raise to scale." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 } }
       - { id: dot-2, type: circle, z: 20, cx: 90, cy: 720, rx: 12, ry: 12, fill: { type: solid, color: "$accent" } }
@@ -93,7 +95,7 @@ pages:
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(5,10,30,0.35)" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "5 / 5" }, style: { font_family: $mono, font_size: 18, color: "#E8F0FF", letter_spacing: 0.18 } }
-      - { id: heading, type: text, z: 11, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Pick once.\nCommit fully." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: heading, type: text, z: 11, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Pick once.\nCommit fully." }, style: { font_family: "Playfair Display", font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.02 } }
       - { id: sub, type: text, z: 12, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "The wrong funding choice will outrun any product decision." }, style: { font_family: $body, font_size: 28, color: "#E0E8FF", line_height: 1.4 } }
       - { id: cta-btn, type: rect, z: 13, x: 60, y: 940, width: 320, height: 72, radius: 36, fill: { type: solid, color: "#FFFFFF" } }
       - { id: cta-text, type: text, z: 14, x: 60, y: 962, width: 320, height: 0, content: { type: plain, value: "Follow →" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "#0A0F1E", text_align: center } }

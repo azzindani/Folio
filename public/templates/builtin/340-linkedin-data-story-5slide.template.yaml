@@ -272,7 +272,7 @@ pages:
         height: 0
         content: { type: plain, value: "What to actually do about it." }
         style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
-      - { id: chip-1, type: rect, z: 20, x: 80, y: 500, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: chip-1, type: rect, z: 20, x: 80, y: 500, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: chip-1-num
         type: text
         z: 21
@@ -291,7 +291,7 @@ pages:
         height: 0
         content: { type: plain, value: "Open with the buyer's pain — not your product." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
-      - { id: chip-2, type: rect, z: 23, x: 80, y: 680, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: chip-2, type: rect, z: 23, x: 80, y: 680, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: chip-2-num
         type: text
         z: 24
@@ -310,7 +310,7 @@ pages:
         height: 0
         content: { type: plain, value: "Rehearse the first 5 minutes harder than the demo." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
-      - { id: chip-3, type: rect, z: 26, x: 80, y: 860, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: chip-3, type: rect, z: 26, x: 80, y: 860, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: chip-3-num
         type: text
         z: 27

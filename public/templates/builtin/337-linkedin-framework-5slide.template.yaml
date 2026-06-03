@@ -221,7 +221,7 @@ pages:
         y: 980
         width: 920
         height: 140
-        radius: 16
+        radius: 0
         fill: { type: solid, color: "$surface" }
         stroke: { color: "$primary", width: 2 }
       - id: stat-label
@@ -328,7 +328,7 @@ pages:
         y: 980
         width: 920
         height: 140
-        radius: 16
+        radius: 0
         fill: { type: solid, color: "$surface" }
         stroke: { color: "$primary", width: 2 }
       - id: stat-label
@@ -417,7 +417,7 @@ pages:
         y: 820
         width: 920
         height: 280
-        radius: 24
+        radius: 0
         fill: { type: solid, color: "$primary" }
       - id: cta-label
         type: text

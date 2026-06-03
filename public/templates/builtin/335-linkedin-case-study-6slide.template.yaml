@@ -126,7 +126,7 @@ pages:
         height: 0
         content: { type: plain, value: "By Q4 2025 they had crossed 1,200 customers and $18M ARR, but their net revenue retention had slipped under 95% — a red flag for any growth-stage SaaS." }
         style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
-      - { id: stat-card-1, type: rect, z: 5, x: 80, y: 880, width: 293, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: stat-card-1, type: rect, z: 5, x: 80, y: 880, width: 293, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: stat-1-value
         type: text
         z: 20
@@ -145,7 +145,7 @@ pages:
         height: 0
         content: { type: plain, value: "FOUNDED" }
         style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.24, text_transform: uppercase }
-      - { id: stat-card-2, type: rect, z: 5, x: 393, y: 880, width: 294, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: stat-card-2, type: rect, z: 5, x: 393, y: 880, width: 294, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: stat-2-value
         type: text
         z: 20
@@ -164,7 +164,7 @@ pages:
         height: 0
         content: { type: plain, value: "EMPLOYEES" }
         style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.24, text_transform: uppercase }
-      - { id: stat-card-3, type: rect, z: 5, x: 707, y: 880, width: 293, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: stat-card-3, type: rect, z: 5, x: 707, y: 880, width: 293, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: stat-3-value
         type: text
         z: 20
@@ -281,7 +281,7 @@ pages:
         height: 0
         content: { type: plain, value: "Our 3-step intervention" }
         style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
-      - { id: card-1, type: rect, z: 5, x: 80, y: 380, width: 920, height: 240, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: card-1, type: rect, z: 5, x: 80, y: 380, width: 920, height: 240, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: step-1-num
         type: text
         z: 20
@@ -309,7 +309,7 @@ pages:
         height: 0
         content: { type: plain, value: "Compressed onboarding from 14 steps to 4. Added an in-product checklist with progress." }
         style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 }
-      - { id: card-2, type: rect, z: 5, x: 80, y: 640, width: 920, height: 240, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: card-2, type: rect, z: 5, x: 80, y: 640, width: 920, height: 240, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: step-2-num
         type: text
         z: 20
@@ -337,7 +337,7 @@ pages:
         height: 0
         content: { type: plain, value: "Split accounts by ARR tier. High-touch CSMs on top 20%, pooled motion on the long tail." }
         style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 }
-      - { id: card-3, type: rect, z: 5, x: 80, y: 900, width: 920, height: 240, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: card-3, type: rect, z: 5, x: 80, y: 900, width: 920, height: 240, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: step-3-num
         type: text
         z: 20
@@ -416,7 +416,7 @@ pages:
         width: 120
         height: 4
         fill: { type: solid, color: "$accent" }
-      - { id: stat-card-before, type: rect, z: 5, x: 120, y: 880, width: 400, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: stat-card-before, type: rect, z: 5, x: 120, y: 880, width: 400, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: before-label
         type: text
         z: 20
@@ -435,7 +435,7 @@ pages:
         height: 0
         content: { type: plain, value: "94% NRR" }
         style: { font_family: $heading, font_size: 48, font_weight: 800, color: $text, text_align: center, letter_spacing: -0.02 }
-      - { id: stat-card-after, type: rect, z: 5, x: 560, y: 880, width: 400, height: 220, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: stat-card-after, type: rect, z: 5, x: 560, y: 880, width: 400, height: 220, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: after-label
         type: text
         z: 20

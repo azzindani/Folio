@@ -116,11 +116,11 @@ layers:
     height: 0
     content: { type: plain, value: "CS 161  ·  WEEK 09  ·  LECTURE 17" }
     style:
-      font_family: $body
-      font_size: 22
-      font_weight: 700
-      color: "$accent"
-      letter_spacing: 0.5
+      font_family: $mono
+      font_size: 18
+      font_weight: 600
+      color: "$primary"
+      letter_spacing: 1
       text_transform: uppercase
 
   - id: eyebrow-rule
@@ -142,18 +142,18 @@ layers:
     height: 0
     content: { type: plain, value: "Dynamic Programming" }
     style:
-      font_family: $heading
-      font_size: 128
+      font_family: "Playfair Display"
+      font_size: 120
       font_weight: 800
       color: "$text"
-      line_height: 1.05
-      letter_spacing: -0.03
+      line_height: 1.0
+      letter_spacing: -0.02
 
   - id: subtitle
     type: text
     z: 21
     x: 120
-    y: 460
+    y: 500
     width: 1680
     height: 0
     content: { type: plain, value: "Memoization, optimal substructure, and the art of subproblems" }
@@ -184,11 +184,11 @@ layers:
     height: 0
     content: { type: plain, value: "LECTURER" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 14
-      font_weight: 800
+      font_weight: 600
       color: "$text_muted"
-      letter_spacing: 0.5
+      letter_spacing: 1
       text_transform: uppercase
 
   - id: lecturer-name
@@ -229,11 +229,11 @@ layers:
     height: 0
     content: { type: plain, value: "DATE" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 14
-      font_weight: 800
+      font_weight: 600
       color: "$text_muted"
-      letter_spacing: 0.5
+      letter_spacing: 1
       text_transform: uppercase
 
   - id: date-value
@@ -273,7 +273,7 @@ layers:
     y: 720
     width: 200
     height: 200
-    radius: 24
+    radius: 0
     fill:
       type: linear
       angle: 135
@@ -306,12 +306,12 @@ layers:
     height: 0
     content: { type: plain, value: "STANFORD UNIVERSITY" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 11
-      font_weight: 700
+      font_weight: 600
       color: "$text_muted"
       text_align: center
-      letter_spacing: 0.4
+      letter_spacing: 1
 
   # ── Page indicator ────────────────────────────────────────
   - id: page-num
@@ -323,12 +323,31 @@ layers:
     height: 0
     content: { type: plain, value: "01 / 32" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 14
       font_weight: 600
       color: "$text_muted"
       text_align: right
-      letter_spacing: 0.3
+      letter_spacing: 1
+
+  # ── Cover accent rule (under eyebrow) ────────────────────
+  - id: rule-top
+    type: rect
+    z: 12
+    x: 120
+    y: 262
+    width: 1680
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rule-tick
+    type: rect
+    z: 13
+    x: 120
+    y: 259
+    width: 150
+    height: 6
+    fill: { type: solid, color: "$primary" }
 
 slots:
   - { id: course_code,    path: "layers[10].content.value", type: text, hint: "Course + week eyebrow",  default: "CS 161  ·  WEEK 09  ·  LECTURE 17" }

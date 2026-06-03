@@ -297,7 +297,7 @@ pages:
         height: 0
         content: { type: plain, value: "Three moves, in order." }
         style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
-      - { id: chip-1, type: rect, z: 20, x: 80, y: 480, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: chip-1, type: rect, z: 20, x: 80, y: 480, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: chip-1-num
         type: text
         z: 21
@@ -316,7 +316,7 @@ pages:
         height: 0
         content: { type: plain, value: "Saved 18 months of runway before resigning." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
-      - { id: chip-2, type: rect, z: 23, x: 80, y: 660, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: chip-2, type: rect, z: 23, x: 80, y: 660, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: chip-2-num
         type: text
         z: 24
@@ -335,7 +335,7 @@ pages:
         height: 0
         content: { type: plain, value: "Shipped a tiny side-project every weekend." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
-      - { id: chip-3, type: rect, z: 26, x: 80, y: 840, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: chip-3, type: rect, z: 26, x: 80, y: 840, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: chip-3-num
         type: text
         z: 27

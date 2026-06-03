@@ -107,7 +107,7 @@ pages:
         height: 0
         content: { type: plain, value: "Pair a new behavior with an existing routine. The old habit triggers the new one — no willpower needed." }
         style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
-      - { id: formula-card, type: rect, z: 20, x: 72, y: 880, width: 936, height: 180, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: formula-card, type: rect, z: 20, x: 72, y: 880, width: 936, height: 180, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: formula-text
         type: text
         z: 21
@@ -151,7 +151,7 @@ pages:
         height: 0
         content: { type: plain, value: "Morning\ncoffee → read." }
         style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
-      - { id: template-card, type: rect, z: 20, x: 72, y: 600, width: 936, height: 200, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: template-card, type: rect, z: 20, x: 72, y: 600, width: 936, height: 200, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: template-text
         type: text
         z: 21
@@ -213,7 +213,7 @@ pages:
         height: 0
         content: { type: plain, value: "Lock laptop\n→ pushups." }
         style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
-      - { id: template-card, type: rect, z: 20, x: 72, y: 600, width: 936, height: 200, radius: 16, fill: { type: solid, color: "$surface" } }
+      - { id: template-card, type: rect, z: 20, x: 72, y: 600, width: 936, height: 200, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: template-text
         type: text
         z: 21
@@ -275,7 +275,7 @@ pages:
         height: 0
         content: { type: plain, value: "Brush teeth\n→ gratitude." }
         style: { font_family: $heading, font_size: 80, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
-      - { id: template-card, type: rect, z: 20, x: 72, y: 580, width: 936, height: 200, radius: 16, fill: { type: solid, color: "rgba(255,255,255,0.18)" } }
+      - { id: template-card, type: rect, z: 20, x: 72, y: 580, width: 936, height: 200, radius: 0, fill: { type: solid, color: "rgba(255,255,255,0.18)" } }
       - id: template-text
         type: text
         z: 21

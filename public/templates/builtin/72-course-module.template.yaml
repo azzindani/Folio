@@ -52,11 +52,11 @@ layers:
     height: 0
     content: { type: plain, value: "MODULE 04" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 16
-      font_weight: 700
+      font_weight: 600
       color: $primary
-      letter_spacing: 0.4
+      letter_spacing: 1
       text_transform: uppercase
 
   - id: course-name
@@ -84,12 +84,12 @@ layers:
     height: 0
     content: { type: plain, value: "Building REST APIs with Node.js" }
     style:
-      font_family: $heading
-      font_size: 64
+      font_family: "Playfair Display"
+      font_size: 68
       font_weight: 800
       color: $text
-      line_height: 1.08
-      letter_spacing: -0.025
+      line_height: 1.04
+      letter_spacing: -0.02
 
   # ── Instructor row ────────────────────────────────────────
   - id: instructor-avatar
@@ -140,7 +140,7 @@ layers:
     y: 380
     width: 1120
     height: 120
-    radius: 16
+    radius: 0
     fill: { type: solid, color: "$surface" }
     stroke: { color: "$border", width: 1 }
 
@@ -171,9 +171,9 @@ layers:
     height: 0
     content: { type: plain, value: "6h 30m" }
     style:
-      font_family: $heading
+      font_family: "Playfair Display"
       font_size: 32
-      font_weight: 700
+      font_weight: 800
       color: $primary
       text_align: center
       line_height: 1.1
@@ -187,12 +187,12 @@ layers:
     height: 0
     content: { type: plain, value: "DURATION" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 12
       font_weight: 600
       color: $text_muted
       text_align: center
-      letter_spacing: 0.3
+      letter_spacing: 1
       text_transform: uppercase
 
   - id: lessons-value
@@ -204,9 +204,9 @@ layers:
     height: 0
     content: { type: plain, value: "18 lessons" }
     style:
-      font_family: $heading
+      font_family: "Playfair Display"
       font_size: 32
-      font_weight: 700
+      font_weight: 800
       color: $primary
       text_align: center
       line_height: 1.1
@@ -220,12 +220,12 @@ layers:
     height: 0
     content: { type: plain, value: "CONTENT" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 12
       font_weight: 600
       color: $text_muted
       text_align: center
-      letter_spacing: 0.3
+      letter_spacing: 1
       text_transform: uppercase
 
   - id: difficulty-value
@@ -237,9 +237,9 @@ layers:
     height: 0
     content: { type: plain, value: "Intermediate" }
     style:
-      font_family: $heading
+      font_family: "Playfair Display"
       font_size: 32
-      font_weight: 700
+      font_weight: 800
       color: $primary
       text_align: center
       line_height: 1.1
@@ -253,12 +253,12 @@ layers:
     height: 0
     content: { type: plain, value: "LEVEL" }
     style:
-      font_family: $body
+      font_family: $mono
       font_size: 12
       font_weight: 600
       color: $text_muted
       text_align: center
-      letter_spacing: 0.3
+      letter_spacing: 1
       text_transform: uppercase
 
   # ── "What you'll learn" section ───────────────────────────
@@ -271,11 +271,12 @@ layers:
     height: 0
     content: { type: plain, value: "What you'll learn" }
     style:
-      font_family: $heading
-      font_size: 28
-      font_weight: 700
+      font_family: "Playfair Display"
+      font_size: 30
+      font_weight: 800
       color: $text
-      line_height: 1.2
+      line_height: 1.06
+      letter_spacing: -0.02
 
   - id: learn-1
     type: text
@@ -343,11 +344,12 @@ layers:
     height: 0
     content: { type: plain, value: "Requirements" }
     style:
-      font_family: $heading
-      font_size: 28
-      font_weight: 700
+      font_family: "Playfair Display"
+      font_size: 30
+      font_weight: 800
       color: $text
-      line_height: 1.2
+      line_height: 1.06
+      letter_spacing: -0.02
 
   - id: req-1
     type: text
@@ -401,11 +403,12 @@ layers:
     height: 0
     content: { type: plain, value: "Module outline" }
     style:
-      font_family: $heading
-      font_size: 28
-      font_weight: 700
+      font_family: "Playfair Display"
+      font_size: 30
+      font_weight: 800
       color: $text
-      line_height: 1.2
+      line_height: 1.06
+      letter_spacing: -0.02
 
   # Lesson 1
   - id: lesson-1-circle

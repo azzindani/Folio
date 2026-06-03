@@ -186,7 +186,7 @@ pages:
         y: 820
         width: 920
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: for-template
         type: text
@@ -265,7 +265,7 @@ pages:
         y: 820
         width: 920
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: who-template
         type: text
@@ -344,7 +344,7 @@ pages:
         y: 820
         width: 920
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: vs-template
         type: text
@@ -415,7 +415,7 @@ pages:
         y: 640
         width: 920
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "rgba(255,255,255,0.14)" }
       - id: cta-template
         type: text
