@@ -220,9 +220,17 @@ Interactive HTML reports (dashboards, EDA, financial decks):
        charts        → {type:"interactive_chart", span:6|8, height:340, chart_type:"line"|"bar"|"area"|"pie"|"donut", data_ref, x_field, y_field, title}
        data table    → {type:"interactive_table", span:12, data_ref, filterable:true, exportable:true, pagination:true, page_size:10,
                          columns:[{field,title,sortable:true,formatter:"currency"|"number"|"percent"|"badge"|"delta",align:"right"}]}
-  4. export_report(design_path, theme:"dark"|"light") → self-contained .report.html
+  4. validate_report(design_path) → {ok, errors, warnings, diagnostics[]} — LINT cross-refs
+     (every chart/table data_ref + x/y field resolves to a real dataset, buttons open existing
+     modals, transforms group by present fields). Run it after add_layers; fix errors before export.
+  5. export_report(design_path, theme:"dark"|"light") → self-contained .report.html
+     (also returns diagnostics; resolves transform datasets at export).
   Defaults if span omitted: kpi=3, chart=6, table/rich_text=12. accent seeds chart colors + links.
   Tables sort/filter/paginate/CSV-export client-side; charts use Chart.js (CDN). All in one HTML file.
+  DATA SOURCES (bind_data datasets[] or report.data.sources): type:"inline" {rows:[…]} ·
+  "json"/"csv" {path} · "query" {engine:"http", url, query?:"dot.path"} fetches JSON (sql/duckdb
+  need a server connector) · "transform" {from:"<srcId>", group_by, agg:"sum|avg|min|max|count",
+  value} = a derived group-by aggregation, chart-bindable as data_ref (x=group_by, y=value).
 
 Interactive components (flow reports — all in add_layers, each takes span + the fields below):
   button       → {type:"button", span:3, label, variant:"solid"|"outline"|"ghost"|"link", action:"open_modal:<id>"}
