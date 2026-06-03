@@ -63,3 +63,6 @@ desktop.ini
 .idea/
 *.swp
 tmp-screens/
+
+# report-lab screenshot artifacts
+tools/report-lab/out/

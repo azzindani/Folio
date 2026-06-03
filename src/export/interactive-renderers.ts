@@ -13,11 +13,24 @@ export interface InteractiveRenderContext {
   pageWidth: number;
   pageHeight: number;
   isDark: boolean;
+  /** Flow mode: layers placed in a responsive 12-col grid (no absolute coords). */
+  flow: boolean;
+  /** Report accent color — seeds chart/sparkline defaults so visuals are coordinated. */
+  accent?: string;
   // Output channels populated as a side-effect:
   chartInits: string[];      // Chart.js init scripts
   tableInits: string[];      // Table init scripts
   fontFamilies: Set<string>; // Google Fonts to inject
   needsChartJs: boolean;
+}
+
+/** Default 12-col grid span per layer type in flow reports. */
+function defaultSpan(type: Layer['type']): number {
+  switch (type) {
+    case 'kpi_card': return 3;
+    case 'interactive_chart': return 6;
+    default: return 12; // tables, rich_text, embed_code
+  }
 }
 
 const INTERACTIVE_LAYER_TYPES = new Set<Layer['type']>([
@@ -69,7 +82,13 @@ function escHtml(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function layerStyle(layer: Layer): string {
+function layerStyle(layer: Layer, ctx: InteractiveRenderContext): string {
+  // Flow mode: place by responsive grid span, let the document grow naturally.
+  if (ctx.flow) {
+    const span = clampSpan((layer as { span?: number }).span ?? defaultSpan(layer.type));
+    return `grid-column:span ${span}`;
+  }
+  // Fixed-canvas mode: absolute positioning from x/y/width/height.
   const x = (layer as { x?: number }).x ?? 0;
   const y = (layer as { y?: number }).y ?? 0;
   const w = (layer as { width?: number | 'auto' }).width;
@@ -82,6 +101,11 @@ function layerStyle(layer: Layer): string {
   if (typeof w === 'number') parts.push(`width:${w}px`);
   if (typeof h === 'number') parts.push(`height:${h}px`);
   return parts.join(';');
+}
+
+function clampSpan(n: number): number {
+  if (!isFinite(n)) return 12;
+  return Math.max(1, Math.min(12, Math.round(n)));
 }
 
 function dataRows(dataRef: string, ctx: InteractiveRenderContext): Record<string, unknown>[] {
@@ -129,7 +153,7 @@ function renderChart(layer: InteractiveChartLayer, ctx: InteractiveRenderContext
   ctx.needsChartJs = true;
   const id = `chart-${layer.id}`;
   const rows = dataRows(layer.data_ref, ctx);
-  const chartConfig = buildChartConfig(layer, rows, ctx.isDark);
+  const chartConfig = buildChartConfig(layer, rows, ctx.isDark, ctx.accent);
   ctx.chartInits.push(`(function(){
     var el = document.getElementById(${JSON.stringify(id)});
     if (!el || !window.Chart) return;
@@ -137,7 +161,10 @@ function renderChart(layer: InteractiveChartLayer, ctx: InteractiveRenderContext
   })();`);
 
   const title = layer.title ? `<div class="ic-title">${escHtml(layer.title)}</div>` : '';
-  return `<div class="ic-chart" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer)}">
+  // In flow mode a grid item has no intrinsic height; give the card a height so
+  // the responsive canvas (maintainAspectRatio:false) has a box to fill.
+  const flowH = ctx.flow ? `;height:${typeof layer.height === 'number' ? layer.height : 340}px` : '';
+  return `<div class="ic-chart" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}${flowH}">
     ${title}
     <div class="ic-chart-canvas-wrap"><canvas id="${id}"></canvas></div>
   </div>`;
@@ -147,14 +174,17 @@ function buildChartConfig(
   layer: InteractiveChartLayer,
   rows: Record<string, unknown>[],
   isDark: boolean,
+  accent?: string,
 ): unknown {
   const x = layer.x_field ?? 'x';
   const y = layer.y_field ?? 'y';
   const labels = rows.map(r => r[x]);
   const data = rows.map(r => Number(r[y] ?? 0));
+  // Accent (if set) leads the palette so single-series charts match the report's color story.
+  const palette = accent ? [accent, ...defaultPalette(isDark)] : defaultPalette(isDark);
   const colors = layer.custom_colors && layer.custom_colors.length > 0
     ? layer.custom_colors
-    : defaultPalette(isDark);
+    : palette;
 
   const grid = layer.grid !== false;
   const legend = layer.legend !== false;
@@ -219,7 +249,7 @@ function renderTable(layer: InteractiveTableLayer, ctx: InteractiveRenderContext
   ctx.tableInits.push(`window.__folioTables = window.__folioTables || {};
 window.__folioTables[${JSON.stringify(id)}] = { columns: ${colsJson}, rows: ${rowsJson}, pageSize: ${layer.page_size ?? 25}, page: 0, sort: null };`);
 
-  return `<div class="ic-table" id="${id}" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer)}">
+  return `<div class="ic-table" id="${id}" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}">
     ${(filterUI || exportUI) ? `<div class="ic-table-toolbar">${filterUI}${exportUI}</div>` : ''}
     <div class="ic-table-scroll"><table><thead></thead><tbody></tbody></table></div>
     ${layer.pagination ? `<div class="ic-table-pager"></div>` : ''}
@@ -247,7 +277,7 @@ function renderKpi(layer: KpiCardLayer, ctx: InteractiveRenderContext): string {
   const radius = layer.border_radius != null ? `border-radius:${layer.border_radius}px;` : '';
   const customStyle = `${bg ? `background:${bg};` : ''}${fg ? `color:${fg};` : ''}${radius}`;
 
-  return `<div class="ic-kpi" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer)};${customStyle}">
+  return `<div class="ic-kpi" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)};${customStyle}">
     ${layer.icon ? `<div class="ic-kpi-icon">${escHtml(layer.icon)}</div>` : ''}
     <div class="ic-kpi-label">${escHtml(layer.label)}</div>
     <div class="ic-kpi-value">${escHtml(value)}</div>
@@ -274,7 +304,7 @@ function renderSparkline(values: number[], color: string): string {
 function renderRichText(layer: RichTextLayer, ctx: InteractiveRenderContext): string {
   if (layer.font_family) ctx.fontFamilies.add(layer.font_family);
   const style = [
-    layerStyle(layer),
+    layerStyle(layer, ctx),
     layer.font_family ? `font-family:'${layer.font_family}',sans-serif` : '',
     layer.font_size ? `font-size:${layer.font_size}px` : '',
     layer.line_height ? `line-height:${layer.line_height}` : '',
@@ -301,6 +331,5 @@ function markdownToHtml(md: string): string {
 // ── Embed Code renderer ──────────────────────────────────────
 
 function renderEmbed(layer: Layer & { html: string }, ctx: InteractiveRenderContext): string {
-  void ctx;
-  return `<div class="ic-embed" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer)}">${layer.html}</div>`;
+  return `<div class="ic-embed" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}">${layer.html}</div>`;
 }
