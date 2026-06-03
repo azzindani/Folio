@@ -100,4 +100,28 @@ describe('interactive components — export', () => {
     expect(h).toContain('Folio.applyFilters');
     expect(h).toContain('data-folio-action'); // dispatcher present
   });
+
+  it('table row_detail emits a clickable table + a hidden detail modal', () => {
+    const h = html([{ id: 't', type: 'interactive_table', z: 0, data_ref: 'ds', row_detail: true,
+      columns: [{ field: 'k', title: 'K' }, { field: 'v', title: 'V' }] } as unknown as Layer]);
+    expect(h).toContain('ic-table-clickable');
+    expect(h).toContain('id="table-t-rowmodal"');
+    expect(h).toContain('rowDetail: true');
+    expect(h).toContain('openRowDetail'); // runtime present
+  });
+
+  it('library:plotly charts load Plotly + register the reactive registry', () => {
+    const h = html([{ id: 'p', type: 'interactive_chart', z: 0, library: 'plotly', chart_type: 'bar', data_ref: 'ds', x_field: 'k', y_field: 'v' } as unknown as Layer]);
+    expect(h).toContain('cdn.plot.ly');
+    expect(h).toContain('window.__folioPlotly');
+    expect(h).toContain('class="ic-plotly"');
+    expect(h).not.toContain('chart.umd.min.js'); // no Chart.js when only plotly used
+  });
+
+  it('plotly_spec passes a raw chart through', () => {
+    const h = html([{ id: 'p', type: 'interactive_chart', z: 0, library: 'plotly', chart_type: 'heatmap', data_ref: 'ds',
+      plotly_spec: { data: [{ type: 'heatmap', z: [[1, 2], [3, 4]] }] } } as unknown as Layer]);
+    expect(h).toContain('"type":"heatmap"');
+    expect(h).toContain('raw:');
+  });
 });

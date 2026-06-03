@@ -78,9 +78,10 @@ export function assembleReportHTML(
   .join('&')}&display=swap" rel="stylesheet">`
     : '';
 
-  const chartJsTag = ctx.needsChartJs
-    ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>'
-    : '';
+  const chartJsTag = [
+    ctx.needsChartJs ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>' : '',
+    ctx.needsPlotly ? '<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>' : '',
+  ].filter(Boolean).join('\n  ');
 
   // tableInits + chartInits just POPULATE the registries (window.__folioTables /
   // window.__folioCharts). RUNTIME_JS builds + wires them (charts gated on Chart.js).
@@ -251,6 +252,7 @@ body.layout-scroll #folio-report,body.layout-flow #folio-report{overflow:visible
 .ic-title{font-size:13px;font-weight:600;margin-bottom:8px;color:inherit}
 .ic-chart-canvas-wrap{flex:1;position:relative;min-height:0}
 .ic-chart canvas{max-width:100%;max-height:100%}
+.ic-plotly{width:100%;height:100%;min-height:0}
 
 .ic-table{background:var(--ic-surface);border:1px solid var(--ic-border);border-radius:6px;display:flex;flex-direction:column;overflow:hidden}
 .ic-table-toolbar{display:flex;gap:8px;padding:8px;border-bottom:1px solid var(--ic-border)}
@@ -269,6 +271,13 @@ body.layout-scroll #folio-report,body.layout-flow #folio-report{overflow:visible
 .ic-table-pager{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-top:1px solid var(--ic-border);font-size:12px;color:var(--ic-muted)}
 .ic-table-pager button{padding:4px 12px;border:1px solid var(--ic-border);border-radius:4px;background:transparent;color:inherit;cursor:pointer;font:inherit}
 .ic-table-pager button:disabled{opacity:.4;cursor:not-allowed}
+.ic-table-clickable tbody tr{cursor:pointer}
+.ic-table-clickable tbody tr:hover{background:rgba(245,200,66,.08)}
+.ic-rowdetail{display:flex;flex-direction:column}
+.ic-rowdetail-line{display:flex;justify-content:space-between;gap:24px;padding:11px 2px;border-bottom:1px solid var(--ic-border);font-size:14px}
+.ic-rowdetail-line:last-child{border-bottom:none}
+.ic-rowdetail-line span:first-child{color:var(--ic-muted);font-weight:600}
+.ic-rowdetail-line span:last-child{text-align:right}
 
 .ic-kpi{background:var(--ic-surface);border:1px solid var(--ic-border);border-radius:6px;padding:14px 18px 12px;display:flex;flex-direction:column;gap:3px;overflow:hidden;position:relative}
 .ic-kpi-icon{font-size:18px;margin-bottom:4px}
@@ -445,6 +454,13 @@ const RUNTIME_JS = `(function(){
     return escHtmlJs(String(v));
   }
   function escHtmlJs(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function openRowDetail(id,row){
+    var t=window.__folioTables[id];var m=document.getElementById(id+'-rowmodal');if(!t||!m)return;
+    var ttl=m.querySelector('.ic-modal-title'),bd=m.querySelector('.ic-modal-body');
+    if(ttl)ttl.textContent=row[t.titleField]==null?'Detail':String(row[t.titleField]);
+    if(bd)bd.innerHTML='<div class="ic-rowdetail">'+t.columns.map(function(c){return '<div class="ic-rowdetail-line"><span>'+escHtmlJs(c.title||c.field)+'</span><span>'+fmtCell(row[c.field],c.formatter)+'</span></div>';}).join('')+'</div>';
+    openModal(id+'-rowmodal');
+  }
   function renderTable(id){
     var t=window.__folioTables&&window.__folioTables[id];if(!t)return;
     var root=document.getElementById(id);if(!root)return;
@@ -456,7 +472,10 @@ const RUNTIME_JS = `(function(){
     if(t.page>=totalPages)t.page=totalPages-1;
     var start=t.page*t.pageSize,pageRows=rows.slice(start,start+t.pageSize);
     thead.innerHTML='<tr>'+t.columns.map(function(c){var s=t.sort&&t.sort.field===c.field?t.sort.dir:'';return '<th data-field="'+c.field+'"'+(s?' data-sort="'+s+'"':'')+(c.align?' style="text-align:'+c.align+'"':'')+'>'+escHtmlJs(c.title)+'</th>';}).join('')+'</tr>';
-    tbody.innerHTML=pageRows.map(function(r){return '<tr>'+t.columns.map(function(c){return '<td'+(c.align?' style="text-align:'+c.align+'"':'')+'>'+fmtCell(r[c.field],c.formatter)+'</td>';}).join('')+'</tr>';}).join('');
+    tbody.innerHTML=pageRows.map(function(r,ri){return '<tr'+(t.rowDetail?' data-row-idx="'+ri+'"':'')+'>'+t.columns.map(function(c){return '<td'+(c.align?' style="text-align:'+c.align+'"':'')+'>'+fmtCell(r[c.field],c.formatter)+'</td>';}).join('')+'</tr>';}).join('');
+    if(t.rowDetail){t._page=pageRows;Array.from(tbody.querySelectorAll('tr[data-row-idx]')).forEach(function(tr){
+      tr.addEventListener('click',function(){var r=t._page[Number(tr.dataset.rowIdx)];if(!r)return;openRowDetail(id,r);});
+    });}
     Array.from(thead.querySelectorAll('th')).forEach(function(th){
       var col=t.columns.find(function(c){return c.field===th.dataset.field;});
       if(!col||col.sortable===false)return;
@@ -494,17 +513,34 @@ const RUNTIME_JS = `(function(){
       try{c.inst=new window.Chart(el.getContext('2d'),c.cfg);}catch(e){}
     });
   }
-  Folio.updateCharts=function(){if(!window.__folioCharts)return;Object.keys(window.__folioCharts).forEach(function(id){var c=window.__folioCharts[id];if(!c.inst)return;var d=chartData(c);c.inst.data.labels=d.labels;c.inst.data.datasets[0].data=d.data;c.inst.update();});};
+  // ── Plotly charts (library:'plotly') — mapped traces re-filter; raw specs are static ──
+  function plotlyTrace(c){var rows=Folio.applyFilters(c.rows);var xs=rows.map(function(r){return r[c.x];}),ys=rows.map(function(r){return Number(r[c.y]||0);});var t=c.ctype;
+    if(t==='pie'||t==='donut')return [{type:'pie',labels:xs,values:ys,hole:t==='donut'?0.5:0}];
+    if(t==='bar')return [{type:'bar',x:xs,y:ys,marker:{color:c.color}}];
+    if(t==='area')return [{type:'scatter',mode:'lines',x:xs,y:ys,fill:'tozeroy',line:{color:c.color}}];
+    if(t==='scatter')return [{type:'scatter',mode:'markers',x:xs,y:ys,marker:{color:c.color}}];
+    return [{type:'scatter',mode:'lines+markers',x:xs,y:ys,line:{color:c.color}}];}
+  function plotlyLayout(c){var gc=c.dark?'rgba(255,255,255,.08)':'rgba(0,0,0,.08)';return {margin:{t:8,r:12,b:42,l:54},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:c.dark?'#cbd5e1':'#334155',family:'Inter,system-ui,sans-serif'},xaxis:{gridcolor:gc,zeroline:false},yaxis:{gridcolor:gc,zeroline:false},showlegend:false};}
+  function buildPlotly(){if(!window.Plotly||!window.__folioPlotly)return;
+    Object.keys(window.__folioPlotly).forEach(function(id){var c=window.__folioPlotly[id];var el=document.getElementById(id);if(!el||c._b)return;c._b=true;
+      try{if(c.raw){var lay=Object.assign({paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:c.dark?'#cbd5e1':'#334155',family:'Inter,system-ui,sans-serif'},margin:{t:8,r:12,b:42,l:54}},c.raw.layout||{});window.Plotly.newPlot(id,c.raw.data||[],lay,{responsive:true,displayModeBar:false});}else{window.Plotly.newPlot(id,plotlyTrace(c),plotlyLayout(c),{responsive:true,displayModeBar:false});}}catch(e){}});}
+  function updatePlotly(){if(!window.Plotly||!window.__folioPlotly)return;Object.keys(window.__folioPlotly).forEach(function(id){var c=window.__folioPlotly[id];if(!c._b||c.raw)return;try{window.Plotly.react(id,plotlyTrace(c),plotlyLayout(c));}catch(e){}});}
+  function resizePlotly(){if(!window.Plotly||!window.__folioPlotly)return;Object.keys(window.__folioPlotly).forEach(function(id){try{window.Plotly.Plots.resize(id);}catch(e){}});}
+  Folio.updateCharts=function(){
+    if(window.__folioCharts)Object.keys(window.__folioCharts).forEach(function(id){var c=window.__folioCharts[id];if(!c.inst)return;var d=chartData(c);c.inst.data.labels=d.labels;c.inst.data.datasets[0].data=d.data;c.inst.update();});
+    updatePlotly();
+  };
   if(window.Chart){buildCharts();}else{var _ct=setInterval(function(){if(window.Chart){clearInterval(_ct);buildCharts();}},50);setTimeout(function(){clearInterval(_ct);},8000);}
+  if(window.Plotly){buildPlotly();}else{var _pt=setInterval(function(){if(window.Plotly){clearInterval(_pt);buildPlotly();}},50);setTimeout(function(){clearInterval(_pt);},8000);}
 
   // ── Generic action dispatcher (buttons, chips, tabs, accordions, modals) ──
-  function openModal(id){var m=document.getElementById(id);if(!m)return;m.classList.add('open');m.setAttribute('aria-hidden','false');document.body.classList.add('ic-modal-lock');if(window.__folioCharts){setTimeout(function(){Object.keys(window.__folioCharts).forEach(function(k){var c=window.__folioCharts[k];if(c.inst&&c.inst.resize)c.inst.resize();});},20);}}
+  function openModal(id){var m=document.getElementById(id);if(!m)return;m.classList.add('open');m.setAttribute('aria-hidden','false');document.body.classList.add('ic-modal-lock');setTimeout(function(){if(window.__folioCharts)Object.keys(window.__folioCharts).forEach(function(k){var c=window.__folioCharts[k];if(c.inst&&c.inst.resize)c.inst.resize();});resizePlotly();},20);}
   function closeModal(id){var m=id?document.getElementById(id):document.querySelector('.ic-modal.open');if(!m)return;m.classList.remove('open');m.setAttribute('aria-hidden','true');if(!document.querySelector('.ic-modal.open'))document.body.classList.remove('ic-modal-lock');}
   function switchTab(group,tid){
     document.querySelectorAll('[data-tab-group="'+group+'"]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab-id')===tid);});
     document.querySelectorAll('[data-tab-panel="'+group+'"]').forEach(function(p){p.classList.toggle('active',p.getAttribute('data-tab-id')===tid);});
-    // Charts inside a previously-hidden panel render at 0×0; nudge Chart.js to resize.
-    if(window.__folioCharts){setTimeout(function(){Object.keys(window.__folioCharts).forEach(function(id){var c=window.__folioCharts[id];if(c.inst&&c.inst.resize)c.inst.resize();});},20);}
+    // Charts inside a previously-hidden panel render at 0×0; nudge them to resize.
+    setTimeout(function(){if(window.__folioCharts)Object.keys(window.__folioCharts).forEach(function(id){var c=window.__folioCharts[id];if(c.inst&&c.inst.resize)c.inst.resize();});resizePlotly();},20);
   }
   function toggleAccordion(id){var it=document.getElementById(id);if(!it)return;var willOpen=!it.classList.contains('open');var g=it.getAttribute('data-acc-group');
     if(g&&willOpen){document.querySelectorAll('[data-acc-group="'+g+'"]').forEach(function(o){if(o!==it)o.classList.remove('open');});}

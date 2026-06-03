@@ -33,6 +33,7 @@ export interface InteractiveRenderContext {
   tableInits: string[];      // Table init scripts
   fontFamilies: Set<string>; // Google Fonts to inject
   needsChartJs: boolean;
+  needsPlotly?: boolean;     // any library:'plotly' chart present
 }
 
 /** Default 12-col grid span per layer type in flow reports. */
@@ -183,9 +184,10 @@ function fmt(value: unknown, formatter?: string, opts?: { currency?: string; dec
 // ── Chart renderer ───────────────────────────────────────────
 
 function renderChart(layer: InteractiveChartLayer, ctx: InteractiveRenderContext): string {
-  ctx.needsChartJs = true;
   const id = `chart-${layer.id}`;
   const rows = dataRows(layer.data_ref, ctx);
+  if (layer.library === 'plotly') return renderPlotlyChart(layer, rows, id, ctx);
+  ctx.needsChartJs = true;
   const chartConfig = buildChartConfig(layer, rows, ctx.isDark, ctx.accent);
   // Register chart metadata so the runtime builds it AND re-filters it live when
   // a linked filter_bar changes Folio.filters. Storing rows + x/y lets us
@@ -263,6 +265,24 @@ function defaultPalette(isDark: boolean): string[] {
     : ['#2563eb', '#059669', '#db2777', '#d97706', '#7c3aed', '#0891b2', '#be123c'];
 }
 
+// ── Plotly chart (library:'plotly') — heatmap/box/scatter/3d + raw passthrough ──
+
+function renderPlotlyChart(layer: InteractiveChartLayer, rows: Record<string, unknown>[], id: string, ctx: InteractiveRenderContext): string {
+  ctx.needsPlotly = true;
+  const title = layer.title ? `<div class="ic-title">${escHtml(layer.title)}</div>` : '';
+  const flowH = ctx.flow ? `;height:${typeof layer.height === 'number' ? layer.height : 360}px` : '';
+  const accent = ctx.accent ?? (ctx.isDark ? '#60a5fa' : '#2563eb');
+  if (layer.plotly_spec) {
+    ctx.chartInits.push(`(window.__folioPlotly=window.__folioPlotly||{})[${JSON.stringify(id)}]={raw:${JSON.stringify(layer.plotly_spec)},dark:${ctx.isDark}};`);
+  } else {
+    ctx.chartInits.push(`(window.__folioPlotly=window.__folioPlotly||{})[${JSON.stringify(id)}]={rows:${JSON.stringify(rows)},x:${JSON.stringify(layer.x_field ?? 'x')},y:${JSON.stringify(layer.y_field ?? 'y')},ctype:${JSON.stringify(layer.chart_type)},color:${JSON.stringify(accent)},dark:${ctx.isDark}};`);
+  }
+  return `<div class="ic-chart" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}${flowH}">
+    ${title}
+    <div class="ic-chart-canvas-wrap"><div id="${id}" class="ic-plotly"></div></div>
+  </div>`;
+}
+
 // ── Table renderer ───────────────────────────────────────────
 
 function renderTable(layer: InteractiveTableLayer, ctx: InteractiveRenderContext): string {
@@ -278,14 +298,24 @@ function renderTable(layer: InteractiveTableLayer, ctx: InteractiveRenderContext
     ? `<button class="ic-table-export" data-target="${id}" title="Download CSV">Export</button>`
     : '';
 
+  const rowDetail = !!layer.row_detail;
+  const titleField = layer.row_detail_title ?? (layer.columns[0]?.field ?? '');
   ctx.tableInits.push(`window.__folioTables = window.__folioTables || {};
-window.__folioTables[${JSON.stringify(id)}] = { columns: ${colsJson}, rows: ${rowsJson}, pageSize: ${layer.page_size ?? 25}, page: 0, sort: null };`);
+window.__folioTables[${JSON.stringify(id)}] = { columns: ${colsJson}, rows: ${rowsJson}, pageSize: ${layer.page_size ?? 25}, page: 0, sort: null, rowDetail: ${rowDetail}, titleField: ${JSON.stringify(titleField)} };`);
 
-  return `<div class="ic-table" id="${id}" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}">
+  // Row-detail drill-down: a hidden modal the runtime fills from the clicked row.
+  const rowModal = rowDetail
+    ? `<div class="ic-modal" id="${id}-rowmodal" data-modal role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="ic-modal-backdrop" data-folio-action="close_modal:${id}-rowmodal"></div>
+    <div class="ic-modal-dialog"><div class="ic-modal-head"><div class="ic-modal-title"></div><button class="ic-modal-close" data-folio-action="close_modal:${id}-rowmodal" aria-label="Close">×</button></div><div class="ic-modal-body"></div></div>
+  </div>`
+    : '';
+
+  return `<div class="ic-table${rowDetail ? ' ic-table-clickable' : ''}" id="${id}" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}">
     ${(filterUI || exportUI) ? `<div class="ic-table-toolbar">${filterUI}${exportUI}</div>` : ''}
     <div class="ic-table-scroll"><table><thead></thead><tbody></tbody></table></div>
     ${layer.pagination ? `<div class="ic-table-pager"></div>` : ''}
-  </div>`;
+  </div>${rowModal}`;
 }
 
 // ── KPI Card renderer ────────────────────────────────────────

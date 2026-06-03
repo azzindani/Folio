@@ -1,5 +1,6 @@
 import { StateManager, type EditorState, type ToolId, type RulerUnit, type Guide } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
+import { computeFlowLayout } from '../renderer/flow-layout';
 import type { Layer, TextLayer } from '../schema/types';
 import { computeRulerTicks } from '../utils/ruler-units';
 import { composeTheme } from '../styles/compose';
@@ -316,14 +317,28 @@ export class CanvasManager {
 
     const pages = design.pages;
     const currentPageIndex = this.state.get().currentPageIndex;
+    const report = design.report;
+    const isFlow = !!report && (report.layout === 'flow' || report.flow === true);
 
     let svg: SVGSVGElement;
+    let renderW = width;
+    let renderH = height;
 
     if (pages && pages.length > 0) {
       const pageIdx = Math.min(currentPageIndex, pages.length - 1);
       const page = pages[pageIdx];
       const layers = page?.layers ?? [];
-      svg = renderPage(layers, width, height, { theme: composed, showGrid: this.state.get().gridVisible });
+      if (isFlow) {
+        // Lay span-positioned layers out in the responsive grid so the canvas
+        // matches the exported flow report (and selection handles line up).
+        const cw = (typeof report?.max_width === 'number' ? report.max_width : 0) || width || 1200;
+        const fl = computeFlowLayout(layers, { containerWidth: cw });
+        renderW = fl.width;
+        renderH = fl.height;
+        svg = renderPage(layers, renderW, renderH, { theme: composed, showGrid: false });
+      } else {
+        svg = renderPage(layers, width, height, { theme: composed, showGrid: this.state.get().gridVisible });
+      }
     } else {
       svg = renderDesign(design, { theme: composed, showGrid: this.state.get().gridVisible });
     }
@@ -343,9 +358,9 @@ export class CanvasManager {
     }
     this.currentSVG = svg;
 
-    // Size viewport
-    this.viewport.style.width = `${width}px`;
-    this.viewport.style.height = `${height}px`;
+    // Size viewport (flow reports grow the artboard to the computed grid height)
+    this.viewport.style.width = `${renderW}px`;
+    this.viewport.style.height = `${renderH}px`;
     this.updateTransform();
     this.updateRulers();
   }

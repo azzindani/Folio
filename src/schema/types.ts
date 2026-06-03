@@ -433,6 +433,10 @@ export type ChartType =
 export interface InteractiveChartLayer extends BaseLayer {
   type: 'interactive_chart';
   chart_type: ChartType;
+  /** Rendering library — chartjs (default) or plotly (heatmap/box/scatter/3d). */
+  library?: 'chartjs' | 'plotly';
+  /** Raw Plotly { data, layout } passthrough (library:'plotly') — static, advanced charts. */
+  plotly_spec?: { data?: unknown[]; layout?: Record<string, unknown> };
   data_ref: string;
   x_field?: string;
   y_field?: string;
@@ -468,6 +472,10 @@ export interface InteractiveTableLayer extends BaseLayer {
   filterable?: boolean;
   exportable?: boolean;
   theme?: string;
+  /** Click a row → open an auto-built detail modal of that row's fields. */
+  row_detail?: boolean;
+  /** Field whose value titles the row-detail modal (defaults to the first column). */
+  row_detail_title?: string;
 }
 
 export interface RichTextLayer extends BaseLayer {
