@@ -99,18 +99,22 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   // ── Report tools ──────────────────────────────────────────
   {
     name: 'generate_report',
-    description: 'Scaffold a new report-type design with pages, navigation, and optional data sources.',
+    description: 'Scaffold a new report-type design with pages, navigation, and optional data sources. Use layout:"flow" for a responsive interactive dashboard/report (12-col grid, layers placed by a span field, no fixed canvas) — set accent + font_heading/font_body for an editorial look.',
     inputSchema: {
       type: 'object',
       properties: {
         project_path:  { type: 'string', description: 'Path to project directory' },
         name:          { type: 'string', description: 'Report name' },
-        layout:        { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar'], default: 'paged' },
+        layout:        { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar', 'flow'], default: 'paged', description: 'flow = responsive 12-col grid (span-based, no fixed canvas) — best for interactive HTML reports' },
         nav_type:      { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar' },
         pages:         { type: 'object', description: 'Array of {id?, label} page specs', items: { type: 'object' } },
         width:         { type: 'number', default: 1080 },
         height:        { type: 'number', default: 1080 },
         data_sources:  { type: 'object', description: 'Optional inline/json/csv data sources', items: { type: 'object' } },
+        max_width:     { type: 'number', description: 'Flow reports: centered container max width in px (default 1200)' },
+        accent:        { type: 'string', description: 'Flow reports: accent color (CSS) — seeds chart palette + links + active states' },
+        font_heading:  { type: 'string', description: 'Flow reports: heading font family (Google font name, e.g. "Playfair Display")' },
+        font_body:     { type: 'string', description: 'Flow reports: body font family (Google font name, e.g. "Inter")' },
       },
       required: ['project_path', 'name', 'pages'],
     },
