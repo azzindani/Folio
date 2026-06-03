@@ -20,7 +20,7 @@ z = stacking order (higher = front)
      near-black #0A0A0A, or a deep editorial hue. Gradient only if the topic earns it.
    • TYPE IS THE DESIGN: headline 4–5× the body (e.g. 100 vs 26). Pair fonts per
      layer via \`font\`: display "Playfair Display"/"Bebas Neue"/"Anton" · body
-     "Source Serif 4"/"Inter" · LABELS "IBM Plex Mono"/"JetBrains Mono".
+     "Inter"/"Public Sans" · LABELS "IBM Plex Mono"/"JetBrains Mono".
    • Tight headlines: lh:1.0–1.05, track:-1..-2. Mono labels: UPPERCASE, track:1.5.
    • ONE accent color, used 1–2× (a stat, a rule) — never on everything.
    • ASYMMETRY + whitespace: left-anchor at x:80–100, leave a column empty. Don't
@@ -37,7 +37,7 @@ z = stacking order (higher = front)
      {id:"head", type:"text", z:10, pos:[96,250,880,470], text:"A headline that does the work.",
         size:108, weight:800, color:"#2A2218", font:"Playfair Display", lh:1.02},
      {id:"body", type:"text", z:10, pos:[96,780,560,230], text:"One clear idea. Left column, right side breathes.",
-        size:27, color:"#2A2218", font:"Source Serif 4"},
+        size:27, color:"#2A2218", font:"Inter"},
      {id:"stat", type:"text", z:10, pos:[96,1060,640,120], text:"61% → 89%",
         size:92, weight:800, color:"#B8543C", font:"Playfair Display"} ])
    Other moods (same recipe, swap palette+fonts): BOLD POSTER bg #0A0A0A / accent
