@@ -9,6 +9,7 @@ import type {
   TooltipLayer, CalloutLayer, ProgressLayer,
 } from '../schema/types';
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
+import { getPreviewRows, getPreviewAccent } from './render-context';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
@@ -983,48 +984,211 @@ function makeForeignObject(
 
 // ── Interactive Chart (Plotly) ───────────────────────────────
 export function renderInteractiveChart(layer: InteractiveChartLayer, _svg: SVGSVGElement): SVGElement {
-  const { fo, container } = makeForeignObject(layer, `[Chart: ${layer.chart_type}]`, 'folio-chart');
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
 
-  const meta = {
-    layerId: layer.id,
-    chartType: layer.chart_type,
-    dataRef: layer.data_ref,
-    xField: layer.x_field,
-    yField: layer.y_field,
-    colorField: layer.color_field,
-    title: layer.title,
-    colorScheme: layer.color_scheme ?? 'blues',
-    customColors: layer.custom_colors,
-    legend: layer.legend ?? true,
-    grid: layer.grid ?? true,
-    animate: layer.animate ?? true,
-  };
-  container.dataset['plotlySpec'] = JSON.stringify(meta);
-  container.dataset['renderType'] = 'plotly';
+  const fo = createSVGElement('foreignObject', { x: layer.x ?? 0, y: layer.y ?? 0, width: w, height: h });
+
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.className = 'folio-chart';
+  container.style.cssText = `width:${w}px;height:${h}px;overflow:hidden;box-sizing:border-box;background:#191926;border-radius:10px;`;
+  if (layer.id) container.dataset['layerId'] = layer.id;
+
+  const ph = document.createElement('div');
+  ph.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  ph.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#8892A4;font-family:Inter,sans-serif;font-size:12px;';
+  ph.textContent = layer.title ?? `${layer.chart_type} chart`;
+  container.appendChild(ph);
+  fo.appendChild(container);
+
+  // Draw a real chart from the design's inline data (or a representative
+  // sample when the source is external / not present at design time) so the
+  // studio canvas previews the widget instead of an empty placeholder.
+  const rows = getPreviewRows(layer.data_ref);
+  const { spec, isSample } = buildChartPreviewSpec(layer, rows, getPreviewAccent(), w, h);
+  import('vega-embed').then(({ default: embed }) => {
+    container.innerHTML = '';
+    return embed(container, spec as unknown as Parameters<typeof embed>[1], {
+      renderer: 'svg', actions: false, theme: 'dark',
+    });
+  }).then(() => {
+    if (isSample) {
+      const note = document.createElement('div');
+      note.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+      note.textContent = 'sample data';
+      note.style.cssText = 'position:absolute;right:8px;bottom:6px;font:9px Inter,sans-serif;color:rgba(180,180,200,0.55);letter-spacing:0.05em;pointer-events:none;';
+      container.style.position = 'relative';
+      container.appendChild(note);
+    }
+  }).catch(() => {
+    container.innerHTML = '';
+    container.appendChild(ph);
+  });
 
   applyCommonAttributes(fo, layer);
   return fo;
 }
 
+// Pick x/y fields for a chart preview — explicit fields win; otherwise infer a
+// categorical x + numeric y from the first row.
+function inferChartFields(layer: InteractiveChartLayer, rows: Record<string, unknown>[]): { x: string; y: string } {
+  let x = layer.x_field;
+  let y = layer.y_field;
+  if ((!x || !y) && rows.length > 0) {
+    const keys = Object.keys(rows[0]);
+    const numKey = keys.find((k) => typeof rows[0][k] === 'number');
+    const catKey = keys.find((k) => typeof rows[0][k] !== 'number') ?? keys[0];
+    x = x ?? catKey;
+    y = y ?? numKey ?? keys[1] ?? keys[0];
+  }
+  return { x: x ?? 'category', y: y ?? 'value' };
+}
+
+function sampleChartRows(x: string, y: string): Record<string, unknown>[] {
+  const cats = ['A', 'B', 'C', 'D', 'E'];
+  const vals = [38, 62, 49, 71, 55];
+  return cats.map((c, i) => ({ [x]: c, [y]: vals[i] }));
+}
+
+interface VlSpec { [k: string]: unknown }
+
+// Map an interactive_chart layer → a Vega-Lite spec for the editor preview.
+// Vega is already bundled (the static `chart` layer uses it), so this needs no
+// new dependency. The exported HTML still draws Chart.js/Plotly; this is a
+// faithful design-time preview of shape + data, not a pixel match.
+export function buildChartPreviewSpec(
+  layer: InteractiveChartLayer,
+  rows: Record<string, unknown>[],
+  accent: string,
+  w: number,
+  h: number,
+): { spec: VlSpec; isSample: boolean } {
+  const { x, y } = inferChartFields(layer, rows);
+  const isSample = rows.length === 0;
+  const values = isSample ? sampleChartRows(x, y) : rows.slice(0, 60);
+  const xType = typeof values[0]?.[x] === 'number' ? 'quantitative' : 'nominal';
+  const colorEnc = layer.color_field
+    ? { color: { field: layer.color_field, type: 'nominal', scale: { scheme: 'tableau10' } } }
+    : {};
+
+  const spec: VlSpec = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: Math.max(80, w - 28),
+    height: Math.max(60, h - (layer.title ? 56 : 34)),
+    background: '#191926',
+    padding: 12,
+    data: { values },
+    config: {
+      view: { stroke: 'transparent' },
+      axis: { labelColor: '#b8b8c8', titleColor: '#d8d8e4', gridColor: 'rgba(255,255,255,0.06)', domainColor: 'rgba(255,255,255,0.18)' },
+      legend: { labelColor: '#b8b8c8', titleColor: '#d8d8e4' },
+      title: { color: '#f0f0f6', fontSize: 13, anchor: 'start' },
+    },
+  };
+  if (layer.title) spec['title'] = layer.title;
+
+  const xEnc = { field: x, type: xType, axis: { labelAngle: 0 } };
+  const yEnc = { field: y, type: 'quantitative' };
+
+  switch (layer.chart_type) {
+    case 'line':
+      spec['mark'] = { type: 'line', color: accent, point: { filled: true, color: accent }, strokeWidth: 2 };
+      spec['encoding'] = { x: { field: x, type: 'ordinal' }, y: yEnc, ...colorEnc };
+      break;
+    case 'area':
+      spec['mark'] = { type: 'area', color: accent, opacity: 0.65, line: { color: accent, strokeWidth: 2 } };
+      spec['encoding'] = { x: { field: x, type: 'ordinal' }, y: yEnc, ...colorEnc };
+      break;
+    case 'scatter':
+      spec['mark'] = { type: 'point', filled: true, color: accent, size: 70, opacity: 0.8 };
+      spec['encoding'] = { x: xEnc, y: yEnc, ...colorEnc };
+      break;
+    case 'pie':
+    case 'donut':
+      spec['mark'] = { type: 'arc', outerRadius: Math.min(spec['width'] as number, spec['height'] as number) / 2 - 6, ...(layer.chart_type === 'donut' ? { innerRadius: Math.min(spec['width'] as number, spec['height'] as number) / 5 } : {}) };
+      spec['encoding'] = { theta: { field: y, type: 'quantitative' }, color: { field: x, type: 'nominal', scale: { scheme: 'tableau10' } } };
+      break;
+    case 'heatmap':
+      if (layer.color_field) {
+        spec['mark'] = 'rect';
+        spec['encoding'] = { x: { field: x, type: 'nominal' }, y: { field: layer.color_field, type: 'nominal' }, color: { field: y, type: 'quantitative', scale: { scheme: 'viridis' } } };
+      } else {
+        spec['mark'] = { type: 'bar', color: accent, cornerRadiusEnd: 3 };
+        spec['encoding'] = { x: xEnc, y: yEnc };
+      }
+      break;
+    case 'funnel':
+      spec['mark'] = { type: 'bar', color: accent, cornerRadiusEnd: 3 };
+      spec['encoding'] = { y: { field: x, type: 'nominal', sort: '-x' }, x: yEnc };
+      break;
+    case 'bar':
+    case 'waterfall':
+    default:
+      spec['mark'] = { type: 'bar', color: accent, cornerRadiusEnd: 3 };
+      spec['encoding'] = { x: xEnc, y: yEnc, ...colorEnc };
+      break;
+  }
+  return { spec, isSample };
+}
+
 // ── Interactive Table (Tabulator) ────────────────────────────
 export function renderInteractiveTable(layer: InteractiveTableLayer, _svg: SVGSVGElement): SVGElement {
-  const { fo, container } = makeForeignObject(layer, '[Table loading…]', 'folio-table');
+  const w = typeof layer.width === 'number' ? layer.width : 400;
+  const h = typeof layer.height === 'number' ? layer.height : 300;
 
-  const meta = {
-    layerId: layer.id,
-    dataRef: layer.data_ref,
-    columns: layer.columns,
-    pagination: layer.pagination ?? true,
-    pageSize: layer.page_size ?? 20,
-    filterable: layer.filterable ?? false,
-    exportable: layer.exportable ?? false,
-    theme: layer.theme ?? 'midnight',
-  };
-  container.dataset['tabulatorSpec'] = JSON.stringify(meta);
-  container.dataset['renderType'] = 'tabulator';
+  const fo = createSVGElement('foreignObject', { x: layer.x ?? 0, y: layer.y ?? 0, width: w, height: h });
 
+  const container = document.createElement('div');
+  container.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  container.className = 'folio-table';
+  container.style.cssText = `width:${w}px;height:${h}px;overflow:hidden;box-sizing:border-box;background:#191926;border-radius:10px;font-family:Inter,sans-serif;`;
+  if (layer.id) container.dataset['layerId'] = layer.id;
+
+  // Draw a real static table preview from the design's inline rows (Tabulator
+  // mounts only in the exported HTML). Falls back to a sample so the shape
+  // shows even when the source is external / not present at design time.
+  const allRows = getPreviewRows(layer.data_ref);
+  const cols = (layer.columns ?? []).length > 0
+    ? layer.columns
+    : (allRows[0] ? Object.keys(allRows[0]).map((f) => ({ field: f, title: f })) : [{ field: 'value', title: 'Value' }]);
+  const sample = allRows.length === 0;
+  const maxRows = Math.max(2, Math.floor((h - 44) / 30));
+  const rows = sample ? sampleTableRows(cols) : allRows.slice(0, maxRows);
+
+  const th = cols.map((c) => {
+    const align = (c as { align?: string }).align ?? 'left';
+    return `<th style="text-align:${escHtml(align)};padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#9aa;border-bottom:1px solid rgba(255,255,255,0.12);white-space:nowrap;">${escHtml(String(c.title ?? c.field))}</th>`;
+  }).join('');
+  const trs = rows.map((r) => {
+    const tds = cols.map((c) => {
+      const align = (c as { align?: string }).align ?? 'left';
+      const v = (r as Record<string, unknown>)[c.field];
+      return `<td style="text-align:${escHtml(align)};padding:7px 12px;font-size:12px;color:#d8d8e4;border-bottom:1px solid rgba(255,255,255,0.05);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${escHtml(v == null ? '' : String(v))}</td>`;
+    }).join('');
+    return `<tr>${tds}</tr>`;
+  }).join('');
+
+  const hiddenCount = sample ? 0 : Math.max(0, allRows.length - rows.length);
+  const footer = hiddenCount > 0
+    ? `<div xmlns="http://www.w3.org/1999/xhtml" style="padding:6px 12px;font-size:10px;color:rgba(180,180,200,0.6);border-top:1px solid rgba(255,255,255,0.08);">+${hiddenCount} more row${hiddenCount === 1 ? '' : 's'}${layer.pagination === false ? '' : ' · paginated'}${layer.exportable ? ' · CSV' : ''}</div>`
+    : (sample ? `<div xmlns="http://www.w3.org/1999/xhtml" style="padding:6px 12px;font-size:10px;color:rgba(180,180,200,0.55);border-top:1px solid rgba(255,255,255,0.08);">sample data</div>` : '');
+
+  container.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="height:100%;display:flex;flex-direction:column;"><div xmlns="http://www.w3.org/1999/xhtml" style="flex:1;overflow:hidden;"><table xmlns="http://www.w3.org/1999/xhtml" style="width:100%;border-collapse:collapse;"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table></div>${footer}</div>`;
+
+  fo.appendChild(container);
   applyCommonAttributes(fo, layer);
   return fo;
+}
+
+function sampleTableRows(cols: { field: string; title?: string }[]): Record<string, unknown>[] {
+  const fill = (i: number, c: { field: string }, j: number): unknown =>
+    j === 0 ? `Item ${i + 1}` : Math.round((i + 1) * (j + 1) * 12.5);
+  return [0, 1, 2].map((i) => {
+    const row: Record<string, unknown> = {};
+    cols.forEach((c, j) => { row[c.field] = fill(i, c, j); });
+    return row;
+  });
 }
 
 // ── Rich Text (marked.js) ────────────────────────────────────

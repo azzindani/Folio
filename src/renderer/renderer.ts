@@ -43,6 +43,13 @@ export function invalidateCache(layerId?: string): void {
 // Active options for the current render pass (set by renderDesign/renderPage)
 let activeOptions: RenderOptions = {};
 
+// Layer types that hydrate their content asynchronously (a lazy import mounts a
+// chart engine AFTER this function returns). The render cache snapshots a clone
+// synchronously — i.e. before the mount — so caching one would serve back a
+// bare placeholder on the next render (the chart shows on load, then vanishes
+// on the first edit). Skip the cache for these so they always re-mount live.
+const UNCACHEABLE_TYPES = new Set<string>(['interactive_chart']);
+
 export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
   // Conditional visibility: evaluate show_if expression
   if (layer.show_if !== undefined) {
@@ -54,6 +61,10 @@ export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
       placeholder.setAttribute('data-hidden', 'show_if');
       return placeholder;
     }
+  }
+
+  if (UNCACHEABLE_TYPES.has(layer.type)) {
+    return renderLayerUncached(layer, svg);
   }
 
   // Check render cache for dirty tracking
