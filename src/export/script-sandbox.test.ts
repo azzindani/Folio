@@ -42,6 +42,19 @@ describe('buildSandboxSrcdoc', () => {
     expect(html).toContain("window.addEventListener('message'");
   });
 
+  // Regression: a `new Function` parameter named `eval`/`arguments` is a strict-
+  // mode SyntaxError, so EVERY sandboxed script threw at construction (the bug
+  // only surfaced when actually executed in a browser, not in the srcdoc string).
+  it('shadow-param list is valid under strict mode (no eval/arguments param)', () => {
+    const params = ['state', 'data', 'event', 'console', 'window', 'document', 'fetch', 'require', 'XMLHttpRequest'];
+    expect(params).not.toContain('eval');
+    expect(params).not.toContain('arguments');
+    // Constructing the wrapper the sandbox builds must NOT throw.
+    expect(() => new Function(...params, '"use strict"; state.x = 1;')).not.toThrow();
+    // Control: including `eval` as a param IS a strict-mode SyntaxError.
+    expect(() => new Function(...params, 'eval', '"use strict"; return 1;')).toThrow();
+  });
+
   it('posts result back to parent on success', () => {
     const html = buildSandboxSrcdoc([]);
     expect(html).toContain("parent.postMessage");
