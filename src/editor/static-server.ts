@@ -9,6 +9,10 @@
 //   FOLIO_DIST_DIR (default ./dist)
 import * as path from 'path';
 import * as fs from 'fs';
+// Pure, side-effect-free HS256 verify — safe to import into the editor process
+// without pulling in MCP/OAuth module side effects (no server start, no IO at
+// import). Lets the editor validate the stateless JWTs mintEditorToken now issues.
+import { verifyJwt, jwtSecret } from '../mcp/jwt';
 
 // Token validation — reuses the OAuth access-token store from the MCP
 // server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
@@ -57,9 +61,10 @@ function loadStaticTokens(): Set<string> {
 
 // True when ANY auth is configured. When false (no tokens anywhere) the editor
 // serves openly — same posture as the MCP's unauthenticated mode — so a local
-// run isn't locked out of its own UI.
+// run isn't locked out of its own UI. A bare FOLIO_JWT_SECRET counts as
+// configured even with no static tokens (matches loadTokens in src/mcp/auth.ts).
 function authConfigured(): boolean {
-  return loadStaticTokens().size > 0;
+  return loadStaticTokens().size > 0 || !!jwtSecret();
 }
 
 function isValidToken(token: string): boolean {
@@ -68,7 +73,12 @@ function isValidToken(token: string): boolean {
   const rec = loadValidTokens().get(token);
   if (rec && rec.expires_at > Date.now()) return true;
   // 2. Static lab/MCP bearer — never expires; one token for MCP + editor.
-  return loadStaticTokens().has(token);
+  if (loadStaticTokens().has(token)) return true;
+  // 3. Stateless HS256 JWT (the kind mintEditorToken now issues) + raw secret
+  //    as master bearer. Verified by signature + exp — no store to consult.
+  const secret = jwtSecret();
+  if (secret && (token === secret || verifyJwt(token, secret).ok)) return true;
+  return false;
 }
 
 // Cookie lifetime for the editor session. 30 days so the lab token, pasted once
@@ -203,11 +213,31 @@ Bun.serve({
           headers: { 'Content-Type': 'text/html; charset=utf-8' },
         });
       }
+
+      // ── /issue-style redirect (ported from the Harnesses auth service) ──
+      // When a valid token rides in on ?token=, set the 30-day session cookie
+      // and 302 to the SAME url with `token` stripped, so the secret leaves the
+      // address bar (and browser history / referrer headers). The cookie carries
+      // the session from here on. Looping is impossible: the redirect target has
+      // no `token` param, so this branch can't fire on the follow-up request.
+      if (qtoken && isValidToken(qtoken)) {
+        url.searchParams.delete('token');
+        const dest = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: dest,
+            'Set-Cookie': `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`,
+          },
+        });
+      }
     }
 
     // Side-effect: when a ?token= is present on the initial editor load,
     // promote it to a folio_session cookie so subsequent navigation works
-    // without the token in the URL.
+    // without the token in the URL. (Belt-and-suspenders: the redirect above
+    // normally handles this; this still covers any path that reaches here with
+    // a token but no cookie.)
     const initialToken = url.searchParams.get('token');
     const hasSessionCookie = !!parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'];
     const setSessionCookie = initialToken && isValidToken(initialToken) && !hasSessionCookie
