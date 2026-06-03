@@ -228,6 +228,8 @@ export interface BaseLayer {
   width?: number | 'auto';
   height?: number | 'auto';
   pos?: PositionShorthand;
+  /** Flow-report grid span (1–12 columns). Ignored outside flow/scroll reports. */
+  span?: number;
   rotation?: number;
   flip_h?: boolean;
   flip_v?: boolean;
@@ -755,7 +757,7 @@ export interface DesignMeta {
 }
 
 // ── Report Layout ───────────────────────────────────────────
-export type ReportLayoutType = 'paged' | 'scroll' | 'tabs' | 'sidebar';
+export type ReportLayoutType = 'paged' | 'scroll' | 'tabs' | 'sidebar' | 'flow';
 
 export interface NavigationSpec {
   type: 'sidebar' | 'topbar' | 'tabs' | 'dots';
@@ -772,6 +774,16 @@ export interface ReportSpec {
   layout: ReportLayoutType;
   navigation?: NavigationSpec;
   data?: DataSpec;
+  /** Force responsive flow rendering (12-col grid, no fixed canvas) regardless of layout. */
+  flow?: boolean;
+  /** Centered container max width in px for scroll/flow reports (default 1200). */
+  max_width?: number;
+  /** Accent color for links, active states, chart defaults (CSS color or token). */
+  accent?: string;
+  /** Heading font family (Google font name) for flow reports. */
+  font_heading?: string;
+  /** Body font family (Google font name) for flow reports. */
+  font_body?: string;
 }
 
 export interface DesignSpec {

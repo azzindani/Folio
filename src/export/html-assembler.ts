@@ -27,6 +27,7 @@ export function assembleReportHTML(
   const report = spec.report;
   const title = opts.title ?? spec.meta.name;
   const isDark = opts.theme !== 'light';
+  const isFlow = report?.layout === 'flow' || report?.flow === true;
 
   const ctx: InteractiveRenderContext = {
     datasets,
@@ -34,11 +35,17 @@ export function assembleReportHTML(
     pageWidth: spec.document?.width ?? 1080,
     pageHeight: spec.document?.height ?? 1080,
     isDark,
+    flow: isFlow,
+    accent: report?.accent,
     chartInits: [],
     tableInits: [],
     fontFamilies: new Set(),
     needsChartJs: !!opts.forceChartJs,
   };
+
+  // Seed editorial fonts so they reach the Google Fonts <link>.
+  if (report?.font_heading) ctx.fontFamilies.add(report.font_heading);
+  if (report?.font_body) ctx.fontFamilies.add(report.font_body);
 
   const nav = report?.navigation
     ? renderNavigation(report.navigation, pages)
@@ -48,11 +55,20 @@ export function assembleReportHTML(
     renderPageSection(spec, page, i, datasets, ctx),
   ).join('\n');
 
-  const layoutClass = report?.layout === 'scroll'
+  const layoutClass = isFlow
+    ? 'layout-flow'
+    : report?.layout === 'scroll'
     ? 'layout-scroll'
     : report?.layout === 'tabs'
     ? 'layout-tabs'
     : 'layout-paged';
+
+  const rootVars = [
+    `--folio-maxw:${report?.max_width ?? 1200}px`,
+    report?.accent ? `--ic-accent:${report.accent}` : '',
+    report?.font_heading ? `--folio-font-head:'${report.font_heading}',Georgia,serif` : '',
+    report?.font_body ? `--folio-font-body:'${report.font_body}',system-ui,sans-serif` : '',
+  ].filter(Boolean).join(';');
 
   const fontLink = ctx.fontFamilies.size > 0
     ? `<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,9 +100,9 @@ if(window.Chart){__initCharts();}else{document.addEventListener('DOMContentLoade
   ${chartJsTag}
   <style>${REPORT_CSS}</style>
 </head>
-<body class="${layoutClass}">
+<body class="${layoutClass}" data-theme="${isDark ? 'dark' : 'light'}"${rootVars ? ` style="${rootVars}"` : ''}>
 ${nav}
-<main class="folio-report" id="folio-report">${sections}</main>
+<main class="folio-report" id="folio-report">${isFlow ? `<div class="folio-flow">${sections}</div>` : sections}</main>
 <script type="application/json" id="folio-design">${JSON.stringify({ meta: spec.meta, pageCount: pages.length, pageIds: pages.map(p => p.id) })}</script>
 ${initScripts ? `<script>${initScripts}</script>` : ''}
 <script>${RUNTIME_JS}</script>
@@ -109,6 +125,18 @@ function renderPageSection(
   const pageH = spec.document?.height ?? 1080;
   ctx.pageWidth = pageW;
   ctx.pageHeight = pageH;
+
+  // Flow mode: responsive 12-col grid, layers in document order, no fixed canvas.
+  if (ctx.flow) {
+    const cells = boundLayers.map(l =>
+      isInteractiveLayer(l)
+        ? renderInteractiveLayer(l, ctx)
+        : `<div class="folio-flow-svg" style="grid-column:span 12">${safeRenderSvg(spec, [l], page.id)}</div>`,
+    ).join('\n');
+    return `<section class="folio-page${active}" data-page-id="${escHtml(page.id)}" data-page-index="${index}">
+      <div class="folio-flow-grid">${cells}</div>
+    </section>`;
+  }
 
   // Render interactive layers as positioned HTML; non-interactive layers go to SVG.
   const hasInteractive = pageHasInteractiveLayers(boundLayers);
@@ -160,12 +188,18 @@ function escHtml(s: string): string {
 // ── Inline CSS ─────────────────────────────────────────────
 const REPORT_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:system-ui,-apple-system,sans-serif}
-body{display:flex;flex-direction:column;background:#0b0d12;color:#e8e8ec;
+html,body{min-height:100%;font-family:var(--folio-font-body,system-ui,-apple-system,sans-serif)}
+body{background:#0b0d12;color:#e8e8ec;
+  --folio-maxw:1200px;
   --ic-pos:#22c55e;--ic-neg:#ef4444;--ic-muted:#94a3b8;
-  --ic-surface:#161821;--ic-border:rgba(255,255,255,.08);--ic-accent:#60a5fa}
+  --ic-surface:#161821;--ic-surface2:#1c1f2b;--ic-border:rgba(255,255,255,.08);--ic-accent:#60a5fa}
 body[data-theme=light]{background:#f7f7fa;color:#1a1a1a;
-  --ic-surface:#ffffff;--ic-border:rgba(0,0,0,.08);--ic-accent:#2563eb}
+  --ic-surface:#ffffff;--ic-surface2:#f0f1f5;--ic-border:rgba(0,0,0,.10);--ic-accent:#2563eb}
+/* Paged & tabs lock to the viewport (one screen at a time); scroll & flow grow the document. */
+body.layout-paged,body.layout-tabs{height:100%;display:flex;flex-direction:column}
+body.layout-paged #folio-report,body.layout-tabs #folio-report{flex:1;overflow:auto}
+body.layout-scroll,body.layout-flow{height:auto;display:block}
+body.layout-scroll #folio-report,body.layout-flow #folio-report{overflow:visible}
 .folio-sidebar{position:fixed;left:0;top:0;bottom:0;overflow-y:auto;padding:1rem 0;z-index:10;background:var(--ic-surface);border-right:1px solid var(--ic-border);min-width:200px}
 .folio-sidebar .nav-list{list-style:none}
 .folio-sidebar .nav-item{padding:.6rem 1.2rem;cursor:pointer;white-space:nowrap}
@@ -181,7 +215,8 @@ body[data-theme=light]{background:#f7f7fa;color:#1a1a1a;
 .folio-dots{display:flex;gap:.5rem;justify-content:center;padding:.5rem}
 .nav-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;border:none}
 .nav-dot.active{background:var(--ic-accent)}
-#folio-report{flex:1;overflow:auto;padding:1rem}
+#folio-report{padding:1rem}
+.layout-flow #folio-report{padding:0}
 .layout-paged .folio-page{display:none}
 .layout-paged .folio-page.active{display:block}
 .layout-scroll .folio-page{display:block;margin-bottom:2rem}
@@ -189,6 +224,31 @@ body[data-theme=light]{background:#f7f7fa;color:#1a1a1a;
 .layout-tabs .folio-page.active{display:block}
 .folio-page-stage svg{position:absolute;top:0;left:0;max-width:100%;height:auto}
 .folio-page svg:not([class]){max-width:100%;height:auto}
+
+/* ── Flow layout: responsive editorial document ── */
+.folio-flow{max-width:var(--folio-maxw,1200px);margin:0 auto;padding:56px 28px 80px}
+.layout-flow .folio-page{display:block}
+.layout-flow .folio-page+.folio-page{margin-top:8px}
+.folio-flow-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;align-items:stretch}
+.folio-flow-grid>*{min-width:0}
+.folio-flow-svg svg{max-width:100%;height:auto;display:block}
+/* Flow headings (rich_text spanning full width) read as section rhythm. */
+.layout-flow .ic-richtext{align-self:center}
+.layout-flow .ic-richtext h1,.layout-flow .ic-richtext h2{font-family:var(--folio-font-head,inherit)}
+@media (max-width:900px){
+  .folio-flow{padding:36px 18px 60px}
+  .folio-flow-grid>*{grid-column:1/-1 !important}
+}
+@media (min-width:901px) and (max-width:1180px){
+  /* tighten to a coarse grid so 3-col KPI rows wrap cleanly on mid widths */
+  .folio-flow-grid{grid-template-columns:repeat(6,1fr)}
+  .folio-flow-grid>.ic-kpi{grid-column:span 2 !important}
+}
+/* Editorial polish (flat, no glow): larger tabular numerals, quiet hover-accent. */
+.layout-flow .ic-kpi-value{font-size:30px;font-variant-numeric:tabular-nums}
+.layout-flow .ic-kpi,.layout-flow .ic-chart,.layout-flow .ic-table{transition:border-color .15s ease}
+.layout-flow .ic-kpi:hover,.layout-flow .ic-chart:hover,.layout-flow .ic-table:hover{border-color:var(--ic-accent)}
+.layout-flow .ic-table thead th{background:var(--ic-surface2)}
 
 /* Interactive widgets */
 .ic-chart{background:var(--ic-surface);border:1px solid var(--ic-border);border-radius:6px;padding:14px;display:flex;flex-direction:column}

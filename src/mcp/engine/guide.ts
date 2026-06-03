@@ -207,6 +207,23 @@ Patch workflow (editing sealed designs):
   2. patch_design(design_path, selectors=[{path,value}])                ← apply
   3. seal_design(design_path)
 
+Interactive HTML reports (dashboards, EDA, financial decks):
+  USE layout:"flow" — a responsive editorial document (12-col grid, NO fixed canvas).
+  Layers are placed by a span field (1–12), NOT x/y/width/height — they reflow on any screen.
+  1. generate_report(project_path, name, layout:"flow", accent:"#f5c842",
+       font_heading:"Playfair Display", font_body:"Inter", max_width:1200,
+       pages:[{id:"overview",label:"Overview"}], data_sources:[{id:"rev",type:"inline",rows:[…]}])
+  2. bind_data(design_path, datasets:[{id, rows:[…]}])   ← add/replace datasets anytime
+  3. add_layers(design_path, page_id, layers:[ …flow widgets, each with a span… ])
+       hero/headings → {type:"rich_text", span:12, font_family:"Playfair Display", font_size:42, content:"**Title**", format:"markdown"}
+       KPI row       → {type:"kpi_card", span:3, label, value, format:"currency"|"number"|"percent", delta, sparkline_data, sparkline_field}
+       charts        → {type:"interactive_chart", span:6|8, height:340, chart_type:"line"|"bar"|"area"|"pie"|"donut", data_ref, x_field, y_field, title}
+       data table    → {type:"interactive_table", span:12, data_ref, filterable:true, exportable:true, pagination:true, page_size:10,
+                         columns:[{field,title,sortable:true,formatter:"currency"|"number"|"percent"|"badge"|"delta",align:"right"}]}
+  4. export_report(design_path, theme:"dark"|"light") → self-contained .report.html
+  Defaults if span omitted: kpi=3, chart=6, table/rich_text=12. accent seeds chart colors + links.
+  Tables sort/filter/paginate/CSV-export client-side; charts use Chart.js (CDN). All in one HTML file.
+
 Token budget for local models:
   Gemma 4B  128K ctx → 5–8 layers/page, guide once per session
   Qwen 9B    64K ctx → 4–6 layers/page, load guide sections only

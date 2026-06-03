@@ -703,6 +703,9 @@ const SIZED_LAYER_TYPES = new Set([
 
 function dimError(l: Layer): string | null {
   if (!SIZED_LAYER_TYPES.has(l.type)) return null;
+  // Flow-report layers are positioned by `span` (responsive grid), not px dimensions.
+  const span = (l as Layer & { span?: number }).span;
+  if (typeof span === 'number' && span > 0) return null;
   const w = (l as Layer & { width?: number }).width;
   const h = (l as Layer & { height?: number }).height;
   // pos:[x,y,w,h] shorthand still pending expansion — accept it.
@@ -1278,12 +1281,17 @@ export function exportPresentation(args: {
 export function generateReport(args: {
   project_path: string;
   name: string;
-  layout?: 'paged' | 'scroll' | 'tabs' | 'sidebar';
+  layout?: 'paged' | 'scroll' | 'tabs' | 'sidebar' | 'flow';
   nav_type?: 'sidebar' | 'topbar' | 'tabs' | 'dots';
   pages: { id?: string; label: string }[];
   width?: number;
   height?: number;
   data_sources?: { id: string; type: 'inline' | 'json' | 'csv'; path?: string; rows?: Record<string, unknown>[] }[];
+  // Flow-report editorial options (used when layout === 'flow'):
+  max_width?: number;
+  accent?: string;
+  font_heading?: string;
+  font_body?: string;
 }): ToolResult {
   const op = 'generate_report';
   const progress: ProgressItem[] = [];
@@ -1308,8 +1316,18 @@ export function generateReport(args: {
     pages: pages as Page[],
     report: {
       layout: args.layout ?? 'paged',
-      navigation: args.nav_type ? { type: args.nav_type } : { type: 'sidebar' },
+      // Flow reports are single scrolling documents — no chrome unless explicitly asked.
+      navigation: args.nav_type
+        ? { type: args.nav_type }
+        : args.layout === 'flow' || args.layout === 'scroll'
+        ? undefined
+        : { type: 'sidebar' },
       data: args.data_sources ? { sources: args.data_sources } : undefined,
+      ...(args.layout === 'flow' ? { flow: true } : {}),
+      ...(args.max_width != null ? { max_width: args.max_width } : {}),
+      ...(args.accent ? { accent: args.accent } : {}),
+      ...(args.font_heading ? { font_heading: args.font_heading } : {}),
+      ...(args.font_body ? { font_body: args.font_body } : {}),
     },
   } as unknown as DesignSpec;
 
