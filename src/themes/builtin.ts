@@ -27,6 +27,17 @@ const SHARED_RADII: ThemeSpec['radii'] = {
   sm: 4, md: 8, lg: 16, xl: 24, full: 9999,
 };
 
+// Editorial / poster / Swiss work uses a binary radius — square corners or a
+// full pill, never the 8–16px "templated middle" that reads as generic. The
+// curated human themes below use this lane.
+const SHARP_RADII: ThemeSpec['radii'] = {
+  sm: 0, md: 0, lg: 0, xl: 0, full: 9999,
+};
+
+// Most "AI-generated" tells trace to a neon glow on text/cards. Human themes
+// get effectively no glow — depth comes from a hairline rule or hard shadow.
+const NO_GLOW = '0 0 0 rgba(0,0,0,0)';
+
 export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
   'dark-tech': {
     _protocol: 'theme/v1',
@@ -45,7 +56,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 24px rgba(0,0,0,0.4)',
-      shadow_glow: '0 0 32px rgba(233,69,96,0.3)',
+      shadow_glow: '0 0 20px rgba(233,69,96,0.12)',
       blur_glass: 12,
     },
     radii: SHARED_RADII,
@@ -137,7 +148,7 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 6px 28px rgba(99,102,241,0.20)',
-      shadow_glow: '0 0 32px rgba(139,92,246,0.25)',
+      shadow_glow: '0 0 20px rgba(139,92,246,0.10)',
       blur_glass: 12,
     },
     radii: SHARED_RADII,
@@ -344,9 +355,86 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
     spacing: SHARED_SPACING,
     effects: {
       shadow_card: '0 4px 20px rgba(0,0,0,0.45)',
-      shadow_glow: '0 0 28px rgba(77,143,184,0.25)',
+      shadow_glow: '0 0 18px rgba(77,143,184,0.10)',
       blur_glass: 12,
     },
     radii: SHARED_RADII,
+  },
+
+  // ── Curated "human design" themes ─────────────────────────────
+  // Archetypes that read as art-directed, not AI-generated: flat canvases,
+  // strong type, one accent, square corners, no glow. Steering points models
+  // here; see src/mcp/engine/guide.ts and [[project-folio-ai-look-diagnosis]].
+
+  // Bold typographic poster — near-black + a single vermillion hit.
+  'bold-poster': {
+    _protocol: 'theme/v1',
+    name: 'Bold Poster',
+    version: '1.0.0',
+    colors: {
+      background: '#0A0A0A',
+      surface: '#161616',
+      primary: '#FF3D00',
+      secondary: '#FAFAFA',
+      text: '#FAFAFA',
+      text_muted: '#737373',
+      border: '#262626',
+    },
+    typography: typography('Anton', 'Inter', 'JetBrains Mono'),
+    spacing: SHARED_SPACING,
+    effects: {
+      shadow_card: '0 8px 32px rgba(0,0,0,0.6)',
+      shadow_glow: NO_GLOW,
+      blur_glass: 0,
+    },
+    radii: SHARP_RADII,
+  },
+
+  // Swiss / International — warm-grey paper, ink black, primary red + blue.
+  'swiss-international': {
+    _protocol: 'theme/v1',
+    name: 'Swiss International',
+    version: '1.0.0',
+    colors: {
+      background: '#F0F0F0',
+      surface: '#FFFFFF',
+      primary: '#D02020',
+      secondary: '#1040C0',
+      text: '#121212',
+      text_muted: '#5C5C5C',
+      border: '#121212',
+    },
+    typography: typography('Space Grotesk', 'Inter', 'IBM Plex Mono'),
+    spacing: SHARED_SPACING,
+    effects: {
+      shadow_card: NO_GLOW,
+      shadow_glow: NO_GLOW,
+      blur_glass: 0,
+    },
+    radii: SHARP_RADII,
+  },
+
+  // Gallery / editorial-minimal — bright neutral, ink type, one rose accent.
+  'gallery': {
+    _protocol: 'theme/v1',
+    name: 'Gallery',
+    version: '1.0.0',
+    colors: {
+      background: '#FAFAFA',
+      surface: '#FFFFFF',
+      primary: '#18181B',
+      secondary: '#EC4899',
+      text: '#09090B',
+      text_muted: '#71717A',
+      border: '#E4E4E7',
+    },
+    typography: typography('Playfair Display', 'Inter', 'JetBrains Mono'),
+    spacing: SHARED_SPACING,
+    effects: {
+      shadow_card: '0 1px 6px rgba(0,0,0,0.06)',
+      shadow_glow: NO_GLOW,
+      blur_glass: 4,
+    },
+    radii: SHARP_RADII,
   },
 };

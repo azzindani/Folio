@@ -37,6 +37,8 @@ export interface ShorthandLayer {
   weight?: number;
   color?: string;
   align?: string;
+  line_height?: number;
+  letter_spacing?: number;
   src?: string;
   icon?: string;
   icon_size?: number;
@@ -349,6 +351,8 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
           ...(sh.weight ? { font_weight: sh.weight } : {}),
           ...(sh.color ? { color: sh.color } : {}),
           ...(sh.align ? { align: sh.align } : {}),
+          ...(typeof sh.line_height === 'number' ? { line_height: sh.line_height } : {}),
+          ...(typeof sh.letter_spacing === 'number' ? { letter_spacing: sh.letter_spacing } : {}),
         } as TextStyle,
       } as Layer;
 
@@ -614,6 +618,17 @@ function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
     const u = out.url ?? out.href;
     if (typeof u === 'string') out.src = u;
   }
+  // typography: lh/leading → line_height; track/tracking → letter_spacing.
+  // These give real type craft (tight display leading 0.9–1.1, tracked +1.5
+  // uppercase mono labels, negative tracking on big headlines).
+  if (out.line_height === undefined) {
+    const lh = r['lh'] ?? r['leading'];
+    if (typeof lh === 'number') out.line_height = lh;
+  }
+  if (out.letter_spacing === undefined) {
+    const ls = r['track'] ?? r['tracking'];
+    if (typeof ls === 'number') out.letter_spacing = ls;
+  }
   return out;
 }
 
@@ -737,6 +752,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'font', 'size', 'weight', 'color', 'align', 'text_decoration', 'src', 'fit',
   'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
   'definition', 'code', 'language', 'expression', 'layers',
+  // typography craft
+  'line_height', 'letter_spacing', 'lh', 'leading', 'track', 'tracking',
   // auto_layout / container
   'direction', 'gap', 'padding', 'justify', 'wrap', 'repeat', 'children', 'valign',
   'corner_radius', 'cornerRadius', 'borderRadius',
@@ -758,7 +775,7 @@ export function diagnoseShorthandKeys(raw: ShorthandLayer[]): string[] {
   raw.forEach((sh, i) => {
     if (!sh || typeof sh !== 'object') return;
     const unknown = Object.keys(sh).filter(k => !KNOWN_SHORTHAND_KEYS.has(k));
-    if (unknown.length) notes.push(`layer "${sh.id ?? i}": unrecognized field(s) [${unknown.join(', ')}] were ignored. Shorthand fields: pos, type, fill, text, size, color, src, icon (verbose content/font_size/symbol/url and terse p/t/f/w/h/c/s/col are accepted).`);
+    if (unknown.length) notes.push(`layer "${sh.id ?? i}": unrecognized field(s) [${unknown.join(', ')}] were ignored. Text fields: text, font, size, weight, color, align, line_height (lh), letter_spacing (track). Box fields: pos, type, fill, stroke, radius, icon, src.`);
   });
   return notes;
 }

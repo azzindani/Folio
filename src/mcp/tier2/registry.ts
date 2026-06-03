@@ -17,7 +17,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'add_layers',
-    description: 'Compose a poster (or one carousel page) in one call via layers_shorthand. FEATURE / BENEFIT / "CARDS" POSTER? Send ONE feature_grid layer — {type:"feature_grid", title, subtitle, bg:"gradient", items:[{icon,title,desc}]} — the engine lays out the background, title and evenly-spaced cards. Do NOT hand-place card coordinates (they collide into an illegible pile or render blank — the #1 small-model failure). For simple text posters use 3–8 hand-placed layers (pos:[x,y,w,h]); always include a full-canvas background rect, and every sized layer needs width+height or it renders invisibly. Returns a clickable open_url. → then seal_design (follow the returned next_action).',
+    description: 'Compose a poster (or one carousel page) in one call via layers_shorthand. Design like a human, not an AI template: flat solid canvas (warm #FAF5EC or near-black #0A0A0A — NO gradient by default), a headline 4–5× the body in a real display font (set font:"Playfair Display"/"Anton"/etc.), ONE accent used 1–2×, asymmetric left-anchor + whitespace, depth via a 2–4px rule not glows, radius 0 or pill. FEATURE / BENEFIT / "CARDS" POSTER? Send ONE feature_grid layer — {type:"feature_grid", title, subtitle, bg:"#0A0A0A", accent:"#FF3D00", items:[{icon,title,desc}]} — the engine lays out the background, title and evenly-spaced cards; do NOT hand-place card coordinates (they collide into an illegible pile — the #1 small-model failure). For text posters use 3–8 hand-placed layers (pos:[x,y,w,h]); always include a full-canvas background rect, and every sized layer needs width+height or it renders invisibly. Returns a clickable open_url. → then seal_design.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -33,7 +33,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'create_design',
-    description: 'Create a new design and get a clickable editor open_url (unique token) to view it immediately. type="poster" = single page → next_action is add_layers. type="carousel" = multi-page → next_action is append_page (repeat per page). Always follow the returned next_action.',
+    description: 'Create a new design and get a clickable editor open_url (unique token) to view it immediately. type="poster" = single page → next_action is add_layers. type="carousel" = multi-page → next_action is append_page (repeat per page). theme_ref sets the palette+fonts; for a human, art-directed look pick a flat-canvas theme that fits the topic — "editorial-cream"/"gallery" (warm/minimal serif), "bold-poster" (near-black + vermillion), "swiss-international" (paper + red/blue), "mono-print"/"brutalist-mono" — rather than a dark glowy tech theme. Always follow the returned next_action.',
     inputSchema: {
       type: 'object',
       properties: {

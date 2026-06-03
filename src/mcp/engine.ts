@@ -73,7 +73,7 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     remaining: 1, hint: 'Add pages with append_page (repeat per page), then seal_design.',
   } : {
     tool: 'add_layers', params: { design_path: designPath },
-    remaining: 1, hint: 'Add content with add_layers. For a feature/benefit/cards poster send ONE feature_grid layer ({type:"feature_grid", title, subtitle, bg:"gradient", items:[{icon,title,desc}]}) — the engine lays out background, title and cards (don\'t hand-place card coordinates). For a simple text poster use 3–8 shorthand layers incl. a full-canvas background rect. Then seal_design.',
+    remaining: 1, hint: 'Add content with add_layers. Design like a human, NOT an AI template: flat solid canvas (warm #FAF5EC or near-black #0A0A0A — NO gradient), a headline 4–5× the body in a real display font (set font: e.g. "Playfair Display"/"Anton"), ONE accent color, asymmetric left-anchor + whitespace, depth via a thin rule not glows. CARDS/features → ONE feature_grid layer ({type:"feature_grid", title, subtitle, bg:"#0A0A0A", accent:"#FF3D00", items:[{icon,title,desc}]}); don\'t hand-place card coordinates. Then seal_design.',
   };
 
   if (fs.existsSync(projectPath)) {
@@ -508,7 +508,7 @@ export function addLayers(args: {
   if (typeof rawShorthand === 'string') {
     return errResult(op,
       'layers_shorthand was a STRING — it must be a JSON array of layer objects, not an encoded string.',
-      'Send an array. Feature/benefit/cards poster → one feature_grid: layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"gradient", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
+      'Send an array. Feature/benefit/cards poster → one feature_grid (flat bg + one accent, not a gradient): layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
   }
   const shorthand = coerceShorthandLayers(rawShorthand);
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');

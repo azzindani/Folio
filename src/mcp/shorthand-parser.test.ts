@@ -88,6 +88,25 @@ describe('expandShorthand', () => {
     }
   });
 
+  it('maps typography craft fields: line_height + letter_spacing (and lh/track aliases)', () => {
+    const [canonical] = expandShorthandLayers([
+      { id: 'h', type: 'text', pos: [0, 0, 800, 200], text: 'Hi', size: 100, line_height: 1.02, letter_spacing: -1.5 },
+    ] as unknown as ShorthandLayer[]) as Array<{ style?: { line_height?: number; letter_spacing?: number } }>;
+    expect(canonical.style?.line_height).toBe(1.02);
+    expect(canonical.style?.letter_spacing).toBe(-1.5);
+
+    const [aliased] = expandShorthandLayers([
+      { id: 'lbl', type: 'text', pos: [0, 0, 800, 40], text: 'TAG', size: 18, lh: 1.4, track: 1.5 },
+    ] as unknown as ShorthandLayer[]) as Array<{ style?: { line_height?: number; letter_spacing?: number } }>;
+    expect(aliased.style?.line_height).toBe(1.4);
+    expect(aliased.style?.letter_spacing).toBe(1.5);
+
+    // none of these are flagged as unrecognized
+    expect(diagnoseShorthandKeys([
+      { id: 'h', type: 'text', text: 'x', font: 'Playfair Display', line_height: 1, letter_spacing: 0, lh: 1, track: 2 },
+    ] as unknown as ShorthandLayer[])).toEqual([]);
+  });
+
   it('expands line with shorthand', () => {
     const sh: ShorthandLayer = { id: 'divider', type: 'line', z: 15, x1: 80, y1: 540, x2: 400, y2: 540, stroke: '$primary' };
     const result = expandShorthand(sh);
