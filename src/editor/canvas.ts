@@ -1,6 +1,7 @@
 import { StateManager, type EditorState, type ToolId, type RulerUnit, type Guide } from './state';
 import { renderDesign, renderPage } from '../renderer/renderer';
 import { computeFlowLayout } from '../renderer/flow-layout';
+import { setPreviewContext } from '../renderer/render-context';
 import type { Layer, TextLayer } from '../schema/types';
 import { computeRulerTicks } from '../utils/ruler-units';
 import { composeTheme } from '../styles/compose';
@@ -319,6 +320,11 @@ export class CanvasManager {
     const currentPageIndex = this.state.get().currentPageIndex;
     const report = design.report;
     const isFlow = !!report && (report.layout === 'flow' || report.flow === true);
+
+    // Expose the report's inline datasets + accent so interactive_chart /
+    // interactive_table layers can draw a real data preview on the canvas
+    // (the Chart.js/Tabulator runtime only exists in exported HTML).
+    setPreviewContext({ sources: report?.data?.sources, accent: report?.accent });
 
     let svg: SVGSVGElement;
     let renderW = width;

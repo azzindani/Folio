@@ -10,6 +10,7 @@ import {
   renderQRCode, renderAutoLayout,
   renderInteractiveChart, renderInteractiveTable, renderRichText,
   renderKpiCard, renderMap, renderEmbedCode, renderPopup,
+  buildChartPreviewSpec,
 } from './layer-renderers';
 
 // Simple render fn for group tests (avoids circular import with renderer.ts)
@@ -977,7 +978,7 @@ describe('renderInteractiveChart', () => {
     expect(container).not.toBeNull();
   });
 
-  it('stores plotly spec in data attribute', () => {
+  it('shows the chart title as the initial placeholder before vega mounts', () => {
     const layer: InteractiveChartLayer = {
       id: 'c2', type: 'interactive_chart', z: 0,
       chart_type: 'line', data_ref: '$data.metrics',
@@ -986,10 +987,8 @@ describe('renderInteractiveChart', () => {
     } as unknown as InteractiveChartLayer;
     const fo = renderInteractiveChart(layer, makeSVG());
     const container = fo.querySelector<HTMLElement>('.folio-chart');
-    const spec = JSON.parse(container?.dataset['plotlySpec'] ?? '{}');
-    expect(spec.chartType).toBe('line');
-    expect(spec.title).toBe('My Chart');
-    expect(spec.legend).toBe(false);
+    expect(container?.textContent).toContain('My Chart');
+    expect(container?.dataset['layerId']).toBe('c2');
   });
 
   it('defaults width/height to 400/300 when not numeric', () => {
@@ -1012,8 +1011,8 @@ describe('renderInteractiveTable', () => {
     expect(fo.querySelector('.folio-table')).not.toBeNull();
   });
 
-  it('stores tabulator spec with columns in data attribute', () => {
-    const cols = [{ field: 'rev', title: 'Revenue', width: 120, sortable: true }];
+  it('renders the declared column headers in a static preview table', () => {
+    const cols = [{ field: 'rev', title: 'Revenue', width: 120, sortable: true }, { field: 'q', title: 'Qty' }];
     const layer: InteractiveTableLayer = {
       id: 't2', type: 'interactive_table', z: 0,
       data_ref: '$data.sales', columns: cols,
@@ -1022,10 +1021,46 @@ describe('renderInteractiveTable', () => {
     } as unknown as InteractiveTableLayer;
     const fo = renderInteractiveTable(layer, makeSVG());
     const container = fo.querySelector<HTMLElement>('.folio-table');
-    const spec = JSON.parse(container?.dataset['tabulatorSpec'] ?? '{}');
-    expect(spec.columns).toEqual(cols);
-    expect(spec.pageSize).toBe(10);
-    expect(spec.exportable).toBe(true);
+    expect(container?.querySelectorAll('th').length).toBe(2);
+    expect(container?.textContent).toContain('Revenue');
+    expect(container?.textContent).toContain('Qty');
+    // No live data bound at design time → representative sample rows render.
+    expect(container?.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+  });
+});
+
+describe('buildChartPreviewSpec', () => {
+  const base = (chart_type: string, extra: Record<string, unknown> = {}): InteractiveChartLayer =>
+    ({ id: 'c', type: 'interactive_chart', z: 0, chart_type, data_ref: 'ds', x_field: 'k', y_field: 'v', ...extra }) as unknown as InteractiveChartLayer;
+
+  it('uses inline rows when available; falls back to a sample otherwise', () => {
+    const withData = buildChartPreviewSpec(base('bar'), [{ k: 'A', v: 1 }, { k: 'B', v: 2 }], '#f5c842', 400, 300);
+    expect(withData.isSample).toBe(false);
+    expect((withData.spec['data'] as { values: unknown[] }).values.length).toBe(2);
+    const noData = buildChartPreviewSpec(base('bar'), [], '#f5c842', 400, 300);
+    expect(noData.isSample).toBe(true);
+    expect((noData.spec['data'] as { values: unknown[] }).values.length).toBeGreaterThan(0);
+  });
+
+  it('maps chart_type to the right Vega-Lite mark', () => {
+    const mark = (t: string): unknown => buildChartPreviewSpec(base(t), [{ k: 'A', v: 1 }], '#f5c842', 400, 300).spec['mark'];
+    expect((mark('bar') as { type: string }).type).toBe('bar');
+    expect((mark('line') as { type: string }).type).toBe('line');
+    expect((mark('area') as { type: string }).type).toBe('area');
+    expect((mark('scatter') as { type: string }).type).toBe('point');
+    expect((mark('pie') as { type: string }).type).toBe('arc');
+    expect((mark('donut') as { type: string; innerRadius: number }).innerRadius).toBeGreaterThan(0);
+  });
+
+  it('applies the accent colour to single-series marks', () => {
+    const spec = buildChartPreviewSpec(base('bar'), [{ k: 'A', v: 1 }], '#f5c842', 400, 300).spec;
+    expect((spec['mark'] as { color: string }).color).toBe('#f5c842');
+  });
+
+  it('heatmap uses a color_field as the second axis when present', () => {
+    const spec = buildChartPreviewSpec(base('heatmap', { color_field: 'sector' }), [{ k: 'A', v: 1, sector: 'X' }], '#f5c842', 400, 300).spec;
+    expect(spec['mark']).toBe('rect');
+    expect((spec['encoding'] as { y: { field: string } }).y.field).toBe('sector');
   });
 });
 
