@@ -409,7 +409,7 @@ export interface AutoLayoutLayer extends BaseLayer {
 }
 
 // ── Data Binding Types ──────────────────────────────────────
-export type DataSourceType = 'csv' | 'excel' | 'json' | 'inline' | 'api' | 'query';
+export type DataSourceType = 'csv' | 'excel' | 'json' | 'inline' | 'api' | 'query' | 'transform';
 /** Query engine for type:'query' sources. http = fetch a JSON endpoint; sql/duckdb need a configured connector. */
 export type QueryEngine = 'http' | 'sql' | 'duckdb';
 export type AggregateOp = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'groupby' | 'filter' | 'sort';
@@ -430,7 +430,14 @@ export interface DataSource {
   query?: string;
   /** type:'query' — named connection (resolved server-side; creds never enter the design). */
   connection?: string;
-  /** Last-fetched rows cached on the source (so the export bakes a snapshot even for query sources). */
+  /** type:'transform' — id of the source dataset to aggregate. */
+  from?: string;
+  /** type:'transform' — field to group rows by. */
+  group_by?: string;
+  /** type:'transform' — aggregation operator. */
+  agg?: 'sum' | 'avg' | 'min' | 'max' | 'count';
+  /** type:'transform' — numeric field to aggregate (omit for count). */
+  value?: string;
 }
 
 export interface DataSpec {

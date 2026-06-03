@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   aggSum, aggAvg, aggMin, aggMax, aggCount,
-  aggGroupBy, aggGroupBySum, evalDataExpr,
+  aggGroupBy, aggGroupBySum, evalDataExpr, computeGroupAgg,
 } from './aggregator';
 import type { LoadedDataset } from './data-loader';
 
@@ -126,5 +126,30 @@ describe('evalDataExpr', () => {
 
   it('returns raw string for unrecognised expr', () => {
     expect(evalDataExpr('some.random.value', datasets)).toBe('some.random.value');
+  });
+});
+
+describe('computeGroupAgg', () => {
+  const stocks = [
+    { sector: 'Banking', yield: 6, mcap: 50 },
+    { sector: 'Banking', yield: 8, mcap: 40 },
+    { sector: 'Energy', yield: 20, mcap: 6 },
+  ];
+  it('avg keeps the group key + names the aggregate after the value field', () => {
+    const out = computeGroupAgg(stocks, 'sector', 'avg', 'yield');
+    expect(out).toContainEqual({ sector: 'Banking', yield: 7 });
+    expect(out).toContainEqual({ sector: 'Energy', yield: 20 });
+  });
+  it('sum aggregates the value field', () => {
+    expect(computeGroupAgg(stocks, 'sector', 'sum', 'mcap')).toContainEqual({ sector: 'Banking', mcap: 90 });
+  });
+  it('count needs no value field and outputs a count column', () => {
+    const out = computeGroupAgg(stocks, 'sector', 'count');
+    expect(out).toContainEqual({ sector: 'Banking', count: 2 });
+    expect(out).toContainEqual({ sector: 'Energy', count: 1 });
+  });
+  it('rounds to 3 decimals', () => {
+    const out = computeGroupAgg([{ g: 'x', v: 1 }, { g: 'x', v: 2 }], 'g', 'avg', 'v');
+    expect(out[0]['v']).toBe(1.5);
   });
 });

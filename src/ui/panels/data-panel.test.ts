@@ -86,4 +86,22 @@ describe('DataPanelManager', () => {
     expect(el.querySelector('input[data-dp-field="url"]')).not.toBeNull();
     expect(el.querySelector('[data-dp="fetch"]')).not.toBeNull();
   });
+
+  it('adds a group-by transform that computes aggregated rows from upstream', () => {
+    const { state, el } = setup([{ id: 'stocks', type: 'inline', rows: [{ sector: 'Banking', yield: 6 }, { sector: 'Banking', yield: 8 }, { sector: 'Energy', yield: 20 }] }]);
+    el.querySelector<HTMLButtonElement>('[data-dp="add-group"]')!.click();
+    const t = srcs(state).find(s => s.type === 'transform')!;
+    expect(t.from).toBe('stocks'); // auto-picked the populated source
+    const tIdx = srcs(state).findIndex(s => s.id === t.id);
+    // set group_by + agg + value → rows recompute
+    const gb = el.querySelector<HTMLSelectElement>(`select[data-dp-field="group_by"][data-idx="${tIdx}"]`)!;
+    gb.value = 'sector'; gb.dispatchEvent(new Event('change'));
+    const agg = el.querySelector<HTMLSelectElement>(`select[data-dp-field="agg"][data-idx="${tIdx}"]`)!;
+    agg.value = 'avg'; agg.dispatchEvent(new Event('change'));
+    const val = el.querySelector<HTMLSelectElement>(`select[data-dp-field="value"][data-idx="${tIdx}"]`)!;
+    val.value = 'yield'; val.dispatchEvent(new Event('change'));
+    const out = srcs(state).find(s => s.type === 'transform')!.rows!;
+    expect(out).toContainEqual({ sector: 'Banking', yield: 7 });
+    expect(out).toContainEqual({ sector: 'Energy', yield: 20 });
+  });
 });

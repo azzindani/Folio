@@ -1,5 +1,6 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { DesignSpec, DataSource } from '../../schema/types';
+import { computeGroupAgg, type GroupAggOp } from '../../report/aggregator';
 
 // Studio Data panel — view/edit the report's datasets without touching YAML.
 // Inline sources get a spreadsheet-style grid (edit cells, rename/add/remove
@@ -72,6 +73,7 @@ export class DataPanelManager {
           <div style="display:flex;gap:4px">
             <button class="dp-btn" data-dp="add-inline" title="New inline dataset" style="${this.btn()}">+ Inline</button>
             <button class="dp-btn" data-dp="add-query" title="New HTTP query dataset" style="${this.btn()}">+ Query</button>
+            <button class="dp-btn" data-dp="add-group" title="New group-by aggregation" style="${this.btn()}">+ Group</button>
           </div>
         </div>
         ${cards || '<div style="color:var(--color-text-muted);font-size:11px;padding:8px 0">No datasets yet.</div>'}
@@ -95,7 +97,9 @@ export class DataPanelManager {
         <button class="dp-btn" data-dp="del-src" data-idx="${idx}" title="Delete dataset" style="border:none;background:none;color:var(--color-text-muted);cursor:pointer;font-size:13px">✕</button>
       </div>`;
     const body = open
-      ? (s.type === 'inline' ? this.renderGrid(s, idx) : this.renderQuery(s, idx))
+      ? (s.type === 'inline' ? this.renderGrid(s, idx)
+        : s.type === 'transform' ? this.renderTransform(s, idx)
+        : this.renderQuery(s, idx))
       : '';
     return `<div style="border:1px solid var(--color-border);border-radius:6px;padding:8px;background:var(--color-surface)">${head}${body}</div>`;
   }
@@ -116,6 +120,38 @@ export class DataPanelManager {
           <textarea class="dp-input" data-dp-field="query" data-idx="${idx}" rows="3" placeholder="SELECT …" style="${cell};font-family:var(--font-mono);resize:vertical">${esc(s.query ?? '')}</textarea>
           <input class="dp-input" data-dp-field="connection" data-idx="${idx}" value="${esc(s.connection ?? '')}" placeholder="connection name (resolved server-side)" style="${cell}">
           <div style="font-size:10px;color:var(--color-text-dim);line-height:1.5">${esc(s.engine)} runs at export via a server-configured connector; ${Array.isArray(s.rows) && s.rows.length ? `${s.rows.length} cached rows shown in charts meanwhile.` : 'no cached rows yet.'}</div>`}
+      </div>`;
+  }
+
+  // Columns of another source (for transform pickers).
+  private colsOf(id?: string): string[] {
+    const src = this.sources().find(s => s.id === id);
+    return Array.isArray(src?.rows) ? columnsOf(src!.rows) : [];
+  }
+
+  private renderTransform(s: DataSource, idx: number): string {
+    const others = this.sources().filter(o => o.id !== s.id).map(o => o.id);
+    const fromOpts = ['', ...others].map(o => `<option value="${esc(o)}"${(s.from ?? '') === o ? ' selected' : ''}>${o || '— pick source —'}</option>`).join('');
+    const cols = this.colsOf(s.from);
+    const colSel = (field: string, val: unknown, allowEmpty: boolean): string => {
+      const list = [...(allowEmpty ? [''] : []), ...cols];
+      return `<select class="dp-input" data-dp-field="${field}" data-idx="${idx}" style="${cell}">${list.map(c => `<option value="${esc(c)}"${String(val ?? '') === c ? ' selected' : ''}>${c || '(none)'}</option>`).join('')}</select>`;
+    };
+    const ops: GroupAggOp[] = ['sum', 'avg', 'min', 'max', 'count'];
+    const aggSel = `<select class="dp-input" data-dp-field="agg" data-idx="${idx}" style="${cell}">${ops.map(o => `<option value="${o}"${(s.agg ?? 'sum') === o ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
+    const rows = Array.isArray(s.rows) ? s.rows : [];
+    const preview = rows.slice(0, 6).map(r => `<div style="display:flex;gap:8px;font-size:10px;color:var(--color-text-muted)"><span style="flex:1">${esc(r[s.group_by ?? ''])}</span><span>${esc(r[(s.agg === 'count' || !s.value) ? 'count' : s.value])}</span></div>`).join('');
+    return `
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="font-size:10px;color:var(--color-text-muted)">From</div>
+        <select class="dp-input" data-dp-field="from" data-idx="${idx}" style="${cell}">${fromOpts}</select>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+          <div><div style="font-size:10px;color:var(--color-text-muted)">Group by</div>${colSel('group_by', s.group_by, true)}</div>
+          <div><div style="font-size:10px;color:var(--color-text-muted)">Agg</div>${aggSel}</div>
+          <div><div style="font-size:10px;color:var(--color-text-muted)">Value</div>${colSel('value', s.value, true)}</div>
+        </div>
+        <div style="font-size:9px;color:var(--color-text-dim)">Aggregates ${esc(s.from || '?')} → bind a chart to <b>${esc(s.id)}</b> (x: ${esc(s.group_by || 'group')}, y: ${esc((s.agg === 'count' || !s.value) ? 'count' : s.value)}). Recomputes at export.</div>
+        ${rows.length ? `<div style="border:1px solid var(--color-border);border-radius:4px;padding:5px">${preview}${rows.length > 6 ? `<div style="font-size:9px;color:var(--color-text-dim);margin-top:2px">+${rows.length - 6} more</div>` : ''}</div>` : '<div style="font-size:10px;color:var(--color-text-dim)">Pick source + group field to compute.</div>'}
       </div>`;
   }
 
@@ -167,6 +203,13 @@ export class DataPanelManager {
             this.mutate(s => [...s, { id, type: 'query', engine: 'http', url: '', rows: [] }]);
             break;
           }
+          case 'add-group': {
+            const id = this.uniqueId('group');
+            this.expanded.add(id);
+            const from = this.sources().find(s => Array.isArray(s.rows) && s.rows.length)?.id ?? '';
+            this.mutate(s => [...s, { id, type: 'transform', from, agg: 'sum', rows: [] }]);
+            break;
+          }
           case 'toggle': {
             const s = this.sources()[idx];
             if (s) { this.expanded.has(s.id) ? this.expanded.delete(s.id) : this.expanded.add(s.id); this.render(); }
@@ -208,7 +251,15 @@ export class DataPanelManager {
         const idx = Number(el.dataset.idx);
         if (el.dataset.dpField) {
           const field = el.dataset.dpField;
-          this.mutate(s => this.editAt(s, idx, src => { (src as unknown as Record<string, unknown>)[field] = el.value; }));
+          this.mutate(sources => this.editAt(sources, idx, src => {
+            (src as unknown as Record<string, unknown>)[field] = el.value;
+            // A transform's output is derived — recompute its rows from upstream
+            // so the canvas preview matches what the export will bake.
+            if (src.type === 'transform') {
+              const fromRows = sources.find(o => o.id === src.from)?.rows ?? [];
+              src.rows = src.group_by ? computeGroupAgg(fromRows, src.group_by, (src.agg ?? 'sum') as GroupAggOp, src.value) : [];
+            }
+          }));
         } else if (el.dataset.dpCol != null) {
           const ci = Number(el.dataset.dpCol);
           this.mutate(s => this.editAt(s, idx, src => {
