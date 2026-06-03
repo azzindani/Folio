@@ -53,6 +53,11 @@ services:
       FOLIO_TOKENS_FILE: ${FOLIO_TOKENS_FILE:-}
       FOLIO_TOKENS:      ${FOLIO_TOKENS:-}
       FOLIO_API_KEY:     ${FOLIO_API_KEY:-}
+      # HS256 signing secret for stateless editor-link JWTs + master bearer.
+      # Falls back to FOLIO_API_KEY when empty, so this is optional.
+      FOLIO_JWT_SECRET:  ${FOLIO_JWT_SECRET:-}
+      # Editor-link / open_in_editor token lifetime (ms). Default 30 days.
+      FOLIO_EDITOR_TOKEN_TTL_MS: ${FOLIO_EDITOR_TOKEN_TTL_MS:-}
       # OAuth client (claude.ai Custom Connector). Both optional; empty
       # FOLIO_OAUTH_CLIENT_SECRET keeps the client public (PKCE-only).
       FOLIO_OAUTH_CLIENT_ID:     ${FOLIO_OAUTH_CLIENT_ID:-claude-ai}

@@ -20,6 +20,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type * as http from 'http';
 import { loadTokens } from './auth';
+import { signJwt, jwtSecret } from './jwt';
 import { readBodyCapped } from '../utils/http-body';
 
 // OAuth bodies are public (pre-auth) and tiny — login forms, code exchanges,
@@ -164,15 +165,29 @@ export function resolveOAuthToken(token: string): string | null {
 }
 
 /**
- * Mint a short-lived editor token. Used by open_in_editor so the URL it
- * returns is self-contained — opening it skips basic-auth, the editor
- * static-server validates the token, sets a session cookie, and the
- * subsequent /__project_files + /editor/events calls inherit access.
- * Default TTL 1h, override with FOLIO_EDITOR_TOKEN_TTL_MS.
+ * Mint an editor token for the URL open_in_editor / create_design return, so
+ * the link is self-contained — opening it skips basic-auth, the editor
+ * static-server validates the token, sets a session cookie, and subsequent
+ * /__project_files + /editor/events calls inherit access.
+ *
+ * Harnesses-lab style: when a JWT secret is configured the token is a STATELESS
+ * 30-day HS256 JWT — it carries its own expiry, needs no server-side store, and
+ * survives restarts, so a pasted link no longer dies after an hour (the old 1h
+ * opaque-token pain). Default TTL 30 days, override with
+ * FOLIO_EDITOR_TOKEN_TTL_MS. With no secret (unauthenticated mode) we fall back
+ * to the legacy opaque, persisted access token so links still work.
  */
+const DEFAULT_EDITOR_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export function mintEditorToken(principal: string = 'default', ttlMs?: number): string {
   const envTtl = parseInt(process.env['FOLIO_EDITOR_TOKEN_TTL_MS'] ?? '', 10);
-  const ttl = ttlMs ?? (Number.isFinite(envTtl) && envTtl > 0 ? envTtl : 60 * 60 * 1000);
+  const ttl = ttlMs ?? (Number.isFinite(envTtl) && envTtl > 0 ? envTtl : DEFAULT_EDITOR_TOKEN_TTL_MS);
+
+  const secret = jwtSecret();
+  if (secret) {
+    return signJwt({ sub: principal, kind: 'editor' }, secret, Math.floor(ttl / 1000));
+  }
+  // No secret configured → no stateless verification possible. Keep the legacy
+  // opaque-token store so the editor link still authenticates.
   const tok = randomToken(24);
   accessTokens.set(tok, { principal, expires_at: Date.now() + ttl });
   persistTokens(accessTokens);

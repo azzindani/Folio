@@ -19,6 +19,7 @@
 import * as fs from 'fs';
 import type * as http from 'http';
 import { resolveOAuthToken } from './oauth';
+import { verifyJwt, jwtSecret } from './jwt';
 
 export interface TokenRegistry {
   readonly mode: 'open' | 'single' | 'multi';
@@ -93,9 +94,22 @@ export function authorize(req: http.IncomingMessage): string | null {
 
   const name = registry.tokens.get(presented);
   if (name) return name;
+
   // Fall back to OAuth-issued access tokens. The token is opaque random
   // bytes mapped to whichever principal authenticated at /oauth/authorize.
-  return resolveOAuthToken(presented);
+  const oauthPrincipal = resolveOAuthToken(presented);
+  if (oauthPrincipal) return oauthPrincipal;
+
+  // Stateless HS256 JWT (Harnesses-lab style): the raw secret is a master
+  // bearer, and any unexpired token signed with it is accepted without a
+  // server-side lookup. Editor links use these (see mintEditorToken).
+  const secret = jwtSecret();
+  if (secret) {
+    if (presented === secret) return 'master';
+    const v = verifyJwt(presented, secret);
+    if (v.ok) return typeof v.payload.sub === 'string' ? v.payload.sub : 'jwt';
+  }
+  return null;
 }
 
 /** Describe the active auth configuration for the startup banner. */
