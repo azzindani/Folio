@@ -150,7 +150,7 @@ pages:
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
-      - { id: icon, type: rect, z: 2, x: 80, y: 160, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: icon, type: rect, z: 2, x: 80, y: 160, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: counter
         type: text
         z: 10
@@ -299,7 +299,7 @@ pages:
         y: 620
         width: 920
         height: 140
-        radius: 20
+        radius: 0
         fill: { type: solid, color: "$primary" }
       - id: cta-text
         type: text

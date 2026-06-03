@@ -104,8 +104,9 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
+        letter_spacing: 1
         color: "$text_muted"
         content: "IPCC SYNTHESIS · GLOBAL INDICATORS · CY2024"
 
@@ -114,12 +115,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 110
+        height: 120
         format: markdown
         font_family: Playfair Display
-        font_size: 32
-        font_weight: 700
-        line_height: 1.15
+        font_size: 48
+        font_weight: 800
+        line_height: 1.05
+        letter_spacing: -0.02
         content: "**Climate Action Tracker 2025**\n*Temperature anomaly, CO2 concentration, sea level, and renewable energy progress.*"
 
       - id: kpi-temp
@@ -193,8 +195,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Global Temperature Anomaly — 30 Year Trend**"
 
       - id: chart-trend
@@ -220,8 +223,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Regional Emissions by Sector**"
 
       - id: chart-regional
@@ -261,8 +265,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 28
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Top 10 Emitting Countries**"
 
       - id: tbl-emitters
@@ -282,6 +287,24 @@ pages:
           - { field: per_capita,     title: Per Capita (t),      width: 200, sortable: true, formatter: number, align: right }
           - { field: yoy_change,     title: YoY %,               width: 180, sortable: true, formatter: delta,  align: right }
           - { field: policy_rating,  title: Policy Rating,       width: 220, sortable: true, formatter: badge }
+
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 200
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 197
+        width: 150
+        height: 6
+        fill: { type: solid, color: "$primary" }
 
 slots:
   - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Report title",       default: "**Climate Action Tracker 2025**\n*Global temperature, atmospheric CO2, sea level, sea ice, and renewable energy progress.*" }

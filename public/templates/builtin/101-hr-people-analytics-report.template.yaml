@@ -83,9 +83,10 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
         color: "$text_muted"
+        letter_spacing: 1
         content: "PEOPLE OPS · Q2 FY2026 · GLOBAL HEADCOUNT"
 
       - id: hero
@@ -93,12 +94,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 80
+        height: 90
         format: markdown
         font_family: Playfair Display
-        font_size: 44
-        font_weight: 700
-        line_height: 1.1
+        font_size: 68
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
         content: "**People Analytics — Quarterly Review**"
 
       - id: kpi-headcount
@@ -175,7 +177,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Headcount Trend — Last 12 Months**"
 
       - id: chart-headcount
@@ -202,7 +206,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Department Breakdown**"
 
       - id: tbl-departments
@@ -230,7 +236,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Engagement Survey — Quarterly Scores (out of 10)**"
 
       - id: tbl-engagement
@@ -259,7 +267,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Diversity by Career Level**"
 
       - id: chart-diversity
@@ -276,6 +286,24 @@ pages:
         legend: true
         grid: true
         animate: true
+
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 26
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 23
+        width: 150
+        height: 6
+        fill: { type: solid, color: "$primary" }
 
 slots:
   - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**People Analytics — Quarterly Review**" }

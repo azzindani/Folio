@@ -149,7 +149,7 @@ pages:
         height: 0
         content: { type: plain, value: "5 words max. Lowercase. No hype. Sound like a forward from a colleague, not a marketing blast." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
-      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 140, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 140, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: example-label
         type: text
         z: 14
@@ -211,7 +211,7 @@ pages:
         height: 0
         content: { type: plain, value: "One specific observation about their company — never \"I hope this email finds you well.\"" }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
-      - { id: example-card, type: rect, z: 13, x: 80, y: 760, width: 920, height: 180, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 760, width: 920, height: 180, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: example-label
         type: text
         z: 14
@@ -273,7 +273,7 @@ pages:
         height: 0
         content: { type: plain, value: "One sentence. The result a customer like them saw — with a number attached." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
-      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 180, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 180, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: example-label
         type: text
         z: 14
@@ -335,7 +335,7 @@ pages:
         height: 0
         content: { type: plain, value: "Don't ask for a meeting on email #1. Ask for a yes/no — momentum beats calendars." }
         style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
-      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 180, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: example-card, type: rect, z: 13, x: 80, y: 740, width: 920, height: 180, radius: 0, fill: { type: solid, color: "$surface" } }
       - id: example-label
         type: text
         z: 14

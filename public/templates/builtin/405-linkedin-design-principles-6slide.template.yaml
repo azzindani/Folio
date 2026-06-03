@@ -65,12 +65,12 @@ pages:
       - { id: principle, type: text, z: 12, x: 60, y: 290, width: 960, height: 0, content: { type: plain, value: "Whitespace" }, style: { font_family: $heading, font_size: 88, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
       - { id: rule, type: text, z: 13, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Space is not absence — it's structure. Double your padding once and see." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.45 } }
       - { id: bad-label, type: text, z: 20, x: 60, y: 720, width: 480, height: 0, content: { type: plain, value: "✗ DON'T" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.36, text_transform: uppercase } }
-      - { id: bad-card, type: rect, z: 21, x: 60, y: 760, width: 400, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: bad-card, type: rect, z: 21, x: 60, y: 760, width: 400, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: bad-inner-1, type: rect, z: 22, x: 76, y: 776, width: 368, height: 60, radius: 4, fill: { type: solid, color: "$primary" } }
       - { id: bad-inner-2, type: rect, z: 23, x: 76, y: 844, width: 368, height: 60, radius: 4, fill: { type: solid, color: "$primary" } }
       - { id: bad-inner-3, type: rect, z: 24, x: 76, y: 912, width: 368, height: 60, radius: 4, fill: { type: solid, color: "$primary" } }
       - { id: good-label, type: text, z: 30, x: 580, y: 720, width: 480, height: 0, content: { type: plain, value: "✓ DO" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
-      - { id: good-card, type: rect, z: 31, x: 580, y: 760, width: 400, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: good-card, type: rect, z: 31, x: 580, y: 760, width: 400, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: good-inner-1, type: rect, z: 32, x: 620, y: 800, width: 320, height: 36, radius: 4, fill: { type: solid, color: "$primary" } }
       - { id: good-inner-2, type: rect, z: 33, x: 620, y: 900, width: 320, height: 36, radius: 4, fill: { type: solid, color: "$primary" } }
       - { id: handle, type: text, z: 40, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
@@ -86,10 +86,10 @@ pages:
       - { id: principle, type: text, z: 12, x: 60, y: 290, width: 960, height: 0, content: { type: plain, value: "Contrast" }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
       - { id: rule, type: text, z: 13, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "Use color to direct the eye, not to decorate. WCAG AA = 4.5:1 minimum." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.45 } }
       - { id: bad-label, type: text, z: 20, x: 60, y: 720, width: 480, height: 0, content: { type: plain, value: "✗ DON'T" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $secondary, letter_spacing: 0.36, text_transform: uppercase } }
-      - { id: bad-bg, type: rect, z: 21, x: 60, y: 760, width: 400, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: bad-bg, type: rect, z: 21, x: 60, y: 760, width: 400, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: bad-cta, type: rect, z: 22, x: 100, y: 840, width: 320, height: 60, radius: 30, fill: { type: solid, color: "#D0D5DD" } }
       - { id: good-label, type: text, z: 30, x: 580, y: 720, width: 480, height: 0, content: { type: plain, value: "✓ DO" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
-      - { id: good-bg, type: rect, z: 31, x: 580, y: 760, width: 400, height: 220, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: good-bg, type: rect, z: 31, x: 580, y: 760, width: 400, height: 220, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: good-cta, type: rect, z: 32, x: 620, y: 840, width: 320, height: 60, radius: 30, fill: { type: solid, color: "$primary" } }
       - { id: handle, type: text, z: 40, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
 

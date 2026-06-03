@@ -154,7 +154,7 @@ pages:
         y: 760
         width: 960
         height: 100
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: confidence-label
         type: text
@@ -232,7 +232,7 @@ pages:
         y: 760
         width: 960
         height: 100
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: confidence-label
         type: text

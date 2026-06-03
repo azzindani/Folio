@@ -88,6 +88,7 @@ pages:
         format: markdown
         font_family: IBM Plex Mono
         font_size: 12
+        letter_spacing: 1
         color: "$text_muted"
         content: "ACME GROWTH · Q1 2026 · CONTENT MARKETING REVIEW"
 
@@ -99,9 +100,10 @@ pages:
         height: 110
         format: markdown
         font_family: Playfair Display
-        font_size: 32
-        font_weight: 700
-        line_height: 1.15
+        font_size: 42
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
         content: "**Content Marketing — Q1 2026**\n*Publishing output, pageview trend, top performers, and channel mix.*"
 
       - id: kpi-pieces
@@ -175,8 +177,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Pageview Trend — Last 12 Weeks**"
 
       - id: chart-trend
@@ -202,8 +205,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Top 10 Content Pieces — Quarterly**"
 
       - id: tbl-content
@@ -231,8 +235,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Channel Mix — Traffic Sources**"
 
       - id: chart-channels
@@ -272,8 +277,9 @@ pages:
         height: 40
         format: markdown
         font_family: Playfair Display
-        font_size: 24
-        font_weight: 700
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Topic Engagement Detail**"
 
       - id: tbl-topics

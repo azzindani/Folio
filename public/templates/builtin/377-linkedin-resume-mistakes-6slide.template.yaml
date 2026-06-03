@@ -174,7 +174,7 @@ pages:
         y: 480
         width: 936
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: m1-wrong-label
         type: text
@@ -201,7 +201,7 @@ pages:
         y: 730
         width: 936
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$primary" }
       - id: m1-right-label
         type: text
@@ -271,7 +271,7 @@ pages:
         y: 480
         width: 936
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: m2-wrong-label
         type: text
@@ -298,7 +298,7 @@ pages:
         y: 730
         width: 936
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$primary" }
       - id: m2-right-label
         type: text
@@ -368,7 +368,7 @@ pages:
         y: 480
         width: 936
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: m3-wrong-label
         type: text
@@ -395,7 +395,7 @@ pages:
         y: 730
         width: 936
         height: 220
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$primary" }
       - id: m3-right-label
         type: text
@@ -465,7 +465,7 @@ pages:
         y: 460
         width: 936
         height: 180
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: m4-wrong-text
         type: text
@@ -483,7 +483,7 @@ pages:
         y: 660
         width: 936
         height: 180
-        radius: 12
+        radius: 0
         fill: { type: solid, color: "#FFFFFF" }
       - id: m4-right-text
         type: text

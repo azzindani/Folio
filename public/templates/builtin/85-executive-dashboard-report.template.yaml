@@ -81,22 +81,24 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
-        color: "$text_muted"
+        color: "$primary"
+        letter_spacing: 1
         content: "NORTHWIND CORP · FY2025 · BOARD REVIEW"
 
       - id: hero
         type: rich_text
         x: 60
-        y: 64
+        y: 84
         width: 1160
-        height: 80
+        height: 90
         format: markdown
         font_family: Playfair Display
-        font_size: 48
-        font_weight: 700
-        line_height: 1.1
+        font_size: 72
+        font_weight: 800
+        line_height: 1.0
+        letter_spacing: -0.02
         content: "**Executive Dashboard — Full Year 2025**"
 
       - id: kpi-revenue
@@ -201,7 +203,8 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Growth by Segment**"
 
       - id: chart-segments
@@ -242,7 +245,8 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Top Accounts**"
 
       - id: tbl-accounts
@@ -263,6 +267,9 @@ pages:
           - { field: growth,     title: YoY %,       width: 140, sortable: true, formatter: delta, align: right }
           - { field: health,     title: Health,      width: 140, sortable: true, formatter: badge }
           - { field: risk_score, title: Risk Score,  width: 130, sortable: true, formatter: number, align: right }
+
+      - { id: rule-top, type: rect, z: 12, x: 60, y: 72, width: 1160, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 13, x: 60, y: 69, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
 
 slots:
   - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Dashboard title",  default: "**Executive Dashboard — Full Year 2025**" }

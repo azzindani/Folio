@@ -63,22 +63,24 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
-        color: "$text_muted"
+        color: "$primary"
+        letter_spacing: 1
         content: "INCOME STATEMENT · FY2025 · CONSOLIDATED"
 
       - id: hero
         type: rich_text
         x: 60
-        y: 64
+        y: 84
         width: 1160
-        height: 80
+        height: 90
         format: markdown
         font_family: Playfair Display
-        font_size: 44
-        font_weight: 700
-        line_height: 1.1
+        font_size: 66
+        font_weight: 800
+        line_height: 1.0
+        letter_spacing: -0.02
         content: "**Profit & Loss Statement**"
 
       - id: kpi-revenue
@@ -159,7 +161,8 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        letter_spacing: -0.02
         content: "**Expense Breakdown**"
 
       - id: tbl-expenses
@@ -202,6 +205,9 @@ pages:
             the Black Friday push and brand campaigns; ROAS targets were met or exceeded.
           - **Office & facilities** declined **-4.1%** as the hybrid policy reduced
             footprint requirements at two regional offices.
+
+      - { id: rule-top, type: rect, z: 12, x: 60, y: 72, width: 1160, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 13, x: 60, y: 69, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
 
 slots:
   - { id: report_title,    path: "pages[0].layers[1].content", type: text, hint: "Statement title",   default: "**Profit & Loss Statement**" }

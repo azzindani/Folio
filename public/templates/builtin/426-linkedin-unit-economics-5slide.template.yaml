@@ -154,7 +154,7 @@ pages:
         y: 480
         width: 960
         height: 130
-        radius: 16
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: formula-label
         type: text
@@ -250,7 +250,7 @@ pages:
         y: 480
         width: 960
         height: 130
-        radius: 16
+        radius: 0
         fill: { type: solid, color: "$surface" }
       - id: formula-label
         type: text

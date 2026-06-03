@@ -102,9 +102,11 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
-        color: "$text_muted"
+        font_weight: 600
+        color: "$primary"
+        letter_spacing: 1
         content: "COMMERCE OPS · FY2026 TTM · GLOBAL STOREFRONT"
 
       - id: hero
@@ -112,12 +114,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 110
+        height: 124
         format: markdown
         font_family: Playfair Display
-        font_size: 42
-        font_weight: 700
-        line_height: 1.15
+        font_size: 56
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
         content: "**GMV Performance — Trailing 12 Months**\n*$128.6M GMV · 484K orders · 7.2% over plan*"
 
       - id: kpi-gmv
@@ -194,7 +197,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
         content: "**Monthly GMV vs Target**"
 
       - id: chart-trend
@@ -221,7 +226,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
         content: "**Top Categories**"
 
       - id: tbl-categories
@@ -250,7 +257,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
         content: "**Top 12 SKUs**"
 
       - id: tbl-skus
@@ -281,7 +290,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
         content: "**Regional Performance ($M GMV)**"
 
       - id: chart-regions
@@ -312,6 +323,9 @@ pages:
         title: Marketing Attribution ($M)
         legend: true
         animate: true
+
+      - { id: rule-top,  type: rect, z: 12, x: 60, y: 200, width: 1160, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 13, x: 60, y: 197, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
 
 slots:
   - { id: report_title,       path: "pages[0].layers[1].content",  type: text, hint: "Report title",       default: "**GMV Performance — Trailing 12 Months**\n*$128.6M GMV · 484K orders · 7.2% over plan*" }

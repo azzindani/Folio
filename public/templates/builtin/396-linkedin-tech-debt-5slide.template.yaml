@@ -46,7 +46,7 @@ pages:
       - { id: row-1, type: text, z: 20, x: 60, y: 540, width: 960, height: 0, content: { type: plain, value: "01 · Code debt   — what we ship" }, style: { font_family: $mono, font_size: 28, color: $text, line_height: 1.7 } }
       - { id: row-2, type: text, z: 21, x: 60, y: 620, width: 960, height: 0, content: { type: plain, value: "02 · Process debt — how we ship" }, style: { font_family: $mono, font_size: 28, color: $text, line_height: 1.7 } }
       - { id: row-3, type: text, z: 22, x: 60, y: 700, width: 960, height: 0, content: { type: plain, value: "03 · People debt  — who ships it" }, style: { font_family: $mono, font_size: 28, color: $text, line_height: 1.7 } }
-      - { id: callout, type: rect, z: 30, x: 60, y: 940, width: 960, height: 200, radius: 12, fill: { type: solid, color: "$surface" } }
+      - { id: callout, type: rect, z: 30, x: 60, y: 940, width: 960, height: 200, radius: 0, fill: { type: solid, color: "$surface" } }
       - { id: callout-text, type: text, z: 31, x: 92, y: 990, width: 900, height: 0, content: { type: plain, value: "If you only refactor the first one,\nyou're paying interest forever on the other two." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5, font_style: italic } }
 
   # ── 3 · 01 Code Debt ──────────────────────────────────────

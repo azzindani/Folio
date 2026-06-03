@@ -97,9 +97,10 @@ pages:
         width: 1160
         height: 24
         format: markdown
-        font_family: IBM Plex Mono
+        font_family: $mono
         font_size: 12
         color: "$text_muted"
+        letter_spacing: 1
         content: "ST MARY'S MEDICAL CENTER · ER OPERATIONS · 24H ENDING 06:00"
 
       - id: hero
@@ -107,12 +108,13 @@ pages:
         x: 60
         y: 64
         width: 1160
-        height: 110
+        height: 140
         format: markdown
         font_family: Playfair Display
-        font_size: 42
-        font_weight: 700
-        line_height: 1.15
+        font_size: 62
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
         content: "**Emergency Department — Operations Dashboard**\n*24-hour census, wait times, triage acuity, complaint mix, and staffing.*"
 
       - id: kpi-patients
@@ -187,7 +189,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Hourly Arrival Rate — Past 24 Hours**"
 
       - id: chart-arrivals
@@ -214,7 +218,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Triage Acuity Distribution**"
 
       - id: chart-triage
@@ -256,7 +262,9 @@ pages:
         format: markdown
         font_family: Playfair Display
         font_size: 24
-        font_weight: 700
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
         content: "**Staffing Schedule — Current 24-Hour Cycle**"
 
       - id: tbl-staff
@@ -275,6 +283,24 @@ pages:
           - { field: rns,           title: RNs,               width: 180, sortable: true, formatter: number,  align: right }
           - { field: techs,         title: Techs,             width: 180, sortable: true, formatter: number,  align: right }
           - { field: capacity_pct,  title: Capacity Used %,   width: 260, sortable: true, formatter: percent, align: right }
+
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 26
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 23
+        width: 150
+        height: 6
+        fill: { type: solid, color: "$primary" }
 
 slots:
   - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**Emergency Department — Operations Dashboard**\n*24-hour census, wait times, triage acuity, complaint mix, and staffing.*" }

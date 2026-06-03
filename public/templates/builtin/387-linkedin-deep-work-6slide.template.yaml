@@ -98,7 +98,7 @@ pages:
         height: 0
         content: { type: plain, value: "Three thieves." }
         style: { font_family: $heading, font_size: 88, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 }
-      - { id: kill-1-icon, type: rect, z: 20, x: 72, y: 480, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: kill-1-icon, type: rect, z: 20, x: 72, y: 480, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: kill-1-text
         type: text
         z: 21
@@ -108,7 +108,7 @@ pages:
         height: 0
         content: { type: plain, value: "Notifications — every ping costs 23 minutes." }
         style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
-      - { id: kill-2-icon, type: rect, z: 20, x: 72, y: 660, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: kill-2-icon, type: rect, z: 20, x: 72, y: 660, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: kill-2-text
         type: text
         z: 21
@@ -118,7 +118,7 @@ pages:
         height: 0
         content: { type: plain, value: "Open tabs — visible work is unfinished work." }
         style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
-      - { id: kill-3-icon, type: rect, z: 20, x: 72, y: 840, width: 56, height: 56, radius: 12, fill: { type: solid, color: "$primary" } }
+      - { id: kill-3-icon, type: rect, z: 20, x: 72, y: 840, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
       - id: kill-3-text
         type: text
         z: 21
