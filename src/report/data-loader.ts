@@ -130,6 +130,19 @@ export async function loadAllSources(
   sources: DataSource[],
   baseDir?: string,
 ): Promise<Map<string, LoadedDataset>> {
-  const results = await Promise.all(sources.map(s => loadDataSource(s, baseDir)));
-  return new Map(results.map(r => [r.id, r]));
+  // Pass 1: load every non-transform source.
+  const base = sources.filter(s => s.type !== 'transform');
+  const results = await Promise.all(base.map(s => loadDataSource(s, baseDir)));
+  const map = new Map(results.map(r => [r.id, r]));
+  // Pass 2: transform sources aggregate an already-loaded source. Computed here
+  // (not loadDataSource) because they need the resolved upstream rows.
+  const { computeGroupAgg } = await import('./aggregator');
+  for (const t of sources.filter(s => s.type === 'transform')) {
+    const fromRows = map.get(t.from ?? '')?.rows ?? [];
+    const rows = t.group_by
+      ? computeGroupAgg(fromRows, t.group_by, t.agg ?? 'sum', t.value)
+      : (t.rows ?? []);
+    map.set(t.id, { id: t.id, rows });
+  }
+  return map;
 }

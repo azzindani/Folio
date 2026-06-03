@@ -51,6 +51,29 @@ export function aggGroupBySum(rows: Row[], groupField: string, valueField: strin
   }));
 }
 
+export type GroupAggOp = 'sum' | 'avg' | 'min' | 'max' | 'count';
+
+// Group `rows` by `groupField` and aggregate `valueField` with `op`, returning
+// chart-ready rows keyed by the group field + the aggregate (named after the
+// value field, or "count"). Shared by the editor's analytics builder and the
+// export-time transform loader so in-canvas preview matches the baked output.
+export function computeGroupAgg(rows: Row[], groupField: string, op: GroupAggOp, valueField?: string): Row[] {
+  const groups = aggGroupBy(rows, groupField);
+  const outKey = op === 'count' || !valueField ? 'count' : valueField;
+  const round = (n: number): number => Math.round(n * 1000) / 1000;
+  return Array.from(groups.entries()).map(([group, groupRows]) => {
+    let value: number;
+    switch (op) {
+      case 'sum': value = aggSum(groupRows, valueField ?? ''); break;
+      case 'avg': value = aggAvg(groupRows, valueField ?? ''); break;
+      case 'min': value = aggMin(groupRows, valueField ?? ''); break;
+      case 'max': value = aggMax(groupRows, valueField ?? ''); break;
+      default: value = aggCount(groupRows); break;
+    }
+    return { [groupField]: group, [outKey]: round(value) };
+  });
+}
+
 // ── Expression evaluator ────────────────────────────────────
 // Evaluates $agg.* and $data.* expressions against loaded datasets.
 

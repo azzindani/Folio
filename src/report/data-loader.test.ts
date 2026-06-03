@@ -122,6 +122,17 @@ describe('loadAllSources', () => {
   });
 });
 
+describe('loadAllSources — transform', () => {
+  it('aggregates an upstream inline source via group-by', async () => {
+    const map = await loadAllSources([
+      { id: 'stocks', type: 'inline', rows: [{ sector: 'Banking', yield: 6 }, { sector: 'Banking', yield: 8 }, { sector: 'Energy', yield: 20 }] },
+      { id: 'bySector', type: 'transform', from: 'stocks', group_by: 'sector', agg: 'avg', value: 'yield' },
+    ]);
+    expect(map.get('bySector')?.rows).toContainEqual({ sector: 'Banking', yield: 7 });
+    expect(map.get('bySector')?.rows).toContainEqual({ sector: 'Energy', yield: 20 });
+  });
+});
+
 describe('loadDataSource — query (http)', () => {
   const realFetch = globalThis.fetch;
   afterEach(() => { globalThis.fetch = realFetch; });
