@@ -30,14 +30,7 @@ layers:
     y: 0
     width: 1200
     height: 1800
-    fill:
-      type: linear
-      angle: 175
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 60 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: top-banner
     type: rect
     z: 1
@@ -81,11 +74,7 @@ layers:
     cy: 500
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.7
 
   - id: hero-glow-2
@@ -95,11 +84,7 @@ layers:
     cy: 740
     rx: 240
     ry: 240
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.6
 
   - id: hero-horizon

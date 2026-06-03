@@ -33,14 +33,7 @@ layers:
     y: 0
     width: 1400
     height: 1400
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "#0A0F1C", position: 0 }
-        - { color: "$background", position: 50 }
-        - { color: "#1A0C24", position: 100 }
-
+    fill: { type: solid, color: "#0A0F1C" }
   - id: glow-circle
     type: circle
     z: 1
@@ -48,12 +41,7 @@ layers:
     y: 200
     width: 1000
     height: 1000
-    fill:
-      type: radial
-      stops:
-        - { color: "rgba(255,106,44,0.22)", position: 0 }
-        - { color: "rgba(255,106,44,0.00)", position: 70 }
-
+    fill: { type: solid, color: "" }
   - id: accent-stripe-tl
     type: rect
     z: 2
@@ -186,12 +174,7 @@ layers:
     width: 200
     height: 380
     radius: 100
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "#B0420F", position: 100 }
+    fill: { type: solid, color: $primary }
     stroke: { color: "$text", width: 4 }
 
   - id: mic-grille-1

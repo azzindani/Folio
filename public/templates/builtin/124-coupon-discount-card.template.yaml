@@ -31,14 +31,7 @@ layers:
     width: 1500
     height: 600
     radius: 24
-    fill:
-      type: linear
-      angle: 105
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 60 }
-        - { color: "#7E2D88", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: card-inner
     type: rect
     z: 1

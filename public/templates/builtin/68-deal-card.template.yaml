@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1080
     height: 1080
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # 1 — neon glow primary
   - id: glow-1
     type: circle
@@ -45,11 +39,7 @@ layers:
     cy: 200
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.38
 
   # 2 — neon glow secondary
@@ -60,11 +50,7 @@ layers:
     cy: 880
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.4
 
   # 3 — corner ribbon (rotated rect across top-left corner)
@@ -109,12 +95,7 @@ layers:
     width: 600
     height: 540
     radius: 24
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$primary", position: 100 }
+    fill: { type: solid, color: $surface2 }
     stroke: { color: "$secondary", width: 2 }
     effects:
       shadow:

@@ -58,7 +58,7 @@ layers:
 
   - { id: divider, type: rect, z: 30, x: 80, y: 980, width: 1040, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.3 }
 
-  - { id: avatar, type: circle, z: 40, cx: 140, cy: 1100, rx: 60, ry: 60, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] } }
+  - { id: avatar, type: circle, z: 40, cx: 140, cy: 1100, rx: 60, ry: 60, fill: { type: solid, color: $primary } }
 
   - id: avatar-initial
     type: text

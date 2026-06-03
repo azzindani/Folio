@@ -28,7 +28,7 @@ pages:
     label: January
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $primary } }
       - { id: deco-1, type: circle, z: 2, cx: 1100, cy: 100, rx: 120, ry: 120, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: deco-2, type: circle, z: 2, cx: 1000, cy: 280, rx: 60, ry: 60, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.15 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
@@ -97,7 +97,7 @@ pages:
     label: February
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $secondary } }
       - { id: deco-1, type: circle, z: 2, cx: 980, cy: 200, rx: 100, ry: 100, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -161,7 +161,7 @@ pages:
     label: March
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $primary } }
       - { id: deco-1, type: circle, z: 2, cx: 1080, cy: 140, rx: 90, ry: 90, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.18 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -228,7 +228,7 @@ pages:
     label: April
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $secondary } }
       - { id: deco-1, type: circle, z: 2, cx: 940, cy: 240, rx: 110, ry: 110, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -292,7 +292,7 @@ pages:
     label: May
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $primary } }
       - { id: deco-1, type: circle, z: 2, cx: 1100, cy: 280, rx: 80, ry: 80, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.18 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -357,7 +357,7 @@ pages:
     label: June
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $secondary } }
       - { id: deco-1, type: circle, z: 2, cx: 1020, cy: 180, rx: 100, ry: 100, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -421,7 +421,7 @@ pages:
     label: July
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $primary } }
       - { id: deco-1, type: circle, z: 2, cx: 1080, cy: 240, rx: 100, ry: 100, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "07" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -488,7 +488,7 @@ pages:
     label: August
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $secondary } }
       - { id: deco-1, type: circle, z: 2, cx: 940, cy: 140, rx: 90, ry: 90, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.18 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "08" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -553,7 +553,7 @@ pages:
     label: September
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $primary } }
       - { id: deco-1, type: circle, z: 2, cx: 1100, cy: 200, rx: 110, ry: 110, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "09" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -617,7 +617,7 @@ pages:
     label: October
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $secondary } }
       - { id: deco-1, type: circle, z: 2, cx: 980, cy: 180, rx: 100, ry: 100, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.18 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "10" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -684,7 +684,7 @@ pages:
     label: November
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $primary } }
       - { id: deco-1, type: circle, z: 2, cx: 1040, cy: 220, rx: 110, ry: 110, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }
       - { id: month-num, type: text, z: 11, x: 100, y: 160, width: 200, height: 0, content: { type: plain, value: "11" }, style: { font_family: $mono, font_size: 28, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
@@ -748,7 +748,7 @@ pages:
     label: December
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
-      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: art-block, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 380, fill: { type: solid, color: $secondary } }
       - { id: deco-1, type: circle, z: 2, cx: 1080, cy: 160, rx: 100, ry: 100, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.2 }
       - { id: deco-2, type: circle, z: 2, cx: 920, cy: 300, rx: 50, ry: 50, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.15 }
       - { id: year-mark, type: text, z: 10, x: 100, y: 100, width: 1040, height: 0, content: { type: plain, value: "MMXXVI" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, opacity: 0.9 } }

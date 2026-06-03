@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 170, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "01 / 05" }, style: { font_family: $mono, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
       - { id: eyebrow, type: text, z: 11, x: 60, y: 400, width: 960, height: 0, content: { type: plain, value: "ENGINEERING CULTURE" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.34, text_transform: uppercase } }
@@ -89,7 +89,7 @@ pages:
   - id: people-debt
     label: 03 People Debt
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary } }
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.5)" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "05 / 05" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.2 } }

@@ -33,14 +33,7 @@ layers:
     y: 0
     width: 1600
     height: 2400
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "#FBE7EC", position: 0 }
-        - { color: "#FFF4F6", position: 50 }
-        - { color: "#F6D4DD", position: 100 }
-
+    fill: { type: solid, color: "#FBE7EC" }
   - id: outer-frame
     type: rect
     z: 2

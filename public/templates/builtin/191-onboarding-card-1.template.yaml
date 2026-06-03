@@ -57,13 +57,7 @@ layers:
     width: 920
     height: 920
     radius: 64
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   # ── Decorative shapes inside illustration ─────────────────
   - id: illo-circle-1
     type: circle

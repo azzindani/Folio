@@ -114,13 +114,7 @@ layers:
     width: 640
     height: 850
     radius: 8
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$surface2", position: 100 }
-
+    fill: { type: solid, color: $surface }
   # 7 — outfit photo glyph
   - id: outfit-glyph
     type: text

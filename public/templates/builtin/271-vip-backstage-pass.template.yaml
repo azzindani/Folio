@@ -301,16 +301,7 @@ layers:
     y: 900
     width: 1420
     height: 24
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$text", position: 0 }
-        - { color: "$primary", position: 25 }
-        - { color: "$text", position: 50 }
-        - { color: "$primary", position: 75 }
-        - { color: "$text", position: 100 }
-
+    fill: { type: solid, color: $text }
   - id: footer-text
     type: text
     z: 51

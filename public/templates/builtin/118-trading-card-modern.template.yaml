@@ -31,13 +31,7 @@ layers:
     width: 1050
     height: 1500
     radius: 40
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: outer-border
     type: rect
     z: 1
@@ -57,13 +51,7 @@ layers:
     width: 930
     height: 90
     radius: 14
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: name
     type: text
     z: 6
@@ -105,12 +93,7 @@ layers:
     width: 930
     height: 680
     radius: 18
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "#2A0F4E", position: 0 }
-        - { color: "#0F0524", position: 100 }
+    fill: { type: solid, color: "#2A0F4E" }
     stroke: { color: "$secondary", width: 2 }
 
   - id: image-hint

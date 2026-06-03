@@ -31,13 +31,7 @@ layers:
     y: 0
     width: 1200
     height: 600
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "#1A1F35", position: 0 }
-        - { color: "$background", position: 100 }
-
+    fill: { type: solid, color: "#1A1F35" }
   # ── Big radial halo ───────────────────────────────────────
   - id: halo
     type: circle
@@ -46,11 +40,7 @@ layers:
     cy: 300
     rx: 380
     ry: 380
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.32
 
   # ── Decorative triangle 1 ─────────────────────────────────
@@ -197,13 +187,7 @@ layers:
     width: 460
     height: 64
     radius: 32
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: rules-text
     type: text
     z: 31

@@ -25,7 +25,7 @@ layers:
   # 0 bg
   - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
   # 1 soft halo
-  - { id: halo, type: circle, z: 1, cx: 540, cy: 760, rx: 540, ry: 540, fill: { type: radial, stops: [{ color: "$primary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.18 }
+  - { id: halo, type: circle, z: 1, cx: 540, cy: 760, rx: 540, ry: 540, fill: { type: none }, opacity: 0.18 }
   # 2 outer frame
   - { id: frame, type: rect, z: 2, x: 80, y: 80, width: 920, height: 1340, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
   # 3 left laurel stem

@@ -32,14 +32,7 @@ layers:
     y: 0
     width: 1080
     height: 1620
-    fill:
-      type: linear
-      angle: 200
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 60 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: bg-overlay
     type: rect
     z: 1
@@ -47,13 +40,7 @@ layers:
     y: 1100
     width: 1080
     height: 520
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$primary", position: 0, opacity: 0 }
-        - { color: "$primary", position: 100, opacity: 0.35 }
-
+    fill: { type: solid, color: $primary }
   # ── Decorative ribbon (polygon) at top ────────────────────
   - id: ribbon
     type: path

@@ -30,14 +30,7 @@ layers:
     y: 0
     width: 1080
     height: 1620
-    fill:
-      type: linear
-      angle: 200
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 60 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Firework A (top-left): center + 7 spokes ─────────────
   - id: fwA-center
     type: circle

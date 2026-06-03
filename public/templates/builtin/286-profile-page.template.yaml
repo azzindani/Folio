@@ -40,14 +40,7 @@ layers:
     y: 0
     width: 1080
     height: 540
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 50 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: banner-glow
     type: circle
     z: 6
@@ -55,11 +48,7 @@ layers:
     cy: 200
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "#FFFFFF", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   # ── Avatar (overlapping) ──────────────────────────────────
@@ -79,13 +68,7 @@ layers:
     cy: 540
     rx: 140
     ry: 140
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $secondary }
   - id: avatar-letter
     type: text
     z: 12
@@ -338,13 +321,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: post-2
     type: rect
     z: 51
@@ -353,13 +330,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $secondary }
   - id: post-3
     type: rect
     z: 52
@@ -368,13 +339,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $accent }
   - id: post-4
     type: rect
     z: 53
@@ -383,13 +348,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $accent }
   - id: post-5
     type: rect
     z: 54
@@ -398,13 +357,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: post-6
     type: rect
     z: 55
@@ -413,13 +366,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $secondary }
   - id: post-7
     type: rect
     z: 56
@@ -428,13 +375,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: post-8
     type: rect
     z: 57
@@ -443,13 +384,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $accent }
   - id: post-9
     type: rect
     z: 58
@@ -458,13 +393,7 @@ layers:
     width: 300
     height: 200
     radius: 16
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $secondary }
 slots:
   - { id: name,      path: "layers[6].content.value",  type: text, hint: "Display name", default: "Maya Chen" }
   - { id: handle,    path: "layers[7].content.value",  type: text, hint: "@handle",      default: "@mayadraws" }

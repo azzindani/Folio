@@ -31,13 +31,7 @@ layers:
     y: 0
     width: 1080
     height: 1920
-    fill:
-      type: linear
-      angle: 170
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Synth grid lines ──────────────────────────────────────
   - id: grid-h1
     type: rect
@@ -77,11 +71,7 @@ layers:
     cy: 700
     rx: 540
     ry: 540
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.28
 
   # ── Viral stat badge ──────────────────────────────────────

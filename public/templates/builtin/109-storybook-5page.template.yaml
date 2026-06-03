@@ -26,8 +26,8 @@ pages:
   - id: title
     label: Title Card
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: linear, angle: 180, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
-      - { id: sun, type: circle, z: 5, cx: 880, cy: 220, rx: 100, ry: 100, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.7 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: $background } }
+      - { id: sun, type: circle, z: 5, cx: 880, cy: 220, rx: 100, ry: 100, fill: { type: none }, opacity: 0.7 }
       - { id: cloud-1, type: circle, z: 6, cx: 220, cy: 200, rx: 50, ry: 50, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
       - { id: cloud-2, type: circle, z: 6, cx: 280, cy: 200, rx: 60, ry: 60, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
       - { id: cloud-3, type: circle, z: 6, cx: 340, cy: 200, rx: 45, ry: 45, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.8 }
@@ -44,10 +44,10 @@ pages:
     label: Scene 1
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
-      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.4 }
+      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: $primary }, opacity: 0.4 }
       - { id: img-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 3 } }
       - { id: img-moon, type: circle, z: 7, cx: 780, cy: 200, rx: 70, ry: 70, fill: { type: solid, color: "#FFFFFF" }, opacity: 0.9 }
-      - { id: img-moon-glow, type: circle, z: 8, cx: 780, cy: 200, rx: 100, ry: 100, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.5 }
+      - { id: img-moon-glow, type: circle, z: 8, cx: 780, cy: 200, rx: 100, ry: 100, fill: { type: none }, opacity: 0.5 }
       - { id: img-house, type: rect, z: 9, x: 280, y: 480, width: 200, height: 160, fill: { type: solid, color: "$secondary" } }
       - { id: img-roof, type: polygon, z: 10, points: "280,480 480,480 380,400", fill: { type: solid, color: "$primary" } }
       - { id: img-door, type: rect, z: 11, x: 360, y: 560, width: 40, height: 80, radius: 4, fill: { type: solid, color: "$text" } }
@@ -66,7 +66,7 @@ pages:
     label: Scene 2
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
-      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] }, opacity: 0.4 }
+      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: $secondary }, opacity: 0.4 }
       - { id: img-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$secondary", width: 3 } }
       - { id: img-grass, type: rect, z: 7, x: 80, y: 580, width: 920, height: 120, fill: { type: solid, color: "$primary" }, opacity: 0.5 }
       - { id: img-path-1, type: ellipse, z: 8, cx: 300, cy: 660, rx: 50, ry: 16, fill: { type: solid, color: "#F5E6D3" } }
@@ -94,7 +94,7 @@ pages:
     label: Scene 3
     layers:
       - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
-      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] }, opacity: 0.55 }
+      - { id: img-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: $primary }, opacity: 0.55 }
       - { id: img-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 3 } }
       - { id: img-arch, type: ellipse, z: 7, cx: 540, cy: 700, rx: 360, ry: 360, fill: { type: solid, color: "$secondary" }, opacity: 0.35 }
       - { id: img-tree-l-trunk, type: rect, z: 8, x: 240, y: 460, width: 22, height: 220, fill: { type: solid, color: "#8B5A3C" } }
@@ -118,8 +118,8 @@ pages:
   - id: the-end
     label: The End
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: linear, angle: 180, stops: [{ color: "$surface", position: 0 }, { color: "$background", position: 100 }] } }
-      - { id: glow, type: circle, z: 1, cx: 540, cy: 540, rx: 380, ry: 380, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.25 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: $surface } }
+      - { id: glow, type: circle, z: 1, cx: 540, cy: 540, rx: 380, ry: 380, fill: { type: none }, opacity: 0.25 }
       - { id: ring-1, type: circle, z: 2, cx: 540, cy: 540, rx: 280, ry: 280, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 2 }, opacity: 0.4 }
       - { id: ring-2, type: circle, z: 3, cx: 540, cy: 540, rx: 220, ry: 220, fill: { type: solid, color: "transparent" }, stroke: { color: "$secondary", width: 2 }, opacity: 0.5 }
       - { id: star-1, type: text, z: 4, x: 240, y: 220, width: 80, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 36, color: $secondary, text_align: center } }

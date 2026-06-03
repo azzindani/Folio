@@ -23,7 +23,7 @@ theme:
 
 layers:
   # 0 bg
-  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: linear, angle: 165, stops: [ { color: "$background", position: 0 }, { color: "$surface", position: 100 } ] } }
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: $background } }
 
   # ── House + key icon ────────────────────────────────────
   # 1 — roof (triangle approximated via rotated rect — use simple rect roof for safety: a wide rect tilted; use chunky house outline instead)

@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1170
     height: 2532
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "#000000", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Ambient glow ──────────────────────────────────────────
   - id: glow
     type: circle
@@ -45,11 +39,7 @@ layers:
     cy: 1900
     rx: 720
     ry: 720
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.3
 
   # ── Status bar mock ───────────────────────────────────────

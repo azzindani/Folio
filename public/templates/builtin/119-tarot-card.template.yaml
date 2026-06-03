@@ -36,14 +36,7 @@ layers:
     y: 0
     width: 800
     height: 1400
-    fill:
-      type: linear
-      angle: 160
-      stops:
-        - { color: "#F8EFD9", position: 0 }
-        - { color: "$background", position: 60 }
-        - { color: "#E6D1A2", position: 100 }
-
+    fill: { type: solid, color: "#F8EFD9" }
   - id: border-outer
     type: rect
     z: 1
@@ -153,12 +146,7 @@ layers:
     width: 600
     height: 760
     radius: 6
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "#E6D1A2", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$primary", width: 2 }
 
   - id: illustration-inner

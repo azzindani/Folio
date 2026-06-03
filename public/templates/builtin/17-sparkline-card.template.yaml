@@ -29,12 +29,7 @@ layers:
     width: 1080
     height: 400
     radius: 24
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface", position: 0 }
-        - { color: "$background", position: 100 }
+    fill: { type: solid, color: $surface }
     stroke: { color: "$border", width: 1 }
 
   - id: label

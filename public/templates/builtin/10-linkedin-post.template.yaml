@@ -37,11 +37,7 @@ layers:
     cy: 80
     rx: 280
     ry: 280
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.22
 
   - id: deco-stripe

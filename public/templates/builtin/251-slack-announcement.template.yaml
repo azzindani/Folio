@@ -51,13 +51,7 @@ layers:
     width: 96
     height: 96
     radius: 24
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   # ── Megaphone glyph ───────────────────────────────────────
   - id: icon-glyph
     type: text
@@ -132,11 +126,7 @@ layers:
     cy: 560
     rx: 200
     ry: 200
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.18
 
   # ── Footer divider ────────────────────────────────────────

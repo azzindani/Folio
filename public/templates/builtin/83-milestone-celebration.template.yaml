@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1080
     height: 1080
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Soft corner glows ────────────────────────────────────
   - id: glow-tl
     type: circle
@@ -45,11 +39,7 @@ layers:
     cy: -40
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.32
 
   - id: glow-br
@@ -59,11 +49,7 @@ layers:
     cy: 1140
     rx: 360
     ry: 360
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.3
 
   # ── Eyebrow ──────────────────────────────────────────────

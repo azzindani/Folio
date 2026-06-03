@@ -99,12 +99,7 @@ layers:
     cy: 290
     rx: 36
     ry: 36
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: instructor-name
     type: text
     z: 16

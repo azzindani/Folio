@@ -29,14 +29,7 @@ layers:
     y: 0
     width: 1800
     height: 200
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 50 }
-        - { color: "$primary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: bg-overlay
     type: rect
     z: 1

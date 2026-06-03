@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1100
     height: 1600
-    fill:
-      type: linear
-      angle: 165
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: vignette
     type: circle
     z: 1
@@ -44,11 +38,7 @@ layers:
     cy: 600
     rx: 700
     ry: 700
-    fill:
-      type: radial
-      stops:
-        - { color: "transparent", position: 0 }
-        - { color: "$background", position: 100 }
+    fill: { type: none }
     opacity: 0.8
 
   - id: top-accent-stripe
@@ -91,12 +81,7 @@ layers:
     type: polygon
     z: 12
     points: "550,180  720,940  380,940"
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: solid, color: $primary }
     opacity: 0.35
 
   - id: hero-silhouette

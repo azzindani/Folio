@@ -37,13 +37,7 @@ layers:
     y: 0
     width: 800
     height: 1130
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glow-top
     type: circle
     z: 5
@@ -51,11 +45,7 @@ layers:
     cy: 220
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   - id: glow-bottom
@@ -65,11 +55,7 @@ layers:
     cy: 920
     rx: 280
     ry: 280
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.3
 
   - id: top-border

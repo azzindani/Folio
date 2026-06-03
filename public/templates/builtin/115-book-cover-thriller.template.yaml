@@ -32,14 +32,7 @@ layers:
     y: 0
     width: 1600
     height: 2400
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "#05070C", position: 0 }
-        - { color: "$background", position: 60 }
-        - { color: "#000000", position: 100 }
-
+    fill: { type: solid, color: "#05070C" }
   - id: shadow-block
     type: rect
     z: 5
@@ -48,13 +41,7 @@ layers:
     width: 1360
     height: 1480
     radius: 4
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "#1A1F2A", position: 0 }
-        - { color: "#0A0D14", position: 100 }
-
+    fill: { type: solid, color: "#1A1F2A" }
   - id: shadow-block-inner
     type: rect
     z: 6
@@ -117,13 +104,7 @@ layers:
     y: 1840
     width: 980
     height: 18
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "#6B0517", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: blood-drip
     type: rect
     z: 21

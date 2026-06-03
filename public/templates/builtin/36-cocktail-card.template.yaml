@@ -28,13 +28,7 @@ layers:
     y: 0
     width: 1080
     height: 1620
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: glass-outer
     type: circle
     z: 5
@@ -42,11 +36,7 @@ layers:
     cy: 480
     rx: 260
     ry: 260
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.55
 
   - id: glass-inner-liquid

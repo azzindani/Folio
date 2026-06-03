@@ -30,13 +30,7 @@ layers:
     y: 0
     width: 1200
     height: 1500
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # 1: ambient accent glow (top-right)
   - id: accent-dot
     type: circle
@@ -45,11 +39,7 @@ layers:
     cy: 180
     rx: 80
     ry: 80
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.55
 
   # 2: top accent band

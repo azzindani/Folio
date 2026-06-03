@@ -29,13 +29,7 @@ layers:
     y: 0
     width: 1920
     height: 1080
-    fill:
-      type: linear
-      angle: 145
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: accent-bar
     type: rect
     z: 5
@@ -108,12 +102,7 @@ layers:
     cy: 800
     rx: 36
     ry: 36
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: instructor-name
     type: text
     z: 21

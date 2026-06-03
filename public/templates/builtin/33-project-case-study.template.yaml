@@ -41,13 +41,7 @@ layers:
     y: 0
     width: 8
     height: 900
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   # --- header (eyebrow + title + client/sector) ---
   - id: eyebrow
     type: text

@@ -30,14 +30,7 @@ layers:
     y: 0
     width: 1200
     height: 1800
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 50 }
-        - { color: "$background", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: rave-circle-a
     type: circle
     z: 1
@@ -45,11 +38,7 @@ layers:
     cy: 380
     rx: 380
     ry: 380
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.6
 
   - id: rave-circle-b
@@ -59,11 +48,7 @@ layers:
     cy: 520
     rx: 340
     ry: 340
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.55
 
   - id: rave-circle-c
@@ -73,11 +58,7 @@ layers:
     cy: 1300
     rx: 460
     ry: 460
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.4
 
   - id: grid-line-top

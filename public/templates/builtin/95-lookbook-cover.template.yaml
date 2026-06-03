@@ -42,14 +42,7 @@ layers:
     y: 560
     width: 1080
     height: 880
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 60 }
-        - { color: "#3D2C1F", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: image-noise-overlay
     type: rect
     z: 6

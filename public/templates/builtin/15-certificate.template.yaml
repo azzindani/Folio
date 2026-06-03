@@ -350,11 +350,7 @@ layers:
     cy: 1330
     rx: 110
     ry: 110
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "#9C7A2E", position: 100 }
+    fill: { type: solid, color: $accent }
     opacity: 0.95
 
   - id: seal-mid
@@ -375,12 +371,7 @@ layers:
     cy: 1330
     rx: 70
     ry: 70
-    fill:
-      type: radial
-      stops:
-        - { color: "#F4D58D", position: 0 }
-        - { color: "$accent", position: 100 }
-
+    fill: { type: solid, color: "#F4D58D" }
   - id: seal-star-a
     type: rect
     z: 63

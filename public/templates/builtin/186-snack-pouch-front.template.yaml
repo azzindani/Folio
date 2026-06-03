@@ -32,13 +32,7 @@ layers:
     y: 0
     width: 1200
     height: 1500
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Top color band ────────────────────────────────────────
   - id: top-band
     type: rect

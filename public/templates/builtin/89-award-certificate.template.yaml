@@ -234,11 +234,7 @@ layers:
     cy: 980
     rx: 70
     ry: 70
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "#7C5A1F", position: 100 }
+    fill: { type: solid, color: $accent }
     opacity: 0.95
 
   - id: seal-inner

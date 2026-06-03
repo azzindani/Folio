@@ -32,14 +32,7 @@ layers:
     y: 0
     width: 1050
     height: 600
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 50 }
-        - { color: "$background", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: bg-overlay
     type: rect
     z: 1
@@ -47,11 +40,7 @@ layers:
     y: 0
     width: 1050
     height: 600
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.18
 
   - id: bg-noise
@@ -85,13 +74,7 @@ layers:
     cy: 100
     rx: 34
     ry: 34
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: mono-letter
     type: text
     z: 12
@@ -150,13 +133,7 @@ layers:
     width: 180
     height: 60
     radius: 30
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: tier-text
     type: text
     z: 21
@@ -183,13 +160,7 @@ layers:
     width: 80
     height: 60
     radius: 8
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "#D4AF37", position: 0 }
-        - { color: "#8C6B1B", position: 100 }
-
+    fill: { type: solid, color: "#D4AF37" }
   - id: chip-line-1
     type: rect
     z: 31
@@ -384,13 +355,7 @@ layers:
     y: 555
     width: 1050
     height: 30
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "transparent", position: 0 }
-        - { color: "$primary", position: 50 }
-        - { color: "transparent", position: 100 }
+    fill: { type: solid, color: $primary }
     opacity: 0.15
 
   # ── Subtle corner accent ─────────────────────────────────
@@ -398,12 +363,7 @@ layers:
     type: polygon
     z: 70
     points: "950,0 1050,0 1050,100"
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: solid, color: $secondary }
     opacity: 0.4
 
 slots:

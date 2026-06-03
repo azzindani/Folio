@@ -348,7 +348,7 @@ pages:
   - id: pillar-4-cta
     label: Pillar 4 + CTA
     layers:
-      - { id: p4-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 200, stops: [{ color: "$background", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: p4-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
       - { id: p4-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
       - id: p4-num
         type: text

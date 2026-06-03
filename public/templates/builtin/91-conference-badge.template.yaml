@@ -53,13 +53,7 @@ layers:
     y: 120
     width: 1050
     height: 110
-    fill:
-      type: linear
-      angle: 90
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $primary }
   - id: conference-name
     type: text
     z: 11

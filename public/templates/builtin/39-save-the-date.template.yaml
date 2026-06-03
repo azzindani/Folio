@@ -37,11 +37,7 @@ layers:
     cy: -40
     rx: 240
     ry: 240
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.18
 
   - id: corner-br
@@ -51,11 +47,7 @@ layers:
     cy: 1120
     rx: 280
     ry: 280
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.18
 
   - id: eyebrow

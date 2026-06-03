@@ -69,12 +69,7 @@ layers:
     cy: 380
     rx: 220
     ry: 220
-    fill:
-      type: radial
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $surface2 }
   # =============== SIDEBAR: name + title ===============
   - id: name
     type: text

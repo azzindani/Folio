@@ -28,13 +28,7 @@ layers:
     y: 0
     width: 1080
     height: 1620
-    fill:
-      type: linear
-      angle: 165
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $background }
   # ── Botanical corner circles (low opacity) ────────────────
   - id: corner-tl
     type: circle
@@ -43,11 +37,7 @@ layers:
     cy: -60
     rx: 280
     ry: 280
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.35
 
   - id: corner-tr
@@ -57,11 +47,7 @@ layers:
     cy: 80
     rx: 200
     ry: 200
-    fill:
-      type: radial
-      stops:
-        - { color: "$accent", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.3
 
   - id: corner-bl
@@ -71,11 +57,7 @@ layers:
     cy: 1620
     rx: 240
     ry: 240
-    fill:
-      type: radial
-      stops:
-        - { color: "$secondary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.3
 
   - id: corner-br
@@ -85,11 +67,7 @@ layers:
     cy: 1680
     rx: 320
     ry: 320
-    fill:
-      type: radial
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "transparent", position: 100 }
+    fill: { type: none }
     opacity: 0.28
 
   # ── Top monogram ──────────────────────────────────────────

@@ -41,13 +41,7 @@ layers:
     y: 0
     width: 1080
     height: 648
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$surface", position: 100 }
-
+    fill: { type: solid, color: $surface2 }
   - id: photo-mark
     type: circle
     z: 6
@@ -65,13 +59,7 @@ layers:
     y: 408
     width: 1080
     height: 240
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "rgba(0,0,0,0)", position: 0 }
-        - { color: "rgba(0,0,0,0.85)", position: 100 }
-
+    fill: { type: solid, color: "" }
   # --- brand badge top-right ---
   - id: brand-badge
     type: rect

@@ -28,14 +28,7 @@ layers:
     y: 0
     width: 1500
     height: 750
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$background", position: 0 }
-        - { color: "$surface", position: 60 }
-        - { color: "$surface2", position: 100 }
-
+    fill: { type: solid, color: $background }
   - id: ribbon-corner
     type: rect
     z: 3

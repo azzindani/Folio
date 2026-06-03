@@ -40,13 +40,7 @@ layers:
     width: 960
     height: 740
     radius: 32
-    fill:
-      type: linear
-      angle: 135
-      stops:
-        - { color: "$surface2", position: 0 }
-        - { color: "$secondary", position: 100 }
-
+    fill: { type: solid, color: $surface2 }
   # 2 — photo glyph (placeholder emoji)
   - id: photo-glyph
     type: text

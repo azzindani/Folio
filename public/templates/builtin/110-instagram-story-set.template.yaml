@@ -26,9 +26,9 @@ pages:
   - id: announcement
     label: Announcement
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: $primary } }
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "rgba(0,0,0,0.25)" } }
-      - { id: glow, type: circle, z: 2, cx: 540, cy: 600, rx: 460, ry: 460, fill: { type: radial, stops: [{ color: "$secondary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.55 }
+      - { id: glow, type: circle, z: 2, cx: 540, cy: 600, rx: 460, ry: 460, fill: { type: none }, opacity: 0.55 }
       - { id: top-strip, type: rect, z: 5, x: 60, y: 80, width: 960, height: 6, radius: 3, fill: { type: solid, color: "rgba(255,255,255,0.5)" } }
       - { id: top-strip-fill, type: rect, z: 6, x: 60, y: 80, width: 192, height: 6, radius: 3, fill: { type: solid, color: "#FFFFFF" } }
       - { id: brand, type: text, z: 10, x: 60, y: 140, width: 960, height: 0, content: { type: plain, value: "@SOLSTICE.COFFEE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4 } }
@@ -63,8 +63,8 @@ pages:
   - id: customer-quote
     label: Customer Quote
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: linear, angle: 180, stops: [{ color: "$surface", position: 0 }, { color: "$background", position: 100 }] } }
-      - { id: glow, type: circle, z: 1, cx: 540, cy: 960, rx: 600, ry: 600, fill: { type: radial, stops: [{ color: "$primary", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.18 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: $surface } }
+      - { id: glow, type: circle, z: 1, cx: 540, cy: 960, rx: 600, ry: 600, fill: { type: none }, opacity: 0.18 }
       - { id: top-strip-1, type: rect, z: 5, x: 60, y: 80, width: 310, height: 6, radius: 3, fill: { type: solid, color: "$primary" } }
       - { id: top-strip-2, type: rect, z: 5, x: 380, y: 80, width: 310, height: 6, radius: 3, fill: { type: solid, color: "$primary" } }
       - { id: top-strip-3, type: rect, z: 6, x: 700, y: 80, width: 310, height: 6, radius: 3, fill: { type: solid, color: "rgba(0,0,0,0.15)" } }
@@ -73,7 +73,7 @@ pages:
       - { id: open-q, type: text, z: 11, x: 60, y: 280, width: 960, height: 0, content: { type: plain, value: "“" }, style: { font_family: $heading, font_size: 240, font_weight: 800, color: $primary, line_height: 1, text_align: center } }
       - { id: quote, type: text, z: 12, x: 100, y: 580, width: 880, height: 0, content: { type: plain, value: "This is the only bag I let myself ration. One scoop a morning. It's the difference between a good day and a great one." }, style: { font_family: $heading, font_size: 52, font_weight: 600, color: $text, line_height: 1.35, text_align: center, letter_spacing: -0.01 } }
       - { id: stars, type: text, z: 13, x: 60, y: 1240, width: 960, height: 0, content: { type: plain, value: "★ ★ ★ ★ ★" }, style: { font_family: $heading, font_size: 36, color: $primary, text_align: center, letter_spacing: 0.4 } }
-      - { id: author-avatar, type: circle, z: 14, cx: 540, cy: 1380, rx: 60, ry: 60, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] } }
+      - { id: author-avatar, type: circle, z: 14, cx: 540, cy: 1380, rx: 60, ry: 60, fill: { type: solid, color: $primary } }
       - { id: author-initial, type: text, z: 15, x: 480, y: 1356, width: 120, height: 0, content: { type: plain, value: "JM" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF", text_align: center } }
       - { id: author-name, type: text, z: 16, x: 60, y: 1480, width: 960, height: 0, content: { type: plain, value: "Jamie M." }, style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, text_align: center } }
       - { id: author-where, type: text, z: 17, x: 60, y: 1530, width: 960, height: 0, content: { type: plain, value: "Brooklyn · ordered 11 bags" }, style: { font_family: $body, font_size: 20, color: $text_muted, text_align: center } }
@@ -93,10 +93,10 @@ pages:
       - { id: top-strip-4-fill, type: rect, z: 7, x: 780, y: 80, width: 80, height: 6, radius: 3, fill: { type: solid, color: "$primary" } }
       - { id: kicker, type: text, z: 10, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "BEHIND THE SCENES" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.4, text_transform: uppercase } }
       - { id: title, type: text, z: 11, x: 60, y: 220, width: 960, height: 0, content: { type: plain, value: "How we\nroast it." }, style: { font_family: $heading, font_size: 108, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 } }
-      - { id: img-frame, type: rect, z: 20, x: 60, y: 540, width: 960, height: 620, radius: 24, fill: { type: linear, angle: 135, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.5 }
+      - { id: img-frame, type: rect, z: 20, x: 60, y: 540, width: 960, height: 620, radius: 24, fill: { type: solid, color: $primary }, opacity: 0.5 }
       - { id: img-border, type: rect, z: 21, x: 60, y: 540, width: 960, height: 620, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 3 } }
       - { id: img-roaster, type: circle, z: 22, cx: 540, cy: 820, rx: 180, ry: 180, fill: { type: solid, color: "$text" } }
-      - { id: img-roaster-glass, type: circle, z: 23, cx: 540, cy: 820, rx: 130, ry: 130, fill: { type: linear, angle: 135, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: img-roaster-glass, type: circle, z: 23, cx: 540, cy: 820, rx: 130, ry: 130, fill: { type: solid, color: $secondary } }
       - { id: img-bean-1, type: ellipse, z: 24, cx: 500, cy: 820, rx: 16, ry: 24, fill: { type: solid, color: "#4A2B0F" } }
       - { id: img-bean-2, type: ellipse, z: 24, cx: 540, cy: 800, rx: 16, ry: 24, fill: { type: solid, color: "#3A1F08" } }
       - { id: img-bean-3, type: ellipse, z: 24, cx: 580, cy: 830, rx: 16, ry: 24, fill: { type: solid, color: "#4A2B0F" } }
@@ -115,9 +115,9 @@ pages:
   - id: cta
     label: CTA Swipe Up
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: linear, angle: 180, stops: [{ color: "$secondary", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: $secondary } }
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "rgba(0,0,0,0.3)" } }
-      - { id: ring-glow, type: circle, z: 2, cx: 540, cy: 540, rx: 360, ry: 360, fill: { type: radial, stops: [{ color: "#FFFFFF", position: 0 }, { color: "transparent", position: 100 }] }, opacity: 0.25 }
+      - { id: ring-glow, type: circle, z: 2, cx: 540, cy: 540, rx: 360, ry: 360, fill: { type: none }, opacity: 0.25 }
       - { id: top-strip-bg, type: rect, z: 5, x: 60, y: 80, width: 960, height: 6, radius: 3, fill: { type: solid, color: "rgba(255,255,255,0.3)" } }
       - { id: top-strip-fill, type: rect, z: 6, x: 60, y: 80, width: 960, height: 6, radius: 3, fill: { type: solid, color: "#FFFFFF" } }
       - { id: brand, type: text, z: 10, x: 60, y: 140, width: 960, height: 0, content: { type: plain, value: "@SOLSTICE.COFFEE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4 } }

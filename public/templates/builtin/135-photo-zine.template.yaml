@@ -49,7 +49,7 @@ pages:
       - { id: hdr, type: text, z: 10, x: 80, y: 80, width: 920, height: 0, content: { type: plain, value: "GREY HOURS  /  I" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
       - { id: hdr-rule, type: rect, z: 11, x: 80, y: 110, width: 920, height: 1, fill: { type: solid, color: "$text" } }
       - { id: photo-big, type: rect, z: 20, x: 80, y: 150, width: 920, height: 720, fill: { type: solid, color: "$text" } }
-      - { id: photo-big-fade, type: rect, z: 21, x: 80, y: 150, width: 920, height: 720, fill: { type: linear, angle: 180, stops: [{ color: "transparent", position: 0 }, { color: "rgba(0,0,0,0.4)", position: 100 }] } }
+      - { id: photo-big-fade, type: rect, z: 21, x: 80, y: 150, width: 920, height: 720, fill: { type: solid, color: "" } }
       - { id: subj-1, type: rect, z: 22, x: 380, y: 400, width: 320, height: 360, radius: 4, fill: { type: solid, color: "$surface" }, opacity: 0.35 }
       - { id: subj-2, type: circle, z: 23, cx: 540, cy: 460, rx: 60, ry: 60, fill: { type: solid, color: "$primary" }, opacity: 0.5 }
       - { id: ph-corner-1, type: text, z: 24, x: 100, y: 170, width: 200, height: 0, content: { type: plain, value: "01 / 04" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "$background", letter_spacing: 0.4 } }
@@ -128,7 +128,7 @@ pages:
       - { id: hdr, type: text, z: 10, x: 80, y: 80, width: 920, height: 0, content: { type: plain, value: "GREY HOURS  /  IV  ·  CODA" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
       - { id: hdr-rule, type: rect, z: 11, x: 80, y: 110, width: 920, height: 1, fill: { type: solid, color: "$text" } }
       - { id: ph-full, type: rect, z: 20, x: 80, y: 150, width: 920, height: 880, fill: { type: solid, color: "$text" } }
-      - { id: ph-full-grad, type: rect, z: 21, x: 80, y: 150, width: 920, height: 880, fill: { type: linear, angle: 180, stops: [{ color: "transparent", position: 0 }, { color: "transparent", position: 70 }, { color: "rgba(0,0,0,0.5)", position: 100 }] } }
+      - { id: ph-full-grad, type: rect, z: 21, x: 80, y: 150, width: 920, height: 880, fill: { type: solid, color: "" } }
       - { id: ph-figure, type: rect, z: 22, x: 420, y: 580, width: 160, height: 280, radius: 4, fill: { type: solid, color: "$primary" }, opacity: 0.4 }
       - { id: ph-horizon, type: rect, z: 23, x: 80, y: 580, width: 920, height: 1, fill: { type: solid, color: "$surface" }, opacity: 0.4 }
       - { id: ph-num, type: text, z: 24, x: 100, y: 170, width: 200, height: 0, content: { type: plain, value: "06 / 06 · FINAL" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "$background", letter_spacing: 0.4 } }

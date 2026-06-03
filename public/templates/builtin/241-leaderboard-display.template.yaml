@@ -40,12 +40,7 @@ layers:
     y: 0
     width: 1080
     height: 400
-    fill:
-      type: linear
-      angle: 180
-      stops:
-        - { color: "$primary", position: 0 }
-        - { color: "$background", position: 100 }
+    fill: { type: solid, color: $primary }
     opacity: 0.2
 
   # ── Header ────────────────────────────────────────────────
