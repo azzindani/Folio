@@ -29,7 +29,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: linear, angle: 135, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$background" } }
       - id: ring
         type: circle
         z: 5
@@ -252,7 +252,7 @@ pages:
   - id: cta
     label: CTA
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$secondary", position: 100 }] }, opacity: 0.9 }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "$primary" }, opacity: 0.9 }
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1080, fill: { type: solid, color: "rgba(3,0,28,0.5)" } }
       - id: counter
         type: text

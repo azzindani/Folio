@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: cv-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: cv-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: cv-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - id: cv-eyebrow
         type: text
@@ -429,7 +429,7 @@ pages:
   - id: mistake-4-cta
     label: Mistake 4 + CTA
     layers:
-      - { id: m4-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 200, stops: [{ color: "$background", position: 0 }, { color: "$primary", position: 100 }] } }
+      - { id: m4-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: m4-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
       - id: m4-eyebrow
         type: text

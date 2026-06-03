@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 160, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "1 / 7" }, style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.18 } }
       - { id: eyebrow, type: text, z: 11, x: 60, y: 460, width: 960, height: 0, content: { type: plain, value: "FOUNDER PLAYBOOK" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase } }
@@ -118,7 +118,7 @@ pages:
   - id: cta
     label: CTA
     layers:
-      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 180, stops: [{ color: "$primary", position: 0 }, { color: "$background", position: 100 }] } }
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
       - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(10,8,40,0.35)" } }
       - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
       - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "7 / 7" }, style: { font_family: $mono, font_size: 18, color: "#E8E8FF", letter_spacing: 0.18 } }

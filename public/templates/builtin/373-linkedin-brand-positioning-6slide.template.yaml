@@ -26,7 +26,7 @@ pages:
   - id: cover
     label: Cover
     layers:
-      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 145, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+      - { id: cover-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
       - { id: cover-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
       - { id: cover-grid-h, type: rect, z: 4, x: 80, y: 660, width: 920, height: 1, fill: { type: solid, color: "$text_muted" }, opacity: 0.25 }
       - { id: cover-grid-v, type: rect, z: 4, x: 540, y: 460, width: 1, height: 400, fill: { type: solid, color: "$text_muted" }, opacity: 0.25 }
@@ -378,7 +378,7 @@ pages:
   - id: cta
     label: SO THAT + CTA
     layers:
-      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: linear, angle: 175, stops: [{ color: "$primary", position: 0 }, { color: "$accent", position: 100 }] }, opacity: 0.95 }
+      - { id: cta-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" }, opacity: 0.95 }
       - { id: cta-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.30)" } }
       - { id: cta-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$secondary" } }
       - id: cta-label

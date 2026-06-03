@@ -22,7 +22,7 @@ theme:
   ref: cyber-synthwave
 
 layers:
-  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1200, height: 1500, fill: { type: linear, angle: 170, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1200, height: 1500, fill: { type: solid, color: "$background" } }
   - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1200, height: 12, fill: { type: solid, color: "$primary" } }
   - { id: accent-dot, type: circle, z: 5, cx: 1130, cy: 130, rx: 10, ry: 10, fill: { type: solid, color: "$accent" } }
   - { id: grid-line-1, type: rect, z: 3, x: 0, y: 1380, width: 1200, height: 1, fill: { type: solid, color: "$accent" }, opacity: 0.2 }

@@ -22,7 +22,7 @@ theme:
   ref: neon-bloom
 
 layers:
-  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1200, height: 1500, fill: { type: linear, angle: 155, stops: [{ color: "$background", position: 0 }, { color: "$surface", position: 100 }] } }
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1200, height: 1500, fill: { type: solid, color: "$background" } }
 
   - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1200, height: 12, fill: { type: solid, color: "$primary" } }
 
