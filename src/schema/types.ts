@@ -28,7 +28,15 @@ export type LayerType =
   | 'map'
   | 'embed_code'
   | 'popup'
-  | 'particle';
+  | 'particle'
+  | 'button'
+  | 'tabs'
+  | 'accordion'
+  | 'filter_bar'
+  | 'toggle'
+  | 'tooltip'
+  | 'callout'
+  | 'progress';
 
 // ── Fill Types ──────────────────────────────────────────────
 export interface SolidFill {
@@ -529,7 +537,132 @@ export interface PopupLayer extends BaseLayer {
   modal?: boolean;
   close_on_backdrop?: boolean;
   open_animation?: 'fade' | 'slide-up' | 'slide-right';
+  /** Title shown in the modal header (report export). */
+  title?: string;
+  /** Markdown body (alternative to child layers) for quick insight popups. */
+  body?: string;
   layers?: Layer[];
+}
+
+// ── Interactive report controls ─────────────────────────────
+/** A runtime action a control fires. Sugar strings also accepted:
+ *  "open_modal:<id>", "close_modal", "toggle:<key>", "set:<key>=<val>",
+ *  "filter:<field>", "tab:<group>:<id>", "accordion:<id>", "scroll_to:<id>",
+ *  "open_url:<url>", "download_csv:<tableId>", "next_page"/"prev_page"/"goto_page:<id>". */
+export type ControlActionType =
+  | 'open_modal' | 'close_modal' | 'toggle' | 'set' | 'filter'
+  | 'tab' | 'accordion' | 'scroll_to' | 'open_url' | 'download_csv'
+  | 'next_page' | 'prev_page' | 'goto_page';
+
+export interface ControlAction {
+  type: ControlActionType;
+  target?: string;     // modal id / state key / field / element id / url
+  value?: string | number | boolean;
+}
+
+export interface ButtonLayer extends BaseLayer {
+  type: 'button';
+  label: string;
+  /** Action sugar string ("open_modal:m1") or a structured ControlAction. */
+  action?: string | ControlAction;
+  icon?: string;
+  variant?: 'solid' | 'outline' | 'ghost' | 'link';
+  size?: 'sm' | 'md' | 'lg';
+  background?: string;
+  text_color?: string;
+  border_radius?: number;
+  full_width?: boolean;
+}
+
+export interface TabItem {
+  id?: string;
+  label: string;
+  icon?: string;
+  layers?: Layer[];
+}
+
+export interface TabsLayer extends BaseLayer {
+  type: 'tabs';
+  tabs: TabItem[];
+  active?: number;            // initially-active tab index
+  variant?: 'underline' | 'pills' | 'enclosed';
+  align?: 'left' | 'center' | 'right' | 'stretch';
+}
+
+export interface AccordionItem {
+  id?: string;
+  title: string;
+  /** Markdown body OR child layers (layers win when both present). */
+  body?: string;
+  layers?: Layer[];
+  open?: boolean;
+}
+
+export interface AccordionLayer extends BaseLayer {
+  type: 'accordion';
+  items: AccordionItem[];
+  /** Only one panel open at a time. */
+  exclusive?: boolean;
+}
+
+export interface FilterOption {
+  label: string;
+  value: string | number;
+}
+
+export interface FilterBarLayer extends BaseLayer {
+  type: 'filter_bar';
+  /** State key the selection writes to (defaults to `field`). */
+  state_key?: string;
+  /** Dataset field this filters; linked tables/charts filter on it. */
+  field: string;
+  label?: string;
+  multi?: boolean;
+  /** Explicit options, or derive distinct values from a dataset. */
+  options?: (FilterOption | string | number)[];
+  options_from?: string;     // data_ref to derive distinct options from
+  style?: 'chips' | 'buttons' | 'dropdown';
+  include_all?: boolean;     // show an "All" reset chip
+}
+
+export interface ToggleLayer extends BaseLayer {
+  type: 'toggle';
+  state_key: string;
+  label?: string;
+  /** Two-option segmented switch; selecting writes value to state_key. */
+  options: (FilterOption | string)[];
+  value?: string | number | boolean;  // initial
+  style?: 'switch' | 'segmented';
+}
+
+export interface TooltipLayer extends BaseLayer {
+  type: 'tooltip';
+  /** Visible trigger content (text or icon). */
+  label?: string;
+  icon?: string;
+  /** Markdown shown on hover/focus. */
+  content: string;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+export interface CalloutLayer extends BaseLayer {
+  type: 'callout';
+  variant?: 'info' | 'success' | 'warning' | 'danger' | 'neutral';
+  title?: string;
+  /** Markdown body. */
+  content: string;
+  icon?: string;
+}
+
+export interface ProgressLayer extends BaseLayer {
+  type: 'progress';
+  label?: string;
+  value: number;             // 0..max
+  max?: number;              // default 100
+  style?: 'bar' | 'radial';
+  color?: string;
+  show_value?: boolean;
+  unit?: string;             // suffix e.g. "%"
 }
 
 export interface ParticleLayer extends BaseLayer {
@@ -567,7 +700,15 @@ export type Layer =
   | MapLayer
   | EmbedCodeLayer
   | PopupLayer
-  | ParticleLayer;
+  | ParticleLayer
+  | ButtonLayer
+  | TabsLayer
+  | AccordionLayer
+  | FilterBarLayer
+  | ToggleLayer
+  | TooltipLayer
+  | CalloutLayer
+  | ProgressLayer;
 
 // ── Theme ───────────────────────────────────────────────────
 export interface TypographyScale {

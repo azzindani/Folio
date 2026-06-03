@@ -17,6 +17,8 @@ const VALID_LAYER_TYPES = new Set([
   'qrcode', 'auto_layout',
   'interactive_chart', 'interactive_table', 'rich_text',
   'kpi_card', 'map', 'embed_code', 'popup', 'particle',
+  'button', 'tabs', 'accordion', 'filter_bar', 'toggle',
+  'tooltip', 'callout', 'progress',
 ]);
 
 const VALID_FILL_TYPES = new Set([

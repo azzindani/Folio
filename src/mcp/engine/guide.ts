@@ -224,6 +224,21 @@ Interactive HTML reports (dashboards, EDA, financial decks):
   Defaults if span omitted: kpi=3, chart=6, table/rich_text=12. accent seeds chart colors + links.
   Tables sort/filter/paginate/CSV-export client-side; charts use Chart.js (CDN). All in one HTML file.
 
+Interactive components (flow reports — all in add_layers, each takes span + the fields below):
+  button       → {type:"button", span:3, label, variant:"solid"|"outline"|"ghost"|"link", action:"open_modal:<id>"}
+                 action sugar: open_modal:<id> · close_modal · toggle:<key> · set:<key>=<val> · filter:<field>:<val>
+                 · tab:<group>:<id> · accordion:<id> · scroll_to:<id> · download_csv:<tableId> · open_url:<url> · goto_page:<id>
+  popup(modal) → {type:"popup", id:"<id>", modal:true, title, body:"markdown"  (OR layers:[…children])}  — hidden; opened by a button action open_modal:<id>
+  tabs         → {type:"tabs", span:12, variant:"underline"|"pills", tabs:[{label, layers:[…children with span]}]}  — within-page tabbed panels
+  accordion    → {type:"accordion", span:12, exclusive:true, items:[{title, body:"markdown" OR layers:[…], open:true}]}
+  filter_bar   → {type:"filter_bar", span:12, field:"sector", multi:true, label, options:[…] OR options_from:"<data_ref>", style:"chips"|"dropdown"}
+                 LINKED: selecting filters every interactive_table + interactive_chart on the page by that field, live.
+  toggle       → {type:"toggle", span:4, state_key:"view", label, options:["A","B"]}  — segmented; writes to shared state
+  callout      → {type:"callout", span:12, variant:"info"|"success"|"warning"|"danger", title, content:"markdown"}
+  progress     → {type:"progress", span:4, label, value:72, max:100, style:"bar"|"radial", unit:"%"}
+  tooltip      → {type:"tooltip", span:2, icon:"i", content:"markdown shown on hover"}
+  These render in the editor canvas too (studio-editable). Containers (tabs/accordion/popup) hold child layers that each take their own span.
+
 Token budget for local models:
   Gemma 4B  128K ctx → 5–8 layers/page, guide once per session
   Qwen 9B    64K ctx → 4–6 layers/page, load guide sections only
