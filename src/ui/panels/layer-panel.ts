@@ -6,6 +6,9 @@ const LAYER_ICONS: Record<string, string> = {
   line: '—', text: 'T', image: '🖼', icon: '✦',
   component: '⊞', mermaid: '➡', chart: '≡',
   code: '<>', math: 'π', group: '▣', qrcode: '⊞',
+  interactive_chart: '≣', interactive_table: '⊟', kpi_card: '◳', rich_text: '¶',
+  button: '⬚', tabs: '⊞', accordion: '☰', filter_bar: '⛃', toggle: '⇄',
+  tooltip: 'ⓘ', callout: '❝', progress: '▰', popup: '⬛',
 };
 
 interface TreeNode {

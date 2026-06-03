@@ -11,6 +11,8 @@ import {
   renderQRCode, renderAutoLayout,
   renderInteractiveChart, renderInteractiveTable, renderRichText,
   renderKpiCard, renderMap, renderEmbedCode, renderPopup, renderParticle,
+  renderButton, renderTabs, renderAccordion, renderFilterBar,
+  renderToggle, renderTooltip, renderCallout, renderProgress,
 } from './layer-renderers';
 
 export interface RenderOptions {
@@ -112,6 +114,14 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     case 'embed_code':          el = renderEmbedCode(layer, svg); break;
     case 'popup':               el = renderPopup(layer, svg, renderLayer); break;
     case 'particle':            el = renderParticle(layer, svg); break;
+    case 'button':              el = renderButton(layer, svg); break;
+    case 'tabs':                el = renderTabs(layer, svg); break;
+    case 'accordion':           el = renderAccordion(layer, svg); break;
+    case 'filter_bar':          el = renderFilterBar(layer, svg); break;
+    case 'toggle':              el = renderToggle(layer, svg); break;
+    case 'tooltip':             el = renderTooltip(layer, svg); break;
+    case 'callout':             el = renderCallout(layer, svg); break;
+    case 'progress':            el = renderProgress(layer, svg); break;
     default:                    el = renderPlaceholder(layer, svg); break;
   }
 
