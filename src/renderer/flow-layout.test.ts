@@ -39,4 +39,13 @@ describe('computeFlowLayout', () => {
     const empty = computeFlowLayout([], { containerWidth: 1200 });
     expect(empty.height).toBeGreaterThanOrEqual(240);
   });
+
+  it('honors an explicit flow_h height override for any layer type', () => {
+    // kpi normally estimates ~124px; flow_h must win and survive a re-layout pass.
+    const layers = [L('k', 'kpi_card', 4, { flow_h: 300 })];
+    computeFlowLayout(layers, { containerWidth: 1200 });
+    expect((layers[0] as unknown as Record<string, number>).height).toBe(300);
+    computeFlowLayout(layers, { containerWidth: 1200 }); // idempotent — no clobber
+    expect((layers[0] as unknown as Record<string, number>).height).toBe(300);
+  });
 });

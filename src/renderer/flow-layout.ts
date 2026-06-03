@@ -15,6 +15,10 @@ function defaultSpan(type: string): number {
 
 function estHeight(layer: Layer): number {
   const l = layer as unknown as Record<string, unknown>;
+  // Explicit user-set flow height wins (set by canvas height-resize). The
+  // computed `height` field is rewritten every layout pass, so it can't store
+  // intent — flow_h does.
+  if (typeof l['flow_h'] === 'number' && l['flow_h'] > 0) return l['flow_h'] as number;
   const num = (v: unknown, d: number): number => (typeof v === 'number' ? v : d);
   switch (layer.type) {
     case 'kpi_card': return 124;
@@ -43,13 +47,46 @@ export interface FlowLayoutOpts {
 
 export interface FlowLayoutResult { width: number; height: number; }
 
-export function computeFlowLayout(layers: Layer[], opts: FlowLayoutOpts = {}): FlowLayoutResult {
-  const cw = opts.containerWidth ?? 1200;
+export interface FlowGridMetrics {
+  containerWidth: number;
+  gap: number;
+  padX: number;
+  padY: number;
+  /** Width of a single grid column in px. */
+  colW: number;
+}
+
+// The single source of truth for flow geometry — computeFlowLayout, the canvas
+// grid overlay, and the width↔span mapping all derive from this so they stay
+// pixel-aligned. Defaults match computeFlowLayout's.
+export function flowGridMetrics(opts: FlowLayoutOpts = {}): FlowGridMetrics {
+  const containerWidth = opts.containerWidth ?? 1200;
   const gap = opts.gap ?? 22;
   const padX = opts.padX ?? 40;
   const padY = opts.padY ?? 48;
-  const inner = cw - 2 * padX;
+  const inner = containerWidth - 2 * padX;
   const colW = (inner - 11 * gap) / 12;
+  return { containerWidth, gap, padX, padY, colW };
+}
+
+/** Left x (px) of column index `col` (0-based) in the flow grid. */
+export function flowColumnX(col: number, m: FlowGridMetrics): number {
+  return m.padX + col * (m.colW + m.gap);
+}
+
+/** Pixel width of a span (1–12 columns) including inter-column gaps. */
+export function flowSpanWidth(span: number, m: FlowGridMetrics): number {
+  const s = Math.max(1, Math.min(12, span));
+  return s * m.colW + (s - 1) * m.gap;
+}
+
+export function computeFlowLayout(layers: Layer[], opts: FlowLayoutOpts = {}): FlowLayoutResult {
+  const m = flowGridMetrics(opts);
+  const cw = m.containerWidth;
+  const gap = m.gap;
+  const padX = m.padX;
+  const padY = m.padY;
+  const colW = m.colW;
 
   let colsUsed = 0;
   let rowTop = padY;

@@ -261,6 +261,42 @@ export class StateManager {
     }
   }
 
+  /**
+   * Move a top-level layer to a new index within the current page (flow-report
+   * reordering). `targetIndex` is the desired position among the OTHER layers
+   * (i.e. after the dragged layer is removed); clamped to the valid range.
+   * No-op if the layer isn't top-level or the position is unchanged.
+   */
+  reorderLayer(layerId: string, targetIndex: number): void {
+    if (!this.state.design) return;
+
+    const reorder = (layers: Layer[]): Layer[] | null => {
+      const from = layers.findIndex(l => l.id === layerId);
+      if (from === -1) return null;
+      const next = layers.slice();
+      const [moved] = next.splice(from, 1);
+      const to = Math.max(0, Math.min(next.length, targetIndex));
+      if (to === from) return null; // unchanged
+      next.splice(to, 0, moved);
+      return next;
+    };
+
+    if (this.state.design.pages && this.state.design.pages.length > 0) {
+      const page = this.state.design.pages[this.state.currentPageIndex];
+      const reordered = page?.layers ? reorder(page.layers) : null;
+      if (!reordered) return;
+      this.pushUndo();
+      const pages = this.state.design.pages.map((p, i) =>
+        i === this.state.currentPageIndex ? { ...p, layers: reordered } : p);
+      this.set('design', { ...this.state.design, pages }, false);
+    } else if (this.state.design.layers) {
+      const reordered = reorder(this.state.design.layers);
+      if (!reordered) return;
+      this.pushUndo();
+      this.set('design', { ...this.state.design, layers: reordered }, false);
+    }
+  }
+
   removeLayer(layerId: string): void {
     if (!this.state.design) return;
     this.pushUndo();

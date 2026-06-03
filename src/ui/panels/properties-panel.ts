@@ -4,6 +4,8 @@ import { colorPicker } from '../color-picker/color-picker';
 import { recolorSVG, extractSVGColors } from '../../utils/svg-importer';
 import { removeBackground } from '../../utils/bg-remover';
 import { attachWheelAdjustAll } from '../inputs/wheel-adjust';
+import { flowGridMetrics } from '../../renderer/flow-layout';
+import { widthToSpan } from '../../editor/flow-edit';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -344,12 +346,55 @@ export class PropertiesPanelManager {
     });
   }
 
+  // True when the active design is a flow/scroll report — layers are positioned
+  // by document order + 12-col span, not free x/y/width/height.
+  private isFlowReport(): boolean {
+    const r = this.state.get().design?.report;
+    return !!r && (r.layout === 'flow' || r.flow === true);
+  }
+
   private renderPositionFields(layer: Layer): string {
+    if (this.isFlowReport()) return this.renderFlowPositionFields(layer);
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
         ${this.renderNumberInput('x', 'X', layer.x ?? 0)}
         ${this.renderNumberInput('y', 'Y', layer.y ?? 0)}
         ${this.renderNumberInput('width', 'W', typeof layer.width === 'number' ? layer.width : 0)}
         ${this.renderNumberInput('height', 'H', typeof layer.height === 'number' ? layer.height : 0)}
+      </div>`;
+  }
+
+  // Flow layers: editable Span (1–12) + explicit row Height (flow_h). Width and
+  // y are derived by the layout each render, so showing/editing them is moot.
+  private renderFlowPositionFields(layer: Layer): string {
+    const { design } = this.state.get();
+    const docW = design?.document?.width;
+    const maxW = design?.report?.max_width;
+    const cw = (typeof maxW === 'number' && maxW > 0 ? maxW : 0) || (typeof docW === 'number' ? docW : 0) || 1200;
+    const m = flowGridMetrics({ containerWidth: cw });
+    const lr = layer as unknown as Record<string, unknown>;
+    const span = typeof lr['span'] === 'number'
+      ? (lr['span'] as number)
+      : widthToSpan(typeof layer.width === 'number' ? layer.width : 0, m);
+    const flowH = typeof lr['flow_h'] === 'number'
+      ? (lr['flow_h'] as number)
+      : (typeof layer.height === 'number' ? Math.round(layer.height) : 0);
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted)">Span (1–12)</div>
+          <input type="number" class="prop-input" data-prop="span" value="${span}" min="1" max="12" step="1"
+            style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                   border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--color-text-muted)">Height</div>
+          <input type="number" class="prop-input" data-prop="flow_h" value="${flowH}" min="40" step="1"
+            style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                   border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--color-text-dim);padding:4px 0 0">
+        Flow layout · drag the body to reorder, side handles to set span, bottom handle for height.
       </div>`;
   }
 
