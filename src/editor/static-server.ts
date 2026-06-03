@@ -180,6 +180,22 @@ Bun.serve({
         return new Response('Unauthorized', { status: 401 });
       }
 
+      // /issue-style strip: when a valid token rides in on ?token= and there's no
+      // cookie yet, set the session cookie and 302 to the same path minus `token`,
+      // so the secret leaves the address bar / history. No loop: the redirect
+      // target has no token param (cookie carries auth on the follow-up request).
+      if (qtoken && !cookie) {
+        url.searchParams.delete('token');
+        const dest = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: dest,
+            'Set-Cookie': `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`,
+          },
+        });
+      }
+
       const rel = url.pathname.slice('/__project_files/'.length);
       const target = safeJoinProject(rel);
       if (!target || !fs.existsSync(target) || fs.statSync(target).isDirectory()) {
@@ -187,12 +203,6 @@ Bun.serve({
       }
       const body = fs.readFileSync(target);
       const headers: Record<string, string> = { 'Content-Type': mime(target), 'Cache-Control': 'no-store' };
-      // If the caller came via ?token= and has no cookie yet, set one so
-      // navigation away from this URL keeps the session alive without
-      // re-attaching ?token= on every fetch.
-      if (qtoken && !cookie) {
-        headers['Set-Cookie'] = `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`;
-      }
       return new Response(body, { status: 200, headers });
     }
 
