@@ -1191,6 +1191,23 @@ describe('addLayers', () => {
     expect(ch.y).toBeUndefined();
   });
 
+  it('normalizes chart `kind` alias + table column `label`→title', () => {
+    addLayers({
+      design_path: designPath,
+      layers: [
+        { id: 'ck', type: 'interactive_chart', z: 0, width: 600, height: 360, kind: 'line', data_ref: 'd', x_field: 'a', y_field: 'b' } as unknown as import('../schema/types').Layer,
+        { id: 'tb', type: 'interactive_table', z: 0, width: 600, height: 300, data_ref: 'd', columns: [{ field: 'a', label: 'Alpha' }, { field: 'b', header: 'Beta' }] } as unknown as import('../schema/types').Layer,
+      ],
+    });
+    const layers = parseYAMLDesign(designPath).layers ?? [];
+    const ck = layers.find(l => l.id === 'ck') as unknown as Record<string, unknown>;
+    expect(ck.chart_type).toBe('line');
+    expect(ck.kind).toBeUndefined();
+    const tb = layers.find(l => l.id === 'tb') as unknown as { columns: Record<string, unknown>[] };
+    expect(tb.columns[0].title).toBe('Alpha');
+    expect(tb.columns[1].title).toBe('Beta');
+  });
+
   it('leaves a numeric chart x/y (pixel position) alone', () => {
     addLayers({
       design_path: designPath,

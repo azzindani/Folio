@@ -94,6 +94,21 @@ describe('interactive components — export', () => {
     expect(h).toContain('ic-tip-pop');
   });
 
+  it('chart `kind` alias is accepted as chart_type (not a blank canvas)', () => {
+    const h = html([{ id: 'ck', type: 'interactive_chart', z: 0, kind: 'bar', data_ref: 'ds', x_field: 'k', y_field: 'v' } as unknown as Layer]);
+    // The Chart.js config must carry a concrete type, not undefined/null.
+    expect(h).toContain('"type":"bar"');
+    expect(h).not.toMatch(/"type":(null|undefined)/);
+  });
+
+  it('table column `label` alias renders a header title (not "undefined")', () => {
+    const h = html([{ id: 't', type: 'interactive_table', z: 0, data_ref: 'ds',
+      columns: [{ field: 'k', label: 'Ticker' }, { field: 'v', label: 'Value' }] } as unknown as Layer]);
+    // The serialized columns the runtime reads must carry title from the label.
+    expect(h).toContain('"title":"Ticker"');
+    expect(h).toContain('"title":"Value"');
+  });
+
   it('charts register reactive metadata + the runtime exposes Folio.filters', () => {
     const h = html([{ id: 'ch', type: 'interactive_chart', z: 0, chart_type: 'bar', data_ref: 'ds', x_field: 'k', y_field: 'v' } as unknown as Layer]);
     expect(h).toContain('window.__folioCharts');
