@@ -6,7 +6,7 @@ import type {
   InteractiveChartLayer, InteractiveTableLayer, RichTextLayer,
   KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer, ParticleLayer,
   ButtonLayer, TabsLayer, AccordionLayer, FilterBarLayer, ToggleLayer,
-  TooltipLayer, CalloutLayer, ProgressLayer,
+  TooltipLayer, CalloutLayer, ProgressLayer, TextContent,
 } from '../schema/types';
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 import { getPreviewRows, getPreviewAccent } from './render-context';
@@ -234,11 +234,33 @@ export function renderLine(layer: LineLayer, svg: SVGSVGElement): SVGElement {
 }
 
 // ── Text ────────────────────────────────────────────────────
+/** Coerce the many text-layer shapes LLMs author into the canonical
+ *  { content:{type,value|spans}, style } the renderer expects. Tolerates a bare
+ *  `text:"…"` alias, a string `content`, a missing content, and flat style
+ *  shorthand (font/size/weight/color/lh/track) — so a heading never throws
+ *  `layer.content.type of undefined` and vanishes into an error placeholder. */
+function normalizeTextLayer(layer: TextLayer): { content: TextContent; style: NonNullable<TextLayer['style']> } {
+  const o = layer as unknown as Record<string, unknown>;
+  let content = o['content'] as TextContent | string | undefined | { value?: unknown };
+  if (typeof content === 'string') content = { type: 'plain', value: content };
+  else if (content == null) content = { type: 'plain', value: typeof o['text'] === 'string' ? o['text'] as string : '' };
+  else if (typeof content === 'object' && !(content as { type?: unknown }).type) content = { type: 'plain', value: String((content as { value?: unknown }).value ?? '') };
+
+  const s = { ...(layer.style ?? {}) } as Record<string, unknown>;
+  if (s['font_family'] == null && o['font'] != null) s['font_family'] = o['font'];
+  if (s['font_size'] == null && o['size'] != null) s['font_size'] = o['size'];
+  if (s['font_weight'] == null && o['weight'] != null) s['font_weight'] = o['weight'];
+  if (s['color'] == null && o['color'] != null) s['color'] = o['color'];
+  if (s['line_height'] == null && o['lh'] != null) s['line_height'] = o['lh'];
+  if (s['letter_spacing'] == null && o['track'] != null) s['letter_spacing'] = o['track'];
+  return { content: content as TextContent, style: s as NonNullable<TextLayer['style']> };
+}
+
 export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
   const g = createSVGElement('g');
-  const style = layer.style ?? {};
+  const { content, style } = normalizeTextLayer(layer);
 
-  if (layer.content.type === 'markdown') {
+  if (content.type === 'markdown') {
     // Use foreignObject for HTML rendering via marked.js
     const fo = createSVGElement('foreignObject', {
       x: layer.x ?? 0,
@@ -274,7 +296,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     const mdContent = document.createElement('div');
     div.appendChild(mdContent);
 
-    const mdValue = (layer.content as { value: string }).value;
+    const mdValue = (content as { value: string }).value;
     import('marked').then(({ marked }) => {
       mdContent.innerHTML = marked.parse(mdValue, { gfm: true }) as string;
       // Syntax-highlight code blocks via Prism (lazy, best-effort)
@@ -289,7 +311,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     });
     fo.appendChild(div);
     g.appendChild(fo);
-  } else if (layer.content.type === 'rich') {
+  } else if (content.type === 'rich') {
     const textEl = createSVGElement('text', {
       x: layer.x ?? 0,
       y: (layer.y ?? 0) + (style.font_size ?? 16),
@@ -297,7 +319,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
     textEl.setAttribute('font-size', String(style.font_size ?? 16));
 
-    for (const span of layer.content.spans) {
+    for (const span of content.spans) {
       const tspan = createSVGElement('tspan');
       tspan.textContent = span.text;
       if (span.bold) tspan.setAttribute('font-weight', 'bold');
@@ -312,7 +334,7 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     // Plain text
     const fontSize = style.font_size ?? 16;
     const lineH = fontSize * (style.line_height ?? 1.4);
-    const value = layer.content.value;
+    const value = content.value;
     const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
 
     // Compute x anchor — `text_align` is the dominant authored form in
