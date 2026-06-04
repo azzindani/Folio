@@ -114,12 +114,32 @@ export function validateReport(spec: DesignSpec): ReportDiagnostic[] {
         if (target && target.kind === 'scroll_to' && !layerIds.has(target.id)) d.push({ severity: 'warning', code: 'action-scroll', message: `button "${l.id}" scrolls to "${target.id}" which has no layer`, layer_id: l.id });
         break;
       }
+      case 'callout': {
+        // `content` is canonical; `text` is a tolerated alias. Empty = a blank box.
+        const body = o['content'] ?? o['text'];
+        if (body == null || String(body).trim() === '') d.push({ severity: 'warning', code: 'callout-empty', message: `callout "${l.id}" has no content`, layer_id: l.id, fix: 'Set `content` to the callout body text.' });
+        break;
+      }
       case 'tabs': if (!Array.isArray(o['tabs']) || !o['tabs'].length) d.push({ severity: 'warning', code: 'tabs-empty', message: `tabs "${l.id}" has no tabs`, layer_id: l.id }); break;
       case 'accordion': if (!Array.isArray(o['items']) || !o['items'].length) d.push({ severity: 'warning', code: 'accordion-empty', message: `accordion "${l.id}" has no items`, layer_id: l.id }); break;
       case 'toggle': if (!Array.isArray(o['options']) || !o['options'].length) d.push({ severity: 'warning', code: 'toggle-empty', message: `toggle "${l.id}" has no options`, layer_id: l.id }); break;
       default: break;
     }
   }
+
+  // Duplicate layer ids corrupt selection, the render cache, and data-layer-id
+  // hooks. The classic cause: separate add_layers batches each restart numbering
+  // (rect_1, text_2, …) so the second batch collides with the first.
+  const counts = new Map<string, number>();
+  for (const l of layers) counts.set(l.id, (counts.get(l.id) ?? 0) + 1);
+  for (const [id, n] of counts) if (n > 1) d.push({ severity: 'error', code: 'dup-layer-id', message: `layer id "${id}" used ${n}× — ids must be unique`, layer_id: id, fix: 'Rename the collisions (add_layers now auto-dedupes new ids).' });
+
+  // Content split across pages[] AND a top-level layers[] array: the editor
+  // renders the page, the SVG renderer prefers top-level → half the report is
+  // invisible in one view or the other. A report keeps all content in its page.
+  const topCount = spec.layers?.length ?? 0;
+  if ((spec.pages?.length ?? 0) > 0 && topCount > 0) d.push({ severity: 'error', code: 'layers-split', message: `design has pages[] AND ${topCount} top-level layer(s) — they will not all render`, fix: 'Move top-level layers into a page (add_layers with page_id).' });
+
   return d;
 }
 

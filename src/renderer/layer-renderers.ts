@@ -1314,8 +1314,11 @@ function formatKpiValue(value: number, format?: string, currency?: string, decim
   return value.toFixed(dec);
 }
 
-function escHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function escHtml(s: unknown): string {
+  // Coerce defensively: component layers are author/LLM-authored and a missing
+  // text field (undefined) must not throw `.replace of undefined` and crash the
+  // whole render. Treat null/undefined as empty.
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── Map (Leaflet) ────────────────────────────────────────────
@@ -1562,8 +1565,10 @@ export function renderCallout(layer: CalloutLayer, _svg: SVGSVGElement): SVGElem
   const accent = { info: '#60a5fa', success: '#22c55e', warning: '#f5a623', danger: '#ef4444', neutral: '#9aa7b4' }[v];
   const icon = layer.icon ?? { info: 'ℹ', success: '✓', warning: '⚠', danger: '✕', neutral: '•' }[v];
   const title = layer.title ? `<div style="font-weight:700;margin-bottom:3px;">${escHtml(layer.title)}</div>` : '';
+  // `content` is canonical; accept `text` as an alias (the field LLMs reach for).
+  const body = layer.content ?? (layer as { text?: string }).text ?? '';
   return foPreview(layer, w, h,
-    `<div style="display:flex;gap:12px;height:100%;padding:14px 16px;border:1px solid rgba(255,255,255,.1);border-left:4px solid ${accent};border-radius:10px;background:#161821;box-sizing:border-box;"><div style="color:${accent};font-size:18px;">${escHtml(icon)}</div><div style="font-size:14px;line-height:1.5;overflow:hidden;">${title}${escHtml(layer.content)}</div></div>`);
+    `<div style="display:flex;gap:12px;height:100%;padding:14px 16px;border:1px solid rgba(255,255,255,.1);border-left:4px solid ${accent};border-radius:10px;background:#161821;box-sizing:border-box;"><div style="color:${accent};font-size:18px;">${escHtml(icon)}</div><div style="font-size:14px;line-height:1.5;overflow:hidden;">${title}${escHtml(body)}</div></div>`);
 }
 
 export function renderProgress(layer: ProgressLayer, _svg: SVGSVGElement): SVGElement {

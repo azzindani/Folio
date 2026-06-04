@@ -491,6 +491,53 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
   return okResult(op, { type: 'poster', layers, layer_count: total, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: total > limit, constrained_metadata_only: constrained && total > limit, progress, context, handover });
 }
 
+/** Every layer id already present in the design (pages + top-level + nested). */
+function collectLayerIds(spec: DesignSpec): Set<string> {
+  const ids = new Set<string>();
+  const visit = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      if (l?.id) ids.add(l.id);
+      const o = l as unknown as Record<string, unknown>;
+      if (Array.isArray(o['layers'])) visit(o['layers'] as Layer[]);
+      if (Array.isArray(o['tabs'])) for (const t of o['tabs'] as Record<string, unknown>[]) visit(t['layers'] as Layer[] | undefined);
+      if (Array.isArray(o['items'])) for (const it of o['items'] as Record<string, unknown>[]) visit(it['layers'] as Layer[] | undefined);
+    }
+  };
+  for (const p of spec.pages ?? []) visit(p.layers);
+  visit(spec.layers);
+  return ids;
+}
+
+/** Rename incoming ids that collide with `used` (and each other) so the design
+ *  never grows duplicate ids — the corruption behind charts/selection breaking
+ *  when separate add_layers batches each restart numbering (rect_1, text_2…). */
+function dedupeIncomingIds(incoming: Layer[], used: Set<string>): string[] {
+  const renamed: string[] = [];
+  for (const l of incoming) {
+    if (!l?.id) continue;
+    if (used.has(l.id)) {
+      let n = 2, nid = `${l.id}-${n}`;
+      while (used.has(nid)) nid = `${l.id}-${++n}`;
+      renamed.push(`${l.id} → ${nid}`);
+      l.id = nid;
+    }
+    used.add(l.id);
+  }
+  return renamed;
+}
+
+/** Fold tolerated field aliases to canonical names so the stored YAML is valid
+ *  and renders everywhere (callout body: `text` → `content`). */
+function normalizeReportAliases(incoming: Layer[]): void {
+  for (const l of incoming) {
+    const o = l as unknown as Record<string, unknown>;
+    if (l.type === 'callout' && o['content'] == null && o['text'] != null) {
+      o['content'] = o['text'];
+      delete o['text'];
+    }
+  }
+}
+
 export function addLayers(args: {
   design_path: string; page_id?: string; project_path?: string;
   layers?: Layer[]; layers_shorthand?: ShorthandLayer[]; task_path?: string;
@@ -539,9 +586,21 @@ export function addLayers(args: {
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const spec = readYAML<DesignSpec>(dPath);
 
-  if (args.page_id && spec.pages) {
-    const page = spec.pages.find(p => p.id === args.page_id);
-    if (!page) return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`, progress);
+  // Canonicalize aliases, then guarantee globally-unique ids before insert.
+  normalizeReportAliases(incoming);
+  const renamed = dedupeIncomingIds(incoming, collectLayerIds(spec));
+  if (renamed.length) progress.push(pInfo(`Renamed ${renamed.length} colliding id(s)`, renamed.slice(0, 8).join(', ')));
+
+  // Routing: a paged design (report/carousel) keeps content in pages[]. Never
+  // silently spill into a divergent top-level layers[] — that splits the canvas
+  // from the editor and hides half the report. Default to the sole page.
+  const pages = spec.pages;
+  if (pages && pages.length) {
+    const pageId = args.page_id ?? (pages.length === 1 ? pages[0].id : undefined);
+    if (!pageId) return errResult(op, `Design has ${pages.length} pages — pass page_id to say which one`, `Pages: ${pages.map(p => p.id).join(', ')}`, progress);
+    const page = pages.find(p => p.id === pageId);
+    if (!page) return errResult(op, `Page not found: ${pageId}`, `Pages: ${pages.map(p => p.id).join(', ')}`, progress);
+    if (!args.page_id && pages.length === 1) progress.push(pInfo('Routed to the only page', pageId));
     if (!page.layers) page.layers = [];
     page.layers.push(...incoming);
   } else {
