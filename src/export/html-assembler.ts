@@ -128,7 +128,7 @@ function renderPageSection(
     const cells = boundLayers.map(l =>
       isInteractiveLayer(l)
         ? renderInteractiveLayer(l, ctx)
-        : `<div class="folio-flow-svg" style="grid-column:span 12">${safeRenderSvg(spec, [l], page.id)}</div>`,
+        : `<div class="folio-flow-svg" style="grid-column:span 12">${renderFlowStaticCell(spec, l, page.id)}</div>`,
     ).join('\n');
     return `<section class="folio-page${active}" data-page-id="${escHtml(page.id)}" data-page-index="${index}">
       <div class="folio-flow-grid">${cells}</div>
@@ -175,6 +175,28 @@ function safeRenderSvg(spec: DesignSpec, layers: Layer[], pageId: string): strin
     return renderToSVGString(boundSpec);
   } catch {
     return `<p style="color:red">Page render error: ${escHtml(pageId)}</p>`;
+  }
+}
+
+/** Render a single non-interactive layer (text/rect/divider…) for a FLOW cell.
+ *  Sizes the SVG to the LAYER, not the full design canvas — otherwise every
+ *  header became a full-document-height (e.g. 1080px) SVG, stacking into huge
+ *  empty gaps between sections. The flow grid + CSS (max-width:100%;height:auto)
+ *  then scales it responsively. */
+function renderFlowStaticCell(spec: DesignSpec, layer: Layer, pageId: string): string {
+  const w = typeof layer.width === 'number' ? layer.width : (spec.document?.width ?? 1200);
+  const h = typeof layer.height === 'number' ? layer.height : 80;
+  const cell = { ...layer, x: 0, y: 0 } as Layer;
+  const boundSpec: DesignSpec = {
+    ...spec,
+    pages: undefined,
+    layers: [cell],
+    document: { ...spec.document, width: w, height: h },
+  };
+  try {
+    return renderToSVGString(boundSpec);
+  } catch {
+    return `<p style="color:red">Render error: ${escHtml(pageId)}</p>`;
   }
 }
 

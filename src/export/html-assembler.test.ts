@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { assembleReportHTML } from './html-assembler';
-import type { DesignSpec } from '../schema/types';
+import type { DesignSpec, Layer } from '../schema/types';
 import type { LoadedDataset } from '../report/data-loader';
 
 function makeReportSpec(pageCount = 2): DesignSpec {
@@ -48,6 +48,22 @@ describe('assembleReportHTML', () => {
   it('includes sidebar nav for sidebar layout', () => {
     const html = assembleReportHTML(makeReportSpec(), emptyDatasets);
     expect(html).toContain('folio-sidebar');
+  });
+
+  it('sizes a non-interactive flow layer SVG to the layer, not the full document', () => {
+    const spec = makeReportSpec(1);
+    spec.report!.layout = 'flow';
+    spec.pages![0].layers = [
+      { id: 'h', type: 'text', z: 0, x: 0, y: 0, width: 800, height: 84,
+        content: { type: 'plain', value: 'Heading' } } as unknown as Layer,
+    ];
+    const html = assembleReportHTML(spec, emptyDatasets);
+    expect(html).toContain('folio-flow-grid');
+    expect(html).toContain('folio-flow-svg');
+    // Old bug: every header rendered as a full-document-height (1080px) SVG,
+    // stacking into huge empty gaps. The cell SVG must be the layer height.
+    expect(html).toMatch(/<svg[^>]*height="84"/);
+    expect(html).not.toMatch(/folio-flow-svg"[^>]*>\s*<svg[^>]*height="1080"/);
   });
 
   it('applies layout-scroll class for scroll layout', () => {

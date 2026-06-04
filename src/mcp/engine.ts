@@ -18,7 +18,7 @@ import {
   buildContext, buildHandover,
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
-import { buildEditorLink } from './engine/editor-link';
+import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
 import { expandShorthandLayers, coerceShorthandLayers, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
@@ -527,13 +527,21 @@ function dedupeIncomingIds(incoming: Layer[], used: Set<string>): string[] {
 }
 
 /** Fold tolerated field aliases to canonical names so the stored YAML is valid
- *  and renders everywhere (callout body: `text` → `content`). */
+ *  and renders everywhere. LLMs reach for the natural short name; the renderers
+ *  read the schema name. Normalize on write so charts/callouts aren't silently
+ *  blank. callout body: `text`→`content`; chart: `chart`→`chart_type`, and a
+ *  STRING `x`/`y` (a field name, not a pixel position) → `x_field`/`y_field`. */
 function normalizeReportAliases(incoming: Layer[]): void {
   for (const l of incoming) {
     const o = l as unknown as Record<string, unknown>;
     if (l.type === 'callout' && o['content'] == null && o['text'] != null) {
       o['content'] = o['text'];
       delete o['text'];
+    }
+    if (l.type === 'interactive_chart') {
+      if (o['chart_type'] == null && typeof o['chart'] === 'string') { o['chart_type'] = o['chart']; delete o['chart']; }
+      if (o['x_field'] == null && typeof o['x'] === 'string') { o['x_field'] = o['x']; delete o['x']; }
+      if (o['y_field'] == null && typeof o['y'] === 'string') { o['y_field'] = o['y']; delete o['y']; }
     }
   }
 }
@@ -1493,15 +1501,34 @@ export function exportReport(args: {
     fs.writeFileSync(outPath, html, 'utf-8');
     progress.push(pOk('Report HTML written', path.basename(outPath)));
 
+    // The deliverable for an interactive report is the RENDERED HTML — serve it
+    // directly so the user sees the final result in a browser (the editor canvas
+    // is an authoring view, not a faithful preview of the exported output).
+    const view = buildReportViewLink(outPath);
+    progress.push(pOk('View rendered report', view.view_url));
+    // Editor link stays available as a secondary "edit the source" affordance.
+    const edit = buildEditorLink(dPath);
+
     const errors = diagnostics.filter(x => x.severity === 'error').length;
     const summary = diagnostics.length
       ? `Report exported with ${errors} error(s) + ${diagnostics.length - errors} warning(s) — see diagnostics`
-      : `Report exported as HTML: ${path.basename(outPath)}`;
+      : `Report exported — open ${view.view_url}`;
     const context = buildContext(op, summary, [
       { type: 'html', path: outPath, role: 'report-output' },
     ]);
-    const handover = buildHandover('EXPORT', { output_path: outPath });
-    return okResult(op, { output_path: outPath, output_file: path.basename(outPath), bytes: html.length, diagnostics, progress, context, handover });
+    const handover = buildHandover('EXPORT', { output_path: outPath, view_url: view.view_url });
+    return okResult(op, {
+      view_url: view.view_url,
+      output_path: outPath,
+      output_file: path.basename(outPath),
+      bytes: html.length,
+      edit_url: edit.open_url,
+      diagnostics,
+      progress,
+      context,
+      handover,
+      _attachments: [view.attachment, edit.attachment],
+    });
   } catch (err) {
     return errResult(op, `HTML assembly failed: ${(err as Error).message}`, 'Ensure design has pages.', progress);
   }

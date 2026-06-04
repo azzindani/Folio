@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { buildEditorLink } from './editor-link';
+import { buildEditorLink, buildReportViewLink } from './editor-link';
 import { buildHandover } from './utils';
 import { createDesign, sealDesign } from '../engine';
 
@@ -25,6 +25,33 @@ describe('buildEditorLink', () => {
 
   it('encodes a page index when given', () => {
     expect(buildEditorLink('/tmp/x.design.yaml', { page: 2 }).open_url).toContain('page=2');
+  });
+});
+
+describe('buildReportViewLink', () => {
+  const PD = process.env['FOLIO_PROJECTS_DIR'];
+  beforeEach(() => { process.env['FOLIO_PROJECTS_DIR'] = '/home/folio/projects'; });
+  afterEach(() => { if (PD === undefined) delete process.env['FOLIO_PROJECTS_DIR']; else process.env['FOLIO_PROJECTS_DIR'] = PD; });
+
+  it('serves the report HTML via /__project_files with a fresh token', () => {
+    const v = buildReportViewLink('/home/folio/projects/p/designs/r.report.html', { baseUrl: 'https://folio.casava.space' });
+    expect(v.view_url).toBe('https://folio.casava.space/__project_files/p/designs/r.report.html?token=' + (v.view_url.match(/token=([^&]+)/) ?? [])[1]);
+    expect(v.view_url).toContain('/__project_files/p/designs/r.report.html');
+    expect(v.view_url).toMatch(/[?&]token=.+/);
+    expect(v.attachment).toMatchObject({ type: 'resource' });
+  });
+
+  it('mints a unique token per call', () => {
+    const tok = (u: string) => (u.match(/token=([^&]+)/) ?? [])[1];
+    const a = buildReportViewLink('/home/folio/projects/p/x.report.html').view_url;
+    const b = buildReportViewLink('/home/folio/projects/p/x.report.html').view_url;
+    expect(tok(a)).toBeTruthy();
+    expect(tok(a)).not.toBe(tok(b));
+  });
+
+  it('percent-encodes path segments with spaces', () => {
+    const v = buildReportViewLink('/home/folio/projects/my proj/a b.report.html', { baseUrl: 'https://h' });
+    expect(v.view_url).toContain('/__project_files/my%20proj/a%20b.report.html');
   });
 });
 

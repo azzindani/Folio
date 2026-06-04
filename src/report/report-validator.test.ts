@@ -71,6 +71,12 @@ describe('validateReport', () => {
     expect(codes(d)).toContain('data-ref-unknown');
   });
 
+  it('flags a chart with no x/y field (renders empty), accepts the x/y string aliases', () => {
+    expect(codes(validateReport(report([L({ id: 'c', type: 'interactive_chart', chart_type: 'bar', data_ref: 'stocks' })], [stocks])))).toContain('chart-fields-missing');
+    // `x`/`y` strings are tolerated aliases for x_field/y_field → not flagged.
+    expect(codes(validateReport(report([L({ id: 'c', type: 'interactive_chart', chart: 'bar', data_ref: 'stocks', x: 'ticker', y: 'yield' })], [stocks])))).not.toContain('chart-fields-missing');
+  });
+
   it('flags a callout with no content, accepts the text alias', () => {
     expect(codes(validateReport(report([L({ id: 'c', type: 'callout', variant: 'info' })], [stocks])))).toContain('callout-empty');
     expect(codes(validateReport(report([L({ id: 'c', type: 'callout', variant: 'info', text: 'hi' })], [stocks])))).not.toContain('callout-empty');

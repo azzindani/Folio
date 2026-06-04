@@ -225,6 +225,10 @@ Interactive HTML reports (dashboards, EDA, financial decks):
      modals, transforms group by present fields). Run it after add_layers; fix errors before export.
   5. export_report(design_path, theme:"dark"|"light") → self-contained .report.html
      (also returns diagnostics; resolves transform datasets at export).
+     ★ DELIVERABLE: export_report returns view_url — a tokenized link that renders the
+       FINAL interactive HTML directly in the browser. Give the user THAT, not the editor
+       link. The editor canvas is an authoring view, not a faithful preview of the export;
+       export_report.view_url is the real result. (edit_url is also returned for editing.)
   Defaults if span omitted: kpi=3, chart=6, table/rich_text=12. accent seeds chart colors + links.
   Tables sort/filter/paginate/CSV-export client-side; charts use Chart.js (CDN). All in one HTML file.
   DATA SOURCES (bind_data datasets[] or report.data.sources): type:"inline" {rows:[…]} ·
