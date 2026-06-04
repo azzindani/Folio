@@ -1177,6 +1177,31 @@ describe('addLayers', () => {
     expect(co.text).toBeUndefined();
   });
 
+  it('normalizes chart `chart`/`x`/`y` aliases to chart_type/x_field/y_field', () => {
+    addLayers({
+      design_path: designPath,
+      layers: [{ id: 'ch', type: 'interactive_chart', z: 0, width: 600, height: 360, chart: 'bar', data_ref: 'd', x: 'ticker', y: 'ytd' } as unknown as import('../schema/types').Layer],
+    });
+    const ch = parseYAMLDesign(designPath).layers?.find(l => l.id === 'ch') as unknown as Record<string, unknown>;
+    expect(ch.chart_type).toBe('bar');
+    expect(ch.x_field).toBe('ticker');
+    expect(ch.y_field).toBe('ytd');
+    expect(ch.chart).toBeUndefined();
+    expect(ch.x).toBeUndefined();
+    expect(ch.y).toBeUndefined();
+  });
+
+  it('leaves a numeric chart x/y (pixel position) alone', () => {
+    addLayers({
+      design_path: designPath,
+      layers: [{ id: 'ch2', type: 'interactive_chart', z: 0, x: 40, y: 80, width: 600, height: 360, chart_type: 'line', data_ref: 'd', x_field: 'a', y_field: 'b' } as unknown as import('../schema/types').Layer],
+    });
+    const ch = parseYAMLDesign(designPath).layers?.find(l => l.id === 'ch2') as unknown as Record<string, unknown>;
+    expect(ch.x).toBe(40);
+    expect(ch.y).toBe(80);
+    expect(ch.x_field).toBe('a');
+  });
+
   it('routes to the sole page when page_id is omitted on a paged design', () => {
     const proj = path.join(tmpDir, 'alsole');
     createProject({ name: 'Sole', path: proj });

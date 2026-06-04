@@ -115,6 +115,11 @@ describe('exportReport', () => {
     expect(fs.existsSync(outPath)).toBe(true);
     const html = fs.readFileSync(outPath, 'utf-8');
     expect(html).toContain('<!DOCTYPE html>');
+    // The deliverable is a browsable view_url that renders the exported HTML.
+    expect(typeof r['view_url']).toBe('string');
+    expect(r['view_url'] as string).toContain('/__project_files/');
+    expect(r['view_url'] as string).toMatch(/[?&]token=.+/);
+    expect(Array.isArray(r['_attachments'])).toBe(true);
   });
 
   it('fails when design_path does not exist', () => {

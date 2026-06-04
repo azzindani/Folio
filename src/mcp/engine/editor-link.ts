@@ -53,3 +53,41 @@ export function buildEditorLink(
     },
   };
 }
+
+export interface ReportViewLink {
+  /** Clickable URL that renders the exported interactive HTML directly in a
+   *  browser — the FINAL result, not the editor canvas. */
+  view_url: string;
+  /** MCP resource block so capable clients render a clickable preview. */
+  attachment: AttachmentBlock;
+}
+
+/**
+ * Build a self-contained URL that serves a file under FOLIO_PROJECTS_DIR
+ * (typically an exported *.report.html) directly as rendered HTML. The
+ * static-server mounts the projects dir at /__project_files/*, serves .html as
+ * text/html, and authenticates the ?token (302-strips it + sets a 30-day
+ * session cookie on first load). So this link opens the real interactive report
+ * in any browser — no editor, no export button.
+ * @param fileAbsPath absolute path to the file (e.g. the .report.html)
+ */
+export function buildReportViewLink(
+  fileAbsPath: string,
+  opts?: { baseUrl?: string },
+): ReportViewLink {
+  const base = (opts?.baseUrl ?? process.env['FOLIO_EDITOR_URL'] ?? 'http://localhost:4173')
+    .replace(/\/+$/, '');
+  const projectsDir = (process.env['FOLIO_PROJECTS_DIR'] ?? '/home/folio/projects').replace(/\/+$/, '');
+  const rel = fileAbsPath.startsWith(`${projectsDir}/`)
+    ? fileAbsPath.slice(projectsDir.length + 1)
+    : fileAbsPath.replace(/^\/+/, '');
+  const encoded = rel.split('/').map(encodeURIComponent).join('/');
+  const view_url = `${base}/__project_files/${encoded}?token=${mintEditorToken('default')}`;
+  return {
+    view_url,
+    attachment: {
+      type: 'resource',
+      resource: { uri: view_url, mimeType: 'text/html', text: `View rendered report → ${view_url}` },
+    },
+  };
+}

@@ -88,10 +88,15 @@ export function validateReport(spec: DesignSpec): ReportDiagnostic[] {
         if (!ref) { d.push({ severity: 'error', code: 'data-ref-missing', message: `${l.type} "${l.id}" has no data_ref`, layer_id: l.id, fix: 'Set data_ref to a dataset id.' }); break; }
         if (!ids.has(ref)) { d.push({ severity: 'error', code: 'data-ref-unknown', message: `${l.type} "${l.id}" → data_ref "${ref}" is not a declared dataset`, layer_id: l.id, fix: `Declared: ${[...ids].join(', ') || '(none — call bind_data)'}` }); break; }
         if (l.type === 'interactive_chart') {
-          if (o['chart_type'] && !CHART_TYPES.has(String(o['chart_type']))) d.push({ severity: 'warning', code: 'chart-type', message: `chart "${l.id}" has unknown chart_type "${String(o['chart_type'])}"`, layer_id: l.id, fix: `Use: ${[...CHART_TYPES].join(', ')}` });
-          if (o['library'] === 'plotly' && o['chart_type'] === 'heatmap' && !o['plotly_spec'] && !o['color_field']) d.push({ severity: 'warning', code: 'heatmap-spec', message: `plotly heatmap "${l.id}" needs plotly_spec or a color_field`, layer_id: l.id, fix: 'Add plotly_spec:{data,layout} or set color_field.' });
-          checkField(l.id, ref, o['x_field'], 'chart x_field');
-          checkField(l.id, ref, o['y_field'], 'chart y_field');
+          // `chart`/`x`/`y` are tolerated aliases for chart_type/x_field/y_field.
+          const ctype = o['chart_type'] ?? o['chart'];
+          const xf = o['x_field'] ?? (typeof o['x'] === 'string' ? o['x'] : undefined);
+          const yf = o['y_field'] ?? (typeof o['y'] === 'string' ? o['y'] : undefined);
+          if (ctype && !CHART_TYPES.has(String(ctype))) d.push({ severity: 'warning', code: 'chart-type', message: `chart "${l.id}" has unknown chart_type "${String(ctype)}"`, layer_id: l.id, fix: `Use: ${[...CHART_TYPES].join(', ')}` });
+          if (o['library'] === 'plotly' && ctype === 'heatmap' && !o['plotly_spec'] && !o['color_field']) d.push({ severity: 'warning', code: 'heatmap-spec', message: `plotly heatmap "${l.id}" needs plotly_spec or a color_field`, layer_id: l.id, fix: 'Add plotly_spec:{data,layout} or set color_field.' });
+          if (!xf && !yf) d.push({ severity: 'warning', code: 'chart-fields-missing', message: `chart "${l.id}" has no x_field/y_field — it will render empty`, layer_id: l.id, fix: 'Set x_field + y_field to dataset columns.' });
+          checkField(l.id, ref, xf, 'chart x_field');
+          checkField(l.id, ref, yf, 'chart y_field');
           checkField(l.id, ref, o['color_field'], 'chart color_field');
         } else {
           for (const c of (Array.isArray(o['columns']) ? o['columns'] as Record<string, unknown>[] : [])) checkField(l.id, ref, c['field'], 'table column field');

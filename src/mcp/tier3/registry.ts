@@ -134,7 +134,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'export_report',
-    description: 'Assemble a report design into a self-contained interactive HTML file.',
+    description: 'Assemble a report design into a self-contained interactive HTML file. Returns view_url — a tokenized link that renders the FINAL interactive report directly in a browser. Give the user view_url (the real result), not the editor link; edit_url is also returned for editing the source.',
     inputSchema: {
       type: 'object',
       properties: {
