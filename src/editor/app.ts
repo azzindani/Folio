@@ -515,6 +515,11 @@ export class EditorApp {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[editor] ?file= load failed:', err);
+      // Surface it — otherwise the canvas silently keeps the sample design and
+      // the user thinks their file produced someone else's poster.
+      const msg = err instanceof Error ? err.message : String(err);
+      void import('../utils/toast').then(({ showToast }) =>
+        showToast(`Could not open ${rel.split('/').pop() ?? rel}: ${msg}`, 'error'));
     }
   }
 

@@ -71,6 +71,33 @@ describe('validateReport', () => {
     expect(codes(d)).toContain('data-ref-unknown');
   });
 
+  it('flags a callout with no content, accepts the text alias', () => {
+    expect(codes(validateReport(report([L({ id: 'c', type: 'callout', variant: 'info' })], [stocks])))).toContain('callout-empty');
+    expect(codes(validateReport(report([L({ id: 'c', type: 'callout', variant: 'info', text: 'hi' })], [stocks])))).not.toContain('callout-empty');
+    expect(codes(validateReport(report([L({ id: 'c', type: 'callout', variant: 'info', content: 'hi' })], [stocks])))).not.toContain('callout-empty');
+  });
+
+  it('flags duplicate layer ids', () => {
+    const d = validateReport(report([
+      L({ id: 'rect_1', type: 'rect' }),
+      L({ id: 'rect_1', type: 'rect' }),
+    ], [stocks]));
+    expect(codes(d)).toContain('dup-layer-id');
+    expect(d.find(x => x.code === 'dup-layer-id')?.severity).toBe('error');
+  });
+
+  it('flags content split across pages[] and top-level layers[]', () => {
+    const spec = {
+      _protocol: 'design/v1',
+      meta: { id: 'r', name: 'R', type: 'report', created: '', modified: '' },
+      document: { width: 1200, height: 100, unit: 'px' },
+      pages: [{ id: 'p', label: 'P', layers: [L({ id: 'a', type: 'rect' })] }],
+      layers: [L({ id: 'b', type: 'rect' })],
+      report: { layout: 'flow', data: { sources: [stocks] } },
+    } as unknown as Parameters<typeof validateReport>[0];
+    expect(codes(validateReport(spec))).toContain('layers-split');
+  });
+
   it('flags empty tabs/accordion/toggle', () => {
     const d = validateReport(report([
       L({ id: 't', type: 'tabs', tabs: [] }),

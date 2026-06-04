@@ -851,3 +851,29 @@ describe('renderLayer — report layer types (lines 101-107)', () => {
     expect(svg.querySelector('[data-layer-id="pop1"]')).not.toBeNull();
   });
 });
+
+describe('render isolation barrier', () => {
+  it('renders a placeholder (not a throw) when a layer renderer throws', () => {
+    const svg = createSVGRoot(500, 500);
+    // A getter that throws when the renderer reads width — simulates any
+    // malformed layer. The whole render must not blow up; one bad layer →
+    // one dashed placeholder, siblings unaffected.
+    const evil = { id: 'evil', type: 'rect', z: 0, x: 10, y: 10,
+      get width(): number { throw new Error('boom'); } } as unknown as Layer;
+    let el!: SVGElement;
+    expect(() => { el = renderLayer(evil, svg); }).not.toThrow();
+    expect(el.getAttribute('data-layer-id')).toBe('evil');
+    expect(el.getAttribute('data-render-error')).toContain('boom');
+  });
+
+  it('renders a callout missing content without throwing (text alias works)', () => {
+    const layers: Layer[] = [
+      { id: 'co_empty', type: 'callout', z: 0, x: 0, y: 0, width: 300, height: 80, variant: 'info' } as unknown as Layer,
+      { id: 'co_text', type: 'callout', z: 0, x: 0, y: 100, width: 300, height: 80, variant: 'info', text: 'aliased body' } as unknown as Layer,
+    ];
+    let svg!: SVGSVGElement;
+    expect(() => { svg = renderPage(layers, 500, 500); }).not.toThrow();
+    expect(svg.querySelector('[data-render-error]')).toBeNull(); // neither needed a placeholder
+    expect(svg.textContent ?? '').toContain('aliased body');
+  });
+});

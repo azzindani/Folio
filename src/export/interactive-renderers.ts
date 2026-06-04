@@ -108,12 +108,12 @@ export function renderInteractiveLayer(layer: Layer, ctx: InteractiveRenderConte
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function escAttr(s: string): string {
-  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+function escAttr(s: unknown): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-function escHtml(s: string): string {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function escHtml(s: unknown): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function layerStyle(layer: Layer, ctx: InteractiveRenderContext): string {
@@ -460,9 +460,11 @@ function renderCallout(layer: CalloutLayer, ctx: InteractiveRenderContext): stri
   const v = layer.variant ?? 'info';
   const icon = layer.icon ?? { info: 'ℹ', success: '✓', warning: '⚠', danger: '✕', neutral: '•' }[v];
   const title = layer.title ? `<div class="ic-callout-title">${escHtml(layer.title)}</div>` : '';
+  // `content` is canonical; accept `text` as an alias (the field LLMs reach for).
+  const body = layer.content ?? (layer as { text?: string }).text ?? '';
   return `<div class="ic-callout ic-callout-${v}" data-layer-id="${escAttr(layer.id)}" style="${layerStyle(layer, ctx)}">
     <div class="ic-callout-ic">${escHtml(icon)}</div>
-    <div class="ic-callout-body">${title}<div class="ic-richtext">${markdownToHtml(layer.content)}</div></div>
+    <div class="ic-callout-body">${title}<div class="ic-richtext">${markdownToHtml(body)}</div></div>
   </div>`;
 }
 

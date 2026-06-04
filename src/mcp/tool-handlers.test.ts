@@ -11,7 +11,10 @@ import {
   exportDesign, exportTemplate, injectTemplate, listTemplateSlots,
   addLayers, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign,
 } from './engine';
-import type { Layer } from '../schema/types';
+import type { Layer, DesignSpec } from '../schema/types';
+import { parseDesign } from '../schema/parser';
+
+const parseYAMLDesign = (p: string): DesignSpec => parseDesign(fs.readFileSync(p, 'utf-8'));
 
 let tmpDir: string;
 
@@ -1147,5 +1150,61 @@ describe('addLayers', () => {
       layers: [{ id: 'lyr', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100 } as import('../schema/types').Layer],
     }) as Record<string, unknown>;
     expect(result.success).toBe(false);
+  });
+
+  it('renames colliding layer ids instead of creating duplicates', () => {
+    const L = (id: string): import('../schema/types').Layer =>
+      ({ id, type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as import('../schema/types').Layer);
+    addLayers({ design_path: designPath, layers: [L('rect_1'), L('text_2')] });
+    const r2 = addLayers({ design_path: designPath, layers: [L('rect_1'), L('text_2')] }) as Record<string, unknown>;
+    const ids = r2.layer_ids as string[];
+    // Second batch must not reuse rect_1 / text_2 — they were renamed.
+    expect(ids).not.toContain('rect_1');
+    expect(ids).not.toContain('text_2');
+    expect(ids).toEqual(['rect_1-2', 'text_2-2']);
+    const spec = parseYAMLDesign(designPath);
+    const allIds = (spec.layers ?? []).map(l => l.id);
+    expect(new Set(allIds).size).toBe(allIds.length); // all unique
+  });
+
+  it('normalizes a callout `text` alias to canonical `content`', () => {
+    addLayers({
+      design_path: designPath,
+      layers: [{ id: 'co', type: 'callout', z: 0, x: 0, y: 0, width: 200, height: 60, text: 'hello' } as unknown as import('../schema/types').Layer],
+    });
+    const co = parseYAMLDesign(designPath).layers?.find(l => l.id === 'co') as unknown as Record<string, unknown>;
+    expect(co.content).toBe('hello');
+    expect(co.text).toBeUndefined();
+  });
+
+  it('routes to the sole page when page_id is omitted on a paged design', () => {
+    const proj = path.join(tmpDir, 'alsole');
+    createProject({ name: 'Sole', path: proj });
+    const cd = createDesign({ project_path: proj, name: 'one', type: 'carousel' }) as Record<string, unknown>;
+    const cdPath = cd.path as string;
+    appendPage({ design_path: cdPath, page_id: 'only', label: 'Only', layers: [] });
+    const r = addLayers({
+      design_path: cdPath,
+      layers: [{ id: 'lyr', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as import('../schema/types').Layer],
+    }) as Record<string, unknown>;
+    expect(r.added).toBe(1);
+    const spec = parseYAMLDesign(cdPath);
+    expect(spec.pages?.[0].layers?.some(l => l.id === 'lyr')).toBe(true);
+    expect(spec.layers ?? []).toHaveLength(0); // never spilled to top-level
+  });
+
+  it('errors when page_id is omitted on a multi-page design', () => {
+    const proj = path.join(tmpDir, 'almulti');
+    createProject({ name: 'Multi', path: proj });
+    const cd = createDesign({ project_path: proj, name: 'two', type: 'carousel' }) as Record<string, unknown>;
+    const cdPath = cd.path as string;
+    appendPage({ design_path: cdPath, page_id: 'p1', label: 'P1', layers: [] });
+    appendPage({ design_path: cdPath, page_id: 'p2', label: 'P2', layers: [] });
+    const r = addLayers({
+      design_path: cdPath,
+      layers: [{ id: 'lyr', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as import('../schema/types').Layer],
+    }) as Record<string, unknown>;
+    expect(r.success).toBe(false);
+    expect(String(r.error)).toContain('page_id');
   });
 });

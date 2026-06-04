@@ -51,6 +51,63 @@ let activeOptions: RenderOptions = {};
 const UNCACHEABLE_TYPES = new Set<string>(['interactive_chart']);
 
 export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
+  // Isolation barrier: one malformed layer (e.g. a callout missing its body,
+  // a chart with a bad ref) must never throw out of the whole render and take
+  // the entire design load down with it. The editor's load path swallows such
+  // a throw and silently falls back to the sample design — so the author opens
+  // their report and sees someone else's poster. Catch per-layer, emit a
+  // visible placeholder, and keep rendering the siblings.
+  try {
+    return renderLayerInner(layer, svg);
+  } catch (err) {
+    return renderLayerError(layer, err);
+  }
+}
+
+/** Visible stand-in for a layer whose renderer threw. Dashed red box + label
+ *  so the broken layer is locatable on canvas instead of vanishing the design. */
+function renderLayerError(layer: Layer, err: unknown): SVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  // Read geometry defensively — the layer that just threw may have a throwing
+  // getter (e.g. a Proxy or a getter that blew up), and re-reading it here would
+  // re-throw straight out of the catch handler.
+  const num = (read: () => unknown, fallback: number): number => {
+    try { const v = read(); return typeof v === 'number' && Number.isFinite(v) ? v : fallback; }
+    catch { return fallback; }
+  };
+  const pos = num(() => (Array.isArray(layer.pos) ? 1 : 0), 0) ? (layer.pos as number[]) : [];
+  const x = num(() => layer.x, typeof pos[0] === 'number' ? pos[0] : 0);
+  const y = num(() => layer.y, typeof pos[1] === 'number' ? pos[1] : 0);
+  const w = num(() => layer.width, typeof pos[2] === 'number' ? pos[2] : 200);
+  const h = num(() => layer.height, typeof pos[3] === 'number' ? pos[3] : 60);
+  const str = (read: () => unknown, fallback: string): string => {
+    try { const v = read(); return v == null ? fallback : String(v); } catch { return fallback; }
+  };
+  const id = str(() => layer.id, '?');
+  const type = str(() => layer.type, 'layer');
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('data-layer-id', id);
+  g.setAttribute('data-render-error', err instanceof Error ? err.message : String(err));
+  const rect = document.createElementNS(ns, 'rect');
+  rect.setAttribute('x', String(x)); rect.setAttribute('y', String(y));
+  rect.setAttribute('width', String(Math.max(40, w))); rect.setAttribute('height', String(Math.max(24, h)));
+  rect.setAttribute('fill', 'rgba(239,68,68,0.06)');
+  rect.setAttribute('stroke', '#ef4444');
+  rect.setAttribute('stroke-width', '1');
+  rect.setAttribute('stroke-dasharray', '4 3');
+  rect.setAttribute('rx', '6');
+  g.appendChild(rect);
+  const label = document.createElementNS(ns, 'text');
+  label.setAttribute('x', String(x + 8)); label.setAttribute('y', String(y + 18));
+  label.setAttribute('fill', '#ef4444');
+  label.setAttribute('font-size', '12');
+  label.setAttribute('font-family', 'ui-monospace, monospace');
+  label.textContent = `⚠ ${type}#${id}`;
+  g.appendChild(label);
+  return g;
+}
+
+function renderLayerInner(layer: Layer, svg: SVGSVGElement): SVGElement {
   // Conditional visibility: evaluate show_if expression
   if (layer.show_if !== undefined) {
     const visible = evalShowIf(layer.show_if, layer);
@@ -370,13 +427,14 @@ export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVG
     };
   }
 
-  // Render top-level layers (poster mode). Carousels keep their content on
-  // pages[] rather than root layers; fall back to the first page so a
-  // whole-design render is never silently blank. Callers that need every page
-  // (export, presentation) iterate pages themselves via renderPage.
-  const rootLayers = (spec.layers && spec.layers.length)
-    ? spec.layers
-    : (spec.pages?.[0]?.layers ?? spec.layers);
+  // Reports/carousels keep content on pages[]; posters use top-level layers[].
+  // Prefer pages when present so this matches the editor's StateManager (which
+  // renders pages[currentPage]) — a malformed both-present design otherwise
+  // splits the canvas (renders top-level) from the editor (renders the page).
+  // Callers that need every page (export, presentation) iterate via renderPage.
+  const rootLayers = (spec.pages && spec.pages.length)
+    ? spec.pages[0].layers
+    : spec.layers;
   if (rootLayers) {
     const layers = prepareLayers(rootLayers, ctx, options.formulaContext);
     buildClipDefs(layers, svg);
