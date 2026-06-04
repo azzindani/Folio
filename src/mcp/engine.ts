@@ -540,8 +540,17 @@ function normalizeReportAliases(incoming: Layer[]): void {
     }
     if (l.type === 'interactive_chart') {
       if (o['chart_type'] == null && typeof o['chart'] === 'string') { o['chart_type'] = o['chart']; delete o['chart']; }
+      if (o['chart_type'] == null && typeof o['kind'] === 'string') { o['chart_type'] = o['kind']; delete o['kind']; }
       if (o['x_field'] == null && typeof o['x'] === 'string') { o['x_field'] = o['x']; delete o['x']; }
       if (o['y_field'] == null && typeof o['y'] === 'string') { o['y_field'] = o['y']; delete o['y']; }
+    }
+    if (l.type === 'interactive_table' && Array.isArray(o['columns'])) {
+      for (const col of o['columns'] as Record<string, unknown>[]) {
+        if (col && col['title'] == null) {
+          const alias = col['label'] ?? col['header'] ?? col['name'];
+          if (alias != null) col['title'] = alias;
+        }
+      }
     }
   }
 }

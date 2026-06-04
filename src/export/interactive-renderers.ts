@@ -183,8 +183,19 @@ function fmt(value: unknown, formatter?: string, opts?: { currency?: string; dec
 
 // ── Chart renderer ───────────────────────────────────────────
 
+/** Be liberal in what we accept: LLMs author charts with `chart`/`kind` instead
+ *  of chart_type, and a string `x`/`y` instead of x_field/y_field. Fold them in
+ *  so the chart isn't a blank canvas. (numeric x/y = pixel position, left alone.) */
+function normalizeChartAliases(layer: InteractiveChartLayer): void {
+  const o = layer as unknown as Record<string, unknown>;
+  if (layer.chart_type == null) { const a = o['chart'] ?? o['kind']; if (typeof a === 'string') o['chart_type'] = a; }
+  if (layer.x_field == null && typeof o['x'] === 'string') o['x_field'] = o['x'];
+  if (layer.y_field == null && typeof o['y'] === 'string') o['y_field'] = o['y'];
+}
+
 function renderChart(layer: InteractiveChartLayer, ctx: InteractiveRenderContext): string {
   const id = `chart-${layer.id}`;
+  normalizeChartAliases(layer);
   const rows = dataRows(layer.data_ref, ctx);
   if (layer.library === 'plotly') return renderPlotlyChart(layer, rows, id, ctx);
   ctx.needsChartJs = true;
@@ -287,7 +298,13 @@ function renderPlotlyChart(layer: InteractiveChartLayer, rows: Record<string, un
 
 function renderTable(layer: InteractiveTableLayer, ctx: InteractiveRenderContext): string {
   const rows = dataRows(layer.data_ref, ctx);
-  const colsJson = JSON.stringify(layer.columns);
+  // Column header alias: LLMs author `label`/`header`/`name` instead of `title`;
+  // the runtime reads `title`, so without this the headers all read "undefined".
+  const cols = (layer.columns ?? []).map(c => {
+    const o = c as unknown as Record<string, unknown>;
+    return { ...o, title: o['title'] ?? o['label'] ?? o['header'] ?? o['name'] ?? o['field'] };
+  });
+  const colsJson = JSON.stringify(cols);
   const rowsJson = JSON.stringify(rows);
   const id = `table-${layer.id}`;
 

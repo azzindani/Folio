@@ -1004,8 +1004,19 @@ function makeForeignObject(
   return { fo, container };
 }
 
+/** Be liberal in what we accept: LLMs author charts with `chart`/`kind` instead
+ *  of chart_type, and a string `x`/`y` instead of x_field/y_field. Fold them so
+ *  the preview isn't an empty box. (numeric x/y = pixel position, left alone.) */
+function normalizeChartAliases(layer: InteractiveChartLayer): void {
+  const o = layer as unknown as Record<string, unknown>;
+  if (layer.chart_type == null) { const a = o['chart'] ?? o['kind']; if (typeof a === 'string') o['chart_type'] = a; }
+  if (layer.x_field == null && typeof o['x'] === 'string') o['x_field'] = o['x'] as string;
+  if (layer.y_field == null && typeof o['y'] === 'string') o['y_field'] = o['y'] as string;
+}
+
 // ── Interactive Chart (Plotly) ───────────────────────────────
 export function renderInteractiveChart(layer: InteractiveChartLayer, _svg: SVGSVGElement): SVGElement {
+  normalizeChartAliases(layer);
   const w = typeof layer.width === 'number' ? layer.width : 400;
   const h = typeof layer.height === 'number' ? layer.height : 300;
 
@@ -1179,8 +1190,11 @@ export function renderInteractiveTable(layer: InteractiveTableLayer, _svg: SVGSV
   const rows = sample ? sampleTableRows(cols) : allRows.slice(0, maxRows);
 
   const th = cols.map((c) => {
-    const align = (c as { align?: string }).align ?? 'left';
-    return `<th style="text-align:${escHtml(align)};padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#9aa;border-bottom:1px solid rgba(255,255,255,0.12);white-space:nowrap;">${escHtml(String(c.title ?? c.field))}</th>`;
+    const co = c as Record<string, unknown>;
+    const align = (co['align'] as string) ?? 'left';
+    // Header alias: title is canonical; accept label/header/name; else the field.
+    const head = co['title'] ?? co['label'] ?? co['header'] ?? co['name'] ?? co['field'];
+    return `<th style="text-align:${escHtml(align)};padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#9aa;border-bottom:1px solid rgba(255,255,255,0.12);white-space:nowrap;">${escHtml(String(head))}</th>`;
   }).join('');
   const trs = rows.map((r) => {
     const tds = cols.map((c) => {
