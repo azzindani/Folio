@@ -36,6 +36,7 @@ const HANDLERS: Record<string, Handler> = {
   create_task:         (a) => engine.createTask(a as Parameters<typeof engine.createTask>[0]),
   resume_task:         (a) => engine.resumeTask(a as Parameters<typeof engine.resumeTask>[0]),
   inspect_design:      (a) => engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]),
+  extract_reference:   (a) => engine.extractReference(a as Parameters<typeof engine.extractReference>[0]),
   add_layers:          (a) => engine.addLayers(a as Parameters<typeof engine.addLayers>[0]),
   create_design:       (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
   append_page:         (a) => engine.appendPage(a as Parameters<typeof engine.appendPage>[0]),

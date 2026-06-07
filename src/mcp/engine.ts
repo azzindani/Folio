@@ -18,6 +18,7 @@ import {
   buildContext, buildHandover,
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
+export { extractReference } from './engine/reference';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
@@ -347,10 +348,10 @@ export function getEngineGuide(args: { section?: string }): ToolResult {
   const progress: ProgressItem[] = [];
   const guide = buildGuide(args.section);
   const section = args.section ?? 'quick_ref';
-  progress.push(pOk(`Guide section: ${section}`, 'sections: quick_ref | shorthand | layers | workflow'));
+  progress.push(pOk(`Guide section: ${section}`, 'sections: quick_ref | shorthand | layers | workflow | reference'));
   const context = buildContext(op, `Loaded guide section "${section}"`);
   const handover = buildHandover('PROJECT', {});
-  return okResult(op, { section, guide, sections_available: 'quick_ref | shorthand | layers | workflow', progress, context, handover });
+  return okResult(op, { section, guide, sections_available: 'quick_ref | shorthand | layers | workflow | reference', progress, context, handover });
 }
 
 export function listTasks(args: { project_path: string }): ToolResult {

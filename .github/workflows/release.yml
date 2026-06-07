@@ -122,6 +122,42 @@ jobs:
           path: tests/playwright-report/
           retention-days: 7
 
+  # ── DOCKER IMAGE → GHCR ───────────────────────────────────────
+  # Publishes ghcr.io/<owner>/folio:<version> + :latest from the existing
+  # Dockerfile (bun two-stage build). Independent of the `release` job so a
+  # registry-permission hiccup never blocks the GitHub Release + tarballs.
+  # First run may need repo Settings → Actions → "Read and write permissions".
+  docker:
+    name: Publish Docker image (GHCR)
+    needs: [build, e2e-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker metadata (lowercased image + semver tags)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   # ── GITHUB RELEASE ────────────────────────────────────────────
   release:
     name: Create GitHub Release

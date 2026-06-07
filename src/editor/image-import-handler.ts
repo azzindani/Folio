@@ -23,6 +23,20 @@ function makeLayer(src: string, w: number, h: number, id: string): ImageLayer {
            width: Math.round(w * scale), height: Math.round(h * scale), src };
 }
 
+// Reference underlay: fit the image INSIDE the canvas (contain), centered, behind
+// everything, locked + dimmed so it acts as a tracing guide. Pure for unit tests.
+export function makeReferenceLayer(
+  src: string, imgW: number, imgH: number, id: string, canvasW: number, canvasH: number,
+): ImageLayer {
+  const scale = Math.min(canvasW / Math.max(imgW, 1), canvasH / Math.max(imgH, 1));
+  const w = Math.round(imgW * scale), h = Math.round(imgH * scale);
+  return {
+    id, type: 'image', z: 0,
+    x: Math.round((canvasW - w) / 2), y: Math.round((canvasH - h) / 2),
+    width: w, height: h, src, fit: 'contain', role: 'reference', locked: true, opacity: 0.4,
+  };
+}
+
 export class ImageImportHandler {
   private state: StateManager;
   private palette: ColorPaletteManager | null = null;
@@ -110,14 +124,36 @@ export class ImageImportHandler {
   }
 
   // ── Drop ──────────────────────────────────────────────────────
+  // Shift-drop imports the image as a locked tracing UNDERLAY (reference) instead
+  // of a content layer — drop a Canva export/screenshot to build on top of it.
   private async onDrop(e: DragEvent): Promise<void> {
     e.preventDefault();
     const files = e.dataTransfer?.files;
     if (!files) return;
     for (const file of files) {
+      if (!SVG_RE.test(file.name) && !IMAGE_RE.test(file.name)) continue;
+      if (e.shiftKey) { await this.importAsReference(file); break; }
       if (SVG_RE.test(file.name))   { await this.fromSVGFile(file);  break; }
       if (IMAGE_RE.test(file.name)) { await this.fromRaster(file);   break; }
     }
+  }
+
+  // ── Reference underlay ────────────────────────────────────────
+  private canvasSize(): { w: number; h: number } {
+    const doc = this.state.get().design?.document;
+    return { w: doc?.width ?? 1080, h: doc?.height ?? 1080 };
+  }
+
+  /** Import a raster/SVG as a locked, dimmed tracing underlay + seed the palette. */
+  async importAsReference(blob: Blob): Promise<void> {
+    const dataUrl = await blobToDataUrl(blob);
+    const { w, h } = await imgSize(dataUrl);
+    const { w: cw, h: ch } = this.canvasSize();
+    const layer = makeReferenceLayer(dataUrl, w, h, nextId('ref'), cw, ch);
+    const colors = await extractDominantColors(blob);
+    this.commit(layer, colors);
+    const toast = await import('../utils/toast');
+    toast.showToast('Reference underlay added (locked, 40%) — build on top, then hide/delete it before exporting', 'info');
   }
 
   // ── Import paths ──────────────────────────────────────────────

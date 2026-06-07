@@ -10,7 +10,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       properties: {
         section: {
           type: 'string',
-          enum: ['quick_ref', 'shorthand', 'layers', 'workflow'],
+          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference'],
           description: 'Guide section to load (default: quick_ref)',
           default: 'quick_ref',
         },
