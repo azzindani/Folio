@@ -334,6 +334,10 @@ export interface ImageLayer extends BaseLayer {
   src: string;
   fit?: 'cover' | 'contain' | 'fill' | 'none';
   crop?: { x: number; y: number; width: number; height: number };
+  /** 'reference' = a locked, dimmed tracing underlay (a Canva export/screenshot
+   *  the user is matching) — built on top of, then hidden/removed before export.
+   *  Defaults to a normal content image when absent. */
+  role?: 'content' | 'reference';
 }
 
 export interface IconLayer extends BaseLayer {
