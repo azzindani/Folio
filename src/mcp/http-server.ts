@@ -25,7 +25,7 @@ type Handler = (args: Record<string, unknown>) => ToolResult;
 
 // §1 — All-tier handler map
 const HANDLERS: Record<string, Handler> = {
-  get_engine_guide:    (_a) => engine.getEngineGuide({}),
+  get_engine_guide:    (a) => engine.getEngineGuide(a as Parameters<typeof engine.getEngineGuide>[0]),
   list_tasks:          (a) => engine.listTasks(a as Parameters<typeof engine.listTasks>[0]),
   create_project:      (a) => engine.createProject(a as Parameters<typeof engine.createProject>[0]),
   list_designs:        (a) => engine.listDesigns(a as Parameters<typeof engine.listDesigns>[0]),
