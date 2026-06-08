@@ -126,6 +126,41 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   });
 }
 
+/**
+ * Overlay an INVISIBLE, selectable text layer onto a PDF page, aligned to the
+ * live editor DOM. The visible pixels come from the raster image (so charts,
+ * gradients and exact type are preserved); this adds the real text on top with
+ * rendering mode "invisible" so it's selectable & copyable — the standard
+ * searchable-PDF technique. Works for SVG <text> AND foreignObject HTML text,
+ * since positions are measured from the rendered DOM via getBoundingClientRect.
+ */
+function addSelectableTextLayer(
+  pdf: { setFontSize(n: number): void; text(t: string, x: number, y: number, o?: Record<string, unknown>): void },
+  liveNode: HTMLElement,
+  designWidth: number,
+  pxToMm: (px: number) => number,
+): void {
+  const box = liveNode.getBoundingClientRect();
+  if (box.width === 0) return;
+  const zoom = box.width / designWidth; // editor zoom — DOM rects are on-screen px
+  const walker = document.createTreeWalker(liveNode, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+    if (!text || !node.parentElement) continue;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const r = range.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    // getComputedStyle font-size is unaffected by ancestor zoom → design px.
+    const fontPx = parseFloat(getComputedStyle(node.parentElement).fontSize) || r.height * 0.8;
+    const dx = (r.left - box.left) / zoom;
+    const baseline = (r.top - box.top) / zoom + fontPx * 0.8; // approx alphabetic baseline
+    pdf.setFontSize(fontPx * (72 / 96)); // px → pt
+    pdf.text(text, pxToMm(dx), pxToMm(baseline), { renderingMode: 'invisible', maxWidth: pxToMm(r.width / zoom) });
+  }
+}
+
 export async function exportToPDF(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
   // Lazy load jsPDF — kept out of initial bundle
   const { jsPDF } = await import('jspdf');
@@ -158,6 +193,12 @@ export async function exportToPDF(spec: DesignSpec, options: ExportOptions): Pro
     const blob = await exportToPNG(spec, { ...options, scale });
     const dataUrl = await blobToDataURL(blob);
     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+    // Overlay selectable text aligned to the live editor DOM (raster stays the
+    // visible layer; this makes the text copyable). Only with a live element.
+    if (options.liveElement) {
+      try { addSelectableTextLayer(pdf, options.liveElement, width, pxToMm); }
+      catch { /* non-fatal — keep the raster-only PDF */ }
+    }
   }
 
   return pdf.output('blob');
