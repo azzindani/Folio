@@ -171,9 +171,9 @@ coordinates to get wrong). Best way to build a feature/benefit poster.
   bg:"gradient" — a flat canvas + one accent reads designed, not AI-generated.
 
 decor (aliases marble_bg, backdrop): a soft, designed BACKGROUND in ONE layer.
-`style:"marble"` (default) = radial-gradient blobs clustered in the corners (each
+style:"marble" (default) = radial-gradient blobs clustered in the corners (each
 fades to the canvas color at its rim, so text on top stays readable) + veins +
-rings + dots. `style:"mesh"` = a calmer gradient-mesh wash. Use it as your FIRST
+rings + dots. style:"mesh" = a calmer gradient-mesh wash. Use it as your FIRST
 layer instead of hand-placing ellipses (which collide, go off-canvas, or lose
 their fill). Then add content on top with a HIGHER z. It's a GENERATOR, not a
 fixed look — vary style/palette/accent/corners/intensity per design; don't ship
