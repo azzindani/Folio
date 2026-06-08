@@ -112,6 +112,13 @@ export function resolveFill(fill: Fill, ctx: TokenResolutionContext): Fill {
       return { ...fill, stops: resolveGradientStops(fill.stops, ctx) };
     case 'multi':
       return { ...fill, layers: fill.layers.map(f => resolveFill(f, ctx)) };
+    case 'pattern':
+      return {
+        ...fill,
+        fg: resolveStringValue(fill.fg, ctx),
+        ...(fill.bg ? { bg: resolveStringValue(fill.bg, ctx) } : {}),
+      };
+    case 'image':
     case 'noise':
     case 'none':
       return fill;
