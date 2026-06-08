@@ -1192,3 +1192,19 @@ describe('marble_bg / backdrop preset', () => {
     expect(g.layers.filter(l => l.type === 'ellipse').every(l => (l.opacity as number) <= 0.5)).toBe(true);
   });
 });
+
+describe('decor preset — generalized (style families)', () => {
+  it('style:"mesh" → spread gradient ellipses, no veins/rings', () => {
+    const g = expandShorthand({ id: 'd', type: 'decor', z: 1, pos: [0, 0, 1080, 1350], style: 'mesh',
+      palette: ['#B9C4F0', '#A6DAE8'] } as unknown as ShorthandLayer) as unknown as { type: string; layers: Array<Record<string, unknown>> };
+    expect(g.type).toBe('group');
+    expect(g.layers.some(l => l.type === 'line')).toBe(false);
+    const blobs = g.layers.filter(l => l.type === 'ellipse' && (l.fill as { type?: string })?.type === 'radial');
+    expect(blobs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('marble_bg alias still defaults to the marble style (corner blobs + veins)', () => {
+    const g = expandShorthand({ id: 'm', type: 'marble_bg', z: 1, pos: [0, 0, 1080, 1350], corners: ['tr', 'bl'] } as unknown as ShorthandLayer) as unknown as { type: string; layers: Array<Record<string, unknown>> };
+    expect(g.layers.some(l => l.type === 'line')).toBe(true); // veins present
+  });
+});
