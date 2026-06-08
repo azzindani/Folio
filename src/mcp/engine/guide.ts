@@ -118,7 +118,11 @@ Rules:
     canvas — or on a colored chip NARROWER than its label (the text spills past the
     chip onto the canvas) — renders invisible. Always lay a full-canvas bg rect first.
   - add_layers returns notes:[…] when something won't render as intended (invisible
-    text, off-canvas layers, missing background) — read them and fix in your next call.`,
+    text, off-canvas layers, missing background) — read them and fix in your next call.
+  - VERIFY before sealing: diagnose_design(design_path) lists problems (off-canvas,
+    collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy) each with a fix;
+    align_layers fixes alignment; render_preview(design_path) returns a PNG so you can
+    SEE the result. Fix → re-check → seal.`,
 
   shorthand: `# Shorthand Syntax (layers_shorthand field)
 pos:[x,y,w,h] replaces x/y/width/height.
@@ -199,7 +203,31 @@ Fill shorthand:         "#hex" | "rgba(r,g,b,a)" | {type:"linear",angle:135,stop
 Stroke shorthand:       "#hex" or {color:"#hex",width:2,dash:[4,2]}
 Image:  use a real https:// URL only — a local filename renders a placeholder.
 Icon:   icon:"<real-lucide-name>" — unknown names render a labeled placeholder.
-Base fields (all types): opacity:0-1 · rotation:deg · flip_h:bool · flip_v:bool · locked:bool`,
+Base fields (all types): opacity:0-1 · rotation:deg · flip_h:bool · flip_v:bool · locked:bool
+
+## Texture & variety (use these instead of defaulting to gradients — they read DESIGNED)
+Pattern fill: any fillable layer → fill:{type:"pattern", pattern:"<name>", fg:"#hex", bg:"#hex"?, scale?, angle?, weight?, opacity?}
+  also terse: fill:"pattern:halftone" or fill:"dots/#222 on #FAF5EC".
+  names: dots dot_grid grid graph_paper isometric stripes diagonal_stripes crosshatch
+         checkerboard chevron zigzag triangles waves scallop plus cross scatter confetti
+         halftone blueprint carbon houndstooth brick.  (e.g. a halftone or crosshatch
+         field beats a navy→purple gradient for an editorial look.)
+Image/texture fill: fill:{type:"image", src:"https://…", mode:"tile"|"cover"|"contain"}
+Effects (any layer, esp. images): effects:{duotone:{shadow:"#1B1B3A",highlight:"#F5C518"}, grain:0.4,
+         posterize:4, saturate:1.2, blend_mode:"multiply", backdrop_blur:12}
+  duotone = the signature editorial photo treatment (two-tone luminance map).
+
+## Shapes (parametric — type is the shape name; fills/strokes/effects like any layer)
+{type:"star", pos:[..], color:"#FF3D00", points:5, inner_ratio:0.4}
+  also: burst/seal (badge sunburst, points:20) · blob (organic, seed:N) · wave (cycles:N) ·
+  arc (open stroke; start/end deg) · ring/donut (thickness:0.4) · bubble/speech_bubble ·
+  heart · lightning/bolt · shield · gear/cog (teeth:8) · arrow · cross_shape.
+  e.g. {type:"blob", pos:[700,120,260,260], color:"#3F5E4A", seed:2} as an organic accent shape.
+
+## Type effects (on any text layer)
+uppercase:true (or transform:"capitalize") · italic:true · outline:{color:"#000",width:3} ·
+highlight:"#FDE047" (marker band) · variation:{wght:350,wdth:80} (variable-font axes) ·
+features:{tnum:1,smcp:1} (OpenType) · curve:"M0 80 Q100 0 200 80" (text along a path).`,
 
   layers: `# Layer Types — Required Fields
 rect      id type z x y width height    + fill? stroke? radius? opacity?
