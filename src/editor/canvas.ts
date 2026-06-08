@@ -397,6 +397,19 @@ export class CanvasManager {
     this.updateRulers();
   }
 
+  /**
+   * The live canvas container DIV — wraps the rendered `<svg>` including the
+   * charts/tables/KPIs that Chart.js/vega drew into their foreignObjects.
+   * Export captures THIS node via dom-to-image (an HTML node, which it
+   * rasterizes reliably — unlike a bare `<svg>`, which fails to load as an
+   * `<img>` and taints the canvas). Re-rendering the spec statically would lose
+   * all the JS-drawn content. The viewport zoom lives on an ancestor, so the
+   * clone renders at design size.
+   */
+  getCanvasExportNode(): HTMLElement | null {
+    return this.currentSVG ? this.svgContainer : null;
+  }
+
   private injectAnimationCSS(svg: SVGSVGElement): void {
     const { animations } = this.state.get();
     const entries = Object.entries(animations);

@@ -196,7 +196,12 @@ export class ToolbarManager {
     const { design, theme } = this.state.get();
     if (!design) return;
     try {
-      await exportDesign(design, { format, theme: theme ?? undefined, scale });
+      // Capture the live canvas for raster formats so charts/tables/KPIs that
+      // JS drew into foreignObjects are included (static re-render loses them).
+      const liveElement = (format === 'png' || format === 'pdf')
+        ? this.app.getCanvasExportNode() ?? undefined
+        : undefined;
+      await exportDesign(design, { format, theme: theme ?? undefined, scale, liveElement });
       const label = format === 'html-report' ? 'Interactive HTML' : format.toUpperCase();
       const suffix = format === 'png' ? ` (×${scale})` : '';
       showToast(`Exported as ${label}${suffix}`, 'success');
