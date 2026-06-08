@@ -1,0 +1,94 @@
+{
+  "families": [
+    "Anton",
+    "Archivo",
+    "Bebas Neue",
+    "DejaVu Sans",
+    "EB Garamond",
+    "Fira Code",
+    "IBM Plex Mono",
+    "Inter",
+    "JetBrains Mono",
+    "Lora",
+    "Manrope",
+    "Montserrat",
+    "Playfair Display",
+    "Plus Jakarta Sans",
+    "Public Sans",
+    "Roboto Mono",
+    "Roboto Slab",
+    "Source Code Pro",
+    "Space Grotesk",
+    "Space Mono",
+    "Work Sans"
+  ],
+  "files": {
+    "Anton": [
+      "Anton-Regular.ttf"
+    ],
+    "Archivo": [
+      "Archivo[wdth,wght].ttf"
+    ],
+    "Bebas Neue": [
+      "BebasNeue-Regular.ttf"
+    ],
+    "DejaVu Sans": [
+      "DejaVuSans.ttf"
+    ],
+    "EB Garamond": [
+      "EBGaramond[wght].ttf"
+    ],
+    "Fira Code": [
+      "FiraCode[wght].ttf"
+    ],
+    "IBM Plex Mono": [
+      "IBMPlexMono-Bold.ttf",
+      "IBMPlexMono-Medium.ttf",
+      "IBMPlexMono-Regular.ttf",
+      "IBMPlexMono-SemiBold.ttf"
+    ],
+    "Inter": [
+      "Inter[opsz,wght].ttf"
+    ],
+    "JetBrains Mono": [
+      "JetBrainsMono[wght].ttf"
+    ],
+    "Lora": [
+      "Lora[wght].ttf"
+    ],
+    "Manrope": [
+      "Manrope[wght].ttf"
+    ],
+    "Montserrat": [
+      "Montserrat[wght].ttf"
+    ],
+    "Playfair Display": [
+      "PlayfairDisplay[wght].ttf"
+    ],
+    "Plus Jakarta Sans": [
+      "PlusJakartaSans[wght].ttf"
+    ],
+    "Public Sans": [
+      "PublicSans[wght].ttf"
+    ],
+    "Roboto Mono": [
+      "RobotoMono[wght].ttf"
+    ],
+    "Roboto Slab": [
+      "RobotoSlab[wght].ttf"
+    ],
+    "Source Code Pro": [
+      "SourceCodePro[wght].ttf"
+    ],
+    "Space Grotesk": [
+      "SpaceGrotesk[wght].ttf"
+    ],
+    "Space Mono": [
+      "SpaceMono-Bold.ttf",
+      "SpaceMono-Regular.ttf"
+    ],
+    "Work Sans": [
+      "WorkSans[wght].ttf"
+    ]
+  }
+}
