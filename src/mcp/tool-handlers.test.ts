@@ -33,7 +33,7 @@ describe('createProject', () => {
 
     expect(result.success).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'project.yaml'))).toBe(true);
-    expect(fs.existsSync(path.join(projectPath, 'themes/dark-tech.theme.yaml'))).toBe(true);
+    expect(fs.existsSync(path.join(projectPath, 'themes/editorial-cream.theme.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'designs'))).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'components/index.yaml'))).toBe(true);
     expect(fs.existsSync(path.join(projectPath, 'templates/index.yaml'))).toBe(true);
@@ -224,7 +224,7 @@ describe('listThemes', () => {
     expect(result.success).toBe(true);
     const themes = result.themes as Array<{ id: string }>;
     expect(themes).toHaveLength(1);
-    expect(themes[0].id).toBe('dark-tech');
+    expect(themes[0].id).toBe('editorial-cream');
   });
 });
 
