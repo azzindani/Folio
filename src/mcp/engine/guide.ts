@@ -85,7 +85,10 @@ Rules:
   - Always pass task_path in append_page — enables auto-handover
   - Call resume_task(task_path) after any context reset
   - 3–8 layers per page is ideal
-  - Load guide sections on demand: shorthand | layers | workflow
+  - Load guide sections on demand: shorthand | layers | workflow | reference
+  - MATCHING a reference image (Canva/screenshot)? Call extract_reference FIRST
+    (colors you see + optional data:/path image) → palette + canvas + brief, then
+    create_design + add_layers. Load the \`reference\` guide section for the full loop.
 
 🎨 Make it RENDER (avoid blank posters):
   - NO photos: you can't supply image files. A bare src like "coffee.jpg"
@@ -257,6 +260,31 @@ Token budget for local models:
   Qwen 9B    64K ctx → 4–6 layers/page, load guide sections only
   Qwen 2B    32K ctx → 3–4 layers/page, shorthand section only
   Output cap: 1K tokens/turn — use layers_shorthand always`,
+
+  reference: `# Reference-Image → Design
+When the user attaches a design to MATCH ("make it like this", "match this Canva poster"):
+
+YOU already SEE the image — describe it precisely. extract_reference handles the
+2 things you guess badly: EXACT pixel dimensions and a role-mapped PALETTE.
+
+Loop:
+  1. extract_reference(colors:[…hex you see…], image?:<data: URL | local path>, project_path?, name?)
+       colors  = the 4–8 main hex you observe (most reliable input).
+       image   = a data: URL or local file path → exact dimensions (+ exact colors for SVG).
+                 https URLs are NOT fetched — pass observed colors instead.
+       → returns: canvas (recommended Folio size), palette {bg,surface,text,accent,secondary,border},
+         palette_spec, mood, and a step-by-step brief. Follow next_action.
+  2. create_design(project_path, name, width, height)  ← use the recommended canvas
+  3. add_layers(design_path, layers_shorthand=[…])  ← rebuild the reference as NATIVE layers:
+       • Map each visual block: eyebrow→mono text · headline→big display text (4–5× body) ·
+         body→text · cards/benefits→ONE feature_grid · logo/photo→image(src)/icon · divider→thin rect.
+       • Match the LAYOUT (alignment, hierarchy, column count, whitespace) and TYPE category
+         (serif→"Playfair Display" · grotesk→"Space Grotesk"/"Inter" · mono labels→"IBM Plex Mono").
+       • Use the EXACT palette hex from step 1 — flat bg, ONE accent. Don't drift to a navy-gradient template.
+  4. seal_design → export_design.
+
+Rebuild as layers (editable), NOT as a single image layer of the screenshot — the point is an
+editable Folio design that matches the reference, not a pasted picture.`,
 };
 
 export function buildGuide(section?: string): string {

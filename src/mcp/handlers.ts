@@ -10,7 +10,7 @@ import type { ToolResult } from './types';
 export type Handler = (args: Record<string, unknown>) => ToolResult;
 
 export const TIER1_HANDLERS: Record<string, Handler> = {
-  get_engine_guide:  (_a) => engine.getEngineGuide({}),
+  get_engine_guide:  (a) => engine.getEngineGuide(a as Parameters<typeof engine.getEngineGuide>[0]),
   list_tasks:        (a) => engine.listTasks(a as Parameters<typeof engine.listTasks>[0]),
   create_project:    (a) => engine.createProject(a as Parameters<typeof engine.createProject>[0]),
   list_designs:      (a) => engine.listDesigns(a as Parameters<typeof engine.listDesigns>[0]),
@@ -23,7 +23,8 @@ export const TIER1_HANDLERS: Record<string, Handler> = {
 };
 
 export const TIER2_HANDLERS: Record<string, Handler> = {
-  inspect_design: (a) => engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]),
+  inspect_design:   (a) => engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]),
+  extract_reference: (a) => engine.extractReference(a as Parameters<typeof engine.extractReference>[0]),
   add_layers:     (a) => engine.addLayers(a as Parameters<typeof engine.addLayers>[0]),
   create_design:  (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
   append_page:    (a) => engine.appendPage(a as Parameters<typeof engine.appendPage>[0]),
