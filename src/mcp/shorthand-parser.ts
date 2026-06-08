@@ -1110,6 +1110,19 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'preset', 'bg_gradient', 'benefit',
   // decor / marble_bg / backdrop preset
   'palette', 'corners', 'intensity', 'veins', 'rings', 'dots', 'style',
+  // editorial / split layout presets
+  'kicker', 'eyebrow', 'headline', 'lede', 'deck', 'body', 'desc', 'footer',
+  'side', 'ratio', 'panel', 'panel_fill', 'panel_label', 'panel_text', 'big',
+  // pattern / image fills (WS1)
+  'pattern', 'fg', 'mode', 'tile_size', 'foreground', 'background',
+  // parametric shapes (WS2)
+  'points', 'inner_ratio', 'lobes', 'seed', 'cycles', 'amplitude', 'start', 'end',
+  'thickness', 'teeth', 'hole',
+  // typography craft (WS3)
+  'transform', 'text_transform', 'uppercase', 'italic', 'font_style', 'underline',
+  'decoration', 'variation', 'font_variation_settings', 'features', 'font_feature_settings',
+  'outline', 'outline_color', 'outline_width', 'text_stroke', 'highlight', 'curve',
+  'text_path', 'word_spacing',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href', 'link',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
