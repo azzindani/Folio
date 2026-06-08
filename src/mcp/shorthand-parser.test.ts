@@ -1099,6 +1099,16 @@ describe('diagnoseShorthandKeys — flags silently-ignored fields', () => {
     expect(notes[0]).toContain('"a"');
     expect(notes[0]).toContain('[wobble]'); // only the genuinely-unknown key is listed
   });
+
+  it('does NOT flag preset / pattern / shape / type-effect fields (WS1–6)', () => {
+    const notes = diagnoseShorthandKeys([
+      { id: 'ed', type: 'editorial', pos: [0, 0, 1080, 1350], kicker: 'k', title: 't', subtitle: 's', body: 'b', footer: 'f', accent: '#000' } as unknown as ShorthandLayer,
+      { id: 'sp', type: 'split', pos: [0, 0, 1200, 800], side: 'left', ratio: 'golden', panel: '#000', panel_label: '04', panel_text: '#fff' } as unknown as ShorthandLayer,
+      { id: 'st', type: 'star', pos: [0, 0, 100, 100], points: 5, inner_ratio: 0.4 } as unknown as ShorthandLayer,
+      { id: 'tx', type: 'text', pos: [0, 0, 100, 50], text: 'Hi', uppercase: true, outline: { color: '#000', width: 2 }, highlight: '#ff0', variation: { wght: 350 }, features: { tnum: 1 }, curve: 'M0 0' } as unknown as ShorthandLayer,
+    ]);
+    expect(notes).toHaveLength(0);
+  });
 });
 
 describe('diagnoseLayers — self-correction notes for the tool loop', () => {
