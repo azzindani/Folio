@@ -478,6 +478,131 @@ function textTypography(sh: ShorthandLayer): Record<string, unknown> {
   return out;
 }
 
+// Estimate wrapped-text height (matches the renderer's ~0.54×fontSize char width).
+function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3): number {
+  const cpl = Math.max(1, Math.floor(widthPx / (fontSize * 0.54)));
+  const lines = text.split('\n').reduce((a, seg) => a + Math.max(1, Math.ceil(seg.length / cpl)), 0);
+  return Math.ceil(lines * fontSize * lh);
+}
+const shStr = (v: unknown, d = ''): string => {
+  if (typeof v === 'string') return v;
+  if (v && typeof v === 'object') { const o = v as Record<string, unknown>; if (typeof o['text'] === 'string') return o['text']; if (typeof o['value'] === 'string') return o['value']; }
+  return d;
+};
+function shBox(sh: ShorthandLayer, dw = 1080, dh = 1350): { X: number; Y: number; W: number; H: number } {
+  return {
+    X: sh.pos?.[0] ?? (typeof sh.x === 'number' ? sh.x : 0),
+    Y: sh.pos?.[1] ?? (typeof sh.y === 'number' ? sh.y : 0),
+    W: sh.pos?.[2] ?? (typeof sh.width === 'number' ? sh.width : dw),
+    H: sh.pos?.[3] ?? (typeof sh.height === 'number' ? sh.height : dh),
+  };
+}
+function txt(id: string, z: number, x: number, y: number, w: number, h: number, value: string, style: Record<string, unknown>): Layer {
+  return { id, type: 'text', z, x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h), content: { type: 'plain', value }, style } as unknown as Layer;
+}
+
+// Editorial text-forward poster — kicker · rule · big headline · deck · body ·
+// footer, left-anchored with a held margin and ONE accent. The art-directed
+// composition the guide preaches, laid out by the engine in ONE layer.
+function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh);
+  const bg = shStr(r['bg'], '#FAF5EC');
+  const accent = shStr(r['accent'], '#B8543C');
+  const textColor = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
+  const muted = shStr(r['muted'], '#6E5F4A');
+  const kicker = shStr(r['kicker'] ?? r['eyebrow'] ?? r['label']);
+  const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
+  const subtitle = shStr(r['subtitle'] ?? r['lede'] ?? r['deck']);
+  const body = shStr(r['body'] ?? r['desc']);
+  const footer = shStr(r['footer']);
+  const M = Math.round(W * 0.08);
+  const cW = W - 2 * M, cX = X + M;
+  const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  let cy = Y + Math.round(H * 0.13), k = 1;
+  if (kicker) {
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
+    cy += Math.round(H * 0.035);
+  }
+  layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
+  cy += Math.round(H * 0.025);
+  if (title) {
+    const ts = Math.round(W * 0.085), th = estTextHeight(title, ts, cW, 1.04);
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04 }));
+    cy += th + Math.round(H * 0.025);
+  }
+  if (subtitle) {
+    const ss = Math.round(W * 0.032), sh2 = estTextHeight(subtitle, ss, cW, 1.35);
+    layers.push(txt(`${id}_sub`, z + k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.35 }));
+    cy += sh2 + Math.round(H * 0.025);
+  }
+  if (body) {
+    const bs = Math.round(W * 0.022), bh = estTextHeight(body, bs, cW, 1.55);
+    layers.push(txt(`${id}_body`, z + k++, cX, cy, cW, bh, body, { font_size: bs, font_weight: 400, color: textColor, line_height: 1.55 }));
+  }
+  if (footer) {
+    const fy = Y + H - Math.round(H * 0.09);
+    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy, width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    layers.push(txt(`${id}_footer`, z + k++, cX, fy + 16, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+  }
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
+// Two-panel editorial split — a color/pattern block on one side, kicker + big
+// headline + deck vertically centered on the other. ratio = panel fraction
+// (number, or "golden" = 0.382). The engine owns every coordinate.
+function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh, 1080, 1080);
+  const side = shStr(r['side'], 'left') === 'right' ? 'right' : 'left';
+  let ratio = typeof r['ratio'] === 'number' ? r['ratio'] : (r['ratio'] === 'golden' ? 0.382 : 0.5);
+  ratio = Math.max(0.25, Math.min(0.7, ratio));
+  const bg = shStr(r['bg'], '#FAF5EC');
+  const accent = shStr(r['accent'], '#B8543C');
+  const panelFill = r['panel'] ?? r['panel_fill'] ?? accent;
+  const textColor = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
+  const muted = shStr(r['muted'], '#6E5F4A');
+  const panelText = shStr(r['panel_text'], '#FAF5EC');
+  const kicker = shStr(r['kicker'] ?? r['eyebrow'] ?? r['label']);
+  const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
+  const subtitle = shStr(r['subtitle'] ?? r['lede'] ?? r['deck'] ?? r['body']);
+  const panelLabel = shStr(r['panel_label'] ?? r['big']);
+
+  const PW = Math.round(W * ratio);
+  const panelX = side === 'left' ? X : X + W - PW;
+  const contentX = side === 'left' ? X + PW : X;
+  const Mcol = Math.round((W - PW) * 0.1);
+  const cW = (W - PW) - 2 * Mcol, cX = contentX + Mcol;
+
+  const layers: Layer[] = [
+    { id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer,
+    { id: `${id}_panel`, type: 'rect', z: 1, x: panelX, y: Y, width: PW, height: H, fill: expandFill(panelFill as string | Fill) } as unknown as Layer,
+  ];
+  let k = 2;
+  if (panelLabel) {
+    layers.push(txt(`${id}_plabel`, k++, panelX, Y + H / 2 - Math.round(PW * 0.18), PW, Math.round(PW * 0.4), panelLabel, { font_size: Math.round(PW * 0.28), font_weight: 800, color: panelText, align: 'center', line_height: 1.0 }));
+  }
+  // Measure the content block, then vertically center it.
+  const ts = Math.round(cW * 0.16), ss = Math.round(cW * 0.058);
+  const titleH = title ? estTextHeight(title, ts, cW, 1.05) : 0;
+  const subH = subtitle ? estTextHeight(subtitle, ss, cW, 1.4) : 0;
+  const kickH = kicker ? Math.round(H * 0.05) : 0;
+  const total = kickH + (title ? titleH + Math.round(H * 0.02) : 0) + subH;
+  let cy = Y + Math.max(Math.round(H * 0.12), (H - total) / 2);
+  if (kicker) {
+    layers.push(txt(`${id}_kick`, k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(cW * 0.04), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
+    cy += kickH;
+  }
+  if (title) {
+    layers.push(txt(`${id}_title`, k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.05 }));
+    cy += titleH + Math.round(H * 0.02);
+  }
+  if (subtitle) {
+    layers.push(txt(`${id}_sub`, k++, cX, cy, cW, subH, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.4 }));
+  }
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -650,6 +775,13 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
 
     case 'feature_grid':
       return buildFeatureGrid(sh, String(sh.id ?? 'feature_grid'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'editorial':
+    case 'poster':
+      return buildEditorial(sh, String(sh.id ?? 'editorial'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'split':
+      return buildSplit(sh, String(sh.id ?? 'split'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'decor':
     case 'marble_bg':
