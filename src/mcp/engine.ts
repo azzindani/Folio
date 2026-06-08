@@ -22,6 +22,7 @@ import { buildGuide } from './engine/guide';
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 export { extractReference } from './engine/reference';
 import { lintComposition, reviewComposition } from './engine/design-lint';
+import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
@@ -1196,6 +1197,134 @@ export function exportDesign(args: { design_path: string; format: string; output
     `Supported formats: svg, png, html. PDF requires a separate Puppeteer step.`,
     progress,
   );
+}
+
+// ── diagnose_design ─────────────────────────────────────────
+// Built-in troubleshooter: geometry + composition + quality findings with fixes.
+export function diagnoseDesign(args: { design_path: string; project_path?: string; page_id?: string }): ToolResult {
+  const op = 'diagnose_design';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+  const spec = readYAML<DesignSpec>(dPath);
+  progress.push(pOk('Loaded design', path.basename(dPath)));
+  const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
+
+  const run = (layers: Layer[], pageId?: string): (Finding & { page?: string })[] =>
+    analyzeLayers(layers ?? [], W, H).map(f => (pageId ? { ...f, page: pageId } : f));
+
+  let findings: (Finding & { page?: string })[] = [];
+  if (args.page_id && spec.pages) {
+    const page = spec.pages.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`, progress);
+    findings = run(page.layers ?? [], page.id);
+  } else if (spec.pages) {
+    for (const page of spec.pages) findings.push(...run(page.layers ?? [], page.id));
+  } else {
+    findings = run(spec.layers ?? []);
+  }
+
+  const errors = findings.filter(f => f.severity === 'error');
+  const warnings = findings.filter(f => f.severity === 'warning');
+  const suggestions = findings.filter(f => f.severity === 'suggestion');
+  progress.push(pOk('Diagnosed', `${errors.length} error(s), ${warnings.length} warning(s), ${suggestions.length} suggestion(s)`));
+  const summary = errors.length === 0 && warnings.length === 0
+    ? (suggestions.length ? 'No problems — some polish suggestions.' : 'Clean — no problems found.')
+    : `${errors.length} error(s) + ${warnings.length} warning(s) to fix.`;
+  const context = buildContext(op, `Diagnosed "${spec.meta.name}" — ${summary}`);
+  return okResult(op, {
+    ok: errors.length === 0, summary,
+    counts: { errors: errors.length, warnings: warnings.length, suggestions: suggestions.length },
+    findings: findings.slice(0, 40), progress, context,
+  });
+}
+
+// ── render_preview ──────────────────────────────────────────
+// Render the design to a PNG and return it INLINE as an image block, so the
+// model can actually SEE what it produced (no file written). Closes the
+// "MCP is blind" gap — pair with diagnose_design to verify a fix visually.
+export function renderPreview(args: { design_path: string; project_path?: string; page_id?: string; scale?: number }): ToolResult {
+  const op = 'render_preview';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+  const spec = readYAML<DesignSpec>(dPath);
+  const componentRegistry = loadComponentRegistry(args.project_path ?? path.dirname(path.dirname(dPath)));
+  const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
+  try {
+    const renderSpec = (spec.pages?.length)
+      ? ({ ...spec, layers: (args.page_id ? spec.pages.find(p => p.id === args.page_id) : spec.pages[0])?.layers ?? [], pages: undefined } as DesignSpec)
+      : spec;
+    const svgStr = renderToSVGString(renderSpec, undefined, undefined, componentRegistry);
+    const missing = unbundledFonts(svgStr);
+    const png = Buffer.from(new Resvg(svgStr, {
+      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(),
+    }).render().asPng());
+    progress.push(pOk('Rendered preview', `${png.length} bytes @ ${scale}×`));
+    const notes = missing.length ? [`Fonts not bundled for raster (fell back; render correctly in the editor): ${missing.join(', ')}`] : [];
+    const context = buildContext(op, `Preview of "${spec.meta.name}"`);
+    const _attachments = [{ type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' }];
+    return okResult(op, { status: 'ok', bytes: png.length, scale, ...(notes.length ? { notes } : {}), progress, context, _attachments });
+  } catch (err) {
+    return errResult(op, `Preview render failed: ${(err as Error).message}`, 'Try export_design format="svg" to verify the design renders.', progress);
+  }
+}
+
+// ── align_layers ────────────────────────────────────────────
+// Auto-align / distribute / snap-to-grid a set of layers (the fix for the
+// misalignment findings). Mutates positions in place and writes the YAML.
+export function alignLayers(args: { design_path: string; layer_ids: string[]; operation: string; project_path?: string; page_id?: string; grid?: number }): ToolResult {
+  const op = 'align_layers';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
+  const spec = readYAML<DesignSpec>(dPath);
+  const arr: Layer[] = (args.page_id && spec.pages) ? (spec.pages.find(p => p.id === args.page_id)?.layers ?? []) : (spec.pages ? spec.pages[0]?.layers ?? [] : spec.layers ?? []);
+  const getXY = (l: Layer): { x: number; y: number; w: number; h: number } | null => {
+    const p = (l as { pos?: unknown }).pos;
+    if (Array.isArray(p) && p.length >= 4 && p.every(n => typeof n === 'number')) return { x: p[0] as number, y: p[1] as number, w: p[2] as number, h: p[3] as number };
+    if ([l.x, l.y, l.width, (l as { height?: unknown }).height].every(v => typeof v === 'number')) return { x: l.x as number, y: l.y as number, w: l.width as number, h: (l as { height: number }).height };
+    return null;
+  };
+  const setXY = (l: Layer, x: number, y: number): void => {
+    const p = (l as { pos?: number[] }).pos;
+    if (Array.isArray(p)) { p[0] = Math.round(x); p[1] = Math.round(y); }
+    else { (l as { x: number }).x = Math.round(x); (l as { y: number }).y = Math.round(y); }
+  };
+  const targets = args.layer_ids.map(id => arr.find(l => l.id === id)).filter((l): l is Layer => !!l);
+  const boxed = targets.map(l => ({ l, b: getXY(l) })).filter((t): t is { l: Layer; b: { x: number; y: number; w: number; h: number } } => !!t.b);
+  if (boxed.length < 1) return errResult(op, 'No positioned target layers found.', 'Pass layer_ids that exist on the page and have numeric positions.', progress);
+
+  const o = args.operation;
+  const grid = typeof args.grid === 'number' && args.grid > 0 ? args.grid : 8;
+  const minX = Math.min(...boxed.map(t => t.b.x)), maxR = Math.max(...boxed.map(t => t.b.x + t.b.w));
+  const minY = Math.min(...boxed.map(t => t.b.y)), maxB = Math.max(...boxed.map(t => t.b.y + t.b.h));
+  for (const { l, b } of boxed) {
+    if (o === 'left') setXY(l, minX, b.y);
+    else if (o === 'right') setXY(l, maxR - b.w, b.y);
+    else if (o === 'top') setXY(l, b.x, minY);
+    else if (o === 'bottom') setXY(l, b.x, maxB - b.h);
+    else if (o === 'center_h') setXY(l, (minX + maxR) / 2 - b.w / 2, b.y);
+    else if (o === 'center_v') setXY(l, b.x, (minY + maxB) / 2 - b.h / 2);
+    else if (o === 'snap_grid') setXY(l, Math.round(b.x / grid) * grid, Math.round(b.y / grid) * grid);
+  }
+  if ((o === 'distribute_h' || o === 'distribute_v') && boxed.length >= 3) {
+    const horiz = o === 'distribute_h';
+    const sorted = [...boxed].sort((a, c) => horiz ? a.b.x - c.b.x : a.b.y - c.b.y);
+    const first = sorted[0].b, last = sorted[sorted.length - 1].b;
+    const span = horiz ? (last.x + last.w) - first.x : (last.y + last.h) - first.y;
+    const totalSize = sorted.reduce((s, t) => s + (horiz ? t.b.w : t.b.h), 0);
+    const gap = (span - totalSize) / (sorted.length - 1);
+    let cursor = horiz ? first.x : first.y;
+    for (const t of sorted) { if (horiz) { setXY(t.l, cursor, t.b.y); cursor += t.b.w + gap; } else { setXY(t.l, t.b.x, cursor); cursor += t.b.h + gap; } }
+  }
+
+  const backup = snapshot(dPath);
+  writeYAML(dPath, spec);
+  progress.push(pOk(`Aligned ${boxed.length} layer(s)`, o));
+  const context = buildContext(op, `Aligned ${boxed.length} layer(s) (${o}) in "${spec.meta.name}"`);
+  const link = buildEditorLink(dPath);
+  return okResult(op, { status: 'ok', operation: o, aligned: boxed.map(t => t.l.id), backup, open_url: link.open_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment] });
 }
 
 export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {
