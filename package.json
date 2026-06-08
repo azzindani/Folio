@@ -72,6 +72,7 @@
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
     "@resvg/resvg-js": "^2.6.2",
+    "dom-to-image-more": "^3.7.2",
     "imagetracerjs": "^1.2.6",
     "interactjs": "^1.10.27",
     "js-yaml": "^4.1.1",
