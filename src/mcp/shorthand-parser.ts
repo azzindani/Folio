@@ -1,5 +1,13 @@
 import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
+import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
+
+// Parametric shapes the engine expands into a `path` layer (absolute coords).
+export const SHAPE_NAMES = new Set<string>([
+  'star', 'burst', 'seal', 'blob', 'wave', 'arc', 'ring', 'donut',
+  'bubble', 'speech_bubble', 'heart', 'lightning', 'bolt', 'shield',
+  'gear', 'cog', 'arrow', 'cross_shape', 'plus_shape',
+]);
 
 /**
  * Semantic Shorthand Parser
@@ -533,6 +541,37 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         fill: sh.fill ? expandFill(sh.fill) : undefined,
         stroke: sh.stroke ? expandStroke(sh.stroke) : undefined,
       } as Layer;
+
+    case 'star': case 'burst': case 'seal': case 'blob': case 'wave':
+    case 'arc': case 'ring': case 'donut': case 'bubble': case 'speech_bubble':
+    case 'heart': case 'lightning': case 'bolt': case 'shield': case 'gear':
+    case 'cog': case 'arrow': case 'cross_shape': case 'plus_shape': {
+      const box: ShapeBox = {
+        x: typeof pos.x === 'number' ? pos.x : 0,
+        y: typeof pos.y === 'number' ? pos.y : 0,
+        w: typeof pos.width === 'number' ? pos.width : 100,
+        h: typeof pos.height === 'number' ? pos.height : 100,
+      };
+      const result = shapePath(sh.type as ShapeName, box, sh as unknown as Record<string, unknown>);
+      // arc is an open stroke shape; everything else fills. Default arc/ring
+      // strokes sensibly so they're visible even if the model omits a stroke.
+      const isStrokeShape = sh.type === 'arc';
+      const fill = sh.fill ? expandFill(sh.fill)
+        : sh.color && !isStrokeShape ? { type: 'solid' as const, color: sh.color }
+        : isStrokeShape ? undefined
+        : { type: 'solid' as const, color: sh.color ?? '$text' };
+      const stroke = sh.stroke ? expandStroke(sh.stroke)
+        : isStrokeShape ? { color: sh.color ?? '$text', width: typeof sh.weight === 'number' ? sh.weight : 8 }
+        : undefined;
+      return {
+        ...base,
+        type: 'path',
+        d: result.d,
+        ...(result.fillRule ? { fill_rule: result.fillRule } : {}),
+        ...(fill ? { fill } : {}),
+        ...(stroke ? { stroke } : {}),
+      } as Layer;
+    }
 
     case 'image':
       return {

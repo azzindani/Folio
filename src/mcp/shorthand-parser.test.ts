@@ -90,6 +90,26 @@ describe('expandShorthand', () => {
     expect(r.fill).toMatchObject({ type: 'image', src: 'https://x/p.png', mode: 'tile' });
   });
 
+  it('expands a star shape into a filled path layer', () => {
+    const r = expandShorthand({ id: 'st', type: 'star', z: 1, pos: [100, 100, 200, 200], points: 6, color: '#FF3D00' } as unknown as ShorthandLayer) as { type?: string; d?: string; fill?: { type?: string; color?: string } };
+    expect(r.type).toBe('path');
+    expect(r.d?.startsWith('M')).toBe(true);
+    expect(r.fill).toEqual({ type: 'solid', color: '#FF3D00' });
+  });
+
+  it('expands a donut shape with evenodd fill-rule', () => {
+    const r = expandShorthand({ id: 'rg', type: 'donut', z: 1, pos: [0, 0, 120, 120], color: '#222', thickness: 0.3 } as unknown as ShorthandLayer) as { type?: string; fill_rule?: string };
+    expect(r.type).toBe('path');
+    expect(r.fill_rule).toBe('evenodd');
+  });
+
+  it('expands an arc as an open stroke shape (no fill, default stroke)', () => {
+    const r = expandShorthand({ id: 'ar', type: 'arc', z: 1, pos: [0, 0, 120, 120], color: '#1040C0', weight: 10 } as unknown as ShorthandLayer) as { type?: string; fill?: unknown; stroke?: { color?: string; width?: number } };
+    expect(r.type).toBe('path');
+    expect(r.fill).toBeUndefined();
+    expect(r.stroke).toEqual({ color: '#1040C0', width: 10 });
+  });
+
   it('expands text with shorthand props', () => {
     const sh: ShorthandLayer = {
       id: 'title', type: 'text', z: 20,
