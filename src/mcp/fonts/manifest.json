@@ -7,6 +7,7 @@
     "EB Garamond",
     "Fira Code",
     "IBM Plex Mono",
+    "IBM Plex Sans",
     "Inter",
     "JetBrains Mono",
     "Lora",
@@ -15,6 +16,7 @@
     "Playfair Display",
     "Plus Jakarta Sans",
     "Public Sans",
+    "Roboto",
     "Roboto Mono",
     "Roboto Slab",
     "Source Code Pro",
@@ -47,6 +49,9 @@
       "IBMPlexMono-Regular.ttf",
       "IBMPlexMono-SemiBold.ttf"
     ],
+    "IBM Plex Sans": [
+      "IBMPlexSans[wdth,wght].ttf"
+    ],
     "Inter": [
       "Inter[opsz,wght].ttf"
     ],
@@ -76,6 +81,9 @@
     ],
     "Roboto Slab": [
       "RobotoSlab[wght].ttf"
+    ],
+    "Roboto": [
+      "Roboto[wdth,wght].ttf"
     ],
     "Source Code Pro": [
       "SourceCodePro[wght].ttf"
