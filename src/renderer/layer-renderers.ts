@@ -6,9 +6,9 @@ import type {
   InteractiveChartLayer, InteractiveTableLayer, RichTextLayer,
   KpiCardLayer, MapLayer, EmbedCodeLayer, PopupLayer, ParticleLayer,
   ButtonLayer, TabsLayer, AccordionLayer, FilterBarLayer, ToggleLayer,
-  TooltipLayer, CalloutLayer, ProgressLayer, TextContent,
+  TooltipLayer, CalloutLayer, ProgressLayer, TextContent, TextStyle,
 } from '../schema/types';
-import { createSVGElement, getOrCreateDefs } from './svg-utils';
+import { createSVGElement, getOrCreateDefs, uniqueDefId } from './svg-utils';
 import { getPreviewRows, getPreviewAccent } from './render-context';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
@@ -257,6 +257,39 @@ function normalizeTextLayer(layer: TextLayer): { content: TextContent; style: No
   return { content: content as TextContent, style: s as NonNullable<TextLayer['style']> };
 }
 
+// Apply CSS text-transform at the string level so it works in resvg too (resvg
+// doesn't honor the CSS text-transform property on <text>).
+function transformText(v: string, mode?: TextStyle['text_transform']): string {
+  if (mode === 'uppercase') return v.toUpperCase();
+  if (mode === 'lowercase') return v.toLowerCase();
+  if (mode === 'capitalize') return v.replace(/\b\p{L}/gu, c => c.toUpperCase());
+  return v;
+}
+
+function settingsString(f: Record<string, number> | string | undefined): string | undefined {
+  if (!f) return undefined;
+  if (typeof f === 'string') return f || undefined;
+  const parts = Object.entries(f).map(([k, v]) => `"${k}" ${v}`);
+  return parts.length ? parts.join(', ') : undefined;
+}
+
+// Set the advanced typographic attributes shared by plain & rich <text>:
+// italic, word-spacing, variable-font axes, OpenType features, glyph outline.
+function applyTypography(textEl: SVGElement, style: TextStyle): void {
+  if (style.font_style) textEl.setAttribute('font-style', style.font_style);
+  if (style.word_spacing) textEl.setAttribute('word-spacing', `${style.word_spacing}px`);
+  const fv = settingsString(style.font_variation_settings);
+  if (fv) textEl.style.setProperty('font-variation-settings', fv);
+  const ff = settingsString(style.font_feature_settings);
+  if (ff) textEl.style.setProperty('font-feature-settings', ff);
+  if (style.stroke && style.stroke.width > 0) {
+    textEl.setAttribute('stroke', style.stroke.color);
+    textEl.setAttribute('stroke-width', String(style.stroke.width));
+    textEl.setAttribute('stroke-linejoin', 'round');
+    textEl.setAttribute('paint-order', 'stroke'); // outline behind the fill
+  }
+}
+
 export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
   const g = createSVGElement('g');
   const { content, style } = normalizeTextLayer(layer);
@@ -319,10 +352,12 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     });
     textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
     textEl.setAttribute('font-size', String(style.font_size ?? 16));
+    if (style.font_weight) textEl.setAttribute('font-weight', String(style.font_weight));
+    applyTypography(textEl, style);
 
     for (const span of content.spans) {
       const tspan = createSVGElement('tspan');
-      tspan.textContent = span.text;
+      tspan.textContent = transformText(span.text, style.text_transform);
       if (span.bold) tspan.setAttribute('font-weight', 'bold');
       if (span.italic) tspan.setAttribute('font-style', 'italic');
       if (span.color) tspan.setAttribute('fill', span.color);
@@ -335,54 +370,86 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
     // Plain text
     const fontSize = style.font_size ?? 16;
     const lineH = fontSize * (style.line_height ?? 1.4);
-    const value = content.value;
-    const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
+    const value = transformText(content.value, style.text_transform);
 
-    // Compute x anchor — `text_align` is the dominant authored form in
-    // templates, `align` is the legacy field; honour either.
     const alignVal = style.text_align ?? style.align;
     const anchor = alignVal === 'center' ? 'middle' : alignVal === 'right' ? 'end' : 'start';
-    let textX = layer.x ?? 0;
-    if (alignVal === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
-    else if (alignVal === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
-
-    // Compute y anchor (vertical align within layer height)
-    let textY = (layer.y ?? 0) + fontSize;
-    if (typeof layer.height === 'number' && style.vertical_align) {
-      const totalH = lines.length * lineH;
-      if (style.vertical_align === 'middle') textY = (layer.y ?? 0) + (layer.height - totalH) / 2 + fontSize;
-      else if (style.vertical_align === 'bottom') textY = (layer.y ?? 0) + layer.height - totalH + fontSize;
-    }
-
-    const textEl = createSVGElement('text', { x: textX, y: textY });
-    textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
-    textEl.setAttribute('font-size', String(fontSize));
-    textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
-    if (style.text_decoration && style.text_decoration !== 'none') {
-      textEl.setAttribute('text-decoration', style.text_decoration);
-    }
-    if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
-    if (alignVal) textEl.setAttribute('text-anchor', anchor);
-
     const textColor = style.color
       ? resolveColorOrGradient(style.color, getOrCreateDefs(svg))
       : '#000';
-    textEl.setAttribute('fill', textColor);
 
-    if (lines.length > 1) {
-      for (let i = 0; i < lines.length; i++) {
-        const tspan = createSVGElement('tspan', {
-          x: String(textX),
-          dy: i === 0 ? '0' : String(lineH),
-        });
-        tspan.textContent = lines[i];
-        textEl.appendChild(tspan);
-      }
+    if (style.text_path?.d) {
+      // Curve a single line of text along an arbitrary SVG path.
+      const pathId = uniqueDefId('textpath');
+      getOrCreateDefs(svg).appendChild(createSVGElement('path', { id: pathId, d: style.text_path.d, fill: 'none' }));
+      const textEl = createSVGElement('text');
+      textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
+      textEl.setAttribute('font-size', String(fontSize));
+      textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
+      if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+      if (alignVal) textEl.setAttribute('text-anchor', anchor);
+      textEl.setAttribute('fill', textColor);
+      applyTypography(textEl, style);
+      const tp = createSVGElement('textPath');
+      tp.setAttribute('href', `#${pathId}`);
+      tp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+      const off = style.text_path.start_offset;
+      tp.setAttribute('startOffset', `${off != null ? off : alignVal === 'center' ? 50 : 0}%`);
+      if (style.text_path.side) tp.setAttribute('side', style.text_path.side);
+      tp.textContent = value;
+      textEl.appendChild(tp);
+      g.appendChild(textEl);
     } else {
-      textEl.textContent = lines[0] ?? '';
-    }
+      const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
+      let textX = layer.x ?? 0;
+      if (alignVal === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
+      else if (alignVal === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
 
-    g.appendChild(textEl);
+      let textY = (layer.y ?? 0) + fontSize;
+      if (typeof layer.height === 'number' && style.vertical_align) {
+        const totalH = lines.length * lineH;
+        if (style.vertical_align === 'middle') textY = (layer.y ?? 0) + (layer.height - totalH) / 2 + fontSize;
+        else if (style.vertical_align === 'bottom') textY = (layer.y ?? 0) + layer.height - totalH + fontSize;
+      }
+
+      // Marker/highlight band behind the text (estimated width — matches wrap heuristic).
+      if (style.highlight) {
+        const cw = fontSize * 0.54;
+        for (let i = 0; i < lines.length; i++) {
+          const lw = lines[i].length * cw + (style.letter_spacing ?? 0) * Math.max(0, lines[i].length - 1);
+          let rx = textX;
+          if (anchor === 'middle') rx = textX - lw / 2; else if (anchor === 'end') rx = textX - lw;
+          const pad = fontSize * 0.12;
+          g.appendChild(createSVGElement('rect', {
+            x: rx - pad, y: textY + i * lineH - fontSize * 0.82,
+            width: lw + pad * 2, height: fontSize * 1.04, fill: style.highlight,
+          }));
+        }
+      }
+
+      const textEl = createSVGElement('text', { x: textX, y: textY });
+      textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
+      textEl.setAttribute('font-size', String(fontSize));
+      textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
+      if (style.text_decoration && style.text_decoration !== 'none') {
+        textEl.setAttribute('text-decoration', style.text_decoration);
+      }
+      if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+      if (alignVal) textEl.setAttribute('text-anchor', anchor);
+      textEl.setAttribute('fill', textColor);
+      applyTypography(textEl, style);
+
+      if (lines.length > 1) {
+        for (let i = 0; i < lines.length; i++) {
+          const tspan = createSVGElement('tspan', { x: String(textX), dy: i === 0 ? '0' : String(lineH) });
+          tspan.textContent = lines[i];
+          textEl.appendChild(tspan);
+        }
+      } else {
+        textEl.textContent = lines[0] ?? '';
+      }
+      g.appendChild(textEl);
+    }
   }
 
   applyCommonAttributes(g, layer);

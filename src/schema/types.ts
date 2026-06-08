@@ -190,6 +190,12 @@ export type TextContent =
   | ExpressionContent;
 
 // ── Text Style ──────────────────────────────────────────────
+/** Outline drawn around glyphs (text stroke). */
+export interface TextStroke {
+  color: string;
+  width: number;
+}
+
 export interface TextStyle {
   font_family?: string;
   font_size?: number;
@@ -197,10 +203,25 @@ export interface TextStyle {
   color?: ColorOrGradient;
   line_height?: number;
   letter_spacing?: number;
+  word_spacing?: number;
   align?: 'left' | 'center' | 'right';
   text_align?: 'left' | 'center' | 'right';
   vertical_align?: 'top' | 'middle' | 'bottom';
-  text_decoration?: 'none' | 'underline' | 'line-through';
+  text_decoration?: 'none' | 'underline' | 'line-through' | 'overline';
+  /** CSS text-transform — UPPERCASE labels, etc. */
+  text_transform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  font_style?: 'normal' | 'italic' | 'oblique';
+  /** Variable-font axes, e.g. { wght: 350, wdth: 80, opsz: 48, slnt: -6 }. */
+  font_variation_settings?: Record<string, number>;
+  /** OpenType features, e.g. { liga: 1, smcp: 1, tnum: 1, ss01: 1 } or a raw string. */
+  font_feature_settings?: Record<string, number> | string;
+  /** Glyph outline (text stroke). */
+  stroke?: TextStroke;
+  /** Marker/highlighter band painted behind the text. */
+  highlight?: string;
+  /** Curve plain text along an SVG path (single line). `d` is absolute coords;
+   *  `side`/`start_offset`/`spacing` tune placement. */
+  text_path?: { d: string; side?: 'left' | 'right'; start_offset?: number };
 }
 
 // ── Shadow ──────────────────────────────────────────────────

@@ -443,6 +443,41 @@ function buildDecor(sh: ShorthandLayer, id: string, z: number): Layer {
   return { id, type: 'group', z, x: 0, y: 0, width: W, height: H, layers } as unknown as Layer;
 }
 
+// Map terse typographic aliases a model reaches for onto the TextStyle fields:
+// transform/uppercase, italic, decoration/underline, variable-font `variation`,
+// OpenType `features`, text `outline`, `highlight` marker, `curve` (text-on-path).
+function textTypography(sh: ShorthandLayer): Record<string, unknown> {
+  const r = sh as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  const transform = r['transform'] ?? r['text_transform'] ?? (r['uppercase'] === true ? 'uppercase' : undefined);
+  if (typeof transform === 'string') out['text_transform'] = transform;
+  if (r['italic'] === true) out['font_style'] = 'italic';
+  else if (typeof r['font_style'] === 'string') out['font_style'] = r['font_style'];
+  if (typeof r['word_spacing'] === 'number') out['word_spacing'] = r['word_spacing'];
+  const deco = r['decoration'] ?? r['text_decoration'] ?? (r['underline'] === true ? 'underline' : undefined);
+  if (typeof deco === 'string') out['text_decoration'] = deco;
+  const variation = r['variation'] ?? r['font_variation_settings'];
+  if (variation && typeof variation === 'object') out['font_variation_settings'] = variation;
+  const features = r['features'] ?? r['font_feature_settings'];
+  if (features && (typeof features === 'object' || typeof features === 'string')) out['font_feature_settings'] = features;
+  const outline = r['outline'] ?? r['text_stroke'];
+  if (typeof outline === 'string') out['stroke'] = { color: outline, width: 2 };
+  else if (outline && typeof outline === 'object') {
+    const o = outline as Record<string, unknown>;
+    out['stroke'] = { color: String(o['color'] ?? '#000'), width: typeof o['width'] === 'number' ? o['width'] : 2 };
+  } else if (typeof r['outline_color'] === 'string') {
+    out['stroke'] = { color: r['outline_color'], width: typeof r['outline_width'] === 'number' ? r['outline_width'] : 2 };
+  }
+  if (typeof r['highlight'] === 'string') out['highlight'] = r['highlight'];
+  const curve = r['curve'] ?? r['text_path'];
+  if (typeof curve === 'string') out['text_path'] = { d: curve };
+  else if (curve && typeof curve === 'object') {
+    const c = curve as Record<string, unknown>;
+    if (typeof c['d'] === 'string') out['text_path'] = { d: c['d'], side: c['side'], start_offset: c['start_offset'] ?? c['offset'] };
+  }
+  return out;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -495,6 +530,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
           ...(sh.align ? { align: sh.align } : {}),
           ...(typeof sh.line_height === 'number' ? { line_height: sh.line_height } : {}),
           ...(typeof sh.letter_spacing === 'number' ? { letter_spacing: sh.letter_spacing } : {}),
+          ...textTypography(sh),
         } as TextStyle,
       } as Layer;
 

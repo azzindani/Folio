@@ -110,6 +110,21 @@ describe('expandShorthand', () => {
     expect(r.stroke).toEqual({ color: '#1040C0', width: 10 });
   });
 
+  it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
+    const r = expandShorthand({
+      id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',
+      uppercase: true, italic: true, outline: { color: '#000', width: 3 },
+      highlight: '#FDE047', variation: { wght: 350 }, features: { tnum: 1 },
+      curve: 'M0 80 Q100 0 200 80',
+    } as unknown as ShorthandLayer) as { style?: Record<string, unknown> };
+    expect(r.style).toMatchObject({
+      text_transform: 'uppercase', font_style: 'italic',
+      stroke: { color: '#000', width: 3 }, highlight: '#FDE047',
+      font_variation_settings: { wght: 350 }, font_feature_settings: { tnum: 1 },
+    });
+    expect((r.style!.text_path as { d?: string }).d).toBe('M0 80 Q100 0 200 80');
+  });
+
   it('expands text with shorthand props', () => {
     const sh: ShorthandLayer = {
       id: 'title', type: 'text', z: 20,
