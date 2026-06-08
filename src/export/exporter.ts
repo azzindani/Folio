@@ -4,6 +4,7 @@ import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderDesign, renderPage } from '../renderer/renderer';
 import type { LoadedDataset } from '../report/data-loader';
 import { checkCanvasScale } from './canvas-limit';
+import { buildEmbeddedFontStyle } from './font-embed';
 
 export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
 
@@ -20,6 +21,23 @@ export function exportToSVG(spec: DesignSpec, options: ExportOptions): string {
   return new XMLSerializer().serializeToString(svg);
 }
 
+/**
+ * Serialize a rendered SVG with its web fonts inlined as `@font-face` data
+ * URIs, so the file (and any `<img>`→canvas raster of it) renders the real
+ * fonts instead of a serif fallback. Falls back to plain serialization if
+ * font embedding yields nothing (no web fonts / offline).
+ */
+async function serializeWithFonts(svg: SVGSVGElement): Promise<string> {
+  const style = await buildEmbeddedFontStyle(svg);
+  if (style) svg.insertAdjacentHTML('afterbegin', style);
+  return new XMLSerializer().serializeToString(svg);
+}
+
+/** Async SVG export with fonts embedded — used by the download path. */
+export async function exportToSVGEmbedded(spec: DesignSpec, options: ExportOptions): Promise<string> {
+  return serializeWithFonts(renderForExport(spec, options));
+}
+
 export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
   const scale = options.scale ?? 2;
   const { width, height } = spec.document;
@@ -31,7 +49,7 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   if (!guard.ok) throw new Error(guard.reason);
 
   const svg = renderForExport(spec, options);
-  const svgString = new XMLSerializer().serializeToString(svg);
+  const svgString = await serializeWithFonts(svg);
 
   const canvas = document.createElement('canvas');
   canvas.width  = guard.width;
@@ -247,7 +265,7 @@ export async function exportDesign(spec: DesignSpec, options: ExportOptions): Pr
 
   switch (options.format) {
     case 'svg': {
-      const svg = exportToSVG(spec, options);
+      const svg = await exportToSVGEmbedded(spec, options);
       await saveText(svg, `${name}.svg`, 'image/svg+xml', 'svg');
       break;
     }
