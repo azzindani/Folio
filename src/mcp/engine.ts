@@ -19,6 +19,7 @@ import {
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
 export { extractReference } from './engine/reference';
+import { lintComposition } from './engine/design-lint';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
@@ -613,6 +614,7 @@ export function addLayers(args: {
   // silently spill into a divergent top-level layers[] — that splits the canvas
   // from the editor and hides half the report. Default to the sole page.
   const pages = spec.pages;
+  let activeLayers: Layer[] = incoming;
   if (pages && pages.length) {
     const pageId = args.page_id ?? (pages.length === 1 ? pages[0].id : undefined);
     if (!pageId) return errResult(op, `Design has ${pages.length} pages — pass page_id to say which one`, `Pages: ${pages.map(p => p.id).join(', ')}`, progress);
@@ -621,15 +623,18 @@ export function addLayers(args: {
     if (!args.page_id && pages.length === 1) progress.push(pInfo('Routed to the only page', pageId));
     if (!page.layers) page.layers = [];
     page.layers.push(...incoming);
+    activeLayers = page.layers;
   } else {
     if (!spec.layers) spec.layers = [];
     spec.layers.push(...incoming);
+    activeLayers = spec.layers;
   }
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
   progress.push(pOk(`Added ${incoming.length} layer(s)`, incoming.map(l => l.id).join(', ')));
 
-  const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming)];
+  const lint = lintComposition(activeLayers, spec.document.width, spec.document.height);
+  const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint];
   for (const n of notes) progress.push(pInfo('Layer note', n));
   // Report cross-reference diagnostics (charts→datasets, buttons→modals, …) so
   // the LLM building the report sees broken refs immediately, not at export.

@@ -98,8 +98,11 @@ Rules:
     map-pin, zap, award, calendar, phone, shopping-cart). Unknown names render
     as a labeled placeholder. Synonyms are tolerated (photo→image, gear→settings).
   - Put real copy in every text layer — empty text renders nothing.
-  - add_layers returns notes:[…] when something won't render as intended —
-    read them and fix in your next call.`,
+  - CONTRAST: text must contrast with the block beneath it. Light text on a light
+    canvas — or on a colored chip NARROWER than its label (the text spills past the
+    chip onto the canvas) — renders invisible. Always lay a full-canvas bg rect first.
+  - add_layers returns notes:[…] when something won't render as intended (invisible
+    text, off-canvas layers, missing background) — read them and fix in your next call.`,
 
   shorthand: `# Shorthand Syntax (layers_shorthand field)
 pos:[x,y,w,h] replaces x/y/width/height.
@@ -276,11 +279,16 @@ Loop:
          palette_spec, mood, and a step-by-step brief. Follow next_action.
   2. create_design(project_path, name, width, height)  ← use the recommended canvas
   3. add_layers(design_path, layers_shorthand=[…])  ← rebuild the reference as NATIVE layers:
+       • LAYER 1 = the full-canvas background from starter_layers (the EXACT bg hex) — NEVER
+         leave the canvas white when the reference is dark. This is the #1 failure to avoid.
        • Map each visual block: eyebrow→mono text · headline→big display text (4–5× body) ·
          body→text · cards/benefits→ONE feature_grid · logo/photo→image(src)/icon · divider→thin rect.
        • Match the LAYOUT (alignment, hierarchy, column count, whitespace) and TYPE category
          (serif→"Playfair Display" · grotesk→"Space Grotesk"/"Inter" · mono labels→"IBM Plex Mono").
-       • Use the EXACT palette hex from step 1 — flat bg, ONE accent. Don't drift to a navy-gradient template.
+       • Use the EXACT palette hex from step 1 — flat bg, ONE accent. Every text color must contrast
+         with the block under it (a colored chip must be WIDER than its label, or the text spills onto
+         the canvas and vanishes). add_layers returns notes:[…] flagging invisible text / off-canvas
+         layers — fix every note before seal_design.
   4. seal_design → export_design.
 
 Rebuild as layers (editable), NOT as a single image layer of the screenshot — the point is an
