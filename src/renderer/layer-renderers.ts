@@ -154,6 +154,7 @@ export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement
 // ── Path ────────────────────────────────────────────────────
 export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
   const el = createSVGElement('path', { d: layer.d });
+  if (layer.fill_rule) el.setAttribute('fill-rule', layer.fill_rule);
 
   if (layer.fill) {
     const fillResult = applyFill(layer.fill, svg, {
