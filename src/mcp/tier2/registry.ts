@@ -16,6 +16,19 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'extract_reference',
+    description: 'Turn a REFERENCE design (a Canva export, screenshot, or SVG the user wants to match) into a deterministic palette + recommended canvas + a step-by-step composition brief. You (the model) already SEE the image — this tool supplies what you guess badly: exact pixel dimensions and a role-mapped palette (background/surface/text/accent/secondary/border). Call it FIRST when the user says "make it like this", "match this design", or attaches a reference. Pass colors:[…] = the main hex you observe in the image, and/or image = a data: URL or a local file path (https URLs are not fetched — send observed colors instead). Returns palette_spec + a brief; then create_design at the recommended canvas and add_layers using the EXACT hex, reproducing the reference layout (do NOT fall back to a centered navy-gradient template).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        colors:       { type: 'object', description: 'Array of the main hex colors you observe in the reference, e.g. ["#0A0A0A","#FF3D00","#FAFAFA"] — most reliable input', items: { type: 'string' } },
+        image:        { type: 'string', description: 'Optional: a data: URL (data:image/png;base64,… or data:image/svg+xml,…) or a local file path. Used for EXACT dimensions + (SVG) exact colors. Remote http(s) URLs are not fetched.' },
+        project_path: { type: 'string', description: 'Optional project name — when given, next_action points straight at create_design' },
+        name:         { type: 'string', description: 'Optional name for the design/palette derived from this reference' },
+      },
+    },
+  },
+  {
     name: 'add_layers',
     description: 'Compose a poster (or one carousel page) in one call via layers_shorthand. Design like a human, not an AI template: flat solid canvas (warm #FAF5EC or near-black #0A0A0A — NO gradient by default), a headline 4–5× the body in a real display font (set font:"Playfair Display"/"Anton"/etc.), ONE accent used 1–2×, asymmetric left-anchor + whitespace, depth via a 2–4px rule not glows, radius 0 or pill. FEATURE / BENEFIT / "CARDS" POSTER? Send ONE feature_grid layer — {type:"feature_grid", title, subtitle, bg:"#0A0A0A", accent:"#FF3D00", items:[{icon,title,desc}]} — the engine lays out the background, title and evenly-spaced cards; do NOT hand-place card coordinates (they collide into an illegible pile — the #1 small-model failure). For text posters use 3–8 hand-placed layers (pos:[x,y,w,h]); always include a full-canvas background rect, and every sized layer needs width+height or it renders invisibly. Returns a clickable open_url. → then seal_design.',
     inputSchema: {

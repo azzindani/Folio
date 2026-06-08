@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-07
+
+First public release. Consolidates the internal Phase 1–5 work (the full
+historical changelog is preserved under [1.0.0] below) and introduces
+reference-image–driven design.
+
+### Added
+
+- **Reference-image → design (MCP)** — new `extract_reference` tool. Turns a
+  reference design (Canva export, screenshot, or SVG the user wants to match)
+  into a deterministic, role-mapped palette (background/surface/text/accent/
+  secondary/border) + a recommended Folio canvas + a step-by-step composition
+  brief the model fills by looking at the image. Dimensions come from
+  header-only parsing (PNG/JPEG/GIF/WebP/SVG — no pixel decode, no new deps).
+  Accepts `data:` URLs and local file paths; degrades to model-observed
+  `colors:[…]` for remote URLs. Returns a `palette_spec` and a `next_action`
+  baton straight into `create_design`.
+- **`reference` engine-guide section** + a quick_ref pointer teaching the
+  match-this-design loop: `extract_reference → create_design → add_layers`,
+  rebuilding the reference as native editable layers (not a pasted screenshot).
+- **Reference underlay (editor)** — Shift-drop an image onto the canvas to add
+  it as a locked, dimmed tracing layer (`ImageLayer.role: 'reference'`) sized to
+  fit the canvas, and seed the color palette from it. Build native layers on
+  top, then hide/remove the underlay before exporting.
+
+### CI/CD
+
+- Release pipeline now publishes a Docker image to GitHub Container Registry
+  (`ghcr.io/<owner>/folio:<version>` + `:latest`) on every `v*.*.*` tag, in
+  addition to the per-platform release tarballs.
+
 ## [1.0.0] - 2026-04-09
 
 ### Added
