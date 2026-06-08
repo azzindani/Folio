@@ -110,6 +110,27 @@ describe('expandShorthand', () => {
     expect(r.stroke).toEqual({ color: '#1040C0', width: 10 });
   });
 
+  it('expands an editorial preset into a positioned group (kicker/rule/title/body/footer)', () => {
+    const r = expandShorthand({ id: 'ed', type: 'editorial', z: 0, pos: [0, 0, 1080, 1350], kicker: 'Notes', title: 'Big Headline', subtitle: 'Deck', body: 'Body', footer: 'foot' } as unknown as ShorthandLayer) as { type?: string; layers?: { id: string; type: string }[] };
+    expect(r.type).toBe('group');
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('ed_bg');
+    expect(ids).toContain('ed_title');
+    expect(ids).toContain('ed_rule');
+    expect(ids).toContain('ed_footer');
+    // every child is fully positioned (no missing geometry)
+    expect(r.layers!.every(l => typeof (l as { x?: number }).x === 'number')).toBe(true);
+  });
+
+  it('expands a split preset with a golden-ratio pattern panel', () => {
+    const r = expandShorthand({ id: 'sp', type: 'split', z: 0, pos: [0, 0, 1200, 800], side: 'left', ratio: 'golden', panel: { type: 'pattern', pattern: 'halftone', fg: '#fff', bg: '#B8543C' }, panel_label: '04', title: 'Hi' } as unknown as ShorthandLayer) as { type?: string; layers?: { id: string; type: string; width?: number; fill?: { type?: string } }[] };
+    expect(r.type).toBe('group');
+    const panel = r.layers!.find(l => l.id === 'sp_panel')!;
+    expect(panel.fill?.type).toBe('pattern');
+    expect(panel.width).toBe(Math.round(1200 * 0.382));
+    expect(r.layers!.map(l => l.id)).toContain('sp_plabel');
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',
