@@ -187,6 +187,20 @@ the same backdrop twice.
     intensity:0.7, veins:true, rings:1, dots:1}
   All fields optional (shown = defaults). corners ⊂ tl/tr/bl/br · intensity 0.2–1.
 
+editorial (alias poster): a complete text-forward editorial poster in ONE layer —
+kicker · rule · big headline · deck · body · footer, left-anchored with a held
+margin and ONE accent (the art-directed look). Engine sizes & stacks everything.
+  {type:"editorial", pos:[0,0,1080,1350], bg:"#FAF5EC", accent:"#B8543C", text_color:"#1A1A1A",
+    kicker:"Field Notes — No. 04", title:"The quiet craft of editorial layout",
+    subtitle:"One-line deck under the headline.", body:"Supporting paragraph…", footer:"folio / 2026"}
+
+split: a two-panel editorial layout — a color/PATTERN block on one side, kicker +
+big headline + deck vertically centered on the other. side:"left"|"right",
+ratio: number or "golden" (0.382). panel can be a hex OR a pattern/image fill.
+  {type:"split", pos:[0,0,1200,800], side:"left", ratio:"golden", panel_label:"04",
+    panel:{type:"pattern",pattern:"halftone",fg:"#FAF5EC",bg:"#B8543C"}, panel_text:"#FAF5EC",
+    bg:"#FAF5EC", accent:"#B8543C", kicker:"Case Study", title:"Headline here", subtitle:"Deck."}
+
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
            (label/value/name/count also map to x/y; or pass a raw vega-lite spec:{...})

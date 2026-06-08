@@ -27,6 +27,13 @@ describe('lintComposition', () => {
     expect(notes).toEqual([]);
   });
 
+  it('reads a PATTERN panel as its bg color for contrast (no false invisible-text)', () => {
+    const panel = { id: 'panel', type: 'rect', z: 1, x: 0, y: 0, width: 460, height: 800, fill: { type: 'pattern', pattern: 'halftone', fg: '#FAF5EC', bg: '#B8543C' } } as unknown as Layer;
+    const label = text('lbl', 2, 80, 300, 300, 200, '#FAF5EC', '04'); // cream on terracotta panel = fine
+    const notes = lintComposition([rect('bg', 0, 0, 0, 1200, 800, '#FAF5EC'), panel, label], 1200, 800);
+    expect(notes.some(n => n.includes('lbl'))).toBe(false);
+  });
+
   it('flags a missing full-canvas background', () => {
     const notes = lintComposition([text('t', 10, 96, 100, 800, 60, '#111111')], 1080, 1080);
     expect(notes.some(n => /background/.test(n))).toBe(true);

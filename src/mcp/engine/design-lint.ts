@@ -20,13 +20,18 @@ function rectOf(l: Layer): Rect | null {
   return { x: x as number, y: y as number, w: w as number, h: h as number };
 }
 
-/** First hex color of a solid or gradient fill; null for tokens/none/images. */
+/** First hex color of a solid/gradient/pattern fill; null for tokens/none/images. */
 function solidColor(l: Layer): string | null {
   const f = (l as { fill?: unknown }).fill;
   if (typeof f === 'string') return f.startsWith('#') ? f : null;
   if (f && typeof f === 'object') {
-    const o = f as { type?: string; color?: string; stops?: { color?: string }[] };
+    const o = f as { type?: string; color?: string; bg?: string; fg?: string; stops?: { color?: string }[] };
     if (typeof o.color === 'string' && o.color.startsWith('#')) return o.color;
+    // Pattern fill — the panel reads as its bg (or fg) for backdrop/contrast.
+    if (o.type === 'pattern') {
+      const pc = o.bg ?? o.fg;
+      if (typeof pc === 'string' && pc.startsWith('#')) return pc;
+    }
     const s = o.stops?.[0]?.color;
     if (typeof s === 'string' && s.startsWith('#')) return s;
   }
