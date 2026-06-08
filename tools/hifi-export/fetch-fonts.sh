@@ -29,10 +29,9 @@ FONTS=(
   "PublicSans[wght].ttf|ofl/publicsans/PublicSans[wght].ttf"
   "WorkSans[wght].ttf|ofl/worksans/WorkSans[wght].ttf"
   "Archivo[wdth,wght].ttf|ofl/archivo/Archivo[wdth,wght].ttf"
-  # Roboto + IBM Plex Sans live under non-obvious paths in google/fonts and 404
-  # from the simple pattern above; they fall back to DejaVu in raster export and
-  # the engine flags them via the unbundled-font note. Add corrected paths here
-  # if you need them rastered.
+  # Roboto + IBM Plex Sans moved to non-obvious paths in google/fonts:
+  "Roboto[wdth,wght].ttf|ofl/roboto/Roboto[wdth,wght].ttf"
+  "IBMPlexSans[wdth,wght].ttf|ofl/ibmplexsans/IBMPlexSans[wdth,wght].ttf"
 )
 enc(){ python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$1"; }
 ok=0; fail=0
