@@ -58,7 +58,19 @@ export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
   // their report and sees someone else's poster. Catch per-layer, emit a
   // visible placeholder, and keep rendering the siblings.
   try {
-    return renderLayerInner(layer, svg);
+    const el = renderLayerInner(layer, svg);
+    const href = (layer as { href?: unknown }).href;
+    if (typeof href === 'string' && href.trim()) {
+      // Wrap in an SVG anchor → clickable in editor/HTML, and a real link
+      // annotation when the HTML is printed to PDF by a browser.
+      const a = document.createElementNS('http://www.w3.org/2000/svg', 'a');
+      a.setAttribute('href', href);
+      a.setAttribute('target', '_blank');
+      a.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href);
+      a.appendChild(el);
+      return a as unknown as SVGElement;
+    }
+    return el;
   } catch (err) {
     return renderLayerError(layer, err);
   }

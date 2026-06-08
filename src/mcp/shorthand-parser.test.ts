@@ -1208,3 +1208,10 @@ describe('decor preset — generalized (style families)', () => {
     expect(g.layers.some(l => l.type === 'line')).toBe(true); // veins present
   });
 });
+
+describe('link / href primitive', () => {
+  it('link shorthand sets layer.href (hyperlink)', () => {
+    const r = expandShorthand({ id: 't', type: 'text', z: 1, pos: [0, 0, 200, 40], text: 'go', link: 'https://example.com' } as unknown as ShorthandLayer);
+    expect((r as unknown as { href?: string }).href).toBe('https://example.com');
+  });
+});

@@ -52,6 +52,7 @@ export interface ShorthandLayer {
   glyph?: string;
   url?: string;
   href?: string;
+  link?: string;
   d?: string;
   sides?: number;
   x1?: number; y1?: number; x2?: number; y2?: number;
@@ -399,6 +400,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
   if (sh.flip_v    !== undefined) base['flip_v']    = sh.flip_v;
   if (sh.visible   !== undefined) base['visible']   = sh.visible;
   if (sh.locked    !== undefined) base['locked']    = sh.locked;
+  if (sh.link      !== undefined) base['href']       = sh.link;
 
   switch (sh.type) {
     case 'rect':
@@ -853,7 +855,7 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // decor / marble_bg / backdrop preset
   'palette', 'corners', 'intensity', 'veins', 'rings', 'dots', 'style',
   // aliases (verbose + terse)
-  'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
+  'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href', 'link',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
 ]);
 
