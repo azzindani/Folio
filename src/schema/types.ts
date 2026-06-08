@@ -248,6 +248,9 @@ export interface BaseLayer {
   visible?: boolean;
   locked?: boolean;
   opacity?: number;
+  /** Hyperlink — wraps the rendered layer in an <a href>. Becomes a clickable
+   *  link in the editor/HTML and a PDF link annotation in browser-printed PDFs. */
+  href?: string;
   clip?: boolean;
   effects?: Effects;
   interaction?: Interaction;

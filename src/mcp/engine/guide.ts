@@ -27,6 +27,22 @@ z = stacking order (higher = front)
      center everything. Depth via a 2–4px RULE/line, NOT glows or soft shadows.
    • radius: 0 (editorial/print) OR 999 (pills) — avoid the 8–16 "templated" middle.
 
+🧭 GOOD DESIGN IS HARD — WORK IN PASSES, don't one-shot the happy path. A flat,
+   centered, single-size layout "renders" but reads mediocre. Aim higher:
+   1. SYSTEM: pick canvas + a real palette (bg · text · ONE accent · neutrals) +
+      a type SCALE (e.g. 88/27/20) + a margin you hold on every side.
+   2. HIERARCHY: ONE focal point — the headline 3–5× the body. Everything else
+      is clearly secondary. If two things shout, neither does.
+   3. STRUCTURE: left-anchor to 1–2 columns; group content into labeled sections
+      with consistent vertical rhythm. Align edges to the grid.
+   4. DEPTH/DECOR LAST: a thin rule, a single decor/backdrop layer in the margins
+      — never gradients/glow competing with the content. Decoration serves the
+      hierarchy; if it fights the text, cut it.
+   5. SELF-REVIEW → REFINE: after add_layers, READ the returned notes (the engine
+      critiques weak hierarchy, accent sprawl, edge-crowding, off-grid edges) AND
+      look at the render. Then patch_design to fix the weakest thing. One pass is
+      rarely enough — a strong poster is usually 2–3 refinement rounds.
+
 ✅ Editorial poster recipe (flat canvas · serif hero ~4:1 · mono label · one accent · asymmetric):
    add_layers(design_path=..., layers_shorthand=[
      {id:"bg",   type:"rect", z:0,  pos:[0,0,1080,1350], fill:"#FAF5EC"},
@@ -153,6 +169,19 @@ coordinates to get wrong). Best way to build a feature/benefit poster.
       {icon:"shield-check", title:"Secure Vault", desc:"End-to-end encrypted"}]}
   Optional: card_fill, accent (icon), text_color, muted. Prefer a FLAT bg hex over
   bg:"gradient" — a flat canvas + one accent reads designed, not AI-generated.
+
+decor (aliases marble_bg, backdrop): a soft, designed BACKGROUND in ONE layer.
+style:"marble" (default) = radial-gradient blobs clustered in the corners (each
+fades to the canvas color at its rim, so text on top stays readable) + veins +
+rings + dots. style:"mesh" = a calmer gradient-mesh wash. Use it as your FIRST
+layer instead of hand-placing ellipses (which collide, go off-canvas, or lose
+their fill). Then add content on top with a HIGHER z. It's a GENERATOR, not a
+fixed look — vary style/palette/accent/corners/intensity per design; don't ship
+the same backdrop twice.
+  {type:"decor", style:"marble", pos:[0,0,1080,1350], bg:"#F3EEF6", accent:"#6231C9",
+    palette:["#B9C4F0","#C9B6EC","#A6DAE8","#F6CBA6"], corners:["tr","bl","br"],
+    intensity:0.7, veins:true, rings:1, dots:1}
+  All fields optional (shown = defaults). corners ⊂ tl/tr/bl/br · intensity 0.2–1.
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}

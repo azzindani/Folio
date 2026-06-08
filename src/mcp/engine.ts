@@ -19,7 +19,7 @@ import {
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
 export { extractReference } from './engine/reference';
-import { lintComposition } from './engine/design-lint';
+import { lintComposition, reviewComposition } from './engine/design-lint';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
@@ -634,7 +634,12 @@ export function addLayers(args: {
   progress.push(pOk(`Added ${incoming.length} layer(s)`, incoming.map(l => l.id).join(', ')));
 
   const lint = lintComposition(activeLayers, spec.document.width, spec.document.height);
-  const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint];
+  // Quality critic — advisory; only when the page looks "complete" (the full
+  // poster has been composed, not a 2-layer partial), so we guide, not nag.
+  const review = activeLayers.length >= 6
+    ? reviewComposition(activeLayers, spec.document.width, spec.document.height)
+    : [];
+  const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint, ...review];
   for (const n of notes) progress.push(pInfo('Layer note', n));
   // Report cross-reference diagnostics (charts→datasets, buttons→modals, …) so
   // the LLM building the report sees broken refs immediately, not at export.
