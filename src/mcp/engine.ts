@@ -1,7 +1,7 @@
 // §14 — pure domain logic, zero MCP imports
 import * as fs from 'fs';
 import * as path from 'path';
-import type { DesignSpec, ThemeSpec, Layer, Page, ComponentSpec } from '../schema/types';
+import type { DesignSpec, Layer, Page, ComponentSpec } from '../schema/types';
 import type { ToolResult } from './types';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { Resvg } from '@resvg/resvg-js';
@@ -63,7 +63,7 @@ export function createDesign(args: { project_path: string; name: string; type?: 
       generation: type === 'carousel' ? { status: 'in_progress', total_pages: 0, completed_pages: 0 } : undefined,
     },
     document: { width: args.width ?? 1080, height: args.height ?? 1080, unit: 'px', dpi: 96 },
-    theme: { ref: args.theme_ref ?? 'dark-tech' },
+    theme: { ref: args.theme_ref ?? 'editorial-cream' },
     ...(type === 'carousel' ? { pages: [] } : { layers: [] }),
   };
 
@@ -154,24 +154,21 @@ export function createProject(args: { name: string; path?: string; theme?: strin
   }
   progress.push(pOk('Created project directories', projectDir));
 
-  const theme: ThemeSpec = {
-    _protocol: 'theme/v1', name: 'Dark Tech', version: '1.0.0',
-    colors: { background: '#1A1A2E', surface: '#16213E', primary: '#E94560', secondary: '#3D9EE4', text: '#FFFFFF', text_muted: '#8892A4', border: '#2A2A4A' },
-    typography: { scale: { h1: { size: 72, weight: 700, line_height: 1.1 }, h2: { size: 48, weight: 700, line_height: 1.2 }, body: { size: 18, weight: 400, line_height: 1.6 } }, families: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' } },
-    spacing: { unit: 8, scale: [0,4,8,16,24,32,48,64] },
-    effects: { shadow_card: '0 4px 24px rgba(0,0,0,0.4)' },
-    radii: { sm: 4, md: 8, lg: 16, xl: 24, full: 9999 },
-  };
-  writeYAML(path.join(projectDir, 'themes/dark-tech.theme.yaml'), theme);
-  progress.push(pInfo('Wrote default theme', 'dark-tech.theme.yaml'));
+  // Default to a flat, art-directed EDITORIAL theme (warm cream + terracotta,
+  // serif display) — not the old dark-navy + magenta + glow "Dark Tech", which
+  // is the canonical AI-template look. Write the chosen builtin verbatim.
+  const themeId = args.theme && BUILTIN_THEMES[args.theme] ? args.theme : 'editorial-cream';
+  const theme = BUILTIN_THEMES[themeId];
+  writeYAML(path.join(projectDir, `themes/${themeId}.theme.yaml`), theme);
+  progress.push(pInfo('Wrote default theme', `${themeId}.theme.yaml`));
 
   const id = generateId();
   const today = new Date().toISOString().split('T')[0];
   const project = {
     _protocol: 'project/v1',
     meta: { id, name: args.name, version: '1.0.0', created: today, modified: today },
-    config: { default_theme: args.theme ?? 'dark-tech', default_canvas: `${width}x${height}`, default_export_format: 'png' },
-    themes: [{ id: 'dark-tech', path: 'themes/dark-tech.theme.yaml', active: true }],
+    config: { default_theme: themeId, default_canvas: `${width}x${height}`, default_export_format: 'png' },
+    themes: [{ id: themeId, path: `themes/${themeId}.theme.yaml`, active: true }],
     components: { registry: 'components/index.yaml' },
     templates: { registry: 'templates/index.yaml' },
     designs: [], assets: { fonts: [], images: [] }, exports: [],
@@ -400,7 +397,7 @@ export function createTask(args: { project_path: string; task_name: string; brie
   const designPath = designResult['path'] as string;
   const { taskPath, spec } = createTaskFile({
     projectPath: args.project_path, taskName: args.task_name, brief: args.brief,
-    designPath, theme: args.theme ?? 'dark-tech', pages: args.pages,
+    designPath, theme: args.theme ?? 'editorial-cream', pages: args.pages,
   });
   progress.push(pOk(`Task created: ${args.pages.length} page(s) planned`, taskPath));
 

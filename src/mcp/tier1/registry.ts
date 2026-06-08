@@ -34,7 +34,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       properties: {
         name:   { type: 'string', description: 'Project name, e.g. "ai-poster"' },
         path:   { type: 'string', description: 'Optional — defaults to the name. Pass a short BARE NAME like "ai-poster" (the engine places it in the projects dir automatically). Do NOT build absolute /home/... paths — you can\'t know the container layout.' },
-        theme:  { type: 'string', description: 'Theme ID (default: dark-tech)', default: 'dark-tech' },
+        theme:  { type: 'string', description: 'Theme ID (default: editorial-cream — a flat, art-directed look; avoid dark glowy tech themes)', default: 'editorial-cream' },
         canvas: { type: 'string', description: 'Canvas size e.g. "1080x1080"', default: '1080x1080' },
       },
       required: ['name'],
@@ -104,7 +104,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         project_path: { type: 'string', description: 'Path to project directory' },
         task_name:    { type: 'string', description: 'Task / design name' },
         brief:        { type: 'string', description: 'One-sentence description of the full design' },
-        theme:        { type: 'string', description: 'Theme ID (default: dark-tech)' },
+        theme:        { type: 'string', description: 'Theme ID (default: editorial-cream — flat/art-directed; avoid dark glowy themes)' },
         width:        { type: 'number', description: 'Canvas width px', default: 1080 },
         height:       { type: 'number', description: 'Canvas height px', default: 1080 },
         pages: {
