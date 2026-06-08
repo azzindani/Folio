@@ -154,6 +154,20 @@ coordinates to get wrong). Best way to build a feature/benefit poster.
   Optional: card_fill, accent (icon), text_color, muted. Prefer a FLAT bg hex over
   bg:"gradient" — a flat canvas + one accent reads designed, not AI-generated.
 
+marble_bg (alias backdrop): a soft, designed BACKGROUND in ONE layer — radial-
+gradient "marble" blobs clustered in the corners (each fades to the canvas color
+at its rim, so text on top stays readable), plus veins + rings + dots. Use it as
+your FIRST layer for an elegant editorial/light look instead of hand-placing
+ellipses (which collide, go off-canvas, or lose their fill). Then add content on
+top with a HIGHER z.
+  {type:"marble_bg", pos:[0,0,1080,1350], bg:"#F3EEF6", accent:"#6231C9",
+    palette:["#B9C4F0","#C9B6EC","#A6DAE8","#F6CBA6"], corners:["tr","bl","br"],
+    intensity:0.7, veins:true, rings:1, dots:1}
+  All fields optional (shown = defaults). corners ⊂ tl/tr/bl/br · intensity 0.2–1.
+  Pairs with the LIGHT EDITORIAL recipe: bg #F3EEF6 · ink #2B2440 · one violet
+  accent #6231C9 · Space Grotesk headline + IBM Plex Mono labels · left-anchored
+  sections (kicker → headline → lede → labeled rows → stat band → repo footer).
+
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
            (label/value/name/count also map to x/y; or pass a raw vega-lite spec:{...})

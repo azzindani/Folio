@@ -1123,3 +1123,72 @@ describe('diagnoseLayers — feature_grid encoded as a string (weak-model failur
     expect(diagnoseLayers(layers)).toEqual([]);
   });
 });
+
+describe('ellipse fill (regression: type="ellipse" dropped its fill)', () => {
+  // Before the fix, the switch had no `case 'ellipse'`, so ellipse layers fell
+  // through to default: which strips fill/stroke — every ellipse rendered
+  // fill="none" (invisible) in SVG/PNG export.
+  it('keeps a solid fill on an ellipse layer', () => {
+    const result = expandShorthand({ id: 'e', type: 'ellipse', z: 1, pos: [0, 0, 40, 40], fill: '#C42E78' });
+    expect(result.type).toBe('ellipse');
+    if ('fill' in result && result.fill && typeof result.fill === 'object') {
+      expect((result.fill as { type: string; color: string }).type).toBe('solid');
+      expect((result.fill as { type: string; color: string }).color).toBe('#C42E78');
+    } else {
+      throw new Error('ellipse lost its fill');
+    }
+  });
+
+  it('keeps a radial gradient fill on an ellipse layer', () => {
+    const result = expandShorthand({
+      id: 'm', type: 'ellipse', z: 1, pos: [0, 0, 200, 200],
+      fill: { type: 'radial', stops: [{ color: '#B9C4F0', position: 0 }, { color: '#F3EEF6', position: 100 }] },
+    });
+    expect(result.type).toBe('ellipse');
+    const fill = (result as { fill?: { type?: string; stops?: unknown[] } }).fill;
+    expect(fill?.type).toBe('radial');
+    expect(Array.isArray(fill?.stops)).toBe(true);
+  });
+
+  it('keeps a stroke on an ellipse (ring) layer', () => {
+    const result = expandShorthand({
+      id: 'ring', type: 'ellipse', z: 1, pos: [0, 0, 100, 100],
+      fill: 'rgba(0,0,0,0)', stroke: { color: '#6231C9', width: 3 },
+    });
+    const stroke = (result as { stroke?: { color?: string } }).stroke;
+    expect(stroke?.color).toBe('#6231C9');
+  });
+});
+
+describe('marble_bg / backdrop preset', () => {
+  it('expands one shorthand into a group: bg rect + gradient ellipse blobs', () => {
+    const g = expandShorthand({
+      id: 'bd', type: 'marble_bg', z: 1, pos: [0, 0, 1080, 1350],
+      bg: '#F3EEF6', palette: ['#B9C4F0', '#A6DAE8'], accent: '#6231C9', corners: ['tr', 'bl'],
+    } as unknown as ShorthandLayer) as unknown as { type: string; layers: Array<Record<string, unknown>> };
+    expect(g.type).toBe('group');
+    // full-canvas flat base first
+    const base = g.layers[0];
+    expect(base.type).toBe('rect');
+    expect((base.fill as { color: string }).color).toBe('#F3EEF6');
+    // at least one radial-gradient ellipse blob that fades to the bg color
+    const blob = g.layers.find(l => l.type === 'ellipse' && (l.fill as { type?: string })?.type === 'radial') as Record<string, unknown>;
+    expect(blob).toBeTruthy();
+    const stops = (blob.fill as { stops: Array<{ color: string }> }).stops;
+    expect(stops[stops.length - 1].color).toBe('#F3EEF6'); // edge blends into canvas → text stays readable
+    // two corners → blobs on both sides of the canvas
+    const xs = g.layers.filter(l => l.type === 'ellipse').map(l => l.x as number);
+    expect(Math.min(...xs)).toBeLessThan(200);
+    expect(Math.max(...xs)).toBeGreaterThan(700);
+  });
+
+  it('backdrop alias works and respects intensity/rings/dots/veins', () => {
+    const g = expandShorthand({
+      id: 'bd2', type: 'backdrop', z: 0, pos: [0, 0, 1080, 1080],
+      corners: ['br'], intensity: 0.5, rings: 0, dots: 0, veins: false,
+    } as unknown as ShorthandLayer) as unknown as { type: string; layers: Array<Record<string, unknown>> };
+    expect(g.type).toBe('group');
+    expect(g.layers.some(l => l.type === 'line')).toBe(false); // veins:false
+    expect(g.layers.filter(l => l.type === 'ellipse').every(l => (l.opacity as number) <= 0.5)).toBe(true);
+  });
+});

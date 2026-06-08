@@ -63,10 +63,20 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
   const notes: string[] = [];
   const z = (l: Layer): number => (typeof l.z === 'number' ? l.z : 0);
 
-  // 1. Full-canvas background present?
-  const bgRect = layers
-    .filter(l => solidColor(l) && (() => { const r = rectOf(l); return r ? r.w * r.h >= canvasW * canvasH * 0.9 && r.x <= 2 && r.y <= 2 : false; })())
-    .sort((a, b) => z(a) - z(b))[0];
+  // 1. Full-canvas background present? Also look one level into group/preset
+  //    layers (marble_bg / backdrop wrap their full-canvas rect in a group).
+  const isFullCanvasSolid = (l: Layer): boolean => {
+    if (!solidColor(l)) return false;
+    const r = rectOf(l);
+    return r ? r.w * r.h >= canvasW * canvasH * 0.9 && r.x <= 2 && r.y <= 2 : false;
+  };
+  const bgCandidates: Layer[] = [];
+  for (const l of layers) {
+    if (isFullCanvasSolid(l)) bgCandidates.push(l);
+    const kids = (l as { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) for (const k of kids) if (isFullCanvasSolid(k)) bgCandidates.push(k);
+  }
+  const bgRect = bgCandidates.sort((a, b) => z(a) - z(b))[0];
   const bgColor = bgRect ? solidColor(bgRect) : null;
   if (!bgRect) {
     notes.push(`No full-canvas background — add a rect at z:0 pos:[0,0,${canvasW},${canvasH}] with a solid fill so the canvas isn't blank/white.`);
