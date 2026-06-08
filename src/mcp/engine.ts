@@ -18,6 +18,7 @@ import {
   buildContext, buildHandover,
 } from './engine/utils';
 import { buildGuide } from './engine/guide';
+import { resvgFontOption, unbundledFonts } from './engine/fonts';
 export { extractReference } from './engine/reference';
 import { lintComposition, reviewComposition } from './engine/design-lint';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
@@ -1088,21 +1089,27 @@ export function exportDesign(args: { design_path: string; format: string; output
       // @resvg/resvg-js is a pure-Rust SVG renderer; prebuilt binaries
       // ship for linux-x64-musl (alpine), linux-x64-gnu, darwin, win32.
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;
-      // Bundle a fallback font: the container runs as non-root (can't install
-      // system fonts) so loadSystemFonts finds none and text renders blank.
-      // src/mcp/fonts/DejaVuSans.ttf ships in the runtime image (COPY src);
-      // point resvg at it so PNG export shows text even when the design's font
-      // isn't installed.
-      const fontFiles = [path.resolve(process.cwd(), 'src/mcp/fonts/DejaVuSans.ttf')]
-        .filter(f => fs.existsSync(f));
+      // resvg can't fetch web fonts — it only renders fonts we hand it. Point it
+      // at the bundled font directory (src/mcp/fonts, COPY'd into the image) so
+      // raster output matches the editor's web-font render; DejaVu is the last
+      // resort for any family we don't ship. Families a design uses but we DON'T
+      // bundle are collected below and surfaced as a note (they'd silently fall
+      // back to DejaVu here while rendering fine in the editor).
+      const missingFonts = new Set<string>();
       // resvg's `fitTo: { mode: 'zoom' }` scales the rendered raster while
       // keeping the SVG viewBox aspect ratio.
-      const rasterize = (svgStr: string): Buffer =>
-        Buffer.from(new Resvg(svgStr, {
+      const rasterize = (svgStr: string): Buffer => {
+        for (const f of unbundledFonts(svgStr)) missingFonts.add(f);
+        return Buffer.from(new Resvg(svgStr, {
           fitTo: { mode: 'zoom', value: scale },
           background: 'rgba(0,0,0,0)',
-          font: { loadSystemFonts: true, fontFiles, defaultFontFamily: 'DejaVu Sans' },
+          font: resvgFontOption(),
         }).render().asPng());
+      };
+      const fontNote = (): string[] =>
+        missingFonts.size
+          ? [`Fonts not bundled for raster export — fell back to a default in PNG/PDF (they render correctly in the editor): ${[...missingFonts].join(', ')}. Use a bundled family (e.g. Inter, Space Grotesk, Playfair Display, IBM Plex Mono) for pixel-matching export.`]
+          : [];
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       // Carousel → one PNG per page (`<base>-p1.png`, `-p2.png`, …).
       if (multiPage) {
@@ -1121,7 +1128,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         });
         const context = buildContext(op, `PNG exported for "${spec.meta.name}" — ${outPaths.length} page(s)`, outPaths.map(p => ({ type: 'png', path: p, role: 'output' })));
         const handover = buildHandover('EXPORT', { design_path: dPath });
-        return okResult(op, { format: 'png', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, scale, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+        return okResult(op, { format: 'png', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, scale, ...((): Record<string, unknown> => { const n = [...assetNotes, ...fontNote()]; return n.length ? { notes: n } : {}; })(), progress, context, handover, _attachments });
       }
       const png = rasterize(renderToSVGString(spec, undefined, undefined, componentRegistry));
       fs.writeFileSync(outPath, png);
@@ -1134,7 +1141,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' },
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/png', text: path.basename(outPath) } },
       ];
-      return okResult(op, { format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+      return okResult(op, { format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, ...((): Record<string, unknown> => { const n = [...assetNotes, ...fontNote()]; return n.length ? { notes: n } : {}; })(), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `PNG render failed: ${(err as Error).message}`, 'Try format="svg" to verify the design renders; PNG layer = SVG layer + resvg rasterizer.', progress);
     }
