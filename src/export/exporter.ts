@@ -161,6 +161,40 @@ function addSelectableTextLayer(
   }
 }
 
+/**
+ * Add clickable PDF link annotations over every hyperlink in the live editor
+ * DOM. Layer `href`s render as SVG/HTML `<a href>` (and rich-text markdown links
+ * too), so measuring each `<a>` from the rendered DOM covers them all. Returns
+ * the number of links added.
+ */
+function addLinkAnnotations(
+  pdf: { link(x: number, y: number, w: number, h: number, o: { url: string }): void },
+  liveNode: HTMLElement,
+  designWidth: number,
+  pxToMm: (px: number) => number,
+): number {
+  const box = liveNode.getBoundingClientRect();
+  if (box.width === 0) return 0;
+  const zoom = box.width / designWidth;
+  let n = 0;
+  for (const a of Array.from(liveNode.querySelectorAll('a[href]'))) {
+    const href = a.getAttribute('href')
+      ?? a.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    if (!href || !/^(https?:|mailto:|tel:)/i.test(href)) continue;
+    const r = a.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    pdf.link(
+      pxToMm((r.left - box.left) / zoom),
+      pxToMm((r.top - box.top) / zoom),
+      pxToMm(r.width / zoom),
+      pxToMm(r.height / zoom),
+      { url: href },
+    );
+    n++;
+  }
+  return n;
+}
+
 export async function exportToPDF(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
   // Lazy load jsPDF — kept out of initial bundle
   const { jsPDF } = await import('jspdf');
@@ -193,11 +227,13 @@ export async function exportToPDF(spec: DesignSpec, options: ExportOptions): Pro
     const blob = await exportToPNG(spec, { ...options, scale });
     const dataUrl = await blobToDataURL(blob);
     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfW, pdfH, undefined, 'FAST');
-    // Overlay selectable text aligned to the live editor DOM (raster stays the
-    // visible layer; this makes the text copyable). Only with a live element.
+    // Overlay selectable text + clickable link annotations aligned to the live
+    // editor DOM (raster stays the visible layer). Only with a live element.
     if (options.liveElement) {
       try { addSelectableTextLayer(pdf, options.liveElement, width, pxToMm); }
       catch { /* non-fatal — keep the raster-only PDF */ }
+      try { addLinkAnnotations(pdf, options.liveElement, width, pxToMm); }
+      catch { /* non-fatal — keep the PDF without link annotations */ }
     }
   }
 
