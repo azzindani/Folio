@@ -5,6 +5,8 @@ import { renderDesign, renderPage } from '../renderer/renderer';
 import type { LoadedDataset } from '../report/data-loader';
 import { checkCanvasScale } from './canvas-limit';
 import { buildEmbeddedFontStyle } from './font-embed';
+// @ts-expect-error — dom-to-image-more ships no types
+import domtoimage from 'dom-to-image-more';
 
 export type ExportFormat = 'svg' | 'png' | 'html' | 'html-animated' | 'html-report' | 'pdf';
 
@@ -14,6 +16,30 @@ export interface ExportOptions {
   theme?: ThemeSpec;
   pageIndex?: number;
   animations?: Map<string, AnimationSpec>;
+  /**
+   * The LIVE canvas container node from the editor. When provided, PNG/PDF
+   * export captures this HTML node via dom-to-image — preserving charts, tables
+   * and KPIs that JavaScript drew into foreignObjects (a static re-render or
+   * SVG→`<img>` raster loses all of it). Must be an HTML element, not a bare
+   * `<svg>` (that fails to load as an `<img>` and taints the canvas). Omit for
+   * headless/programmatic export.
+   */
+  liveElement?: HTMLElement;
+}
+
+/**
+ * Rasterize the live editor canvas with dom-to-image-more. Unlike SVG→`<img>`,
+ * this clones the rendered DOM — reading each chart/vega `<svg>`/`<canvas>` and
+ * KPI HTML — so the PNG matches what's on screen. Capturing an HTML container
+ * (not a bare `<svg>`) is what makes this load reliably without tainting.
+ */
+async function liveCanvasToPNG(node: HTMLElement, width: number, height: number, scale: number): Promise<Blob> {
+  return domtoimage.toBlob(node, {
+    width: width * scale,
+    height: height * scale,
+    style: { transform: `scale(${scale})`, transformOrigin: 'top left', width: `${width}px`, height: `${height}px` },
+    bgcolor: '#ffffff',
+  }) as Promise<Blob>;
 }
 
 export function exportToSVG(spec: DesignSpec, options: ExportOptions): string {
@@ -47,6 +73,20 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   // exceeds ~16384px — there's no platform error to catch downstream.
   const guard = checkCanvasScale(width, height, scale);
   if (!guard.ok) throw new Error(guard.reason);
+
+  // Preferred path: capture the LIVE canvas so charts/tables/KPIs (drawn by JS
+  // into foreignObjects) are included — matching the viewport. Falls back to the
+  // static SVG raster when no live element is available (headless callers) or if
+  // dom-to-image fails for any reason.
+  // pageIndex set ⇒ carousel page render; the live element is only the current
+  // page, so restrict live capture to single-page (poster) export.
+  if (options.liveElement && options.pageIndex === undefined) {
+    try {
+      return await liveCanvasToPNG(options.liveElement, width, height, scale);
+    } catch {
+      // fall through to the static path
+    }
+  }
 
   const svg = renderForExport(spec, options);
   const svgString = await serializeWithFonts(svg);
