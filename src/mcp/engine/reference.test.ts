@@ -100,6 +100,11 @@ describe('extractReference', () => {
     expect((r.palette as { background: string }).background).toBeTruthy();
     expect((r.next_action as { tool: string }).tool).toBe('create_design');
     expect(typeof r.brief).toBe('string');
+    // hardening: mandates the background as the first layer + ships a starter bg layer
+    expect(r.brief as string).toMatch(/MANDATORY FIRST LAYER/);
+    const starter = r.starter_layers as { id: string; type: string; fill: string }[];
+    expect(starter[0]).toMatchObject({ id: 'bg', type: 'rect' });
+    expect(starter[0].fill).toBe((r.palette as { background: string }).background);
   });
   it('works from observed colors alone (no image)', () => {
     const r = extractReference({ colors: ['#FAF5EC', '#FFFBEB', '#2A2218', '#B8543C'] });

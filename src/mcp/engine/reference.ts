@@ -188,6 +188,8 @@ function buildBrief(p: ReferencePalette | null, canvas: { width: number; height:
     lines.push('PALETTE — use these EXACT hex, do not invent new colors:');
     lines.push(`  bg ${p.background} · surface ${p.surface} · text ${p.text} · muted ${p.text_muted}`);
     lines.push(`  accent ${p.accent} (use 1–2× only — a stat or a rule) · secondary ${p.secondary} · border ${p.border}`);
+    const bgLayer = canvas ? `{id:"bg",type:"rect",z:0,pos:[0,0,${canvas.width},${canvas.height}],fill:"${p.background}"}` : `a full-canvas rect filled "${p.background}"`;
+    lines.push(`⚠️ MANDATORY FIRST LAYER: ${bgLayer}. The canvas MUST be ${p.background} — do NOT default to white or navy. Then put text in ${p.text}; use ${p.accent} on only 1–2 elements. Every text color must contrast with the block it sits on (add_layers will flag invisible text).`);
   }
   if (mood) lines.push(`MOOD: ${mood}`);
   lines.push(
@@ -266,10 +268,15 @@ export function extractReference(args: { image?: string; colors?: string[]; proj
   } : null;
 
   const brief = buildBrief(palette, canvas, mood);
+  // A ready-to-paste first layer: the full-canvas background in the extracted
+  // color, so the model literally cannot drop the reference's canvas color.
+  const starter_layers = (palette && canvas)
+    ? [{ id: 'bg', type: 'rect', z: 0, pos: [0, 0, canvas.width, canvas.height], fill: palette.background }]
+    : undefined;
   const next_action: NextAction = args.project_path ? {
     tool: 'create_design',
     params: { project_path: args.project_path, name: args.name ?? 'reference-design', ...(canvas ? { width: canvas.width, height: canvas.height } : {}) },
-    remaining: 1, hint: 'Create the design at the recommended canvas, then add_layers using the EXACT palette hex above. Reproduce the reference layout — do not default to a centered navy-gradient template.',
+    remaining: 1, hint: `Create the design at the recommended canvas, then add_layers — your FIRST layer MUST be the full-canvas background${palette ? ` filled ${palette.background}` : ''} (see starter_layers), then build the rest with the EXACT palette hex. Reproduce the reference layout; do not default to a white/navy-gradient template.`,
   } : {
     tool: 'create_project', params: { name: args.name ?? 'reference-design' },
     remaining: 2, hint: 'Create a project, then create_design at the recommended canvas and add_layers with the palette above.',
@@ -277,5 +284,5 @@ export function extractReference(args: { image?: string; colors?: string[]; proj
 
   const context = buildContext(op, `Extracted ${rgbs.length} colors${dims ? ` + ${dims.w}x${dims.h}` : ''} from reference`);
   const handover = buildHandover('PROJECT', args.project_path ? { project_path: args.project_path } : {});
-  return okResult(op, { source, dimensions: dims, canvas, mood, palette, palette_spec, observed_colors: rgbs.map(toHex), brief, next_action, progress, context, handover });
+  return okResult(op, { source, dimensions: dims, canvas, mood, palette, palette_spec, ...(starter_layers ? { starter_layers } : {}), observed_colors: rgbs.map(toHex), brief, next_action, progress, context, handover });
 }
