@@ -365,6 +365,8 @@ export interface PathLayer extends BaseLayer {
   d: string;
   fill?: Fill;
   stroke?: Stroke;
+  /** SVG fill-rule — 'evenodd' punches holes (ring/donut/gear shapes). */
+  fill_rule?: 'nonzero' | 'evenodd';
 }
 
 export interface PolygonLayer extends BaseLayer {
