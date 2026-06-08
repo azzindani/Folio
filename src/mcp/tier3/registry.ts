@@ -35,6 +35,49 @@ export const TIER3_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'diagnose_design',
+    description: 'Built-in troubleshooter — scans a design for problems the model is blind to and returns structured findings with fixes: off-canvas layers, collisions/overlap pile-ups, near-miss MISALIGNMENT (edges off by a few px), tiny text, low-contrast/invisible text, missing background, plus quality critique (weak hierarchy, accent sprawl, crowded margins). Run it after composing and before seal_design; fix the errors/warnings, then render_preview to confirm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        page_id:      { type: 'string', description: 'Carousel: diagnose one page (omit = all pages)' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'render_preview',
+    description: 'Render the design to a PNG and return it INLINE as an image so you can SEE what you produced (no file written). Use it to visually verify a composition or confirm a fix — pair with diagnose_design. Foreground charts/KPIs that need a browser still only appear in the editor; everything else (shapes, patterns, text, fills) rasterizes here.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        page_id:      { type: 'string', description: 'Carousel: preview one page (omit = first page)' },
+        scale:        { type: 'number', description: 'Raster scale 0.5–2 (default 1)', default: 1 },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'align_layers',
+    description: 'Auto-align / distribute / snap-to-grid a set of layers — the fix for diagnose_design misalignment findings. operation: left|right|top|bottom|center_h|center_v (align edges/centers across the group), distribute_h|distribute_v (even spacing, needs ≥3), snap_grid (round each to the grid). Mutates positions and writes the YAML (with a backup).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        layer_ids:    { type: 'object', description: 'Layer IDs to align', items: { type: 'string' } },
+        operation:    { type: 'string', enum: ['left', 'right', 'top', 'bottom', 'center_h', 'center_v', 'distribute_h', 'distribute_v', 'snap_grid'] },
+        grid:         { type: 'number', description: 'Grid size px for snap_grid (default 8)' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        page_id:      { type: 'string', description: 'Carousel page id (omit = first page)' },
+      },
+      required: ['design_path', 'layer_ids', 'operation'],
+    },
+  },
+  {
     name: 'batch_create',
     description: 'Generate N designs from one template using an array of slot objects.',
     inputSchema: {
