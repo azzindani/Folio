@@ -67,6 +67,29 @@ describe('expandShorthand', () => {
     expect(result.fill?.type).toBe('radial');
   });
 
+  it('parses a compact pattern string ("pattern:halftone")', () => {
+    const r = expandShorthand({ id: 'p', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: 'pattern:halftone' }) as { fill?: { type?: string; pattern?: string; fg?: string } };
+    expect(r.fill?.type).toBe('pattern');
+    expect(r.fill?.pattern).toBe('halftone');
+  });
+
+  it('parses pattern fg/bg from "dots/#222 on #faf5ec"', () => {
+    const r = expandShorthand({ id: 'p', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: 'dots/#222222 on #FAF5EC' }) as { fill?: { type?: string; pattern?: string; fg?: string; bg?: string } };
+    expect(r.fill).toMatchObject({ type: 'pattern', pattern: 'dots', fg: '#222222', bg: '#FAF5EC' });
+  });
+
+  it('normalizes a loose pattern object (color→fg, name→pattern, hyphen→underscore)', () => {
+    const r = expandShorthand({ id: 'p', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: { type: 'pattern', name: 'diagonal-stripes', color: '#111' } as unknown as ShorthandLayer['fill'] }) as { fill?: { type?: string; pattern?: string; fg?: string } };
+    expect(r.fill?.type).toBe('pattern');
+    expect(r.fill?.pattern).toBe('diagonal_stripes');
+    expect(r.fill?.fg).toBe('#111');
+  });
+
+  it('passes an image fill through (url→src)', () => {
+    const r = expandShorthand({ id: 'p', type: 'rect', z: 0, pos: [0, 0, 10, 10], fill: { type: 'image', url: 'https://x/p.png', mode: 'tile' } as unknown as ShorthandLayer['fill'] }) as { fill?: { type?: string; src?: string; mode?: string } };
+    expect(r.fill).toMatchObject({ type: 'image', src: 'https://x/p.png', mode: 'tile' });
+  });
+
   it('expands text with shorthand props', () => {
     const sh: ShorthandLayer = {
       id: 'title', type: 'text', z: 20,

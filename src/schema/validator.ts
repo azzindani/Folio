@@ -22,7 +22,14 @@ const VALID_LAYER_TYPES = new Set([
 ]);
 
 const VALID_FILL_TYPES = new Set([
-  'solid', 'linear', 'radial', 'conic', 'noise', 'multi', 'none',
+  'solid', 'linear', 'radial', 'conic', 'noise', 'pattern', 'image', 'multi', 'none',
+]);
+
+const VALID_PATTERN_NAMES = new Set([
+  'dots', 'dot_grid', 'grid', 'graph_paper', 'isometric', 'stripes',
+  'diagonal_stripes', 'crosshatch', 'checkerboard', 'chevron', 'zigzag',
+  'triangles', 'waves', 'scallop', 'plus', 'cross', 'scatter', 'confetti',
+  'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
 ]);
 
 export function validateLayer(layer: Partial<BaseLayer>, path: string): ValidationError[] {
@@ -97,6 +104,23 @@ export function validateFill(fill: Partial<Fill>, path: string): ValidationError
     const gradFill = fill as { stops?: unknown[] };
     if (!gradFill.stops || !Array.isArray(gradFill.stops) || gradFill.stops.length < 2) {
       errors.push({ severity: 'error', path: `${path}.stops`, message: 'Gradient requires at least 2 stops' });
+    }
+  }
+
+  if (fill.type === 'pattern') {
+    const pf = fill as { pattern?: string; fg?: string };
+    if (!pf.pattern || !VALID_PATTERN_NAMES.has(pf.pattern)) {
+      errors.push({ severity: 'error', path: `${path}.pattern`, message: `Pattern fill needs a known pattern name (got "${pf.pattern ?? ''}")` });
+    }
+    if (!pf.fg) {
+      errors.push({ severity: 'error', path: `${path}.fg`, message: 'Pattern fill requires a foreground color (fg)' });
+    }
+  }
+
+  if (fill.type === 'image') {
+    const imf = fill as { src?: string };
+    if (!imf.src) {
+      errors.push({ severity: 'error', path: `${path}.src`, message: 'Image fill requires a src' });
     }
   }
 
