@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lintComposition } from './design-lint';
+import { lintComposition, reviewComposition } from './design-lint';
 import type { Layer } from '../../schema/types';
 
 const rect = (id: string, z: number, x: number, y: number, w: number, h: number, color: string): Layer =>
@@ -44,5 +44,41 @@ describe('lintComposition', () => {
       text('label', 10, 96, 100, 360, 40, '#0A0A0A'),
     ], 1080, 1080);
     expect(notes).toEqual([]);
+  });
+});
+
+const txt = (id: string, z: number, x: number, y: number, w: number, h: number, size: number, color = '#222222', value = 'Lorem ipsum dolor'): Layer =>
+  ({ id, type: 'text', z, x, y, width: w, height: h, content: { type: 'plain', value }, style: { color, font_size: size, font_family: 'Inter' } } as unknown as Layer);
+
+describe('reviewComposition (quality critic)', () => {
+  it('flags weak hierarchy when the largest text barely beats the body', () => {
+    const notes = reviewComposition([
+      txt('h', 10, 72, 80, 900, 40, 30), txt('a', 11, 72, 160, 900, 30, 24),
+      txt('b', 12, 72, 220, 900, 30, 22), txt('c', 13, 72, 280, 900, 30, 20),
+    ], 1080, 1350);
+    expect(notes.some(n => /weak hierarchy/.test(n))).toBe(true);
+  });
+
+  it('passes a strong hierarchy (big headline over small body)', () => {
+    const notes = reviewComposition([
+      txt('h', 10, 72, 80, 900, 120, 96), txt('a', 11, 72, 260, 900, 30, 24),
+      txt('b', 12, 72, 320, 900, 30, 22), txt('c', 13, 72, 380, 900, 30, 20),
+    ], 1080, 1350);
+    expect(notes.some(n => /weak hierarchy/.test(n))).toBe(false);
+  });
+
+  it('flags accent sprawl (too many vivid colors)', () => {
+    const notes = reviewComposition([
+      txt('h', 10, 72, 80, 900, 120, 96, '#E0307E'), txt('a', 11, 72, 260, 900, 30, 24, '#1E8E3E'),
+      txt('b', 12, 72, 320, 900, 30, 22, '#1A73E8'), txt('c', 13, 72, 380, 900, 30, 20, '#F9AB00'),
+    ], 1080, 1350);
+    expect(notes.some(n => /accent sprawl/.test(n))).toBe(true);
+  });
+
+  it('flags text crowding the left edge', () => {
+    const notes = reviewComposition([
+      txt('h', 10, 8, 80, 700, 120, 96), txt('a', 11, 8, 260, 700, 30, 24), txt('b', 12, 8, 320, 700, 30, 22),
+    ], 1080, 1350);
+    expect(notes.some(n => /crowds the edge/.test(n))).toBe(true);
   });
 });

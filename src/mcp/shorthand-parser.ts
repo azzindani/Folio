@@ -313,7 +313,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
 // color at its rim, so text on top stays readable), plus optional veins, rings
 // and dots. Collapses the ~15-25 hand-placed shapes models reliably get wrong
 // (off-canvas, dropped fills, killed contrast) into a single, balanced intent.
-function buildMarbleBg(sh: ShorthandLayer, id: string, z: number): Layer {
+function buildDecor(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const num = (v: unknown, d: number): number => (typeof v === 'number' ? v : d);
   const X = sh.pos?.[0] ?? num(sh.x, 0);
@@ -330,12 +330,27 @@ function buildMarbleBg(sh: ShorthandLayer, id: string, z: number): Layer {
   const veins = r['veins'] !== false;
   const rings = Math.max(0, Math.round(num(r['rings'], 1)));
   const dots  = Math.max(0, Math.round(num(r['dots'], 1)));
+  const style = typeof r['style'] === 'string' ? (r['style'] as string) : 'marble';
 
   const solid  = (color: string): Fill => ({ type: 'solid', color } as unknown as Fill);
   const radial = (color: string): Fill => ({ type: 'radial', stops: [{ color, position: 0 }, { color: bg, position: 100 }] } as unknown as Fill);
   const layers: Layer[] = [
     { id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: solid(bg) } as unknown as Layer,
   ];
+
+  if (style === 'mesh') {
+    // gradient-mesh wash: a few big soft radial gradients spread near the edges
+    // (no veins/rings) — a calmer, more abstract backdrop than marble.
+    const spots: [number, number][] = [[0.16, 0.12], [0.86, 0.22], [0.26, 0.82], [0.80, 0.84]];
+    spots.forEach(([fx, fy], i) => {
+      const s = Math.round(W * 0.62);
+      layers.push({ id: `${id}_m${i}`, type: 'ellipse', z: i + 1, x: Math.round(X + fx * W - s / 2), y: Math.round(Y + fy * H - s / 2),
+        width: s, height: s, fill: radial(pal[i % pal.length]), opacity: +(intensity * 0.5).toFixed(2) } as unknown as Layer);
+    });
+    return { id, type: 'group', z, x: 0, y: 0, width: W, height: H, layers } as unknown as Layer;
+  }
+
+  // style "marble" (default): organic corner clusters + veins/rings/dots.
   // [cornerX, cornerY, inwardX, inwardY] per corner key
   const ANCHOR: Record<string, [number, number, number, number]> = {
     tl: [X, Y, 1, 1], tr: [X + W, Y, -1, 1], bl: [X, Y + H, 1, -1], br: [X + W, Y + H, -1, -1],
@@ -510,9 +525,10 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'feature_grid':
       return buildFeatureGrid(sh, String(sh.id ?? 'feature_grid'), typeof sh.z === 'number' ? sh.z : 0);
 
+    case 'decor':
     case 'marble_bg':
     case 'backdrop':
-      return buildMarbleBg(sh, String(sh.id ?? 'backdrop'), typeof sh.z === 'number' ? sh.z : 0);
+      return buildDecor(sh, String(sh.id ?? 'decor'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'component':
       return {
@@ -571,7 +587,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
 const KNOWN_SHORTHAND_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'text', 'line', 'icon', 'path', 'polygon', 'image', 'mermaid', 'code', 'math', 'group',
   'auto_layout', 'row', 'column', 'stack', 'grid', 'chart', 'kpi_card', 'component',
-  'feature_grid', 'cards', 'card_grid', 'features', 'marble_bg', 'backdrop',
+  'feature_grid', 'cards', 'card_grid', 'features', 'decor', 'marble_bg', 'backdrop',
 ]);
 
 // Parse a compact layer string a small model tends to emit, e.g.
@@ -834,8 +850,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // feature_grid preset
   'items', 'features', 'title', 'subtitle', 'card_fill', 'accent', 'text_color', 'muted', 'bg', 'columns',
   'preset', 'bg_gradient', 'benefit',
-  // marble_bg / backdrop preset
-  'palette', 'corners', 'intensity', 'veins', 'rings', 'dots',
+  // decor / marble_bg / backdrop preset
+  'palette', 'corners', 'intensity', 'veins', 'rings', 'dots', 'style',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',
