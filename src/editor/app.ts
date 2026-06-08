@@ -1135,6 +1135,11 @@ export class EditorApp {
     return this.canvas.exportSVG();
   }
 
+  /** Live canvas DOM node (with JS-drawn charts/tables) — for high-fidelity export capture. */
+  getCanvasExportNode(): HTMLElement | null {
+    return this.canvas.getCanvasExportNode();
+  }
+
   applyTheme(themeId: string): void {
     const theme = BUILTIN_THEMES[themeId];
     if (theme) this.state.set('theme', theme);
