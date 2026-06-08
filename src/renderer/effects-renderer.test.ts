@@ -118,6 +118,58 @@ describe('applyEffects — shadow with spread', () => {
   });
 });
 
+describe('applyEffects — duotone', () => {
+  it('maps luminance to a two-color ramp (feColorMatrix + feComponentTransfer)', () => {
+    const svg = makeSvg();
+    const el = makeEl();
+    applyEffects(el, { duotone: { shadow: '#1B1B3A', highlight: '#F5C518' } }, svg);
+    expect(el.getAttribute('filter')).toMatch(/^url\(#fx-/);
+    const lum = svg.querySelector('feColorMatrix[type="matrix"]');
+    expect(lum).not.toBeNull();
+    const ct = svg.querySelector('feComponentTransfer')!;
+    expect(ct).not.toBeNull();
+    const r = ct.querySelector('feFuncR')!;
+    expect(r.getAttribute('type')).toBe('table');
+    // shadow #1B → 0.106, highlight #F5 → 0.961
+    expect(r.getAttribute('tableValues')).toMatch(/^0\.1\d+ 0\.9\d+$/);
+  });
+});
+
+describe('applyEffects — posterize / saturate', () => {
+  it('posterize emits discrete feComponentTransfer with N levels', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { posterize: 4 }, svg);
+    const fn = svg.querySelector('feComponentTransfer feFuncR')!;
+    expect(fn.getAttribute('type')).toBe('discrete');
+    expect(fn.getAttribute('tableValues')!.split(' ')).toHaveLength(4);
+  });
+
+  it('saturate emits a saturate feColorMatrix', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { saturate: 0 }, svg);
+    const cm = svg.querySelector('feColorMatrix[type="saturate"]')!;
+    expect(cm.getAttribute('values')).toBe('0');
+  });
+});
+
+describe('applyEffects — grain', () => {
+  it('overlays clipped turbulence noise', () => {
+    const svg = makeSvg();
+    applyEffects(makeEl(), { grain: 0.5 }, svg);
+    expect(svg.querySelector('feTurbulence')).not.toBeNull();
+    expect(svg.querySelector('feBlend')).not.toBeNull();
+  });
+});
+
+describe('applyEffects — backdrop_blur', () => {
+  it('sets backdropFilter style (glassmorphism, HTML contexts)', () => {
+    const svg = makeSvg();
+    const el = makeEl();
+    applyEffects(el, { backdrop_blur: 12 }, svg);
+    expect((el as unknown as HTMLElement).style.backdropFilter).toBe('blur(12px)');
+  });
+});
+
 describe('applyEffects — no effects', () => {
   it('does not add filter when no shadows or blur', () => {
     const svg = makeSvg();

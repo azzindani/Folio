@@ -83,6 +83,43 @@ export interface NoiseFill {
   octaves: number;
 }
 
+/** Generative tiled patterns — dots, stripes, grids, halftone, memphis, etc.
+ *  Rendered as an SVG <pattern> so it tiles seamlessly and rasterizes in resvg. */
+export type PatternName =
+  | 'dots' | 'dot_grid' | 'grid' | 'graph_paper' | 'isometric'
+  | 'stripes' | 'diagonal_stripes' | 'crosshatch' | 'checkerboard'
+  | 'chevron' | 'zigzag' | 'triangles' | 'waves' | 'scallop'
+  | 'plus' | 'cross' | 'scatter' | 'confetti' | 'halftone' | 'blueprint'
+  | 'carbon' | 'houndstooth' | 'brick';
+
+export interface PatternFill {
+  type: 'pattern';
+  pattern: PatternName;
+  /** Foreground (marks) color. */
+  fg: string;
+  /** Background color; omit for transparent (pattern floats over fills below). */
+  bg?: string;
+  /** Tile-size multiplier (1 = preset default, ~24px). */
+  scale?: number;
+  /** Rotation of the whole field, degrees. */
+  angle?: number;
+  /** Mark weight / stroke multiplier (1 = default). */
+  weight?: number;
+  /** Mark opacity 0–1. */
+  opacity?: number;
+}
+
+/** Image / photo-texture fill — tile a texture or fit a single image into the shape. */
+export interface ImageFill {
+  type: 'image';
+  src: string;
+  /** tile = repeat texture; cover/contain = single fitted image. Default 'cover'. */
+  mode?: 'tile' | 'cover' | 'contain';
+  /** Tile edge length in px when mode='tile'. Default 96. */
+  tile_size?: number;
+  opacity?: number;
+}
+
 export interface MultiFill {
   type: 'multi';
   layers: Fill[];
@@ -98,6 +135,8 @@ export type Fill =
   | RadialGradientFill
   | ConicGradientFill
   | NoiseFill
+  | PatternFill
+  | ImageFill
   | MultiFill
   | NoneFill;
 
@@ -173,13 +212,32 @@ export interface Shadow {
   color: string;
 }
 
+// ── Duotone ─────────────────────────────────────────────────
+/** Maps a layer's luminance onto a two-color ramp (shadows→highlights).
+ *  The signature editorial/photo treatment; applied via feColorMatrix. */
+export interface Duotone {
+  /** Color mapped to dark/shadow pixels. */
+  shadow: string;
+  /** Color mapped to light/highlight pixels. */
+  highlight: string;
+}
+
 // ── Effects ─────────────────────────────────────────────────
 export interface Effects {
   shadows?: Shadow[];
   blur?: number;
+  /** Gaussian blur of whatever sits *behind* the layer (glassmorphism). */
   backdrop_blur?: number;
   opacity?: number;
   blend_mode?: string;
+  /** Two-tone luminance remap (editorial photo look). */
+  duotone?: Duotone;
+  /** Film/paper grain overlaid on the layer, 0–1 intensity. */
+  grain?: number;
+  /** Posterize to N tonal levels (2–8) for a screen-print look. */
+  posterize?: number;
+  /** Saturation multiplier (0 = grayscale, 1 = unchanged, >1 = punchy). */
+  saturate?: number;
 }
 
 // ── Corner Radius ───────────────────────────────────────────

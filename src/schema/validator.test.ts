@@ -97,6 +97,26 @@ describe('validateFill', () => {
     const errors = validateFill({ type: 'none' }, 'fill');
     expect(errors).toHaveLength(0);
   });
+
+  it('validates a pattern fill with a known name + fg', () => {
+    const errors = validateFill({ type: 'pattern', pattern: 'halftone', fg: '#111' } as never, 'fill');
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rejects an unknown pattern name', () => {
+    const errors = validateFill({ type: 'pattern', pattern: 'sparkles', fg: '#111' } as never, 'fill');
+    expect(errors.some(e => e.path === 'fill.pattern')).toBe(true);
+  });
+
+  it('rejects a pattern fill missing fg', () => {
+    const errors = validateFill({ type: 'pattern', pattern: 'dots' } as never, 'fill');
+    expect(errors.some(e => e.path === 'fill.fg')).toBe(true);
+  });
+
+  it('validates an image fill with src and rejects one without', () => {
+    expect(validateFill({ type: 'image', src: 'a.png' } as never, 'fill')).toHaveLength(0);
+    expect(validateFill({ type: 'image' } as never, 'fill').some(e => e.path === 'fill.src')).toBe(true);
+  });
 });
 
 describe('validateDesignLayers', () => {
