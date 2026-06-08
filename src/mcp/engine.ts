@@ -5,6 +5,7 @@ import type { DesignSpec, ThemeSpec, Layer, Page, ComponentSpec } from '../schem
 import type { ToolResult } from './types';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { Resvg } from '@resvg/resvg-js';
+import { jsPDF } from 'jspdf';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 import { validateReport, type ReportDiagnostic } from '../report/report-validator';
@@ -949,6 +950,27 @@ function loadComponentRegistry(projectDir: string | undefined): Map<string, Comp
   } catch { return undefined; }
 }
 
+/**
+ * Collect absolute-positioned clickable rects from every layer carrying an
+ * `href` (recursing into groups — group children are stored in absolute
+ * coords). Used to add PDF `/Link` annotations over hyperlinked layers.
+ */
+export function collectHrefRects(layers: Layer[]): { x: number; y: number; w: number; h: number; href: string }[] {
+  const out: { x: number; y: number; w: number; h: number; href: string }[] = [];
+  const walk = (ls: Layer[]): void => {
+    for (const l of ls) {
+      const href = (l as { href?: unknown }).href;
+      const g = l as { x?: number; y?: number; width?: number; height?: number; layers?: Layer[] };
+      if (typeof href === 'string' && href.trim() && (g.width ?? 0) > 0 && (g.height ?? 0) > 0) {
+        out.push({ x: g.x ?? 0, y: g.y ?? 0, w: g.width ?? 0, h: g.height ?? 0, href });
+      }
+      if (Array.isArray(g.layers)) walk(g.layers);
+    }
+  };
+  walk(layers);
+  return out;
+}
+
 export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number; project_path?: string }): ToolResult {
   const op = 'export_design';
   const progress: ProgressItem[] = [];
@@ -1054,35 +1076,57 @@ export function exportDesign(args: { design_path: string; format: string; output
     }
   }
   if (args.format === 'pdf') {
-    // PDF via Puppeteer is async — we can stage the HTML synchronously but
-    // the actual PDF requires a separate Node call. Returning success:true
-    // misleads agents into thinking the file exists. Return success:false
-    // with the staged HTML path in the error context so the caller can
-    // either consume the HTML or invoke the Puppeteer step themselves.
-    const htmlPath = outPath.replace(/\.pdf$/, '-puppeteer.html');
-    let htmlOk = false;
+    // Real PDF, in-container (no browser): rasterize each page through resvg
+    // with the bundled fonts (so type matches the editor) and place it full-
+    // page in a jsPDF, then add `/Link` annotations over every hyperlinked
+    // layer. This is a high-resolution RASTER pdf with working links — crisp
+    // at practical zoom. For selectable text / infinite-zoom vector, the SVG
+    // export (now self-contained) or the hi-fi browser worker is the path.
     try {
-      const datasets = new Map<string, LoadedDataset>();
-      const sources: { id: string; rows?: Record<string, unknown>[] }[] = spec.report?.data?.sources ?? [];
-      for (const src of sources) {
-        if (src.rows) datasets.set(src.id, { id: src.id, rows: src.rows });
+      const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 3;
+      const missingFonts = new Set<string>();
+      const rasterize = (svgStr: string): Buffer => {
+        for (const f of unbundledFonts(svgStr)) missingFonts.add(f);
+        return Buffer.from(new Resvg(svgStr, {
+          fitTo: { mode: 'zoom', value: scale },
+          background: 'rgba(255,255,255,1)',
+          font: resvgFontOption(),
+        }).render().asPng());
+      };
+      const W = spec.document.width, H = spec.document.height;
+      const toPt = (px: number): number => (px * 72) / 96;
+      const orient = W >= H ? 'landscape' : 'portrait';
+      const pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(W), toPt(H)], compress: true });
+      const addDesignPage = (svgStr: string, layers: Layer[], first: boolean): void => {
+        if (!first) pdf.addPage([toPt(W), toPt(H)], orient);
+        const png = rasterize(svgStr);
+        pdf.addImage(`data:image/png;base64,${png.toString('base64')}`, 'PNG', 0, 0, toPt(W), toPt(H), undefined, 'FAST');
+        for (const r of collectHrefRects(layers)) {
+          pdf.link(toPt(r.x), toPt(r.y), toPt(r.w), toPt(r.h), { url: r.href });
+        }
+      };
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      if (multiPage) {
+        pages.forEach((page, i) => addDesignPage(renderPageSVG(page), page.layers ?? [], i === 0));
+      } else {
+        addDesignPage(renderToSVGString(spec, undefined, undefined, componentRegistry), spec.layers ?? [], true);
       }
-      const html: string = assembleReportHTML(spec, datasets, {});
-      fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
-      fs.writeFileSync(htmlPath, html, 'utf-8');
-      progress.push(pOk('HTML staged for Puppeteer PDF', path.basename(htmlPath)));
-      htmlOk = true;
+      const pdfBuf = Buffer.from(pdf.output('arraybuffer'));
+      fs.writeFileSync(outPath, pdfBuf);
+      progress.push(pOk('PDF written', `${path.basename(outPath)} (${pdfBuf.length} bytes @ ${scale}×)`));
+      const linkCount = multiPage
+        ? pages.reduce((n, p) => n + collectHrefRects(p.layers ?? []).length, 0)
+        : collectHrefRects(spec.layers ?? []).length;
+      const notes = [
+        'PDF is a high-resolution raster with clickable links and editor-matching fonts. For selectable text / infinite-zoom vector, use export_design format:"svg" (self-contained) or the hi-fi browser worker.',
+        ...(missingFonts.size ? [`Fonts not bundled — fell back to a default in raster: ${[...missingFonts].join(', ')}.`] : []),
+      ];
+      const context = buildContext(op, `PDF exported for "${spec.meta.name}"`, [{ type: 'pdf', path: outPath, role: 'output' }]);
+      const handover = buildHandover('EXPORT', { design_path: dPath });
+      return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, links: linkCount, notes, progress, context, handover });
     } catch (err) {
-      progress.push(pWarn(`HTML staging failed: ${(err as Error).message}`));
+      return errResult(op, `PDF render failed: ${(err as Error).message}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF.', progress);
     }
-    return errResult(
-      op,
-      'PDF export requires a separate Puppeteer step',
-      htmlOk
-        ? `HTML staged at ${htmlPath}. Run exportToPuppeteerPDF(htmlPath, '${outPath}') in Node to produce the PDF.`
-        : 'HTML staging failed — see progress.',
-      progress,
-    );
   }
   if (args.format === 'png') {
     try {
