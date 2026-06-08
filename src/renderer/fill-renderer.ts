@@ -1,5 +1,6 @@
-import type { Fill, LinearGradientFill, RadialGradientFill, ConicGradientFill, NoiseFill, ColorOrGradient } from '../schema/types';
+import type { Fill, LinearGradientFill, RadialGradientFill, ConicGradientFill, NoiseFill, ImageFill, ColorOrGradient } from '../schema/types';
 import { createSVGElement, uniqueDefId, getOrCreateDefs } from './svg-utils';
+import { renderPattern } from './pattern-renderer';
 
 export interface FillResult {
   fill: string;
@@ -147,6 +148,36 @@ function renderNoiseFilter(
   return noiseRect;
 }
 
+// Image / photo-texture fill via an SVG <pattern>. mode='tile' repeats the
+// source at tile_size; cover/contain fit one image to the shape bounds. Uses
+// userSpaceOnUse, so it aligns to the canvas grid (ideal for full-canvas bgs).
+function renderImageFill(
+  fill: ImageFill,
+  defs: SVGDefsElement,
+  bounds: { width: number; height: number },
+): string {
+  const id = uniqueDefId('img');
+  const mode = fill.mode ?? 'cover';
+  const tile = mode === 'tile' ? Math.max(4, fill.tile_size ?? 96) : 0;
+  const w = mode === 'tile' ? tile : Math.max(1, bounds.width);
+  const h = mode === 'tile' ? tile : Math.max(1, bounds.height);
+  const pattern = createSVGElement('pattern', {
+    id, patternUnits: 'userSpaceOnUse', width: w, height: h,
+  });
+  const preserve = mode === 'contain' ? 'xMidYMid meet'
+    : mode === 'tile' ? 'xMidYMid slice' : 'xMidYMid slice';
+  const image = createSVGElement('image', {
+    x: 0, y: 0, width: w, height: h,
+    preserveAspectRatio: preserve,
+    opacity: fill.opacity !== undefined ? String(fill.opacity) : undefined,
+  });
+  image.setAttribute('href', fill.src);
+  image.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', fill.src);
+  pattern.appendChild(image);
+  defs.appendChild(pattern);
+  return `url(#${id})`;
+}
+
 export function applyFill(
   fill: Fill,
   svg: SVGSVGElement,
@@ -169,6 +200,12 @@ export function applyFill(
 
     case 'conic':
       return { fill: renderConicGradient(fill, defs, bounds) };
+
+    case 'pattern':
+      return { fill: renderPattern(fill, defs), opacity: undefined };
+
+    case 'image':
+      return { fill: renderImageFill(fill, defs, bounds) };
 
     case 'noise':
       return {

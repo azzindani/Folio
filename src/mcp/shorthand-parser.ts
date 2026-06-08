@@ -105,8 +105,54 @@ function parseDelimitedGradient(s: string): Fill | null {
     : { type: 'linear', angle: 135, stops }) as unknown as Fill;
 }
 
+const PATTERN_NAMES = new Set([
+  'dots', 'dot_grid', 'grid', 'graph_paper', 'isometric', 'stripes',
+  'diagonal_stripes', 'crosshatch', 'checkerboard', 'chevron', 'zigzag',
+  'triangles', 'waves', 'scallop', 'plus', 'cross', 'scatter', 'confetti',
+  'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
+]);
+
+// Parse a compact pattern string: "pattern:halftone", "halftone/#1a1a1a",
+// "dots/#222 on #faf5ec". Returns null when it isn't a pattern string.
+function parsePatternString(s: string): Fill | null {
+  let t = s.trim();
+  const pfx = /^pattern:\s*/i.exec(t);
+  if (pfx) t = t.slice(pfx[0].length).trim();
+  const onSplit = t.split(/\s+on\s+/i);
+  const head = onSplit[0].trim();
+  const bg = onSplit[1]?.trim();
+  const [nameRaw, fg] = head.split('/').map(p => p.trim());
+  const name = nameRaw.toLowerCase().replace(/[\s-]+/g, '_');
+  if (!PATTERN_NAMES.has(name)) return null;
+  const f: Record<string, unknown> = { type: 'pattern', pattern: name, fg: fg || '$text' };
+  if (bg) f['bg'] = bg;
+  return f as unknown as Fill;
+}
+
+// Normalize a loose pattern/image fill object (fg/foreground/color, bg/background).
+function normalizePatternFill(fill: Fill): Fill {
+  const f = fill as unknown as Record<string, unknown>;
+  const t = typeof f['type'] === 'string' ? (f['type'] as string).toLowerCase() : '';
+  if (t === 'pattern') {
+    const name = String(f['pattern'] ?? f['name'] ?? 'dots').toLowerCase().replace(/[\s-]+/g, '_');
+    const fg = (f['fg'] ?? f['foreground'] ?? f['color'] ?? '$text') as string;
+    const out: Record<string, unknown> = { type: 'pattern', pattern: PATTERN_NAMES.has(name) ? name : 'dots', fg };
+    for (const k of ['bg', 'scale', 'angle', 'weight', 'opacity']) if (f[k] !== undefined) out[k] = f[k];
+    if (out['bg'] === undefined && f['background'] !== undefined) out['bg'] = f['background'];
+    return out as unknown as Fill;
+  }
+  if (t === 'image') {
+    const out: Record<string, unknown> = { type: 'image', src: f['src'] ?? f['url'] ?? f['href'] ?? '' };
+    for (const k of ['mode', 'tile_size', 'opacity']) if (f[k] !== undefined) out[k] = f[k];
+    return out as unknown as Fill;
+  }
+  return fill;
+}
+
 function expandFill(fill: string | Fill): Fill {
   if (typeof fill === 'string') {
+    const pat = parsePatternString(fill);
+    if (pat) return pat;
     const css = parseCssGradient(fill);
     if (css) return css;
     const delim = parseDelimitedGradient(fill);
@@ -123,6 +169,9 @@ function expandFill(fill: string | Fill): Fill {
     }
     return { type: 'solid', color: fill };
   }
+  const fr = fill as unknown as Record<string, unknown>;
+  const ft = typeof fr['type'] === 'string' ? (fr['type'] as string).toLowerCase() : '';
+  if (ft === 'pattern' || ft === 'image') return normalizePatternFill(fill);
   return normalizeGradientFill(fill);
 }
 

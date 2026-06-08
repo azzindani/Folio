@@ -165,6 +165,45 @@ describe('applyFill — noise', () => {
   });
 });
 
+describe('applyFill — pattern', () => {
+  it('returns a url(#pat-...) reference and writes a <pattern> to defs', () => {
+    const svg = makeSVG();
+    const result = applyFill(
+      { type: 'pattern', pattern: 'halftone', fg: '#1A1A1A', bg: '#FAF5EC' } as Fill,
+      svg, { width: 200, height: 200 },
+    );
+    expect(result.fill).toMatch(/^url\(#pat-\d+\)$/);
+    const pat = getDefs(svg)!.querySelector('pattern');
+    expect(pat).toBeTruthy();
+    expect(pat!.querySelector('rect')!.getAttribute('fill')).toBe('#FAF5EC');
+    expect(pat!.querySelectorAll('circle').length).toBeGreaterThan(0);
+  });
+});
+
+describe('applyFill — image', () => {
+  it('tiles a texture with a userSpaceOnUse pattern + <image>', () => {
+    const svg = makeSVG();
+    const result = applyFill(
+      { type: 'image', src: 'https://x/t.png', mode: 'tile', tile_size: 64 } as Fill,
+      svg, { width: 200, height: 200 },
+    );
+    expect(result.fill).toMatch(/^url\(#img-\d+\)$/);
+    const pat = getDefs(svg)!.querySelector('pattern')!;
+    expect(pat.getAttribute('width')).toBe('64');
+    const img = pat.querySelector('image')!;
+    expect(img.getAttribute('href')).toBe('https://x/t.png');
+  });
+
+  it('cover mode fits one image to the shape bounds', () => {
+    const svg = makeSVG();
+    applyFill({ type: 'image', src: 'a.jpg', mode: 'cover' } as Fill, svg, { width: 300, height: 150 });
+    const pat = getDefs(svg)!.querySelector('pattern')!;
+    expect(pat.getAttribute('width')).toBe('300');
+    expect(pat.getAttribute('height')).toBe('150');
+    expect(pat.querySelector('image')!.getAttribute('preserveAspectRatio')).toBe('xMidYMid slice');
+  });
+});
+
 describe('applyFill — multi', () => {
   it('combines multiple fill layers and returns first non-none fill', () => {
     const svg = makeSVG();
