@@ -256,6 +256,20 @@ describe('expandShorthand', () => {
     expect(r.layers!.every(l => typeof l.x === 'number' && typeof l.y === 'number')).toBe(true);
   });
 
+  it('sections: stats auto-split a merged "figure + words" value (incl. currency) into value + label', () => {
+    type SL = { id: string; type: string; style?: { font_size?: number } };
+    const r = expandShorthand({
+      id: 'st', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'X',
+      blocks: [{ kind: 'stats', items: [{ value: '$250B market size' }, { value: '207M creators' }, { value: '73%' }] }],
+    } as unknown as ShorthandLayer) as { layers?: SL[] };
+    const big = (id: string): number => r.layers!.find(l => l.id === id)!.style!.font_size!;
+    const small = (id: string): number => r.layers!.find(l => l.id === id)!.style!.font_size!;
+    // value layer (big) and label layer (small) both exist for the merged "$250B market size"
+    expect(big('st_b0_v0')).toBeGreaterThan(small('st_b0_l0') * 2);
+    // a bare "73%" with no words stays a value-only stat (no label layer)
+    expect(r.layers!.some(l => l.id === 'st_b0_l2')).toBe(false);
+  });
+
   it('sections: native bars block renders rect bars scaled to the max value', () => {
     type SL = { id: string; type: string; width: number };
     const r = expandShorthand({
