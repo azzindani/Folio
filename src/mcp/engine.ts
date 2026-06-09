@@ -569,17 +569,16 @@ export function addLayers(args: {
   // Coerce the many shapes a small model sends (array of objects, array of
   // compact strings, or a {id: "type:[pos]:text"} dict) into canonical layers.
   const rawShorthand = args.layers_shorthand as unknown;
-  // Weak models reach for feature_grid (good) but encode the whole object as a
-  // flat string ("feature_grid:0,0,1080,1080:title=…:items=icon=…"). That has no
-  // [x,y,w,h] bracket, so it parses to one junk text layer or coerces to nothing.
-  // Catch the string up front and show the exact JSON shape so the next call is
-  // right — far better than a misleading "No layers provided".
-  if (typeof rawShorthand === 'string') {
-    return errResult(op,
-      'layers_shorthand was a STRING — it must be a JSON array of layer objects, not an encoded string.',
-      'Send an array. Feature/benefit/cards poster → one feature_grid (flat bg + one accent, not a gradient): layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
-  }
+  // coerceShorthandLayers leniently parses a JSON/YAML-array STRING (a common
+  // small-model form) back into layers. Only when that parse yields NOTHING do
+  // we surface the helpful shape — e.g. a flat blob ("feature_grid:0,0,…:title=…")
+  // with no [x,y,w,h] bracket that coerces to nothing.
   const shorthand = coerceShorthandLayers(rawShorthand);
+  if (typeof rawShorthand === 'string' && !shorthand.length) {
+    return errResult(op,
+      'layers_shorthand was a STRING that did not parse into any layers.',
+      'Send a JSON array. Feature/benefit/cards poster → one feature_grid (flat bg + one accent, not a gradient): layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
+  }
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
 
   const incoming: Layer[] = shorthand.length
@@ -668,6 +667,21 @@ export function appendPage(args: {
   const layers: Layer[] = pageShorthand.length
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
+  // Never silently append an EMPTY page when content was MEANINGFULLY supplied
+  // but coerced to nothing (e.g. a stringified shorthand that didn't parse) — a
+  // blank slide would still report success and the dropped copy goes unnoticed,
+  // exactly how a 6-page carousel sealed with every page empty. An explicit
+  // `layers: []` / `layers_shorthand: []` scaffold call stays allowed.
+  const rawSh = args.layers_shorthand as unknown;
+  const shorthandSupplied =
+    (typeof rawSh === 'string' && rawSh.trim().length > 0) ||
+    (Array.isArray(rawSh) && rawSh.length > 0) ||
+    (rawSh != null && typeof rawSh === 'object' && !Array.isArray(rawSh) && Object.keys(rawSh as object).length > 0);
+  if (layers.length === 0 && shorthandSupplied) {
+    return errResult(op,
+      'append_page produced 0 layers — the page content did not parse, so nothing was written.',
+      'Pass layers_shorthand as an ARRAY of preset objects (ONE per slide), e.g. layers_shorthand=[{type:"editorial", bg:"#FAF5EC", accent:"#B8543C", text_color:"#1A1A1A", kicker:"…", title:"…", deck:"…"}].', progress);
+  }
   progress.push(pInfo(`Page has ${layers.length} layer(s)`, pageShorthand.length ? 'via shorthand' : 'verbose'));
 
   const bak = snapshot(dPath);

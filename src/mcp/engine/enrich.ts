@@ -86,11 +86,14 @@ interface PageSpec { role: string; label: string; preset: string; hints: string;
 // A cohesive deck arc: cover → context → N focused content slides → data/proof
 // → takeaway/CTA. Each page is ONE preset layer (a slide = one clear message,
 // NOT a dense infographic). Presets vary by role; the mood stays constant.
-function planPages(subject: string, count: number): PageSpec[] {
+function planPages(subject: string, count: number, mood: Mood): PageSpec[] {
   // EVERY page = ONE engine preset layer (editorial or sections). Never hand-place
   // text/stats/charts on a slide — that is the #1 carousel failure (icons over
   // words, bar values overflowing, weak hierarchy). Presets own the layout.
-  const ONE = 'Build this slide as ONE preset layer — do NOT hand-place any text, stat, icon or chart (they collide and the hierarchy goes flat).';
+  // Bake the shared style INTO every hint so the model copies bg_style verbatim
+  // onto each page (a thin model otherwise drops bg_style and ships flat slides).
+  const STYLE = `Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}" on this layer — IDENTICAL on every page for a cohesive deck.`;
+  const ONE = `Build this slide as ONE preset layer — do NOT hand-place any text, stat, icon or chart (they collide and the hierarchy goes flat). ${STYLE}`;
   const pages: PageSpec[] = [];
   pages.push({ role: 'cover', label: 'Cover', preset: 'editorial', hints: `editorial preset (ONE layer): a kicker, a BOLD title naming the topic ("${subject}"), a one-line deck. ${ONE}` });
   const middle = count - 2; // reserve cover + closing
@@ -127,11 +130,11 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
       `${subject} key statistics 2026`, `${subject} latest trends and figures`,
       `${subject} market size growth data`, `notable ${subject} facts and numbers`,
     ] : [];
-    const pages = planPages(subject, count);
+    const pages = planPages(subject, count, mood);
     const research_instruction = research
       ? 'Factual topic: FIRST run the research_queries with your web tools for REAL figures. Do NOT invent statistics.'
       : 'No external research needed — use the details in the prompt.';
-    const instruction = `${research_instruction} Build a ${count}-page CAROUSEL. Put the SAME bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)} on EVERY page (set them on each page's preset layer) for a cohesive deck. Flow: create_task with the pages below (label + hints), then append_page per page adding exactly ONE preset layer (editorial or sections) per its hints — NEVER hand-place text/stats/icons/charts on a slide (they collide). Keep stat VALUES short ("55%", "15M"); put descriptions in the label. One clear message per slide. Then run diagnose_design on the WHOLE design; if ANY page reports errors, replace that page's layers with a single preset layer and re-diagnose. Do NOT seal_design until EVERY page is error-free.`;
+    const instruction = `${research_instruction} Build a ${count}-page CAROUSEL. Put the SAME bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)} on EVERY page (set them on each page's preset layer) for a cohesive deck. Flow: create_task with width:${cw}, height:${ch} and the pages below (label + hints), then append_page per page passing layers_shorthand as a real JSON ARRAY of ONE preset object (editorial or sections) per its hints — NEVER hand-place text/stats/icons/charts on a slide (they collide). Each page's preset MUST carry the bg_style/bg/accent/text_color above. Keep stat VALUES short ("55%", "15M"); put descriptions in the label. One clear message per slide. Then run diagnose_design on the WHOLE design; if ANY page reports errors, replace that page's layers with a single preset layer and re-diagnose. Do NOT seal_design until EVERY page is error-free.`;
     progress.push(pOk(`Planned a ${count}-page carousel`, research ? `${research_queries.length} research queries` : 'no research needed'));
     const context = buildContext(op, `Enriched brief → ${count}-page carousel`);
     const handover = buildHandover('DESIGN', {}, { type: 'carousel' });

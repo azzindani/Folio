@@ -1,3 +1,4 @@
+import yaml from 'js-yaml';
 import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
@@ -1549,6 +1550,23 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
     return (id ? { id } : {}) as ShorthandLayer;
   };
   if (input == null) return [];
+  // A STRING is the #1 silent-failure shape: a model JSON/YAML-stringifies the
+  // whole layers_shorthand ('[{type:"editorial", …}]'). Unquoted keys make it
+  // invalid strict JSON but valid YAML flow, so parse leniently and recurse.
+  // Without this the string matches no branch below → [] → an EMPTY page that
+  // still reports success (caught a 6-page carousel silently dropping all copy).
+  if (typeof input === 'string') {
+    const s = input.trim();
+    if (!s) return [];
+    let parsed: unknown;
+    try { parsed = yaml.load(s); } catch { parsed = undefined; }
+    if (parsed && typeof parsed === 'object') return coerceShorthandLayers(parsed);
+    // A bare compact layer must carry an [x,y,w,h] bracket. Without one it's a
+    // junk blob a weak model emitted ("feature_grid:0,0,…:items=…") — return []
+    // so the caller surfaces the correct ARRAY shape instead of a junk layer.
+    if (/\[[^\]]*\]/.test(s)) { const p = parseCompactLayer(s); if (Object.keys(p).length) return [p]; }
+    return [];
+  }
   if (Array.isArray(input)) return input.map(v => one(v));
   if (typeof input === 'object') {
     const obj = input as Record<string, unknown>;

@@ -797,6 +797,37 @@ describe('coerceShorthandLayers — accepts the shapes small models actually sen
     expect(coerceShorthandLayers(null)).toEqual([]);
     expect(coerceShorthandLayers(42)).toEqual([]);
   });
+
+  // The carousel silent-drop bug: a model stringifies the whole array. Unquoted
+  // keys make it invalid JSON but valid YAML flow — parse it, don't drop it.
+  it('parses a JSON/YAML-array STRING with unquoted keys (carousel drop bug)', () => {
+    const out = coerceShorthandLayers(
+      '[{type: "editorial", bg: "#FAF5EC", accent: "#B8543C", kicker: "K", title: "T", deck: "D"}]',
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('editorial');
+    expect(out[0].title).toBe('T');
+  });
+
+  it('parses a strict-JSON array string', () => {
+    const out = coerceShorthandLayers('[{"type":"rect","pos":[0,0,10,10]}]');
+    expect(out[0].type).toBe('rect');
+  });
+
+  it('parses a single stringified object (not wrapped in an array)', () => {
+    const out = coerceShorthandLayers('{type: "stat", value: "55%", label: "share"}');
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('stat');
+  });
+
+  it('treats an unstructured string as one compact layer', () => {
+    const out = coerceShorthandLayers('rect:[0,0,10,10]:#FAF5EC');
+    expect(out[0].type).toBe('rect');
+  });
+
+  it('returns [] for an empty / whitespace string', () => {
+    expect(coerceShorthandLayers('   ')).toEqual([]);
+  });
 });
 
 describe('expandShorthandLayers — visible defaults (no blank designs)', () => {
