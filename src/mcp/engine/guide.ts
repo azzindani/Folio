@@ -96,6 +96,13 @@ z = stacking order (higher = front)
    stack + margin accent bars, centered to fill the canvas — don't hand-place it (the title
    collides with the details and decor lands invisible).
 
+📰 RICH / DENSE / MULTI-SECTION? (an infographic, a report, a "state of X", anything with
+   several sections, stats, and paragraphs) — use the sections PRESET (aliases infographic/
+   document) on a TALL canvas (1080x1920+): a header + an ordered blocks:[{kind:…}] list
+   (intro/stats/heading/text/list/callout/quote/divider). The engine measures + flows every
+   block with editorial rhythm. This is how you make a CONTENT-RICH, professional layout —
+   supply lots of blocks; never hand-place a multi-section document (it collides badly).
+
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
 each also return open_url — a clickable, unique-token editor link (no separate
@@ -259,6 +266,25 @@ instead of hand-placing a giant title (it collides with the details + the decor 
 invisible). details=[…] OR date/venue/time fields. palette=[…] colors the bars.
   {type:"event", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#FF3D00", palette:["#00E5FF","#FF00E5","#C6FF00"],
     title:"Neon Nights", details:["Saturday 14 June","Riverside Park","7PM till late"], footer:"@neonnights"}
+
+sections (aliases infographic, document, report_poster): the RICH, content-DENSE poster —
+a header (kicker/title/subtitle) then an ordered blocks:[…] the engine MEASURES and flows
+top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Each block:
+  {kind:"intro", text:"…"}            一 lead paragraph
+  {kind:"stats", items:[{value:"58%",label:"hybrid"},…]}   一 a row of big figures (≤4)
+  {kind:"heading", text:"…"}          一 section heading (accent tick)
+  {kind:"text", text:"…"}             一 body paragraph
+  {kind:"list", items:[{title,desc},…]}  一 numbered sub-list
+  {kind:"callout", label:"Key takeaway", text:"…"}  一 accent-tinted highlight box
+  {kind:"quote", text:"…", cite:"…"}  一 pull quote
+  {kind:"divider"}                    一 rule
+  {type:"sections", pos:[0,0,1080,1920], bg:"#FAF5EC", accent:"#B8543C", kicker:"Report",
+    title:"The State of Remote Work 2026", subtitle:"…", footer:"Source: …", blocks:[
+      {kind:"intro",text:"…"}, {kind:"stats",items:[{value:"58%",label:"hybrid"},{value:"27%",label:"remote"}]},
+      {kind:"heading",text:"The Hybrid Default"}, {kind:"text",text:"…"},
+      {kind:"callout",label:"Takeaway",text:"…"} ]}
+  This is THE tool for a magazine infographic / multi-section report — supply many blocks
+  for a dense, organized, professional layout; don't hand-place sections (they collide).
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
