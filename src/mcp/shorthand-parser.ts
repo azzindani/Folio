@@ -396,15 +396,21 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const subtitle = str(r['subtitle']);
   if (subtitle) layers.push({ id: `${id}_subtitle`, type: 'text', z: 30, x: X + M, y: Y + Math.round(H * 0.26), width: W - 2 * M, height: Math.round(H * 0.06),
     content: { type: 'plain', value: subtitle }, style: { font_size: Math.round(W * 0.03), color: muted, align: 'center' } } as unknown as Layer);
+  // Scale type + MEASURE wrapped heights so long titles/descs never overflow the
+  // card or collide (narrow cards → smaller type). Fixed heights overflowed before.
+  const pad = 28, innerW = Math.max(40, cardW - 2 * pad);
+  const iconSz = Math.max(40, Math.min(60, Math.round(cardW * 0.3)));
+  const tSize = Math.max(18, Math.round(Math.min(30, cardW * 0.145)));
+  const dSize = Math.max(13, Math.round(Math.min(21, cardW * 0.1)));
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
-    if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: 60, height: 60, name: it.icon, size: 60, color: cardIcon } as unknown as Layer);
-    if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: cardW - 60, height: 90,
-      content: { type: 'plain', value: it.title }, style: { font_size: 30, font_weight: 700, color: cardText, align: 'center' } } as unknown as Layer);
-    if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: cardW - 60, height: 110,
-      content: { type: 'plain', value: it.desc }, style: { font_size: 21, color: cardMuted, align: 'center' } } as unknown as Layer);
+    if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: iconSz, height: iconSz, name: it.icon, size: iconSz, color: cardIcon } as unknown as Layer);
+    if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: innerW, height: estTextHeight(it.title, tSize, innerW, 1.15),
+      content: { type: 'plain', value: it.title }, style: { font_size: tSize, font_weight: 700, color: cardText, align: 'center', line_height: 1.15 } } as unknown as Layer);
+    if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: innerW, height: estTextHeight(it.desc, dSize, innerW, 1.4),
+      content: { type: 'plain', value: it.desc }, style: { font_size: dSize, color: cardMuted, align: 'center', line_height: 1.4 } } as unknown as Layer);
     return { id: `${id}_card${i}`, type: 'auto_layout', z: i, x: 0, y: 0, width: cardW, height: rowH, direction: 'column',
-      gap: 16, padding: 28, align_items: 'center', justify_content: 'center', radius: 18,
+      gap: 16, padding: pad, align_items: 'center', justify_content: 'center', radius: 18,
       fill: expandFill(cardFillResolved), layers: kids } as unknown as Layer;
   });
   layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: Y + rowY, width: W - 2 * M, height: rowH,
