@@ -967,7 +967,30 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     });
     return { layers, height: Math.max(0, items.length * (rowH + rowGap) - rowGap) };
   }
-  // divider / rule (default fall-through for unknown kinds = a thin rule)
+  if (kind === 'caption' || kind === 'source' || kind === 'note' || kind === 'footnote' || kind === 'label') {
+    // Small mono source/caption line (blind models pass the footer source as a
+    // block like {kind:source}; render its text — never silently drop it).
+    const t = shStr(b['text'] ?? b['body'] ?? b['value'] ?? b['content'] ?? b['source'] ?? b['label']);
+    if (!t) return { layers, height: 0 };
+    const size = Math.round(W * 0.016);
+    const th = estTextHeight(t, size, w, 1.3);
+    layers.push(txt(`${idp}_cap`, z++, x, y, w, th, t, { font_family: 'IBM Plex Mono', font_size: size, font_weight: 500, color: muted, letter_spacing: 0.5 }));
+    return { layers, height: th };
+  }
+  if (kind === 'divider' || kind === 'rule' || kind === 'hr' || kind === 'separator') {
+    layers.push({ id: `${idp}_div`, type: 'rect', z: z++, x, y: y + Math.round(W * 0.01), width: w, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    return { layers, height: Math.round(W * 0.02) };
+  }
+  // Unknown kind that still carries text → render as body text rather than
+  // dropping it to a blank rule (a blind model can't see the text vanish).
+  const fallText = shStr(b['text'] ?? b['body'] ?? b['value'] ?? b['content'] ?? b['title'] ?? b['heading']);
+  if (fallText) {
+    const size = Math.round(W * 0.0225);
+    const th = estTextHeight(fallText, size, w, 1.5);
+    layers.push(txt(`${idp}_t`, z++, x, y, w, th, fallText, { font_size: size, font_weight: 400, color: muted, line_height: 1.5 }));
+    return { layers, height: th };
+  }
+  // Truly empty block → a thin rule.
   layers.push({ id: `${idp}_div`, type: 'rect', z: z++, x, y: y + Math.round(W * 0.01), width: w, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
   return { layers, height: Math.round(W * 0.02) };
 }
@@ -1028,8 +1051,9 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
   const sumH = heights.reduce((a, h) => a + h, 0);
   const n = Math.max(1, bl.length);
-  // Tight floor so dense content fits; generous cap so a roomy canvas fills.
-  const gap = Math.max(Math.round(W * 0.022), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
+  // Tight floor so dense content fits; modest cap so a roomy canvas stays
+  // magazine-dense instead of drifting into airy, sparse-looking whitespace.
+  const gap = Math.max(Math.round(W * 0.022), Math.min(Math.round(W * 0.042), (avail - sumH) / n));
   bl.forEach((b, i) => {
     const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
     out.layers.forEach(l => layers.push(l));
