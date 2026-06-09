@@ -229,6 +229,74 @@ describe('expandShorthand', () => {
     expect((bar0.fill?.color ?? '').toLowerCase()).not.toBe('#0a0a0a');
   });
 
+  it('expands a sections preset: header + flowed, measured, non-overlapping blocks', () => {
+    type SL = { id: string; type: string; x: number; y: number; width: number; height: number };
+    const r = expandShorthand({
+      id: 'sec', type: 'sections', z: 0, pos: [0, 0, 1080, 1920],
+      bg: '#FAF5EC', accent: '#B8543C', kicker: 'Report', title: 'The State of Remote Work 2026',
+      subtitle: 'A year in review.', footer: 'Source: Index 2026',
+      blocks: [
+        { kind: 'intro', text: 'Remote work matured in 2026 as hybrid models settled into a default rhythm across most knowledge sectors.' },
+        { kind: 'stats', items: [{ value: '58%', label: 'hybrid' }, { value: '27%', label: 'fully remote' }, { value: '+41%', label: 'productivity' }] },
+        { kind: 'heading', text: 'The Hybrid Default' },
+        { kind: 'text', text: 'Most companies settled on two to three office days, balancing focus and collaboration.' },
+        { kind: 'callout', label: 'Key takeaway', text: 'Async-first cultures outperformed meeting-heavy ones on nearly every measure.' },
+        { kind: 'quote', text: 'The commute dividend went straight into focus work.', cite: 'GWI 2026' },
+      ],
+    } as unknown as ShorthandLayer) as { type?: string; layers?: SL[] };
+    expect(r.type).toBe('group');
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('sec_title');
+    expect(ids).toContain('sec_footer');
+    expect(ids.some(i => i.startsWith('sec_b0'))).toBe(true);
+    expect(ids.some(i => i.startsWith('sec_b5'))).toBe(true);
+    expect(ids.filter(i => /^sec_b1_v\d/.test(i)).length).toBe(3);   // 3 stat values
+    expect(ids).toContain('sec_b4_box');                            // callout tinted box
+    expect(r.layers!.length).toBeGreaterThan(15);                   // a rich composition
+    expect(r.layers!.every(l => typeof l.x === 'number' && typeof l.y === 'number')).toBe(true);
+  });
+
+  it('sections: stats auto-split a merged "figure + words" value (incl. currency) into value + label', () => {
+    type SL = { id: string; type: string; style?: { font_size?: number } };
+    const r = expandShorthand({
+      id: 'st', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'X',
+      blocks: [{ kind: 'stats', items: [{ value: '$250B market size' }, { value: '207M creators' }, { value: '73%' }] }],
+    } as unknown as ShorthandLayer) as { layers?: SL[] };
+    const big = (id: string): number => r.layers!.find(l => l.id === id)!.style!.font_size!;
+    const small = (id: string): number => r.layers!.find(l => l.id === id)!.style!.font_size!;
+    // value layer (big) and label layer (small) both exist for the merged "$250B market size"
+    expect(big('st_b0_v0')).toBeGreaterThan(small('st_b0_l0') * 2);
+    // a bare "73%" with no words stays a value-only stat (no label layer)
+    expect(r.layers!.some(l => l.id === 'st_b0_l2')).toBe(false);
+  });
+
+  it('sections: native bars block renders rect bars scaled to the max value', () => {
+    type SL = { id: string; type: string; width: number };
+    const r = expandShorthand({
+      id: 'bc', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'Usage',
+      blocks: [{ kind: 'bars', items: [{ label: 'Mobile', value: 80 }, { label: 'Desktop', value: 40 }, { label: 'Tablet', value: 10 }] }],
+    } as unknown as ShorthandLayer) as { layers?: SL[] };
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('bc_b0_bb0');   // bar 0
+    expect(ids).toContain('bc_b0_bb2');   // bar 2
+    const bar0 = r.layers!.find(l => l.id === 'bc_b0_bb0')!;
+    const bar1 = r.layers!.find(l => l.id === 'bc_b0_bb1')!;
+    // value 80 → wider bar than value 40 (scaled to max)
+    expect(bar0.width).toBeGreaterThan(bar1.width);
+    expect(ids).toContain('bc_b0_bt0');   // track behind bar
+  });
+
+  it('sections drops leading/trailing divider blocks and the orphan header rule', () => {
+    const r = expandShorthand({
+      id: 'sd', type: 'sections', z: 0, pos: [0, 0, 1080, 1400],
+      blocks: [{ kind: 'divider' }, { kind: 'text', text: 'Body content here.' }, { kind: 'divider' }],
+    } as unknown as ShorthandLayer) as { layers?: Array<{ id: string }> };
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).not.toContain('sd_hr');     // no header content → no orphan rule
+    expect(ids.some(i => i.includes('_div'))).toBe(false);  // leading+trailing dividers trimmed
+    expect(ids.some(i => i.startsWith('sd_b'))).toBe(true); // the text block survived
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',
