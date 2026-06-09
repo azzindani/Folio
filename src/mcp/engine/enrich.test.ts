@@ -81,6 +81,19 @@ describe('enrichBrief — carousel / multi-page decks', () => {
     expect(r.instruction!).toMatch(/SAME bg_style/);
   });
 
+  it('bakes the shared bg_style into EVERY page hint (so a thin model cannot drop it)', () => {
+    const r = car('a 6-slide carousel about the future of AI');
+    // AI topic → mesh bg_style; every page hint must carry it verbatim.
+    expect(r.suggested!.bg_style).toContain('mesh');
+    expect(r.pages!.every(p => /bg_style:"mesh/.test(p.hints))).toBe(true);
+    expect(r.pages!.every(p => p.hints.includes('ONE preset layer'))).toBe(true);
+  });
+
+  it('instruction tells the model to pass the suggested canvas to create_task', () => {
+    const r = car('a presentation about renewable energy');
+    expect(r.instruction!).toMatch(/create_task with width:1920, height:1080/);
+  });
+
   it('explicit type:"carousel" forces a deck even without a keyword', () => {
     expect(car('quarterly results', 'carousel').output_type).toBe('carousel');
   });

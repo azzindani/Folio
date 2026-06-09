@@ -1,3 +1,4 @@
+import yaml from 'js-yaml';
 import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
@@ -1025,6 +1026,13 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   const kind = shStr(b['kind'] ?? b['type'], 'text');
   const layers: Layer[] = [];
   let z = z0;
+  // The item array is the #1 alias gap: a model names it items / rows / data /
+  // values / stats / bars interchangeably. Reading only b['items'] silently
+  // drops the whole block (caught a "By the numbers" slide rendering blank).
+  const arrField = (...keys: string[]): Record<string, unknown>[] => {
+    for (const k of keys) if (Array.isArray(b[k])) return b[k] as Record<string, unknown>[];
+    return [];
+  };
 
   if (kind === 'heading' || kind === 'subhead' || kind === 'section') {
     const t = shStr(b['text'] ?? b['title'] ?? b['heading'] ?? b['content']);
@@ -1042,7 +1050,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     return { layers, height: th };
   }
   if (kind === 'stats' || kind === 'stat_row' || kind === 'kpis' || kind === 'metrics') {
-    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 4) as Record<string, unknown>[];
+    const items = arrField('items', 'rows', 'stats', 'values', 'data', 'metrics', 'kpis').slice(0, 4);
     const n = Math.max(1, items.length);
     const colGap = Math.round(W * 0.025);
     const colW = Math.round((w - (n - 1) * colGap) / n);
@@ -1077,7 +1085,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     return { layers, height: maxH };
   }
   if (kind === 'list' || kind === 'steps') {
-    const items = (Array.isArray(b['items']) ? b['items'] : []) as Record<string, unknown>[];
+    const items = arrField('items', 'rows', 'steps', 'list', 'points', 'data');
     const gutter = Math.round(W * 0.055), tSize = Math.round(W * 0.026), dSize = Math.round(W * 0.02);
     let yy = y;
     items.forEach((it, i) => {
@@ -1118,7 +1126,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   }
   if (kind === 'bars' || kind === 'bar_chart' || kind === 'chart' || kind === 'ranking') {
     // Native rect bar chart — rasterizes in PNG (unlike foreignObject charts).
-    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 8) as Record<string, unknown>[];
+    const items = arrField('items', 'data', 'bars', 'values', 'rows', 'series').slice(0, 8);
     const num = (it: Record<string, unknown>): number => {
       const v = it['value'] ?? it['y'] ?? it['count'];
       return typeof v === 'number' ? v : (parseFloat(shStr(v).replace(/[^0-9.\-]/g, '')) || 0);
@@ -1549,6 +1557,23 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
     return (id ? { id } : {}) as ShorthandLayer;
   };
   if (input == null) return [];
+  // A STRING is the #1 silent-failure shape: a model JSON/YAML-stringifies the
+  // whole layers_shorthand ('[{type:"editorial", …}]'). Unquoted keys make it
+  // invalid strict JSON but valid YAML flow, so parse leniently and recurse.
+  // Without this the string matches no branch below → [] → an EMPTY page that
+  // still reports success (caught a 6-page carousel silently dropping all copy).
+  if (typeof input === 'string') {
+    const s = input.trim();
+    if (!s) return [];
+    let parsed: unknown;
+    try { parsed = yaml.load(s); } catch { parsed = undefined; }
+    if (parsed && typeof parsed === 'object') return coerceShorthandLayers(parsed);
+    // A bare compact layer must carry an [x,y,w,h] bracket. Without one it's a
+    // junk blob a weak model emitted ("feature_grid:0,0,…:items=…") — return []
+    // so the caller surfaces the correct ARRAY shape instead of a junk layer.
+    if (/\[[^\]]*\]/.test(s)) { const p = parseCompactLayer(s); if (Object.keys(p).length) return [p]; }
+    return [];
+  }
   if (Array.isArray(input)) return input.map(v => one(v));
   if (typeof input === 'object') {
     const obj = input as Record<string, unknown>;
