@@ -1655,3 +1655,20 @@ describe('feature_grid card fit (measured heights + scaled type, no overflow)', 
     expect(many.style!.font_size!).toBeLessThan(few.style!.font_size!);
   });
 });
+
+describe('sections stats — long unbreakable value fits its column (no collision)', () => {
+  it('a long single-token value like "$0.04/kWh" gets a font that fits the column', () => {
+    const g = expandShorthand({
+      id: 'sv', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'X',
+      blocks: [{ kind: 'stats', items: [
+        { value: '230 GW', label: 'capacity' }, { value: '6%', label: 'share' },
+        { value: '$0.04/kWh', label: 'LCOE' }, { value: '260k', label: 'jobs' },
+      ] }],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; content?: { value?: string }; style?: { font_size?: number } }> };
+    const long = g.layers.find(l => l.content?.value === '$0.04/kWh')!;
+    const fs = long.style!.font_size!;
+    // content width per column ≈ (918 - 3*27)/4 ≈ 209px; "$0.04/kWh" is 9 chars.
+    expect(fs * 9 * 0.58).toBeLessThanOrEqual(209);
+    expect(fs).toBeGreaterThanOrEqual(22);
+  });
+});
