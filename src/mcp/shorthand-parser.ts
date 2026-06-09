@@ -386,7 +386,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
     // Rich engine-composed background. Use the canvas base color (or a dark
     // default — feature_grid reads best on a deep canvas) as the wash base.
     const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHex ?? '#0A0A0A');
-    composeBackground(bgStyle, id, X, Y, W, H, { bg: base, accent, text: textColor, palette }, 0).forEach(l => layers.push(l));
+    composeBackground(bgStyle, id, X, Y, W, H, { bg: base, accent, text: textColor, palette, image: str(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0).forEach(l => layers.push(l));
   } else if (bgFill !== undefined) {
     layers.push({ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bgFill) } as unknown as Layer);
   }
@@ -499,7 +499,7 @@ function buildDecor(sh: ShorthandLayer, id: string, z: number): Layer {
 // texture overlay. Tokens combine with "+": "gradient + dots + curve", "mesh +
 // halftone", "marble", "gradient:vert + band". Lives inside the preset group, so
 // diagnose (top-level only) can't false-flag the intentionally-soft decor.
-interface BgCtx { bg: string; accent: string; text: string; palette: string[]; }
+interface BgCtx { bg: string; accent: string; text: string; palette: string[]; image?: string; }
 
 /** Blend two hex colors (t=0 → a, t=1 → b). Returns #rrggbb, or `a` if unparsable. */
 function mixHex(a: string, b: string, t: number): string {
@@ -521,11 +521,14 @@ function parseBgSpec(spec: string): { base: string; baseArg: string; sweeps: str
     else if (nm === 'gradient' || nm === 'linear') { base = 'gradient'; baseArg = arg; }
     else if (nm === 'radial') { base = 'radial'; baseArg = arg; }
     else if (nm === 'mesh' || nm === 'marble') base = nm;
-    else if (nm === 'curve' || nm === 'curved' || nm === 'curved_gradient' || nm === 'corner' || nm === 'sweep') sweeps.push('curve');
-    else if (nm === 'glow' || nm === 'spotlight') sweeps.push('glow');
+    else if (nm === 'photo' || nm === 'image' || nm === 'cover') base = 'photo';
+    // sweeps keep their placement arg (e.g. curve:bl, glow:bottom) after the ':'.
+    else if (nm === 'curve' || nm === 'curved' || nm === 'curved_gradient' || nm === 'corner' || nm === 'sweep') sweeps.push('curve:' + (arg || 'tr'));
+    else if (nm === 'glow' || nm === 'spotlight') sweeps.push('glow:' + (arg || 'top'));
     else if (nm === 'band' || nm === 'band_left' || nm === 'sidebar') sweeps.push('band_left');
     else if (nm === 'band_top' || nm === 'topbar') sweeps.push('band_top');
     else if (nm === 'grain' || nm === 'noise' || nm === 'film') sweeps.push('grain');
+    else if (nm === 'vignette' || nm === 'vignet') sweeps.push('vignette');
     else if (nm === 'pattern') { const p = arg.replace(/[\s-]+/g, '_'); overlays.push(PATTERN_NAMES.has(p) ? p : 'dots'); }
     else if (PATTERN_NAMES.has(nm)) overlays.push(nm);
   }
@@ -546,14 +549,40 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
   const blob = (id: string, cx: number, cy: number, s: number, c: string, op: number): void => {
     layers.push({ id, type: 'ellipse', z: z++, x: Math.round(cx - s / 2), y: Math.round(cy - s / 2), width: s, height: s, fill: radialTo(c), opacity: +op.toFixed(2) } as unknown as Layer);
   };
+  // Resolve a placement keyword (corner/edge/center) to an anchor point.
+  const anchor = (a: string): [number, number] => {
+    switch (a) {
+      case 'tl': return [X, Y]; case 'tr': return [X + W, Y]; case 'bl': return [X, Y + H]; case 'br': return [X + W, Y + H];
+      case 'top': return [X + W * 0.5, Y]; case 'bottom': return [X + W * 0.5, Y + H];
+      case 'left': return [X, Y + H * 0.5]; case 'right': return [X + W, Y + H * 0.5];
+      case 'center': case 'centre': case 'middle': return [X + W * 0.5, Y + H * 0.5];
+      default: return [X + W, Y];
+    }
+  };
 
   // BASE WASH
-  if (base === 'gradient' || base === 'radial') {
+  if (base === 'photo' && ctx.image) {
+    // Full-bleed image (renders in editor/HTML; resvg can't fetch remote URLs,
+    // so PNG preview shows the scrim+layout). A solid legibility veil keeps text
+    // readable — dark veil under light text, light veil under dark text.
+    layers.push({ id: `${idp}_photo`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'image', src: ctx.image, mode: 'cover' } as unknown as Fill } as unknown as Layer);
+    const tRgb = hexToRgb(asHex(text) ?? '#1A1A1A');
+    const veil = tRgb && luminance(tRgb) > 0.5 ? '#0A0A0A' : '#FFFFFF';
+    layers.push({ id: `${idp}_scrim`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'solid', color: veil }, opacity: 0.5 } as unknown as Layer);
+  } else if (base === 'gradient' || base === 'radial') {
     const ang = /^\d+$/.test(baseArg) ? Number(baseArg) : baseArg === 'vert' ? 180 : baseArg === 'horiz' ? 90 : 135;
-    const c2 = mixHex(bgHex, accent, dark ? 0.45 : 0.14);
+    // Palette-driven multi-hue wash (tinted toward bg so text stays legible),
+    // else a subtle two-tone bg→accent.
+    let stops: { color: string; position: number }[];
+    if (ctx.palette.length >= 2) {
+      const cols = [bgHex, ...ctx.palette.slice(0, 3).map(c => mixHex(bgHex, c, dark ? 0.5 : 0.38))];
+      stops = cols.map((c, i) => ({ color: c, position: Math.round((i / (cols.length - 1)) * 100) }));
+    } else {
+      stops = [{ color: bgHex, position: 0 }, { color: mixHex(bgHex, accent, dark ? 0.45 : 0.14), position: 100 }];
+    }
     const grad: Fill = base === 'radial'
-      ? { type: 'radial', stops: [{ color: c2, position: 0 }, { color: bgHex, position: 100 }] } as unknown as Fill
-      : { type: 'linear', angle: ang, stops: [{ color: bgHex, position: 0 }, { color: c2, position: 100 }] } as unknown as Fill;
+      ? { type: 'radial', stops: stops.slice().reverse().map((s, i) => ({ color: s.color, position: Math.round((i / (stops.length - 1)) * 100) })) } as unknown as Fill
+      : { type: 'linear', angle: ang, stops } as unknown as Fill;
     layers.push({ id: `${idp}_bg`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: grad } as unknown as Layer);
   } else {
     layers.push({ id: `${idp}_bg`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer);
@@ -569,13 +598,24 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
     }
   }
 
-  // SWEEPS — curved-gradient corner sweep / top glow / edge band (built-in shapes)
+  // SWEEPS — curved-gradient sweep / glow (both placement-aware) / edge band /
+  // grain / vignette (built-in shapes only, so everything rasterizes in PNG).
   for (const sw of sweeps) {
-    if (sw === 'curve') blob(`${idp}_curve`, X + W, Y, Math.round(W * 0.95), mixHex(bgHex, accent, dark ? 0.5 : 0.24), dark ? 0.6 : 0.55);
-    else if (sw === 'glow') blob(`${idp}_glow`, X + W * 0.5, Y + H * 0.04, Math.round(W * 0.92), mixHex(bgHex, accent, dark ? 0.55 : 0.22), dark ? 0.55 : 0.45);
-    else if (sw === 'band_left') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: Math.max(6, Math.round(W * 0.022)), height: H, fill: { type: 'solid', color: accent } } as unknown as Layer);
-    else if (sw === 'band_top') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: W, height: Math.max(5, Math.round(W * 0.016)), fill: { type: 'solid', color: accent } } as unknown as Layer);
-    else if (sw === 'grain') layers.push({ id: `${idp}_grain`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'noise', frequency: 0.9, octaves: 2, opacity: dark ? 0.06 : 0.045 } as unknown as Fill } as unknown as Layer);
+    const [kind, place] = sw.split(':');
+    if (kind === 'curve') { const [cx, cy] = anchor(place || 'tr'); blob(`${idp}_curve`, cx, cy, Math.round(W * 0.95), mixHex(bgHex, accent, dark ? 0.5 : 0.24), dark ? 0.6 : 0.55); }
+    else if (kind === 'glow') { const [cx, cy] = anchor(place || 'top'); blob(`${idp}_glow`, cx, cy, Math.round(W * 0.92), mixHex(bgHex, accent, dark ? 0.55 : 0.22), dark ? 0.55 : 0.45); }
+    else if (kind === 'band_left') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: Math.max(6, Math.round(W * 0.022)), height: H, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    else if (kind === 'band_top') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: W, height: Math.max(5, Math.round(W * 0.016)), fill: { type: 'solid', color: accent } } as unknown as Layer);
+    else if (kind === 'grain') layers.push({ id: `${idp}_grain`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'noise', frequency: 0.9, octaves: 2, opacity: dark ? 0.06 : 0.045 } as unknown as Fill } as unknown as Layer);
+    else if (kind === 'vignette') {
+      // Edge-framing: dark radial blobs centred just BEYOND each corner so only
+      // the outer edge darkens (the bright centre is left clear) and they fade to
+      // the canvas color. Opaque stops → rasterizes everywhere. Subtle on light.
+      const dk = mixHex(bgHex, '#000000', dark ? 0.6 : 0.28), s = Math.round(Math.max(W, H) * 0.52);
+      const o = Math.round(s * 0.18); // push centre outward past the corner
+      ([['tl', X - o, Y - o], ['tr', X + W + o, Y - o], ['bl', X - o, Y + H + o], ['br', X + W + o, Y + H + o]] as [string, number, number][])
+        .forEach(([c, cx, cy]) => blob(`${idp}_vig_${c}`, cx, cy, s, dk, dark ? 0.55 : 0.32));
+    }
   }
 
   // OVERLAY — whisper-faint pattern texture (no tile bg → the base shows
@@ -665,7 +705,7 @@ function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
   const M = Math.round(W * 0.08);
   const cW = W - 2 * M, cX = X + M;
   const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette }, 0)
+    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
     : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
   let cy = Y + Math.round(H * 0.13), k = layers.length;
   if (kicker) {
@@ -727,7 +767,7 @@ function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
   // Full-canvas background (rich engine-composed when bg_style is set), then the
   // opaque panel covers its side and the content reads over the other side.
   const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette }, 0)
+    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
     : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
   const panelZ = layers.length;
   layers.push({ id: `${id}_panel`, type: 'rect', z: panelZ, x: panelX, y: Y, width: PW, height: H, fill: expandFill(panelFill as string | Fill) } as unknown as Layer);
@@ -862,7 +902,7 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
   const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
   const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette }, 0)
+    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
     : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
 
   // Size the number to dominate: fit-to-width, capped, never tiny.
@@ -930,7 +970,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   if (!bars.length) bars = [contrastRatio(accent, bgHex ?? '#000') >= 1.5 ? accent : textColor];
 
   const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette: palRaw }, 0)
+    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette: palRaw, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
     : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
   let k = layers.length;
   // Measure the centered content block (kicker + title + details).
@@ -1134,7 +1174,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
   // Rich engine-composed background when bg_style is set, else a flat wash.
   const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text, palette }, 0)
+    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
     : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
   let k = layers.length, cy = Y + Math.round(W * 0.08);
 
@@ -1724,7 +1764,7 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // decor / marble_bg / backdrop preset
   'palette', 'corners', 'intensity', 'veins', 'rings', 'dots', 'style',
   // rich engine-composed background (composeBackground)
-  'bg_style', 'background_style', 'bg_treatment',
+  'bg_style', 'background_style', 'bg_treatment', 'bg_image', 'photo', 'bg_photo',
   // editorial / split / list layout presets
   'kicker', 'eyebrow', 'headline', 'lede', 'deck', 'body', 'desc', 'footer',
   'side', 'ratio', 'panel', 'panel_fill', 'panel_label', 'panel_text', 'big',

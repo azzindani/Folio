@@ -1586,3 +1586,48 @@ describe('composeBackground — wired into feature_grid + split', () => {
     expect(g.layers.some(l => l.id === 'fg2_bg')).toBe(true);
   });
 });
+
+describe('composeBackground — placement, palette gradient, vignette, photo', () => {
+  const sx = (extra: Record<string, unknown>) => expandShorthand({
+    id: 'b', type: 'sections', z: 0, pos: [0, 0, 1000, 1000], title: 'T',
+    blocks: [{ kind: 'text', text: 'x' }], ...extra,
+  } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+
+  it('curve:bl anchors the sweep at bottom-left', () => {
+    const g = sx({ bg: '#FAF5EC', accent: '#B8543C', bg_style: 'curve:bl' });
+    const c = g.layers.find(l => l.id === 'b_curve')!;
+    // center (X=0,Y=H=1000): x ≈ -s/2 (<0), y ≈ H - s/2 (large)
+    expect(Number(c.x)).toBeLessThan(0);
+    expect(Number(c.y)).toBeGreaterThan(200);
+  });
+
+  it('palette + gradient → a multi-stop (≥3) linear gradient', () => {
+    const g = sx({ bg: '#FAF5EC', accent: '#B8543C', palette: ['#E0A96D', '#9CAF88', '#6E8BB5'], bg_style: 'gradient' });
+    const bg = g.layers.find(l => l.id === 'b_bg')!;
+    const f = bg.fill as { type?: string; stops?: unknown[] };
+    expect(f.type).toBe('linear');
+    expect(f.stops!.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('vignette → four corner dark radial blobs', () => {
+    const g = sx({ bg: '#0E0B14', accent: '#F4B740', text_color: '#F5F1EA', bg_style: 'solid + vignette' });
+    const vig = g.layers.filter(l => String(l.id).startsWith('b_vig_'));
+    expect(vig.length).toBe(4);
+    expect(vig.every(l => l.type === 'ellipse')).toBe(true);
+  });
+
+  it('photo base + bg_image → image fill + a legibility scrim', () => {
+    const g = sx({ bg: '#101014', accent: '#F4B740', text_color: '#F5F1EA', bg_style: 'photo + grain', bg_image: 'https://example.com/x.jpg' });
+    const photo = g.layers.find(l => l.id === 'b_photo')!;
+    expect((photo.fill as { type?: string }).type).toBe('image');
+    const scrim = g.layers.find(l => l.id === 'b_scrim')!;
+    expect(scrim).toBeTruthy();
+    expect(g.layers.some(l => l.id === 'b_grain')).toBe(true);
+  });
+
+  it('photo base WITHOUT bg_image falls back to a plain bg (no broken image fill)', () => {
+    const g = sx({ bg: '#101014', bg_style: 'photo' });
+    expect(g.layers.some(l => l.id === 'b_photo')).toBe(false);
+    expect(g.layers.some(l => l.id === 'b_bg')).toBe(true);
+  });
+});
