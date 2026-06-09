@@ -603,6 +603,91 @@ function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
+// Numbered / stepped LIST — the most common poster structure ("5 tips", "3
+// steps", "7 reasons") and the one with no other preset. Engine MEASURES every
+// item's wrapped title + description and stacks them with a distributed rhythm
+// (slack spread between items, never a dead bottom), an accent marker in the
+// left gutter, a held margin, and an auto-sized headline. Removes the hand-
+// placed-list failure mode (overflow + collision) entirely. ONE layer in.
+interface ListItem { title: string; desc: string; icon: string; }
+function readListItems(v: unknown): ListItem[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((it) => {
+    const o = (it && typeof it === 'object' ? it : {}) as Record<string, unknown>;
+    return {
+      title: shStr(o['title'] ?? o['name'] ?? o['label'] ?? o['heading'] ?? (typeof it === 'string' ? it : '')),
+      desc: shStr(o['desc'] ?? o['description'] ?? o['text'] ?? o['subtitle'] ?? o['body']),
+      icon: shStr(o['icon']),
+    };
+  }).filter((i) => i.title || i.desc);
+}
+
+function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh);
+  const bg = shStr(r['bg'], '#FAF5EC');
+  const accent = shStr(r['accent'], '#B8543C');
+  const textColor = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
+  const muted = shStr(r['muted'], '#6E5F4A');
+  const kicker = shStr(r['kicker'] ?? r['eyebrow']);
+  const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
+  const footer = shStr(r['footer']);
+  const marker = shStr(r['marker'], 'number'); // number | bullet | icon | none
+  const items = readListItems(r['items']);
+
+  const M = Math.round(W * 0.08), cX = X + M, contentW = W - 2 * M;
+  const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  let k = 1, cy = Y + Math.round(H * 0.1);
+
+  if (kicker) {
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, contentW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
+    cy += Math.round(H * 0.04);
+  }
+  if (title) {
+    const ts = Math.round(W * 0.07), th = estTextHeight(title, ts, contentW, 1.04);
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, contentW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04 }));
+    cy += th + Math.round(H * 0.018);
+    layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
+    layers.push({ id: `${id}_tick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    cy += Math.round(H * 0.04);
+  }
+
+  const gutter = marker === 'none' ? 0 : Math.round(W * 0.085);
+  const tX = cX + gutter, tW = contentW - gutter;
+  const its = Math.round(W * 0.032), ds = Math.round(W * 0.0205), gapTD = Math.round(its * 0.4);
+  const blocks = items.map((it) => {
+    const tH = estTextHeight(it.title, its, tW, 1.12);
+    const dH = it.desc ? estTextHeight(it.desc, ds, tW, 1.4) : 0;
+    return { it, tH, dH, h: tH + (it.desc ? gapTD + dH : 0) };
+  });
+  const bottomM = footer ? Math.round(H * 0.1) : Math.round(H * 0.06);
+  const avail = (Y + H - bottomM) - cy;
+  const sumH = blocks.reduce((a, b) => a + b.h, 0);
+  const n = blocks.length;
+  const gap = n > 1 ? Math.max(Math.round(H * 0.022), Math.min(Math.round(H * 0.06), (avail - sumH) / n)) : 0;
+
+  blocks.forEach((b, i) => {
+    if (marker === 'number') {
+      const ms = Math.round(W * 0.042);
+      layers.push(txt(`${id}_n${i}`, z + k++, cX, cy - Math.round(ms * 0.08), gutter, ms * 1.3, String(i + 1).padStart(2, '0'), { font_size: ms, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
+    } else if (marker === 'bullet') {
+      layers.push({ id: `${id}_d${i}`, type: 'ellipse', z: z + k++, x: cX, y: Math.round(cy + b.tH * 0.28), width: Math.round(W * 0.018), height: Math.round(W * 0.018), fill: { type: 'solid', color: accent } } as unknown as Layer);
+    } else if (marker === 'icon' && b.it.icon) {
+      layers.push({ id: `${id}_i${i}`, type: 'icon', z: z + k++, x: cX, y: Math.round(cy), width: Math.round(W * 0.05), height: Math.round(W * 0.05), icon: b.it.icon, color: accent } as unknown as Layer);
+    }
+    layers.push(txt(`${id}_t${i}`, z + k++, tX, cy, tW, b.tH, b.it.title, { font_size: its, font_weight: 700, color: textColor, line_height: 1.12 }));
+    if (b.it.desc) layers.push(txt(`${id}_b${i}`, z + k++, tX, cy + b.tH + gapTD, tW, b.dH, b.it.desc, { font_size: ds, font_weight: 400, color: muted, line_height: 1.4 }));
+    cy += b.h + gap;
+  });
+
+  if (footer) {
+    const fy = Y + H - Math.round(H * 0.07);
+    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy, width: contentW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    layers.push(txt(`${id}_footer`, z + k++, cX, fy + 14, contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+  }
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -782,6 +867,12 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
 
     case 'split':
       return buildSplit(sh, String(sh.id ?? 'split'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'list':
+    case 'steps':
+    case 'checklist':
+    case 'numbered_list':
+      return buildList(sh, String(sh.id ?? 'list'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'decor':
     case 'marble_bg':
@@ -1110,9 +1201,10 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'preset', 'bg_gradient', 'benefit',
   // decor / marble_bg / backdrop preset
   'palette', 'corners', 'intensity', 'veins', 'rings', 'dots', 'style',
-  // editorial / split layout presets
+  // editorial / split / list layout presets
   'kicker', 'eyebrow', 'headline', 'lede', 'deck', 'body', 'desc', 'footer',
   'side', 'ratio', 'panel', 'panel_fill', 'panel_label', 'panel_text', 'big',
+  'marker', 'heading', 'description', 'cards',
   // pattern / image fills (WS1)
   'pattern', 'fg', 'mode', 'tile_size', 'foreground', 'background',
   // parametric shapes (WS2)
