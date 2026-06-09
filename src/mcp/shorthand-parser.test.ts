@@ -229,6 +229,33 @@ describe('expandShorthand', () => {
     expect((bar0.fill?.color ?? '').toLowerCase()).not.toBe('#0a0a0a');
   });
 
+  it('expands a sections preset: header + flowed, measured, non-overlapping blocks', () => {
+    type SL = { id: string; type: string; x: number; y: number; width: number; height: number };
+    const r = expandShorthand({
+      id: 'sec', type: 'sections', z: 0, pos: [0, 0, 1080, 1920],
+      bg: '#FAF5EC', accent: '#B8543C', kicker: 'Report', title: 'The State of Remote Work 2026',
+      subtitle: 'A year in review.', footer: 'Source: Index 2026',
+      blocks: [
+        { kind: 'intro', text: 'Remote work matured in 2026 as hybrid models settled into a default rhythm across most knowledge sectors.' },
+        { kind: 'stats', items: [{ value: '58%', label: 'hybrid' }, { value: '27%', label: 'fully remote' }, { value: '+41%', label: 'productivity' }] },
+        { kind: 'heading', text: 'The Hybrid Default' },
+        { kind: 'text', text: 'Most companies settled on two to three office days, balancing focus and collaboration.' },
+        { kind: 'callout', label: 'Key takeaway', text: 'Async-first cultures outperformed meeting-heavy ones on nearly every measure.' },
+        { kind: 'quote', text: 'The commute dividend went straight into focus work.', cite: 'GWI 2026' },
+      ],
+    } as unknown as ShorthandLayer) as { type?: string; layers?: SL[] };
+    expect(r.type).toBe('group');
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('sec_title');
+    expect(ids).toContain('sec_footer');
+    expect(ids.some(i => i.startsWith('sec_b0'))).toBe(true);
+    expect(ids.some(i => i.startsWith('sec_b5'))).toBe(true);
+    expect(ids.filter(i => /^sec_b1_v\d/.test(i)).length).toBe(3);   // 3 stat values
+    expect(ids).toContain('sec_b4_box');                            // callout tinted box
+    expect(r.layers!.length).toBeGreaterThan(15);                   // a rich composition
+    expect(r.layers!.every(l => typeof l.x === 'number' && typeof l.y === 'number')).toBe(true);
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',
