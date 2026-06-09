@@ -670,8 +670,8 @@ function textTypography(sh: ShorthandLayer): Record<string, unknown> {
 }
 
 // Estimate wrapped-text height (matches the renderer's ~0.54×fontSize char width).
-function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3): number {
-  const cpl = Math.max(1, Math.floor(widthPx / (fontSize * 0.54)));
+function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, charFactor = 0.54): number {
+  const cpl = Math.max(1, Math.floor(widthPx / (fontSize * charFactor)));
   const lines = text.split('\n').reduce((a, seg) => a + Math.max(1, Math.ceil(seg.length / cpl)), 0);
   return Math.ceil(lines * fontSize * lh);
 }
@@ -1077,7 +1077,10 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     resolved.forEach(({ val, lab }, i) => {
       const ix = x + i * (colW + colGap);
       const vh = estTextHeight(val, vSize, colW, 1.05);
-      const lh = lab ? estTextHeight(lab, lSize, colW, 1.3) : 0;
+      // Mono + ALL-CAPS + letter-spacing wraps wider than sans — reserve height
+      // with a matching 0.66 char factor so the bars below don't overlap a label
+      // that wrapped to more lines than a 0.54 estimate predicted.
+      const lh = lab ? estTextHeight(lab, lSize, colW, 1.3, 0.66) : 0;
       layers.push(txt(`${idp}_v${i}`, z++, ix, y, colW, vh, val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.05, letter_spacing: -1 }));
       if (lab) layers.push(txt(`${idp}_l${i}`, z++, ix, y + vh + 10, colW, lh, lab, { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 500, color: muted, letter_spacing: 0.5, text_transform: 'uppercase' }));
       maxH = Math.max(maxH, vh + (lab ? 10 + lh : 0));
