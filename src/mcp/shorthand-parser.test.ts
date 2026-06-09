@@ -297,6 +297,30 @@ describe('expandShorthand', () => {
     expect(ids.some(i => i.startsWith('sd_b'))).toBe(true); // the text block survived
   });
 
+  it('sections: a source/caption block renders its text (never silently dropped to a blank rule)', () => {
+    const r = expandShorthand({
+      id: 'sc', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'X',
+      blocks: [
+        { kind: 'text', text: 'Body.' },
+        { kind: 'source', text: 'Source: Global Work Index 2026' },
+      ],
+    } as unknown as ShorthandLayer) as { layers?: Array<{ id: string; content?: { value?: string } }> };
+    const cap = r.layers!.find(l => l.id === 'sc_b1_cap');
+    expect(cap).toBeTruthy();
+    expect(cap!.content!.value).toBe('Source: Global Work Index 2026');
+  });
+
+  it('sections: an unknown-kind block that carries text renders the text instead of a blank divider', () => {
+    const r = expandShorthand({
+      id: 'uk', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'X',
+      blocks: [{ kind: 'mysteryKind', text: 'Important line.' }],
+    } as unknown as ShorthandLayer) as { layers?: Array<{ id: string; type: string; content?: { value?: string } }> };
+    const t = r.layers!.find(l => l.id === 'uk_b0_t');
+    expect(t).toBeTruthy();
+    expect(t!.type).toBe('text');
+    expect(t!.content!.value).toBe('Important line.');
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',

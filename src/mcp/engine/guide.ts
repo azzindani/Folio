@@ -103,6 +103,10 @@ z = stacking order (higher = front)
    (intro/stats/heading/text/list/callout/quote/divider). The engine measures + flows every
    block with editorial rhythm. This is how you make a CONTENT-RICH, professional layout —
    supply a title + many blocks; never hand-place a multi-section document (it collides badly).
+   ⚠️ SIZE THE CANVAS TO THE CONTENT: budget ~280px of height per block (a stats row or bars
+   counts as one). 6 blocks → ~1080x1900, 8 blocks → ~1080x2400, 10 → ~1080x2900. A canvas too
+   short for the content overflows the footer. Keep block bodies to ~2 sentences; when in doubt
+   make the canvas TALLER (the engine distributes the slack — extra height never looks empty).
 
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
