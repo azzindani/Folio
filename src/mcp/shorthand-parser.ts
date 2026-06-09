@@ -347,6 +347,8 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const accent    = str(r['accent'], '$primary');
   const textColor = str(r['text_color'] ?? r['color'], '$text');
   const muted     = str(r['muted'], textColor);
+  const bgStyle   = str(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
+  const palette   = (Array.isArray(r['palette']) ? r['palette'] : []).filter((c): c is string => typeof c === 'string');
   // Card text MUST contrast the CARD fill, not the global canvas. A blind model
   // that picks a dark canvas + light text would otherwise drop that light text
   // onto a light ($surface) card → invisible (the #1 feature_grid failure).
@@ -380,14 +382,19 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const rowY = Math.round(H * 0.42), rowH = H - rowY - M;
   const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
   const layers: Layer[] = [];
-  if (bgFill !== undefined) {
+  if (bgStyle) {
+    // Rich engine-composed background. Use the canvas base color (or a dark
+    // default — feature_grid reads best on a deep canvas) as the wash base.
+    const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHex ?? '#0A0A0A');
+    composeBackground(bgStyle, id, X, Y, W, H, { bg: base, accent, text: textColor, palette }, 0).forEach(l => layers.push(l));
+  } else if (bgFill !== undefined) {
     layers.push({ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bgFill) } as unknown as Layer);
   }
   const title = str(r['title']);
-  if (title) layers.push({ id: `${id}_title`, type: 'text', z: 5, x: X + M, y: Y + Math.round(H * 0.11), width: W - 2 * M, height: Math.round(H * 0.13),
+  if (title) layers.push({ id: `${id}_title`, type: 'text', z: 30, x: X + M, y: Y + Math.round(H * 0.11), width: W - 2 * M, height: Math.round(H * 0.13),
     content: { type: 'plain', value: title }, style: { font_size: Math.round(W * 0.08), font_weight: 800, color: textColor, align: 'center' } } as unknown as Layer);
   const subtitle = str(r['subtitle']);
-  if (subtitle) layers.push({ id: `${id}_subtitle`, type: 'text', z: 5, x: X + M, y: Y + Math.round(H * 0.26), width: W - 2 * M, height: Math.round(H * 0.06),
+  if (subtitle) layers.push({ id: `${id}_subtitle`, type: 'text', z: 30, x: X + M, y: Y + Math.round(H * 0.26), width: W - 2 * M, height: Math.round(H * 0.06),
     content: { type: 'plain', value: subtitle }, style: { font_size: Math.round(W * 0.03), color: muted, align: 'center' } } as unknown as Layer);
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
@@ -400,7 +407,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
       gap: 16, padding: 28, align_items: 'center', justify_content: 'center', radius: 18,
       fill: expandFill(cardFillResolved), layers: kids } as unknown as Layer;
   });
-  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 10, x: X + M, y: Y + rowY, width: W - 2 * M, height: rowH,
+  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: Y + rowY, width: W - 2 * M, height: rowH,
     direction: 'row', gap, justify_content: 'space-between', align_items: 'stretch', layers: cards } as unknown as Layer);
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
@@ -518,6 +525,7 @@ function parseBgSpec(spec: string): { base: string; baseArg: string; sweeps: str
     else if (nm === 'glow' || nm === 'spotlight') sweeps.push('glow');
     else if (nm === 'band' || nm === 'band_left' || nm === 'sidebar') sweeps.push('band_left');
     else if (nm === 'band_top' || nm === 'topbar') sweeps.push('band_top');
+    else if (nm === 'grain' || nm === 'noise' || nm === 'film') sweeps.push('grain');
     else if (nm === 'pattern') { const p = arg.replace(/[\s-]+/g, '_'); overlays.push(PATTERN_NAMES.has(p) ? p : 'dots'); }
     else if (PATTERN_NAMES.has(nm)) overlays.push(nm);
   }
@@ -567,6 +575,7 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
     else if (sw === 'glow') blob(`${idp}_glow`, X + W * 0.5, Y + H * 0.04, Math.round(W * 0.92), mixHex(bgHex, accent, dark ? 0.55 : 0.22), dark ? 0.55 : 0.45);
     else if (sw === 'band_left') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: Math.max(6, Math.round(W * 0.022)), height: H, fill: { type: 'solid', color: accent } } as unknown as Layer);
     else if (sw === 'band_top') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: W, height: Math.max(5, Math.round(W * 0.016)), fill: { type: 'solid', color: accent } } as unknown as Layer);
+    else if (sw === 'grain') layers.push({ id: `${idp}_grain`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'noise', frequency: 0.9, octaves: 2, opacity: dark ? 0.06 : 0.045 } as unknown as Fill } as unknown as Layer);
   }
 
   // OVERLAY — whisper-faint pattern texture (no tile bg → the base shows
@@ -706,6 +715,8 @@ function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
   const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
   const subtitle = shStr(r['subtitle'] ?? r['lede'] ?? r['deck'] ?? r['body']);
   const panelLabel = shStr(r['panel_label'] ?? r['big']);
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
+  const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter((c): c is string => typeof c === 'string');
 
   const PW = Math.round(W * ratio);
   const panelX = side === 'left' ? X : X + W - PW;
@@ -713,11 +724,14 @@ function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
   const Mcol = Math.round((W - PW) * 0.1);
   const cW = (W - PW) - 2 * Mcol, cX = contentX + Mcol;
 
-  const layers: Layer[] = [
-    { id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer,
-    { id: `${id}_panel`, type: 'rect', z: 1, x: panelX, y: Y, width: PW, height: H, fill: expandFill(panelFill as string | Fill) } as unknown as Layer,
-  ];
-  let k = 2;
+  // Full-canvas background (rich engine-composed when bg_style is set), then the
+  // opaque panel covers its side and the content reads over the other side.
+  const layers: Layer[] = bgStyle
+    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette }, 0)
+    : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  const panelZ = layers.length;
+  layers.push({ id: `${id}_panel`, type: 'rect', z: panelZ, x: panelX, y: Y, width: PW, height: H, fill: expandFill(panelFill as string | Fill) } as unknown as Layer);
+  let k = panelZ + 1;
   if (panelLabel) {
     layers.push(txt(`${id}_plabel`, k++, panelX, Y + H / 2 - Math.round(PW * 0.18), PW, Math.round(PW * 0.4), panelLabel, { font_size: Math.round(PW * 0.28), font_weight: 800, color: panelText, align: 'center', line_height: 1.0 }));
   }

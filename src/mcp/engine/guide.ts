@@ -293,12 +293,12 @@ top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Ea
   This is THE tool for a magazine infographic / multi-section report — supply many blocks
   for a dense, organized, professional layout; don't hand-place sections (they collide).
 
-RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event): the engine composes a
+RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event/feature_grid/split): the engine composes a
 layered, collision-proof background BEHIND the content so you never hand-place decor. Combine
 tokens with "+". Pass palette:[…] for mesh/marble colors. Keep bg as the base canvas color
 (light bg → keep text dark; dark bg → set text_color light). Tokens:
   base:    gradient (or gradient:vert / gradient:135 / gradient:horiz) · mesh · marble · radial · solid
-  sweep:   curve (curved-gradient corner sweep) · glow (top spotlight) · band (accent edge bar) · band_top
+  sweep:   curve (curved-gradient corner sweep) · glow (top spotlight) · band (accent edge bar) · band_top · grain (film noise)
   texture: any pattern name (dots · grid · graph_paper · halftone · blueprint · carbon · waves · chevron…)
   e.g.  bg_style:"gradient + curve + dots"   (warm editorial)
         bg_style:"mesh + glow + grid"        (premium dark report — pair bg:"#0E0B14", text_color:"#F5F1EA", palette:[…])
