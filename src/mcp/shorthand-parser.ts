@@ -845,6 +845,205 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
+// Rich multi-section "infographic / report" poster. The blind-model unlock for
+// CONTENT-DENSE, professional layouts: the model supplies an ordered list of
+// typed blocks (heading · text · stats row · list · callout · quote · divider)
+// and the engine MEASURES each and flows them top-to-bottom with editorial
+// rhythm, an accent system, held margins and a footer — so a dense, organized,
+// human-designer-level composition is one call instead of dozens of colliding
+// hand-placed layers.
+interface SecCtx { accent: string; text: string; muted: string; W: number; }
+
+function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number, x: number, y: number, w: number, ctx: SecCtx): { layers: Layer[]; height: number } {
+  const { accent, text, muted, W } = ctx;
+  const kind = shStr(b['kind'] ?? b['type'], 'text');
+  const layers: Layer[] = [];
+  let z = z0;
+
+  if (kind === 'heading' || kind === 'subhead' || kind === 'section') {
+    const t = shStr(b['text'] ?? b['title'] ?? b['heading'] ?? b['content']);
+    const size = Math.round(W * (kind === 'subhead' ? 0.032 : 0.044));
+    layers.push({ id: `${idp}_tick`, type: 'rect', z: z++, x, y, width: Math.round(W * 0.055), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    const th = estTextHeight(t, size, w, 1.1);
+    layers.push(txt(`${idp}_h`, z++, x, y + 20, w, th, t, { font_size: size, font_weight: 800, color: text, line_height: 1.1, letter_spacing: -0.5 }));
+    return { layers, height: 20 + th };
+  }
+  if (kind === 'text' || kind === 'paragraph' || kind === 'body' || kind === 'intro') {
+    const t = shStr(b['text'] ?? b['body'] ?? b['value'] ?? b['content']);
+    const size = Math.round(W * (kind === 'intro' ? 0.026 : 0.0225));
+    const th = estTextHeight(t, size, w, 1.5);
+    layers.push(txt(`${idp}_t`, z++, x, y, w, th, t, { font_size: size, font_weight: 400, color: kind === 'intro' ? text : muted, line_height: 1.5 }));
+    return { layers, height: th };
+  }
+  if (kind === 'stats' || kind === 'stat_row' || kind === 'kpis' || kind === 'metrics') {
+    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 4) as Record<string, unknown>[];
+    const n = Math.max(1, items.length);
+    const colGap = Math.round(W * 0.025);
+    const colW = Math.round((w - (n - 1) * colGap) / n);
+    const vSize = Math.round(Math.min(W * 0.055, colW * 0.42)), lSize = Math.round(W * 0.016);
+    let maxH = 0;
+    items.forEach((it, i) => {
+      const ix = x + i * (colW + colGap);
+      let val = shStr(it['value'] ?? it['stat'] ?? it['number'] ?? it['title']);
+      let lab = shStr(it['label'] ?? it['desc'] ?? it['text']);
+      // Blind models often merge figure+label into one field ("58% hybrid"). If
+      // only one field is present and it carries a number + words, split it so
+      // the big number stays narrow (else it overflows the column and collides).
+      const merged = (!lab && val) ? val : (!val && lab) ? lab : '';
+      if (merged) {
+        // figure = optional sign/currency · digits · optional %/scale-suffix, then the label words
+        const m = merged.trim().match(/^([+\-]?[$€£¥]?[\d.,]+\s*(?:%|[KMBkmb×x])?)\s+(.+)$/);
+        if (m) { val = m[1].trim(); lab = m[2].trim(); }
+      }
+      const vh = estTextHeight(val, vSize, colW, 1.0);
+      const lh = lab ? estTextHeight(lab, lSize, colW, 1.3) : 0;
+      layers.push(txt(`${idp}_v${i}`, z++, ix, y, colW, vh, val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
+      if (lab) layers.push(txt(`${idp}_l${i}`, z++, ix, y + vh + 10, colW, lh, lab, { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 500, color: muted, letter_spacing: 0.5, text_transform: 'uppercase' }));
+      maxH = Math.max(maxH, vh + (lab ? 10 + lh : 0));
+    });
+    return { layers, height: maxH };
+  }
+  if (kind === 'list' || kind === 'steps') {
+    const items = (Array.isArray(b['items']) ? b['items'] : []) as Record<string, unknown>[];
+    const gutter = Math.round(W * 0.055), tSize = Math.round(W * 0.026), dSize = Math.round(W * 0.02);
+    let yy = y;
+    items.forEach((it, i) => {
+      const title = shStr(it['title'] ?? it['name'] ?? it['label']);
+      const desc = shStr(it['desc'] ?? it['text'] ?? it['description']);
+      const tH = estTextHeight(title, tSize, w - gutter, 1.15);
+      const dH = desc ? estTextHeight(desc, dSize, w - gutter, 1.4) : 0;
+      layers.push(txt(`${idp}_n${i}`, z++, x, yy, gutter, tSize * 1.3, String(i + 1).padStart(2, '0'), { font_size: Math.round(tSize * 1.05), font_weight: 800, color: accent, line_height: 1.0 }));
+      layers.push(txt(`${idp}_lt${i}`, z++, x + gutter, yy, w - gutter, tH, title, { font_size: tSize, font_weight: 700, color: text, line_height: 1.15 }));
+      if (desc) layers.push(txt(`${idp}_ld${i}`, z++, x + gutter, yy + tH + 6, w - gutter, dH, desc, { font_size: dSize, font_weight: 400, color: muted, line_height: 1.4 }));
+      yy += tH + (desc ? 6 + dH : 0) + Math.round(W * 0.022);
+    });
+    return { layers, height: Math.max(0, yy - y - Math.round(W * 0.022)) };
+  }
+  if (kind === 'callout' || kind === 'highlight' || kind === 'takeaway') {
+    const t = shStr(b['text'] ?? b['body'] ?? b['value']);
+    const label = shStr(b['label'] ?? b['title']);
+    const pad = Math.round(W * 0.035), innerW = w - 2 * pad - 6;
+    const lSize = Math.round(W * 0.016), tSize = Math.round(W * 0.026);
+    const labH = label ? lSize + 12 : 0;
+    const tH = estTextHeight(t, tSize, innerW, 1.45);
+    const boxH = pad * 2 + labH + tH;
+    layers.push({ id: `${idp}_box`, type: 'rect', z: z++, x, y, width: w, height: boxH, opacity: 0.12, fill: { type: 'solid', color: accent }, radius: 10 } as unknown as Layer);
+    layers.push({ id: `${idp}_bar`, type: 'rect', z: z++, x, y, width: 6, height: boxH, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    if (label) layers.push(txt(`${idp}_cl`, z++, x + pad, y + pad, innerW, lSize + 6, label, { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 700, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
+    layers.push(txt(`${idp}_ct`, z++, x + pad, y + pad + labH, innerW, tH, t, { font_size: tSize, font_weight: 600, color: text, line_height: 1.45 }));
+    return { layers, height: boxH };
+  }
+  if (kind === 'quote' || kind === 'pullquote') {
+    const t = shStr(b['text'] ?? b['quote'] ?? b['content']).replace(/^["“”'']+|["“”'']+$/g, '');
+    const cite = shStr(b['cite'] ?? b['author'] ?? b['source']);
+    const qSize = Math.round(W * 0.036);
+    const qH = estTextHeight(t, qSize, w, 1.3);
+    layers.push(txt(`${idp}_q`, z++, x, y, w, qH, `“${t}”`, { font_size: qSize, font_weight: 500, font_style: 'italic', color: text, line_height: 1.3 }));
+    let hh = qH;
+    if (cite) { layers.push(txt(`${idp}_qc`, z++, x, y + qH + 12, w, 34, cite, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: accent, letter_spacing: 1, text_transform: 'uppercase' })); hh += 12 + 34; }
+    return { layers, height: hh };
+  }
+  if (kind === 'bars' || kind === 'bar_chart' || kind === 'chart' || kind === 'ranking') {
+    // Native rect bar chart — rasterizes in PNG (unlike foreignObject charts).
+    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 8) as Record<string, unknown>[];
+    const num = (it: Record<string, unknown>): number => {
+      const v = it['value'] ?? it['y'] ?? it['count'];
+      return typeof v === 'number' ? v : (parseFloat(shStr(v).replace(/[^0-9.\-]/g, '')) || 0);
+    };
+    const vals = items.map(num);
+    const max = Math.max(1, ...vals.map(Math.abs));
+    const rowH = Math.round(W * 0.05), rowGap = Math.round(W * 0.02);
+    const labelW = Math.round(w * 0.3), barTrack = w - labelW - Math.round(W * 0.1);
+    const barH = Math.round(rowH * 0.62);
+    items.forEach((it, i) => {
+      const yy = y + i * (rowH + rowGap);
+      const label = shStr(it['label'] ?? it['title'] ?? it['name'] ?? it['x']);
+      const valDisp = shStr(it['value'] ?? it['y'] ?? it['count']);
+      const bw = Math.max(4, Math.round(barTrack * (Math.abs(vals[i]) / max)));
+      layers.push(txt(`${idp}_bl${i}`, z++, x, yy + Math.round((rowH - barH) / 2) - 2, labelW - 12, barH + 6, label, { font_size: Math.round(W * 0.019), font_weight: 600, color: text, line_height: 1.1 }));
+      layers.push({ id: `${idp}_bt${i}`, type: 'rect', z: z++, x: x + labelW, y: yy, width: barTrack, height: barH, opacity: 0.14, fill: { type: 'solid', color: muted }, radius: 4 } as unknown as Layer);
+      layers.push({ id: `${idp}_bb${i}`, type: 'rect', z: z++, x: x + labelW, y: yy, width: bw, height: barH, fill: { type: 'solid', color: accent }, radius: 4 } as unknown as Layer);
+      if (valDisp) layers.push(txt(`${idp}_bv${i}`, z++, x + labelW + bw + 10, yy + Math.round((barH - Math.round(W * 0.02)) / 2), Math.round(W * 0.12), barH, valDisp, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.018), font_weight: 700, color: muted }));
+    });
+    return { layers, height: Math.max(0, items.length * (rowH + rowGap) - rowGap) };
+  }
+  // divider / rule (default fall-through for unknown kinds = a thin rule)
+  layers.push({ id: `${idp}_div`, type: 'rect', z: z++, x, y: y + Math.round(W * 0.01), width: w, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+  return { layers, height: Math.round(W * 0.02) };
+}
+
+function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh, 1080, 1920);
+  const bg = shStr(r['bg'], '#FAF5EC');
+  const accent = shStr(r['accent'], '#B8543C');
+  const text = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
+  const muted = shStr(r['muted'], '#6E5F4A');
+  const kicker = shStr(r['kicker'] ?? r['eyebrow']);
+  const title = shStr(r['title'] ?? r['headline']);
+  const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
+  const footer = shStr(r['footer']);
+  const blocks = (Array.isArray(r['blocks']) ? r['blocks'] : Array.isArray(r['sections']) ? r['sections'] : []) as Record<string, unknown>[];
+  const ctx: SecCtx = { accent, text, muted, W };
+
+  const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
+  const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  let k = 1, cy = Y + Math.round(W * 0.08);
+
+  if (kicker) {
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
+    cy += Math.round(W * 0.045);
+  }
+  if (title) {
+    const ts = Math.round(W * 0.072), th = estTextHeight(title, ts, cW, 1.04);
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: text, line_height: 1.04, letter_spacing: -1 }));
+    cy += th + Math.round(W * 0.02);
+  }
+  if (subtitle) {
+    const ss = Math.round(W * 0.028), sh2 = estTextHeight(subtitle, ss, cW, 1.45);
+    layers.push(txt(`${id}_sub`, z + k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45 }));
+    cy += sh2 + Math.round(W * 0.025);
+  }
+  // Header rule + tick only when there's actually a header (a blind model may
+  // pass only blocks → an orphan rule at the top looks broken).
+  if (kicker || title || subtitle) {
+    layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: text } } as unknown as Layer);
+    layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    cy += Math.round(W * 0.05);
+  }
+
+  // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
+  // dead space — a common blind-model habit).
+  const isDiv = (b: Record<string, unknown>): boolean => { const ki = shStr(b['kind'] ?? b['type']); return ki === 'divider' || ki === 'rule'; };
+  const bl = blocks.slice();
+  while (bl.length && isDiv(bl[0])) bl.shift();
+  while (bl.length && isDiv(bl[bl.length - 1])) bl.pop();
+
+  // Pass 1 — measure every block. Pass 2 — place with a gap that distributes the
+  // leftover space (so a generous canvas fills without a dead band, a short one stays tight).
+  // Reserve a generous footer band so the last block never crowds the footer
+  // (diagnose can't see inside the group, so the layout MUST be collision-proof).
+  const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
+  const avail = (Y + H - M - footerH) - cy;
+  const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
+  const sumH = heights.reduce((a, h) => a + h, 0);
+  const n = Math.max(1, bl.length);
+  const gap = Math.max(Math.round(W * 0.038), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
+  bl.forEach((b, i) => {
+    const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
+    out.layers.forEach(l => layers.push(l));
+    k += out.layers.length + 1;
+    cy += heights[i] + gap;
+  });
+
+  if (footer) {
+    const fy = Y + H - Math.round(W * 0.05);
+    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy - 16, width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    layers.push(txt(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+  }
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -1040,6 +1239,12 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'flyer':
     case 'hero':
       return buildEvent(sh, String(sh.id ?? 'event'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'sections':
+    case 'infographic':
+    case 'document':
+    case 'report_poster':
+      return buildSections(sh, String(sh.id ?? 'sections'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'decor':
     case 'marble_bg':
@@ -1374,6 +1579,7 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'marker', 'heading', 'description', 'cards',
   'stat', 'number', 'caption',
   'details', 'lines', 'info', 'date', 'venue', 'location', 'place', 'time', 'when', 'where',
+  'blocks', 'sections', 'kind', 'cite', 'author', 'source', 'quote',
   // pattern / image fills (WS1)
   'pattern', 'fg', 'mode', 'tile_size', 'foreground', 'background',
   // parametric shapes (WS2)
