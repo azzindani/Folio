@@ -1103,9 +1103,10 @@ describe('addLayers', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects a STRING layers_shorthand with the feature_grid JSON shape', () => {
-    // Weak models pick feature_grid but encode it as a flat string. Don't
-    // silently make one junk text layer — error with the exact array shape.
+  it('rejects a junk-BLOB string layers_shorthand (no brackets, not JSON)', () => {
+    // Weak models pick feature_grid but encode it as a flat blob with no
+    // [x,y,w,h] bracket and no JSON structure. It can't parse → error with the
+    // exact array shape rather than silently making one junk text layer.
     const result = addLayers({
       design_path: designPath,
       layers_shorthand: 'feature_grid:0,0,1080,1080:title=Brew Lab:items=icon=coffee:title=Fresh:desc=Sourced' as unknown as import('./shorthand-parser').ShorthandLayer[],
@@ -1114,6 +1115,17 @@ describe('addLayers', () => {
     expect(String(result.error)).toContain('STRING');
     expect(String(result.hint)).toContain('feature_grid');
     expect(String(result.hint)).toContain('items');
+  });
+
+  it('PARSES a stringified JSON/YAML array layers_shorthand (the carousel drop fix)', () => {
+    // A model that JSON-stringifies the array (unquoted keys = YAML flow) must
+    // succeed, not silently drop — this was the 6-page-carousel-went-blank bug.
+    const result = addLayers({
+      design_path: designPath,
+      layers_shorthand: '[{type: "text", pos: [100,100,800,200], text: "Hello", size: 64}]' as unknown as import('./shorthand-parser').ShorthandLayer[],
+    }) as Record<string, unknown>;
+    expect(result.success).toBe(true);
+    expect(result.added).toBe(1);
   });
 
   it('returns error for missing design', () => {

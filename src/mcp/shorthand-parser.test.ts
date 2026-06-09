@@ -797,6 +797,37 @@ describe('coerceShorthandLayers — accepts the shapes small models actually sen
     expect(coerceShorthandLayers(null)).toEqual([]);
     expect(coerceShorthandLayers(42)).toEqual([]);
   });
+
+  // The carousel silent-drop bug: a model stringifies the whole array. Unquoted
+  // keys make it invalid JSON but valid YAML flow — parse it, don't drop it.
+  it('parses a JSON/YAML-array STRING with unquoted keys (carousel drop bug)', () => {
+    const out = coerceShorthandLayers(
+      '[{type: "editorial", bg: "#FAF5EC", accent: "#B8543C", kicker: "K", title: "T", deck: "D"}]',
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('editorial');
+    expect(out[0].title).toBe('T');
+  });
+
+  it('parses a strict-JSON array string', () => {
+    const out = coerceShorthandLayers('[{"type":"rect","pos":[0,0,10,10]}]');
+    expect(out[0].type).toBe('rect');
+  });
+
+  it('parses a single stringified object (not wrapped in an array)', () => {
+    const out = coerceShorthandLayers('{type: "stat", value: "55%", label: "share"}');
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('stat');
+  });
+
+  it('treats an unstructured string as one compact layer', () => {
+    const out = coerceShorthandLayers('rect:[0,0,10,10]:#FAF5EC');
+    expect(out[0].type).toBe('rect');
+  });
+
+  it('returns [] for an empty / whitespace string', () => {
+    expect(coerceShorthandLayers('   ')).toEqual([]);
+  });
 });
 
 describe('expandShorthandLayers — visible defaults (no blank designs)', () => {
@@ -1670,5 +1701,30 @@ describe('sections stats — long unbreakable value fits its column (no collisio
     // content width per column ≈ (918 - 3*27)/4 ≈ 209px; "$0.04/kWh" is 9 chars.
     expect(fs * 9 * 0.58).toBeLessThanOrEqual(209);
     expect(fs).toBeGreaterThanOrEqual(22);
+  });
+});
+
+describe('sections block item-array aliases (model names it rows/data, not items)', () => {
+  // The "By the numbers" slide rendered BLANK: model sent stats:{rows:[…]} and
+  // bars:{data:[…]} but the engine only read b['items'] → both blocks empty.
+  const collectText = (l: { content?: { value?: string }; layers?: unknown[] }): string[] => {
+    const out: string[] = [];
+    if (l.content?.value) out.push(l.content.value);
+    for (const c of (l.layers ?? []) as Array<typeof l>) out.push(...collectText(c));
+    return out;
+  };
+  it('stats accepts rows[], bars accepts data[] — content is not dropped', () => {
+    const g = expandShorthand({
+      id: 'nums', type: 'sections', z: 0, pos: [0, 0, 1080, 1080], title: 'By the numbers',
+      blocks: [
+        { kind: 'stats', rows: [{ value: '30%', label: 'renewable share' }, { value: '6%', label: 'solar' }] },
+        { kind: 'bars', data: [{ label: 'Renewables', value: 80 }, { label: 'Fossil fuels', value: 20 }] },
+      ],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ content?: { value?: string }; layers?: unknown[] }> };
+    const all = g.layers.flatMap(collectText);
+    expect(all).toContain('30%');
+    expect(all).toContain('6%');
+    expect(all).toContain('Renewables');
+    expect(all).toContain('Fossil fuels');
   });
 });
