@@ -1703,3 +1703,28 @@ describe('sections stats — long unbreakable value fits its column (no collisio
     expect(fs).toBeGreaterThanOrEqual(22);
   });
 });
+
+describe('sections block item-array aliases (model names it rows/data, not items)', () => {
+  // The "By the numbers" slide rendered BLANK: model sent stats:{rows:[…]} and
+  // bars:{data:[…]} but the engine only read b['items'] → both blocks empty.
+  const collectText = (l: { content?: { value?: string }; layers?: unknown[] }): string[] => {
+    const out: string[] = [];
+    if (l.content?.value) out.push(l.content.value);
+    for (const c of (l.layers ?? []) as Array<typeof l>) out.push(...collectText(c));
+    return out;
+  };
+  it('stats accepts rows[], bars accepts data[] — content is not dropped', () => {
+    const g = expandShorthand({
+      id: 'nums', type: 'sections', z: 0, pos: [0, 0, 1080, 1080], title: 'By the numbers',
+      blocks: [
+        { kind: 'stats', rows: [{ value: '30%', label: 'renewable share' }, { value: '6%', label: 'solar' }] },
+        { kind: 'bars', data: [{ label: 'Renewables', value: 80 }, { label: 'Fossil fuels', value: 20 }] },
+      ],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ content?: { value?: string }; layers?: unknown[] }> };
+    const all = g.layers.flatMap(collectText);
+    expect(all).toContain('30%');
+    expect(all).toContain('6%');
+    expect(all).toContain('Renewables');
+    expect(all).toContain('Fossil fuels');
+  });
+});

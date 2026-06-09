@@ -1026,6 +1026,13 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   const kind = shStr(b['kind'] ?? b['type'], 'text');
   const layers: Layer[] = [];
   let z = z0;
+  // The item array is the #1 alias gap: a model names it items / rows / data /
+  // values / stats / bars interchangeably. Reading only b['items'] silently
+  // drops the whole block (caught a "By the numbers" slide rendering blank).
+  const arrField = (...keys: string[]): Record<string, unknown>[] => {
+    for (const k of keys) if (Array.isArray(b[k])) return b[k] as Record<string, unknown>[];
+    return [];
+  };
 
   if (kind === 'heading' || kind === 'subhead' || kind === 'section') {
     const t = shStr(b['text'] ?? b['title'] ?? b['heading'] ?? b['content']);
@@ -1043,7 +1050,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     return { layers, height: th };
   }
   if (kind === 'stats' || kind === 'stat_row' || kind === 'kpis' || kind === 'metrics') {
-    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 4) as Record<string, unknown>[];
+    const items = arrField('items', 'rows', 'stats', 'values', 'data', 'metrics', 'kpis').slice(0, 4);
     const n = Math.max(1, items.length);
     const colGap = Math.round(W * 0.025);
     const colW = Math.round((w - (n - 1) * colGap) / n);
@@ -1078,7 +1085,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     return { layers, height: maxH };
   }
   if (kind === 'list' || kind === 'steps') {
-    const items = (Array.isArray(b['items']) ? b['items'] : []) as Record<string, unknown>[];
+    const items = arrField('items', 'rows', 'steps', 'list', 'points', 'data');
     const gutter = Math.round(W * 0.055), tSize = Math.round(W * 0.026), dSize = Math.round(W * 0.02);
     let yy = y;
     items.forEach((it, i) => {
@@ -1119,7 +1126,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   }
   if (kind === 'bars' || kind === 'bar_chart' || kind === 'chart' || kind === 'ranking') {
     // Native rect bar chart — rasterizes in PNG (unlike foreignObject charts).
-    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 8) as Record<string, unknown>[];
+    const items = arrField('items', 'data', 'bars', 'values', 'rows', 'series').slice(0, 8);
     const num = (it: Record<string, unknown>): number => {
       const v = it['value'] ?? it['y'] ?? it['count'];
       return typeof v === 'number' ? v : (parseFloat(shStr(v).replace(/[^0-9.\-]/g, '')) || 0);
