@@ -1028,7 +1028,8 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
   const sumH = heights.reduce((a, h) => a + h, 0);
   const n = Math.max(1, bl.length);
-  const gap = Math.max(Math.round(W * 0.038), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
+  // Tight floor so dense content fits; generous cap so a roomy canvas fills.
+  const gap = Math.max(Math.round(W * 0.022), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
   bl.forEach((b, i) => {
     const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
     out.layers.forEach(l => layers.push(l));
