@@ -130,6 +130,24 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
     notes.push(`text "${o.id}" (${o.fontSize}px) needs ~${o.estH}px for ~${o.lines} wrapped lines but its box is only ${o.declaredH}px tall — it spills ~${o.spill}px${where}. Raise height to ≥${o.estH}px, shrink font_size, or use a preset that auto-sizes.`);
   }
 
+  // 5. Invisible decor — a sized shape whose fill barely contrasts the canvas it
+  //    sits on adds NOTHING (the model thinks it added a visual accent, but it's
+  //    not there — a vision-less blind spot). Flag only the clearly-invisible.
+  if (bgColor) {
+    const DECOR = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon']);
+    for (const l of layers) {
+      if (l === bgRect || !DECOR.has(l.type)) continue;
+      if (((l as { opacity?: number }).opacity ?? 1) < 0.5) continue; // intentionally faint
+      const fc = solidColor(l), r = rectOf(l);
+      if (!fc || !r) continue;
+      if (r.w * r.h >= canvasW * canvasH * 0.6) continue; // large panel, not an accent
+      const cr = contrast(hexToRgb(fc), hexToRgb(bgColor));
+      if (cr !== null && cr < 1.2) {
+        notes.push(`decor "${l.id}" (${fc}) is nearly invisible on the background (${bgColor}, contrast ${cr.toFixed(2)}:1) — it adds no visible element. Give it a contrasting color (or the accent), or remove it.`);
+      }
+    }
+  }
+
   return notes.slice(0, 8);
 }
 

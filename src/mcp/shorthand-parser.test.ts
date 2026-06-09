@@ -169,6 +169,36 @@ describe('expandShorthand', () => {
     expect(ids).not.toContain('lb_b0');        // no desc → no body layer
   });
 
+  it('expands a stat preset with a dominant auto-sized number above the caption', () => {
+    const r = expandShorthand({
+      id: 'st', type: 'stat', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#0A0A0A', accent: '#FF3D00', kicker: 'Maker Report', stat: '73%',
+      caption: 'of side projects never ship.', footer: 'folio',
+    } as unknown as ShorthandLayer) as { type?: string; layers?: { id: string; type: string; y: number; height: number; style?: { font_size?: number } }[] };
+    expect(r.type).toBe('group');
+    const num = r.layers!.find(l => l.id === 'st_stat')!;
+    const cap = r.layers!.find(l => l.id === 'st_cap')!;
+    // the number dominates the caption font size and sits above it
+    expect(num.style!.font_size!).toBeGreaterThan((cap.style!.font_size ?? 0) * 3);
+    expect(num.y + num.height).toBeLessThanOrEqual(cap.y + 2);
+  });
+
+  it('feature_grid keeps card text legible on a dark canvas (light text would vanish on a light card)', () => {
+    type FGLayer = { id: string; type: string; fill?: { color?: string }; style?: { color?: string }; layers?: FGLayer[] };
+    const r = expandShorthand({
+      id: 'fg', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#0A0A0A', accent: '#FF3D00', text_color: '#FAFAFA',
+      items: [{ icon: 'zap', title: 'Fast', desc: 'Quick sync' }],
+    } as unknown as ShorthandLayer) as { layers?: FGLayer[] };
+    const row = r.layers!.find(l => l.id === 'fg_row')!;        // cards nest inside the row
+    const card = row.layers!.find(l => l.id === 'fg_card0')!;
+    const cardBg = (card.fill?.color ?? '').toLowerCase();
+    const title = card.layers!.find(l => l.id.endsWith('_title'))!;
+    // On a dark canvas the engine flips cards to a light surface with dark text.
+    expect(cardBg).not.toBe('#0a0a0a');
+    expect(title.style!.color!.toLowerCase()).not.toBe('#fafafa'); // not the invisible light-on-light
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',

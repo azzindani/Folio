@@ -85,6 +85,11 @@ z = stacking order (higher = front)
    ])   ← headline + every item auto-sized & vertically distributed. marker:"number"|"bullet"|"icon"|"none".
         kicker/footer optional. This is the RIGHT tool for any "list of N items" — don't hand-place it.
 
+📊 ONE BIG STAT? ("73% of…", a single headline figure) — use the stat PRESET (aliases
+   metric/big_number): {type:"stat", bg, accent, stat:"73%", kicker:"…", caption:"…"}. The
+   engine sizes the number to dominate so the focal hierarchy is guaranteed — don't hand-place
+   a giant number (it overflows and collides with the caption).
+
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
 each also return open_url — a clickable, unique-token editor link (no separate
@@ -232,6 +237,14 @@ NEVER hand-place a list (the headline wraps and buries item 1). items=[{title,de
     kicker:"Field Notes", title:"5 Habits…", marker:"number", footer:"folio / 2026",
     items:[{title:"Write Small Tests", desc:"One thing, fast feedback."}, …]}
   marker:"number"(01,02…)|"bullet"|"icon"(uses item.icon)|"none". kicker/footer optional.
+
+stat (aliases metric, big_number): ONE dominant statistic poster — a huge auto-sized
+number (the single accent moment), a small kicker above, a one-line caption below.
+Engine sizes the number to dominate, so the focal hierarchy can't be weak. Use this for
+any "X% of …" / single-figure poster instead of hand-placing a giant number (which
+overflows + collides with the caption).
+  {type:"stat", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA",
+    kicker:"Maker Report 2026", stat:"73%", caption:"of side projects never ship.", footer:"folio"}
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}

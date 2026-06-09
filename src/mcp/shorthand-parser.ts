@@ -1,6 +1,25 @@
 import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
+import { hexToRgb, luminance } from './engine/reference';
+
+/** A concrete hex string (not a token/gradient/Fill object), else null. */
+function asHex(v: unknown): string | null {
+  return typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : null;
+}
+function contrastRatio(a: string, b: string): number {
+  const ra = hexToRgb(a), rb = hexToRgb(b);
+  if (!ra || !rb) return 21;
+  const la = luminance(ra), lb = luminance(rb);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+/** Keep `prefer` if it's legible on `on`; otherwise flip to near-black/near-white. */
+function readableOn(on: string, prefer: string): string {
+  const onRgb = hexToRgb(on);
+  if (!onRgb) return prefer;
+  if (asHex(prefer) && contrastRatio(prefer, on) >= 3) return prefer;
+  return luminance(onRgb) > 0.5 ? '#1A1A1A' : '#FAFAFA';
+}
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
 export const SHAPE_NAMES = new Set<string>([
@@ -328,6 +347,27 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const accent    = str(r['accent'], '$primary');
   const textColor = str(r['text_color'] ?? r['color'], '$text');
   const muted     = str(r['muted'], textColor);
+  // Card text MUST contrast the CARD fill, not the global canvas. A blind model
+  // that picks a dark canvas + light text would otherwise drop that light text
+  // onto a light ($surface) card → invisible (the #1 feature_grid failure).
+  // Resolve a concrete card surface and pick readable on-card colors.
+  const bgHex = asHex(typeof bgFill === 'string' ? bgFill : null);
+  const bgRgb = bgHex ? hexToRgb(bgHex) : null;
+  const bgDark = bgRgb ? luminance(bgRgb) < 0.42 : false;
+  const explicitCard = asHex(r['card_fill']);
+  let cardFillResolved: string | Fill = cardFill;
+  let cardText = textColor, cardMuted = muted, cardIcon = accent;
+  if (explicitCard) {
+    cardFillResolved = explicitCard;
+    cardText = readableOn(explicitCard, textColor);
+    cardMuted = readableOn(explicitCard, muted);
+    cardIcon = contrastRatio(accent, explicitCard) >= 2 ? accent : readableOn(explicitCard, accent);
+  } else if (bgDark) {
+    // Light cards on a dark canvas + dark text — striking AND legible.
+    cardFillResolved = '#F4F1EA';
+    cardText = '#1A1A1A'; cardMuted = '#5A5650';
+    cardIcon = contrastRatio(accent, '#F4F1EA') >= 2 ? accent : '#1A1A1A';
+  }
   const rawItems = Array.isArray(r['items']) ? r['items'] : Array.isArray(r['cards']) ? r['cards'] : Array.isArray(r['features']) ? r['features'] : [];
   const items = (rawItems as Record<string, unknown>[]).slice(0, 5).map(it => ({
     icon: str(it['icon'] ?? it['symbol']),
@@ -351,14 +391,14 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
     content: { type: 'plain', value: subtitle }, style: { font_size: Math.round(W * 0.03), color: muted, align: 'center' } } as unknown as Layer);
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
-    if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: 60, height: 60, name: it.icon, size: 60, color: accent } as unknown as Layer);
+    if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: 60, height: 60, name: it.icon, size: 60, color: cardIcon } as unknown as Layer);
     if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: cardW - 60, height: 90,
-      content: { type: 'plain', value: it.title }, style: { font_size: 30, font_weight: 700, color: textColor, align: 'center' } } as unknown as Layer);
+      content: { type: 'plain', value: it.title }, style: { font_size: 30, font_weight: 700, color: cardText, align: 'center' } } as unknown as Layer);
     if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: cardW - 60, height: 110,
-      content: { type: 'plain', value: it.desc }, style: { font_size: 21, color: muted, align: 'center' } } as unknown as Layer);
+      content: { type: 'plain', value: it.desc }, style: { font_size: 21, color: cardMuted, align: 'center' } } as unknown as Layer);
     return { id: `${id}_card${i}`, type: 'auto_layout', z: i, x: 0, y: 0, width: cardW, height: rowH, direction: 'column',
       gap: 16, padding: 28, align_items: 'center', justify_content: 'center', radius: 18,
-      fill: expandFill(cardFill), layers: kids } as unknown as Layer;
+      fill: expandFill(cardFillResolved), layers: kids } as unknown as Layer;
   });
   layers.push({ id: `${id}_row`, type: 'auto_layout', z: 10, x: X + M, y: Y + rowY, width: W - 2 * M, height: rowH,
     direction: 'row', gap, justify_content: 'space-between', align_items: 'stretch', layers: cards } as unknown as Layer);
@@ -688,6 +728,55 @@ function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
+// Single-statistic focal poster — a huge dominant number (the ONE accent
+// moment), a small kicker above, a one-line caption below, optional footer.
+// Engine sizes the number to dominate and measures the caption, so the focal
+// hierarchy is guaranteed. Removes the hand-placed big-number flail (the model
+// can't see that its giant number overflowed or collided with the caption).
+function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh);
+  const bg = shStr(r['bg'], '#0A0A0A');
+  const accent = shStr(r['accent'], '#FF3D00');
+  const textColor = shStr(r['text_color'] ?? r['color'], '#FAFAFA');
+  const muted = shStr(r['muted'], '#9A9A9A');
+  const kicker = shStr(r['kicker'] ?? r['label'] ?? r['eyebrow']);
+  const stat = shStr(r['stat'] ?? r['value'] ?? r['number'] ?? r['title'] ?? r['text'], '0');
+  const caption = shStr(r['caption'] ?? r['subtitle'] ?? r['desc'] ?? r['body']);
+  const footer = shStr(r['footer']);
+
+  const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
+  const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+
+  // Size the number to dominate: fit-to-width, capped, never tiny.
+  const len = Math.max(2, stat.replace(/\s/g, '').length);
+  const numSize = Math.max(Math.round(W * 0.12), Math.min(Math.round(W * 0.42), Math.round(cW / (len * 0.58))));
+  const numH = estTextHeight(stat, numSize, cW, 1.0);
+  const capSize = Math.round(W * 0.034);
+  const capH = caption ? estTextHeight(caption, capSize, cW, 1.4) : 0;
+  const kickH = kicker ? Math.round(H * 0.045) : 0;
+  const gap = Math.round(H * 0.028);
+  const total = kickH + numH + (caption ? gap + capH : 0);
+  let cy = Y + Math.max(Math.round(H * 0.16), (H - total) / 2 - Math.round(H * 0.03));
+  let k = 1;
+  if (kicker) {
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: muted, letter_spacing: 2, text_transform: 'uppercase' }));
+    cy += kickH;
+  }
+  layers.push(txt(`${id}_stat`, z + k++, cX, cy, cW, numH, stat, { font_size: numSize, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -2 }));
+  cy += numH + (caption ? gap : 0);
+  if (caption) {
+    layers.push({ id: `${id}_caprule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - Math.round(gap * 0.4), width: Math.round(W * 0.13), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    layers.push(txt(`${id}_cap`, z + k++, cX, cy + 14, cW, capH, caption, { font_size: capSize, font_weight: 400, color: textColor, line_height: 1.4 }));
+  }
+  if (footer) {
+    const fy = Y + H - Math.round(H * 0.07);
+    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy, width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    layers.push(txt(`${id}_footer`, z + k++, cX, fy + 14, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+  }
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -873,6 +962,11 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'checklist':
     case 'numbered_list':
       return buildList(sh, String(sh.id ?? 'list'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'stat':
+    case 'metric':
+    case 'big_number':
+      return buildStat(sh, String(sh.id ?? 'stat'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'decor':
     case 'marble_bg':
@@ -1205,6 +1299,7 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'kicker', 'eyebrow', 'headline', 'lede', 'deck', 'body', 'desc', 'footer',
   'side', 'ratio', 'panel', 'panel_fill', 'panel_label', 'panel_text', 'big',
   'marker', 'heading', 'description', 'cards',
+  'stat', 'number', 'caption',
   // pattern / image fills (WS1)
   'pattern', 'fg', 'mode', 'tile_size', 'foreground', 'background',
   // parametric shapes (WS2)
