@@ -18,6 +18,18 @@ export const TIER1_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'enrich_brief',
+    description: 'START HERE when the prompt is SHORT or vague (e.g. "a poster about remote work"). Turns a one-line idea into a RICH content plan so the design is dense, not sparse: infers the best preset, a full block/field outline (the richness floor), a topic-matched bg_style + palette + colors, and — when the topic is factual — the exact web-research queries to run FIRST so figures are real, not invented. Returns needs_research + research_queries + an instruction; follow it (research if asked) then create_design + add_layers.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'The user\'s topic/intent — even one line, e.g. "the state of remote work" or "a feature poster for my CI tool".' },
+        type:   { type: 'string', description: 'Optional preset hint (sections/feature_grid/stat/event/list/split/editorial). Omit to let the engine infer it.' },
+      },
+      required: ['prompt'],
+    },
+  },
+  {
     name: 'list_tasks',
     description: 'List task files in a project with progress status.',
     inputSchema: {

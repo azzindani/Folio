@@ -144,5 +144,22 @@ export function analyzeLayers(layers: Layer[], W: number, H: number): Finding[] 
   for (const note of reviewComposition(layers, W, H)) {
     out.push({ code: 'quality', severity: 'suggestion', message: note });
   }
+  // Sparse-content nudge → enrich_brief. Conservative: only when there's a rich
+  // preset group absent AND the canvas is near-empty (≤1 text layer, little copy),
+  // so it never fires on a preset (which expands to a many-child group) or a
+  // genuinely full hand-placed poster.
+  const richGroup = layers.some(l => (l.type === 'group' || l.type === 'auto_layout') && (((l as { layers?: unknown[] }).layers?.length) ?? 0) >= 5);
+  const textLayers = layers.filter(l => l.type === 'text');
+  const textChars = textLayers.reduce((n, l) => {
+    const c = (l as { content?: { value?: string; text?: string } }).content;
+    return n + (c?.value ?? c?.text ?? '').length;
+  }, 0);
+  if (!richGroup && textLayers.length <= 1 && textChars < 140) {
+    out.push({
+      code: 'sparse_content', severity: 'suggestion',
+      message: 'This design is sparse — very little content for the canvas.',
+      fix: 'Call enrich_brief with your topic to get a rich content plan (preset + full block outline + research queries), then rebuild with that preset.',
+    });
+  }
   return out;
 }

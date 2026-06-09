@@ -8,6 +8,13 @@ Canvas: 1080x1080 (sq) · 1080x1350 (port) · 1920x1080 (land) · units: px
 Design types: poster (single page) | carousel (multi-page)
 z = stacking order (higher = front)
 
+🧠 SHORT or vague prompt (e.g. "a poster about remote work")? Call enrich_brief FIRST.
+   It returns the best preset + a full content outline (the richness floor) + a
+   topic-matched bg_style/palette, and — for factual topics — the web-research
+   queries to run before composing (so figures are REAL, not invented). Follow its
+   instruction: research if asked, then create_design + add_layers. Don't ship a
+   sparse 2-layer poster when the topic deserves a dense, researched infographic.
+
 ⚠️ EVERY sized layer (rect, image, ellipse, icon, group, chart, kpi_card…)
    MUST have a positive width AND height — or use pos:[x,y,w,h]. Without
    dimensions the layer renders INVISIBLY. add_layers now rejects 0-dim
