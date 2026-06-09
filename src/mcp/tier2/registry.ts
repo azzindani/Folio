@@ -125,12 +125,13 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'update_layer',
-    description: 'Merge props into a layer by ID. Snapshots before write.',
+    description: 'Merge props into a layer by ID. Snapshots before write. CAROUSEL: pass page_id to scope the edit to one page — carousel pages share layer IDs (sections_1 etc.), so without it every page with that ID is patched.',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
         layer_id:     { type: 'string', description: 'Layer ID to update' },
+        page_id:      { type: 'string', description: 'Carousel: restrict the update to this page (recommended — IDs repeat across pages)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
         props:        { type: 'object', description: 'Properties to merge', properties: {} },
       },
@@ -139,12 +140,13 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'remove_layer',
-    description: 'Remove a layer by ID from design or all pages.',
+    description: 'Remove a layer by ID. CAROUSEL: pass page_id to scope removal to one page — pages share layer IDs (sections_1 etc.), so WITHOUT page_id the same ID is removed from EVERY page (this silently empties sibling slides).',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
         layer_id:     { type: 'string', description: 'Layer ID to remove' },
+        page_id:      { type: 'string', description: 'Carousel: restrict removal to this page (recommended — IDs repeat across pages)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
       },
       required: ['design_path', 'layer_id'],
