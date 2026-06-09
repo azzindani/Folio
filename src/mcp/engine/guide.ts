@@ -72,6 +72,30 @@ z = stacking order (higher = front)
          {icon:"award",  title:"Guaranteed",    desc:"Love it or full refund"}]}
    ])   ← title auto-wraps & auto-sizes; cards evenly spaced. card_fill/accent/text_color optional.
 
+📋 A NUMBERED LIST? ("5 tips", "3 steps", "7 reasons", "N ways/habits/rules") — the
+   most common poster, and the one hand-placing ALWAYS breaks (your headline wraps and
+   buries item 1). Use the list PRESET — ONE layer; the engine measures each item and
+   stacks them with even rhythm (no overlap, no dead bottom), accent markers in the gutter:
+   add_layers(design_path=..., layers_shorthand=[
+     {type:"list", pos:[0,0,1080,1350], bg:"#FAF5EC", accent:"#B8543C", text_color:"#1A1A1A",
+       kicker:"Engineering — No. 05", title:"5 Habits of Highly Effective Engineers",
+       marker:"number", footer:"folio / 2026", items:[
+         {title:"Write Small, Focused Tests", desc:"Tests that verify one thing pinpoint failures."},
+         {title:"Read Error Messages",        desc:"The stack trace tells you exactly what broke."}, …]}
+   ])   ← headline + every item auto-sized & vertically distributed. marker:"number"|"bullet"|"icon"|"none".
+        kicker/footer optional. This is the RIGHT tool for any "list of N items" — don't hand-place it.
+
+📊 ONE BIG STAT? ("73% of…", a single headline figure) — use the stat PRESET (aliases
+   metric/big_number): {type:"stat", bg, accent, stat:"73%", kicker:"…", caption:"…"}. The
+   engine sizes the number to dominate so the focal hierarchy is guaranteed — don't hand-place
+   a giant number (it overflows and collides with the caption).
+
+🎟️ EVENT / GIG / LAUNCH FLYER? (big name + date/venue/time) — use the event PRESET (aliases
+   flyer/hero): {type:"event", bg, accent, palette:[…], title:"Neon Nights",
+   details:["Sat 14 June","Riverside Park","7PM till late"]}. Big auto-sized title + a detail
+   stack + margin accent bars, centered to fill the canvas — don't hand-place it (the title
+   collides with the details and decor lands invisible).
+
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
 each also return open_url — a clickable, unique-token editor link (no separate
@@ -117,12 +141,22 @@ Rules:
   - CONTRAST: text must contrast with the block beneath it. Light text on a light
     canvas — or on a colored chip NARROWER than its label (the text spills past the
     chip onto the canvas) — renders invisible. Always lay a full-canvas bg rect first.
+  - 📐 SIZE TEXT BOXES FOR WRAPPING (the #1 thing you're blind to): a box fits about
+    floor(width ÷ (0.55 × font_size)) chars per LINE. A 96px headline in an 880px box
+    fits ~16 chars/line — so a 40-char title is 3 lines ≈ 3×96 ≈ 290px tall, NOT 120.
+    If the height is too short the text spills past the box and lands ON the layers
+    below (diagnose reports this as text_overflow). So: estimate the line count, set
+    height ≈ lines × font_size × 1.1, and leave that much vertical gap before the next
+    layer. When unsure, OVER-size the height. Easiest: use the editorial / feature_grid
+    preset — it auto-sizes every block so text never collides.
   - add_layers returns notes:[…] when something won't render as intended (invisible
-    text, off-canvas layers, missing background) — read them and fix in your next call.
-  - VERIFY before sealing: diagnose_design(design_path) lists problems (off-canvas,
-    collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy) each with a fix;
-    align_layers fixes alignment; render_preview(design_path) returns a PNG so you can
-    SEE the result. Fix → re-check → seal.`,
+    text, off-canvas layers, missing background, text_overflow) — read them and fix in
+    your next call.
+  - VERIFY before sealing: diagnose_design(design_path) lists problems (text_overflow,
+    off-canvas, collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy) each
+    with a fix; FIX EVERY error then re-run it until zero errors. align_layers fixes
+    alignment; render_preview(design_path) returns a PNG so you can SEE the result.
+    Fix → re-check → seal.`,
 
   shorthand: `# Shorthand Syntax (layers_shorthand field)
 pos:[x,y,w,h] replaces x/y/width/height.
@@ -200,6 +234,31 @@ ratio: number or "golden" (0.382). panel can be a hex OR a pattern/image fill.
   {type:"split", pos:[0,0,1200,800], side:"left", ratio:"golden", panel_label:"04",
     panel:{type:"pattern",pattern:"halftone",fg:"#FAF5EC",bg:"#B8543C"}, panel_text:"#FAF5EC",
     bg:"#FAF5EC", accent:"#B8543C", kicker:"Case Study", title:"Headline here", subtitle:"Deck."}
+
+list (aliases steps, checklist, numbered_list): a numbered/stepped vertical list — the
+right tool for "N tips/steps/reasons/habits". Engine MEASURES each item (title + desc) and
+distributes them with even rhythm under an auto-sized headline; accent marker in the gutter.
+NEVER hand-place a list (the headline wraps and buries item 1). items=[{title,desc,icon?}].
+  {type:"list", pos:[0,0,1080,1350], bg:"#FAF5EC", accent:"#B8543C", text_color:"#1A1A1A",
+    kicker:"Field Notes", title:"5 Habits…", marker:"number", footer:"folio / 2026",
+    items:[{title:"Write Small Tests", desc:"One thing, fast feedback."}, …]}
+  marker:"number"(01,02…)|"bullet"|"icon"(uses item.icon)|"none". kicker/footer optional.
+
+stat (aliases metric, big_number): ONE dominant statistic poster — a huge auto-sized
+number (the single accent moment), a small kicker above, a one-line caption below.
+Engine sizes the number to dominate, so the focal hierarchy can't be weak. Use this for
+any "X% of …" / single-figure poster instead of hand-placing a giant number (which
+overflows + collides with the caption).
+  {type:"stat", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA",
+    kicker:"Maker Report 2026", stat:"73%", caption:"of side projects never ship.", footer:"folio"}
+
+event (aliases flyer, hero): a bold event/announcement poster — a BIG auto-sized title,
+a stack of detail lines (date/venue/time), engine-placed accent bars in the margin, footer.
+The block is vertically centered so it fills the canvas. Use this for a gig/launch/flyer
+instead of hand-placing a giant title (it collides with the details + the decor lands
+invisible). details=[…] OR date/venue/time fields. palette=[…] colors the bars.
+  {type:"event", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#FF3D00", palette:["#00E5FF","#FF00E5","#C6FF00"],
+    title:"Neon Nights", details:["Saturday 14 June","Riverside Park","7PM till late"], footer:"@neonnights"}
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
