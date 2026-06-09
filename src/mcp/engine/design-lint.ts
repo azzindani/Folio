@@ -8,6 +8,7 @@
 
 import type { Layer } from '../../schema/types';
 import { hexToRgb, luminance, saturation, hue, type RGB } from './reference';
+import { findTextOverflows } from './text-measure';
 
 interface Rect { x: number; y: number; w: number; h: number }
 
@@ -119,6 +120,31 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
     if (!r) continue;
     if (r.x < -4 || r.y < -4 || r.x + r.w > canvasW + 4 || r.y + r.h > canvasH + 4) {
       notes.push(`layer "${l.id}" extends outside the ${canvasW}x${canvasH} canvas (x:${Math.round(r.x)} y:${Math.round(r.y)} w:${Math.round(r.w)} h:${Math.round(r.h)}) — it will be clipped.`);
+    }
+  }
+
+  // 4. Text overflow — box too short for the wrapped text, so it spills and
+  //    collides with layers below. The #1 thing a vision-less model can't see.
+  for (const o of findTextOverflows(layers, canvasH)) {
+    const where = o.collides.length ? `, overlapping ${o.collides.length} layer(s) below` : o.offBottom ? ', running off the canvas bottom' : '';
+    notes.push(`text "${o.id}" (${o.fontSize}px) needs ~${o.estH}px for ~${o.lines} wrapped lines but its box is only ${o.declaredH}px tall — it spills ~${o.spill}px${where}. Raise height to ≥${o.estH}px, shrink font_size, or use a preset that auto-sizes.`);
+  }
+
+  // 5. Invisible decor — a sized shape whose fill barely contrasts the canvas it
+  //    sits on adds NOTHING (the model thinks it added a visual accent, but it's
+  //    not there — a vision-less blind spot). Flag only the clearly-invisible.
+  if (bgColor) {
+    const DECOR = new Set(['rect', 'ellipse', 'circle', 'path', 'polygon']);
+    for (const l of layers) {
+      if (l === bgRect || !DECOR.has(l.type)) continue;
+      if (((l as { opacity?: number }).opacity ?? 1) < 0.5) continue; // intentionally faint
+      const fc = solidColor(l), r = rectOf(l);
+      if (!fc || !r) continue;
+      if (r.w * r.h >= canvasW * canvasH * 0.6) continue; // large panel, not an accent
+      const cr = contrast(hexToRgb(fc), hexToRgb(bgColor));
+      if (cr !== null && cr < 1.2) {
+        notes.push(`decor "${l.id}" (${fc}) is nearly invisible on the background (${bgColor}, contrast ${cr.toFixed(2)}:1) — it adds no visible element. Give it a contrasting color (or the accent), or remove it.`);
+      }
     }
   }
 

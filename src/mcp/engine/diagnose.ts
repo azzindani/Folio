@@ -6,6 +6,7 @@
 
 import type { Layer } from '../../schema/types';
 import { lintComposition, reviewComposition } from './design-lint';
+import { findTextOverflows } from './text-measure';
 
 export interface Finding {
   code: string;
@@ -66,6 +67,23 @@ function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
     }
   }
 
+  // Text overflow — a box too short for its wrapped text spills past it and
+  // collides with whatever sits below. Declared boxes DON'T overlap (so the
+  // collision check below stays silent), but the rendered text does. This is
+  // the failure a vision-less model can't see; it's reported as one actionable
+  // finding per overflowing layer instead of N pairwise collisions.
+  for (const o of findTextOverflows(layers, H)) {
+    const hit = o.collides.length;
+    const where = hit
+      ? ` and overlaps ${hit} layer(s) below (${o.collides.slice(0, 4).join(', ')}${hit > 4 ? '…' : ''})`
+      : o.offBottom ? ' and runs off the bottom of the canvas' : '';
+    out.push({
+      code: 'text_overflow', severity: hit || o.offBottom ? 'error' : 'warning', layer_id: o.id,
+      message: `text "${o.id}" (${o.fontSize}px) wraps to ~${o.lines} lines (~${o.estH}px) but its box is only ${o.declaredH}px tall — it spills ~${o.spill}px past the box${where}.`,
+      fix: `Raise its height to ≥${o.estH}px, reduce font_size, shorten the copy, or use the editorial/feature_grid preset (auto-sizes blocks so text never collides).`,
+    });
+  }
+
   // Collisions — two same-kind content layers (text↔text, icon↔icon) that overlap
   // are almost always an accidental pile-up (the #1 hand-placement failure).
   const content = bs.filter(b => !FULL_BG(b, W, H) && (b.type === 'text' || b.type === 'icon' || b.type === 'kpi_card'));
@@ -115,10 +133,12 @@ function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
 /** Run all diagnostics over a page's layers. */
 export function analyzeLayers(layers: Layer[], W: number, H: number): Finding[] {
   const out = geometryFindings(layers, W, H);
-  // Fold composition lint (render-correctness) as warnings/errors.
+  // Fold composition lint (render-correctness) as warnings/errors. Skip the
+  // overflow note — geometryFindings already emits a richer text_overflow
+  // finding for it (folding both double-reports the same problem).
   for (const note of lintComposition(layers, W, H)) {
-    const severity: Finding['severity'] = /invisible|outside|No full-canvas/.test(note) ? 'warning' : 'warning';
-    out.push({ code: 'composition', severity, message: note });
+    if (/spills ~\d+px/.test(note)) continue;
+    out.push({ code: 'composition', severity: 'warning', message: note });
   }
   // Fold quality critic as suggestions.
   for (const note of reviewComposition(layers, W, H)) {
