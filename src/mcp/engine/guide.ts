@@ -283,6 +283,7 @@ top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Ea
   {kind:"bars", items:[{label:"Mobile",value:62},{label:"Desktop",value:31}]}  一 native bar chart (renders in PNG)
   {kind:"callout", label:"Key takeaway", text:"…"}  一 accent-tinted highlight box
   {kind:"quote", text:"…", cite:"…"}  一 pull quote
+  {kind:"source", text:"Source: …"}   一 small mono source/caption line (footer credit)
   {kind:"divider"}                    一 rule
   {type:"sections", pos:[0,0,1080,1920], bg:"#FAF5EC", accent:"#B8543C", kicker:"Report",
     title:"The State of Remote Work 2026", subtitle:"…", footer:"Source: …", blocks:[
@@ -291,6 +292,18 @@ top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Ea
       {kind:"callout",label:"Takeaway",text:"…"} ]}
   This is THE tool for a magazine infographic / multi-section report — supply many blocks
   for a dense, organized, professional layout; don't hand-place sections (they collide).
+
+RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event): the engine composes a
+layered, collision-proof background BEHIND the content so you never hand-place decor. Combine
+tokens with "+". Pass palette:[…] for mesh/marble colors. Keep bg as the base canvas color
+(light bg → keep text dark; dark bg → set text_color light). Tokens:
+  base:    gradient (or gradient:vert / gradient:135 / gradient:horiz) · mesh · marble · radial · solid
+  sweep:   curve (curved-gradient corner sweep) · glow (top spotlight) · band (accent edge bar) · band_top
+  texture: any pattern name (dots · grid · graph_paper · halftone · blueprint · carbon · waves · chevron…)
+  e.g.  bg_style:"gradient + curve + dots"   (warm editorial)
+        bg_style:"mesh + glow + grid"        (premium dark report — pair bg:"#0E0B14", text_color:"#F5F1EA", palette:[…])
+        bg_style:"marble"                     (soft organic) · bg_style:"gradient:vert + band" (clean)
+  Textures auto-render whisper-faint so text stays readable; the sweep/mesh fades to the base color.
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
