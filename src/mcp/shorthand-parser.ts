@@ -891,7 +891,8 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
       // the big number stays narrow (else it overflows the column and collides).
       const merged = (!lab && val) ? val : (!val && lab) ? lab : '';
       if (merged) {
-        const m = merged.trim().match(/^([+\-]?[\d.,]+\s*%?\s*[KMB×x]?)\s+(.+)$/);
+        // figure = optional sign/currency · digits · optional %/scale-suffix, then the label words
+        const m = merged.trim().match(/^([+\-]?[$€£¥]?[\d.,]+\s*(?:%|[KMBkmb×x])?)\s+(.+)$/);
         if (m) { val = m[1].trim(); lab = m[2].trim(); }
       }
       const vh = estTextHeight(val, vSize, colW, 1.0);
@@ -933,7 +934,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     return { layers, height: boxH };
   }
   if (kind === 'quote' || kind === 'pullquote') {
-    const t = shStr(b['text'] ?? b['quote']);
+    const t = shStr(b['text'] ?? b['quote'] ?? b['content']).replace(/^["“”'']+|["“”'']+$/g, '');
     const cite = shStr(b['cite'] ?? b['author'] ?? b['source']);
     const qSize = Math.round(W * 0.036);
     const qH = estTextHeight(t, qSize, w, 1.3);
@@ -1020,12 +1021,14 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
 
   // Pass 1 — measure every block. Pass 2 — place with a gap that distributes the
   // leftover space (so a generous canvas fills without a dead band, a short one stays tight).
-  const footerH = footer ? Math.round(W * 0.06) : 0;
+  // Reserve a generous footer band so the last block never crowds the footer
+  // (diagnose can't see inside the group, so the layout MUST be collision-proof).
+  const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
   const avail = (Y + H - M - footerH) - cy;
   const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
   const sumH = heights.reduce((a, h) => a + h, 0);
   const n = Math.max(1, bl.length);
-  const gap = Math.max(Math.round(W * 0.04), Math.min(Math.round(W * 0.075), (avail - sumH) / n));
+  const gap = Math.max(Math.round(W * 0.038), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
   bl.forEach((b, i) => {
     const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
     out.layers.forEach(l => layers.push(l));
