@@ -295,15 +295,17 @@ top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Ea
 
 RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event/feature_grid/split): the engine composes a
 layered, collision-proof background BEHIND the content so you never hand-place decor. Combine
-tokens with "+". Pass palette:[…] for mesh/marble colors. Keep bg as the base canvas color
-(light bg → keep text dark; dark bg → set text_color light). Tokens:
-  base:    gradient (or gradient:vert / gradient:135 / gradient:horiz) · mesh · marble · radial · solid
-  sweep:   curve (curved-gradient corner sweep) · glow (top spotlight) · band (accent edge bar) · band_top · grain (film noise)
+tokens with "+". Pass palette:[…] to color mesh/marble AND to make a gradient multi-hue. Keep
+bg as the base canvas color (light bg → keep text dark; dark bg → set text_color light). Tokens:
+  base:    gradient (or gradient:vert / gradient:135 / gradient:horiz) · mesh · marble · radial · solid · photo
+  sweep:   curve (curved sweep) · glow (spotlight) · band/band_top (accent edge bar) · grain (film noise) · vignette
+           curve & glow take a PLACEMENT: curve:tr|tl|br|bl (default tr) · glow:top|bottom|center|left|right (default top)
   texture: any pattern name (dots · grid · graph_paper · halftone · blueprint · carbon · waves · chevron…)
-  e.g.  bg_style:"gradient + curve + dots"   (warm editorial)
-        bg_style:"mesh + glow + grid"        (premium dark report — pair bg:"#0E0B14", text_color:"#F5F1EA", palette:[…])
-        bg_style:"marble"                     (soft organic) · bg_style:"gradient:vert + band" (clean)
-  Textures auto-render whisper-faint so text stays readable; the sweep/mesh fades to the base color.
+  photo:   base "photo" + bg_image:"https://…" → full-bleed image with an auto legibility scrim (editor/HTML; PNG shows the scrim)
+  e.g.  bg_style:"gradient + curve + dots"          (warm editorial)
+        bg_style:"mesh + glow + grain"              (premium dark report — pair bg:"#0E0B14", text_color:"#F5F1EA", palette:[…])
+        bg_style:"gradient + curve:bl + vignette"   · bg_style:"photo + grain" with bg_image:"https://…"
+  Palette colors are auto-tinted toward bg, textures render whisper-faint, sweeps fade to the base — so text stays readable.
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
