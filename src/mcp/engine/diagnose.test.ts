@@ -56,3 +56,21 @@ describe('analyzeLayers — composition fold-in + clean baseline', () => {
     expect(f.filter(x => x.severity === 'warning')).toHaveLength(0);
   });
 });
+
+describe('analyzeLayers — sparse-content nudge → enrich_brief', () => {
+  it('flags a near-empty poster (bg + 1 short text)', () => {
+    expect(codes([bg, text('h', 96, 120, 880, 80, 96)])).toContain('sparse_content');
+  });
+
+  it('does NOT flag a rich preset group (many children)', () => {
+    const group = { id: 'sec', type: 'group', z: 0, x: 0, y: 0, width: W, height: H,
+      layers: Array.from({ length: 8 }, (_, i) => text(`c${i}`, 80, 80 + i * 60, 400, 50, 28)) } as unknown as Layer;
+    expect(codes([group])).not.toContain('sparse_content');
+  });
+
+  it('does NOT flag a content-full poster', () => {
+    const layers = [bg, text('headline', 96, 120, 880, 130, 96),
+      text('body', 96, 320, 700, 120, 24), text('stat', 96, 500, 400, 100, 72)];
+    expect(codes(layers)).not.toContain('sparse_content');
+  });
+});
