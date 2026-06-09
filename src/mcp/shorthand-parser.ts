@@ -1046,24 +1046,31 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     const n = Math.max(1, items.length);
     const colGap = Math.round(W * 0.025);
     const colW = Math.round((w - (n - 1) * colGap) / n);
-    const vSize = Math.round(Math.min(W * 0.055, colW * 0.42)), lSize = Math.round(W * 0.016);
-    let maxH = 0;
-    items.forEach((it, i) => {
-      const ix = x + i * (colW + colGap);
+    const lSize = Math.round(W * 0.016);
+    // Resolve each figure FIRST — split a merged "58% hybrid" / "$250B market"
+    // into value + label so the figure stays narrow.
+    const resolved = items.map(it => {
       let val = shStr(it['value'] ?? it['stat'] ?? it['number'] ?? it['title']);
       let lab = shStr(it['label'] ?? it['desc'] ?? it['text']);
-      // Blind models often merge figure+label into one field ("58% hybrid"). If
-      // only one field is present and it carries a number + words, split it so
-      // the big number stays narrow (else it overflows the column and collides).
       const merged = (!lab && val) ? val : (!val && lab) ? lab : '';
       if (merged) {
-        // figure = optional sign/currency · digits · optional %/scale-suffix, then the label words
         const m = merged.trim().match(/^([+\-]?[$€£¥]?[\d.,]+\s*(?:%|[KMBkmb×x])?)\s+(.+)$/);
         if (m) { val = m[1].trim(); lab = m[2].trim(); }
       }
-      const vh = estTextHeight(val, vSize, colW, 1.0);
+      return { val, lab };
+    });
+    // Size the figure to FIT its column: the longest UNBREAKABLE token of any
+    // value must fit colW (a long single-token value like "$0.04/kWh" otherwise
+    // overruns the column and collides with the next stat — and diagnose can't
+    // see inside this group, so the layout must be collision-proof by construction).
+    const maxTok = Math.max(1, ...resolved.map(rr => Math.max(1, ...rr.val.split(/\s+/).map(t => t.length))));
+    const vSize = Math.max(22, Math.round(Math.min(W * 0.055, (colW * 0.92) / (maxTok * 0.58))));
+    let maxH = 0;
+    resolved.forEach(({ val, lab }, i) => {
+      const ix = x + i * (colW + colGap);
+      const vh = estTextHeight(val, vSize, colW, 1.05);
       const lh = lab ? estTextHeight(lab, lSize, colW, 1.3) : 0;
-      layers.push(txt(`${idp}_v${i}`, z++, ix, y, colW, vh, val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
+      layers.push(txt(`${idp}_v${i}`, z++, ix, y, colW, vh, val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.05, letter_spacing: -1 }));
       if (lab) layers.push(txt(`${idp}_l${i}`, z++, ix, y + vh + 10, colW, lh, lab, { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 500, color: muted, letter_spacing: 0.5, text_transform: 'uppercase' }));
       maxH = Math.max(maxH, vh + (lab ? 10 + lh : 0));
     });
