@@ -131,6 +131,44 @@ describe('expandShorthand', () => {
     expect(r.layers!.map(l => l.id)).toContain('sp_plabel');
   });
 
+  it('expands a list preset into a measured, non-overlapping numbered stack', () => {
+    const r = expandShorthand({
+      id: 'lst', type: 'list', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#FAF5EC', accent: '#B8543C', kicker: 'Notes', title: '5 Habits of Highly Effective Engineers',
+      marker: 'number', footer: 'folio / 2026',
+      items: [
+        { title: 'Write Small, Focused Tests', desc: 'Tests that verify one thing pinpoint failures.' },
+        { title: 'Read Error Messages Carefully', desc: 'The stack trace tells you what broke.' },
+        { title: 'Keep the Debugger Close', desc: 'Validate assumptions before they compound.' },
+      ],
+    } as unknown as ShorthandLayer) as { type?: string; layers?: { id: string; type: string; x: number; y: number; width: number; height: number }[] };
+    expect(r.type).toBe('group');
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('lst_bg');
+    expect(ids).toContain('lst_title');
+    expect(ids).toContain('lst_n0');   // accent number marker for item 0
+    expect(ids).toContain('lst_t0');   // item title
+    expect(ids).toContain('lst_b0');   // item description
+    expect(ids).toContain('lst_footer');
+    // Item titles must NOT vertically overlap (the whole point — measured stack).
+    const titles = ['lst_t0', 'lst_t1', 'lst_t2'].map(id => r.layers!.find(l => l.id === id)!);
+    for (let i = 1; i < titles.length; i++) {
+      expect(titles[i].y).toBeGreaterThan(titles[i - 1].y + titles[i - 1].height);
+    }
+    expect(r.layers!.every(l => typeof l.x === 'number' && typeof l.y === 'number')).toBe(true);
+  });
+
+  it('list preset supports bullet markers and item without desc', () => {
+    const r = expandShorthand({
+      id: 'lb', type: 'steps', z: 0, pos: [0, 0, 1080, 1080], marker: 'bullet',
+      items: [{ title: 'Only a title' }, { title: 'Second' }],
+    } as unknown as ShorthandLayer) as { layers?: { id: string; type: string }[] };
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('lb_d0');           // bullet ellipse
+    expect(ids).toContain('lb_t0');
+    expect(ids).not.toContain('lb_b0');        // no desc → no body layer
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',
