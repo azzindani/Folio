@@ -90,6 +90,12 @@ z = stacking order (higher = front)
    engine sizes the number to dominate so the focal hierarchy is guaranteed — don't hand-place
    a giant number (it overflows and collides with the caption).
 
+🎟️ EVENT / GIG / LAUNCH FLYER? (big name + date/venue/time) — use the event PRESET (aliases
+   flyer/hero): {type:"event", bg, accent, palette:[…], title:"Neon Nights",
+   details:["Sat 14 June","Riverside Park","7PM till late"]}. Big auto-sized title + a detail
+   stack + margin accent bars, centered to fill the canvas — don't hand-place it (the title
+   collides with the details and decor lands invisible).
+
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
 each also return open_url — a clickable, unique-token editor link (no separate
@@ -245,6 +251,14 @@ any "X% of …" / single-figure poster instead of hand-placing a giant number (w
 overflows + collides with the caption).
   {type:"stat", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA",
     kicker:"Maker Report 2026", stat:"73%", caption:"of side projects never ship.", footer:"folio"}
+
+event (aliases flyer, hero): a bold event/announcement poster — a BIG auto-sized title,
+a stack of detail lines (date/venue/time), engine-placed accent bars in the margin, footer.
+The block is vertically centered so it fills the canvas. Use this for a gig/launch/flyer
+instead of hand-placing a giant title (it collides with the details + the decor lands
+invisible). details=[…] OR date/venue/time fields. palette=[…] colors the bars.
+  {type:"event", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#FF3D00", palette:["#00E5FF","#FF00E5","#C6FF00"],
+    title:"Neon Nights", details:["Saturday 14 June","Riverside Park","7PM till late"], footer:"@neonnights"}
 
 ## Data-viz + reuse
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}

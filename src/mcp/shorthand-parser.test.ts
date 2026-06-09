@@ -199,6 +199,36 @@ describe('expandShorthand', () => {
     expect(title.style!.color!.toLowerCase()).not.toBe('#fafafa'); // not the invisible light-on-light
   });
 
+  it('expands an event preset: big title above a non-overlapping detail stack + visible bars', () => {
+    type EL = { id: string; type: string; x: number; y: number; width: number; height: number; fill?: { color?: string }; style?: { font_size?: number } };
+    const r = expandShorthand({
+      id: 'ev', type: 'event', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#0A0A0A', accent: '#FF3D00', palette: ['#00E5FF', '#FF00E5', '#C6FF00'],
+      title: 'Neon Nights', details: ['Saturday 14 June', 'Riverside Park', '7PM till late'], footer: '@neon',
+    } as unknown as ShorthandLayer) as { type?: string; layers?: EL[] };
+    expect(r.type).toBe('group');
+    const title = r.layers!.find(l => l.id === 'ev_title')!;
+    const d0 = r.layers!.find(l => l.id === 'ev_d0')!;
+    // details sit BELOW the (auto-sized) title — no collision
+    expect(d0.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
+    // decorative bars exist and are NOT the background color (visible)
+    const bar0 = r.layers!.find(l => l.id === 'ev_bar0')!;
+    expect((bar0.fill?.color ?? '').toLowerCase()).not.toBe('#0a0a0a');
+    // title dominates the detail font size
+    expect(title.style!.font_size!).toBeGreaterThan((d0.style!.font_size ?? 0) * 2);
+  });
+
+  it('event preset drops palette colors that would be invisible on the canvas', () => {
+    const r = expandShorthand({
+      id: 'ev2', type: 'flyer', z: 0, pos: [0, 0, 1080, 1350], bg: '#0A0A0A',
+      accent: '#FF3D00', palette: ['#0B0B0B', '#0A0A0A'], title: 'X', details: ['Y'],
+    } as unknown as ShorthandLayer) as { layers?: Array<{ id: string; fill?: { color?: string } }> };
+    const bar0 = r.layers!.find(l => l.id === 'ev2_bar0')!;
+    // both palette colors are ~invisible on #0A0A0A → falls back to a contrasting color
+    expect((bar0.fill?.color ?? '').toLowerCase()).not.toBe('#0b0b0b');
+    expect((bar0.fill?.color ?? '').toLowerCase()).not.toBe('#0a0a0a');
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',

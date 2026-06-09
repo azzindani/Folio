@@ -777,6 +777,74 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
+// Event / flyer poster — a BIG auto-sized title, a stack of detail lines
+// (date / venue / time) below it, optional engine-placed accent bars in the
+// margin, footer. The whole block is vertically centered so it fills the canvas.
+// Removes the hand-placed bold-poster flail (title collides with the details;
+// decor lands invisible or scattered) — the blind model can't see any of that.
+function readDetailLines(r: Record<string, unknown>): string[] {
+  const d = r['details'] ?? r['lines'] ?? r['info'];
+  if (Array.isArray(d)) return d.filter((x): x is string => typeof x === 'string');
+  const out: string[] = [];
+  for (const key of ['date', 'venue', 'location', 'place', 'time', 'when', 'where']) {
+    const v = r[key];
+    if (typeof v === 'string' && v.trim()) out.push(v);
+  }
+  return out;
+}
+function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh);
+  const bg = shStr(r['bg'], '#0A0A0A');
+  const accent = shStr(r['accent'], '#FF3D00');
+  const textColor = shStr(r['text_color'] ?? r['color'], '#FAFAFA');
+  const muted = shStr(r['muted'], '#9A9A9A');
+  const kicker = shStr(r['kicker'] ?? r['eyebrow']);
+  const title = shStr(r['title'] ?? r['headline'] ?? r['text'], 'EVENT');
+  const footer = shStr(r['footer']);
+  const details = readDetailLines(r);
+
+  const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
+  const bgHex = asHex(bg);
+  // Decor bar colors must contrast the canvas (don't repeat the invisible-decor bug).
+  const palRaw = (Array.isArray(r['palette']) ? r['palette'] : []).filter((c): c is string => typeof c === 'string');
+  let bars = (palRaw.length ? palRaw : [accent]).filter(c => !bgHex || contrastRatio(c, bgHex) >= 1.5);
+  if (!bars.length) bars = [contrastRatio(accent, bgHex ?? '#000') >= 1.5 ? accent : textColor];
+
+  const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  let k = 1;
+  // Measure the centered content block (kicker + title + details).
+  const ts = Math.round(W * 0.15), titleH = estTextHeight(title, ts, cW, 1.0);
+  const ds = Math.round(W * 0.026), lineGap = Math.round(H * 0.012);
+  const detailH = details.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25) + lineGap, 0);
+  const kickH = kicker ? Math.round(H * 0.05) : 0;
+  const total = kickH + titleH + Math.round(H * 0.03) + detailH;
+  const top = Y + Math.max(Math.round(H * 0.12), (H - total) / 2 - Math.round(H * 0.02));
+
+  // Accent bars in the far-left margin, staggered, vertically spanning the block.
+  bars.slice(0, 3).forEach((c, i) => {
+    layers.push({ id: `${id}_bar${i}`, type: 'rect', z: z + k++, x: Math.round(X + W * 0.018 + i * W * 0.022), y: Math.round(top + i * H * 0.03), width: Math.round(W * 0.012), height: Math.round((titleH + detailH) * (0.95 - i * 0.12)), fill: { type: 'solid', color: c } } as unknown as Layer);
+  });
+
+  let cy = top;
+  if (kicker) {
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
+    cy += kickH;
+  }
+  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase' }));
+  cy += titleH + Math.round(H * 0.03);
+  details.forEach((line, i) => {
+    const lh = estTextHeight(line, ds, cW, 1.25);
+    layers.push(txt(`${id}_d${i}`, z + k++, cX, cy, cW, lh, line, { font_family: 'IBM Plex Mono', font_size: ds, font_weight: 600, color: i === details.length - 1 ? accent : textColor, letter_spacing: 1, text_transform: 'uppercase' }));
+    cy += lh + lineGap;
+  });
+  if (footer) {
+    const fy = Y + H - Math.round(H * 0.07);
+    layers.push(txt(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+  }
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+}
+
 // ── Main expansion function ─────────────────────────────────
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -967,6 +1035,11 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'metric':
     case 'big_number':
       return buildStat(sh, String(sh.id ?? 'stat'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'event':
+    case 'flyer':
+    case 'hero':
+      return buildEvent(sh, String(sh.id ?? 'event'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'decor':
     case 'marble_bg':
@@ -1300,6 +1373,7 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'side', 'ratio', 'panel', 'panel_fill', 'panel_label', 'panel_text', 'big',
   'marker', 'heading', 'description', 'cards',
   'stat', 'number', 'caption',
+  'details', 'lines', 'info', 'date', 'venue', 'location', 'place', 'time', 'when', 'where',
   // pattern / image fills (WS1)
   'pattern', 'fg', 'mode', 'tile_size', 'foreground', 'background',
   // parametric shapes (WS2)
