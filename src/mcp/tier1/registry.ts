@@ -19,7 +19,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'enrich_brief',
-    description: 'START HERE when the prompt is SHORT or vague (e.g. "a poster about remote work"). Turns a one-line idea into a RICH content plan so the design is dense, not sparse: infers the best preset, a full block/field outline (the richness floor), a topic-matched bg_style + palette + colors, and — when the topic is factual — the exact web-research queries to run FIRST so figures are real, not invented. Returns needs_research + research_queries + an instruction; follow it (research if asked) then create_design + add_layers.',
+    description: 'START HERE when the prompt is SHORT or vague (e.g. "a poster about remote work" or "a 6-slide carousel on X"). Turns a one-line idea into a RICH content plan so the output is dense, not sparse. For a single design: infers the best preset + a full block/field outline (the richness floor). For a CAROUSEL/deck/slides (auto-detected, or pass type:"carousel"): returns output_type:"carousel" + page_count + a per-page plan (pages:[{role,label,preset,hints}]) following a cohesive cover→content→data→takeaway arc with ONE shared bg_style/palette. Either way it picks a topic-matched bg_style + palette + colors and — for factual topics — the exact web-research queries to run FIRST so figures are real, not invented. Returns needs_research + research_queries + an instruction; follow it (research if asked) then create_design/create_task + add_layers/append_page.',
     inputSchema: {
       type: 'object',
       properties: {

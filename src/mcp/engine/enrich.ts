@@ -64,12 +64,79 @@ function needsResearch(p: string, type: string): boolean {
     || type === 'sections' || type === 'stat';
 }
 
+// ── Carousel / multi-page deck planning ─────────────────────
+function isCarousel(p: string, type?: string): boolean {
+  if (type === 'carousel') return true;
+  return /\b(carousel|deck|slides?|slideshow|presentation|multi-?page|story|thread|onboarding|walkthrough|step-by-step|series|\d+\s*(slides?|pages?|cards?))\b/i.test(p);
+}
+function parsePageCount(p: string): number {
+  const m = p.match(/\b(\d+)\s*(slides?|pages?|cards?|parts?)\b/i) ?? p.match(/\b(\d+)[- ]?(slide|page|part)\b/i);
+  const n = m ? parseInt(m[1], 10) : NaN;
+  return Number.isFinite(n) ? Math.max(3, Math.min(10, n)) : 5;
+}
+// A social "carousel" reads portrait; a "presentation/deck/slideshow" reads
+// landscape. "carousel" wins when both appear (e.g. "6-slide carousel").
+function carouselCanvas(p: string): [number, number] {
+  if (/\b(carousel|instagram|linkedin|social|tiktok|story)\b/i.test(p)) return [1080, 1350];
+  if (/\b(presentation|slideshow|deck|keynote|slides?)\b/i.test(p)) return [1920, 1080];
+  return [1080, 1350];
+}
+
+interface PageSpec { role: string; label: string; preset: string; hints: string; }
+// A cohesive deck arc: cover → context → N focused content slides → data/proof
+// → takeaway/CTA. Each page is ONE preset layer (a slide = one clear message,
+// NOT a dense infographic). Presets vary by role; the mood stays constant.
+function planPages(subject: string, count: number): PageSpec[] {
+  const pages: PageSpec[] = [];
+  pages.push({ role: 'cover', label: 'Cover', preset: 'editorial', hints: `editorial preset: a kicker, a bold title naming the topic ("${subject}"), and a one-line deck. The hook.` });
+  const middle = count - 2; // reserve cover + closing
+  const hasData = middle >= 3;
+  const contentSlots = hasData ? middle - 1 : middle;
+  if (count >= 4) pages.push({ role: 'context', label: 'Why it matters', preset: 'editorial', hints: 'editorial preset: one heading + 2-3 sentences framing why this topic matters now.' });
+  const bodySlots = Math.max(1, contentSlots - (count >= 4 ? 1 : 0));
+  for (let i = 0; i < bodySlots; i++) {
+    pages.push({ role: 'content', label: `Key point ${i + 1}`, preset: 'sections',
+      hints: 'sections preset, FOCUSED (2-4 blocks): one {kind:heading} + a {kind:text} of 2-3 sentences, optionally one {kind:stats} OR {kind:callout}. One idea per slide — do not overfill.' });
+  }
+  if (hasData) pages.push({ role: 'data', label: 'By the numbers', preset: 'sections',
+    hints: 'sections preset: a {kind:stats} row of 3-4 REAL figures + a {kind:bars} ranked comparison. The proof slide.' });
+  pages.push({ role: 'closing', label: 'Takeaway', preset: 'stat',
+    hints: 'stat preset for a strong close: the single most important figure or a one-line takeaway as the stat, a caption, and a CTA/source in the footer.' });
+  return pages.slice(0, count);
+}
+
 export function enrichBrief(args: { prompt?: string; type?: string }): ToolResult {
   const op = 'enrich_brief';
   const progress: ProgressItem[] = [];
   const prompt = (args.prompt ?? '').trim();
   if (!prompt) {
     return okResult(op, { error_hint: 'Pass a prompt (a short topic/intent).', progress: [pInfo('No prompt given')] });
+  }
+  // Multi-page deck / carousel → a per-page plan instead of one design.
+  if (isCarousel(prompt, args.type)) {
+    const subject = subjectOf(prompt);
+    const mood = (MOODS.find(m => m.test.test(prompt))?.mood) ?? DEFAULT_MOOD;
+    const count = parsePageCount(prompt);
+    const [cw, ch] = carouselCanvas(prompt);
+    const research = needsResearch(prompt, 'sections');
+    const research_queries = research ? [
+      `${subject} key statistics 2026`, `${subject} latest trends and figures`,
+      `${subject} market size growth data`, `notable ${subject} facts and numbers`,
+    ] : [];
+    const pages = planPages(subject, count);
+    const research_instruction = research
+      ? 'Factual topic: FIRST run the research_queries with your web tools for REAL figures. Do NOT invent statistics.'
+      : 'No external research needed — use the details in the prompt.';
+    const instruction = `${research_instruction} Build a ${count}-page CAROUSEL. Keep the SAME bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)} on EVERY page for a cohesive deck. Recommended flow: create_task with the pages below (each label + hints), then append_page for each page placing ONE preset layer per its hints. One clear message per slide — don't overfill. diagnose_design each page and seal when done.`;
+    progress.push(pOk(`Planned a ${count}-page carousel`, research ? `${research_queries.length} research queries` : 'no research needed'));
+    const context = buildContext(op, `Enriched brief → ${count}-page carousel`);
+    const handover = buildHandover('DESIGN', {}, { type: 'carousel' });
+    return okResult(op, {
+      output_type: 'carousel', topic: subject, page_count: count,
+      needs_research: research, research_queries, research_instruction,
+      pages, suggested: { ...mood, width: cw, height: ch }, canvas: { width: cw, height: ch },
+      instruction, progress, context, handover,
+    });
   }
   const design_type = (args.type && OUTLINES[args.type]) ? args.type : inferType(prompt);
   const outline = OUTLINES[design_type] ?? OUTLINES.sections;
@@ -96,7 +163,7 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);
   const handover = buildHandover('DESIGN', {});
   return okResult(op, {
-    topic: subject, design_type, needs_research: research, research_queries, research_instruction,
+    output_type: 'poster', topic: subject, design_type, needs_research: research, research_queries, research_instruction,
     outline: outline.blocks ?? outline.fields, suggested: { ...mood, width, height },
     canvas: { width, height }, instruction, progress, context, handover,
   });

@@ -53,3 +53,40 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.success).toBe(true);
   });
 });
+
+describe('enrichBrief — carousel / multi-page decks', () => {
+  type Carousel = { output_type?: string; page_count?: number; pages?: Array<{ role: string; preset: string; hints: string }>;
+    needs_research?: boolean; suggested?: { bg_style?: string; width?: number; height?: number }; instruction?: string };
+  const car = (prompt: string, type?: string) => enrichBrief({ prompt, type }) as unknown as Carousel;
+
+  it('detects a carousel + page count, plans cover→…→closing pages', () => {
+    const r = car('a 6-slide carousel about the future of work');
+    expect(r.output_type).toBe('carousel');
+    expect(r.page_count).toBe(6);
+    expect(r.pages!.length).toBe(6);
+    expect(r.pages![0].role).toBe('cover');
+    expect(r.pages![r.pages!.length - 1].role).toBe('closing');
+  });
+
+  it('a presentation/deck goes landscape; social carousel stays portrait', () => {
+    expect(car('a presentation deck on AI in healthcare').suggested!.width).toBe(1920);
+    expect(car('an instagram carousel about remote work').suggested!.height).toBe(1350);
+  });
+
+  it('every content/data page names a preset + has hints, and the mood is shared', () => {
+    const r = car('a 7-page carousel on the state of solar energy');
+    expect(r.pages!.every(p => p.preset && p.hints.length > 0)).toBe(true);
+    expect(r.pages!.some(p => p.role === 'data')).toBe(true);
+    expect(r.needs_research).toBe(true);
+    expect(r.instruction!).toMatch(/SAME bg_style/);
+  });
+
+  it('explicit type:"carousel" forces a deck even without a keyword', () => {
+    expect(car('quarterly results', 'carousel').output_type).toBe('carousel');
+  });
+
+  it('clamps page count to a sane range', () => {
+    expect(car('a 99-slide carousel about x').page_count).toBeLessThanOrEqual(10);
+    expect(car('a 1-slide carousel about x').page_count).toBeGreaterThanOrEqual(3);
+  });
+});
