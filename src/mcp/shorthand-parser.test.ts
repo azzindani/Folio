@@ -256,6 +256,33 @@ describe('expandShorthand', () => {
     expect(r.layers!.every(l => typeof l.x === 'number' && typeof l.y === 'number')).toBe(true);
   });
 
+  it('sections: native bars block renders rect bars scaled to the max value', () => {
+    type SL = { id: string; type: string; width: number };
+    const r = expandShorthand({
+      id: 'bc', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'Usage',
+      blocks: [{ kind: 'bars', items: [{ label: 'Mobile', value: 80 }, { label: 'Desktop', value: 40 }, { label: 'Tablet', value: 10 }] }],
+    } as unknown as ShorthandLayer) as { layers?: SL[] };
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).toContain('bc_b0_bb0');   // bar 0
+    expect(ids).toContain('bc_b0_bb2');   // bar 2
+    const bar0 = r.layers!.find(l => l.id === 'bc_b0_bb0')!;
+    const bar1 = r.layers!.find(l => l.id === 'bc_b0_bb1')!;
+    // value 80 → wider bar than value 40 (scaled to max)
+    expect(bar0.width).toBeGreaterThan(bar1.width);
+    expect(ids).toContain('bc_b0_bt0');   // track behind bar
+  });
+
+  it('sections drops leading/trailing divider blocks and the orphan header rule', () => {
+    const r = expandShorthand({
+      id: 'sd', type: 'sections', z: 0, pos: [0, 0, 1080, 1400],
+      blocks: [{ kind: 'divider' }, { kind: 'text', text: 'Body content here.' }, { kind: 'divider' }],
+    } as unknown as ShorthandLayer) as { layers?: Array<{ id: string }> };
+    const ids = r.layers!.map(l => l.id);
+    expect(ids).not.toContain('sd_hr');     // no header content → no orphan rule
+    expect(ids.some(i => i.includes('_div'))).toBe(false);  // leading+trailing dividers trimmed
+    expect(ids.some(i => i.startsWith('sd_b'))).toBe(true); // the text block survived
+  });
+
   it('maps terse typography aliases (uppercase/italic/outline/highlight/curve)', () => {
     const r = expandShorthand({
       id: 'h', type: 'text', z: 1, pos: [0, 0, 400, 80], text: 'hi',

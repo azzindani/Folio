@@ -98,10 +98,11 @@ z = stacking order (higher = front)
 
 📰 RICH / DENSE / MULTI-SECTION? (an infographic, a report, a "state of X", anything with
    several sections, stats, and paragraphs) — use the sections PRESET (aliases infographic/
-   document) on a TALL canvas (1080x1920+): a header + an ordered blocks:[{kind:…}] list
+   document) on a TALL canvas (1080x1920+). ALWAYS give it a header — kicker + title (this is
+   the poster's headline; don't put it inside blocks) — THEN an ordered blocks:[{kind:…}] list
    (intro/stats/heading/text/list/callout/quote/divider). The engine measures + flows every
    block with editorial rhythm. This is how you make a CONTENT-RICH, professional layout —
-   supply lots of blocks; never hand-place a multi-section document (it collides badly).
+   supply a title + many blocks; never hand-place a multi-section document (it collides badly).
 
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
@@ -275,6 +276,7 @@ top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Ea
   {kind:"heading", text:"…"}          一 section heading (accent tick)
   {kind:"text", text:"…"}             一 body paragraph
   {kind:"list", items:[{title,desc},…]}  一 numbered sub-list
+  {kind:"bars", items:[{label:"Mobile",value:62},{label:"Desktop",value:31}]}  一 native bar chart (renders in PNG)
   {kind:"callout", label:"Key takeaway", text:"…"}  一 accent-tinted highlight box
   {kind:"quote", text:"…", cite:"…"}  一 pull quote
   {kind:"divider"}                    一 rule

@@ -934,6 +934,30 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     if (cite) { layers.push(txt(`${idp}_qc`, z++, x, y + qH + 12, w, 34, cite, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: accent, letter_spacing: 1, text_transform: 'uppercase' })); hh += 12 + 34; }
     return { layers, height: hh };
   }
+  if (kind === 'bars' || kind === 'bar_chart' || kind === 'chart' || kind === 'ranking') {
+    // Native rect bar chart — rasterizes in PNG (unlike foreignObject charts).
+    const items = (Array.isArray(b['items']) ? b['items'] : []).slice(0, 8) as Record<string, unknown>[];
+    const num = (it: Record<string, unknown>): number => {
+      const v = it['value'] ?? it['y'] ?? it['count'];
+      return typeof v === 'number' ? v : (parseFloat(shStr(v).replace(/[^0-9.\-]/g, '')) || 0);
+    };
+    const vals = items.map(num);
+    const max = Math.max(1, ...vals.map(Math.abs));
+    const rowH = Math.round(W * 0.05), rowGap = Math.round(W * 0.02);
+    const labelW = Math.round(w * 0.3), barTrack = w - labelW - Math.round(W * 0.1);
+    const barH = Math.round(rowH * 0.62);
+    items.forEach((it, i) => {
+      const yy = y + i * (rowH + rowGap);
+      const label = shStr(it['label'] ?? it['title'] ?? it['name'] ?? it['x']);
+      const valDisp = shStr(it['value'] ?? it['y'] ?? it['count']);
+      const bw = Math.max(4, Math.round(barTrack * (Math.abs(vals[i]) / max)));
+      layers.push(txt(`${idp}_bl${i}`, z++, x, yy + Math.round((rowH - barH) / 2) - 2, labelW - 12, barH + 6, label, { font_size: Math.round(W * 0.019), font_weight: 600, color: text, line_height: 1.1 }));
+      layers.push({ id: `${idp}_bt${i}`, type: 'rect', z: z++, x: x + labelW, y: yy, width: barTrack, height: barH, opacity: 0.14, fill: { type: 'solid', color: muted }, radius: 4 } as unknown as Layer);
+      layers.push({ id: `${idp}_bb${i}`, type: 'rect', z: z++, x: x + labelW, y: yy, width: bw, height: barH, fill: { type: 'solid', color: accent }, radius: 4 } as unknown as Layer);
+      if (valDisp) layers.push(txt(`${idp}_bv${i}`, z++, x + labelW + bw + 10, yy + Math.round((barH - Math.round(W * 0.02)) / 2), Math.round(W * 0.12), barH, valDisp, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.018), font_weight: 700, color: muted }));
+    });
+    return { layers, height: Math.max(0, items.length * (rowH + rowGap) - rowGap) };
+  }
   // divider / rule (default fall-through for unknown kinds = a thin rule)
   layers.push({ id: `${idp}_div`, type: 'rect', z: z++, x, y: y + Math.round(W * 0.01), width: w, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
   return { layers, height: Math.round(W * 0.02) };
@@ -971,19 +995,30 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     layers.push(txt(`${id}_sub`, z + k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45 }));
     cy += sh2 + Math.round(W * 0.025);
   }
-  layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: text } } as unknown as Layer);
-  layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
-  cy += Math.round(W * 0.05);
+  // Header rule + tick only when there's actually a header (a blind model may
+  // pass only blocks → an orphan rule at the top looks broken).
+  if (kicker || title || subtitle) {
+    layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: text } } as unknown as Layer);
+    layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    cy += Math.round(W * 0.05);
+  }
+
+  // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
+  // dead space — a common blind-model habit).
+  const isDiv = (b: Record<string, unknown>): boolean => { const ki = shStr(b['kind'] ?? b['type']); return ki === 'divider' || ki === 'rule'; };
+  const bl = blocks.slice();
+  while (bl.length && isDiv(bl[0])) bl.shift();
+  while (bl.length && isDiv(bl[bl.length - 1])) bl.pop();
 
   // Pass 1 — measure every block. Pass 2 — place with a gap that distributes the
   // leftover space (so a generous canvas fills without a dead band, a short one stays tight).
   const footerH = footer ? Math.round(W * 0.06) : 0;
   const avail = (Y + H - M - footerH) - cy;
-  const heights = blocks.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
+  const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
   const sumH = heights.reduce((a, h) => a + h, 0);
-  const n = Math.max(1, blocks.length);
+  const n = Math.max(1, bl.length);
   const gap = Math.max(Math.round(W * 0.04), Math.min(Math.round(W * 0.075), (avail - sumH) / n));
-  blocks.forEach((b, i) => {
+  bl.forEach((b, i) => {
     const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
     out.layers.forEach(l => layers.push(l));
     k += out.layers.length + 1;
