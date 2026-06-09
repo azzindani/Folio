@@ -1521,6 +1521,14 @@ describe('composeBackground — engine-composed rich backgrounds (bg_style)', ()
     expect(blobs.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('"gradient + grain" → adds a faint noise-fill film-grain overlay', () => {
+    const g = sec('gradient + grain');
+    const grain = g.layers.find(l => l.id === 'sx_grain')!;
+    expect(grain).toBeTruthy();
+    expect((grain.fill as { type?: string }).type).toBe('noise');
+    expect((grain.fill as { opacity?: number }).opacity).toBeLessThan(0.1);
+  });
+
   it('"marble" → corner radial clusters', () => {
     const g = sec('marble');
     const blobs = g.layers.filter(l => String(l.id).includes('_mb') && l.type === 'ellipse');
@@ -1539,5 +1547,42 @@ describe('composeBackground — engine-composed rich backgrounds (bg_style)', ()
     const g = expandShorthand({ id: 'f', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'T',
       blocks: [{ kind: 'text', text: 'b' }] } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
     expect(g.layers.filter(l => /_(curve|glow|mesh|tex|band)/.test(String(l.id))).length).toBe(0);
+  });
+});
+
+describe('composeBackground — wired into feature_grid + split', () => {
+  it('feature_grid bg_style → bg stack behind, title/cards z above every bg layer', () => {
+    const g = expandShorthand({
+      id: 'fg', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080],
+      bg: '#0A0A0A', bg_style: 'mesh + glow + grid', accent: '#FF3D00', text_color: '#FAFAFA',
+      title: 'Nova', subtitle: 'deck', items: [{ icon: 'zap', title: 'Fast', desc: 'd' }],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+    const bgZ = g.layers.filter(l => /_(bg|mesh|glow|grid|tex|curve|band)/.test(String(l.id))).map(l => Number(l.z));
+    expect(bgZ.length).toBeGreaterThanOrEqual(3);
+    const title = g.layers.find(l => l.id === 'fg_title')!;
+    const row = g.layers.find(l => l.id === 'fg_row')!;
+    expect(Number(title.z)).toBeGreaterThan(Math.max(...bgZ));
+    expect(Number(row.z)).toBeGreaterThan(Math.max(...bgZ));
+  });
+
+  it('split bg_style → rich bg, panel above the bg stack, content above the panel', () => {
+    const g = expandShorthand({
+      id: 'sp', type: 'split', z: 0, pos: [0, 0, 1200, 800], side: 'left', ratio: 'golden',
+      bg: '#FAF5EC', bg_style: 'gradient + dots', accent: '#B8543C', title: 'Headline', subtitle: 'deck',
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+    const panel = g.layers.find(l => l.id === 'sp_panel')!;
+    const bgOnly = g.layers.filter(l => /_(bg|tex|curve|glow|mesh|band)/.test(String(l.id))).map(l => Number(l.z));
+    expect(Number(panel.z)).toBeGreaterThan(Math.max(...bgOnly));
+    const title = g.layers.find(l => l.id === 'sp_title')!;
+    expect(Number(title.z)).toBeGreaterThan(Number(panel.z));
+  });
+
+  it('feature_grid without bg_style keeps the single flat bg rect (back-compat)', () => {
+    const g = expandShorthand({
+      id: 'fg2', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080], bg: '#0A0A0A',
+      title: 'X', items: [{ icon: 'zap', title: 'A', desc: 'd' }],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+    expect(g.layers.filter(l => /_(mesh|glow|grid|tex|curve|band)/.test(String(l.id))).length).toBe(0);
+    expect(g.layers.some(l => l.id === 'fg2_bg')).toBe(true);
   });
 });
