@@ -1631,3 +1631,27 @@ describe('composeBackground — placement, palette gradient, vignette, photo', (
     expect(g.layers.some(l => l.id === 'b_bg')).toBe(true);
   });
 });
+
+describe('feature_grid card fit (measured heights + scaled type, no overflow)', () => {
+  const fgCard = (n: number, titleLen: number, descLen: number, id = 'fg') => {
+    const items = Array.from({ length: n }, (_, i) => ({ icon: 'zap', title: 'T'.repeat(titleLen) + i, desc: 'd '.repeat(descLen) }));
+    return expandShorthand({ id, type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080], bg: '#0A0A0A', title: 'X', items } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+  };
+  const cardKid = (g: { layers: Array<Record<string, unknown>> }, suffix: string) => {
+    const row = g.layers.find(l => String(l.id).endsWith('_row')) as { layers?: Array<Record<string, unknown>> };
+    const card = row.layers!.find(c => String(c.id).endsWith('_card1')) as { layers?: Array<Record<string, unknown>> };
+    return card.layers!.find(k => String(k.id).includes(suffix))!;
+  };
+
+  it('a longer description gets a taller measured box (not a fixed height)', () => {
+    const short = cardKid(fgCard(3, 4, 2, 'a'), '_desc');
+    const long = cardKid(fgCard(3, 4, 20, 'b'), '_desc');
+    expect(Number(long.height)).toBeGreaterThan(Number(short.height));
+  });
+
+  it('narrower cards (more of them) use a smaller title font', () => {
+    const few = cardKid(fgCard(2, 6, 4, 'c'), '_title') as { style?: { font_size?: number } };
+    const many = cardKid(fgCard(5, 6, 4, 'd'), '_title') as { style?: { font_size?: number } };
+    expect(many.style!.font_size!).toBeLessThan(few.style!.font_size!);
+  });
+});
