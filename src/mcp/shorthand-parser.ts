@@ -861,7 +861,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   let z = z0;
 
   if (kind === 'heading' || kind === 'subhead' || kind === 'section') {
-    const t = shStr(b['text'] ?? b['title'] ?? b['heading']);
+    const t = shStr(b['text'] ?? b['title'] ?? b['heading'] ?? b['content']);
     const size = Math.round(W * (kind === 'subhead' ? 0.032 : 0.044));
     layers.push({ id: `${idp}_tick`, type: 'rect', z: z++, x, y, width: Math.round(W * 0.055), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
     const th = estTextHeight(t, size, w, 1.1);
@@ -869,7 +869,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     return { layers, height: 20 + th };
   }
   if (kind === 'text' || kind === 'paragraph' || kind === 'body' || kind === 'intro') {
-    const t = shStr(b['text'] ?? b['body'] ?? b['value']);
+    const t = shStr(b['text'] ?? b['body'] ?? b['value'] ?? b['content']);
     const size = Math.round(W * (kind === 'intro' ? 0.026 : 0.0225));
     const th = estTextHeight(t, size, w, 1.5);
     layers.push(txt(`${idp}_t`, z++, x, y, w, th, t, { font_size: size, font_weight: 400, color: kind === 'intro' ? text : muted, line_height: 1.5 }));
@@ -884,8 +884,16 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     let maxH = 0;
     items.forEach((it, i) => {
       const ix = x + i * (colW + colGap);
-      const val = shStr(it['value'] ?? it['stat'] ?? it['number'] ?? it['title']);
-      const lab = shStr(it['label'] ?? it['desc'] ?? it['text']);
+      let val = shStr(it['value'] ?? it['stat'] ?? it['number'] ?? it['title']);
+      let lab = shStr(it['label'] ?? it['desc'] ?? it['text']);
+      // Blind models often merge figure+label into one field ("58% hybrid"). If
+      // only one field is present and it carries a number + words, split it so
+      // the big number stays narrow (else it overflows the column and collides).
+      const merged = (!lab && val) ? val : (!val && lab) ? lab : '';
+      if (merged) {
+        const m = merged.trim().match(/^([+\-]?[\d.,]+\s*%?\s*[KMB×x]?)\s+(.+)$/);
+        if (m) { val = m[1].trim(); lab = m[2].trim(); }
+      }
       const vh = estTextHeight(val, vSize, colW, 1.0);
       const lh = lab ? estTextHeight(lab, lSize, colW, 1.3) : 0;
       layers.push(txt(`${idp}_v${i}`, z++, ix, y, colW, vh, val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
