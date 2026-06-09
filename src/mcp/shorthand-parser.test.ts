@@ -1494,3 +1494,50 @@ describe('link / href primitive', () => {
     expect((r as unknown as { href?: string }).href).toBe('https://example.com');
   });
 });
+
+describe('composeBackground — engine-composed rich backgrounds (bg_style)', () => {
+  const sec = (bg_style: string) => expandShorthand({
+    id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'T', bg_style,
+    blocks: [{ kind: 'text', text: 'Body.' }],
+  } as unknown as ShorthandLayer) as unknown as { type: string; layers: Array<Record<string, unknown>> };
+
+  it('"gradient + dots + curve" → linear base + pattern overlay + curved-gradient sweep, content above bg', () => {
+    const g = sec('gradient + dots + curve');
+    const base = g.layers.find(l => l.id === 'sx_bg')!;
+    expect((base.fill as { type?: string }).type).toBe('linear');
+    const tex = g.layers.find(l => l.id === 'sx_tex')!;
+    expect((tex.fill as { type?: string; pattern?: string }).pattern).toBe('dots');
+    const curve = g.layers.find(l => l.id === 'sx_curve')!;
+    expect(curve.type).toBe('ellipse');
+    // content title z sits above every background layer
+    const bgZmax = Math.max(...g.layers.filter(l => /_(bg|tex|curve|mesh|glow|band)/.test(String(l.id))).map(l => Number(l.z)));
+    const title = g.layers.find(l => l.id === 'sx_title')!;
+    expect(Number(title.z)).toBeGreaterThan(bgZmax);
+  });
+
+  it('"mesh" → solid base + ≥3 soft radial blobs', () => {
+    const g = sec('mesh');
+    const blobs = g.layers.filter(l => l.type === 'ellipse' && (l.fill as { type?: string })?.type === 'radial');
+    expect(blobs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('"marble" → corner radial clusters', () => {
+    const g = sec('marble');
+    const blobs = g.layers.filter(l => String(l.id).includes('_mb') && l.type === 'ellipse');
+    expect(blobs.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('"glow + band" → top glow ellipse + a solid edge band rect', () => {
+    const g = sec('glow + band');
+    expect(g.layers.some(l => l.id === 'sx_glow' && l.type === 'ellipse')).toBe(true);
+    const band = g.layers.find(l => l.id === 'sx_band')!;
+    expect(band.type).toBe('rect');
+    expect((band.fill as { type?: string }).type).toBe('solid');
+  });
+
+  it('no bg_style → a single flat bg rect (back-compat)', () => {
+    const g = expandShorthand({ id: 'f', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'T',
+      blocks: [{ kind: 'text', text: 'b' }] } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+    expect(g.layers.filter(l => /_(curve|glow|mesh|tex|band)/.test(String(l.id))).length).toBe(0);
+  });
+});
