@@ -383,13 +383,13 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const rowY = Math.round(H * 0.42), rowH = H - rowY - M;
   const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
   const layers: Layer[] = [];
-  if (bgStyle) {
-    // Rich engine-composed background. Use the canvas base color (or a dark
-    // default — feature_grid reads best on a deep canvas) as the wash base.
+  {
+    // Always engine-compose the background. Use the canvas base color (or a dark
+    // default — feature_grid reads best on a deep canvas) as the wash base, and
+    // when no bg_style was given fall back to a tasteful designed default (glow/
+    // sweep + grain) rather than a flat fill — flat reads as a template.
     const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHex ?? '#0A0A0A');
-    composeBackground(bgStyle, id, X, Y, W, H, { bg: base, accent, text: textColor, palette, image: str(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0).forEach(l => layers.push(l));
-  } else if (bgFill !== undefined) {
-    layers.push({ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bgFill) } as unknown as Layer);
+    composeBackground(bgStyle || defaultBgStyle(base), id, X, Y, W, H, { bg: base, accent, text: textColor, palette, image: str(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0).forEach(l => layers.push(l));
   }
   const title = str(r['title']);
   if (title) layers.push({ id: `${id}_title`, type: 'text', z: 30, x: X + M, y: Y + Math.round(H * 0.11), width: W - 2 * M, height: Math.round(H * 0.13),
@@ -638,6 +638,19 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
   return layers;
 }
 
+// When a preset is given NO bg_style, the OLD fallback was a flat solid rect —
+// which reads as a template, the #1 "AI-generated" tell and the gap between a
+// diagnose-clean poster and the hand-art-directed peak. Default instead to a
+// tasteful, collision-proof designed background: a faint accent glow/sweep + a
+// premium grain, tuned by bg luminance. Subtle enough never to fight the text,
+// it's what turns a flat number-on-cream into a designed poster. A model that
+// genuinely wants flat can still pass bg_style:"solid".
+function defaultBgStyle(bg: string): string {
+  const rgb = hexToRgb(asHex(bg) ?? '#FAF5EC');
+  const dark = rgb ? luminance(rgb) < 0.42 : false;
+  return dark ? 'glow:top + grain' : 'gradient:vert + curve:bl + grain';
+}
+
 // Map terse typographic aliases a model reaches for onto the TextStyle fields:
 // transform/uppercase, italic, decoration/underline, variable-font `variation`,
 // OpenType `features`, text `outline`, `highlight` marker, `curve` (text-on-path).
@@ -715,9 +728,7 @@ function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
   const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
   const M = Math.round(W * 0.08);
   const cW = W - 2 * M, cX = X + M;
-  const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
-    : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   let cy = Y + Math.round(H * 0.13), k = layers.length;
   if (kicker) {
     layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
@@ -777,9 +788,7 @@ function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
 
   // Full-canvas background (rich engine-composed when bg_style is set), then the
   // opaque panel covers its side and the content reads over the other side.
-  const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
-    : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   const panelZ = layers.length;
   layers.push({ id: `${id}_panel`, type: 'rect', z: panelZ, x: panelX, y: Y, width: PW, height: H, fill: expandFill(panelFill as string | Fill) } as unknown as Layer);
   let k = panelZ + 1;
@@ -916,9 +925,7 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
   const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
   const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
-  const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
-    : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
 
   // Size the number to dominate: fit-to-width, capped, never tiny.
   const len = Math.max(2, stat.replace(/\s/g, '').length);
@@ -984,9 +991,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   let bars = (palRaw.length ? palRaw : [accent]).filter(c => !bgHex || contrastRatio(c, bgHex) >= 1.5);
   if (!bars.length) bars = [contrastRatio(accent, bgHex ?? '#000') >= 1.5 ? accent : textColor];
 
-  const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette: palRaw, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
-    : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette: palRaw, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   let k = layers.length;
   // Measure the centered content block (kicker + title + details). The title is
   // ALL-CAPS sans and the details ALL-CAPS mono — both wrap WIDER than the 0.54
@@ -1209,9 +1214,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
 
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
   // Rich engine-composed background when bg_style is set, else a flat wash.
-  const layers: Layer[] = bgStyle
-    ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
-    : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   let k = layers.length, cy = Y + Math.round(W * 0.08);
 
   if (kicker) {

@@ -8,17 +8,26 @@ import type { ToolResult, ProgressItem } from '../types';
 import { okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
 
 interface Mood { theme: string; bg: string; accent: string; text_color: string; palette: string[]; bg_style: string; }
+// Topic → art-direction. Most lanes are DARK + a warm/electric accent — a bold,
+// art-directed look (the hand-built peak), not a safe flat-cream template. Only
+// health/nature stays light (where calm warmth genuinely reads better). Order
+// matters: first match wins, so the more specific lanes precede the broad ones.
 const MOODS: { test: RegExp; mood: Mood }[] = [
-  { test: /\b(ai|ml|tech|software|developer|saas|startup|crypto|web3|cyber|security|data|cloud|api|devops|engineering|robot)/i,
+  // Tech / AI / software → deep indigo, electric violet.
+  { test: /\b(ai|ml|tech|software|developer|saas|startup|crypto|web3|cyber|security|data|cloud|api|devops|engineering|robot|llm|model|compute|chip|quantum|app)/i,
     mood: { theme: 'bold-poster', bg: '#0E0B14', accent: '#7C5CFF', text_color: '#F5F1EA', palette: ['#7C5CFF', '#27C2A0', '#F4B740'], bg_style: 'mesh + glow + grain' } },
-  { test: /\b(finance|economy|market|invest|revenue|business|sales|growth|stock|fintech|bank|b2b|saas)/i,
-    mood: { theme: 'editorial-cream', bg: '#FAF5EC', accent: '#B8543C', text_color: '#1A1A1A', palette: ['#E0A96D', '#9CAF88', '#6E8BB5'], bg_style: 'gradient + curve + dots' } },
-  { test: /\b(health|wellness|medical|nature|climate|environment|sustain|green|food|nutrition|fitness|care)/i,
+  // Money / business / impact → DRAMATIC near-black + gold (the editorial-stat peak).
+  { test: /\b(finance|financial|econom|market|invest|revenue|business|sales|growth|stock|fintech|bank|b2b|profit|cost|costs|price|pricing|budget|waste|wasted|billion|trillion|gdp|wage|salary|spend|spending|money|wealth|tax|debt|productivity|roi|valuation|funding)/i,
+    mood: { theme: 'bold-poster', bg: '#0A0A0A', accent: '#F4B740', text_color: '#FAFAFA', palette: ['#F4B740', '#E0A96D', '#3DD4C8'], bg_style: 'glow + grain' } },
+  // Health / nature / climate → calm warm paper + sage (the one lane where light wins).
+  { test: /\b(health|wellness|medical|nature|climate|environment|sustain|green|food|nutrition|fitness|care|wellbeing|mental|organic|forest|ocean|solar|renewable|wildlife|biodiversity)/i,
     mood: { theme: 'editorial-cream', bg: '#F2F0E6', accent: '#3E7C5A', text_color: '#1A1A1A', palette: ['#9CAF88', '#C8B88A', '#6E8BB5'], bg_style: 'gradient:vert + curve + grain' } },
-  { test: /\b(art|music|culture|fashion|film|design|creative|festival|gallery|brand|photo)/i,
+  // Art / culture / events → near-black + vermillion, vignette.
+  { test: /\b(art|music|culture|fashion|film|design|creative|festival|gallery|brand|photo|exhibition|concert|theatre|theater|launch|party|nightlife|cinema|poster)/i,
     mood: { theme: 'bold-poster', bg: '#0A0A0A', accent: '#FF3D00', text_color: '#FAFAFA', palette: ['#FF3D00', '#F4B740', '#3DD4C8'], bg_style: 'mesh + vignette + grain' } },
 ];
-const DEFAULT_MOOD: Mood = { theme: 'editorial-cream', bg: '#FAF5EC', accent: '#B8543C', text_color: '#1A1A1A', palette: ['#E0A96D', '#9CAF88', '#6E8BB5'], bg_style: 'gradient + curve + dots' };
+// Unmatched → bold drama (deep charcoal + warm amber), not flat light.
+const DEFAULT_MOOD: Mood = { theme: 'bold-poster', bg: '#141414', accent: '#E8A13C', text_color: '#FAFAFA', palette: ['#E8A13C', '#C66B4A', '#6E8BB5'], bg_style: 'glow + grain' };
 
 // Per-preset rich outline + recommended canvas. Each entry the model fills with
 // researched, specific content — the counts are the "richness floor".
@@ -33,7 +42,7 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
     'callout {label,text} — the single key takeaway',
     'source — cite the research source' ] },
   feature_grid: { canvas: [1080, 1080], fields: ['title', 'subtitle (one line)', 'items — 4-5 cards {icon, title, 1-line desc}'] },
-  stat: { canvas: [1080, 1350], fields: ['kicker', 'stat — the ONE big figure (researched)', 'caption — one line of context', 'footer — source'] },
+  stat: { canvas: [1080, 1350], fields: ['kicker — short eyebrow label', 'stat — the ONE big figure (researched, e.g. "$37B" / "9.4 hrs")', 'caption — a FULL sentence of context, 12-25 words (NOT a 2-3 word fragment)', 'footer — REQUIRED: cite a real source'] },
   list: { canvas: [1080, 1350], fields: ['kicker', 'title', 'items — 5-8 {title, desc}', 'footer'] },
   event: { canvas: [1080, 1350], fields: ['kicker', 'title', 'details — [date, venue, time]', 'footer'] },
   split: { canvas: [1200, 800], fields: ['panel_label', 'kicker', 'title (headline)', 'subtitle (deck)'] },
@@ -164,7 +173,7 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   const fill = outline.blocks
     ? `Use the "${design_type}" preset with a blocks:[…] array covering: ${outline.blocks.join(' · ')}.`
     : `Use the "${design_type}" preset, supplying: ${(outline.fields ?? []).join(' · ')}.`;
-  const instruction = `${research_instruction} ${fill} Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)}. Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. Then diagnose_design until clean and seal.`;
+  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)}. Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. Then diagnose_design until clean and seal.`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);
