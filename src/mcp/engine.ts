@@ -865,7 +865,17 @@ export function addLayer(args: { design_path: string; page_id?: string; layer: L
   return okResult(op, { layer_id: args.layer.id, next_action, progress, context, handover }, bak);
 }
 
-export function updateLayer(args: { design_path: string; layer_id: string; props: Partial<Layer>; project_path?: string }): ToolResult {
+// Which scopes (root + page ids) carry a top-level layer with this id. >1 means
+// an unscoped remove/update would hit multiple pages — carousel preset groups
+// share ids (sections_1 / editorial_1), so this guards the silent-nuke footgun.
+function pagesWithLayer(spec: DesignSpec, layerId: string): string[] {
+  const hits: string[] = [];
+  if (spec.layers?.some(l => l.id === layerId)) hits.push('(root)');
+  for (const p of spec.pages ?? []) if (p.layers?.some(l => l.id === layerId)) hits.push(p.id);
+  return hits;
+}
+
+export function updateLayer(args: { design_path: string; layer_id: string; props: Partial<Layer>; page_id?: string; project_path?: string }): ToolResult {
   const op = 'update_layer';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
@@ -879,8 +889,18 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   const patch = (layers: Layer[]): Layer[] =>
     layers.map(l => { if (l.id === args.layer_id) { found = true; return { ...l, ...args.props } as Layer; } return l; });
 
-  if (spec.layers) spec.layers = patch(spec.layers);
-  if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = patch(page.layers); }
+  // page_id scopes the edit to ONE carousel page — without it the same id on
+  // sibling pages would all be patched (carousel groups share ids).
+  if (args.page_id) {
+    const page = spec.pages?.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use inspect_design to list page IDs.', progress);
+    if (page.layers) page.layers = patch(page.layers);
+  } else {
+    const hits = pagesWithLayer(spec, args.layer_id);
+    if (hits.length > 1) return errResult(op, `Layer id "${args.layer_id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to patch all of them.`, 'Pass page_id to update ONE page (carousel pages share layer IDs).', progress);
+    if (spec.layers) spec.layers = patch(spec.layers);
+    if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = patch(page.layers); }
+  }
   if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use inspect_design to find layer IDs.', progress);
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
@@ -893,7 +913,7 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   return okResult(op, { updated: args.layer_id, next_action, progress, context, handover }, bak);
 }
 
-export function removeLayer(args: { design_path: string; layer_id: string; project_path?: string }): ToolResult {
+export function removeLayer(args: { design_path: string; layer_id: string; page_id?: string; project_path?: string }): ToolResult {
   const op = 'remove_layer';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
@@ -902,12 +922,26 @@ export function removeLayer(args: { design_path: string; layer_id: string; proje
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const spec = readYAML<DesignSpec>(dPath);
-  if (spec.layers) spec.layers = spec.layers.filter(l => l.id !== args.layer_id);
-  if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = page.layers.filter(l => l.id !== args.layer_id); }
+  let removed = 0;
+  const drop = (layers: Layer[]): Layer[] => { const k = layers.filter(l => l.id !== args.layer_id); removed += layers.length - k.length; return k; };
+  // page_id scopes removal to ONE carousel page. WITHOUT it the same id on
+  // sibling pages is removed too (carousel groups share ids) — the footgun that
+  // silently emptied 3 pages when one page's group was deleted by id.
+  if (args.page_id) {
+    const page = spec.pages?.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use inspect_design to list page IDs.', progress);
+    if (page.layers) page.layers = drop(page.layers);
+  } else {
+    const hits = pagesWithLayer(spec, args.layer_id);
+    if (hits.length > 1) return errResult(op, `Layer id "${args.layer_id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to remove from all (this silently empties sibling slides).`, 'Pass page_id to remove it from ONE page (carousel pages share layer IDs).', progress);
+    if (spec.layers) spec.layers = drop(spec.layers);
+    if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = drop(page.layers); }
+  }
+  if (removed === 0) return errResult(op, `Layer not found: ${args.layer_id}`, args.page_id ? `No layer "${args.layer_id}" on page "${args.page_id}".` : 'Use inspect_design to find layer IDs.', progress);
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
-  progress.push(pOk(`Removed layer "${args.layer_id}"`));
+  progress.push(pOk(`Removed layer "${args.layer_id}"`, removed > 1 ? `${removed} matches across pages — pass page_id to scope` : undefined));
 
   const next_action: NextAction = { tool: 'inspect_design', params: { design_path: dPath }, remaining: -1, hint: 'Verify removal with inspect_design, then continue or seal.' };
   const context = buildContext(op, `Removed layer "${args.layer_id}" from ${path.basename(dPath)}`);

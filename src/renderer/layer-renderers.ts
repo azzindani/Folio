@@ -16,12 +16,17 @@ import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 import { encodeQR } from './qr/encode';
 
 // Word-wrap plain text into lines that fit within maxWidth.
-// Uses a ~0.52× font-size char-width estimate (accurate for Inter/sans-serif).
-function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number): string[] {
+// Default char-width is ~0.52× font-size (accurate for Inter/sans-serif). Pass
+// perCharPx to override for wider glyph runs — monospace, ALL-CAPS, and
+// letter-spaced text are meaningfully wider, and the 0.52 estimate packs too
+// many chars per line so the rendered line OVERFLOWS its box (e.g. a stat
+// label "RENEWABLE CAPACITY ADDED…" bleeding into the next column).
+function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number, perCharPx?: number): string[] {
   const lines: string[] = [];
+  const cw = perCharPx && perCharPx > 0 ? perCharPx : fontSize * 0.52;
   for (const para of text.split('\n')) {
     if (!maxWidth || maxWidth <= 0) { lines.push(para); continue; }
-    const maxChars = Math.max(1, Math.floor(maxWidth / (fontSize * 0.52)));
+    const maxChars = Math.max(1, Math.floor(maxWidth / cw));
     const words = para.split(' ');
     let cur = '';
     for (const word of words) {
@@ -400,7 +405,17 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       textEl.appendChild(tp);
       g.appendChild(textEl);
     } else {
-      const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize);
+      // Widen the char estimate for wider glyph runs so the line actually fits
+      // its box: monospace (~0.60), ALL-CAPS (+0.06), plus literal letter-spacing.
+      // Plain sans mixed-case keeps the original 0.52 → no change to those lines.
+      const fam = (style.font_family ?? '').toLowerCase();
+      const isMono = /\bmono\b|monospace|courier|consolas|menlo/.test(fam);
+      const isUpper = style.text_transform === 'uppercase';
+      let factor = isMono ? 0.60 : 0.52;
+      if (isUpper) factor += 0.06;
+      const perChar = factor === 0.52 ? undefined
+        : fontSize * factor + (typeof style.letter_spacing === 'number' ? Math.max(0, style.letter_spacing) : 0);
+      const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize, perChar);
       let textX = layer.x ?? 0;
       if (alignVal === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
       else if (alignVal === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;

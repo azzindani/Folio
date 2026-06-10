@@ -377,6 +377,46 @@ describe('addLayer in carousel page', () => {
   });
 });
 
+// ── carousel-safe remove/update: shared IDs across pages ─────
+describe('remove/update_layer — carousel pages share layer IDs', () => {
+  let designPath: string;
+  beforeEach(() => {
+    const projectPath = path.join(tmpDir, 'shared-id-proj');
+    createProject({ name: 'Shared', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'deck', type: 'carousel' });
+    designPath = path.join(projectPath, 'designs/deck.design.yaml');
+    // Two pages whose top-level group both carry id "sections_1" (the real shape).
+    const grp = (): Layer => ({ id: 'sections_1', type: 'group', z: 0, x: 0, y: 0, width: 1080, height: 1080,
+      layers: [{ id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } }] } as unknown as Layer);
+    appendPage({ design_path: designPath, page_id: 'page_1', label: 'One', layers: [grp()] });
+    appendPage({ design_path: designPath, page_id: 'page_2', label: 'Two', layers: [grp()] });
+  });
+
+  it('REFUSES an unscoped remove of a shared id (no silent multi-page nuke)', () => {
+    const r = removeLayer({ design_path: designPath, layer_id: 'sections_1' }) as Record<string, unknown>;
+    expect(r.success).toBe(false);
+    expect(String(r.hint)).toContain('page_id');
+    // both pages still have their group
+    const spec = parseYAMLDesign(designPath);
+    expect(spec.pages?.every(p => (p.layers ?? []).length === 1)).toBe(true);
+  });
+
+  it('removes a shared id from ONLY the named page when page_id is passed', () => {
+    const r = removeLayer({ design_path: designPath, layer_id: 'sections_1', page_id: 'page_2' }) as Record<string, unknown>;
+    expect(r.success).not.toBe(false);
+    const spec = parseYAMLDesign(designPath);
+    const byId = (id: string): number => (spec.pages?.find(p => p.id === id)?.layers ?? []).length;
+    expect(byId('page_1')).toBe(1); // untouched
+    expect(byId('page_2')).toBe(0); // removed here only
+  });
+
+  it('REFUSES an unscoped update of a shared id', () => {
+    const r = updateLayer({ design_path: designPath, layer_id: 'sections_1', props: { x: 5 } }) as Record<string, unknown>;
+    expect(r.success).toBe(false);
+    expect(String(r.hint)).toContain('page_id');
+  });
+});
+
 // ── batchCreate ─────────────────────────────────────────────
 
 describe('batchCreate', () => {

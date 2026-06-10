@@ -67,6 +67,27 @@ function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
     }
   }
 
+  // Serialized-spec leak — a model fumbling patch_design/add_layers can dump the
+  // raw shorthand/JSON into a text layer's content, which then renders as a wall
+  // of  "bg": "#…", "accent": …  visible on the slide. The model can't SEE it, so
+  // flag it as an error with the offending snippet.
+  const SPEC_KEY = /["']?(bg_style|text_color|layers_shorthand|accent|kicker|deck|font_weight|pos)["']?\s*:/g;
+  for (const l of layers) {
+    if (l.type !== 'text') continue;
+    const c = (l as { content?: { value?: string } | string }).content;
+    const v = (typeof c === 'string' ? c : c?.value) ?? '';
+    if (v.length < 30) continue;
+    const looksJson = /^\s*[[{]/.test(v) && v.includes('":');
+    const keyHits = (v.match(SPEC_KEY) ?? []).length;
+    if (looksJson || keyHits >= 2) {
+      out.push({
+        code: 'serialized_spec', severity: 'error', layer_id: l.id,
+        message: `text "${l.id}" contains a serialized design spec / JSON blob ("${v.slice(0, 48).replace(/\s+/g, ' ').trim()}…") — raw markup is showing as visible copy.`,
+        fix: 'Replace this layer with the intended human-readable text, or rebuild the slide as ONE preset layer (sections/editorial) via add_layers.',
+      });
+    }
+  }
+
   // Text overflow — a box too short for its wrapped text spills past it and
   // collides with whatever sits below. Declared boxes DON'T overlap (so the
   // collision check below stays silent), but the rendered text does. This is
