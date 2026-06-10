@@ -183,6 +183,17 @@ describe('expandShorthand', () => {
     expect(num.y + num.height).toBeLessThanOrEqual(cap.y + 2);
   });
 
+  it('keeps the stat caption legible on a LIGHT bg (default white caption would vanish)', () => {
+    const r = expandShorthand({
+      id: 'lt', type: 'stat', z: 0, pos: [0, 0, 1080, 1080],
+      bg: '#FAF5EC', accent: '#B8543C', kicker: 'Annual cost',
+      stat: '$37B', caption: 'in the United States',
+    } as unknown as ShorthandLayer) as { layers?: { id: string; style?: { color?: string } }[] };
+    const cap = r.layers!.find(l => l.id === 'lt_cap')!;
+    // No text_color given + light bg → engine must flip the caption off near-white.
+    expect(cap.style!.color!.toLowerCase()).not.toBe('#fafafa');
+  });
+
   it('feature_grid keeps card text legible on a dark canvas (light text would vanish on a light card)', () => {
     type FGLayer = { id: string; type: string; fill?: { color?: string }; style?: { color?: string }; layers?: FGLayer[] };
     const r = expandShorthand({
@@ -1701,6 +1712,42 @@ describe('sections stats — long unbreakable value fits its column (no collisio
     // content width per column ≈ (918 - 3*27)/4 ≈ 209px; "$0.04/kWh" is 9 chars.
     expect(fs * 9 * 0.58).toBeLessThanOrEqual(209);
     expect(fs).toBeGreaterThanOrEqual(22);
+  });
+});
+
+describe('feature_grid — long-token card title fits a narrow (5-card) column', () => {
+  // 5 cards → narrow columns; a long unbreakable token ("Zero-Downtime") at the
+  // unclamped font bled past the card edge. Size the title so the longest token
+  // fits innerW.
+  it('shrinks the title font so the longest token fits the card', () => {
+    const items = [0, 1, 2, 3, 4].map(i => ({ icon: 'zap', title: i === 3 ? 'Zero-Downtime Deployments' : 'Short', desc: 'x' }));
+    const g = expandShorthand({ id: 'fg', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1350], bg: '#111', accent: '#7c5cff', title: 'CI/CD', items } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; width?: number; style?: { font_size?: number }; layers?: unknown[] }> };
+    const find = (ls: Array<{ id: string; layers?: unknown[] }>, id: string): { id: string; width?: number; style?: { font_size?: number } } | undefined => {
+      for (const l of ls) { if (l.id === id) return l as never; if (l.layers) { const r = find(l.layers as never, id); if (r) return r; } }
+      return undefined;
+    };
+    const card = find(g.layers, 'fg_card3')!;
+    const title = find(g.layers, 'fg_c3_title')! as { style?: { font_size?: number } };
+    const innerW = (card.width ?? 0) - 56;
+    // longest token "Zero-Downtime" = 13 chars must fit innerW at the chosen size.
+    expect(13 * (title.style!.font_size!) * 0.55).toBeLessThanOrEqual(innerW);
+  });
+});
+
+describe('event preset — caps title that wraps to 3 lines does not collide with details', () => {
+  // The blind 120B's "Design Weekend 2026" wrapped to 3 ALL-CAPS lines; the title
+  // height was measured at the 0.54 default while the renderer wraps caps wider,
+  // so the detail lines overlapped the title's last line (invisible to diagnose —
+  // it's inside the preset group).
+  it('places the first detail line BELOW the wrapped title', () => {
+    const g = expandShorthand({
+      id: 'ev', type: 'event', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#0B0B0B', accent: '#FF3D00', title: 'Design Weekend 2026',
+      details: ['Sat-Sun June 15-16', 'City Design Center', '10AM-6PM daily'],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; y: number; height: number }> };
+    const title = g.layers.find(l => l.id === 'ev_title')!;
+    const d0 = g.layers.find(l => l.id === 'ev_d0')!;
+    expect(d0.y).toBeGreaterThanOrEqual(title.y + title.height);
   });
 });
 
