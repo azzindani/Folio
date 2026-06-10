@@ -74,3 +74,21 @@ describe('analyzeLayers — sparse-content nudge → enrich_brief', () => {
     expect(codes(layers)).not.toContain('sparse_content');
   });
 });
+
+describe('analyzeLayers — serialized-spec leak (patch-fumble safety net)', () => {
+  const textV = (id: string, value: string): Layer =>
+    ({ id, type: 'text', z: 5, x: 96, y: 200, width: 880, height: 300, content: { type: 'plain', value }, style: { font_size: 28 } } as unknown as Layer);
+
+  it('flags a text layer whose content is a serialized shorthand blob', () => {
+    const v = ', "bg": "#FAF5EC", "accent": "#B8543C", "text_color": "#1A1A1A", "bg_style": "gradient + curve';
+    expect(codes([bg, textV('leak', v)])).toContain('serialized_spec');
+  });
+
+  it('flags a JSON-array string dumped as copy', () => {
+    expect(codes([bg, textV('leak2', '[{"type":"stat","value":"55%","label":"share"}]')])).toContain('serialized_spec');
+  });
+
+  it('does NOT flag normal prose that happens to mention a colon', () => {
+    expect(codes([bg, textV('ok', 'Renewables: the fastest-growing source of new power worldwide in 2024.')])).not.toContain('serialized_spec');
+  });
+});
