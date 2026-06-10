@@ -586,21 +586,16 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
     iconSvg.innerHTML = inner;
     g.appendChild(iconSvg);
   } else {
-    // Fallback: dashed rect + name label for unknown icons
-    const rect = createSVGElement('rect', {
-      x: 0, y: 0, width: size, height: size,
-      rx: '3', fill: 'none', stroke: color,
-      'stroke-width': '1.5', 'stroke-dasharray': '4 3',
+    // Unknown icon → a clean stroked circle in the icon color, matching the 2px
+    // line weight of real Lucide glyphs. A blind model can't SEE that its icon
+    // name didn't resolve, so the old dashed box + raw-name label rendered as
+    // obviously-broken output; a neutral ring reads as an intentional bullet
+    // instead. (diagnoseLayers still WARNS so a sighted/agentic caller can fix it.)
+    const circle = createSVGElement('circle', {
+      cx: size / 2, cy: size / 2, r: Math.max(2, size / 2 - 1),
+      fill: 'none', stroke: color, 'stroke-width': '2',
     });
-    const label = createSVGElement('text', {
-      x: size / 2, y: size / 2 + 4,
-      'text-anchor': 'middle',
-      'font-size': String(Math.max(7, Math.floor(size / 4))),
-      fill: color,
-    });
-    label.textContent = layer.name;
-    g.appendChild(rect);
-    g.appendChild(label);
+    g.appendChild(circle);
   }
 
   applyCommonAttributes(g, layer);

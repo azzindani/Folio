@@ -902,8 +902,8 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const muted = shStr(r['muted'], '#9A9A9A');
   const kicker = shStr(r['kicker'] ?? r['label'] ?? r['eyebrow']);
   const stat = shStr(r['stat'] ?? r['value'] ?? r['number'] ?? r['title'] ?? r['text'], '0');
-  const caption = shStr(r['caption'] ?? r['subtitle'] ?? r['desc'] ?? r['body']);
-  const footer = shStr(r['footer']);
+  const caption = shStr(r['caption'] ?? r['subtitle'] ?? r['desc'] ?? r['body'] ?? r['context'] ?? r['note'] ?? r['summary'] ?? r['lead'] ?? r['blurb'] ?? r['detail']);
+  const footer = shStr(r['footer'] ?? r['source'] ?? r['credit']);
 
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
   const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
@@ -1907,7 +1907,7 @@ export function diagnoseLayers(layers: Layer[]): string[] {
       if (l.type === 'icon') {
         const name = (l as Layer & { name?: string }).name ?? '';
         const hit = resolveIconName(name);
-        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a labeled placeholder. Use a real name, e.g.: ${SUGGESTED_ICONS}.`);
+        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a blank fallback circle. Use a real name, e.g.: ${SUGGESTED_ICONS}.`);
       } else if (l.type === 'image') {
         const src = (l as Layer & { src?: string }).src ?? '';
         if (src && !/^(https?:|data:|file:|\/\/)/i.test(src)) {
@@ -1922,9 +1922,14 @@ export function diagnoseLayers(layers: Layer[]): string[] {
         else if (typeof v === 'string' && (/\bitems\s*=/.test(v) || (/\btitle\s*=/.test(v) && /\bdesc\s*=/.test(v)) || /^\s*feature_grid\s*:/.test(v))) {
           notes.push(`text "${l.id}": the content looks like a feature_grid encoded as a string. Send it as a JSON object, not a colon/equals string: {type:"feature_grid", title:"…", subtitle:"…", bg:"gradient", items:[{icon:"…", title:"…", desc:"…"}]}.`);
         }
-      } else if (l.type === 'group') {
-        walk((l as Layer & { layers?: Layer[] }).layers);
       }
+      // Recurse into ANY nested container — group, auto_layout, feature_grid
+      // cards… — not just `group`. Presets nest their icons and text inside
+      // auto_layout rows, so a group-only walk silently skipped them and an
+      // unknown icon (which renders as a placeholder box a blind model can't
+      // see) went unwarned.
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) walk(kids);
     }
   };
   walk(layers);
