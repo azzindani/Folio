@@ -129,11 +129,13 @@ describe('regression corpus — real lab-agent payloads stay rendered', () => {
     expect(svg).toContain('$49');
   });
 
-  it('icon synonyms resolve, unreal names stay placeholders', () => {
+  it('icon synonyms resolve; unreal names fall back to a clean circle (no raw-name leak)', () => {
     const { svg } = renderSVG({
-      a: { type: 'icon', pos: [0, 0, 48, 48], icon: 'photo' },       // → image glyph
-      b: { type: 'icon', pos: [100, 0, 48, 48], icon: 'coffee_cup' },// → placeholder label
+      a: { type: 'icon', pos: [0, 0, 48, 48], icon: 'photo' },              // → image glyph
+      b: { type: 'icon', pos: [100, 0, 48, 48], icon: '__no_such_icon__' }, // → circle fallback
     });
-    expect(svg).toContain('coffee_cup'); // honest placeholder label rendered
+    // The unresolved name must NOT leak as visible text; it renders a circle.
+    expect(svg).not.toContain('__no_such_icon__');
+    expect(svg).toContain('<circle');
   });
 });
