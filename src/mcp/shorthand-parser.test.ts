@@ -1704,6 +1704,44 @@ describe('sections stats — long unbreakable value fits its column (no collisio
   });
 });
 
+describe('diagnoseLayers recurses into auto_layout (catches nested bad icons)', () => {
+  // feature_grid nests icons inside auto_layout cards, not groups — a group-only
+  // walk silently skipped them, so an unknown icon went unwarned (blind models
+  // can't see the placeholder it renders).
+  it('flags an unknown icon nested inside a feature_grid card', () => {
+    const layers = expandShorthandLayers(coerceShorthandLayers([
+      { type: 'feature_grid', title: 'X', bg: '#000', accent: '#f30',
+        items: [{ icon: 'gauge', title: 'A', desc: 'b' }, { icon: 'zap', title: 'C', desc: 'd' }] },
+    ]));
+    const notes = diagnoseLayers(layers);
+    expect(notes.some(n => n.includes('gauge') && n.includes('not a known icon'))).toBe(true);
+  });
+
+  it('stays silent when every nested icon resolves', () => {
+    const layers = expandShorthandLayers(coerceShorthandLayers([
+      { type: 'feature_grid', title: 'X', bg: '#000', accent: '#f30',
+        items: [{ icon: 'zap', title: 'A', desc: 'b' }, { icon: 'shield-check', title: 'C', desc: 'd' }] },
+    ]));
+    expect(diagnoseLayers(layers).some(n => n.includes('not a known icon'))).toBe(false);
+  });
+});
+
+describe('stat preset caption/footer aliases (model names it context/source)', () => {
+  const collect = (l: { content?: { value?: string }; layers?: unknown[] }): string[] => {
+    const out: string[] = [];
+    if (l.content?.value) out.push(l.content.value);
+    for (const c of (l.layers ?? []) as Array<typeof l>) out.push(...collect(c));
+    return out;
+  };
+  it('renders supporting text passed as context, and source as footer', () => {
+    const g = expandShorthand({ id: 's', type: 'stat', z: 0, pos: [0, 0, 1080, 1350],
+      value: '9.4 hrs', context: 'lost to context-switching every week', source: 'Source: Asana' } as unknown as ShorthandLayer) as unknown as { layers?: Array<{ content?: { value?: string }; layers?: unknown[] }> };
+    const all = (g.layers ?? []).flatMap(collect);
+    expect(all.some(t => t.includes('context-switching'))).toBe(true);
+    expect(all.some(t => t.includes('Source: Asana'))).toBe(true);
+  });
+});
+
 describe('sections block item-array aliases (model names it rows/data, not items)', () => {
   // The "By the numbers" slide rendered BLANK: model sent stats:{rows:[…]} and
   // bars:{data:[…]} but the engine only read b['items'] → both blocks empty.
