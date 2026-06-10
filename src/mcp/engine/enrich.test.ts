@@ -42,6 +42,16 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.design_type).toBe('stat');
   });
 
+  it('the stat plan demands a full-sentence caption + a required source, and a portrait canvas', () => {
+    const r = run('the $37B cost of meetings', 'stat');
+    const fields = (r.outline as string[]).join(' | ');
+    expect(fields).toMatch(/full sentence/i);
+    expect(fields).toMatch(/source/i);
+    expect(r.canvas!.height).toBeGreaterThan(r.canvas!.width); // portrait
+    expect(r.instruction!).toMatch(/EXACTLY \d+×\d+/);
+    expect(r.instruction!).toMatch(/always include the source/i);
+  });
+
   it('the instruction tells the model to research first and fill every slot', () => {
     const r = run('the state of electric vehicles');
     expect(r.instruction!).toMatch(/research/i);
