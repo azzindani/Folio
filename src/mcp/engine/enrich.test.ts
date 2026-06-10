@@ -37,6 +37,20 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.suggested!.bg_style).toContain('mesh');
   });
 
+  it('a money/cost topic gets the DARK dramatic gold mood (not flat cream)', () => {
+    const r = run('the financial cost of unnecessary meetings to US business') as unknown as { suggested: { bg: string; accent: string; bg_style: string } };
+    expect(r.suggested.bg.toLowerCase()).toBe('#0a0a0a');
+    expect(r.suggested.accent.toLowerCase()).toBe('#f4b740');
+    expect(r.suggested.bg_style).toContain('glow');
+  });
+
+  it('an unmatched topic defaults to a BOLD dark mood, not flat light cream', () => {
+    const r = run('a poster about weekend hiking trips') as unknown as { suggested: { bg: string; bg_style: string } };
+    // dark charcoal default — luminance well below mid.
+    expect(parseInt(r.suggested.bg.slice(1, 3), 16)).toBeLessThan(64);
+    expect(r.suggested.bg_style).toContain('grain');
+  });
+
   it('an explicit type hint overrides inference', () => {
     const r = run('quarterly numbers', 'stat');
     expect(r.design_type).toBe('stat');
