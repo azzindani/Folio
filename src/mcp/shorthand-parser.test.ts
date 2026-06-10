@@ -1753,6 +1753,19 @@ describe('event preset — caps title that wraps to 3 lines does not collide wit
     const d0 = g.layers.find(l => l.id === 'ev_d0')!;
     expect(d0.y).toBeGreaterThanOrEqual(title.y + title.height);
   });
+
+  it('a 4-word title that word-wraps to 4 lines still clears the details (word-aware height)', () => {
+    // "2026 DESIGN SYSTEMS SUMMIT" packs 1 word/line (4 lines); the old char-count
+    // estimate said 3 → details overlapped the 4th line. Word-aware estTextHeight fixes it.
+    const g = expandShorthand({
+      id: 'ev', type: 'event', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#0A0A0A', accent: '#FF3D00', title: '2026 Design Systems Summit',
+      details: ['June 15-16, 2026', 'San Francisco, CA', '9:00 AM - 6:00 PM'],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; y: number; height: number }> };
+    const title = g.layers.find(l => l.id === 'ev_title')!;
+    const d0 = g.layers.find(l => l.id === 'ev_d0')!;
+    expect(d0.y).toBeGreaterThanOrEqual(title.y + title.height);
+  });
 });
 
 describe('diagnoseLayers recurses into auto_layout (catches nested bad icons)', () => {

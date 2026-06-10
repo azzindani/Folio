@@ -689,7 +689,25 @@ function textTypography(sh: ShorthandLayer): Record<string, unknown> {
 // Estimate wrapped-text height (matches the renderer's ~0.54×fontSize char width).
 function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, charFactor = 0.54): number {
   const cpl = Math.max(1, Math.floor(widthPx / (fontSize * charFactor)));
-  const lines = text.split('\n').reduce((a, seg) => a + Math.max(1, Math.ceil(seg.length / cpl)), 0);
+  // WORD-AWARE greedy wrap — the renderer breaks at word boundaries, so a
+  // char-count estimate (ceil(len/cpl)) under-counts lines whenever words don't
+  // pack evenly (e.g. a 4-word ALL-CAPS title at 1 word/line). Under-counting a
+  // title's lines pushes whatever sits below INTO it — a collision diagnose
+  // can't see (it's inside the preset group). Greedily pack words exactly as the
+  // renderer does so the reserved height matches what's actually drawn.
+  let lines = 0;
+  for (const seg of text.split('\n')) {
+    const words = seg.split(/\s+/).filter(Boolean);
+    if (!words.length) { lines += 1; continue; }
+    let cur = 0, segLines = 1;
+    for (const w of words) {
+      if (cur === 0) cur = w.length;
+      else if (cur + 1 + w.length <= cpl) { cur += 1 + w.length; continue; }
+      else { segLines += 1; cur = w.length; }
+      if (w.length > cpl) { segLines += Math.ceil(w.length / cpl) - 1; cur = w.length % cpl || cpl; }
+    }
+    lines += segLines;
+  }
   return Math.ceil(lines * fontSize * lh);
 }
 const shStr = (v: unknown, d = ''): string => {
