@@ -270,17 +270,17 @@ describe('renderIcon', () => {
     expect(innerSvg!.getAttribute('stroke')).toBe('currentColor');
   });
 
-  it('renders fallback rect+text for unknown icon names', () => {
+  it('renders a clean circle fallback (no raw name) for unknown icon names', () => {
     const layer: IconLayer = {
       id: 'ic3', type: 'icon', z: 0,
       x: 0, y: 0, name: '__unknown_icon_xyz__', size: 32, color: '#abc',
     };
     const el = renderIcon(layer, makeSVG());
-    const rect = el.querySelector('rect');
-    expect(rect).toBeTruthy();
-    const text = el.querySelector('text');
-    expect(text).toBeTruthy();
-    expect(text!.textContent).toBe('__unknown_icon_xyz__');
+    const circle = el.querySelector('circle');
+    expect(circle).toBeTruthy();
+    expect(circle!.getAttribute('stroke')).toBe('#abc');
+    // The raw, unresolved name must NOT leak as visible text.
+    expect(el.querySelector('text')).toBeNull();
   });
 });
 
@@ -943,15 +943,14 @@ describe('renderCircle', () => {
 
 // ── Icon fallback ────────────────────────────────────────────
 describe('renderIcon — fallback for unknown icon', () => {
-  it('renders dashed rect and text label for unknown icon name', () => {
+  it('renders a clean circle (not a raw-name label) for unknown icon name', () => {
     const layer: IconLayer = {
       id: 'unk', type: 'icon', z: 0, name: '__nonexistent_icon__', size: 32,
       x: 0, y: 0,
     } as unknown as IconLayer;
     const el = renderIcon(layer, makeSVG());
-    expect(el.querySelector('rect')).not.toBeNull();
-    const text = el.querySelector('text');
-    expect(text?.textContent).toBe('__nonexistent_icon__');
+    expect(el.querySelector('circle')).not.toBeNull();
+    expect(el.querySelector('text')).toBeNull();
   });
 
   it('resolves a synonym name to a real Lucide icon (no placeholder)', () => {
