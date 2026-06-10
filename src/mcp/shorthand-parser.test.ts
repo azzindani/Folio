@@ -1585,10 +1585,13 @@ describe('composeBackground — engine-composed rich backgrounds (bg_style)', ()
     expect((band.fill as { type?: string }).type).toBe('solid');
   });
 
-  it('no bg_style → a single flat bg rect (back-compat)', () => {
+  it('no bg_style → a tasteful designed default bg (grain + sweep), NOT a flat fill', () => {
     const g = expandShorthand({ id: 'f', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'T',
       blocks: [{ kind: 'text', text: 'b' }] } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
-    expect(g.layers.filter(l => /_(curve|glow|mesh|tex|band)/.test(String(l.id))).length).toBe(0);
+    // The old flat fallback read as a template — the engine now defaults to depth.
+    expect(g.layers.some(l => /_grain$/.test(String(l.id)))).toBe(true);
+    expect(g.layers.some(l => /_(glow|curve)/.test(String(l.id)))).toBe(true);
+    expect(g.layers.some(l => l.id === 'f_bg')).toBe(true);
   });
 });
 
@@ -1619,12 +1622,13 @@ describe('composeBackground — wired into feature_grid + split', () => {
     expect(Number(title.z)).toBeGreaterThan(Number(panel.z));
   });
 
-  it('feature_grid without bg_style keeps the single flat bg rect (back-compat)', () => {
+  it('feature_grid without bg_style → designed default bg (glow + grain on the deep canvas), not flat', () => {
     const g = expandShorthand({
       id: 'fg2', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080], bg: '#0A0A0A',
       title: 'X', items: [{ icon: 'zap', title: 'A', desc: 'd' }],
     } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
-    expect(g.layers.filter(l => /_(mesh|glow|grid|tex|curve|band)/.test(String(l.id))).length).toBe(0);
+    expect(g.layers.some(l => /_glow/.test(String(l.id)))).toBe(true);
+    expect(g.layers.some(l => /_grain$/.test(String(l.id)))).toBe(true);
     expect(g.layers.some(l => l.id === 'fg2_bg')).toBe(true);
   });
 });
