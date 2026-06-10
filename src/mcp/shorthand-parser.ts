@@ -401,8 +401,12 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   // card or collide (narrow cards → smaller type). Fixed heights overflowed before.
   const pad = 28, innerW = Math.max(40, cardW - 2 * pad);
   const iconSz = Math.max(40, Math.min(60, Math.round(cardW * 0.3)));
-  const tSize = Math.max(18, Math.round(Math.min(30, cardW * 0.145)));
-  const dSize = Math.max(13, Math.round(Math.min(21, cardW * 0.1)));
+  // Also fit the longest UNBREAKABLE token (wrap only breaks on spaces, so a long
+  // word like "Zero-Downtime" can't split) — without this a many-card / narrow
+  // layout lets long titles bleed past the card edges (diagnose can't see it).
+  const longTok = (key: 'title' | 'desc'): number => Math.max(1, ...items.map(it => Math.max(1, ...String(it[key] ?? '').split(/\s+/).map(t => t.length))));
+  const tSize = Math.max(14, Math.floor(Math.min(30, cardW * 0.145, (innerW * 0.98) / (longTok('title') * 0.55))));
+  const dSize = Math.max(12, Math.floor(Math.min(21, cardW * 0.1, (innerW * 0.98) / (longTok('desc') * 0.52))));
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
     if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: iconSz, height: iconSz, name: it.icon, size: iconSz, color: cardIcon } as unknown as Layer);
@@ -899,6 +903,10 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const bg = shStr(r['bg'], '#0A0A0A');
   const accent = shStr(r['accent'], '#FF3D00');
   const textColor = shStr(r['text_color'] ?? r['color'], '#FAFAFA');
+  // Caption sits ON the bg — its default (#FAFAFA, for a dark bg) is invisible
+  // when the model gives a LIGHT bg and no text_color. Flip to a legible tone.
+  // A vision-less model cannot see the caption vanish, so the engine guarantees it.
+  const capColor = readableOn(bg, textColor);
   const muted = shStr(r['muted'], '#9A9A9A');
   const kicker = shStr(r['kicker'] ?? r['label'] ?? r['eyebrow']);
   const stat = shStr(r['stat'] ?? r['value'] ?? r['number'] ?? r['title'] ?? r['text'], '0');
@@ -931,7 +939,7 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   cy += numH + (caption ? gap : 0);
   if (caption) {
     layers.push({ id: `${id}_caprule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - Math.round(gap * 0.4), width: Math.round(W * 0.13), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
-    layers.push(txt(`${id}_cap`, z + k++, cX, cy + 14, cW, capH, caption, { font_size: capSize, font_weight: 400, color: textColor, line_height: 1.4 }));
+    layers.push(txt(`${id}_cap`, z + k++, cX, cy + 14, cW, capH, caption, { font_size: capSize, font_weight: 400, color: capColor, line_height: 1.4 }));
   }
   if (footer) {
     const fy = Y + H - Math.round(H * 0.07);
@@ -980,10 +988,14 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     ? composeBackground(bgStyle, id, X, Y, W, H, { bg, accent, text: textColor, palette: palRaw, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0)
     : [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
   let k = layers.length;
-  // Measure the centered content block (kicker + title + details).
-  const ts = Math.round(W * 0.15), titleH = estTextHeight(title, ts, cW, 1.0);
+  // Measure the centered content block (kicker + title + details). The title is
+  // ALL-CAPS sans and the details ALL-CAPS mono — both wrap WIDER than the 0.54
+  // default, so measure with caps-aware factors (0.60 / 0.66) to match the
+  // renderer. Without this a title that wraps to 3 caps lines under-budgets and
+  // the details overlap its last line (diagnose can't see inside the preset).
+  const ts = Math.round(W * 0.15), titleH = estTextHeight(title, ts, cW, 1.0, 0.60);
   const ds = Math.round(W * 0.026), lineGap = Math.round(H * 0.012);
-  const detailH = details.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25) + lineGap, 0);
+  const detailH = details.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25, 0.66) + lineGap, 0);
   const kickH = kicker ? Math.round(H * 0.05) : 0;
   const total = kickH + titleH + Math.round(H * 0.03) + detailH;
   const top = Y + Math.max(Math.round(H * 0.12), (H - total) / 2 - Math.round(H * 0.02));
@@ -1001,7 +1013,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase' }));
   cy += titleH + Math.round(H * 0.03);
   details.forEach((line, i) => {
-    const lh = estTextHeight(line, ds, cW, 1.25);
+    const lh = estTextHeight(line, ds, cW, 1.25, 0.66);
     layers.push(txt(`${id}_d${i}`, z + k++, cX, cy, cW, lh, line, { font_family: 'IBM Plex Mono', font_size: ds, font_weight: 600, color: i === details.length - 1 ? accent : textColor, letter_spacing: 1, text_transform: 'uppercase' }));
     cy += lh + lineGap;
   });

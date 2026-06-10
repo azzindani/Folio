@@ -558,6 +558,28 @@ function normalizeReportAliases(incoming: Layer[]): void {
   }
 }
 
+// Snap a top-level shorthand layer's declared box into the page canvas. Reads
+// the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
+// and shrinks only the dimension(s) that spill past the right/bottom edge. A
+// model that mistypes a portrait height (1350) onto a square doc (1080) gets a
+// canvas-fitting preset instead of a clipped, un-fixable one.
+function clampShorthandToCanvas(layers: ShorthandLayer[], W: number, H: number): void {
+  if (!(W > 0) || !(H > 0)) return;
+  for (const sh of layers) {
+    const r = sh as Record<string, unknown>;
+    const p = r['pos'];
+    if (Array.isArray(p) && p.length >= 4 && p.slice(0, 4).every(n => typeof n === 'number')) {
+      const [x, y, w, h] = p as number[];
+      r['pos'] = [x, y, x + w > W ? Math.max(1, W - x) : w, y + h > H ? Math.max(1, H - y) : h];
+      continue;
+    }
+    const x = typeof r['x'] === 'number' ? (r['x'] as number) : 0;
+    const y = typeof r['y'] === 'number' ? (r['y'] as number) : 0;
+    if (typeof r['width'] === 'number' && x + (r['width'] as number) > W) r['width'] = Math.max(1, W - x);
+    if (typeof r['height'] === 'number' && y + (r['height'] as number) > H) r['height'] = Math.max(1, H - y);
+  }
+}
+
 export function addLayers(args: {
   design_path: string; page_id?: string; project_path?: string;
   layers?: Layer[]; layers_shorthand?: ShorthandLayer[]; task_path?: string;
@@ -581,6 +603,14 @@ export function addLayers(args: {
   }
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
 
+  const spec = readYAML<DesignSpec>(dPath);
+  // Clamp any top-level layer the model sized larger than the canvas BEFORE
+  // expansion. A full-bleed preset given height 1350 on a 1080 doc expands to a
+  // group + bg taller than the page → off_canvas error the model then can't fix
+  // (patching the already-EXPANDED group's shorthand keys is inert). Clamping at
+  // the source lets the preset lay itself out correctly inside the page.
+  if (shorthand.length) clampShorthandToCanvas(shorthand, spec.document.width, spec.document.height);
+
   const incoming: Layer[] = shorthand.length
     ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
@@ -603,7 +633,6 @@ export function addLayers(args: {
 
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
-  const spec = readYAML<DesignSpec>(dPath);
 
   // Canonicalize aliases, then guarantee globally-unique ids before insert.
   normalizeReportAliases(incoming);
@@ -739,8 +768,8 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
     const wouldPatch: string[] = [];
     const errors: string[] = [];
     for (const sel of args.selectors) {
-      try { setNestedValue(spec, sel.path, sel.value); wouldPatch.push(sel.path); }
-      catch (e) { errors.push(`${sel.path}: ${(e as Error).message}`); }
+      if (setNestedValue(spec, sel.path, sel.value)) wouldPatch.push(sel.path);
+      else errors.push(`${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
     }
     progress.push(errors.length === 0 ? pOk(`Dry-run: ${wouldPatch.length} path(s) valid`) : pWarn('Dry-run: some paths invalid', errors.join('; ')));
     const context = buildContext(op, `Dry-run validated ${wouldPatch.length} selector(s)`);
@@ -752,16 +781,37 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const spec = readYAML<Record<string, unknown>>(dPath);
   const patched: string[] = [];
-  for (const sel of args.selectors) { setNestedValue(spec, sel.path, sel.value); patched.push(sel.path); }
+  const unresolved: string[] = [];
+  const inert: string[] = [];
+  for (const sel of args.selectors) {
+    if (setNestedValue(spec, sel.path, sel.value)) {
+      patched.push(sel.path);
+      const w = inertPresetKeyWarning(spec, sel.path);
+      if (w) inert.push(w);
+    } else {
+      unresolved.push(sel.path);
+    }
+  }
+  // Every selector missed — almost always `layers[0].x` against a design whose
+  // shape the model guessed wrong. Fail loudly instead of reporting a phantom
+  // success the model can't see through (it has no render).
+  if (patched.length === 0 && unresolved.length > 0) {
+    return errResult(op,
+      `None of the ${unresolved.length} patch path(s) resolved: ${unresolved.join(', ')}`,
+      'Run inspect_design first to read exact paths. Layers are addressable by index (layers[0].x) or id filter (layers[id=foo].x).',
+      progress);
+  }
   writeYAML(dPath, spec);
   progress.push(pOk(`Patched ${patched.length} field(s)`, patched.join(', ')));
+  if (unresolved.length) progress.push(pWarn(`${unresolved.length} path(s) did not resolve — not applied`, unresolved.join(', ')));
+  for (const w of inert) progress.push(pWarn('Patch has no render effect', w));
 
-  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: 'Fields patched. Call seal_design or make further patches.' };
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: inert.length ? 'Some patches hit an expanded preset (no effect) — remove_layer + add_layers to change it. Otherwise seal_design.' : 'Fields patched. Call seal_design or make further patches.' };
   const context = buildContext(op, `Patched ${patched.length} field(s) in ${path.basename(dPath)}`, [
     { type: 'design', path: dPath, role: 'updated' },
   ]);
   const handover = buildHandover('PATCH', { design_path: dPath });
-  return okResult(op, { patched_paths: patched, count: patched.length, next_action, progress, context, handover }, bak);
+  return okResult(op, { patched_paths: patched, count: patched.length, ...(unresolved.length ? { unresolved } : {}), ...(inert.length ? { inert_no_effect: inert } : {}), next_action, progress, context, handover }, bak);
 }
 
 export function sealDesign(args: { design_path: string; project_path?: string }): ToolResult {
@@ -1861,22 +1911,98 @@ export function debugFormula(args: {
 
 // ── Internal shared helpers ───────────────────────────────────
 
-function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: unknown): void {
-  const parts = dotPath.split('.');
-  let current: unknown = obj;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const part = parts[i];
-    const arrayMatch = part.match(/^(\w+)\[(\w+)=([^\]]+)\]$/);
-    if (arrayMatch) {
-      const [, arrayKey, filterKey, filterValue] = arrayMatch;
-      const arr = (current as Record<string, unknown>)[arrayKey];
-      if (Array.isArray(arr)) current = arr.find((item: Record<string, unknown>) => String(item[filterKey]) === filterValue);
-    } else {
-      current = (current as Record<string, unknown>)[part];
+type PathTok =
+  | { kind: 'key'; key: string }
+  | { kind: 'index'; i: number }
+  | { kind: 'filter'; k: string; v: string };
+
+// Tokenize a selector path into keys, array INDICES (`[0]`), and array FILTERS
+// (`[id=foo]`). Earlier this only understood `[key=value]`, so `layers[0].x`
+// silently resolved to nothing — and patch_design still reported success. Both
+// forms are now first-class.
+function tokenizePath(dotPath: string): PathTok[] {
+  const toks: PathTok[] = [];
+  for (const seg of dotPath.split('.')) {
+    const m = seg.match(/^([^[\]]*)((?:\[[^\]]+\])*)$/);
+    if (!m) return [];
+    if (m[1]) toks.push({ kind: 'key', key: m[1] });
+    for (const acc of m[2].match(/\[[^\]]+\]/g) ?? []) {
+      const inner = acc.slice(1, -1);
+      const eq = inner.indexOf('=');
+      if (eq >= 0) toks.push({ kind: 'filter', k: inner.slice(0, eq), v: inner.slice(eq + 1) });
+      else if (/^\d+$/.test(inner)) toks.push({ kind: 'index', i: Number(inner) });
+      else toks.push({ kind: 'key', key: inner });
     }
-    if (current === undefined || current === null) return;
   }
-  (current as Record<string, unknown>)[parts[parts.length - 1]] = value;
+  return toks;
+}
+
+function descend(cur: unknown, t: PathTok): unknown {
+  if (cur == null || typeof cur !== 'object') return undefined;
+  if (t.kind === 'key') return (cur as Record<string, unknown>)[t.key];
+  if (t.kind === 'index') return Array.isArray(cur) ? cur[t.i] : undefined;
+  return Array.isArray(cur) ? cur.find((it) => it != null && String((it as Record<string, unknown>)[t.k]) === t.v) : undefined;
+}
+
+// Returns true iff the value was actually written. A false return means the path
+// did not resolve (missing parent, out-of-range index, no filter match) — the
+// caller surfaces that instead of pretending the patch landed.
+function setNestedValue(obj: Record<string, unknown>, dotPath: string, value: unknown): boolean {
+  const toks = tokenizePath(dotPath);
+  if (toks.length === 0) return false;
+  let cur: unknown = obj;
+  for (let i = 0; i < toks.length - 1; i++) {
+    cur = descend(cur, toks[i]);
+    if (cur == null || typeof cur !== 'object') return false;
+  }
+  const last = toks[toks.length - 1];
+  if (last.kind === 'key') {
+    if (cur == null || typeof cur !== 'object' || Array.isArray(cur)) return false;
+    (cur as Record<string, unknown>)[last.key] = value;
+    return true;
+  }
+  if (last.kind === 'index') {
+    if (!Array.isArray(cur) || last.i < 0 || last.i >= cur.length) return false;
+    cur[last.i] = value;
+    return true;
+  }
+  if (!Array.isArray(cur)) return false;
+  const idx = cur.findIndex((it) => it != null && String((it as Record<string, unknown>)[last.k]) === last.v);
+  if (idx < 0) return false;
+  cur[idx] = value;
+  return true;
+}
+
+// Shorthand-only authoring keys. They drive a PRESET at expansion time, but once
+// add_layers has expanded the preset into a concrete group (real x/y/width/height
+// + child layers), re-setting them does NOTHING — the renderer reads the children,
+// not these. A vision-less model patching `layers[0].pos`/`bg`/`stat` sees
+// success but no change, and loops. Detect it and point at the real recovery.
+const INERT_ON_EXPANDED = new Set([
+  'pos', 'bg', 'bg_style', 'background_style', 'bg_treatment', 'accent', 'text_color',
+  'color', 'muted', 'kicker', 'label', 'eyebrow', 'stat', 'value', 'number',
+  'subtitle', 'deck', 'caption', 'desc', 'body', 'footer', 'source', 'credit',
+  'items', 'blocks', 'rows', 'data', 'series', 'bars', 'steps', 'points', 'metrics',
+  'kpis', 'stats', 'values', 'details', 'palette', 'icon', 'mood', 'title',
+]);
+
+function inertPresetKeyWarning(spec: Record<string, unknown>, dotPath: string): string | null {
+  const toks = tokenizePath(dotPath);
+  if (toks.length < 2) return null;
+  const last = toks[toks.length - 1];
+  if (last.kind !== 'key' || !INERT_ON_EXPANDED.has(last.key)) return null;
+  let cur: unknown = spec;
+  for (let i = 0; i < toks.length - 1; i++) {
+    cur = descend(cur, toks[i]);
+    if (cur == null || typeof cur !== 'object') return null;
+  }
+  const g = cur as Record<string, unknown>;
+  const expanded = (g['type'] === 'group' || g['type'] === 'auto_layout')
+    && Array.isArray(g['layers']) && (g['layers'] as unknown[]).length > 0
+    && typeof g['width'] === 'number' && typeof g['height'] === 'number';
+  if (!expanded) return null;
+  const gid = typeof g['id'] === 'string' ? g['id'] : '(group)';
+  return `"${dotPath}" sets shorthand key "${last.key}" on already-expanded preset "${gid}" — no render effect (it is now concrete child layers). To change its size, position, colour or content: remove_layer "${gid}", then add_layers a fresh preset with the corrected values.`;
 }
 
 function isConstrained(): boolean {

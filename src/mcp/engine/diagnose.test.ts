@@ -75,6 +75,21 @@ describe('analyzeLayers — sparse-content nudge → enrich_brief', () => {
   });
 });
 
+describe('analyzeLayers — stacked full-canvas presets (re-added not replaced)', () => {
+  const fg = (id: string): Layer => ({ id, type: 'group', z: 0, x: 0, y: 0, width: W, height: H,
+    layers: Array.from({ length: 6 }, (_, i) => text(`${id}_t${i}`, 80, 80 + i * 60, 400, 50, 28)) } as unknown as Layer);
+  it('warns when the same full-canvas preset is stacked multiple times', () => {
+    const f = analyzeLayers([fg('feature_grid_1'), fg('feature_grid_1-2'), fg('feature_grid_1-3')], W, H);
+    const hit = f.find(x => x.code === 'stacked_presets');
+    expect(hit).toBeTruthy();
+    expect(hit!.severity).toBe('warning');
+    expect(hit!.message).toContain('feature_grid_1-3');
+  });
+  it('does NOT warn for a single full-canvas preset group', () => {
+    expect(analyzeLayers([fg('feature_grid_1')], W, H).some(x => x.code === 'stacked_presets')).toBe(false);
+  });
+});
+
 describe('analyzeLayers — serialized-spec leak (patch-fumble safety net)', () => {
   const textV = (id: string, value: string): Layer =>
     ({ id, type: 'text', z: 5, x: 96, y: 200, width: 880, height: 300, content: { type: 'plain', value }, style: { font_size: 28 } } as unknown as Layer);
