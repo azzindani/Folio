@@ -171,8 +171,8 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
     ? 'This topic is factual: FIRST run the research_queries with your web tools to gather REAL figures and specifics. Do NOT invent statistics. Then compose.'
     : 'No external research needed — use the details in the prompt.';
   const fill = outline.blocks
-    ? `Use the "${design_type}" preset with a blocks:[…] array covering: ${outline.blocks.join(' · ')}.`
-    : `Use the "${design_type}" preset, supplying: ${(outline.fields ?? []).join(' · ')}.`;
+    ? `Add ONE layer — layers_shorthand:[{type:"${design_type}", …}] — with a blocks:[…] array covering: ${outline.blocks.join(' · ')}. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
+    : `Add ONE layer — layers_shorthand:[{type:"${design_type}", …}] supplying: ${(outline.fields ?? []).join(' · ')}. NEVER hand-place separate title/body/text layers — the preset auto-sizes every block so text never collides.`;
   const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)}. Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. Then diagnose_design until clean and seal.`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
