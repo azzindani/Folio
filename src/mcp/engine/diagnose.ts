@@ -182,5 +182,18 @@ export function analyzeLayers(layers: Layer[], W: number, H: number): Finding[] 
       fix: 'Call enrich_brief with your topic to get a rich content plan (preset + full block outline + research queries), then rebuild with that preset.',
     });
   }
+  // Stacked full-canvas preset groups → a model re-ADDED a preset instead of
+  // replacing it (dedupe renames them foo_1, foo_1-2, foo_1-3…). They overlap
+  // perfectly so no collision fires and only the TOP one renders — the rest are
+  // dead weight the model can't SEE. Flag it with the ids to remove.
+  const fullGroups = boxes(layers).filter(b => b.type === 'group' && FULL_BG(b, W, H));
+  if (fullGroups.length > 1) {
+    const ids = fullGroups.map(b => b.id);
+    out.push({
+      code: 'stacked_presets', severity: 'warning',
+      message: `${fullGroups.length} full-canvas layers are stacked (${ids.join(', ')}) — only the top one shows; the rest are duplicates (a preset added repeatedly instead of replaced).`,
+      fix: `Keep one and remove_layer the others: ${ids.slice(0, -1).join(', ')}.`,
+    });
+  }
   return out;
 }
