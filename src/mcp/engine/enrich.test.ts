@@ -72,6 +72,12 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.instruction!).toMatch(/bg_style/);
   });
 
+  it('steers to ONE preset layer, never hand-placed text (the editorial loop fix)', () => {
+    const r = run('an opinion essay: make software boring', 'editorial');
+    expect(r.instruction!).toMatch(/ONE layer/);
+    expect(r.instruction!).toMatch(/NEVER hand-place/i);
+  });
+
   it('an empty prompt fails gracefully (no throw)', () => {
     const r = enrichBrief({ prompt: '' }) as unknown as { success: boolean };
     expect(r.success).toBe(true);
