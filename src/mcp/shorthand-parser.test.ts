@@ -183,6 +183,17 @@ describe('expandShorthand', () => {
     expect(num.y + num.height).toBeLessThanOrEqual(cap.y + 2);
   });
 
+  it('keeps the stat caption legible on a LIGHT bg (default white caption would vanish)', () => {
+    const r = expandShorthand({
+      id: 'lt', type: 'stat', z: 0, pos: [0, 0, 1080, 1080],
+      bg: '#FAF5EC', accent: '#B8543C', kicker: 'Annual cost',
+      stat: '$37B', caption: 'in the United States',
+    } as unknown as ShorthandLayer) as { layers?: { id: string; style?: { color?: string } }[] };
+    const cap = r.layers!.find(l => l.id === 'lt_cap')!;
+    // No text_color given + light bg → engine must flip the caption off near-white.
+    expect(cap.style!.color!.toLowerCase()).not.toBe('#fafafa');
+  });
+
   it('feature_grid keeps card text legible on a dark canvas (light text would vanish on a light card)', () => {
     type FGLayer = { id: string; type: string; fill?: { color?: string }; style?: { color?: string }; layers?: FGLayer[] };
     const r = expandShorthand({

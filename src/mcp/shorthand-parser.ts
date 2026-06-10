@@ -903,6 +903,10 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const bg = shStr(r['bg'], '#0A0A0A');
   const accent = shStr(r['accent'], '#FF3D00');
   const textColor = shStr(r['text_color'] ?? r['color'], '#FAFAFA');
+  // Caption sits ON the bg — its default (#FAFAFA, for a dark bg) is invisible
+  // when the model gives a LIGHT bg and no text_color. Flip to a legible tone.
+  // A vision-less model cannot see the caption vanish, so the engine guarantees it.
+  const capColor = readableOn(bg, textColor);
   const muted = shStr(r['muted'], '#9A9A9A');
   const kicker = shStr(r['kicker'] ?? r['label'] ?? r['eyebrow']);
   const stat = shStr(r['stat'] ?? r['value'] ?? r['number'] ?? r['title'] ?? r['text'], '0');
@@ -935,7 +939,7 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   cy += numH + (caption ? gap : 0);
   if (caption) {
     layers.push({ id: `${id}_caprule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - Math.round(gap * 0.4), width: Math.round(W * 0.13), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
-    layers.push(txt(`${id}_cap`, z + k++, cX, cy + 14, cW, capH, caption, { font_size: capSize, font_weight: 400, color: textColor, line_height: 1.4 }));
+    layers.push(txt(`${id}_cap`, z + k++, cX, cy + 14, cW, capH, caption, { font_size: capSize, font_weight: 400, color: capColor, line_height: 1.4 }));
   }
   if (footer) {
     const fy = Y + H - Math.round(H * 0.07);

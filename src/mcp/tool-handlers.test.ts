@@ -852,22 +852,48 @@ describe('patchDesign — array selector notation (lines 666-669)', () => {
     expect(content).toContain('Updated');
   });
 
-  it('silently no-ops when array item not found', () => {
-    // pages[id=missing] → arr.find returns undefined → early return
+  it('patches a layer by array INDEX (layers[0].x)', () => {
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'pages[id=page_1].layers[0].x', value: 25 }],
+    });
+    expect(result.success).toBe(true);
+    expect(result.patched_paths).toContain('pages[id=page_1].layers[0].x');
+    const content = fs.readFileSync(designPath, 'utf-8');
+    expect(content).toMatch(/x:\s*25/);
+  });
+
+  it('FAILS loudly when array item not found (was: silent no-op success)', () => {
+    // pages[id=missing] → no match → unresolved → only selector → errResult.
     const result = patchDesign({
       design_path: designPath,
       selectors: [{ path: 'pages[id=missing].label', value: 'Oops' }],
     });
-    expect(result.success).toBe(true); // no throw
+    expect(result.success).toBe(false);
+    expect(fs.readFileSync(designPath, 'utf-8')).not.toContain('Oops');
   });
 
-  it('silently no-ops when intermediate key is null', () => {
-    // doc.missingKey.sub → current becomes undefined after first step
+  it('FAILS loudly when an intermediate key is missing (was: silent no-op success)', () => {
     const result = patchDesign({
       design_path: designPath,
       selectors: [{ path: 'missingKey.sub.value', value: 42 }],
     });
-    expect(result.success).toBe(true); // no throw
+    expect(result.success).toBe(false);
+  });
+
+  it('reports inert patches on an expanded preset group (no render effect)', () => {
+    appendPage({
+      design_path: designPath, page_id: 'page_2', label: 'Page Two',
+      layers: [{ id: 'stat_1', type: 'group', z: 0, x: 0, y: 0, width: 1080, height: 1350,
+        layers: [{ id: 'stat_1_bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1350 }] } as unknown as Layer],
+    });
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'pages[id=page_2].layers[0].pos', value: [0, 0, 1080, 1080] }],
+    });
+    expect(result.success).toBe(true);
+    expect(result.inert_no_effect).toBeTruthy();
+    expect((result.inert_no_effect as string[])[0]).toMatch(/no render effect/);
   });
 });
 
@@ -1141,6 +1167,17 @@ describe('addLayers', () => {
   it('returns error when no layers provided', () => {
     const result = addLayers({ design_path: designPath }) as Record<string, unknown>;
     expect(result.success).toBe(false);
+  });
+
+  it('clamps an oversized preset (h:1350 on a 1080 doc) to the canvas — no off_canvas', () => {
+    addLayers({
+      design_path: designPath,
+      layers_shorthand: [{ id: 'stat_1', type: 'stat', z: 0, pos: [0, 0, 1080, 1350],
+        bg: '#FAF5EC', accent: '#B8543C', stat: '$37B', caption: 'in the US' }],
+    });
+    const info = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    const grp = (info.layers as { id: string; h: number }[]).find(l => l.id === 'stat_1')!;
+    expect(grp.h).toBeLessThanOrEqual(1080);
   });
 
   it('rejects a junk-BLOB string layers_shorthand (no brackets, not JSON)', () => {
