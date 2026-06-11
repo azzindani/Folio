@@ -1830,3 +1830,50 @@ describe('sections block item-array aliases (model names it rows/data, not items
     expect(all).toContain('Fossil fuels');
   });
 });
+
+describe('heading legibility on a dark canvas (vision-loop: invisible-title fix)', () => {
+  type G = { layers: Array<Record<string, unknown>> };
+  const exp = (sh: Record<string, unknown>): G => expandShorthand(sh as unknown as ShorthandLayer) as unknown as G;
+  const find = (g: G, suffix: string) => g.layers.find(l => String(l.id).endsWith(suffix)) as
+    { y?: number; height?: number; style?: { color?: string; font_size?: number } } | undefined;
+  const color = (g: G, suffix: string): string => String(find(g, suffix)?.style?.color ?? '');
+
+  it('feature_grid heading on a dark bg flips to light (was invisible #1A1A1A-on-dark)', () => {
+    // model set a dark bg but gave NO text_color → engine must not leave a dark title.
+    const g = exp({ id: 'fg', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080], bg: '#0A0A0A', accent: '#FF6A3D',
+      title: 'Strait of Hormuz Crisis: 5 Immediate Actions', subtitle: 'What the world must do now',
+      items: [{ icon: 'anchor', title: 'A', desc: 'd' }, { icon: 'flag', title: 'B', desc: 'd' }] });
+    expect(color(g, 'fg_title')).toBe('#FAFAFA');
+    expect(color(g, 'fg_subtitle')).toBe('#FAFAFA');
+  });
+
+  it('feature_grid: a long wrapped title never overflows into the subtitle or the cards row', () => {
+    const g = exp({ id: 'fg', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080], bg: '#0A0A0A', accent: '#FF6A3D',
+      title: 'Strait of Hormuz Crisis: 5 Immediate Actions', subtitle: 'What the world must do now to protect global energy flows',
+      items: [{ icon: 'anchor', title: 'A', desc: 'd' }, { icon: 'flag', title: 'B', desc: 'd' }] });
+    const title = find(g, 'fg_title')!, sub = find(g, 'fg_subtitle')!, row = g.layers.find(l => l.id === 'fg_row') as { y?: number };
+    expect((title.y! + title.height!)).toBeLessThanOrEqual(sub.y! + 2);     // title clears the subtitle
+    expect((sub.y! + sub.height!)).toBeLessThanOrEqual(row.y! as number);   // heading clears the cards
+    // the long title was shrunk below the nominal 0.08*W start size
+    expect(title.style!.font_size!).toBeLessThan(Math.round(1080 * 0.08));
+  });
+
+  it('editorial / sections / list / stat / event headings all go light on a dark bg', () => {
+    const dark = { bg: '#0A0A0A', accent: '#FF6A3D' };
+    expect(color(exp({ id: 'ed', type: 'editorial', z: 0, pos: [0, 0, 1080, 1350], ...dark, title: 'X', body: 'b' }), 'ed_title')).toBe('#FAFAFA');
+    expect(color(exp({ id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], ...dark, title: 'X', blocks: [{ kind: 'text', text: 't' }] }), 'sx_title')).toBe('#FAFAFA');
+    expect(color(exp({ id: 'ls', type: 'list', z: 0, pos: [0, 0, 1080, 1350], ...dark, title: 'X', items: [{ title: 'a', desc: 'd' }] }), 'ls_title')).toBe('#FAFAFA');
+    expect(color(exp({ id: 'st', type: 'stat', z: 0, pos: [0, 0, 1080, 1350], ...dark, stat: '90%', caption: 'a real sentence of context here' }), 'st_cap')).toBe('#FAFAFA');
+    expect(color(exp({ id: 'ev', type: 'event', z: 0, pos: [0, 0, 1080, 1350], ...dark, title: 'GALA', details: ['JUN 6'] }), 'ev_title')).toBe('#FAFAFA');
+  });
+
+  it('a light bg still yields dark text (no regression on the cream default)', () => {
+    const g = exp({ id: 'ed', type: 'editorial', z: 0, pos: [0, 0, 1080, 1350], bg: '#FAF5EC', title: 'X', body: 'b' });
+    expect(color(g, 'ed_title')).toBe('#1A1A1A');
+  });
+
+  it('an explicit, contrasting text_color is preserved (not force-flipped)', () => {
+    const g = exp({ id: 'ed', type: 'editorial', z: 0, pos: [0, 0, 1080, 1350], bg: '#0A0A0A', text_color: '#FFD400', title: 'X', body: 'b' });
+    expect(color(g, 'ed_title')).toBe('#FFD400');
+  });
+});
