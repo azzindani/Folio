@@ -8,11 +8,19 @@
 // Each call mints a FRESH unique editor token (1h TTL), so the link is
 // self-authenticating and not shared/replayed across designs.
 import { mintEditorToken } from '../oauth';
+import { registerShortLink } from './short-link';
 import type { AttachmentBlock } from '../types';
 
 export interface EditorLink {
   /** Clickable, token-embedded URL that opens this design in the editor. */
   open_url: string;
+  /**
+   * SHORT, opaque link (…/o/<code>) that 302-redirects to the full editor URL,
+   * minting the auth token server-side. ~40 chars, no JWT, no percent-encoding —
+   * give THIS to a human/small model to relay; the long open_url is for clients
+   * that load the design programmatically. Absent on a bare (no-design) link.
+   */
+  short_url?: string;
   /** Base editor URL (no query) — for clients that build their own links. */
   editor_url: string;
   /** MCP resource block so capable clients render a rich, clickable preview. */
@@ -44,12 +52,23 @@ export function buildEditorLink(
 
   const open_url = params.toString() ? `${editor_url}/?${params.toString()}` : editor_url;
 
+  // Short, mangle-proof link — register code→path and hand back …/o/<code>.
+  // The static-server resolves it, mints a token, and 302s to the full URL.
+  const short_url = designPath
+    ? `${editor_url}/o/${registerShortLink(designPath, opts?.page)}`
+    : undefined;
+
   return {
     open_url,
+    short_url,
     editor_url,
     attachment: {
       type: 'resource',
-      resource: { uri: open_url, mimeType: 'text/html', text: `Open in Folio editor → ${open_url}` },
+      resource: {
+        uri: short_url ?? open_url,
+        mimeType: 'text/html',
+        text: `Open in Folio editor → ${short_url ?? open_url}`,
+      },
     },
   };
 }

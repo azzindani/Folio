@@ -21,6 +21,21 @@ function readableOn(on: string, prefer: string): string {
   if (asHex(prefer) && contrastRatio(prefer, on) >= 3) return prefer;
   return luminance(onRgb) > 0.5 ? '#1A1A1A' : '#FAFAFA';
 }
+/**
+ * Resolve a readable (text, muted) pair for content sitting on `bg`. Honors an
+ * explicit hex when it already contrasts; otherwise flips to a light pair on a
+ * dark canvas (or a dark pair on a light one). A vision-less model that sets a
+ * dark bg but leaves text at a light-canvas default ($text / #1A1A1A) would
+ * otherwise render invisible — the engine guarantees legibility it can't see.
+ * A non-hex explicit (a `$token`) is treated as "unset" so the bg drives it.
+ */
+function readablePair(bg: string, explicitText?: unknown, explicitMuted?: unknown): { text: string; muted: string } {
+  const rgb = hexToRgb(asHex(bg) ?? '#FAF5EC');
+  const dark = rgb ? luminance(rgb) < 0.42 : false;
+  const text = readableOn(bg, asHex(explicitText) ?? (dark ? '#FAFAFA' : '#1A1A1A'));
+  const muted = readableOn(bg, asHex(explicitMuted) ?? (dark ? '#B8B2A8' : '#6E5F4A'));
+  return { text, muted };
+}
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
 export const SHAPE_NAMES = new Set<string>([
@@ -383,20 +398,39 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const rowY = Math.round(H * 0.42), rowH = H - rowY - M;
   const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
   const layers: Layer[] = [];
-  {
-    // Always engine-compose the background. Use the canvas base color (or a dark
-    // default — feature_grid reads best on a deep canvas) as the wash base, and
-    // when no bg_style was given fall back to a tasteful designed default (glow/
-    // sweep + grain) rather than a flat fill — flat reads as a template.
-    const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHex ?? '#0A0A0A');
-    composeBackground(bgStyle || defaultBgStyle(base), id, X, Y, W, H, { bg: base, accent, text: textColor, palette, image: str(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0).forEach(l => layers.push(l));
-  }
+  // Always engine-compose the background. Use the canvas base color (or a dark
+  // default — feature_grid reads best on a deep canvas) as the wash base, and
+  // when no bg_style was given fall back to a tasteful designed default (glow/
+  // sweep + grain) rather than a flat fill — flat reads as a template.
+  const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHex ?? '#0A0A0A');
+  composeBackground(bgStyle || defaultBgStyle(base), id, X, Y, W, H, { bg: base, accent, text: textColor, palette, image: str(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0).forEach(l => layers.push(l));
+  // The heading sits on the CANVAS wash, not on a card — so its colors must
+  // contrast `base`, not the theme. A blind model that set a dark bg but left
+  // text as the theme's dark $text would otherwise render an INVISIBLE title.
+  // And MEASURE the wrapped title so a 2–3 line headline shrinks instead of
+  // overflowing its fixed box into the subtitle / cards (the bug the vision
+  // loop caught on the Hormuz poster).
+  const headColor = readableOn(base, textColor);
+  const headW = W - 2 * M;
+  const headLimit = Y + rowY - Math.round(H * 0.03); // heading must clear the cards row
+  let cursorY = Y + Math.round(H * 0.09);
   const title = str(r['title']);
-  if (title) layers.push({ id: `${id}_title`, type: 'text', z: 30, x: X + M, y: Y + Math.round(H * 0.11), width: W - 2 * M, height: Math.round(H * 0.13),
-    content: { type: 'plain', value: title }, style: { font_size: Math.round(W * 0.08), font_weight: 800, color: textColor, align: 'center' } } as unknown as Layer);
+  if (title) {
+    let tSizeH = Math.round(W * 0.08);
+    let tH = estTextHeight(title, tSizeH, headW, 1.1);
+    const maxTH = Math.round(H * 0.22);
+    if (tH > maxTH) { tSizeH = Math.max(Math.round(W * 0.045), Math.floor(tSizeH * maxTH / tH)); tH = estTextHeight(title, tSizeH, headW, 1.1); }
+    layers.push({ id: `${id}_title`, type: 'text', z: 30, x: X + M, y: cursorY, width: headW, height: tH,
+      content: { type: 'plain', value: title }, style: { font_size: tSizeH, font_weight: 800, color: headColor, align: 'center', line_height: 1.1 } } as unknown as Layer);
+    cursorY += tH + Math.round(H * 0.012);
+  }
   const subtitle = str(r['subtitle']);
-  if (subtitle) layers.push({ id: `${id}_subtitle`, type: 'text', z: 30, x: X + M, y: Y + Math.round(H * 0.26), width: W - 2 * M, height: Math.round(H * 0.06),
-    content: { type: 'plain', value: subtitle }, style: { font_size: Math.round(W * 0.03), color: muted, align: 'center' } } as unknown as Layer);
+  if (subtitle && cursorY < headLimit) {
+    const sSize = Math.round(W * 0.03);
+    const sH = Math.min(estTextHeight(subtitle, sSize, headW, 1.25), Math.max(sSize, headLimit - cursorY));
+    layers.push({ id: `${id}_subtitle`, type: 'text', z: 30, opacity: 0.8, x: X + M, y: cursorY, width: headW, height: sH,
+      content: { type: 'plain', value: subtitle }, style: { font_size: sSize, color: headColor, align: 'center', line_height: 1.25 } } as unknown as Layer);
+  }
   // Scale type + MEASURE wrapped heights so long titles/descs never overflow the
   // card or collide (narrow cards → smaller type). Fixed heights overflowed before.
   const pad = 28, innerW = Math.max(40, cardW - 2 * pad);
@@ -735,8 +769,7 @@ function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
   const { X, Y, W, H } = shBox(sh);
   const bg = shStr(r['bg'], '#FAF5EC');
   const accent = shStr(r['accent'], '#B8543C');
-  const textColor = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
-  const muted = shStr(r['muted'], '#6E5F4A');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow'] ?? r['label']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
   const subtitle = shStr(r['subtitle'] ?? r['lede'] ?? r['deck']);
@@ -788,8 +821,7 @@ function buildSplit(sh: ShorthandLayer, id: string, z: number): Layer {
   const bg = shStr(r['bg'], '#FAF5EC');
   const accent = shStr(r['accent'], '#B8543C');
   const panelFill = r['panel'] ?? r['panel_fill'] ?? accent;
-  const textColor = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
-  const muted = shStr(r['muted'], '#6E5F4A');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const panelText = shStr(r['panel_text'], '#FAF5EC');
   const kicker = shStr(r['kicker'] ?? r['eyebrow'] ?? r['label']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
@@ -858,8 +890,7 @@ function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
   const { X, Y, W, H } = shBox(sh);
   const bg = shStr(r['bg'], '#FAF5EC');
   const accent = shStr(r['accent'], '#B8543C');
-  const textColor = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
-  const muted = shStr(r['muted'], '#6E5F4A');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
   const footer = shStr(r['footer']);
@@ -929,12 +960,12 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const { X, Y, W, H } = shBox(sh);
   const bg = shStr(r['bg'], '#0A0A0A');
   const accent = shStr(r['accent'], '#FF3D00');
-  const textColor = shStr(r['text_color'] ?? r['color'], '#FAFAFA');
-  // Caption sits ON the bg — its default (#FAFAFA, for a dark bg) is invisible
-  // when the model gives a LIGHT bg and no text_color. Flip to a legible tone.
-  // A vision-less model cannot see the caption vanish, so the engine guarantees it.
-  const capColor = readableOn(bg, textColor);
-  const muted = shStr(r['muted'], '#9A9A9A');
+  // Caption + kicker + footer sit ON the bg. A fixed default (#FAFAFA for a dark
+  // bg) is invisible when the model gives a LIGHT bg and no text_color (and vice
+  // versa). readablePair flips to a legible tone for the actual canvas — a
+  // vision-less model cannot see the text vanish, so the engine guarantees it.
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
+  const capColor = textColor;
   const kicker = shStr(r['kicker'] ?? r['label'] ?? r['eyebrow']);
   const stat = shStr(r['stat'] ?? r['value'] ?? r['number'] ?? r['title'] ?? r['text'], '0');
   const caption = shStr(r['caption'] ?? r['subtitle'] ?? r['desc'] ?? r['body'] ?? r['context'] ?? r['note'] ?? r['summary'] ?? r['lead'] ?? r['blurb'] ?? r['detail']);
@@ -994,8 +1025,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   const { X, Y, W, H } = shBox(sh);
   const bg = shStr(r['bg'], '#0A0A0A');
   const accent = shStr(r['accent'], '#FF3D00');
-  const textColor = shStr(r['text_color'] ?? r['color'], '#FAFAFA');
-  const muted = shStr(r['muted'], '#9A9A9A');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text'], 'EVENT');
   const footer = shStr(r['footer']);
@@ -1219,8 +1249,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const { X, Y, W, H } = shBox(sh, 1080, 1920);
   const bg = shStr(r['bg'], '#FAF5EC');
   const accent = shStr(r['accent'], '#B8543C');
-  const text = shStr(r['text_color'] ?? r['color'], '#1A1A1A');
-  const muted = shStr(r['muted'], '#6E5F4A');
+  const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline']);
   const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);

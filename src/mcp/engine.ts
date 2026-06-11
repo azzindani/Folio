@@ -73,7 +73,7 @@ export function createDesign(args: { project_path: string; name: string; type?: 
 
   // Self-contained editor link (fresh token) — design is openable immediately.
   const link = buildEditorLink(designPath);
-  progress.push(pOk('Editor link', link.open_url));
+  progress.push(pOk('Editor link', link.short_url ?? link.open_url));
 
   const projectPath = path.join(args.project_path, 'project.yaml');
   const next_action: NextAction = type === 'carousel' ? {
@@ -96,13 +96,13 @@ export function createDesign(args: { project_path: string; name: string; type?: 
       { type: 'design', path: designPath, role: 'created' },
     ]);
     const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path }, { type: type as 'poster' | 'carousel' });
-    return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
+    return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
   }
   const context = buildContext(op, `Created ${type} design "${args.name}"`, [
     { type: 'design', path: designPath, role: 'created' },
   ]);
   const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path }, { type: type as 'poster' | 'carousel' });
-  return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] });
+  return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] });
 }
 
 // ── Tier 1 — Project Management ──────────────────────────────
@@ -750,7 +750,7 @@ export function appendPage(args: {
     design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}),
   }, { type: 'carousel' });
   const link = buildEditorLink(dPath, { page: spec.pages.length - 1 });
-  return okResult(op, { page_id: pageId, page_count: spec.pages.length, open_url: link.open_url, editor_url: link.editor_url, ...(notes.length ? { notes } : {}), ...(next_action ? { next_action } : {}), progress, context, handover, _attachments: [link.attachment] }, bak);
+  return okResult(op, { page_id: pageId, page_count: spec.pages.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(notes.length ? { notes } : {}), ...(next_action ? { next_action } : {}), progress, context, handover, _attachments: [link.attachment] }, bak);
 }
 
 export function patchDesign(args: { design_path: string; selectors: { path: string; value: unknown }[]; dry_run?: boolean; project_path?: string }): ToolResult {
@@ -830,13 +830,15 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   progress.push(pOk('Design sealed', `${spec.pages?.length ?? 0} page(s), ${spec.layers?.length ?? 0} root layer(s)`));
 
   const link = buildEditorLink(dPath);
-  progress.push(pOk('Editor link', link.open_url));
-  const next_action: NextAction = { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: `Export with export_design, or open the design now: ${link.open_url}` };
+  progress.push(pOk('Editor link', link.short_url ?? link.open_url));
+  // Hand the SHORT link to the user — a small model mangles the long tokenized
+  // URL (truncates / re-encodes it). share_url is ~40 chars and copy-safe.
+  const next_action: NextAction = { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: `Export with export_design. To open or share the design, give the user this link EXACTLY as written (do not retype or re-encode it): ${link.short_url ?? link.open_url}` };
   const context = buildContext(op, `Sealed design "${spec.meta.name}"`, [
     { type: 'design', path: dPath, role: 'sealed' },
   ]);
   const handover = buildHandover('SEAL', { design_path: dPath }, { type: spec.meta.type });
-  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, open_url: link.open_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
+  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
 }
 
 // Known layer types — kept in sync with LayerType in src/schema/types.ts.
@@ -1123,7 +1125,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         _attachments.push(link.attachment);
         const context = buildContext(op, `SVG exported for "${spec.meta.name}" — ${outPaths.length} page(s)`, outPaths.map(p => ({ type: 'svg', path: p, role: 'output' })));
         const handover = buildHandover('EXPORT', { design_path: dPath });
-        return okResult(op, { format: 'svg', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, open_url: link.open_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+        return okResult(op, { format: 'svg', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
       }
       const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.writeFileSync(outPath, svgStr, 'utf-8');
@@ -1140,7 +1142,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/svg+xml', text: path.basename(outPath) } },
         link.attachment,
       ];
-      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
     }
@@ -1167,7 +1169,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       progress.push(pOk('HTML written', path.basename(outPath)));
       const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, open_url: link.open_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
+      return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
     } catch (err) {
       return errResult(op, `HTML export failed: ${(err as Error).message}`, 'Check design spec.', progress);
     }
@@ -1420,7 +1422,7 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
   progress.push(pOk(`Aligned ${boxed.length} layer(s)`, o));
   const context = buildContext(op, `Aligned ${boxed.length} layer(s) (${o}) in "${spec.meta.name}"`);
   const link = buildEditorLink(dPath);
-  return okResult(op, { status: 'ok', operation: o, aligned: boxed.map(t => t.l.id), backup, open_url: link.open_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment] });
+  return okResult(op, { status: 'ok', operation: o, aligned: boxed.map(t => t.l.id), backup, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment] });
 }
 
 export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {

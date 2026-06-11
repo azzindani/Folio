@@ -12,7 +12,10 @@ import * as fs from 'fs';
 // Pure, side-effect-free HS256 verify — safe to import into the editor process
 // without pulling in MCP/OAuth module side effects (no server start, no IO at
 // import). Lets the editor validate the stateless JWTs mintEditorToken now issues.
-import { verifyJwt, jwtSecret } from '../mcp/jwt';
+import { verifyJwt, signJwt, jwtSecret } from '../mcp/jwt';
+// Pure, side-effect-free resolver (fs + a hash only) — maps a short /o/<code>
+// back to the design path so we can 302 to the full tokenized editor URL.
+import { resolveShortLink } from '../mcp/engine/short-link';
 
 // Token validation — reuses the OAuth access-token store from the MCP
 // server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
@@ -165,6 +168,30 @@ Bun.serve({
   hostname: HOST,
   async fetch(req) {
     const url = new URL(req.url);
+
+    // ── Short editor link: /o/<code> → 302 to the full tokenized editor URL ──
+    // The whole point: a small model copies this ~40-char link faithfully, then
+    // we mint the auth token HERE (server-side) so no long JWT ever rides in the
+    // string the model handled. Runs before the auth gate — the code itself is
+    // the capability (same trust posture as the token-bearing long link).
+    // Capture everything after /o/ (even a trailing %5D / backtick a small model
+    // may glue on) and let resolveShortLink sanitize it — don't reject at the
+    // route, or such a link 401s at the auth gate instead of resolving.
+    const shortCodeMatch = url.pathname.match(/^\/o\/([^/]+)$/);
+    if (shortCodeMatch && req.method === 'GET') {
+      // No decode (a lone % would throw); resolveShortLink strips from the first
+      // non-[A-Za-z0-9_-] char, so a raw "%5D" / "`" tail is handled the same.
+      const code = shortCodeMatch[1] ?? '';
+      const target = resolveShortLink(code);
+      if (!target) return new Response('Unknown or expired Folio link', { status: 404 });
+      const p = new URLSearchParams();
+      p.set('file', target.path);
+      if (typeof target.page === 'number') p.set('page', String(target.page));
+      p.set('mcp_url', process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`);
+      const secret = jwtSecret();
+      if (secret) p.set('token', signJwt({ sub: 'default', kind: 'editor' }, secret, 60 * 60 * 24 * 30));
+      return new Response(null, { status: 302, headers: { Location: `/?${p.toString()}`, 'Cache-Control': 'no-store' } });
+    }
 
     // Auth check for /__project_files/* — accept a Bearer token, a
     // ?token= query param (Jupyter-style — the link from open_in_editor

@@ -26,6 +26,23 @@ describe('buildEditorLink', () => {
   it('encodes a page index when given', () => {
     expect(buildEditorLink('/tmp/x.design.yaml', { page: 2 }).open_url).toContain('page=2');
   });
+
+  it('also returns a SHORT /o/<code> link (no token, mangle-proof) for a real design', () => {
+    const link = buildEditorLink('/tmp/x.design.yaml', { editorUrl: 'https://folio.casava.space' });
+    expect(link.short_url).toMatch(/^https:\/\/folio\.casava\.space\/o\/[A-Za-z0-9_-]+$/);
+    expect(link.short_url).not.toContain('token=');      // no JWT in the string the model copies
+    expect(link.short_url!.length).toBeLessThan(60);     // short enough a 30B can't truncate it
+    // the same design ⇒ the same stable short link (idempotent across re-seals)
+    expect(buildEditorLink('/tmp/x.design.yaml', { editorUrl: 'https://folio.casava.space' }).short_url).toBe(link.short_url);
+    // the rich attachment leads with the short link, not the long one
+    const att = link.attachment;
+    expect(att.type).toBe('resource');
+    if (att.type === 'resource') expect(att.resource.uri).toBe(link.short_url);
+  });
+
+  it('omits short_url for a bare (no-design) editor link', () => {
+    expect(buildEditorLink().short_url).toBeUndefined();
+  });
 });
 
 describe('buildReportViewLink', () => {
