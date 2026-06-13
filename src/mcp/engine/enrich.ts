@@ -6,7 +6,7 @@
 // FIRST (so figures are real, not invented). The model does the research + writing.
 import type { ToolResult, ProgressItem } from '../types';
 import { okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
-import { pickMood, type Mood } from './mood-bank';
+import { pickMood, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
 
 
 // Per-preset rich outline + recommended canvas. Each entry the model fills with
@@ -126,7 +126,9 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   // Multi-page deck / carousel → a per-page plan instead of one design.
   if (isCarousel(prompt, args.type)) {
     const subject = subjectOf(prompt);
-    const mood = pickMood(prompt, subject);
+    const cBase = pickMood(prompt, subject);
+    // One procedural recipe seeded by the subject, shared across all pages.
+    const mood: Mood = { ...cBase, bg_style: proceduralBgStyle(subject, isDarkHex(cBase.bg)) };
     const count = parsePageCount(prompt);
     const [cw, ch] = carouselCanvas(prompt);
     const research = needsResearch(prompt, 'sections');
@@ -149,7 +151,10 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   const design_type = (args.type && OUTLINES[args.type]) ? args.type : inferType(prompt);
   const outline = OUTLINES[design_type] ?? OUTLINES.sections;
   const subject = subjectOf(prompt);
-  const mood = pickMood(prompt, subject);
+  const base = pickMood(prompt, subject);
+  // Procedural geometry seeded by the topic — keeps the curated colour but varies
+  // the background so two posters in the same colour mood don't look alike.
+  const mood: Mood = { ...base, bg_style: proceduralBgStyle(subject || prompt, isDarkHex(base.bg)) };
   const research = needsResearch(prompt, design_type);
   const research_queries = research ? researchQueries(subject) : [];
   const [width, height] = outline.canvas;

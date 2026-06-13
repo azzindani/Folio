@@ -2039,3 +2039,19 @@ describe('sections — per-style headline treatments (typographic variety)', () 
     expect((mega?.style?.font_size ?? 0)).toBeGreaterThan(plain?.style?.font_size ?? 0);
   });
 });
+
+describe('headline overflow — an oversized single word is shrunk to fit the column', () => {
+  type LT = { id: string; style?: { font_size?: number } };
+  type GT = { layers: LT[] };
+  const titleSize = (title: string) => {
+    const g = expandShorthand({ id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1350], bg: '#0A0A0A',
+      title, blocks: [{ kind: 'text', text: 'body' }] } as unknown as ShorthandLayer) as unknown as GT;
+    return (g.layers.find(l => l.id === 's_title') as LT | undefined)?.style?.font_size ?? 0;
+  };
+  it('a long unwrappable word gets a smaller font than a short title', () => {
+    const shortT = titleSize('Brief Title');
+    const longWord = titleSize('Internationalization Antidisestablishmentarianism');
+    expect(longWord).toBeLessThan(shortT);
+    expect(longWord).toBeGreaterThan(0); // floored, never collapses
+  });
+});
