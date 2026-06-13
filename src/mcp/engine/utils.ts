@@ -94,7 +94,24 @@ export function snapshot(filePath: string): string {
 
 export function readYAML<T>(filePath: string): T {
   const content = fs.readFileSync(resolvePath(filePath), 'utf-8');
-  return yaml.load(content) as T;
+  const data = yaml.load(content) as T;
+  // A weak model (via patch_design) sometimes writes `layers` as a SINGLE object
+  // instead of a list — `layers: {type: rect}` not `layers: [ … ]`. Everything
+  // downstream calls `layers.map(...)` / `layers.push(...)`, so that one bad write
+  // crashed render/export/diagnose with "layers.map is not a function" (g_summit)
+  // and would break a repair attempt too. Coerce a lone-object layers container
+  // back to a one-element array so the malformed design self-heals on read.
+  const fix = (c: { layers?: unknown } | null | undefined): void => {
+    if (c && c.layers != null && !Array.isArray(c.layers) && typeof c.layers === 'object') {
+      c.layers = [c.layers];
+    }
+  };
+  if (data && typeof data === 'object') {
+    fix(data as { layers?: unknown });
+    const pages = (data as { pages?: unknown }).pages;
+    if (Array.isArray(pages)) for (const p of pages) fix(p as { layers?: unknown });
+  }
+  return data;
 }
 
 // Atomic write: temp file → rename, prevents partial writes
