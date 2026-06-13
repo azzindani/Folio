@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, hasPresetType, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -601,6 +601,17 @@ export function addLayers(args: {
       'layers_shorthand was a STRING that did not parse into any layers.',
       'Send a JSON array. Feature/benefit/cards poster → one feature_grid (flat bg + one accent, not a gradient): layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
   }
+  // A STRING that smells like a preset (has "blocks"/a preset "type") but coerced
+  // to NO real preset layer — almost always MALFORMED JSON (a stray brace, a
+  // truncation). Left alone it degrades to a lone text layer holding the blob →
+  // a blank-looking poster (g_arch). Reject so the model resends a clean array
+  // rather than silently shipping the blank.
+  if (typeof rawShorthand === 'string' && shorthand.length && !hasPresetType(shorthand)
+    && /"blocks"|"type"\s*:\s*"(sections|stats|bars|feature_grid|editorial|stat|event|list|split)"/.test(rawShorthand)) {
+    return errResult(op,
+      'layers_shorthand looks like a preset but is MALFORMED JSON (it parsed into no valid preset layer — likely a stray brace or a truncation).',
+      'Resend it as a clean JSON array — one preset object, e.g. layers_shorthand=[{type:"sections", title:"…", subtitle:"…", bg_style:"…", blocks:[{type:"stats", items:[{value:"30%", label:"…"}]}, {type:"heading_text", heading:"…", text:"…"}, {type:"callout", label:"Key Takeaway", text:"…"}]}]. Do NOT double-nest blocks ([[…]]) and close every brace.');
+  }
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
   // A weak model sometimes packs the ENTIRE preset as a STRINGIFIED JSON blob
   // inside a verbose text layer (`content.value`) instead of passing it as
@@ -671,14 +682,18 @@ export function addLayers(args: {
     spec.layers.push(...incoming);
     activeLayers = spec.layers;
     // Auto-fit the canvas to a fresh single full-bleed preset. A flow preset
-    // (sections/stat/…) has already sized its group to its own content — short
-    // → shorter page (no dead band), long → taller page (no clipping). Match
-    // the document height to it so the poster has no wasted space and nothing
-    // spills off the bottom. Only when this preset IS the whole poster.
+    // (sections/stat/…) builds its group at the origin sized to its own content.
+    // Fit the document to it — HEIGHT (short → shorter page, long → taller, no
+    // dead band, no spill) AND WIDTH, so a poster the model created on a
+    // mismatched canvas (e.g. a 2000×1080 LANDSCAPE doc holding a 1080-wide
+    // portrait preset) doesn't render in a half-width column with the bottom
+    // clipped (g_cyber). Only when this preset IS the whole poster.
     if (!hadContent && incoming.length === 1) {
-      const g = incoming[0] as Layer & { x?: number; width?: number; height?: number };
-      const W = spec.document.width;
-      if (g.type === 'group' && (g.x ?? 0) <= W * 0.02 && (g.width ?? 0) >= W * 0.9 && typeof g.height === 'number' && g.height > 0) {
+      const g = incoming[0] as Layer & { x?: number; y?: number; width?: number; height?: number };
+      const { width: DW, height: DH } = spec.document;
+      if (g.type === 'group' && (g.x ?? 0) <= DW * 0.02 && (g.y ?? 0) <= DH * 0.02
+        && typeof g.width === 'number' && g.width > 0 && typeof g.height === 'number' && g.height > 0) {
+        spec.document.width = g.width;
         spec.document.height = g.height;
       }
     }
