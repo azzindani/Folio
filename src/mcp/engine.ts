@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -595,13 +595,25 @@ export function addLayers(args: {
   // small-model form) back into layers. Only when that parse yields NOTHING do
   // we surface the helpful shape — e.g. a flat blob ("feature_grid:0,0,…:title=…")
   // with no [x,y,w,h] bracket that coerces to nothing.
-  const shorthand = coerceShorthandLayers(rawShorthand);
+  let shorthand = coerceShorthandLayers(rawShorthand);
   if (typeof rawShorthand === 'string' && !shorthand.length) {
     return errResult(op,
       'layers_shorthand was a STRING that did not parse into any layers.',
       'Send a JSON array. Feature/benefit/cards poster → one feature_grid (flat bg + one accent, not a gradient): layers_shorthand=[{type:"feature_grid", title:"Brew Lab", subtitle:"Premium coffee subscription", bg:"#0A0A0A", accent:"#FF3D00", text_color:"#FAFAFA", items:[{icon:"coffee", title:"Freshly Roasted", desc:"Sourced from sustainable farms"},{icon:"truck", title:"Fast Delivery", desc:"Shipped within 24h"},{icon:"shield-check", title:"Quality Assured", desc:"Third-wave control"}]}]');
   }
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
+  // A weak model sometimes packs the ENTIRE preset as a STRINGIFIED JSON blob
+  // inside a verbose text layer (`content.value`) instead of passing it as
+  // layers_shorthand — the engine then renders one unreadable JSON wall → a
+  // blank-looking poster. Recover the preset and re-route it through the
+  // shorthand expander (same silent-drop class as a stringified shorthand, #42).
+  if (!shorthand.length && args.layers?.length) {
+    const recovered = recoverStringifiedPreset(args.layers);
+    if (recovered?.length) {
+      shorthand = recovered;
+      progress.push(pInfo('Recovered a stringified preset from a text layer', `re-expanding ${recovered.length} preset layer(s)`));
+    }
+  }
 
   const spec = readYAML<DesignSpec>(dPath);
   // Clamp any top-level layer the model sized larger than the canvas BEFORE
