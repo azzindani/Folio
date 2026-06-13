@@ -1459,7 +1459,13 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const title = shStr(r['title'] ?? r['headline']);
   const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
   const footer = shStr(r['footer']);
-  const blocks = coalesceStatBlocks((Array.isArray(r['blocks']) ? r['blocks'] : Array.isArray(r['sections']) ? r['sections'] : []) as Record<string, unknown>[]);
+  // Weak models sometimes DOUBLE-NEST blocks — `blocks:[[{block}],[{block}]]`,
+  // each wrapped in its own array — which the renderer reads as an array-typed
+  // "block" with no kind → every block renders empty (a near-blank poster).
+  // Flatten one level so a nested block is treated as a normal block.
+  const rawBlocks = (Array.isArray(r['blocks']) ? r['blocks'] : Array.isArray(r['sections']) ? r['sections'] : []) as unknown[];
+  const flatBlocks = rawBlocks.flatMap(b => (Array.isArray(b) ? b : [b])) as Record<string, unknown>[];
+  const blocks = coalesceStatBlocks(flatBlocks);
   // No bg from the model → seed a topic-apt mood from the content (the blind-
   // model "same template" fix), else everything falls to one cream default.
   const m = seededDefaults(r, [title, subtitle, kicker, blocks]);
@@ -1954,6 +1960,18 @@ const PRESET_TYPES = new Set([
   'sections', 'infographic', 'document', 'report_poster', 'decor', 'marble_bg',
   'backdrop',
 ]);
+
+// Did coercion yield at least one real preset layer? Used to tell a parsed-OK
+// preset shorthand from junk a malformed string degraded into (e.g. a lone text
+// layer holding the whole blob) — so add_layers can reject the junk instead of
+// silently shipping a blank poster.
+export function hasPresetType(layers: ShorthandLayer[]): boolean {
+  return layers.some(l => {
+    const r = l as Record<string, unknown>;
+    return (typeof r['type'] === 'string' && PRESET_TYPES.has(r['type']))
+      || (typeof r['preset'] === 'string' && PRESET_TYPES.has(r['preset']));
+  });
+}
 
 // Does a decoded object look like a Folio PRESET payload (not arbitrary JSON a
 // poster might legitimately display)? The signal must be specific so a code

@@ -12,6 +12,7 @@ import {
   addLayers, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign,
 } from './engine';
 import type { Layer, DesignSpec } from '../schema/types';
+import type { ShorthandLayer } from './shorthand-parser';
 import { parseDesign } from '../schema/parser';
 
 const parseYAMLDesign = (p: string): DesignSpec => parseDesign(fs.readFileSync(p, 'utf-8'));
@@ -205,6 +206,48 @@ describe('addLayers — recovers a preset stringified into a text layer (blank-p
     expect(spec.layers!.some(l => l.type === 'group')).toBe(true);
     const lone = spec.layers!.find(l => l.type === 'text') as { content?: { value?: string } } | undefined;
     expect(lone?.content?.value ?? '').not.toContain('"blocks"');
+  });
+});
+
+describe('addLayers — fits a mismatched canvas to a sole preset (landscape-clip fix)', () => {
+  it('a 1080-wide portrait preset on a 2000×1080 LANDSCAPE doc shrinks the doc to fit (g_cyber)', () => {
+    const projectPath = path.join(tmpDir, 'fit-project');
+    createProject({ name: 'Fit', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Wide Doc', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/wide-doc.design.yaml');
+    // simulate the model's landscape canvas (the empty design's only dims are the
+    // document block, so the first width/height in the file are safe to swap)
+    const y0 = fs.readFileSync(designPath, 'utf-8').replace(/width: \d+/, 'width: 2000').replace(/height: \d+/, 'height: 1080');
+    fs.writeFileSync(designPath, y0);
+
+    addLayers({ design_path: designPath, layers_shorthand: [{ type: 'sections', title: 'Cybercrime',
+      subtitle: 'cost', blocks: [{ type: 'stats', items: [{ value: '$10T', label: 'cost' }] },
+        { type: 'callout', label: 'Key', text: 'Prevention pays.' }] }] as unknown as ShorthandLayer[] });
+
+    const spec = parseDesign(fs.readFileSync(designPath, 'utf-8'));
+    const g = spec.layers!.find(l => l.type === 'group') as { width?: number; height?: number };
+    expect(spec.document.width).toBe(g.width);          // canvas now matches the portrait preset
+    expect(spec.document.height).toBe(g.height);
+    expect(spec.document.width).toBeLessThan(2000);     // shrank from the landscape width
+  });
+});
+
+describe('addLayers — rejects a malformed preset string instead of shipping a blank (g_arch)', () => {
+  it('a preset-looking STRING with a stray brace errors with a repair hint (not a junk text layer)', () => {
+    const projectPath = path.join(tmpDir, 'malformed-project');
+    createProject({ name: 'Malformed', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Bad Blob', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/bad-blob.design.yaml');
+
+    // valid-ish preset blob with an EXTRA brace after blocks (the g_arch corruption)
+    const bad = '[{"blocks":[{"type":"stats","items":[{"value":"30%","label":"x"}]}]},"subtitle":"s","title":"T","type":"sections"}]';
+    const res = addLayers({ design_path: designPath, layers_shorthand: bad as unknown as ShorthandLayer[] }) as Record<string, unknown>;
+    expect(res.success).toBe(false);
+    expect(String(res.error ?? '')).toMatch(/malformed/i);
+
+    // nothing got written — no lone blob text layer was saved
+    const spec = parseDesign(fs.readFileSync(designPath, 'utf-8'));
+    expect((spec.layers ?? []).length).toBe(0);
   });
 });
 

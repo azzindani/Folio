@@ -2151,4 +2151,18 @@ describe('sections stat-fill robustness (vision-loop: oceans + energy fixes)', (
     expect(all).toContain('Cost Reductions');
     expect(all.some(t => t.includes('LCOE fell 90%'))).toBe(true);
   });
+
+  it('flattens DOUBLE-NESTED blocks [[{block}],[{block}]] so they are not empty (g_arch)', () => {
+    const g = exp({ id: 'dn', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'Architecture',
+      blocks: [
+        [{ type: 'stats', items: [{ value: '1,200+', label: 'super-tall towers' }] }],
+        [{ type: 'heading_text', sub_theme: 'Sustainability', text: 'Passive design and net-zero targets.' }],
+        [{ type: 'callout', label: 'Key Takeaway', text: 'Form meets sustainability.' }],
+      ] });
+    const all = texts(g);
+    expect(all).toContain('1,200+');                              // the nested stat rendered
+    expect(all).toContain('Sustainability');
+    expect(all.some(t => t.includes('net-zero'))).toBe(true);
+    expect(all.some(t => t.includes('Form meets'))).toBe(true);
+  });
 });
