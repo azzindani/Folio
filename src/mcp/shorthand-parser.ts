@@ -3,7 +3,7 @@ import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 import { hexToRgb, luminance } from './engine/reference';
-import { pickMood, type Mood } from './engine/mood-bank';
+import { pickMood, proceduralBgStyle, type Mood } from './engine/mood-bank';
 
 /** A concrete hex string (not a token/gradient/Fill object), else null. */
 function asHex(v: unknown): string | null {
@@ -55,7 +55,13 @@ function seededDefaults(r: Record<string, unknown>, seedParts: unknown[]): Mood 
   // spread across the bank instead of collapsing onto one default.
   const all = seedParts.map(p => (typeof p === 'string' ? p : JSON.stringify(p ?? ''))).join(' ');
   const topic = seedParts.filter((p): p is string => typeof p === 'string').join(' ').trim();
-  return pickMood(topic || all, all);
+  const mood = pickMood(topic || all, all);
+  // Keep the mood's curated COLOUR/font/treatment, but compose the GEOMETRY
+  // procedurally from the content so two decks in the same colour mood don't
+  // share a background (the "same background" complaint). 100+ distinct recipes.
+  const rgb = hexToRgb(mood.bg);
+  const dark = rgb ? luminance(rgb) < 0.5 : true;
+  return { ...mood, bg_style: proceduralBgStyle(all, dark) };
 }
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
@@ -846,6 +852,30 @@ function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3
   }
   return Math.ceil(lines * fontSize * lh);
 }
+// Per-font average glyph advance (÷ fontSize). Condensed display faces (Anton,
+// Bebas) pack tight; monospace runs wide; serif/sans sit in the middle.
+function fontCharFactor(font?: string): number {
+  if (!font) return 0.54;
+  const f = font.toLowerCase();
+  if (/mono|courier|consol/.test(f)) return 0.6;
+  if (/bebas|anton|oswald|archivo narrow|condensed/.test(f)) return 0.42;
+  return 0.54;
+}
+// Shrink a headline so its LONGEST WORD fits the column. A word can't wrap, so an
+// oversized single word (e.g. "CONFERENCE" in a large serif) bleeds off the right
+// edge — drop the size until it fits, floored at 0.45× so it never collapses.
+function fitTitleSize(text: string, baseSize: number, widthPx: number, font?: string, caps = false): number {
+  const longest = text.split(/\s+/).reduce((a, w) => (w.length > a.length ? w : a), '');
+  if (!longest) return baseSize;
+  // Uppercase geometric letters (C/O/N/M/W) run much wider than the lowercase
+  // average, so caps needs a heavier factor or a long word still bleeds off-edge.
+  // Leave a 3% safety margin and err toward shrinking — clipping looks worse.
+  const cf = fontCharFactor(font) * (caps ? 1.32 : 1.05);
+  const target = widthPx * 0.97;
+  const wordW = longest.length * baseSize * cf;
+  if (wordW <= target) return baseSize;
+  return Math.max(Math.floor(baseSize * (target / wordW)), Math.round(baseSize * 0.42));
+}
 const shStr = (v: unknown, d = ''): string => {
   if (typeof v === 'string') return v;
   if (v && typeof v === 'object') { const o = v as Record<string, unknown>; if (typeof o['text'] === 'string') return o['text']; if (typeof o['value'] === 'string') return o['value']; }
@@ -892,8 +922,9 @@ function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
   layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
   cy += Math.round(H * 0.025);
   if (title) {
-    const ts = Math.round(W * 0.085), th = estTextHeight(title, ts, cW, 1.04);
-    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04, font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
+    const edFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+    const ts = fitTitleSize(title, Math.round(W * 0.085), cW, edFont), th = estTextHeight(title, ts, cW, 1.04);
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04, font_family: edFont }));
     cy += th + Math.round(H * 0.025);
   }
   if (subtitle) {
@@ -1154,7 +1185,9 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   // default, so measure with caps-aware factors (0.60 / 0.66) to match the
   // renderer. Without this a title that wraps to 3 caps lines under-budgets and
   // the details overlap its last line (diagnose can't see inside the preset).
-  const ts = Math.round(W * 0.15), titleH = estTextHeight(title, ts, cW, 1.0, 0.60);
+  const eventFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+  // Shrink the (often very large) caps title so its longest word fits the width.
+  const ts = fitTitleSize(title, Math.round(W * 0.15), cW, eventFont, true), titleH = estTextHeight(title, ts, cW, 1.0, 0.60);
   const ds = Math.round(W * 0.026), lineGap = Math.round(H * 0.012);
   const detailH = details.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25, 0.66) + lineGap, 0);
   const kickH = kicker ? Math.round(H * 0.05) : 0;
@@ -1382,9 +1415,10 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const mega = headlineStyle === 'mega';
   const rotateKick = headlineStyle === 'rotate' && !!kicker;
   const tLH = 1.04;
-  const ts = mega ? Math.round(W * 0.094) : Math.round(W * 0.072);
   const gutter = rotateKick ? Math.round(W * 0.085) : 0;       // left clearance for the vertical spine
   const ccX = cX + gutter, ccW = cW - gutter;                  // content column (indented when a spine is present)
+  const tsBase = mega ? Math.round(W * 0.094) : Math.round(W * 0.072);
+  const ts = title ? fitTitleSize(title, tsBase, ccW, titleFont, mega) : tsBase;  // shrink so the longest word fits
 
   // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
   // dead space — a common blind-model habit). Trim BEFORE measuring.
