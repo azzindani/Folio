@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -2053,5 +2053,49 @@ describe('headline overflow — an oversized single word is shrunk to fit the co
     const longWord = titleSize('Internationalization Antidisestablishmentarianism');
     expect(longWord).toBeLessThan(shortT);
     expect(longWord).toBeGreaterThan(0); // floored, never collapses
+  });
+});
+
+describe('recoverStringifiedPreset — rescues a preset blob stuffed into a text layer', () => {
+  const txt = (value: string): Layer => ({ id: 't', type: 'text', content: { type: 'plain', value } } as unknown as Layer);
+  const bg = (): Layer => ({ id: 'r', type: 'rect', pos: [0, 0, 1080, 2000] } as unknown as Layer);
+
+  it('array form: [{type:"sections",…,blocks:[…]}] in a text value → one sections layer', () => {
+    const blob = JSON.stringify([{ type: 'sections', kicker: 'Astrophysics', title: 'Black Holes',
+      subtitle: 'overview', blocks: [{ type: 'stats', items: [{ value: '30 km', label: 'radius' }] }] }]);
+    const got = recoverStringifiedPreset([txt(blob), bg()]);
+    expect(got).not.toBeNull();
+    expect(got!.length).toBe(1);
+    expect(got![0].type).toBe('sections');
+    // the recovered preset expands into a real layer tree (not a JSON wall)
+    const tree = expandShorthandLayers(got!);
+    expect(tree[0].type).toBe('group');
+  });
+
+  it('object form with blocks but NO type → defaulted to sections (the sleep blank)', () => {
+    const blob = JSON.stringify({ accent: '#3E7C5A', bg: '#F2F0E6', kicker: 'Sleep Facts',
+      subtitle: 'why rest matters', headline: 'Why We Sleep',
+      blocks: [{ type: 'heading_text', heading: 'The Science', subtitles: ['…'] }] });
+    const got = recoverStringifiedPreset([txt(blob)]);
+    expect(got).not.toBeNull();
+    expect(got![0].type).toBe('sections');           // type injected, not exploded into per-key layers
+    expect(got!.length).toBe(1);
+  });
+
+  it('recovers even from a TRUNCATED blob (closeJsonString repair)', () => {
+    const full = JSON.stringify([{ type: 'sections', title: 'X', blocks: [{ type: 'stats', items: [{ value: '1', label: 'a' }] }] }]);
+    const got = recoverStringifiedPreset([txt(full.slice(0, full.length - 3))]); // chop the closing braces
+    expect(got).not.toBeNull();
+    expect(got![0].type).toBe('sections');
+  });
+
+  it('does NOT hijack a legitimate text layer that merely contains JSON-like text', () => {
+    expect(recoverStringifiedPreset([txt('{"latitude": 40.7, "longitude": -74.0}')])).toBeNull();
+    expect(recoverStringifiedPreset([txt('Save 30% on { everything } this week')])).toBeNull();
+  });
+
+  it('returns null when there is no text layer carrying a preset (the healthy case)', () => {
+    expect(recoverStringifiedPreset([bg()])).toBeNull();
+    expect(recoverStringifiedPreset([txt('A Brief History of Jazz')])).toBeNull();
   });
 });
