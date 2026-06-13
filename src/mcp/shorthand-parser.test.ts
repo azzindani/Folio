@@ -1877,3 +1877,65 @@ describe('heading legibility on a dark canvas (vision-loop: invisible-title fix)
     expect(color(g, 'ed_title')).toBe('#FFD400');
   });
 });
+
+describe('seeded default mood — no-bg presets vary by topic (the 30B "same-template" fix)', () => {
+  type G = { layers: Array<Record<string, unknown>> };
+  const sec = (id: string, title: string, intro: string): G => expandShorthand({
+    id, type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title,
+    blocks: [{ kind: 'text', text: intro }],
+  } as unknown as ShorthandLayer) as unknown as G;
+  // The composed canvas base rect carries the bg color/fill.
+  const bgOf = (g: G): string => {
+    const l = g.layers.find(x => String(x.id).endsWith('_bg'));
+    return JSON.stringify((l as { fill?: unknown } | undefined)?.fill ?? null);
+  };
+
+  it('two different topics with NO bg get different canvases (not one cream default)', () => {
+    const ocean = sec('a', 'Deep Sea Abyss', 'The abyssal zone far below sea level harbors bioluminescent marine creatures.');
+    const volcano = sec('b', 'Volcano Science', 'Volcanoes erupt molten rock and lava from deep in the Earth.');
+    const neon = sec('c', 'Neon Sign History', 'Neon signs lit cities through the 20th century, a vintage glow.');
+    expect(new Set([bgOf(ocean), bgOf(volcano), bgOf(neon)]).size).toBe(3);
+  });
+
+  it('the same content is deterministic (no Math.random in the seed)', () => {
+    expect(bgOf(sec('a', 'Volcano Science', 'Volcanoes erupt molten rock.')))
+      .toBe(bgOf(sec('z', 'Volcano Science', 'Volcanoes erupt molten rock.')));
+  });
+
+  it('an explicit bg is always honored over the seeded default', () => {
+    const g = expandShorthand({ id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1920],
+      bg: '#123456', title: 'X', blocks: [{ kind: 'text', text: 'y' }] } as unknown as ShorthandLayer) as unknown as G;
+    expect(bgOf(g).toLowerCase()).toContain('123456');
+  });
+
+  it('content lanes steer the seed: an ocean topic lands on a dark teal canvas', () => {
+    const g = sec('o', 'Deep Sea Abyss', 'The abyssal zone below sea level — marine life in the deep ocean.');
+    // teal-ocean mood bg is #06141B; the base rect should carry it.
+    expect(bgOf(g).toLowerCase()).toContain('06141b');
+  });
+});
+
+describe('coerceShorthandLayers — recover a MALFORMED stringified layers_shorthand (30B blank-design fix)', () => {
+  const type0 = (s: string): string | undefined => {
+    const out = coerceShorthandLayers(s);
+    return out[0]?.type;
+  };
+  it('a clean stringified array still parses', () => {
+    expect(type0('[{"type":"sections","blocks":[{"kind":"text","text":"hi"}]}]')).toBe('sections');
+  });
+  it('truncated — missing the final closing brace (model hit a token limit)', () => {
+    expect(type0('{"type":"sections","bg":"#06141B","blocks":[{"kind":"text","text":"hi"}]')).toBe('sections');
+  });
+  it('the OTHER tool params got concatenated into the string', () => {
+    expect(type0('[{"type":"sections","blocks":[{"kind":"text","text":"hi"}]}],"design_path":"/x.yaml","project_path":"/x"}')).toBe('sections');
+  });
+  it('a doubled closing brace at the end', () => {
+    expect(type0('{"type":"sections","blocks":[{"kind":"text","text":"hi"}]}}')).toBe('sections');
+  });
+  it('a single stringified object (not an array) is wrapped', () => {
+    expect(type0('{"type":"stat","stat":"90%","caption":"a real sentence of context here that is long enough"}')).toBe('stat');
+  });
+  it('genuine junk still yields no usable layer', () => {
+    expect(coerceShorthandLayers('not json at all, just prose').length).toBe(0);
+  });
+});
