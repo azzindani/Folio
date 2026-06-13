@@ -30,9 +30,13 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
 
 function inferType(p: string): string {
   if (/\b(\d+|five|six|seven|eight|nine|ten)\s+(tips|steps|ways|reasons|rules|habits|lessons|principles|mistakes|tactics)\b/i.test(p)) return 'list';
-  if (/\b(event|flyer|launch|party|gig|concert|webinar|meetup|conference|festival|workshop|summit)\b/i.test(p)) return 'event';
+  // A product/app/tool poster is a FEATURE grid, even when phrased as a "launch"
+  // — don't let the ambiguous word "launch" route it to the EVENT preset (which
+  // then ships a placeholder "EVENT" title when the model gives no event title).
+  const hasProduct = /\b(product|app|tool|platform|saas|software|feature|features|extension|plugin|widget|library|framework)\b/i.test(p);
+  if (!hasProduct && /\b(event|flyer|launch|party|gig|concert|webinar|meetup|conference|festival|workshop|summit|expo|gala|ceremony|fundraiser|gathering)\b/i.test(p)) return 'event';
   if (/\b(vs\.?|versus|comparison|compare|case study|before and after)\b/i.test(p)) return 'split';
-  if (/\b(feature|features|product|app|tool|platform|benefits|capabilities|why choose)\b/i.test(p)) return 'feature_grid';
+  if (/\b(feature|features|product|app|tool|platform|benefits|capabilities|why choose|launch)\b/i.test(p)) return 'feature_grid';
   if (/\b(\d+%|one (stat|number|figure)|single (stat|number))\b/i.test(p) && !/\b(report|trends|state of|overview)\b/i.test(p)) return 'stat';
   if (/\b(report|state of|trends|overview|infographic|landscape|guide to|breakdown|analysis|deep dive|annual)\b/i.test(p)) return 'sections';
   return 'sections';
