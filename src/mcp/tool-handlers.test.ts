@@ -167,6 +167,18 @@ describe('sealDesign', () => {
     const parsed = result as Record<string, unknown>;
     expect(parsed.status).toBe('sealed');
   });
+
+  it('refuses to seal an empty poster (no layers → would ship a blank)', () => {
+    const projectPath = path.join(tmpDir, 'empty-project');
+    createProject({ name: 'Empty', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Blank', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/blank.design.yaml');
+
+    const result = sealDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(result.status).not.toBe('sealed');
+    expect(result.success).toBe(false);
+    expect(String(result.error ?? '')).toMatch(/empty|no layers/i);
+  });
 });
 
 describe('addLayer / updateLayer / removeLayer', () => {

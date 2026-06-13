@@ -13,7 +13,6 @@ import { pickMood, type Mood } from './mood-bank';
 // researched, specific content — the counts are the "richness floor".
 const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fields?: string[] }> = {
   sections: { canvas: [1080, 2000], blocks: [
-    'intro — 2 sentences framing the topic',
     'stats — a row of 4 key figures {value,label} (REAL researched numbers)',
     'heading + text — sub-theme #1, heading + 2-3 sentences',
     'heading + text — sub-theme #2, heading + 2-3 sentences',
@@ -159,9 +158,9 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
     ? 'This topic is factual: FIRST run the research_queries with your web tools to gather REAL figures and specifics. Do NOT invent statistics. Then compose.'
     : 'No external research needed — use the details in the prompt.';
   const fill = outline.blocks
-    ? `Add ONE layer — layers_shorthand:[{type:"${design_type}", …}] — with a blocks:[…] array covering: ${outline.blocks.join(' · ')}. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
+    ? `Add ONE layer — layers_shorthand:[{type:"${design_type}", title:"<a punchy ≤6-word HEADLINE naming the topic>", subtitle:"<a 2-sentence intro deck>", …, blocks:[…]}]. The title + subtitle go on the LAYER ITSELF (a titleless deck looks unfinished); then a blocks array covering: ${outline.blocks.join(' · ')}. Emit EVERY block listed — a thin 1-2 block deck is the exact "sparse / dead space" failure to avoid. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
     : `Add ONE layer — layers_shorthand:[{type:"${design_type}", …}] supplying: ${(outline.fields ?? []).join(' · ')}. NEVER hand-place separate title/body/text layers — the preset auto-sizes every block so text never collides.`;
-  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)}. Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. Then diagnose_design until clean and seal.`;
+  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. Then diagnose_design until clean and seal.`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);
