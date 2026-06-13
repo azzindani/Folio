@@ -440,7 +440,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
     const maxTH = Math.round(H * 0.22);
     if (tH > maxTH) { tSizeH = Math.max(Math.round(W * 0.045), Math.floor(tSizeH * maxTH / tH)); tH = estTextHeight(title, tSizeH, headW, 1.1); }
     layers.push({ id: `${id}_title`, type: 'text', z: 30, x: X + M, y: cursorY, width: headW, height: tH,
-      content: { type: 'plain', value: title }, style: { font_size: tSizeH, font_weight: 800, color: headColor, align: 'center', line_height: 1.1 } } as unknown as Layer);
+      content: { type: 'plain', value: title }, style: { font_size: tSizeH, font_weight: 800, color: headColor, align: 'center', line_height: 1.1, font_family: str(r['font'] ?? r['font_family'], m?.font ?? '') || undefined } } as unknown as Layer);
     cursorY += tH + Math.round(H * 0.012);
   }
   const subtitle = str(r['subtitle']);
@@ -593,6 +593,14 @@ function parseBgSpec(spec: string): { base: string; baseArg: string; sweeps: str
     else if (nm === 'band_top' || nm === 'topbar') sweeps.push('band_top');
     else if (nm === 'grain' || nm === 'noise' || nm === 'film') sweeps.push('grain');
     else if (nm === 'vignette' || nm === 'vignet') sweeps.push('vignette');
+    // Bold GEOMETRIC sweeps (non-circular) — the anti-"AI circle" vocabulary.
+    else if (nm === 'tri' || nm === 'triangle' || nm === 'wedge') sweeps.push('tri:' + (arg || 'br'));
+    else if (nm === 'blocks' || nm === 'bauhaus' || nm === 'block') sweeps.push('blocks:' + (arg || 'mix'));
+    else if (nm === 'rings' || nm === 'concentric' || nm === 'target') sweeps.push('rings:' + (arg || 'tr'));
+    else if (nm === 'arcs' || nm === 'scallop_arc' || nm === 'orbit') sweeps.push('arcs:' + (arg || 'bottom'));
+    else if (nm === 'diag' || nm === 'diagonal' || nm === 'slash') sweeps.push('diag:' + (arg || 'tr'));
+    else if (nm === 'wave' || nm === 'waveband' || nm === 'ribbon') sweeps.push('wave:' + (arg || 'bottom'));
+    else if (nm === 'shards' || nm === 'confetti_shapes' || nm === 'scatter_shapes') sweeps.push('shards:' + (arg || 'mix'));
     else if (nm === 'pattern') { const p = arg.replace(/[\s-]+/g, '_'); overlays.push(PATTERN_NAMES.has(p) ? p : 'dots'); }
     else if (PATTERN_NAMES.has(nm)) overlays.push(nm);
   }
@@ -607,6 +615,7 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
   const bgRgb = hexToRgb(bgHex);
   const dark = bgRgb ? luminance(bgRgb) < 0.42 : false;
   const pal = ctx.palette.length >= 2 ? ctx.palette : [accent, mixHex(bgHex, accent, 0.5), mixHex(bgHex, text, 0.3)];
+  const p0 = pal[0] ?? accent, p1 = pal[1] ?? accent, p2 = pal[2] ?? p1;
   const layers: Layer[] = [];
   let z = z0;
   const radialTo = (c: string): Fill => ({ type: 'radial', stops: [{ color: c, position: 0 }, { color: bgHex, position: 100 }] } as unknown as Fill);
@@ -679,6 +688,74 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
       const o = Math.round(s * 0.18); // push centre outward past the corner
       ([['tl', X - o, Y - o], ['tr', X + W + o, Y - o], ['bl', X - o, Y + H + o], ['br', X + W + o, Y + H + o]] as [string, number, number][])
         .forEach(([c, cx, cy]) => blob(`${idp}_vig_${c}`, cx, cy, s, dk, dark ? 0.55 : 0.32));
+    }
+    // ── GEOMETRIC sweeps (rect / triangle / ring / arc / diagonal / wave /
+    // scattered polygons) — the NON-circular vocabulary so styles stop looking
+    // like the same radial-blob template. All built from primitives that
+    // rasterize in PNG. Colors blend toward bg so text over them stays legible.
+    else if (kind === 'tri') {
+      const x2 = X + W, y2 = Y + H, T = Math.round(W * 0.6);
+      const triD = (k: string): string =>
+        k === 'tr' ? `M${x2 - T} ${Y}L${x2} ${Y}L${x2} ${Y + T}Z`
+          : k === 'tl' ? `M${X} ${Y}L${X + T} ${Y}L${X} ${Y + T}Z`
+          : k === 'bl' ? `M${X} ${y2 - T}L${X} ${y2}L${X + T} ${y2}Z`
+          : `M${x2 - T} ${y2}L${x2} ${y2}L${x2} ${y2 - T}Z`;
+      const c1 = place || 'br', c2 = c1 === 'br' ? 'tl' : c1 === 'tl' ? 'br' : c1 === 'tr' ? 'bl' : 'tr';
+      layers.push({ id: `${idp}_tri0`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: triD(c1), fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.5 : 0.55) }, opacity: 0.5 } as unknown as Layer);
+      layers.push({ id: `${idp}_tri1`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: triD(c2), fill: { type: 'solid', color: mixHex(bgHex, p1, 0.45) }, opacity: dark ? 0.32 : 0.26 } as unknown as Layer);
+    }
+    else if (kind === 'diag') {
+      // A diagonal color field (one big triangle across a diagonal) — a flat,
+      // hard-edged wash instead of a soft circular gradient.
+      const x2 = X + W, y2 = Y + H, d = place === 'tl'
+        ? `M${X} ${Y}L${x2} ${Y}L${X} ${y2}Z` : `M${x2} ${Y}L${x2} ${y2}L${X} ${y2}Z`;
+      layers.push({ id: `${idp}_diag`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d, fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.42 : 0.5) }, opacity: dark ? 0.4 : 0.34 } as unknown as Layer);
+    }
+    else if (kind === 'blocks') {
+      // Bauhaus/Swiss offset rectangles — strong rectilinear character.
+      const specs: [number, number, number, number, string][] = [
+        [0.0, 0.0, 0.16, 1.0, p0], [0.74, 0.62, 0.26, 0.38, p1], [0.55, 0.0, 0.45, 0.12, p2],
+      ];
+      specs.forEach(([fx, fy, fw, fh, c], i) => layers.push({ id: `${idp}_blk${i}`, type: 'rect', z: z++,
+        x: Math.round(X + fx * W), y: Math.round(Y + fy * H), width: Math.round(fw * W), height: Math.round(fh * H),
+        fill: { type: 'solid', color: mixHex(bgHex, c, dark ? 0.4 : 0.5) }, opacity: dark ? 0.45 : 0.32 } as unknown as Layer));
+    }
+    else if (kind === 'rings') {
+      // Concentric OUTLINED ovals (stroke, no fill) near a corner — round, but a
+      // different feel than the solid blob: airy, technical.
+      const [cx, cy] = anchor(place || 'tr');
+      for (let i = 0; i < 3; i++) { const r = Math.round(W * (0.5 - i * 0.13));
+        layers.push({ id: `${idp}_ring${i}`, type: 'ellipse', z: z++, x: Math.round(cx - r), y: Math.round(cy - r), width: r * 2, height: r * 2, stroke: { color: mixHex(bgHex, p0, dark ? 0.55 : 0.6), width: Math.max(2, Math.round(W * 0.006)) }, opacity: dark ? 0.5 : 0.4 } as unknown as Layer); }
+    }
+    else if (kind === 'arcs') {
+      // A big sweeping arc band at an edge (open stroke).
+      const band = Math.round(W * 0.5), atBottom = (place || 'bottom') !== 'top';
+      const by = atBottom ? Y + H - band : Y - band;
+      const box: ShapeBox = { x: X - Math.round(W * 0.15), y: by, w: Math.round(W * 1.3), h: band * 2 };
+      const arc = shapePath('arc', box, { start: atBottom ? 180 : 0, end: atBottom ? 360 : 180 });
+      layers.push({ id: `${idp}_arc`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: arc.d, stroke: { color: mixHex(bgHex, p0, dark ? 0.55 : 0.55), width: Math.max(8, Math.round(W * 0.05)) }, opacity: dark ? 0.45 : 0.4 } as unknown as Layer);
+    }
+    else if (kind === 'wave') {
+      // A wavy ribbon band along one edge — organic but hard-rendered (no circle).
+      const band = Math.round(H * 0.22), atBottom = (place || 'bottom') !== 'top';
+      const wy = atBottom ? Y + H - band : Y;
+      const box: ShapeBox = { x: X - 2, y: wy, w: W + 4, h: band };
+      const wv = shapePath('wave', box, { amplitude: Math.round(band * 0.45), cycles: 3 });
+      layers.push({ id: `${idp}_wave`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: wv.d, fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.42 : 0.5) }, opacity: dark ? 0.45 : 0.35 } as unknown as Layer);
+    }
+    else if (kind === 'shards') {
+      // Scattered GEOMETRIC confetti (triangles + squares + a plus) in palette —
+      // playful, editorial, decidedly not dots.
+      const shards: [number, number, number, number][] = [
+        [0.12, 0.08, 0.07, 0], [0.9, 0.14, 0.05, 1], [0.84, 0.78, 0.08, 2],
+        [0.08, 0.86, 0.06, 0], [0.93, 0.5, 0.045, 1], [0.06, 0.46, 0.05, 2],
+      ];
+      shards.forEach(([fx, fy, fs, kindIdx], i) => {
+        const cx = X + fx * W, cy = Y + fy * H, s2 = Math.round(fs * W), c = mixHex(bgHex, [p0, p1, p2][i % 3] ?? p0, dark ? 0.5 : 0.6);
+        if (kindIdx === 0) layers.push({ id: `${idp}_sh${i}`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: `M${Math.round(cx)} ${Math.round(cy - s2)}L${Math.round(cx + s2)} ${Math.round(cy + s2)}L${Math.round(cx - s2)} ${Math.round(cy + s2)}Z`, fill: { type: 'solid', color: c }, opacity: dark ? 0.5 : 0.45 } as unknown as Layer);
+        else if (kindIdx === 1) layers.push({ id: `${idp}_sh${i}`, type: 'rect', z: z++, x: Math.round(cx - s2), y: Math.round(cy - s2), width: s2 * 2, height: s2 * 2, rotation: 18, fill: { type: 'solid', color: c }, opacity: dark ? 0.5 : 0.45 } as unknown as Layer);
+        else layers.push({ id: `${idp}_sh${i}`, type: 'rect', z: z++, x: Math.round(cx - s2 * 1.4), y: Math.round(cy - s2 * 0.4), width: Math.round(s2 * 2.8), height: Math.round(s2 * 0.8), fill: { type: 'solid', color: c }, opacity: dark ? 0.5 : 0.45 } as unknown as Layer);
+      });
     }
   }
 
@@ -810,7 +887,7 @@ function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
   cy += Math.round(H * 0.025);
   if (title) {
     const ts = Math.round(W * 0.085), th = estTextHeight(title, ts, cW, 1.04);
-    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04 }));
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04, font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
     cy += th + Math.round(H * 0.025);
   }
   if (subtitle) {
@@ -1014,7 +1091,7 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
     layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: muted, letter_spacing: 2, text_transform: 'uppercase' }));
     cy += kickH;
   }
-  layers.push(txt(`${id}_stat`, z + k++, cX, cy, cW, numH, stat, { font_size: numSize, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -2 }));
+  layers.push(txt(`${id}_stat`, z + k++, cX, cy, cW, numH, stat, { font_size: numSize, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -2, font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
   cy += numH + (caption ? gap : 0);
   if (caption) {
     layers.push({ id: `${id}_caprule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - Math.round(gap * 0.4), width: Math.round(W * 0.13), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
@@ -1088,7 +1165,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
     cy += kickH;
   }
-  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase' }));
+  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase', font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
   cy += titleH + Math.round(H * 0.03);
   details.forEach((line, i) => {
     const lh = estTextHeight(line, ds, cW, 1.25, 0.66);
@@ -1271,7 +1348,7 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
 
 function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
-  const { X, Y, W, H } = shBox(sh, 1080, 1920);
+  const { X, Y, W } = shBox(sh, 1080, 1920);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline']);
   const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
@@ -1288,6 +1365,31 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const ctx: SecCtx = { accent, text, muted, W };
 
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
+
+  // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
+  // dead space — a common blind-model habit). Trim BEFORE measuring.
+  const isDiv = (b: Record<string, unknown>): boolean => { const ki = shStr(b['kind'] ?? b['type']); return ki === 'divider' || ki === 'rule'; };
+  const bl = blocks.slice();
+  while (bl.length && isDiv(bl[0])) bl.shift();
+  while (bl.length && isDiv(bl[bl.length - 1])) bl.pop();
+  const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
+  const sumH = heights.reduce((a, h) => a + h, 0);
+  const n = Math.max(1, bl.length);
+
+  // ── Fit pass — size the CANVAS to the content, not the content to a fixed
+  // canvas. Short content shrinks the page (no dead band below the last block);
+  // long content grows it (no clipping past the bottom). Measure the header +
+  // blocks first, then compose the background at this fitted height so the baked
+  // sweep geometry (triangles, diagonals, waves) matches the page exactly.
+  let hY = Math.round(W * 0.08);
+  if (kicker) hY += Math.round(W * 0.045);
+  if (title) hY += estTextHeight(title, Math.round(W * 0.072), cW, 1.04) + Math.round(W * 0.02);
+  if (subtitle) hY += estTextHeight(subtitle, Math.round(W * 0.028), cW, 1.45) + Math.round(W * 0.025);
+  if (kicker || title || subtitle) hY += Math.round(W * 0.05);
+  const footerBand = footer ? Math.round(W * 0.1) : Math.round(W * 0.06);
+  const naturalH = hY + sumH + Math.round(W * 0.032) * Math.max(0, n - 1) + footerBand + Math.round(W * 0.04);
+  const H = Math.max(Math.round(W * 0.9), Math.min(Math.round(W * 3.4), naturalH));
+
   // Rich engine-composed background when bg_style is set, else a flat wash.
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   let k = layers.length, cy = Y + Math.round(W * 0.08);
@@ -1298,7 +1400,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   }
   if (title) {
     const ts = Math.round(W * 0.072), th = estTextHeight(title, ts, cW, 1.04);
-    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: text, line_height: 1.04, letter_spacing: -1 }));
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: text, line_height: 1.04, letter_spacing: -1, font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
     cy += th + Math.round(W * 0.02);
   }
   if (subtitle) {
@@ -1314,25 +1416,11 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     cy += Math.round(W * 0.05);
   }
 
-  // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
-  // dead space — a common blind-model habit).
-  const isDiv = (b: Record<string, unknown>): boolean => { const ki = shStr(b['kind'] ?? b['type']); return ki === 'divider' || ki === 'rule'; };
-  const bl = blocks.slice();
-  while (bl.length && isDiv(bl[0])) bl.shift();
-  while (bl.length && isDiv(bl[bl.length - 1])) bl.pop();
-
-  // Pass 1 — measure every block. Pass 2 — place with a gap that distributes the
-  // leftover space (so a generous canvas fills without a dead band, a short one stays tight).
-  // Reserve a generous footer band so the last block never crowds the footer
-  // (diagnose can't see inside the group, so the layout MUST be collision-proof).
+  // Place blocks: distribute only the SMALL leftover slack in the fitted canvas
+  // (floor keeps dense content tight, cap keeps a slightly-roomy page balanced).
   const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
   const avail = (Y + H - M - footerH) - cy;
-  const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
-  const sumH = heights.reduce((a, h) => a + h, 0);
-  const n = Math.max(1, bl.length);
-  // Tight floor so dense content fits; modest cap so a roomy canvas stays
-  // magazine-dense instead of drifting into airy, sparse-looking whitespace.
-  const gap = Math.max(Math.round(W * 0.022), Math.min(Math.round(W * 0.042), (avail - sumH) / n));
+  const gap = Math.max(Math.round(W * 0.024), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
   bl.forEach((b, i) => {
     const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
     out.layers.forEach(l => layers.push(l));

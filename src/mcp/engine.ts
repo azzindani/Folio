@@ -655,8 +655,21 @@ export function addLayers(args: {
     activeLayers = page.layers;
   } else {
     if (!spec.layers) spec.layers = [];
+    const hadContent = spec.layers.length > 0;
     spec.layers.push(...incoming);
     activeLayers = spec.layers;
+    // Auto-fit the canvas to a fresh single full-bleed preset. A flow preset
+    // (sections/stat/…) has already sized its group to its own content — short
+    // → shorter page (no dead band), long → taller page (no clipping). Match
+    // the document height to it so the poster has no wasted space and nothing
+    // spills off the bottom. Only when this preset IS the whole poster.
+    if (!hadContent && incoming.length === 1) {
+      const g = incoming[0] as Layer & { x?: number; width?: number; height?: number };
+      const W = spec.document.width;
+      if (g.type === 'group' && (g.x ?? 0) <= W * 0.02 && (g.width ?? 0) >= W * 0.9 && typeof g.height === 'number' && g.height > 0) {
+        spec.document.height = g.height;
+      }
+    }
   }
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
@@ -820,9 +833,17 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
 
+  const spec = readYAML<DesignSpec>(dPath);
+  // Never seal a blank poster. A weak model that thrashed (hallucinated tool
+  // names, looped) can reach seal_design with layers:[] — sealing then ships an
+  // empty design. Refuse, and point it back at add_layers so it produces output.
+  // (Carousels have a `pages` key and their own page-completion flow — skip them.)
+  if (!spec.pages && (spec.layers?.length ?? 0) === 0) {
+    return errResult(op, 'Cannot seal an empty design — the canvas has no layers.',
+      'Call add_layers FIRST with ONE preset layer (use the prefixed tool name mcp__folio__add_layers), e.g. layers_shorthand:[{type:"sections", title:"…", subtitle:"…", bg_style:"…", blocks:[…]}]; then diagnose_design; then seal_design.', progress);
+  }
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
-  const spec = readYAML<DesignSpec>(dPath);
   spec._mode = 'complete';
   if (spec.meta.generation) spec.meta.generation.status = 'complete';
   spec.meta.modified = new Date().toISOString().split('T')[0];
