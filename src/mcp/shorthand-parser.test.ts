@@ -2165,4 +2165,48 @@ describe('sections stat-fill robustness (vision-loop: oceans + energy fixes)', (
     expect(all.some(t => t.includes('net-zero'))).toBe(true);
     expect(all.some(t => t.includes('Form meets'))).toBe(true);
   });
+
+  it('a stats block with NO figures renders the captions, not empty big-number slots (g_color)', () => {
+    const g = exp({ id: 'cl', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'Color',
+      blocks: [{ type: 'stats', items: [
+        { value: '', label: 'Consumers who say color influences purchase' },
+        { value: '', label: 'Ad recall lift with vibrant colors' },
+      ] }] });
+    const all = texts(g);
+    expect(byId(g, '_b0_v0')).toBeUndefined();                   // no empty figure cell
+    expect(all.some(t => t.includes('influences purchase'))).toBe(true); // caption copy survives
+    expect(all.some(t => t.includes('Ad recall'))).toBe(true);
+  });
+
+  it('drops only the figure-less cells when a stats block is mixed', () => {
+    const g = exp({ id: 'mx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'X',
+      blocks: [{ type: 'stats', items: [
+        { value: '70%', label: 'with figure' },
+        { value: '', label: 'no figure' },
+      ] }] });
+    expect(byId(g, '_b0_v0')?.content?.value).toBe('70%');
+    expect(byId(g, '_b0_v1')).toBeUndefined();                   // the empty cell dropped
+  });
+});
+
+describe('list preset sizes to content (no clip on dense, no dead band on sparse — g_habits)', () => {
+  type Node = { id: string; y: number; height: number };
+  const list = (n: number) => expandShorthand({ id: 'hb', type: 'list', z: 0, pos: [0, 0, 1080, 1350],
+    title: 'Habits of Deep Work', marker: 'number', footer: 'source',
+    items: Array.from({ length: n }, (_, i) => ({ title: `Habit ${i + 1} with a reasonably long name`,
+      desc: 'A sentence of supporting detail that takes a line or two to explain the habit fully.' })),
+  } as unknown as ShorthandLayer) as unknown as { height: number; layers: Node[] };
+
+  it('GROWS the group past a short 1350 canvas for 7 dense items (was clipped)', () => {
+    const g = list(7);
+    expect(g.height).toBeGreaterThan(1350);
+    const last = g.layers.find(l => l.id === 'hb_t6')!;
+    expect(last.y + last.height).toBeLessThanOrEqual(g.height);  // last item fits inside the group
+    const foot = g.layers.find(l => l.id === 'hb_footer')!;
+    expect(foot.y).toBeGreaterThan(last.y);                      // footer below the last item, no collision
+  });
+
+  it('SHRINKS below 1350 for a sparse 3-item list (no dead band)', () => {
+    expect(list(3).height).toBeLessThan(1350);
+  });
 });

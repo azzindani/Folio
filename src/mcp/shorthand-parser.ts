@@ -1035,56 +1035,60 @@ function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
   const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
 
   const M = Math.round(W * 0.08), cX = X + M, contentW = W - 2 * M;
+  // The bg is sized to the MEASURED content at the end (height patched in), so a
+  // dense list (7 items) grows the page instead of clipping and a sparse one
+  // shrinks instead of leaving dead space — vertical rhythm is W-based (not a
+  // share of a fixed H), then addLayers fits the canvas to this group's height.
   const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
-  let k = 1, cy = Y + Math.round(H * 0.1);
+  let k = 1, cy = Y + Math.round(W * 0.085);
 
   if (kicker) {
     layers.push(txt(`${id}_kick`, z + k++, cX, cy, contentW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
-    cy += Math.round(H * 0.04);
+    cy += Math.round(W * 0.05);
   }
   if (title) {
     const ts = Math.round(W * 0.07), th = estTextHeight(title, ts, contentW, 1.04);
     layers.push(txt(`${id}_title`, z + k++, cX, cy, contentW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04 }));
-    cy += th + Math.round(H * 0.018);
+    cy += th + Math.round(W * 0.02);
     layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
     layers.push({ id: `${id}_tick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
-    cy += Math.round(H * 0.04);
+    cy += Math.round(W * 0.05);
   }
 
   const gutter = marker === 'none' ? 0 : Math.round(W * 0.085);
   const tX = cX + gutter, tW = contentW - gutter;
   const its = Math.round(W * 0.032), ds = Math.round(W * 0.0205), gapTD = Math.round(its * 0.4);
-  const blocks = items.map((it) => {
+  const itemGap = Math.round(W * 0.03);     // fixed inter-item rhythm — content sizes the page
+  items.forEach((it, i) => {
     const tH = estTextHeight(it.title, its, tW, 1.12);
     const dH = it.desc ? estTextHeight(it.desc, ds, tW, 1.4) : 0;
-    return { it, tH, dH, h: tH + (it.desc ? gapTD + dH : 0) };
-  });
-  const bottomM = footer ? Math.round(H * 0.1) : Math.round(H * 0.06);
-  const avail = (Y + H - bottomM) - cy;
-  const sumH = blocks.reduce((a, b) => a + b.h, 0);
-  const n = blocks.length;
-  const gap = n > 1 ? Math.max(Math.round(H * 0.022), Math.min(Math.round(H * 0.06), (avail - sumH) / n)) : 0;
-
-  blocks.forEach((b, i) => {
     if (marker === 'number') {
       const ms = Math.round(W * 0.042);
       layers.push(txt(`${id}_n${i}`, z + k++, cX, cy - Math.round(ms * 0.08), gutter, ms * 1.3, String(i + 1).padStart(2, '0'), { font_size: ms, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
     } else if (marker === 'bullet') {
-      layers.push({ id: `${id}_d${i}`, type: 'ellipse', z: z + k++, x: cX, y: Math.round(cy + b.tH * 0.28), width: Math.round(W * 0.018), height: Math.round(W * 0.018), fill: { type: 'solid', color: accent } } as unknown as Layer);
-    } else if (marker === 'icon' && b.it.icon) {
-      layers.push({ id: `${id}_i${i}`, type: 'icon', z: z + k++, x: cX, y: Math.round(cy), width: Math.round(W * 0.05), height: Math.round(W * 0.05), icon: b.it.icon, color: accent } as unknown as Layer);
+      layers.push({ id: `${id}_d${i}`, type: 'ellipse', z: z + k++, x: cX, y: Math.round(cy + tH * 0.28), width: Math.round(W * 0.018), height: Math.round(W * 0.018), fill: { type: 'solid', color: accent } } as unknown as Layer);
+    } else if (marker === 'icon' && it.icon) {
+      layers.push({ id: `${id}_i${i}`, type: 'icon', z: z + k++, x: cX, y: Math.round(cy), width: Math.round(W * 0.05), height: Math.round(W * 0.05), icon: it.icon, color: accent } as unknown as Layer);
     }
-    layers.push(txt(`${id}_t${i}`, z + k++, tX, cy, tW, b.tH, b.it.title, { font_size: its, font_weight: 700, color: textColor, line_height: 1.12 }));
-    if (b.it.desc) layers.push(txt(`${id}_b${i}`, z + k++, tX, cy + b.tH + gapTD, tW, b.dH, b.it.desc, { font_size: ds, font_weight: 400, color: muted, line_height: 1.4 }));
-    cy += b.h + gap;
+    layers.push(txt(`${id}_t${i}`, z + k++, tX, cy, tW, tH, it.title, { font_size: its, font_weight: 700, color: textColor, line_height: 1.12 }));
+    if (it.desc) layers.push(txt(`${id}_b${i}`, z + k++, tX, cy + tH + gapTD, tW, dH, it.desc, { font_size: ds, font_weight: 400, color: muted, line_height: 1.4 }));
+    cy += tH + (it.desc ? gapTD + dH : 0) + itemGap;
   });
+  if (items.length) cy -= itemGap;          // drop the trailing gap after the last item
 
   if (footer) {
-    const fy = Y + H - Math.round(H * 0.07);
-    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy, width: contentW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
-    layers.push(txt(`${id}_footer`, z + k++, cX, fy + 14, contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    cy += Math.round(W * 0.05);
+    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    cy += 14;
+    layers.push(txt(`${id}_footer`, z + k++, cX, Math.round(cy), contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    cy += 30;
   }
-  return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
+
+  // Size the group to its measured content (clamped sane), then patch the bg to
+  // match so addLayers can fit the canvas — no clip (dense), no dead band (sparse).
+  const finalH = Math.min(Math.round(W * 3.6), Math.max(Math.round(W * 0.5), Math.round(cy + W * 0.07 - Y)));
+  (layers[0] as unknown as { height: number }).height = finalH;
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: finalH, layers } as unknown as Layer;
 }
 
 // Single-statistic focal poster — a huge dominant number (the ONE accent
@@ -1288,9 +1292,6 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   }
   if (kind === 'stats' || kind === 'stat_row' || kind === 'kpis' || kind === 'metrics') {
     const items = arrField('items', 'rows', 'stats', 'values', 'data', 'metrics', 'kpis').slice(0, 4);
-    const n = Math.max(1, items.length);
-    const colGap = Math.round(W * 0.025);
-    const colW = Math.round((w - (n - 1) * colGap) / n);
     const lSize = Math.round(W * 0.016);
     // Resolve each figure FIRST — split a merged "58% hybrid" / "$250B market"
     // into value + label so the figure stays narrow.
@@ -1311,14 +1312,31 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
       }
       return { val, lab };
     });
+    // A stats block with NO figures — the model gave captions but no numbers
+    // (g_color) — must NOT render as empty big-number slots. Keep only cells that
+    // HAVE a figure; if none do, render the (real) caption copy as one compact
+    // line so the content still shows instead of vanishing.
+    const shown = resolved.filter(rr => rr.val.trim() !== '');
+    if (!shown.length) {
+      const caps = resolved.map(rr => rr.lab.trim()).filter(Boolean);
+      if (!caps.length) return { layers, height: 0 };
+      const line = caps.join('   ·   ');
+      const size = Math.round(W * 0.0205);
+      const th = estTextHeight(line, size, w, 1.5);
+      layers.push(txt(`${idp}_caps`, z++, x, y, w, th, line, { font_size: size, font_weight: 500, color: muted, line_height: 1.5 }));
+      return { layers, height: th };
+    }
+    const n = shown.length;
+    const colGap = Math.round(W * 0.025);
+    const colW = Math.round((w - (n - 1) * colGap) / n);
     // Size the figure to FIT its column: the longest UNBREAKABLE token of any
     // value must fit colW (a long single-token value like "$0.04/kWh" otherwise
     // overruns the column and collides with the next stat — and diagnose can't
     // see inside this group, so the layout must be collision-proof by construction).
-    const maxTok = Math.max(1, ...resolved.map(rr => Math.max(1, ...rr.val.split(/\s+/).map(t => t.length))));
+    const maxTok = Math.max(1, ...shown.map(rr => Math.max(1, ...rr.val.split(/\s+/).map(t => t.length))));
     const vSize = Math.max(22, Math.round(Math.min(W * 0.055, (colW * 0.92) / (maxTok * 0.58))));
     let maxH = 0;
-    resolved.forEach(({ val, lab }, i) => {
+    shown.forEach(({ val, lab }, i) => {
       const ix = x + i * (colW + colGap);
       const vh = estTextHeight(val, vSize, colW, 1.05);
       // Mono + ALL-CAPS + letter-spacing wraps wider than sans — reserve height
