@@ -1227,6 +1227,15 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
 // hand-placed layers.
 interface SecCtx { accent: string; text: string; muted: string; W: number; }
 
+// A short, measure-like token that belongs in a stat's BIG figure slot —
+// "30%", "$500B", "1.0 TW", "2.3s", "12M". Used to detect/repair a model that
+// swapped a stat's label and value (the long caption must not render huge).
+function figureLike(s: string): boolean {
+  const t = s.trim();
+  if (!t || t.length > 14) return false;
+  return /^[+\-]?[$€£¥]?\d[\d.,:]*\s?(?:%|[KMBT]|[kKMG]?Wh?|TW|GW|MW|x|×|s|hrs?|bn|m|k|°[CF]?)?\+?$/.test(t);
+}
+
 function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number, x: number, y: number, w: number, ctx: SecCtx): { layers: Layer[]; height: number } {
   const { accent, text, muted, W } = ctx;
   const kind = shStr(b['kind'] ?? b['type'], 'text');
@@ -1247,6 +1256,28 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     const th = estTextHeight(t, size, w, 1.1);
     layers.push(txt(`${idp}_h`, z++, x, y + 20, w, th, t, { font_size: size, font_weight: 800, color: text, line_height: 1.1, letter_spacing: -0.5 }));
     return { layers, height: 20 + th };
+  }
+  // A subhead PLUS its body, the common "heading_text" block weak models emit
+  // (heading in `sub_theme`/`heading`, body in `text`/`subtitles`). Without this
+  // it fell to the generic fallback → the body rendered as a bare floating line
+  // with no hierarchy (the g_energy "Cost Reductions / Job Creation" case).
+  if (kind === 'heading_text' || kind === 'titled_text' || kind === 'section_block' || kind === 'subsection') {
+    let head = shStr(b['heading'] ?? b['sub_theme'] ?? b['subhead'] ?? b['title'] ?? b['name']);
+    const subs = Array.isArray(b['subtitles']) ? (b['subtitles'] as unknown[]).map(s => shStr(s)).filter(Boolean).join(' ') : '';
+    let body = subs || shStr(b['body'] ?? b['subtitle'] ?? b['desc'] ?? b['text'] ?? b['content']);
+    if (!head) { head = body; body = ''; }   // only one string given → it's the heading
+    const hSize = Math.round(W * 0.032);
+    layers.push({ id: `${idp}_tick`, type: 'rect', z: z++, x, y, width: Math.round(W * 0.055), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    const hh = estTextHeight(head, hSize, w, 1.15);
+    layers.push(txt(`${idp}_hh`, z++, x, y + 20, w, hh, head, { font_size: hSize, font_weight: 800, color: text, line_height: 1.15, letter_spacing: -0.4 }));
+    let total = 20 + hh;
+    if (body) {
+      const bSize = Math.round(W * 0.0225);
+      const bh = estTextHeight(body, bSize, w, 1.5);
+      layers.push(txt(`${idp}_hb`, z++, x, y + total + 10, w, bh, body, { font_size: bSize, font_weight: 400, color: muted, line_height: 1.5 }));
+      total += 10 + bh;
+    }
+    return { layers, height: total };
   }
   if (kind === 'text' || kind === 'paragraph' || kind === 'body' || kind === 'intro') {
     const t = shStr(b['text'] ?? b['body'] ?? b['value'] ?? b['content']);
@@ -1270,6 +1301,13 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
       if (merged) {
         const m = merged.trim().match(/^([+\-]?[$€£¥]?[\d.,]+\s*(?:%|[KMBkmb×x])?)\s+(.+)$/);
         if (m) { val = m[1].trim(); lab = m[2].trim(); }
+      }
+      // A weak model often SWAPS the pair — figure into `label`, caption into
+      // `value` (e.g. label:"30%", value:"Share of … renewables") — so the big
+      // number renders the long prose and the caption shrinks to "30%". Correct
+      // it: the short measure-like token is the figure; the prose is the label.
+      if (val && lab && figureLike(lab) && !figureLike(val) && (val.length > 12 || /\s/.test(val.trim()))) {
+        [val, lab] = [lab, val];
       }
       return { val, lab };
     });
@@ -1385,6 +1423,35 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
   return { layers, height: Math.round(W * 0.02) };
 }
 
+// Weak models often emit ONE singular `{type:"stat", value, label}` block per
+// figure instead of a single `{type:"stats", items:[…]}` row — the singular
+// blocks then hit the unknown-kind fallback, which renders the value but DROPS
+// the label (the g_oceans "8M / 91% / 30%" with no captions case). Fold any run
+// of consecutive singular stat blocks into stats rows of up to 4 so they render
+// as a proper figure row WITH labels. A no-op when no singular stats appear, so
+// well-formed designs are untouched (same mood seed, same layout).
+function coalesceStatBlocks(blocks: Record<string, unknown>[]): Record<string, unknown>[] {
+  const SINGULAR = new Set(['stat', 'metric', 'big_number', 'figure', 'kpi', 'number']);
+  const out: Record<string, unknown>[] = [];
+  let run: Record<string, unknown>[] = [];
+  const flush = (): void => {
+    for (let i = 0; i < run.length; i += 4) {
+      out.push({ type: 'stats', items: run.slice(i, i + 4).map(b => ({
+        value: b['value'] ?? b['stat'] ?? b['number'] ?? b['figure'] ?? b['title'],
+        label: b['label'] ?? b['desc'] ?? b['text'] ?? b['caption'] ?? b['name'],
+      })) });
+    }
+    run = [];
+  };
+  for (const b of blocks) {
+    const k = shStr(b['kind'] ?? b['type']).toLowerCase();
+    if (SINGULAR.has(k) && !Array.isArray(b['items'])) run.push(b);
+    else { flush(); out.push(b); }
+  }
+  flush();
+  return out;
+}
+
 function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const { X, Y, W } = shBox(sh, 1080, 1920);
@@ -1392,7 +1459,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const title = shStr(r['title'] ?? r['headline']);
   const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
   const footer = shStr(r['footer']);
-  const blocks = (Array.isArray(r['blocks']) ? r['blocks'] : Array.isArray(r['sections']) ? r['sections'] : []) as Record<string, unknown>[];
+  const blocks = coalesceStatBlocks((Array.isArray(r['blocks']) ? r['blocks'] : Array.isArray(r['sections']) ? r['sections'] : []) as Record<string, unknown>[]);
   // No bg from the model → seed a topic-apt mood from the content (the blind-
   // model "same template" fix), else everything falls to one cream default.
   const m = seededDefaults(r, [title, subtitle, kicker, blocks]);

@@ -2099,3 +2099,56 @@ describe('recoverStringifiedPreset — rescues a preset blob stuffed into a text
     expect(recoverStringifiedPreset([txt('A Brief History of Jazz')])).toBeNull();
   });
 });
+
+describe('sections stat-fill robustness (vision-loop: oceans + energy fixes)', () => {
+  type Node = { id?: string; content?: { value?: string }; layers?: Node[] };
+  const flat = (l: Node): Node[] => [l, ...((l.layers ?? []).flatMap(flat))];
+  const exp = (sh: Record<string, unknown>): Node => expandShorthand(sh as unknown as ShorthandLayer) as unknown as Node;
+  const texts = (g: Node): string[] => flat(g).map(n => n.content?.value ?? '').filter(Boolean);
+  const byId = (g: Node, suffix: string): Node | undefined => flat(g).find(n => String(n.id ?? '').endsWith(suffix));
+
+  it('coalesces singular {type:"stat",value,label} blocks into ONE row, keeping labels (g_oceans)', () => {
+    const g = exp({ id: 'oc', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'Save Our Oceans',
+      blocks: [
+        { type: 'stat', value: '8M', label: 'tons of plastic enter ocean each year' },
+        { type: 'stat', value: '91%', label: 'of plastic is not recycled' },
+        { type: 'stat', value: '30%', label: 'of marine species affected' },
+        { type: 'stat', value: '100K', label: 'marine animals die annually' },
+      ] });
+    const all = texts(g);
+    // value AND label both survive — the label was previously dropped by the fallback
+    expect(all).toContain('8M'); expect(all).toContain('100K');
+    expect(all.some(t => t.includes('tons of plastic'))).toBe(true);
+    expect(all.some(t => t.includes('not recycled'))).toBe(true);
+    // folded into ONE stats row: the first block carries the figure cells _v0.._v3
+    expect(byId(g, '_b0_v0')?.content?.value).toBe('8M');
+    expect(byId(g, '_b0_v3')?.content?.value).toBe('100K');
+  });
+
+  it('corrects a SWAPPED label/value stat so the figure is the big number (g_energy)', () => {
+    const g = exp({ id: 'en', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'Renewables',
+      blocks: [{ type: 'stats', items: [
+        { label: '30%', value: 'Share of global electricity from renewables (2023)' },
+        { label: '1.0 TW', value: 'Solar PV capacity' },
+        { label: '$500B', value: 'Investment 2023' },
+      ] }] });
+    expect(byId(g, '_b0_v0')?.content?.value).toBe('30%');       // figure in the big slot
+    expect(byId(g, '_b0_v1')?.content?.value).toBe('1.0 TW');
+    expect(String(byId(g, '_b0_l0')?.content?.value ?? '')).toContain('Share of global'); // prose → caption
+  });
+
+  it('does NOT swap a well-formed stat (figure already in value)', () => {
+    const g = exp({ id: 'ok', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'X',
+      blocks: [{ type: 'stats', items: [{ value: '70%', label: 'enterprises using AI' }] }] });
+    expect(byId(g, '_b0_v0')?.content?.value).toBe('70%');
+    expect(String(byId(g, '_b0_l0')?.content?.value ?? '')).toContain('enterprises');
+  });
+
+  it('renders a heading_text block as subhead + body (sub_theme / text aliases)', () => {
+    const g = exp({ id: 'ht', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'X',
+      blocks: [{ type: 'heading_text', sub_theme: 'Cost Reductions', text: 'Solar PV LCOE fell 90% since 2010.' }] });
+    const all = texts(g);
+    expect(all).toContain('Cost Reductions');
+    expect(all.some(t => t.includes('LCOE fell 90%'))).toBe(true);
+  });
+});
