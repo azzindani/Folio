@@ -32,16 +32,17 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.design_type).toBe('feature_grid');
   });
 
-  it('a tech topic gets a dark mesh+glow+grain mood', () => {
-    const r = run('the state of AI in healthcare');
-    expect(r.suggested!.bg_style).toContain('mesh');
+  it('a tech topic gets a dark mood with a procedural grained background', () => {
+    const r = run('the state of AI in healthcare') as unknown as { suggested: { bg: string; bg_style: string } };
+    expect(r.suggested.bg.toLowerCase()).toBe('#0e0b14'); // indigo tech mood (colour is curated)
+    expect(r.suggested.bg_style).toContain('grain');      // procedural geometry, grain floor
   });
 
   it('a money/cost topic gets the DARK dramatic gold mood (not flat cream)', () => {
     const r = run('the financial cost of unnecessary meetings to US business') as unknown as { suggested: { bg: string; accent: string; bg_style: string } };
     expect(r.suggested.bg.toLowerCase()).toBe('#0a0a0a');
     expect(r.suggested.accent.toLowerCase()).toBe('#f4b740');
-    expect(r.suggested.bg_style).toContain('glow');
+    expect(r.suggested.bg_style).toContain('grain');
   });
 
   it('unmatched topics get VARIED but STABLE moods (no single same-template default)', () => {
@@ -128,9 +129,11 @@ describe('enrichBrief — carousel / multi-page decks', () => {
 
   it('bakes the shared bg_style into EVERY page hint (so a thin model cannot drop it)', () => {
     const r = car('a 6-slide carousel about the future of AI');
-    // AI topic → mesh bg_style; every page hint must carry it verbatim.
-    expect(r.suggested!.bg_style).toContain('mesh');
-    expect(r.pages!.every(p => /bg_style:"mesh/.test(p.hints))).toBe(true);
+    // The recipe is procedural now, but ONE shared recipe must appear verbatim on
+    // every page hint for a cohesive deck.
+    const shared = r.suggested!.bg_style as string;
+    expect(shared).toContain('grain');
+    expect(r.pages!.every(p => p.hints.includes(`bg_style:"${shared}"`))).toBe(true);
     expect(r.pages!.every(p => p.hints.includes('ONE preset layer'))).toBe(true);
   });
 

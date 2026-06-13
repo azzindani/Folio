@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MOOD_BANK, pickMood, seededMood, type Mood } from './mood-bank';
+import { MOOD_BANK, pickMood, seededMood, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
 
 describe('mood-bank — 20 distinct styles (color + geometric recipe + font)', () => {
   it('has 20 styles, each fully specified', () => {
@@ -42,5 +42,28 @@ describe('mood-bank — 20 distinct styles (color + geometric recipe + font)', (
     const a = seededMood('origami cranes'), b = seededMood('origami cranes');
     expect(a).toEqual(b);
     expect((a as Mood).font.length).toBeGreaterThan(0);
+  });
+});
+
+describe('proceduralBgStyle — 100+ distinct backgrounds from the bg_style grammar', () => {
+  it('generates well over 100 distinct recipes across varied seeds', () => {
+    const seeds = Array.from({ length: 600 }, (_, i) => `topic number ${i} about ${(i * 7) % 13} things`);
+    const set = new Set(seeds.map((s, i) => proceduralBgStyle(s, i % 2 === 0)));
+    expect(set.size).toBeGreaterThan(100);
+  });
+  it('is deterministic per seed and always carries a base + grain texture floor', () => {
+    expect(proceduralBgStyle('mars exploration', true)).toBe(proceduralBgStyle('mars exploration', true));
+    const r = proceduralBgStyle('mars exploration', true);
+    expect(r).toContain('grain');
+    expect(r.split(' + ').length).toBeGreaterThanOrEqual(3); // base + sweep + pattern + grain
+  });
+  it('two different topics in the same colour mood get different geometry', () => {
+    // both space topics → same navy mood, but procedural geometry differs
+    const dark = true;
+    expect(proceduralBgStyle('the race to explore mars', dark)).not.toBe(proceduralBgStyle('the physics of black holes', dark));
+  });
+  it('isDarkHex distinguishes dark from light canvases', () => {
+    expect(isDarkHex('#0A0A0A')).toBe(true);
+    expect(isDarkHex('#FAF5EC')).toBe(false);
   });
 });

@@ -88,3 +88,51 @@ export function pickMood(text: string, seed: string): Mood {
 export function seededMood(seed: string): Mood {
   return pickMood(seed, seed);
 }
+
+// ── Procedural background grammar ─────────────────────────────
+// The bg_style language (base + sweeps + pattern + grain) is already
+// combinatorial; the 20 moods just hardcode ONE recipe each, so the same colour
+// always draws the same geometry ("some designs use the same background"). These
+// pools SAMPLE that grammar, seeded by the design's content, so two decks in the
+// same colour mood get different geometry. Space = base × sweep × sweep2 ×
+// pattern ≫ 100 distinct, coherent backgrounds. Pools are individually vetted;
+// sweeps blend toward the bg and patterns render faint, so any combination stays
+// legible. marble/photo are excluded (need extra inputs / don't raster cleanly).
+const BG_BASE_DARK = ['gradient', 'radial', 'mesh', 'gradient:vert', 'solid'];
+const BG_BASE_LIGHT = ['gradient:vert', 'gradient', 'solid', 'radial'];
+const BG_SWEEP = ['tri:br', 'tri:tr', 'diag:tr', 'diag:tl', 'blocks', 'rings:tr', 'rings:tl', 'arcs:bottom', 'wave:bottom', 'shards', 'curve:tr', 'curve:bl', 'glow:top'];
+const BG_PATTERN = ['grid', 'dot_grid', 'dots', 'crosshatch', 'diagonal_stripes', 'graph_paper', 'isometric', 'chevron', 'triangles', 'waves', 'scallop', 'plus', 'blueprint', 'carbon', 'halftone', 'zigzag'];
+
+// FNV-1a salted by slot so each part of the recipe draws an independent index
+// from the same seed (stable per content, decorrelated across slots).
+function hashSalt(s: string, salt: number): number {
+  let h = (0x811c9dc5 ^ salt) >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+
+/**
+ * Compose a bg_style recipe procedurally from the seed — base + 1-2 geometric
+ * sweeps + a faint pattern + grain. Deterministic per seed, varied across seeds.
+ * `dark` picks the base pool that reads on a dark vs light canvas.
+ */
+/** True when a hex reads as a dark canvas (picks the dark vs light base pool). */
+export function isDarkHex(hex: string): boolean {
+  const h = (hex || '').replace('#', '');
+  if (h.length < 6) return true;
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+
+export function proceduralBgStyle(seed: string, dark: boolean): string {
+  const s = seed && seed.trim() ? seed : 'folio-default';
+  const bases = dark ? BG_BASE_DARK : BG_BASE_LIGHT;
+  const base = bases[hashSalt(s, 1) % bases.length] ?? 'gradient';
+  const sweep1 = BG_SWEEP[hashSalt(s, 2) % BG_SWEEP.length] ?? 'glow:top';
+  const sweep2 = hashSalt(s, 3) % 5 < 2 ? (BG_SWEEP[hashSalt(s, 4) % BG_SWEEP.length] ?? '') : '';
+  const pattern = BG_PATTERN[hashSalt(s, 5) % BG_PATTERN.length] ?? 'grid';
+  const parts = [base, sweep1];
+  if (sweep2 && sweep2 !== sweep1) parts.push(sweep2);
+  parts.push(pattern, 'grain');
+  return parts.join(' + ');
+}
