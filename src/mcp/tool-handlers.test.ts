@@ -181,6 +181,33 @@ describe('sealDesign', () => {
   });
 });
 
+describe('addLayers — recovers a preset stringified into a text layer (blank-poster fix)', () => {
+  it('re-expands a [{type:"sections",…}] blob into a real layer tree, not a JSON wall', () => {
+    const projectPath = path.join(tmpDir, 'recover-project');
+    createProject({ name: 'Recover', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Blob Poster', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/blob-poster.design.yaml');
+
+    const blob = JSON.stringify([{ type: 'sections', kicker: 'Astrophysics', title: 'Black Holes',
+      subtitle: 'A concise overview', bg_style: 'gradient + grain',
+      blocks: [{ type: 'stats', items: [{ value: '30 km', label: 'radius' }] },
+        { type: 'callout', label: 'Takeaway', text: 'Cosmic regulators.' }] }]);
+    // The model's mistake: the whole preset packed into ONE verbose text layer,
+    // plus a stray bg rect — exactly the g_blackholes blank shape.
+    const res = addLayers({ design_path: designPath, layers: [
+      { id: 'text_1', type: 'text', content: { type: 'plain', value: blob } },
+      { id: 'rect_1', type: 'rect', pos: [0, 0, 1080, 2000] },
+    ] as unknown as Layer[] }) as Record<string, unknown>;
+    expect(res.success).not.toBe(false);
+
+    const spec = parseDesign(fs.readFileSync(designPath, 'utf-8'));
+    // Recovered: a real expanded group, NOT a lone text layer holding the JSON.
+    expect(spec.layers!.some(l => l.type === 'group')).toBe(true);
+    const lone = spec.layers!.find(l => l.type === 'text') as { content?: { value?: string } } | undefined;
+    expect(lone?.content?.value ?? '').not.toContain('"blocks"');
+  });
+});
+
 describe('addLayer / updateLayer / removeLayer', () => {
   let designPath: string;
 

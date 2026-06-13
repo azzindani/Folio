@@ -1879,6 +1879,66 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   return [];
 }
 
+// Every preset `type` (plus its aliases) the expander dispatches on. Used to
+// recognise a preset payload a model stuffed into a text layer (see below).
+const PRESET_TYPES = new Set([
+  'feature_grid', 'editorial', 'poster', 'split', 'list', 'steps', 'checklist',
+  'numbered_list', 'stat', 'metric', 'big_number', 'event', 'flyer', 'hero',
+  'sections', 'infographic', 'document', 'report_poster', 'decor', 'marble_bg',
+  'backdrop',
+]);
+
+// Does a decoded object look like a Folio PRESET payload (not arbitrary JSON a
+// poster might legitimately display)? The signal must be specific so a code
+// snippet showing JSON is never hijacked: a known preset `type`/`preset`, or a
+// `blocks` array (the sections grammar), or an `items` array paired with a
+// title/kicker (the feature_grid grammar).
+function looksLikePreset(o: unknown): boolean {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
+  const r = o as Record<string, unknown>;
+  if (typeof r['type'] === 'string' && PRESET_TYPES.has(r['type'])) return true;
+  if (typeof r['preset'] === 'string' && PRESET_TYPES.has(r['preset'])) return true;
+  if (Array.isArray(r['blocks'])) return true;
+  if (Array.isArray(r['items']) && (r['title'] != null || r['kicker'] != null)) return true;
+  return false;
+}
+
+// The dominant blank-poster cause on weak models: instead of passing the preset
+// as layers_shorthand, the model JSON-stringifies the WHOLE payload and drops it
+// into a single text layer's `content.value` (array form `[{type:"sections",…}]`
+// or bare object `{…,"blocks":[…]}` with the type omitted). The engine then
+// renders one unreadable JSON wall → a design that looks blank. Detect that blob,
+// decode it leniently, and hand back a real ShorthandLayer[] so add_layers can
+// re-expand it through the normal preset pipeline — same silent-drop class as a
+// stringified layers_shorthand (#42), on the text-layer path. Returns null when
+// no text layer carries a preset blob (the common, healthy case).
+export function recoverStringifiedPreset(layers: Layer[]): ShorthandLayer[] | null {
+  for (const l of layers) {
+    if (!l || l.type !== 'text') continue;
+    const raw = (l as Layer & { content?: string | { value?: string } }).content;
+    const s = (typeof raw === 'string' ? raw : raw?.value ?? '').trim();
+    if (!(s.startsWith('{') || s.startsWith('['))) continue;
+    const parsed = lenientParseLayers(s);
+    if (!parsed) continue;
+    const items = Array.isArray(parsed) ? parsed : [parsed];
+    if (!items.some(looksLikePreset)) continue;
+    // A `blocks`-bearing object with no `type` IS a sections payload — name it so
+    // coerceShorthandLayers treats it as one layer, not an {id:layer} dict.
+    const normalized = items.map(o => {
+      if (o && typeof o === 'object' && !Array.isArray(o)) {
+        const r = o as Record<string, unknown>;
+        if (r['type'] == null && r['preset'] == null && Array.isArray(r['blocks'])) {
+          return { ...r, type: 'sections' };
+        }
+      }
+      return o;
+    });
+    const sh = coerceShorthandLayers(normalized);
+    if (sh.length) return sh;
+  }
+  return null;
+}
+
 // Small models name fields after the *verbose* output schema (content,
 // font_size, symbol, url) rather than the terse shorthand vocabulary
 // (text, size, icon, src). Without this, a model that sends
