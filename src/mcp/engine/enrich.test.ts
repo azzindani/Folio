@@ -32,6 +32,13 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.design_type).toBe('feature_grid');
   });
 
+  it('a product/app LAUNCH is a feature_grid, not an event (the "launch" trap)', () => {
+    expect(run('a launch poster for a productivity app').design_type).toBe('feature_grid');
+    expect(run('the launch of our new developer tool').design_type).toBe('feature_grid');
+    // a real event with no product noun still routes to event
+    expect(run('a flyer for a design systems conference').design_type).toBe('event');
+  });
+
   it('a tech topic gets a dark mood with a procedural grained background', () => {
     const r = run('the state of AI in healthcare') as unknown as { suggested: { bg: string; bg_style: string } };
     expect(r.suggested.bg.toLowerCase()).toBe('#0e0b14'); // indigo tech mood (colour is curated)
