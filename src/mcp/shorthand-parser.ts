@@ -3,7 +3,7 @@ import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 import { hexToRgb, luminance } from './engine/reference';
-import { seededMood, type Mood } from './engine/mood-bank';
+import { pickMood, type Mood } from './engine/mood-bank';
 
 /** A concrete hex string (not a token/gradient/Fill object), else null. */
 function asHex(v: unknown): string | null {
@@ -48,8 +48,14 @@ function readablePair(bg: string, explicitText?: unknown, explicitMuted?: unknow
  */
 function seededDefaults(r: Record<string, unknown>, seedParts: unknown[]): Mood | null {
   if (typeof r['bg'] === 'string' && (r['bg'] as string).trim() !== '') return null;
-  const seed = seedParts.map(p => (typeof p === 'string' ? p : JSON.stringify(p ?? ''))).join(' ');
-  return seededMood(seed);
+  // Match the palette LANE on the prose parts (title/subtitle/kicker — the
+  // topic), NOT the bulky body arrays (blocks/items/details). A generic stat
+  // label like "market value" inside blocks must not hijack the whole palette to
+  // the finance lane. The FULL content still seeds the hash so unmatched topics
+  // spread across the bank instead of collapsing onto one default.
+  const all = seedParts.map(p => (typeof p === 'string' ? p : JSON.stringify(p ?? ''))).join(' ');
+  const topic = seedParts.filter((p): p is string => typeof p === 'string').join(' ').trim();
+  return pickMood(topic || all, all);
 }
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
@@ -1366,13 +1372,27 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
 
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
 
+  // ── Typographic treatment — the per-style TITLE personality on top of the
+  // color/geometry/font: 'highlight' (knockout marker chip), 'underline' (accent
+  // swipe), 'mega' (oversized uppercase), 'rotate' (vertical magazine-spine
+  // kicker), 'rule' (accent rule). Seeded from the mood so a vision-less model
+  // gets a distinct type voice for free; an explicit field still overrides.
+  const headlineStyle = shStr(r['headline_style'] ?? r['type_treatment'] ?? r['headline'], m?.headline ?? 'rule');
+  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+  const mega = headlineStyle === 'mega';
+  const rotateKick = headlineStyle === 'rotate' && !!kicker;
+  const tLH = 1.04;
+  const ts = mega ? Math.round(W * 0.094) : Math.round(W * 0.072);
+  const gutter = rotateKick ? Math.round(W * 0.085) : 0;       // left clearance for the vertical spine
+  const ccX = cX + gutter, ccW = cW - gutter;                  // content column (indented when a spine is present)
+
   // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
   // dead space — a common blind-model habit). Trim BEFORE measuring.
   const isDiv = (b: Record<string, unknown>): boolean => { const ki = shStr(b['kind'] ?? b['type']); return ki === 'divider' || ki === 'rule'; };
   const bl = blocks.slice();
   while (bl.length && isDiv(bl[0])) bl.shift();
   while (bl.length && isDiv(bl[bl.length - 1])) bl.pop();
-  const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, cX, 0, cW, ctx).height);
+  const heights = bl.map((b, i) => renderSectionBlock(b, `${id}_b${i}`, z, ccX, 0, ccW, ctx).height);
   const sumH = heights.reduce((a, h) => a + h, 0);
   const n = Math.max(1, bl.length);
 
@@ -1382,9 +1402,9 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   // blocks first, then compose the background at this fitted height so the baked
   // sweep geometry (triangles, diagonals, waves) matches the page exactly.
   let hY = Math.round(W * 0.08);
-  if (kicker) hY += Math.round(W * 0.045);
-  if (title) hY += estTextHeight(title, Math.round(W * 0.072), cW, 1.04) + Math.round(W * 0.02);
-  if (subtitle) hY += estTextHeight(subtitle, Math.round(W * 0.028), cW, 1.45) + Math.round(W * 0.025);
+  if (kicker && !rotateKick) hY += Math.round(headlineStyle === 'highlight' ? W * 0.052 : W * 0.045);
+  if (title) hY += estTextHeight(title, ts, ccW, tLH) + Math.round(W * 0.02) + (headlineStyle === 'underline' ? Math.round(W * 0.018) : 0);
+  if (subtitle) hY += estTextHeight(subtitle, Math.round(W * 0.028), ccW, 1.45) + Math.round(W * 0.025);
   if (kicker || title || subtitle) hY += Math.round(W * 0.05);
   const footerBand = footer ? Math.round(W * 0.1) : Math.round(W * 0.06);
   const naturalH = hY + sumH + Math.round(W * 0.032) * Math.max(0, n - 1) + footerBand + Math.round(W * 0.04);
@@ -1394,26 +1414,52 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   let k = layers.length, cy = Y + Math.round(W * 0.08);
 
-  if (kicker) {
-    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
+  // Vertical magazine-spine kicker (rotate): a -90° label pinned at the left
+  // edge; the content column is already indented (gutter) to clear it. Built as a
+  // raw layer because rotation is a LAYER prop, not a text-style field.
+  if (rotateKick) {
+    const kSize = Math.round(W * 0.019), kbw = Math.round(W * 0.34), kbh = Math.round(kSize * 1.8);
+    const cxp = X + Math.round(W * 0.04), cyp = cy + Math.round(W * 0.18);
+    layers.push({ id: `${id}_kick`, type: 'text', z: z + k++, x: Math.round(cxp - kbw / 2), y: Math.round(cyp - kbh / 2), width: kbw, height: kbh, rotation: -90,
+      content: { type: 'plain', value: kicker }, style: { font_family: 'IBM Plex Mono', font_size: kSize, font_weight: 700, color: accent, letter_spacing: 3, text_transform: 'uppercase', align: 'center' } } as unknown as Layer);
+  } else if (kicker && headlineStyle === 'highlight') {
+    // Knockout marker chip — accent band, text in the canvas color.
+    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 42, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 700, color: readableOn(accent, bg), letter_spacing: 2, text_transform: 'uppercase', highlight: accent }));
+    cy += Math.round(W * 0.052);
+  } else if (kicker) {
+    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
     cy += Math.round(W * 0.045);
   }
   if (title) {
-    const ts = Math.round(W * 0.072), th = estTextHeight(title, ts, cW, 1.04);
-    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: text, line_height: 1.04, letter_spacing: -1, font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
+    const th = estTextHeight(title, ts, ccW, tLH);
+    // highlight with no kicker → put the marker band on the TITLE itself (a
+    // knockout headline) so the treatment is never dormant on a kicker-less deck.
+    const titleHi = headlineStyle === 'highlight' && !kicker;
+    const titleStyle: Record<string, unknown> = { font_size: ts, font_weight: 800, color: titleHi ? readableOn(accent, bg) : text, line_height: tLH, letter_spacing: mega ? -2 : -1, font_family: titleFont };
+    if (mega) titleStyle['text_transform'] = 'uppercase';
+    if (titleHi) titleStyle['highlight'] = accent;
+    layers.push(txt(`${id}_title`, z + k++, ccX, cy, ccW, th, title, titleStyle));
     cy += th + Math.round(W * 0.02);
+    // Underline swipe — a thick accent bar directly beneath the title.
+    if (headlineStyle === 'underline') {
+      const ulw = Math.min(ccW, Math.round(W * 0.32)), ulh = Math.max(7, Math.round(W * 0.013));
+      layers.push({ id: `${id}_ul`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy - W * 0.01), width: ulw, height: ulh, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      cy += Math.round(W * 0.012);
+    }
   }
   if (subtitle) {
-    const ss = Math.round(W * 0.028), sh2 = estTextHeight(subtitle, ss, cW, 1.45);
-    layers.push(txt(`${id}_sub`, z + k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45 }));
+    const ss = Math.round(W * 0.028), sh2 = estTextHeight(subtitle, ss, ccW, 1.45);
+    layers.push(txt(`${id}_sub`, z + k++, ccX, cy, ccW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45 }));
     cy += sh2 + Math.round(W * 0.025);
   }
-  // Header rule + tick only when there's actually a header (a blind model may
-  // pass only blocks → an orphan rule at the top looks broken).
-  if (kicker || title || subtitle) {
-    layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: text } } as unknown as Layer);
-    layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+  // A header rule belongs to the plain/mega/rotate treatments; highlight +
+  // underline already carry their own accent moment, so a rule is redundant.
+  if ((kicker || title || subtitle) && (headlineStyle === 'rule' || mega || headlineStyle === 'rotate')) {
+    layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy), width: ccW, height: mega ? 4 : 3, fill: { type: 'solid', color: text } } as unknown as Layer);
+    layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
     cy += Math.round(W * 0.05);
+  } else if (kicker || title || subtitle) {
+    cy += Math.round(W * 0.03);
   }
 
   // Place blocks: distribute only the SMALL leftover slack in the fitted canvas
@@ -1422,7 +1468,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const avail = (Y + H - M - footerH) - cy;
   const gap = Math.max(Math.round(W * 0.024), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
   bl.forEach((b, i) => {
-    const out = renderSectionBlock(b, `${id}_b${i}`, z + k, cX, cy, cW, ctx);
+    const out = renderSectionBlock(b, `${id}_b${i}`, z + k, ccX, cy, ccW, ctx);
     out.layers.forEach(l => layers.push(l));
     k += out.layers.length + 1;
     cy += heights[i] + gap;
@@ -1430,8 +1476,8 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
 
   if (footer) {
     const fy = Y + H - Math.round(W * 0.05);
-    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy - 16, width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
-    layers.push(txt(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: ccX, y: fy - 16, width: ccW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    layers.push(txt(`${id}_footer`, z + k++, ccX, fy, ccW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
@@ -2032,6 +2078,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'decoration', 'variation', 'font_variation_settings', 'features', 'font_feature_settings',
   'outline', 'outline_color', 'outline_width', 'text_stroke', 'highlight', 'curve',
   'text_path', 'word_spacing',
+  // per-style title treatment (highlight/underline/mega/rotate/rule)
+  'headline_style', 'type_treatment',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href', 'link',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',

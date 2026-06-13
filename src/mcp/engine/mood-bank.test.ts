@@ -4,13 +4,20 @@ import { MOOD_BANK, pickMood, seededMood, type Mood } from './mood-bank';
 describe('mood-bank — 20 distinct styles (color + geometric recipe + font)', () => {
   it('has 20 styles, each fully specified', () => {
     expect(MOOD_BANK.length).toBe(20);
+    const treatments = new Set(['rule', 'highlight', 'underline', 'mega', 'rotate']);
     for (const m of MOOD_BANK) {
       expect(m.bg).toMatch(/^#[0-9A-Fa-f]{6}$/);
       expect(m.accent).toMatch(/^#[0-9A-Fa-f]{6}$/);
       expect(m.palette.length).toBeGreaterThanOrEqual(3);
       expect(m.font.length).toBeGreaterThan(0);
       expect(m.bg_style).toContain('grain'); // the texture floor on every style
+      expect(treatments.has(m.headline)).toBe(true); // a valid title treatment
     }
+  });
+
+  it('the title treatments are spread across the bank (not one default)', () => {
+    const used = new Set(MOOD_BANK.map(m => m.headline));
+    expect(used.size).toBeGreaterThanOrEqual(4); // at least 4 of the 5 treatments in play
   });
 
   it('the bank is genuinely varied — many distinct fonts, bgs and geometric recipes', () => {

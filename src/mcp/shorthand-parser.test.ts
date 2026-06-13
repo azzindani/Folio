@@ -2011,3 +2011,31 @@ describe('sections — canvas auto-fits to content (kills dead space, prevents c
     expect(bg?.height).toBe(g.height);
   });
 });
+
+describe('sections — per-style headline treatments (typographic variety)', () => {
+  type L = { id: string; type: string; rotation?: number; style?: { font_size?: number; highlight?: string }; fill?: { color?: string } };
+  type G = { layers: L[] };
+  const make = (treatment: string) => expandShorthand({ id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1350], bg: '#0A0A0A', accent: '#F4B740',
+    headline_style: treatment, kicker: 'Field Report', title: 'A Headline', subtitle: 'A deck.',
+    blocks: [{ kind: 'text', heading: 'H', text: 'Some body copy that fills a line or two.' }] } as unknown as ShorthandLayer) as unknown as G;
+  const find = (g: G, suffix: string) => g.layers.find(l => l.id.includes(suffix));
+
+  it('highlight → the kicker carries a marker band (style.highlight = accent)', () => {
+    const k = find(make('highlight'), '_kick') as L | undefined;
+    expect(k?.style?.highlight).toBe('#F4B740');
+  });
+  it('underline → an accent bar (_ul) sits under the title', () => {
+    const ul = find(make('underline'), '_ul') as L | undefined;
+    expect(ul?.type).toBe('rect');
+    expect(ul?.fill?.color).toBe('#F4B740');
+  });
+  it('rotate → the kicker is a -90° rotated layer; no underline/rule-only-when-due', () => {
+    const k = find(make('rotate'), '_kick') as L | undefined;
+    expect(k?.rotation).toBe(-90);
+  });
+  it('mega → the title is meaningfully larger than the plain rule treatment', () => {
+    const mega = find(make('mega'), '_title') as L | undefined;
+    const plain = find(make('rule'), '_title') as L | undefined;
+    expect((mega?.style?.font_size ?? 0)).toBeGreaterThan(plain?.style?.font_size ?? 0);
+  });
+});

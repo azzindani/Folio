@@ -429,7 +429,10 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
 
       // Marker/highlight band behind the text (estimated width — matches wrap heuristic).
       if (style.highlight) {
-        const cw = fontSize * 0.54;
+        // Monospace glyphs are wider than the 0.54em sans average; widen so the
+        // band covers every char (an undersized chip clips the last letter).
+        const mono = /mono|courier|consol/i.test(style.font_family ?? '');
+        const cw = fontSize * (mono ? 0.62 : 0.54);
         for (let i = 0; i < lines.length; i++) {
           const lw = lines[i].length * cw + (style.letter_spacing ?? 0) * Math.max(0, lines[i].length - 1);
           let rx = textX;
