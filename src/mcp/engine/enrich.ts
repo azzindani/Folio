@@ -6,28 +6,8 @@
 // FIRST (so figures are real, not invented). The model does the research + writing.
 import type { ToolResult, ProgressItem } from '../types';
 import { okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
+import { pickMood, type Mood } from './mood-bank';
 
-interface Mood { theme: string; bg: string; accent: string; text_color: string; palette: string[]; bg_style: string; }
-// Topic → art-direction. Most lanes are DARK + a warm/electric accent — a bold,
-// art-directed look (the hand-built peak), not a safe flat-cream template. Only
-// health/nature stays light (where calm warmth genuinely reads better). Order
-// matters: first match wins, so the more specific lanes precede the broad ones.
-const MOODS: { test: RegExp; mood: Mood }[] = [
-  // Tech / AI / software → deep indigo, electric violet.
-  { test: /\b(ai|ml|tech|software|developer|saas|startup|crypto|web3|cyber|security|data|cloud|api|devops|engineering|robot|llm|model|compute|chip|quantum|app)/i,
-    mood: { theme: 'bold-poster', bg: '#0E0B14', accent: '#7C5CFF', text_color: '#F5F1EA', palette: ['#7C5CFF', '#27C2A0', '#F4B740'], bg_style: 'mesh + glow + grain' } },
-  // Money / business / impact → DRAMATIC near-black + gold (the editorial-stat peak).
-  { test: /\b(finance|financial|econom|market|invest|revenue|business|sales|growth|stock|fintech|bank|b2b|profit|cost|costs|price|pricing|budget|waste|wasted|billion|trillion|gdp|wage|salary|spend|spending|money|wealth|tax|debt|productivity|roi|valuation|funding)/i,
-    mood: { theme: 'bold-poster', bg: '#0A0A0A', accent: '#F4B740', text_color: '#FAFAFA', palette: ['#F4B740', '#E0A96D', '#3DD4C8'], bg_style: 'glow + grain' } },
-  // Health / nature / climate → calm warm paper + sage (the one lane where light wins).
-  { test: /\b(health|wellness|medical|nature|climate|environment|sustain|green|food|nutrition|fitness|care|wellbeing|mental|organic|forest|ocean|solar|renewable|wildlife|biodiversity)/i,
-    mood: { theme: 'editorial-cream', bg: '#F2F0E6', accent: '#3E7C5A', text_color: '#1A1A1A', palette: ['#9CAF88', '#C8B88A', '#6E8BB5'], bg_style: 'gradient:vert + curve + grain' } },
-  // Art / culture / events → near-black + vermillion, vignette.
-  { test: /\b(art|music|culture|fashion|film|design|creative|festival|gallery|brand|photo|exhibition|concert|theatre|theater|launch|party|nightlife|cinema|poster)/i,
-    mood: { theme: 'bold-poster', bg: '#0A0A0A', accent: '#FF3D00', text_color: '#FAFAFA', palette: ['#FF3D00', '#F4B740', '#3DD4C8'], bg_style: 'mesh + vignette + grain' } },
-];
-// Unmatched → bold drama (deep charcoal + warm amber), not flat light.
-const DEFAULT_MOOD: Mood = { theme: 'bold-poster', bg: '#141414', accent: '#E8A13C', text_color: '#FAFAFA', palette: ['#E8A13C', '#C66B4A', '#6E8BB5'], bg_style: 'glow + grain' };
 
 // Per-preset rich outline + recommended canvas. Each entry the model fills with
 // researched, specific content — the counts are the "richness floor".
@@ -69,8 +49,24 @@ function subjectOf(p: string): string {
 
 function needsResearch(p: string, type: string): boolean {
   if (type === 'event') return false; // flyers carry their own given details
-  return /\b(20\d\d|state of|trends?|statistics?|data|market|report|study|survey|industry|growth|adoption|landscape|forecast|index|benchmark|rate|percent|%)\b/i.test(p)
-    || type === 'sections' || type === 'stat';
+  if (type === 'stat') return true;   // a stat poster is nothing without a real figure
+  // Otherwise research only when the topic genuinely calls for live facts — NOT
+  // every sections poster. Forcing research on "history of neon signs" produced
+  // the nonsense "…market size growth data" query; let knowledge topics write
+  // from knowledge and reserve web lookups for data/trend/report topics.
+  return /\b(20\d\d|state of|trends?|statistic|data|market|report|study|survey|industry|growth|adoption|landscape|forecast|index|benchmark|rate|percent|%|how many|number of|spending|impact|comparison)\b/i.test(p);
+}
+
+// Sensible, topic-agnostic research queries. The old set hard-coded "market size
+// growth data", which read as nonsense for non-market topics; these fit any
+// subject while still steering toward real, sourced facts.
+function researchQueries(subject: string): string[] {
+  return [
+    `${subject} key facts and figures`,
+    `${subject} recent statistics 2026`,
+    `${subject} notable examples and details`,
+    `${subject} expert sources and reports`,
+  ];
 }
 
 // ── Carousel / multi-page deck planning ─────────────────────
@@ -131,14 +127,11 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   // Multi-page deck / carousel → a per-page plan instead of one design.
   if (isCarousel(prompt, args.type)) {
     const subject = subjectOf(prompt);
-    const mood = (MOODS.find(m => m.test.test(prompt))?.mood) ?? DEFAULT_MOOD;
+    const mood = pickMood(prompt, subject);
     const count = parsePageCount(prompt);
     const [cw, ch] = carouselCanvas(prompt);
     const research = needsResearch(prompt, 'sections');
-    const research_queries = research ? [
-      `${subject} key statistics 2026`, `${subject} latest trends and figures`,
-      `${subject} market size growth data`, `notable ${subject} facts and numbers`,
-    ] : [];
+    const research_queries = research ? researchQueries(subject) : [];
     const pages = planPages(subject, count, mood);
     const research_instruction = research
       ? 'Factual topic: FIRST run the research_queries with your web tools for REAL figures. Do NOT invent statistics.'
@@ -156,15 +149,10 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   }
   const design_type = (args.type && OUTLINES[args.type]) ? args.type : inferType(prompt);
   const outline = OUTLINES[design_type] ?? OUTLINES.sections;
-  const mood = (MOODS.find(m => m.test.test(prompt))?.mood) ?? DEFAULT_MOOD;
-  const research = needsResearch(prompt, design_type);
   const subject = subjectOf(prompt);
-  const research_queries = research ? [
-    `${subject} key statistics 2026`,
-    `${subject} latest trends and figures`,
-    `${subject} market size growth data`,
-    `notable ${subject} facts and numbers`,
-  ] : [];
+  const mood = pickMood(prompt, subject);
+  const research = needsResearch(prompt, design_type);
+  const research_queries = research ? researchQueries(subject) : [];
   const [width, height] = outline.canvas;
 
   const research_instruction = research

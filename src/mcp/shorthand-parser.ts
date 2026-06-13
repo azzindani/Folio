@@ -3,6 +3,7 @@ import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 import { hexToRgb, luminance } from './engine/reference';
+import { seededMood, type Mood } from './engine/mood-bank';
 
 /** A concrete hex string (not a token/gradient/Fill object), else null. */
 function asHex(v: unknown): string | null {
@@ -35,6 +36,20 @@ function readablePair(bg: string, explicitText?: unknown, explicitMuted?: unknow
   const text = readableOn(bg, asHex(explicitText) ?? (dark ? '#FAFAFA' : '#1A1A1A'));
   const muted = readableOn(bg, asHex(explicitMuted) ?? (dark ? '#B8B2A8' : '#6E5F4A'));
   return { text, muted };
+}
+/**
+ * Seeded default art-direction for a preset whose model call OMITTED `bg`. A
+ * vision-less 30B reliably drops bg/accent/bg_style (it sends only structure), so
+ * every preset would otherwise fall to one hard-coded default → the "same
+ * template" look. Seeding a mood from the design's own CONTENT (title + body)
+ * gives two different topics two different looks even when neither carried a
+ * color, and lanes match the content words ("abyssal"→teal, "volcano"→midnight).
+ * Returns null when an explicit bg was given — that is always honored.
+ */
+function seededDefaults(r: Record<string, unknown>, seedParts: unknown[]): Mood | null {
+  if (typeof r['bg'] === 'string' && (r['bg'] as string).trim() !== '') return null;
+  const seed = seedParts.map(p => (typeof p === 'string' ? p : JSON.stringify(p ?? ''))).join(' ');
+  return seededMood(seed);
 }
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
@@ -359,12 +374,16 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
     const hex = colors.filter(c => typeof c === 'string') as string[];
     if (hex.length >= 2) bgFill = `linear-gradient(135deg, ${hex.join(', ')})`;
   }
+  // No bg from the model → seed a topic-apt mood from the card content so two
+  // different feature posters don't both fall to the same default canvas.
+  const m = seededDefaults(r, [str(r['title']), str(r['subtitle']), r['items'] ?? r['cards'] ?? r['features']]);
+  if (bgFill === undefined && m) bgFill = m.bg;
   const cardFill  = str(r['card_fill'], '$surface');
-  const accent    = str(r['accent'], '$primary');
-  const textColor = str(r['text_color'] ?? r['color'], '$text');
+  const accent    = str(r['accent'], m?.accent ?? '$primary');
+  const textColor = str(r['text_color'] ?? r['color'], m?.text_color ?? '$text');
   const muted     = str(r['muted'], textColor);
-  const bgStyle   = str(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
-  const palette   = (Array.isArray(r['palette']) ? r['palette'] : []).filter((c): c is string => typeof c === 'string');
+  const bgStyle   = str(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
+  const palette   = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
   // Card text MUST contrast the CARD fill, not the global canvas. A blind model
   // that picks a dark canvas + light text would otherwise drop that light text
   // onto a light ($surface) card → invisible (the #1 feature_grid failure).
@@ -767,16 +786,18 @@ function txt(id: string, z: number, x: number, y: number, w: number, h: number, 
 function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const { X, Y, W, H } = shBox(sh);
-  const bg = shStr(r['bg'], '#FAF5EC');
-  const accent = shStr(r['accent'], '#B8543C');
-  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow'] ?? r['label']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
   const subtitle = shStr(r['subtitle'] ?? r['lede'] ?? r['deck']);
   const body = shStr(r['body'] ?? r['desc']);
   const footer = shStr(r['footer']);
-  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
-  const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
+  // Seed the mood from the essay's own words when the model gave no bg.
+  const m = seededDefaults(r, [title, subtitle, body, kicker]);
+  const bg = shStr(r['bg'], m?.bg ?? '#FAF5EC');
+  const accent = shStr(r['accent'], m?.accent ?? '#B8543C');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
+  const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
   const M = Math.round(W * 0.08);
   const cW = W - 2 * M, cX = X + M;
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
@@ -888,14 +909,16 @@ function readListItems(v: unknown): ListItem[] {
 function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const { X, Y, W, H } = shBox(sh);
-  const bg = shStr(r['bg'], '#FAF5EC');
-  const accent = shStr(r['accent'], '#B8543C');
-  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text']);
   const footer = shStr(r['footer']);
   const marker = shStr(r['marker'], 'number'); // number | bullet | icon | none
   const items = readListItems(r['items']);
+  // Seed the mood from the list's own items when the model gave no bg.
+  const m = seededDefaults(r, [title, kicker, items]);
+  const bg = shStr(r['bg'], m?.bg ?? '#FAF5EC');
+  const accent = shStr(r['accent'], m?.accent ?? '#B8543C');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
 
   const M = Math.round(W * 0.08), cX = X + M, contentW = W - 2 * M;
   const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
@@ -958,21 +981,21 @@ function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
 function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const { X, Y, W, H } = shBox(sh);
-  const bg = shStr(r['bg'], '#0A0A0A');
-  const accent = shStr(r['accent'], '#FF3D00');
-  // Caption + kicker + footer sit ON the bg. A fixed default (#FAFAFA for a dark
-  // bg) is invisible when the model gives a LIGHT bg and no text_color (and vice
-  // versa). readablePair flips to a legible tone for the actual canvas — a
-  // vision-less model cannot see the text vanish, so the engine guarantees it.
-  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
-  const capColor = textColor;
   const kicker = shStr(r['kicker'] ?? r['label'] ?? r['eyebrow']);
   const stat = shStr(r['stat'] ?? r['value'] ?? r['number'] ?? r['title'] ?? r['text'], '0');
   const caption = shStr(r['caption'] ?? r['subtitle'] ?? r['desc'] ?? r['body'] ?? r['context'] ?? r['note'] ?? r['summary'] ?? r['lead'] ?? r['blurb'] ?? r['detail']);
   const footer = shStr(r['footer'] ?? r['source'] ?? r['credit']);
-
-  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
-  const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
+  // Seed the mood from the stat's caption when the model gave no bg (else every
+  // stat poster is the same near-black + vermillion default).
+  const m = seededDefaults(r, [caption, kicker, stat]);
+  const bg = shStr(r['bg'], m?.bg ?? '#0A0A0A');
+  const accent = shStr(r['accent'], m?.accent ?? '#FF3D00');
+  // Caption + kicker + footer sit ON the bg. readablePair flips text to a legible
+  // tone for the actual canvas — a vision-less model cannot see text vanish.
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
+  const capColor = textColor;
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
+  const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
   const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
 
@@ -1023,14 +1046,16 @@ function readDetailLines(r: Record<string, unknown>): string[] {
 function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const { X, Y, W, H } = shBox(sh);
-  const bg = shStr(r['bg'], '#0A0A0A');
-  const accent = shStr(r['accent'], '#FF3D00');
-  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline'] ?? r['text'], 'EVENT');
   const footer = shStr(r['footer']);
   const details = readDetailLines(r);
-  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
+  // Seed the mood from the event's title/details when the model gave no bg.
+  const m = seededDefaults(r, [title, kicker, details]);
+  const bg = shStr(r['bg'], m?.bg ?? '#0A0A0A');
+  const accent = shStr(r['accent'], m?.accent ?? '#FF3D00');
+  const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
 
   const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
   const bgHex = asHex(bg);
@@ -1247,16 +1272,19 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
 function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
   const { X, Y, W, H } = shBox(sh, 1080, 1920);
-  const bg = shStr(r['bg'], '#FAF5EC');
-  const accent = shStr(r['accent'], '#B8543C');
-  const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'], r['muted']);
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline']);
   const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
   const footer = shStr(r['footer']);
-  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment']);
-  const palette = (Array.isArray(r['palette']) ? r['palette'] : []).filter(c => typeof c === 'string') as string[];
   const blocks = (Array.isArray(r['blocks']) ? r['blocks'] : Array.isArray(r['sections']) ? r['sections'] : []) as Record<string, unknown>[];
+  // No bg from the model → seed a topic-apt mood from the content (the blind-
+  // model "same template" fix), else everything falls to one cream default.
+  const m = seededDefaults(r, [title, subtitle, kicker, blocks]);
+  const bg = shStr(r['bg'], m?.bg ?? '#FAF5EC');
+  const accent = shStr(r['accent'], m?.accent ?? '#B8543C');
+  const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
+  const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
   const ctx: SecCtx = { accent, text, muted, W };
 
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
@@ -1611,6 +1639,38 @@ function parseCompactLayer(s: string): ShorthandLayer {
 // ShorthandLayer[]. Accepts: the documented array of objects; an array of
 // compact strings; or an object/dict mapping id → object | compact-string
 // (e.g. {bg:"pos:[…]", headline:"text:[…]:Hello"} — a common small-model form).
+// Recover a layers_shorthand that arrived as a (often MALFORMED) JSON string —
+// the dominant blank-design cause on small models. They stringify the whole
+// array AND mangle it: a missing final brace (truncation), the OTHER tool params
+// concatenated in (`…}],"design_path":"…"}`), or a doubled `}`. Scan bracket
+// depth (string-aware) and either TRUNCATE at the first complete top-level value
+// (trailing garbage) or APPEND the missing closers (unclosed value).
+function closeJsonString(s: string): string {
+  const stack: string[] = [];
+  let inStr = false, esc = false, endIdx = -1;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
+    else if (ch === '}' || ch === ']') { if (stack.length) stack.pop(); if (stack.length === 0) { endIdx = i; break; } }
+  }
+  if (endIdx >= 0 && endIdx < s.length - 1) return s.slice(0, endIdx + 1);
+  if (stack.length) return s.replace(/,\s*$/, '') + stack.reverse().join('');
+  return s;
+}
+/** Strict JSON → lenient YAML (unquoted keys / single quotes / dup-keys=last) →
+ *  bracket-repaired reparse. Returns the parsed value, or undefined if all fail. */
+function lenientParseLayers(s: string): unknown {
+  try { return JSON.parse(s); } catch { /* not strict JSON */ }
+  try { const y = yaml.load(s); if (y && typeof y === 'object') return y; } catch { /* not YAML */ }
+  const repaired = closeJsonString(s);
+  if (repaired !== s) {
+    try { return JSON.parse(repaired); } catch { /* repaired still not JSON */ }
+    try { const y = yaml.load(repaired); if (y && typeof y === 'object') return y; } catch { /* give up */ }
+  }
+  return undefined;
+}
 export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   const one = (v: unknown, id?: string): ShorthandLayer => {
     if (typeof v === 'string') { const p = parseCompactLayer(v); return id ? { id, ...p } : p; }
@@ -1630,8 +1690,7 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   if (typeof input === 'string') {
     const s = input.trim();
     if (!s) return [];
-    let parsed: unknown;
-    try { parsed = yaml.load(s); } catch { parsed = undefined; }
+    const parsed = lenientParseLayers(s);
     if (parsed && typeof parsed === 'object') return coerceShorthandLayers(parsed);
     // A bare compact layer must carry an [x,y,w,h] bracket. Without one it's a
     // junk blob a weak model emitted ("feature_grid:0,0,…:items=…") — return []
