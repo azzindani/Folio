@@ -32,8 +32,27 @@ export function serializeYAML(data: unknown): string {
   });
 }
 
+// A weak model (via patch_design) sometimes writes `layers` as a SINGLE object
+// instead of a list — `layers: {type: rect, …}` not `layers: [ … ]`. Everything
+// downstream calls `layers.map(...)`, so that one bad write crashed render /
+// export / diagnose with "layers.map is not a function" (g_summit). Coerce a
+// lone-object layers container back to a one-element array so a malformed design
+// still renders its single layer instead of throwing.
+function coerceLayersArray(spec: DesignSpec): DesignSpec {
+  const fix = (c: { layers?: unknown }): void => {
+    if (c.layers != null && !Array.isArray(c.layers) && typeof c.layers === 'object') {
+      c.layers = [c.layers] as never;
+    }
+  };
+  if (spec && typeof spec === 'object') {
+    fix(spec as { layers?: unknown });
+    if (Array.isArray(spec.pages)) for (const p of spec.pages) fix(p as { layers?: unknown });
+  }
+  return spec;
+}
+
 export function parseDesign(source: string): DesignSpec {
-  return parseYAML<DesignSpec>(source);
+  return coerceLayersArray(parseYAML<DesignSpec>(source));
 }
 
 export function parseTheme(source: string): ThemeSpec {

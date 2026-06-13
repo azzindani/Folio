@@ -126,6 +126,21 @@ describe('readYAML / writeYAML', () => {
     writeYAML(filePath, { x: 1 });
     expect(fs.existsSync(filePath)).toBe(true);
   });
+
+  it('coerces a SINGLE-OBJECT layers back to an array (malformed patch self-heals, g_summit)', () => {
+    const filePath = path.join(tmpDir, 'bad.design.yaml');
+    fs.writeFileSync(filePath, 'document:\n  width: 1080\n  height: 1350\nlayers:\n  type: rect\n  z: 0\n');
+    const spec = readYAML<{ layers: unknown }>(filePath);
+    expect(Array.isArray(spec.layers)).toBe(true);
+    expect((spec.layers as Array<{ type: string }>)[0].type).toBe('rect');
+  });
+
+  it('coerces a single-object layers inside a carousel page', () => {
+    const filePath = path.join(tmpDir, 'bad-deck.design.yaml');
+    fs.writeFileSync(filePath, 'pages:\n  - id: p1\n    layers:\n      type: text\n      z: 0\n');
+    const spec = readYAML<{ pages: Array<{ layers: unknown }> }>(filePath);
+    expect(Array.isArray(spec.pages[0].layers)).toBe(true);
+  });
 });
 
 describe('generateId', () => {
