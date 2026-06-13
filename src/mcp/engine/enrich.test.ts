@@ -44,11 +44,26 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.suggested.bg_style).toContain('glow');
   });
 
-  it('an unmatched topic defaults to a BOLD dark mood, not flat light cream', () => {
-    const r = run('a poster about weekend hiking trips') as unknown as { suggested: { bg: string; bg_style: string } };
-    // dark charcoal default — luminance well below mid.
-    expect(parseInt(r.suggested.bg.slice(1, 3), 16)).toBeLessThan(64);
-    expect(r.suggested.bg_style).toContain('grain');
+  it('unmatched topics get VARIED but STABLE moods (no single same-template default)', () => {
+    const sug = (p: string) => (run(p) as unknown as { suggested: { bg: string; accent: string; bg_style: string } }).suggested;
+    // Same topic ⇒ identical art-direction every time (deterministic, no Math.random).
+    expect(sug('a poster about origami cranes')).toEqual(sug('a poster about origami cranes'));
+    // A spread of unrelated, lane-less topics must NOT all collapse to one bg —
+    // this is the "same template" complaint, now fixed by the hashed mood bank.
+    const topics = ['origami cranes', 'lighthouse keepers', 'vintage typewriters',
+      'desert mirages', 'paper airplanes', 'abandoned subway stations', 'tea ceremonies', 'glassblowing'];
+    const bgs = new Set(topics.map(t => sug(`a poster about ${t}`).bg));
+    expect(bgs.size).toBeGreaterThanOrEqual(4); // genuine variety, not one charcoal default
+    // every bg_style still carries grain (the texture floor that kills the flat-AI look)
+    expect(topics.every(t => sug(`a poster about ${t}`).bg_style.includes('grain'))).toBe(true);
+  });
+
+  it('the same KNOWN-domain topics map to apt, distinct moods (ocean≠money≠tech)', () => {
+    const bg = (p: string) => (run(p) as unknown as { suggested: { bg: string } }).suggested.bg.toLowerCase();
+    const ocean = bg('deep sea creatures of the abyss');
+    const money = bg('the financial cost of meetings to business');
+    const tech = bg('the state of AI developer tools');
+    expect(new Set([ocean, money, tech]).size).toBe(3); // three different art-directions
   });
 
   it('an explicit type hint overrides inference', () => {
