@@ -1939,3 +1939,75 @@ describe('coerceShorthandLayers — recover a MALFORMED stringified layers_short
     expect(coerceShorthandLayers('not json at all, just prose').length).toBe(0);
   });
 });
+
+describe('composeBackground — geometric (non-circular) sweeps + style font', () => {
+  type G = { layers: Array<Record<string, unknown>> };
+  const exp = (bg_style: string): G => expandShorthand({
+    id: 'g', type: 'sections', z: 0, pos: [0, 0, 1080, 1350], bg: '#0A0A0A', accent: '#FF6A3D',
+    bg_style, title: 'T', blocks: [{ kind: 'text', text: 'x' }],
+  } as unknown as ShorthandLayer) as unknown as G;
+  const has = (g: G, suffix: string): boolean => g.layers.some(l => String(l.id).includes(suffix));
+  const layer = (g: G, suffix: string) => g.layers.find(l => String(l.id).includes(suffix)) as { type?: string; d?: string; stroke?: unknown } | undefined;
+
+  it('triangles render as path layers (hard corners, not a blob)', () => {
+    const g = exp('tri:br + grain');
+    expect(layer(g, '_tri0')?.type).toBe('path');
+    expect(layer(g, '_tri0')?.d).toContain('Z'); // a closed triangle path
+  });
+  it('blocks render as rectangles', () => {
+    expect(layer(exp('blocks + grain'), '_blk0')?.type).toBe('rect');
+  });
+  it('rings render as STROKED ovals (outline, no fill)', () => {
+    const r = layer(exp('rings:tr + grain'), '_ring0');
+    expect(r?.type).toBe('ellipse');
+    expect(r?.stroke).toBeTruthy();
+  });
+  it('arcs / diagonals / waves / shards all emit their layers', () => {
+    expect(has(exp('arcs:bottom + grain'), '_arc')).toBe(true);
+    expect(has(exp('diag:tr + grain'), '_diag')).toBe(true);
+    expect(has(exp('wave:bottom + grain'), '_wave')).toBe(true);
+    expect(has(exp('shards + grain'), '_sh0')).toBe(true);
+  });
+  it('a combined recipe stacks several distinct geometric sweeps', () => {
+    const g = exp('tri:br + blocks + rings:tr + grain');
+    expect(has(g, '_tri0') && has(g, '_blk0') && has(g, '_ring0')).toBe(true);
+  });
+
+  it('the seeded style font lands on the section title; an explicit font overrides', () => {
+    const seeded = expandShorthand({ id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1350],
+      title: 'Deep Sea Abyss', blocks: [{ kind: 'text', text: 'marine life in the ocean deep' }] } as unknown as ShorthandLayer) as unknown as G;
+    const t = seeded.layers.find(l => l.id === 's_title') as { style?: { font_family?: string } } | undefined;
+    expect(typeof t?.style?.font_family).toBe('string');
+    expect((t?.style?.font_family ?? '').length).toBeGreaterThan(0);
+    const explicit = expandShorthand({ id: 'e', type: 'sections', z: 0, pos: [0, 0, 1080, 1350], bg: '#101010',
+      font: 'Bebas Neue', title: 'X', blocks: [{ kind: 'text', text: 'y' }] } as unknown as ShorthandLayer) as unknown as G;
+    const te = explicit.layers.find(l => l.id === 'e_title') as { style?: { font_family?: string } } | undefined;
+    expect(te?.style?.font_family).toBe('Bebas Neue');
+  });
+});
+
+describe('sections — canvas auto-fits to content (kills dead space, prevents clipping)', () => {
+  type GH = { type?: string; height?: number; layers: { id: string; type: string }[] };
+  const block = (i: number) => ({ kind: 'text', heading: `Sub-theme ${i}`, text: 'A reasonably long paragraph of supporting copy that wraps across several lines to take up real vertical space on the page.' });
+  const build = (n: number) => expandShorthand({ id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], bg: '#0A0A0A',
+    title: 'A Headline', subtitle: 'A two sentence intro deck that frames the topic for the reader.',
+    blocks: Array.from({ length: n }, (_, i) => block(i + 1)) } as unknown as ShorthandLayer) as unknown as GH;
+
+  it('a SPARSE deck shrinks the group well below the requested 1920', () => {
+    const g = build(1);
+    expect(g.type).toBe('group');
+    expect(g.height ?? 0).toBeLessThan(1500);
+    expect(g.height ?? 0).toBeGreaterThanOrEqual(Math.round(1080 * 0.9)); // not collapsed past the floor
+  });
+  it('a DENSE deck grows the group past 1920 so nothing clips', () => {
+    const sparse = build(1).height ?? 0;
+    const g = build(16);
+    expect(g.height ?? 0).toBeGreaterThan(1920);   // grows beyond the requested height
+    expect(g.height ?? 0).toBeGreaterThan(sparse); // and is taller than the sparse page
+  });
+  it('the full-bleed background spans the fitted height (sweep geometry matches the page)', () => {
+    const g = build(1);
+    const bg = g.layers.find(l => l.id === 's_bg') as { height?: number } | undefined;
+    expect(bg?.height).toBe(g.height);
+  });
+});

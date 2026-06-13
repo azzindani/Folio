@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { buildEditorLink, buildReportViewLink } from './editor-link';
 import { buildHandover } from './utils';
-import { createDesign, sealDesign } from '../engine';
+import { createDesign, sealDesign, addLayers } from '../engine';
 
 describe('buildEditorLink', () => {
   it('builds a tokenized, self-contained editor URL', () => {
@@ -92,6 +92,7 @@ describe('design tools surface an editor open_url', () => {
 
   it('seal_design returns an open_url', () => {
     const d = createDesign({ project_path: tmp, name: 'S', type: 'poster' })['path'] as string;
+    addLayers({ design_path: d, layers_shorthand: [{ id: 'r', type: 'rect', z: 0, pos: [0, 0, 100, 100], fill: '#111' }] as never });
     const r = sealDesign({ design_path: d }) as Record<string, unknown>;
     expect((r['open_url'] as string)).toMatch(/token=/);
   });
