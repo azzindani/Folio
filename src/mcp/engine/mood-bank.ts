@@ -117,7 +117,12 @@ export function seededMood(seed: string): Mood {
 const BG_BASE_DARK = ['gradient', 'radial', 'mesh', 'gradient:vert', 'solid'];
 const BG_BASE_LIGHT = ['gradient:vert', 'gradient', 'solid', 'radial'];
 const BG_SWEEP = ['tri:br', 'tri:tr', 'diag:tr', 'diag:tl', 'blocks', 'rings:tr', 'rings:tl', 'arcs:bottom', 'wave:bottom', 'shards', 'curve:tr', 'curve:bl', 'glow:top'];
-const BG_PATTERN = ['grid', 'dot_grid', 'dots', 'crosshatch', 'diagonal_stripes', 'graph_paper', 'isometric', 'chevron', 'triangles', 'waves', 'scallop', 'plus', 'blueprint', 'carbon', 'halftone', 'zigzag'];
+// Only the SUBTLE patterns are sampled procedurally — the dense weaves
+// (crosshatch/diagonal_stripes/carbon/halftone/zigzag/chevron) read as
+// over-processed at any opacity (user feedback), so the auto-sampler never
+// reaches for them. A model can still request one explicitly via a bg_style
+// string; parseBgSpec/composeBackground still support the full pattern set.
+const BG_PATTERN_CALM = ['grid', 'dot_grid', 'dots', 'graph_paper', 'plus', 'blueprint'];
 
 // FNV-1a salted by slot so each part of the recipe draws an independent index
 // from the same seed (stable per content, decorrelated across slots).
@@ -145,10 +150,17 @@ export function proceduralBgStyle(seed: string, dark: boolean): string {
   const bases = dark ? BG_BASE_DARK : BG_BASE_LIGHT;
   const base = bases[hashSalt(s, 1) % bases.length] ?? 'gradient';
   const sweep1 = BG_SWEEP[hashSalt(s, 2) % BG_SWEEP.length] ?? 'glow:top';
-  const sweep2 = hashSalt(s, 3) % 5 < 2 ? (BG_SWEEP[hashSalt(s, 4) % BG_SWEEP.length] ?? '') : '';
-  const pattern = BG_PATTERN[hashSalt(s, 5) % BG_PATTERN.length] ?? 'grid';
+  // A SECOND sweep is now RARE (~12%, was 40%) — stacking geometry is what made
+  // backgrounds crowded; one restrained sweep + grain is the calm default.
+  const sweep2 = hashSalt(s, 3) % 8 === 0 ? (BG_SWEEP[hashSalt(s, 4) % BG_SWEEP.length] ?? '') : '';
+  // A pattern is OPTIONAL (~45%) and only from the subtle set — so roughly half
+  // the backgrounds are just base + one sweep + grain (clean), the rest add a
+  // faint dot/grid texture. More variety, far less crowding.
+  const usePattern = hashSalt(s, 6) % 100 < 45;
+  const pattern = usePattern ? (BG_PATTERN_CALM[hashSalt(s, 5) % BG_PATTERN_CALM.length] ?? '') : '';
   const parts = [base, sweep1];
   if (sweep2 && sweep2 !== sweep1) parts.push(sweep2);
-  parts.push(pattern, 'grain');
+  if (pattern) parts.push(pattern);
+  parts.push('grain');
   return parts.join(' + ');
 }
