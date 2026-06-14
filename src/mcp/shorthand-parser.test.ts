@@ -1752,12 +1752,37 @@ describe('sections stats — long unbreakable value fits its column (no collisio
         { value: '230 GW', label: 'capacity' }, { value: '6%', label: 'share' },
         { value: '$0.04/kWh', label: 'LCOE' }, { value: '260k', label: 'jobs' },
       ] }],
-    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; content?: { value?: string }; style?: { font_size?: number } }> };
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; width?: number; content?: { value?: string }; style?: { font_size?: number } }> };
     const long = g.layers.find(l => l.content?.value === '$0.04/kWh')!;
     const fs = long.style!.font_size!;
-    // content width per column ≈ (918 - 3*27)/4 ≈ 209px; "$0.04/kWh" is 9 chars.
-    expect(fs * 9 * 0.58).toBeLessThanOrEqual(209);
+    // "$0.04/kWh" is 9 chars; it must fit within ITS rendered column width
+    // (whatever the layout variant chose — 4-across row or 2-col grid).
+    expect(fs * 9 * 0.58).toBeLessThanOrEqual(long.width! * 0.92 + 1);
     expect(fs).toBeGreaterThanOrEqual(22);
+  });
+});
+
+describe('sections — layout variant (centered header / stat grid)', () => {
+  const sectionsWith = (extra: Record<string, unknown>) => expandShorthand({
+    id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], kicker: 'KICKER', title: 'A Real Title', subtitle: 'a subtitle line',
+    blocks: [{ kind: 'stats', items: [{ value: '70%', label: 'a' }, { value: '8M', label: 'b' }, { value: '25%', label: 'c' }, { value: '12%', label: 'd' }] }],
+    ...extra,
+  } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; style?: { align?: string } }> };
+
+  it('an explicit align:"center" centers the title; align:"left" keeps it left', () => {
+    const c = sectionsWith({ align: 'center' }).layers.find(l => l.id === 's_title')!;
+    const l = sectionsWith({ align: 'left' }).layers.find(l => l.id === 's_title')!;
+    expect(c.style!.align).toBe('center');
+    expect(l.style!.align).toBeUndefined();
+  });
+
+  it('a centered design also centers the kicker and stat figures', () => {
+    const g = sectionsWith({ align: 'center' }).layers;
+    expect(g.find(l => l.id === 's_kick')!.style!.align).toBe('center');
+    // every stat value layer is centered in a centered design
+    const vals = g.filter(l => /_v\d+$/.test(l.id));
+    expect(vals.length).toBeGreaterThan(0);
+    expect(vals.every(v => v.style!.align === 'center')).toBe(true);
   });
 });
 
