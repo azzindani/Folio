@@ -1262,6 +1262,21 @@ describe('addLayers', () => {
     expect(grp.h).toBeLessThanOrEqual(1080);
   });
 
+  it('width-fits a hand-placed text layer with NO width so it wraps, not overflows', () => {
+    // The feature_grid title-overflow case: a model hand-places a long headline
+    // with no x/width → it would render at natural width and run off both edges.
+    addLayers({
+      design_path: designPath,
+      layers_shorthand: [{ id: 'headline', type: 'text', z: 2,
+        content: { type: 'plain', value: 'Can a 30B AI Model Create Designs?' } } as unknown as import('./shorthand-parser').ShorthandLayer],
+    });
+    const info = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    const t = (info.layers as { id: string; x: number; w: number }[]).find(l => l.id === 'headline')!;
+    expect(t.w).toBeGreaterThan(0);
+    expect(t.x + t.w).toBeLessThanOrEqual(1080); // stays inside the canvas
+    expect(t.x).toBeGreaterThan(0);              // nudged off the hard left edge
+  });
+
   it('rejects a junk-BLOB string layers_shorthand (no brackets, not JSON)', () => {
     // Weak models pick feature_grid but encode it as a flat blob with no
     // [x,y,w,h] bracket and no JSON structure. It can't parse → error with the
