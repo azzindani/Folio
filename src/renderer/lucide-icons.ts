@@ -333,7 +333,19 @@ const EMOJI_ICONS: Record<string, string> = {
   '⚠': 'alert-circle', '❗': 'alert-circle', '‼': 'alert-circle',
   '🎉': 'gift', '🎊': 'gift', '🥳': 'gift',
   '📞': 'phone', '☎': 'phone', '📧': 'mail', '✉': 'mail',
-  '🏠': 'home', '🏡': 'home',
+  '🏠': 'home', '🏡': 'home', '🏘': 'home', '🏚': 'home', '🏫': 'home',
+  // potted plants / trees / cactus / clover / chili → leaf
+  '🪴': 'leaf', '🌳': 'leaf', '🌲': 'leaf', '🌴': 'leaf', '🪵': 'leaf', '🍀': 'leaf', '☘': 'leaf', '🌵': 'leaf', '🎋': 'leaf', '🌶': 'leaf',
+  // more fruit / nuts → leaf
+  '🍐': 'leaf', '🍊': 'leaf', '🍋': 'leaf', '🍌': 'leaf', '🥝': 'leaf', '🍑': 'leaf', '🥭': 'leaf', '🍍': 'leaf', '🫐': 'leaf', '🥥': 'leaf', '🌰': 'leaf', '🥜': 'leaf',
+  // kids / adults → user
+  '🧒': 'user', '👶': 'user', '👦': 'user', '👧': 'user', '🧓': 'user', '👴': 'user', '👵': 'user', '👨': 'user', '👩': 'user',
+  // more flowers → sun (matches the flower convention above)
+  '🪻': 'sun', '🌺': 'sun', '🏵': 'sun', '🪷': 'sun',
+  // bundled places / logistics / objects
+  '🌍': 'globe', '🌎': 'globe', '🌏': 'globe', '🌐': 'globe',
+  '📦': 'package', '🚚': 'truck', '🚛': 'truck', '🔑': 'key', '🗝': 'key',
+  '🎀': 'gift', '🍬': 'gift', '🍭': 'gift',
 };
 
 /** Strip variation selectors, ZWJ and skin-tone modifiers so "❤️"/"👋🏽" match the base key. */

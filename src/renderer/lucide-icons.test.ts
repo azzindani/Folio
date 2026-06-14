@@ -82,7 +82,7 @@ describe('buildIconSVG', () => {
 
 describe('resolveIconName — maps emoji to bundled glyphs (resvg has no emoji font)', () => {
   it('maps common emoji to a real, bundled Lucide id', () => {
-    for (const [emoji, expected] of [['🥕', 'leaf'], ['☕', 'coffee'], ['📍', 'map-pin'], ['🧺', 'shopping-bag'], ['⭐', 'star'], ['🎉', 'gift']] as const) {
+    for (const [emoji, expected] of [['🥕', 'leaf'], ['☕', 'coffee'], ['📍', 'map-pin'], ['🧺', 'shopping-bag'], ['⭐', 'star'], ['🎉', 'gift'], ['🪴', 'leaf'], ['🧒', 'user'], ['🌳', 'leaf'], ['📦', 'package']] as const) {
       const r = resolveIconName(emoji);
       expect(r).toBe(expected);
       expect(LUCIDE_ICONS[r!]).toBeTruthy();   // the target actually exists in the bundle
