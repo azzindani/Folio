@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, demoteCoveringBackdrops, lockCarouselCanvas, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -2457,5 +2457,111 @@ describe('event preset — footer never overlaps the detail stack (blind-30B ove
     expect(lastDetail).toBeTruthy();
     // footer sits at or below the bottom edge of the last detail line — no overprint
     expect(footer!.y).toBeGreaterThanOrEqual(lastDetail!.y + lastDetail!.height);
+  });
+});
+
+describe('fillBleedPresetDims — boxless full-bleed preset fills the page (blank-carousel-slide fix)', () => {
+  it('sizes a boxless feature_grid to the page so it reflows to fill, no dead strip', () => {
+    const sh: ShorthandLayer[] = [{ type: 'feature_grid', title: 'Pick a Setup', items: [{ title: 'Bin', desc: 'Outdoor' }] } as unknown as ShorthandLayer];
+    expect(fillBleedPresetDims(sh, 1080, 1350)).toBe(1);
+    const [grp] = expandShorthandLayers(sh);
+    expect(grp.type).toBe('group');
+    // group + its composed bg now span the full 1350-tall page, not a 1080 square
+    expect((grp as Layer & { height?: number }).height).toBe(1350);
+  });
+  it('fills a boxless event preset to the page height too', () => {
+    const sh: ShorthandLayer[] = [{ type: 'event', title: 'Film Night', date: 'Sat 8pm' } as unknown as ShorthandLayer];
+    expect(fillBleedPresetDims(sh, 1080, 1350)).toBe(1);
+    const [grp] = expandShorthandLayers(sh);
+    expect((grp as Layer & { height?: number }).height).toBe(1350);
+  });
+  it('leaves a preset that already has an explicit box untouched', () => {
+    const sh: ShorthandLayer[] = [{ type: 'feature_grid', pos: [0, 0, 500, 500], title: 'X' } as unknown as ShorthandLayer];
+    expect(fillBleedPresetDims(sh, 1080, 1350)).toBe(0);
+  });
+  it('skips flow presets (sections is content-sized; a list is placed, not page-filling)', () => {
+    expect(fillBleedPresetDims([{ type: 'sections', title: 'Greens' } as unknown as ShorthandLayer], 1080, 1350)).toBe(0);
+    expect(fillBleedPresetDims([{ type: 'list', items: ['a', 'b'] } as unknown as ShorthandLayer], 1080, 1350)).toBe(0);
+  });
+});
+
+describe('demoteCoveringBackdrops — a full-canvas rect added onto content sinks behind it', () => {
+  const W = 1080, H = 1350;
+  const rect = (z: number, fill: unknown, extra: Record<string, unknown> = {}): Layer =>
+    ({ id: 'bg', type: 'rect', z, x: 0, y: 0, width: W, height: H, fill, ...extra } as unknown as Layer);
+
+  it('demotes an opaque solid full-canvas rect below existing content', () => {
+    const existing: Layer[] = [{ id: 'grp', type: 'group', z: 0, x: 0, y: 0, width: W, height: H } as unknown as Layer];
+    const incoming: Layer[] = [rect(0, { type: 'solid', color: '#F7EFE0' })];
+    expect(demoteCoveringBackdrops(existing, incoming, W, H)).toBe(1);
+    expect((incoming[0] as Layer & { z: number }).z).toBeLessThan(0);
+  });
+  it('accepts a gradient fill and a bare hex string as opaque covers', () => {
+    const existing: Layer[] = [{ id: 'g', type: 'group', z: 5, x: 0, y: 0, width: W, height: H } as unknown as Layer];
+    expect(demoteCoveringBackdrops(existing, [rect(5, { type: 'linear', stops: [] })], W, H)).toBe(1);
+    expect(demoteCoveringBackdrops(existing, [rect(5, '#112233')], W, H)).toBe(1);
+  });
+  it('leaves a semi-transparent scrim (opacity < 0.95) where the model put it', () => {
+    const existing: Layer[] = [{ id: 'g', type: 'group', z: 0, x: 0, y: 0, width: W, height: H } as unknown as Layer];
+    const incoming: Layer[] = [rect(10, { type: 'solid', color: '#000' }, { opacity: 0.4 })];
+    expect(demoteCoveringBackdrops(existing, incoming, W, H)).toBe(0);
+    expect((incoming[0] as Layer & { z: number }).z).toBe(10);
+  });
+  it('no-op when the target page is empty (a legitimate first background)', () => {
+    expect(demoteCoveringBackdrops([], [rect(0, { type: 'solid', color: '#fff' })], W, H)).toBe(0);
+  });
+  it('ignores a noise/texture overlay (not a solid cover)', () => {
+    const existing: Layer[] = [{ id: 'g', type: 'group', z: 0, x: 0, y: 0, width: W, height: H } as unknown as Layer];
+    expect(demoteCoveringBackdrops(existing, [rect(9, { type: 'noise', frequency: 0.9 })], W, H)).toBe(0);
+  });
+});
+
+describe('lockCarouselCanvas — keep a deck cohesive (cold-brew light/dark-flip find)', () => {
+  // A fake expanded page: a group whose first rect child is the canvas bg, plus a *_title.
+  const page = (bg: string, font: string): { layers: Layer[] } => ({
+    layers: [{
+      id: 'feature_grid_1', type: 'group', z: 0, x: 0, y: 0, width: 1080, height: 1350,
+      layers: [
+        { id: 'feature_grid_1_bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: 'solid', color: bg } },
+        { id: 'feature_grid_1_title', type: 'text', z: 30, x: 0, y: 0, width: 900, height: 100, style: { font_family: font } },
+      ],
+    } as unknown as Layer],
+  });
+
+  it('snaps a dark slide back to the deck when the deck is light, with readable text', () => {
+    const pages = [page('#FAF5EC', 'Playfair Display')];
+    const incoming: ShorthandLayer[] = [{ type: 'feature_grid', bg: '#0E0B14', text_color: '#F4F1EA', title: 'Steep overnight' } as unknown as ShorthandLayer];
+    const res = lockCarouselCanvas(pages, incoming);
+    expect(res.bg).toBe(1);
+    const r = incoming[0] as unknown as Record<string, unknown>;
+    expect(r['bg']).toBe('#FAF5EC');
+    expect(r['text_color']).toBe('#1A1A1A'); // dark text for the light deck — never light-on-light
+  });
+
+  it('leaves a same-class (light) slide untouched — hue/shade variation is fine', () => {
+    const pages = [page('#FAF5EC', 'Playfair Display')];
+    const incoming: ShorthandLayer[] = [{ type: 'feature_grid', bg: '#EDE7DD', title: 'Grind coarse' } as unknown as ShorthandLayer];
+    expect(lockCarouselCanvas(pages, incoming).bg).toBe(0);
+    expect((incoming[0] as unknown as Record<string, unknown>)['bg']).toBe('#EDE7DD');
+  });
+
+  it('snaps a drifted heading font back to the deck font', () => {
+    const pages = [page('#FAF5EC', 'Playfair Display')];
+    const incoming: ShorthandLayer[] = [{ type: 'feature_grid', bg: '#FAF5EC', font: 'Space Grotesk', title: 'X' } as unknown as ShorthandLayer];
+    const res = lockCarouselCanvas(pages, incoming);
+    expect(res.font).toBe(1);
+    expect((incoming[0] as unknown as Record<string, unknown>)['font']).toBe('Playfair Display');
+  });
+
+  it('keeps a dark slide dark when the deck itself is dark', () => {
+    const pages = [page('#0A0A0A', 'Anton')];
+    const incoming: ShorthandLayer[] = [{ type: 'feature_grid', bg: '#101418', title: 'X' } as unknown as ShorthandLayer];
+    expect(lockCarouselCanvas(pages, incoming).bg).toBe(0);
+  });
+
+  it('no-op for the first page (empty deck) and for non-page presets', () => {
+    expect(lockCarouselCanvas([], [{ type: 'feature_grid', bg: '#000' } as unknown as ShorthandLayer]).bg).toBe(0);
+    const pages = [page('#FAF5EC', 'Inter')];
+    expect(lockCarouselCanvas(pages, [{ type: 'list', items: ['a'] } as unknown as ShorthandLayer]).bg).toBe(0);
   });
 });

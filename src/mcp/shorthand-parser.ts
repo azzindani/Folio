@@ -2309,6 +2309,184 @@ export function unwrapBareContainers(
   return { layers: out, unwrapped };
 }
 
+// Full-bleed layout presets whose builder HONORS an explicit height box and
+// composes its background to fill it. Sized to the page they cover the canvas.
+// (sections/infographic/document/report_poster are deliberately omitted — they
+// are FLOW presets, content-sized so the doc can auto-fit to them, and ignore an
+// injected height; the covering-backdrop guard protects those from blanking.)
+const BLEED_PRESETS = new Set([
+  'feature_grid', 'editorial', 'poster', 'event', 'flyer', 'hero', 'split',
+  'decor', 'marble_bg', 'backdrop',
+]);
+
+// A full-bleed preset added as a page layer WITHOUT an explicit box defaults to
+// a hardcoded square (feature_grid 1080², sections 1080×1920) — on a portrait
+// carousel page (e.g. 1080×1350) that leaves a dead strip the model then "fixes"
+// by stamping a full-canvas rect ON TOP, blanking the slide (live carousel find:
+// 4 of 6 slides rendered empty). Size a boxless top-level preset to the page so
+// it lays itself out across the whole canvas. Mutates in place; returns count.
+export function fillBleedPresetDims(layers: ShorthandLayer[], docW: number, docH: number): number {
+  let filled = 0;
+  for (const sh of layers) {
+    if (!sh || typeof sh !== 'object' || Array.isArray(sh)) continue;
+    const r = sh as Record<string, unknown>;
+    const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+    if (!BLEED_PRESETS.has(t)) continue;
+    const hasBox = (Array.isArray(r['pos']) && (r['pos'] as unknown[]).length === 4)
+      || typeof r['x'] === 'number' || typeof r['y'] === 'number'
+      || typeof r['width'] === 'number' || typeof r['height'] === 'number';
+    if (hasBox) continue;
+    r['pos'] = [0, 0, docW, docH];
+    filled++;
+  }
+  return filled;
+}
+
+// Is this an OPAQUE rectangle covering (essentially) the whole canvas? A solid
+// or gradient fill at the origin spanning the page — the shape a model stamps as
+// a "background". Noise/image overlays and anything <0.95 opacity (a scrim) are
+// deliberately NOT covers and are left where the model put them.
+function isFullCanvasOpaqueRect(l: Layer, docW: number, docH: number): boolean {
+  const a = l as unknown as Record<string, unknown>;
+  if (a['type'] !== 'rect') return false;
+  if (typeof a['opacity'] === 'number' && (a['opacity'] as number) < 0.95) return false;
+  const num = (v: unknown): number => (typeof v === 'number' ? v : 0);
+  const x = num(a['x']), y = num(a['y']), w = num(a['width']), h = num(a['height']);
+  if (!(x <= docW * 0.02 && y <= docH * 0.02 && w >= docW * 0.96 && h >= docH * 0.96)) return false;
+  const f = a['fill'];
+  if (f == null) return false;
+  if (typeof f === 'string') {
+    const s = f.trim();
+    return s !== '' && s !== 'none' && !/rgba?\([^)]*,\s*0?\.\d+\s*\)|hsla/i.test(s);
+  }
+  if (typeof f === 'object') {
+    const ft = (f as { type?: string }).type;
+    return ft === 'solid' || ft === 'linear' || ft === 'radial' || ft === undefined;
+  }
+  return false;
+}
+
+// When add_layers drops a full-canvas opaque rect onto a page that ALREADY has
+// content, array order would paint it over everything (the renderer sorts by z,
+// stable — a new z:0 rect appended after a z:0 group wins the tie and covers it).
+// Demote each such rect strictly below every existing/incoming layer so it sinks
+// to the back: a redundant "background" becomes harmless instead of destructive.
+// Returns the count demoted. No-op when the target is empty (a real first bg).
+export function demoteCoveringBackdrops(existing: Layer[], incoming: Layer[], docW: number, docH: number): number {
+  if (!existing.length) return 0;
+  const zOf = (l: Layer): number => (typeof (l as { z?: unknown }).z === 'number' ? (l as { z: number }).z : 0);
+  let minZ = Infinity;
+  for (const l of existing) minZ = Math.min(minZ, zOf(l));
+  for (const l of incoming) minZ = Math.min(minZ, zOf(l));
+  let demoted = 0;
+  for (const l of incoming) {
+    if (isFullCanvasOpaqueRect(l, docW, docH)) {
+      (l as { z: number }).z = minZ - 1 - demoted;
+      demoted++;
+    }
+  }
+  return demoted;
+}
+
+// Page-LAYOUT presets (the ones that paint a full slide canvas) — the cohesion
+// lock applies to these. Backgrounds (decor/marble_bg/backdrop) and small
+// content blocks (list/stat) are deliberately excluded.
+const PAGE_PRESETS = new Set([
+  'feature_grid', 'sections', 'infographic', 'document', 'report_poster',
+  'editorial', 'poster', 'event', 'flyer', 'hero', 'split',
+]);
+const DARK_LUM = 0.42; // matches buildFeatureGrid's bgDark threshold
+
+function fillHex(fill: unknown): string | null {
+  if (typeof fill === 'string') return asHex(fill);
+  if (fill && typeof fill === 'object') {
+    const f = fill as { color?: unknown; stops?: Array<{ color?: unknown }> };
+    if (typeof f.color === 'string') return asHex(f.color);
+    if (Array.isArray(f.stops) && f.stops.length) return asHex(f.stops[0]?.color);
+  }
+  return null;
+}
+
+// The canvas base color of an already-expanded page: the first group's first
+// rect child (its *_bg), else a top-level full-canvas rect.
+function pageCanvasColor(page: { layers?: Layer[] }): string | null {
+  for (const l of page?.layers ?? []) {
+    const r = l as unknown as Record<string, unknown>;
+    if (r['type'] === 'group' && Array.isArray(r['layers'])) {
+      for (const c of r['layers'] as Record<string, unknown>[]) {
+        if (c['type'] === 'rect') { const hex = fillHex(c['fill']); if (hex) return hex; }
+      }
+    }
+    if (r['type'] === 'rect') { const hex = fillHex(r['fill']); if (hex) return hex; }
+  }
+  return null;
+}
+
+// The heading font of an already-expanded page: a *_title text layer's family.
+function pageHeadingFont(page: { layers?: Layer[] }): string | null {
+  const walk = (layers: unknown[]): string | null => {
+    for (const l of layers ?? []) {
+      const r = l as Record<string, unknown>;
+      const id = typeof r['id'] === 'string' ? r['id'] : '';
+      if (r['type'] === 'text' && /_title$/.test(id)) {
+        const st = r['style'] as { font_family?: unknown } | undefined;
+        if (st && typeof st.font_family === 'string' && st.font_family) return st.font_family;
+      }
+      if (Array.isArray(r['layers'])) { const f = walk(r['layers']); if (f) return f; }
+    }
+    return null;
+  };
+  return walk(page?.layers ?? []);
+}
+
+// Carousel cohesion lock. A blind model composes each slide in a separate call
+// and drifts — slide 4 comes back near-black in an otherwise-cream deck, the
+// heading font flips serif↔sans — so the set reads like seven designers each did
+// one slide (live cold-brew find: 3 of 7 slides flipped dark). Establish the
+// deck's look from the FIRST page (canvas luminance class + heading font) and,
+// for an incoming page-layout preset that FLIPS light↔dark or changes the
+// heading font, snap it back. Only flips are touched — same-class hue/shade
+// variation is left alone. Returns counts for the progress note.
+export function lockCarouselCanvas(
+  pages: Array<{ layers?: Layer[] }>, incoming: ShorthandLayer[],
+): { bg: number; font: number } {
+  if (!pages.length) return { bg: 0, font: 0 };
+  let refHex: string | null = null, refFont: string | null = null;
+  for (const p of pages) {
+    if (!refHex) refHex = pageCanvasColor(p);
+    if (!refFont) refFont = pageHeadingFont(p);
+    if (refHex && refFont) break;
+  }
+  if (!refHex) return { bg: 0, font: 0 };
+  const refRgb = hexToRgb(refHex);
+  const refDark = refRgb ? luminance(refRgb) < DARK_LUM : false;
+  let bg = 0, font = 0;
+  for (const sh of incoming) {
+    if (!sh || typeof sh !== 'object' || Array.isArray(sh)) continue;
+    const r = sh as Record<string, unknown>;
+    const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+    if (!PAGE_PRESETS.has(t)) continue;
+    const bgHex = asHex(r['bg']);
+    if (bgHex) {
+      const rgb = hexToRgb(bgHex);
+      const dark = rgb ? luminance(rgb) < DARK_LUM : false;
+      if (dark !== refDark) {
+        // Snap to the deck canvas + a guaranteed-readable text color, and drop
+        // the content-seeded mood keys so cards never go light-on-light.
+        r['bg'] = refHex;
+        r['text_color'] = refDark ? '#FAFAFA' : '#1A1A1A';
+        delete r['palette']; delete r['bg_style'];
+        bg++;
+      }
+    }
+    if (refFont) {
+      const f = r['font'] ?? r['font_family'];
+      if (typeof f === 'string' && f && f !== refFont) { r['font'] = refFont; delete r['font_family']; font++; }
+    }
+  }
+  return { bg, font };
+}
+
 // Small models name fields after the *verbose* output schema (content,
 // font_size, symbol, url) rather than the terse shorthand vocabulary
 // (text, size, icon, src). Without this, a model that sends

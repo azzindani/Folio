@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, demoteCoveringBackdrops, lockCarouselCanvas, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -722,6 +722,13 @@ export function addLayers(args: {
       progress.push(pInfo(`Unwrapped ${uw.unwrapped} container wrapper(s)`, 'hoisted nested layers to the page'));
     }
   }
+  // Size a boxless full-bleed preset to the page so it fills the whole canvas
+  // instead of a hardcoded square — no dead strip on a portrait/tall page for
+  // the model to "fix" with a covering rect (the blank-carousel-slide find).
+  if (shorthand.length) {
+    const filled = fillBleedPresetDims(shorthand, spec.document.width, spec.document.height);
+    if (filled) progress.push(pInfo(`Sized ${filled} full-bleed preset(s) to the page`, `${spec.document.width}×${spec.document.height}`));
+  }
   // Clamp any top-level layer the model sized larger than the canvas BEFORE
   // expansion. A full-bleed preset given height 1350 on a 1080 doc expands to a
   // group + bg taller than the page → off_canvas error the model then can't fix
@@ -793,11 +800,15 @@ export function addLayers(args: {
     if (!page) return errResult(op, `Page not found: ${pageId}`, `Pages: ${pages.map(p => p.id).join(', ')}`, progress);
     if (!args.page_id && pages.length === 1) progress.push(pInfo('Routed to the only page', pageId));
     if (!page.layers) page.layers = [];
+    const sunk = demoteCoveringBackdrops(page.layers, incoming, spec.document.width, spec.document.height);
+    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind existing content`, 'a background added last would have blanked the page'));
     page.layers.push(...incoming);
     activeLayers = page.layers;
   } else {
     if (!spec.layers) spec.layers = [];
     const hadContent = spec.layers.length > 0;
+    const sunk = demoteCoveringBackdrops(spec.layers, incoming, spec.document.width, spec.document.height);
+    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind existing content`, 'a background added last would have blanked the poster'));
     spec.layers.push(...incoming);
     activeLayers = spec.layers;
     // Auto-fit the canvas to a fresh single full-bleed preset. A flow preset
@@ -860,6 +871,16 @@ export function appendPage(args: {
     if (uw.unwrapped) {
       pageShorthand = uw.layers;
       progress.push(pInfo(`Unwrapped ${uw.unwrapped} container wrapper(s)`, 'hoisted nested layers to the page'));
+    }
+    // Fill the page with a boxless full-bleed preset so a tall slide (e.g. a
+    // 1080×1350 carousel page) has no dead strip below a 1080² preset.
+    const filled = fillBleedPresetDims(pageShorthand, spec.document.width, spec.document.height);
+    if (filled) progress.push(pInfo(`Sized ${filled} full-bleed preset(s) to the page`, `${spec.document.width}×${spec.document.height}`));
+    // Keep the deck cohesive: snap a slide that flips light↔dark or changes the
+    // heading font back to the look the first page established.
+    if (spec.pages?.length) {
+      const locked = lockCarouselCanvas(spec.pages, pageShorthand);
+      if (locked.bg || locked.font) progress.push(pInfo(`Locked carousel cohesion`, `${locked.bg} bg + ${locked.font} font snapped to the deck`));
     }
   }
   const layers: Layer[] = pageShorthand.length
