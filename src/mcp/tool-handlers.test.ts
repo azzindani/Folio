@@ -163,11 +163,28 @@ describe('sealDesign', () => {
     createDesign({ project_path: projectPath, name: 'Seal Target', type: 'carousel' });
 
     const designPath = path.join(projectPath, 'designs/seal-target.design.yaml');
-    appendPage({ design_path: designPath, label: 'Page 1' });
+    appendPage({ design_path: designPath, label: 'Page 1', layers_shorthand: [{ type: 'editorial', title: 'Hello', subtitle: 'World' }] as unknown as import('./shorthand-parser').ShorthandLayer[] });
 
     const result = sealDesign({ design_path: designPath });
     const parsed = result as Record<string, unknown>;
     expect(parsed.status).toBe('sealed');
+  });
+
+  it('refuses to seal a carousel with a blank slide (only background shapes, no content)', () => {
+    const projectPath = path.join(tmpDir, 'blank-slide-project');
+    createProject({ name: 'BlankSlide', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Deck', type: 'carousel' });
+    const designPath = path.join(projectPath, 'designs/deck.design.yaml');
+    // page 1 has real content; page 2 is the blank-slide failure — two bg rects, no text
+    appendPage({ design_path: designPath, label: 'Cover', layers_shorthand: [{ type: 'editorial', title: 'Cover', subtitle: 'x' }] as unknown as import('./shorthand-parser').ShorthandLayer[] });
+    appendPage({ design_path: designPath, page_id: 'slide-2', label: 'Slide 2', layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#fff' } },
+      { id: 'panel', type: 'rect', z: 1, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#14100A' } },
+    ] as unknown as import('../schema/types').Layer[] });
+
+    const result = sealDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+    expect(String(result.error)).toContain('slide-2');
   });
 
   it('refuses to seal an empty poster (no layers → would ship a blank)', () => {
