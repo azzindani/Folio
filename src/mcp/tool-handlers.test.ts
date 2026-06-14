@@ -178,7 +178,34 @@ describe('sealDesign', () => {
     const result = sealDesign({ design_path: designPath }) as Record<string, unknown>;
     expect(result.status).not.toBe('sealed');
     expect(result.success).toBe(false);
-    expect(String(result.error ?? '')).toMatch(/empty|no layers/i);
+    expect(String(result.error ?? '')).toMatch(/empty|no layers|blank/i);
+  });
+
+  it('refuses to seal a background + EMPTY group (the live-30B blank: shell with no content)', () => {
+    const projectPath = path.join(tmpDir, 'shell-project');
+    createProject({ name: 'Shell', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Shell', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/shell.design.yaml');
+    addLayers({ design_path: designPath, layers: [
+      { id: 'background', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#0A0A0A' } },
+      { id: 'sections', type: 'group', z: 1, x: 0, y: 0, width: 1080, height: 1080, layers: [] },
+    ] as unknown as import('../schema/types').Layer[] });
+    const result = sealDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(result.success).toBe(false);
+    expect(String(result.error ?? '')).toMatch(/blank|no visible content/i);
+  });
+
+  it('seals a design that DOES have content (background + a real text layer)', () => {
+    const projectPath = path.join(tmpDir, 'ok-project');
+    createProject({ name: 'OK', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'OK', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/ok.design.yaml');
+    addLayers({ design_path: designPath, layers: [
+      { id: 'background', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#0A0A0A' } },
+      { id: 'title', type: 'text', z: 1, x: 80, y: 80, width: 900, height: 120, content: { type: 'plain', value: 'A Real Title' } },
+    ] as unknown as import('../schema/types').Layer[] });
+    const result = sealDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(result.status).toBe('sealed');
   });
 });
 
