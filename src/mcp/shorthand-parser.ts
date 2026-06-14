@@ -1930,6 +1930,32 @@ function lenientParseLayers(s: string): unknown {
   }
   return undefined;
 }
+// A model that confuses the page-append shape for a layer appends a stray
+// routing artifact next to the real preset, e.g.
+//   {type:"poster", label:"my.design.yaml", page_id:0}
+// `poster` is a real preset type, so coercion accepts it and the expander
+// renders the FILENAME label as a headline ON TOP of the good content (the v4
+// streaming-poster slip). Recognise that shape — a container/routing layer
+// whose ONLY payload is a filename, with no blocks/items — so it can be pruned.
+const CONTAINER_TYPES = new Set(['poster', 'page', 'slide', 'document', 'carousel', 'design']);
+const FILENAME_RE = /\.(?:design\.)?ya?ml$|\.(?:png|jpe?g|svg|pdf|json)$/i;
+function isStrayContainerLayer(r: Record<string, unknown>): boolean {
+  if (Array.isArray(r['blocks']) || Array.isArray(r['items']) || Array.isArray(r['rows']) || Array.isArray(r['sections'])) return false;
+  const labelish = [r['label'], r['title'], r['content'], r['text'], r['value'], r['name']]
+    .find(v => typeof v === 'string' && (v as string).trim() !== '') as string | undefined;
+  if (typeof labelish !== 'string' || !FILENAME_RE.test(labelish.trim())) return false;
+  const routing = r['page_id'] !== undefined || r['page'] !== undefined;
+  const container = typeof r['type'] === 'string' && CONTAINER_TYPES.has((r['type'] as string).toLowerCase());
+  return routing || container;
+}
+// Prune stray container/routing artifacts, but only when a real sibling layer
+// survives — never empty the batch (downstream empty-guards handle a truly
+// empty add; a lone filename layer is left for the error path to surface).
+function pruneStrayMeta(arr: ShorthandLayer[]): ShorthandLayer[] {
+  const kept = arr.filter(l => !isStrayContainerLayer(l as Record<string, unknown>));
+  return kept.length ? kept : arr;
+}
+
 export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   const one = (v: unknown, id?: string): ShorthandLayer => {
     if (typeof v === 'string') { const p = parseCompactLayer(v); return id ? { id, ...p } : p; }
@@ -1957,7 +1983,7 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
     if (/\[[^\]]*\]/.test(s)) { const p = parseCompactLayer(s); if (Object.keys(p).length) return [p]; }
     return [];
   }
-  if (Array.isArray(input)) return input.map(v => one(v));
+  if (Array.isArray(input)) return pruneStrayMeta(input.map(v => one(v)));
   if (typeof input === 'object') {
     const obj = input as Record<string, unknown>;
     // A bare object that is itself ONE layer — it carries a layer type
@@ -1965,7 +1991,7 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
     // that sends a single {preset:"feature_grid", title, items:[…]} object has
     // each key exploded into its own layer (title/items become stray texts).
     if (typeof obj['type'] === 'string' || typeof obj['preset'] === 'string') return [one(obj)];
-    return Object.entries(obj).map(([id, v]) => one(v, id));
+    return pruneStrayMeta(Object.entries(obj).map(([id, v]) => one(v, id)));
   }
   return [];
 }
