@@ -577,7 +577,30 @@ function clampShorthandToCanvas(layers: ShorthandLayer[], W: number, H: number):
     const y = typeof r['y'] === 'number' ? (r['y'] as number) : 0;
     if (typeof r['width'] === 'number' && x + (r['width'] as number) > W) r['width'] = Math.max(1, W - x);
     if (typeof r['height'] === 'number' && y + (r['height'] as number) > H) r['height'] = Math.max(1, H - y);
+    // A HAND-PLACED text layer with NO width renders at natural width, so a long
+    // headline runs clean off both canvas edges (the feature_grid title-overflow
+    // the user hit: the model hand-placed a 64px headline beside a preset instead
+    // of using the preset's title slot, with no x/width → pinned at 0,0, clipped).
+    // Give a width-less text layer a canvas-fit wrapping width (and nudge it off
+    // the hard left edge) so it wraps inside the canvas instead of overflowing.
+    if (isTextLayer(r) && r['width'] === undefined && !Array.isArray(p)) {
+      const margin = Math.round(W * 0.06);
+      const xx = typeof r['x'] === 'number' ? Math.max(0, r['x'] as number) : margin;
+      if (typeof r['x'] !== 'number') r['x'] = margin;
+      r['width'] = Math.max(1, W - xx - margin);
+    }
   }
+}
+
+// A text-bearing shorthand layer: an explicit type:"text", or (type omitted) a
+// layer carrying text content — content:{value}/text/value — and no shape/preset
+// signal. Used to width-fit hand-placed headlines so they wrap, not overflow.
+function isTextLayer(r: Record<string, unknown>): boolean {
+  if (r['type'] === 'text') return true;
+  if (r['type'] !== undefined) return false;
+  const c = r['content'];
+  if (c && typeof c === 'object' && typeof (c as Record<string, unknown>)['value'] === 'string') return true;
+  return typeof r['text'] === 'string' || typeof r['value'] === 'string';
 }
 
 export function addLayers(args: {
