@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MOOD_BANK, pickMood, seededMood, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
+import { MOOD_BANK, pickMood, pickMoodVariant, seededMood, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
 
 describe('mood-bank — 20 distinct styles (color + geometric recipe + font)', () => {
   it('has 20 styles, each fully specified', () => {
@@ -42,6 +42,18 @@ describe('mood-bank — 20 distinct styles (color + geometric recipe + font)', (
     const a = seededMood('origami cranes'), b = seededMood('origami cranes');
     expect(a).toEqual(b);
     expect((a as Mood).font.length).toBeGreaterThan(0);
+  });
+
+  it('pickMoodVariant gives N DISTINCT options for one topic (variant 0 == the apt default)', () => {
+    const topic = 'the future of artificial intelligence';
+    expect(pickMoodVariant(topic, topic, 0)).toEqual(pickMood(topic, topic)); // 0 = unchanged default
+    // 8 options → at least 6 distinct palettes (a couple may coincide as it wraps the bank)
+    const bgs = new Set(Array.from({ length: 8 }, (_, i) => pickMoodVariant(topic, topic, i).bg));
+    expect(bgs.size).toBeGreaterThanOrEqual(6);
+    // deterministic — option 3 is always the same mood
+    expect(pickMoodVariant(topic, topic, 3)).toEqual(pickMoodVariant(topic, topic, 3));
+    // every variant is a complete mood
+    expect(pickMoodVariant(topic, topic, 5).font.length).toBeGreaterThan(0);
   });
 });
 

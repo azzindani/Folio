@@ -79,6 +79,22 @@ export function pickMood(text: string, seed: string): Mood {
   if (lane) return MOOD_BANK[lane.idx] ?? DEFAULT_MOOD;
   return MOOD_BANK[moodHash(seed || text) % MOOD_BANK.length] ?? DEFAULT_MOOD;
 }
+
+/**
+ * Pick the Nth DISTINCT art-direction for one topic — the engine side of "give me
+ * N options of the same subject". variant 0 is the topic-apt default (== pickMood,
+ * unchanged); variants 1..N step through the bank from that anchor, so each option
+ * is a different palette + typography treatment (and, paired with a variant-seeded
+ * proceduralBgStyle, different geometry) while staying the same topic. Deterministic:
+ * (topic, variant) ⇒ one stable mood, so a re-run of option 3 looks identical.
+ */
+export function pickMoodVariant(text: string, seed: string, variant: number): Mood {
+  const v = Math.max(0, Math.floor(variant || 0));
+  if (v === 0) return pickMood(text, seed);
+  const lane = LANES.find(l => l.test.test(text));
+  const anchor = lane ? lane.idx : moodHash(seed || text) % MOOD_BANK.length;
+  return MOOD_BANK[(anchor + v) % MOOD_BANK.length] ?? DEFAULT_MOOD;
+}
 /**
  * A preset's default art-direction when the model gave no bg/accent — derived
  * from the design's own CONTENT (title + body text), so two different topics
