@@ -114,9 +114,17 @@ export function seededMood(seed: string): Mood {
 // pattern ≫ 100 distinct, coherent backgrounds. Pools are individually vetted;
 // sweeps blend toward the bg and patterns render faint, so any combination stays
 // legible. marble/photo are excluded (need extra inputs / don't raster cleanly).
-const BG_BASE_DARK = ['gradient', 'radial', 'mesh', 'gradient:vert', 'solid'];
-const BG_BASE_LIGHT = ['gradient:vert', 'gradient', 'solid', 'radial'];
-const BG_SWEEP = ['tri:br', 'tri:tr', 'diag:tr', 'diag:tl', 'blocks', 'rings:tr', 'rings:tl', 'arcs:bottom', 'wave:bottom', 'shards', 'curve:tr', 'curve:bl', 'glow:top'];
+// A FLAT solid canvas is now a first-class outcome (weighted in twice on light)
+// — a clean solid + faint grain reads as intentional/human, where a gradient
+// wash always carries a colour haze (user: "over-processed background").
+const BG_BASE_DARK = ['gradient', 'radial', 'mesh', 'gradient:vert', 'solid', 'solid'];
+const BG_BASE_LIGHT = ['solid', 'solid', 'gradient:vert', 'gradient', 'radial'];
+// Sweeps split by character: GEOMETRIC (hard-edged triangles/diagonals/blocks/
+// arcs/waves — read as deliberate Swiss/Bauhaus moves) vs SOFT (circular glow/
+// curve blobs — the "AI haze" the user flagged). The sampler reaches for a
+// geometric sweep ~70% of the time and a soft one only ~30%.
+const BG_SWEEP_GEO = ['tri:br', 'tri:tr', 'diag:tr', 'diag:tl', 'blocks', 'rings:tr', 'rings:tl', 'arcs:bottom', 'wave:bottom', 'shards'];
+const BG_SWEEP_SOFT = ['curve:tr', 'curve:bl', 'glow:top'];
 // Only the SUBTLE patterns are sampled procedurally — the dense weaves
 // (crosshatch/diagonal_stripes/carbon/halftone/zigzag/chevron) read as
 // over-processed at any opacity (user feedback), so the auto-sampler never
@@ -149,16 +157,25 @@ export function proceduralBgStyle(seed: string, dark: boolean): string {
   const s = seed && seed.trim() ? seed : 'folio-default';
   const bases = dark ? BG_BASE_DARK : BG_BASE_LIGHT;
   const base = bases[hashSalt(s, 1) % bases.length] ?? 'gradient';
-  const sweep1 = BG_SWEEP[hashSalt(s, 2) % BG_SWEEP.length] ?? 'glow:top';
-  // A SECOND sweep is now RARE (~12%, was 40%) — stacking geometry is what made
-  // backgrounds crowded; one restrained sweep + grain is the calm default.
-  const sweep2 = hashSalt(s, 3) % 8 === 0 ? (BG_SWEEP[hashSalt(s, 4) % BG_SWEEP.length] ?? '') : '';
+  // A sweep is now OPTIONAL (~55% present, ~45% flat) — a mandatory sweep on
+  // EVERY design is what made every canvas carry a large colour haze. When a
+  // sweep is drawn, it's geometric ~70% of the time and soft (glow/curve) ~30%.
+  const hasSweep = hashSalt(s, 2) % 100 < 55;
+  let sweep1 = '';
+  if (hasSweep) {
+    const soft = hashSalt(s, 7) % 10 < 3;
+    const pool = soft ? BG_SWEEP_SOFT : BG_SWEEP_GEO;
+    sweep1 = pool[hashSalt(s, 8) % pool.length] ?? '';
+  }
+  // A SECOND sweep is RARE (~12%) and only stacks on top of an existing one.
+  const sweep2 = (sweep1 && hashSalt(s, 3) % 8 === 0) ? (BG_SWEEP_GEO[hashSalt(s, 4) % BG_SWEEP_GEO.length] ?? '') : '';
   // A pattern is OPTIONAL (~45%) and only from the subtle set — so roughly half
   // the backgrounds are just base + one sweep + grain (clean), the rest add a
   // faint dot/grid texture. More variety, far less crowding.
   const usePattern = hashSalt(s, 6) % 100 < 45;
   const pattern = usePattern ? (BG_PATTERN_CALM[hashSalt(s, 5) % BG_PATTERN_CALM.length] ?? '') : '';
-  const parts = [base, sweep1];
+  const parts = [base];
+  if (sweep1) parts.push(sweep1);                       // omitted entirely when flat
   if (sweep2 && sweep2 !== sweep1) parts.push(sweep2);
   if (pattern) parts.push(pattern);
   parts.push('grain');
@@ -172,10 +189,18 @@ export function proceduralBgStyle(seed: string, dark: boolean): string {
 //   statCols — a 4-across figure row vs a 2-column (2×N) stat grid
 // Both are cheap, collision-proof recombinations of the existing pieces; the
 // fit-pass measures whatever they produce, so the canvas always sizes to fit.
-export interface SecLayout { align: 'left' | 'center'; statCols: number; }
+//   header   — a plain top-of-canvas masthead (default) vs a full-bleed colour
+//              BAND behind the header with reversed-out type (a magazine/report
+//              cover silhouette — the single biggest "this isn't the same
+//              template" cue, since it changes the whole top third of the page)
+//   bandTone — when header==='band': an INK slab (dark, accent kicker) vs an
+//              ACCENT slab (saturated, reversed kicker) — two distinct identities
+export interface SecLayout { align: 'left' | 'center'; statCols: number; header: 'plain' | 'band'; bandTone: 'accent' | 'ink'; }
 export function pickSecLayout(seed: string): SecLayout {
   const s = seed && seed.trim() ? seed : 'folio-default';
   const align: 'left' | 'center' = hashSalt(s, 11) % 5 < 2 ? 'center' : 'left'; // ~40% centered
   const statCols = hashSalt(s, 12) % 2 === 0 ? 4 : 2;
-  return { align, statCols };
+  const header: 'plain' | 'band' = hashSalt(s, 13) % 3 === 0 ? 'band' : 'plain'; // ~33% masthead band
+  const bandTone: 'accent' | 'ink' = hashSalt(s, 14) % 2 === 0 ? 'ink' : 'accent';
+  return { align, statCols, header, bandTone };
 }

@@ -658,22 +658,29 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
     const ang = /^\d+$/.test(baseArg) ? Number(baseArg) : baseArg === 'vert' ? 180 : baseArg === 'horiz' ? 90 : 135;
     // Palette-driven multi-hue wash (tinted toward bg so text stays legible),
     // else a subtle two-tone bg→accent.
-    let stops: { color: string; position: number }[];
-    if (ctx.palette.length >= 2) {
-      const cols = [bgHex, ...ctx.palette.slice(0, 3).map(c => mixHex(bgHex, c, dark ? 0.5 : 0.38))];
-      stops = cols.map((c, i) => ({ color: c, position: Math.round((i / (cols.length - 1)) * 100) }));
-    } else {
-      stops = [{ color: bgHex, position: 0 }, { color: mixHex(bgHex, accent, dark ? 0.45 : 0.14), position: 100 }];
-    }
-    const grad: Fill = base === 'radial'
-      ? { type: 'radial', stops: stops.slice().reverse().map((s, i) => ({ color: s.color, position: Math.round((i / (stops.length - 1)) * 100) })) } as unknown as Fill
+    // A radial that drops the SATURATED palette colour at the dead centre reads as
+    // an "over-processed glow blob" (user feedback). For radial, keep the canvas
+    // colour at the centre (position 0) and let only a FAINT tint reach the edge —
+    // and mix gentler on a light canvas so the wash never turns into a colour spot.
+    const isRadial = base === 'radial';
+    // Gentler on light canvases: a 0.38 mix turned the wash into a muddy two-tone
+    // field (user: "over-processed background"). Keep light gradients subtle so a
+    // bg stays a backdrop, not a colour event; dark canvases tolerate more.
+    const mixK = isRadial ? (dark ? 0.34 : 0.1) : (dark ? 0.46 : 0.2);
+    // A bg → SINGLE-tint two-stop wash. A multi-hue 3–4 stop ramp (bg→blue→gold→…)
+    // reads as a muddy two-tone field with a hard perceptual seam; one tint keeps
+    // the gradient a quiet backdrop. mesh/marble bases still use the full palette.
+    const tintTo = ctx.palette[0] ?? accent;
+    const stops = [{ color: bgHex, position: 0 }, { color: mixHex(bgHex, tintTo, mixK), position: 100 }];
+    const grad: Fill = isRadial
+      ? { type: 'radial', stops } as unknown as Fill   // bg at centre, faint tint at edge — no saturated centre blob
       : { type: 'linear', angle: ang, stops } as unknown as Fill;
     layers.push({ id: `${idp}_bg`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: grad } as unknown as Layer);
   } else {
     layers.push({ id: `${idp}_bg`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer);
     if (base === 'mesh') {
-      const spots: [number, number][] = [[0.16, 0.12], [0.85, 0.20], [0.24, 0.84], [0.82, 0.80]];
-      spots.forEach(([fx, fy], i) => blob(`${idp}_mesh${i}`, X + fx * W, Y + fy * H, Math.round(W * 0.6), pal[i % pal.length], dark ? 0.5 : 0.32));
+      const spots: [number, number][] = [[0.14, 0.1], [0.87, 0.18], [0.2, 0.86], [0.84, 0.82]];
+      spots.forEach(([fx, fy], i) => blob(`${idp}_mesh${i}`, X + fx * W, Y + fy * H, Math.round(W * 0.52), pal[i % pal.length], dark ? 0.4 : 0.24));
     } else if (base === 'marble') {
       const cs: [number, number, number, number][] = [[X + W, Y, -1, 1], [X, Y + H, 1, -1]];
       cs.forEach(([ax, ay, dx, dy], ci) => {
@@ -687,8 +694,8 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
   // grain / vignette (built-in shapes only, so everything rasterizes in PNG).
   for (const sw of sweeps) {
     const [kind, place] = sw.split(':');
-    if (kind === 'curve') { const [cx, cy] = anchor(place || 'tr'); blob(`${idp}_curve`, cx, cy, Math.round(W * 0.95), mixHex(bgHex, accent, dark ? 0.5 : 0.24), dark ? 0.6 : 0.55); }
-    else if (kind === 'glow') { const [cx, cy] = anchor(place || 'top'); blob(`${idp}_glow`, cx, cy, Math.round(W * 0.92), mixHex(bgHex, accent, dark ? 0.55 : 0.22), dark ? 0.55 : 0.45); }
+    if (kind === 'curve') { const [cx, cy] = anchor(place || 'tr'); blob(`${idp}_curve`, cx, cy, Math.round(W * 0.85), mixHex(bgHex, accent, dark ? 0.46 : 0.2), dark ? 0.5 : 0.4); }
+    else if (kind === 'glow') { const [cx, cy] = anchor(place || 'top'); blob(`${idp}_glow`, cx, cy, Math.round(W * 0.82), mixHex(bgHex, accent, dark ? 0.5 : 0.2), dark ? 0.46 : 0.32); }
     else if (kind === 'band_left') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: Math.max(6, Math.round(W * 0.022)), height: H, fill: { type: 'solid', color: accent } } as unknown as Layer);
     else if (kind === 'band_top') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: W, height: Math.max(5, Math.round(W * 0.016)), fill: { type: 'solid', color: accent } } as unknown as Layer);
     else if (kind === 'grain') layers.push({ id: `${idp}_grain`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'noise', frequency: 0.9, octaves: 2, opacity: dark ? 0.06 : 0.045 } as unknown as Fill } as unknown as Layer);
@@ -1312,6 +1319,11 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
       if (val && lab && figureLike(lab) && !figureLike(val) && (val.length > 12 || /\s/.test(val.trim()))) {
         [val, lab] = [lab, val];
       }
+      // A figure cell whose VALUE carries no digit (a weak model wrote the unit or a
+      // word — "minutes", "fast" — where the number belongs) renders as a giant fake
+      // number next to the real digits. Demote it into the label so the big-number
+      // slot stays numeric; a digit-less, all-caption stats block is handled below.
+      if (val && !/[\d∞]/.test(val) && val.trim().length <= 14) { lab = lab ? `${val} · ${lab}` : val; val = ''; }
       return { val, lab };
     });
     // A stats block with NO figures — the model gave captions but no numbers
@@ -1529,6 +1541,19 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   ctx.align = centered ? 'center' : 'left';
   ctx.statCols = lay.statCols;
   const halign = centered ? { align: 'center' } : {};
+  // MASTHEAD BAND archetype — a full-bleed colour slab behind the header with
+  // reversed-out type (a magazine/report-cover silhouette). The single biggest
+  // "this isn't the same template" cue: it restyles the whole top third without
+  // touching the palette. INK slab = strong contrast to the canvas; ACCENT slab =
+  // the accent itself. Header colours flip so they stay legible on the slab; the
+  // highlight/underline/rule moments are suppressed (the band IS the treatment).
+  const bgIsDark = ((): boolean => { const r = hexToRgb(asHex(bg) ?? '#FAF5EC'); return r ? luminance(r) < 0.45 : false; })();
+  const band = lay.header === 'band' && !rotateKick;
+  const bandBg = band ? (lay.bandTone === 'ink' ? (bgIsDark ? '#F4F1EA' : '#17161B') : mixHex(accent, '#101012', 0.12)) : '';
+  const bandText = band ? readableOn(bandBg, bg) : text;
+  const kickColor = band ? (lay.bandTone === 'ink' ? accent : bandText) : accent;
+  const titleColor = band ? bandText : text;
+  const subColor = band ? mixHex(bandBg, bandText, 0.62) : muted;
   const tLH = 1.04;
   const gutter = rotateKick ? Math.round(W * 0.085) : 0;       // left clearance for the vertical spine
   const ccX = cX + gutter, ccW = cW - gutter;                  // content column (indented when a spine is present)
@@ -1561,6 +1586,8 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
 
   // Rich engine-composed background when bg_style is set, else a flat wash.
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
+  // Lay the masthead slab over the composed wash, under the header text.
+  if (band) layers.push({ id: `${id}_mband`, type: 'rect', z: layers.length, x: X, y: Y, width: W, height: Math.round(hY), fill: { type: 'solid', color: bandBg } } as unknown as Layer);
   let k = layers.length, cy = Y + Math.round(W * 0.08);
 
   // Vertical magazine-spine kicker (rotate): a -90° label pinned at the left
@@ -1571,12 +1598,12 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     const cxp = X + Math.round(W * 0.04), cyp = cy + Math.round(W * 0.18);
     layers.push({ id: `${id}_kick`, type: 'text', z: z + k++, x: Math.round(cxp - kbw / 2), y: Math.round(cyp - kbh / 2), width: kbw, height: kbh, rotation: -90,
       content: { type: 'plain', value: kicker }, style: { font_family: 'IBM Plex Mono', font_size: kSize, font_weight: 700, color: accent, letter_spacing: 3, text_transform: 'uppercase', align: 'center' } } as unknown as Layer);
-  } else if (kicker && headlineStyle === 'highlight') {
+  } else if (kicker && headlineStyle === 'highlight' && !band) {
     // Knockout marker chip — accent band, text in the canvas color.
     layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 42, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 700, color: readableOn(accent, bg), letter_spacing: 2, text_transform: 'uppercase', highlight: accent, ...halign }));
     cy += Math.round(W * 0.052);
   } else if (kicker) {
-    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase', ...halign }));
+    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: kickColor, letter_spacing: 2, text_transform: 'uppercase', ...halign }));
     cy += Math.round(W * 0.045);
   }
   if (title) {
@@ -1586,15 +1613,15 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     const th = estTextHeight(title, ts, ccW, tLH, mega ? 0.66 : 0.54);
     // highlight with no kicker → put the marker band on the TITLE itself (a
     // knockout headline) so the treatment is never dormant on a kicker-less deck.
-    const titleHi = headlineStyle === 'highlight' && !kicker;
-    const titleStyle: Record<string, unknown> = { font_size: ts, font_weight: 800, color: titleHi ? readableOn(accent, bg) : text, line_height: tLH, letter_spacing: mega ? -2 : -1, font_family: titleFont, ...halign };
+    const titleHi = headlineStyle === 'highlight' && !kicker && !band;
+    const titleStyle: Record<string, unknown> = { font_size: ts, font_weight: 800, color: titleHi ? readableOn(accent, bg) : titleColor, line_height: tLH, letter_spacing: mega ? -2 : -1, font_family: titleFont, ...halign };
     if (mega) titleStyle['text_transform'] = 'uppercase';
     if (titleHi) titleStyle['highlight'] = accent;
     layers.push(txt(`${id}_title`, z + k++, ccX, cy, ccW, th, title, titleStyle));
     cy += th + Math.round(W * 0.02);
     // Underline swipe — a thick accent bar directly beneath the title (centered
     // under a centered headline, else left-anchored).
-    if (headlineStyle === 'underline') {
+    if (headlineStyle === 'underline' && !band) {
       const ulw = Math.min(ccW, Math.round(W * 0.32)), ulh = Math.max(7, Math.round(W * 0.013));
       const ulx = centered ? ccX + Math.round((ccW - ulw) / 2) : ccX;
       layers.push({ id: `${id}_ul`, type: 'rect', z: z + k++, x: ulx, y: Math.round(cy - W * 0.01), width: ulw, height: ulh, fill: { type: 'solid', color: accent } } as unknown as Layer);
@@ -1603,12 +1630,13 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   }
   if (subtitle) {
     const ss = Math.round(W * 0.028), sh2 = estTextHeight(subtitle, ss, ccW, 1.45);
-    layers.push(txt(`${id}_sub`, z + k++, ccX, cy, ccW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45, ...halign }));
+    layers.push(txt(`${id}_sub`, z + k++, ccX, cy, ccW, sh2, subtitle, { font_size: ss, font_weight: 400, color: subColor, line_height: 1.45, ...halign }));
     cy += sh2 + Math.round(W * 0.025);
   }
   // A header rule belongs to the plain/mega/rotate treatments; highlight +
-  // underline already carry their own accent moment, so a rule is redundant.
-  if ((kicker || title || subtitle) && (headlineStyle === 'rule' || mega || headlineStyle === 'rotate')) {
+  // underline already carry their own accent moment, so a rule is redundant. The
+  // masthead band already frames the header, so it suppresses the rule too.
+  if ((kicker || title || subtitle) && !band && (headlineStyle === 'rule' || mega || headlineStyle === 'rotate')) {
     if (centered) {
       // A single short accent rule centered under the keynote header.
       const crw = Math.round(W * 0.16);
@@ -1622,6 +1650,10 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     cy += Math.round(W * 0.03);
   }
 
+  // The masthead band reserves the header zone (height hY). A band-mode header is
+  // a touch shorter than that estimate (the rule is suppressed), so push the first
+  // block clear of the band's bottom edge rather than letting its top tuck under it.
+  if (band) cy = Math.max(cy, Y + Math.round(hY) + Math.round(W * 0.05));
   // Place blocks: distribute only the SMALL leftover slack in the fitted canvas
   // (floor keeps dense content tight, cap keeps a slightly-roomy page balanced).
   const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
