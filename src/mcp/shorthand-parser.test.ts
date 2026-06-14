@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -2342,5 +2342,95 @@ describe('list preset sizes to content (no clip on dense, no dead band on sparse
 
   it('SHRINKS below 1350 for a sparse 3-item list (no dead band)', () => {
     expect(list(3).height).toBeLessThan(1350);
+  });
+});
+
+describe('unwrapBareContainers — hoist a model-invented page wrapper (blind-30B blank-poster fix)', () => {
+  const W = 1080, H = 1080;
+  it('hoists children out of a typeless wrapper carrying page-level style', () => {
+    const sh = [{
+      bg: '#FAF5EC', accent: '#D95F00', font_heading: 'Playfair Display', font_body: 'Inter',
+      layers: [
+        { type: 'editorial', id: 'editorial_1', pos: [0, 0, W, H], title: 'Market', subtitle: 's', body: 'b' },
+        { type: 'icon', id: 'i1', icon: 'apple', pos: [760, 180, 150, 150] },
+      ],
+    }] as unknown as ShorthandLayer[];
+    const { layers, unwrapped } = unwrapBareContainers(sh, W, H);
+    expect(unwrapped).toBe(1);
+    expect(layers.some(l => l.type === 'editorial')).toBe(true);
+    expect(layers.some(l => l.type === 'icon')).toBe(true);
+    // the wrapper itself is gone — nothing still carries a nested layers[] array
+    expect(layers.some(l => Array.isArray((l as Record<string, unknown>)['layers']))).toBe(false);
+  });
+
+  it('does NOT add a bg rect when a child preset already paints the canvas', () => {
+    const sh = [{ bg: '#FAF5EC', layers: [{ type: 'editorial', title: 't' }] }] as unknown as ShorthandLayer[];
+    const { layers } = unwrapBareContainers(sh, W, H);
+    expect(layers.some(l => l.type === 'rect')).toBe(false);
+    expect(layers.some(l => l.type === 'editorial')).toBe(true);
+  });
+
+  it('synthesizes a full-bleed bg rect when the wrapper sets bg and no child paints the canvas', () => {
+    const sh = [{ bg: '#101010', layers: [
+      { type: 'text', id: 't', pos: [80, 80, 900, 120], text: 'Hi' },
+      { type: 'icon', id: 'i', icon: 'star', pos: [800, 80, 80, 80] },
+    ] }] as unknown as ShorthandLayer[];
+    const { layers } = unwrapBareContainers(sh, W, H);
+    expect(layers[0]?.type).toBe('rect');             // bg sits behind, first
+    expect(layers[0]?.pos).toEqual([0, 0, W, H]);
+    expect(layers[0]?.fill).toBe('#101010');
+  });
+
+  it('cascades wrapper style onto PRESET children that omit it; leaf layers untouched', () => {
+    const sh = [{ accent: '#D95F00', bg: '#FAF5EC', layers: [
+      { type: 'editorial', id: 'a', title: 'x' },                              // preset, no accent → inherits
+      { type: 'sections', id: 'b', accent: '#000000', title: 'y', blocks: [] }, // own accent → kept
+      { type: 'icon', id: 'c', icon: 'star', pos: [0, 0, 10, 10] },            // leaf → untouched
+    ] }] as unknown as ShorthandLayer[];
+    const { layers } = unwrapBareContainers(sh, W, H);
+    const a = layers.find(l => l.id === 'a') as Record<string, unknown>;
+    const b = layers.find(l => l.id === 'b') as Record<string, unknown>;
+    const c = layers.find(l => l.id === 'c') as Record<string, unknown>;
+    expect(a['accent']).toBe('#D95F00');
+    expect(a['bg']).toBe('#FAF5EC');
+    expect(b['accent']).toBe('#000000');              // own value kept
+    expect(c['accent']).toBeUndefined();              // leaf untouched
+  });
+
+  it('leaves a REAL group (pos + dims) and an auto_layout (gap) untouched', () => {
+    const grp = [{ type: 'group', pos: [0, 0, 500, 500], layers: [{ type: 'text', text: 'x' }] }] as unknown as ShorthandLayer[];
+    expect(unwrapBareContainers(grp, W, H).unwrapped).toBe(0);
+    const col = [{ type: 'column', gap: 24, layers: [{ type: 'text', text: 'x' }] }] as unknown as ShorthandLayer[];
+    expect(unwrapBareContainers(col, W, H).unwrapped).toBe(0);
+  });
+
+  it('unwraps via the `children` alias and a `page` type', () => {
+    const sh = [{ type: 'page', children: [{ type: 'editorial', title: 't' }] }] as unknown as ShorthandLayer[];
+    const { layers, unwrapped } = unwrapBareContainers(sh, W, H);
+    expect(unwrapped).toBe(1);
+    expect(layers.some(l => l.type === 'editorial')).toBe(true);
+  });
+
+  it('does not touch a normal preset array (no wrapper)', () => {
+    const sh = [{ type: 'sections', title: 't', blocks: [{ type: 'callout', text: 'x' }] }] as unknown as ShorthandLayer[];
+    const { layers, unwrapped } = unwrapBareContainers(sh, W, H);
+    expect(unwrapped).toBe(0);
+    expect(layers).toHaveLength(1);
+  });
+
+  it('the exact blind-30B wrapper payload expands without a dimensionless-group error', () => {
+    const sh = [{
+      accent: '#D95F00', bg: '#FAF5EC', font_body: 'Inter', font_heading: 'Playfair Display',
+      layers: [
+        { accent: '#D95F00', bg: '#FAF5EC', body: 'Fresh local produce.', footer: 'Town Square', id: 'editorial_1', kicker: 'WEEKEND FARMERS MARKET', pos: [0, 0, 1080, 1080], subtitle: 'produce · music · coffee', text_color: '#1A1A1A', title: 'Farmers Market Morning', type: 'editorial' },
+        { color: '#D95F00', id: 'produce_icon', icon: 'apple', pos: [760, 180, 150, 150], size: 150, type: 'icon' },
+      ],
+    }] as unknown as ShorthandLayer[];
+    const { layers } = unwrapBareContainers(sh, 1080, 1080);
+    const expanded = expandShorthandLayers(layers);
+    // every expanded layer has a real type — no typeless/dimensionless group survives
+    expect(expanded.every(l => typeof l.type === 'string' && l.type.length > 0)).toBe(true);
+    const groups = expanded.filter(l => l.type === 'group') as (Layer & { width?: number })[];
+    expect(groups.every(g => typeof g.width === 'number' && (g.width ?? 0) > 0)).toBe(true);
   });
 });
