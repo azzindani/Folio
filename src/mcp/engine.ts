@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, hasPresetType, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -563,6 +563,68 @@ function normalizeReportAliases(incoming: Layer[]): void {
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
 // model that mistypes a portrait height (1350) onto a square doc (1080) gets a
 // canvas-fitting preset instead of a clipped, un-fixable one.
+// A weak model (e.g. a 3B-active nano) sometimes hand-places a whole poster as
+// loose TEXT layers with NO font_size — every line then renders at the tiny
+// renderer default, scattered, with no hierarchy (the recurring nano-30B miss).
+// When the batch is clearly hand-placed (no preset group) and most text is
+// unsized, give it an editorial hierarchy: the first line is the title, the
+// second a subtitle, the rest body — sized to the canvas and re-stacked top-down
+// with margins so it reads as a clean text poster instead of micro-print. Never
+// touches a preset group or a deliberately-sized composition.
+function structureHandPlacedText(layers: Layer[], W: number, H: number): number {
+  const textVal = (l: Layer): string => {
+    const c = (l as unknown as Record<string, unknown>)['content'];
+    return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : '');
+  };
+  const styleOf = (l: Layer): Record<string, unknown> => {
+    const o = l as unknown as Record<string, unknown>;
+    if (!o['style'] || typeof o['style'] !== 'object') o['style'] = {};
+    return o['style'] as Record<string, unknown>;
+  };
+  const texts = layers.filter(l => l?.type === 'text');
+  const hasContainer = layers.some(l => l?.type === 'group' || l?.type === 'auto_layout');
+  const unsized = texts.filter(l => styleOf(l)['font_size'] == null);
+  // Only restructure a clearly hand-placed, mostly-unsized text poster.
+  if (hasContainer || unsized.length < 2 || unsized.length < texts.length * 0.6) return 0;
+  // Read the canvas background color (a full-bleed solid rect, if any) so the
+  // rescued text gets a READABLE color — a model that drops font_size usually
+  // drops color too, defaulting to dark text that vanishes on a dark canvas.
+  const lum = (hex: string): number => {
+    const h = (hex || '').replace('#', '');
+    if (h.length < 6) return 1;
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  };
+  const bgRect = layers.find(l => {
+    const o = l as unknown as Record<string, unknown>;
+    const fill = o['fill'] as Record<string, unknown> | undefined;
+    return l?.type === 'rect' && (o['width'] as number) >= W * 0.9 && fill?.['type'] === 'solid' && typeof fill['color'] === 'string';
+  });
+  const bgHex = bgRect ? ((bgRect as unknown as Record<string, unknown>)['fill'] as Record<string, string>)['color'] : '#FFFFFF';
+  const dark = lum(bgHex) < 0.5;
+  const headColor = dark ? '#FAFAFA' : '#1A1A1A';
+  const bodyColor = dark ? '#C9C6BF' : '#4A4640';
+  const M = Math.round(W * 0.075), colW = W - 2 * M;
+  let cy = Math.round(H * 0.09);
+  unsized.forEach((l, i) => {
+    const o = l as unknown as Record<string, unknown>;
+    const style = styleOf(l);
+    const len = textVal(l).trim().length;
+    let size: number, weight = 400, lh = 1.45;
+    if (i === 0) { size = Math.round(W * (len > 48 ? 0.05 : 0.066)); weight = 800; lh = 1.05; }
+    else if (i === 1 && len <= 130) { size = Math.round(W * 0.03); weight = 500; lh = 1.35; }
+    else { size = Math.round(W * 0.023); lh = 1.5; }
+    style['font_size'] = size;
+    if (style['font_weight'] == null) style['font_weight'] = weight;
+    if (style['line_height'] == null) style['line_height'] = lh;
+    if (style['color'] == null) style['color'] = i <= 1 ? headColor : bodyColor;
+    const h = estTextHeight(textVal(l), size, colW, lh);
+    o['x'] = M; o['y'] = cy; o['width'] = colW; o['height'] = h;
+    cy += h + Math.round(W * (i === 0 ? 0.028 : 0.02));
+  });
+  return unsized.length;
+}
+
 function clampShorthandToCanvas(layers: ShorthandLayer[], W: number, H: number): void {
   if (!(W > 0) || !(H > 0)) return;
   for (const sh of layers) {
@@ -661,6 +723,14 @@ export function addLayers(args: {
     ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
+
+  // Rescue a hand-placed, unsized text poster (a weak model that skipped the
+  // preset) into a readable title/subtitle/body hierarchy. Posters only — paged
+  // designs route into pages and have their own flow.
+  if (!spec.pages) {
+    const restructured = structureHandPlacedText(incoming, spec.document.width, spec.document.height);
+    if (restructured) progress.push(pInfo(`Structured ${restructured} unsized text layer(s)`, 'hand-placed → title/subtitle/body hierarchy'));
+  }
 
   const invalid = incoming.find(l => !l?.type || !VALID_LAYER_TYPES.has(l.type));
   if (invalid) {

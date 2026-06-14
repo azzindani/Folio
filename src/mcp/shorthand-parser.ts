@@ -831,7 +831,7 @@ function textTypography(sh: ShorthandLayer): Record<string, unknown> {
 }
 
 // Estimate wrapped-text height (matches the renderer's ~0.54×fontSize char width).
-function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, charFactor = 0.54): number {
+export function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, charFactor = 0.54): number {
   const cpl = Math.max(1, Math.floor(widthPx / (fontSize * charFactor)));
   // WORD-AWARE greedy wrap — the renderer breaks at word boundaries, so a
   // char-count estimate (ceil(len/cpl)) under-counts lines whenever words don't
