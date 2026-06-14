@@ -2054,6 +2054,36 @@ export function hasPresetType(layers: ShorthandLayer[]): boolean {
 // snippet showing JSON is never hijacked: a known preset `type`/`preset`, or a
 // `blocks` array (the sections grammar), or an `items` array paired with a
 // title/kicker (the feature_grid grammar).
+// The sections grammar a model sometimes emits with each block kind as a KEY
+// (stats/bars/heading_text/callout) instead of a `blocks:[]` array. True when ≥2
+// such keys appear, or ≥1 alongside a kicker/title — specific enough that a code
+// snippet showing JSON isn't mistaken for one.
+const FIELD_BLOCK_KEYS = ['stats', 'bars', 'heading_text', 'callout', 'takeaway', 'list', 'steps', 'kpis', 'metrics', 'quote', 'source'];
+function hasFieldKeyedBlocks(r: Record<string, unknown>): boolean {
+  const present = FIELD_BLOCK_KEYS.filter(k => r[k] != null);
+  return present.length >= 2 || (present.length >= 1 && (r['kicker'] != null || r['title'] != null || r['subtitle'] != null));
+}
+// Build a `blocks[]` array from field-keyed sections content, in editorial order.
+function fieldKeyedToBlocks(r: Record<string, unknown>): Record<string, unknown>[] {
+  const blocks: Record<string, unknown>[] = [];
+  const stats = r['stats'] ?? r['kpis'] ?? r['metrics'];
+  if (Array.isArray(stats)) blocks.push({ type: 'stats', items: stats });
+  const ht = r['heading_text'];
+  if (Array.isArray(ht)) for (const h of ht) { if (h && typeof h === 'object') blocks.push({ type: 'heading_text', ...(h as Record<string, unknown>) }); }
+  else if (ht && typeof ht === 'object') blocks.push({ type: 'heading_text', ...(ht as Record<string, unknown>) });
+  if (Array.isArray(r['bars'])) blocks.push({ type: 'bars', items: r['bars'] });
+  const list = r['list'] ?? r['steps'];
+  if (Array.isArray(list)) blocks.push({ type: 'list', items: list });
+  const quote = r['quote'];
+  if (typeof quote === 'string') blocks.push({ type: 'quote', text: quote });
+  else if (quote && typeof quote === 'object') blocks.push({ type: 'quote', ...(quote as Record<string, unknown>) });
+  const co = r['callout'] ?? r['takeaway'];
+  if (typeof co === 'string') blocks.push({ type: 'callout', text: co });
+  else if (co && typeof co === 'object') blocks.push({ type: 'callout', ...(co as Record<string, unknown>) });
+  if (typeof r['source'] === 'string') blocks.push({ type: 'source', text: r['source'] });
+  return blocks;
+}
+
 function looksLikePreset(o: unknown): boolean {
   if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
   const r = o as Record<string, unknown>;
@@ -2061,7 +2091,32 @@ function looksLikePreset(o: unknown): boolean {
   if (typeof r['preset'] === 'string' && PRESET_TYPES.has(r['preset'])) return true;
   if (Array.isArray(r['blocks'])) return true;
   if (Array.isArray(r['items']) && (r['title'] != null || r['kicker'] != null)) return true;
+  // A single-key wrapper {"sections": {…}} (the key is a preset type, value an obj).
+  const keys = Object.keys(r);
+  if (keys.length === 1 && PRESET_TYPES.has(keys[0] ?? '') && r[keys[0] ?? ''] && typeof r[keys[0] ?? ''] === 'object') return true;
+  // Field-keyed sections content (bars/stats/heading_text/callout as keys).
+  if (hasFieldKeyedBlocks(r)) return true;
   return false;
+}
+
+// Normalize a decoded preset blob into a canonical shorthand layer: unwrap a
+// single-key {"sections": {…}} wrapper, default a typeless blocks/field-keyed
+// object to sections, and synthesize a blocks[] from field-keyed content.
+function normalizePresetBlob(o: unknown): unknown {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return o;
+  let r = o as Record<string, unknown>;
+  const keys = Object.keys(r);
+  if (keys.length === 1 && PRESET_TYPES.has(keys[0] ?? '') && r[keys[0] ?? ''] && typeof r[keys[0] ?? ''] === 'object' && !Array.isArray(r[keys[0] ?? ''])) {
+    r = { type: keys[0], ...(r[keys[0] ?? ''] as Record<string, unknown>) };
+  }
+  if (r['type'] == null && r['preset'] == null && (Array.isArray(r['blocks']) || hasFieldKeyedBlocks(r))) {
+    r = { ...r, type: 'sections' };
+  }
+  if ((r['type'] === 'sections' || r['preset'] === 'sections') && !Array.isArray(r['blocks'])) {
+    const blocks = fieldKeyedToBlocks(r);
+    if (blocks.length) r = { ...r, blocks };
+  }
+  return r;
 }
 
 // The dominant blank-poster cause on weak models: instead of passing the preset
@@ -2083,17 +2138,12 @@ export function recoverStringifiedPreset(layers: Layer[]): ShorthandLayer[] | nu
     if (!parsed) continue;
     const items = Array.isArray(parsed) ? parsed : [parsed];
     if (!items.some(looksLikePreset)) continue;
-    // A `blocks`-bearing object with no `type` IS a sections payload — name it so
-    // coerceShorthandLayers treats it as one layer, not an {id:layer} dict.
-    const normalized = items.map(o => {
-      if (o && typeof o === 'object' && !Array.isArray(o)) {
-        const r = o as Record<string, unknown>;
-        if (r['type'] == null && r['preset'] == null && Array.isArray(r['blocks'])) {
-          return { ...r, type: 'sections' };
-        }
-      }
-      return o;
-    });
+    // Unwrap a {"sections": {…}} wrapper, default a typeless blocks/field-keyed
+    // object to sections, and synthesize blocks[] from field-keyed content — so
+    // coerceShorthandLayers treats it as one real preset layer, not an {id:layer}
+    // dict or an empty section. (Live blind-30B find: the model stringified the
+    // whole sections payload wrapped as {"sections": {bars,stats,heading_text…}}.)
+    const normalized = items.map(normalizePresetBlob);
     const sh = coerceShorthandLayers(normalized);
     if (sh.length) return sh;
   }

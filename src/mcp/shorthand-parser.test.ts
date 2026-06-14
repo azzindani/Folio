@@ -2156,6 +2156,35 @@ describe('recoverStringifiedPreset — rescues a preset blob stuffed into a text
     expect(got![0].type).toBe('sections');
   });
 
+  it('single-key wrapper {"sections": {field-keyed blocks}} → one sections layer with blocks (live 30B find)', () => {
+    const blob = JSON.stringify({ sections: {
+      kicker: 'Ocean Currents',
+      stats: [{ value: '15 Sv', label: 'AMOC flow' }, { value: '5-6 mph', label: 'Gulf Stream speed' }],
+      heading_text: [{ heading: 'What drives them?', body: 'Wind, temperature, salinity and Coriolis.' }],
+      bars: [{ label: 'AMOC', value: 15 }, { label: 'ACC', value: 135 }],
+      callout: { label: 'Takeaway', text: 'Currents regulate global climate.' },
+    } });
+    const got = recoverStringifiedPreset([txt(blob), bg()]);
+    expect(got).not.toBeNull();
+    expect(got!.length).toBe(1);
+    expect(got![0].type).toBe('sections');
+    // field-keyed content was synthesized into a real blocks[] array
+    const blocks = (got![0] as unknown as { blocks?: unknown[] }).blocks;
+    expect(Array.isArray(blocks)).toBe(true);
+    expect(blocks!.length).toBeGreaterThanOrEqual(4); // stats + heading_text + bars + callout
+    // and it expands into a real layer tree, not a JSON wall
+    expect(expandShorthandLayers(got!)[0].type).toBe('group');
+  });
+
+  it('field-keyed sections object WITHOUT a wrapper or type → defaulted to sections + blocks built', () => {
+    const blob = JSON.stringify({ kicker: 'Coffee', title: 'The Bean Trade',
+      stats: [{ value: '$100B', label: 'market' }], bars: [{ label: 'Brazil', value: 90 }] });
+    const got = recoverStringifiedPreset([txt(blob)]);
+    expect(got).not.toBeNull();
+    expect(got![0].type).toBe('sections');
+    expect((got![0] as unknown as { blocks?: unknown[] }).blocks!.length).toBe(2);
+  });
+
   it('does NOT hijack a legitimate text layer that merely contains JSON-like text', () => {
     expect(recoverStringifiedPreset([txt('{"latitude": 40.7, "longitude": -74.0}')])).toBeNull();
     expect(recoverStringifiedPreset([txt('Save 30% on { everything } this week')])).toBeNull();
