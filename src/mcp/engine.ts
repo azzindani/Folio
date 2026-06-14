@@ -877,6 +877,40 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
   return okResult(op, { patched_paths: patched, count: patched.length, ...(unresolved.length ? { unresolved } : {}), ...(inert.length ? { inert_no_effect: inert } : {}), next_action, progress, context, handover }, bak);
 }
 
+// Does the design carry anything that actually RENDERS as content — not just a
+// background wash and empty groups? A weak model sometimes seals a shell: a
+// background rect + an empty {type:"group", layers:[]} it forgot to fill, or a
+// payload that degraded to nothing — every such design renders BLANK. Recurse
+// for a single text layer with real copy, or a content leaf (icon/image/chart/
+// callout/…). Plain rects/ellipses are treated as decor/background, so a design
+// that is ONLY shapes does not count (the rare pure-shape poster trades off
+// against reliably catching the blank-poster class).
+function hasRenderableContent(spec: DesignSpec): boolean {
+  const CONTENT_LEAF = new Set(['icon', 'image', 'chart', 'interactive_chart', 'interactive_table',
+    'kpi_card', 'mermaid', 'math', 'qrcode', 'map', 'embed_code', 'callout', 'button', 'code', 'particle']);
+  const hasText = (o: Record<string, unknown>): boolean => {
+    const c = o['content'];
+    const v = typeof c === 'string' ? c
+      : (c && typeof c === 'object' ? (c as Record<string, unknown>)['value'] : (o['text'] ?? o['value']));
+    return typeof v === 'string' && v.trim().length > 0;
+  };
+  const visit = (ls?: Layer[]): boolean => {
+    for (const l of ls ?? []) {
+      if (!l || typeof l !== 'object') continue;
+      const o = l as unknown as Record<string, unknown>;
+      const t = o['type'];
+      if ((t === 'text' || t === 'rich_text') && hasText(o)) return true;
+      if (typeof t === 'string' && CONTENT_LEAF.has(t)) return true;
+      if (Array.isArray(o['layers']) && visit(o['layers'] as Layer[])) return true;
+      if (Array.isArray(o['tabs'])) for (const tab of o['tabs'] as Record<string, unknown>[]) if (visit(tab?.['layers'] as Layer[] | undefined)) return true;
+      if (Array.isArray(o['items'])) for (const it of o['items'] as Record<string, unknown>[]) if (it && Array.isArray(it['layers']) && visit(it['layers'] as Layer[])) return true;
+    }
+    return false;
+  };
+  for (const p of spec.pages ?? []) if (visit(p.layers)) return true;
+  return visit(spec.layers);
+}
+
 export function sealDesign(args: { design_path: string; project_path?: string }): ToolResult {
   const op = 'seal_design';
   const progress: ProgressItem[] = [];
@@ -884,13 +918,15 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
 
   const spec = readYAML<DesignSpec>(dPath);
-  // Never seal a blank poster. A weak model that thrashed (hallucinated tool
-  // names, looped) can reach seal_design with layers:[] — sealing then ships an
-  // empty design. Refuse, and point it back at add_layers so it produces output.
+  // Never seal a BLANK poster. A weak model that thrashed (hallucinated tool
+  // names, looped, or built a {type:"group",layers:[]} shell it forgot to fill)
+  // can reach seal_design with no renderable content — sealing then ships an
+  // empty design + a blank link. Refuse when the canvas has no layers OR every
+  // layer is just a background/empty group, and point it back at add_layers.
   // (Carousels have a `pages` key and their own page-completion flow — skip them.)
-  if (!spec.pages && (spec.layers?.length ?? 0) === 0) {
-    return errResult(op, 'Cannot seal an empty design — the canvas has no layers.',
-      'Call add_layers FIRST with ONE preset layer (use the prefixed tool name mcp__folio__add_layers), e.g. layers_shorthand:[{type:"sections", title:"…", subtitle:"…", bg_style:"…", blocks:[…]}]; then diagnose_design; then seal_design.', progress);
+  if (!spec.pages && !hasRenderableContent(spec)) {
+    return errResult(op, 'Cannot seal a blank design — it has no visible content (every layer is a background or an empty group), so it would render empty.',
+      'Call add_layers FIRST with ONE FILLED preset layer (use the prefixed tool name mcp__folio__add_layers), e.g. layers_shorthand:[{type:"sections", title:"…", subtitle:"…", blocks:[{type:"stats",items:[{value:"…",label:"…"}]},{type:"heading_text",heading:"…",body:"…"},{type:"bars",items:[…]},{type:"callout",text:"…"}]}]; then diagnose_design; then seal_design.', progress);
   }
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));

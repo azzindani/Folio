@@ -92,7 +92,10 @@ describe('design tools surface an editor open_url', () => {
 
   it('seal_design returns an open_url', () => {
     const d = createDesign({ project_path: tmp, name: 'S', type: 'poster' })['path'] as string;
-    addLayers({ design_path: d, layers_shorthand: [{ id: 'r', type: 'rect', z: 0, pos: [0, 0, 100, 100], fill: '#111' }] as never });
+    addLayers({ design_path: d, layers_shorthand: [
+      { id: 'r', type: 'rect', z: 0, pos: [0, 0, 100, 100], fill: '#111' },
+      { id: 't', type: 'text', z: 1, pos: [10, 10, 80, 30], text: 'Hello' },
+    ] as never });
     const r = sealDesign({ design_path: d }) as Record<string, unknown>;
     expect((r['open_url'] as string)).toMatch(/token=/);
   });
