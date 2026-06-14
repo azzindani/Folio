@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MOOD_BANK, pickMood, pickMoodVariant, seededMood, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
+import { MOOD_BANK, pickMood, pickMoodVariant, seededMood, proceduralBgStyle, pickSecLayout, isDarkHex, type Mood } from './mood-bank';
 
 describe('mood-bank — 20 distinct styles (color + geometric recipe + font)', () => {
   it('has 20 styles, each fully specified', () => {
@@ -77,5 +77,21 @@ describe('proceduralBgStyle — 100+ distinct backgrounds from the bg_style gram
   it('isDarkHex distinguishes dark from light canvases', () => {
     expect(isDarkHex('#0A0A0A')).toBe(true);
     expect(isDarkHex('#FAF5EC')).toBe(false);
+  });
+});
+
+describe('pickSecLayout — structural variety decorrelated from colour', () => {
+  it('is deterministic per seed and returns a complete variant', () => {
+    expect(pickSecLayout('the future of solar energy')).toEqual(pickSecLayout('the future of solar energy'));
+    const v = pickSecLayout('jazz history');
+    expect(['left', 'center']).toContain(v.align);
+    expect([2, 4]).toContain(v.statCols);
+  });
+  it('both alignments AND both stat layouts appear across many topics', () => {
+    const seeds = Array.from({ length: 40 }, (_, i) => `topic number ${i} about ${(i * 5) % 7}`);
+    const aligns = new Set(seeds.map(s => pickSecLayout(s).align));
+    const cols = new Set(seeds.map(s => pickSecLayout(s).statCols));
+    expect(aligns.size).toBe(2);   // not every poster is left-anchored
+    expect(cols.size).toBe(2);     // not every stat block is the same row
   });
 });

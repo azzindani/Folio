@@ -3,7 +3,7 @@ import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 import { hexToRgb, luminance } from './engine/reference';
-import { pickMood, proceduralBgStyle, type Mood } from './engine/mood-bank';
+import { pickMood, proceduralBgStyle, pickSecLayout, type Mood } from './engine/mood-bank';
 
 /** A concrete hex string (not a token/gradient/Fill object), else null. */
 function asHex(v: unknown): string | null {
@@ -1231,7 +1231,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
 // rhythm, an accent system, held margins and a footer — so a dense, organized,
 // human-designer-level composition is one call instead of dozens of colliding
 // hand-placed layers.
-interface SecCtx { accent: string; text: string; muted: string; W: number; }
+interface SecCtx { accent: string; text: string; muted: string; W: number; align?: 'left' | 'center'; statCols?: number; }
 
 // A short, measure-like token that belongs in a stat's BIG figure slot —
 // "30%", "$500B", "1.0 TW", "2.3s", "12M". Used to detect/repair a model that
@@ -1329,27 +1329,39 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
       return { layers, height: th };
     }
     const n = shown.length;
-    const colGap = Math.round(W * 0.025);
-    const colW = Math.round((w - (n - 1) * colGap) / n);
+    // 4-across row by default, or a 2-column grid when the layout variant asks
+    // for it (ctx.statCols) AND there are >2 figures — a structurally different
+    // stat block for the same data (the "all designs are the same" fix). The
+    // 2-col grid gets wider columns (bigger numbers) and centered cells.
+    const cols = (ctx.statCols === 2 && n > 2) ? 2 : n;
+    const rows = Math.ceil(n / cols);
+    const colGap = Math.round(W * 0.025), rowGap = Math.round(W * 0.03);
+    const colW = Math.round((w - (cols - 1) * colGap) / cols);
+    const cellCenter = ctx.align === 'center' || cols === 2;
+    const valAlign = cellCenter ? { align: 'center' } : {};
     // Size the figure to FIT its column: the longest UNBREAKABLE token of any
     // value must fit colW (a long single-token value like "$0.04/kWh" otherwise
     // overruns the column and collides with the next stat — and diagnose can't
     // see inside this group, so the layout must be collision-proof by construction).
     const maxTok = Math.max(1, ...shown.map(rr => Math.max(1, ...rr.val.split(/\s+/).map(t => t.length))));
     const vSize = Math.max(22, Math.round(Math.min(W * 0.055, (colW * 0.92) / (maxTok * 0.58))));
-    let maxH = 0;
-    shown.forEach(({ val, lab }, i) => {
-      const ix = x + i * (colW + colGap);
+    // Measure every cell, then place row-by-row (each row as tall as its tallest
+    // cell) so a wrapped label never overlaps the row beneath it.
+    const cells = shown.map(({ val, lab }) => {
       const vh = estTextHeight(val, vSize, colW, 1.05);
-      // Mono + ALL-CAPS + letter-spacing wraps wider than sans — reserve height
-      // with a matching 0.66 char factor so the bars below don't overlap a label
-      // that wrapped to more lines than a 0.54 estimate predicted.
       const lh = lab ? estTextHeight(lab, lSize, colW, 1.3, 0.66) : 0;
-      layers.push(txt(`${idp}_v${i}`, z++, ix, y, colW, vh, val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.05, letter_spacing: -1 }));
-      if (lab) layers.push(txt(`${idp}_l${i}`, z++, ix, y + vh + 10, colW, lh, lab, { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 500, color: muted, letter_spacing: 0.5, text_transform: 'uppercase' }));
-      maxH = Math.max(maxH, vh + (lab ? 10 + lh : 0));
+      return { val, lab, vh, lh, h: vh + (lab ? 10 + lh : 0) };
     });
-    return { layers, height: maxH };
+    const rowH = Array.from({ length: rows }, (_, r) => Math.max(0, ...cells.filter((_, i) => Math.floor(i / cols) === r).map(c => c.h)));
+    cells.forEach((c, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      const ix = x + col * (colW + colGap);
+      const iy = y + rowH.slice(0, row).reduce((a, h) => a + h, 0) + row * rowGap;
+      layers.push(txt(`${idp}_v${i}`, z++, ix, iy, colW, c.vh, c.val, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.05, letter_spacing: -1, ...valAlign }));
+      if (c.lab) layers.push(txt(`${idp}_l${i}`, z++, ix, iy + c.vh + 10, colW, c.lh, c.lab, { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 500, color: muted, letter_spacing: 0.5, text_transform: 'uppercase', ...valAlign }));
+    });
+    const totalH = rowH.reduce((a, h) => a + h, 0) + Math.max(0, rows - 1) * rowGap;
+    return { layers, height: totalH };
   }
   if (kind === 'list' || kind === 'steps') {
     const items = arrField('items', 'rows', 'steps', 'list', 'points', 'data');
@@ -1507,6 +1519,16 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
   const mega = headlineStyle === 'mega';
   const rotateKick = headlineStyle === 'rotate' && !!kicker;
+  // STRUCTURAL variant (decorrelated from colour): a centered keynote header vs
+  // the left editorial default, and a 4-across vs 2-col stat grid — so two decks
+  // in the same colour mood don't share a SHAPE (the "all designs are the same"
+  // fix). A left-spine rotate layout is inherently left, so it opts out of center.
+  const lay = pickSecLayout([title, subtitle, kicker].filter(Boolean).join(' ') || 'folio');
+  const alignField = shStr(r['align'] ?? r['text_align']);
+  const centered = !rotateKick && (alignField === 'center' || (alignField !== 'left' && lay.align === 'center'));
+  ctx.align = centered ? 'center' : 'left';
+  ctx.statCols = lay.statCols;
+  const halign = centered ? { align: 'center' } : {};
   const tLH = 1.04;
   const gutter = rotateKick ? Math.round(W * 0.085) : 0;       // left clearance for the vertical spine
   const ccX = cX + gutter, ccW = cW - gutter;                  // content column (indented when a spine is present)
@@ -1551,10 +1573,10 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
       content: { type: 'plain', value: kicker }, style: { font_family: 'IBM Plex Mono', font_size: kSize, font_weight: 700, color: accent, letter_spacing: 3, text_transform: 'uppercase', align: 'center' } } as unknown as Layer);
   } else if (kicker && headlineStyle === 'highlight') {
     // Knockout marker chip — accent band, text in the canvas color.
-    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 42, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 700, color: readableOn(accent, bg), letter_spacing: 2, text_transform: 'uppercase', highlight: accent }));
+    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 42, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 700, color: readableOn(accent, bg), letter_spacing: 2, text_transform: 'uppercase', highlight: accent, ...halign }));
     cy += Math.round(W * 0.052);
   } else if (kicker) {
-    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
+    layers.push(txt(`${id}_kick`, z + k++, ccX, cy, ccW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase', ...halign }));
     cy += Math.round(W * 0.045);
   }
   if (title) {
@@ -1562,28 +1584,36 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     // highlight with no kicker → put the marker band on the TITLE itself (a
     // knockout headline) so the treatment is never dormant on a kicker-less deck.
     const titleHi = headlineStyle === 'highlight' && !kicker;
-    const titleStyle: Record<string, unknown> = { font_size: ts, font_weight: 800, color: titleHi ? readableOn(accent, bg) : text, line_height: tLH, letter_spacing: mega ? -2 : -1, font_family: titleFont };
+    const titleStyle: Record<string, unknown> = { font_size: ts, font_weight: 800, color: titleHi ? readableOn(accent, bg) : text, line_height: tLH, letter_spacing: mega ? -2 : -1, font_family: titleFont, ...halign };
     if (mega) titleStyle['text_transform'] = 'uppercase';
     if (titleHi) titleStyle['highlight'] = accent;
     layers.push(txt(`${id}_title`, z + k++, ccX, cy, ccW, th, title, titleStyle));
     cy += th + Math.round(W * 0.02);
-    // Underline swipe — a thick accent bar directly beneath the title.
+    // Underline swipe — a thick accent bar directly beneath the title (centered
+    // under a centered headline, else left-anchored).
     if (headlineStyle === 'underline') {
       const ulw = Math.min(ccW, Math.round(W * 0.32)), ulh = Math.max(7, Math.round(W * 0.013));
-      layers.push({ id: `${id}_ul`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy - W * 0.01), width: ulw, height: ulh, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      const ulx = centered ? ccX + Math.round((ccW - ulw) / 2) : ccX;
+      layers.push({ id: `${id}_ul`, type: 'rect', z: z + k++, x: ulx, y: Math.round(cy - W * 0.01), width: ulw, height: ulh, fill: { type: 'solid', color: accent } } as unknown as Layer);
       cy += Math.round(W * 0.012);
     }
   }
   if (subtitle) {
     const ss = Math.round(W * 0.028), sh2 = estTextHeight(subtitle, ss, ccW, 1.45);
-    layers.push(txt(`${id}_sub`, z + k++, ccX, cy, ccW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45 }));
+    layers.push(txt(`${id}_sub`, z + k++, ccX, cy, ccW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.45, ...halign }));
     cy += sh2 + Math.round(W * 0.025);
   }
   // A header rule belongs to the plain/mega/rotate treatments; highlight +
   // underline already carry their own accent moment, so a rule is redundant.
   if ((kicker || title || subtitle) && (headlineStyle === 'rule' || mega || headlineStyle === 'rotate')) {
-    layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy), width: ccW, height: mega ? 4 : 3, fill: { type: 'solid', color: text } } as unknown as Layer);
-    layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    if (centered) {
+      // A single short accent rule centered under the keynote header.
+      const crw = Math.round(W * 0.16);
+      layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: ccX + Math.round((ccW - crw) / 2), y: Math.round(cy), width: crw, height: mega ? 6 : 5, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    } else {
+      layers.push({ id: `${id}_hr`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy), width: ccW, height: mega ? 4 : 3, fill: { type: 'solid', color: text } } as unknown as Layer);
+      layers.push({ id: `${id}_htick`, type: 'rect', z: z + k++, x: ccX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    }
     cy += Math.round(W * 0.05);
   } else if (kicker || title || subtitle) {
     cy += Math.round(W * 0.03);

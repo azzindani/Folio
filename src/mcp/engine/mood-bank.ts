@@ -164,3 +164,18 @@ export function proceduralBgStyle(seed: string, dark: boolean): string {
   parts.push('grain');
   return parts.join(' + ');
 }
+
+// A STRUCTURAL layout variant for the sections preset, seeded from content on
+// salts DECORRELATED from the colour/bg seed — so two posters in the same colour
+// mood still differ in shape (the "all designs look the same" fix). Two knobs:
+//   align    — left-anchored editorial (default) vs a centered keynote header
+//   statCols — a 4-across figure row vs a 2-column (2×N) stat grid
+// Both are cheap, collision-proof recombinations of the existing pieces; the
+// fit-pass measures whatever they produce, so the canvas always sizes to fit.
+export interface SecLayout { align: 'left' | 'center'; statCols: number; }
+export function pickSecLayout(seed: string): SecLayout {
+  const s = seed && seed.trim() ? seed : 'folio-default';
+  const align: 'left' | 'center' = hashSalt(s, 11) % 5 < 2 ? 'center' : 'left'; // ~40% centered
+  const statCols = hashSalt(s, 12) % 2 === 0 ? 4 : 2;
+  return { align, statCols };
+}
