@@ -839,6 +839,48 @@ describe('coerceShorthandLayers — accepts the shapes small models actually sen
   it('returns [] for an empty / whitespace string', () => {
     expect(coerceShorthandLayers('   ')).toEqual([]);
   });
+
+  it('prunes a stray container/routing layer whose only payload is a filename (v4 slip)', () => {
+    // The model appended a routing artifact next to the real sections preset;
+    // `poster` is a real preset type, so without the prune the FILENAME label
+    // renders as a headline over the good content.
+    const out = coerceShorthandLayers([
+      { type: 'sections', title: 'The Price of a Play', kicker: 'Streaming', blocks: [{ type: 'callout', text: 'x' }] },
+      { type: 'poster', label: 'economicsofstreamingmusic.design.yaml', page_id: 0 },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('sections');
+  });
+
+  it('prunes a filename routing artifact even with a non-container type', () => {
+    const out = coerceShorthandLayers([
+      { type: 'editorial', title: 'Real', blocks: [{ type: 'callout', text: 'x' }] },
+      { label: 'deck.design.yaml', page_id: 2 },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].type).toBe('editorial');
+  });
+
+  it('keeps a real poster layer (filename label alone is not enough — needs routing/container + no content)', () => {
+    const out = coerceShorthandLayers([
+      { type: 'sections', title: 'A', blocks: [{ type: 'callout', text: 'x' }] },
+      { type: 'poster', title: 'A genuine second poster', blocks: [{ type: 'callout', text: 'y' }] },
+    ]);
+    expect(out).toHaveLength(2);
+  });
+
+  it('never empties the batch — a lone filename layer is left for the error path', () => {
+    const out = coerceShorthandLayers([{ type: 'poster', label: 'only.design.yaml', page_id: 0 }]);
+    expect(out).toHaveLength(1);
+  });
+
+  it('does not prune a deliberate source line mentioning a .yaml file', () => {
+    const out = coerceShorthandLayers([
+      { type: 'sections', title: 'A', blocks: [{ type: 'callout', text: 'x' }] },
+      { type: 'text', content: 'Source: config.yaml drives the build' },
+    ]);
+    expect(out).toHaveLength(2); // not a bare filename (extra prose) → kept
+  });
 });
 
 describe('expandShorthandLayers — visible defaults (no blank designs)', () => {
