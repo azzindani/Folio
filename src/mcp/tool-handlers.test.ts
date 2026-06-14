@@ -221,6 +221,31 @@ describe('sealDesign', () => {
     expect(sealed.document.width).toBe(1080);
   });
 
+  it('unwraps a model-invented page wrapper instead of rejecting a dimensionless group (blind-30B blank-poster)', () => {
+    const projectPath = path.join(tmpDir, 'wrapper-project');
+    createProject({ name: 'Wrap', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Wrap', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/wrap.design.yaml');
+    // The exact shape a blind 30B emitted: page-level bg/accent/fonts on a typeless
+    // wrapper, the real layers nested under `layers`. Pre-fix this threw
+    // "group needs a positive width" and the poster sealed blank.
+    const result = addLayers({ design_path: designPath, layers_shorthand: [{
+      bg: '#FAF5EC', accent: '#D95F00', font_heading: 'Playfair Display', font_body: 'Inter',
+      layers: [
+        { type: 'editorial', id: 'editorial_1', pos: [0, 0, 1080, 1080], kicker: 'WEEKEND', title: 'Farmers Market', subtitle: 'produce · music · coffee', body: 'Fresh local produce, live music, good coffee.', footer: 'Sat 8AM · Town Green' },
+        { type: 'icon', id: 'produce_icon', icon: 'apple', pos: [760, 180, 150, 150] },
+      ],
+    }] as never }) as Record<string, unknown>;
+    expect(result.success).not.toBe(false);                 // not the dimensionless-group rejection
+    expect(Number(result.added)).toBeGreaterThan(0);
+    const info = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    const layers = info.layers as { type: string }[];
+    expect(layers.length).toBeGreaterThan(0);
+    expect(layers.some(l => l.type === 'group')).toBe(true);  // editorial preset expanded
+    const seal = sealDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(seal.status).toBe('sealed');                       // non-blank → seals cleanly
+  });
+
   it('sizes & stacks a hand-placed UNSIZED text poster (nano-30B rescue) into a hierarchy', () => {
     const projectPath = path.join(tmpDir, 'handtext-project');
     createProject({ name: 'HandText', path: projectPath });

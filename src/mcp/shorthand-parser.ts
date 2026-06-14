@@ -2212,6 +2212,99 @@ export function recoverStringifiedPreset(layers: Layer[]): ShorthandLayer[] | nu
   return null;
 }
 
+// Generic container words a model invents to wrap a poster's real layers. None
+// are preset types, so a {type:"page", layers:[…]} (or a typeless {bg, layers})
+// is a transparent wrapper, not content.
+const WRAPPER_TYPES = new Set(['', 'group', 'page', 'container', 'frame', 'root', 'canvas', 'wrapper', 'layout', 'artboard']);
+// Page-level style keys a model puts on a wrapper, meant to cascade onto the
+// PRESET children it holds (presets consume bg/accent/palette/text_color; leaf
+// text/icon layers carry their own color, so cascading to them only adds
+// "unrecognized field" noise). Excludes font_heading/font_body — no layer reads
+// them, so they would just trip the diagnostics.
+const CASCADE_KEYS = ['bg', 'background', 'accent', 'palette', 'theme', 'mood', 'text_color'];
+
+// Is this a BARE container — a dimensionless wrapper with a nested layers/children
+// array and no own geometry or flow hints? Such a wrapper carries page intent,
+// not a real group; inferLayerType would make it a `group` with no width → reject.
+function isBareContainer(r: Record<string, unknown>): boolean {
+  const kids = r['layers'] ?? r['children'];
+  if (!Array.isArray(kids) || kids.length === 0) return false;
+  // Any own geometry → a real, intentional group; leave it alone.
+  if (r['pos'] !== undefined || r['x'] !== undefined || r['y'] !== undefined
+    || r['width'] !== undefined || r['height'] !== undefined) return false;
+  // Layout hints → auto_layout flexbox; the engine flows its children.
+  if (r['direction'] !== undefined || r['gap'] !== undefined || r['justify'] !== undefined
+    || r['wrap'] !== undefined || r['padding'] !== undefined) return false;
+  const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+  return WRAPPER_TYPES.has(t) && !PRESET_TYPES.has(t);
+}
+
+// Does some child already paint the full canvas (a preset fills its own bg, or a
+// full-bleed rect/image sits at the origin)? Gates the synthesized bg rect.
+function childPaintsCanvas(kids: ShorthandLayer[], docW: number, docH: number): boolean {
+  return kids.some(c => {
+    const r = c as Record<string, unknown>;
+    const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+    if (PRESET_TYPES.has(t)) return true;
+    if (t === 'rect' || t === 'image' || t === 'circle' || t === 'ellipse') {
+      const p = r['pos'];
+      const [x, y, w, h] = Array.isArray(p) && p.length === 4
+        ? (p as number[])
+        : [Number(r['x'] ?? 0), Number(r['y'] ?? 0), Number(r['width'] ?? 0), Number(r['height'] ?? 0)];
+      if (x <= docW * 0.02 && y <= docH * 0.02 && w >= docW * 0.96 && h >= docH * 0.96) return true;
+    }
+    return false;
+  });
+}
+
+// A weak model often wraps the real poster in a page/document CONTAINER it
+// invented: a typeless object carrying page-level bg/accent/fonts and a nested
+// `layers:[…]` of absolutely-positioned children. inferLayerType turns that into
+// a `group`, but with no pos/width/height add_layers rejects it ("group needs a
+// positive width") → the model loops and ships a blank poster (live blind-30B
+// find: every add_layers ok=false, three empty designs sealed as "done"). Detect
+// a bare wrapper and HOIST its children to the page: cascade the wrapper's page
+// style onto children that omit it, and synthesize a full-bleed bg rect when the
+// wrapper set `bg` and no child already paints the canvas. Recurses (a wrapper
+// may nest a wrapper); real groups (pos+dims) and auto_layout are left untouched.
+export function unwrapBareContainers(
+  layers: ShorthandLayer[], docW: number, docH: number,
+): { layers: ShorthandLayer[]; unwrapped: number } {
+  let unwrapped = 0;
+  const out: ShorthandLayer[] = [];
+  const visit = (items: ShorthandLayer[], depth: number): void => {
+    for (const it of items) {
+      const r = it as Record<string, unknown>;
+      if (depth < 6 && it && typeof it === 'object' && !Array.isArray(it) && isBareContainer(r)) {
+        unwrapped++;
+        const kids = (r['layers'] ?? r['children']) as ShorthandLayer[];
+        const cascade: Record<string, unknown> = {};
+        for (const k of CASCADE_KEYS) if (r[k] !== undefined) cascade[k] = r[k];
+        const childArr = kids.map(c => {
+          if (!c || typeof c !== 'object') return c;
+          const cr = { ...(c as Record<string, unknown>) } as ShorthandLayer;
+          // Only presets (or a typeless child that will infer one) read page-style
+          // keys; leaf layers keep their own styling untouched.
+          const ct = typeof cr['type'] === 'string' ? (cr['type'] as string).toLowerCase() : '';
+          if (ct === '' || PRESET_TYPES.has(ct)) {
+            for (const [k, v] of Object.entries(cascade)) if (cr[k] === undefined) cr[k] = v;
+          }
+          return cr;
+        });
+        const bg = r['bg'] ?? r['background'];
+        if (typeof bg === 'string' && bg && !childPaintsCanvas(childArr, docW, docH)) {
+          out.push({ type: 'rect', id: 'bg', pos: [0, 0, docW, docH], fill: bg, z: 0 } as ShorthandLayer);
+        }
+        visit(childArr, depth + 1);
+      } else {
+        out.push(it);
+      }
+    }
+  };
+  visit(layers, 0);
+  return { layers: out, unwrapped };
+}
+
 // Small models name fields after the *verbose* output schema (content,
 // font_size, symbol, url) rather than the terse shorthand vocabulary
 // (text, size, icon, src). Without this, a model that sends
