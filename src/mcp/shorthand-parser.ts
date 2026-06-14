@@ -1252,7 +1252,11 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     cy += lh + lineGap;
   });
   if (footer) {
-    const fy = Y + H - Math.round(H * 0.07);
+    // Anchor the footer to the bottom margin, OR just below the detail stack when
+    // long (wrapped) detail lines overran past it — never on top of it. A fixed
+    // bottom y collided the footer with the last detail line (blind-30B: a "hosted
+    // by…" footer printed over the "Free · All ages…" meta line).
+    const fy = Math.max(Y + H - Math.round(H * 0.07), Math.round(cy) + lineGap);
     layers.push(txt(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;

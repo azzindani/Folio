@@ -2434,3 +2434,28 @@ describe('unwrapBareContainers — hoist a model-invented page wrapper (blind-30
     expect(groups.every(g => typeof g.width === 'number' && (g.width ?? 0) > 0)).toBe(true);
   });
 });
+
+describe('event preset — footer never overlaps the detail stack (blind-30B overlap fix)', () => {
+  it('drops the footer below long wrapped detail lines instead of pinning it to a fixed bottom y', () => {
+    const sh = [{
+      type: 'event', kicker: 'Neighborhood Plant Swap',
+      title: 'Trade Cuttings. Share Soil. Meet Your Block.',
+      details: [
+        'Saturday, June 27 · 10 AM–1 PM',
+        'Maple Court Community Garden',
+        'Bring 3 healthy plants, seeds, or cuttings; take home new neighbors for your windowsill.',
+        'Free · All ages · Gloves and extra pots provided',
+      ],
+      footer: 'Hosted by Maple Court Garden Club · rain or shine under the pavilion',
+    }] as unknown as ShorthandLayer[];
+    const expanded = expandShorthandLayers(sh) as (Layer & { layers?: (Layer & { id: string; y: number; height: number })[] })[];
+    const kids = expanded[0]?.layers ?? [];
+    const details = kids.filter(l => /_d\d+$/.test(l.id));
+    const footer = kids.find(l => l.id.endsWith('_footer'));
+    const lastDetail = details[details.length - 1];
+    expect(footer).toBeTruthy();
+    expect(lastDetail).toBeTruthy();
+    // footer sits at or below the bottom edge of the last detail line — no overprint
+    expect(footer!.y).toBeGreaterThanOrEqual(lastDetail!.y + lastDetail!.height);
+  });
+});
