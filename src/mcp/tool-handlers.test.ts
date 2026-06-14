@@ -195,6 +195,37 @@ describe('sealDesign', () => {
     expect(String(result.error ?? '')).toMatch(/blank|no visible content/i);
   });
 
+  it('sizes & stacks a hand-placed UNSIZED text poster (nano-30B rescue) into a hierarchy', () => {
+    const projectPath = path.join(tmpDir, 'handtext-project');
+    createProject({ name: 'HandText', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'HandText', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/handtext.design.yaml');
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#0A0A0A' } },
+      { id: 't1', type: 'text', z: 1, content: { type: 'plain', value: 'AI Can Design Posters Without Seeing Them' } },
+      { id: 't2', type: 'text', z: 2, content: { type: 'plain', value: 'Made by a 30B model driving Folio.' } },
+      { id: 't3', type: 'text', z: 3, content: { type: 'plain', value: 'Hours of design work now take minutes, and bulk work that took days now takes minutes.' } },
+    ] as unknown as import('../schema/types').Layer[] });
+    const info = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    const ls = info.layers as { id: string; y: number; h: number }[];
+    const t1 = ls.find(l => l.id === 't1')!, t2 = ls.find(l => l.id === 't2')!, t3 = ls.find(l => l.id === 't3')!;
+    expect(t1.h).toBeGreaterThan(0);
+    expect(t2.y).toBeGreaterThanOrEqual(t1.y + t1.h);   // stacked, no overlap
+    expect(t3.y).toBeGreaterThanOrEqual(t2.y + t2.h);
+  });
+
+  it('does NOT restructure when a preset group is present', () => {
+    const projectPath = path.join(tmpDir, 'preset-project');
+    createProject({ name: 'Preset', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Preset', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/preset.design.yaml');
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'sections', title: 'Real Preset', blocks: [{ type: 'callout', text: 'x' }] },
+    ] as never });
+    const info = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect((info.layers as { type: string }[]).some(l => l.type === 'group')).toBe(true);
+  });
+
   it('seals a design that DOES have content (background + a real text layer)', () => {
     const projectPath = path.join(tmpDir, 'ok-project');
     createProject({ name: 'OK', path: projectPath });
