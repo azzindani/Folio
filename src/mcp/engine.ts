@@ -852,6 +852,18 @@ export function addLayers(args: {
   return okResult(op, { added: incoming.length, layer_ids: incoming.map(l => l.id), ...(notes.length ? { notes } : {}), ...(diagnostics.length ? { diagnostics } : {}), next_action, progress, context, handover }, bak);
 }
 
+// Pure-decoration leaf types — a slide built from ONLY these renders blank.
+const DECORATIVE_LAYER_TYPES = new Set(['rect', 'ellipse', 'circle', 'line', 'path', 'polygon', 'polyline', 'particle']);
+// Does a page carry any readable content (text/image/icon/chart/preset), or is
+// it only background shapes? Recurses into groups/containers.
+function pageHasReadableContent(layers: Layer[]): boolean {
+  return layers.some(l => {
+    const kids = (l as Layer & { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) return pageHasReadableContent(kids);
+    return !DECORATIVE_LAYER_TYPES.has(l.type);
+  });
+}
+
 export function appendPage(args: {
   design_path: string; page_id?: string; label?: string; template_ref?: string;
   slots?: Record<string, unknown>; layers?: Layer[]; layers_shorthand?: ShorthandLayer[];
@@ -1083,6 +1095,18 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   if (!spec.pages && !hasRenderableContent(spec)) {
     return errResult(op, 'Cannot seal a blank design — it has no visible content (every layer is a background or an empty group), so it would render empty.',
       'Call add_layers FIRST with ONE FILLED preset layer (use the prefixed tool name mcp__folio__add_layers), e.g. layers_shorthand:[{type:"sections", title:"…", subtitle:"…", blocks:[{type:"stats",items:[{value:"…",label:"…"}]},{type:"heading_text",heading:"…",body:"…"},{type:"bars",items:[…]},{type:"callout",text:"…"}]}]; then diagnose_design; then seal_design.', progress);
+  }
+  // A carousel must not seal with a BLANK slide — a page that's empty or only
+  // background shapes (no text/image/preset) renders blank but the model reports
+  // success (live find: a 5-slide deck whose 4 content slides were two bg rects
+  // each, sealed "0 errors"). Name the blank pages and send it back to fill them.
+  if (spec.pages && spec.pages.length) {
+    const blank = spec.pages.filter(p => !pageHasReadableContent(p.layers ?? []));
+    if (blank.length) {
+      const ids = blank.map(p => p.id).join(', ');
+      return errResult(op, `Cannot seal — ${blank.length} carousel page(s) have no readable content (empty or only background shapes), so they render blank: ${ids}.`,
+        'Add each slide\'s title + content before sealing. Easiest: one preset per page, e.g. add_layers/append_page with layers_shorthand:[{type:"list", title:"…", marker:"number", items:[{title:"…",desc:"…"}], footer:"…"}] or {type:"feature_grid", title:"…", items:[{icon,title,desc}]}.', progress);
+    }
   }
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
