@@ -80,6 +80,23 @@ describe('buildIconSVG', () => {
   });
 });
 
+describe('resolveIconName — maps emoji to bundled glyphs (resvg has no emoji font)', () => {
+  it('maps common emoji to a real, bundled Lucide id', () => {
+    for (const [emoji, expected] of [['🥕', 'leaf'], ['☕', 'coffee'], ['📍', 'map-pin'], ['🧺', 'shopping-bag'], ['⭐', 'star'], ['🎉', 'gift']] as const) {
+      const r = resolveIconName(emoji);
+      expect(r).toBe(expected);
+      expect(LUCIDE_ICONS[r!]).toBeTruthy();   // the target actually exists in the bundle
+    }
+  });
+  it('strips variation selectors and reads the first emoji from a mixed string', () => {
+    expect(resolveIconName('❤️')).toBe('heart');        // ❤ + U+FE0F
+    expect(resolveIconName('🥕 carrots')).toBe('leaf');  // emoji + label
+  });
+  it('still returns null for a genuinely unknown non-emoji name', () => {
+    expect(resolveIconName('frobozz-widget')).toBeNull();
+  });
+});
+
 describe('LUCIDE_ICONS and ALL_ICON_NAMES', () => {
   it('LUCIDE_ICONS contains at least one icon', () => {
     expect(Object.keys(LUCIDE_ICONS).length).toBeGreaterThan(0);
