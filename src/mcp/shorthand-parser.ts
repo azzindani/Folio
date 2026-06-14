@@ -713,15 +713,15 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
           : k === 'bl' ? `M${X} ${y2 - T}L${X} ${y2}L${X + T} ${y2}Z`
           : `M${x2 - T} ${y2}L${x2} ${y2}L${x2} ${y2 - T}Z`;
       const c1 = place || 'br', c2 = c1 === 'br' ? 'tl' : c1 === 'tl' ? 'br' : c1 === 'tr' ? 'bl' : 'tr';
-      layers.push({ id: `${idp}_tri0`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: triD(c1), fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.5 : 0.55) }, opacity: 0.5 } as unknown as Layer);
-      layers.push({ id: `${idp}_tri1`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: triD(c2), fill: { type: 'solid', color: mixHex(bgHex, p1, 0.45) }, opacity: dark ? 0.32 : 0.26 } as unknown as Layer);
+      layers.push({ id: `${idp}_tri0`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: triD(c1), fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.5 : 0.55) }, opacity: dark ? 0.3 : 0.28 } as unknown as Layer);
+      layers.push({ id: `${idp}_tri1`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: triD(c2), fill: { type: 'solid', color: mixHex(bgHex, p1, 0.45) }, opacity: dark ? 0.2 : 0.16 } as unknown as Layer);
     }
     else if (kind === 'diag') {
       // A diagonal color field (one big triangle across a diagonal) — a flat,
       // hard-edged wash instead of a soft circular gradient.
       const x2 = X + W, y2 = Y + H, d = place === 'tl'
         ? `M${X} ${Y}L${x2} ${Y}L${X} ${y2}Z` : `M${x2} ${Y}L${x2} ${y2}L${X} ${y2}Z`;
-      layers.push({ id: `${idp}_diag`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d, fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.42 : 0.5) }, opacity: dark ? 0.4 : 0.34 } as unknown as Layer);
+      layers.push({ id: `${idp}_diag`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d, fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.42 : 0.5) }, opacity: dark ? 0.26 : 0.2 } as unknown as Layer);
     }
     else if (kind === 'blocks') {
       // Bauhaus/Swiss offset rectangles — strong rectilinear character.
@@ -730,14 +730,14 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
       ];
       specs.forEach(([fx, fy, fw, fh, c], i) => layers.push({ id: `${idp}_blk${i}`, type: 'rect', z: z++,
         x: Math.round(X + fx * W), y: Math.round(Y + fy * H), width: Math.round(fw * W), height: Math.round(fh * H),
-        fill: { type: 'solid', color: mixHex(bgHex, c, dark ? 0.4 : 0.5) }, opacity: dark ? 0.45 : 0.32 } as unknown as Layer));
+        fill: { type: 'solid', color: mixHex(bgHex, c, dark ? 0.4 : 0.5) }, opacity: dark ? 0.28 : 0.2 } as unknown as Layer));
     }
     else if (kind === 'rings') {
       // Concentric OUTLINED ovals (stroke, no fill) near a corner — round, but a
       // different feel than the solid blob: airy, technical.
       const [cx, cy] = anchor(place || 'tr');
       for (let i = 0; i < 3; i++) { const r = Math.round(W * (0.5 - i * 0.13));
-        layers.push({ id: `${idp}_ring${i}`, type: 'ellipse', z: z++, x: Math.round(cx - r), y: Math.round(cy - r), width: r * 2, height: r * 2, stroke: { color: mixHex(bgHex, p0, dark ? 0.55 : 0.6), width: Math.max(2, Math.round(W * 0.006)) }, opacity: dark ? 0.5 : 0.4 } as unknown as Layer); }
+        layers.push({ id: `${idp}_ring${i}`, type: 'ellipse', z: z++, x: Math.round(cx - r), y: Math.round(cy - r), width: r * 2, height: r * 2, stroke: { color: mixHex(bgHex, p0, dark ? 0.55 : 0.6), width: Math.max(2, Math.round(W * 0.006)) }, opacity: dark ? 0.32 : 0.26 } as unknown as Layer); }
     }
     else if (kind === 'arcs') {
       // A big sweeping arc band at an edge (open stroke).
@@ -745,7 +745,7 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
       const by = atBottom ? Y + H - band : Y - band;
       const box: ShapeBox = { x: X - Math.round(W * 0.15), y: by, w: Math.round(W * 1.3), h: band * 2 };
       const arc = shapePath('arc', box, { start: atBottom ? 180 : 0, end: atBottom ? 360 : 180 });
-      layers.push({ id: `${idp}_arc`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: arc.d, stroke: { color: mixHex(bgHex, p0, dark ? 0.55 : 0.55), width: Math.max(8, Math.round(W * 0.05)) }, opacity: dark ? 0.45 : 0.4 } as unknown as Layer);
+      layers.push({ id: `${idp}_arc`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: arc.d, stroke: { color: mixHex(bgHex, p0, dark ? 0.55 : 0.55), width: Math.max(8, Math.round(W * 0.05)) }, opacity: dark ? 0.28 : 0.24 } as unknown as Layer);
     }
     else if (kind === 'wave') {
       // A wavy ribbon band along one edge — organic but hard-rendered (no circle).
@@ -753,7 +753,7 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
       const wy = atBottom ? Y + H - band : Y;
       const box: ShapeBox = { x: X - 2, y: wy, w: W + 4, h: band };
       const wv = shapePath('wave', box, { amplitude: Math.round(band * 0.45), cycles: 3 });
-      layers.push({ id: `${idp}_wave`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: wv.d, fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.42 : 0.5) }, opacity: dark ? 0.45 : 0.35 } as unknown as Layer);
+      layers.push({ id: `${idp}_wave`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: wv.d, fill: { type: 'solid', color: mixHex(bgHex, p0, dark ? 0.42 : 0.5) }, opacity: dark ? 0.28 : 0.22 } as unknown as Layer);
     }
     else if (kind === 'shards') {
       // Scattered GEOMETRIC confetti (triangles + squares + a plus) in palette —
@@ -764,18 +764,20 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
       ];
       shards.forEach(([fx, fy, fs, kindIdx], i) => {
         const cx = X + fx * W, cy = Y + fy * H, s2 = Math.round(fs * W), c = mixHex(bgHex, [p0, p1, p2][i % 3] ?? p0, dark ? 0.5 : 0.6);
-        if (kindIdx === 0) layers.push({ id: `${idp}_sh${i}`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: `M${Math.round(cx)} ${Math.round(cy - s2)}L${Math.round(cx + s2)} ${Math.round(cy + s2)}L${Math.round(cx - s2)} ${Math.round(cy + s2)}Z`, fill: { type: 'solid', color: c }, opacity: dark ? 0.5 : 0.45 } as unknown as Layer);
-        else if (kindIdx === 1) layers.push({ id: `${idp}_sh${i}`, type: 'rect', z: z++, x: Math.round(cx - s2), y: Math.round(cy - s2), width: s2 * 2, height: s2 * 2, rotation: 18, fill: { type: 'solid', color: c }, opacity: dark ? 0.5 : 0.45 } as unknown as Layer);
-        else layers.push({ id: `${idp}_sh${i}`, type: 'rect', z: z++, x: Math.round(cx - s2 * 1.4), y: Math.round(cy - s2 * 0.4), width: Math.round(s2 * 2.8), height: Math.round(s2 * 0.8), fill: { type: 'solid', color: c }, opacity: dark ? 0.5 : 0.45 } as unknown as Layer);
+        if (kindIdx === 0) layers.push({ id: `${idp}_sh${i}`, type: 'path', z: z++, x: X, y: Y, width: W, height: H, d: `M${Math.round(cx)} ${Math.round(cy - s2)}L${Math.round(cx + s2)} ${Math.round(cy + s2)}L${Math.round(cx - s2)} ${Math.round(cy + s2)}Z`, fill: { type: 'solid', color: c }, opacity: dark ? 0.32 : 0.28 } as unknown as Layer);
+        else if (kindIdx === 1) layers.push({ id: `${idp}_sh${i}`, type: 'rect', z: z++, x: Math.round(cx - s2), y: Math.round(cy - s2), width: s2 * 2, height: s2 * 2, rotation: 18, fill: { type: 'solid', color: c }, opacity: dark ? 0.32 : 0.28 } as unknown as Layer);
+        else layers.push({ id: `${idp}_sh${i}`, type: 'rect', z: z++, x: Math.round(cx - s2 * 1.4), y: Math.round(cy - s2 * 0.4), width: Math.round(s2 * 2.8), height: Math.round(s2 * 0.8), fill: { type: 'solid', color: c }, opacity: dark ? 0.32 : 0.28 } as unknown as Layer);
       });
     }
   }
 
   // OVERLAY — whisper-faint pattern texture (no tile bg → the base shows
-  // through; kept low-contrast + sparse so it reads as premium grain, not noise)
+  // through). Kept VERY low-contrast + sparse so it reads as a premium paper
+  // grain, never as a crowded screen. (Tuned down from fg .7/.4 · op .12/.07 ·
+  // scale 1.8 — user feedback: backgrounds were over-processed and crowded.)
   for (const ov of overlays) {
-    const fg = dark ? mixHex(bgHex, text, 0.7) : mixHex(bgHex, text, 0.4);
-    layers.push({ id: `${idp}_tex`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'pattern', pattern: ov, fg, opacity: dark ? 0.12 : 0.07, scale: 1.8 } as unknown as Fill } as unknown as Layer);
+    const fg = dark ? mixHex(bgHex, text, 0.4) : mixHex(bgHex, text, 0.22);
+    layers.push({ id: `${idp}_tex`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'pattern', pattern: ov, fg, opacity: dark ? 0.055 : 0.035, scale: 2.6 } as unknown as Fill } as unknown as Layer);
   }
   return layers;
 }
