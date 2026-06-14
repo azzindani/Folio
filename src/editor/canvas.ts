@@ -472,7 +472,7 @@ export class CanvasManager {
         { cls: 'w',  x: bbox.x,               y: cy,                   cursor: 'w-resize'  },
       ];
 
-      const layerData = this.state.getCurrentLayers().find(l => l.id === id) as unknown as Record<string, unknown> | undefined;
+      const layerData = this.findLayerDeep(id) as unknown as Record<string, unknown> | undefined;
       const origX = typeof layerData?.['x'] === 'number' ? (layerData['x'] as number) : bbox.x;
       const origY = typeof layerData?.['y'] === 'number' ? (layerData['y'] as number) : bbox.y;
       const origW = typeof layerData?.['width']  === 'number' ? (layerData['width']  as number) : bbox.width;
@@ -493,7 +493,7 @@ export class CanvasManager {
         // Double-click on handle opens inline text editor for text layers
         handle.addEventListener('dblclick', (ev) => {
           ev.stopPropagation();
-          const layer = this.state.getCurrentLayers().find(l => l.id === id);
+          const layer = this.findLayerDeep(id);
           if (layer?.type === 'text') {
             const svgEl = this.svgContainer.querySelector<SVGElement>(`[data-layer-id="${id}"]`);
             if (svgEl) this.openInlineTextEditor(layer as TextLayer, svgEl);
@@ -515,7 +515,7 @@ export class CanvasManager {
       });
       box.addEventListener('dblclick', (ev) => {
         ev.stopPropagation();
-        const layer = this.state.getCurrentLayers().find(l => l.id === id);
+        const layer = this.findLayerDeep(id);
         if (layer?.type === 'text') {
           const svgEl = this.svgContainer.querySelector<SVGElement>(`[data-layer-id="${id}"]`);
           if (svgEl) this.openInlineTextEditor(layer as TextLayer, svgEl);
@@ -618,7 +618,7 @@ export class CanvasManager {
   private startGroupDrag(e: PointerEvent, ids: string[]): void {
     const startX = e.clientX, startY = e.clientY;
     const zoom = this.state.get().zoom;
-    const layers = this.state.getCurrentLayers().filter(l => ids.includes(l.id));
+    const layers = this.collectLayersDeep(ids);
     const origs = new Map(layers.map(l => [l.id, { x: l.x ?? 0, y: l.y ?? 0 }]));
     let started = false;
     const onMove = (me: PointerEvent) => {
@@ -646,7 +646,7 @@ export class CanvasManager {
   ): void {
     const startX = e.clientX, startY = e.clientY;
     const zoom = this.state.get().zoom;
-    const layers = this.state.getCurrentLayers().filter(l => ids.includes(l.id));
+    const layers = this.collectLayersDeep(ids);
     // Snapshot each layer's bounds relative to the union bbox
     const origs = layers.map(l => ({
       id: l.id,
@@ -701,7 +701,7 @@ export class CanvasManager {
     layerId: string,
     bbox: DOMRect | SVGRect,
   ): void {
-    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    const layer = this.findLayerDeep(layerId);
     if (!layer || layer.locked) return;
 
     const zoom = this.state.get().zoom;
@@ -910,8 +910,41 @@ export class CanvasManager {
     this.state.set('selectedLayerIds', [id]);
   }
 
+  // Resolve a layer by id ANYWHERE in the tree (group / auto_layout children),
+  // not just the top level. A flat lookup left every nested preset child
+  // un-draggable: the drag/resize/rotate handlers resolved `undefined` and
+  // silently bailed, so clicking a card/title inside a feature_grid/event group
+  // selected it but it would not move — the "can't move components" report.
+  private findLayerDeep(id: string): Layer | undefined {
+    const walk = (layers: Layer[]): Layer | undefined => {
+      for (const l of layers) {
+        if (l.id === id) return l;
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) { const hit = walk(kids); if (hit) return hit; }
+      }
+      return undefined;
+    };
+    return walk(this.state.getCurrentLayers());
+  }
+
+  // Collect selected layers by id from anywhere in the tree (group-aware
+  // multi-select drag/resize). Returns them in tree order.
+  private collectLayersDeep(ids: string[]): Layer[] {
+    const want = new Set(ids);
+    const out: Layer[] = [];
+    const walk = (layers: Layer[]): void => {
+      for (const l of layers) {
+        if (want.has(l.id)) out.push(l);
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) walk(kids);
+      }
+    };
+    walk(this.state.getCurrentLayers());
+    return out;
+  }
+
   private startDrag(e: PointerEvent, layerId: string): void {
-    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    const layer = this.findLayerDeep(layerId);
     if (!layer || layer.locked) return;
 
     // Flow reports position by document order + span, not x/y — translating a
@@ -973,7 +1006,7 @@ export class CanvasManager {
     handle: string,
     origX: number, origY: number, origW: number, origH: number,
   ): void {
-    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    const layer = this.findLayerDeep(layerId);
     if (!layer || layer.locked) return;
     e.stopPropagation();
 
@@ -1127,7 +1160,7 @@ export class CanvasManager {
   // Drag a flow component to reorder it (ghost follows cursor, insertion bar
   // marks the drop slot, commit on release).
   private startFlowReorder(e: PointerEvent, layerId: string): void {
-    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    const layer = this.findLayerDeep(layerId);
     const r = layer as unknown as Record<string, unknown> | undefined;
     const lw = typeof r?.['width'] === 'number' ? (r['width'] as number) : 200;
     const lh = typeof r?.['height'] === 'number' ? (r['height'] as number) : 80;
@@ -1355,7 +1388,7 @@ export class CanvasManager {
     if (!layerEl) return;
     const layerId = layerEl.getAttribute('data-layer-id');
     if (!layerId) return;
-    const layer = this.state.getCurrentLayers().find(l => l.id === layerId);
+    const layer = this.findLayerDeep(layerId);
     if (!layer || layer.type !== 'text') return;
     this.openInlineTextEditor(layer as TextLayer, layerEl);
   }

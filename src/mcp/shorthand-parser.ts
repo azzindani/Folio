@@ -1043,24 +1043,32 @@ function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
   const accent = shStr(r['accent'], m?.accent ?? '#B8543C');
   const { text: textColor, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
 
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
+  const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
+  // Did the carousel page-fill hand this list the full page rect (private
+  // __fillPage marker)? Then FILL that height and center the content — a
+  // content-sized group on a fixed slide left an empty lower band (the dead
+  // "black strip" a carousel list slide showed). A poster list (even one the
+  // model gave an explicit pos) still sizes to content so the doc auto-fits.
+  const boxed = r['__fillPage'] === true;
   const M = Math.round(W * 0.08), cX = X + M, contentW = W - 2 * M;
-  // The bg is sized to the MEASURED content at the end (height patched in), so a
-  // dense list (7 items) grows the page instead of clipping and a sparse one
-  // shrinks instead of leaving dead space — vertical rhythm is W-based (not a
-  // share of a fixed H), then addLayers fits the canvas to this group's height.
-  const layers: Layer[] = [{ id: `${id}_bg`, type: 'rect', z: 0, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer];
+  // Content is laid out into its own array first so the final height is known
+  // before the background is composed (composeBackground must span the whole
+  // page, not just the measured content).
+  const content: Layer[] = [];
+  const layers: Layer[] = [];
   let k = 1, cy = Y + Math.round(W * 0.085);
 
   if (kicker) {
-    layers.push(txt(`${id}_kick`, z + k++, cX, cy, contentW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
+    content.push(txt(`${id}_kick`, z + k++, cX, cy, contentW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
     cy += Math.round(W * 0.05);
   }
   if (title) {
     const ts = Math.round(W * 0.07), th = estTextHeight(title, ts, contentW, 1.04);
-    layers.push(txt(`${id}_title`, z + k++, cX, cy, contentW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04 }));
+    content.push(txt(`${id}_title`, z + k++, cX, cy, contentW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04 }));
     cy += th + Math.round(W * 0.02);
-    layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
-    layers.push({ id: `${id}_tick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    content.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
+    content.push({ id: `${id}_tick`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
     cy += Math.round(W * 0.05);
   }
 
@@ -1073,30 +1081,38 @@ function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
     const dH = it.desc ? estTextHeight(it.desc, ds, tW, 1.4) : 0;
     if (marker === 'number') {
       const ms = Math.round(W * 0.042);
-      layers.push(txt(`${id}_n${i}`, z + k++, cX, cy - Math.round(ms * 0.08), gutter, ms * 1.3, String(i + 1).padStart(2, '0'), { font_size: ms, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
+      content.push(txt(`${id}_n${i}`, z + k++, cX, cy - Math.round(ms * 0.08), gutter, ms * 1.3, String(i + 1).padStart(2, '0'), { font_size: ms, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1 }));
     } else if (marker === 'bullet') {
-      layers.push({ id: `${id}_d${i}`, type: 'ellipse', z: z + k++, x: cX, y: Math.round(cy + tH * 0.28), width: Math.round(W * 0.018), height: Math.round(W * 0.018), fill: { type: 'solid', color: accent } } as unknown as Layer);
+      content.push({ id: `${id}_d${i}`, type: 'ellipse', z: z + k++, x: cX, y: Math.round(cy + tH * 0.28), width: Math.round(W * 0.018), height: Math.round(W * 0.018), fill: { type: 'solid', color: accent } } as unknown as Layer);
     } else if (marker === 'icon' && it.icon) {
-      layers.push({ id: `${id}_i${i}`, type: 'icon', z: z + k++, x: cX, y: Math.round(cy), width: Math.round(W * 0.05), height: Math.round(W * 0.05), icon: it.icon, color: accent } as unknown as Layer);
+      content.push({ id: `${id}_i${i}`, type: 'icon', z: z + k++, x: cX, y: Math.round(cy), width: Math.round(W * 0.05), height: Math.round(W * 0.05), icon: it.icon, color: accent } as unknown as Layer);
     }
-    layers.push(txt(`${id}_t${i}`, z + k++, tX, cy, tW, tH, it.title, { font_size: its, font_weight: 700, color: textColor, line_height: 1.12 }));
-    if (it.desc) layers.push(txt(`${id}_b${i}`, z + k++, tX, cy + tH + gapTD, tW, dH, it.desc, { font_size: ds, font_weight: 400, color: muted, line_height: 1.4 }));
+    content.push(txt(`${id}_t${i}`, z + k++, tX, cy, tW, tH, it.title, { font_size: its, font_weight: 700, color: textColor, line_height: 1.12 }));
+    if (it.desc) content.push(txt(`${id}_b${i}`, z + k++, tX, cy + tH + gapTD, tW, dH, it.desc, { font_size: ds, font_weight: 400, color: muted, line_height: 1.4 }));
     cy += tH + (it.desc ? gapTD + dH : 0) + itemGap;
   });
   if (items.length) cy -= itemGap;          // drop the trailing gap after the last item
 
   if (footer) {
     cy += Math.round(W * 0.05);
-    layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
+    content.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
     cy += 14;
-    layers.push(txt(`${id}_footer`, z + k++, cX, Math.round(cy), contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    content.push(txt(`${id}_footer`, z + k++, cX, Math.round(cy), contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
     cy += 30;
   }
 
-  // Size the group to its measured content (clamped sane), then patch the bg to
-  // match so addLayers can fit the canvas — no clip (dense), no dead band (sparse).
-  const finalH = Math.min(Math.round(W * 3.6), Math.max(Math.round(W * 0.5), Math.round(cy + W * 0.07 - Y)));
-  (layers[0] as unknown as { height: number }).height = finalH;
+  // Natural content height (clamped sane). A boxless POSTER list uses this so the
+  // canvas fits the content; a BOXED carousel page list FILLS the given page
+  // height and centers the content block (no empty lower band / dead strip).
+  const naturalH = Math.min(Math.round(W * 3.6), Math.max(Math.round(W * 0.5), Math.round(cy + W * 0.07 - Y)));
+  const finalH = boxed ? Math.max(naturalH, H) : naturalH;
+  const yOff = finalH > naturalH ? Math.round((finalH - naturalH) / 2) : 0;
+  if (yOff) for (const l of content) { const ly = l as unknown as { y: number }; ly.y = ly.y + yOff; }
+  // Compose a real background sized to the FULL page (texture/depth, not a flat
+  // fill — buildList was the one preset that skipped this), then lay content on top.
+  const bgLayers = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, finalH, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
+  content.forEach((l, i) => { (l as unknown as { z: number }).z = 30 + i; });
+  layers.push(...bgLayers, ...content);
   return { id, type: 'group', z, x: X, y: Y, width: W, height: finalH, layers } as unknown as Layer;
 }
 
@@ -2342,6 +2358,28 @@ export function fillBleedPresetDims(layers: ShorthandLayer[], docW: number, docH
   return filled;
 }
 
+// Flow/list presets that size themselves to their content (so a poster can
+// auto-fit). On a fixed CAROUSEL page that content-sizing leaves an empty lower
+// band — hand them the page box so they fill + center it instead.
+const FLOW_PAGE_PRESETS = new Set(['list', 'steps', 'checklist', 'numbered_list']);
+export function fillFlowPresetsToPage(layers: ShorthandLayer[], docW: number, docH: number): number {
+  let filled = 0;
+  for (const sh of layers) {
+    if (!sh || typeof sh !== 'object' || Array.isArray(sh)) continue;
+    const r = sh as Record<string, unknown>;
+    const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+    if (!FLOW_PAGE_PRESETS.has(t)) continue;
+    const hasBox = (Array.isArray(r['pos']) && (r['pos'] as unknown[]).length === 4)
+      || typeof r['x'] === 'number' || typeof r['y'] === 'number'
+      || typeof r['width'] === 'number' || typeof r['height'] === 'number';
+    if (hasBox) continue;
+    r['pos'] = [0, 0, docW, docH];
+    r['__fillPage'] = true; // tells buildList to FILL+center, not size-to-content
+    filled++;
+  }
+  return filled;
+}
+
 // Is this an OPAQUE rectangle covering (essentially) the whole canvas? A solid
 // or gradient fill at the origin spanning the page — the shape a model stamps as
 // a "background". Noise/image overlays and anything <0.95 opacity (a scrim) are
@@ -2683,6 +2721,8 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
 // aliases normalizeShorthandAliases maps. A key outside this set is silently
 // ignored on expansion, so diagnoseShorthandKeys flags it for the model.
 const KNOWN_SHORTHAND_KEYS = new Set<string>([
+  // engine-internal markers (set by the engine, not the model — never flagged)
+  '__fillPage',
   // canonical
   'id', 'type', 'z', 'pos', 'x', 'y', 'width', 'height', 'opacity', 'rotation',
   'flip_h', 'flip_v', 'visible', 'locked', 'fill', 'stroke', 'radius', 'text',
