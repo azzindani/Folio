@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, demoteCoveringBackdrops, lockCarouselCanvas, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -876,6 +876,11 @@ export function appendPage(args: {
     // 1080×1350 carousel page) has no dead strip below a 1080² preset.
     const filled = fillBleedPresetDims(pageShorthand, spec.document.width, spec.document.height);
     if (filled) progress.push(pInfo(`Sized ${filled} full-bleed preset(s) to the page`, `${spec.document.width}×${spec.document.height}`));
+    // A content-sized list/steps preset on a fixed slide left an empty lower band;
+    // hand it the page box so it fills + centers (carousel pages only — a poster
+    // list still auto-fits its canvas to the content).
+    const flowFilled = fillFlowPresetsToPage(pageShorthand, spec.document.width, spec.document.height);
+    if (flowFilled) progress.push(pInfo(`Filled ${flowFilled} flow preset(s) to the page`, 'centered content, no dead band'));
     // Keep the deck cohesive: snap a slide that flips light↔dark or changes the
     // heading font back to the look the first page established.
     if (spec.pages?.length) {
