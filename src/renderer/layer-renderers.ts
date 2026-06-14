@@ -574,6 +574,29 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
   const resolved = resolveIconName(layer.name);
   const inner = resolved ? LUCIDE_ICONS[resolved] : undefined;
 
+  // A purely-numeric "icon name" ("01", "1"…) means a NUMBERED badge, not a
+  // glyph — models reach for it on numbered feature cards. Render the number in
+  // a ring (both in the accent color) instead of the empty-ring fallback, which
+  // read as a broken icon. Strip a leading zero so "01" shows as "1".
+  const numName = (layer.name ?? '').trim();
+  if (!inner && /^\d{1,2}$/.test(numName)) {
+    const label = numName.replace(/^0+(?=\d)/, '');
+    g.appendChild(createSVGElement('circle', {
+      cx: size / 2, cy: size / 2, r: Math.max(2, size / 2 - 1),
+      fill: 'none', stroke: color, 'stroke-width': '2',
+    }));
+    const num = createSVGElement('text', {
+      x: size / 2, y: Math.round(size / 2 + size * 0.18),
+      fill: color, 'font-size': String(Math.round(size * 0.5)), 'font-weight': '700',
+      'text-anchor': 'middle', 'font-family': 'Inter, system-ui, sans-serif',
+    });
+    num.textContent = label;
+    g.appendChild(num);
+    applyCommonAttributes(g, layer);
+    if (layer.effects) applyEffects(g, layer.effects, svg);
+    return g;
+  }
+
   if (inner) {
     // Real Lucide icon — embed scaled SVG as nested <svg>
     const ns = 'http://www.w3.org/2000/svg';
