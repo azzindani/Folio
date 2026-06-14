@@ -25,6 +25,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       properties: {
         prompt: { type: 'string', description: 'The user\'s topic/intent — even one line, e.g. "the state of remote work" or "a feature poster for my CI tool".' },
         type:   { type: 'string', description: 'Optional preset hint (sections/feature_grid/stat/event/list/split/editorial). Omit to let the engine infer it.' },
+        variant: { type: 'number', description: 'Optional. For "give me N OPTIONS of the same topic": call once per option with variant:0,1,2,… — each returns a DISTINCT art-direction (palette + typography treatment + background geometry) for the same content. 0 = the topic-apt default. Deterministic, so variant 3 always looks the same.' },
       },
       required: ['prompt'],
     },

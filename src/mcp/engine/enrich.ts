@@ -6,7 +6,7 @@
 // FIRST (so figures are real, not invented). The model does the research + writing.
 import type { ToolResult, ProgressItem } from '../types';
 import { okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
-import { pickMood, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
+import { pickMoodVariant, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
 
 
 // Per-preset rich outline + recommended canvas. Each entry the model fills with
@@ -120,19 +120,24 @@ function planPages(subject: string, count: number, mood: Mood): PageSpec[] {
   return pages.slice(0, count);
 }
 
-export function enrichBrief(args: { prompt?: string; type?: string }): ToolResult {
+export function enrichBrief(args: { prompt?: string; type?: string; variant?: number }): ToolResult {
   const op = 'enrich_brief';
   const progress: ProgressItem[] = [];
   const prompt = (args.prompt ?? '').trim();
   if (!prompt) {
     return okResult(op, { error_hint: 'Pass a prompt (a short topic/intent).', progress: [pInfo('No prompt given')] });
   }
+  // variant N ⇒ the Nth DISTINCT art-direction of the SAME topic — for "give me
+  // N options". 0 = the topic-apt default (unchanged); >0 rotates palette +
+  // treatment + (via the variant-salted seed) background geometry.
+  const variant = Math.max(0, Math.floor(Number(args.variant) || 0));
+  const vSeed = (s: string): string => (variant ? `${s}#v${variant}` : s);
   // Multi-page deck / carousel → a per-page plan instead of one design.
   if (isCarousel(prompt, args.type)) {
     const subject = subjectOf(prompt);
-    const cBase = pickMood(prompt, subject);
+    const cBase = pickMoodVariant(prompt, subject, variant);
     // One procedural recipe seeded by the subject, shared across all pages.
-    const mood: Mood = { ...cBase, bg_style: proceduralBgStyle(subject, isDarkHex(cBase.bg)) };
+    const mood: Mood = { ...cBase, bg_style: proceduralBgStyle(vSeed(subject), isDarkHex(cBase.bg)) };
     const count = parsePageCount(prompt);
     const [cw, ch] = carouselCanvas(prompt);
     const research = needsResearch(prompt, 'sections');
@@ -146,7 +151,7 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
     const context = buildContext(op, `Enriched brief → ${count}-page carousel`);
     const handover = buildHandover('DESIGN', {}, { type: 'carousel' });
     return okResult(op, {
-      output_type: 'carousel', topic: subject, page_count: count,
+      output_type: 'carousel', topic: subject, page_count: count, variant,
       needs_research: research, research_queries, research_instruction,
       pages, suggested: { ...mood, width: cw, height: ch }, canvas: { width: cw, height: ch },
       instruction, progress, context, handover,
@@ -155,10 +160,11 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   const design_type = (args.type && OUTLINES[args.type]) ? args.type : inferType(prompt);
   const outline = OUTLINES[design_type] ?? OUTLINES.sections;
   const subject = subjectOf(prompt);
-  const base = pickMood(prompt, subject);
-  // Procedural geometry seeded by the topic — keeps the curated colour but varies
-  // the background so two posters in the same colour mood don't look alike.
-  const mood: Mood = { ...base, bg_style: proceduralBgStyle(subject || prompt, isDarkHex(base.bg)) };
+  const base = pickMoodVariant(prompt, subject, variant);
+  // Procedural geometry seeded by the topic (+variant) — keeps a curated colour
+  // but varies the background so two posters in the same colour mood, or two
+  // variants of one topic, don't look alike.
+  const mood: Mood = { ...base, bg_style: proceduralBgStyle(vSeed(subject || prompt), isDarkHex(base.bg)) };
   const research = needsResearch(prompt, design_type);
   const research_queries = research ? researchQueries(subject) : [];
   const [width, height] = outline.canvas;
@@ -175,7 +181,7 @@ export function enrichBrief(args: { prompt?: string; type?: string }): ToolResul
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);
   const handover = buildHandover('DESIGN', {});
   return okResult(op, {
-    output_type: 'poster', topic: subject, design_type, needs_research: research, research_queries, research_instruction,
+    output_type: 'poster', topic: subject, design_type, variant, needs_research: research, research_queries, research_instruction,
     outline: outline.blocks ?? outline.fields, suggested: { ...mood, width, height },
     canvas: { width, height }, instruction, progress, context, handover,
   });

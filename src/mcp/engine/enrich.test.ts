@@ -101,6 +101,20 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.instruction!).toMatch(/NEVER hand-place/i);
   });
 
+  it('variant N yields a DISTINCT art-direction for the SAME topic (the "N options" feature)', () => {
+    type Sug = { variant: number; design_type: string; suggested: { bg: string; accent: string; bg_style: string } };
+    const sug = (v: number) => enrichBrief({ prompt: 'the future of artificial intelligence', variant: v }) as unknown as Sug;
+    const key = (s: Sug) => `${s.suggested.bg}|${s.suggested.accent}|${s.suggested.bg_style}`;
+    const v0 = sug(0), v1 = sug(1), v2 = sug(2);
+    expect(v0.variant).toBe(0);
+    expect(v1.variant).toBe(1);
+    // same topic ⇒ same preset, but the look (palette + geometry) differs per variant
+    expect(v1.design_type).toBe(v0.design_type);
+    expect(new Set([key(v0), key(v1), key(v2)]).size).toBe(3);
+    // deterministic: re-asking for option 2 returns the identical art-direction
+    expect(sug(2).suggested).toEqual(v2.suggested);
+  });
+
   it('an empty prompt fails gracefully (no throw)', () => {
     const r = enrichBrief({ prompt: '' }) as unknown as { success: boolean };
     expect(r.success).toBe(true);
