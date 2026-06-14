@@ -1851,6 +1851,20 @@ describe('event preset — caps title that wraps to 3 lines does not collide wit
     const d0 = g.layers.find(l => l.id === 'ev_d0')!;
     expect(d0.y).toBeGreaterThanOrEqual(title.y + title.height);
   });
+
+  it('heroes a date-like detail as a big accent line, leaving venue/meta in the stack', () => {
+    const g = expandShorthand({
+      id: 'ev', type: 'event', z: 0, pos: [0, 0, 1080, 1350],
+      bg: '#0A0A0A', accent: '#FF3D00', title: 'Stargazing Night',
+      details: ['Sat July 18 · 8 PM', 'City Park', 'Free · All ages'],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; y: number; style?: { font_size?: number; color?: string } }> };
+    const hero = g.layers.find(l => l.id === 'ev_hero')!;
+    const d0 = g.layers.find(l => l.id === 'ev_d0')!;
+    expect(hero).toBeTruthy();
+    expect((hero.style!.color ?? '').toLowerCase()).toBe('#ff3d00');                 // the accent moment
+    expect(hero.style!.font_size!).toBeGreaterThan((d0.style!.font_size ?? 0) * 1.6); // dominates the meta lines
+    expect(d0.y).toBeGreaterThan(hero.y);                                            // venue/meta sits below the date
+  });
 });
 
 describe('diagnoseLayers recurses into auto_layout (catches nested bad icons)', () => {
