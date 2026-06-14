@@ -14,6 +14,7 @@ import {
 import type { Layer, DesignSpec } from '../schema/types';
 import type { ShorthandLayer } from './shorthand-parser';
 import { parseDesign } from '../schema/parser';
+import { dump as yamlDump } from 'js-yaml';
 
 const parseYAMLDesign = (p: string): DesignSpec => parseDesign(fs.readFileSync(p, 'utf-8'));
 
@@ -193,6 +194,31 @@ describe('sealDesign', () => {
     const result = sealDesign({ design_path: designPath }) as Record<string, unknown>;
     expect(result.success).toBe(false);
     expect(String(result.error ?? '')).toMatch(/blank|no visible content/i);
+  });
+
+  it('re-fits a sole full-bleed preset to its content at seal (blind-model canvas over-resize)', () => {
+    const projectPath = path.join(tmpDir, 'fit-project');
+    createProject({ name: 'Fit', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Fit', type: 'poster', width: 1080, height: 1350 });
+    const designPath = path.join(projectPath, 'designs/fit.design.yaml');
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', title: 'Market Day', items: [
+        { icon: 'leaf', title: 'Fresh', desc: 'local produce' },
+        { icon: 'sun', title: 'Morning', desc: 'every saturday' },
+      ] },
+    ] as unknown as ShorthandLayer[] });
+    // A blind model often resizes the canvas TALLER than its content afterward,
+    // and writes the dimension as a string — leaving the preset in a half-empty
+    // page. Simulate that, then seal and expect the canvas re-fit to the content.
+    const spec = parseYAMLDesign(designPath);
+    const grpH = Number((spec.layers![0] as { height?: number }).height);
+    (spec.document as unknown as { height: unknown }).height = '2000';
+    fs.writeFileSync(designPath, yamlDump(spec));
+    sealDesign({ design_path: designPath });
+    const sealed = parseYAMLDesign(designPath);
+    expect(typeof sealed.document.height).toBe('number');
+    expect(sealed.document.height).toBe(grpH);   // shrank back to the preset → no dead band
+    expect(sealed.document.width).toBe(1080);
   });
 
   it('sizes & stacks a hand-placed UNSIZED text poster (nano-30B rescue) into a hierarchy', () => {

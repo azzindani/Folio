@@ -1160,6 +1160,18 @@ function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
 // margin, footer. The whole block is vertically centered so it fills the canvas.
 // Removes the hand-placed bold-poster flail (title collides with the details;
 // decor lands invisible or scattered) — the blind model can't see any of that.
+// A short, date-like detail line ("Sat July 18 · 8 PM", "June 15-16, 2026",
+// "07/18") — the one the event poster should hero as a big accent moment instead
+// of burying in the uniform mono stack. A month name or a numeric date pattern in
+// a short line qualifies; a long sentence or a time-only line ("9:00 AM") does not.
+const EVENT_MONTH_RE = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i;
+const EVENT_NUMDATE_RE = /\b\d{1,4}[\/.-]\d{1,2}(?:[\/.-]\d{1,4})?\b/;
+function isDateLine(s: string): boolean {
+  const t = s.trim();
+  if (!t || t.length > 34) return false;
+  return EVENT_MONTH_RE.test(t) || EVENT_NUMDATE_RE.test(t);
+}
+
 function readDetailLines(r: Record<string, unknown>): string[] {
   const d = r['details'] ?? r['lines'] ?? r['info'];
   if (Array.isArray(d)) return d.filter((x): x is string => typeof x === 'string');
@@ -1201,15 +1213,23 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   const eventFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
   // Shrink the (often very large) caps title so its longest word fits the width.
   const ts = fitTitleSize(title, Math.round(W * 0.15), cW, eventFont, true), titleH = estTextHeight(title, ts, cW, 1.0, 0.60);
+  // Hero the date — pull the first date-like line out of the stack and render it
+  // big in the accent (the prominent "JULY 18" an event poster wants), leaving the
+  // venue/meta lines in the calm mono stack below it.
+  let heroDate = ''; const restDetails: string[] = [];
+  for (const line of details) { if (!heroDate && isDateLine(line)) heroDate = line.trim(); else restDetails.push(line); }
+  const hs = heroDate ? fitTitleSize(heroDate, Math.round(W * 0.062), cW, eventFont, true) : 0;
+  const heroH = heroDate ? estTextHeight(heroDate, hs, cW, 1.0, 0.6) : 0;
+  const heroGap = heroDate ? Math.round(H * 0.022) : 0;
   const ds = Math.round(W * 0.026), lineGap = Math.round(H * 0.012);
-  const detailH = details.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25, 0.66) + lineGap, 0);
+  const detailH = restDetails.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25, 0.66) + lineGap, 0);
   const kickH = kicker ? Math.round(H * 0.05) : 0;
-  const total = kickH + titleH + Math.round(H * 0.03) + detailH;
+  const total = kickH + titleH + Math.round(H * 0.03) + heroH + heroGap + detailH;
   const top = Y + Math.max(Math.round(H * 0.12), (H - total) / 2 - Math.round(H * 0.02));
 
   // Accent bars in the far-left margin, staggered, vertically spanning the block.
   bars.slice(0, 3).forEach((c, i) => {
-    layers.push({ id: `${id}_bar${i}`, type: 'rect', z: z + k++, x: Math.round(X + W * 0.018 + i * W * 0.022), y: Math.round(top + i * H * 0.03), width: Math.round(W * 0.012), height: Math.round((titleH + detailH) * (0.95 - i * 0.12)), fill: { type: 'solid', color: c } } as unknown as Layer);
+    layers.push({ id: `${id}_bar${i}`, type: 'rect', z: z + k++, x: Math.round(X + W * 0.018 + i * W * 0.022), y: Math.round(top + i * H * 0.03), width: Math.round(W * 0.012), height: Math.round((titleH + heroH + detailH) * (0.95 - i * 0.12)), fill: { type: 'solid', color: c } } as unknown as Layer);
   });
 
   let cy = top;
@@ -1217,11 +1237,18 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
     cy += kickH;
   }
-  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase', font_family: shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined }));
+  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase', font_family: eventFont }));
   cy += titleH + Math.round(H * 0.03);
-  details.forEach((line, i) => {
+  if (heroDate) {
+    layers.push(txt(`${id}_hero`, z + k++, cX, cy, cW, heroH, heroDate, { font_size: hs, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase', font_family: eventFont }));
+    cy += heroH + heroGap;
+  }
+  restDetails.forEach((line, i) => {
     const lh = estTextHeight(line, ds, cW, 1.25, 0.66);
-    layers.push(txt(`${id}_d${i}`, z + k++, cX, cy, cW, lh, line, { font_family: 'IBM Plex Mono', font_size: ds, font_weight: 600, color: i === details.length - 1 ? accent : textColor, letter_spacing: 1, text_transform: 'uppercase' }));
+    // With a hero date carrying the accent, the meta lines stay calm; without one,
+    // the last line keeps the accent highlight (often the date/CTA).
+    const accentLine = !heroDate && i === restDetails.length - 1;
+    layers.push(txt(`${id}_d${i}`, z + k++, cX, cy, cW, lh, line, { font_family: 'IBM Plex Mono', font_size: ds, font_weight: 600, color: accentLine ? accent : textColor, letter_spacing: 1, text_transform: 'uppercase' }));
     cy += lh + lineGap;
   });
   if (footer) {
