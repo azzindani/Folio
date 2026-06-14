@@ -1552,7 +1552,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   // sweep geometry (triangles, diagonals, waves) matches the page exactly.
   let hY = Math.round(W * 0.08);
   if (kicker && !rotateKick) hY += Math.round(headlineStyle === 'highlight' ? W * 0.052 : W * 0.045);
-  if (title) hY += estTextHeight(title, ts, ccW, tLH) + Math.round(W * 0.02) + (headlineStyle === 'underline' ? Math.round(W * 0.018) : 0);
+  if (title) hY += estTextHeight(title, ts, ccW, tLH, mega ? 0.66 : 0.54) + Math.round(W * 0.02) + (headlineStyle === 'underline' ? Math.round(W * 0.018) : 0);
   if (subtitle) hY += estTextHeight(subtitle, Math.round(W * 0.028), ccW, 1.45) + Math.round(W * 0.025);
   if (kicker || title || subtitle) hY += Math.round(W * 0.05);
   const footerBand = footer ? Math.round(W * 0.1) : Math.round(W * 0.06);
@@ -1580,7 +1580,10 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
     cy += Math.round(W * 0.045);
   }
   if (title) {
-    const th = estTextHeight(title, ts, ccW, tLH);
+    // Mega is uppercase and often falls back to a wider raster font than the
+    // measured display font, so it wraps to MORE lines than the 0.54 estimate
+    // predicts → the subtitle collided into it. Reserve with a wider factor.
+    const th = estTextHeight(title, ts, ccW, tLH, mega ? 0.66 : 0.54);
     // highlight with no kicker → put the marker band on the TITLE itself (a
     // knockout headline) so the treatment is never dormant on a kicker-less deck.
     const titleHi = headlineStyle === 'highlight' && !kicker;
