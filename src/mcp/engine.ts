@@ -981,6 +981,31 @@ function hasRenderableContent(spec: DesignSpec): boolean {
   return visit(spec.layers);
 }
 
+// A poster that IS a single full-bleed preset group should size the document to
+// that group. The add_layers auto-fit does this when the preset is first added,
+// but a blind model often RESIZES the canvas afterward (and writes a string dim
+// like '2000') — leaving the preset floating in a half-empty page (the
+// feature_grid "bottom 40% blank" the harness test exposed). Re-fit at seal so
+// the finished poster is always sized to its content. Also normalizes string dims.
+function fitDocumentToSolePreset(spec: DesignSpec): boolean {
+  if (spec.pages && spec.pages.length) return false;
+  const doc = spec.document as unknown as { width: number; height: number };
+  const dw = Number(doc.width), dh = Number(doc.height);
+  if (!Number.isFinite(dw) || !Number.isFinite(dh)) return false;
+  let changed = false;
+  if (doc.width !== dw) { doc.width = dw; changed = true; }    // normalize '2000' → 2000
+  if (doc.height !== dh) { doc.height = dh; changed = true; }
+  const layers = spec.layers ?? [];
+  if (layers.length !== 1) return changed;
+  const g = layers[0] as Layer & { type?: string; x?: number; y?: number; width?: number; height?: number };
+  const gw = Number(g.width), gh = Number(g.height);
+  if (g.type !== 'group' || !(gw > 0) || !(gh > 0)) return changed;
+  if ((g.x ?? 0) > dw * 0.02 || (g.y ?? 0) > dh * 0.02) return changed;   // must be full-bleed at origin
+  if (doc.width !== gw) { doc.width = gw; changed = true; }
+  if (doc.height !== gh) { doc.height = gh; changed = true; }
+  return changed;
+}
+
 export function sealDesign(args: { design_path: string; project_path?: string }): ToolResult {
   const op = 'seal_design';
   const progress: ProgressItem[] = [];
@@ -1000,6 +1025,7 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   }
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
+  if (fitDocumentToSolePreset(spec)) progress.push(pInfo('Fitted canvas to content', `${spec.document.width}×${spec.document.height}`));
   spec._mode = 'complete';
   if (spec.meta.generation) spec.meta.generation.status = 'complete';
   spec.meta.modified = new Date().toISOString().split('T')[0];
