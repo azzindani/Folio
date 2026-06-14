@@ -1762,6 +1762,20 @@ describe('sections stats — long unbreakable value fits its column (no collisio
   });
 });
 
+describe('sections — a MEGA (uppercase) multi-line title does not collide with the subtitle', () => {
+  it('reserves enough height for a wrapped mega title so the subtitle sits below it', () => {
+    const g = expandShorthand({
+      id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1500], headline_style: 'mega',
+      kicker: 'NO VISION', title: 'Can a 30B Model Actually Design This Poster',
+      subtitle: 'This poster is the proof — built by a 30-billion-parameter language model driving Folio.',
+      blocks: [{ kind: 'stats', items: [{ value: '30B', label: 'params' }] }],
+    } as unknown as ShorthandLayer) as unknown as { layers: Array<{ id: string; y?: number; height?: number }> };
+    const title = g.layers.find(l => l.id === 's_title')!;
+    const sub = g.layers.find(l => l.id === 's_sub')!;
+    expect(sub.y!).toBeGreaterThanOrEqual(title.y! + (title.height ?? 0));
+  });
+});
+
 describe('sections — layout variant (centered header / stat grid)', () => {
   const sectionsWith = (extra: Record<string, unknown>) => expandShorthand({
     id: 's', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], kicker: 'KICKER', title: 'A Real Title', subtitle: 'a subtitle line',
