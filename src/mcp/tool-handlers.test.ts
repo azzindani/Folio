@@ -221,6 +221,53 @@ describe('sealDesign', () => {
     expect(sealed.document.width).toBe(1080);
   });
 
+  it('unwraps a model-invented page wrapper instead of rejecting a dimensionless group (blind-30B blank-poster)', () => {
+    const projectPath = path.join(tmpDir, 'wrapper-project');
+    createProject({ name: 'Wrap', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Wrap', type: 'poster' });
+    const designPath = path.join(projectPath, 'designs/wrap.design.yaml');
+    // The exact shape a blind 30B emitted: page-level bg/accent/fonts on a typeless
+    // wrapper, the real layers nested under `layers`. Pre-fix this threw
+    // "group needs a positive width" and the poster sealed blank.
+    const result = addLayers({ design_path: designPath, layers_shorthand: [{
+      bg: '#FAF5EC', accent: '#D95F00', font_heading: 'Playfair Display', font_body: 'Inter',
+      layers: [
+        { type: 'editorial', id: 'editorial_1', pos: [0, 0, 1080, 1080], kicker: 'WEEKEND', title: 'Farmers Market', subtitle: 'produce · music · coffee', body: 'Fresh local produce, live music, good coffee.', footer: 'Sat 8AM · Town Green' },
+        { type: 'icon', id: 'produce_icon', icon: 'apple', pos: [760, 180, 150, 150] },
+      ],
+    }] as never }) as Record<string, unknown>;
+    expect(result.success).not.toBe(false);                 // not the dimensionless-group rejection
+    expect(Number(result.added)).toBeGreaterThan(0);
+    const info = inspectDesign({ design_path: designPath }) as Record<string, unknown>;
+    const layers = info.layers as { type: string }[];
+    expect(layers.length).toBeGreaterThan(0);
+    expect(layers.some(l => l.type === 'group')).toBe(true);  // editorial preset expanded
+    const seal = sealDesign({ design_path: designPath }) as Record<string, unknown>;
+    expect(seal.status).toBe('sealed');                       // non-blank → seals cleanly
+  });
+
+  it('defaults a missing color on a hand-placed verbose text layer to $text (invisible-on-dark fix)', () => {
+    const projectPath = path.join(tmpDir, 'textcolor-project');
+    createProject({ name: 'TextColor', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'TextColor', type: 'poster', theme_ref: 'bold-poster' });
+    const designPath = path.join(projectPath, 'designs/textcolor.design.yaml');
+    // A blind-30B detail block: sized verbose text with a style but NO color → the
+    // renderer falls back to #000 → invisible on a near-black poster.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#0A0A0A' } },
+      { id: 'details', type: 'text', z: 1, x: 80, y: 700, width: 600, height: 200, content: { type: 'plain', value: 'Friday 9:30 PM · No cover' }, style: { fontSize: 23 } },
+      { id: 'titled', type: 'text', z: 2, x: 80, y: 80, width: 900, height: 120, content: { type: 'plain', value: 'Has Color' }, style: { color: '#FF3D00' } },
+    ] as unknown as import('../schema/types').Layer[] });
+    const spec = parseYAMLDesign(designPath);
+    const layers = spec.layers as { id: string; style?: { color?: string } }[];
+    const detailsColor = layers.find(l => l.id === 'details')?.style?.color;
+    expect(detailsColor).toBeTruthy();                                       // no longer missing
+    expect(detailsColor).not.toBe('#000');                                  // not the invisible renderer default
+    expect(detailsColor).not.toBe('#000000');
+    expect(detailsColor).not.toBe('#0A0A0A');                               // not the (dark) page background
+    expect(layers.find(l => l.id === 'titled')?.style?.color).toBe('#FF3D00'); // explicit color untouched
+  });
+
   it('sizes & stacks a hand-placed UNSIZED text poster (nano-30B rescue) into a hierarchy', () => {
     const projectPath = path.join(tmpDir, 'handtext-project');
     createProject({ name: 'HandText', path: projectPath });
