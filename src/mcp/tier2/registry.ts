@@ -62,7 +62,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'append_page',
-    description: 'Add ONE page to a carousel — raw layers_shorthand, or template_ref+slots. Pass task_path to enable auto-handover. Repeat until next_action.remaining==0, then seal_design. Returns an open_url that opens to the new page.',
+    description: 'Add ONE page to a carousel — raw layers_shorthand, or template_ref+slots. Pass task_path to enable auto-handover. Repeat until next_action.remaining==0, then seal_design. COHESION — a carousel is ONE design, not N standalone posters: pick ONE palette (same bg + same accent) and ONE heading font UP FRONT and pass them IDENTICALLY on every page. Do NOT re-theme a slide to its content (a "steep overnight" slide going dark while the rest are cream is the #1 carousel failure — it reads like seven different designers). Vary the WORDS per slide, never the canvas. Returns an open_url that opens to the new page.',
     inputSchema: {
       type: 'object',
       properties: {
