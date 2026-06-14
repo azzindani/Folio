@@ -742,6 +742,22 @@ export function addLayers(args: {
     if (restructured) progress.push(pInfo(`Structured ${restructured} unsized text layer(s)`, 'hand-placed → title/subtitle/body hierarchy'));
   }
 
+  // Hand-placed VERBOSE text with no color renders #000 (the renderer default) —
+  // a dark-on-dark blank on dark themes (live blind-30B: a details block went
+  // invisible on a near-black poster). Default a missing text color to the theme
+  // $text token, which always contrasts the theme background. The shorthand path
+  // already does this via applyVisibleDefaults; this covers the verbose path.
+  let coloredText = 0;
+  for (const l of incoming) {
+    if (l.type !== 'text') continue;
+    const st = l.style as { color?: unknown } | undefined;
+    if (st?.color === undefined || st.color === '') {
+      l.style = { ...l.style, color: '$text' };
+      coloredText++;
+    }
+  }
+  if (coloredText) progress.push(pInfo(`Defaulted ${coloredText} text color(s)`, 'missing → $text (legible on theme bg)'));
+
   const invalid = incoming.find(l => !l?.type || !VALID_LAYER_TYPES.has(l.type));
   if (invalid) {
     return errResult(
