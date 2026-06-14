@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, demoteCoveringBackdrops, lockCarouselCanvas, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -2342,6 +2342,30 @@ describe('list preset sizes to content (no clip on dense, no dead band on sparse
 
   it('SHRINKS below 1350 for a sparse 3-item list (no dead band)', () => {
     expect(list(3).height).toBeLessThan(1350);
+  });
+});
+
+describe('fillFlowPresetsToPage — a carousel list slide fills the page (no dead strip)', () => {
+  it('marks a boxless list-family preset and skips one that already has a box', () => {
+    const layers = [{ type: 'list', title: 'X' }, { type: 'steps', pos: [0, 0, 500, 500] }] as unknown as ShorthandLayer[];
+    expect(fillFlowPresetsToPage(layers, 1080, 1080)).toBe(1);
+    const a = layers[0] as unknown as Record<string, unknown>;
+    expect(a['__fillPage']).toBe(true);
+    expect(a['pos']).toEqual([0, 0, 1080, 1080]);
+    expect((layers[1] as unknown as Record<string, unknown>)['__fillPage']).toBeUndefined();
+  });
+
+  it('a filled list FILLS the page height and centers content; a poster list still shrinks', () => {
+    const fill = (n: number) => {
+      const sh = [{ id: 'sl', type: 'list', title: 'Tips', marker: 'number',
+        items: Array.from({ length: n }, (_, i) => ({ title: `Tip ${i + 1}`, desc: 'short detail' })) }] as unknown as ShorthandLayer[];
+      fillFlowPresetsToPage(sh, 1080, 1080);
+      return expandShorthand(sh[0]) as unknown as { height: number; layers: Array<{ id: string; y: number }> };
+    };
+    const g = fill(3);
+    expect(g.height).toBe(1080);                           // fills the slide, no dead strip
+    const kick = g.layers.find(l => l.id === 'sl_title');
+    expect(kick!.y).toBeGreaterThan(120);                  // content pushed down (centered), not jammed at the top
   });
 });
 

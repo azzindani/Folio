@@ -1,6 +1,7 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { Page } from '../../schema/types';
 import { renderPage } from '../../renderer/renderer';
+import { composeTheme } from '../../styles/compose';
 
 export class PageStrip {
   private container: HTMLElement;
@@ -25,7 +26,11 @@ export class PageStrip {
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
-    if (changedKeys.some(k => ['design', 'currentPageIndex', 'theme'].includes(k as string))) {
+    // Watch the SAME appearance keys the main canvas does (theme + the picked
+    // overlay primitives) so thumbnails never drift from the viewport — a stale
+    // strip after picking a palette/font/effect is the "preview isn't the same"
+    // confusion.
+    if (changedKeys.some(k => ['design', 'currentPageIndex', 'theme', 'palette', 'typePack', 'effectsPack'].includes(k as string))) {
       this.render();
     }
   }
@@ -84,8 +89,14 @@ export class PageStrip {
     `;
 
     try {
-      const { theme } = this.state.get();
-      const svg = renderPage(page.layers ?? [], docW, docH, { theme: theme ?? undefined });
+      const { theme, palette, typePack, effectsPack } = this.state.get();
+      // Compose the theme with the picked overlays exactly like the main canvas
+      // (composeTheme returns the base theme by reference when nothing is picked),
+      // so a thumbnail always matches the viewport for the same page.
+      const composed = theme
+        ? composeTheme(theme, { palette: palette ?? undefined, typePack: typePack ?? undefined, effectsPack: effectsPack ?? undefined })
+        : undefined;
+      const svg = renderPage(page.layers ?? [], docW, docH, { theme: composed });
       svg.setAttribute('width', String(THUMB_W));
       svg.setAttribute('height', String(THUMB_H));
       svg.style.display = 'block';
