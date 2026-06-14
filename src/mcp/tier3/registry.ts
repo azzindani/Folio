@@ -68,7 +68,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        layer_ids:    { type: 'object', description: 'Layer IDs to align', items: { type: 'string' } },
+        layer_ids:    { type: 'array', description: 'Layer IDs to align', items: { type: 'string' } },
         operation:    { type: 'string', enum: ['left', 'right', 'top', 'bottom', 'center_h', 'center_v', 'distribute_h', 'distribute_v', 'snap_grid'] },
         grid:         { type: 'number', description: 'Grid size px for snap_grid (default 8)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
@@ -85,7 +85,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       properties: {
         project_path: { type: 'string', description: 'Path to project directory' },
         template_id:  { type: 'string', description: 'Template ID to use' },
-        slots_array:  { type: 'object', description: 'One slot object per design', items: { type: 'object' } },
+        slots_array:  { type: 'array', description: 'One slot object per design', items: { type: 'object' } },
       },
       required: ['project_path', 'template_id', 'slots_array'],
     },
@@ -97,7 +97,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: {
         design_path:    { type: 'string', description: 'Path to source .design.yaml' },
-        layer_ids:      { type: 'object', description: 'Layer IDs to extract', items: { type: 'string' } },
+        layer_ids:      { type: 'array', description: 'Layer IDs to extract', items: { type: 'string' } },
         component_name: { type: 'string', description: 'Name for the new component' },
         project_path:   { type: 'string', description: 'Path to project directory' },
       },
@@ -150,10 +150,10 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         name:          { type: 'string', description: 'Report name' },
         layout:        { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar', 'flow'], default: 'paged', description: 'flow = responsive 12-col grid (span-based, no fixed canvas) — best for interactive HTML reports' },
         nav_type:      { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar' },
-        pages:         { type: 'object', description: 'Array of {id?, label} page specs', items: { type: 'object' } },
+        pages:         { type: 'array', description: 'Array of {id?, label} page specs', items: { type: 'object' } },
         width:         { type: 'number', default: 1080 },
         height:        { type: 'number', default: 1080 },
-        data_sources:  { type: 'object', description: 'Optional inline/json/csv data sources', items: { type: 'object' } },
+        data_sources:  { type: 'array', description: 'Optional inline/json/csv data sources', items: { type: 'object' } },
         max_width:     { type: 'number', description: 'Flow reports: centered container max width in px (default 1200)' },
         accent:        { type: 'string', description: 'Flow reports: accent color (CSS) — seeds chart palette + links + active states' },
         font_heading:  { type: 'string', description: 'Flow reports: heading font family (Google font name, e.g. "Playfair Display")' },
@@ -169,7 +169,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        datasets:     { type: 'object', description: 'Array of {id, rows[]}', items: { type: 'object' } },
+        datasets:     { type: 'array', description: 'Array of {id, rows[]}', items: { type: 'object' } },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
       },
       required: ['design_path', 'datasets'],
@@ -210,7 +210,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
       properties: {
         project_path:  { type: 'string', description: 'Path to project directory' },
         name:          { type: 'string', description: 'Presentation name' },
-        pages:         { type: 'object', description: 'Array of {id?, label, notes?} slide specs', items: { type: 'object' } },
+        pages:         { type: 'array', description: 'Array of {id?, label, notes?} slide specs', items: { type: 'object' } },
         transition:    { type: 'string', enum: ['none','fade','slide-left','slide-right','slide-up','slide-down','zoom-in','zoom-out','flip-h','flip-v','cube-left','cube-right','reveal','wipe-left','wipe-right','dissolve','morph'], default: 'fade' },
         auto_advance:  { type: 'number', description: 'Auto-advance delay ms (0 = manual)' },
         width:         { type: 'number', default: 1920 },
