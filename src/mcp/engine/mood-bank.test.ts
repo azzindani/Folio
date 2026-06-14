@@ -66,13 +66,22 @@ describe('proceduralBgStyle — 100+ distinct backgrounds from the bg_style gram
   it('is deterministic per seed and always carries a base + grain texture floor', () => {
     expect(proceduralBgStyle('mars exploration', true)).toBe(proceduralBgStyle('mars exploration', true));
     const r = proceduralBgStyle('mars exploration', true);
-    expect(r).toContain('grain');
-    expect(r.split(' + ').length).toBeGreaterThanOrEqual(3); // base + sweep + pattern + grain
+    const parts = r.split(' + ');
+    expect(parts.length).toBeGreaterThanOrEqual(2);          // base + grain minimum (a FLAT canvas is a valid outcome)
+    expect(parts[parts.length - 1]).toBe('grain');           // grain is always the floor layer
+  });
+  it('flat canvases occur but sweeps still appear across many topics', () => {
+    const seeds = Array.from({ length: 80 }, (_, i) => `subject ${i} edition ${(i * 5) % 9}`);
+    const recipes = seeds.map((s, i) => proceduralBgStyle(s, i % 2 === 0));
+    const flat = recipes.filter(r => r.split(' + ').length === 2).length;   // base + grain only
+    expect(flat).toBeGreaterThan(0);              // some canvases are clean/flat now
+    expect(flat).toBeLessThan(seeds.length);      // but not all — sweeps still happen
   });
   it('two different topics in the same colour mood get different geometry', () => {
-    // both space topics → same navy mood, but procedural geometry differs
+    // both space topics → same navy mood, but procedural geometry differs across a set
     const dark = true;
-    expect(proceduralBgStyle('the race to explore mars', dark)).not.toBe(proceduralBgStyle('the physics of black holes', dark));
+    const seeds = ['the race to explore mars', 'the physics of black holes', 'voyager and the outer planets', 'mapping the cosmic web', 'a short history of rocketry'];
+    expect(new Set(seeds.map(s => proceduralBgStyle(s, dark))).size).toBeGreaterThan(1);
   });
   it('isDarkHex distinguishes dark from light canvases', () => {
     expect(isDarkHex('#0A0A0A')).toBe(true);
@@ -86,6 +95,8 @@ describe('pickSecLayout — structural variety decorrelated from colour', () => 
     const v = pickSecLayout('jazz history');
     expect(['left', 'center']).toContain(v.align);
     expect([2, 4]).toContain(v.statCols);
+    expect(['plain', 'band']).toContain(v.header);
+    expect(['accent', 'ink']).toContain(v.bandTone);
   });
   it('both alignments AND both stat layouts appear across many topics', () => {
     const seeds = Array.from({ length: 40 }, (_, i) => `topic number ${i} about ${(i * 5) % 7}`);
@@ -93,5 +104,13 @@ describe('pickSecLayout — structural variety decorrelated from colour', () => 
     const cols = new Set(seeds.map(s => pickSecLayout(s).statCols));
     expect(aligns.size).toBe(2);   // not every poster is left-anchored
     expect(cols.size).toBe(2);     // not every stat block is the same row
+  });
+  it('a masthead band appears for some seeds but not most (it is the minority cue)', () => {
+    const seeds = Array.from({ length: 60 }, (_, i) => `subject ${i} variation ${(i * 3) % 11}`);
+    const headers = seeds.map(s => pickSecLayout(s).header);
+    const bands = headers.filter(h => h === 'band').length;
+    expect(bands).toBeGreaterThan(0);              // the band archetype does fire
+    expect(bands).toBeLessThan(seeds.length / 2);  // but the plain masthead stays the default
+    expect(new Set(seeds.map(s => pickSecLayout(s).bandTone)).size).toBe(2); // both tones occur
   });
 });

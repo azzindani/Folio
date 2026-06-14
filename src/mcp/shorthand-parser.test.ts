@@ -1627,12 +1627,13 @@ describe('composeBackground — engine-composed rich backgrounds (bg_style)', ()
     expect((band.fill as { type?: string }).type).toBe('solid');
   });
 
-  it('no bg_style → a tasteful designed default bg (grain + sweep), NOT a flat fill', () => {
+  it('no bg_style → a designed default bg with a grain texture floor, NOT a bare flat fill', () => {
     const g = expandShorthand({ id: 'f', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'T',
       blocks: [{ kind: 'text', text: 'b' }] } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
-    // The old flat fallback read as a template — the engine now defaults to depth.
+    // A FLAT solid canvas is now a valid, intentional outcome (the over-processed
+    // washes were the complaint) — but it always carries a grain texture floor +
+    // a real base fill, never the old bare single-rect fallback.
     expect(g.layers.some(l => /_grain$/.test(String(l.id)))).toBe(true);
-    expect(g.layers.some(l => /_(glow|curve)/.test(String(l.id)))).toBe(true);
     expect(g.layers.some(l => l.id === 'f_bg')).toBe(true);
   });
 });
@@ -1689,12 +1690,15 @@ describe('composeBackground — placement, palette gradient, vignette, photo', (
     expect(Number(c.y)).toBeGreaterThan(200);
   });
 
-  it('palette + gradient → a multi-stop (≥3) linear gradient', () => {
+  it('palette + gradient → a clean 2-stop bg→tint wash (not a muddy multi-hue ramp)', () => {
     const g = sx({ bg: '#FAF5EC', accent: '#B8543C', palette: ['#E0A96D', '#9CAF88', '#6E8BB5'], bg_style: 'gradient' });
     const bg = g.layers.find(l => l.id === 'b_bg')!;
-    const f = bg.fill as { type?: string; stops?: unknown[] };
+    const f = bg.fill as { type?: string; stops?: Array<{ color?: string; position?: number }> };
     expect(f.type).toBe('linear');
-    expect(f.stops!.length).toBeGreaterThanOrEqual(3);
+    expect(f.stops!.length).toBe(2);                    // bg → single tint, no multi-hue seam
+    expect(f.stops![0].color).toBe('#FAF5EC');          // canvas colour at the start
+    expect(f.stops![0].position).toBe(0);
+    expect(f.stops![1].position).toBe(100);
   });
 
   it('vignette → four corner dark radial blobs', () => {
@@ -1942,7 +1946,13 @@ describe('heading legibility on a dark canvas (vision-loop: invisible-title fix)
   it('editorial / sections / list / stat / event headings all go light on a dark bg', () => {
     const dark = { bg: '#0A0A0A', accent: '#FF6A3D' };
     expect(color(exp({ id: 'ed', type: 'editorial', z: 0, pos: [0, 0, 1080, 1350], ...dark, title: 'X', body: 'b' }), 'ed_title')).toBe('#FAFAFA');
-    expect(color(exp({ id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], ...dark, title: 'X', blocks: [{ kind: 'text', text: 't' }] }), 'sx_title')).toBe('#FAFAFA');
+    // sections may draw a masthead BAND for some seeds — then the title reads
+    // dark-on-light-slab instead of light-on-canvas. Assert legibility against the
+    // actual backdrop (band fill if present, else the dark canvas), tone-agnostic.
+    const sx = exp({ id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], ...dark, title: 'X', blocks: [{ kind: 'text', text: 't' }] });
+    const sxBand = sx.layers.find(l => String(l.id).endsWith('_mband')) as { fill?: { color?: string } } | undefined;
+    const lum = (hex: string): number => { const h = hex.replace('#', ''); return (0.2126 * parseInt(h.slice(0, 2), 16) + 0.7152 * parseInt(h.slice(2, 4), 16) + 0.0722 * parseInt(h.slice(4, 6), 16)) / 255; };
+    expect(Math.abs(lum(color(sx, 'sx_title')) - lum(sxBand?.fill?.color ?? '#0A0A0A'))).toBeGreaterThan(0.4);
     expect(color(exp({ id: 'ls', type: 'list', z: 0, pos: [0, 0, 1080, 1350], ...dark, title: 'X', items: [{ title: 'a', desc: 'd' }] }), 'ls_title')).toBe('#FAFAFA');
     expect(color(exp({ id: 'st', type: 'stat', z: 0, pos: [0, 0, 1080, 1350], ...dark, stat: '90%', caption: 'a real sentence of context here' }), 'st_cap')).toBe('#FAFAFA');
     expect(color(exp({ id: 'ev', type: 'event', z: 0, pos: [0, 0, 1080, 1350], ...dark, title: 'GALA', details: ['JUN 6'] }), 'ev_title')).toBe('#FAFAFA');
