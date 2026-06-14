@@ -16,6 +16,11 @@ tools/*
 tools/audit/*
 !tools/audit/*.mjs
 !tools/audit/*.md
+# EXCEPTION: the blind-model harness driver + docs under tools/blind-harness/
+!tools/blind-harness/
+tools/blind-harness/*
+!tools/blind-harness/*.sh
+!tools/blind-harness/*.md
 
 # Generated indices — single source of truth is the YAML files under
 # public/styles/ and public/templates/. The four index JSONs are
