@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -712,6 +712,16 @@ export function addLayers(args: {
   }
 
   const spec = readYAML<DesignSpec>(dPath);
+  // Hoist any bare page/document wrapper the model invented (a typeless container
+  // carrying page-level bg/accent/fonts + a nested layers:[…]). Left alone it
+  // becomes a dimensionless group → "needs a positive width" → blank poster.
+  if (shorthand.length) {
+    const uw = unwrapBareContainers(shorthand, spec.document.width, spec.document.height);
+    if (uw.unwrapped) {
+      shorthand = uw.layers;
+      progress.push(pInfo(`Unwrapped ${uw.unwrapped} container wrapper(s)`, 'hoisted nested layers to the page'));
+    }
+  }
   // Clamp any top-level layer the model sized larger than the canvas BEFORE
   // expansion. A full-bleed preset given height 1350 on a 1080 doc expands to a
   // group + bg taller than the page → off_canvas error the model then can't fix
@@ -731,6 +741,22 @@ export function addLayers(args: {
     const restructured = structureHandPlacedText(incoming, spec.document.width, spec.document.height);
     if (restructured) progress.push(pInfo(`Structured ${restructured} unsized text layer(s)`, 'hand-placed → title/subtitle/body hierarchy'));
   }
+
+  // Hand-placed VERBOSE text with no color renders #000 (the renderer default) —
+  // a dark-on-dark blank on dark themes (live blind-30B: a details block went
+  // invisible on a near-black poster). Default a missing text color to the theme
+  // $text token, which always contrasts the theme background. The shorthand path
+  // already does this via applyVisibleDefaults; this covers the verbose path.
+  let coloredText = 0;
+  for (const l of incoming) {
+    if (l.type !== 'text') continue;
+    const st = l.style as { color?: unknown } | undefined;
+    if (st?.color === undefined || st.color === '') {
+      l.style = { ...l.style, color: '$text' };
+      coloredText++;
+    }
+  }
+  if (coloredText) progress.push(pInfo(`Defaulted ${coloredText} text color(s)`, 'missing → $text (legible on theme bg)'));
 
   const invalid = incoming.find(l => !l?.type || !VALID_LAYER_TYPES.has(l.type));
   if (invalid) {
@@ -825,7 +851,17 @@ export function appendPage(args: {
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
 
-  const pageShorthand = coerceShorthandLayers(args.layers_shorthand as unknown);
+  const spec = readYAML<DesignSpec>(dPath);
+  let pageShorthand = coerceShorthandLayers(args.layers_shorthand as unknown);
+  // Hoist a bare page/document wrapper before expansion (same blank-slide guard
+  // as add_layers) so a nested layers:[…] container isn't dropped to a group.
+  if (pageShorthand.length) {
+    const uw = unwrapBareContainers(pageShorthand, spec.document.width, spec.document.height);
+    if (uw.unwrapped) {
+      pageShorthand = uw.layers;
+      progress.push(pInfo(`Unwrapped ${uw.unwrapped} container wrapper(s)`, 'hoisted nested layers to the page'));
+    }
+  }
   const layers: Layer[] = pageShorthand.length
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
@@ -848,7 +884,6 @@ export function appendPage(args: {
 
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
-  const spec = readYAML<DesignSpec>(dPath);
   if (!spec.pages) spec.pages = [];
 
   const pageId = args.page_id ?? `page_${spec.pages.length + 1}`;

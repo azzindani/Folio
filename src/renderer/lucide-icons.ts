@@ -297,6 +297,67 @@ const ICON_ALIASES: Record<string, string> = {
 
 const ICON_NAME_SET = new Set(Object.keys(LUCIDE_ICONS));
 
+// Blind models love EMOJI as icon names (🥕 🧀 ☕ 📍). resvg has no emoji font, so
+// they render as "NO GLYPH" tofu — every value below is a bundled Lucide id, so an
+// emoji becomes a real vector glyph in BOTH the editor and PNG export. Keys are the
+// BASE codepoint (variation selectors / skin tones are stripped before lookup).
+const EMOJI_ICONS: Record<string, string> = {
+  // produce / plants / food → leaf (a clean "fresh/market" glyph)
+  '🥕': 'leaf', '🌽': 'leaf', '🍅': 'leaf', '🥦': 'leaf', '🥬': 'leaf', '🌱': 'leaf', '🌿': 'leaf', '🍃': 'leaf',
+  '🍎': 'leaf', '🍏': 'leaf', '🍇': 'leaf', '🍓': 'leaf', '🍒': 'leaf', '🥗': 'leaf', '🌾': 'leaf', '🥒': 'leaf', '🫑': 'leaf',
+  '🌻': 'sun', '🌼': 'sun', '🌸': 'sun', '🌷': 'sun', '💐': 'sun', '🌹': 'sun',
+  '☕': 'coffee', '🍵': 'coffee', '🫖': 'coffee',
+  '🍯': 'droplet', '💧': 'droplet', '🫗': 'droplet', '🥛': 'droplet',
+  '🧀': 'gift', '🧁': 'gift', '🍰': 'gift', '🍪': 'gift', '🍩': 'gift', '🍫': 'gift', '🍞': 'gift', '🥐': 'gift', '🥖': 'gift', '🎁': 'gift', '🥚': 'gift',
+  '🎵': 'volume-2', '🎶': 'volume-2', '🎤': 'volume-2', '🎸': 'volume-2',
+  '👋': 'users', '🙌': 'users', '🤝': 'users', '👥': 'users', '🧑‍🤝‍🧑': 'users',
+  '👤': 'user', '🧑': 'user', '🙂': 'user',
+  '📍': 'map-pin', '📌': 'map-pin', '🗺': 'map', '🧭': 'map',
+  '🧺': 'shopping-bag', '🛍': 'shopping-bag', '👜': 'shopping-bag',
+  '🛒': 'shopping-cart',
+  '🏷': 'tag', '💰': 'tag', '💵': 'tag', '💲': 'tag', '🪙': 'tag',
+  '⭐': 'star', '🌟': 'star', '✨': 'star', '💫': 'star', '🔆': 'star',
+  '❤': 'heart', '🧡': 'heart', '💛': 'heart', '💚': 'heart', '💙': 'heart', '💜': 'heart', '♥': 'heart', '💖': 'heart', '💗': 'heart',
+  '📅': 'calendar', '🗓': 'calendar', '📆': 'calendar',
+  '🕐': 'clock', '⏰': 'clock', '⏱': 'clock', '⌚': 'clock', '🕒': 'clock', '🕙': 'clock',
+  '☀': 'sun', '🌞': 'sun',
+  '🌙': 'moon', '🌛': 'moon', '🌜': 'moon', '🌝': 'moon', '🌚': 'moon',
+  '☁': 'cloud', '⛅': 'cloud',
+  '🌧': 'cloud-rain', '🌦': 'cloud-rain', '🌈': 'cloud-rain',
+  '❄': 'snowflake', '⛄': 'snowflake', '☃': 'snowflake',
+  '🔥': 'flame', '⚡': 'zap',
+  '🏆': 'award', '🥇': 'award', '🎖': 'award', '🏅': 'award',
+  '💬': 'message-circle', '🗨': 'message-circle', '💭': 'message-circle',
+  '✅': 'check-circle', '✔': 'check-circle', '☑': 'check-circle',
+  '❌': 'x-circle', '✖': 'x-circle', '🚫': 'x-circle',
+  '⚠': 'alert-circle', '❗': 'alert-circle', '‼': 'alert-circle',
+  '🎉': 'gift', '🎊': 'gift', '🥳': 'gift',
+  '📞': 'phone', '☎': 'phone', '📧': 'mail', '✉': 'mail',
+  '🏠': 'home', '🏡': 'home', '🏘': 'home', '🏚': 'home', '🏫': 'home',
+  // potted plants / trees / cactus / clover / chili → leaf
+  '🪴': 'leaf', '🌳': 'leaf', '🌲': 'leaf', '🌴': 'leaf', '🪵': 'leaf', '🍀': 'leaf', '☘': 'leaf', '🌵': 'leaf', '🎋': 'leaf', '🌶': 'leaf',
+  // more fruit / nuts → leaf
+  '🍐': 'leaf', '🍊': 'leaf', '🍋': 'leaf', '🍌': 'leaf', '🥝': 'leaf', '🍑': 'leaf', '🥭': 'leaf', '🍍': 'leaf', '🫐': 'leaf', '🥥': 'leaf', '🌰': 'leaf', '🥜': 'leaf',
+  // kids / adults → user
+  '🧒': 'user', '👶': 'user', '👦': 'user', '👧': 'user', '🧓': 'user', '👴': 'user', '👵': 'user', '👨': 'user', '👩': 'user',
+  // more flowers → sun (matches the flower convention above)
+  '🪻': 'sun', '🌺': 'sun', '🏵': 'sun', '🪷': 'sun',
+  // bundled places / logistics / objects
+  '🌍': 'globe', '🌎': 'globe', '🌏': 'globe', '🌐': 'globe',
+  '📦': 'package', '🚚': 'truck', '🚛': 'truck', '🔑': 'key', '🗝': 'key',
+  '🎀': 'gift', '🍬': 'gift', '🍭': 'gift',
+};
+
+/** Strip variation selectors, ZWJ and skin-tone modifiers so "❤️"/"👋🏽" match the base key. */
+const EMOJI_STRIP = /[️‍\u{1F3FB}-\u{1F3FF}]/gu;
+function matchEmojiIcon(raw: string): string | null {
+  const cleaned = raw.replace(EMOJI_STRIP, '').trim();
+  if (EMOJI_ICONS[cleaned]) return EMOJI_ICONS[cleaned];
+  // A mixed "🥕 carrots" string → use the first emoji codepoint we recognize.
+  for (const ch of cleaned) if (EMOJI_ICONS[ch]) return EMOJI_ICONS[ch];
+  return null;
+}
+
 function normalizeIconKey(s: string): string {
   return s.trim().toLowerCase().replace(/[\s_.]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 }
@@ -311,6 +372,8 @@ function normalizeIconKey(s: string): string {
 export function resolveIconName(raw: string): string | null {
   if (!raw || typeof raw !== 'string') return null;
   if (ICON_NAME_SET.has(raw)) return raw;
+  const emoji = matchEmojiIcon(raw);   // 🥕 / ☕ / 📍 → a bundled glyph (resvg has no emoji font)
+  if (emoji) return emoji;
   const key = normalizeIconKey(raw);
   if (ICON_NAME_SET.has(key)) return key;
   const noPrefix = key.replace(/^icon-/, '');
