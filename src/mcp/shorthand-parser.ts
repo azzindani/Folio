@@ -509,7 +509,10 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   }));
   const availBelow = (Y + H - M) - headerBottom;
   const cardH = Math.min(cardContentH, Math.max(Math.round(H * 0.16), availBelow));
-  const rowTop = Math.round(headerBottom + Math.max(0, (availBelow - cardH) / 2));
+  // Cards sit just below the header; the WHOLE composition (header + row) is then
+  // centered vertically as a unit (the shift below), so they never float mid-
+  // canvas with a gap above AND below.
+  const rowTop = headerBottom + Math.round(H * 0.02);
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
     if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: iconSz, height: iconSz, name: it.icon, size: iconSz, color: cardIcon } as unknown as Layer);
@@ -523,6 +526,20 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   });
   layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: rowTop, width: W - 2 * M, height: cardH,
     direction: 'row', gap, justify_content: 'space-between', align_items: 'stretch', layers: cards } as unknown as Layer);
+  // Center the whole composition (header text + card row) vertically as ONE block —
+  // the header was laid from a fixed top, so without this the cards float in the
+  // lower-middle with a gap above and below. Shift the header + row together.
+  const compTop = Y + Math.round(H * 0.09), compBot = rowTop + cardH;
+  const shift = Math.round((H - (compBot - compTop)) / 2) - Math.round(H * 0.09);
+  if (shift > 0) {
+    for (const l of layers) {
+      const o = l as unknown as Record<string, unknown>;
+      const lid = String(o['id'] ?? '');
+      if ((lid === `${id}_title` || lid === `${id}_subtitle` || lid === `${id}_row`) && typeof o['y'] === 'number') {
+        o['y'] = (o['y'] as number) + shift;
+      }
+    }
+  }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
