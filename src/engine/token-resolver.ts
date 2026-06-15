@@ -101,6 +101,15 @@ function resolveGradientStops(stops: GradientStop[], ctx: TokenResolutionContext
 }
 
 export function resolveFill(fill: Fill, ctx: TokenResolutionContext): Fill {
+  // A bare color string (e.g. `fill: '#0A0A0A'` or `fill: '$accent'`) is a common
+  // shorthand a model emits on a complete-mode layer. Coerce it to a solid fill
+  // (resolving any token) instead of falling through the switch and returning
+  // undefined — which STRIPS the fill, rendering the layer transparent (the
+  // blind-model lightning poster's #0A0A0A background silently vanished to white).
+  if (typeof fill === 'string') {
+    return { type: 'solid', color: resolveStringValue(fill, ctx) };
+  }
+
   switch (fill.type) {
     case 'solid':
       return { ...fill, color: resolveStringValue(fill.color, ctx) };

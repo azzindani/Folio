@@ -264,6 +264,57 @@ describe('sealDesign', () => {
     expect(texts[texts.length - 1].y).toBeGreaterThan(400);
   });
 
+  it('flattens a hand-authored relative-framed group so children render at absolute coords (blind-model group offset)', () => {
+    const projectPath = path.join(tmpDir, 'flatten-project');
+    createProject({ name: 'Flatten', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Flatten', type: 'poster', width: 1080, height: 1920 });
+    const designPath = path.join(projectPath, 'designs/flatten.design.yaml');
+    // The exact blind-model shape (lightning poster): a group placed at y:250 with
+    // children positioned in the group's LOCAL frame (y near 0). The engine renders
+    // group children at ABSOLUTE coords, so pre-fix these collapsed to the top and
+    // overprinted the y:100 headline. Flatten must bake the 250 offset into the kids.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'headline', type: 'text', z: 0, x: 0, y: 100, width: 1080, height: 120, content: { type: 'plain', value: 'TITLE' }, style: { font_size: 60, color: '#fff' } },
+      { id: 'col', type: 'group', z: 1, x: 0, y: 250, width: 1080, height: 600, layers: [
+        { id: 'h1', type: 'text', z: 0, x: 0, y: 0, width: 360, height: 80, content: { type: 'plain', value: 'A' }, style: { font_size: 40, color: '#fff' } },
+        { id: 'b1', type: 'text', z: 1, x: 0, y: 100, width: 360, height: 100, content: { type: 'plain', value: 'body' }, style: { font_size: 30, color: '#fff' } },
+        { id: 'rule', type: 'line', z: 2, x1: 180, y1: 200, x2: 180, y2: 250, stroke: { color: '#fff', width: 2 } },
+      ] },
+    ] as unknown as Layer[] });
+    const spec = parseYAMLDesign(designPath);
+    const grp = (spec.layers ?? []).find(l => l.type === 'group') as unknown as
+      { y: number; layers: { id: string; y?: number; y1?: number; y2?: number }[] };
+    expect(grp.y).toBe(250);                                 // box re-fit to children's true top (min baked y)
+    const child = (id: string): { y?: number; y1?: number; y2?: number } | undefined =>
+      grp.layers.find(c => c.id === id);
+    expect(child('h1')?.y).toBe(250);                        // 0 + 250
+    expect(child('b1')?.y).toBe(350);                        // 100 + 250
+    expect(child('rule')?.y1).toBe(450);                     // line coords baked too (200 + 250)
+    expect(child('rule')?.y2).toBe(500);                     // 250 + 250
+  });
+
+  it('leaves a genuine absolute-children group untouched (no false-positive flatten)', () => {
+    const projectPath = path.join(tmpDir, 'noflatten-project');
+    createProject({ name: 'NoFlatten', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'NoFlatten', type: 'poster', width: 1080, height: 1920 });
+    const designPath = path.join(projectPath, 'designs/noflatten.design.yaml');
+    // A canonical section-style group: origin at (40,300), children at ABSOLUTE
+    // coords (>= origin). Flatten must NOT fire — children already correct.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'sec', type: 'group', z: 0, x: 40, y: 300, width: 1000, height: 400, layers: [
+        { id: 'k1', type: 'text', z: 0, x: 120, y: 360, width: 800, height: 80, content: { type: 'plain', value: 'X' }, style: { font_size: 40, color: '#fff' } },
+      ] },
+    ] as unknown as Layer[] });
+    const spec = parseYAMLDesign(designPath);
+    const grp = (spec.layers ?? []).find(l => l.type === 'group') as unknown as
+      { x: number; y: number; layers: { id: string; x: number; y: number }[] };
+    expect(grp.y).toBe(300);                                 // untouched
+    expect(grp.x).toBe(40);
+    const k1 = grp.layers.find(c => c.id === 'k1');
+    expect(k1?.y).toBe(360);                                 // child unchanged (already absolute)
+    expect(k1?.x).toBe(120);
+  });
+
   it('unwraps a model-invented page wrapper instead of rejecting a dimensionless group (blind-30B blank-poster)', () => {
     const projectPath = path.join(tmpDir, 'wrapper-project');
     createProject({ name: 'Wrap', path: projectPath });
