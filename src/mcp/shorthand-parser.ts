@@ -446,7 +446,14 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const N = Math.max(1, items.length);
   const M = Math.round(W * 0.07);
   const gap = Math.round(M * 0.4);
-  const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
+  // Column count: a single row of N cards reads as a thin strip on a square /
+  // portrait canvas, wasting most of the height. Wrap to a balanced grid unless
+  // the canvas is wide. 1-3 stay one row; 4 → 2×2; 5-6 → 3 across. A wide canvas
+  // (e.g. a banner) keeps the single row.
+  const wide = W > H * 1.25;
+  const cols = wide || N <= 3 ? N : (N === 4 ? 2 : 3);
+  const rowsN = Math.ceil(N / cols);
+  const cardW = Math.round((W - 2 * M - (cols - 1) * gap) / cols);
   const layers: Layer[] = [];
   // Always engine-compose the background. Use the canvas base color (or a dark
   // default — feature_grid reads best on a deep canvas) as the wash base, and
@@ -500,7 +507,10 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   // gaps), then center the row in the space below the header — not a fixed 58% of
   // the canvas, which floated the content and left a dead band.
   const cardKidGap = 16;
-  const cardContentH = Math.max(Math.round(H * 0.16), ...items.map(it => {
+  // A multi-row grid wants taller (more square) tiles so the dashboard fills the
+  // canvas instead of stacking thin strips.
+  const minCardH = Math.round(H * (rowsN > 1 ? 0.2 : 0.16));
+  const cardContentH = Math.max(minCardH, ...items.map(it => {
     let h = 2 * pad;
     if (it.icon) h += iconSz + cardKidGap;
     if (it.title) h += estTextHeight(it.title, tSize, innerW, 1.15);
@@ -508,9 +518,11 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
     return h;
   }));
   const availBelow = (Y + H - M) - headerBottom;
-  const cardH = Math.min(cardContentH, Math.max(Math.round(H * 0.16), availBelow));
-  // Cards sit just below the header; the WHOLE composition (header + row) is then
-  // centered vertically as a unit (the shift below), so they never float mid-
+  // Fit ALL rows (not just one) in the space below the header.
+  const cardH = Math.min(cardContentH, Math.max(minCardH, Math.floor((availBelow - (rowsN - 1) * gap) / rowsN)));
+  const gridH = rowsN * cardH + (rowsN - 1) * gap;
+  // The grid sits just below the header; the WHOLE composition (header + grid) is
+  // then centered vertically as a unit (the shift below), so it never floats mid-
   // canvas with a gap above AND below.
   const rowTop = headerBottom + Math.round(H * 0.02);
   const cards: Layer[] = items.map((it, i) => {
@@ -524,12 +536,21 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
       gap: cardKidGap, padding: pad, align_items: 'center', justify_content: 'center', radius: 18,
       fill: expandFill(cardFillResolved), layers: kids } as unknown as Layer;
   });
-  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: rowTop, width: W - 2 * M, height: cardH,
-    direction: 'row', gap, justify_content: 'space-between', align_items: 'stretch', layers: cards } as unknown as Layer);
-  // Center the whole composition (header text + card row) vertically as ONE block —
-  // the header was laid from a fixed top, so without this the cards float in the
-  // lower-middle with a gap above and below. Shift the header + row together.
-  const compTop = Y + Math.round(H * 0.09), compBot = rowTop + cardH;
+  // Chunk cards into rows of `cols` and stack them in a column container. For a
+  // 4-up (2×2) grid this fills a square canvas instead of stringing the cards out
+  // as one thin strip. A partial last row centers so it doesn't spread lopsided.
+  const rowGroups: Layer[] = [];
+  for (let rI = 0; rI < rowsN; rI++) {
+    const slice = cards.slice(rI * cols, rI * cols + cols);
+    rowGroups.push({ id: `${id}_r${rI}`, type: 'auto_layout', z: rI, x: 0, y: 0, width: W - 2 * M, height: cardH,
+      direction: 'row', gap, justify_content: slice.length < cols ? 'center' : 'space-between', align_items: 'stretch', layers: slice } as unknown as Layer);
+  }
+  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: rowTop, width: W - 2 * M, height: gridH,
+    direction: 'column', gap, align_items: 'stretch', layers: rowGroups } as unknown as Layer);
+  // Center the whole composition (header text + card grid) vertically as ONE block —
+  // the header was laid from a fixed top, so without this the grid floats in the
+  // lower-middle with a gap above and below. Shift the header + grid together.
+  const compTop = Y + Math.round(H * 0.09), compBot = rowTop + gridH;
   const shift = Math.round((H - (compBot - compTop)) / 2) - Math.round(H * 0.09);
   if (shift > 0) {
     for (const l of layers) {

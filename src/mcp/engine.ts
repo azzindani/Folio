@@ -657,6 +657,37 @@ function collectContentBoxes(layers: Layer[], out: Array<{ x: number; y: number;
   }
 }
 
+// A model that hand-places a title/label can compute a position just past the
+// canvas edge (e.g. a 1080-tall poster with its title at y:1095) — the layer
+// then renders ENTIRELY off-canvas and its content is silently LOST (no error,
+// no strikethrough, just gone). If a top-level content layer has zero overlap
+// with the canvas, snap it back just inside the nearest edge so the text shows
+// rather than vanishing. Only fires on layers with NO intersection at all — a
+// bleeding/partly-visible decoration (motif, backdrop) is never touched.
+function snapOffCanvasContent(layers: Layer[], docW: number, docH: number): number {
+  let snapped = 0;
+  const mX = Math.round(docW * 0.03), mY = Math.round(docH * 0.03);
+  const SNAPPABLE = new Set(['text', 'rich_text', 'image', 'group', 'chart', 'kpi_card', 'mermaid', 'icon']);
+  for (const l of layers) {
+    if (isMotifLayer(l) || !SNAPPABLE.has(l.type)) continue;
+    const o = l as unknown as Record<string, unknown>;
+    const bb = layerBBox(l);
+    const w = bb.r - bb.x, h = bb.b - bb.y;
+    if (w <= 0 || h <= 0 || w >= docW * 1.5 || h >= docH * 1.5) continue; // skip empty / bleed-sized
+    const outX = bb.r <= 0 || bb.x >= docW;
+    const outY = bb.b <= 0 || bb.y >= docH;
+    if (!outX && !outY) continue; // overlaps the canvas → already visible
+    let nx = bb.x, ny = bb.y;
+    if (bb.r <= 0) nx = mX; else if (bb.x >= docW) nx = docW - w - mX;
+    if (bb.b <= 0) ny = mY; else if (bb.y >= docH) ny = docH - h - mY;
+    const p = o['pos'];
+    if (Array.isArray(p) && p.length >= 2) { p[0] = Math.round(nx); p[1] = Math.round(ny); }
+    else { o['x'] = Math.round(nx); o['y'] = Math.round(ny); }
+    snapped++;
+  }
+  return snapped;
+}
+
 function dropCollidingMotifs(layers: Layer[]): number {
   const content: Array<{ x: number; y: number; r: number; b: number }> = [];
   collectContentBoxes(layers, content);
@@ -1174,6 +1205,12 @@ export function addLayers(args: {
       }
     }
   }
+
+  // Pull any top-level content layer the model placed fully off-canvas back
+  // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
+  // renders nowhere and the content is silently lost.
+  const snappedOff = snapOffCanvasContent(activeLayers, spec.document.width, spec.document.height);
+  if (snappedOff) progress.push(pInfo(`Snapped ${snappedOff} off-canvas layer(s) inside`, 'content placed past the canvas edge would have rendered nowhere'));
 
   // Drop any space-filling motif that overlaps content. Runs on the MERGED set
   // (existing + incoming), so a motif added in its own add_layers call — the
