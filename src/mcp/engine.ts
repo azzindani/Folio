@@ -805,15 +805,31 @@ function isFullCanvasBackdrop(l: Layer, docW: number, docH: number): boolean {
 // backdrops AND a complete full-bleed content preset coexist — an unambiguous
 // rebuild signal no clean design produces — the preset already holds the clean
 // composition: keep it + one backdrop and drop the loose hand-placed duplicates.
+// EXCEPT a hand-placed poster TITLE: it isn't redundant with the preset (whose
+// header is usually empty), so dropping it would lose the title. Loose text is
+// only dropped when it's REDUNDANT with the preset's own content (the pricing tier
+// labels the grid already shows); unique loose text is kept for promoteCoveredTitle
+// to surface. Loose shapes/rects are always structural junk the preset replaces.
 function dropThrashDuplicates(layers: Layer[], docW: number, docH: number): number {
   const backdropIdx = layers.map((l, i) => isFullCanvasBackdrop(l, docW, docH) ? i : -1).filter(i => i >= 0);
   const presetIdx = layers.map((l, i) => isFullBleedContentPreset(l, docW, docH) ? i : -1).filter(i => i >= 0);
   // Need the rebuild signal (≥3 stacked backdrops) AND a preset to fall back on.
   if (backdropIdx.length < 3 || presetIdx.length < 1) return 0;
+  // Tokenize the preset's own text so we can tell redundant loose copies (tier
+  // labels) from a unique title.
+  const tokens = (s: string): string[] => s.toLowerCase().split(/[^a-z0-9$%]+/).filter(t => t.length >= 3);
+  const presetWords = new Set<string>();
+  const collectText = (ls: Layer[]): void => { for (const k of ls) { if (k.type === 'text') tokens(layerText(k)).forEach(t => presetWords.add(t)); const kids = (k as unknown as Record<string, unknown>)['layers']; if (Array.isArray(kids)) collectText(kids as Layer[]); } };
+  presetIdx.forEach(i => collectText([layers[i]]));
+  const redundant = (l: Layer): boolean => { const t = tokens(layerText(l)); if (!t.length) return true; return t.filter(w => presetWords.has(w)).length / t.length >= 0.7; };
   const keep = new Set<number>([backdropIdx[backdropIdx.length - 1], ...presetIdx]);
-  const LOOSE = new Set(['text', 'rect', 'line', 'ellipse', 'icon', 'path']);
+  const SHAPE = new Set(['rect', 'line', 'ellipse', 'icon', 'path']);
   const drop = new Set<number>();
-  layers.forEach((l, i) => { if (!keep.has(i) && !isMotifLayer(l) && LOOSE.has(l.type)) drop.add(i); });
+  layers.forEach((l, i) => {
+    if (keep.has(i) || isMotifLayer(l)) return;
+    if (SHAPE.has(l.type)) drop.add(i);                       // structural junk the preset replaces
+    else if (l.type === 'text' && redundant(l)) drop.add(i);  // a duplicate of preset content (not the title)
+  });
   let removed = 0;
   for (let i = layers.length - 1; i >= 0; i--) { if (drop.has(i)) { layers.splice(i, 1); removed++; } }
   return removed;
@@ -1387,17 +1403,16 @@ export function addLayers(args: {
     }
   }
 
-  // Remove loose hand-placed duplicates from a rebuild thrash (many stacked
-  // full-canvas backdrops + a complete content preset → keep the preset, drop the
-  // dozens of overlapping hand-placed copies the model never cleared).
-  const droppedThrash = dropThrashDuplicates(activeLayers, spec.document.width, spec.document.height);
-  if (droppedThrash) progress.push(pInfo(`Removed ${droppedThrash} hand-placed duplicate(s)`, 'a thrashing rebuild stacked loose copies over the content preset — kept the preset'));
-
-  // Same rebuild thrash on a preset-less typographic poster: duplicate backdrops +
-  // the same quote/text stamped several times → keep one backdrop and the last copy
-  // of each repeated string.
+  // First collapse repeated strings from a rebuild to one copy each (runs before the
+  // preset-thrash pass so N duplicate titles become ONE unique title it can keep).
   const droppedDupText = dedupDuplicateText(activeLayers, spec.document.width, spec.document.height);
   if (droppedDupText) progress.push(pInfo(`Removed ${droppedDupText} duplicate text/backdrop(s)`, 'a rebuild stamped the same text several times — kept the final copy'));
+
+  // Then remove loose hand-placed duplicates from a rebuild thrash (many stacked
+  // full-canvas backdrops + a complete content preset → keep the preset + a unique
+  // title, drop the loose copies that just repeat the preset's own content).
+  const droppedThrash = dropThrashDuplicates(activeLayers, spec.document.width, spec.document.height);
+  if (droppedThrash) progress.push(pInfo(`Removed ${droppedThrash} hand-placed duplicate(s)`, 'a thrashing rebuild stacked loose copies over the content preset — kept the preset'));
 
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
