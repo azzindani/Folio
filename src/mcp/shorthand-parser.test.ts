@@ -227,8 +227,8 @@ describe('expandShorthand', () => {
       bg: '#0A0A0A', accent: '#FF3D00', text_color: '#FAFAFA',
       items: [{ icon: 'zap', title: 'Fast', desc: 'Quick sync' }],
     } as unknown as ShorthandLayer) as { layers?: FGLayer[] };
-    const row = r.layers!.find(l => l.id === 'fg_row')!;        // cards nest inside the row
-    const card = row.layers!.find(l => l.id === 'fg_card0')!;
+    const findDeep = (ls: FGLayer[], id: string): FGLayer | undefined => { for (const l of ls) { if (l.id === id) return l; if (l.layers) { const f = findDeep(l.layers, id); if (f) return f; } } return undefined; };
+    const card = findDeep(r.layers!, 'fg_card0')!;               // cards nest inside row-groups
     const cardBg = (card.fill?.color ?? '').toLowerCase();
     const title = card.layers!.find(l => l.id.endsWith('_title'))!;
     // On a dark canvas the engine flips cards to a light surface with dark text.
@@ -1075,9 +1075,11 @@ describe('feature_grid preset (model gives content, engine owns layout)', () => 
     const types = kids.map(k => k.type);
     expect(types).toContain('rect'); // bg
     expect(types.filter(t => t === 'text').length).toBe(2); // title + subtitle
-    const row = kids.find(k => k.type === 'auto_layout') as Layer & { direction?: string; layers?: Layer[] };
+    const grid = kids.find(k => k.type === 'auto_layout') as Layer & { direction?: string; layers?: Layer[] };
+    expect(grid.direction).toBe('column');                 // grid container = column of rows
+    const row = (grid.layers ?? [])[0] as Layer & { direction?: string; layers?: Layer[] };
     expect(row.direction).toBe('row');
-    expect(row.layers).toHaveLength(3);
+    expect(row.layers).toHaveLength(3);                     // 3 cards on one row
     // every card is a column with icon + title + desc, and a real position
     for (const card of row.layers ?? []) {
       const c = card as Layer & { type?: string; direction?: string; layers?: Layer[]; width?: number };
@@ -1117,8 +1119,9 @@ describe('feature_grid preset (model gives content, engine owns layout)', () => 
     expect(flat).toContain('Improve flexibility'); // benefit→desc survived
     const bg = (g.layers ?? []).find(l => l.type === 'rect') as Layer & { fill?: { type?: string } };
     expect(bg.fill?.type).toBe('linear');   // bg_gradient list → linear gradient
-    const row = (g.layers ?? []).find(l => l.type === 'auto_layout') as Layer & { layers?: Layer[] };
-    expect(row.layers).toHaveLength(2);
+    const grid = (g.layers ?? []).find(l => l.type === 'auto_layout') as Layer & { layers?: Layer[] };
+    const row = (grid.layers ?? [])[0] as Layer & { layers?: Layer[] };
+    expect(row.layers).toHaveLength(2);                     // 2 cards on the single row
   });
 
   it('infers feature_grid from an items array and accepts the `cards` alias', () => {
@@ -1948,13 +1951,16 @@ describe('composeBackground — placement, palette gradient, vignette, photo', (
 });
 
 describe('feature_grid card fit (measured heights + scaled type, no overflow)', () => {
-  const fgCard = (n: number, titleLen: number, descLen: number, id = 'fg') => {
+  const fgCard = (n: number, titleLen: number, descLen: number, id = 'fg', w = 1080, h = 1080) => {
     const items = Array.from({ length: n }, (_, i) => ({ icon: 'zap', title: 'T'.repeat(titleLen) + i, desc: 'd '.repeat(descLen) }));
-    return expandShorthand({ id, type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080], bg: '#0A0A0A', title: 'X', items } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+    return expandShorthand({ id, type: 'feature_grid', z: 0, pos: [0, 0, w, h], bg: '#0A0A0A', title: 'X', items } as unknown as ShorthandLayer) as unknown as { layers: Array<Record<string, unknown>> };
+  };
+  const findDeep = (ls: Array<Record<string, unknown>>, pred: (l: Record<string, unknown>) => boolean): Record<string, unknown> | undefined => {
+    for (const l of ls) { if (pred(l)) return l; const k = l['layers']; if (Array.isArray(k)) { const f = findDeep(k as Array<Record<string, unknown>>, pred); if (f) return f; } }
+    return undefined;
   };
   const cardKid = (g: { layers: Array<Record<string, unknown>> }, suffix: string) => {
-    const row = g.layers.find(l => String(l.id).endsWith('_row')) as { layers?: Array<Record<string, unknown>> };
-    const card = row.layers!.find(c => String(c.id).endsWith('_card1')) as { layers?: Array<Record<string, unknown>> };
+    const card = findDeep(g.layers, c => String(c.id).endsWith('_card1')) as { layers?: Array<Record<string, unknown>> };
     return card.layers!.find(k => String(k.id).includes(suffix))!;
   };
 
@@ -1965,8 +1971,9 @@ describe('feature_grid card fit (measured heights + scaled type, no overflow)', 
   });
 
   it('narrower cards (more of them) use a smaller title font', () => {
-    const few = cardKid(fgCard(2, 6, 4, 'c'), '_title') as { style?: { font_size?: number } };
-    const many = cardKid(fgCard(5, 6, 4, 'd'), '_title') as { style?: { font_size?: number } };
+    // Wide canvas → all cards stay in one row, so more cards = genuinely narrower.
+    const few = cardKid(fgCard(2, 10, 4, 'c', 1600, 600), '_title') as { style?: { font_size?: number } };
+    const many = cardKid(fgCard(6, 10, 4, 'd', 1600, 600), '_title') as { style?: { font_size?: number } };
     expect(many.style!.font_size!).toBeLessThan(few.style!.font_size!);
   });
 });
@@ -3000,10 +3007,39 @@ describe('feature_grid preset — cards sized to content, not a fixed 58% band',
         { title: 'Guided Sessions', desc: 'Trainer-led workouts.' },
         { title: 'Progress Charts', desc: 'Visualize trends.' },
       ] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
-    const row = g.layers.find(l => typeof l['id'] === 'string' && /_row$/.test(l['id'] as string));
-    const rowH = Number(row?.['height'] ?? 0);
+    const row = g.layers.find(l => typeof l['id'] === 'string' && /_row$/.test(l['id'] as string)) as { height?: number; y?: number; direction?: string; layers?: unknown[] } | undefined;
+    const rowH = Number(row?.height ?? 0);
+    // 4 items on a portrait canvas wrap to a 2×2 grid (column of 2 rows).
+    expect(row?.direction).toBe('column');
+    expect(row?.layers).toHaveLength(2);
     expect(rowH).toBeGreaterThan(0);
-    expect(rowH).toBeLessThan(700);   // content-sized — NOT the old ~1038 (H*0.58)
-    expect(Number(row?.['y'] ?? 0)).toBeGreaterThan(300); // placed below the header, centered in the rest
+    expect(rowH).toBeLessThan(1080);  // content-sized — NOT the old fixed ~1113 (H*0.58)
+    expect(Number(row?.y ?? 0)).toBeGreaterThan(300); // placed below the header, centered in the rest
+  });
+
+  it('wraps 4 cards into a 2×2 grid on a SQUARE canvas (not a thin single strip)', () => {
+    type L = { id?: string; type?: string; direction?: string; width?: number; layers?: L[] };
+    const g = expandShorthand({ id: 'kpi', type: 'feature_grid', z: 0, pos: [0, 0, 1080, 1080],
+      items: [{ title: 'Revenue', desc: '$4.2M' }, { title: 'Users', desc: '125K' },
+              { title: 'Churn', desc: '3.2%' }, { title: 'Growth', desc: '18%' }] } as unknown as ShorthandLayer) as unknown as { layers: L[] };
+    const grid = g.layers.find(l => String(l.id).endsWith('_row'))!;
+    expect(grid.direction).toBe('column');
+    expect(grid.layers).toHaveLength(2);              // 2 rows
+    for (const row of grid.layers ?? []) {
+      expect(row.direction).toBe('row');
+      expect(row.layers).toHaveLength(2);             // 2 cards each → 2×2
+    }
+    // cards are substantial (square-ish), not the old 4-up thin strip (~210 wide)
+    const card0 = grid.layers![0].layers![0];
+    expect(Number(card0.width)).toBeGreaterThan(380);
+  });
+
+  it('keeps a single row on a WIDE banner canvas (no needless wrap)', () => {
+    type L = { id?: string; type?: string; direction?: string; layers?: L[] };
+    const g = expandShorthand({ id: 'b', type: 'feature_grid', z: 0, pos: [0, 0, 1600, 500],
+      items: [{ title: 'A', desc: '1' }, { title: 'B', desc: '2' }, { title: 'C', desc: '3' }, { title: 'D', desc: '4' }] } as unknown as ShorthandLayer) as unknown as { layers: L[] };
+    const grid = g.layers.find(l => String(l.id).endsWith('_row'))!;
+    expect(grid.layers).toHaveLength(1);              // one row of 4
+    expect(grid.layers![0].layers).toHaveLength(4);
   });
 });
