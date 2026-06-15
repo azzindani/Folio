@@ -1814,10 +1814,17 @@ describe('composeBackground — engine-composed rich backgrounds (bg_style)', ()
     expect(Number(title.z)).toBeGreaterThan(bgZmax);
   });
 
-  it('"mesh" → solid base + ≥3 soft radial blobs', () => {
+  it('"mesh" → solid base + ≥3 soft radial blobs, kept SUBTLE (de-glowed)', () => {
     const g = sec('mesh');
     const blobs = g.layers.filter(l => l.type === 'ellipse' && (l.fill as { type?: string })?.type === 'radial');
     expect(blobs.length).toBeGreaterThanOrEqual(3);
+    // Each mesh blob must stay a quiet tonal wash, not a saturated "AI glow" blob:
+    // low opacity, and tinted TOWARD the bg (not the raw palette hue).
+    for (const b of blobs) {
+      expect(Number((b as unknown as { opacity: number }).opacity)).toBeLessThanOrEqual(0.3);
+      const stops = (b.fill as { stops?: { color: string }[] }).stops ?? [];
+      expect(stops[0]?.color.toLowerCase()).not.toBe('#5b8cff'); // not the raw accent — mixed toward bg
+    }
   });
 
   it('"gradient + grain" → adds a faint noise-fill film-grain overlay', () => {
