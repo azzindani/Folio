@@ -1905,7 +1905,10 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   // the accent itself. Header colours flip so they stay legible on the slab; the
   // highlight/underline/rule moments are suppressed (the band IS the treatment).
   const bgIsDark = ((): boolean => { const r = hexToRgb(asHex(bg) ?? '#FAF5EC'); return r ? luminance(r) < 0.45 : false; })();
-  const band = lay.header === 'band' && !rotateKick;
+  // The masthead band needs a header to reverse out — a model that passed only
+  // blocks (no kicker/title/subtitle) would otherwise get an empty coloured stripe.
+  const hasHeader = !!kicker || !!title || !!subtitle;
+  const band = lay.header === 'band' && !rotateKick && hasHeader;
   const bandBg = band ? (lay.bandTone === 'ink' ? (bgIsDark ? '#F4F1EA' : '#17161B') : mixHex(accent, '#101012', 0.12)) : '';
   const bandText = band ? readableOn(bandBg, bg) : text;
   const kickColor = band ? (lay.bandTone === 'ink' ? accent : bandText) : accent;

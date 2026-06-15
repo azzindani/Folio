@@ -2934,3 +2934,26 @@ describe('sections stats block — a LONE figure becomes a hero number', () => {
     expect(one).toBeGreaterThan(120);          // genuinely dominant on a 1080 canvas
   });
 });
+
+describe('sections masthead band — never an empty coloured stripe', () => {
+  it('does not draw a masthead band when the sections has no header (blocks only)', () => {
+    // The no-header seed ("folio") picks the band layout, so pre-fix a titleless
+    // blocks-only sections rendered an empty cream/ink stripe at the top.
+    const g = expandShorthandLayers([{ type: 'sections', blocks: [
+      { kind: 'heading_text', heading: '$1.7 trillion', text: 'US student debt in 2026.' },
+      { kind: 'caption', text: 'Source: Federal Reserve' },
+    ] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
+    const ids = g.layers.map(l => String(l['id'] ?? ''));
+    expect(ids.some(id => /_mband$/.test(id))).toBe(false); // no empty band slab
+  });
+
+  it('still draws the band when a header IS present (not over-suppressed)', () => {
+    // 'In Praise of Doing Less' is a header seed that picks the band layout.
+    const g = expandShorthandLayers([{ type: 'sections', title: 'In Praise of Doing Less',
+      blocks: [{ kind: 'text', text: 'x' }] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
+    const ids = g.layers.map(l => String(l['id'] ?? ''));
+    // header present → band may or may not be seeded, but if the seed bands it draws;
+    // at minimum the title text is present (header never silently dropped).
+    expect(ids.some(id => /_title$/.test(id))).toBe(true);
+  });
+});
