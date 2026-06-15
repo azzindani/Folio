@@ -23,6 +23,10 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
   // A PROCESS / WORKFLOW / "how X moves through Y" poster — still a sections preset,
   // but its spine is a flow block the engine draws as numbered nodes joined by arrows
   // (never a plain list, never hand-placed circles/boxes that overlap).
+  // PRICING — a sections preset whose body is a pricing block (even tier columns).
+  pricing: { canvas: [1080, 1350], preset: 'sections', blocks: [
+    'a pricing block {kind:"pricing", items:[{name, price, period, features:[...], highlight}]} — 2-4 tiers, each a name + a price + a period (e.g. "/mo") + 3-5 features, with highlight:true on the recommended tier; the engine lays out even columns',
+    'callout {label,text} — which plan fits whom' ] },
   // A dated HISTORY — a sections preset whose spine is a timeline block (date column
   // + rail + node per milestone), never a plain list or hand-placed dots.
   timeline: { canvas: [1080, 1920], preset: 'sections', blocks: [
@@ -46,6 +50,8 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
 
 function inferType(p: string): string {
   if (/\b(\d+|five|six|seven|eight|nine|ten)\s+(tips|steps|ways|reasons|rules|habits|lessons|principles|mistakes|tactics)\b/i.test(p)) return 'list';
+  // PRICING tiers — a sections preset with a pricing block (even tier columns).
+  if (/\b(pricing|price table|pricing tiers?|subscription (?:plans?|tiers?)|plans? and pricing|tiers? and pricing)\b/i.test(p)) return 'pricing';
   // A dated HISTORY — render as a timeline (date column + rail), not a flow. Checked
   // BEFORE process so "roadmap"/"the journey of X" with dates routes here.
   if (/\b(timeline|milestones?|roadmap|history of|the (?:story|journey|history|evolution) of|over the years|through the years|chronology|evolution of|year by year|founded in)\b/i.test(p)) return 'timeline';
