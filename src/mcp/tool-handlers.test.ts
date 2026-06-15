@@ -483,6 +483,37 @@ describe('sealDesign', () => {
     expect(top.some(l => l.type === 'group' && /^feature_grid/.test(String((l as { id?: string }).id)))).toBe(true); // preset kept
   });
 
+  it('dedupes a quote stamped several times on a preset-less typographic poster', () => {
+    const projectPath = path.join(tmpDir, 'quote-dup-project');
+    createProject({ name: 'QuoteDup', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'QuoteDup', type: 'poster', width: 1080, height: 1440 });
+    const designPath = path.join(projectPath, 'designs/quotedup.design.yaml');
+    const QUOTE = 'Design is not just what it looks like and feels like. Design is how it works.';
+    // The real quote-poster failure: 3 rebuild passes each re-laying a full-canvas
+    // backdrop + the same quote + attribution, all overlapping (no preset at all).
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg1', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1440, fill: { type: 'solid', color: '#FAF5EC' } },
+      { id: 'q1', type: 'text', z: 1, x: 540, y: 500, width: 475, height: 202, content: { type: 'plain', value: QUOTE }, style: { font_size: 36 } },
+      { id: 'a1', type: 'text', z: 1, x: 540, y: 717, width: 475, height: 34, content: { type: 'plain', value: '- Steve Jobs, Apple' }, style: { font_size: 24 } },
+    ] as unknown as Layer[] });
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg2', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1440, fill: { type: 'solid', color: '#FAF5EC' } },
+      { id: 'q2', type: 'text', z: 1, x: 540, y: 500, width: 475, height: 202, content: { type: 'plain', value: QUOTE }, style: { font_size: 36 } },
+      { id: 'a2', type: 'text', z: 1, x: 540, y: 717, width: 475, height: 34, content: { type: 'plain', value: '- Steve Jobs, Apple' }, style: { font_size: 24 } },
+    ] as unknown as Layer[] });
+    addLayers({ design_path: designPath, layers: [
+      { id: 'q3', type: 'text', z: 2, x: 540, y: 400, width: 475, height: 336, content: { type: 'plain', value: QUOTE }, style: { font_size: 48 } },
+      { id: 'a3', type: 'text', z: 2, x: 540, y: 751, width: 475, height: 28, content: { type: 'plain', value: '– Steve Jobs, Apple' }, style: { font_size: 20 } },
+    ] as unknown as Layer[] });
+    const layerTextOf = (l: Layer): string => { const c = (l as unknown as { content?: { value?: unknown } }).content; return c && typeof c.value === 'string' ? c.value : ''; };
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const quotes = top.filter(l => l.type === 'text' && layerTextOf(l).startsWith('Design is not'));
+    const attrs = top.filter(l => l.type === 'text' && /Steve Jobs/.test(layerTextOf(l)));
+    expect(quotes.length).toBe(1);          // one quote survives (the last pass)
+    expect(attrs.length).toBe(1);           // one attribution survives (dash variant normalized)
+    expect((quotes[0] as { id?: string }).id).toBe('q3'); // kept the LAST pass
+  });
+
   it('de-dupes a duplicate page_id on append so no two pages share an id', () => {
     const projectPath = path.join(tmpDir, 'pageid-project');
     createProject({ name: 'PgId', path: projectPath });
