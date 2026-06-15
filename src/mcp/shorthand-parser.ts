@@ -1293,7 +1293,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
 // rhythm, an accent system, held margins and a footer — so a dense, organized,
 // human-designer-level composition is one call instead of dozens of colliding
 // hand-placed layers.
-interface SecCtx { accent: string; text: string; muted: string; W: number; align?: 'left' | 'center'; statCols?: number; }
+interface SecCtx { accent: string; text: string; muted: string; bg: string; W: number; align?: 'left' | 'center'; statCols?: number; }
 
 // A short, measure-like token that belongs in a stat's BIG figure slot —
 // "30%", "$500B", "1.0 TW", "2.3s", "12M". Used to detect/repair a model that
@@ -1305,7 +1305,7 @@ function figureLike(s: string): boolean {
 }
 
 function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number, x: number, y: number, w: number, ctx: SecCtx): { layers: Layer[]; height: number } {
-  const { accent, text, muted, W } = ctx;
+  const { accent, text, muted, bg, W } = ctx;
   const kind = shStr(b['kind'] ?? b['type'], 'text');
   const layers: Layer[] = [];
   let z = z0;
@@ -1430,7 +1430,55 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     const totalH = rowH.reduce((a, h) => a + h, 0) + Math.max(0, rows - 1) * rowGap;
     return { layers, height: totalH };
   }
-  if (kind === 'list' || kind === 'steps') {
+  // Connected PROCESS FLOW — numbered nodes on a left rail joined by arrows, with
+  // measured (collision-free) title + desc to the right. A blind model asked for a
+  // "flow" hand-places ellipses + boxes + text that OVERLAP (it can't see wrapping);
+  // this engine-owned block lays steps out so they never collide and reads as a real
+  // process diagram. Rasterizes (ellipse/rect/path/text — no foreignObject). `steps`
+  // routes here (a step list IS a sequence) while plain `list` stays bullets.
+  if (kind === 'flow' || kind === 'process' || kind === 'pipeline' || kind === 'workflow' || kind === 'journey' || kind === 'steps' || kind === 'step') {
+    const items = arrField('items', 'steps', 'stages', 'nodes', 'phases', 'rows', 'list', 'points', 'data');
+    if (!items.length) return { layers, height: 0 };
+    const nodeR = Math.round(W * 0.026);
+    const railX = x + nodeR;
+    const gap = Math.round(W * 0.03);
+    const textX = x + 2 * nodeR + Math.round(W * 0.03);
+    const textW = w - (textX - x);
+    const tSize = Math.round(W * 0.027), dSize = Math.round(W * 0.02);
+    const numColor = readableOn(accent, bg);
+    const rows = items.map(it => {
+      const title = shStr(it['title'] ?? it['name'] ?? it['label'] ?? it['heading'] ?? it['step']);
+      const desc = shStr(it['desc'] ?? it['text'] ?? it['description'] ?? it['detail'] ?? it['body']);
+      const tH = estTextHeight(title || ' ', tSize, textW, 1.15);
+      const dH = desc ? estTextHeight(desc, dSize, textW, 1.4) : 0;
+      const rowH = Math.max(2 * nodeR, tH + (desc ? 6 + dH : 0));
+      return { title, desc, tH, dH, rowH };
+    });
+    let yy = y;
+    rows.forEach((row, i) => {
+      const nodeTop = yy;
+      const nodeCY = yy + nodeR;
+      // rail + downward arrow to the next node (drawn first → sits behind the node)
+      if (i < rows.length - 1) {
+        const lineTop = nodeTop + 2 * nodeR;
+        const nextTop = yy + row.rowH + gap;
+        const lineH = Math.max(0, nextTop - lineTop);
+        layers.push({ id: `${idp}_rail${i}`, type: 'rect', z: z++, x: railX - 2, y: lineTop, width: 4, height: lineH, opacity: 0.4, fill: { type: 'solid', color: accent } } as unknown as Layer);
+        const my = lineTop + lineH / 2;
+        const ah = Math.round(nodeR * 0.5);
+        layers.push({ id: `${idp}_arw${i}`, type: 'path', z: z++, x: railX - ah, y: my - ah, width: 2 * ah, height: 2 * ah, d: `M ${railX - ah} ${Math.round(my - ah * 0.4)} L ${railX + ah} ${Math.round(my - ah * 0.4)} L ${railX} ${Math.round(my + ah * 0.75)} Z`, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      }
+      // node circle + step number
+      layers.push({ id: `${idp}_node${i}`, type: 'ellipse', z: z++, x: railX - nodeR, y: nodeTop, width: 2 * nodeR, height: 2 * nodeR, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      layers.push(txt(`${idp}_nn${i}`, z++, railX - nodeR, Math.round(nodeCY - nodeR * 0.62), 2 * nodeR, Math.round(nodeR * 1.3), String(i + 1), { font_size: Math.round(nodeR * 0.92), font_weight: 800, color: numColor, align: 'center', line_height: 1.0 }));
+      // title + desc, top-aligned to the node
+      layers.push(txt(`${idp}_ft${i}`, z++, textX, nodeTop, textW, row.tH, row.title, { font_size: tSize, font_weight: 700, color: text, line_height: 1.15 }));
+      if (row.desc) layers.push(txt(`${idp}_fd${i}`, z++, textX, nodeTop + row.tH + 6, textW, row.dH, row.desc, { font_size: dSize, font_weight: 400, color: muted, line_height: 1.4 }));
+      yy += row.rowH + gap;
+    });
+    return { layers, height: Math.max(0, yy - y - gap) };
+  }
+  if (kind === 'list' || kind === 'bullets' || kind === 'checklist') {
     const items = arrField('items', 'rows', 'steps', 'list', 'points', 'data');
     const gutter = Math.round(W * 0.055), tSize = Math.round(W * 0.026), dSize = Math.round(W * 0.02);
     let yy = y;
@@ -1573,7 +1621,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
-  const ctx: SecCtx = { accent, text, muted, W };
+  const ctx: SecCtx = { accent, text, muted, bg, W };
 
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
 

@@ -11,7 +11,7 @@ import { pickMoodVariant, proceduralBgStyle, isDarkHex, type Mood } from './mood
 
 // Per-preset rich outline + recommended canvas. Each entry the model fills with
 // researched, specific content — the counts are the "richness floor".
-const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fields?: string[] }> = {
+const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fields?: string[]; preset?: string }> = {
   sections: { canvas: [1080, 2000], blocks: [
     'stats — a row of 4 key figures {value,label} (REAL researched numbers)',
     'heading + text — sub-theme #1, heading + 2-3 sentences',
@@ -20,6 +20,12 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
     'bars — a ranked comparison of 4-5 items {label,value}',
     'callout {label,text} — the single key takeaway',
     'source — cite the research source' ] },
+  // A PROCESS / WORKFLOW / "how X moves through Y" poster — still a sections preset,
+  // but its spine is a flow block the engine draws as numbered nodes joined by arrows
+  // (never a plain list, never hand-placed circles/boxes that overlap).
+  process: { canvas: [1080, 1920], preset: 'sections', blocks: [
+    'a flow block {kind:"flow", items:[{title, desc}]} — 4-7 SEQUENTIAL steps, each a 1-3 word title + a one-sentence desc; the engine draws numbered nodes connected by arrows so steps never collide',
+    'callout {label,text} — why the flow matters or the single key insight' ] },
   feature_grid: { canvas: [1080, 1080], fields: ['title', 'subtitle (one line)', 'items — 4-5 cards {icon, title, 1-line desc}'] },
   stat: { canvas: [1080, 1350], fields: ['kicker — short eyebrow label', 'stat — the ONE big figure (researched, e.g. "$37B" / "9.4 hrs")', 'caption — a FULL sentence of context, 12-25 words (NOT a 2-3 word fragment)', 'footer — REQUIRED: cite a real source'] },
   list: { canvas: [1080, 1350], fields: ['kicker', 'title', 'items — 5-8 {title, desc}', 'footer'] },
@@ -30,6 +36,8 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
 
 function inferType(p: string): string {
   if (/\b(\d+|five|six|seven|eight|nine|ten)\s+(tips|steps|ways|reasons|rules|habits|lessons|principles|mistakes|tactics)\b/i.test(p)) return 'list';
+  // A PROCESS / sequence — render as a connected flow diagram, not a bullet list.
+  if (/\b(process|workflow|pipeline|life\s?cycle|journey|funnel|roadmap|stages?\b|how (?:a|an|the|it)\b.*\b(?:works?|flows?|moves?|happens?|goes?)|step.?by.?step|from .{2,40}? to .{2,40}?\b)\b/i.test(p)) return 'process';
   // A product/app/tool poster is a FEATURE grid, even when phrased as a "launch"
   // — don't let the ambiguous word "launch" route it to the EVENT preset (which
   // then ships a placeholder "EVENT" title when the model gives no event title).
@@ -172,9 +180,10 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   const research_instruction = research
     ? 'This topic is factual: FIRST run the research_queries with your web tools to gather REAL figures and specifics. Do NOT invent statistics. Then compose.'
     : 'No external research needed — use the details in the prompt.';
+  const presetType = outline.preset ?? design_type;
   const fill = outline.blocks
-    ? `Add ONE layer — layers_shorthand:[{type:"${design_type}", kicker:"<a 1-3 word eyebrow label>", title:"<a punchy ≤6-word HEADLINE naming the topic>", subtitle:"<a 2-sentence intro deck>", …, blocks:[…]}]. The kicker + title + subtitle go on the LAYER ITSELF (a titleless deck looks unfinished); then a blocks array covering: ${outline.blocks.join(' · ')}. Emit EVERY block listed — a thin 1-2 block deck is the exact "sparse / dead space" failure to avoid. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
-    : `Add ONE layer — layers_shorthand:[{type:"${design_type}", …}] supplying: ${(outline.fields ?? []).join(' · ')}. NEVER hand-place separate title/body/text layers — the preset auto-sizes every block so text never collides.`;
+    ? `Add ONE layer — layers_shorthand:[{type:"${presetType}", kicker:"<a 1-3 word eyebrow label>", title:"<a punchy ≤6-word HEADLINE naming the topic>", subtitle:"<a 2-sentence intro deck>", …, blocks:[…]}]. The kicker + title + subtitle go on the LAYER ITSELF (a titleless deck looks unfinished); then a blocks array covering: ${outline.blocks.join(' · ')}. Emit EVERY block listed — a thin 1-2 block deck is the exact "sparse / dead space" failure to avoid. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
+    : `Add ONE layer — layers_shorthand:[{type:"${presetType}", …}] supplying: ${(outline.fields ?? []).join(' · ')}. NEVER hand-place separate title/body/text layers — the preset auto-sizes every block so text never collides.`;
   const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. Then diagnose_design until clean and seal.`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
