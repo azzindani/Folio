@@ -677,6 +677,48 @@ function dropCollidingMotifs(layers: Layer[]): number {
   return dropped;
 }
 
+// A top-level `type:chart` layer is a foreignObject (vega) — it renders BLANK in
+// PNG/PDF/render_preview (resvg can't run a browser), so a model that builds a bar
+// chart this way ships a poster with an empty hole where the data should be (live
+// find: a "popular languages" poster = title + takeaway + a blank middle). When the
+// chart is a simple BAR chart, draw it natively (rect bars + labels) so it shows in
+// every export. Other chart marks (line/area/scatter) stay foreignObject for now.
+function rasterizeBarChartLayer(l: Layer): Layer | null {
+  const o = l as unknown as Record<string, unknown>;
+  if (o['type'] !== 'chart') return null;
+  const spec = o['spec'] as Record<string, unknown> | undefined;
+  const markRaw = spec?.['mark'] ?? o['chart_type'] ?? o['chartType'];
+  const mark = typeof markRaw === 'string' ? markRaw.toLowerCase()
+    : (markRaw && typeof markRaw === 'object' ? String((markRaw as Record<string, unknown>)['type'] ?? '').toLowerCase() : '');
+  if (mark !== 'bar' && mark !== 'bars' && mark !== 'column') return null;
+  const dv = (spec?.['data'] as Record<string, unknown> | undefined)?.['values'] ?? o['data'] ?? o['values'] ?? spec?.['values'];
+  if (!Array.isArray(dv) || !dv.length) return null;
+  const items = (dv as Record<string, unknown>[]).slice(0, 10).map(d => ({
+    label: String(d['x'] ?? d['label'] ?? d['name'] ?? d['category'] ?? d['key'] ?? ''),
+    value: Number(d['y'] ?? d['value'] ?? d['count'] ?? d['amount'] ?? 0),
+  })).filter(it => it.label && Number.isFinite(it.value));
+  if (items.length < 2) return null;
+  const n = (v: unknown, dft: number): number => (typeof v === 'number' ? v : dft);
+  const x = n(o['x'], 100), y = n(o['y'], 200), w = n(o['width'], 880), h = n(o['height'], 500);
+  const max = Math.max(1, ...items.map(it => Math.abs(it.value)));
+  const rowH = h / items.length, barH = Math.max(8, Math.round(rowH * 0.5));
+  const labelW = Math.round(w * 0.26), valW = Math.round(w * 0.12);
+  const trackX = x + labelW, trackW = Math.max(20, w - labelW - valW);
+  const fs = Math.max(13, Math.min(28, Math.round(rowH * 0.3)));
+  const cid = String(o['id'] ?? 'chart');
+  const kids: Layer[] = [];
+  let k = 0;
+  items.forEach((it, i) => {
+    const ry = Math.round(y + i * rowH + (rowH - barH) / 2);
+    const bw = Math.max(4, Math.round(trackW * (Math.abs(it.value) / max)));
+    kids.push({ id: `${cid}_l${i}`, type: 'text', z: k++, x, y: ry + Math.round((barH - fs) / 2) - 2, width: labelW - 12, height: barH + 6, content: { type: 'plain', value: it.label }, style: { font_size: fs, font_weight: 600, color: '$text', line_height: 1.1 } } as unknown as Layer);
+    kids.push({ id: `${cid}_t${i}`, type: 'rect', z: k++, x: trackX, y: ry, width: trackW, height: barH, opacity: 0.14, fill: { type: 'solid', color: '$muted' }, radius: 4 } as unknown as Layer);
+    kids.push({ id: `${cid}_b${i}`, type: 'rect', z: k++, x: trackX, y: ry, width: bw, height: barH, fill: { type: 'solid', color: '$accent' }, radius: 4 } as unknown as Layer);
+    kids.push({ id: `${cid}_v${i}`, type: 'text', z: k++, x: trackX + bw + 8, y: ry + Math.round((barH - fs) / 2), width: valW + 40, height: barH, content: { type: 'plain', value: String(it.value) }, style: { font_family: 'IBM Plex Mono', font_size: fs, font_weight: 700, color: '$muted' } } as unknown as Layer);
+  });
+  return { id: cid, type: 'group', z: typeof o['z'] === 'number' ? (o['z'] as number) : 0, x, y, width: w, height: h, layers: kids } as unknown as Layer;
+}
+
 // A full-canvas OPAQUE content preset group (sections/feature_grid/editorial/…) —
 // it paints its own background, so two of them at the origin fully cover each
 // other. (decor/marble/backdrop presets and motifs are excluded — those are meant
@@ -991,6 +1033,14 @@ export function addLayers(args: {
     ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
+
+  // Draw a foreignObject BAR chart natively so it isn't blank in PNG/PDF export.
+  let rasterizedCharts = 0;
+  for (let i = 0; i < incoming.length; i++) {
+    const native = rasterizeBarChartLayer(incoming[i]);
+    if (native) { incoming[i] = native; rasterizedCharts++; }
+  }
+  if (rasterizedCharts) progress.push(pInfo(`Rasterized ${rasterizedCharts} bar chart(s)`, 'foreignObject charts render BLANK in PNG → drew native rect bars'));
 
   // Bake any local-framed hand-authored group offset into its children (the
   // engine renders group children at absolute coords; a model that placed them
