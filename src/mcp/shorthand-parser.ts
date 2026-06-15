@@ -1894,10 +1894,12 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   // whole composition (topPad) — unless a masthead band is present, which is a
   // top-anchored cover archetype whose slab is drawn at the page top.
   const H = fillPage ? boxH : Math.max(Math.round(W * 0.9), Math.min(Math.round(W * 3.4), naturalH));
-  // Vertically center the whole composition when the fixed page is taller than
-  // the content. The masthead slab is shifted by the same offset (below), so the
-  // band stays aligned with its reversed-out header text.
-  const topPad = (fillPage && H > naturalH) ? Math.round((H - naturalH) * 0.42) : 0;
+  // Vertically center the whole composition whenever the canvas is taller than the
+  // content — a fixed fill page (carousel) OR a thin POSTER floored at W*0.9 (a
+  // single stat + caption that used to sit top-anchored with a dead band below).
+  // The masthead slab is shifted by the same offset (below) so the band stays
+  // aligned with its reversed-out header text. Dense content (H==naturalH) → 0.
+  const topPad = H > naturalH ? Math.round((H - naturalH) * 0.42) : 0;
 
   // Rich engine-composed background when bg_style is set, else a flat wash.
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
@@ -1973,10 +1975,11 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   // (floor keeps dense content tight, cap keeps a slightly-roomy page balanced).
   const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
   const avail = (Y + H - M - footerH) - cy;
-  // A page-fill slide centers its content as a compact block (topPad already
-  // shifted cy down), so use the NATURAL inter-block gap — matching the gap
-  // naturalH assumed — instead of stretching blocks across the slack.
-  const gap = fillPage
+  // When the composition is centered (topPad > 0, i.e. the canvas has slack), use
+  // the NATURAL inter-block gap — matching the gap naturalH assumed — so the
+  // centered block keeps its true height. A content-tight page (no slack) keeps
+  // the original distribute-the-remainder behavior.
+  const gap = topPad > 0
     ? Math.round(W * 0.032)
     : Math.max(Math.round(W * 0.024), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
   bl.forEach((b, i) => {
