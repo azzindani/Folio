@@ -62,14 +62,26 @@ function seededDefaults(r: Record<string, unknown>, seedParts: unknown[]): Mood 
   // otherwise fall to ONE seeded mood and render IDENTICALLY. variant 0 (a lone
   // design, the default) == pickMood → byte-identical to before.
   const variant = Math.max(0, Math.floor(Number(r['__variant']) || 0));
-  const mood = pickMoodVariant(topic || all, all, variant);
+  // CAROUSEL COHESION: a deck's pages are appended in separate calls, each with
+  // DIFFERENT content (slide titles "Simplicity"/"Typography"/…). Seeding the
+  // mood from per-page content gives every slide a different palette+font — the
+  // set reads like six designers. When appendPage stamps a stable `__deckseed`
+  // (the design identity), lock the PALETTE/FONT to it so every slide shares one
+  // mood; the per-page content still salts the bg GEOMETRY so slides aren't
+  // pixel-identical. No deck seed (a normal poster) → byte-identical to before.
+  const deck = typeof r['__deckseed'] === 'string' && (r['__deckseed'] as string).trim() !== ''
+    ? (r['__deckseed'] as string) : '';
+  const mood = deck
+    ? pickMoodVariant(deck, deck, variant)
+    : pickMoodVariant(topic || all, all, variant);
   // Keep the mood's curated COLOUR/font/treatment, but compose the GEOMETRY
   // procedurally from the content so two decks in the same colour mood don't
   // share a background (the "same background" complaint). 100+ distinct recipes.
   // Salt the geometry seed by the variant too, so two options never share a bg.
   const rgb = hexToRgb(mood.bg);
   const dark = rgb ? luminance(rgb) < 0.5 : true;
-  return { ...mood, bg_style: proceduralBgStyle(variant ? `${all}#v${variant}` : all, dark) };
+  const geoSeed = deck ? `${deck}#${all}` : (variant ? `${all}#v${variant}` : all);
+  return { ...mood, bg_style: proceduralBgStyle(geoSeed, dark) };
 }
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
@@ -2908,6 +2920,28 @@ export function lockCarouselCanvas(
   return { bg, font };
 }
 
+// Carousel cohesion, the COMMON case: a weak model appends each slide as a bare
+// `{type:"sections"}` with NO bg/font, expecting the engine to style it. The
+// engine's seededDefaults then seeds a mood from each slide's DISTINCT content
+// (the slide titles) → every page a different palette+font (the lockCarousel
+// snap can't help — there is no explicit bg to detect a flip). Stamp a stable
+// `__deckseed` (the design identity) on every bg-less page preset so all slides
+// resolve to ONE shared mood. A page that DOES carry its own bg is left alone.
+export function stampDeckSeed(layers: ShorthandLayer[], seed: string): number {
+  if (!seed) return 0;
+  let n = 0;
+  for (const sh of layers) {
+    if (!sh || typeof sh !== 'object' || Array.isArray(sh)) continue;
+    const r = sh as Record<string, unknown>;
+    const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+    if (!PAGE_PRESETS.has(t)) continue;
+    if (typeof r['bg'] === 'string' && (r['bg'] as string).trim() !== '') continue;
+    r['__deckseed'] = seed;
+    n++;
+  }
+  return n;
+}
+
 // Small models name fields after the *verbose* output schema (content,
 // font_size, symbol, url) rather than the terse shorthand vocabulary
 // (text, size, icon, src). Without this, a model that sends
@@ -3105,7 +3139,7 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
 // ignored on expansion, so diagnoseShorthandKeys flags it for the model.
 const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // engine-internal markers (set by the engine, not the model — never flagged)
-  '__fillPage', '__variant',
+  '__fillPage', '__variant', '__deckseed',
   // canonical
   'id', 'type', 'z', 'pos', 'x', 'y', 'width', 'height', 'opacity', 'rotation',
   'flip_h', 'flip_v', 'visible', 'locked', 'fill', 'stroke', 'radius', 'text',

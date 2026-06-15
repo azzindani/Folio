@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -1121,6 +1121,13 @@ export function appendPage(args: {
     // list still auto-fits its canvas to the content).
     const flowFilled = fillFlowPresetsToPage(pageShorthand, spec.document.width, spec.document.height);
     if (flowFilled) progress.push(pInfo(`Filled ${flowFilled} flow preset(s) to the page`, 'centered content, no dead band'));
+    // Cohesion at the SOURCE: a model that appends bare `{type:"sections"}` slides
+    // (no bg/font) would otherwise get a per-slide mood seeded from each slide's
+    // content. Stamp the deck identity so every bg-less slide seeds ONE shared
+    // mood (palette+font). Runs for the first page too, so the whole set matches.
+    const deckSeed = (spec.meta?.name && String(spec.meta.name).trim()) || spec.meta?.id || '';
+    const seeded = stampDeckSeed(pageShorthand, deckSeed);
+    if (seeded) progress.push(pInfo(`Locked deck mood on ${seeded} slide(s)`, 'shared palette+font from the deck identity'));
     // Keep the deck cohesive: snap a slide that flips light↔dark or changes the
     // heading font back to the look the first page established.
     if (spec.pages?.length) {

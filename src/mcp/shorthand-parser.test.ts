@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -2810,5 +2810,42 @@ describe('lockCarouselCanvas — keep a deck cohesive (cold-brew light/dark-flip
     expect(lockCarouselCanvas([], [{ type: 'feature_grid', bg: '#000' } as unknown as ShorthandLayer]).bg).toBe(0);
     const pages = [page('#FAF5EC', 'Inter')];
     expect(lockCarouselCanvas(pages, [{ type: 'list', items: ['a'] } as unknown as ShorthandLayer]).bg).toBe(0);
+  });
+});
+
+describe('stampDeckSeed + seededDefaults — carousel cohesion when bg is OMITTED', () => {
+  it('stamps the deck seed on bg-less page presets; skips ones with an explicit bg + non-page presets', () => {
+    const layers: ShorthandLayer[] = [
+      { type: 'sections', title: 'Simplicity' } as unknown as ShorthandLayer,
+      { type: 'sections', bg: '#123456', title: 'Color' } as unknown as ShorthandLayer, // explicit bg wins
+      { type: 'list', items: ['a'] } as unknown as ShorthandLayer,                       // not a page preset
+    ];
+    expect(stampDeckSeed(layers, 'My Deck')).toBe(1);
+    expect((layers[0] as unknown as Record<string, unknown>)['__deckseed']).toBe('My Deck');
+    expect((layers[1] as unknown as Record<string, unknown>)['__deckseed']).toBeUndefined();
+    expect((layers[2] as unknown as Record<string, unknown>)['__deckseed']).toBeUndefined();
+  });
+
+  it('no-op with an empty seed', () => {
+    const layers = [{ type: 'sections', title: 'x' } as unknown as ShorthandLayer];
+    expect(stampDeckSeed(layers, '')).toBe(0);
+  });
+
+  it('two slides with DIFFERENT content but the SAME deck seed share ONE palette + font', () => {
+    const lookOf = (title: string): { bg: string | undefined; font: string | undefined } => {
+      const sh = { type: 'sections', title, __deckseed: 'Minimalist Design Principles Carousel',
+        blocks: [{ kind: 'text', text: 'A short explanation of this principle.' }] } as unknown as ShorthandLayer;
+      const grp = expandShorthandLayers([sh])[0] as unknown as { layers: Array<Record<string, unknown>> };
+      const bgRect = grp.layers.find(l => l['type'] === 'rect');
+      const fill = bgRect?.['fill'] as { color?: string; stops?: Array<{ color?: string }> } | undefined;
+      const titleLayer = grp.layers.find(l => typeof l['id'] === 'string' && /_title$/.test(l['id'] as string));
+      const font = (titleLayer?.['style'] as { font_family?: string } | undefined)?.font_family;
+      return { bg: fill?.color ?? fill?.stops?.[0]?.color, font };
+    };
+    const a = lookOf('Simplicity');
+    const b = lookOf('Typography'); // wholly different topic word
+    expect(a.bg).toBeDefined();
+    expect(a.bg).toBe(b.bg);   // same palette across slides
+    expect(a.font).toBe(b.font); // same heading font across slides
   });
 });
