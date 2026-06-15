@@ -3,7 +3,7 @@ import type { Layer, Fill, TextContent, TextStyle } from '../schema/types';
 import { resolveIconName } from '../renderer/lucide-icons';
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 import { hexToRgb, luminance } from './engine/reference';
-import { pickMood, proceduralBgStyle, pickSecLayout, type Mood } from './engine/mood-bank';
+import { pickMoodVariant, proceduralBgStyle, pickSecLayout, type Mood } from './engine/mood-bank';
 
 /** A concrete hex string (not a token/gradient/Fill object), else null. */
 function asHex(v: unknown): string | null {
@@ -55,13 +55,21 @@ function seededDefaults(r: Record<string, unknown>, seedParts: unknown[]): Mood 
   // spread across the bank instead of collapsing onto one default.
   const all = seedParts.map(p => (typeof p === 'string' ? p : JSON.stringify(p ?? ''))).join(' ');
   const topic = seedParts.filter((p): p is string => typeof p === 'string').join(' ').trim();
-  const mood = pickMood(topic || all, all);
+  // `__variant` (stamped by addLayers for a design that is the Nth member of a
+  // sibling variant SET — "give me N options of one topic") steps to the Nth
+  // DISTINCT curated art-direction. A weak model passes variant to enrich_brief but
+  // DROPS the returned bg/accent/font here, so all N same-content designs would
+  // otherwise fall to ONE seeded mood and render IDENTICALLY. variant 0 (a lone
+  // design, the default) == pickMood → byte-identical to before.
+  const variant = Math.max(0, Math.floor(Number(r['__variant']) || 0));
+  const mood = pickMoodVariant(topic || all, all, variant);
   // Keep the mood's curated COLOUR/font/treatment, but compose the GEOMETRY
   // procedurally from the content so two decks in the same colour mood don't
   // share a background (the "same background" complaint). 100+ distinct recipes.
+  // Salt the geometry seed by the variant too, so two options never share a bg.
   const rgb = hexToRgb(mood.bg);
   const dark = rgb ? luminance(rgb) < 0.5 : true;
-  return { ...mood, bg_style: proceduralBgStyle(all, dark) };
+  return { ...mood, bg_style: proceduralBgStyle(variant ? `${all}#v${variant}` : all, dark) };
 }
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
@@ -2722,7 +2730,7 @@ export function expandShorthandLayers(layers: ShorthandLayer[]): Layer[] {
 // ignored on expansion, so diagnoseShorthandKeys flags it for the model.
 const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // engine-internal markers (set by the engine, not the model — never flagged)
-  '__fillPage',
+  '__fillPage', '__variant',
   // canonical
   'id', 'type', 'z', 'pos', 'x', 'y', 'width', 'height', 'opacity', 'rotation',
   'flip_h', 'flip_v', 'visible', 'locked', 'fill', 'stroke', 'radius', 'text',

@@ -1579,6 +1579,54 @@ describe('link / href primitive', () => {
   });
 });
 
+describe('__variant — distinct curated art-direction per sibling design (give-me-N-options)', () => {
+  // A weak model passes `variant` to enrich_brief but DROPS the returned bg/accent/
+  // font on add_layers, so N same-content designs would seed to ONE mood and render
+  // IDENTICALLY. addLayers stamps `__variant` (the design's index in its sibling set)
+  // so seededDefaults picks the Nth curated art-direction even with no style passed.
+  type Grp = { type: string; layers: Array<Record<string, unknown>> };
+  const content = {
+    id: 'v', type: 'sections', z: 0, pos: [0, 0, 1080, 1350],
+    title: 'Can AI Create Designs?', subtitle: 'Proof a text-only model can design', kicker: 'AI DESIGN',
+    blocks: [
+      { kind: 'stats', items: [{ value: '120B', label: 'Params' }, { value: '0', label: 'Vision' }] },
+      { kind: 'callout', label: 'Key', text: 'Design is structure, not pixels.' },
+    ],
+  };
+  // Signature of the rendered LOOK: base background fill + the title's font.
+  const sig = (g: Grp): string => {
+    const rect = g.layers.find(l => l['type'] === 'rect');
+    const title = g.layers.find(l => typeof l['id'] === 'string' && (l['id'] as string).endsWith('_title'));
+    const style = (title?.['style'] ?? {}) as Record<string, unknown>;
+    return JSON.stringify(rect?.['fill']) + '|' + String(style['font_family'] ?? '');
+  };
+  const expand = (variant?: number): Grp =>
+    expandShorthand({ ...content, ...(variant === undefined ? {} : { __variant: variant }) } as unknown as ShorthandLayer) as unknown as Grp;
+
+  it('variant 0 is byte-identical to no variant (lone design unchanged)', () => {
+    expect(sig(expand(0))).toBe(sig(expand()));
+  });
+
+  it('variants 1+ produce a DIFFERENT art-direction from variant 0 (same content)', () => {
+    const base = sig(expand(0));
+    expect(sig(expand(1))).not.toBe(base);
+    expect(sig(expand(2))).not.toBe(base);
+    expect(sig(expand(4))).not.toBe(base);
+  });
+
+  it('distinct variants differ from EACH OTHER (5 options ⇒ 5 looks)', () => {
+    const sigs = [0, 1, 2, 3, 4].map(v => sig(expand(v)));
+    expect(new Set(sigs).size).toBe(sigs.length);
+  });
+
+  it('an explicit bg always wins — variant is ignored when the model gave style', () => {
+    const withBg = (variant: number): Grp =>
+      expandShorthand({ ...content, bg: '#0A0A0A', __variant: variant } as unknown as ShorthandLayer) as unknown as Grp;
+    const rectFill = (g: Grp): unknown => g.layers.find(l => l['type'] === 'rect')?.['fill'];
+    expect(rectFill(withBg(0))).toEqual(rectFill(withBg(3)));
+  });
+});
+
 describe('composeBackground — engine-composed rich backgrounds (bg_style)', () => {
   const sec = (bg_style: string) => expandShorthand({
     id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'T', bg_style,
