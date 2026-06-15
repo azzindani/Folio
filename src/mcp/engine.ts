@@ -923,6 +923,22 @@ export function addLayers(args: {
     const filled = fillBleedPresetDims(shorthand, spec.document.width, spec.document.height);
     if (filled) progress.push(pInfo(`Sized ${filled} full-bleed preset(s) to the page`, `${spec.document.width}×${spec.document.height}`));
   }
+  // A PAGED design (carousel/presentation) filled via add_layers + page_id — the
+  // path create_presentation takes (it scaffolds EMPTY pages, then the model fills
+  // each slide here, NOT via append_page). Run the same page-prep append_page does
+  // so the deck still gets a full-bleed content fill (no left-anchored portrait
+  // group on a landscape slide, no dead strip) AND stays cohesive (one shared mood
+  // for bg-less slides; light↔dark / font flips snapped to the deck). Posters (no
+  // spec.pages) are untouched — they keep content-sizing + the centering pass.
+  if (shorthand.length && spec.pages && spec.pages.length) {
+    const flowFilled = fillFlowPresetsToPage(shorthand, spec.document.width, spec.document.height);
+    if (flowFilled) progress.push(pInfo(`Filled ${flowFilled} content preset(s) to the slide`, `${spec.document.width}×${spec.document.height}`));
+    const deckSeed = (spec.meta?.name && String(spec.meta.name).trim()) || spec.meta?.id || '';
+    const seeded = stampDeckSeed(shorthand, deckSeed);
+    if (seeded) progress.push(pInfo(`Locked deck mood on ${seeded} slide(s)`, 'shared palette+font from the deck identity'));
+    const locked = lockCarouselCanvas(spec.pages, shorthand);
+    if (locked.bg || locked.font) progress.push(pInfo('Locked carousel cohesion', `${locked.bg} bg + ${locked.font} font snapped to the deck`));
+  }
   // Clamp any top-level layer the model sized larger than the canvas BEFORE
   // expansion. A full-bleed preset given height 1350 on a 1080 doc expands to a
   // group + bg taller than the page → off_canvas error the model then can't fix
