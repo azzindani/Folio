@@ -1684,6 +1684,47 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     });
     return { layers, height: Math.max(0, yy - y - gap) };
   }
+  // PRICING / plans — N tier columns (name + big price + feature list), one tier
+  // optionally highlighted (accent fill + POPULAR chip), all cards the same height.
+  // Rasterizes. A blind model asked for pricing hand-places colliding columns; this
+  // owns the grid. Features live on each tier item.
+  if (kind === 'pricing' || kind === 'plans' || kind === 'tiers' || kind === 'price_table') {
+    const tiersRaw = arrField('items', 'tiers', 'plans', 'options', 'rows', 'data', 'cards');
+    if (!tiersRaw.length) return { layers, height: 0 };
+    const list = tiersRaw.slice(0, 4);
+    const n = list.length;
+    const gap = Math.round(W * 0.025), colW = Math.round((w - (n - 1) * gap) / n), pad = Math.round(W * 0.022);
+    const innerW = colW - 2 * pad;
+    const nameSize = Math.round(W * 0.017), priceSize = Math.round(W * 0.046), perSize = Math.round(W * 0.016), featSize = Math.round(W * 0.0175);
+    const td = list.map(t => {
+      const name = shStr(t['name'] ?? t['title'] ?? t['tier'] ?? t['plan'] ?? t['label']);
+      const price = shStr(t['price'] ?? t['cost'] ?? t['amount'] ?? t['value']);
+      const period = shStr(t['period'] ?? t['unit'] ?? t['per'] ?? t['interval'] ?? t['cadence']);
+      const fRaw = (Array.isArray(t['features']) ? t['features'] : Array.isArray(t['items']) ? t['items'] : Array.isArray(t['perks']) ? t['perks'] : Array.isArray(t['includes']) ? t['includes'] : []) as unknown[];
+      const feats = fRaw.map(f => shStr(typeof f === 'object' && f ? ((f as Record<string, unknown>)['text'] ?? (f as Record<string, unknown>)['label'] ?? (f as Record<string, unknown>)['name']) : f)).filter(Boolean);
+      const highlight = !!(t['highlight'] ?? t['featured'] ?? t['popular'] ?? t['recommended'] ?? t['best']);
+      const featHs = feats.map(f => estTextHeight(f, featSize, innerW - 18, 1.3));
+      const contentH = pad + (name ? nameSize + 14 : 0) + priceSize * 1.15 + (period ? perSize + 6 : 0) + 18 + featHs.reduce((a, b) => a + b + 11, 0) + pad;
+      return { name, price, period, feats, featHs, highlight, contentH };
+    });
+    const cardH = Math.max(...td.map(t => t.contentH));
+    list.forEach((_t, i) => {
+      const t = td[i], cx = x + i * (colW + gap), hl = t.highlight;
+      const cardText = hl ? readableOn(accent, bg) : text, cardMuted = hl ? readableOn(accent, bg) : muted;
+      layers.push({ id: `${idp}_card${i}`, type: 'rect', z: z++, x: cx, y, width: colW, height: cardH, radius: 14, fill: { type: 'solid', color: hl ? accent : mixHex(bg, text, 0.06) }, ...(hl ? {} : { stroke: { color: mixHex(bg, text, 0.16), width: 1.5 } }) } as unknown as Layer);
+      let cy = y + pad;
+      if (t.name) { layers.push(txt(`${idp}_pn${i}`, z++, cx + pad, cy, innerW, nameSize + 6, t.name.toUpperCase(), { font_family: 'IBM Plex Mono', font_size: nameSize, font_weight: 700, color: hl ? cardText : accent, letter_spacing: 1.5 })); cy += nameSize + 14; }
+      layers.push(txt(`${idp}_pp${i}`, z++, cx + pad, cy, innerW, priceSize * 1.15, t.price, { font_size: priceSize, font_weight: 800, color: cardText, line_height: 1.1 })); cy += priceSize * 1.15;
+      if (t.period) { layers.push(txt(`${idp}_pper${i}`, z++, cx + pad, cy, innerW, perSize + 6, t.period, { font_size: perSize, font_weight: 500, color: cardMuted })); cy += perSize + 6; }
+      cy += 18;
+      t.feats.forEach((f, j) => {
+        layers.push({ id: `${idp}_pdot${i}_${j}`, type: 'ellipse', z: z++, x: cx + pad, y: cy + 5, width: 7, height: 7, fill: { type: 'solid', color: hl ? cardText : accent } } as unknown as Layer);
+        layers.push(txt(`${idp}_pf${i}_${j}`, z++, cx + pad + 16, cy, innerW - 18, t.featHs[j], f, { font_size: featSize, font_weight: 500, color: cardMuted, line_height: 1.3 }));
+        cy += t.featHs[j] + 11;
+      });
+    });
+    return { layers, height: cardH };
+  }
   if (kind === 'caption' || kind === 'source' || kind === 'note' || kind === 'footnote' || kind === 'label') {
     // Small mono source/caption line (blind models pass the footer source as a
     // block like {kind:source}; render its text — never silently drop it).
