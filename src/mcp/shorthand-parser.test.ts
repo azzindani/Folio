@@ -2873,4 +2873,14 @@ describe('buildSections page-fill — no dead strip / dead band on a fixed slide
     const g = grp({ pos: [0, 0, 1080, 1080] });
     expect(g.height).toBeLessThan(1080);          // content-sized (≤ W*0.9 floor), proves fill is the lever
   });
+
+  it('a THIN poster (floored at W*0.9) centers its content too — no top-anchored dead band', () => {
+    // One short block: naturalH < the W*0.9 floor, so the floored group has slack
+    // and the composition is centered instead of pinned to the top with dead space.
+    const g = expandShorthandLayers([
+      { type: 'sections', title: 'A Single Big Idea', blocks: [{ kind: 'text', text: 'One short line.' }] } as unknown as ShorthandLayer,
+    ])[0] as unknown as { height: number; layers: Array<Record<string, unknown>> };
+    const title = g.layers.find(l => typeof l['id'] === 'string' && /_title$/.test(l['id'] as string));
+    expect((title?.['y'] as number)).toBeGreaterThan(150); // pushed down toward center, not at the ~86 top margin
+  });
 });
