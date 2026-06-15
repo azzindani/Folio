@@ -446,7 +446,6 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const N = Math.max(1, items.length);
   const M = Math.round(W * 0.07);
   const gap = Math.round(M * 0.4);
-  const rowY = Math.round(H * 0.42), rowH = H - rowY - M;
   const cardW = Math.round((W - 2 * M - (N - 1) * gap) / N);
   const layers: Layer[] = [];
   // Always engine-compose the background. Use the canvas base color (or a dark
@@ -463,7 +462,7 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   // loop caught on the Hormuz poster).
   const headColor = readableOn(base, textColor);
   const headW = W - 2 * M;
-  const headLimit = Y + rowY - Math.round(H * 0.03); // heading must clear the cards row
+  const headLimit = Y + Math.round(H * 0.39); // cap the header zone (top ~39%)
   let cursorY = Y + Math.round(H * 0.09);
   const title = str(r['title']);
   if (title) {
@@ -481,7 +480,12 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
     const sH = Math.min(estTextHeight(subtitle, sSize, headW, 1.25), Math.max(sSize, headLimit - cursorY));
     layers.push({ id: `${id}_subtitle`, type: 'text', z: 30, opacity: 0.8, x: X + M, y: cursorY, width: headW, height: sH,
       content: { type: 'plain', value: subtitle }, style: { font_size: sSize, color: headColor, align: 'center', line_height: 1.25 } } as unknown as Layer);
+    cursorY += sH;
   }
+  // Bottom of the actual header — the cards row is placed BELOW this, sized to its
+  // own content and centered in the leftover space, instead of being pinned to a
+  // fixed 42% line (which left a dead band under a short header + over-tall cards).
+  const headerBottom = cursorY + Math.round(H * 0.04);
   // Scale type + MEASURE wrapped heights so long titles/descs never overflow the
   // card or collide (narrow cards → smaller type). Fixed heights overflowed before.
   const pad = 28, innerW = Math.max(40, cardW - 2 * pad);
@@ -492,6 +496,23 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const longTok = (key: 'title' | 'desc'): number => Math.max(1, ...items.map(it => Math.max(1, ...String(it[key] ?? '').split(/\s+/).map(t => t.length))));
   const tSize = Math.max(14, Math.floor(Math.min(30, cardW * 0.145, (innerW * 0.98) / (longTok('title') * 0.55))));
   const dSize = Math.max(12, Math.floor(Math.min(21, cardW * 0.1, (innerW * 0.98) / (longTok('desc') * 0.52))));
+  // Size the cards to the TALLEST card's content (icon + title + desc + padding +
+  // gaps), then center the row in the space below the header — not a fixed 58% of
+  // the canvas, which floated the content and left a dead band.
+  const cardKidGap = 16;
+  const cardContentH = Math.max(Math.round(H * 0.16), ...items.map(it => {
+    let h = 2 * pad;
+    if (it.icon) h += iconSz + cardKidGap;
+    if (it.title) h += estTextHeight(it.title, tSize, innerW, 1.15);
+    if (it.desc) h += cardKidGap + estTextHeight(it.desc, dSize, innerW, 1.4);
+    return h;
+  }));
+  const availBelow = (Y + H - M) - headerBottom;
+  const cardH = Math.min(cardContentH, Math.max(Math.round(H * 0.16), availBelow));
+  // Cards sit just below the header; the WHOLE composition (header + row) is then
+  // centered vertically as a unit (the shift below), so they never float mid-
+  // canvas with a gap above AND below.
+  const rowTop = headerBottom + Math.round(H * 0.02);
   const cards: Layer[] = items.map((it, i) => {
     const kids: Layer[] = [];
     if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: iconSz, height: iconSz, name: it.icon, size: iconSz, color: cardIcon } as unknown as Layer);
@@ -499,12 +520,26 @@ function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
       content: { type: 'plain', value: it.title }, style: { font_size: tSize, font_weight: 700, color: cardText, align: 'center', line_height: 1.15 } } as unknown as Layer);
     if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: innerW, height: estTextHeight(it.desc, dSize, innerW, 1.4),
       content: { type: 'plain', value: it.desc }, style: { font_size: dSize, color: cardMuted, align: 'center', line_height: 1.4 } } as unknown as Layer);
-    return { id: `${id}_card${i}`, type: 'auto_layout', z: i, x: 0, y: 0, width: cardW, height: rowH, direction: 'column',
-      gap: 16, padding: pad, align_items: 'center', justify_content: 'center', radius: 18,
+    return { id: `${id}_card${i}`, type: 'auto_layout', z: i, x: 0, y: 0, width: cardW, height: cardH, direction: 'column',
+      gap: cardKidGap, padding: pad, align_items: 'center', justify_content: 'center', radius: 18,
       fill: expandFill(cardFillResolved), layers: kids } as unknown as Layer;
   });
-  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: Y + rowY, width: W - 2 * M, height: rowH,
+  layers.push({ id: `${id}_row`, type: 'auto_layout', z: 35, x: X + M, y: rowTop, width: W - 2 * M, height: cardH,
     direction: 'row', gap, justify_content: 'space-between', align_items: 'stretch', layers: cards } as unknown as Layer);
+  // Center the whole composition (header text + card row) vertically as ONE block —
+  // the header was laid from a fixed top, so without this the cards float in the
+  // lower-middle with a gap above and below. Shift the header + row together.
+  const compTop = Y + Math.round(H * 0.09), compBot = rowTop + cardH;
+  const shift = Math.round((H - (compBot - compTop)) / 2) - Math.round(H * 0.09);
+  if (shift > 0) {
+    for (const l of layers) {
+      const o = l as unknown as Record<string, unknown>;
+      const lid = String(o['id'] ?? '');
+      if ((lid === `${id}_title` || lid === `${id}_subtitle` || lid === `${id}_row`) && typeof o['y'] === 'number') {
+        o['y'] = (o['y'] as number) + shift;
+      }
+    }
+  }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
