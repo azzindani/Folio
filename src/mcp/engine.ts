@@ -630,6 +630,53 @@ function flattenRelativeGroups(layers: Layer[]): number {
   return moved;
 }
 
+// A motif (meta.role==='motif') is a space-filling decoration — it exists to
+// occupy DEAD space. On a full-width layout (versus/comparison, pricing, feature
+// grid, a stat row) there is no open side column, so a model that followed the
+// "add a motif to fill the side" directive drops it straight onto content: the
+// arcs strike through the text. Collect the real content boxes, then remove any
+// motif that overlaps them past a small threshold — a decoration that isn't in
+// empty space has failed its only job, and dropping it beats a strikethrough.
+function isMotifLayer(l: Layer): boolean {
+  const m = (l as unknown as Record<string, unknown>)['meta'];
+  return !!m && (m as Record<string, unknown>)['role'] === 'motif';
+}
+
+function collectContentBoxes(layers: Layer[], out: Array<{ x: number; y: number; r: number; b: number }>): void {
+  for (const l of layers) {
+    if (isMotifLayer(l)) continue; // a motif never counts as content it must avoid
+    const o = l as unknown as Record<string, unknown>;
+    if (l.type === 'group' && Array.isArray(o['layers'])) {
+      collectContentBoxes(o['layers'] as Layer[], out);
+      continue;
+    }
+    if (l.type === 'text' || l.type === 'chart' || l.type === 'image' ||
+        l.type === 'kpi_card' || l.type === 'rich_text' || l.type === 'mermaid') {
+      out.push(layerBBox(l));
+    }
+  }
+}
+
+function dropCollidingMotifs(layers: Layer[]): number {
+  const content: Array<{ x: number; y: number; r: number; b: number }> = [];
+  collectContentBoxes(layers, content);
+  if (!content.length) return 0;
+  let dropped = 0;
+  for (let i = layers.length - 1; i >= 0; i--) {
+    if (!isMotifLayer(layers[i])) continue;
+    const m = layerBBox(layers[i]);
+    const mArea = Math.max(1, (m.r - m.x) * (m.b - m.y));
+    let overlap = 0;
+    for (const c of content) {
+      const ix = Math.max(0, Math.min(m.r, c.r) - Math.max(m.x, c.x));
+      const iy = Math.max(0, Math.min(m.b, c.b) - Math.max(m.y, c.y));
+      overlap += ix * iy;
+    }
+    if (overlap / mArea > 0.12) { layers.splice(i, 1); dropped++; }
+  }
+  return dropped;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -724,7 +771,9 @@ function decollideHandPlaced(layers: Layer[], W: number, H: number): number {
     const w = Number(r['width']) || W;
     return Math.max(given, estTextHeight(textVal(l), fs, w, lh));
   };
-  const movable = layers.filter(l => l && !isFullBleed(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  // A motif is a behind-content decoration, not a flow row — never stack it (that
+  // would shove it off-canvas). dropCollidingMotifs is the sole authority on it.
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];
@@ -999,6 +1048,14 @@ export function addLayers(args: {
       }
     }
   }
+  // Drop any space-filling motif that overlaps content. Runs on the MERGED set
+  // (existing + incoming), so a motif added in its own add_layers call — the
+  // common shape, since the content preset and the decoration arrive separately —
+  // is still checked against the content already on the page. A motif that isn't
+  // in dead space has failed its only job; removing it beats a strikethrough.
+  const droppedMotifs = dropCollidingMotifs(activeLayers);
+  if (droppedMotifs) progress.push(pInfo(`Dropped ${droppedMotifs} colliding motif(s)`, 'decoration overlapped content → removed (no dead space to fill)'));
+
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
   progress.push(pOk(`Added ${incoming.length} layer(s)`, incoming.map(l => l.id).join(', ')));

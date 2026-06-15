@@ -2228,8 +2228,11 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         ...base,
         type: 'group',
         width: box.w, height: box.h,
+        // Tag as a space-filling decoration so the ingest pipeline can drop it if
+        // it lands on content (a full-width layout leaves no open side space).
+        meta: { ...(base['meta'] as Record<string, unknown> | undefined), role: 'motif' },
         layers: motifLayers(name, box, accent, idp, typeof sh.z === 'number' ? sh.z : 0),
-      } as Layer;
+      } as unknown as Layer;
     }
 
     case 'image':
