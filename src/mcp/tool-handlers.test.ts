@@ -376,6 +376,26 @@ describe('sealDesign', () => {
     expect(bgOf(g1)).toBe(bgOf(g2));
   });
 
+  it('rasterizes a foreignObject bar chart into native rect bars (so it is not blank in PNG)', () => {
+    const projectPath = path.join(tmpDir, 'chart-project');
+    createProject({ name: 'Chart', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Chart', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/chart.design.yaml');
+    addLayers({ design_path: designPath, layers: [
+      { id: 'chart', type: 'chart', z: 2, x: 100, y: 200, width: 880, height: 500,
+        spec: { mark: 'bar', encoding: { x: { field: 'x' }, y: { field: 'y' } },
+          data: { values: [{ x: 'Python', y: 30 }, { x: 'JavaScript', y: 25 }, { x: 'Go', y: 6 }] } } },
+    ] as unknown as Layer[] });
+    const spec = parseYAMLDesign(designPath);
+    expect((spec.layers ?? []).some(l => l.type === 'chart')).toBe(false); // no foreignObject chart left
+    const grp = (spec.layers ?? []).find(l => l.type === 'group' && (l as { id?: string }).id === 'chart') as unknown as { layers: Array<Record<string, unknown>> };
+    expect(grp).toBeTruthy();
+    const bars = grp.layers.filter(l => l['type'] === 'rect' && /_b\d+$/.test(String(l['id'])));
+    expect(bars.length).toBe(3);                       // one bar per data point
+    const labels = grp.layers.filter(l => l['type'] === 'text').map(l => (l['content'] as { value?: string })?.value);
+    expect(labels).toContain('Python');               // category labels rendered as real text
+  });
+
   it('removes stacked duplicate full-canvas presets, keeping the last (thrash-rebuild)', () => {
     const projectPath = path.join(tmpDir, 'stacked-project');
     createProject({ name: 'Stacked', path: projectPath });
