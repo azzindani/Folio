@@ -101,6 +101,15 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.instruction!).toMatch(/NEVER hand-place/i);
   });
 
+  it('suggests a topic-apt motif to fill a large empty band (conditionally, not always)', () => {
+    const bolt = run('how lightning forms');
+    expect(bolt.instruction!).toMatch(/type:"motif"/);
+    expect(bolt.instruction!).toMatch(/motif:"bolt"/);          // topic → bolt
+    expect(bolt.instruction!).toMatch(/IF.*empty band/i);       // conditional, preserves intentional whitespace
+    const tech = run('how neural networks learn');
+    expect(tech.instruction!).toMatch(/motif:"(circuit|orbit)"/); // tech/network topic → tech motif
+  });
+
   it('variant N yields a DISTINCT art-direction for the SAME topic (the "N options" feature)', () => {
     type Sug = { variant: number; design_type: string; suggested: { bg: string; accent: string; bg_style: string } };
     const sug = (v: number) => enrichBrief({ prompt: 'the future of artificial intelligence', variant: v }) as unknown as Sug;
