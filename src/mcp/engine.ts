@@ -1022,6 +1022,49 @@ function recenterHalfAnchoredText(layers: Layer[], docW: number, docH: number): 
   return moved;
 }
 
+// A deck's COVER slide breaks cohesion when the model hand-places it as a couple
+// of loose texts with no background: it renders pure white while every content
+// slide carries the deck's cream/dark wash (the productivity-tips carousel). A
+// page's background may be a top-level full-canvas rect OR a full-bleed preset
+// group that paints its own — sample whichever a sibling has.
+function pageBgColor(page: { layers?: Layer[] }, docW: number, docH: number): string | null {
+  const anyFill = (l: Layer): string | null => {
+    const f = (l as unknown as Record<string, unknown>)['fill'] as Record<string, unknown> | undefined;
+    if (!f || typeof f !== 'object') return null;
+    if (typeof f['color'] === 'string') return f['color'] as string;
+    const s = f['stops'];
+    return (Array.isArray(s) && s[0] && typeof (s[0] as Record<string, unknown>)['color'] === 'string') ? (s[0] as Record<string, unknown>)['color'] as string : null;
+  };
+  for (const l of page.layers ?? []) {
+    if (isFullCanvasBackdrop(l, docW, docH)) { const c = anyFill(l); if (c) return c; }
+    if (isFullBleedContentPreset(l, docW, docH)) {
+      const kids = (l as unknown as Record<string, unknown>)['layers'];
+      if (Array.isArray(kids)) for (const k of kids as Layer[]) { if (k.type === 'rect') { const c = anyFill(k); if (c) return c; } }
+    }
+  }
+  return null;
+}
+
+// Give every deck page a background in the deck's shared color so a bg-less cover
+// doesn't render white against cream/dark content slides. Idempotent and order-
+// independent: it samples the reference color from whichever sibling already has
+// one, so it eventually fills the cover once a content slide exists.
+function ensureDeckPageBackgrounds(pages: Page[], docW: number, docH: number): number {
+  if (!pages || pages.length < 2) return 0;
+  let ref: string | null = null;
+  for (const p of pages) { const c = pageBgColor(p, docW, docH); if (c) { ref = c; break; } }
+  if (!ref) return 0;
+  let added = 0;
+  for (const p of pages) {
+    if (pageBgColor(p, docW, docH)) continue;
+    if (!p.layers) p.layers = [];
+    const minZ = p.layers.reduce((m, l) => Math.min(m, typeof (l as unknown as Record<string, unknown>)['z'] === 'number' ? (l as unknown as Record<string, unknown>)['z'] as number : 0), 0);
+    p.layers.unshift({ id: `${p.id}_deckbg`, type: 'rect', z: minZ - 1, x: 0, y: 0, width: docW, height: docH, fill: { type: 'solid', color: ref } } as unknown as Layer);
+    added++;
+  }
+  return added;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -1491,6 +1534,13 @@ export function addLayers(args: {
   // in dead space has failed its only job; removing it beats a strikethrough.
   const droppedMotifs = dropCollidingMotifs(activeLayers);
   if (droppedMotifs) progress.push(pInfo(`Dropped ${droppedMotifs} colliding motif(s)`, 'decoration overlapped content → removed (no dead space to fill)'));
+
+  // Deck cohesion: give every slide the shared background so a bg-less hand-placed
+  // cover doesn't render white against cream/dark content slides.
+  if (spec.pages) {
+    const bgAdded = ensureDeckPageBackgrounds(spec.pages, spec.document.width, spec.document.height);
+    if (bgAdded) progress.push(pInfo(`Added a deck background to ${bgAdded} slide(s)`, 'matched the shared deck color so the cover is cohesive'));
+  }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);

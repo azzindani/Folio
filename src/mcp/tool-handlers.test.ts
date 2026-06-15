@@ -413,6 +413,25 @@ describe('sealDesign', () => {
     expect(bgOf(g1)).toBe(bgOf(g2));
   });
 
+  it('gives a bg-less hand-placed cover slide the deck background (cohesion)', () => {
+    const projectPath = path.join(tmpDir, 'deck-cover-project');
+    createProject({ name: 'DeckCover', path: projectPath });
+    const pres = createPresentation({ project_path: projectPath, name: 'Tips Deck',
+      pages: [{ label: 'Cover' }, { label: 'Tip One' }], width: 1080, height: 1080 }) as unknown as { design_path: string };
+    const dPath = pres.design_path;
+    // Content slide gets a cream wash from its preset; the cover is hand-placed text
+    // with NO background → it would render pure white against the cream content.
+    addLayers({ design_path: dPath, page_id: 'slide_2', layers_shorthand: [
+      { type: 'sections', bg: '#FAF5EC', title: 'Tip One', blocks: [{ kind: 'text', text: 'A tip.' }] }] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: dPath, page_id: 'slide_1', layers: [
+      { id: 'cover_title', type: 'text', z: 1, x: 200, y: 460, width: 680, height: 60, content: { type: 'plain', value: 'Productivity Tips' }, style: { font_size: 48 } }] as unknown as Layer[] });
+    const spec = parseYAMLDesign(dPath);
+    const cover = (spec.pages ?? []).find(p => p.id === 'slide_1');
+    const coverBg = (cover?.layers ?? []).find(l => l.type === 'rect' && (l as { width?: number }).width === 1080) as unknown as { fill?: { color?: string } } | undefined;
+    expect(coverBg).toBeTruthy();                  // cover got a full-canvas background
+    expect(coverBg?.fill?.color).toBe('#FAF5EC');  // matching the deck's shared color
+  });
+
   it('rasterizes a foreignObject bar chart into native rect bars (so it is not blank in PNG)', () => {
     const projectPath = path.join(tmpDir, 'chart-project');
     createProject({ name: 'Chart', path: projectPath });
