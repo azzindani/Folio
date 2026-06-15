@@ -2957,3 +2957,22 @@ describe('sections masthead band — never an empty coloured stripe', () => {
     expect(ids.some(id => /_title$/.test(id))).toBe(true);
   });
 });
+
+describe('heading_text block — a figure heading becomes a hero number', () => {
+  const headSize = (heading: string, body: string): number => {
+    const g = expandShorthandLayers([{ type: 'sections', title: 'X',
+      blocks: [{ kind: 'heading_text', heading, text: body }] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
+    const hh = g.layers.find(l => typeof l['id'] === 'string' && /_hh$/.test(l['id'] as string));
+    return Number((hh?.['style'] as { font_size?: number } | undefined)?.font_size ?? 0);
+  };
+  it('heroes a compact figure ("$250B") and a spelled-out one ("$1.7 trillion")', () => {
+    expect(headSize('$250B', 'Creator economy value in 2026.')).toBeGreaterThan(100);
+    expect(headSize('$1.7 trillion', 'US student debt in 2026.')).toBeGreaterThan(100);
+  });
+  it('leaves a normal text heading at the modest heading size (no false hero)', () => {
+    const normal = headSize('Key Trends to Watch', 'Several shifts are reshaping the field.');
+    const tips = headSize('10 Tips', 'Practical advice for beginners.');
+    expect(normal).toBeLessThan(60);   // ~W*0.032
+    expect(tips).toBeLessThan(60);     // "10 Tips" is a heading, not a stat
+  });
+});

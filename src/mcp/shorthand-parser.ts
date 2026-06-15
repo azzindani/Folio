@@ -1351,6 +1351,28 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     const subs = Array.isArray(b['subtitles']) ? (b['subtitles'] as unknown[]).map(s => shStr(s)).filter(Boolean).join(' ') : '';
     let body = subs || shStr(b['body'] ?? b['subtitle'] ?? b['desc'] ?? b['text'] ?? b['content']);
     if (!head) { head = body; body = ''; }   // only one string given → it's the heading
+    // A model that wants a single-stat poster often writes the FIGURE as the
+    // heading_text heading ("$1.7 trillion" / "$250B") + a caption, instead of a
+    // stats block — and the figure then renders at a timid ~35px. When the heading
+    // IS a figure (a compact token, or a number + a scale word) and a caption
+    // follows, render it as a HERO number (accent, fit-to-width), matching the
+    // single-stat stats-block treatment. Recurring student-debt / creator-economy.
+    const ht = head.trim(), hw = ht.split(/\s+/);
+    const heroFig = !!body && ht.length <= 20 && (figureLike(ht)
+      || (hw.length === 2 && /^[$€£¥]?[+\-]?[\d.,]+$/.test(hw[0])
+        && /^(trillion|billion|million|thousand|percent|hours?|hrs?|days?|years?|weeks?|months?|minutes?|seconds?)$/i.test(hw[1])));
+    if (heroFig) {
+      const maxTok = Math.max(1, ...hw.map(t => t.length));
+      const vSize = Math.max(40, Math.round(Math.min(W * 0.13, (w * 0.92) / (maxTok * 0.58))));
+      const vh = estTextHeight(head, vSize, w, 1.04);
+      layers.push({ id: `${idp}_tick`, type: 'rect', z: z++, x, y, width: Math.round(W * 0.055), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      layers.push(txt(`${idp}_hh`, z++, x, y + 22, w, vh, head, { font_size: vSize, font_weight: 800, color: accent, line_height: 1.04, letter_spacing: -1 }));
+      let total = 22 + vh;
+      const bSize = Math.round(W * 0.026), bh = estTextHeight(body, bSize, w, 1.45);
+      layers.push(txt(`${idp}_hb`, z++, x, y + total + 16, w, bh, body, { font_size: bSize, font_weight: 400, color: text, line_height: 1.45 }));
+      total += 16 + bh;
+      return { layers, height: total };
+    }
     const hSize = Math.round(W * 0.032);
     layers.push({ id: `${idp}_tick`, type: 'rect', z: z++, x, y, width: Math.round(W * 0.055), height: 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
     const hh = estTextHeight(head, hSize, w, 1.15);
