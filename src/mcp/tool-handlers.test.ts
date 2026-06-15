@@ -514,6 +514,40 @@ describe('sealDesign', () => {
     expect((quotes[0] as { id?: string }).id).toBe('q3'); // kept the LAST pass
   });
 
+  it('re-centers a title anchored at the canvas mid-line (docW/2 used as left edge)', () => {
+    const projectPath = path.join(tmpDir, 'midanchor-project');
+    createProject({ name: 'MidAnchor', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'MidAnchor', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/midanchor.design.yaml');
+    // Title at x=540 (=docW/2) reaching the right edge, nothing on the left at its
+    // y-band → the model meant to center it. A chart group below (different band)
+    // must not block the recenter.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+      { id: 'title', type: 'text', z: 1, x: 540, y: 120, width: 475, height: 40, content: { type: 'plain', value: 'How We Spend Our Day' }, style: { font_size: 34 } },
+    ] as unknown as Layer[] });
+    const title = (parseYAMLDesign(designPath).layers ?? []).find(l => (l as { id?: string }).id === 'title') as unknown as { x?: number; style?: { align?: string } };
+    expect(Number(title.x)).toBeLessThan(540);                 // pulled left toward true center
+    expect(Math.abs(Number(title.x) - (1080 - 475) / 2)).toBeLessThanOrEqual(2); // centered box
+    expect(title.style?.align).toBe('center');
+  });
+
+  it('leaves a mid-line text alone when the left half is occupied (real right column)', () => {
+    const projectPath = path.join(tmpDir, 'rightcol-project');
+    createProject({ name: 'RightCol', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'RightCol', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/rightcol.design.yaml');
+    // A genuine two-column layout: an image panel on the left, text in the right
+    // half at the same height → NOT a centering slip, must be left as placed.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+      { id: 'panel', type: 'rect', z: 1, x: 80, y: 300, width: 420, height: 480, fill: { type: 'solid', color: '#2d5a3d' } },
+      { id: 'copy', type: 'text', z: 2, x: 540, y: 400, width: 460, height: 200, content: { type: 'plain', value: 'A column of supporting copy on the right side.' }, style: { font_size: 28 } },
+    ] as unknown as Layer[] });
+    const copy = (parseYAMLDesign(designPath).layers ?? []).find(l => (l as { id?: string }).id === 'copy') as unknown as { x?: number };
+    expect(Number(copy.x)).toBe(540);                          // untouched — real right column
+  });
+
   it('de-dupes a duplicate page_id on append so no two pages share an id', () => {
     const projectPath = path.join(tmpDir, 'pageid-project');
     createProject({ name: 'PgId', path: projectPath });
