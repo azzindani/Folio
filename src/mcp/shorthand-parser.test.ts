@@ -1662,6 +1662,33 @@ describe('sections — connected flow / process block (rasterizing, collision-fr
   });
 });
 
+describe('sections — pricing / plans block', () => {
+  type SL = { id: string; type: string };
+  const pr = (block: object): { layers?: SL[] } => expandShorthand({
+    id: 'pr', type: 'sections', z: 0, pos: [0, 0, 1080, 1350], title: 'X', blocks: [block],
+  } as unknown as ShorthandLayer) as { layers?: SL[] };
+
+  it('renders one card per tier + a price + per-feature rows', () => {
+    const g = pr({ kind: 'pricing', items: [
+      { name: 'Free', price: '$0', period: '/mo', features: ['Basic streaming', 'Ads'] },
+      { name: 'Plus', price: '$9', period: '/mo', features: ['Offline', 'No ads', 'HD'], highlight: true },
+      { name: 'Pro', price: '$15', period: '/mo', features: ['Hi-fi', 'Family'] },
+    ] });
+    const ids = g.layers!.map(l => l.id);
+    expect(ids.filter(i => /_card\d+$/.test(i)).length).toBe(3);
+    expect(ids.filter(i => /_pp\d+$/.test(i)).length).toBe(3);        // one price per tier
+    expect(ids.filter(i => /_pf\d+_\d+$/.test(i)).length).toBe(7);    // 2+3+2 features
+  });
+
+  it('handles tiers/plans + perks aliases', () => {
+    const g = pr({ kind: 'plans', tiers: [
+      { title: 'Basic', cost: 'Free', perks: ['x'] },
+      { title: 'Pro', cost: '$9', perks: ['y', 'z'] },
+    ] });
+    expect(g.layers!.filter(l => /_card\d+$/.test(l.id)).length).toBe(2);
+  });
+});
+
 describe('sections — timeline / milestones block', () => {
   type SL = { id: string; type: string; y: number };
   const tl = (block: object): { layers?: SL[] } => expandShorthand({
