@@ -376,6 +376,29 @@ describe('sealDesign', () => {
     expect(bgOf(g1)).toBe(bgOf(g2));
   });
 
+  it('removes stacked duplicate full-canvas presets, keeping the last (thrash-rebuild)', () => {
+    const projectPath = path.join(tmpDir, 'stacked-project');
+    createProject({ name: 'Stacked', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Stacked', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/stacked.design.yaml');
+    // A thrashing rebuild: three full-canvas feature_grids stacked across calls.
+    for (const t of ['First Attempt', 'Second Attempt', 'Final Version']) {
+      addLayers({ design_path: designPath, layers_shorthand: [
+        { type: 'feature_grid', title: t, items: [{ title: 'A', desc: 'x' }, { title: 'B', desc: 'y' }] }] as unknown as ShorthandLayer[] });
+    }
+    const spec = parseYAMLDesign(designPath);
+    const grids = (spec.layers ?? []).filter(l => l.type === 'group' && String((l as { id?: string }).id ?? '').startsWith('feature_grid'));
+    expect(grids.length).toBe(1); // only the survivor remains
+    const titles: string[] = [];
+    const walk = (ls: Layer[]): void => { for (const l of ls) {
+      if (l.type === 'text') { const c = (l as unknown as { content?: { value?: unknown } }).content; if (c && typeof c.value === 'string') titles.push(c.value); }
+      const kids = (l as unknown as { layers?: Layer[] }).layers; if (Array.isArray(kids)) walk(kids);
+    } };
+    walk(spec.layers ?? []);
+    expect(titles).toContain('Final Version');     // the LAST attempt is kept
+    expect(titles).not.toContain('First Attempt'); // earlier stacked attempts dropped
+  });
+
   it('de-dupes a duplicate page_id on append so no two pages share an id', () => {
     const projectPath = path.join(tmpDir, 'pageid-project');
     createProject({ name: 'PgId', path: projectPath });
