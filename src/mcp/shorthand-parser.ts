@@ -1428,7 +1428,13 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     // overruns the column and collides with the next stat — and diagnose can't
     // see inside this group, so the layout must be collision-proof by construction).
     const maxTok = Math.max(1, ...shown.map(rr => Math.max(1, ...rr.val.split(/\s+/).map(t => t.length))));
-    const vSize = Math.max(22, Math.round(Math.min(W * 0.055, (colW * 0.92) / (maxTok * 0.58))));
+    // A LONE figure is the poster's focal point, not a row cell — let it grow into a
+    // hero number (a blind model that builds a single-stat poster as a 1-item stats
+    // block otherwise gets a timid ~59px figure instead of a dominant one). A
+    // multi-stat row keeps the compact cap so columns stay balanced. Still fit-to-
+    // column so a long token never overruns.
+    const figCap = n === 1 ? W * 0.14 : W * 0.055;
+    const vSize = Math.max(22, Math.round(Math.min(figCap, (colW * 0.92) / (maxTok * 0.58))));
     // Measure every cell, then place row-by-row (each row as tall as its tallest
     // cell) so a wrapped label never overlaps the row beneath it.
     const cells = shown.map(({ val, lab }) => {
