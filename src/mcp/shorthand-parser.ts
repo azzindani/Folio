@@ -1611,6 +1611,42 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
       return { layers, height: chartH + axisH + 8 };
     }
   }
+  // Side-by-side COMPARISON — two option headers + attribute rows (label, A value,
+  // B value) split by a center divider, each row measured so nothing overprints.
+  // A blind model asked for an "X vs Y" hand-places a colliding table; this owns it.
+  if (kind === 'versus' || kind === 'comparison' || kind === 'compare' || kind === 'vs' || kind === 'head_to_head') {
+    const rows = arrField('rows', 'items', 'attributes', 'features', 'criteria', 'dimensions', 'aspects');
+    if (!rows.length) return { layers, height: 0 };
+    const opts = Array.isArray(b['options']) ? (b['options'] as unknown[]).map(o => shStr(o)) : [];
+    const aName = shStr(b['a_label'] ?? b['left_label'] ?? b['option_a'] ?? b['title_a'] ?? b['a']) || opts[0] || 'Option A';
+    const bName = shStr(b['b_label'] ?? b['right_label'] ?? b['option_b'] ?? b['title_b'] ?? b['b']) || opts[1] || 'Option B';
+    const gap = Math.round(W * 0.03), colW = Math.round((w - gap) / 2);
+    const leftX = x, rightX = x + colW + gap, midX = x + Math.round(w / 2);
+    const aOf = (rw: Record<string, unknown>): string => shStr(rw['a'] ?? rw['left'] ?? rw['option_a'] ?? rw['a_value'] ?? rw['value_a'] ?? rw['first']);
+    const bOf = (rw: Record<string, unknown>): string => shStr(rw['b'] ?? rw['right'] ?? rw['option_b'] ?? rw['b_value'] ?? rw['value_b'] ?? rw['second']);
+    const labelOf = (rw: Record<string, unknown>): string => shStr(rw['label'] ?? rw['attribute'] ?? rw['feature'] ?? rw['criterion'] ?? rw['aspect'] ?? rw['name'] ?? rw['title']);
+    let yy = y;
+    const hSize = Math.round(W * 0.03);
+    const headH = Math.max(estTextHeight(aName, hSize, colW, 1.1), estTextHeight(bName, hSize, colW, 1.1));
+    layers.push(txt(`${idp}_ha`, z++, leftX, yy, colW, headH, aName, { font_size: hSize, font_weight: 800, color: accent, align: 'center', line_height: 1.1 }));
+    layers.push(txt(`${idp}_hb`, z++, rightX, yy, colW, headH, bName, { font_size: hSize, font_weight: 800, color: text, align: 'center', line_height: 1.1 }));
+    yy += headH + Math.round(W * 0.022);
+    const rowsTop = yy;
+    const lSize = Math.round(W * 0.017), vSize = Math.round(W * 0.022);
+    rows.forEach((rw, i) => {
+      const label = labelOf(rw), av = aOf(rw), bv = bOf(rw);
+      const lH = label ? estTextHeight(label, lSize, w, 1.1) : 0;
+      const vH = Math.max(estTextHeight(av || ' ', vSize, colW - 24, 1.3), estTextHeight(bv || ' ', vSize, colW - 24, 1.3));
+      if (i > 0) layers.push({ id: `${idp}_sep${i}`, type: 'rect', z: z++, x, y: yy - Math.round(W * 0.013), width: w, height: 1, opacity: 0.22, fill: { type: 'solid', color: muted } } as unknown as Layer);
+      if (label) layers.push(txt(`${idp}_rl${i}`, z++, x, yy, w, lH, label.toUpperCase(), { font_family: 'IBM Plex Mono', font_size: lSize, font_weight: 700, color: muted, letter_spacing: 1, align: 'center', line_height: 1.1 }));
+      const vy = yy + (label ? lH + 6 : 0);
+      layers.push(txt(`${idp}_ra${i}`, z++, leftX, vy, colW, vH, av, { font_size: vSize, font_weight: 600, color: text, align: 'center', line_height: 1.3 }));
+      layers.push(txt(`${idp}_rb${i}`, z++, rightX, vy, colW, vH, bv, { font_size: vSize, font_weight: 600, color: text, align: 'center', line_height: 1.3 }));
+      yy += lH + (label ? 6 : 0) + vH + Math.round(W * 0.026);
+    });
+    layers.push({ id: `${idp}_div`, type: 'rect', z: z0, x: midX - 1, y: rowsTop, width: 2, height: Math.max(0, yy - rowsTop - Math.round(W * 0.026)), opacity: 0.3, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    return { layers, height: Math.max(0, yy - y - Math.round(W * 0.026)) };
+  }
   if (kind === 'caption' || kind === 'source' || kind === 'note' || kind === 'footnote' || kind === 'label') {
     // Small mono source/caption line (blind models pass the footer source as a
     // block like {kind:source}; render its text — never silently drop it).

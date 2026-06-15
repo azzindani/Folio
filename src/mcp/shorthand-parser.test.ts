@@ -1662,6 +1662,33 @@ describe('sections — connected flow / process block (rasterizing, collision-fr
   });
 });
 
+describe('sections — versus / comparison block', () => {
+  type SL = { id: string; type: string };
+  const vs = (block: object): { layers?: SL[] } => expandShorthand({
+    id: 'cmp', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'X', blocks: [block],
+  } as unknown as ShorthandLayer) as { layers?: SL[] };
+
+  it('renders two option headers + per-row A/B values + a center divider', () => {
+    const g = vs({ kind: 'versus', a_label: 'Classroom', b_label: 'App', rows: [
+      { label: 'Cost', a: 'High upfront', b: 'Low monthly' },
+      { label: 'Pace', a: 'Fixed schedule', b: 'Flexible' },
+      { label: 'Speaking', a: 'Lots of practice', b: 'Limited' },
+    ] });
+    const ids = g.layers!.map(l => l.id);
+    expect(ids.some(i => /_ha$/.test(i))).toBe(true);
+    expect(ids.some(i => /_hb$/.test(i))).toBe(true);
+    expect(ids.filter(i => /_ra\d+$/.test(i)).length).toBe(3);
+    expect(ids.filter(i => /_rb\d+$/.test(i)).length).toBe(3);
+    expect(ids.some(i => /_div$/.test(i))).toBe(true);
+  });
+
+  it('handles alias data shapes (options[] + left/right)', () => {
+    const g = vs({ kind: 'comparison', options: ['A', 'B'], items: [{ attribute: 'Speed', left: 'Slow', right: 'Fast' }] });
+    expect(g.layers!.filter(l => /_ra\d+$/.test(l.id)).length).toBe(1);
+    expect(g.layers!.filter(l => /_rb\d+$/.test(l.id)).length).toBe(1);
+  });
+});
+
 describe('sections — native donut + line data viz (rasterizing, no foreignObject)', () => {
   type SL = { id: string; type: string };
   const sec = (block: object): { layers?: SL[] } => expandShorthand({
