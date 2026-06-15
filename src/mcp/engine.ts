@@ -665,6 +665,32 @@ function isTextLayer(r: Record<string, unknown>): boolean {
   return typeof r['text'] === 'string' || typeof r['value'] === 'string';
 }
 
+// Index of a design within its sibling VARIANT SET — designs in the same folder
+// whose filename differs ONLY by a trailing integer (the "give me N options of one
+// topic" pattern: folio-poster-1, folio-poster-2, …). A weak model passes `variant`
+// to enrich_brief but then DROPS the returned bg/accent/font on add_layers, so all N
+// same-topic designs fall to ONE content-seeded mood and render IDENTICALLY (the
+// "failed to generate N distinct designs" report). The index lets seededDefaults pick
+// the Nth curated art-direction even with no style passed. A lone design (no
+// integer-only sibling sharing its stem) → 0 → byte-identical to before.
+function variantIndexForDesign(designPath: string): number {
+  const base = path.basename(designPath).replace(/\.design\.yaml$/i, '');
+  const m = /^(.*?)[-_ ]?(\d+)$/.exec(base);
+  if (!m || !m[1]) return 0; // no trailing number, or an all-digit name → not a set
+  const stem = m[1];
+  const num = Number(m[2]);
+  let nums: number[];
+  try {
+    nums = fs.readdirSync(path.dirname(designPath))
+      .map(f => /^(.*?)[-_ ]?(\d+)\.design\.yaml$/i.exec(f))
+      .filter((x): x is RegExpExecArray => x !== null && x[1] === stem)
+      .map(x => Number(x[2]));
+  } catch { return 0; }
+  const sorted = Array.from(new Set(nums)).sort((a, b) => a - b);
+  const idx = sorted.indexOf(num);
+  return idx < 0 ? 0 : idx;
+}
+
 export function addLayers(args: {
   design_path: string; page_id?: string; project_path?: string;
   layers?: Layer[]; layers_shorthand?: ShorthandLayer[]; task_path?: string;
@@ -735,6 +761,19 @@ export function addLayers(args: {
   // (patching the already-EXPANDED group's shorthand keys is inert). Clamping at
   // the source lets the preset lay itself out correctly inside the page.
   if (shorthand.length) clampShorthandToCanvas(shorthand, spec.document.width, spec.document.height);
+
+  // "Give me N options of one topic": stamp this design's index within its sibling
+  // variant set so a preset whose style the model DROPPED still picks the Nth curated
+  // art-direction (seededDefaults → pickMoodVariant) instead of the same seeded mood
+  // every other option got. Only fires when the model omitted bg (explicit style is
+  // always honored); a lone design → index 0 → unchanged.
+  if (shorthand.length) {
+    const vi = variantIndexForDesign(dPath);
+    if (vi > 0) {
+      for (const l of shorthand) (l as unknown as Record<string, unknown>)['__variant'] = vi;
+      progress.push(pInfo(`Applied art-direction variant ${vi}`, 'one of a sibling variant set — distinct palette/typography/background'));
+    }
+  }
 
   const incoming: Layer[] = shorthand.length
     ? expandShorthandLayers(shorthand)
