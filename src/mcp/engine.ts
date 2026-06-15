@@ -677,6 +677,34 @@ function dropCollidingMotifs(layers: Layer[]): number {
   return dropped;
 }
 
+// A full-canvas OPAQUE content preset group (sections/feature_grid/editorial/…) —
+// it paints its own background, so two of them at the origin fully cover each
+// other. (decor/marble/backdrop presets and motifs are excluded — those are meant
+// to show through.)
+const CONTENT_PRESET_RE = /^(feature_grid|sections|infographic|document|report_poster|editorial|stat|list|steps|event|flyer|hero|split|poster)([_-]|$)/;
+function isFullBleedContentPreset(l: Layer, docW: number, docH: number): boolean {
+  const o = l as unknown as Record<string, unknown>;
+  if (o['type'] !== 'group') return false;
+  if (!CONTENT_PRESET_RE.test(String(o['id'] ?? ''))) return false;
+  const x = Number(o['x']) || 0, y = Number(o['y']) || 0, w = Number(o['width']) || 0;
+  return x <= docW * 0.02 && y <= docH * 0.04 && w >= docW * 0.9;
+}
+
+// A thrashing model rebuilds a poster several times → many full-canvas content
+// presets STACKED at the origin (e.g. 8 feature_grids, de-duped to unique ids by
+// the page-id/layer-id pass but still overlapping into an illegible mess: two
+// headers, content bleeding off-canvas). They're opaque and fully cover one
+// another, so keep the LAST (the model's final attempt) and drop the earlier ones.
+function dropStackedPresets(layers: Layer[], docW: number, docH: number): number {
+  const idxs: number[] = [];
+  layers.forEach((l, i) => { if (isFullBleedContentPreset(l, docW, docH)) idxs.push(i); });
+  if (idxs.length < 2) return 0;
+  const drop = new Set(idxs.slice(0, -1)); // keep the last
+  let removed = 0;
+  for (let i = layers.length - 1; i >= 0; i--) { if (drop.has(i)) { layers.splice(i, 1); removed++; } }
+  return removed;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -1081,6 +1109,22 @@ export function addLayers(args: {
       }
     }
   }
+  // Remove stacked duplicate full-canvas presets (a thrashing model rebuilds the
+  // poster several times, leaving N overlapping content groups). Keep the final
+  // one; on a poster, re-fit the doc to it (a later add_layers means the fresh-
+  // poster auto-fit above didn't fire).
+  const droppedStacked = dropStackedPresets(activeLayers, spec.document.width, spec.document.height);
+  if (droppedStacked) {
+    progress.push(pInfo(`Removed ${droppedStacked} stacked duplicate preset(s)`, 'a thrashing rebuild stacked full-canvas presets — kept the final one'));
+    if (!spec.pages) {
+      const g = activeLayers.find(l => isFullBleedContentPreset(l, spec.document.width, spec.document.height)) as (Layer & { width?: number; height?: number }) | undefined;
+      if (g && typeof g.width === 'number' && g.width > 0 && typeof g.height === 'number' && g.height > 0) {
+        spec.document.width = g.width;
+        spec.document.height = g.height;
+      }
+    }
+  }
+
   // Drop any space-filling motif that overlaps content. Runs on the MERGED set
   // (existing + incoming), so a motif added in its own add_layers call — the
   // common shape, since the content preset and the decoration arrive separately —
