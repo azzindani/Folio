@@ -23,6 +23,11 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
   // A PROCESS / WORKFLOW / "how X moves through Y" poster — still a sections preset,
   // but its spine is a flow block the engine draws as numbered nodes joined by arrows
   // (never a plain list, never hand-placed circles/boxes that overlap).
+  // A dated HISTORY — a sections preset whose spine is a timeline block (date column
+  // + rail + node per milestone), never a plain list or hand-placed dots.
+  timeline: { canvas: [1080, 1920], preset: 'sections', blocks: [
+    'a timeline block {kind:"timeline", items:[{date, title, desc}]} — 5-7 dated milestones in order, each a date + a short title + a one-sentence desc; the engine draws a rail with a node per milestone',
+    'callout {label,text} — where it is headed next, or the through-line' ] },
   // An "X vs Y" comparison — a sections preset whose spine is a versus block the
   // engine lays out as two columns + a divider (never a hand-placed colliding table).
   comparison: { canvas: [1080, 1350], preset: 'sections', blocks: [
@@ -41,6 +46,9 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
 
 function inferType(p: string): string {
   if (/\b(\d+|five|six|seven|eight|nine|ten)\s+(tips|steps|ways|reasons|rules|habits|lessons|principles|mistakes|tactics)\b/i.test(p)) return 'list';
+  // A dated HISTORY — render as a timeline (date column + rail), not a flow. Checked
+  // BEFORE process so "roadmap"/"the journey of X" with dates routes here.
+  if (/\b(timeline|milestones?|roadmap|history of|the (?:story|journey|history|evolution) of|over the years|through the years|chronology|evolution of|year by year|founded in)\b/i.test(p)) return 'timeline';
   // A PROCESS / sequence — render as a connected flow diagram, not a bullet list.
   if (/\b(process|workflow|pipeline|life\s?cycle|journey|funnel|roadmap|stages?\b|how (?:a|an|the|it)\b.*\b(?:works?|flows?|moves?|happens?|goes?)|step.?by.?step|from .{2,40}? to .{2,40}?\b)\b/i.test(p)) return 'process';
   // A product/app/tool poster is a FEATURE grid, even when phrased as a "launch"

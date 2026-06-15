@@ -1662,6 +1662,29 @@ describe('sections — connected flow / process block (rasterizing, collision-fr
   });
 });
 
+describe('sections — timeline / milestones block', () => {
+  type SL = { id: string; type: string; y: number };
+  const tl = (block: object): { layers?: SL[] } => expandShorthand({
+    id: 'tl', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'X', blocks: [block],
+  } as unknown as ShorthandLayer) as { layers?: SL[] };
+
+  it('renders a date + node + rail + event per milestone, measured & stacked', () => {
+    const g = tl({ kind: 'timeline', items: [
+      { date: '2019', title: 'Founded', desc: 'Two engineers in a garage with one idea.' },
+      { date: '2021', title: 'Seed round', desc: 'Raised capital to grow the team.' },
+      { date: '2024', title: 'Acquired', desc: 'A big exit caps the journey.' },
+    ] });
+    const ids = g.layers!.map(l => l.id);
+    expect(ids.filter(i => /_node\d+$/.test(i)).length).toBe(3);
+    expect(ids.filter(i => /_dt\d+$/.test(i)).length).toBe(3);    // date labels
+    expect(ids.filter(i => /_rail\d+$/.test(i)).length).toBe(2);  // n-1 connectors
+    expect(ids.filter(i => /_tt\d+$/.test(i)).length).toBe(3);    // event titles
+    const ny = (i: number): number => g.layers!.find(l => l.id === `tl_b0_node${i}`)!.y;
+    expect(ny(0)).toBeLessThan(ny(1));
+    expect(ny(1)).toBeLessThan(ny(2));
+  });
+});
+
 describe('sections — versus / comparison block', () => {
   type SL = { id: string; type: string };
   const vs = (block: object): { layers?: SL[] } => expandShorthand({
