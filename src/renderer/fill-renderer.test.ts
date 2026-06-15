@@ -36,6 +36,14 @@ describe('applyFill — solid', () => {
     expect(result.fill).toBe('#00FF00');
     expect(result.opacity).toBe(0.5);
   });
+
+  it('accepts a bare color string as a solid fill (blind-model `fill: "#0A0A0A"`)', () => {
+    // A model emits a bare hex on a complete-mode rect. Pre-fix this fell through
+    // the type switch → undefined → caller crash → invisible/white layer.
+    const result = applyFill('#0A0A0A' as unknown as SolidFill, makeSVG(), { width: 1080, height: 1920 });
+    expect(result.fill).toBe('#0A0A0A');
+    expect(result.opacity).toBeUndefined();
+  });
 });
 
 describe('applyFill — linear gradient', () => {

@@ -558,6 +558,78 @@ function normalizeReportAliases(incoming: Layer[]): void {
   }
 }
 
+// A model may hand-author a `group` at (gx,gy) and position its children in the
+// group's LOCAL frame (child coords near 0), expecting the group origin to offset
+// them. The engine treats group x/y as bounds only — children render at ABSOLUTE
+// canvas coords (every shorthand/section template relies on this), so such a
+// group's children collapse to the top-left and collide with whatever else is up
+// there (the blind-model lightning poster: a y:250 column group printed over the
+// y:100 headline). Detect the local-frame case — a child positioned BEFORE the
+// group origin, which is impossible for genuinely-absolute children (they always
+// sit at >= the origin) — and bake the offset into the whole subtree, then zero
+// then shrink the group box to the children's true extent (NOT 0,0: a stale
+// full-height box makes the downstream de-collide pass treat the whole upper
+// canvas as occupied and shove a sibling headline far down).
+// Processes innermost-first so nested relative frames compose correctly.
+function layerLeftTop(l: Layer): { x: number; y: number } {
+  const o = l as unknown as Record<string, unknown>;
+  const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);
+  const xs = [num(o['x']), num(o['x1']), num(o['x2']), num(o['cx'])].filter((n): n is number => n !== undefined);
+  const ys = [num(o['y']), num(o['y1']), num(o['y2']), num(o['cy'])].filter((n): n is number => n !== undefined);
+  return { x: xs.length ? Math.min(...xs) : 0, y: ys.length ? Math.min(...ys) : 0 };
+}
+
+function bakeOffsetDeep(l: Layer, dx: number, dy: number): void {
+  const o = l as unknown as Record<string, unknown>;
+  for (const k of ['x', 'x1', 'x2', 'cx']) if (typeof o[k] === 'number') o[k] = (o[k] as number) + dx;
+  for (const k of ['y', 'y1', 'y2', 'cy']) if (typeof o[k] === 'number') o[k] = (o[k] as number) + dy;
+  const kids = o['layers'];
+  if (Array.isArray(kids)) for (const k of kids) bakeOffsetDeep(k as Layer, dx, dy);
+}
+
+// Axis-aligned box of a layer in absolute coords (line endpoints, or x/y+size).
+function layerBBox(l: Layer): { x: number; y: number; r: number; b: number } {
+  const o = l as unknown as Record<string, unknown>;
+  const n = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);
+  const x1 = n(o['x1']), y1 = n(o['y1']), x2 = n(o['x2']), y2 = n(o['y2']);
+  if (x1 !== undefined && x2 !== undefined && y1 !== undefined && y2 !== undefined) {
+    return { x: Math.min(x1, x2), y: Math.min(y1, y2), r: Math.max(x1, x2), b: Math.max(y1, y2) };
+  }
+  const x = n(o['x']) ?? 0, y = n(o['y']) ?? 0, w = n(o['width']) ?? 0, h = n(o['height']) ?? 0;
+  return { x, y, r: x + w, b: y + h };
+}
+
+function flattenRelativeGroups(layers: Layer[]): number {
+  let moved = 0;
+  for (const l of layers) {
+    const o = l as unknown as Record<string, unknown>;
+    if (l?.type !== 'group' || !Array.isArray(o['layers']) || (o['layers'] as unknown[]).length === 0) continue;
+    const kids = o['layers'] as Layer[];
+    moved += flattenRelativeGroups(kids); // innermost-first
+    const gx = typeof o['x'] === 'number' ? o['x'] : 0;
+    const gy = typeof o['y'] === 'number' ? o['y'] : 0;
+    if (gx === 0 && gy === 0) continue;
+    // Strict `<`: an absolute child is never positioned before its group origin,
+    // so this never false-fires on a real template (children at X+margin >= X).
+    const local = kids.some(k => { const p = layerLeftTop(k); return p.x < gx || p.y < gy; });
+    if (!local) continue;
+    for (const k of kids) bakeOffsetDeep(k, gx, gy);
+    // Re-fit the group box to the children's true extent so the de-collide pass
+    // and any bounds logic see the real occupied region, not the old origin.
+    let minX = Infinity, minY = Infinity, maxR = -Infinity, maxB = -Infinity;
+    for (const k of kids) {
+      const bb = layerBBox(k);
+      minX = Math.min(minX, bb.x); minY = Math.min(minY, bb.y);
+      maxR = Math.max(maxR, bb.r); maxB = Math.max(maxB, bb.b);
+    }
+    if (Number.isFinite(minX)) {
+      o['x'] = minX; o['y'] = minY; o['width'] = maxR - minX; o['height'] = maxB - minY;
+    }
+    moved++;
+  }
+  return moved;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -826,6 +898,12 @@ export function addLayers(args: {
     ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
+
+  // Bake any local-framed hand-authored group offset into its children (the
+  // engine renders group children at absolute coords; a model that placed them
+  // relative to a moved group would otherwise collapse them to the top-left).
+  const flattened = flattenRelativeGroups(incoming);
+  if (flattened) progress.push(pInfo(`Flattened ${flattened} relative group(s)`, 'baked group offset into children → absolute coords'));
 
   // Rescue a hand-placed, unsized text poster (a weak model that skipped the
   // preset) into a readable title/subtitle/body hierarchy. Posters only — paged

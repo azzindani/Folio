@@ -118,6 +118,18 @@ describe('resolveFill', () => {
     expect(resolved).toEqual({ type: 'solid', color: '#E94560' });
   });
 
+  it('coerces a bare hex string fill into a solid (blind-model `fill: "#0A0A0A"`)', () => {
+    // Pre-fix this fell through the type switch → undefined → the fill was STRIPPED
+    // → the layer rendered transparent (a vanished background).
+    const resolved = resolveFill('#0A0A0A' as unknown as Fill, ctx);
+    expect(resolved).toEqual({ type: 'solid', color: '#0A0A0A' });
+  });
+
+  it('coerces a bare token string fill and resolves the token', () => {
+    const resolved = resolveFill('$primary' as unknown as Fill, ctx);
+    expect(resolved).toEqual({ type: 'solid', color: '#E94560' });
+  });
+
   it('resolves gradient stop tokens', () => {
     const fill: Fill = {
       type: 'linear',
