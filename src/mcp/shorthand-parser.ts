@@ -2873,12 +2873,26 @@ export function fillBleedPresetDims(layers: ShorthandLayer[], docW: number, docH
     const r = sh as Record<string, unknown>;
     const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
     if (!BLEED_PRESETS.has(t)) continue;
-    const hasBox = (Array.isArray(r['pos']) && (r['pos'] as unknown[]).length === 4)
+    const pos = Array.isArray(r['pos']) && (r['pos'] as unknown[]).length >= 4 ? (r['pos'] as number[]) : null;
+    const hasBox = pos !== null
       || typeof r['x'] === 'number' || typeof r['y'] === 'number'
       || typeof r['width'] === 'number' || typeof r['height'] === 'number';
-    if (hasBox) continue;
-    r['pos'] = [0, 0, docW, docH];
-    filled++;
+    if (!hasBox) { r['pos'] = [0, 0, docW, docH]; filled++; continue; }
+    // A full-bleed preset IS the poster — so a clearly-wrong box (a thrashing model
+    // gave x=-459, 1539² on a 1080 canvas) means it fumbled the position/size, not
+    // that it wants a smaller region. Snap an off-canvas / oversized box to the page
+    // so the preset lays out correctly (and origin-stacked dupes can then be deduped).
+    const bx = pos ? Number(pos[0]) : (typeof r['x'] === 'number' ? r['x'] as number : 0);
+    const by = pos ? Number(pos[1]) : (typeof r['y'] === 'number' ? r['y'] as number : 0);
+    const bw = pos ? Number(pos[2]) : (typeof r['width'] === 'number' ? r['width'] as number : docW);
+    const bh = pos ? Number(pos[3]) : (typeof r['height'] === 'number' ? r['height'] as number : docH);
+    const wrong = bx < -docW * 0.05 || by < -docH * 0.05
+      || bw > docW * 1.1 || bh > docH * 1.3 || (bx + bw) > docW * 1.1;
+    if (wrong) {
+      r['pos'] = [0, 0, docW, docH];
+      delete r['x']; delete r['y']; delete r['width']; delete r['height'];
+      filled++;
+    }
   }
   return filled;
 }
