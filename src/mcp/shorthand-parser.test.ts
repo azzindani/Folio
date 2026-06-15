@@ -2730,6 +2730,15 @@ describe('fillBleedPresetDims — boxless full-bleed preset fills the page (blan
     expect(fillBleedPresetDims([{ type: 'sections', title: 'Greens' } as unknown as ShorthandLayer], 1080, 1350)).toBe(0);
     expect(fillBleedPresetDims([{ type: 'list', items: ['a', 'b'] } as unknown as ShorthandLayer], 1080, 1350)).toBe(0);
   });
+  it('snaps an OFF-CANVAS / OVERSIZED full-bleed box to the page (thrash misplacement)', () => {
+    const sh: ShorthandLayer[] = [{ type: 'feature_grid', pos: [-459, 500, 1539, 1539], title: 'X' } as unknown as ShorthandLayer];
+    expect(fillBleedPresetDims(sh, 1080, 1080)).toBe(1);
+    expect((sh[0] as unknown as { pos: number[] }).pos).toEqual([0, 0, 1080, 1080]);
+  });
+  it('leaves a sane in-canvas full-bleed box alone', () => {
+    const sh: ShorthandLayer[] = [{ type: 'feature_grid', pos: [0, 0, 1080, 1350], title: 'X' } as unknown as ShorthandLayer];
+    expect(fillBleedPresetDims(sh, 1080, 1350)).toBe(0);
+  });
 });
 
 describe('demoteCoveringBackdrops — a full-canvas rect added onto content sinks behind it', () => {
