@@ -1662,6 +1662,36 @@ describe('sections — connected flow / process block (rasterizing, collision-fr
   });
 });
 
+describe('sections — native donut + line data viz (rasterizing, no foreignObject)', () => {
+  type SL = { id: string; type: string };
+  const sec = (block: object): { layers?: SL[] } => expandShorthand({
+    id: 'dv', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'Data', blocks: [block],
+  } as unknown as ShorthandLayer) as { layers?: SL[] };
+
+  it('donut renders one arc path per slice + a legend (swatch + label + %)', () => {
+    const g = sec({ kind: 'donut', items: [{ label: 'BEV', value: 70 }, { label: 'PHEV', value: 20 }, { label: 'FCEV', value: 10 }] });
+    const ids = g.layers!.map(l => l.id);
+    expect(ids.filter(i => /_arc\d+$/.test(i)).length).toBe(3);
+    expect(g.layers!.filter(l => l.type === 'path' && /_arc/.test(l.id)).length).toBe(3);
+    expect(ids.filter(i => /_sw\d+$/.test(i)).length).toBe(3);   // legend swatches
+    expect(ids.filter(i => /_lp\d+$/.test(i)).length).toBe(3);   // % labels
+  });
+
+  it('line/trend renders a polyline path + area + dots + x labels', () => {
+    const g = sec({ kind: 'line', items: [{ x: '2019', y: 2 }, { x: '2020', y: 4 }, { x: '2021', y: 9 }, { x: '2022', y: 14 }] });
+    const ids = g.layers!.map(l => l.id);
+    expect(ids.some(i => /_line$/.test(i))).toBe(true);
+    expect(ids.some(i => /_area$/.test(i))).toBe(true);
+    expect(ids.filter(i => /_dot\d+$/.test(i)).length).toBe(4);
+    expect(ids.filter(i => /_lx\d+$/.test(i)).length).toBe(4);
+  });
+
+  it('pie still emits one path per slice (no inner hole)', () => {
+    const g = sec({ kind: 'pie', items: [{ label: 'A', value: 1 }, { label: 'B', value: 1 }] });
+    expect(g.layers!.filter(l => /_arc\d+$/.test(l.id)).length).toBe(2);
+  });
+});
+
 describe('composeBackground — engine-composed rich backgrounds (bg_style)', () => {
   const sec = (bg_style: string) => expandShorthand({
     id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'T', bg_style,
