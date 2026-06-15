@@ -1293,7 +1293,7 @@ function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
 // rhythm, an accent system, held margins and a footer — so a dense, organized,
 // human-designer-level composition is one call instead of dozens of colliding
 // hand-placed layers.
-interface SecCtx { accent: string; text: string; muted: string; bg: string; W: number; align?: 'left' | 'center'; statCols?: number; }
+interface SecCtx { accent: string; text: string; muted: string; bg: string; W: number; palette?: string[]; align?: 'left' | 'center'; statCols?: number; }
 
 // A short, measure-like token that belongs in a stat's BIG figure slot —
 // "30%", "$500B", "1.0 TW", "2.3s", "12M". Used to detect/repair a model that
@@ -1542,6 +1542,75 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     });
     return { layers, height: Math.max(0, items.length * (rowH + rowGap) - rowGap) };
   }
+  // Native DONUT / PIE share-of-whole — arc paths + a legend with %. Rasterizes
+  // (unlike a foreignObject vega chart, which exports BLANK). For a "breakdown /
+  // split / composition / X% of the whole" — the share viz `bars` can't express.
+  if (kind === 'donut' || kind === 'pie' || kind === 'ring_chart' || kind === 'breakdown' || kind === 'share' || kind === 'composition') {
+    const items = arrField('items', 'rows', 'data', 'values', 'slices', 'segments', 'parts');
+    if (!items.length) return { layers, height: 0 };
+    const valOf = (it: Record<string, unknown>): number => {
+      const v = it['value'] ?? it['y'] ?? it['count'] ?? it['percent'] ?? it['share'] ?? it['pct'];
+      return typeof v === 'number' ? v : (parseFloat(shStr(v).replace(/[^0-9.\-]/g, '')) || 0);
+    };
+    const vals = items.map(valOf);
+    const total = vals.reduce((a, b) => a + Math.abs(b), 0) || 1;
+    const R = Math.round(W * 0.15), rIn = kind === 'pie' ? 0 : Math.round(W * 0.15 * 0.58);
+    const cx = x + R, cy = y + R;
+    const ramp = (ctx.palette && ctx.palette.length >= 2) ? ctx.palette : [accent, mixHex(accent, text, 0.4), mixHex(accent, muted, 0.55)];
+    const sliceColor = (i: number): string => {
+      const base = ramp[i % ramp.length] ?? accent;
+      const tier = Math.floor(i / ramp.length);
+      return tier === 0 ? base : mixHex(base, bg, Math.min(0.5, 0.22 * tier));
+    };
+    let a0 = -Math.PI / 2;
+    items.forEach((_it, i) => {
+      const a1 = a0 + (Math.abs(vals[i]) / total) * 2 * Math.PI;
+      const la = (a1 - a0) > Math.PI ? 1 : 0;
+      const pt = (rad: number, ang: number): string => `${(cx + rad * Math.cos(ang)).toFixed(1)} ${(cy + rad * Math.sin(ang)).toFixed(1)}`;
+      const d = rIn > 0
+        ? `M ${pt(R, a0)} A ${R} ${R} 0 ${la} 1 ${pt(R, a1)} L ${pt(rIn, a1)} A ${rIn} ${rIn} 0 ${la} 0 ${pt(rIn, a0)} Z`
+        : `M ${cx} ${cy} L ${pt(R, a0)} A ${R} ${R} 0 ${la} 1 ${pt(R, a1)} Z`;
+      layers.push({ id: `${idp}_arc${i}`, type: 'path', z: z++, x: cx - R, y: cy - R, width: 2 * R, height: 2 * R, d, fill: { type: 'solid', color: sliceColor(i) } } as unknown as Layer);
+      a0 = a1;
+    });
+    const legendX = x + 2 * R + Math.round(W * 0.05);
+    const legendW = Math.max(Math.round(W * 0.2), w - (legendX - x));
+    const lh = Math.round(W * 0.044), sw = Math.round(W * 0.022), pctW = Math.round(W * 0.07);
+    items.forEach((it, i) => {
+      const ly = y + i * lh;
+      const label = shStr(it['label'] ?? it['name'] ?? it['title'] ?? it['x'] ?? it['category']);
+      const pct = Math.round((Math.abs(vals[i]) / total) * 100);
+      layers.push({ id: `${idp}_sw${i}`, type: 'rect', z: z++, x: legendX, y: ly + 4, width: sw, height: sw, fill: { type: 'solid', color: sliceColor(i) }, radius: 3 } as unknown as Layer);
+      layers.push(txt(`${idp}_ll${i}`, z++, legendX + sw + 12, ly, legendW - sw - pctW - 24, lh, label, { font_size: Math.round(W * 0.02), font_weight: 600, color: text, line_height: 1.15 }));
+      layers.push(txt(`${idp}_lp${i}`, z++, legendX + legendW - pctW, ly, pctW, lh, `${pct}%`, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.021), font_weight: 700, color: accent, align: 'right' }));
+    });
+    return { layers, height: Math.max(2 * R, items.length * lh) };
+  }
+  // Native LINE / TREND — a polyline over labeled x points + a faint area fill +
+  // dots + x-axis labels. Rasterizes (no foreignObject). For "growth/trend over time".
+  if (kind === 'line' || kind === 'trend' || kind === 'area' || kind === 'timeseries' || kind === 'line_chart') {
+    const items = arrField('items', 'rows', 'data', 'values', 'points', 'series');
+    const valOf = (it: Record<string, unknown>): number => {
+      const v = it['value'] ?? it['y'] ?? it['count'] ?? it['amount'];
+      return typeof v === 'number' ? v : (parseFloat(shStr(v).replace(/[^0-9.\-]/g, '')) || 0);
+    };
+    const pts = items.map(it => ({ x: shStr(it['label'] ?? it['x'] ?? it['name'] ?? it['year']), y: valOf(it) }));
+    if (pts.length >= 2) {
+      const ys = pts.map(p => p.y), ymin = Math.min(...ys), ymax = Math.max(...ys), span = (ymax - ymin) || 1;
+      const chartH = Math.round(W * 0.26), axisH = Math.round(W * 0.05), plotBot = y + chartH;
+      const px = (i: number): number => x + (i / (pts.length - 1)) * w;
+      const py = (v: number): number => plotBot - ((v - ymin) / span) * chartH;
+      const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${px(i).toFixed(1)} ${py(p.y).toFixed(1)}`).join(' ');
+      layers.push({ id: `${idp}_area`, type: 'path', z: z++, x, y, width: w, height: chartH, d: `${lineD} L ${px(pts.length - 1).toFixed(1)} ${plotBot} L ${px(0).toFixed(1)} ${plotBot} Z`, fill: { type: 'solid', color: accent }, opacity: 0.12 } as unknown as Layer);
+      layers.push({ id: `${idp}_line`, type: 'path', z: z++, x, y, width: w, height: chartH, d: lineD, stroke: { color: accent, width: Math.max(3, Math.round(W * 0.005)) } } as unknown as Layer);
+      const dotR = Math.round(W * 0.009), labW = Math.round(W * 0.12);
+      pts.forEach((p, i) => {
+        layers.push({ id: `${idp}_dot${i}`, type: 'ellipse', z: z++, x: px(i) - dotR, y: py(p.y) - dotR, width: 2 * dotR, height: 2 * dotR, fill: { type: 'solid', color: accent } } as unknown as Layer);
+        if (p.x) { const lx = Math.max(x, Math.min(px(i) - labW / 2, x + w - labW)); layers.push(txt(`${idp}_lx${i}`, z++, lx, plotBot + 8, labW, axisH, p.x, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 600, color: muted, align: 'center', line_height: 1.1 })); }
+      });
+      return { layers, height: chartH + axisH + 8 };
+    }
+  }
   if (kind === 'caption' || kind === 'source' || kind === 'note' || kind === 'footnote' || kind === 'label') {
     // Small mono source/caption line (blind models pass the footer source as a
     // block like {kind:source}; render its text — never silently drop it).
@@ -1621,7 +1690,7 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
-  const ctx: SecCtx = { accent, text, muted, bg, W };
+  const ctx: SecCtx = { accent, text, muted, bg, W, palette };
 
   const M = Math.round(W * 0.075), cX = X + M, cW = W - 2 * M;
 
