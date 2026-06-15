@@ -183,6 +183,15 @@ export function applyFill(
   svg: SVGSVGElement,
   bounds: { width: number; height: number },
 ): FillResult {
+  // Robustness: a bare color string (e.g. `fill: '#0A0A0A'` or `fill: '$accent'`)
+  // is a common shorthand a model emits on a complete-mode layer. Without this
+  // guard it falls through the type switch, returns undefined, and the caller
+  // crashes on `.fill` → the layer renders as an error placeholder (an invisible
+  // or white block). Treat any string as a solid fill.
+  if (typeof fill === 'string') {
+    return { fill };
+  }
+
   const defs = getOrCreateDefs(svg);
 
   switch (fill.type) {
