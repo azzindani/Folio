@@ -1961,6 +1961,119 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
 }
 
 // ── Main expansion function ─────────────────────────────────
+// ── Decorative MOTIFS ─────────────────────────────────────────
+// Composed, multi-primitive vector illustrations that fill the negative space a
+// blind model leaves (big empty columns). Each draws into a box from rect/ellipse/
+// path/line ONLY (rasterizes in PNG/PDF) using one accent color at varied OPACITY
+// for depth — no color interpolation, so it is token-safe ($accent passes through
+// to the resolver untouched). Returns absolute-coord layers; the caller wraps them
+// in a group. Math.sin/cos only (deterministic — no Math.random/Date in render).
+const MOTIF_NAMES = new Set([
+  'bolt', 'lightning', 'arcs', 'waves', 'orbit', 'rings', 'rays', 'sunburst',
+  'grid', 'dots', 'peaks', 'mountains', 'circuit',
+]);
+
+function motifLayers(name: string, box: ShapeBox, accent: string, idp: string, z0: number): Layer[] {
+  const { x, y, w, h } = box;
+  const a = accent;
+  const layers: Layer[] = [];
+  let z = z0;
+  const R = (n: number): number => Math.round(n);
+  const cx = x + w / 2, cy = y + h / 2;
+  const poly = (pts: number[][]): string => pts.map((p, i) => `${i ? 'L' : 'M'}${R(p[0])} ${R(p[1])}`).join(' ');
+  const op = (v: number): number => +v.toFixed(2);
+  const key = MOTIF_NAMES.has(name) ? name : 'arcs';
+
+  switch (key) {
+    case 'bolt':
+    case 'lightning': {
+      const gw = w * 0.78, gh = h * 0.6;
+      layers.push({ id: `${idp}_glow`, type: 'ellipse', z: z++, x: R(cx - gw / 2), y: R(cy - gh / 2), width: R(gw), height: R(gh), fill: { type: 'solid', color: a }, opacity: 0.1 } as unknown as Layer);
+      const bx = x + w * 0.5;
+      const bolt = poly([
+        [bx + w * 0.10, y + h * 0.03], [bx - w * 0.14, y + h * 0.46], [bx + w * 0.02, y + h * 0.46],
+        [bx - w * 0.20, y + h * 0.97], [bx + w * 0.16, y + h * 0.42], [bx - w * 0.01, y + h * 0.42],
+      ]) + ' Z';
+      layers.push({ id: `${idp}_bolt`, type: 'path', z: z++, x, y, width: w, height: h, d: bolt, fill: { type: 'solid', color: a }, opacity: 0.92 } as unknown as Layer);
+      const fork = poly([[bx + w * 0.02, y + h * 0.46], [bx + w * 0.24, y + h * 0.64]]);
+      layers.push({ id: `${idp}_fork`, type: 'path', z: z++, x, y, width: w, height: h, d: fork, stroke: { color: a, width: Math.max(3, R(w * 0.02)) }, opacity: 0.65 } as unknown as Layer);
+      break;
+    }
+    case 'arcs': {
+      const n = 5, max = Math.min(w, h) * 0.98, ox = x + w, oy = y + h * 0.08;
+      for (let i = 0; i < n; i++) {
+        const r = max * (0.26 + 0.74 * (i / (n - 1)));
+        const d = `M${R(ox - r)} ${R(oy)} A ${R(r)} ${R(r)} 0 0 1 ${R(ox)} ${R(oy + r)}`;
+        layers.push({ id: `${idp}_arc${i}`, type: 'path', z: z++, x, y, width: w, height: h, d, stroke: { color: a, width: Math.max(2, R(w * 0.012)) }, opacity: op(0.22 + 0.58 * (i / (n - 1))) } as unknown as Layer);
+      }
+      break;
+    }
+    case 'waves': {
+      const n = 5, amp = h * 0.055, step = h / (n + 1), seg = 18;
+      for (let i = 0; i < n; i++) {
+        const baseY = y + step * (i + 1), pts: number[][] = [];
+        for (let s = 0; s <= seg; s++) pts.push([x + (w * s) / seg, baseY + Math.sin((s / seg) * Math.PI * 3 + i * 0.6) * amp]);
+        layers.push({ id: `${idp}_wave${i}`, type: 'path', z: z++, x, y, width: w, height: h, d: poly(pts), stroke: { color: a, width: Math.max(2, R(w * 0.01)) }, opacity: op(0.3 + 0.5 * (i / (n - 1))) } as unknown as Layer);
+      }
+      break;
+    }
+    case 'orbit':
+    case 'rings': {
+      const n = 3, max = Math.min(w, h) * 0.92;
+      for (let i = 0; i < n; i++) {
+        const r = (max * (0.42 + 0.58 * (i / (n - 1)))) / 2;
+        layers.push({ id: `${idp}_ring${i}`, type: 'ellipse', z: z++, x: R(cx - r), y: R(cy - r), width: R(r * 2), height: R(r * 2), stroke: { color: a, width: Math.max(2, R(w * 0.01)) }, opacity: op(0.3 + 0.35 * (i / (n - 1))) } as unknown as Layer);
+        const ang = -0.6 + i * 1.7, nx = cx + Math.cos(ang) * r, ny = cy + Math.sin(ang) * r, ds = Math.max(6, w * 0.035);
+        layers.push({ id: `${idp}_node${i}`, type: 'ellipse', z: z++, x: R(nx - ds / 2), y: R(ny - ds / 2), width: R(ds), height: R(ds), fill: { type: 'solid', color: a }, opacity: 0.9 } as unknown as Layer);
+      }
+      const cs = Math.max(8, w * 0.05);
+      layers.push({ id: `${idp}_core`, type: 'ellipse', z: z++, x: R(cx - cs / 2), y: R(cy - cs / 2), width: R(cs), height: R(cs), fill: { type: 'solid', color: a }, opacity: 1 } as unknown as Layer);
+      break;
+    }
+    case 'rays':
+    case 'sunburst': {
+      const n = 12, rad = Math.min(w, h) * 0.52, cs = Math.max(8, w * 0.06);
+      for (let i = 0; i < n; i++) {
+        const ang = (i / n) * Math.PI * 2;
+        layers.push({ id: `${idp}_ray${i}`, type: 'path', z: z++, x, y, width: w, height: h, d: poly([[cx, cy], [cx + Math.cos(ang) * rad, cy + Math.sin(ang) * rad]]), stroke: { color: a, width: Math.max(2, R(w * 0.012)) }, opacity: op(i % 2 ? 0.35 : 0.7) } as unknown as Layer);
+      }
+      layers.push({ id: `${idp}_hub`, type: 'ellipse', z: z++, x: R(cx - cs / 2), y: R(cy - cs / 2), width: R(cs), height: R(cs), fill: { type: 'solid', color: a }, opacity: 1 } as unknown as Layer);
+      break;
+    }
+    case 'grid':
+    case 'dots': {
+      const cols = 6, rows = Math.min(14, Math.max(3, Math.round((6 * h) / w)));
+      const ds = Math.max(4, Math.min(w / cols, h / rows) * 0.26);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const px = x + ((c + 0.5) / cols) * w, py = y + ((r + 0.5) / rows) * h;
+        layers.push({ id: `${idp}_dot${r}_${c}`, type: 'ellipse', z: z++, x: R(px - ds / 2), y: R(py - ds / 2), width: R(ds), height: R(ds), fill: { type: 'solid', color: a }, opacity: op(0.2 + 0.6 * (c / (cols - 1))) } as unknown as Layer);
+      }
+      break;
+    }
+    case 'peaks':
+    case 'mountains': {
+      const ranges = 3;
+      for (let i = 0; i < ranges; i++) {
+        const baseY = y + h * (0.55 + 0.15 * i), peakY = y + h * (0.2 + 0.18 * i), midX = x + w * (0.3 + 0.2 * i);
+        const d = poly([[x, baseY], [midX, peakY], [x + w, baseY], [x + w, y + h], [x, y + h]]) + ' Z';
+        layers.push({ id: `${idp}_peak${i}`, type: 'path', z: z++, x, y, width: w, height: h, d, fill: { type: 'solid', color: a }, opacity: op(0.18 + 0.22 * i) } as unknown as Layer);
+      }
+      break;
+    }
+    case 'circuit': {
+      const lines = 5;
+      for (let i = 0; i < lines; i++) {
+        const sy = y + h * ((i + 0.5) / lines), midX = x + w * (0.35 + 0.12 * (i % 3)), turnY = sy + (i % 2 ? -h * 0.08 : h * 0.08);
+        layers.push({ id: `${idp}_trace${i}`, type: 'path', z: z++, x, y, width: w, height: h, d: poly([[x, sy], [midX, sy], [midX, turnY], [x + w, turnY]]), stroke: { color: a, width: Math.max(2, R(w * 0.01)) }, opacity: op(0.3 + 0.4 * (i / (lines - 1))) } as unknown as Layer);
+        const ds = Math.max(6, w * 0.03);
+        layers.push({ id: `${idp}_jn${i}`, type: 'ellipse', z: z++, x: R(midX - ds / 2), y: R(turnY - ds / 2), width: R(ds), height: R(ds), fill: { type: 'solid', color: a }, opacity: 0.85 } as unknown as Layer);
+      }
+      break;
+    }
+  }
+  return layers;
+}
+
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
   const base: Record<string, unknown> = {
@@ -2088,6 +2201,29 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         ...(result.fillRule ? { fill_rule: result.fillRule } : {}),
         ...(fill ? { fill } : {}),
         ...(stroke ? { stroke } : {}),
+      } as Layer;
+    }
+
+    case 'motif':
+    case 'illustration':
+    case 'decoration': {
+      const box: ShapeBox = {
+        x: typeof pos.x === 'number' ? pos.x : 0,
+        y: typeof pos.y === 'number' ? pos.y : 0,
+        w: typeof pos.width === 'number' ? pos.width : 240,
+        h: typeof pos.height === 'number' ? pos.height : 240,
+      };
+      const shr = sh as unknown as Record<string, unknown>;
+      const name = shStr(shr['motif'] ?? shr['shape'] ?? shr['name'] ?? shr['variant'], 'arcs');
+      const accent = (typeof sh.color === 'string' && sh.color)
+        || (typeof shr['accent'] === 'string' && (shr['accent'] as string))
+        || '$accent';
+      const idp = sh.id ?? `motif${Math.round(box.x)}_${Math.round(box.y)}`;
+      return {
+        ...base,
+        type: 'group',
+        width: box.w, height: box.h,
+        layers: motifLayers(name, box, accent, idp, typeof sh.z === 'number' ? sh.z : 0),
       } as Layer;
     }
 
@@ -3001,6 +3137,8 @@ const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'text_path', 'word_spacing',
   // per-style title treatment (highlight/underline/mega/rotate/rule)
   'headline_style', 'type_treatment',
+  // decorative motif / illustration (fills negative space)
+  'motif', 'shape',
   // aliases (verbose + terse)
   'content', 'font_size', 'fontSize', 'symbol', 'glyph', 'url', 'href', 'link',
   't', 'p', 'f', 'w', 'h', 'col', 'c', 's',

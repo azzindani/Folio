@@ -16,6 +16,31 @@ describe('expandShorthand', () => {
     }
   });
 
+  it('expands a motif into a group of primitive layers within its box (fills negative space)', () => {
+    const sh = { id: 'deco', type: 'motif', motif: 'bolt', pos: [700, 300, 300, 800], color: '#FFCC00' } as unknown as ShorthandLayer;
+    const result = expandShorthand(sh) as unknown as { type: string; width: number; height: number; layers: Record<string, unknown>[] };
+    expect(result.type).toBe('group');
+    expect(result.width).toBe(300);
+    expect(result.layers.length).toBeGreaterThan(1);                 // composed, not a single silhouette
+    // every primitive is a rasterizing type (no foreignObject) and uses the accent
+    for (const l of result.layers) {
+      expect(['path', 'ellipse', 'rect', 'line']).toContain(l['type'] as string);
+    }
+    const colorsUsed = result.layers.map(l => {
+      const f = l['fill'] as { color?: string } | undefined;
+      const s = l['stroke'] as { color?: string } | undefined;
+      return f?.color ?? s?.color;
+    });
+    expect(colorsUsed.every(c => c === '#FFCC00')).toBe(true);       // single accent, varied opacity
+  });
+
+  it('falls back to a valid motif for an unknown name (never empty)', () => {
+    const sh = { id: 'd', type: 'illustration', name: 'totally-made-up', pos: [0, 0, 200, 200], accent: '#fff' } as unknown as ShorthandLayer;
+    const result = expandShorthand(sh) as unknown as { type: string; layers: unknown[] };
+    expect(result.type).toBe('group');
+    expect(result.layers.length).toBeGreaterThan(0);                 // unknown → 'arcs', not blank
+  });
+
   it('expands rect with string fill to solid fill', () => {
     const sh: ShorthandLayer = { id: 'box', type: 'rect', z: 10, x: 100, y: 100, width: 200, height: 150, fill: '#FF0000' };
     const result = expandShorthand(sh);
