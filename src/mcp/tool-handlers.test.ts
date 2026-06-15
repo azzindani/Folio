@@ -540,6 +540,35 @@ describe('sealDesign', () => {
     expect((quotes[0] as { id?: string }).id).toBe('q3'); // kept the LAST pass
   });
 
+  it('collapses stacked duplicate groups + overlapping reworded captions (no dup-backdrop gate)', () => {
+    const projectPath = path.join(tmpDir, 'chart-thrash-project');
+    createProject({ name: 'ChartThrash', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'ChartThrash', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/chartthrash.design.yaml');
+    // The donut-poster failure: the model re-stacked a chart GROUP + a reworded
+    // caption three times WITHOUT re-laying the backdrop, so the dup-backdrop gates
+    // miss it. Same id-base groups at the same box + overlapping near-dup captions.
+    const grp = (id: string) => ({ id, type: 'group', z: 2, x: 140, y: 200, width: 800, height: 600,
+      layers: [{ id: `${id}_b`, type: 'rect', z: 0, x: 140, y: 200, width: 800, height: 600, fill: { type: 'solid', color: '#2d5a3d' } }] });
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+      grp('chart_3'),
+      { id: 'cap', type: 'text', z: 3, x: 300, y: 850, width: 475, height: 26, content: { type: 'plain', value: 'Chrome leads with 65% share' }, style: { font_size: 20 } },
+    ] as unknown as Layer[] });
+    addLayers({ design_path: designPath, layers: [
+      grp('chart_3'),   // dedupeIncomingIds → chart_3-2 (same base + box)
+      { id: 'cap', type: 'text', z: 3, x: 300, y: 850, width: 475, height: 26, content: { type: 'plain', value: 'Chrome dominates with 65% share' }, style: { font_size: 20 } },
+    ] as unknown as Layer[] });
+    addLayers({ design_path: designPath, layers: [ grp('chart_3') ] as unknown as Layer[] }); // chart_3-3
+    const layerTextOf = (l: Layer): string => { const c = (l as unknown as { content?: { value?: unknown } }).content; return c && typeof c.value === 'string' ? c.value : ''; };
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const charts = top.filter(l => l.type === 'group' && /^chart_3/.test(String((l as { id?: string }).id)));
+    const caps = top.filter(l => l.type === 'text' && /65% share/.test(layerTextOf(l)));
+    expect(charts.length).toBe(1);          // 3 stacked chart groups → 1
+    expect(caps.length).toBe(1);            // 2 overlapping reworded captions → 1
+    expect(layerTextOf(caps[0])).toMatch(/dominates/); // kept the LAST caption
+  });
+
   it('re-centers a title anchored at the canvas mid-line (docW/2 used as left edge)', () => {
     const projectPath = path.join(tmpDir, 'midanchor-project');
     createProject({ name: 'MidAnchor', path: projectPath });
