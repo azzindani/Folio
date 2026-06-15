@@ -2887,7 +2887,8 @@ export function fillBleedPresetDims(layers: ShorthandLayer[], docW: number, docH
     const bw = pos ? Number(pos[2]) : (typeof r['width'] === 'number' ? r['width'] as number : docW);
     const bh = pos ? Number(pos[3]) : (typeof r['height'] === 'number' ? r['height'] as number : docH);
     const wrong = bx < -docW * 0.05 || by < -docH * 0.05
-      || bw > docW * 1.1 || bh > docH * 1.3 || (bx + bw) > docW * 1.1;
+      || bw > docW * 1.1 || bh > docH * 1.3
+      || (bx + bw) > docW * 1.1 || (by + bh) > docH * 1.1;
     if (wrong) {
       r['pos'] = [0, 0, docW, docH];
       delete r['x']; delete r['y']; delete r['width']; delete r['height'];
