@@ -361,6 +361,26 @@ describe('sealDesign', () => {
     expect(Number(title.y) + Number(title.height)).toBeLessThanOrEqual(1080);    // fully visible
   });
 
+  it('surfaces a title buried under a full-canvas preset (lifts z + reseats it up top)', () => {
+    const projectPath = path.join(tmpDir, 'covered-title-project');
+    createProject({ name: 'CoveredTitle', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'CoveredTitle', type: 'poster', width: 1920, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/coveredtitle.design.yaml');
+    // The recurring failure: the model hand-places the title (z:1), then builds a
+    // full-canvas feature_grid (z:2) whose opaque bg paints over it → invisible.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'title', type: 'text', z: 1, x: 960, y: 980, width: 845, height: 68, content: { type: 'plain', value: 'Nimbus Roadmap 2026' }, style: { font_size: 48, color: '#141414' } },
+    ] as unknown as Layer[] });
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { id: 'feature_grid_3', type: 'feature_grid', z: 2, bg: '#0A0A0A', pos: [0, 0, 1920, 1080], items: [{ title: 'Q1', desc: 'Beta' }, { title: 'Q2', desc: 'Mobile' }, { title: 'Q3', desc: 'AI' }, { title: 'Q4', desc: 'Enterprise' }] }] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(designPath);
+    const title = (spec.layers ?? []).find(l => (l as { id?: string }).id === 'title') as unknown as { z?: number; y?: number; style?: { color?: string } };
+    const grid = (spec.layers ?? []).find(l => (l as { id?: string }).id === 'feature_grid_3') as unknown as { z?: number };
+    expect(Number(title.z)).toBeGreaterThan(Number(grid.z));   // lifted above the covering preset
+    expect(Number(title.y)).toBeLessThan(1080 * 0.2);          // re-seated into the empty top header zone
+    expect(title.style?.color?.toLowerCase()).not.toBe('#141414'); // recolored to contrast the dark preset bg
+  });
+
   it('a presentation filled via add_layers+page_id fills each slide and stays cohesive (create_presentation path)', () => {
     const projectPath = path.join(tmpDir, 'deck-project');
     createProject({ name: 'Deck', path: projectPath });
