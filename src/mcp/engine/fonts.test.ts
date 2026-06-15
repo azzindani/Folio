@@ -8,6 +8,11 @@ describe('bundled fonts manifest', () => {
     for (const f of ['space grotesk', 'ibm plex mono', 'inter', 'playfair display']) {
       expect(fams.has(f)).toBe(true);
     }
+    // mood-bank display faces — bundled so headlines don't fall back to DejaVu in
+    // raster export (the "clean vs great" headline gap). Keep these on disk.
+    for (const f of ['orbitron', 'audiowide', 'bricolage grotesque', 'quicksand', 'source serif 4']) {
+      expect(fams.has(f)).toBe(true);
+    }
     expect(fams.has('dejavu sans')).toBe(true);
   });
 
