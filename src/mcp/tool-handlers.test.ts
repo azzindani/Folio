@@ -376,6 +376,26 @@ describe('sealDesign', () => {
     expect(bgOf(g1)).toBe(bgOf(g2));
   });
 
+  it('fits a poster doc to the sole content group even when a full-canvas backdrop rect was also added (sage-block bug)', () => {
+    const projectPath = path.join(tmpDir, 'fitbg-project');
+    createProject({ name: 'FitBg', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'FitBg', type: 'poster', width: 1080, height: 1920 });
+    const designPath = path.join(projectPath, 'designs/fitbg.design.yaml');
+    // The exact shape: a full-canvas backdrop rect + ONE thin sections group, in one
+    // call. Pre-fix the doc stayed 1920 and the 972 group left the backdrop showing
+    // through the empty lower half.
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'rect', pos: [0, 0, 1080, 1920], fill: '#A8B6A2' },
+      { type: 'sections', title: 'In Praise of Doing Less', subtitle: 'x', blocks: [{ kind: 'text', text: 'A short line.' }] },
+    ] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(designPath);
+    const grp = (spec.layers ?? []).find(l => l.type === 'group') as unknown as { height: number };
+    expect(spec.document.height).toBeLessThan(1920);   // doc fit down to the content
+    expect(spec.document.height).toBe(grp.height);      // exactly the group height
+    const rect = (spec.layers ?? []).find(l => l.type === 'rect') as unknown as { height: number };
+    expect(rect.height).toBeLessThanOrEqual(grp.height); // backdrop clamped, no overhang
+  });
+
   it('keeps a motif placed in genuine empty side space (no overlap with content)', () => {
     const projectPath = path.join(tmpDir, 'motif-keep-project');
     createProject({ name: 'MotifKeep', path: projectPath });
