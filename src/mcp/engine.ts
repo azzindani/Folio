@@ -1054,13 +1054,30 @@ export function addLayers(args: {
     // mismatched canvas (e.g. a 2000×1080 LANDSCAPE doc holding a 1080-wide
     // portrait preset) doesn't render in a half-width column with the bottom
     // clipped (g_cyber). Only when this preset IS the whole poster.
-    if (!hadContent && incoming.length === 1) {
-      const g = incoming[0] as Layer & { x?: number; y?: number; width?: number; height?: number };
+    // The poster IS the sole content group, possibly accompanied ONLY by
+    // full-canvas backdrop rect(s) the model added as a separate background. A
+    // model that added [bg-rect, sections] in one call used to skip this fit
+    // (length !== 1), leaving the content group (e.g. 972) on a tall doc (1920)
+    // with the backdrop showing through the empty lower half (the sage-block
+    // "In Praise of Doing Less" bug). Fit the doc to the group and clamp the
+    // backdrops to it so there's no dead band.
+    if (!hadContent) {
       const { width: DW, height: DH } = spec.document;
-      if (g.type === 'group' && (g.x ?? 0) <= DW * 0.02 && (g.y ?? 0) <= DH * 0.02
+      type Box = Layer & { x?: number; y?: number; width?: number; height?: number };
+      const groups = incoming.filter(l => l.type === 'group') as Box[];
+      const others = incoming.filter(l => l.type !== 'group') as Box[];
+      const fullCanvasRect = (l: Box): boolean => l.type === 'rect'
+        && (l.width ?? 0) >= DW * 0.9 && (l.height ?? 0) >= DH * 0.9;
+      const g = groups.length === 1 ? groups[0] : undefined;
+      if (g && others.every(fullCanvasRect)
+        && (g.x ?? 0) <= DW * 0.02 && (g.y ?? 0) <= DH * 0.02
         && typeof g.width === 'number' && g.width > 0 && typeof g.height === 'number' && g.height > 0) {
         spec.document.width = g.width;
         spec.document.height = g.height;
+        for (const r of others) {
+          if ((r.height ?? 0) > g.height) r.height = g.height;
+          if ((r.width ?? 0) > g.width) r.width = g.width;
+        }
       }
     }
   }
