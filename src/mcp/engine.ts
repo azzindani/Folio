@@ -835,6 +835,53 @@ function dropThrashDuplicates(layers: Layer[], docW: number, docH: number): numb
   return removed;
 }
 
+// A rebuild thrash that does NOT re-lay the backdrop (so the dup-backdrop gates
+// miss it): the model re-adds the CHART/diagram group and a reworded CAPTION each
+// pass, stacking three identical chart groups + two overlapping captions ("Chrome
+// leads…" / "Chrome dominates…") that render as garbled overprint. Collapse two
+// kinds of stacked duplicate: (1) groups sharing an id-base and box (the suffixed
+// chart_3 / chart_3-2 / chart_3-3 rebuilds) → keep the last; (2) heavily
+// overlapping NEAR-DUPLICATE text (same spot, ≥50% shared tokens — so two distinct
+// labels that merely abut are never merged) → keep the last.
+function dedupOverlappingDuplicates(layers: Layer[], docW: number, docH: number): number {
+  const drop = new Set<number>();
+  const baseId = (l: Layer): string => String((l as unknown as Record<string, unknown>)['id'] ?? '').replace(/-\d+$/, '');
+  const tol = Math.max(docW, docH) * 0.02;
+  const sameBox = (a: Layer, b: Layer): boolean => {
+    const A = layerBBox(a), B = layerBBox(b);
+    return Math.abs(A.x - B.x) < tol && Math.abs(A.y - B.y) < tol && Math.abs((A.r - A.x) - (B.r - B.x)) < tol && Math.abs((A.b - A.y) - (B.b - B.y)) < tol;
+  };
+  // (1) stacked duplicate groups (same id-base + same box) — keep the last
+  const groups = layers.map((l, i) => ({ l, i })).filter(x => x.l.type === 'group' && !isFullBleedContentPreset(x.l, docW, docH) && baseId(x.l));
+  for (let a = 0; a < groups.length; a++) {
+    for (let b = a + 1; b < groups.length; b++) {
+      if (baseId(groups[a].l) === baseId(groups[b].l) && sameBox(groups[a].l, groups[b].l)) drop.add(groups[a].i);
+    }
+  }
+  // (2) heavily-overlapping near-duplicate text — keep the last
+  const toks = (s: string): string[] => s.toLowerCase().split(/[^a-z0-9$%]+/).filter(t => t.length >= 2);
+  const similar = (a: Layer, b: Layer): boolean => {
+    const ta = new Set(toks(layerText(a))), tb = toks(layerText(b));
+    if (!ta.size || !tb.length) return false;
+    return tb.filter(t => ta.has(t)).length / Math.max(ta.size, tb.length) >= 0.5;
+  };
+  const texts = layers.map((l, i) => ({ l, i })).filter(x => x.l.type === 'text' && layerText(x.l).trim());
+  for (let a = 0; a < texts.length; a++) {
+    if (drop.has(texts[a].i)) continue;
+    for (let b = a + 1; b < texts.length; b++) {
+      if (drop.has(texts[b].i)) continue;
+      const A = layerBBox(texts[a].l), B = layerBBox(texts[b].l);
+      const ox = Math.min(A.r, B.r) - Math.max(A.x, B.x), oy = Math.min(A.b, B.b) - Math.max(A.y, B.y);
+      if (ox <= 0 || oy <= 0) continue;
+      const inter = ox * oy, areaA = (A.r - A.x) * (A.b - A.y), areaB = (B.r - B.x) * (B.b - B.y);
+      if (inter >= Math.min(areaA, areaB) * 0.6 && similar(texts[a].l, texts[b].l)) drop.add(texts[a].i);
+    }
+  }
+  let removed = 0;
+  for (let i = layers.length - 1; i >= 0; i--) { if (drop.has(i)) { layers.splice(i, 1); removed++; } }
+  return removed;
+}
+
 // Without a content preset to fall back on (a pure typographic poster — a quote,
 // a manifesto), a model can still stamp the SAME text two or three times across
 // rebuild passes, piling them up as an illegible overlap, and re-lay the full-
@@ -1413,6 +1460,12 @@ export function addLayers(args: {
   // title, drop the loose copies that just repeat the preset's own content).
   const droppedThrash = dropThrashDuplicates(activeLayers, spec.document.width, spec.document.height);
   if (droppedThrash) progress.push(pInfo(`Removed ${droppedThrash} hand-placed duplicate(s)`, 'a thrashing rebuild stacked loose copies over the content preset — kept the preset'));
+
+  // Catch a rebuild that re-stacked a chart/diagram group + a reworded caption
+  // without re-laying the backdrop (the dup-backdrop gates miss it): collapse
+  // stacked duplicate groups + overlapping near-duplicate text.
+  const droppedOverlap = dedupOverlappingDuplicates(activeLayers, spec.document.width, spec.document.height);
+  if (droppedOverlap) progress.push(pInfo(`Removed ${droppedOverlap} stacked/overlapping duplicate(s)`, 'a rebuild stacked identical groups + overlapping captions — kept the last'));
 
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
