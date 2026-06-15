@@ -1647,6 +1647,43 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     layers.push({ id: `${idp}_div`, type: 'rect', z: z0, x: midX - 1, y: rowsTop, width: 2, height: Math.max(0, yy - rowsTop - Math.round(W * 0.026)), opacity: 0.3, fill: { type: 'solid', color: accent } } as unknown as Layer);
     return { layers, height: Math.max(0, yy - y - Math.round(W * 0.026)) };
   }
+  // TIMELINE / milestones — a left date column + a rail of node dots + event
+  // title/desc to the right, each row measured. Rasterizes. For history / roadmap /
+  // "the journey of X". Like flow but date-anchored (the date is the emphasis).
+  if (kind === 'timeline' || kind === 'milestones' || kind === 'history' || kind === 'roadmap' || kind === 'chronology') {
+    const items = arrField('items', 'milestones', 'events', 'entries', 'rows', 'points', 'stages', 'phases');
+    if (!items.length) return { layers, height: 0 };
+    const dateColW = Math.round(W * 0.15);
+    const railX = x + dateColW + Math.round(W * 0.025);
+    const nodeR = Math.round(W * 0.013);
+    const textX = railX + Math.round(W * 0.04);
+    const textW = w - (textX - x);
+    const tSize = Math.round(W * 0.027), dSize = Math.round(W * 0.02), dateSize = Math.round(W * 0.024);
+    const gap = Math.round(W * 0.032);
+    const rows = items.map(it => {
+      const date = shStr(it['date'] ?? it['year'] ?? it['time'] ?? it['when'] ?? it['label'] ?? it['phase']);
+      const title = shStr(it['title'] ?? it['event'] ?? it['name'] ?? it['heading'] ?? it['milestone']);
+      const desc = shStr(it['desc'] ?? it['text'] ?? it['description'] ?? it['detail'] ?? it['body']);
+      const tH = estTextHeight(title || ' ', tSize, textW, 1.15);
+      const dH = desc ? estTextHeight(desc, dSize, textW, 1.4) : 0;
+      const rowH = Math.max(2 * nodeR, tH + (desc ? 6 + dH : 0));
+      return { date, title, desc, tH, dH, rowH };
+    });
+    let yy = y;
+    rows.forEach((row, i) => {
+      const nodeCY = yy + Math.round(tSize * 0.55);
+      if (i < rows.length - 1) {
+        const nextCY = yy + row.rowH + gap + Math.round(tSize * 0.55);
+        layers.push({ id: `${idp}_rail${i}`, type: 'rect', z: z++, x: railX - 2, y: nodeCY, width: 4, height: Math.max(0, nextCY - nodeCY), opacity: 0.32, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      }
+      if (row.date) layers.push(txt(`${idp}_dt${i}`, z++, x, nodeCY - Math.round(dateSize * 0.62), dateColW, Math.round(dateSize * 1.4), row.date, { font_family: 'IBM Plex Mono', font_size: dateSize, font_weight: 800, color: accent, align: 'right', line_height: 1.0 }));
+      layers.push({ id: `${idp}_node${i}`, type: 'ellipse', z: z++, x: railX - nodeR, y: nodeCY - nodeR, width: 2 * nodeR, height: 2 * nodeR, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      layers.push(txt(`${idp}_tt${i}`, z++, textX, yy, textW, row.tH, row.title, { font_size: tSize, font_weight: 700, color: text, line_height: 1.15 }));
+      if (row.desc) layers.push(txt(`${idp}_td${i}`, z++, textX, yy + row.tH + 6, textW, row.dH, row.desc, { font_size: dSize, font_weight: 400, color: muted, line_height: 1.4 }));
+      yy += row.rowH + gap;
+    });
+    return { layers, height: Math.max(0, yy - y - gap) };
+  }
   if (kind === 'caption' || kind === 'source' || kind === 'note' || kind === 'footnote' || kind === 'label') {
     // Small mono source/caption line (blind models pass the footer source as a
     // block like {kind:source}; render its text — never silently drop it).
