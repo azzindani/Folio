@@ -812,6 +812,74 @@ function dropThrashDuplicates(layers: Layer[], docW: number, docH: number): numb
   return removed;
 }
 
+// A recurring blind-model failure: the model hand-places the poster's TITLE as a
+// top-level text, then builds a full-canvas opaque content preset (feature_grid /
+// sections) at a HIGHER z — whose background paints right over the title, so it
+// renders invisible. Meanwhile the preset carries no title of its own, leaving its
+// header zone empty (dead space up top). Surface the covered title: lift it above
+// the preset, and when the preset's header is empty, re-seat it as a centered title
+// in the top margin so it fills that dead space instead of hiding under the wash.
+function promoteCoveredTitle(layers: Layer[], docW: number, docH: number): number {
+  const zOf = (l: Layer): number => { const z = (l as unknown as Record<string, unknown>)['z']; return typeof z === 'number' ? z : 0; };
+  const textVal = (l: Layer): string => { const c = (l as unknown as Record<string, unknown>)['content']; return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : ''); };
+  // The preset's background color (first solid/gradient rect child) — the title,
+  // once lifted on top, sits on THIS, not the original canvas, so it must contrast.
+  const presetBg = (g: Layer): string | null => {
+    const kids = (g as unknown as Record<string, unknown>)['layers'];
+    if (!Array.isArray(kids)) return null;
+    for (const k of kids as Layer[]) {
+      if (k.type !== 'rect') continue;
+      const f = (k as unknown as Record<string, unknown>)['fill'] as Record<string, unknown> | undefined;
+      if (!f || typeof f !== 'object') continue;
+      if (typeof f['color'] === 'string') return f['color'] as string;
+      const stops = f['stops'];
+      if (Array.isArray(stops) && stops[0] && typeof (stops[0] as Record<string, unknown>)['color'] === 'string') return (stops[0] as Record<string, unknown>)['color'] as string;
+    }
+    return null;
+  };
+  const lum = (hex: string): number => {
+    const h = (hex || '').replace('#', '');
+    if (h.length < 6) return 1;
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  };
+  // A preset's header is "empty" when no DIRECT text child sits in its top third.
+  // Only direct children: a preset's header (_title/_subtitle) is absolutely
+  // positioned, while card text lives in a nested auto_layout whose children carry
+  // relative y:0 — recursing would misread those as "text at the top".
+  const presetHasTopText = (g: Layer): boolean => {
+    const gb = layerBBox(g); const top = gb.y + (gb.b - gb.y) * 0.34;
+    const kids = (g as unknown as Record<string, unknown>)['layers'];
+    if (!Array.isArray(kids)) return false;
+    return (kids as Layer[]).some(k => k.type === 'text' && textVal(k).trim() && layerBBox(k).y < top);
+  };
+  let promoted = 0;
+  for (let i = 0; i < layers.length; i++) {
+    const t = layers[i];
+    if (t.type !== 'text' || !textVal(t).trim()) continue;
+    const tb = layerBBox(t), tz = zOf(t);
+    const coverer = layers.find((p, j) => j !== i && isFullBleedContentPreset(p, docW, docH) && zOf(p) > tz
+      && layerBBox(p).x <= tb.x + 1 && layerBBox(p).y <= tb.y + 1 && layerBBox(p).r >= tb.r - 1 && layerBBox(p).b >= tb.b - 1);
+    if (!coverer) continue;
+    const o = t as unknown as Record<string, unknown>;
+    o['z'] = zOf(coverer) + 1;                                  // lift above the wash → visible
+    const st = (o['style'] && typeof o['style'] === 'object') ? o['style'] as Record<string, unknown> : (o['style'] = {} as Record<string, unknown>);
+    // The title now sits on the preset's background — recolor it to contrast that,
+    // not the original canvas (a dark-canvas preset would hide the model's dark title).
+    const bg = presetBg(coverer);
+    if (bg) st['color'] = lum(bg) < 0.5 ? '#FAFAFA' : '#141414';
+    if (!presetHasTopText(coverer)) {                          // empty header → re-seat as the title up top
+      const w = tb.r - tb.x;
+      const nx = Math.max(Math.round(docW * 0.04), Math.round((docW - w) / 2)), ny = Math.round(docH * 0.06);
+      const p = o['pos'];
+      if (Array.isArray(p) && p.length >= 2) { p[0] = nx; p[1] = ny; } else { o['x'] = nx; o['y'] = ny; }
+      if (st['align'] == null) st['align'] = 'center';
+    }
+    promoted++;
+  }
+  return promoted;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -1251,6 +1319,12 @@ export function addLayers(args: {
   // renders nowhere and the content is silently lost.
   const snappedOff = snapOffCanvasContent(activeLayers, spec.document.width, spec.document.height);
   if (snappedOff) progress.push(pInfo(`Snapped ${snappedOff} off-canvas layer(s) inside`, 'content placed past the canvas edge would have rendered nowhere'));
+
+  // Surface a hand-placed title the model buried under a full-canvas preset's
+  // background (lift it above the wash; re-seat it up top if the preset's header
+  // is empty) — otherwise the poster's title renders invisible.
+  const promoted = promoteCoveredTitle(activeLayers, spec.document.width, spec.document.height);
+  if (promoted) progress.push(pInfo(`Surfaced ${promoted} covered title(s)`, 'a title hidden under a full-canvas preset was lifted into view'));
 
   // Drop any space-filling motif that overlaps content. Runs on the MERGED set
   // (existing + incoming), so a motif added in its own add_layers call — the
