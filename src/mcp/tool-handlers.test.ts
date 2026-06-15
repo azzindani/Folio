@@ -376,6 +376,20 @@ describe('sealDesign', () => {
     expect(bgOf(g1)).toBe(bgOf(g2));
   });
 
+  it('de-dupes a duplicate page_id on append so no two pages share an id', () => {
+    const projectPath = path.join(tmpDir, 'pageid-project');
+    createProject({ name: 'PgId', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'PgId', type: 'carousel', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/pgid.design.yaml');
+    appendPage({ design_path: designPath, page_id: 'cover', layers_shorthand: [{ type: 'sections', title: 'A', blocks: [{ kind: 'text', text: 'a' }] }] as unknown as ShorthandLayer[] });
+    appendPage({ design_path: designPath, page_id: 'cover', layers_shorthand: [{ type: 'sections', title: 'B', blocks: [{ kind: 'text', text: 'b' }] }] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(designPath);
+    const ids = (spec.pages ?? []).map(p => p.id);
+    expect(new Set(ids).size).toBe(ids.length); // all unique
+    expect(ids).toContain('cover');
+    expect(ids).toContain('cover-2');
+  });
+
   it('fits a poster doc to the sole content group even when a full-canvas backdrop rect was also added (sage-block bug)', () => {
     const projectPath = path.join(tmpDir, 'fitbg-project');
     createProject({ name: 'FitBg', path: projectPath });

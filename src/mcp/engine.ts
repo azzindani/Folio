@@ -1192,7 +1192,15 @@ export function appendPage(args: {
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   if (!spec.pages) spec.pages = [];
 
-  const pageId = args.page_id ?? `page_${spec.pages.length + 1}`;
+  // Ensure a UNIQUE page id. A model that labels two slides the same (or passes
+  // page_id twice) would otherwise create duplicate ids — which makes a page_id-
+  // scoped op (render_preview/remove_layer/update_layer) ambiguous and can break
+  // navigation/export. Suffix on collision, mirroring the layer-id de-dupe.
+  const desiredId = args.page_id ?? `page_${spec.pages.length + 1}`;
+  const taken = new Set(spec.pages.map(p => p.id));
+  let pageId = desiredId;
+  for (let n = 2; taken.has(pageId); n++) pageId = `${desiredId}-${n}`;
+  if (pageId !== desiredId) progress.push(pInfo(`Renamed colliding page id`, `${desiredId} → ${pageId}`));
   spec.pages.push({ id: pageId, label: args.label ?? `Page ${spec.pages.length + 1}`, template_ref: args.template_ref, slots: args.slots, layers });
 
   if (spec.meta.generation) {
@@ -2130,14 +2138,20 @@ export function createPresentation(args: {
   const dPath = path.join(pDir, 'designs', `${slug}.design.yaml`);
   fs.mkdirSync(path.dirname(dPath), { recursive: true });
 
-  const pages = args.pages.map((p, i) => ({
-    id: p.id ?? `slide_${i + 1}`,
-    label: p.label,
-    notes: p.notes,
-    layers: [] as unknown[],
-    transition: args.transition ? { type: args.transition, duration: 400 } : undefined,
-    auto_advance: args.auto_advance,
-  }));
+  const usedIds = new Set<string>();
+  const pages = args.pages.map((p, i) => {
+    let id = p.id ?? `slide_${i + 1}`;
+    for (let n = 2; usedIds.has(id); n++) id = `${p.id ?? `slide_${i + 1}`}-${n}`;
+    usedIds.add(id);
+    return {
+      id,
+      label: p.label,
+      notes: p.notes,
+      layers: [] as unknown[],
+      transition: args.transition ? { type: args.transition, duration: 400 } : undefined,
+      auto_advance: args.auto_advance,
+    };
+  });
 
   const spec = {
     _protocol: 'design/v1',
