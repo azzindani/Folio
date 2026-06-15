@@ -2,7 +2,9 @@
   "families": [
     "Anton",
     "Archivo",
+    "Audiowide",
     "Bebas Neue",
+    "Bricolage Grotesque",
     "DejaVu Sans",
     "EB Garamond",
     "Fira Code",
@@ -13,13 +15,16 @@
     "Lora",
     "Manrope",
     "Montserrat",
+    "Orbitron",
     "Playfair Display",
     "Plus Jakarta Sans",
     "Public Sans",
+    "Quicksand",
     "Roboto",
     "Roboto Mono",
     "Roboto Slab",
     "Source Code Pro",
+    "Source Serif 4",
     "Space Grotesk",
     "Space Mono",
     "Work Sans"
@@ -31,8 +36,14 @@
     "Archivo": [
       "Archivo[wdth,wght].ttf"
     ],
+    "Audiowide": [
+      "Audiowide-Regular.ttf"
+    ],
     "Bebas Neue": [
       "BebasNeue-Regular.ttf"
+    ],
+    "Bricolage Grotesque": [
+      "BricolageGrotesque[opsz,wdth,wght].ttf"
     ],
     "DejaVu Sans": [
       "DejaVuSans.ttf"
@@ -67,6 +78,9 @@
     "Montserrat": [
       "Montserrat[wght].ttf"
     ],
+    "Orbitron": [
+      "Orbitron[wght].ttf"
+    ],
     "Playfair Display": [
       "PlayfairDisplay[wght].ttf"
     ],
@@ -75,6 +89,9 @@
     ],
     "Public Sans": [
       "PublicSans[wght].ttf"
+    ],
+    "Quicksand": [
+      "Quicksand[wght].ttf"
     ],
     "Roboto Mono": [
       "RobotoMono[wght].ttf"
@@ -87,6 +104,9 @@
     ],
     "Source Code Pro": [
       "SourceCodePro[wght].ttf"
+    ],
+    "Source Serif 4": [
+      "SourceSerif4[opsz,wght].ttf"
     ],
     "Space Grotesk": [
       "SpaceGrotesk[wght].ttf"
