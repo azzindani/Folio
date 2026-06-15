@@ -48,6 +48,18 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
   editorial: { canvas: [1080, 1350], fields: ['kicker', 'title', 'subtitle (deck)', 'body — supporting paragraph', 'footer'] },
 };
 
+// Map a topic to a decorative motif that fits it, for filling negative space.
+function motifForTopic(s: string): string {
+  const t = s.toLowerCase();
+  if (/lightning|storm|thunder|electric|energy|power|spark|volt|charge|battery/.test(t)) return 'bolt';
+  if (/wave|ocean|water|sound|audio|music|fluid|flow|signal|radio|climate|tide/.test(t)) return 'waves';
+  if (/space|planet|orbit|atom|science|physics|network|molecule|star|cosmos|astronom|chemistry/.test(t)) return 'orbit';
+  if (/mountain|growth|climb|peak|summit|outdoor|hike|finance|revenue|increase|trend|invest|market/.test(t)) return 'peaks';
+  if (/tech|circuit|chip|digital|computer|electronic|hardware|\bai\b|data|code|software|cyber|robot/.test(t)) return 'circuit';
+  if (/\bsun\b|solar|shine|burst|launch|optimis|bright|spotlight|award/.test(t)) return 'rays';
+  return 'arcs';
+}
+
 function inferType(p: string): string {
   if (/\b(\d+|five|six|seven|eight|nine|ten)\s+(tips|steps|ways|reasons|rules|habits|lessons|principles|mistakes|tactics)\b/i.test(p)) return 'list';
   // PRICING tiers — a sections preset with a pricing block (even tier columns).
@@ -204,7 +216,7 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   const fill = outline.blocks
     ? `Add ONE layer — layers_shorthand:[{type:"${presetType}", kicker:"<a 1-3 word eyebrow label>", title:"<a punchy ≤6-word HEADLINE naming the topic>", subtitle:"<a 2-sentence intro deck>", …, blocks:[…]}]. The kicker + title + subtitle go on the LAYER ITSELF (a titleless deck looks unfinished); then a blocks array covering: ${outline.blocks.join(' · ')}. Emit EVERY block listed — a thin 1-2 block deck is the exact "sparse / dead space" failure to avoid. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
     : `Add ONE layer — layers_shorthand:[{type:"${presetType}", …}] supplying: ${(outline.fields ?? []).join(' · ')}. NEVER hand-place separate title/body/text layers — the preset auto-sizes every block so text never collides.`;
-  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. Then diagnose_design until clean and seal.`;
+  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. IF after composing the layout still leaves a large EMPTY band (a wide blank column beside left-anchored content, or a tall blank lower area), add ONE decorative motif there to fill it — layers_shorthand:[{type:"motif", motif:"${motifForTopic(subject)}", pos:[x,y,w,h], color:"${mood.accent}"}] sized to occupy that empty region (a composed vector illustration; do NOT add it if the design is already full or deliberately minimal). Then diagnose_design until clean and seal.`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);
