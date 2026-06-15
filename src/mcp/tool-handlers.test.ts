@@ -483,6 +483,32 @@ describe('sealDesign', () => {
     expect(top.some(l => l.type === 'group' && /^feature_grid/.test(String((l as { id?: string }).id)))).toBe(true); // preset kept
   });
 
+  it('keeps a UNIQUE poster title through the preset-thrash cleanup (only drops redundant copies)', () => {
+    const projectPath = path.join(tmpDir, 'thrash-title-project');
+    createProject({ name: 'ThrashTitle', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'ThrashTitle', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/thrashtitle.design.yaml');
+    // The comparison-poster failure: the model rebuilt 4× (backdrop + a unique TITLE
+    // + a loose copy of the preset's own label), then a feature_grid. The title is
+    // NOT redundant with the grid → it must survive (dropping it lost the title).
+    for (let i = 0; i < 4; i++) {
+      addLayers({ design_path: designPath, layers: [
+        { id: `bg_${i}`, type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+        { id: `title_${i}`, type: 'text', z: 1, x: 200, y: 60, width: 680, height: 50, content: { type: 'plain', value: 'Volt vs Competitors Feature Comparison' }, style: { font_size: 34 } },
+        { id: `dup_${i}`, type: 'text', z: 1, x: 120, y: 400, width: 300, height: 40, content: { type: 'plain', value: 'Unlimited storage' }, style: { font_size: 24 } },
+      ] as unknown as Layer[] });
+    }
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { id: 'feature_grid_3', type: 'feature_grid', z: 2, items: [{ title: 'Feature', desc: 'Unlimited storage' }, { title: 'Volt', desc: 'Yes' }, { title: 'Rival A', desc: 'No' }] }] as unknown as ShorthandLayer[] });
+    const layerTextOf = (l: Layer): string => { const c = (l as unknown as { content?: { value?: unknown } }).content; return c && typeof c.value === 'string' ? c.value : ''; };
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const titles = top.filter(l => l.type === 'text' && /Competitors/.test(layerTextOf(l)));
+    const dupLabels = top.filter(l => l.type === 'text' && layerTextOf(l) === 'Unlimited storage');
+    expect(titles.length).toBe(1);          // the unique title survives (exactly one, deduped)
+    expect(dupLabels.length).toBe(0);       // loose copies of the preset's own label dropped
+    expect(top.some(l => l.type === 'group' && /^feature_grid/.test(String((l as { id?: string }).id)))).toBe(true);
+  });
+
   it('dedupes a quote stamped several times on a preset-less typographic poster', () => {
     const projectPath = path.join(tmpDir, 'quote-dup-project');
     createProject({ name: 'QuoteDup', path: projectPath });
