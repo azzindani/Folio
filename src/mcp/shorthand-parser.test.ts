@@ -2976,3 +2976,20 @@ describe('heading_text block — a figure heading becomes a hero number', () => 
     expect(tips).toBeLessThan(60);     // "10 Tips" is a heading, not a stat
   });
 });
+
+describe('feature_grid preset — cards sized to content, not a fixed 58% band', () => {
+  it('a short-content feature grid has a content-sized card row (no dead band)', () => {
+    const g = expandShorthandLayers([{ type: 'feature_grid', title: 'Pulse', subtitle: 'Track your health',
+      pos: [0, 0, 1080, 1920], items: [
+        { title: 'Workout Tracking', desc: 'Log every rep, set, and route.' },
+        { title: 'Heart Rate', desc: 'Real-time pulse zones.' },
+        { title: 'Guided Sessions', desc: 'Trainer-led workouts.' },
+        { title: 'Progress Charts', desc: 'Visualize trends.' },
+      ] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
+    const row = g.layers.find(l => typeof l['id'] === 'string' && /_row$/.test(l['id'] as string));
+    const rowH = Number(row?.['height'] ?? 0);
+    expect(rowH).toBeGreaterThan(0);
+    expect(rowH).toBeLessThan(700);   // content-sized — NOT the old ~1038 (H*0.58)
+    expect(Number(row?.['y'] ?? 0)).toBeGreaterThan(300); // placed below the header, centered in the rest
+  });
+});
