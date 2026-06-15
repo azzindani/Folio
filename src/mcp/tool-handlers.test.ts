@@ -10,6 +10,7 @@ import {
   resumeDesign, saveAsComponent, applyTheme,
   exportDesign, exportTemplate, injectTemplate, listTemplateSlots,
   addLayers, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign,
+  createPresentation,
 } from './engine';
 import type { Layer, DesignSpec } from '../schema/types';
 import type { ShorthandLayer } from './shorthand-parser';
@@ -341,6 +342,38 @@ describe('sealDesign', () => {
       { type: 'motif', motif: 'arcs', pos: [150, 350, 600, 350], color: '#FFFFFF', z: 0 },
     ] as unknown as ShorthandLayer[] });
     expect(hasMotif(parseYAMLDesign(designPath))).toBe(false);
+  });
+
+  it('a presentation filled via add_layers+page_id fills each slide and stays cohesive (create_presentation path)', () => {
+    const projectPath = path.join(tmpDir, 'deck-project');
+    createProject({ name: 'Deck', path: projectPath });
+    const pres = createPresentation({ project_path: projectPath, name: 'Future Deck',
+      pages: [{ label: 'Cover' }, { label: 'Trend One' }], width: 1920, height: 1080 }) as unknown as { design_path: string };
+    const dPath = pres.design_path;
+    // Bare sections per slide (no bg/font) with DIFFERENT content — the exact shape
+    // that used to give a left-anchored 1080×972 portrait group on each 1920×1080
+    // landscape slide + a per-slide divergent mood.
+    addLayers({ design_path: dPath, page_id: 'slide_1', layers_shorthand: [
+      { type: 'sections', title: 'Cover', blocks: [{ kind: 'text', text: 'Intro line.' }] }] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: dPath, page_id: 'slide_2', layers_shorthand: [
+      { type: 'sections', title: 'Trend One Async', blocks: [{ kind: 'text', text: 'Another line.' }] }] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(dPath);
+    const grp = (pid: string) => {
+      const pg = (spec.pages ?? []).find(p => p.id === pid);
+      return (pg?.layers ?? []).find(l => l.type === 'group') as unknown as { width: number; height: number; layers: Array<Record<string, unknown>> };
+    };
+    const bgOf = (g: { layers: Array<Record<string, unknown>> }) => {
+      const r = g.layers.find(l => l['type'] === 'rect');
+      const f = r?.['fill'] as { color?: string; stops?: Array<{ color?: string }> } | undefined;
+      return f?.color ?? f?.stops?.[0]?.color;
+    };
+    const g1 = grp('slide_1'), g2 = grp('slide_2');
+    // each slide FILLS the landscape page (was 1080×972 portrait in the left corner)
+    expect(g1.width).toBe(1920); expect(g1.height).toBe(1080);
+    expect(g2.width).toBe(1920); expect(g2.height).toBe(1080);
+    // cohesive: both slides share one deck mood despite different content
+    expect(bgOf(g1)).toBeDefined();
+    expect(bgOf(g1)).toBe(bgOf(g2));
   });
 
   it('keeps a motif placed in genuine empty side space (no overlap with content)', () => {
