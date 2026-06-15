@@ -315,6 +315,48 @@ describe('sealDesign', () => {
     expect(k1?.x).toBe(120);
   });
 
+  const hasMotif = (spec: { layers?: Layer[] }): boolean =>
+    (spec.layers ?? []).some(l => {
+      const m = (l as unknown as { meta?: { role?: string } }).meta;
+      return m?.role === 'motif';
+    });
+
+  it('drops a space-filling motif that lands on content (full-width layout has no dead space)', () => {
+    const projectPath = path.join(tmpDir, 'motif-drop-project');
+    createProject({ name: 'MotifDrop', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'MotifDrop', type: 'poster', width: 1080, height: 1920 });
+    const designPath = path.join(projectPath, 'designs/motifdrop.design.yaml');
+    // A model followed the "add a motif to fill the side" directive on a full-width
+    // layout: the decoration box sits squarely over the content text. It must be
+    // removed (a strikethrough across the copy is worse than no decoration).
+    const tall = 'Line one of a tall content column\nLine two continues the copy\nLine three keeps going\nLine four fills more height\nLine five and the column is wide\nLine six rounds it out';
+    // The real shape: the content preset lands in one call, the decoration in a
+    // SEPARATE call (the motif then never sees the content via `incoming`). The
+    // drop pass must run on the MERGED page and still remove the colliding motif.
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'rect', pos: [0, 0, 1080, 1920], fill: '#0E1116' },
+      { type: 'text', pos: [80, 300, 900, 500], text: tall, color: '#FFFFFF', size: 40 },
+    ] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'motif', motif: 'arcs', pos: [150, 350, 600, 350], color: '#FFFFFF', z: 0 },
+    ] as unknown as ShorthandLayer[] });
+    expect(hasMotif(parseYAMLDesign(designPath))).toBe(false);
+  });
+
+  it('keeps a motif placed in genuine empty side space (no overlap with content)', () => {
+    const projectPath = path.join(tmpDir, 'motif-keep-project');
+    createProject({ name: 'MotifKeep', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'MotifKeep', type: 'poster', width: 1080, height: 1920 });
+    const designPath = path.join(projectPath, 'designs/motifkeep.design.yaml');
+    // Left-anchored copy, motif in the open right column — its intended use. Kept.
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'rect', pos: [0, 0, 1080, 1920], fill: '#0E1116' },
+      { type: 'text', pos: [80, 400, 400, 600], text: 'A narrow left column', color: '#FFFFFF', size: 40 },
+      { type: 'motif', motif: 'arcs', pos: [620, 400, 380, 600], color: '#FFFFFF', z: 0 },
+    ] as unknown as ShorthandLayer[] });
+    expect(hasMotif(parseYAMLDesign(designPath))).toBe(true);
+  });
+
   it('unwraps a model-invented page wrapper instead of rejecting a dimensionless group (blind-30B blank-poster)', () => {
     const projectPath = path.join(tmpDir, 'wrapper-project');
     createProject({ name: 'Wrap', path: projectPath });
