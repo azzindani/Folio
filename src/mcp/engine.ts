@@ -599,6 +599,13 @@ function layerBBox(l: Layer): { x: number; y: number; r: number; b: number } {
   return { x, y, r: x + w, b: y + h };
 }
 
+// Plain string of a text layer's content (handles both `content: "str"` and
+// `content: { value: "str" }`). Empty for non-text / missing content.
+function layerText(l: Layer): string {
+  const c = (l as unknown as Record<string, unknown>)['content'];
+  return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : '');
+}
+
 function flattenRelativeGroups(layers: Layer[]): number {
   let moved = 0;
   for (const l of layers) {
@@ -809,6 +816,43 @@ function dropThrashDuplicates(layers: Layer[], docW: number, docH: number): numb
   layers.forEach((l, i) => { if (!keep.has(i) && !isMotifLayer(l) && LOOSE.has(l.type)) drop.add(i); });
   let removed = 0;
   for (let i = layers.length - 1; i >= 0; i--) { if (drop.has(i)) { layers.splice(i, 1); removed++; } }
+  return removed;
+}
+
+// Without a content preset to fall back on (a pure typographic poster — a quote,
+// a manifesto), a model can still stamp the SAME text two or three times across
+// rebuild passes, piling them up as an illegible overlap, and re-lay the full-
+// canvas backdrop each pass. Gate on that duplicate-backdrop signal (≥2 identical
+// full-canvas solid washes — something no one-pass design produces), then collapse
+// the backdrops to one and keep only the LAST copy of each repeated text — the
+// model's final pass, which is internally consistent (its attribution sits below
+// its own quote). A single-pass poster that legitimately repeats a short word is
+// never touched, because there's no duplicate backdrop to trip the gate.
+function dedupDuplicateText(layers: Layer[], docW: number, docH: number): number {
+  const fillKey = (l: Layer): string => {
+    const f = (l as unknown as Record<string, unknown>)['fill'] as Record<string, unknown> | undefined;
+    if (!f || typeof f !== 'object') return '';
+    if (typeof f['color'] === 'string') return f['color'] as string;
+    const s = f['stops'];
+    return (Array.isArray(s) && s[0] && typeof (s[0] as Record<string, unknown>)['color'] === 'string') ? (s[0] as Record<string, unknown>)['color'] as string : '';
+  };
+  const groups = new Map<string, number[]>();
+  layers.forEach((l, i) => { if (isFullCanvasBackdrop(l, docW, docH)) { const k = fillKey(l); groups.set(k, [...(groups.get(k) ?? []), i]); } });
+  // Duplicate identical backdrops are the GATE only — we don't remove them. Each
+  // add_layers call re-runs this pass on the merged page; collapsing the backdrops
+  // here would erase the rebuild signal before the model's later passes arrive
+  // (and they're harmless — identical full-canvas washes that demoteCoveringBackdrops
+  // already sinks behind content).
+  let dupBackdrop = false;
+  for (const arr of groups.values()) if (arr.length >= 2) dupBackdrop = true;
+  if (!dupBackdrop) return 0; // no rebuild signal → leave a legit single-pass poster alone
+  const norm = (s: string): string => s.replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim().toLowerCase();
+  const last = new Map<string, number>();
+  layers.forEach((l, i) => { if (l.type === 'text' && norm(layerText(l)).length >= 6) last.set(norm(layerText(l)), i); });
+  const dropT = new Set<number>();
+  layers.forEach((l, i) => { if (l.type === 'text') { const k = norm(layerText(l)); if (k.length >= 6 && last.get(k) !== i) dropT.add(i); } });
+  let removed = 0;
+  for (let i = layers.length - 1; i >= 0; i--) { if (dropT.has(i)) { layers.splice(i, 1); removed++; } }
   return removed;
 }
 
@@ -1313,6 +1357,12 @@ export function addLayers(args: {
   // dozens of overlapping hand-placed copies the model never cleared).
   const droppedThrash = dropThrashDuplicates(activeLayers, spec.document.width, spec.document.height);
   if (droppedThrash) progress.push(pInfo(`Removed ${droppedThrash} hand-placed duplicate(s)`, 'a thrashing rebuild stacked loose copies over the content preset — kept the preset'));
+
+  // Same rebuild thrash on a preset-less typographic poster: duplicate backdrops +
+  // the same quote/text stamped several times → keep one backdrop and the last copy
+  // of each repeated string.
+  const droppedDupText = dedupDuplicateText(activeLayers, spec.document.width, spec.document.height);
+  if (droppedDupText) progress.push(pInfo(`Removed ${droppedDupText} duplicate text/backdrop(s)`, 'a rebuild stamped the same text several times — kept the final copy'));
 
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
