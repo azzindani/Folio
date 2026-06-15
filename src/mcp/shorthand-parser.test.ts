@@ -2849,3 +2849,28 @@ describe('stampDeckSeed + seededDefaults — carousel cohesion when bg is OMITTE
     expect(a.font).toBe(b.font); // same heading font across slides
   });
 });
+
+describe('buildSections page-fill — no dead strip / dead band on a fixed slide', () => {
+  const grp = (extra: Record<string, unknown>) => expandShorthandLayers([
+    { type: 'sections', title: 'Simplicity', subtitle: 'Keep only what is essential.',
+      blocks: [{ kind: 'text', text: 'Remove excess and focus on the core.' }], ...extra } as unknown as ShorthandLayer,
+  ])[0] as unknown as { width: number; height: number; layers: Array<Record<string, unknown>> };
+
+  it('a __fillPage slide fills the page height exactly (bg spans it → no unpainted strip)', () => {
+    const g = grp({ __fillPage: true, pos: [0, 0, 1080, 1080] });
+    expect(g.height).toBe(1080);
+    const bgRect = g.layers.find(l => l['type'] === 'rect' && (l['height'] as number) >= 1080);
+    expect(bgRect).toBeTruthy();                 // the background covers the whole page
+  });
+
+  it('centers thin content on a tall fill page (no top-heavy dead band)', () => {
+    const g = grp({ __fillPage: true, pos: [0, 0, 1080, 1080] });
+    const title = g.layers.find(l => typeof l['id'] === 'string' && /_title$/.test(l['id'] as string));
+    expect((title?.['y'] as number)).toBeGreaterThan(200); // pushed down from the top, not pinned at ~86
+  });
+
+  it('WITHOUT __fillPage the same content stays content-sized (poster auto-fit, unchanged)', () => {
+    const g = grp({ pos: [0, 0, 1080, 1080] });
+    expect(g.height).toBeLessThan(1080);          // content-sized (≤ W*0.9 floor), proves fill is the lever
+  });
+});

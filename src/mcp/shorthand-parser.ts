@@ -1801,7 +1801,11 @@ function coalesceStatBlocks(blocks: Record<string, unknown>[]): Record<string, u
 
 function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
-  const { X, Y, W } = shBox(sh, 1080, 1920);
+  const { X, Y, W, H: boxH } = shBox(sh, 1080, 1920);
+  // On a fixed carousel slide the page-fill stamps `__fillPage` + the page box:
+  // FILL that height (bg spans the whole page, no unpainted strip) and vertically
+  // CENTER the content (no top-heavy dead band). A poster keeps content-sizing.
+  const fillPage = r['__fillPage'] === true && boxH > 0;
   const kicker = shStr(r['kicker'] ?? r['eyebrow']);
   const title = shStr(r['title'] ?? r['headline']);
   const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
@@ -1885,13 +1889,21 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   if (kicker || title || subtitle) hY += Math.round(W * 0.05);
   const footerBand = footer ? Math.round(W * 0.1) : Math.round(W * 0.06);
   const naturalH = hY + sumH + Math.round(W * 0.032) * Math.max(0, n - 1) + footerBand + Math.round(W * 0.04);
-  const H = Math.max(Math.round(W * 0.9), Math.min(Math.round(W * 3.4), naturalH));
+  // A page-fill slide is EXACTLY the page height (bg spans it → no strip); a
+  // poster sizes to content. When the page is taller than the content, center the
+  // whole composition (topPad) — unless a masthead band is present, which is a
+  // top-anchored cover archetype whose slab is drawn at the page top.
+  const H = fillPage ? boxH : Math.max(Math.round(W * 0.9), Math.min(Math.round(W * 3.4), naturalH));
+  // Vertically center the whole composition when the fixed page is taller than
+  // the content. The masthead slab is shifted by the same offset (below), so the
+  // band stays aligned with its reversed-out header text.
+  const topPad = (fillPage && H > naturalH) ? Math.round((H - naturalH) * 0.42) : 0;
 
   // Rich engine-composed background when bg_style is set, else a flat wash.
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
   // Lay the masthead slab over the composed wash, under the header text.
-  if (band) layers.push({ id: `${id}_mband`, type: 'rect', z: layers.length, x: X, y: Y, width: W, height: Math.round(hY), fill: { type: 'solid', color: bandBg } } as unknown as Layer);
-  let k = layers.length, cy = Y + Math.round(W * 0.08);
+  if (band) layers.push({ id: `${id}_mband`, type: 'rect', z: layers.length, x: X, y: Y + topPad, width: W, height: Math.round(hY), fill: { type: 'solid', color: bandBg } } as unknown as Layer);
+  let k = layers.length, cy = Y + Math.round(W * 0.08) + topPad;
 
   // Vertical magazine-spine kicker (rotate): a -90° label pinned at the left
   // edge; the content column is already indented (gutter) to clear it. Built as a
@@ -1956,12 +1968,17 @@ function buildSections(sh: ShorthandLayer, id: string, z: number): Layer {
   // The masthead band reserves the header zone (height hY). A band-mode header is
   // a touch shorter than that estimate (the rule is suppressed), so push the first
   // block clear of the band's bottom edge rather than letting its top tuck under it.
-  if (band) cy = Math.max(cy, Y + Math.round(hY) + Math.round(W * 0.05));
+  if (band) cy = Math.max(cy, Y + topPad + Math.round(hY) + Math.round(W * 0.05));
   // Place blocks: distribute only the SMALL leftover slack in the fitted canvas
   // (floor keeps dense content tight, cap keeps a slightly-roomy page balanced).
   const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
   const avail = (Y + H - M - footerH) - cy;
-  const gap = Math.max(Math.round(W * 0.024), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
+  // A page-fill slide centers its content as a compact block (topPad already
+  // shifted cy down), so use the NATURAL inter-block gap — matching the gap
+  // naturalH assumed — instead of stretching blocks across the slack.
+  const gap = fillPage
+    ? Math.round(W * 0.032)
+    : Math.max(Math.round(W * 0.024), Math.min(Math.round(W * 0.06), (avail - sumH) / n));
   bl.forEach((b, i) => {
     const out = renderSectionBlock(b, `${id}_b${i}`, z + k, ccX, cy, ccW, ctx);
     out.layers.forEach(l => layers.push(l));
@@ -2756,7 +2773,14 @@ export function fillBleedPresetDims(layers: ShorthandLayer[], docW: number, docH
 // Flow/list presets that size themselves to their content (so a poster can
 // auto-fit). On a fixed CAROUSEL page that content-sizing leaves an empty lower
 // band — hand them the page box so they fill + center it instead.
-const FLOW_PAGE_PRESETS = new Set(['list', 'steps', 'checklist', 'numbered_list']);
+// Content presets that, on a fixed slide, should FILL the page (not size-to-
+// content) so there's no unpainted strip / dead band below the content. buildList
+// AND buildSections both honor the private `__fillPage` marker: fill the page
+// height, compose the bg across it, and vertically center the content block.
+const FLOW_PAGE_PRESETS = new Set([
+  'list', 'steps', 'checklist', 'numbered_list',
+  'sections', 'infographic', 'document', 'report_poster',
+]);
 export function fillFlowPresetsToPage(layers: ShorthandLayer[], docW: number, docH: number): number {
   let filled = 0;
   for (const sh of layers) {
@@ -2769,7 +2793,7 @@ export function fillFlowPresetsToPage(layers: ShorthandLayer[], docW: number, do
       || typeof r['width'] === 'number' || typeof r['height'] === 'number';
     if (hasBox) continue;
     r['pos'] = [0, 0, docW, docH];
-    r['__fillPage'] = true; // tells buildList to FILL+center, not size-to-content
+    r['__fillPage'] = true; // FILL+center the page, not size-to-content
     filled++;
   }
   return filled;
