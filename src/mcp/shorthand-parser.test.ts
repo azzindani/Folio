@@ -2917,3 +2917,20 @@ describe('sections feature_grid BLOCK — items render, never silently dropped',
     expect(txts).toContain('Key Features');       // block sub-heading kept
   });
 });
+
+describe('sections stats block — a LONE figure becomes a hero number', () => {
+  const figSize = (items: unknown[]): number => {
+    const g = expandShorthandLayers([{ type: 'sections', title: 'X',
+      blocks: [{ kind: 'stats', items }] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
+    const v0 = g.layers.find(l => typeof l['id'] === 'string' && /_v0$/.test(l['id'] as string));
+    return Number((v0?.['style'] as { font_size?: number } | undefined)?.font_size ?? 0);
+  };
+  it('a single-item stats figure is much larger than a 4-up row cell', () => {
+    const one = figSize([{ value: '$250B', label: 'Creator economy 2026' }]);
+    const four = figSize([
+      { value: '$250B', label: 'a' }, { value: '24%', label: 'b' },
+      { value: '20M', label: 'c' }, { value: '+10%', label: 'd' }]);
+    expect(one).toBeGreaterThan(four * 1.6);   // focal hero, not a timid row cell
+    expect(one).toBeGreaterThan(120);          // genuinely dominant on a 1080 canvas
+  });
+});
