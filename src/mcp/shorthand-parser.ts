@@ -687,8 +687,13 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
   } else {
     layers.push({ id: `${idp}_bg`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: expandFill(bg) } as unknown as Layer);
     if (base === 'mesh') {
-      const spots: [number, number][] = [[0.14, 0.1], [0.87, 0.18], [0.2, 0.86], [0.84, 0.82]];
-      spots.forEach(([fx, fy], i) => blob(`${idp}_mesh${i}`, X + fx * W, Y + fy * H, Math.round(W * 0.52), pal[i % pal.length], dark ? 0.4 : 0.24));
+      // A SUBTLE tonal mesh, not an "AI gradient mesh": 3 soft blobs (down from 4)
+      // tinted TOWARD the bg (full-saturation palette hues read as over-processed
+      // glow — user feedback) using at most TWO hues so it's quiet depth, not a
+      // rainbow wash, at low opacity (0.4→0.26 dark).
+      const spots: [number, number][] = [[0.16, 0.12], [0.85, 0.2], [0.78, 0.86]];
+      const hues = [pal[0] ?? accent, pal[1] ?? pal[0] ?? accent];
+      spots.forEach(([fx, fy], i) => blob(`${idp}_mesh${i}`, X + fx * W, Y + fy * H, Math.round(W * 0.5), mixHex(bgHex, hues[i % hues.length], dark ? 0.55 : 0.4), dark ? 0.26 : 0.16));
     } else if (base === 'marble') {
       const cs: [number, number, number, number][] = [[X + W, Y, -1, 1], [X, Y + H, 1, -1]];
       cs.forEach(([ax, ay, dx, dy], ci) => {
@@ -703,7 +708,7 @@ function composeBackground(spec: string, idp: string, X: number, Y: number, W: n
   for (const sw of sweeps) {
     const [kind, place] = sw.split(':');
     if (kind === 'curve') { const [cx, cy] = anchor(place || 'tr'); blob(`${idp}_curve`, cx, cy, Math.round(W * 0.85), mixHex(bgHex, accent, dark ? 0.46 : 0.2), dark ? 0.5 : 0.4); }
-    else if (kind === 'glow') { const [cx, cy] = anchor(place || 'top'); blob(`${idp}_glow`, cx, cy, Math.round(W * 0.82), mixHex(bgHex, accent, dark ? 0.5 : 0.2), dark ? 0.46 : 0.32); }
+    else if (kind === 'glow') { const [cx, cy] = anchor(place || 'top'); blob(`${idp}_glow`, cx, cy, Math.round(W * 0.72), mixHex(bgHex, accent, dark ? 0.42 : 0.18), dark ? 0.32 : 0.22); }
     else if (kind === 'band_left') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: Math.max(6, Math.round(W * 0.022)), height: H, fill: { type: 'solid', color: accent } } as unknown as Layer);
     else if (kind === 'band_top') layers.push({ id: `${idp}_band`, type: 'rect', z: z++, x: X, y: Y, width: W, height: Math.max(5, Math.round(W * 0.016)), fill: { type: 'solid', color: accent } } as unknown as Layer);
     else if (kind === 'grain') layers.push({ id: `${idp}_grain`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'noise', frequency: 0.9, octaves: 2, opacity: dark ? 0.06 : 0.045 } as unknown as Fill } as unknown as Layer);
