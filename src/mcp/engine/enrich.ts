@@ -23,6 +23,11 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
   // A PROCESS / WORKFLOW / "how X moves through Y" poster — still a sections preset,
   // but its spine is a flow block the engine draws as numbered nodes joined by arrows
   // (never a plain list, never hand-placed circles/boxes that overlap).
+  // An "X vs Y" comparison — a sections preset whose spine is a versus block the
+  // engine lays out as two columns + a divider (never a hand-placed colliding table).
+  comparison: { canvas: [1080, 1350], preset: 'sections', blocks: [
+    'a versus block {kind:"versus", a_label:"<option A>", b_label:"<option B>", rows:[{label:"<aspect>", a:"<A value>", b:"<B value>"}]} — compare 4-6 aspects side by side; the engine draws two columns + a center divider, measured so nothing collides',
+    'callout {label,text} — the verdict: which to pick, and when' ] },
   process: { canvas: [1080, 1920], preset: 'sections', blocks: [
     'a flow block {kind:"flow", items:[{title, desc}]} — 4-7 SEQUENTIAL steps, each a 1-3 word title + a one-sentence desc; the engine draws numbered nodes connected by arrows so steps never collide',
     'callout {label,text} — why the flow matters or the single key insight' ] },
@@ -43,7 +48,8 @@ function inferType(p: string): string {
   // then ships a placeholder "EVENT" title when the model gives no event title).
   const hasProduct = /\b(product|app|tool|platform|saas|software|feature|features|extension|plugin|widget|library|framework)\b/i.test(p);
   if (!hasProduct && /\b(event|flyer|launch|party|gig|concert|webinar|meetup|conference|festival|workshop|summit|expo|gala|ceremony|fundraiser|gathering)\b/i.test(p)) return 'event';
-  if (/\b(vs\.?|versus|comparison|compare|case study|before and after)\b/i.test(p)) return 'split';
+  if (/\b(case study|before and after)\b/i.test(p)) return 'split';
+  if (/\b(vs\.?|versus|comparison|compare|head[ -]?to[ -]?head|which is better|pros and cons)\b/i.test(p)) return 'comparison';
   if (/\b(feature|features|product|app|tool|platform|benefits|capabilities|why choose|launch)\b/i.test(p)) return 'feature_grid';
   if (/\b(\d+%|one (stat|number|figure)|single (stat|number))\b/i.test(p) && !/\b(report|trends|state of|overview)\b/i.test(p)) return 'stat';
   if (/\b(report|state of|trends|overview|infographic|landscape|guide to|breakdown|analysis|deep dive|annual)\b/i.test(p)) return 'sections';
