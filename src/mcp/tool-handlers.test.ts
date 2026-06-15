@@ -344,6 +344,23 @@ describe('sealDesign', () => {
     expect(hasMotif(parseYAMLDesign(designPath))).toBe(false);
   });
 
+  it('snaps a title placed fully off-canvas back inside (content would otherwise be lost)', () => {
+    const projectPath = path.join(tmpDir, 'offcanvas-project');
+    createProject({ name: 'OffCanvas', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'OffCanvas', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/offcanvas.design.yaml');
+    // The real failure: a model computed the title's y just past the canvas bottom
+    // (1095 on a 1080-tall poster). It renders NOWHERE — the title is silently lost.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+      { id: 'title', type: 'text', z: 1, x: 65, y: 1095, width: 950, height: 34, content: { type: 'plain', value: 'Off-screen title' }, style: { font_size: 24 } },
+    ] as unknown as Layer[] });
+    const spec = parseYAMLDesign(designPath);
+    const title = (spec.layers ?? []).find(l => (l as { id?: string }).id === 'title') as unknown as { y?: number; height?: number };
+    expect(Number(title.y)).toBeLessThan(1080);                                  // pulled onto the canvas
+    expect(Number(title.y) + Number(title.height)).toBeLessThanOrEqual(1080);    // fully visible
+  });
+
   it('a presentation filled via add_layers+page_id fills each slide and stays cohesive (create_presentation path)', () => {
     const projectPath = path.join(tmpDir, 'deck-project');
     createProject({ name: 'Deck', path: projectPath });
