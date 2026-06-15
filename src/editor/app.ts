@@ -22,6 +22,7 @@ import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
 import type { DesignSpec, ThemeSpec } from '../schema/types';
+import { ensureDesignFonts } from '../styles/font-loader';
 import { fileWatcher } from '../fs/file-watcher';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { PanelResizer } from '../ui/resize/panel-resizer';
@@ -1104,6 +1105,23 @@ export class EditorApp {
       // panel both see them. Empty object resets any prior design's anims.
       this.state.set('animations', spec.animations ?? {});
     });
+
+    // Load the design's own font families (a mood may pick Orbitron / Bricolage
+    // Grotesque on a layer) so the live editor matches the raster export instead
+    // of falling back to a generic. Recurses groups + every page.
+    const designFonts = new Set<string>();
+    const walkFonts = (layers: ReadonlyArray<Record<string, unknown>>): void => {
+      for (const l of layers) {
+        const style = l['style'] as Record<string, unknown> | undefined;
+        const fam = style?.['font_family'] ?? l['font_family'];
+        if (typeof fam === 'string') designFonts.add(fam);
+        const kids = l['layers'];
+        if (Array.isArray(kids)) walkFonts(kids as Record<string, unknown>[]);
+      }
+    };
+    walkFonts((spec.layers ?? []) as unknown as Record<string, unknown>[]);
+    for (const p of spec.pages ?? []) walkFonts((p.layers ?? []) as unknown as Record<string, unknown>[]);
+    ensureDesignFonts([...designFonts]);
 
     this.resolveStyleRefs(spec);
 
