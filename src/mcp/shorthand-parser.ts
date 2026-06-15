@@ -1511,6 +1511,50 @@ function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: number,
     });
     return { layers, height: Math.max(0, yy - y - Math.round(W * 0.022)) };
   }
+  // Feature/benefit CARDS nested as a sections block — a blind model naturally
+  // writes {kind:"feature_grid", title, subtitle, items:[{icon,title,desc}]}
+  // inside a sections layer (feature_grid is really a top-level preset, so this
+  // kind used to hit the unknown-kind fallback that renders only the title and
+  // SILENTLY DROPS every item — the Swell "Key Features" with zero features bug).
+  // Render the items as a measured 2-column grid (title + desc per card, accent
+  // tick), with the block's own title/subtitle as a sub-heading above.
+  if (kind === 'feature_grid' || kind === 'features' || kind === 'feature' || kind === 'cards' || kind === 'grid' || kind === 'benefits') {
+    const items = arrField('items', 'cards', 'features', 'rows', 'list', 'data', 'points');
+    if (!items.length) return { layers, height: 0 };
+    let yy = y;
+    const hTitle = shStr(b['title'] ?? b['heading']);
+    const hSub = shStr(b['subtitle'] ?? b['subhead'] ?? b['intro']);
+    if (hTitle) {
+      const hs = Math.round(W * 0.03), hh = estTextHeight(hTitle, hs, w, 1.1);
+      layers.push(txt(`${idp}_h`, z++, x, yy, w, hh, hTitle, { font_size: hs, font_weight: 800, color: text, line_height: 1.1 }));
+      yy += hh + Math.round(W * 0.012);
+    }
+    if (hSub) {
+      const ss = Math.round(W * 0.022), sh = estTextHeight(hSub, ss, w, 1.35);
+      layers.push(txt(`${idp}_sh`, z++, x, yy, w, sh, hSub, { font_size: ss, font_weight: 400, color: muted, line_height: 1.35 }));
+      yy += sh + Math.round(W * 0.022);
+    }
+    const cols = items.length >= 2 ? 2 : 1;
+    const colGap = Math.round(W * 0.035), colW = Math.round((w - colGap * (cols - 1)) / cols);
+    const tSize = Math.round(W * 0.025), dSize = Math.round(W * 0.0195), tickH = Math.max(3, Math.round(W * 0.006));
+    const rowGap = Math.round(W * 0.03);
+    let rowTop = yy, rowMax = 0, col = 0;
+    items.forEach((it, i) => {
+      const cTitle = shStr(it['title'] ?? it['name'] ?? it['label'] ?? it['heading']);
+      const cDesc = shStr(it['desc'] ?? it['text'] ?? it['description'] ?? it['detail'] ?? it['body']);
+      const cx = x + col * (colW + colGap);
+      const tH = estTextHeight(cTitle || ' ', tSize, colW, 1.15);
+      const dH = cDesc ? estTextHeight(cDesc, dSize, colW, 1.4) : 0;
+      const cellH = tickH + 10 + tH + (cDesc ? 6 + dH : 0);
+      layers.push({ id: `${idp}_tk${i}`, type: 'rect', z: z++, x: cx, y: rowTop, width: Math.round(W * 0.045), height: tickH, fill: { type: 'solid', color: accent } } as unknown as Layer);
+      layers.push(txt(`${idp}_ct${i}`, z++, cx, rowTop + tickH + 10, colW, tH, cTitle, { font_size: tSize, font_weight: 700, color: text, line_height: 1.15 }));
+      if (cDesc) layers.push(txt(`${idp}_cd${i}`, z++, cx, rowTop + tickH + 10 + tH + 6, colW, dH, cDesc, { font_size: dSize, font_weight: 400, color: muted, line_height: 1.4 }));
+      rowMax = Math.max(rowMax, cellH);
+      col++;
+      if (col >= cols || i === items.length - 1) { rowTop += rowMax + rowGap; rowMax = 0; col = 0; }
+    });
+    return { layers, height: Math.max(0, rowTop - y - rowGap) };
+  }
   if (kind === 'callout' || kind === 'highlight' || kind === 'takeaway') {
     const t = shStr(b['text'] ?? b['body'] ?? b['value']);
     const label = shStr(b['label'] ?? b['title']);
