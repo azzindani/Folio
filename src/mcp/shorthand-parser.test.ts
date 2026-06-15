@@ -2735,6 +2735,11 @@ describe('fillBleedPresetDims — boxless full-bleed preset fills the page (blan
     expect(fillBleedPresetDims(sh, 1080, 1080)).toBe(1);
     expect((sh[0] as unknown as { pos: number[] }).pos).toEqual([0, 0, 1080, 1080]);
   });
+  it('snaps a full-bleed box placed BELOW the fold (off the bottom) to the page', () => {
+    const sh: ShorthandLayer[] = [{ type: 'feature_grid', pos: [0, 1095, 1080, 1469], title: 'X' } as unknown as ShorthandLayer];
+    expect(fillBleedPresetDims(sh, 1080, 1469)).toBe(1);
+    expect((sh[0] as unknown as { pos: number[] }).pos).toEqual([0, 0, 1080, 1469]);
+  });
   it('leaves a sane in-canvas full-bleed box alone', () => {
     const sh: ShorthandLayer[] = [{ type: 'feature_grid', pos: [0, 0, 1080, 1350], title: 'X' } as unknown as ShorthandLayer];
     expect(fillBleedPresetDims(sh, 1080, 1350)).toBe(0);
