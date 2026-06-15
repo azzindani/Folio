@@ -625,6 +625,53 @@ function structureHandPlacedText(layers: Layer[], W: number, H: number): number 
   return unsized.length;
 }
 
+// Push apart hand-placed layers that OVERPRINT. A blind model gives each text
+// layer an explicit height it can't verify; the text wraps past it and collides
+// with whatever is below (the fitness-infographic case). Re-measure every text
+// layer's TRUE height, then sweep top→bottom: any layer whose top sits inside a
+// higher layer it horizontally overlaps is pushed down to clear it. Side-by-side
+// items (a row of stat cards) don't overlap horizontally, so they stay aligned;
+// a full-width heading above a row pushes the whole row down. A preset (one group)
+// or an already-clean layout → no moves. Returns the number of layers shifted.
+function decollideHandPlaced(layers: Layer[], W: number, H: number): number {
+  const o = (l: Layer): Record<string, unknown> => l as unknown as Record<string, unknown>;
+  const isFullBleed = (l: Layer): boolean => {
+    const r = o(l); const w = Number(r['width']) || 0; const h = Number(r['height']) || 0;
+    return (l.type === 'rect' || l.type === 'image') && w >= W * 0.9 && h >= H * 0.9;
+  };
+  const textVal = (l: Layer): string => {
+    const c = o(l)['content'];
+    return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : '');
+  };
+  const measuredH = (l: Layer): number => {
+    const r = o(l); const given = Number(r['height']) || 0;
+    if (l.type !== 'text') return given;
+    const style = (r['style'] as Record<string, unknown>) ?? {};
+    const fs = Number(style['font_size']) || Math.round(W * 0.025);
+    const lh = Number(style['line_height']) || 1.4;
+    const w = Number(r['width']) || W;
+    return Math.max(given, estTextHeight(textVal(l), fs, w, lh));
+  };
+  const movable = layers.filter(l => l && !isFullBleed(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  if (movable.length < 2) return 0;
+  const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
+  const placed: { x: number; w: number; bot: number }[] = [];
+  const gap = Math.round(W * 0.014);
+  let moved = 0;
+  for (const l of ordered) {
+    const r = o(l);
+    const x = Number(r['x']); const w = Number(r['width']) || 1;
+    const mh = measuredH(l);
+    if (l.type === 'text' && mh > (Number(r['height']) || 0)) r['height'] = mh;
+    let top = Number(r['y']);
+    let floor = -Infinity;
+    for (const p of placed) if (x < p.x + p.w && p.x < x + w) floor = Math.max(floor, p.bot + gap);
+    if (floor > top + 1) { top = Math.round(floor); r['y'] = top; moved++; }
+    placed.push({ x, w, bot: top + mh });
+  }
+  return moved;
+}
+
 function clampShorthandToCanvas(layers: ShorthandLayer[], W: number, H: number): void {
   if (!(W > 0) || !(H > 0)) return;
   for (const sh of layers) {
@@ -786,6 +833,13 @@ export function addLayers(args: {
   if (!spec.pages) {
     const restructured = structureHandPlacedText(incoming, spec.document.width, spec.document.height);
     if (restructured) progress.push(pInfo(`Structured ${restructured} unsized text layer(s)`, 'hand-placed → title/subtitle/body hierarchy'));
+    // Then de-collide: a model that SIZED its text still gives wrong heights (it
+    // can't see wrapping), so text overflows and overprints the next layer (the
+    // fitness-infographic "Month 4: 12,000" over "User Base"). Re-measure + push
+    // overlapping hand-placed layers apart. No-op on a preset (one group) or a
+    // clean layout. Posters only — pages flow their own content.
+    const decollided = decollideHandPlaced(incoming, spec.document.width, spec.document.height);
+    if (decollided) progress.push(pInfo(`Reflowed ${decollided} overlapping hand-placed layer(s)`, 'measured text → no overprint'));
   }
 
   // Hand-placed VERBOSE text with no color renders #000 (the renderer default) —

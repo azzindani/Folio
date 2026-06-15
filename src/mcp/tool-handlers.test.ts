@@ -238,6 +238,32 @@ describe('sealDesign', () => {
     expect(sealed.document.width).toBe(1080);
   });
 
+  it('de-collides overflowing hand-placed text so layers never overprint (blind-model overflow)', () => {
+    const projectPath = path.join(tmpDir, 'decollide-project');
+    createProject({ name: 'Decollide', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Decollide', type: 'poster', width: 1080, height: 1920 });
+    const designPath = path.join(projectPath, 'designs/decollide.design.yaml');
+    // A blind model sizes its text but gives each layer a too-short height it can't
+    // verify: the 5-line block at y=200 overflows and the next two layers sit ON it.
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'rect', pos: [0, 0, 1080, 1920], fill: '#0E1116' },
+      { type: 'text', pos: [80, 90, 920, 80], text: 'Year One', color: '#FFFFFF', size: 60 },
+      { type: 'text', pos: [80, 200, 920, 90], text: 'Month 1: 1,200\nMonth 2: 3,400\nMonth 3: 7,100\nMonth 4: 12,000\nMonth 5: 19,500', color: '#CCCCCC', size: 34 },
+      { type: 'text', pos: [80, 280, 920, 60], text: 'User Base Split', color: '#FFFFFF', size: 42 },
+      { type: 'text', pos: [80, 350, 920, 80], text: 'Mobile 55 · Desktop 30 · Tablet 15', color: '#CCCCCC', size: 34 },
+    ] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(designPath);
+    const texts = (spec.layers ?? []).filter(l => l.type === 'text')
+      .map(l => l as unknown as { y: number; height: number })
+      .sort((a, b) => a.y - b.y);
+    // every text layer starts at/after the previous one's MEASURED bottom — no overprint
+    for (let i = 1; i < texts.length; i++) {
+      expect(texts[i].y).toBeGreaterThanOrEqual(texts[i - 1].y + texts[i - 1].height - 2);
+    }
+    // the last block was pushed well past its given y=350 (the overflow was absorbed)
+    expect(texts[texts.length - 1].y).toBeGreaterThan(400);
+  });
+
   it('unwraps a model-invented page wrapper instead of rejecting a dimensionless group (blind-30B blank-poster)', () => {
     const projectPath = path.join(tmpDir, 'wrapper-project');
     createProject({ name: 'Wrap', path: projectPath });
