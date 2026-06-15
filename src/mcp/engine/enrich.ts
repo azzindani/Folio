@@ -17,7 +17,7 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
     'heading + text — sub-theme #1, heading + 2-3 sentences',
     'heading + text — sub-theme #2, heading + 2-3 sentences',
     'heading + text — sub-theme #3, heading + 2-3 sentences',
-    'bars — a ranked comparison of 4-5 items {label,value}',
+    'a data viz — pick what the data IS: bars {label,value} for a ranking, donut {label,value} for a share/breakdown (parts of a whole, %), or line {x,y} for a trend over time (all rasterize)',
     'callout {label,text} — the single key takeaway',
     'source — cite the research source' ] },
   // A PROCESS / WORKFLOW / "how X moves through Y" poster — still a sections preset,
