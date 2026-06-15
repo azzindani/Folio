@@ -216,14 +216,17 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   const fill = outline.blocks
     ? `Add ONE layer — layers_shorthand:[{type:"${presetType}", kicker:"<a 1-3 word eyebrow label>", title:"<a punchy ≤6-word HEADLINE naming the topic>", subtitle:"<a 2-sentence intro deck>", …, blocks:[…]}]. The kicker + title + subtitle go on the LAYER ITSELF (a titleless deck looks unfinished); then a blocks array covering: ${outline.blocks.join(' · ')}. Emit EVERY block listed — a thin 1-2 block deck is the exact "sparse / dead space" failure to avoid. NEVER hand-place separate text/stat/icon layers (they collide and you loop).`
     : `Add ONE layer — layers_shorthand:[{type:"${presetType}", …}] supplying: ${(outline.fields ?? []).join(' · ')}. NEVER hand-place separate title/body/text layers — the preset auto-sizes every block so text never collides.`;
-  // A content-dense (blocks-based) poster reliably leaves a wide blank column
-  // beside its left-anchored steps/rows — the blind model won't decorate it on
-  // its own, so DIRECT it to add a motif there (placed BEHIND the text at low z,
-  // so it fills the space as a tinted illustration and can never collide). A
-  // minimal/fields poster (editorial/event/stat) lives on its whitespace, so the
-  // motif stays conditional there.
+  // A content-dense (blocks-based) poster with LEFT-ANCHORED steps/rows reliably
+  // leaves a wide blank column — the blind model won't decorate it on its own, so
+  // DIRECT it to add a motif there (BEHIND the text at low z, a tinted illustration
+  // that can't collide). But a FULL-WIDTH block layout — a versus table, a pricing
+  // grid, a date-railed timeline — spans the whole canvas; directing a motif into
+  // the right third drops it straight onto content (the engine then has to remove
+  // it). For those, and for minimal/fields posters (editorial/event/stat) that live
+  // on their whitespace, the motif stays CONDITIONAL: fill only a genuine gap.
   const motif = motifForTopic(subject);
-  const motifClause = outline.blocks
+  const fullWidthLayout = design_type === 'comparison' || design_type === 'pricing' || design_type === 'timeline';
+  const motifClause = (outline.blocks && !fullWidthLayout)
     ? `THEN add ONE decorative ${motif} motif to fill the open side space (these dense posters leave a wide blank column): append layers_shorthand:[{type:"motif", motif:"${motif}", pos:[${Math.round(width * 0.6)}, ${Math.round(height * 0.34)}, ${Math.round(width * 0.34)}, ${Math.round(height * 0.5)}], color:"${mood.accent}", z:1}] — a composed vector illustration on the right, BEHIND the text (low z) so it can never collide; resize its pos to whatever region the content actually left open.`
     : `IF the finished layout still leaves a large EMPTY band beside left-anchored content, add ONE ${motif} motif there to fill it — layers_shorthand:[{type:"motif", motif:"${motif}", pos:[x,y,w,h], color:"${mood.accent}", z:1}] — but NOT if the design is already full or deliberately minimal (whitespace is fine).`;
   const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. ${motifClause} Then diagnose_design until clean and seal.`;

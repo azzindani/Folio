@@ -18,8 +18,9 @@ describe('expandShorthand', () => {
 
   it('expands a motif into a group of primitive layers within its box (fills negative space)', () => {
     const sh = { id: 'deco', type: 'motif', motif: 'bolt', pos: [700, 300, 300, 800], color: '#FFCC00' } as unknown as ShorthandLayer;
-    const result = expandShorthand(sh) as unknown as { type: string; width: number; height: number; layers: Record<string, unknown>[] };
+    const result = expandShorthand(sh) as unknown as { type: string; width: number; height: number; meta?: { role?: string }; layers: Record<string, unknown>[] };
     expect(result.type).toBe('group');
+    expect(result.meta?.role).toBe('motif');                         // tagged for collision-drop in ingest
     expect(result.width).toBe(300);
     expect(result.layers.length).toBeGreaterThan(1);                 // composed, not a single silhouette
     // every primitive is a rasterizing type (no foreignObject) and uses the accent

@@ -112,6 +112,20 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(essay.instruction!).toMatch(/IF the finished layout/i); // CONDITIONAL — preserves whitespace
   });
 
+  it('does NOT direct a motif onto a full-width layout (versus/pricing/timeline span the canvas)', () => {
+    // A comparison's versus table fills the full width — there is no open side
+    // column, so the motif must be CONDITIONAL, not directed into width*0.6.
+    const cmp = run('monolith vs microservices');
+    expect(cmp.design_type).toBe('comparison');
+    expect(cmp.instruction!).toMatch(/IF the finished layout/i);   // conditional
+    expect(cmp.instruction!).not.toMatch(/fill the open side space/i);
+    const price = run('pricing plans for our SaaS', 'pricing');
+    expect(price.instruction!).toMatch(/IF the finished layout/i);
+    // a left-anchored explainer still gets the DIRECTIVE (it leaves a real column)
+    const proc = run('how lightning forms');
+    expect(proc.instruction!).toMatch(/fill the open side space/i);
+  });
+
   it('variant N yields a DISTINCT art-direction for the SAME topic (the "N options" feature)', () => {
     type Sug = { variant: number; design_type: string; suggested: { bg: string; accent: string; bg_style: string } };
     const sug = (v: number) => enrichBrief({ prompt: 'the future of artificial intelligence', variant: v }) as unknown as Sug;
