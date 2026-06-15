@@ -778,6 +778,40 @@ function dropStackedPresets(layers: Layer[], docW: number, docH: number): number
   return removed;
 }
 
+// A full-canvas OPAQUE solid backdrop rect at the origin — the base wash a model
+// lays down first. A clean page has exactly one; a thrashing rebuild re-adds it
+// on every pass (8 stacked here). Gradient/noise overlays aren't counted (a legit
+// layered background is base + gradient + grain → different fills, not dupes).
+function isFullCanvasBackdrop(l: Layer, docW: number, docH: number): boolean {
+  if (l.type !== 'rect') return false;
+  const fill = (l as unknown as Record<string, unknown>)['fill'] as Record<string, unknown> | undefined;
+  if (!fill || fill['type'] !== 'solid') return false;
+  const b = layerBBox(l);
+  return b.x <= docW * 0.02 && b.y <= docH * 0.02 && (b.r - b.x) >= docW * 0.95 && (b.b - b.y) >= docH * 0.95;
+}
+
+// A thrashing model can rebuild a HAND-PLACED poster many times across add_layers
+// calls — each pass re-adds the WHOLE composition (a full-canvas backdrop + every
+// text/rect) without clearing, so the page piles up dozens of overlapping
+// duplicates (here: 8 backdrops, 5 copies of each pricing tier). dropStackedPresets
+// only sees preset GROUPS, not these loose layers. When several full-canvas
+// backdrops AND a complete full-bleed content preset coexist — an unambiguous
+// rebuild signal no clean design produces — the preset already holds the clean
+// composition: keep it + one backdrop and drop the loose hand-placed duplicates.
+function dropThrashDuplicates(layers: Layer[], docW: number, docH: number): number {
+  const backdropIdx = layers.map((l, i) => isFullCanvasBackdrop(l, docW, docH) ? i : -1).filter(i => i >= 0);
+  const presetIdx = layers.map((l, i) => isFullBleedContentPreset(l, docW, docH) ? i : -1).filter(i => i >= 0);
+  // Need the rebuild signal (≥3 stacked backdrops) AND a preset to fall back on.
+  if (backdropIdx.length < 3 || presetIdx.length < 1) return 0;
+  const keep = new Set<number>([backdropIdx[backdropIdx.length - 1], ...presetIdx]);
+  const LOOSE = new Set(['text', 'rect', 'line', 'ellipse', 'icon', 'path']);
+  const drop = new Set<number>();
+  layers.forEach((l, i) => { if (!keep.has(i) && !isMotifLayer(l) && LOOSE.has(l.type)) drop.add(i); });
+  let removed = 0;
+  for (let i = layers.length - 1; i >= 0; i--) { if (drop.has(i)) { layers.splice(i, 1); removed++; } }
+  return removed;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -1205,6 +1239,12 @@ export function addLayers(args: {
       }
     }
   }
+
+  // Remove loose hand-placed duplicates from a rebuild thrash (many stacked
+  // full-canvas backdrops + a complete content preset → keep the preset, drop the
+  // dozens of overlapping hand-placed copies the model never cleared).
+  const droppedThrash = dropThrashDuplicates(activeLayers, spec.document.width, spec.document.height);
+  if (droppedThrash) progress.push(pInfo(`Removed ${droppedThrash} hand-placed duplicate(s)`, 'a thrashing rebuild stacked loose copies over the content preset — kept the preset'));
 
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it

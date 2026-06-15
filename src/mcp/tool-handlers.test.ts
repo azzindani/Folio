@@ -436,6 +436,33 @@ describe('sealDesign', () => {
     expect(titles).not.toContain('First Attempt'); // earlier stacked attempts dropped
   });
 
+  it('removes loose hand-placed duplicates when many backdrops stack over a content preset', () => {
+    const projectPath = path.join(tmpDir, 'thrash-loose-project');
+    createProject({ name: 'ThrashLoose', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'ThrashLoose', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/thrashloose.design.yaml');
+    // The real pricing-poster failure: the model rebuilt a HAND-PLACED poster
+    // many times (a full-canvas backdrop + loose tier text per pass) AND once via
+    // a feature_grid preset that holds the clean composition. Replicate: 4 stacked
+    // backdrops + loose duplicate text, then a complete feature_grid.
+    for (let i = 0; i < 4; i++) {
+      addLayers({ design_path: designPath, layers: [
+        { id: `bg_${i}`, type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+        { id: `tier_${i}`, type: 'text', z: 1, x: 120, y: 400, width: 300, height: 40, content: { type: 'plain', value: 'Starter $9/mo' }, style: { font_size: 30 } },
+      ] as unknown as Layer[] });
+    }
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', items: [{ title: 'Starter', desc: '$9/mo' }, { title: 'Pro', desc: '$29/mo' }, { title: 'Enterprise', desc: '$99/mo' }] }] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(designPath);
+    const top = spec.layers ?? [];
+    // exactly one backdrop survives + the feature_grid preset; loose tier dupes gone
+    const backdrops = top.filter(l => l.type === 'rect' && (l as { width?: number }).width === 1080);
+    expect(backdrops.length).toBe(1);
+    const looseTier = top.filter(l => l.type === 'text' && /tier_/.test(String((l as { id?: string }).id)));
+    expect(looseTier.length).toBe(0);                 // loose hand-placed copies removed
+    expect(top.some(l => l.type === 'group' && /^feature_grid/.test(String((l as { id?: string }).id)))).toBe(true); // preset kept
+  });
+
   it('de-dupes a duplicate page_id on append so no two pages share an id', () => {
     const projectPath = path.join(tmpDir, 'pageid-project');
     createProject({ name: 'PgId', path: projectPath });
