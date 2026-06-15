@@ -924,6 +924,41 @@ function promoteCoveredTitle(layers: Layer[], docW: number, docH: number): numbe
   return promoted;
 }
 
+// A blind model reliably mis-centers a hand-placed title: it sets the text's x to
+// the canvas MID-LINE (docW/2) — using the center coordinate as the LEFT edge — so
+// the box runs from the middle to the right edge and the whole title lands in the
+// right half with empty space on the left (seen on a quote, a roadmap, an
+// infographic). When a top-level text starts right at docW/2, reaches the right
+// region, and nothing else occupies the left half at its height, re-center the box
+// and center-align the text so it reads as a real centered title.
+function recenterHalfAnchoredText(layers: Layer[], docW: number, docH: number): number {
+  const half = docW / 2, tol = docW * 0.03;
+  let moved = 0;
+  for (const t of layers) {
+    if (t.type !== 'text' || !layerText(t).trim()) continue;
+    const b = layerBBox(t), w = b.r - b.x;
+    if (Math.abs(b.x - half) > tol) continue;     // left edge isn't on the mid-line
+    if (b.r < docW * 0.8 || w > docW * 0.55) continue; // not the middle→right-edge signature
+    // Anything meaningful in the left half at this vertical band means it's a real
+    // right-column placement, not a centering slip — leave it.
+    const leftOccupied = layers.some(o => {
+      if (o === t || (o.type === 'rect' && isFullCanvasBackdrop(o, docW, docH)) || isMotifLayer(o)) return false;
+      const ob = layerBBox(o);
+      const vOverlap = Math.min(b.b, ob.b) - Math.max(b.y, ob.y);
+      return vOverlap > 0 && ob.x < half - tol;
+    });
+    if (leftOccupied) continue;
+    const o = t as unknown as Record<string, unknown>;
+    const nx = Math.round((docW - w) / 2);
+    const p = o['pos'];
+    if (Array.isArray(p) && p.length >= 2) { p[0] = nx; } else { o['x'] = nx; }
+    const st = (o['style'] && typeof o['style'] === 'object') ? o['style'] as Record<string, unknown> : (o['style'] = {} as Record<string, unknown>);
+    if (st['align'] == null) st['align'] = 'center';
+    moved++;
+  }
+  return moved;
+}
+
 // Snap a top-level shorthand layer's declared box into the page canvas. Reads
 // the two shapes the engine accepts — `pos:[x,y,w,h]` or `x/y/width/height` —
 // and shrinks only the dimension(s) that spill past the right/bottom edge. A
@@ -1375,6 +1410,11 @@ export function addLayers(args: {
   // is empty) — otherwise the poster's title renders invisible.
   const promoted = promoteCoveredTitle(activeLayers, spec.document.width, spec.document.height);
   if (promoted) progress.push(pInfo(`Surfaced ${promoted} covered title(s)`, 'a title hidden under a full-canvas preset was lifted into view'));
+
+  // Re-center a title the model anchored at the canvas mid-line (docW/2 used as a
+  // left edge → title stuck in the right half with an empty left).
+  const recentered = recenterHalfAnchoredText(activeLayers, spec.document.width, spec.document.height);
+  if (recentered) progress.push(pInfo(`Re-centered ${recentered} mid-anchored text(s)`, 'a title placed with its left edge on the canvas centerline was centered'));
 
   // Drop any space-filling motif that overlaps content. Runs on the MERGED set
   // (existing + incoming), so a motif added in its own add_layers call — the
