@@ -1627,6 +1627,41 @@ describe('__variant — distinct curated art-direction per sibling design (give-
   });
 });
 
+describe('sections — connected flow / process block (rasterizing, collision-free)', () => {
+  type SL = { id: string; type: string; x: number; y: number; width: number; height: number };
+  const flow = (kind: string): { type?: string; layers?: SL[] } => expandShorthand({
+    id: 'fl', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'How it works',
+    blocks: [{ kind, items: [
+      { title: 'Submitted', desc: 'Customer submits a ticket via email or portal, which then needs routing to a team.' },
+      { title: 'Triaged', desc: 'The team reviews and categorizes by urgency and product area.' },
+      { title: 'Resolved', desc: 'The agent fixes it and closes the loop with the customer.' },
+    ] }],
+  } as unknown as ShorthandLayer) as { type?: string; layers?: SL[] };
+
+  it('renders numbered nodes + connectors + arrows + measured text, no overlap', () => {
+    const g = flow('flow');
+    const ids = g.layers!.map(l => l.id);
+    expect(ids.filter(i => /_node\d+$/.test(i)).length).toBe(3);   // one node per step
+    expect(ids.filter(i => /_rail\d+$/.test(i)).length).toBe(2);   // n-1 connectors
+    expect(ids.filter(i => /_arw\d+$/.test(i)).length).toBe(2);    // n-1 arrows
+    expect(g.layers!.filter(l => l.type === 'ellipse').length).toBeGreaterThanOrEqual(3);
+    expect(ids.some(i => /_ft0$/.test(i))).toBe(true);             // step title
+    const ny = (i: number): number => g.layers!.find(l => l.id === `fl_b0_node${i}`)!.y;
+    expect(ny(0)).toBeLessThan(ny(1));                             // measured → stacked
+    expect(ny(1)).toBeLessThan(ny(2));
+  });
+
+  it('`steps` routes to the flow renderer (a step list IS a sequence)', () => {
+    expect(flow('steps').layers!.some(l => /_node0$/.test(l.id))).toBe(true);
+  });
+
+  it('plain `list` stays bullets — no flow nodes', () => {
+    const g = expandShorthand({ id: 'ls', type: 'sections', z: 0, pos: [0, 0, 1080, 1400], title: 'X',
+      blocks: [{ kind: 'list', items: [{ title: 'A', desc: 'a' }, { title: 'B', desc: 'b' }] }] } as unknown as ShorthandLayer) as { layers?: SL[] };
+    expect(g.layers!.some(l => /_node\d+$/.test(l.id))).toBe(false);
+  });
+});
+
 describe('composeBackground — engine-composed rich backgrounds (bg_style)', () => {
   const sec = (bg_style: string) => expandShorthand({
     id: 'sx', type: 'sections', z: 0, pos: [0, 0, 1080, 1920], title: 'T', bg_style,
