@@ -2884,3 +2884,36 @@ describe('buildSections page-fill — no dead strip / dead band on a fixed slide
     expect((title?.['y'] as number)).toBeGreaterThan(150); // pushed down toward center, not at the ~86 top margin
   });
 });
+
+describe('sections feature_grid BLOCK — items render, never silently dropped', () => {
+  const allText = (g: { layers: Array<Record<string, unknown>> }): string[] => {
+    const out: string[] = [];
+    const walk = (ls: Array<Record<string, unknown>>): void => {
+      for (const l of ls) {
+        if (l['type'] === 'text') {
+          const c = l['content'] as { value?: unknown } | undefined;
+          if (c && typeof c.value === 'string') out.push(c.value);
+        }
+        if (Array.isArray(l['layers'])) walk(l['layers'] as Array<Record<string, unknown>>);
+      }
+    };
+    walk(g.layers);
+    return out;
+  };
+
+  it('renders every feature item of a {kind:feature_grid} block nested in sections (the Swell bug)', () => {
+    const g = expandShorthandLayers([{ type: 'sections', title: 'Swell', subtitle: 'Tide app', blocks: [
+      { kind: 'feature_grid', title: 'Key Features', subtitle: 'Stay ahead', items: [
+        { title: 'Tide Charts', desc: 'Real-time tides' },
+        { title: 'Surf Forecasts', desc: 'Seven-day waves' },
+        { title: 'Wind Conditions', desc: 'Live wind' },
+        { title: 'Spot Maps', desc: 'Nearby breaks' },
+      ] }] }] as unknown as ShorthandLayer[])[0] as unknown as { layers: Array<Record<string, unknown>> };
+    const txts = allText(g);
+    for (const t of ['Tide Charts', 'Surf Forecasts', 'Wind Conditions', 'Spot Maps']) {
+      expect(txts).toContain(t);                 // every card title rendered (was dropped before)
+    }
+    expect(txts).toContain('Real-time tides');   // and descriptions
+    expect(txts).toContain('Key Features');       // block sub-heading kept
+  });
+});
