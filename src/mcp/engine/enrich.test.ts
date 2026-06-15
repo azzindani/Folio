@@ -101,13 +101,15 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(r.instruction!).toMatch(/NEVER hand-place/i);
   });
 
-  it('suggests a topic-apt motif to fill a large empty band (conditionally, not always)', () => {
-    const bolt = run('how lightning forms');
+  it('directs a topic-apt motif to fill side space on dense posters, conditional on minimal ones', () => {
+    const bolt = run('how lightning forms');                    // explainer → blocks-based (dense)
     expect(bolt.instruction!).toMatch(/type:"motif"/);
     expect(bolt.instruction!).toMatch(/motif:"bolt"/);          // topic → bolt
-    expect(bolt.instruction!).toMatch(/IF.*empty band/i);       // conditional, preserves intentional whitespace
+    expect(bolt.instruction!).toMatch(/fill the open side space/i); // DIRECTIVE on a dense poster
     const tech = run('how neural networks learn');
     expect(tech.instruction!).toMatch(/motif:"(circuit|orbit)"/); // tech/network topic → tech motif
+    const essay = run('an opinion essay: make software boring', 'editorial'); // minimal/fields
+    expect(essay.instruction!).toMatch(/IF the finished layout/i); // CONDITIONAL — preserves whitespace
   });
 
   it('variant N yields a DISTINCT art-direction for the SAME topic (the "N options" feature)', () => {
