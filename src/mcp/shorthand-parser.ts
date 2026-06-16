@@ -2948,6 +2948,40 @@ export function fillFlowPresetsToPage(layers: ShorthandLayer[], docW: number, do
   return filled;
 }
 
+// Poster variant of the above: snap ONLY a clearly-WRONG box (off-canvas /
+// oversized / offset from the origin), never a boxless preset. A poster's boxless
+// flow preset must keep content-sizing so the doc auto-fits to it (filling it
+// would stretch sparse content + leave a dead band) — but a mispositioned one
+// (the signup-flow thrash: sections at x=-459 / y=400 content-sizes tall → steps
+// off the page → blank) must snap to the origin and fill so its content lands
+// on-canvas. After the snap, origin-stacked dupes dedupe via dropStackedPresets.
+export function snapWrongFlowPresets(layers: ShorthandLayer[], docW: number, docH: number): number {
+  let snapped = 0;
+  for (const sh of layers) {
+    if (!sh || typeof sh !== 'object' || Array.isArray(sh)) continue;
+    const r = sh as Record<string, unknown>;
+    const t = typeof r['type'] === 'string' ? (r['type'] as string).toLowerCase() : '';
+    if (!FLOW_PAGE_PRESETS.has(t)) continue;
+    const pos = Array.isArray(r['pos']) && (r['pos'] as unknown[]).length >= 4 ? (r['pos'] as number[]) : null;
+    const hasBox = pos !== null
+      || typeof r['x'] === 'number' || typeof r['y'] === 'number'
+      || typeof r['width'] === 'number' || typeof r['height'] === 'number';
+    if (!hasBox) continue; // boxless on a poster → leave it to content-size + auto-fit
+    const bx = pos ? Number(pos[0]) : (typeof r['x'] === 'number' ? r['x'] as number : 0);
+    const by = pos ? Number(pos[1]) : (typeof r['y'] === 'number' ? r['y'] as number : 0);
+    const bw = pos ? Number(pos[2]) : (typeof r['width'] === 'number' ? r['width'] as number : docW);
+    const bh = pos ? Number(pos[3]) : (typeof r['height'] === 'number' ? r['height'] as number : docH);
+    const wrong = bx < -docW * 0.05 || by < -docH * 0.05 || bx > docW * 0.06 || by > docH * 0.06
+      || bw > docW * 1.1 || bh > docH * 1.3 || (bx + bw) > docW * 1.1 || (by + bh) > docH * 1.1;
+    if (!wrong) continue;
+    delete r['x']; delete r['y']; delete r['width']; delete r['height'];
+    r['pos'] = [0, 0, docW, docH];
+    r['__fillPage'] = true;
+    snapped++;
+  }
+  return snapped;
+}
+
 // Is this an OPAQUE rectangle covering (essentially) the whole canvas? A solid
 // or gradient fill at the origin spanning the page — the shape a model stamps as
 // a "background". Noise/image overlays and anything <0.95 opacity (a scrim) are
