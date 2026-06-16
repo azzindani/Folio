@@ -27,7 +27,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
 import { bareNameSegment } from './normalize-paths';
 import { renderToSVGString } from './engine/svg-export';
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, snapWrongFlowPresets, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys, estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { createTaskFile, readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
@@ -1310,6 +1310,11 @@ export function addLayers(args: {
   if (shorthand.length) {
     const filled = fillBleedPresetDims(shorthand, spec.document.width, spec.document.height);
     if (filled) progress.push(pInfo(`Sized ${filled} full-bleed preset(s) to the page`, `${spec.document.width}×${spec.document.height}`));
+    // Snap a mispositioned flow preset (off-canvas / oversized / offset from origin)
+    // to fill the page — a content-sizing flow preset placed at y=400 renders its
+    // tall content off the bottom edge (the signup-flow blank). Posters + carousels.
+    const flowSnapped = snapWrongFlowPresets(shorthand, spec.document.width, spec.document.height);
+    if (flowSnapped) progress.push(pInfo(`Snapped ${flowSnapped} mispositioned flow preset(s) to the page`, 'off-origin content preset would render off-canvas'));
   }
   // A PAGED design (carousel/presentation) filled via add_layers + page_id — the
   // path create_presentation takes (it scaffolds EMPTY pages, then the model fills
