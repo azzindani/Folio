@@ -2,6 +2,10 @@
 # Payload format, layer schema, design tokens, and system spec
 # v2.0.0 | Recovered from CLAUDE.md v1.2.0 + codebase audit
 
+> Part of the Folio docs — index at [docs/README.md](README.md). This is the canonical
+> `.design.yaml` payload spec. To author it from an LLM see [MCP.md](MCP.md) (shorthand +
+> presets) and [TOOLS.md](TOOLS.md); for the render pipeline see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ---
 
 ## 1. PHILOSOPHY

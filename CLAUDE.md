@@ -2,7 +2,10 @@
 # Local-first YAML graphic design engine | LLM-first architecture
 # v2.5.0 | Phase 1–5 complete
 
-> Full specs live in docs/ARCHITECTURE.md (architecture) and docs/DESIGN.md (design system + payload format).
+> Full docs live in docs/ — see docs/README.md for the index. Key: docs/ARCHITECTURE.md
+> (architecture), docs/MCP.md + docs/TOOLS.md (MCP engine + all 49 tools), docs/DEPLOYMENT.md
+> (deploy + endpoints), docs/INTEGRATIONS.md (claude.ai/Claude Code/LM Studio/harnesses),
+> docs/EDITOR.md (visual editor), docs/DESIGN.md (design system + payload format).
 
 ---
 

@@ -1,4 +1,4 @@
-// §7 Tier 2 — Medium (9 tools): design lifecycle & layer manipulation
+// §7 Tier 2 — Design (10 tools): design lifecycle & layer manipulation
 import type { ToolDefinition } from '../types';
 
 export const TIER2_TOOLS: ToolDefinition[] = [

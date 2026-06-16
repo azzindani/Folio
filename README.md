@@ -2,9 +2,23 @@
 
 A self-hosted MCP server and browser-based graphic design editor that gives local LLMs structured tools to generate, edit, and export designs as plain YAML files. No cloud APIs, no subscriptions — everything runs on your machine or your VPS.
 
+## Documentation
+
+Full guides live in [`docs/`](docs/README.md):
+
+| Doc | Covers |
+|---|---|
+| [docs/MCP.md](docs/MCP.md) | Folio as an MCP engine — transports, tiers, protocol, workflows, shorthand |
+| [docs/TOOLS.md](docs/TOOLS.md) | Reference for all 49 MCP tools (params, returns, examples) |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy modes, Docker + Caddy/TLS, endpoints, env vars, auth, ops |
+| [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) | Connect claude.ai, Claude Code, LM Studio, Hermes/OpenClaw, the editor |
+| [docs/EDITOR.md](docs/EDITOR.md) | Visual editor — canvas, panels, shortcuts, export, live refresh |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, render pipeline, build & test |
+| [docs/DESIGN.md](docs/DESIGN.md) · [docs/REPORT_ENGINE.md](docs/REPORT_ENGINE.md) | Payload spec · interactive reports |
+
 ## Features
 
-- **38 MCP tools** across 3 tiers: basic (10), design (9), export (19)
+- **49 MCP tools** across 3 tiers: Basic (15), Design (10), Export (24)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Multiple transports** — stdio (local LM Studio / Claude Code), HTTP + SSE (Claude Connectors, Hermes, OpenClaw, any MCP-over-HTTP client)
 - **Multi-token auth** — issue named bearer tokens per connector; audit log records which token called which tool
@@ -119,9 +133,9 @@ The first launch clones the repo and installs dependencies (~1–2 minutes). Sub
 ```
 
 4. Wait for the green dot next to each server
-5. Start chatting — the model will see all 38 tools
+5. Start chatting — the model will see all 49 tools
 
-> For small models (≤32K context), use only `folio_basic` (10 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
+> For small models (≤32K context), use only `folio_basic` (15 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
 
 ### macOS / Linux (bash)
 
@@ -309,7 +323,9 @@ Auth: Authorization: Bearer <token>
 1. Go to **Settings → Connectors → Add custom connector**.
 2. URL: `https://folio.your-domain.tld/mcp`
 3. Auth: **Bearer token**, value from `tokens.json`.
-4. Save. Claude.ai will run `tools/list` and surface all 38 tools.
+4. Save. Claude.ai will run `tools/list` and surface all 49 tools.
+
+> The full claude.ai OAuth + PKCE walkthrough is in [docs/INTEGRATIONS.md §2](docs/INTEGRATIONS.md).
 
 > Anthropic's connector requires HTTPS. Use the Caddy TLS profile (above) or front Folio with Cloudflare Tunnel / nginx + Let's Encrypt.
 
@@ -371,12 +387,12 @@ curl -s https://folio.your-domain.tld/health | jq .
 curl -s https://folio.your-domain.tld/tokens/whoami \
      -H "Authorization: Bearer sk-folio-..." | jq .
 
-# 3. tools/list (returns all 41 tool definitions)
+# 3. tools/list (returns all 49 tool definitions)
 curl -s https://folio.your-domain.tld/mcp \
      -H "Authorization: Bearer sk-folio-..." \
      -H "Content-Type: application/json" \
      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'
-# → 38
+# → 49
 
 # 4. Create a project
 curl -s https://folio.your-domain.tld/mcp \
@@ -600,15 +616,20 @@ The MCP path-resolver gates every read/write to the calling user's home director
 
 ## Available Tools
 
-### Tier 1 — Basic (10 tools)
+### Tier 1 — Basic (15 tools)
 
-Project management, navigation, and task planning. Safe to use with any model — no file writes, minimal token cost.
+Project management, navigation, task planning, and library/theme ops. Safe to use with any model — minimal token cost.
 
 | Tool | Purpose |
 |---|---|
-| `get_engine_guide` | Load engine reference guide by section: `quick_ref`, `shorthand`, `layers`, `workflow` (~200 tokens each) |
+| `get_engine_guide` | Load engine reference guide by section: `quick_ref`, `shorthand`, `layers`, `workflow`, `reference` (~200 tokens each) |
+| `enrich_brief` | Turn a short/vague prompt into a rich content plan (best preset + outline, or a per-page carousel plan) — start here when the brief is thin |
 | `create_project` | Scaffold project directory with `designs/`, `assets/`, `themes/`, `exports/` and `project.yaml` |
 | `list_designs` | List all `.design.yaml` files in a project with status and page count |
+| `browse_library` | Cross-project catalog of the whole library — every project + design, newest first |
+| `rename_design` | Change a design's display name (file path left unchanged so editor links survive) |
+| `delete_design` | Move a design to the project's `.trash/` (recoverable) |
+| `move_design` | Move a design's file into another project |
 | `list_tasks` | List task files with progress status (pages done / total) |
 | `list_themes` | List available themes registered in `project.yaml` |
 | `apply_theme` | Set active theme for a project — updates `project.yaml` |
@@ -617,13 +638,14 @@ Project management, navigation, and task planning. Safe to use with any model �
 | `resume_task` | Read task state and return exact next tool call — use after any context reset |
 | `resume_design` | Read carousel generation state to continue appending pages |
 
-### Tier 2 — Design (9 tools)
+### Tier 2 — Design (10 tools)
 
 Full design lifecycle — create, inspect, build, edit. All write tools create a `.mcp_versions/` snapshot before touching disk.
 
 | Tool | Purpose |
 |---|---|
 | `create_design` | Create a new blank `.design.yaml` (poster or carousel) registered in `project.yaml` |
+| `extract_reference` | Turn a reference image (Canva export / screenshot / SVG) into a palette + canvas + composition brief |
 | `inspect_design` | Return design metadata, layer summary, page list, and validation errors |
 | `add_layers` | Add one or more layers using shorthand syntax — 80% fewer tokens than verbose YAML |
 | `append_page` | Add a page to a carousel design; returns next `append_page` baton or `seal_design` when done |
@@ -633,14 +655,19 @@ Full design lifecycle — create, inspect, build, edit. All write tools create a
 | `patch_design` | Apply JSON-pointer selectors to any field; supports `dry_run: true` to validate before writing |
 | `seal_design` | Mark design complete, validate all layers, freeze `_mode: complete` |
 
-### Tier 3 — Export (19 tools)
+### Tier 3 — Export (24 tools)
 
-SVG/HTML export, batch generation, templates, component extraction, report assembly, presentations, formula binding, animation, and collaboration.
+SVG/HTML/PNG export, batch generation, templates, component extraction, report assembly, presentations, formula binding, animation, collaboration, and QA (diagnose / preview / align).
 
 | Tool | Purpose |
 |---|---|
 | `open_in_editor` | Return a `http://…/?file=…&mcp_url=…` URL that opens the design in the visual editor with live MCP refresh wired up |
-| `export_design` | Export to SVG (server-side jsdom renderer) or self-contained HTML; PDF stages HTML for Puppeteer |
+| `export_design` | Export to SVG/PNG (server-side jsdom renderer) or self-contained HTML; PDF stages HTML for Puppeteer |
+| `export_library_gallery` | Build a self-contained `library.html` file-manager (thumbnails + search + editor links) for the whole library |
+| `diagnose_design` | Scan for issues the model is blind to — off-canvas, collisions, misalignment, invisible/low-contrast text, weak hierarchy — each with a fix |
+| `render_preview` | Render to a PNG and return it inline as an image so the model can *see* the result |
+| `align_layers` | Auto-align / distribute / snap-to-grid a set of layers — the fix for diagnose misalignment findings |
+| `validate_report` | Lint an interactive report's cross-references (datasets, fields, actions) before export |
 | `export_template` | Export sealed design as `.template.yaml` skeleton with named `{{slot}}` placeholders |
 | `list_template_slots` | List all injectable slots in a `.template.yaml` with paths, types, and hints |
 | `inject_template` | Fill template slots with new content to produce a `.design.yaml` |
@@ -834,21 +861,25 @@ rm -rf ./folio-projects
 Folio/
 ├── src/
 │   ├── mcp/
-│   │   ├── index.ts             ← stdio entry point; selects tier via FOLIO_MCP_TIER
-│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker)
+│   │   ├── index.ts             ← stdio entry point; selects tier via FOLIO_MCP_TIER (1|2|3|all)
+│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker); serves all 49 tools
+│   │   ├── handlers.ts          ← ALL_HANDLERS = TIER1∪TIER2∪TIER3 (single dispatch map)
 │   │   ├── auth.ts              ← token loader (file / inline / single-key / open)
-│   │   ├── engine.ts            ← all tool implementations (zero MCP imports)
+│   │   ├── jwt.ts               ← HS256 editor-link JWTs + master bearer
+│   │   ├── oauth.ts             ← OAuth 2.0 + PKCE + DCR + refresh (claude.ai connector)
+│   │   ├── engine.ts            ← facade → engine-{project,layer,edit,export,report,runtime}-tools.ts
 │   │   ├── types.ts             ← ToolResult, ProgressItem, Handover, ContextField
-│   │   ├── shorthand-parser.ts  ← expands layers_shorthand → full Layer objects
+│   │   ├── shorthand-parser.ts  ← facade → shorthand-{helpers,presets,sections,background,expand,…}.ts
 │   │   ├── engine/
 │   │   │   ├── utils.ts         ← resolvePath, snapshot, readYAML, writeYAML, okResult, errResult
-│   │   │   ├── guide.ts         ← 4-section engine reference guide (~200 tokens/section)
+│   │   │   ├── guide.ts         ← 5-section engine reference guide (~200 tokens/section)
 │   │   │   ├── svg-export.ts    ← server-side SVG renderer (jsdom + renderer.ts)
 │   │   │   ├── task.ts          ← carousel task file CRUD + next-action baton
 │   │   │   └── coerce.ts        ← input coercion helpers
 │   │   ├── tier1/               ← Basic tool registry + stdio server
 │   │   ├── tier2/               ← Design tool registry + stdio server
-│   │   └── tier3/               ← Export tool registry + stdio server
+│   │   ├── tier3/               ← Export tool registry + stdio server
+│   │   └── all/                 ← full-union registry + stdio server (FOLIO_MCP_TIER=all)
 │   ├── renderer/
 │   │   ├── renderer.ts          ← renderDesign() / renderPage() → SVGSVGElement
 │   │   ├── layer-renderers.ts   ← per-type renderers
@@ -866,7 +897,7 @@ Folio/
 │   └── utils/                   ← debug logger, ruler units
 ├── scripts/
 │   ├── docker-entrypoint.sh     ← dispatches by $FOLIO_MODE
-│   ├── serve.sh                 ← vite preview (:4173)
+│   ├── serve.sh                 ← editor static server: bun src/editor/static-server.ts (:4173)
 │   ├── serve-mcp.sh             ← bun run src/mcp/http-server.ts (:3333)
 │   ├── build.sh · test.sh       ← used by both host + Docker
 ├── caddy/Caddyfile              ← reverse proxy + auto-HTTPS for the tls profile
@@ -875,7 +906,7 @@ Folio/
 ├── .env.example                 ← env template
 ├── tokens.example.json          ← multi-token template
 ├── tests/                       ← Playwright e2e + visual regression
-└── src/**/*.test.ts             ← 1,935 Vitest unit + integration tests
+└── src/**/*.test.ts             ← 2,600+ Vitest unit + integration tests
 ```
 
 ---

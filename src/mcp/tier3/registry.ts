@@ -1,4 +1,4 @@
-// §7 Tier 3 — Advanced (6 tools): export, batch, templates, components
+// §7 Tier 3 — Export (24 tools): export, templates, components, reports, presentations, animation, formula, collab, QA
 import type { ToolDefinition } from '../types';
 
 export const TIER3_TOOLS: ToolDefinition[] = [

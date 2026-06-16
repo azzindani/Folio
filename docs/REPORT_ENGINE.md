@@ -2,6 +2,10 @@
 # Extends the Folio Design Engine with data-driven, interactive report output
 # Phase 2 feature set
 
+> Part of the Folio docs — index at [docs/README.md](README.md). Report MCP tools
+> (`generate_report` · `bind_data` · `validate_report` · `export_report`) are documented
+> in [TOOLS.md](TOOLS.md); the authoring workflow is in [MCP.md §8.3](MCP.md).
+
 ---
 
 ## 1. OVERVIEW
