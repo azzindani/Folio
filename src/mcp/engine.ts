@@ -770,16 +770,42 @@ function isFullBleedContentPreset(l: Layer, docW: number, docH: number): boolean
   return x <= docW * 0.02 && y <= docH * 0.04 && w >= docW * 0.9;
 }
 
+// All text tokens inside a preset group — used to tell a THRASH rebuild (the same
+// poster re-stacked, ~identical content) from N DISTINCT sections a model stacked
+// (a 3-section menu: Breakfast / Lunch / Drinks — different items each).
+function presetTokens(g: Layer): Set<string> {
+  const out = new Set<string>();
+  const walk = (ls: Layer[]): void => { for (const k of ls) { if (k.type === 'text') for (const t of layerText(k).toLowerCase().split(/[^a-z0-9$%]+/)) if (t.length >= 3) out.add(t); const kids = (k as unknown as Record<string, unknown>)['layers']; if (Array.isArray(kids)) walk(kids as Layer[]); } };
+  const kids = (g as unknown as Record<string, unknown>)['layers'];
+  if (Array.isArray(kids)) walk(kids as Layer[]);
+  return out;
+}
+function presetsSimilar(a: Layer, b: Layer): boolean {
+  const ta = presetTokens(a), tb = presetTokens(b);
+  if (ta.size < 2 || tb.size < 2) return true; // no real content to tell apart → treat as dup (old behavior)
+  let shared = 0; for (const t of ta) if (tb.has(t)) shared++;
+  return shared / Math.min(ta.size, tb.size) >= 0.5;
+}
+
 // A thrashing model rebuilds a poster several times → many full-canvas content
 // presets STACKED at the origin (e.g. 8 feature_grids, de-duped to unique ids by
-// the page-id/layer-id pass but still overlapping into an illegible mess: two
-// headers, content bleeding off-canvas). They're opaque and fully cover one
-// another, so keep the LAST (the model's final attempt) and drop the earlier ones.
+// the page-id/layer-id pass but still overlapping into an illegible mess). They're
+// opaque and fully cover one another, so keep the LAST and drop the earlier ones —
+// BUT only the ones whose content DUPLICATES a later preset (a true rebuild). A
+// model that stacked N DISTINCT full-canvas sections (a 3-section menu) must NOT
+// have 2 silently deleted as "dupes" — that loses whole sections of content.
 function dropStackedPresets(layers: Layer[], docW: number, docH: number): number {
   const idxs: number[] = [];
   layers.forEach((l, i) => { if (isFullBleedContentPreset(l, docW, docH)) idxs.push(i); });
   if (idxs.length < 2) return 0;
-  const drop = new Set(idxs.slice(0, -1)); // keep the last
+  const drop = new Set<number>();
+  // Drop a preset only when a LATER stacked preset repeats its content (keep the
+  // last of each duplicate group); distinct sections are all preserved.
+  for (let a = 0; a < idxs.length; a++) {
+    for (let b = a + 1; b < idxs.length; b++) {
+      if (presetsSimilar(layers[idxs[a]], layers[idxs[b]])) { drop.add(idxs[a]); break; }
+    }
+  }
   let removed = 0;
   for (let i = layers.length - 1; i >= 0; i--) { if (drop.has(i)) { layers.splice(i, 1); removed++; } }
   return removed;
