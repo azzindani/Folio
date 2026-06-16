@@ -63,6 +63,22 @@ export const TIER1_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'browse_library',
+    description: 'Browse the WHOLE design library — every project and design stored in the projects dir, not just one project (list_designs is per-project). Your file-manager view of the collection: each design\'s name, type, canvas size, page count and last-modified, grouped by project, newest first. Use it to find a design across projects, see everything you\'ve made, or pick something to reopen. Filter with `search` (matches project or design name), `type` (poster/carousel/report/…) or `project`; sort by modified/name/designs. Pass include_links:true to get an open-in-editor URL per design. Read-only.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        search:        { type: 'string', description: 'Substring filter on project OR design name' },
+        type:          { type: 'string', description: 'Only designs of this type (poster/carousel/report/presentation/motion)' },
+        project:       { type: 'string', description: 'Only projects whose name contains this' },
+        sort:          { type: 'string', enum: ['modified', 'name', 'designs'], description: 'Sort projects (default: modified, newest first)' },
+        limit:         { type: 'number', description: 'Max projects to return (default 40, max 200)' },
+        designs_per_project: { type: 'number', description: 'Max designs shown per project (default 8, max 40)' },
+        include_links: { type: 'boolean', description: 'Add an open-in-editor URL per design (default false)' },
+      },
+    },
+  },
+  {
     name: 'list_themes',
     description: 'List available themes registered in project.yaml.',
     inputSchema: {

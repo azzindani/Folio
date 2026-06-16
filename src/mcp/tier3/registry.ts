@@ -35,6 +35,19 @@ export const TIER3_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'export_library_gallery',
+    description: 'Build a self-contained HTML "file manager" for the WHOLE design library — every project and design as a thumbnail card with a live search box and click-through to open each in the editor. Writes <projects>/library.html plus cached thumbnails (re-runs only re-render changed designs). Open the file in a browser to browse everything you\'ve made. Optionally filter with `search`/`type`, or cap first-build rendering with `max_thumbnails`.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        output_path:    { type: 'string', description: 'Where to write the gallery HTML (default <projects>/library.html)' },
+        max_thumbnails: { type: 'number', description: 'Max NEW thumbnails to render this call (default 120; cached ones are free). Re-run to fill the rest.' },
+        search:         { type: 'string', description: 'Only include designs/projects matching this substring' },
+        type:           { type: 'string', description: 'Only include designs of this type' },
+      },
+    },
+  },
+  {
     name: 'diagnose_design',
     description: 'Built-in troubleshooter — scans a design for problems the model is blind to and returns structured findings with fixes: off-canvas layers, collisions/overlap pile-ups, near-miss MISALIGNMENT (edges off by a few px), tiny text, low-contrast/invisible text, missing background, plus quality critique (weak hierarchy, accent sprawl, crowded margins). Run it after composing and before seal_design; fix the errors/warnings, then render_preview to confirm.',
     inputSchema: {
