@@ -12,21 +12,12 @@ import { Resvg } from '@resvg/resvg-js';
 import { resvgFontOption } from './fonts';
 import { serializeSVGElement } from './svg-export';
 import { extractVectorTextCandidates, type VectorTextRun } from '../../export/pdf-vector-text';
+import { PX2PT, drawVectorRun, type PdfTextDoc } from '../../export/pdf-draw';
 import { pickFont, fontFileBase64, type FontPick } from './pdf-fonts';
 
-const PX2PT = 72 / 96;
-
-/** Minimal slice of the jsPDF surface the builder touches. */
-export interface PdfDoc {
+/** Minimal slice of the jsPDF surface the builder touches (draw + raster). */
+export interface PdfDoc extends PdfTextDoc {
   addImage(data: string, fmt: string, x: number, y: number, w: number, h: number, alias?: string, compression?: string): void;
-  addFileToVFS(file: string, b64: string): void;
-  addFont(file: string, family: string, style: string): void;
-  setFont(family: string, style?: string): void;
-  setFontSize(pt: number): void;
-  setTextColor(r: number, g: number, b: number): void;
-  setDrawColor(r: number, g: number, b: number): void;
-  setLineWidth(w: number): void;
-  text(text: string, x: number, y: number, opts?: Record<string, unknown>): void;
 }
 
 export interface PdfPageInput {
@@ -34,10 +25,6 @@ export interface PdfPageInput {
   svg: SVGSVGElement;
   width: number;
   height: number;
-}
-
-function alignOf(anchor: VectorTextRun['anchor']): 'left' | 'center' | 'right' {
-  return anchor === 'middle' ? 'center' : anchor === 'end' ? 'right' : 'left';
 }
 
 /**
@@ -80,21 +67,7 @@ export function addVectorPdfPage(
       pdf.addFont(pick.file, pick.alias, 'normal');
       registered.add(pick.alias);
     }
-    pdf.setFont(pick.alias, 'normal');
-    pdf.setFontSize(run.fontSize * PX2PT);
-    pdf.setTextColor(run.color[0], run.color[1], run.color[2]);
-    const opts: Record<string, unknown> = { align: alignOf(run.anchor), baseline: 'alphabetic' };
-    if (run.letterSpacing) opts.charSpace = run.letterSpacing * PX2PT;
-    if (pick.fauxBold) {
-      // Variable family with no dedicated bold file → thicken with a hairline
-      // stroke so a 700/900 heading doesn't render at the 400 default instance.
-      pdf.setDrawColor(run.color[0], run.color[1], run.color[2]);
-      pdf.setLineWidth(run.fontSize * PX2PT * 0.022);
-      opts.renderingMode = 'fillThenStroke';
-    } else {
-      opts.renderingMode = 'fill';
-    }
-    pdf.text(run.text, run.x * PX2PT, run.baseline * PX2PT, opts);
+    drawVectorRun(pdf, run, pick);
   }
 
   return draw.length;

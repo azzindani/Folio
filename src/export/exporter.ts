@@ -3,6 +3,7 @@ import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderEntry } from '../renderer/render-entry';
 import type { RenderEntryResult } from '../renderer/render-entry';
+import { PX2PT } from './pdf-draw';
 import type { LoadedDataset } from '../report/data-loader';
 import { checkCanvasScale } from './canvas-limit';
 import { buildEmbeddedFontStyle } from './font-embed';
@@ -201,7 +202,55 @@ function addLinkAnnotations(
   return n;
 }
 
+/**
+ * Hybrid VECTOR PDF in the browser: vectorizable text → real selectable jsPDF
+ * glyphs (crisp at any zoom) with TTFs fetched from /fonts/, over a high-DPI
+ * raster of the rest. Returns null when nothing could be vectorized (no bundled
+ * fonts reachable / all gradient text) so the caller falls back to the raster +
+ * invisible-text PDF, which keeps text selectable in that case. Skipped for
+ * interactive designs (charts/tables live only in the DOM → raster path).
+ */
+async function exportToVectorPDF(spec: DesignSpec, options: ExportOptions): Promise<Blob | null> {
+  const { jsPDF } = await import('jspdf');
+  const { addBrowserVectorPdfPage } = await import('./pdf-vector-browser');
+  const scale = options.scale ?? 2;
+  const pages = spec.pages && spec.pages.length > 0 ? spec.pages : null;
+  const targets: (number | undefined)[] = pages ? pages.map((_, i) => i) : [undefined];
+
+  const registered = new Set<string>();
+  let pdf: InstanceType<typeof jsPDF> | null = null;
+  let totalRuns = 0;
+  for (const pageIndex of targets) {
+    const { svg, width, height } = renderEntry(spec, { theme: options.theme, pageIndex });
+    const wPt = width * PX2PT, hPt = height * PX2PT;
+    const orient = width >= height ? 'landscape' : 'portrait';
+    if (!pdf) pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [wPt, hPt], compress: true });
+    else pdf.addPage([wPt, hPt], orient);
+    totalRuns += await addBrowserVectorPdfPage(pdf as unknown as import('./pdf-vector-browser').BrowserPdfDoc, svg, width, height, scale, registered);
+  }
+  // Nothing vectorized → let the raster+invisible-text path handle it (so text
+  // stays selectable). Otherwise the vector PDF is the better artifact.
+  if (!pdf || totalRuns === 0) return null;
+  return pdf.output('blob');
+}
+
 export async function exportToPDF(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
+  // Prefer the true-vector PDF for non-interactive designs (selectable text,
+  // infinite-zoom crispness). Charts/tables only exist in the live DOM, so
+  // those designs go straight to the raster path. Any failure (offline fonts,
+  // canvas limits) falls back too — never worse than the raster PDF.
+  if (!hasInteractiveContent(spec)) {
+    try {
+      const vec = await exportToVectorPDF(spec, options);
+      if (vec) return vec;
+    } catch {
+      // fall through to raster + invisible selectable text
+    }
+  }
+  return exportToRasterPDF(spec, options);
+}
+
+async function exportToRasterPDF(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
   // Lazy load jsPDF — kept out of initial bundle
   const { jsPDF } = await import('jspdf');
   const scale = options.scale ?? 2;
