@@ -22,6 +22,8 @@ import { buildGuide } from './engine/guide';
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 export { extractReference } from './engine/reference';
 export { enrichBrief } from './engine/enrich';
+export { browseLibrary } from './engine/library';
+export { exportLibraryGallery } from './engine/library-gallery';
 import { lintComposition, reviewComposition } from './engine/design-lint';
 import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
