@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
+import { expandShorthand, expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, snapWrongFlowPresets, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, compressDesignContext, diagnoseLayers, diagnoseShorthandKeys, detectTextOverlap, type ShorthandLayer } from './shorthand-parser';
 import type { Layer } from '../schema/types';
 
 describe('expandShorthand', () => {
@@ -2583,6 +2583,25 @@ describe('fillFlowPresetsToPage — a carousel list slide fills the page (no dea
     expect(a['__fillPage']).toBe(true);
     expect(a['pos']).toEqual([0, 0, 1080, 1080]);
     expect((layers[1] as unknown as Record<string, unknown>)['__fillPage']).toBeUndefined();
+  });
+
+  it('snaps an OFF-ORIGIN / oversized flow preset to fill the page (content-size overflow fix)', () => {
+    // The signup-flow thrash: sections placed at x=83,y=400 (or x=-459) content-sizes
+    // tall → its steps render past the page bottom (blank). Snap to the origin+fill.
+    const offset = [{ type: 'sections', pos: [83, 400, 997, 600], title: 'Flow' }] as unknown as ShorthandLayer[];
+    expect(snapWrongFlowPresets(offset, 1080, 1080)).toBe(1);
+    const a = offset[0] as unknown as Record<string, unknown>;
+    expect(a['pos']).toEqual([0, 0, 1080, 1080]);
+    expect(a['__fillPage']).toBe(true);
+    const offcanvas = [{ type: 'sections', pos: [-459, 500, 1539, 1431], title: 'Flow' }] as unknown as ShorthandLayer[];
+    expect(snapWrongFlowPresets(offcanvas, 1080, 1080)).toBe(1);
+    expect((offcanvas[0] as unknown as Record<string, unknown>)['pos']).toEqual([0, 0, 1080, 1080]);
+    // a near-origin, in-bounds box is left alone (not every box is "wrong")
+    const ok = [{ type: 'sections', pos: [40, 40, 1000, 800], title: 'Flow' }] as unknown as ShorthandLayer[];
+    expect(snapWrongFlowPresets(ok, 1080, 1080)).toBe(0);
+    // a BOXLESS poster flow preset is left to content-size (snapWrong only touches boxed)
+    const boxless = [{ type: 'sections', title: 'Flow' }] as unknown as ShorthandLayer[];
+    expect(snapWrongFlowPresets(boxless, 1080, 1080)).toBe(0);
   });
 
   it('a filled list FILLS the page height and centers content; a poster list still shrinks', () => {
