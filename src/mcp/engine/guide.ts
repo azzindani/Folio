@@ -8,6 +8,13 @@ Canvas: 1080x1080 (sq) · 1080x1350 (port) · 1920x1080 (land) · units: px
 Design types: poster (single page) | carousel (multi-page)
 z = stacking order (higher = front)
 
+1️⃣ ONE design per request — THE DEFAULT. Produce EXACTLY ONE design and stop. Do NOT
+   volunteer extra "options"/"variations"/"versions" — generating several unasked wastes
+   the user's time + tokens and is a bug, not helpfulness. Make MORE than one ONLY when the
+   user EXPLICITLY asks ("give me 3 options", "a few variations", "2 versions"); then make
+   exactly the number asked (use enrich_brief variant:0,1,2… — one call per option). A
+   carousel/deck is still ONE design (multi-page), not multiple designs. When unsure: ONE.
+
 🧠 SHORT or vague prompt (e.g. "a poster about remote work", "a 6-slide carousel on X")?
    Call enrich_brief FIRST. Single design → best preset + a full content outline
    (the richness floor). CAROUSEL/deck/slides → output_type:"carousel" + a per-page
