@@ -18,14 +18,14 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'export_design',
-    description: 'Export a design to SVG, PNG or HTML (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf stages an HTML for Puppeteer and returns success:false.',
+    description: 'Export a design to SVG, PNG, PDF or HTML (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf is a true VECTOR PDF: text is embedded as real, selectable/copy-paste glyphs that stay crisp at any zoom, drawn over a high-DPI raster for backgrounds/gradients/effects, with clickable links — no Puppeteer/Chromium needed.',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        // svg/png/html produce real files; a carousel yields one file per page.
-        // pdf returns success:false with the staged-HTML path so the caller can
-        // run the Puppeteer step. Keep all in the enum for discoverability.
+        // All four produce real files; a carousel yields one file per page.
+        // pdf is a vector PDF (selectable text + raster backdrop), built
+        // in-process via jsPDF — no Puppeteer step.
         format:       { type: 'string', enum: ['svg', 'html', 'pdf', 'png'] },
         output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
