@@ -580,17 +580,51 @@ describe('sealDesign', () => {
     expect(ys[0]).toBeLessThan(ys[1]);
     expect(ys[1]).toBeLessThan(ys[2]);
     expect(spec.document.height).toBeGreaterThan(1080); // page grew to fit the bands
+    // ...but each band is TRIMMED to its content (a section is a heading + one short
+    // row of cards), so the page is far shorter than 3 full 1080 squares — no dead
+    // space stacked between sections.
+    expect(spec.document.height).toBeLessThan(3 * 1080);
     // CRUCIAL: the section's CONTENT actually moved into the band — a group applies
     // no render transform, so moving only the group box would leave every child
     // (the full-bleed bg rect) stacked at y:0 and invisible. Each section's bg rect
-    // must sit at its band top, not all at the origin.
+    // must sit at its (distinct, increasing) band top, not all at the origin.
     const bgTops = sections.map(g => {
       const kids = (g as unknown as { layers?: Layer[] }).layers ?? [];
       const bg = kids.find(k => k.type === 'rect' && Number((k as unknown as { width?: number }).width) >= 1080 * 0.9);
       return Number((bg as unknown as { y?: number } | undefined)?.y) || 0;
     }).sort((a, b) => a - b);
     expect(new Set(bgTops).size).toBe(3);             // bgs at three distinct y, not piled at 0
-    expect(bgTops[2]).toBeGreaterThan(1080);          // the last band's content is well past the first page
+    expect(bgTops[0]).toBeLessThan(bgTops[1]);
+    expect(bgTops[1]).toBeLessThan(bgTops[2]);
+    // each band's bg height matches its (trimmed) band, not the full 1080 square
+    const bandHeights = sections.map(g => {
+      const kids = (g as unknown as { layers?: Layer[] }).layers ?? [];
+      const bg = kids.find(k => k.type === 'rect' && Number((k as unknown as { width?: number }).width) >= 1080 * 0.9);
+      return Number((bg as unknown as { height?: number } | undefined)?.height) || 0;
+    });
+    expect(bandHeights.every(h => h > 0 && h < 1080)).toBe(true); // trimmed, not full-canvas
+  });
+
+  it('seats a stranded loose doc title ABOVE the banded sections (not marooned below)', () => {
+    const projectPath = path.join(tmpDir, 'banded-title-project');
+    createProject({ name: 'BandedTitle', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'BandedTitle', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/bandedtitle.design.yaml');
+    // The Olive Branch menu: the model put the doc title in its own call and placed
+    // it near the BOTTOM, so after the sections band + trim it was stranded in the
+    // dead space below the last band. It must be re-seated above the first band.
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', title: 'Starters', items: [{ title: 'Bruschetta', desc: '$8' }, { title: 'Calamari', desc: '$12' }] }] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', title: 'Mains', items: [{ title: 'Salmon', desc: '$24' }, { title: 'Ribeye', desc: '$32' }] }] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: designPath, layers: [
+      { id: 'doctitle', type: 'text', z: 9, x: 300, y: 1000, width: 480, height: 60, content: { type: 'plain', value: 'The Olive Branch' }, style: { font_size: 48 } }] as unknown as Layer[] });
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const title = top.find(l => (l as { id?: string }).id === 'doctitle') as unknown as { y?: number };
+    const sections = top.filter(l => l.type === 'group' && /^feature_grid/.test(String((l as { id?: string }).id ?? '')));
+    const firstBandTop = Math.min(...sections.map(g => Number((g as unknown as { y?: number }).y) || 0));
+    expect(Number(title.y)).toBeLessThan(firstBandTop);   // title sits above the first band, not stranded below
+    expect(Number(title.y)).toBeLessThan(200);            // up in the top title zone
   });
 
   it('removes loose hand-placed duplicates when many backdrops stack over a content preset', () => {
