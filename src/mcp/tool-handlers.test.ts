@@ -404,6 +404,29 @@ describe('sealDesign', () => {
     expect(Number(tagline.y)).toBeGreaterThanOrEqual(Number(title.y) + Number(title.height) - 1); // no overlap
   });
 
+  it('spreads a hand-placed title + intro the model dropped at the same y (overprint → lines)', () => {
+    const projectPath = path.join(tmpDir, 'overprint-project');
+    createProject({ name: 'Overprint', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Overprint', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/overprint.design.yaml');
+    // The pizza-recipe failure: a content group is present (so decollideHandPlaced is
+    // switched off) and the title + intro sit at nearly the same y (distinct content,
+    // so not a dedupe) → they overprint into one smear. spreadStackedText re-stacks
+    // them, clamped on-canvas.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'feature_grid_3', type: 'group', z: 2, x: 0, y: 0, width: 1080, height: 1080, layers: [
+        { id: 'fg_bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } }] },
+      { id: 'title', type: 'text', z: 5, x: 300, y: 936, width: 475, height: 112, content: { type: 'plain', value: 'Classic Margherita Pizza' }, style: { font_size: 40 } },
+      { id: 'intro', type: 'text', z: 5, x: 300, y: 986, width: 475, height: 62, content: { type: 'plain', value: 'A timeless Italian classic with simple ingredients' }, style: { font_size: 22 } },
+    ] as unknown as Layer[] });
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const title = top.find(l => (l as { id?: string }).id === 'title') as unknown as { y?: number; height?: number };
+    const intro = top.find(l => (l as { id?: string }).id === 'intro') as unknown as { y?: number; height?: number };
+    expect(Number(title.y)).toBeLessThan(Number(intro.y));                         // title (fs40) on top
+    expect(Number(intro.y)).toBeGreaterThanOrEqual(Number(title.y) + Number(title.height) - 1); // no overlap
+    expect(Number(intro.y) + Number(intro.height)).toBeLessThanOrEqual(1080);      // clamped on-canvas
+  });
+
   it('a presentation filled via add_layers+page_id fills each slide and stays cohesive (create_presentation path)', () => {
     const projectPath = path.join(tmpDir, 'deck-project');
     createProject({ name: 'Deck', path: projectPath });

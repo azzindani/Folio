@@ -908,6 +908,53 @@ function dedupOverlappingDuplicates(layers: Layer[], docW: number, docH: number)
   return removed;
 }
 
+// A model that hand-places a title + intro/tagline (or several bullets) sometimes
+// gives them the SAME y — they render as an illegible overprint (the pizza recipe:
+// "Classic Margherita Pizza" stamped over "A timeless Italian classic…"). These
+// are DISTINCT top-level texts (different content, so dedup won't drop them) and
+// decollideHandPlaced is switched off once a preset group is on the page. Cluster
+// the top-level texts that heavily overlap each other and aren't near-duplicates,
+// then re-stack each cluster vertically (largest font first) — clamped to stay on
+// the canvas — so the pair reads as separate lines instead of one smear.
+function spreadStackedText(layers: Layer[], docW: number, docH: number): number {
+  const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };
+  const toks = (s: string): Set<string> => new Set(s.toLowerCase().split(/[^a-z0-9$%]+/).filter(t => t.length >= 2));
+  const similar = (a: Layer, b: Layer): boolean => { const ta = toks(layerText(a)), tb = [...toks(layerText(b))]; if (!ta.size || !tb.length) return false; return tb.filter(t => ta.has(t)).length / Math.max(ta.size, tb.length) >= 0.5; };
+  const texts = layers.filter(l => l.type === 'text' && layerText(l).trim());
+  const n = texts.length;
+  if (n < 2) return 0;
+  const parent = texts.map((_, i) => i);
+  const find = (x: number): number => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+    const A = layerBBox(texts[a]), B = layerBBox(texts[b]);
+    const ox = Math.min(A.r, B.r) - Math.max(A.x, B.x), oy = Math.min(A.b, B.b) - Math.max(A.y, B.y);
+    if (ox <= 0 || oy <= 0) continue;
+    const inter = ox * oy, areaMin = Math.min((A.r - A.x) * (A.b - A.y), (B.r - B.x) * (B.b - B.y));
+    if (inter >= areaMin * 0.6 && !similar(texts[a], texts[b])) parent[find(a)] = find(b);
+  }
+  const clusters = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) { const r = find(i); clusters.set(r, [...(clusters.get(r) ?? []), i]); }
+  let changed = 0;
+  const gap = Math.round(docH * 0.012);
+  for (const idxs of clusters.values()) {
+    if (idxs.length < 2) continue;
+    const members = idxs.map(i => texts[i]).sort((p, q) => fontOf(q) - fontOf(p)); // largest font first
+    const heights = members.map(m => { const b = layerBBox(m); return Math.max(b.b - b.y, fontOf(m)); });
+    const totalH = heights.reduce((s, h) => s + h, 0) + gap * (members.length - 1);
+    let cursorY = Math.min(...idxs.map(i => layerBBox(texts[i]).y));
+    const maxY = docH - Math.round(docH * 0.02);
+    if (cursorY + totalH > maxY) cursorY = Math.max(Math.round(docH * 0.02), maxY - totalH);
+    for (let m = 0; m < members.length; m++) {
+      const o = members[m] as unknown as Record<string, unknown>;
+      const p = o['pos'];
+      if (Array.isArray(p) && p.length >= 2) { p[1] = Math.round(cursorY); } else { o['y'] = Math.round(cursorY); }
+      cursorY += heights[m] + gap;
+    }
+    changed += members.length;
+  }
+  return changed;
+}
+
 // Without a content preset to fall back on (a pure typographic poster — a quote,
 // a manifesto), a model can still stamp the SAME text two or three times across
 // rebuild passes, piling them up as an illegible overlap, and re-lay the full-
@@ -1568,6 +1615,11 @@ export function addLayers(args: {
   // left edge → title stuck in the right half with an empty left).
   const recentered = recenterHalfAnchoredText(activeLayers, spec.document.width, spec.document.height);
   if (recentered) progress.push(pInfo(`Re-centered ${recentered} mid-anchored text(s)`, 'a title placed with its left edge on the canvas centerline was centered'));
+
+  // Re-stack hand-placed texts the model dropped at the same y (a title overprinting
+  // its intro) into separate lines, so they read instead of smearing together.
+  const spread = spreadStackedText(activeLayers, spec.document.width, spec.document.height);
+  if (spread) progress.push(pInfo(`Un-stacked ${spread} overlapping text(s)`, 'distinct texts at the same position were spread into lines'));
 
   // Drop any space-filling motif that overlaps content. Runs on the MERGED set
   // (existing + incoming), so a motif added in its own add_layers call — the
