@@ -381,6 +381,29 @@ describe('sealDesign', () => {
     expect(title.style?.color?.toLowerCase()).not.toBe('#141414'); // recolored to contrast the dark preset bg
   });
 
+  it('stacks a title + tagline pair when both are buried (no overlap at the same y)', () => {
+    const projectPath = path.join(tmpDir, 'title-tagline-project');
+    createProject({ name: 'TitleTagline', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'TitleTagline', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/titletagline.design.yaml');
+    // The Lumen poster: a big title + a smaller tagline, both hand-placed and both
+    // buried under a full-canvas feature_grid. promoteCoveredTitle re-seated both to
+    // the same top y → they overlapped.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'title', type: 'text', z: 1, x: 168, y: 90, width: 745, height: 101, content: { type: 'plain', value: 'Lumen' }, style: { font_size: 72 } },
+      { id: 'tagline', type: 'text', z: 1, x: 168, y: 80, width: 745, height: 40, content: { type: 'plain', value: 'Light that thinks with you' }, style: { font_size: 28 } },
+    ] as unknown as Layer[] });
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { id: 'feature_grid_5', type: 'feature_grid', z: 2, pos: [0, 0, 1080, 1080], items: [{ title: 'Adaptive', desc: 'auto' }, { title: 'Voice', desc: 'hands-free' }, { title: 'Circadian', desc: 'rhythm' }] }] as unknown as ShorthandLayer[] });
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const title = top.find(l => (l as { id?: string }).id === 'title') as unknown as { y?: number; height?: number; style?: { font_size?: number } };
+    const tagline = top.find(l => (l as { id?: string }).id === 'tagline') as unknown as { y?: number };
+    // both surfaced into the top zone, but the bigger title is ABOVE the tagline,
+    // and they don't sit at the same y
+    expect(Number(title.y)).toBeLessThan(Number(tagline.y));    // title (fs72) on top, tagline below
+    expect(Number(tagline.y)).toBeGreaterThanOrEqual(Number(title.y) + Number(title.height) - 1); // no overlap
+  });
+
   it('a presentation filled via add_layers+page_id fills each slide and stays cohesive (create_presentation path)', () => {
     const projectPath = path.join(tmpDir, 'deck-project');
     createProject({ name: 'Deck', path: projectPath });
