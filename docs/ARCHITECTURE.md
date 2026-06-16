@@ -1,515 +1,479 @@
 # ARCHITECTURE.md — Folio Design Engine
-# System Architecture Reference
-# v1.0.0 | Updated 2026-04-12
+
+> System architecture reference. Current as of v0.1.0 (post 700-line-budget split).
+> Companion docs: [MCP.md](MCP.md) · [TOOLS.md](TOOLS.md) · [DEPLOYMENT.md](DEPLOYMENT.md) · [INTEGRATIONS.md](INTEGRATIONS.md) · [EDITOR.md](EDITOR.md) · [DESIGN.md](DESIGN.md) · [REPORT_ENGINE.md](REPORT_ENGINE.md)
 
 ---
 
-## 1. SYSTEM OVERVIEW
+## 1. WHAT FOLIO IS
 
-Folio is a **local-first, file-based graphic design engine** with two usage surfaces:
+Folio is a **local-first, file-based graphic-design engine**. A design is a plain
+`.design.yaml` file on disk — that file *is* the product. Everything else is a view
+or a tool over it.
 
-1. **Browser editor** — visual WYSIWYG + Monaco YAML editor (bidirectional live sync)
-2. **MCP server** — stdio tool surface for LLM-driven design generation
+Three usage surfaces sit on one shared engine core:
 
 ```
-┌─────────────────���──────────────────────────────────────���───────┐
-│                        USER SURFACES                           │
-│                                                                │
-│   Browser Editor (src/editor/)        MCP Server (src/mcp/)   │
-│   Visual canvas + Monaco YAML         JSON-RPC 2.0 via stdio  │
-└────────────────────────���─────────────────────────────────────┘
-                              │
-              ┌───────────────▼───────────────┐
-              │          ENGINE CORE           │
-              │  schema/ · engine/ · renderer/ │
-              └───────────────┬───────────────┘
-                              │
-              ┌───────────────▼───────────────┐
-              │         FILE LAYER             │
-              │   .design.yaml · .theme.yaml   │
-              │   .component.yaml · project.yaml│
-              └─────���─────────────────────────┘
+   LLM (via MCP)              Human (via browser)            CI / scripts
+   create/edit designs        visual + YAML editor           batch / export
+        │                            │                            │
+        ▼                            ▼                            ▼
+  ┌───────────────────────────────────────────────────────────────────┐
+  │                          ENGINE CORE                                │
+  │   schema/ (types·parser·validator)   engine/ (resolve·expand)       │
+  │   renderer/ (YAML → SVG)             themes/ (tokens)               │
+  └───────────────────────────────────────────────────────────────────┘
+        │                            │                            │
+        ▼                            ▼                            ▼
+  ┌───────────────────────────────────────────────────────────────────┐
+  │                       FILE LAYER (source of truth)                  │
+  │   .design.yaml · .template.yaml · .component.yaml · project.yaml    │
+  │   .task.yaml · .theme.yaml · exports/*.svg|html|png|pdf             │
+  └───────────────────────────────────────────────────────────────────┘
 ```
+
+Design principles, in priority order:
+
+1. **The YAML file is canonical.** The canvas, the SVG, the HTML export are all
+   regenerable views. Never store state only in the view.
+2. **LLM-first.** The MCP tool surface and the shorthand syntax exist so a model
+   can express design intent in as few tokens as possible. Verbose YAML on disk;
+   compact shorthand on the wire.
+3. **Offline.** Zero CDN calls at runtime after install. Fonts, icons, and the
+   renderer are bundled. (Lazy renderers — mermaid/vega/katex/prism — and Chart.js
+   in HTML reports are the documented exceptions.)
+4. **One engine, many transports.** The same `renderDesign()` runs in the browser
+   (live canvas) and in Bun/Node (server-side SVG export, no browser).
 
 ---
 
-## 2. DATA FLOW
-
-### 2.1 Editor Flow (browser)
+## 2. REPOSITORY MAP
 
 ```
-YAML file / user edit
-        │
-        ▼
-  src/schema/parser.ts          parseDesign(yaml) → DesignSpec
-        │
-        ▼
-  src/schema/validator.ts       validateDesignSpec() → ValidationError[]
-        │
-        ▼
-  src/editor/state.ts           StateManager.set('design', spec)
-        │
-        ├─── src/ui/panels/*    Layer panel, properties, problems re-render
-        │
-        ▼
-  src/engine/token-resolver.ts  resolveLayerTokens(layer, ctx) → Layer
-  src/engine/shorthand-expander expandPositionShorthand(layer) → Layer
-        │
-        ▼
-  src/renderer/renderer.ts      renderDesign(spec, options) → SVGSVGElement
-        │
-        ├─── fill-renderer.ts   applyFill() → linearGradient / feFilter / etc.
-        ├─── effects-renderer.ts applyEffects() → SVG <filter>
-        └─── layer-renderers.ts  renderRect/Text/Circle/… → SVGElement
-                  │
-                  ▼
-        Render cache (dirty tracking by prop hash)
-                  │
-                  ▼
-        canvas.svgContainer.innerHTML = svg
+Folio/
+├── src/
+│   ├── mcp/              ← MCP tool surface (stdio + HTTP transports)
+│   ├── schema/           ← types, parser, validator
+│   ├── engine/           ← token resolver, shorthand expander, component resolver
+│   ├── renderer/         ← YAML → SVG render pipeline
+│   ├── editor/           ← browser visual editor + static file server
+│   ├── ui/               ← editor panels, dialogs, palette, toolbars
+│   ├── export/           ← SVG/HTML/PDF/animation/presentation/collab/remote
+│   ├── report/           ← interactive-report data loader, aggregator, binder
+│   ├── animation/        ← keyframe engine, CSS generator, transitions
+│   ├── scripting/        ← =formula evaluator
+│   ├── fs/               ← file access + watcher (browser)
+│   ├── themes/           ← 17 built-in themes
+│   ├── templates/        ← starter templates
+│   └── utils/            ← debug logger, http-body caps, units
+├── scripts/              ← docker-entrypoint, serve, build, gen-* index builders
+├── caddy/Caddyfile       ← reverse proxy + auto-HTTPS (tls profile)
+├── docker-compose.yml    ← folio + optional caddy service
+├── Dockerfile            ← oven/bun image, runs from source
+├── docs/                 ← this directory
+└── tests/                ← Playwright e2e + visual regression
 ```
 
-### 2.2 MCP Flow (LLM generation)
+### 2.1 The 700-line budget & facade pattern
 
-```
-LLM tool call (JSON-RPC)
-        │
-        ▼
-  src/mcp/server.ts             parse JSON-RPC, route to handler
-        │
-        ▼
-  src/mcp/tool-handlers.ts      e.g. appendPage() / createDesign()
-        │
-        ├─── src/mcp/shorthand-parser.ts  expandShorthand(layer) → full Layer
-        │
-        ▼
-  js-yaml.dump()                serialize DesignSpec → YAML
-        │
-        ▼
-  fs.writeFileSync()            write to .design.yaml
-        │
-        ▼
-  src/fs/file-watcher.ts        detects change → fires onChange callback
-        │
-        ▼
-  editor reloads design         instant canvas update
-```
+Every file under `src/` is capped at **700 lines**, enforced in CI by an eslint
+`max-lines` rule. Modules that outgrew the budget were split, and the original
+path became a **thin facade** that re-exports from siblings, so the public import
+API is unchanged. When editing, go to the real sibling module, not the facade:
 
-### 2.3 Export Flow
+| Facade (import path) | Real modules behind it |
+|---|---|
+| `src/mcp/engine.ts` | `engine-{project,layer,edit,export,report,runtime}-tools.ts` + `engine-finalize-{geom,text}.ts` |
+| `src/mcp/shorthand-parser.ts` | `shorthand-{helpers,presets-a,presets-b,sections,background,expand,recover,diagnose}.ts` |
+| `src/renderer/layer-renderers.ts` | `layer-renderers-{shared,shapes,embed,layout}.ts` |
+| `src/schema/types.ts` | `types/{primitives,layers,document}.ts` (barrel) |
 
-```
-EditorApp.exportSVG() / toolbar export button
-        │
-        ▼
-  src/export/exporter.ts
-        │
-        ├── exportToSVG()       XMLSerializer.serializeToString(svg)
-        ├── exportToPNG()       SVG → Blob → Image → Canvas → PNG blob
-        ├── exportToPDF()       PNG per page → jsPDF (lazy loaded)
-        └── exportToHTML()      SVG string + design JSON + animation CSS → .html
-```
+Stateful editor/UI classes were split with an **abstract base class** the public
+class `extends`: `editor/canvas.ts` → `canvas-{base,interactions,draw}.ts`;
+`editor/app.ts` → `app-base.ts` + `sample-design.ts`;
+`ui/panels/properties-panel.ts` → `-base`; `ui/dialogs/catalog.ts` → `catalog-base` + `catalog-utils`.
 
 ---
 
-## 3. MODULE RESPONSIBILITIES
+## 3. THE MCP SUBSYSTEM (`src/mcp/`)
 
-### 3.1 `src/schema/`
+This is the heart of the LLM integration story. See [MCP.md](MCP.md) for the wire
+protocol and [TOOLS.md](TOOLS.md) for every tool.
 
-| File | Responsibility |
-|---|---|
-| `types.ts` | All TypeScript interfaces: Layer, DesignSpec, ThemeSpec, ComponentSpec, TemplateSpec, ProjectSpec, Fill types, TextContent, Effects, etc. |
-| `parser.ts` | YAML ↔ DesignSpec serialization. ParseError with line/column info. |
-| `validator.ts` | Schema validation: required fields, duplicate IDs, duplicate z-index, fill validation. Returns `ValidationError[]` with severity + dot-path. |
+### 3.1 Layering — zero domain logic in transports
 
-### 3.2 `src/engine/`
+```
+   stdio transport                 HTTP transport
+   index.ts (tier select)          http-server.ts (all tiers + OAuth + SSE)
+   tier1/server.ts                       │
+   tier2/server.ts                       │
+   tier3/server.ts                       │
+   all/server.ts                         │
+        │                                │
+        └──────────────┬─────────────────┘
+                       ▼
+              handlers.ts  ── ALL_HANDLERS = { ...TIER1_HANDLERS,
+                                               ...TIER2_HANDLERS,
+                                               ...TIER3_HANDLERS }
+                       │  (single source of truth — dispatch ≡ advertised schema)
+                       ▼
+              engine.ts (facade)  →  engine-*-tools.ts
+                       │
+        ┌──────────────┼───────────────────────────────┐
+        ▼              ▼                                 ▼
+  shorthand-parser   engine/utils.ts                engine/svg-export.ts
+  (shorthand→Layer)  (resolvePath·snapshot·          (jsdom + renderer.ts →
+                      readYAML·writeYAML)             real .svg, no browser)
+```
 
-| File | Responsibility |
-|---|---|
-| `token-resolver.ts` | `$token` → theme value. Lookup order: overrides → colors → typography → effects → radii → deep search. Fallback: `#FF00FF`. Resolves fills, strokes, text styles, shadow colors recursively. |
-| `component-resolver.ts` | `{{propName}}` → slot value substitution. Walks layer objects recursively. Validates required props. |
-| `shorthand-expander.ts` | `pos: [x,y,w,h]` → `{x,y,width,height}`. Basic position shorthand only. |
-| `performance.bench.ts` | Vitest bench benchmarks (not runtime). |
+The transports contain **no** design logic. They parse a request, look up a handler
+in `ALL_HANDLERS`, call it, and serialize the result. All business logic lives in
+the engine modules. This is why a tool registered in a tier registry but missing
+from `ALL_HANDLERS` would advertise but 404 — the map is deliberately the one
+source of truth (`http-server.ts §1`).
 
-### 3.3 `src/renderer/`
+### 3.2 Tiers
 
-| File | Responsibility |
-|---|---|
-| `renderer.ts` | Main pipeline: token resolution → shorthand expansion → z-sort → per-layer dispatch. Dirty tracking cache (prop hash → SVGElement). Grid overlay. `renderDesign` (poster) + `renderPage` (carousel page). |
-| `layer-renderers.ts` | One function per layer type. All 13 types: rect, circle, path, polygon, line, text, image, icon, mermaid, chart, code, math, group. Lazy async loading for mermaid/vega/katex/prism. |
-| `fill-renderer.ts` | `applyFill()` dispatcher. Creates SVG linearGradient, radialGradient (conic approx), feTurbulence noise, multi (recursive), solid color. |
-| `effects-renderer.ts` | `applyEffects()` → SVG `<filter>` in `<defs>`. feDropShadow, feGaussianBlur, opacity attr, CSS mix-blend-mode. Filter bbox extended ±20% to prevent clipping. |
-| `svg-utils.ts` | `createSVGElement<K>(tag, attrs)`, `createSVGRoot(w,h)`, `getOrCreateDefs(svg)`, `uniqueDefId(prefix)` — global counter, reset before each render pass. |
+Tools are grouped into three tiers so a small local model can load only what it can
+handle. The HTTP server always serves the full union (49); only stdio is tiered.
 
-### 3.4 `src/editor/`
+| Tier | Name | Count | Registry | Purpose |
+|---|---|---|---|---|
+| 1 | Basic | 15 | `tier1/registry.ts` | Projects, navigation, tasks, library, theming — no heavy writes |
+| 2 | Design | 10 | `tier2/registry.ts` | Full design lifecycle: create → compose → inspect → patch → seal |
+| 3 | Export | 24 | `tier3/registry.ts` | SVG/HTML/PDF export, templates, components, reports, presentations, animation, formula, collab |
 
-| File | Responsibility |
-|---|---|
-| `state.ts` | Central reactive state (design, theme, selection, zoom, pan, mode, grid, undo stack). `set()`, `batch()`, `subscribe()`, `undo()/redo()`, `getCurrentLayers()`, `updateLayer()`, `addLayer()`, `removeLayer()`. |
-| `app.ts` | Bootstrap: builds DOM layout, instantiates all managers, loads default theme + sample design, wires file watcher. |
-| `canvas.ts` | SVG container + selection overlay. Pointer events for select/drag/rotate. Wheel for zoom/pan. `fitToScreen()`. Smart guides on drag. |
-| `interactions.ts` | interact.js: draggable (snap to grid + layer edges) + resizable (corner handles, min 10px). |
-| `keyboard.ts` | All keyboard shortcuts: undo/redo, tools, selection ops, clipboard (YAML), group/ungroup, z-order. |
-| `payload-editor.ts` | Monaco Editor (lazy CDN load). Two-way sync with 300ms debounce. Validation markers. |
+`FOLIO_MCP_TIER` selects the stdio surface: `1`, `2`, `3`, or `all`/`0` (full union
+in one registration). `index.ts` dispatches; tiers are exclusive (register 1+2+3 as
+three servers for the union without dupes, or `all` for one).
 
-### 3.5 `src/ui/`
+### 3.3 Tool result contract
 
-| File | Responsibility |
-|---|---|
-| `toolbar/toolbar.ts` | Top bar: visual/payload toggle, theme selector, zoom display, export menu. |
-| `panels/layer-panel.ts` | Layered by z-band. Virtual scroll (32px rows, ~20 DOM nodes). Click-to-select, shift-multi, double-click rename. |
-| `panels/properties-panel.ts` | Context-aware per layer type: position, fill, stroke, radius, text style. Gradient stop editor (partial). |
-| `panels/problems-panel.ts` | Validation error/warning list. Re-runs on every design change. |
-| `panels/file-tree.ts` | FSA open/save, recent files (localStorage, max 8), current design info. |
-| `panels/page-strip.ts` | Carousel page thumbnails. Click-to-navigate. Add page button. |
-| `palette/command-palette.ts` | Cmd+K palette. 100+ commands. Filtered list, arrow keys, Enter/Esc. |
-| `tools/align-toolbar.ts` | Alignment actions: left/center/right/top/middle/bottom, distribute H/V. |
-| `tools/toolbox.ts` | Tool buttons: select, rect, circle, text, line. |
+Every handler returns a `ToolResult` (see `src/mcp/types.ts`) that is far richer
+than a bare string — this is what makes Folio drivable by weak models:
 
-### 3.6 `src/mcp/`
-
-| File | Responsibility |
-|---|---|
-| `server.ts` | JSON-RPC 2.0 stdio server. Routes: initialize, tools/list, tools/call. |
-| `tool-handlers.ts` | All 16+ tool implementations: createProject, createDesign, appendPage, patchDesign, sealDesign, addLayer, updateLayer, removeLayer, listThemes, exportDesign, batchCreate, duplicateDesign, resumeDesign, saveAsComponent, applyTheme, listDesigns. |
-| `shorthand-parser.ts` | Level 1-2 shorthand → full verbose Layer. Compact LLM notation → engine-ready spec. |
-| `tool-registry.ts` | JSON schema definitions for all tools. Used in MCP initialize response. |
-| `types.ts` | MCPRequest, MCPResponse, ToolCallResult, ToolDefinition. |
-
-### 3.7 `src/export/`
-
-| File | Responsibility |
-|---|---|
-| `exporter.ts` | exportToSVG, exportToPNG (canvas 2D, configurable scale), exportToPDF (jsPDF lazy, px→mm at 96dpi), exportToHTML (embedded SVG + design JSON + animation CSS), downloadBlob/downloadText. |
-
-### 3.8 `src/animation/`
-
-| File | Responsibility |
-|---|---|
-| `types.ts` | EnterAnimationType (14), ExitAnimationType (7), LoopAnimation (7), KeyframePoint, AnimationSpec, PlaybackConfig, StaggerSequence. |
-| `css-generator.ts` | @keyframes rules + animation properties per layer. Stagger delay calculation. Full presets for all 28 animation types. |
-| `keyframe-engine.ts` | Linear keyframe interpolation. Color lerp (hex→rgb→hex). PlaybackController with RAF loop. |
-
-### 3.9 `src/fs/`
-
-| File | Responsibility |
-|---|---|
-| `file-access.ts` | File System Access API + `<input>` fallback. openFile(), saveFile(). |
-| `file-watcher.ts` | Polls watched FileSystemFileHandle. Fires onChange(name, content) on modification. |
-
-### 3.10 `src/themes/`
-
-`builtin.ts` — 3 built-in themes: `dark-tech`, `light-clean`, `ocean-blue`. Each has full color palette, typography scale, spacing, effects, radii.
-
----
-
-## 4. STATE MANAGEMENT
-
-### 4.1 StateManager (`src/editor/state.ts`)
-
-Single source of truth for all editor state. Observer pattern — all UI components subscribe and react to key changes.
-
-```typescript
-interface EditorState {
-  design: DesignSpec | null      // current open design
-  theme: ThemeSpec | null        // resolved active theme
-  selectedLayerIds: string[]     // active selection
-  zoom: number                   // canvas zoom (0.1–5)
-  panX: number                   // canvas pan X
-  panY: number                   // canvas pan Y
-  mode: 'visual' | 'payload'     // editor mode
-  currentPageIndex: number       // active carousel page
-  gridVisible: boolean           // grid overlay toggle
-  yamlSource: string             // raw YAML string (Monaco)
-  dirty: boolean                 // unsaved changes
-  activeTool: ToolId             // select|text|rect|circle|line
+```
+{
+  success: boolean
+  op: string
+  ...payload...                       // tool-specific fields
+  notes?: string[]                    // render-blocking issues the engine detected
+  next_action?: { tool, params, remaining, hint }   // call THIS next
+  handover?: { workflow_step, workflow_next, suggested_next[], carry_forward }
+  context?: { artifacts:[{path, role}], ... }        // files created/modified/opened
+  open_url? / view_url? / edit_url?   // tokenized editor / report links
+  token_estimate: number
 }
 ```
 
-**Undo/redo:** Immutable stack, max 100 entries. Every `set()` call with `recordUndo=true` (default) pushes previous state.
+`toMCPResult()` flattens this into the MCP `content[]` envelope and trims it to the
+`FOLIO_OUTPUT_BUDGET` token cap (default 1000). The **next_action** and **handover**
+protocols let a model chain tools without re-deriving state. See [MCP.md §5](MCP.md).
 
-**Batch updates:** `state.batch(fn)` runs multiple sets, fires single notification.
+### 3.4 Path normalization
 
-**Layer operations:** `updateLayer(id, updates)` recursively walks design.layers and page.layers, including group children. Both poster and carousel modes supported.
+`normalizeProjectPaths()` runs on every `tools/call` (HTTP) before the handler.
+LLMs guess absolute paths badly, so it rewrites `project_path`/`path`/`design_path`
+so a design always lands under `FOLIO_PROJECTS_DIR` — the only root the editor can
+serve. A bare name (`"rainforest"`) is resolved to the projects dir; a misguessed
+absolute path is corrected. The engine's own `resolvePath()` then gates every
+read/write to the projects dir or `/tmp`.
 
-### 4.2 Component Communication Pattern
+---
+
+## 4. DATA FLOWS
+
+### 4.1 Editor flow (browser)
 
 ```
-StateManager (source of truth)
+.design.yaml  (file open / Monaco edit / MCP mutation via SSE)
       │
-      ├── CanvasManager.onStateChange()     → re-render SVG
-      ├── LayerPanelManager.onStateChange() → rebuild virtual list
-      ├── PropertiesPanelManager            → update fields
-      ├── ProblemsPanelManager              → re-validate
-      ├── PayloadEditor                     → sync Monaco content
-      ├── PageStrip                         → rebuild page list
-      └── ToolbarManager                   → update mode/zoom display
+      ▼  src/schema/parser.ts            parseDesign(yaml) → DesignSpec
+      ▼  src/schema/validator.ts         validate() → ValidationError[]
+      ▼  src/editor/state.ts             StateManager.set('design', spec)
+      │        ├── ui/panels/*           layer / properties / problems re-render
+      │        └── ui/panels/page-strip  carousel thumbnails
+      ▼  src/engine/token-resolver.ts    $token → theme value
+      ▼  src/engine/shorthand-expander   pos:[x,y,w,h] → {x,y,width,height}
+      ▼  src/renderer/renderer.ts        renderDesign(spec) → SVGSVGElement
+      │        ├── fill-renderer.ts      solid/linear/radial/conic/noise/pattern/image
+      │        ├── effects-renderer.ts   shadow/blur/blend/duotone/grain → <filter>
+      │        └── layer-renderers*.ts   per-type → SVGElement (lazy for mermaid/…)
+      ▼  render cache (per-layer prop hash)
+      ▼  canvas.svgContainer ← SVG
 ```
 
-No circular updates: Monaco sync uses guards (`isUpdatingFromState`, `isUpdatingFromEditor`).
-
----
-
-## 5. RENDER PIPELINE DETAILS
-
-### 5.1 Dirty Tracking Cache
-
-```typescript
-const renderCache = new Map<string, { hash: string; svg: SVGElement }>()
-
-// Per-render:
-const layerHash = JSON.stringify(layer)        // full prop hash
-const cached = renderCache.get(layer.id)
-if (cached && cached.hash === layerHash) {
-  return cached.svg.cloneNode(true)            // ~0.1ms — cache hit
-}
-// else: full render (~0.1ms–50ms per type), store result
-```
-
-Cache invalidated on: theme change, zoom change, canvas resize (full clear). Single layer change: only that layer re-renders.
-
-### 5.2 Layer Render Order
+### 4.2 MCP generation flow (LLM)
 
 ```
-For each render pass:
-  1. expandPositionShorthand(layer)         pos:[x,y,w,h] → explicit
-  2. resolveLayerTokens(layer, ctx)         $token → hex/value
-  3. sort by z ascending
-  4. renderLayer(layer, svg) per layer
-     └── check cache → uncached → dispatch to type renderer
+tools/call (JSON-RPC over stdio or HTTP)
+      │
+      ▼  http-server.ts / tierN server   route → dispatch
+      ▼  normalizeProjectPaths(args)     fix LLM path guesses
+      ▼  ALL_HANDLERS[name](args)        e.g. addLayers / appendPage
+      │        └── shorthand-parser      expandShorthand(layer) → full Layer
+      ▼  engine/utils.snapshot()         write .mcp_versions/ backup first
+      ▼  writeYAML()                     js-yaml.dump → fs.writeFileSync
+      ▼  result.next_action / open_url   returned to the model
+      │
+      └── (HTTP) editorBroadcast('file_changed', path)  → /editor/events SSE
+                 → any open editor reloads the design instantly
 ```
 
-### 5.3 Async Renderers (lazy loaded)
-
-Mermaid, vega-lite, katex, prism — loaded on first use via dynamic import. While loading: foreignObject placeholder text shown. On load: re-render.
-
-```typescript
-// Pattern:
-const container = createForeignObject(x, y, w, h)
-const placeholder = document.createElement('div')
-placeholder.textContent = layer.definition  // shown immediately
-container.appendChild(placeholder)
-
-import('mermaid').then(({ default: mermaid }) => {
-  mermaid.render(id, layer.definition).then(({ svg }) => {
-    placeholder.innerHTML = svg  // replace with rendered output
-  })
-})
-```
-
-### 5.4 Performance Targets
+### 4.3 Export flow
 
 ```
-rect / circle / line:    ~0.1ms   pure SVG attrs
-text (plain):            ~0.3ms   SVG text + line wrapping
-text (markdown):         ~2ms     marked.js parse
-icon (placeholder):      ~0.2ms   placeholder rect+text
-image:                   ~5ms     decode + embed
-mermaid (first):         ~50ms    → cache SVG
-vega-lite (first):       ~30ms    → cache SVG
-katex (first):           ~5ms     → cache
-code/prism (first):      ~3ms     → cache
+Browser export (toolbar):  src/export/exporter.ts
+   exportToSVG()   XMLSerializer
+   exportToPNG()   SVG → Image → Canvas → PNG (×1/×2/×3)
+   exportToPDF()   PNG per page → jsPDF (lazy)
+   exportToHTML()  SVG + design JSON + animation CSS → self-contained .html
+
+Server-side export (MCP export_design):  src/mcp/engine/svg-export.ts
+   jsdom document → renderer.ts renderDesign() → serialize → .svg file
+   (no browser; runs under Bun/Node in the container)
+
+Report / presentation export:  src/export/*-assembler.ts
+   design + datasets + runtime → one self-contained .html
 ```
 
 ---
 
-## 6. MCP SERVER ARCHITECTURE
+## 5. RENDER PIPELINE (`src/renderer/`)
 
-### 6.1 Protocol
-
-```
-Transport: stdin/stdout (stdio)
-Protocol:  JSON-RPC 2.0
-Messages:  newline-delimited JSON
-
-Flow:
-  Client → initialize       → capabilities response
-  Client → notifications/initialized
-  Client → tools/list       → array of tool definitions
-  Client → tools/call       → { name, arguments } → { content: [{type,text}] }
-```
-
-### 6.2 Tool Architecture
-
-```
-server.ts  →  tool-registry.ts    (metadata/schema per tool)
-           →  tool-handlers.ts    (implementation)
-                    │
-                    ├── readYAML()    fs.readFileSync → yaml.load
-                    ├── writeYAML()   yaml.dump → fs.writeFileSync
-                    └── expandShorthand() via shorthand-parser.ts
-```
-
-All tools are synchronous file operations except exportDesign (async render pipeline).
-
-### 6.3 Shorthand Levels
-
-```
-Level 1 — Slot fill (LLM):        template + slots → ~50-150 tokens/design
-Level 2 — Semantic shorthand:     compact layer spec → ~300-600 tokens/design
-Level 3 — Full verbose YAML:      on disk (engine-generated) → 2000-4000 tokens
-```
-
-`shorthand-parser.ts` expands Level 1-2 to Level 3 before writing to disk.
-
-### 6.4 Incremental Generation
-
-```
-State tracked in meta.generation:
-  status: 'in_progress' | 'complete'
-  total_pages: N
-  completed_pages: N
-  last_operation: string
-
-resumeDesign(id): reads completed_pages → returns context for next page
-sealDesign(id):   sets _mode: 'complete', generation.status: 'complete'
-```
-
----
-
-## 7. FILE SYSTEM ABSTRACTION
-
-### 7.1 Browser (editor)
-
-```
-Desktop Chrome:  File System Access API (FileSystemFileHandle)
-                 → read/write files, watch for changes
-Other browsers:  <input type="file"> + download via blob URL
-                 → no file watching (no-op)
-
-Abstraction (src/fs/):
-  openFile(accept) → {name, content} or null
-  saveFile(content, filename) → download or FSA write
-  watchFile(handle, initialContent) → polls handle, fires onChange()
-  isNativeFS() → true only on Chrome with FSA support
-```
-
-### 7.2 MCP Server (Node.js)
-
-Direct `fs` module — `readFileSync`, `writeFileSync`, `mkdirSync`. No abstraction needed — server runs in Node.js, not browser.
-
----
-
-## 8. TEST ARCHITECTURE
-
-### 8.1 Stack
-
-```
-Vitest         unit + integration (Vite-native, jsdom environment)
-Playwright     E2E (real browser: Chromium/Firefox/WebKit)
-               visual regression (screenshot comparison, ≤1% diff)
-```
-
-### 8.2 Unit Test Layout
-
-```
-src/*/                    ← co-located .test.ts files
-tests/
-  e2e/                    ← Playwright E2E specs
-  integration/            ← full workflow tests (Vitest, no browser)
-  visual/                 ← Playwright visual regression
-  fixtures/               ← sample .design.yaml, .theme.yaml
-```
-
-### 8.3 Coverage Targets
-
-| Module | Target |
+| File | Responsibility |
 |---|---|
-| Token resolver | 98% |
-| Schema validation | 95% |
-| SVG renderer | 90% |
-| MCP tools | 90% |
-| Export pipeline | 85% |
-| Component system | 85% |
-| Canvas interactions | 80% |
-| Overall | >80% |
+| `renderer.ts` | Pipeline: shorthand expand → token resolve → z-sort → per-layer dispatch → dirty-tracking cache. `renderDesign` (poster) + `renderPage` (carousel). |
+| `layer-renderers.ts` (facade) | One renderer per layer type, split across `-shared / -shapes / -embed / -layout`. Lazy `import()` for mermaid/vega/katex/prism. |
+| `fill-renderer.ts` | `applyFill()` — solid · linear · radial · conic (approx) · noise (feTurbulence) · pattern · image (tile/cover/contain). |
+| `effects-renderer.ts` | `applyEffects()` → SVG `<filter>` in `<defs>`: drop shadow (with spread), blur, opacity, mix-blend-mode, duotone, grain, posterize. |
+| `svg-utils.ts` | `createSVGElement`, `createSVGRoot`, `getOrCreateDefs`, `uniqueDefId` (counter reset per pass). |
+| `lucide-icons.ts` | 80+ Lucide icon path data, resolved by name. |
+| `qr/` | Dependency-free QR encoder. |
 
-### 8.4 Key Test Invariants
+**Dirty tracking:** a `Map<layerId, {hash, svg}>` keyed by `JSON.stringify(layer)`.
+On a single-layer change only that layer re-renders (cache-clone the rest). The cache
+fully clears on theme change, zoom, or canvas resize.
+
+**Determinism invariant:** the same YAML must produce identical SVG on repeated calls
+— no `Math.random()` / `Date.now()` in the render path (seed by layer id instead).
+
+**Layer types (35):** `rect circle ellipse path polygon polyline line text image icon
+component component_list mermaid chart code math group qrcode auto_layout
+interactive_chart interactive_table rich_text kpi_card map embed_code popup particle
+button tabs accordion filter_bar toggle tooltip callout progress`. The `interactive_*`,
+`rich_text`, `kpi_card`, and the component group (`button/tabs/accordion/filter_bar/
+toggle/tooltip/callout/progress`) power flow-layout reports — see [REPORT_ENGINE.md](REPORT_ENGINE.md).
+
+---
+
+## 6. SCHEMA & ENGINE CORE
+
+### 6.1 `src/schema/`
+
+| File | Responsibility |
+|---|---|
+| `types.ts` (barrel) | Re-exports `types/primitives.ts` (Fill, Stroke, Effects, color/units), `types/layers.ts` (LayerType union + every concrete layer), `types/document.ts` (DesignSpec, ThemeSpec, ComponentSpec, TemplateSpec, ProjectSpec, report types). |
+| `parser.ts` | YAML ↔ DesignSpec. `ParseError` carries line/column. |
+| `validator.ts` | Required fields, duplicate IDs, z-index collisions, fill validation → `ValidationError[]` with severity + dot-path. |
+
+### 6.2 `src/engine/`
+
+| File | Responsibility |
+|---|---|
+| `token-resolver.ts` | `$token` → theme value. Lookup: overrides → colors → typography → effects → radii → deep search. Fallback `#FF00FF`. Recursive over fills/strokes/text/shadows. |
+| `shorthand-expander.ts` | `pos:[x,y,w,h]` → explicit `{x,y,width,height}`. (Engine-side position shorthand; the richer MCP shorthand lives in `mcp/shorthand-parser.ts`.) |
+| `component-resolver.ts` | `{{propName}}` slot substitution; validates required props; inlines `.component.yaml` at render time. |
+
+### 6.3 Theme tokens
+
+Any color/font value prefixed with `$` resolves against the active theme at render
+time: `$primary`, `$surface`, `$text_muted`, `$heading` (→ `typography.families.heading`).
+**17 built-in themes** ship in `src/themes/builtin.ts`: `dark-tech light-clean ocean-blue
+neon-bloom indigo-pro sunset-glow mono-print forest-deep pastel-dream high-contrast
+brutalist-mono cyber-synthwave editorial-cream corporate-slate bold-poster
+swiss-international gallery`. Custom themes live in a project's `themes/` and are
+registered in `project.yaml`.
+
+### 6.4 Z-index bands
 
 ```
-Renderer determinism:  same YAML → identical SVG on repeated calls
-Token resolution:      $primary → correct hex, overrides take precedence
-Undo/redo:             state returns to exact previous value
-Export:                HTML output has no external URLs (self-contained)
-MCP round-trip:        create → append → seal produces valid .design.yaml
+0–9    Background   full-bleed fills, textures, decor
+10–19  Structural   cards, frames, containers, rules
+20–49  Content      text, icons, images, charts
+50–69  Overlay      color washes, decorative overlays
+70–89  Foreground   accent shapes, highlights
+90–99  UI           editor-only handles (never written to files)
 ```
 
 ---
 
-## 9. BUILD PIPELINE
+## 7. EDITOR & UI (`src/editor/`, `src/ui/`)
+
+| File | Responsibility |
+|---|---|
+| `editor/state.ts` | Reactive single source of truth (design, theme, selection, zoom/pan, mode, page index, grid, undo stack ≤100). Observer pattern; `batch()` coalesces. |
+| `editor/app.ts` (+`app-base`) | Bootstrap: builds layout, instantiates managers, loads theme + sample design, wires the file watcher / SSE. |
+| `editor/canvas.ts` (+`-base/-interactions/-draw`) | SVG container, selection overlay, pointer drag/rotate, wheel zoom/pan, smart guides, rulers. |
+| `editor/interactions.ts` | interact.js draggable (snap to grid/edges) + resizable (8 handles). |
+| `editor/keyboard.ts` | All shortcuts (undo/redo, tools, clipboard-as-YAML, group, z-order). |
+| `editor/payload-editor.ts` | Monaco (lazy). Two-way sync, 300ms debounce, validation markers, re-entrancy guards. |
+| `editor/static-server.ts` | **Bun static file server** for the built editor in Docker. Serves `dist/`, mounts `FOLIO_PROJECTS_DIR` at `/__project_files/*`, validates a Bearer/`?token=`/`folio_session` cookie (JWT-aware), sets the session cookie. *(Replaces the old `vite preview`.)* |
+
+`src/ui/` holds the panels (layer, properties, problems, file-tree, page-strip,
+timeline), dialogs (catalog), the command palette, and toolbars (align, toolbox).
+Full editor guide: [EDITOR.md](EDITOR.md).
+
+---
+
+## 8. TRANSPORTS, ENDPOINTS & AUTH
+
+Two long-lived servers run in the `both` container role (default):
+
+| Server | File | Port (in-container) | Role |
+|---|---|---|---|
+| MCP HTTP | `mcp/http-server.ts` | `FOLIO_PORT` = 3333 | JSON-RPC, SSE, OAuth, health |
+| Editor static | `editor/static-server.ts` | `PORT` = 4173 | Built editor + project-file fetch |
+
+### 8.1 HTTP endpoints (MCP server, :3333)
+
+| Method · path | Auth | Purpose |
+|---|---|---|
+| `GET  /health` | none | Liveness: `{status, version, tiers, auth}` |
+| `POST /mcp` | Bearer | JSON-RPC: `initialize` · `tools/list` · `tools/call` |
+| `GET  /mcp/sse` | Bearer | SSE stream of every tool response |
+| `GET  /editor/events` | Bearer or `?token=` | File-change SSE for live editor refresh |
+| `GET  /tokens/whoami` | Bearer | Returns the named token that authenticated |
+| `GET  /.well-known/oauth-authorization-server` | none | RFC 8414 metadata |
+| `GET  /.well-known/oauth-protected-resource` | none | RFC 9728 metadata |
+| `GET/POST /oauth/authorize` | none | Login form → auth code (PKCE) |
+| `POST /oauth/token` | none | code → access+refresh token |
+| `POST /oauth/register` | none | RFC 7591 dynamic client registration |
+
+### 8.2 Auth resolution (`mcp/auth.ts`, `mcp/jwt.ts`, `mcp/oauth.ts`)
+
+First strategy that resolves wins:
+
+```
+FOLIO_TOKENS_FILE  (tokens.json: { "name": "sk-..." })   ← production, named/audited
+FOLIO_TOKENS       ("name:sk-...,other:sk-...")           ← env-only multi-token
+FOLIO_API_KEY      (single shared bearer)                 ← legacy
+(none)             → open mode                            ← localhost / private net
+```
+
+On top of that:
+- **JWT (HS256, `jwt.ts`)** — `FOLIO_JWT_SECRET` (falls back to `FOLIO_API_KEY`) signs
+  stateless 30-day editor-link tokens that `open_in_editor`/`create_design` return.
+  The raw secret also works as a master bearer. Survives restarts; no server store.
+- **OAuth 2.0 + PKCE (`oauth.ts`)** — the claude.ai Custom Connector flow. The
+  access token issued by `/oauth/token` bridges to whichever Folio API key the user
+  typed at `/oauth/authorize`. Access (24h) and refresh (30d, rotating) tokens are
+  persisted to `FOLIO_OAUTH_STATE_DIR` so a container bounce never forces re-auth.
+
+Every authenticated `tools/call` writes one audit line to stderr:
+`[mcp] token=<name> tool=<tool> ok=<bool>` — token *values* are never logged.
+
+Full deploy + endpoint + auth reference: [DEPLOYMENT.md](DEPLOYMENT.md).
+Per-client setup: [INTEGRATIONS.md](INTEGRATIONS.md).
+
+### 8.3 Memory safety
+
+The container is memory-capped (default `mem_limit: 1g`). Guards: `/mcp` body capped
+at `FOLIO_MAX_BODY_BYTES` (32 MiB), OAuth bodies at 256 KiB, `editorBroadcast` skips
+files over `FOLIO_MAX_BROADCAST_BYTES` (16 MiB), dead SSE clients are pruned on write,
+and both servers run under `bun --smol`.
+
+---
+
+## 9. BUILD, TEST & DEPLOY PIPELINE
 
 ### 9.1 Commands
 
 ```bash
-npm run dev          # Vite dev server (HMR)
-npm run build        # tsc --noEmit + vite build → dist/
+npm run dev          # Vite dev server + HMR → http://localhost:5173
+npm run gen          # regenerate catalog/palette/type-pack/effects/font indexes
+npm run build        # gen + tsc + vite build → dist/
 npm run typecheck    # tsc --noEmit (strict)
-npm run lint         # eslint --max-warnings 0
-npm run test:unit    # vitest run (unit tests)
-npm run test:e2e     # playwright test tests/e2e/
-npm run test:visual  # playwright test tests/visual/
-npm run test:bench   # vitest bench (performance)
-npm run mcp          # node dist/mcp-server.js (stdio server)
+npm run lint         # eslint src --max-warnings 0  (incl. max-lines:700)
+npm run test:unit    # vitest run
+npm run test:integration
+npm run test:e2e     # playwright (chromium)
+npm run test:visual  # playwright visual regression
+FOLIO_MCP_TIER=all bun run src/mcp/index.ts   # stdio MCP, full surface
+bun run src/mcp/http-server.ts                # HTTP MCP on :3333
 ```
 
-### 9.2 Bundle Strategy
+> The host this repo is developed on is RAM-tight; `npm run build` (vite) can OOM
+> locally — it's a CI/runner step. `tsc`, `eslint`, and `vitest` run fine locally.
 
-```
-Initial bundle (~500KB gzipped):
-  SVG renderer · text renderer · icon placeholder
-  token resolver · shorthand expander
-  marked.js (~20KB) · js-yaml (~45KB)
-  interact.js (~30KB) · Floating UI (~15KB)
-  Lucide sprite (~150KB)
+### 9.2 Runtime model — runs from source
 
-Lazy chunks (loaded on first use):
-  Monaco Editor    ~2MB   (payload mode activate)
-  mermaid          ~500KB (first mermaid layer)
-  vega-embed       ~400KB (first chart layer)
-  katex            ~280KB (first math layer)
-  prismjs          ~30KB  (first code layer)
-  jsPDF            ~200KB (PDF export)
-  dom-to-image-more ~20KB (PNG export)
+The Docker image is `oven/bun` and runs the TypeScript **directly from `src/`** via
+Bun (no compiled `dist/` for the MCP server; the editor is the only built artifact).
+That makes deploy of a code change a source sync + restart, not a rebuild:
+
+```bash
+docker cp src/. folio:/app/src && docker restart folio
 ```
 
-### 9.3 Offline-First Rule
+Because facades re-export their siblings, copy the **whole tree** (a partial copy
+breaks the import graph). Verify with `curl localhost:3333/health`.
 
-Zero CDN calls at runtime after `npm install`. All assets bundled locally. No `fonts.googleapis.com`, no `unpkg.com`, no external URLs.
+### 9.3 Test architecture
+
+```
+Vitest      unit + integration (jsdom env), co-located *.test.ts
+Playwright  e2e (real Chromium) + visual regression (≤1% pixel diff)
+```
+
+Coverage targets: token-resolver 98% · schema 95% · renderer 90% · MCP 90% ·
+export 85% · overall >80%. Key invariants: render determinism, token precedence,
+undo/redo exactness, self-contained HTML export (no external URLs), and MCP
+round-trip (`create → append → seal` → valid `.design.yaml`).
 
 ---
 
-## 10. KNOWN GAPS & NEXT STEPS
+## 10. EXTENDING FOLIO
 
-### 10.1 Icon Layer (High Priority)
+### 10.1 Add an MCP tool
 
-Current: renders placeholder rect + text with icon name.
-Required: bundle Lucide SVG sprite at build time, resolve name → SVG path data.
+1. Implement the handler in the right `engine-*-tools.ts` (pure function:
+   `(args) => ToolResult`). Snapshot before any write via `engine/utils.snapshot()`.
+2. Re-export it from the `engine.ts` facade if needed.
+3. Register the JSON schema in the matching `tierN/registry.ts` (`TIERn_TOOLS`).
+4. Add it to the tier's handler map so it lands in `ALL_HANDLERS`.
+5. If it mutates a `.design.yaml`, add the tool name to `FILE_MUTATING_TOOLS` in
+   `http-server.ts` so the editor live-refreshes.
+6. Write a co-located `*.test.ts`. Keep every file ≤700 lines.
 
-```typescript
-// Target implementation:
-import { icons } from 'lucide'  // or lazy load sprite
-export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
-  const paths = icons[layer.name]  // get path data
-  const el = createSVGElement('svg', { width: layer.size, height: layer.size })
-  // render paths...
-}
-```
+> Reconnect caveat: an MCP client caches `tools/list` at connect time. After adding a
+> tool, reconnect the client (or restart it) to see it.
 
-### 10.2 Per-Corner Border Radius (Medium Priority)
+### 10.2 Add a layer type
 
-SVG `<rect>` only supports uniform `rx`. For independent corners, use `<path>` with arc commands.
+1. Add the literal to the `LayerType` union and a concrete interface in
+   `schema/types/layers.ts`.
+2. Add a renderer in the appropriate `layer-renderers-*.ts` and dispatch it from
+   `renderer.ts`.
+3. Add shorthand expansion in `shorthand-parser` if it needs compact authoring.
+4. Add validation rules in `validator.ts`. Add tests.
 
-### 10.3 Properties Panel Gradient Editor (Medium Priority)
+### 10.3 Add a theme
 
-Basic gradient rendering works. Full interactive gradient stop editor (drag stops, color picker per stop) is stubbed.
+Append to `src/themes/builtin.ts` (full color palette + typography + spacing +
+effects + radii), or drop a `.theme.yaml` in a project's `themes/` and register it
+in `project.yaml` via `apply_theme`.
 
-### 10.4 Mode B Interactive Output (Phase 2)
+---
 
-State/data binding/scripting layer not implemented. Requires: TS compiler integration, sandbox iframe, state runtime.
+## 11. SEE ALSO
 
-### 10.5 Phase 3 Exports (Phase 3)
-
-GIF, MP4/WebM (Puppeteer frame capture + FFmpeg), Lottie JSON — not yet implemented.
-
-### 10.6 node_modules (Immediate)
-
-`npm install` not run in this environment. Required before any test or build.
+| Doc | Covers |
+|---|---|
+| [MCP.md](MCP.md) | MCP standard, transports, tiers, wire protocol, workflows, shorthand |
+| [TOOLS.md](TOOLS.md) | Every one of the 49 tools — params, returns, examples |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Docker, Caddy/TLS, endpoints, env vars, auth, backups |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | claude.ai, Claude Code, LM Studio, Hermes/OpenClaw, editor wiring |
+| [EDITOR.md](EDITOR.md) | Visual editor: canvas, panels, shortcuts, export, live refresh |
+| [DESIGN.md](DESIGN.md) | Design system + full `.design.yaml` payload spec |
+| [REPORT_ENGINE.md](REPORT_ENGINE.md) | Interactive flow-layout reports + components |
