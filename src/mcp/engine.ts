@@ -811,6 +811,70 @@ function dropStackedPresets(layers: Layer[], docW: number, docH: number): number
   return removed;
 }
 
+// A blind model handed a multi-section brief (intro + schedule + pricing) often
+// emits 2+ DISTINCT full-bleed content presets — one per section — all pinned to
+// the SAME full-canvas box, so they z-STACK and only the topmost renders: every
+// earlier section (and any title beneath them) is silently invisible. By this
+// point dropStackedPresets has removed true rebuild DUPLICATES, so the presets
+// left here are distinct sections that must all be SEEN — re-seat each into its
+// own vertical BAND down the page. A group applies NO render transform (renderGroup
+// emits a bare <g>; its children carry ABSOLUTE doc coords), so banding means
+// TRANSLATING the whole subtree, not just moving the group box — moving the box
+// alone leaves every child where it was. Single posters only (carousels page these).
+function stackDistinctFullBleedPresets(layers: Layer[], doc: { width: number; height: number }, docW: number, docH: number): number {
+  // Detect by full WIDTH only (NOT y): once a section has been re-seated into a
+  // lower band, a y-gated check would stop seeing it, so a later add_layers call
+  // would re-band fresh sections ON TOP of the stuck ones. Width-only detection
+  // makes every pass re-derive the whole band layout from scratch — idempotent.
+  const isSection = (l: Layer): boolean => {
+    const o = l as unknown as Record<string, unknown>;
+    if (o['type'] !== 'group' || !CONTENT_PRESET_RE.test(String(o['id'] ?? ''))) return false;
+    const x = Number(o['x']) || 0, w = Number(o['width']) || 0;
+    return x <= docW * 0.02 && w >= docW * 0.9;
+  };
+  const presets = layers.filter(isSection);
+  if (presets.length < 2) return 0;
+  const zOf = (l: Layer): number => { const z = (l as unknown as Record<string, unknown>)['z']; return typeof z === 'number' ? z : 0; };
+  // Reading order = render order: stack the earliest-drawn (lowest z) section on top.
+  presets.sort((a, b) => zOf(a) - zOf(b));
+  const yOf = (l: Layer): number => { const o = l as unknown as Record<string, unknown>; const p = o['pos']; return (Array.isArray(p) && p.length >= 2) ? (Number(p[1]) || 0) : (Number(o['y']) || 0); };
+  const setY = (l: Layer, y: number): void => { const o = l as unknown as Record<string, unknown>; const p = o['pos']; if (Array.isArray(p) && p.length >= 2) p[1] = y; else o['y'] = y; };
+  // The preset's full-bleed background rect anchors the band top — decorations and
+  // cards keep their offset relative to it, and reading it (not the unreliable group
+  // box) keeps the pass idempotent across incremental re-bands.
+  const bgTop = (g: Layer): number => {
+    const kids = (g as unknown as Record<string, unknown>)['layers'];
+    if (!Array.isArray(kids)) return yOf(g);
+    const gw = Number((g as unknown as Record<string, unknown>)['width']) || docW, gh = Number((g as unknown as Record<string, unknown>)['height']) || docH;
+    for (const k of kids as Layer[]) {
+      if (k.type !== 'rect') continue;
+      const b = layerBBox(k);
+      if ((b.r - b.x) >= gw * 0.9 && (b.b - b.y) >= gh * 0.9) return b.y; // the full-canvas wash
+    }
+    return yOf(g);
+  };
+  // Translate a subtree's absolute y by delta. An auto_layout lays its children out
+  // from its OWN y (their coords are recomputed at render), so shift the container
+  // and STOP; every other node carries an absolute y to shift, recursing into groups.
+  const shiftY = (l: Layer, d: number): void => {
+    setY(l, yOf(l) + d);
+    if ((l as unknown as Record<string, unknown>)['type'] === 'auto_layout') return;
+    const kids = (l as unknown as Record<string, unknown>)['layers'];
+    if (Array.isArray(kids)) for (const k of kids as Layer[]) shiftY(k, d);
+  };
+  let cursorY = 0;
+  for (const g of presets) {
+    const d = cursorY - bgTop(g);
+    if (d) shiftY(g, d);                               // move the whole section into its band
+    setY(g, cursorY);                                  // group box top = band top (bbox/inspect)
+    cursorY += Number((g as unknown as Record<string, unknown>)['height']) || docH;
+  }
+  if (cursorY > docH) doc.height = cursorY;            // grow the page to hold the bands
+  const bg = layers.find(l => isFullCanvasBackdrop(l, docW, docH));
+  if (bg) (bg as unknown as Record<string, unknown>)['height'] = Math.max(cursorY, docH); // extend base wash under the lower bands
+  return presets.length;
+}
+
 // A full-canvas OPAQUE solid backdrop rect at the origin — the base wash a model
 // lays down first. A clean page has exactly one; a thrashing rebuild re-adds it
 // on every pass (8 stacked here). Gradient/noise overlays aren't counted (a legit
@@ -1580,6 +1644,14 @@ export function addLayers(args: {
         spec.document.height = g.height;
       }
     }
+  }
+
+  // Multi-section brief → the model stacked 2+ DISTINCT full-bleed presets at the
+  // same box (only the top one would render). Re-seat each into its own vertical
+  // band so every section is visible (poster only; carousel sections are pages).
+  if (!spec.pages) {
+    const stacked = stackDistinctFullBleedPresets(activeLayers, spec.document, spec.document.width, spec.document.height);
+    if (stacked) progress.push(pInfo(`Stacked ${stacked} full-bleed section(s) into bands`, 'distinct full-canvas sections were piled at one spot — split into a vertical brochure'));
   }
 
   // First collapse repeated strings from a rebuild to one copy each (runs before the
