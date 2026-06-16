@@ -44,6 +44,29 @@ describe('lintComposition', () => {
     expect(notes.some(n => /outside the/.test(n))).toBe(true);
   });
 
+  it('flags empty text slots the model never filled (empty-shell guard)', () => {
+    // The Flowstate pricing failure: every tier card had value:'' where the price belongs.
+    const freePrice = { id: 'free_price', type: 'text', z: 5, x: 80, y: 300, width: 200, height: 50, content: { type: 'plain', value: '' }, style: { color: '#FFFFFF', font_size: 40 } } as unknown as Layer;
+    const proPrice = { id: 'pro_price', type: 'text', z: 5, x: 380, y: 300, width: 200, height: 50, content: { type: 'plain', value: '   ' }, style: { color: '#FFFFFF', font_size: 40 } } as unknown as Layer;
+    const notes = lintComposition([rect('bg', 0, 0, 0, 1080, 1080, '#0A0A0A'), freePrice, proPrice], 1080, 1080);
+    expect(notes.some(n => /EMPTY|empty shell|never filled/.test(n))).toBe(true);
+    expect(notes.some(n => n.includes('free_price') && n.includes('pro_price'))).toBe(true);
+  });
+
+  it('finds empty slots nested inside a preset group', () => {
+    const group = { id: 'sections_1', type: 'group', z: 2, x: 0, y: 0, width: 1080, height: 1080, layers: [
+      { id: 'card_price', type: 'text', z: 1, x: 80, y: 300, width: 200, height: 50, content: { type: 'plain', value: '' }, style: { color: '#FFF', font_size: 36 } },
+    ] } as unknown as Layer;
+    const notes = lintComposition([rect('bg', 0, 0, 0, 1080, 1080, '#0A0A0A'), group], 1080, 1080);
+    expect(notes.some(n => n.includes('card_price'))).toBe(true);
+  });
+
+  it('does NOT flag a sizeless empty text (incidental, not a display slot)', () => {
+    const t = { id: 'spacer', type: 'text', z: 5, x: 80, y: 300, width: 200, height: 10, content: { type: 'plain', value: '' }, style: { color: '#FFF' } } as unknown as Layer;
+    const notes = lintComposition([rect('bg', 0, 0, 0, 1080, 1080, '#0A0A0A'), t], 1080, 1080);
+    expect(notes.some(n => /EMPTY|never filled/.test(n))).toBe(false);
+  });
+
   it('does not flag text correctly sitting on a contrasting chip', () => {
     const notes = lintComposition([
       rect('bg', 0, 0, 0, 1080, 1080, '#0A0A0A'),
