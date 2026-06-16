@@ -546,6 +546,27 @@ describe('sealDesign', () => {
     expect(flat).toContain('Drinks');
     expect(flat).toContain('Avocado Toast');
     expect(flat).toContain('Club Sandwich');
+    // ...and they're re-seated into stacked vertical BANDS (not piled at one box,
+    // where only the top section would render). Distinct, increasing y + a doc tall
+    // enough to hold every band.
+    const sections = (spec.layers ?? []).filter(l => l.type === 'group' && /^feature_grid/.test(String((l as { id?: string }).id ?? '')));
+    expect(sections.length).toBe(3);
+    const ys = sections.map(l => Number((l as unknown as { y?: number }).y) || 0).sort((a, b) => a - b);
+    expect(new Set(ys).size).toBe(3);                 // three distinct bands
+    expect(ys[0]).toBeLessThan(ys[1]);
+    expect(ys[1]).toBeLessThan(ys[2]);
+    expect(spec.document.height).toBeGreaterThan(1080); // page grew to fit the bands
+    // CRUCIAL: the section's CONTENT actually moved into the band — a group applies
+    // no render transform, so moving only the group box would leave every child
+    // (the full-bleed bg rect) stacked at y:0 and invisible. Each section's bg rect
+    // must sit at its band top, not all at the origin.
+    const bgTops = sections.map(g => {
+      const kids = (g as unknown as { layers?: Layer[] }).layers ?? [];
+      const bg = kids.find(k => k.type === 'rect' && Number((k as unknown as { width?: number }).width) >= 1080 * 0.9);
+      return Number((bg as unknown as { y?: number } | undefined)?.y) || 0;
+    }).sort((a, b) => a - b);
+    expect(new Set(bgTops).size).toBe(3);             // bgs at three distinct y, not piled at 0
+    expect(bgTops[2]).toBeGreaterThan(1080);          // the last band's content is well past the first page
   });
 
   it('removes loose hand-placed duplicates when many backdrops stack over a content preset', () => {
