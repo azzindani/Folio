@@ -1,0 +1,359 @@
+// Folio MCP engine — patch/seal/add/update/remove layer tools. Split from engine.ts; verbatim bodies.
+import * as fs from 'fs';
+import * as path from 'path';
+import type { DesignSpec, Layer } from '../schema/types';
+import type { ToolResult } from './types';
+
+import type { ProgressItem } from './types';
+
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
+
+import { buildEditorLink } from './engine/editor-link';
+
+import type { NextAction } from './types';
+
+import { pageHasReadableContent } from './engine-layer-tools';
+
+import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
+
+export function patchDesign(args: { design_path: string; selectors: { path: string; value: unknown }[]; dry_run?: boolean; project_path?: string }): ToolResult {
+  const op = 'patch_design';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  const invalid = args.selectors.filter(s => typeof s.path !== 'string' || !s.path);
+  if (invalid.length > 0) return errResult(op, 'Selectors missing path field', 'Each selector needs { path: "dot.path", value: ... }', progress);
+
+  if (args.dry_run) {
+    // Validate without touching the file
+    const spec = readYAML<Record<string, unknown>>(dPath);
+    const wouldPatch: string[] = [];
+    const errors: string[] = [];
+    for (const sel of args.selectors) {
+      if (setNestedValue(spec, sel.path, sel.value)) wouldPatch.push(sel.path);
+      else errors.push(`${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
+    }
+    progress.push(errors.length === 0 ? pOk(`Dry-run: ${wouldPatch.length} path(s) valid`) : pWarn('Dry-run: some paths invalid', errors.join('; ')));
+    const context = buildContext(op, `Dry-run validated ${wouldPatch.length} selector(s)`);
+    const handover = buildHandover('PATCH', { design_path: dPath });
+    return okResult(op, { dry_run: true, would_patch: wouldPatch, errors, progress, context, handover });
+  }
+
+  const bak = snapshot(dPath);
+  progress.push(pInfo('Snapshot created', path.basename(bak)));
+  const spec = readYAML<Record<string, unknown>>(dPath);
+  const patched: string[] = [];
+  const unresolved: string[] = [];
+  const inert: string[] = [];
+  for (const sel of args.selectors) {
+    if (setNestedValue(spec, sel.path, sel.value)) {
+      patched.push(sel.path);
+      const w = inertPresetKeyWarning(spec, sel.path);
+      if (w) inert.push(w);
+    } else {
+      unresolved.push(sel.path);
+    }
+  }
+  // Every selector missed — almost always `layers[0].x` against a design whose
+  // shape the model guessed wrong. Fail loudly instead of reporting a phantom
+  // success the model can't see through (it has no render).
+  if (patched.length === 0 && unresolved.length > 0) {
+    return errResult(op,
+      `None of the ${unresolved.length} patch path(s) resolved: ${unresolved.join(', ')}`,
+      'Run inspect_design first to read exact paths. Layers are addressable by index (layers[0].x) or id filter (layers[id=foo].x).',
+      progress);
+  }
+  writeYAML(dPath, spec);
+  progress.push(pOk(`Patched ${patched.length} field(s)`, patched.join(', ')));
+  if (unresolved.length) progress.push(pWarn(`${unresolved.length} path(s) did not resolve — not applied`, unresolved.join(', ')));
+  for (const w of inert) progress.push(pWarn('Patch has no render effect', w));
+
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: inert.length ? 'Some patches hit an expanded preset (no effect) — remove_layer + add_layers to change it. Otherwise seal_design.' : 'Fields patched. Call seal_design or make further patches.' };
+  const context = buildContext(op, `Patched ${patched.length} field(s) in ${path.basename(dPath)}`, [
+    { type: 'design', path: dPath, role: 'updated' },
+  ]);
+  const handover = buildHandover('PATCH', { design_path: dPath });
+  return okResult(op, { patched_paths: patched, count: patched.length, ...(unresolved.length ? { unresolved } : {}), ...(inert.length ? { inert_no_effect: inert } : {}), next_action, progress, context, handover }, bak);
+}
+
+// Does the design carry anything that actually RENDERS as content — not just a
+// background wash and empty groups? A weak model sometimes seals a shell: a
+// background rect + an empty {type:"group", layers:[]} it forgot to fill, or a
+// payload that degraded to nothing — every such design renders BLANK. Recurse
+// for a single text layer with real copy, or a content leaf (icon/image/chart/
+// callout/…). Plain rects/ellipses are treated as decor/background, so a design
+// that is ONLY shapes does not count (the rare pure-shape poster trades off
+// against reliably catching the blank-poster class).
+
+export function hasRenderableContent(spec: DesignSpec): boolean {
+  const CONTENT_LEAF = new Set(['icon', 'image', 'chart', 'interactive_chart', 'interactive_table',
+    'kpi_card', 'mermaid', 'math', 'qrcode', 'map', 'embed_code', 'callout', 'button', 'code', 'particle']);
+  const hasText = (o: Record<string, unknown>): boolean => {
+    const c = o['content'];
+    const v = typeof c === 'string' ? c
+      : (c && typeof c === 'object' ? (c as Record<string, unknown>)['value'] : (o['text'] ?? o['value']));
+    return typeof v === 'string' && v.trim().length > 0;
+  };
+  const visit = (ls?: Layer[]): boolean => {
+    for (const l of ls ?? []) {
+      if (!l || typeof l !== 'object') continue;
+      const o = l as unknown as Record<string, unknown>;
+      const t = o['type'];
+      if ((t === 'text' || t === 'rich_text') && hasText(o)) return true;
+      if (typeof t === 'string' && CONTENT_LEAF.has(t)) return true;
+      if (Array.isArray(o['layers']) && visit(o['layers'] as Layer[])) return true;
+      if (Array.isArray(o['tabs'])) for (const tab of o['tabs'] as Record<string, unknown>[]) if (visit(tab?.['layers'] as Layer[] | undefined)) return true;
+      if (Array.isArray(o['items'])) for (const it of o['items'] as Record<string, unknown>[]) if (it && Array.isArray(it['layers']) && visit(it['layers'] as Layer[])) return true;
+    }
+    return false;
+  };
+  for (const p of spec.pages ?? []) if (visit(p.layers)) return true;
+  return visit(spec.layers);
+}
+
+// A poster that IS a single full-bleed preset group should size the document to
+// that group. The add_layers auto-fit does this when the preset is first added,
+// but a blind model often RESIZES the canvas afterward (and writes a string dim
+// like '2000') — leaving the preset floating in a half-empty page (the
+// feature_grid "bottom 40% blank" the harness test exposed). Re-fit at seal so
+// the finished poster is always sized to its content. Also normalizes string dims.
+
+export function fitDocumentToSolePreset(spec: DesignSpec): boolean {
+  if (spec.pages && spec.pages.length) return false;
+  const doc = spec.document as unknown as { width: number; height: number };
+  const dw = Number(doc.width), dh = Number(doc.height);
+  if (!Number.isFinite(dw) || !Number.isFinite(dh)) return false;
+  let changed = false;
+  if (doc.width !== dw) { doc.width = dw; changed = true; }    // normalize '2000' → 2000
+  if (doc.height !== dh) { doc.height = dh; changed = true; }
+  const layers = spec.layers ?? [];
+  if (layers.length !== 1) return changed;
+  const g = layers[0] as Layer & { type?: string; x?: number; y?: number; width?: number; height?: number };
+  const gw = Number(g.width), gh = Number(g.height);
+  if (g.type !== 'group' || !(gw > 0) || !(gh > 0)) return changed;
+  if ((g.x ?? 0) > dw * 0.02 || (g.y ?? 0) > dh * 0.02) return changed;   // must be full-bleed at origin
+  if (doc.width !== gw) { doc.width = gw; changed = true; }
+  if (doc.height !== gh) { doc.height = gh; changed = true; }
+  return changed;
+}
+
+export function sealDesign(args: { design_path: string; project_path?: string }): ToolResult {
+  const op = 'seal_design';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  const spec = readYAML<DesignSpec>(dPath);
+  // Never seal a BLANK poster. A weak model that thrashed (hallucinated tool
+  // names, looped, or built a {type:"group",layers:[]} shell it forgot to fill)
+  // can reach seal_design with no renderable content — sealing then ships an
+  // empty design + a blank link. Refuse when the canvas has no layers OR every
+  // layer is just a background/empty group, and point it back at add_layers.
+  // (Carousels have a `pages` key and their own page-completion flow — skip them.)
+  if (!spec.pages && !hasRenderableContent(spec)) {
+    return errResult(op, 'Cannot seal a blank design — it has no visible content (every layer is a background or an empty group), so it would render empty.',
+      'Call add_layers FIRST with ONE FILLED preset layer (use the prefixed tool name mcp__folio__add_layers), e.g. layers_shorthand:[{type:"sections", title:"…", subtitle:"…", blocks:[{type:"stats",items:[{value:"…",label:"…"}]},{type:"heading_text",heading:"…",body:"…"},{type:"bars",items:[…]},{type:"callout",text:"…"}]}]; then diagnose_design; then seal_design.', progress);
+  }
+  // A carousel must not seal with a BLANK slide — a page that's empty or only
+  // background shapes (no text/image/preset) renders blank but the model reports
+  // success (live find: a 5-slide deck whose 4 content slides were two bg rects
+  // each, sealed "0 errors"). Name the blank pages and send it back to fill them.
+  if (spec.pages && spec.pages.length) {
+    const blank = spec.pages.filter(p => !pageHasReadableContent(p.layers ?? []));
+    if (blank.length) {
+      const ids = blank.map(p => p.id).join(', ');
+      return errResult(op, `Cannot seal — ${blank.length} carousel page(s) have no readable content (empty or only background shapes), so they render blank: ${ids}.`,
+        'Add each slide\'s title + content before sealing. Easiest: one preset per page, e.g. add_layers/append_page with layers_shorthand:[{type:"list", title:"…", marker:"number", items:[{title:"…",desc:"…"}], footer:"…"}] or {type:"feature_grid", title:"…", items:[{icon,title,desc}]}.', progress);
+    }
+  }
+  const bak = snapshot(dPath);
+  progress.push(pInfo('Snapshot created', path.basename(bak)));
+  if (fitDocumentToSolePreset(spec)) progress.push(pInfo('Fitted canvas to content', `${spec.document.width}×${spec.document.height}`));
+  spec._mode = 'complete';
+  if (spec.meta.generation) spec.meta.generation.status = 'complete';
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(dPath, spec);
+  progress.push(pOk('Design sealed', `${spec.pages?.length ?? 0} page(s), ${spec.layers?.length ?? 0} root layer(s)`));
+
+  const link = buildEditorLink(dPath);
+  progress.push(pOk('Editor link', link.short_url ?? link.open_url));
+  // Hand the SHORT link to the user — a small model mangles the long tokenized
+  // URL (truncates / re-encodes it). share_url is ~40 chars and copy-safe.
+  const next_action: NextAction = { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: `Export with export_design. To open or share the design, give the user this link EXACTLY as written (do not retype or re-encode it): ${link.short_url ?? link.open_url}` };
+  const context = buildContext(op, `Sealed design "${spec.meta.name}"`, [
+    { type: 'design', path: dPath, role: 'sealed' },
+  ]);
+  const handover = buildHandover('SEAL', { design_path: dPath }, { type: spec.meta.type });
+  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
+}
+
+// Known layer types — kept in sync with LayerType in src/schema/types.ts.
+// Used to reject garbage like type:"frobozz" before it lands on disk.
+
+export const VALID_LAYER_TYPES = new Set([
+  'rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line',
+  'text', 'image', 'icon', 'component', 'component_list',
+  'mermaid', 'chart', 'code', 'math', 'group', 'qrcode',
+  'auto_layout', 'interactive_chart', 'interactive_table',
+  'rich_text', 'kpi_card', 'map', 'embed_code', 'popup', 'particle',
+  'button', 'tabs', 'accordion', 'filter_bar', 'toggle',
+  'tooltip', 'callout', 'progress',
+]);
+
+// Layer types that render INVISIBLY when width or height is 0 / missing.
+// LLM agents commonly omit these in verbose form, producing a blank canvas
+// that no test catches. Reject at write time with an actionable error so
+// the agent fixes the YAML immediately instead of debugging from the SVG.
+
+export const SIZED_LAYER_TYPES = new Set([
+  'rect', 'circle', 'ellipse', 'image', 'icon', 'group',
+  'chart', 'interactive_chart', 'interactive_table', 'rich_text', 'kpi_card',
+  'mermaid', 'code', 'math', 'qrcode', 'map', 'embed_code',
+]);
+
+export function dimError(l: Layer): string | null {
+  if (!SIZED_LAYER_TYPES.has(l.type)) return null;
+  // Flow-report layers are positioned by `span` (responsive grid), not px dimensions.
+  const span = (l as Layer & { span?: number }).span;
+  if (typeof span === 'number' && span > 0) return null;
+  const w = (l as Layer & { width?: number }).width;
+  const h = (l as Layer & { height?: number }).height;
+  // pos:[x,y,w,h] shorthand still pending expansion — accept it.
+  const pos = (l as Layer & { pos?: number[] }).pos;
+  if (Array.isArray(pos) && pos.length >= 4 && pos[2] && pos[3]) return null;
+  if (typeof w !== 'number' || w <= 0) return `Layer "${l.id}" (${l.type}) needs a positive width — got ${w}`;
+  if (typeof h !== 'number' || h <= 0) return `Layer "${l.id}" (${l.type}) needs a positive height — got ${h}`;
+  return null;
+}
+
+export function addLayer(args: { design_path: string; page_id?: string; layer: Layer; project_path?: string }): ToolResult {
+  const op = 'add_layer';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  if (!args.layer || !args.layer.type || !VALID_LAYER_TYPES.has(args.layer.type)) {
+    return errResult(
+      op,
+      `Invalid layer.type: "${args.layer?.type}"`,
+      `Allowed: ${[...VALID_LAYER_TYPES].join(', ')}`,
+    );
+  }
+  const dimMsg = dimError(args.layer);
+  if (dimMsg) return errResult(op, dimMsg, 'Pass explicit width + height (px) or use pos:[x,y,w,h] shorthand.');
+
+  const bak = snapshot(dPath);
+  progress.push(pInfo('Snapshot created', path.basename(bak)));
+  const spec = readYAML<DesignSpec>(dPath);
+
+  if (args.page_id && spec.pages) {
+    const page = spec.pages.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`, progress);
+    if (!page.layers) page.layers = [];
+    page.layers.push(args.layer);
+  } else {
+    if (!spec.layers) spec.layers = [];
+    spec.layers.push(args.layer);
+  }
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(dPath, spec);
+  progress.push(pOk(`Added layer "${args.layer.id}"`, args.layer.type));
+
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: 'Continue adding layers or call seal_design.' };
+  const context = buildContext(op, `Added layer "${args.layer.id}" to ${path.basename(dPath)}`);
+  const handover = buildHandover('COMPOSE', { design_path: dPath });
+  return okResult(op, { layer_id: args.layer.id, next_action, progress, context, handover }, bak);
+}
+
+// Which scopes (root + page ids) carry a top-level layer with this id. >1 means
+// an unscoped remove/update would hit multiple pages — carousel preset groups
+// share ids (sections_1 / editorial_1), so this guards the silent-nuke footgun.
+
+export function pagesWithLayer(spec: DesignSpec, layerId: string): string[] {
+  const hits: string[] = [];
+  if (spec.layers?.some(l => l.id === layerId)) hits.push('(root)');
+  for (const p of spec.pages ?? []) if (p.layers?.some(l => l.id === layerId)) hits.push(p.id);
+  return hits;
+}
+
+export function updateLayer(args: { design_path: string; layer_id: string; props: Partial<Layer>; page_id?: string; project_path?: string }): ToolResult {
+  const op = 'update_layer';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  const bak = snapshot(dPath);
+  progress.push(pInfo('Snapshot created', path.basename(bak)));
+  const spec = readYAML<DesignSpec>(dPath);
+  let found = false;
+
+  const patch = (layers: Layer[]): Layer[] =>
+    layers.map(l => { if (l.id === args.layer_id) { found = true; return { ...l, ...args.props } as Layer; } return l; });
+
+  // page_id scopes the edit to ONE carousel page — without it the same id on
+  // sibling pages would all be patched (carousel groups share ids).
+  if (args.page_id) {
+    const page = spec.pages?.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use inspect_design to list page IDs.', progress);
+    if (page.layers) page.layers = patch(page.layers);
+  } else {
+    const hits = pagesWithLayer(spec, args.layer_id);
+    if (hits.length > 1) return errResult(op, `Layer id "${args.layer_id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to patch all of them.`, 'Pass page_id to update ONE page (carousel pages share layer IDs).', progress);
+    if (spec.layers) spec.layers = patch(spec.layers);
+    if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = patch(page.layers); }
+  }
+  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use inspect_design to find layer IDs.', progress);
+
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(dPath, spec);
+  progress.push(pOk(`Updated layer "${args.layer_id}"`, Object.keys(args.props).join(', ')));
+
+  const next_action: NextAction = { tool: 'seal_design', params: { design_path: dPath }, remaining: -1, hint: 'Continue editing or call seal_design.' };
+  const context = buildContext(op, `Updated layer "${args.layer_id}" in ${path.basename(dPath)}`);
+  const handover = buildHandover('PATCH', { design_path: dPath });
+  return okResult(op, { updated: args.layer_id, next_action, progress, context, handover }, bak);
+}
+
+export function removeLayer(args: { design_path: string; layer_id: string; page_id?: string; project_path?: string }): ToolResult {
+  const op = 'remove_layer';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  const bak = snapshot(dPath);
+  progress.push(pInfo('Snapshot created', path.basename(bak)));
+  const spec = readYAML<DesignSpec>(dPath);
+  let removed = 0;
+  const drop = (layers: Layer[]): Layer[] => { const k = layers.filter(l => l.id !== args.layer_id); removed += layers.length - k.length; return k; };
+  // page_id scopes removal to ONE carousel page. WITHOUT it the same id on
+  // sibling pages is removed too (carousel groups share ids) — the footgun that
+  // silently emptied 3 pages when one page's group was deleted by id.
+  if (args.page_id) {
+    const page = spec.pages?.find(p => p.id === args.page_id);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use inspect_design to list page IDs.', progress);
+    if (page.layers) page.layers = drop(page.layers);
+  } else {
+    const hits = pagesWithLayer(spec, args.layer_id);
+    if (hits.length > 1) return errResult(op, `Layer id "${args.layer_id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to remove from all (this silently empties sibling slides).`, 'Pass page_id to remove it from ONE page (carousel pages share layer IDs).', progress);
+    if (spec.layers) spec.layers = drop(spec.layers);
+    if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = drop(page.layers); }
+  }
+  if (removed === 0) return errResult(op, `Layer not found: ${args.layer_id}`, args.page_id ? `No layer "${args.layer_id}" on page "${args.page_id}".` : 'Use inspect_design to find layer IDs.', progress);
+
+  spec.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(dPath, spec);
+  progress.push(pOk(`Removed layer "${args.layer_id}"`, removed > 1 ? `${removed} matches across pages — pass page_id to scope` : undefined));
+
+  const next_action: NextAction = { tool: 'inspect_design', params: { design_path: dPath }, remaining: -1, hint: 'Verify removal with inspect_design, then continue or seal.' };
+  const context = buildContext(op, `Removed layer "${args.layer_id}" from ${path.basename(dPath)}`);
+  const handover = buildHandover('PATCH', { design_path: dPath });
+  return okResult(op, { removed: args.layer_id, next_action, progress, context, handover }, bak);
+}
+
+// ── Tier 3 — Export & Templates ──────────────────────────────
+
+// Blank image srcs pointing at a local file we can't find, so the renderer
+// shows its placeholder frame instead of a blank gap on export. Mutates the
+// (export-only, non-persisted) spec and returns a note per blanked layer so
+// the caller can tell the model to fix the asset. Skips http(s)/data/file URIs.
