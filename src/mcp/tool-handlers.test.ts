@@ -427,6 +427,30 @@ describe('sealDesign', () => {
     expect(Number(intro.y) + Number(intro.height)).toBeLessThanOrEqual(1080);      // clamped on-canvas
   });
 
+  it('measures + fits an oversized hand-placed quote so its attribution stays on-canvas', () => {
+    const projectPath = path.join(tmpDir, 'quote-overflow-project');
+    createProject({ name: 'QuoteOverflow', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'QuoteOverflow', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/quoteoverflow.design.yaml');
+    // The Steve Jobs quote failure: a blind model sizes a hand-placed quote so large
+    // (fs 160) it wraps to 6 lines and fills the whole canvas, with height:0 so no
+    // geometry pass can see it — the attribution it placed below overprints the body
+    // and then gets shoved off the bottom. Measure true height + shrink the hero so
+    // the attribution fits.
+    addLayers({ design_path: designPath, layers: [
+      { id: 'bg', type: 'rect', z: -1, x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#EDE8DC' } },
+      { id: 'quote', type: 'text', z: 1, x: 90, y: 22, width: 900, height: 0, content: { type: 'plain', value: 'The only way to do great work is to love what you do.' }, style: { font_family: 'Playfair Display', font_size: 160, font_weight: 'bold' } },
+      { id: 'attr', type: 'text', z: 2, x: 90, y: 440, width: 900, height: 0, content: { type: 'plain', value: '- Steve Jobs' }, style: { font_size: 40 } },
+    ] as unknown as Layer[] });
+    const top = parseYAMLDesign(designPath).layers ?? [];
+    const quote = top.find(l => (l as { id?: string }).id === 'quote') as unknown as { y?: number; height?: number; style?: { font_size?: number } };
+    const attr = top.find(l => (l as { id?: string }).id === 'attr') as unknown as { y?: number; height?: number };
+    expect(Number(quote.style?.font_size)).toBeLessThan(160);                        // oversized hero shrunk
+    expect(Number(quote.height)).toBeGreaterThan(0);                                 // true height measured (was 0)
+    expect(Number(attr.y)).toBeGreaterThanOrEqual(Number(quote.y) + Number(quote.height) - 2); // attribution below the quote, no overprint
+    expect(Number(attr.y) + Number(attr.height)).toBeLessThanOrEqual(1080);          // attribution stays on-canvas
+  });
+
   it('a presentation filled via add_layers+page_id fills each slide and stays cohesive (create_presentation path)', () => {
     const projectPath = path.join(tmpDir, 'deck-project');
     createProject({ name: 'Deck', path: projectPath });

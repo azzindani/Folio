@@ -1329,6 +1329,102 @@ function decollideHandPlaced(layers: Layer[], W: number, H: number): number {
   return moved;
 }
 
+// A blind model stores hand-placed text with height:0 — it can't see how many
+// lines its words will wrap to, so it leaves the box height unset (or guesses a
+// single line). EVERY geometry safety pass that runs on the merged set —
+// spreadStackedText, snapOffCanvasContent, promoteCoveredTitle — reads that 0 as
+// a zero-height box and never fires, so a quote that wraps to five lines silently
+// overprints its attribution and spills off the canvas (decollideHandPlaced would
+// catch it, but it only runs on THIS call's `incoming`, missing text split across
+// add_layers calls). Measure each TOP-LEVEL sized text's true wrapped height and
+// set it, so the downstream passes see the box that will actually render. Only
+// top-level (auto_layout card text keeps relative coords); only grows a too-short
+// box, never shrinks a real one; unsized text is left to structureHandPlacedText.
+// Average glyph advance as a fraction of font size — condensed display faces
+// (Anton/Bebas/Oswald) pack ~35% more characters per line than a default serif/
+// sans, monospace fewer. Feeding the right factor to estTextHeight keeps a
+// headline in a condensed font from being over-measured (and needlessly shrunk).
+function fontCharFactor(font: string): number {
+  const f = (font || '').toLowerCase();
+  if (/mono|courier|consolas/.test(f)) return 0.6;
+  if (/bebas|anton|oswald|archivo narrow|condensed|teko|fjalla/.test(f)) return 0.4;
+  return 0.54;
+}
+
+// A blind model routinely sizes a hand-placed hero line (a quote, a big headline)
+// far too large — it can't see that the words wrap to five lines and fill the
+// whole canvas, leaving no room for the attribution/footer it also placed (which
+// then gets shoved off the bottom by the de-collide). When a MULTI-LINE top-level
+// text overflows the space left after its sibling texts + margins, shrink its font
+// until it fits. Multi-line gate (lines>=3) so a deliberately giant one-word poster
+// ("SALE") is never shrunk. Hand-placed posters only — a preset owns its own sizing.
+function fitOverflowingHeroText(layers: Layer[], _W: number, H: number): number {
+  const measure = (l: Layer): { h: number; lines: number; fs: number } | null => {
+    if (!l || l.type !== 'text') return null;
+    const o = l as unknown as Record<string, unknown>;
+    const text = layerText(l).trim(); if (!text) return null;
+    const style = (o['style'] as Record<string, unknown>) ?? {};
+    const fs = Number(style['font_size']); if (!(fs > 0)) return null;
+    const lh = Number(style['line_height']) || 1.4;
+    const font = typeof style['font_family'] === 'string' ? style['font_family'] as string : '';
+    const p = o['pos'];
+    const w = Number(o['width']) || (Array.isArray(p) && p.length >= 3 ? Number(p[2]) : 0);
+    if (!(w > 0)) return null;
+    const h = estTextHeight(text, fs, w, lh, fontCharFactor(font));
+    return { h, lines: Math.max(1, Math.round(h / (fs * lh))), fs };
+  };
+  const texts = layers.filter(l => measure(l));
+  if (texts.length < 2) return 0;                               // nothing to make room for
+  const margin = Math.round(H * 0.14), gap = Math.round(H * 0.02);
+  let fixed = 0;
+  for (const l of texts) {
+    const m = measure(l); if (!m || m.lines < 3) continue;       // only a wrapped block can overflow
+    let sib = 0;
+    for (const s of texts) { if (s === l) continue; const sm = measure(s); if (sm) sib += sm.h; }
+    const avail = H - margin - gap * (texts.length - 1) - sib;
+    if (m.h <= avail || avail < H * 0.2) continue;               // already fits / no sane room
+    const o = l as unknown as Record<string, unknown>;
+    const style = o['style'] as Record<string, unknown>;
+    let fs = m.fs;
+    while (fs > 24) {                                            // shrink until the block fits the room left
+      fs = Math.round(fs * 0.9);
+      style['font_size'] = fs;
+      const mm = measure(l);
+      if (mm && mm.h <= avail) break;
+    }
+    fixed++;
+  }
+  return fixed;
+}
+
+function setMeasuredTextHeights(layers: Layer[], _W: number): number {
+  let set = 0;
+  for (const l of layers) {
+    if (!l || l.type !== 'text') continue;
+    const o = l as unknown as Record<string, unknown>;
+    const text = layerText(l).trim();
+    if (!text) continue;
+    const style = (o['style'] as Record<string, unknown>) ?? {};
+    const fs = Number(style['font_size']);
+    if (!(fs > 0)) continue;                                     // unsized → structureHandPlacedText owns it
+    const lh = Number(style['line_height']) || 1.4;
+    const font = typeof style['font_family'] === 'string' ? style['font_family'] as string : '';
+    const p = o['pos'];
+    const w = Number(o['width']) || (Array.isArray(p) && p.length >= 3 ? Number(p[2]) : 0);
+    if (!(w > 0)) continue;
+    const measured = estTextHeight(text, fs, w, lh, fontCharFactor(font));
+    const given = Number(o['height']) || (Array.isArray(p) && p.length >= 4 ? Number(p[3]) : 0) || 0;
+    // Track the measured height in BOTH directions: a height:0 box must grow, but a
+    // box left STALE-tall after fitOverflowingHeroText shrank the font must shrink
+    // too — otherwise the inflated box shoves the layers below it off the canvas.
+    if (Math.abs(measured - given) > 2) {
+      if (Array.isArray(p) && p.length >= 4) p[3] = measured; else o['height'] = measured;
+      set++;
+    }
+  }
+  return set;
+}
+
 function clampShorthandToCanvas(layers: ShorthandLayer[], W: number, H: number): void {
   if (!(W > 0) || !(H > 0)) return;
   for (const sh of layers) {
@@ -1670,6 +1766,21 @@ export function addLayers(args: {
   // stacked duplicate groups + overlapping near-duplicate text.
   const droppedOverlap = dedupOverlappingDuplicates(activeLayers, spec.document.width, spec.document.height);
   if (droppedOverlap) progress.push(pInfo(`Removed ${droppedOverlap} stacked/overlapping duplicate(s)`, 'a rebuild stacked identical groups + overlapping captions — kept the last'));
+
+  // On a hand-placed poster (no preset owns the layout), shrink any oversized
+  // multi-line hero line so the attribution/footer it placed below still fits —
+  // otherwise the de-collide shoves them off the bottom.
+  const hasContentPreset = activeLayers.some(l => l?.type === 'group' && CONTENT_PRESET_RE.test(String((l as unknown as Record<string, unknown>)['id'] ?? '')));
+  if (!spec.pages && !hasContentPreset) {
+    const fitted = fitOverflowingHeroText(activeLayers, spec.document.width, spec.document.height);
+    if (fitted) progress.push(pInfo(`Fitted ${fitted} oversized text block(s)`, 'shrank a wrapped hero line so its attribution/footer fits on canvas'));
+  }
+
+  // Give hand-placed text its TRUE wrapped height (the model stores height:0) so
+  // every geometry pass below sees the box that will actually render — without it
+  // a wrapped quote reads as a zero-height box and overprints / spills unchecked.
+  const measured = setMeasuredTextHeights(activeLayers, spec.document.width);
+  if (measured) progress.push(pInfo(`Measured ${measured} text height(s)`, 'set true wrapped height so overlap/overflow passes can see the box'));
 
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
