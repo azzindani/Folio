@@ -79,6 +79,44 @@ export const TIER1_TOOLS: ToolDefinition[] = [
     },
   },
   {
+    name: 'rename_design',
+    description: 'Rename a design\'s display name (its meta.name, what the library shows). The FILE path is left unchanged on purpose so existing editor links never break. Library-management op — pair with browse_library.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to the .design.yaml' },
+        new_name:     { type: 'string', description: 'New display name' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'new_name'],
+    },
+  },
+  {
+    name: 'delete_design',
+    description: 'Delete a design by moving it to the project\'s .trash/ (RECOVERABLE — never a hard delete; restore by moving it back out). Library-management op.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:  { type: 'string', description: 'Path to the .design.yaml to delete' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+      },
+      required: ['design_path'],
+    },
+  },
+  {
+    name: 'move_design',
+    description: 'Move a design\'s file into another project (name collisions get a suffix). Returns the new path + an editor link. Library-management op — the target project must already exist (create_project).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        design_path:    { type: 'string', description: 'Path to the .design.yaml to move' },
+        target_project: { type: 'string', description: 'Destination project (bare name like "my-project" or a path)' },
+        project_path:   { type: 'string', description: 'Source project dir — enables relative design_path' },
+      },
+      required: ['design_path', 'target_project'],
+    },
+  },
+  {
     name: 'list_themes',
     description: 'List available themes registered in project.yaml.',
     inputSchema: {
