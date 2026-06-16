@@ -1,8 +1,8 @@
 // Folio editor canvas — controller: constructor, render, state sync, selection overlay, event entry.
 // Split out of canvas.ts to stay within the line budget; verbatim bodies.
 import { StateManager, type EditorState } from './state';
-import { renderDesign, renderPage } from '../renderer/renderer';
-import { computeFlowLayout, flowGridMetrics } from '../renderer/flow-layout';
+import { renderEntry } from '../renderer/render-entry';
+import { flowGridMetrics } from '../renderer/flow-layout';
 import { setPreviewContext } from '../renderer/render-context';
 import type { TextLayer } from '../schema/types';
 import { composeTheme } from '../styles/compose';
@@ -185,7 +185,7 @@ export class CanvasManager extends CanvasInteractions {
     const { design, theme, palette, typePack, effectsPack } = this.state.get();
     if (!design) return;
 
-    const { width, height } = design.document;
+    const { width } = design.document;
 
     // Compose the active theme with any picked overlay primitives. When
     // nothing is picked, composeTheme returns the base theme by reference
@@ -201,43 +201,31 @@ export class CanvasManager extends CanvasInteractions {
     const pages = design.pages;
     const currentPageIndex = this.state.get().currentPageIndex;
     const report = design.report;
-    const isFlow = !!report && (report.layout === 'flow' || report.flow === true);
 
     // Expose the report's inline datasets + accent so interactive_chart /
     // interactive_table layers can draw a real data preview on the canvas
     // (the Chart.js/Tabulator runtime only exists in exported HTML).
     setPreviewContext({ sources: report?.data?.sources, accent: report?.accent });
 
-    // Reset flow-edit geometry; the isFlow branch below re-enables it.
+    // Reset flow-edit geometry; the isFlow result below re-enables it.
     this.flowActive = false;
     this.flowMetrics = null;
 
-    let svg: SVGSVGElement;
-    let renderW = width;
-    let renderH = height;
-
-    if (pages && pages.length > 0) {
-      const pageIdx = Math.min(currentPageIndex, pages.length - 1);
-      const page = pages[pageIdx];
-      const layers = page?.layers ?? [];
-      if (isFlow) {
-        // Lay span-positioned layers out in the responsive grid so the canvas
-        // matches the exported flow report (and selection handles line up).
-        const cw = (typeof report?.max_width === 'number' ? report.max_width : 0) || width || 1200;
-        const fl = computeFlowLayout(layers, { containerWidth: cw });
-        renderW = fl.width;
-        renderH = fl.height;
-        // Cache geometry so drag-to-reorder + span/height resize map cursor
-        // deltas to the same grid the layout used.
-        this.flowActive = true;
-        this.flowMetrics = flowGridMetrics({ containerWidth: cw });
-        this.flowContentHeight = renderH;
-        svg = renderPage(layers, renderW, renderH, { theme: composed, showGrid: false });
-      } else {
-        svg = renderPage(layers, width, height, { theme: composed, showGrid: this.state.get().gridVisible });
-      }
-    } else {
-      svg = renderDesign(design, { theme: composed, showGrid: this.state.get().gridVisible });
+    // Single render path shared with export + MCP (renderEntry): page select +
+    // flow-grid layout live there, so the canvas can never drift from the file.
+    const cw = (typeof report?.max_width === 'number' ? report.max_width : 0) || width || 1200;
+    const { svg, width: renderW, height: renderH, isFlow: flowed } = renderEntry(design, {
+      theme: composed,
+      pageIndex: pages && pages.length > 0 ? Math.min(currentPageIndex, pages.length - 1) : undefined,
+      containerWidth: cw,
+      showGrid: this.state.get().gridVisible,
+    });
+    if (flowed) {
+      // Cache geometry so drag-to-reorder + span/height resize map cursor
+      // deltas to the same grid the layout used.
+      this.flowActive = true;
+      this.flowMetrics = flowGridMetrics({ containerWidth: cw });
+      this.flowContentHeight = renderH;
     }
 
     // Inject animation CSS into the SVG so YAML-declared enter/loop/exit

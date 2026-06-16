@@ -148,8 +148,8 @@ Return a tokenized editor URL (live-refreshes as later tools edit). Note: create
 - **Opt:** `design_path` (omit = editor home), `project_path`, `editor_url` (override base), `page` (1-based).
 
 #### `export_design`
-Export to **SVG / PNG / HTML** (real files; a carousel → one file per page, `output_paths` lists them). `pdf` stages an HTML for Puppeteer and returns `success:false` with the path.
-- **Req:** `design_path`, `format` (`svg`|`html`|`pdf`|`png`). **Opt:** `output_path`, `scale` (1–3, default 2), `project_path`.
+Export to **SVG / PNG / PDF / HTML** (real files; a carousel → one file per page, `output_paths` lists them). `pdf` is a true **vector PDF**: text is embedded as real, selectable/copy-paste glyphs that stay crisp at any zoom, over a high-DPI raster for backgrounds/gradients/effects (in-process via jsPDF — no Puppeteer). `vector_runs` reports how many text runs were vectorized; text with gradient fills, rotation, curved paths, or unbundled fonts stays in the raster.
+- **Req:** `design_path`, `format` (`svg`|`html`|`pdf`|`png`). **Opt:** `output_path`, `scale` (1–3, default 2 — PDF raster backdrop defaults to 3), `project_path`.
 
 #### `export_library_gallery`
 Build a self-contained `library.html` file-manager for the whole library (thumbnail cards + live search + editor click-through). Re-renders only changed designs.

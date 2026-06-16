@@ -6,6 +6,7 @@ import { showToast } from '../../utils/toast';
 import { batchExportDialog } from '../dialogs/batch-export';
 import { exportAsTemplate } from '../../schema/template';
 import { BUILTIN_THEMES } from '../../themes/builtin';
+import { composeTheme } from '../../styles/compose';
 
 export class ToolbarManager {
   private container: HTMLElement;
@@ -193,15 +194,26 @@ export class ToolbarManager {
     format: 'svg' | 'png' | 'pdf' | 'html' | 'html-report',
     scale: number,
   ): Promise<void> {
-    const { design, theme } = this.state.get();
+    const { design, theme, palette, typePack, effectsPack } = this.state.get();
     if (!design) return;
     try {
+      // Compose the picked style overlays into the theme EXACTLY as the canvas
+      // does (composeTheme returns the base theme by reference when nothing is
+      // picked) — otherwise the export renders the un-composed base theme and
+      // its colours/type drift from the on-screen preview.
+      const composed = theme
+        ? composeTheme(theme, {
+            palette: palette ?? undefined,
+            typePack: typePack ?? undefined,
+            effectsPack: effectsPack ?? undefined,
+          })
+        : undefined;
       // Capture the live canvas for raster formats so charts/tables/KPIs that
       // JS drew into foreignObjects are included (static re-render loses them).
       const liveElement = (format === 'png' || format === 'pdf')
         ? this.app.getCanvasExportNode() ?? undefined
         : undefined;
-      await exportDesign(design, { format, theme: theme ?? undefined, scale, liveElement });
+      await exportDesign(design, { format, theme: composed, scale, liveElement });
       const label = format === 'html-report' ? 'Interactive HTML' : format.toUpperCase();
       const suffix = format === 'png' ? ` (×${scale})` : '';
       showToast(`Exported as ${label}${suffix}`, 'success');

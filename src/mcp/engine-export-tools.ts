@@ -18,7 +18,8 @@ import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink } from './engine/editor-link';
 
-import { renderToSVGString } from './engine/svg-export';
+import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
+import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 
 import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
@@ -199,56 +200,63 @@ export function exportDesign(args: { design_path: string; format: string; output
     }
   }
   if (args.format === 'pdf') {
-    // Real PDF, in-container (no browser): rasterize each page through resvg
-    // with the bundled fonts (so type matches the editor) and place it full-
-    // page in a jsPDF, then add `/Link` annotations over every hyperlinked
-    // layer. This is a high-resolution RASTER pdf with working links — crisp
-    // at practical zoom. For selectable text / infinite-zoom vector, the SVG
-    // export (now self-contained) or the hi-fi browser worker is the path.
+    // Hybrid VECTOR PDF, in-container (no browser/Chromium): text is drawn as
+    // real, selectable glyphs with embedded bundled fonts (crisp at ANY zoom,
+    // copy-paste works) over a high-DPI resvg raster that carries backgrounds,
+    // gradients and effects. Text that can't be placed exactly (gradient fill,
+    // rotation, curved paths, unbundled fonts) stays in the raster, so the PDF
+    // is never worse than the old all-raster output. `/Link` annotations sit
+    // over every hyperlinked layer.
     try {
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 3;
       const missingFonts = new Set<string>();
-      const rasterize = (svgStr: string): Buffer => {
-        for (const f of unbundledFonts(svgStr)) missingFonts.add(f);
-        return Buffer.from(new Resvg(svgStr, {
-          fitTo: { mode: 'zoom', value: scale },
-          background: 'rgba(255,255,255,1)',
-          font: resvgFontOption(),
-        }).render().asPng());
-      };
-      const W = spec.document.width, H = spec.document.height;
       const toPt = (px: number): number => (px * 72) / 96;
-      const orient = W >= H ? 'landscape' : 'portrait';
-      const pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(W), toPt(H)], compress: true });
-      const addDesignPage = (svgStr: string, layers: Layer[], first: boolean): void => {
-        if (!first) pdf.addPage([toPt(W), toPt(H)], orient);
-        const png = rasterize(svgStr);
-        pdf.addImage(`data:image/png;base64,${png.toString('base64')}`, 'PNG', 0, 0, toPt(W), toPt(H), undefined, 'FAST');
-        for (const r of collectHrefRects(layers)) {
+      const dim = (el: SVGSVGElement, attr: 'width' | 'height', fallback: number): number => {
+        const v = parseFloat(el.getAttribute(attr) ?? '');
+        return Number.isFinite(v) && v > 0 ? v : fallback;
+      };
+
+      // One render spec per output page. Rendering also applies flow layout +
+      // mutates layer geometry in place, so the link rects read post-layout.
+      const sheetSpecs = multiPage
+        ? pages.map(page => ({ spec: { ...spec, layers: page.layers ?? [], pages: undefined } as DesignSpec, layers: page.layers ?? [] }))
+        : [{ spec, layers: spec.layers ?? [] }];
+
+      const registered = new Set<string>();
+      let vectorRuns = 0;
+      let pdf: jsPDF | null = null;
+      sheetSpecs.forEach(s => {
+        // Render to a LIVE element (not a string) so the vector-PDF builder can
+        // walk <text> nodes directly — re-parsing the string would throw on
+        // markdown foreignObject HTML (not valid XML).
+        const el = renderToSVGElement(s.spec, undefined, undefined, componentRegistry);
+        const w = dim(el, 'width', spec.document.width);
+        const h = dim(el, 'height', spec.document.height);
+        for (const f of unbundledFonts(serializeSVGElement(el))) missingFonts.add(f);
+        const orient = w >= h ? 'landscape' : 'portrait';
+        if (!pdf) pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(w), toPt(h)], compress: true });
+        else pdf.addPage([toPt(w), toPt(h)], orient);
+        vectorRuns += addVectorPdfPage(pdf as unknown as PdfDoc, { svg: el, width: w, height: h }, scale, registered);
+        for (const r of collectHrefRects(s.layers)) {
           pdf.link(toPt(r.x), toPt(r.y), toPt(r.w), toPt(r.h), { url: r.href });
         }
-      };
+      });
+      const doc = pdf as unknown as jsPDF;
+
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
-      if (multiPage) {
-        pages.forEach((page, i) => addDesignPage(renderPageSVG(page), page.layers ?? [], i === 0));
-      } else {
-        addDesignPage(renderToSVGString(spec, undefined, undefined, componentRegistry), spec.layers ?? [], true);
-      }
-      const pdfBuf = Buffer.from(pdf.output('arraybuffer'));
+      const pdfBuf = Buffer.from(doc.output('arraybuffer'));
       fs.writeFileSync(outPath, pdfBuf);
-      progress.push(pOk('PDF written', `${path.basename(outPath)} (${pdfBuf.length} bytes @ ${scale}×)`));
-      const linkCount = multiPage
-        ? pages.reduce((n, p) => n + collectHrefRects(p.layers ?? []).length, 0)
-        : collectHrefRects(spec.layers ?? []).length;
+      progress.push(pOk('PDF written', `${path.basename(outPath)} (${pdfBuf.length} bytes @ ${scale}× · ${vectorRuns} vector text run(s))`));
+      const linkCount = sheetSpecs.reduce((n, s) => n + collectHrefRects(s.layers).length, 0);
       const notes = [
-        'PDF is a high-resolution raster with clickable links and editor-matching fonts. For selectable text / infinite-zoom vector, use export_design format:"svg" (self-contained) or the hi-fi browser worker.',
-        ...(missingFonts.size ? [`Fonts not bundled — fell back to a default in raster: ${[...missingFonts].join(', ')}.`] : []),
+        `Vector PDF — ${vectorRuns} text run(s) embedded as selectable, zoom-crisp glyphs over a ${scale}× raster (backgrounds/gradients/effects). Copy-paste works; text stays sharp at any zoom.`,
+        ...(missingFonts.size ? [`Some text stayed in the raster (font not bundled, so it can't be embedded as vector): ${[...missingFonts].join(', ')}. Use a bundled family (Inter, Space Grotesk, Playfair Display, IBM Plex Mono…) for fully-vector text.`] : []),
       ];
       const context = buildContext(op, `PDF exported for "${spec.meta.name}"`, [{ type: 'pdf', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, links: linkCount, notes, progress, context, handover });
+      return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, links: linkCount, vector_runs: vectorRuns, notes, progress, context, handover });
     } catch (err) {
-      return errResult(op, `PDF render failed: ${(err as Error).message}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF.', progress);
+      return errResult(op, `PDF render failed: ${(err as Error).message}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF vector text.', progress);
     }
   }
   if (args.format === 'png') {
@@ -316,7 +324,7 @@ export function exportDesign(args: { design_path: string; format: string; output
   return errResult(
     op,
     `Unsupported export format: ${args.format}`,
-    `Supported formats: svg, png, html. PDF requires a separate Puppeteer step.`,
+    `Supported formats: svg, png, pdf (vector, selectable text), html.`,
     progress,
   );
 }

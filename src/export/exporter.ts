@@ -1,7 +1,8 @@
 import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
-import { renderDesign, renderPage } from '../renderer/renderer';
+import { renderEntry } from '../renderer/render-entry';
+import type { RenderEntryResult } from '../renderer/render-entry';
 import type { LoadedDataset } from '../report/data-loader';
 import { checkCanvasScale } from './canvas-limit';
 import { buildEmbeddedFontStyle } from './font-embed';
@@ -43,7 +44,7 @@ async function liveCanvasToPNG(node: HTMLElement, width: number, height: number,
 }
 
 export function exportToSVG(spec: DesignSpec, options: ExportOptions): string {
-  const svg = renderForExport(spec, options);
+  const { svg } = renderForExport(spec, options);
   return new XMLSerializer().serializeToString(svg);
 }
 
@@ -61,12 +62,32 @@ async function serializeWithFonts(svg: SVGSVGElement): Promise<string> {
 
 /** Async SVG export with fonts embedded — used by the download path. */
 export async function exportToSVGEmbedded(spec: DesignSpec, options: ExportOptions): Promise<string> {
-  return serializeWithFonts(renderForExport(spec, options));
+  return serializeWithFonts(renderForExport(spec, options).svg);
 }
 
 export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
   const scale = options.scale ?? 2;
-  const { width, height } = spec.document;
+
+  // Capture the LIVE canvas ONLY when the design has interactive widgets
+  // (charts/tables/KPIs) that JS drew into foreignObjects — a static re-render
+  // loses those. For everything else (posters, static reports) the canonical
+  // SVG render below is byte-identical to the editor preview, so we use it
+  // instead of dom-to-image: the DOM screenshot is non-deterministic (font
+  // races, partial CSS) and was the root cause of "preview ≠ export".
+  // pageIndex set ⇒ carousel page; the live element is only the current page.
+  if (options.liveElement && options.pageIndex === undefined && hasInteractiveContent(spec)) {
+    const { width, height } = spec.document;
+    const guard = checkCanvasScale(width, height, scale);
+    if (guard.ok) {
+      try {
+        return await liveCanvasToPNG(options.liveElement, width, height, scale);
+      } catch {
+        // fall through to the static path
+      }
+    }
+  }
+
+  const { svg, width, height } = renderForExport(spec, options);
 
   // Guard against the browser canvas dimension ceiling. Without this,
   // canvas silently produces a blank image when W×scale or H×scale
@@ -74,21 +95,6 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   const guard = checkCanvasScale(width, height, scale);
   if (!guard.ok) throw new Error(guard.reason);
 
-  // Preferred path: capture the LIVE canvas so charts/tables/KPIs (drawn by JS
-  // into foreignObjects) are included — matching the viewport. Falls back to the
-  // static SVG raster when no live element is available (headless callers) or if
-  // dom-to-image fails for any reason.
-  // pageIndex set ⇒ carousel page render; the live element is only the current
-  // page, so restrict live capture to single-page (poster) export.
-  if (options.liveElement && options.pageIndex === undefined) {
-    try {
-      return await liveCanvasToPNG(options.liveElement, width, height, scale);
-    } catch {
-      // fall through to the static path
-    }
-  }
-
-  const svg = renderForExport(spec, options);
   const svgString = await serializeWithFonts(svg);
 
   const canvas = document.createElement('canvas');
@@ -324,15 +330,14 @@ ${JSON.stringify(spec, null, 2)}
 </html>`;
 }
 
-function renderForExport(spec: DesignSpec, options: ExportOptions): SVGSVGElement {
-  const { width, height } = spec.document;
-
-  if (spec.pages && options.pageIndex !== undefined) {
-    const page = spec.pages[options.pageIndex];
-    return renderPage(page?.layers ?? [], width, height, { theme: options.theme });
-  }
-
-  return renderDesign(spec, { theme: options.theme });
+/**
+ * The canonical export render — the SAME path the editor canvas and the MCP
+ * server use (renderEntry), so a flow report lays out on its responsive grid
+ * and a poster matches the preview pixel-for-pixel. Returns the SVG plus the
+ * final artboard dimensions (which differ from document size for flow reports).
+ */
+function renderForExport(spec: DesignSpec, options: ExportOptions): RenderEntryResult {
+  return renderEntry(spec, { theme: options.theme, pageIndex: options.pageIndex });
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
