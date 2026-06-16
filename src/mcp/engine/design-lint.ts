@@ -97,6 +97,26 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
     notes.push(`No full-canvas background — add a rect at z:0 pos:[0,0,${canvasW},${canvasH}] with a solid fill so the canvas isn't blank/white.`);
   }
 
+  // 1b. Empty-value text placeholders — the model built a card/slot structure but
+  //     left the value BLANK (the Flowstate pricing: every tier card had value:''
+  //     where the $/mo price belongs, plus no features). It LOOKS designed but the
+  //     data is missing, and a vision-less model can't see the gap. Recurse into
+  //     preset groups (the slots are nested) and surface it so the model fills the
+  //     real content instead of shipping an empty shell. Only flag SIZED text (a
+  //     real display slot), never an incidental empty string.
+  const emptyIds: string[] = [];
+  const scanEmpty = (ls: Layer[]): void => {
+    for (const l of ls) {
+      if (l.type === 'text') { const fs = fontSize(l); if (fs && fs > 0 && !textValue(l).trim()) emptyIds.push(String(l.id ?? '?')); }
+      const kids = (l as { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) scanEmpty(kids);
+    }
+  };
+  scanEmpty(layers);
+  if (emptyIds.length) {
+    notes.push(`${emptyIds.length} text slot(s) are EMPTY (${emptyIds.slice(0, 5).join(', ')}${emptyIds.length > 5 ? '…' : ''}) — placeholder(s) the model never filled (e.g. a price/stat). The render shows a blank where the data belongs. Fill each with the real value from the brief (update_layer/patch_design), or remove it — don't ship an empty shell.`);
+  }
+
   // 2. Invisible / low-contrast text (also catches a chip too small to cover the text).
   for (const t of layers) {
     if (t.type !== 'text') continue;
