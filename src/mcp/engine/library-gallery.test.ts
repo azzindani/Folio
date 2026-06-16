@@ -37,6 +37,11 @@ describe('library gallery', () => {
     expect(html).toContain('Q4 Report');
     expect(html).toContain('id="q"');          // live search box
     expect(html).toContain('data-name');        // searchable cards
+    expect(html).toContain('class="proj"');     // project shown per card (flat grid)
+    expect(html).toContain('data-type="poster"'); // type on card for chip filtering
+    expect(html).toContain('class="chip"');     // type filter chips
+    // search index includes the project name, so you can filter by project too
+    expect(html).toMatch(/data-name="[^"]*alpha[^"]*"/);
   });
 
   it('renders thumbnails and caches them by mtime (second run is free)', () => {
