@@ -457,10 +457,14 @@ describe('sealDesign', () => {
     createProject({ name: 'Stacked', path: projectPath });
     createDesign({ project_path: projectPath, name: 'Stacked', type: 'poster', width: 1080, height: 1080 });
     const designPath = path.join(projectPath, 'designs/stacked.design.yaml');
-    // A thrashing rebuild: three full-canvas feature_grids stacked across calls.
+    // A thrashing rebuild: three full-canvas feature_grids re-stacked across calls
+    // with the SAME (substantial) content — only the attempt title changes — which
+    // is how a real rebuild looks (vs distinct sections, tested separately).
     for (const t of ['First Attempt', 'Second Attempt', 'Final Version']) {
       addLayers({ design_path: designPath, layers_shorthand: [
-        { type: 'feature_grid', title: t, items: [{ title: 'A', desc: 'x' }, { title: 'B', desc: 'y' }] }] as unknown as ShorthandLayer[] });
+        { type: 'feature_grid', title: t, items: [
+          { title: 'Realtime Sync', desc: 'Updates stream instantly across devices' },
+          { title: 'Secure Vault', desc: 'Encrypted storage for every document' }] }] as unknown as ShorthandLayer[] });
     }
     const spec = parseYAMLDesign(designPath);
     const grids = (spec.layers ?? []).filter(l => l.type === 'group' && String((l as { id?: string }).id ?? '').startsWith('feature_grid'));
@@ -473,6 +477,29 @@ describe('sealDesign', () => {
     walk(spec.layers ?? []);
     expect(titles).toContain('Final Version');     // the LAST attempt is kept
     expect(titles).not.toContain('First Attempt'); // earlier stacked attempts dropped
+  });
+
+  it('PRESERVES N distinct stacked sections (different content) — no silent data loss', () => {
+    const projectPath = path.join(tmpDir, 'distinct-sections-project');
+    createProject({ name: 'Distinct', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Distinct', type: 'poster', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/distinct.design.yaml');
+    // A menu: the model stacked 3 full-canvas feature_grids, one per DISTINCT section.
+    // They have no shared content, so none is a "thrash duplicate" — dropping any
+    // would lose a whole section (the Copper Kettle menu lost Breakfast + Lunch).
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', title: 'Breakfast', items: [{ title: 'Avocado Toast', desc: 'sourdough, poached egg' }, { title: 'Granola Bowl', desc: 'yogurt, berries, honey' }] }] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', title: 'Lunch', items: [{ title: 'Club Sandwich', desc: 'turkey, bacon, lettuce' }, { title: 'Caesar Salad', desc: 'romaine, parmesan, croutons' }] }] as unknown as ShorthandLayer[] });
+    addLayers({ design_path: designPath, layers_shorthand: [
+      { type: 'feature_grid', title: 'Drinks', items: [{ title: 'Cold Brew', desc: 'served over ice' }, { title: 'Matcha Latte', desc: 'oat milk, honey' }] }] as unknown as ShorthandLayer[] });
+    const spec = parseYAMLDesign(designPath);
+    const flat = JSON.stringify(spec.layers ?? []);
+    expect(flat).toContain('Breakfast');   // all three sections survive
+    expect(flat).toContain('Lunch');
+    expect(flat).toContain('Drinks');
+    expect(flat).toContain('Avocado Toast');
+    expect(flat).toContain('Club Sandwich');
   });
 
   it('removes loose hand-placed duplicates when many backdrops stack over a content preset', () => {
