@@ -18,6 +18,9 @@ export default [
       'no-console': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
+      // Keep every module within budget so there's headroom for future work.
+      // Split a file before it crosses this line.
+      'max-lines': ['error', { max: 700, skipBlankLines: false, skipComments: false }],
     },
   },
   {
