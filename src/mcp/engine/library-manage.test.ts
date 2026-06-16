@@ -1,0 +1,71 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import { renameDesign, deleteDesign, moveDesign } from './library-manage';
+
+function makeProject(root: string, name: string): string {
+  const dir = path.join(root, name);
+  fs.mkdirSync(path.join(dir, 'designs'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'project.yaml'), `_protocol: project/v1\nmeta:\n  name: ${name}\n`);
+  return dir;
+}
+function makeDesign(projectDir: string, file: string, name: string): string {
+  const fp = path.join(projectDir, 'designs', file);
+  fs.writeFileSync(fp, `_protocol: design/v1\nmeta:\n  id: ${file}\n  name: ${name}\n  type: poster\n  created: '2026-06-01'\n  modified: '2026-06-01'\ndocument:\n  width: 1080\n  height: 1080\n  unit: px\n  dpi: 96\nlayers:\n  - id: r\n    type: rect\n    x: 0\n    'y': 0\n    width: 1080\n    height: 1080\n`);
+  return fp;
+}
+
+describe('library management', () => {
+  let tmp: string;
+  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-mng-')); });
+  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+
+  it('renames the display name but keeps the file path stable', () => {
+    const proj = makeProject(tmp, 'alpha');
+    const fp = makeDesign(proj, 'a.design.yaml', 'Old Name');
+    const r = renameDesign({ design_path: fp, new_name: 'New Name' }) as unknown as { success: boolean; design_path: string; name: string; previous_name: string };
+    expect(r.success).toBe(true);
+    expect(r.name).toBe('New Name');
+    expect(r.previous_name).toBe('Old Name');
+    expect(r.design_path).toBe(fp);            // path unchanged
+    expect(fs.readFileSync(fp, 'utf8')).toContain('name: New Name');
+  });
+
+  it('rejects an empty new name', () => {
+    const proj = makeProject(tmp, 'alpha');
+    const fp = makeDesign(proj, 'a.design.yaml', 'X');
+    const r = renameDesign({ design_path: fp, new_name: '  ' }) as unknown as { success: boolean };
+    expect(r.success).toBe(false);
+  });
+
+  it('deletes a design to a recoverable .trash (no hard unlink)', () => {
+    const proj = makeProject(tmp, 'alpha');
+    const fp = makeDesign(proj, 'a.design.yaml', 'Doomed');
+    const r = deleteDesign({ design_path: fp }) as unknown as { success: boolean; trashed_path: string };
+    expect(r.success).toBe(true);
+    expect(fs.existsSync(fp)).toBe(false);                  // gone from designs/
+    expect(fs.existsSync(r.trashed_path)).toBe(true);       // but recoverable in .trash/
+    expect(r.trashed_path).toContain(path.join('alpha', '.trash'));
+  });
+
+  it('moves a design into another project', () => {
+    const a = makeProject(tmp, 'alpha');
+    makeProject(tmp, 'beta');
+    const fp = makeDesign(a, 'a.design.yaml', 'Mover');
+    const r = moveDesign({ design_path: fp, target_project: path.join(tmp, 'beta') }) as unknown as { success: boolean; design_path: string };
+    expect(r.success).toBe(true);
+    expect(fs.existsSync(fp)).toBe(false);
+    expect(r.design_path).toContain(path.join('beta', 'designs'));
+    expect(fs.existsSync(r.design_path)).toBe(true);
+  });
+
+  it('errors when the target project does not exist', () => {
+    const a = makeProject(tmp, 'alpha');
+    const fp = makeDesign(a, 'a.design.yaml', 'X');
+    const r = moveDesign({ design_path: fp, target_project: path.join(tmp, 'ghost') }) as unknown as { success: boolean; error: string };
+    expect(r.success).toBe(false);
+    expect(r.error).toMatch(/not found/i);
+    expect(fs.existsSync(fp)).toBe(true);                   // source untouched on failure
+  });
+});

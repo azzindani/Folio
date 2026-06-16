@@ -24,6 +24,7 @@ export { extractReference } from './engine/reference';
 export { enrichBrief } from './engine/enrich';
 export { browseLibrary } from './engine/library';
 export { exportLibraryGallery } from './engine/library-gallery';
+export { renameDesign, deleteDesign, moveDesign } from './engine/library-manage';
 import { lintComposition, reviewComposition } from './engine/design-lint';
 import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink, buildReportViewLink } from './engine/editor-link';
