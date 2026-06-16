@@ -1,7 +1,8 @@
 // Server-side DOM shim. Importing this module sets up jsdom globals so any
 // later code (renderer, html-assembler) can call document/XMLSerializer.
 import { JSDOM } from 'jsdom';
-import { renderDesign, invalidateCache } from '../../renderer/renderer';
+import { invalidateCache } from '../../renderer/renderer';
+import { renderEntry } from '../../renderer/render-entry';
 import { BUILTIN_THEMES } from '../../themes/builtin';
 import type { DesignSpec, ThemeSpec, ComponentSpec } from '../../schema/types';
 
@@ -23,7 +24,13 @@ export function ensureDOM(): void {
 // browser-style rendering anywhere in Node.
 ensureDOM();
 
-export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext, theme?: ThemeSpec, componentRegistry?: Map<string, ComponentSpec>): string {
+/**
+ * Render a design to a live SVG element (jsdom). Returned BEFORE serialization
+ * so callers that need the DOM — e.g. the vector-PDF builder, which walks
+ * `<text>` nodes — can read it directly instead of re-parsing a string (markdown
+ * foreignObject HTML isn't valid XML, so a re-parse would throw).
+ */
+export function renderToSVGElement(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext, theme?: ThemeSpec, componentRegistry?: Map<string, ComponentSpec>): SVGSVGElement {
   ensureDOM();
   // Resolve the design's theme so color/typography tokens ($surface, $text…)
   // render with real values. Without a theme, renderDesign leaves tokens
@@ -36,9 +43,22 @@ export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../
   // re-emitting its gradient/<defs>, leaving a dead url(#…) ref (e.g. every
   // feature_grid's "feature_grid_1_bg"). Clear it so each export is clean.
   invalidateCache();
-  const svgEl = renderDesign(spec, { formulaContext, theme: resolvedTheme, componentRegistry });
+  // renderEntry (not renderDesign) so flow reports get the same responsive
+  // grid layout the editor canvas applies — otherwise a flow report exports
+  // with every layer stacked at the origin while the studio shows the grid.
+  return renderEntry(spec, { formulaContext, theme: resolvedTheme, componentRegistry }).svg;
+}
+
+/** Serialize a rendered SVG element to a string, normalizing the root xmlns
+ *  (jsdom can emit it twice; resvg wants exactly one). */
+export function serializeSVGElement(svgEl: SVGSVGElement): string {
+  ensureDOM();
   let raw = (serializer as { serializeToString(el: Node): string }).serializeToString(svgEl);
   raw = raw.replace(/(<svg[^>]*?) xmlns="http:\/\/www\.w3\.org\/2000\/svg"/, '$1');
   if (!raw.includes('xmlns=')) raw = raw.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
   return raw;
+}
+
+export function renderToSVGString(spec: DesignSpec, formulaContext?: import('../../scripting/formula').FormulaContext, theme?: ThemeSpec, componentRegistry?: Map<string, ComponentSpec>): string {
+  return serializeSVGElement(renderToSVGElement(spec, formulaContext, theme, componentRegistry));
 }
