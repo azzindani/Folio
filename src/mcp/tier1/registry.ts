@@ -1,4 +1,4 @@
-// §7 Tier 1 — Basic (10 tools, 128K context): project management, navigation, tasks
+// §7 Tier 1 — Basic (15 tools): project management, navigation, tasks, library, theming
 import type { ToolDefinition } from '../types';
 
 export const TIER1_TOOLS: ToolDefinition[] = [
