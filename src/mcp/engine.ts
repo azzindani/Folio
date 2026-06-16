@@ -862,16 +862,124 @@ function stackDistinctFullBleedPresets(layers: Layer[], doc: { width: number; he
     const kids = (l as unknown as Record<string, unknown>)['layers'];
     if (Array.isArray(kids)) for (const k of kids as Layer[]) shiftY(k, d);
   };
+  // A full-canvas grid is built to fill a 1080 SQUARE, but a section often holds
+  // only a heading + one short row of cards, so ~two thirds of each band is dead
+  // space (the menu: Starters/Mains/Desserts each ~60% empty). Trim every band to
+  // its real CONTENT extent — the heading text + the card auto_layout, NOT the
+  // full-bleed wash/grain or the oversized corner motif — so the stacked brochure
+  // reads tight instead of airy. Content-type children measure their own absolute
+  // box; decorations are excluded from the extent and dropped if the trim leaves
+  // them overflowing the smaller band.
+  const CONTENT_TYPES = new Set(['text', 'rich_text', 'auto_layout', 'chart', 'kpi_card', 'mermaid', 'group', 'icon']);
+  const contentExtent = (g: Layer): { top: number; bot: number } | null => {
+    const kids = (g as unknown as Record<string, unknown>)['layers'];
+    if (!Array.isArray(kids)) return null;
+    let top = Infinity, bot = -Infinity;
+    for (const k of kids as Layer[]) {
+      if (!CONTENT_TYPES.has(k.type)) continue;
+      const b = layerBBox(k);
+      if (b.b <= b.y) continue;
+      top = Math.min(top, b.y); bot = Math.max(bot, b.b);
+    }
+    return Number.isFinite(top) && bot > top ? { top, bot } : null;
+  };
+  const pad = Math.round(docW * 0.055);
+  const gap = Math.round(docW * 0.018);
+  const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };
+  const textH = (l: Layer): number => {
+    const o = l as unknown as Record<string, unknown>; const st = (o['style'] as Record<string, unknown>) ?? {};
+    const fs = Number(st['font_size']) || Math.round(docW * 0.04), lh = Number(st['line_height']) || 1.3;
+    const p = o['pos']; const w = Number(o['width']) || (Array.isArray(p) && p.length >= 3 ? Number(p[2]) : 0) || Math.round(docW * 0.84);
+    const font = typeof st['font_family'] === 'string' ? st['font_family'] as string : '';
+    return estTextHeight(layerText(l), fs, w, lh, fontCharFactor(font));
+  };
+  // Place a loose text centered at y; return its measured height.
+  const seatCentered = (t: Layer, ty: number): number => {
+    const o = t as unknown as Record<string, unknown>; const h = textH(t);
+    const w = Number(o['width']) || Math.round(docW * 0.84);
+    const nx = Math.max(0, Math.round((docW - w) / 2));
+    const p = o['pos'];
+    if (Array.isArray(p) && p.length >= 2) { p[0] = nx; p[1] = ty; if (p.length >= 4) p[3] = h; } else { o['x'] = nx; o['y'] = ty; o['height'] = h; }
+    const st = (o['style'] && typeof o['style'] === 'object') ? o['style'] as Record<string, unknown> : (o['style'] = {} as Record<string, unknown>);
+    if (st['align'] == null) st['align'] = 'center';
+    return h;
+  };
+  const bandBgHex = (g: Layer): string | null => {
+    const kids = (g as unknown as Record<string, unknown>)['layers']; if (!Array.isArray(kids)) return null;
+    for (const k of kids as Layer[]) { if (k.type !== 'rect') continue; const f = (k as unknown as Record<string, unknown>)['fill'] as Record<string, unknown> | undefined; if (f && typeof f['color'] === 'string') return f['color'] as string; }
+    return null;
+  };
+  const lumOf = (hex: string): number => { const h = (hex || '').replace('#', ''); if (h.length < 6) return 1; return (0.2126 * parseInt(h.slice(0, 2), 16) + 0.7152 * parseInt(h.slice(2, 4), 16) + 0.0722 * parseInt(h.slice(4, 6), 16)) / 255; };
+  // Loose top-level text the model placed OUTSIDE the bands. SHORT lines (≤3 words)
+  // are section HEADINGS the model stranded (wellness: "Daily Schedule"/"Pricing"
+  // piled at the top, their bands left unlabelled); when exactly one such heading
+  // exists per band, seat each ABOVE its band in reading order. Everything else (the
+  // doc title, an intro) goes in a zone above the first band. The menu's lone "The
+  // Olive Branch" has 0 short headings ≠ 2 bands → it simply tops the brochure.
+  const looseText = layers.filter(l => l && l.type === 'text' && layerText(l).trim() && !presets.includes(l));
+  const headings = looseText.filter(l => layerText(l).trim().split(/\s+/).filter(Boolean).length <= 3).sort((a, b) => yOf(a) - yOf(b));
+  const assignHeads = headings.length === presets.length && headings.length >= 1;
+  const bandHead: Layer[] = assignHeads ? headings : [];
+  const topZone = assignHeads ? looseText.filter(l => !headings.includes(l)) : looseText;
   let cursorY = 0;
-  for (const g of presets) {
-    const d = cursorY - bgTop(g);
-    if (d) shiftY(g, d);                               // move the whole section into its band
-    setY(g, cursorY);                                  // group box top = band top (bbox/inspect)
-    cursorY += Number((g as unknown as Record<string, unknown>)['height']) || docH;
+  if (topZone.length) {
+    topZone.sort((a, b) => fontOf(b) - fontOf(a));     // title on top, tagline/intro below
+    let ty = pad;
+    for (const t of topZone) ty += seatCentered(t, ty) + gap;
+    cursorY = ty + Math.round(docW * 0.02);
   }
-  if (cursorY > docH) doc.height = cursorY;            // grow the page to hold the bands
+  presets.forEach((g, gi) => {
+    const o = g as unknown as Record<string, unknown>;
+    const gW = Number(o['width']) || docW, gH = Number(o['height']) || docH;
+    const head = bandHead[gi];
+    const headH = head ? textH(head) : 0;
+    const topReserve = pad + (head ? headH + gap : 0);  // band-top space (+ room for a heading)
+    const ext = contentExtent(g);
+    let bandH: number, delta: number;
+    if (ext) {                                          // trim the band to heading + content + margins
+      bandH = Math.round((ext.bot - ext.top) + topReserve + pad);
+      delta = (cursorY + topReserve) - ext.top;
+    } else {                                            // no measurable content → keep full band
+      bandH = gH + (head ? headH + gap : 0);
+      delta = cursorY + (head ? headH + gap : 0) - bgTop(g);
+    }
+    if (delta) shiftY(g, delta);                        // move the whole section into its band
+    if (head) {                                         // seat the heading over the band, contrasting its wash
+      seatCentered(head, cursorY + pad);
+      const ho = head as unknown as Record<string, unknown>;
+      ho['z'] = zOf(g) + 1;
+      const bgHex = bandBgHex(g);
+      if (bgHex) { const st = (ho['style'] as Record<string, unknown>) ?? (ho['style'] = {}); st['color'] = lumOf(bgHex) < 0.5 ? '#FAFAFA' : '#141414'; }
+    }
+    const kids = o['layers'];
+    if (Array.isArray(kids)) {
+      const kept: Layer[] = [];
+      for (const k of kids as Layer[]) {
+        const ko = k as unknown as Record<string, unknown>;
+        if (k.type === 'rect' && (Number(ko['width']) || 0) >= gW * 0.9) {  // bg / grain wash → span the band
+          const p = ko['pos'];
+          if (Array.isArray(p) && p.length >= 4) { p[1] = cursorY; p[3] = bandH; } else { ko['y'] = cursorY; ko['height'] = bandH; }
+          kept.push(k); continue;
+        }
+        if (!CONTENT_TYPES.has(k.type)) {               // decoration sized for the old full band
+          const b = layerBBox(k);
+          if (b.b > cursorY + bandH + 2 || b.y < cursorY - 2) continue;     // overflows the trim → drop
+        }
+        kept.push(k);
+      }
+      o['layers'] = kept;
+    }
+    setY(g, cursorY);                                   // group box top = band top (bbox/inspect)
+    if (Array.isArray(o['pos']) && (o['pos'] as unknown[]).length >= 4) (o['pos'] as unknown[])[3] = bandH; else o['height'] = bandH;
+    cursorY += bandH;
+  });
+  // The page is now exactly the stacked bands — but never crop a top-level layer
+  // (a hand-placed title sitting beside the first band) that reaches further down.
+  let floor = cursorY;
+  for (const l of layers) { if (presets.includes(l) || isFullCanvasBackdrop(l, docW, docH)) continue; floor = Math.max(floor, layerBBox(l).b); }
+  doc.height = floor;
   const bg = layers.find(l => isFullCanvasBackdrop(l, docW, docH));
-  if (bg) (bg as unknown as Record<string, unknown>)['height'] = Math.max(cursorY, docH); // extend base wash under the lower bands
+  if (bg) (bg as unknown as Record<string, unknown>)['height'] = floor; // base wash spans the whole page
   return presets.length;
 }
 
