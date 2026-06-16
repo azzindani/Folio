@@ -986,7 +986,9 @@ function promoteCoveredTitle(layers: Layer[], docW: number, docH: number): numbe
     if (!Array.isArray(kids)) return false;
     return (kids as Layer[]).some(k => k.type === 'text' && textVal(k).trim() && layerBBox(k).y < top);
   };
+  const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };
   let promoted = 0;
+  const toReseat: Layer[] = []; // covered texts whose preset header is empty → re-seat up top
   for (let i = 0; i < layers.length; i++) {
     const t = layers[i];
     if (t.type !== 'text' || !textVal(t).trim()) continue;
@@ -1001,14 +1003,23 @@ function promoteCoveredTitle(layers: Layer[], docW: number, docH: number): numbe
     // not the original canvas (a dark-canvas preset would hide the model's dark title).
     const bg = presetBg(coverer);
     if (bg) st['color'] = lum(bg) < 0.5 ? '#FAFAFA' : '#141414';
-    if (!presetHasTopText(coverer)) {                          // empty header → re-seat as the title up top
-      const w = tb.r - tb.x;
-      const nx = Math.max(Math.round(docW * 0.04), Math.round((docW - w) / 2)), ny = Math.round(docH * 0.06);
-      const p = o['pos'];
-      if (Array.isArray(p) && p.length >= 2) { p[0] = nx; p[1] = ny; } else { o['x'] = nx; o['y'] = ny; }
-      if (st['align'] == null) st['align'] = 'center';
-    }
+    if (!presetHasTopText(coverer)) toReseat.push(t);          // empty header → re-seat below
     promoted++;
+  }
+  // Re-seat the surfaced titles as a centered STACK in the top margin — largest
+  // font first (the title), smaller below (the tagline) — so a title + tagline pair
+  // doesn't pile up at the same y (the Lumen poster: both landed at y=65, overlapping).
+  toReseat.sort((a, b) => fontOf(b) - fontOf(a));
+  let cursorY = Math.round(docH * 0.06);
+  for (const t of toReseat) {
+    const o = t as unknown as Record<string, unknown>;
+    const tb = layerBBox(t), w = tb.r - tb.x, h = Math.max(tb.b - tb.y, fontOf(t));
+    const nx = Math.max(Math.round(docW * 0.04), Math.round((docW - w) / 2));
+    const p = o['pos'];
+    if (Array.isArray(p) && p.length >= 2) { p[0] = nx; p[1] = cursorY; } else { o['x'] = nx; o['y'] = cursorY; }
+    const st = o['style'] as Record<string, unknown>;
+    if (st['align'] == null) st['align'] = 'center';
+    cursorY += h + Math.round(docH * 0.015);
   }
   return promoted;
 }
