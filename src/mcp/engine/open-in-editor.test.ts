@@ -16,14 +16,19 @@ describe('openInEditor', () => {
     expect((r['url'] as string).startsWith('http://localhost:4173')).toBe(true);
   });
 
-  it('encodes the design_path into the URL and includes mcp_url', () => {
+  it('leads with the short share link; full open_url encodes the design_path + mcp_url', () => {
     const dPath = createDesign({ project_path: tmpDir, name: 'Editor Link', type: 'poster' })['path'] as string;
     const r = openInEditor({ design_path: dPath });
     expect(r.success).toBe(true);
+    // `url` is the SHORT, copy/paste-safe link (no JWT, no percent-encoding).
     const url = r['url'] as string;
-    expect(url).toContain('file=');
-    expect(url).toContain('mcp_url=');
-    expect(decodeURIComponent(url)).toContain(dPath);
+    expect(url).toContain('/o/');
+    expect(r['share_url']).toBe(url);
+    // The full link is still available and carries the file= + mcp_url= params.
+    const openUrl = r['open_url'] as string;
+    expect(openUrl).toContain('file=');
+    expect(openUrl).toContain('mcp_url=');
+    expect(decodeURIComponent(openUrl)).toContain(dPath);
   });
 
   it('honours custom editor_url override', () => {

@@ -5,8 +5,9 @@
 // to open the design in the Folio editor — same mechanism open_in_editor uses,
 // surfaced everywhere so a design is openable the moment it exists.
 //
-// Each call mints a FRESH unique editor token (1h TTL), so the link is
-// self-authenticating and not shared/replayed across designs.
+// Each call mints a FRESH unique editor token (30-day TTL by default; see
+// DEFAULT_EDITOR_TOKEN_TTL_MS in oauth.ts), so the link is self-authenticating.
+// Prefer the SHORT link (short_url) when handing a link to a human — see below.
 import { mintEditorToken } from '../oauth';
 import { registerShortLink } from './short-link';
 import type { AttachmentBlock } from '../types';
