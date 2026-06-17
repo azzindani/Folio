@@ -482,7 +482,13 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
   // Place blocks: distribute only the SMALL leftover slack in the fitted canvas
   // (floor keeps dense content tight, cap keeps a slightly-roomy page balanced).
   const footerH = footer ? Math.round(W * 0.1) : Math.round(W * 0.03);
-  const avail = (Y + H - M - footerH) - cy;
+  // Clip-safety cushion: the fill distribution below otherwise seats the LAST
+  // block flush against the bottom edge (measured extent == box height exactly),
+  // so any text-measurement drift in that block — a callout/body line that
+  // resvg wraps one line longer than estTextHeight predicted — spills off the
+  // canvas. Reserve a small band so the last block always lands just inside.
+  const clipSafety = Math.round(W * 0.025);
+  const avail = (Y + H - M - footerH - clipSafety) - cy;
   // When the composition is centered (topPad > 0, i.e. the canvas has slack), use
   // the NATURAL inter-block gap — matching the gap naturalH assumed — so the
   // centered block keeps its true height. A content-tight page (no slack) keeps
