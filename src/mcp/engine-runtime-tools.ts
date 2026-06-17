@@ -373,17 +373,26 @@ export function openInEditor(args: {
     ...(typeof args.page === 'number' ? { page: args.page } : {}),
     ...(args.editor_url ? { editorUrl: args.editor_url } : {}),
   });
-  progress.push(pOk('Editor URL', link.open_url));
+  // Lead with the SHORT link: it's ~40 chars (no JWT, no percent-encoding) so it
+  // survives copy/paste into a chat, and it mints a fresh auth token server-side
+  // on each click — the long open_url is a 300+ char JWT URL that mangles when
+  // relayed by a human (the "the link is not working / give me a shorter link"
+  // report). The short link is stable per design path, so re-opening the SAME
+  // design returns the SAME short link (not a "new link for the same design").
+  const share = link.short_url ?? link.open_url;
+  progress.push(pOk('Editor link', share));
 
   const context = buildContext(op, `Editor link generated`,
     dPath ? [{ type: 'design', path: dPath, role: 'opened' }] : []);
   const handover = buildHandover('EXPORT', dPath ? { design_path: dPath } : {});
 
   return okResult(op, {
-    url: link.open_url,
+    url: share,
+    share_url: link.short_url,
+    open_url: link.open_url,
     editor_url: link.editor_url,
     design_path: dPath || undefined,
-    hint: `Open ${link.open_url} in a browser. The editor will live-refresh as MCP edits the file.`,
+    hint: `Give the user this link: ${share} — it's short, survives copy/paste, and opens the live editor (live-refreshes as MCP edits the file).`,
     progress,
     context,
     handover,

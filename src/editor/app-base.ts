@@ -296,7 +296,11 @@ export abstract class EditorAppBase {
     const setCollapsed = (collapsed: boolean): void => {
       app?.classList.toggle('panel-collapsed', collapsed);
       actBtns.forEach(b => {
-        b.setAttribute('aria-expanded', String(!collapsed && b.dataset.panel === currentPanel));
+        const isCurrent = b.dataset.panel === currentPanel;
+        // Drop the active highlight while collapsed so the bar reads as "closed"
+        // (no panel open) rather than "this panel is selected but blank/broken".
+        b.classList.toggle('active', !collapsed && isCurrent);
+        b.setAttribute('aria-expanded', String(!collapsed && isCurrent));
       });
     };
 
@@ -332,9 +336,13 @@ export abstract class EditorAppBase {
         const isActive = tab.classList.contains('active');
         const isCollapsed = app.classList.contains('rpanel-collapsed');
 
-        // Click already-active tab while expanded → collapse
+        // Click already-active tab while expanded → collapse. Clear the active
+        // highlight so the bar reads as "closed" (no panel open) instead of
+        // "properties selected but blank" — the latter looked broken. Clicking
+        // any icon re-opens its pane (the else branch below).
         if (isActive && !isCollapsed) {
           app.classList.add('rpanel-collapsed');
+          tabs.forEach(t => t.classList.remove('active'));
           return;
         }
 

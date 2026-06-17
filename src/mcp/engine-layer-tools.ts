@@ -17,6 +17,7 @@ import { buildEditorLink } from './engine/editor-link';
 import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, snapWrongFlowPresets, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
+import { honorPosterRatio } from './poster-ratio';
 import type { NextAction } from './types';
 
 import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-geom';
@@ -249,11 +250,21 @@ export function addLayers(args: {
       if (g && others.every(fullCanvasRect)
         && (g.x ?? 0) <= DW * 0.02 && (g.y ?? 0) <= DH * 0.02
         && typeof g.width === 'number' && g.width > 0 && typeof g.height === 'number' && g.height > 0) {
-        spec.document.width = g.width;
-        spec.document.height = g.height;
-        for (const r of others) {
-          if ((r.height ?? 0) > g.height) r.height = g.height;
-          if ((r.width ?? 0) > g.width) r.width = g.width;
+        // The user/model created the doc with a deliberate standard portrait/
+        // square ratio (4:5, 9:16, 1:1, …) → HONOR it instead of silently
+        // resizing the canvas to the content's natural height (4:5 → 3:5).
+        const ratioFit = honorPosterRatio(g as unknown as Layer, others as unknown as Layer[], DW, DH);
+        if (ratioFit) {
+          spec.document.width = ratioFit.width;
+          spec.document.height = ratioFit.height;
+          progress.push(pInfo(`Kept the requested ${DW}×${DH} aspect ratio`, `fit the content to a ${ratioFit.width}×${ratioFit.height} canvas (same shape) instead of reshaping it to the content's height`));
+        } else {
+          spec.document.width = g.width;
+          spec.document.height = g.height;
+          for (const r of others) {
+            if ((r.height ?? 0) > g.height) r.height = g.height;
+            if ((r.width ?? 0) > g.width) r.width = g.width;
+          }
         }
       }
     }
@@ -268,8 +279,14 @@ export function addLayers(args: {
     if (!spec.pages) {
       const g = activeLayers.find(l => isFullBleedContentPreset(l, spec.document.width, spec.document.height)) as (Layer & { width?: number; height?: number }) | undefined;
       if (g && typeof g.width === 'number' && g.width > 0 && typeof g.height === 'number' && g.height > 0) {
-        spec.document.width = g.width;
-        spec.document.height = g.height;
+        const ratioFit = honorPosterRatio(g as unknown as Layer, [], spec.document.width, spec.document.height);
+        if (ratioFit) {
+          spec.document.width = ratioFit.width;
+          spec.document.height = ratioFit.height;
+        } else {
+          spec.document.width = g.width;
+          spec.document.height = g.height;
+        }
       }
     }
   }

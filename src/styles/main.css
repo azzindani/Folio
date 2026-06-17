@@ -129,6 +129,18 @@ html, body {
     var(--activity-bar-width);
 }
 
+/* When the right panel is collapsed, accent the activity bar's inner (canvas-
+   facing) edge so the strip reads as a tucked-away panel you can click to
+   reopen — not a dead/broken sliver. Pairs with clearing the tab's active
+   highlight on collapse (see wireRpanelTabs). */
+#app.rpanel-collapsed .r-activity-bar {
+  border-left: 2px solid var(--color-primary);
+}
+/* Mirror cue on the left when its panel is collapsed. */
+#app.panel-collapsed .activity-bar {
+  border-right: 2px solid var(--color-primary);
+}
+
 /* ── TOOLBAR ──────────────────────────────────────────────── */
 .toolbar {
   grid-area: toolbar;
