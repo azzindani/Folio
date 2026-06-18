@@ -329,26 +329,52 @@ export abstract class EditorAppBase {
     const tabs = this.container.querySelectorAll<HTMLElement>('.r-activity-bar .rpanel-tab');
     const panes = this.container.querySelectorAll<HTMLElement>('.rpanel-body .tab-pane');
     const app = this.container.closest('#app') ?? this.container;
+    const panel = this.container.querySelector<HTMLElement>('.properties-panel');
+
+    // Below desktop (≤1023px) the panel is an absolute/fixed slide-in overlay
+    // shown via `.mob-open` — the grid `rpanel` column is forced to 0, so the
+    // desktop-only `rpanel-collapsed` toggle does NOTHING there and used to leave
+    // the panel stranded off-screen: the activity bar was visible and clickable
+    // but the panel never appeared (looked permanently broken). The bar is still
+    // shown on tablet, so its tabs must drive the same `.mob-open` the mobile-nav
+    // uses. We deliberately do NOT raise `.mob-backdrop` here — on tablet its
+    // z-index sits above the panel and would bury it; tablet closes by re-clicking
+    // the active tab, mirroring the left panel (which has no backdrop either).
+    const overlay = (): boolean => window.matchMedia('(max-width: 1023px)').matches;
+
+    const showPane = (tabId: string): void => {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+      panes.forEach(p => p.classList.toggle('active', p.dataset.tab === tabId));
+    };
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const tabId = tab.dataset.tab!;
         const isActive = tab.classList.contains('active');
-        const isCollapsed = app.classList.contains('rpanel-collapsed');
 
-        // Click already-active tab while expanded → collapse. Clear the active
-        // highlight so the bar reads as "closed" (no panel open) instead of
-        // "properties selected but blank" — the latter looked broken. Clicking
-        // any icon re-opens its pane (the else branch below).
+        if (overlay()) {
+          const isOpen = !!panel?.classList.contains('mob-open');
+          // Re-click the already-open tab → slide the overlay back out.
+          if (isActive && isOpen) {
+            panel?.classList.remove('mob-open');
+            tabs.forEach(t => t.classList.remove('active'));
+            return;
+          }
+          showPane(tabId);
+          panel?.classList.add('mob-open');
+          return;
+        }
+
+        // Desktop: collapse/expand via the grid column. Click already-active tab
+        // while expanded → collapse, clearing the active highlight so the bar
+        // reads as "closed" rather than "selected but blank".
+        const isCollapsed = app.classList.contains('rpanel-collapsed');
         if (isActive && !isCollapsed) {
           app.classList.add('rpanel-collapsed');
           tabs.forEach(t => t.classList.remove('active'));
           return;
         }
-
-        // Otherwise switch to that tab and ensure panel is open
-        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
-        panes.forEach(p => p.classList.toggle('active', p.dataset.tab === tabId));
+        showPane(tabId);
         app.classList.remove('rpanel-collapsed');
       });
     });
