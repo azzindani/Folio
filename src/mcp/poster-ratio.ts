@@ -10,12 +10,18 @@
 // When the document was created with a recognized standard PORTRAIT/SQUARE ratio
 // and a single content preset IS the whole poster, we instead PRESERVE that
 // ratio: grow the canvas to the smallest box of the requested ratio that
-// contains the measured content, center the content, and stretch the preset's
-// own full-bleed background layers to fill. No type/coordinate SCALING — the
-// preset's measured layout stays pixel-for-pixel intact (so none of its
-// overlap/fit guarantees regress); the only cost is editorial margin when the
-// content's natural ratio differs from the requested one. That is the correct
-// trade: the user asked for the ratio, not for a specific pixel height.
+// contains the measured content, then SCALE the content horizontally to fill
+// the widened canvas (and stretch the preset's full-bleed background layers to
+// fill). Honoring the ratio means growing the canvas WIDER than the content
+// column; an earlier version just centered the fixed-width column, which left
+// big dead bands on the left and right ("too much dead space"). Instead we
+// apply a horizontal scale `sx = newW/gw` to every layer's x and width, so the
+// preset's chosen margin stays proportional and the text area becomes
+// `canvasWidth − margin` again. Only the horizontal axis scales: y/height are
+// untouched (vertical rhythm unchanged) and font sizes are NOT scaled — text
+// just reflows into wider boxes (fewer wraps, never clipped). Aspect-locked
+// layers (circle/ellipse/image) reposition by center but keep their size so the
+// stretch can't distort them into ovals.
 
 import type { Layer } from '../schema/types';
 
@@ -68,17 +74,25 @@ function hasRelativeLayout(layer: Layer): boolean {
   return Array.isArray(kids) && (kids as Layer[]).some(hasRelativeLayout);
 }
 
-function shiftOrFill(layer: Layer, dx: number, dy: number, gw: number, gh: number, newW: number, newH: number): void {
+function scaleOrFill(layer: Layer, sx: number, gw: number, gh: number, newW: number, newH: number): void {
   const o = layer as unknown as Record<string, unknown>;
   const kids = o['layers'];
-  if (Array.isArray(kids)) for (const k of kids as Layer[]) shiftOrFill(k, dx, dy, gw, gh, newW, newH);
+  if (Array.isArray(kids)) for (const k of kids as Layer[]) scaleOrFill(k, sx, gw, gh, newW, newH);
   if (o['type'] === 'group') return; // outer/nested wrappers: children carry the coords
   if (isFullBleedBg(o, gw, gh)) {
     o['x'] = 0; o['y'] = 0; o['width'] = newW; o['height'] = newH;
     return;
   }
-  o['x'] = num(o, 'x') + dx;
-  o['y'] = num(o, 'y') + dy;
+  const t = o['type'];
+  const w = num(o, 'width');
+  // Aspect-locked layers: reposition by center, keep size — a horizontal-only
+  // stretch would otherwise turn a circle into an ellipse / squash an image.
+  if (t === 'circle' || t === 'ellipse' || t === 'image') {
+    o['x'] = Math.round((num(o, 'x') + w / 2) * sx - w / 2);
+    return;
+  }
+  o['x'] = Math.round(num(o, 'x') * sx);
+  if (w > 0) o['width'] = Math.round(w * sx);
 }
 
 /**
@@ -119,16 +133,14 @@ export function honorPosterRatio(
     return null;
   }
 
-  // Center horizontally (the content column is exactly `gw` wide, so this is
-  // always safe), but TOP-ANCHOR vertically (dy = 0). A preset can slightly
-  // under-estimate its own height; centering would add a top margin that pushes
-  // that overflow off the bottom edge, whereas top-anchoring only ever gives the
-  // overflow MORE room ([gh, newH]). The cost is a little breathing room at the
-  // bottom for short content — preferable to clipping, and the user asked for
-  // the ratio, not a pixel-perfect fill.
-  const dx = Math.round((newW - gw) / 2);
-  const dy = 0;
-  shiftOrFill(group, dx, dy, gw, gh, newW, newH);
+  // Scale the content horizontally to FILL the widened canvas (sx ≥ 1 — we only
+  // ever grow width here). This keeps the preset's margin proportional instead
+  // of leaving the original-width column centered with dead bands on both sides.
+  // Vertical layout is left as-is and top-anchored: a preset can slightly
+  // under-estimate its own height, and not touching y/height only ever gives any
+  // such overflow MORE room ([gh, newH]) rather than pushing it off the bottom.
+  const sx = newW / gw;
+  scaleOrFill(group, sx, gw, gh, newW, newH);
   g['x'] = 0; g['y'] = 0; g['width'] = newW; g['height'] = newH;
   for (const r of others) {
     const ro = r as unknown as Record<string, unknown>;

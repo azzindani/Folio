@@ -30,7 +30,7 @@ function poster(groupH: number): { group: Layer } {
 }
 
 describe('honorPosterRatio', () => {
-  it('grows a tall 4:5 poster sideways to keep the ratio (no clipping, bg fills)', () => {
+  it('grows a tall 4:5 poster sideways and scales content to fill (no dead margins, bg fills)', () => {
     const { group } = poster(1800);
     const res = honorPosterRatio(group, [], 1080, 1350); // 4:5 requested, content 1080x1800
     expect(res).toEqual({ width: 1440, height: 1800 });   // 1440/1800 === 4/5
@@ -39,10 +39,17 @@ describe('honorPosterRatio', () => {
     const kids = g['layers'] as Record<string, unknown>[];
     const bg = kids.find(k => k['id'] === 'sections_1_bg')!;
     expect([bg['x'], bg['y'], bg['width'], bg['height']]).toEqual([0, 0, 1440, 1800]); // stretched to fill
+    const sx = 1440 / 1080; // 1.333…
     const title = kids.find(k => k['id'] === 'sections_1_title')!;
-    expect(title['x']).toBe(80 + 180); // centered: dx = (1440-1080)/2 = 180
-    expect(title['y']).toBe(100);      // dy = 0 (height unchanged)
-    expect((title['style'] as Record<string, unknown>)['font_size']).toBe(80); // type NOT scaled
+    // x AND width scale horizontally → the text area fills the widened canvas
+    // with the SAME proportional margin (80→107), not a centered 900-wide column
+    // stranded with ~260px dead bands on each side.
+    expect(title['x']).toBe(Math.round(80 * sx));      // 107
+    expect(title['width']).toBe(Math.round(900 * sx)); // 1200 — text area = canvas − margin
+    // right margin stays proportional & small (≈ left), not the old 280px gap
+    expect(1440 - (Number(title['x']) + Number(title['width']))).toBeLessThan(140);
+    expect(title['y']).toBe(100); // vertical layout untouched (y unchanged)
+    expect((title['style'] as Record<string, unknown>)['font_size']).toBe(80); // font NOT scaled
   });
 
   it('returns null when content FITS the requested height (legacy content-fit / sage-block keeps charge)', () => {
