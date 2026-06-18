@@ -18,11 +18,32 @@ import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset,
 import type { ShorthandLayer } from './shorthand-parser';
 import { readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import { honorPosterRatio } from './poster-ratio';
+import { BUILTIN_THEMES } from '../themes/builtin';
 import type { NextAction } from './types';
 
 import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-geom';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
+
+const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+
+/**
+ * Resolve a design's theme background + text to hex, for reconciling a preset's
+ * content-seeded mood against the chosen theme (see seededDefaults). Handles an
+ * inline `theme.colors` object and a builtin `theme.ref`; returns null when the
+ * theme is absent or its background isn't a usable hex (custom project themes,
+ * `$token` backgrounds → no override, mood stays in charge).
+ */
+function resolveThemeColors(spec: DesignSpec): { bg: string; text: string } | null {
+  const th = spec.theme as { ref?: string; colors?: Record<string, unknown> } | undefined;
+  if (!th) return null;
+  const colors = th.colors ?? (th.ref ? (BUILTIN_THEMES[th.ref]?.colors as Record<string, unknown> | undefined) : undefined);
+  if (!colors) return null;
+  const bg = colors['background'];
+  if (typeof bg !== 'string' || !HEX_RE.test(bg)) return null;
+  const text = colors['text'];
+  return { bg, text: typeof text === 'string' && HEX_RE.test(text) ? text : '' };
+}
 
 export function addLayers(args: {
   design_path: string; page_id?: string; project_path?: string;
@@ -126,6 +147,20 @@ export function addLayers(args: {
     if (vi > 0) {
       for (const l of shorthand) (l as unknown as Record<string, unknown>)['__variant'] = vi;
       progress.push(pInfo(`Applied art-direction variant ${vi}`, 'one of a sibling variant set — distinct palette/typography/background'));
+    }
+  }
+
+  // Stamp the chosen theme's bg/text onto each preset so its content-seeded mood
+  // can't fight the theme's light/dark polarity — a `light-clean` poster used to
+  // come back on a dark indigo gradient because the "AI/tech" topic seeded a dark
+  // mood and the preset never consulted the theme ("that is not a light theme").
+  // Colours only; composition (geometry/type/font/accent) stays mood-driven, and
+  // an explicit shorthand `bg` still wins (seededDefaults bails on it).
+  const themeColors = resolveThemeColors(spec);
+  if (themeColors && shorthand.length) {
+    for (const l of shorthand) {
+      const rr = l as unknown as Record<string, unknown>;
+      if (rr['__theme'] === undefined) rr['__theme'] = themeColors;
     }
   }
 
@@ -447,6 +482,16 @@ export function appendPage(args: {
     if (spec.pages?.length) {
       const locked = lockCarouselCanvas(spec.pages, pageShorthand);
       if (locked.bg || locked.font) progress.push(pInfo(`Locked carousel cohesion`, `${locked.bg} bg + ${locked.font} font snapped to the deck`));
+    }
+  }
+  // Same theme reconciliation as posters (see addLayers): keep a slide's seeded
+  // mood from fighting the deck's theme polarity. Deck cohesion already locks one
+  // shared mood, so every slide reconciles the same way.
+  const pageThemeColors = resolveThemeColors(spec);
+  if (pageThemeColors && pageShorthand.length) {
+    for (const l of pageShorthand) {
+      const rr = l as unknown as Record<string, unknown>;
+      if (rr['__theme'] === undefined) rr['__theme'] = pageThemeColors;
     }
   }
   const layers: Layer[] = pageShorthand.length

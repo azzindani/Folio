@@ -76,14 +76,43 @@ export function seededDefaults(r: Record<string, unknown>, seedParts: unknown[])
   const mood = deck
     ? pickMoodVariant(deck, deck, variant)
     : pickMoodVariant(topic || all, all, variant);
+  // Reconcile the content-seeded mood with the design's THEME (stamped by
+  // addLayers as `__theme`). The lane is picked from the topic words, so an
+  // "AI / tech" topic seeds a DARK indigo mood — which lands as a dark canvas
+  // even when the user explicitly created a LIGHT theme ("that is not a light
+  // theme"). When the mood's light/dark POLARITY fights the theme's, adopt the
+  // theme's background + text so the canvas matches the chosen theme; geometry,
+  // type treatment, font and accent stay mood-driven, so variety holds where
+  // the polarity already agrees. Explicit shorthand `bg` short-circuits above.
+  const reconciled = reconcileMoodWithTheme(mood, r['__theme']);
   // Keep the mood's curated COLOUR/font/treatment, but compose the GEOMETRY
   // procedurally from the content so two decks in the same colour mood don't
   // share a background (the "same background" complaint). 100+ distinct recipes.
   // Salt the geometry seed by the variant too, so two options never share a bg.
-  const rgb = hexToRgb(mood.bg);
+  const rgb = hexToRgb(reconciled.bg);
   const dark = rgb ? luminance(rgb) < 0.5 : true;
   const geoSeed = deck ? `${deck}#${all}` : (variant ? `${all}#v${variant}` : all);
-  return { ...mood, bg_style: proceduralBgStyle(geoSeed, dark) };
+  return { ...reconciled, bg_style: proceduralBgStyle(geoSeed, dark) };
+}
+
+/**
+ * If the seeded mood's light/dark polarity fights an explicit theme, adopt the
+ * theme's background (and text) so a LIGHT theme can't render dark — or a dark
+ * theme light. Geometry / type / accent stay mood-driven, and a same-polarity
+ * theme is left untouched so the per-topic colour variety survives. `themeRaw`
+ * is `{ bg, text }` resolved from the design's theme by addLayers; absent or
+ * malformed → mood unchanged.
+ */
+function reconcileMoodWithTheme(mood: Mood, themeRaw: unknown): Mood {
+  if (!themeRaw || typeof themeRaw !== 'object') return mood;
+  const t = themeRaw as Record<string, unknown>;
+  const tbg = asHex(t['bg']);
+  if (!tbg) return mood;
+  const moodRgb = hexToRgb(mood.bg), themeRgb = hexToRgb(tbg);
+  if (!moodRgb || !themeRgb) return mood;
+  if ((luminance(moodRgb) < 0.5) === (luminance(themeRgb) < 0.5)) return mood; // same polarity → keep mood
+  const tText = asHex(t['text']);
+  return { ...mood, bg: tbg, text_color: tText ?? mood.text_color };
 }
 
 // Parametric shapes the engine expands into a `path` layer (absolute coords).
