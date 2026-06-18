@@ -276,6 +276,7 @@ describe('batchCreate — ?? fallback for name', () => {
   it('uses template_id fallback name when slot has no name (line 371 ?? branch)', () => {
     const projectPath = path.join(tmpDir, 'batch-noname');
     createProject({ name: 'Batch NoName', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'my-tpl' });
     const result = batchCreate({
       project_path: projectPath,
       template_id: 'my-tpl',

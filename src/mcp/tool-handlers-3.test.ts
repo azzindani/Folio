@@ -363,6 +363,8 @@ describe('batchCreate', () => {
   });
 
   it('creates N designs from N slot arrays', () => {
+    // batch_create clones a real template/design — create the source first.
+    createDesign({ project_path: projectPath, name: 'my-template' });
     const result = batchCreate({
       project_path: projectPath,
       template_id: 'my-template',
@@ -378,6 +380,7 @@ describe('batchCreate', () => {
   });
 
   it('creates designs with auto-generated names when no name slot', () => {
+    createDesign({ project_path: projectPath, name: 'hero-card' });
     const result = batchCreate({
       project_path: projectPath,
       template_id: 'hero-card',
