@@ -11,7 +11,8 @@ import { validateDesignSpec } from '../schema/validator';
 
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './engine/utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover, generateId } from './engine/utils';
+import type { TemplateSlot } from '../schema/template';
 
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 
@@ -25,10 +26,6 @@ import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
 
 import type { LoadedDataset } from '../report/data-loader';
-
-import { createDesign } from './engine-project-tools';
-
-import { patchDesign } from './engine-edit-tools';
 
 export function flagMissingImages(spec: DesignSpec, baseDirs: string[]): string[] {
   const notes: string[] = [];
@@ -460,28 +457,102 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
   return okResult(op, { status: 'ok', operation: o, aligned: boxed.map(t => t.l.id), backup, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment] });
 }
 
+// Friendly slot keys a model naturally sends (title/kicker/…) → substrings of
+// the auto-derived slot ids (`<layerId>_text`, e.g. `sections_1_title_text`).
+// Lets batch_create fill content without the model knowing the exact slot ids.
+const SLOT_KEY_ALIASES: Record<string, string[]> = {
+  title: ['title', 'headline', 'head', 'hero'],
+  kicker: ['kick', 'eyebrow', 'overline', 'tag', 'label'],
+  subtitle: ['sub', 'deck', 'standfirst', 'intro', 'tagline'],
+  body: ['body', 'desc', 'paragraph', 'copy'],
+  footer: ['footer', 'foot', 'caption', 'credit'],
+};
+
+/** Best-effort map a friendly slot key to a real template slot (by exact id/path,
+ *  then id-substring, then alias family), skipping slots already claimed. */
+function matchSlot(key: string, slots: TemplateSlot[], used: Set<string>): TemplateSlot | null {
+  const k = key.toLowerCase();
+  const free = (s: TemplateSlot): boolean => !used.has(s.id);
+  return slots.find(s => free(s) && (s.id === key || s.path === key))
+    ?? slots.find(s => free(s) && s.id.toLowerCase().includes(k))
+    ?? (SLOT_KEY_ALIASES[k] ?? []).reduce<TemplateSlot | undefined>(
+      (hit, a) => hit ?? slots.find(s => free(s) && s.id.toLowerCase().includes(a)), undefined)
+    ?? null;
+}
+
+/** Resolve a batch template_id to a TemplateSpec: an explicit `.template.yaml`,
+ *  else a project design (exported to a template so its dimensions, theme and
+ *  layout carry into every variant). */
+function resolveBatchTemplate(projectPath: string, templateId: string): TemplateSpec | null {
+  const tpl = resolveDesignPath(`templates/${templateId}.template.yaml`, projectPath);
+  if (fs.existsSync(tpl)) {
+    const t = readYAML<TemplateSpec>(tpl);
+    if (t._protocol === 'template/v1') return t;
+  }
+  const slug = templateId.toLowerCase().replace(/\s+/g, '-');
+  for (const id of [templateId, slug]) {
+    const dp = resolveDesignPath(`designs/${id}.design.yaml`, projectPath);
+    if (fs.existsSync(dp)) return exportAsTemplate(readYAML<DesignSpec>(dp));
+  }
+  return null;
+}
+
+/** Register a batch-created design in project.yaml so list_designs (which reads
+ *  project.yaml, not the filesystem) shows it. No-op when there's no project.yaml. */
+function registerInProject(projectPath: string, designId: string): void {
+  const pPath = resolveDesignPath('project.yaml', projectPath);
+  if (!fs.existsSync(pPath)) return;
+  const project = readYAML<{ designs?: { id: string }[] }>(pPath);
+  project.designs = project.designs ?? [];
+  if (!project.designs.some(d => d.id === designId)) {
+    project.designs.push({ id: designId, path: `designs/${designId}.design.yaml`, type: 'poster', status: 'draft' } as { id: string });
+  }
+  writeYAML(pPath, project);
+}
+
 export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {
   const op = 'batch_create';
   const progress: ProgressItem[] = [];
   const created: { design_id: string; path: string }[] = [];
 
-  for (let i = 0; i < args.slots_array.length; i++) {
-    const slots = args.slots_array[i];
-    const name = (slots['name'] as string | undefined) ?? `${args.template_id}-${i + 1}`;
-    const r = createDesign({ project_path: args.project_path, name, type: 'poster' });
-    if (!r.success) return errResult(op, `Failed at design ${i + 1}: ${r.error ?? ''}`, r.hint ?? '', progress);
+  // Resolve the template FIRST so every variant inherits its dimensions, theme
+  // and layout. The old code ignored template_id and created blank default-size
+  // (1080×1080 square) posters, then patched non-resolving paths — so a 1080×2000
+  // template produced empty squares ("can't generate a proper custom-dimension
+  // poster"). Now we clone the real template per row.
+  const template = resolveBatchTemplate(args.project_path, args.template_id);
+  if (!template) {
+    return errResult(op, `Template not found: ${args.template_id}`,
+      'template_id must be a .template.yaml id (see export_template) OR a design name in this project to clone. Run create_project + a source design first.', progress);
+  }
+  const slots = template.slots ?? [];
 
-    const designPath = r['path'] as string;
-    const selectors = Object.entries(slots).filter(([k]) => k !== 'name').map(([k, v]) => ({ path: k, value: v }));
-    if (selectors.length > 0) {
-      const pr = patchDesign({ design_path: designPath, selectors });
-      if (!pr.success) return errResult(op, `Patch failed at design ${i + 1}: ${pr.error ?? ''}`, pr.hint ?? '', progress);
+  for (let i = 0; i < args.slots_array.length; i++) {
+    const row = { ...args.slots_array[i] };
+    const name = (row['name'] as string | undefined) ?? `${args.template_id}-${i + 1}`;
+    delete row['name'];
+
+    // Translate the row's friendly keys → the template's actual slot paths.
+    const used = new Set<string>();
+    const slotValues: Record<string, unknown> = {};
+    let matched = 0;
+    for (const [key, value] of Object.entries(row)) {
+      const slot = matchSlot(key, slots, used);
+      if (slot) { slotValues[slot.path] = value; used.add(slot.id); matched++; }
     }
-    created.push({ design_id: r['design_id'] as string, path: designPath });
-    progress.push(pOk(`Created design ${i + 1}/${args.slots_array.length}`, name));
+
+    const design = injectIntoTemplate(template, slotValues);
+    design.meta = { ...design.meta, id: generateId(), name, generator: 'mcp', modified: new Date().toISOString().split('T')[0] };
+    const designId = name.toLowerCase().replace(/\s+/g, '-');
+    const designPath = resolveDesignPath(`designs/${designId}.design.yaml`, args.project_path);
+    writeYAML(designPath, design);
+    registerInProject(args.project_path, designId);
+    created.push({ design_id: design.meta.id, path: designPath });
+    progress.push(pOk(`Created design ${i + 1}/${args.slots_array.length}`,
+      `${name} — ${design.document.width}×${design.document.height}, ${matched}/${Object.keys(row).length} slot(s) filled`));
   }
 
-  const context = buildContext(op, `Batch created ${created.length} design(s)`,
+  const context = buildContext(op, `Batch created ${created.length} design(s) from "${args.template_id}"`,
     created.map(c => ({ type: 'design', path: c.path, role: 'created' })));
   const handover = buildHandover('EXPORT', { project_path: args.project_path });
   return okResult(op, { created, count: created.length, progress, context, handover });
