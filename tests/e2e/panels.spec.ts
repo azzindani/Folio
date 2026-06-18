@@ -27,6 +27,67 @@ test.describe('Panels — properties panel', () => {
   });
 });
 
+test.describe('Panels — right panel reachable on desktop (collapse toggle)', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.canvas-area svg', { timeout: 10_000 });
+  });
+
+  test('clicking the active right tab collapses, then re-expands', async ({ page }) => {
+    const app = page.locator('#app');
+    const tab = page.locator('.r-activity-bar .rpanel-tab[data-tab="properties"]');
+    await expect(app).not.toHaveClass(/rpanel-collapsed/);
+    await tab.click();
+    await expect(app).toHaveClass(/rpanel-collapsed/);
+    await tab.click();
+    await expect(app).not.toHaveClass(/rpanel-collapsed/);
+  });
+});
+
+test.describe('Panels — right panel reachable on tablet (overlay)', () => {
+  // Regression: at 768–1023px the panel is an off-screen `.mob-open` overlay and
+  // the grid `rpanel` column is forced to 0, so the desktop `rpanel-collapsed`
+  // toggle does nothing. The visible r-activity-bar must drive `.mob-open` or the
+  // panel is unreachable ("the rightbar cannot be used, it remains persistent").
+  test.use({ viewport: { width: 900, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.canvas-area svg', { timeout: 10_000 });
+  });
+
+  const onScreen = async (page: import('@playwright/test').Page): Promise<boolean> =>
+    page.evaluate(() => {
+      const rp = document.querySelector('.properties-panel');
+      if (!rp) return false;
+      const r = rp.getBoundingClientRect();
+      return r.left < window.innerWidth - 4 && r.right > 4 && r.width > 4;
+    });
+
+  test('r-activity-bar tab slides the panel on-screen, re-click slides it out', async ({ page }) => {
+    const panel = page.locator('.properties-panel');
+    const tab = page.locator('.r-activity-bar .rpanel-tab[data-tab="properties"]');
+    // Starts closed (off-screen) so the canvas is unobstructed.
+    expect(await onScreen(page)).toBe(false);
+    await tab.click();
+    await expect(panel).toHaveClass(/mob-open/);
+    expect(await onScreen(page)).toBe(true);
+    // Re-clicking the open tab dismisses it.
+    await tab.click();
+    await expect(panel).not.toHaveClass(/mob-open/);
+    expect(await onScreen(page)).toBe(false);
+  });
+
+  test('switching to another right tab keeps the overlay open and swaps panes', async ({ page }) => {
+    await page.locator('.r-activity-bar .rpanel-tab[data-tab="properties"]').click();
+    await page.locator('.r-activity-bar .rpanel-tab[data-tab="data"]').click();
+    await expect(page.locator('.properties-panel')).toHaveClass(/mob-open/);
+    await expect(page.locator('.rpanel-body .tab-pane[data-tab="data"]')).toHaveClass(/active/);
+  });
+});
+
 test.describe('Panels — layer panel interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
