@@ -58,7 +58,10 @@ test.describe('Panels — right panel reachable on tablet (overlay)', () => {
     await page.waitForSelector('.canvas-area svg', { timeout: 10_000 });
   });
 
-  const onScreen = async (page: import('@playwright/test').Page): Promise<boolean> =>
+  // The panel has a 250ms slide transition, so read its rect via expect.poll —
+  // a bare getBoundingClientRect right after the class toggles catches it
+  // mid-animation (still off/partly on screen) and flakes.
+  const onScreen = (page: import('@playwright/test').Page): Promise<boolean> =>
     page.evaluate(() => {
       const rp = document.querySelector('.properties-panel');
       if (!rp) return false;
@@ -70,14 +73,14 @@ test.describe('Panels — right panel reachable on tablet (overlay)', () => {
     const panel = page.locator('.properties-panel');
     const tab = page.locator('.r-activity-bar .rpanel-tab[data-tab="properties"]');
     // Starts closed (off-screen) so the canvas is unobstructed.
-    expect(await onScreen(page)).toBe(false);
+    await expect.poll(() => onScreen(page)).toBe(false);
     await tab.click();
     await expect(panel).toHaveClass(/mob-open/);
-    expect(await onScreen(page)).toBe(true);
+    await expect.poll(() => onScreen(page)).toBe(true);
     // Re-clicking the open tab dismisses it.
     await tab.click();
     await expect(panel).not.toHaveClass(/mob-open/);
-    expect(await onScreen(page)).toBe(false);
+    await expect.poll(() => onScreen(page)).toBe(false);
   });
 
   test('switching to another right tab keeps the overlay open and swaps panes', async ({ page }) => {
