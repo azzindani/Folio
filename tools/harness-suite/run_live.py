@@ -113,11 +113,15 @@ def run_one(case, timeout, poll, settle, min_bytes):
             stable = 0
         last = sig
     ds = designs(proj)
+    total_bytes = design_sig(proj)[1]
+    # A bare create_design scaffold (~260 bytes, 0 layers) is NOT a real design —
+    # the model stalled before add_layers. Require real content to count as built.
+    composed = len(ds) > 0 and total_bytes >= min_bytes
     return {
         "id": case["id"], "project": proj, "title": case["title"], "intent": case["intent"],
         "theme": case["theme"], "dims": case["dims"], "carousel": case["carousel"],
         "brief": case["brief"], "designs": ds, "design_count": len(ds),
-        "generated": len(ds) > 0, "started": started,
+        "bytes": total_bytes, "generated": composed, "started": started,
         "dur_s": round(time.time() - t0, 1), "mode": "live",
     }
 

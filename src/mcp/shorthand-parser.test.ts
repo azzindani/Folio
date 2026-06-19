@@ -247,11 +247,29 @@ describe('expandShorthand', () => {
     const d0 = r.layers!.find(l => l.id === 'ev_d0')!;
     // details sit BELOW the (auto-sized) title — no collision
     expect(d0.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
-    // decorative bars exist and are NOT the background color (visible)
-    const bar0 = r.layers!.find(l => l.id === 'ev_bar0')!;
-    expect((bar0.fill?.color ?? '').toLowerCase()).not.toBe('#0a0a0a');
+    // the accent moment is either the left rail (rail variant) or a rule (the
+    // other variants) — it exists and is NOT the background color (visible).
+    const accent = r.layers!.find(l => l.id === 'ev_bar0' || l.id === 'ev_rule')!;
+    expect(accent).toBeTruthy();
+    expect((accent.fill?.color ?? '').toLowerCase()).not.toBe('#0a0a0a');
     // title dominates the detail font size
     expect(title.style!.font_size!).toBeGreaterThan((d0.style!.font_size ?? 0) * 2);
+  });
+
+  it('event preset has structurally distinct variants (not one recoloured template)', () => {
+    type EL = { id: string; style?: { align?: string; text_transform?: string } };
+    const shape = (title: string): string => {
+      const r = expandShorthand({ id: 'e', type: 'event', z: 0, pos: [0, 0, 1080, 1350],
+        title, details: ['Sat 14 June', 'The Park'] } as unknown as ShorthandLayer) as { layers?: EL[] };
+      const t = r.layers!.find(l => l.id === 'e_title')!;
+      const rail = r.layers!.some(l => l.id === 'e_bar0');
+      return `${t.style?.align ?? 'left'}|${t.style?.text_transform ?? 'mixed'}|${rail ? 'rail' : 'norail'}`;
+    };
+    // Across many titles the preset must yield several different skeletons —
+    // some centered, some left; some all-caps sans, some mixed-case serif.
+    const shapes = new Set(['Jazz Night', 'Charity Gala', 'Wedding Day', 'Farmers Market',
+      'Comedy Show', 'Art Walk', 'Book Launch', 'Film Night'].map(shape));
+    expect(shapes.size).toBeGreaterThanOrEqual(3);
   });
 
   it('event preset drops palette colors that would be invisible on the canvas', () => {

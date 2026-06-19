@@ -204,3 +204,24 @@ export function pickSecLayout(seed: string): SecLayout {
   const bandTone: 'accent' | 'ink' = hashSalt(s, 14) % 2 === 0 ? 'ink' : 'accent';
   return { align, statCols, header, bandTone };
 }
+
+// Structural archetype for an EVENT poster. The event preset used to emit ONE
+// skeleton (left accent rail + all-caps sans headline, vertically centered), so
+// every event poster read as the same template recoloured. Pick one of four
+// genuinely different bone structures from the title seed so two events don't
+// share a shape:
+//   0 left-rail caps — accent bars in the left margin, all-caps sans, left-anchored (classic)
+//   1 centered caps  — no rail, caps sans centered under a centered accent rule (poster)
+//   2 left serif     — mixed-case SERIF headline, left-anchored with an accent tick (editorial)
+//   3 centered serif — mixed-case SERIF headline centered with a short centered rule (elegant)
+export interface EventLayout { align: 'left' | 'center'; rail: boolean; serif: boolean; }
+export function pickEventLayout(seed: string): EventLayout {
+  const s = seed && seed.trim() ? seed : 'event';
+  const variants: EventLayout[] = [
+    { align: 'left',   rail: true,  serif: false },
+    { align: 'center', rail: false, serif: false },
+    { align: 'left',   rail: false, serif: true  },
+    { align: 'center', rail: false, serif: true  },
+  ];
+  return variants[hashSalt(s, 21) % variants.length];
+}
