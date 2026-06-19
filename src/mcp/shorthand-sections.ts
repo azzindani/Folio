@@ -131,7 +131,12 @@ export function renderSectionBlock(b: Record<string, unknown>, idp: string, z0: 
     const rows = Math.ceil(n / cols);
     const colGap = Math.round(W * 0.025), rowGap = Math.round(W * 0.03);
     const colW = Math.round((w - (cols - 1) * colGap) / cols);
-    const cellCenter = ctx.align === 'center' || cols === 2;
+    // Follow the composition's alignment. A 2-col grid used to force-center its
+    // cells, which left the figures floating mid-column while the heading/text
+    // blocks below sat left-anchored — a visible left-edge mismatch. Left-anchor
+    // the cells too (col 0 starts at the content margin), so the whole body
+    // shares one left edge; only an explicitly centered composition centers them.
+    const cellCenter = ctx.align === 'center';
     const valAlign = cellCenter ? { align: 'center' } : {};
     // Size the figure to FIT its column: the longest UNBREAKABLE token of any
     // value must fit colW (a long single-token value like "$0.04/kWh" otherwise
