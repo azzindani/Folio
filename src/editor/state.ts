@@ -171,9 +171,40 @@ export class StateManager {
     return this.state.design.layers ?? [];
   }
 
+  /** Find a layer by id anywhere in the current page tree (recurses into groups).
+   *  Top-level-only `getCurrentLayers().find(...)` silently misses layers nested
+   *  in a group — and presets ship the whole poster as one group, so editing any
+   *  of its children did nothing. */
+  findLayer(id: string): Layer | undefined {
+    const walk = (layers: Layer[]): Layer | undefined => {
+      for (const l of layers) {
+        if (l.id === id) return l;
+        const kids = (l as unknown as { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) { const f = walk(kids); if (f) return f; }
+      }
+      return undefined;
+    };
+    return walk(this.getCurrentLayers());
+  }
+
   getSelectedLayers(): Layer[] {
-    const layers = this.getCurrentLayers();
-    return layers.filter(l => this.state.selectedLayerIds.includes(l.id));
+    const ids = new Set(this.state.selectedLayerIds);
+    if (ids.size === 0) return [];
+    // Recurse into groups: a click on the canvas resolves to the INNERMOST
+    // data-layer-id (a child of a group), and presets ship the whole poster as
+    // ONE group — so a top-level-only filter returned nothing for every nested
+    // item, making the canvas feel unselectable (no selection box, blank
+    // properties). Walk the tree so nested ids resolve too.
+    const found: Layer[] = [];
+    const walk = (layers: Layer[]): void => {
+      for (const l of layers) {
+        if (ids.has(l.id)) found.push(l);
+        const kids = (l as unknown as { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) walk(kids);
+      }
+    };
+    walk(this.getCurrentLayers());
+    return found;
   }
 
   updateLayer(layerId: string, updates: Partial<Layer>, recordUndo = true): void {

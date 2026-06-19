@@ -292,24 +292,25 @@ describe('sealDesign', () => {
     expect(ids).toContain('cover-2');
   });
 
-  it('fits a poster doc to the sole content group even when a full-canvas backdrop rect was also added (sage-block bug)', () => {
+  it('HONORS a deliberate 1080×1920 (9:16) even for short content — bg fills, no shrink', () => {
     const projectPath = path.join(tmpDir, 'fitbg-project');
     createProject({ name: 'FitBg', path: projectPath });
     createDesign({ project_path: projectPath, name: 'FitBg', type: 'poster', width: 1080, height: 1920 });
     const designPath = path.join(projectPath, 'designs/fitbg.design.yaml');
-    // The exact shape: a full-canvas backdrop rect + ONE thin sections group, in one
-    // call. Pre-fix the doc stayed 1920 and the 972 group left the backdrop showing
-    // through the empty lower half.
+    // A full-canvas backdrop rect + ONE thin sections group. 1080×1920 is a
+    // standard 9:16 ratio the user deliberately chose, so the short content keeps
+    // the requested canvas (content top-anchored, backdrop filling) instead of
+    // collapsing the doc to the ~972 content height.
     addLayers({ design_path: designPath, layers_shorthand: [
       { type: 'rect', pos: [0, 0, 1080, 1920], fill: '#A8B6A2' },
       { type: 'sections', title: 'In Praise of Doing Less', subtitle: 'x', blocks: [{ kind: 'text', text: 'A short line.' }] },
     ] as unknown as ShorthandLayer[] });
     const spec = parseYAMLDesign(designPath);
     const grp = (spec.layers ?? []).find(l => l.type === 'group') as unknown as { height: number };
-    expect(spec.document.height).toBeLessThan(1920);   // doc fit down to the content
-    expect(spec.document.height).toBe(grp.height);      // exactly the group height
+    expect(spec.document.height).toBe(1920);  // requested 9:16 kept, NOT shrunk
+    expect(grp.height).toBe(1920);             // content group fills the canvas
     const rect = (spec.layers ?? []).find(l => l.type === 'rect') as unknown as { height: number };
-    expect(rect.height).toBeLessThanOrEqual(grp.height); // backdrop clamped, no overhang
+    expect(rect.height).toBe(1920);            // backdrop fills the whole canvas
   });
 
   it('keeps a motif placed in genuine empty side space (no overlap with content)', () => {
