@@ -214,6 +214,15 @@ export function pickSecLayout(seed: string): SecLayout {
 //   1 centered caps  — no rail, caps sans centered under a centered accent rule (poster)
 //   2 left serif     — mixed-case SERIF headline, left-anchored with an accent tick (editorial)
 //   3 centered serif — mixed-case SERIF headline centered with a short centered rule (elegant)
+// feature_grid used to ALWAYS centre its header and card content. Half the time
+// now go fully left-anchored (header + cards left, icons top-left) — a calmer
+// editorial grid vs the centred dashboard — so two card posters don't match.
+export interface GridLayout { align: 'left' | 'center'; }
+export function pickGridLayout(seed: string): GridLayout {
+  const s = seed && seed.trim() ? seed : 'grid';
+  return { align: hashSalt(s, 31) % 2 === 0 ? 'left' : 'center' };
+}
+
 export interface EventLayout { align: 'left' | 'center'; rail: boolean; serif: boolean; }
 export function pickEventLayout(seed: string): EventLayout {
   const s = seed && seed.trim() ? seed : 'event';
