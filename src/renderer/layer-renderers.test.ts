@@ -256,7 +256,7 @@ describe('renderIcon', () => {
     expect(innerSvg!.getAttribute('stroke')).toBe('currentColor');
   });
 
-  it('renders a clean circle fallback (no raw name) for unknown icon names', () => {
+  it('renders a solid dot fallback (no raw name) for unknown icon names', () => {
     const layer: IconLayer = {
       id: 'ic3', type: 'icon', z: 0,
       x: 0, y: 0, name: '__unknown_icon_xyz__', size: 32, color: '#abc',
@@ -264,7 +264,8 @@ describe('renderIcon', () => {
     const el = renderIcon(layer, makeSVG());
     const circle = el.querySelector('circle');
     expect(circle).toBeTruthy();
-    expect(circle!.getAttribute('stroke')).toBe('#abc');
+    // A filled accent dot (reads as an intentional bullet), not a hollow ring.
+    expect(circle!.getAttribute('fill')).toBe('#abc');
     // The raw, unresolved name must NOT leak as visible text.
     expect(el.querySelector('text')).toBeNull();
   });

@@ -302,6 +302,28 @@ const ICON_NAME_SET = new Set(Object.keys(LUCIDE_ICONS));
 // emoji becomes a real vector glyph in BOTH the editor and PNG export. Keys are the
 // BASE codepoint (variation selectors / skin tones are stripped before lookup).
 const EMOJI_ICONS: Record<string, string> = {
+  // ── business / tech / product emoji a model reaches for on feature cards.
+  // The add_layers guide tells models to use plain emoji, so an unmapped one
+  // (📊 on a "Reporting Dashboard" card) renders a blank circle — a recurring
+  // blind-model failure. Map each to the nearest real glyph in the bundled set.
+  '📊': 'bar-chart', '📈': 'trending-up', '📉': 'trending-down', '📇': 'clipboard',
+  '📋': 'clipboard', '📝': 'file-text', '🧾': 'receipt', '📄': 'file-text', '📃': 'file-text',
+  '💼': 'briefcase', '🗂': 'folder', '📁': 'folder', '📂': 'folder-open', '🗃': 'folder',
+  '🔒': 'lock', '🔐': 'lock', '🛡': 'shield', '🔓': 'unlock',
+  '🚀': 'send', '💡': 'zap', '⚙': 'settings', '⚙️': 'settings', '🛠': 'settings', '🔧': 'settings', '🔩': 'settings',
+  '📱': 'smartphone', '💻': 'monitor', '🖥': 'monitor', '⌨': 'type', '🖱': 'navigation',
+  '🎯': 'target', '🔔': 'bell', '🔕': 'bell', '📢': 'volume-2', '📣': 'volume-2',
+  '📖': 'book-open', '📚': 'book', '📕': 'book', '📗': 'book', '📘': 'book', '📙': 'book',
+  '✏': 'pencil', '✏️': 'pencil', '🖊': 'pen', '🖋': 'pen-tool', '🖌': 'pen-tool', '🎨': 'palette', '📐': 'ruler',
+  '🔎': 'search',
+  '💪': 'zap', '🏋': 'zap', '🏋️': 'zap', '🧘': 'user', '🏃': 'navigation', '🚴': 'navigation', '⚽': 'target',
+  '🥈': 'award', '🥉': 'award',
+  '🚗': 'truck', '🚙': 'truck', '✈': 'send', '✈️': 'send', '🛫': 'send', '🛬': 'send',
+  '🎓': 'graduation-cap', '🎒': 'briefcase', '❓': 'info', '❔': 'info', 'ℹ': 'info', 'ℹ️': 'info', '⚠️': 'alert-triangle',
+  '💳': 'credit-card', '🏦': 'home', '🔗': 'link', '🖼': 'image', '🎥': 'video', '📹': 'video', '📷': 'image', '📸': 'image', '🎙': 'mic',
+  '🧠': 'cpu', '🤖': 'cpu', '🧪': 'pipette', '🔬': 'search', '🩺': 'stethoscope', '💊': 'pill', '🩹': 'plus',
+  '☁️': 'cloud', '❄️': 'snowflake', '🌡': 'thermometer', '☀️': 'sun', '⏳': 'clock', '⌛': 'clock', '⏲': 'timer',
+  '📤': 'upload', '📥': 'download', '🔄': 'refresh', '♻': 'refresh', '♻️': 'refresh', '✂': 'scissors',
   // produce / plants / food → leaf (a clean "fresh/market" glyph)
   '🥕': 'leaf', '🌽': 'leaf', '🍅': 'leaf', '🥦': 'leaf', '🥬': 'leaf', '🌱': 'leaf', '🌿': 'leaf', '🍃': 'leaf',
   '🍎': 'leaf', '🍏': 'leaf', '🍇': 'leaf', '🍓': 'leaf', '🍒': 'leaf', '🥗': 'leaf', '🌾': 'leaf', '🥒': 'leaf', '🫑': 'leaf',

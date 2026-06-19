@@ -484,16 +484,16 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
     iconSvg.innerHTML = inner;
     g.appendChild(iconSvg);
   } else {
-    // Unknown icon → a clean stroked circle in the icon color, matching the 2px
-    // line weight of real Lucide glyphs. A blind model can't SEE that its icon
-    // name didn't resolve, so the old dashed box + raw-name label rendered as
-    // obviously-broken output; a neutral ring reads as an intentional bullet
-    // instead. (diagnoseLayers still WARNS so a sighted/agentic caller can fix it.)
-    const circle = createSVGElement('circle', {
-      cx: size / 2, cy: size / 2, r: Math.max(2, size / 2 - 1),
-      fill: 'none', stroke: color, 'stroke-width': '2',
+    // Unknown icon → a SOLID accent dot. A blind model can't see that its name
+    // didn't resolve; a hollow ring at icon size read as an empty/broken slot
+    // next to real glyphs, whereas a small filled disc reads as an intentional
+    // bullet/marker. (The emoji + alias maps resolve the vast majority; this is
+    // the last resort, and diagnoseLayers still WARNS for an agentic caller.)
+    const dot = createSVGElement('circle', {
+      cx: size / 2, cy: size / 2, r: Math.max(2, size * 0.26),
+      fill: color, stroke: 'none',
     });
-    g.appendChild(circle);
+    g.appendChild(dot);
   }
 
   applyCommonAttributes(g, layer);
