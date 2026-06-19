@@ -80,8 +80,19 @@ export function lintComposition(layers: Layer[], canvasW: number, canvasH: numbe
 
   // 1. Full-canvas background present? Also look one level into group/preset
   //    layers (marble_bg / backdrop wrap their full-canvas rect in a group).
+  // Accept a theme-TOKEN fill ($surface / $background / $primary …) as a real
+  // background too. solidColor is hex-only (it feeds contrast math), so a base
+  // rect filled with a token used to be invisible to this check → a FALSE "no
+  // full-canvas background" note that tells the model to redo a poster that
+  // already HAS a background (a real blank-design false alarm).
+  const solidOrTokenFill = (l: Layer): boolean => {
+    if (solidColor(l)) return true;
+    const f = (l as { fill?: unknown }).fill;
+    const c = typeof f === 'string' ? f : (f && typeof f === 'object' ? (f as { color?: unknown }).color : undefined);
+    return typeof c === 'string' && c.startsWith('$');
+  };
   const isFullCanvasSolid = (l: Layer): boolean => {
-    if (!solidColor(l)) return false;
+    if (!solidOrTokenFill(l)) return false;
     const r = rectOf(l);
     return r ? r.w * r.h >= canvasW * canvasH * 0.9 && r.x <= 2 && r.y <= 2 : false;
   };

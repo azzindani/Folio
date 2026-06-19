@@ -444,6 +444,32 @@ export function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
     if (r[canonical] !== undefined) return;
     for (const k of keys) if (r[k] !== undefined) { r[canonical] = r[k]; return; }
   };
+  // Verbose/canonical layers nest styling under `style:{}` — the schema shape a
+  // model learns from inspect_design output or the docs, then reasonably sends
+  // through `layers_shorthand`. The shorthand expander reads FLAT fields, so an
+  // un-lifted `style` silently DROPS every color/font/weight/align: the text
+  // then defaults to a flat `$text` with one size and no accent, and the whole
+  // poster reads as blank/undesigned (live blind-model failure). Lift the
+  // recognized style props to the top level (an explicit flat field still wins).
+  const st = r['style'];
+  if (st && typeof st === 'object' && !Array.isArray(st)) {
+    const s = st as Record<string, unknown>;
+    const lift = (canonical: string, ...keys: string[]): void => {
+      if (r[canonical] !== undefined) return;
+      for (const k of keys) if (s[k] !== undefined) { r[canonical] = s[k]; return; }
+    };
+    lift('color', 'color');
+    lift('font', 'font', 'font_family', 'fontFamily');
+    lift('size', 'size', 'font_size', 'fontSize');
+    lift('weight', 'weight', 'font_weight', 'fontWeight');
+    lift('align', 'align', 'text_align', 'textAlign');
+    lift('line_height', 'line_height', 'lineHeight', 'lh', 'leading');
+    lift('letter_spacing', 'letter_spacing', 'letterSpacing', 'track', 'tracking');
+    // Craft fields the text expander's typography reader also checks flat.
+    for (const k of ['text_transform', 'uppercase', 'italic', 'font_style', 'text_decoration', 'underline', 'highlight', 'outline', 'outline_color', 'outline_width', 'word_spacing']) {
+      if (r[k] === undefined && s[k] !== undefined) r[k] = s[k];
+    }
+  }
   alias('type', 't', 'preset');
   alias('pos', 'p');
   alias('fill', 'f');
