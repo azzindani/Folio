@@ -35,6 +35,22 @@ describe('resolveIconName — tolerates the names small models emit', () => {
     expect(resolveIconName('espresso')).toBe('coffee');
     expect(resolveIconName('shipping')).toBe('truck');
   });
+  it('maps the business/tech/etc. emoji models put on feature cards (no blank circle)', () => {
+    // 📊 on a "Reporting Dashboard" card was the live blind-model failure.
+    expect(resolveIconName('📊')).toBe('bar-chart');
+    expect(resolveIconName('📈')).toBe('trending-up');
+    expect(resolveIconName('💼')).toBe('briefcase');
+    expect(resolveIconName('🔒')).toBe('lock');
+    expect(resolveIconName('🚀')).toBe('send');
+    expect(resolveIconName('💡')).toBe('zap');
+    expect(resolveIconName('📱')).toBe('smartphone');
+    expect(resolveIconName('🎯')).toBe('target');
+    expect(resolveIconName('🎓')).toBe('graduation-cap');
+    expect(resolveIconName('📝')).toBe('file-text');
+    expect(resolveIconName('🧠')).toBe('cpu');
+    // mixed "emoji + label" still resolves off the first known emoji
+    expect(resolveIconName('📊 Analytics')).toBe('bar-chart');
+  });
   it('returns null (→ honest placeholder) when there is no confident match', () => {
     expect(resolveIconName('coffee_cup')).toBeNull();
     expect(resolveIconName('nonexistent-xyz')).toBeNull();

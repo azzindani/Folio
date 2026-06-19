@@ -71,3 +71,12 @@ tmp-screens/
 
 # report-lab screenshot artifacts
 tools/report-lab/out/
+
+# EXCEPTION: the 100-case design suite (drivers + use cases) under tools/harness-suite/
+!tools/harness-suite/
+tools/harness-suite/*
+!tools/harness-suite/*.py
+!tools/harness-suite/*.json
+!tools/harness-suite/*.md
+# but NOT the regenerated run results
+tools/harness-suite/results.json
