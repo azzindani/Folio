@@ -401,8 +401,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
   }
 
   private switchFillType(layerId: string, toType: string): void {
-    const layers = this.state.getCurrentLayers();
-    const layer = layers.find(l => l.id === layerId);
+    const layer = this.state.findLayer(layerId);
     if (!layer) return;
 
     const currentFill = (layer as { fill?: { type: string; color?: string; stops?: { color: string; position: number }[]; angle?: number; cx?: number; cy?: number; radius?: number } }).fill;
@@ -444,8 +443,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
   }
 
   private addGradientStop(layerId: string, position: number): void {
-    const layers = this.state.getCurrentLayers();
-    const layer = layers.find(l => l.id === layerId);
+    const layer = this.state.findLayer(layerId);
     if (!layer || !('fill' in layer)) return;
     const fill = (layer as { fill?: { type: string; stops?: unknown[] } }).fill;
     if (!fill || (fill.type !== 'linear' && fill.type !== 'radial')) return;
@@ -457,8 +455,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
   }
 
   private removeGradientStop(layerId: string, index: number): void {
-    const layers = this.state.getCurrentLayers();
-    const layer = layers.find(l => l.id === layerId);
+    const layer = this.state.findLayer(layerId);
     if (!layer || !('fill' in layer)) return;
     const fill = (layer as { fill?: { type: string; stops?: unknown[] } }).fill;
     if (!fill || !fill.stops || fill.stops.length <= 2) return; // keep ≥ 2 stops
@@ -566,8 +563,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
     }
 
     // Nested property updates (supports array indices, e.g. fill.stops.0.color)
-    const layers = this.state.getCurrentLayers();
-    const layer = layers.find(l => l.id === layerId);
+    const layer = this.state.findLayer(layerId);
     if (!layer) return;
 
     const update = deepClone(layer) as unknown as Record<string, unknown>;

@@ -52,11 +52,18 @@ describe('honorPosterRatio', () => {
     expect((title['style'] as Record<string, unknown>)['font_size']).toBe(80); // font NOT scaled
   });
 
-  it('returns null when content FITS the requested height (legacy content-fit / sage-block keeps charge)', () => {
+  it('HONORS the requested dims when content fits (no shrink to content)', () => {
     const { group } = poster(1200);
-    expect(honorPosterRatio(group, [], 1080, 1350)).toBeNull(); // gh (1200) ≤ reqH (1350)
-    // group untouched
-    expect((group as unknown as Record<string, unknown>)['height']).toBe(1200);
+    // gh (1200) ≤ reqH (1350): the user asked for a 4:5 canvas, so keep 4:5 with
+    // the short content top-anchored and the bg filling — don't collapse to 1200.
+    const res = honorPosterRatio(group, [], 1080, 1350);
+    expect(res).toEqual({ width: 1080, height: 1350 });
+    const g = group as unknown as Record<string, unknown>;
+    expect([g['width'], g['height']]).toEqual([1080, 1350]);
+    const bg = (g['layers'] as Record<string, unknown>[]).find(k => k['id'] === 'sections_1_bg')!;
+    expect([bg['width'], bg['height']]).toEqual([1080, 1350]); // backdrop fills the canvas
+    const title = (g['layers'] as Record<string, unknown>[]).find(k => k['id'] === 'sections_1_title')!;
+    expect(title['y']).toBe(100); // content stays top-anchored (not recentered)
   });
 
   it('returns null for a non-standard ratio (legacy content-fit stays in charge)', () => {

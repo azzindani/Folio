@@ -114,21 +114,27 @@ export function honorPosterRatio(
   const gw = num(g, 'width'), gh = num(g, 'height');
   if (gw <= 0 || gh <= 0) return null;
 
-  // Only act when the content is TALLER than the requested canvas — that is the
-  // bug: the legacy auto-fit grows the doc to the content's height, turning 4:5
-  // into 3:5. When content FITS (gh ≤ reqH) the legacy content-fit (shrink the
-  // doc to the content, no dead band — the "sage-block" behavior) is correct and
-  // we stay out of its way. We can't tell a deliberate ratio from a model's
-  // arbitrarily-oversized canvas for short content, so we don't try.
-  if (gh <= reqH) return null;
-
+  // Honor the requested standard ratio in BOTH directions:
+  //  • OVERFLOW (content taller than reqH): grow to the smallest box of the
+  //    requested ratio that contains the content (else the legacy auto-fit grows
+  //    the doc to the content's height, turning 4:5 into 3:5).
+  //  • UNDERFLOW (content fits): keep the requested canvas instead of shrinking
+  //    to the content. The user deliberately created a standard-ratio poster, so
+  //    a short run of content should keep that ratio (content top-anchored,
+  //    background filling) — not collapse toward a square. (This was the legacy
+  //    "sage-block" shrink; the user asked for the dimension to be respected.)
   const ratio = reqW / reqH;
-  // Smallest box of `ratio` (w/h) that contains gw×gh.
-  let newW = Math.max(gw, Math.round(gh * ratio));
-  let newH = Math.round(newW / ratio);
-  if (newH < gh) { newH = gh; newW = Math.round(gh * ratio); }
+  let newW: number, newH: number;
+  if (gh > reqH) {
+    newW = Math.max(gw, Math.round(gh * ratio));
+    newH = Math.round(newW / ratio);
+    if (newH < gh) { newH = gh; newW = Math.round(gh * ratio); }
+  } else {
+    newW = Math.max(gw, reqW);
+    newH = newW > reqW ? Math.round(newW / ratio) : reqH;
+  }
 
-  // Already the requested ratio at the natural size → nothing to do.
+  // Already exactly the target size → nothing to do (legacy path is a no-op too).
   if (newW === gw && newH === gh) {
     return null;
   }

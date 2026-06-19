@@ -376,6 +376,16 @@ export abstract class PropertiesPanelBase {
         html += this.renderColorField('style.color', 'Color', styleColor);
       }
     }
+    // Link — set an href so the layer renders as a real clickable hyperlink
+    // (wrapped in an SVG <a> by renderLayer) in the editor, HTML and PDF export.
+    const href = typeof (layer as { href?: unknown }).href === 'string' ? (layer as { href: string }).href : '';
+    html += `
+      <div style="margin-top:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Link (URL)</div>
+        <input type="text" class="prop-input" data-prop="href" value="${href}" placeholder="https://…"
+          style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px">
+      </div>`;
     return html;
   }
 
