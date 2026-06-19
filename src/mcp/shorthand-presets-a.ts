@@ -3,7 +3,7 @@ import type { Layer, Fill } from '../schema/types';
 
 import { hexToRgb, luminance } from './engine/reference';
 
-import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, expandFill, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt } from './shorthand-helpers';
+import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, expandFill, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer } from './shorthand-helpers';
 
 import { composeBackground } from './shorthand-background';
 
@@ -348,7 +348,7 @@ export function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer
   if (footer) {
     const fy = Y + H - Math.round(H * 0.09);
     layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy, width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
-    layers.push(txt(`${id}_footer`, z + k++, cX, fy + 16, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    layers.push(footerLayer(`${id}_footer`, z + k++, cX, fy + 16, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
