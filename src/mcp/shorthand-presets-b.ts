@@ -2,7 +2,7 @@
 import type { Layer } from '../schema/types';
 
 import { hexToRgb, luminance } from './engine/reference';
-import { pickSecLayout } from './engine/mood-bank';
+import { pickSecLayout, pickEventLayout } from './engine/mood-bank';
 import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, mixHex, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer, ListItem, SecCtx } from './shorthand-helpers';
 
 import { renderSectionBlock } from './shorthand-sections';
@@ -210,6 +210,19 @@ export function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
 
   const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
   const bgHex = asHex(bg);
+  // ── Structural variant — one of 4 distinct event skeletons (left-rail caps /
+  // centered caps / left serif / centered serif), seeded from the title so two
+  // event posters never share a shape. An explicit align: still overrides.
+  const lay = pickEventLayout(`${title} ${kicker}`);
+  const alignField = shStr(r['align'] ?? r['text_align']);
+  const centered = alignField === 'center' || (alignField !== 'left' && lay.align === 'center');
+  const serif = lay.serif;
+  const rail = lay.rail && !centered;        // a left rail only reads under left-anchored text
+  const halign = centered ? { align: 'center' as const } : {};
+  // Serif variant: a mixed-case display serif headline (Playfair) instead of the
+  // all-caps sans — the single biggest break from the "every event is CAPS" look.
+  const titleFontResolved = shStr(r['font'] ?? r['font_family'], (serif ? 'Playfair Display' : (m?.font ?? ''))) || undefined;
+  const titleCaps = !serif;
   // Decor bar colors must contrast the canvas (don't repeat the invisible-decor bug).
   const palRaw = (Array.isArray(r['palette']) ? r['palette'] : []).filter((c): c is string => typeof c === 'string');
   let bars = (palRaw.length ? palRaw : [accent]).filter(c => !bgHex || contrastRatio(c, bgHex) >= 1.5);
@@ -222,37 +235,49 @@ export function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   // default, so measure with caps-aware factors (0.60 / 0.66) to match the
   // renderer. Without this a title that wraps to 3 caps lines under-budgets and
   // the details overlap its last line (diagnose can't see inside the preset).
-  const eventFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
-  // Shrink the (often very large) caps title so its longest word fits the width.
-  const ts = fitTitleSize(title, Math.round(W * 0.15), cW, eventFont, true), titleH = estTextHeight(title, ts, cW, 1.0, 0.60);
+  // Shrink the (often very large) title so its longest word fits the width.
+  const capsFactor = titleCaps ? 0.60 : 0.54;
+  const ts = fitTitleSize(title, Math.round(W * (serif ? 0.135 : 0.15)), cW, titleFontResolved, titleCaps), titleH = estTextHeight(title, ts, cW, serif ? 1.05 : 1.0, capsFactor);
   // Hero the date — pull the first date-like line out of the stack and render it
   // big in the accent (the prominent "JULY 18" an event poster wants), leaving the
   // venue/meta lines in the calm mono stack below it.
   let heroDate = ''; const restDetails: string[] = [];
   for (const line of details) { if (!heroDate && isDateLine(line)) heroDate = line.trim(); else restDetails.push(line); }
-  const hs = heroDate ? fitTitleSize(heroDate, Math.round(W * 0.062), cW, eventFont, true) : 0;
-  const heroH = heroDate ? estTextHeight(heroDate, hs, cW, 1.0, 0.6) : 0;
+  const hs = heroDate ? fitTitleSize(heroDate, Math.round(W * 0.062), cW, titleFontResolved, titleCaps) : 0;
+  const heroH = heroDate ? estTextHeight(heroDate, hs, cW, 1.0, capsFactor) : 0;
   const heroGap = heroDate ? Math.round(H * 0.022) : 0;
   const ds = Math.round(W * 0.026), lineGap = Math.round(H * 0.012);
   const detailH = restDetails.reduce((a, l) => a + estTextHeight(l, ds, cW, 1.25, 0.66) + lineGap, 0);
   const kickH = kicker ? Math.round(H * 0.05) : 0;
-  const total = kickH + titleH + Math.round(H * 0.03) + heroH + heroGap + detailH;
+  const ruleH = !rail ? Math.round(H * 0.028) : 0; // a rule replaces the rail's accent moment
+  const total = kickH + titleH + ruleH + Math.round(H * 0.03) + heroH + heroGap + detailH;
   const top = Y + Math.max(Math.round(H * 0.12), (H - total) / 2 - Math.round(H * 0.02));
 
-  // Accent bars in the far-left margin, staggered, vertically spanning the block.
-  bars.slice(0, 3).forEach((c, i) => {
+  // Variant 0 ONLY: accent bars in the far-left margin (the "left rail" look).
+  // The other three variants carry their accent in a rule under the title instead,
+  // so two event posters never share the rail-and-caps silhouette.
+  if (rail) bars.slice(0, 3).forEach((c, i) => {
     layers.push({ id: `${id}_bar${i}`, type: 'rect', z: z + k++, x: Math.round(X + W * 0.018 + i * W * 0.022), y: Math.round(top + i * H * 0.03), width: Math.round(W * 0.012), height: Math.round((titleH + heroH + detailH) * (0.95 - i * 0.12)), fill: { type: 'solid', color: c } } as unknown as Layer);
   });
 
+  const titleTransform = titleCaps ? { text_transform: 'uppercase' as const } : {};
   let cy = top;
   if (kicker) {
-    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase', ...halign }));
     cy += kickH;
   }
-  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase', font_family: eventFont }));
-  cy += titleH + Math.round(H * 0.03);
+  layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, titleH, title, { font_size: ts, font_weight: serif ? 700 : 800, color: textColor, line_height: serif ? 1.05 : 1.0, letter_spacing: serif ? 0 : -1, ...titleTransform, font_family: titleFontResolved, ...halign }));
+  cy += titleH;
+  if (ruleH) {
+    // Accent rule under the title — centered under a centered headline, else a
+    // short left-anchored tick. Gives the rail-less variants their accent beat.
+    const rw = centered ? Math.round(W * 0.14) : Math.round(W * 0.1);
+    const rx = centered ? cX + Math.round((cW - rw) / 2) : cX;
+    layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: rx, y: Math.round(cy + H * 0.006), width: rw, height: serif ? 3 : 6, fill: { type: 'solid', color: accent } } as unknown as Layer);
+  }
+  cy += ruleH + Math.round(H * 0.03);
   if (heroDate) {
-    layers.push(txt(`${id}_hero`, z + k++, cX, cy, cW, heroH, heroDate, { font_size: hs, font_weight: 800, color: accent, line_height: 1.0, letter_spacing: -1, text_transform: 'uppercase', font_family: eventFont }));
+    layers.push(txt(`${id}_hero`, z + k++, cX, cy, cW, heroH, heroDate, { font_size: hs, font_weight: serif ? 700 : 800, color: accent, line_height: 1.0, letter_spacing: serif ? 0 : -1, ...titleTransform, font_family: titleFontResolved, ...halign }));
     cy += heroH + heroGap;
   }
   restDetails.forEach((line, i) => {
@@ -260,7 +285,7 @@ export function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     // With a hero date carrying the accent, the meta lines stay calm; without one,
     // the last line keeps the accent highlight (often the date/CTA).
     const accentLine = !heroDate && i === restDetails.length - 1;
-    layers.push(txt(`${id}_d${i}`, z + k++, cX, cy, cW, lh, line, { font_family: 'IBM Plex Mono', font_size: ds, font_weight: 600, color: accentLine ? accent : textColor, letter_spacing: 1, text_transform: 'uppercase' }));
+    layers.push(txt(`${id}_d${i}`, z + k++, cX, cy, cW, lh, line, { font_family: 'IBM Plex Mono', font_size: ds, font_weight: 600, color: accentLine ? accent : textColor, letter_spacing: 1, text_transform: 'uppercase', ...halign }));
     cy += lh + lineGap;
   });
   if (footer) {
@@ -269,7 +294,7 @@ export function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     // bottom y collided the footer with the last detail line (blind-30B: a "hosted
     // by…" footer printed over the "Free · All ages…" meta line).
     const fy = Math.max(Y + H - Math.round(H * 0.07), Math.round(cy) + lineGap);
-    layers.push(footerLayer(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
+    layers.push(footerLayer(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1, ...halign }, r));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
