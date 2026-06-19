@@ -522,6 +522,36 @@ export function txt(id: string, z: number, x: number, y: number, w: number, h: n
   return { id, type: 'text', z, x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h), content: { type: 'plain', value }, style } as unknown as Layer;
 }
 
+// A URL inside footer/credit text: a full http(s) link, a www. host, or a bare
+// `domain.tld/path`. The trailing PATH is required for the bare form so version
+// strings ("v2.5.0"), filenames ("design.yaml") and dotted prose ("e.g.") don't
+// false-match — a real footer URL the user wants linked virtually always has one.
+const FOOTER_URL_RE = /(https?:\/\/[^\s]+|www\.[^\s]+|(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s]+)/i;
+
+/** Prepend https:// when a URL has no scheme so it's a valid href. */
+export function normalizeUrl(u: string): string {
+  const t = u.trim();
+  return /^https?:\/\//i.test(t) ? t : `https://${t.replace(/^\/+/, '')}`;
+}
+
+/** The href for a footer/credit: an explicit link field, else a URL detected in
+ *  the text itself ("add the repo hyperlink as footer" → the URL becomes live). */
+export function footerHref(value: string, r: Record<string, unknown>): string | undefined {
+  const explicit = shStr(r['footer_link'] ?? r['footer_url'] ?? r['footer_href'] ?? r['link'] ?? r['url']);
+  if (explicit) return normalizeUrl(explicit);
+  const m = value.match(FOOTER_URL_RE);
+  return m ? normalizeUrl(m[1] ?? m[0]) : undefined;
+}
+
+/** Footer text layer that becomes a clickable hyperlink (renderer wraps an
+ *  `href` layer in an SVG <a>) when the footer carries a URL or an explicit link. */
+export function footerLayer(id: string, z: number, x: number, y: number, w: number, h: number, value: string, style: Record<string, unknown>, r: Record<string, unknown>): Layer {
+  const layer = txt(id, z, x, y, w, h, value, style);
+  const href = footerHref(value, r);
+  if (href) (layer as unknown as Record<string, unknown>)['href'] = href;
+  return layer;
+}
+
 // Editorial text-forward poster — kicker · rule · big headline · deck · body ·
 // footer, left-anchored with a held margin and ONE accent. The art-directed
 // composition the guide preaches, laid out by the engine in ONE layer.

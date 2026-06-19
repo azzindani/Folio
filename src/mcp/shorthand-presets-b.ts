@@ -3,7 +3,7 @@ import type { Layer } from '../schema/types';
 
 import { hexToRgb, luminance } from './engine/reference';
 import { pickSecLayout } from './engine/mood-bank';
-import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, mixHex, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, ListItem, SecCtx } from './shorthand-helpers';
+import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, mixHex, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer, ListItem, SecCtx } from './shorthand-helpers';
 
 import { renderSectionBlock } from './shorthand-sections';
 import { composeBackground } from './shorthand-background';
@@ -88,7 +88,7 @@ export function buildList(sh: ShorthandLayer, id: string, z: number): Layer {
     cy += Math.round(W * 0.05);
     content.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: contentW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
     cy += 14;
-    content.push(txt(`${id}_footer`, z + k++, cX, Math.round(cy), contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    content.push(footerLayer(`${id}_footer`, z + k++, cX, Math.round(cy), contentW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
     cy += 30;
   }
 
@@ -158,7 +158,7 @@ export function buildStat(sh: ShorthandLayer, id: string, z: number): Layer {
   if (footer) {
     const fy = Y + H - Math.round(H * 0.07);
     layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: cX, y: fy, width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
-    layers.push(txt(`${id}_footer`, z + k++, cX, fy + 14, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    layers.push(footerLayer(`${id}_footer`, z + k++, cX, fy + 14, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
@@ -269,7 +269,7 @@ export function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
     // bottom y collided the footer with the last detail line (blind-30B: a "hosted
     // by…" footer printed over the "Free · All ages…" meta line).
     const fy = Math.max(Y + H - Math.round(H * 0.07), Math.round(cy) + lineGap);
-    layers.push(txt(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    layers.push(footerLayer(`${id}_footer`, z + k++, cX, fy, cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
@@ -506,7 +506,7 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
   if (footer) {
     const fy = Y + H - Math.round(W * 0.05);
     layers.push({ id: `${id}_frule`, type: 'rect', z: z + k++, x: ccX, y: fy - 16, width: ccW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
-    layers.push(txt(`${id}_footer`, z + k++, ccX, fy, ccW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }));
+    layers.push(footerLayer(`${id}_footer`, z + k++, ccX, fy, ccW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
   }
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
