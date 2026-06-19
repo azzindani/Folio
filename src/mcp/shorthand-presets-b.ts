@@ -349,8 +349,15 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
   // fix). A left-spine rotate layout is inherently left, so it opts out of center.
   const lay = pickSecLayout([title, subtitle, kicker].filter(Boolean).join(' ') || 'folio');
   const alignField = shStr(r['align'] ?? r['text_align']);
-  const centered = !rotateKick && (alignField === 'center' || (alignField !== 'left' && lay.align === 'center'));
-  ctx.align = centered ? 'center' : 'left';
+  const explicitCenter = alignField === 'center';
+  // The keynote layout variant centers the HEADER as a cover-style masthead, but
+  // the BODY (stats + heading/text blocks) stays left-anchored: a centered
+  // masthead over a left-aligned body is a clean editorial pattern, whereas
+  // centering the stat figures while the paragraphs below sit left makes the
+  // figures float ~⅓-canvas off the body's left edge and reads as "unaligned"
+  // (a blind model can't see it). Only an EXPLICIT align:center centers the body.
+  const centered = !rotateKick && (explicitCenter || (alignField !== 'left' && lay.align === 'center'));
+  ctx.align = explicitCenter ? 'center' : 'left';
   ctx.statCols = lay.statCols;
   const halign = centered ? { align: 'center' } : {};
   // MASTHEAD BAND archetype — a full-bleed colour slab behind the header with
@@ -411,8 +418,14 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
 
   // Rich engine-composed background when bg_style is set, else a flat wash.
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
-  // Lay the masthead slab over the composed wash, under the header text.
-  if (band) layers.push({ id: `${id}_mband`, type: 'rect', z: layers.length, x: X, y: Y + topPad, width: W, height: Math.round(hY), fill: { type: 'solid', color: bandBg } } as unknown as Layer);
+  // Lay the masthead slab over the composed wash, under the header text. Its
+  // height is the pre-measure estimate `hY`; after the real header is laid we
+  // shrink it to the actual header bottom (the estimate over-reserves ~W*0.05,
+  // which showed as a dead colour band under the subtitle).
+  const bandLayer = band
+    ? ({ id: `${id}_mband`, type: 'rect', z: layers.length, x: X, y: Y + topPad, width: W, height: Math.round(hY), fill: { type: 'solid', color: bandBg } } as unknown as Layer)
+    : null;
+  if (bandLayer) layers.push(bandLayer);
   let k = layers.length, cy = Y + Math.round(W * 0.08) + topPad;
 
   // Vertical magazine-spine kicker (rotate): a -90° label pinned at the left
@@ -458,6 +471,10 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
     layers.push(txt(`${id}_sub`, z + k++, ccX, cy, ccW, sh2, subtitle, { font_size: ss, font_weight: 400, color: subColor, line_height: 1.45, ...halign }));
     cy += sh2 + Math.round(W * 0.025);
   }
+  // Shrink the masthead slab to the real header bottom now that the header is
+  // laid (cy = last header element + its trailing pad). `hY` over-reserved, so
+  // the slab used to extend a dead band of flat colour below the subtitle.
+  if (bandLayer) (bandLayer as unknown as Record<string, unknown>)['height'] = Math.max(Math.round(W * 0.12), Math.round(cy - (Y + topPad)));
   // A header rule belongs to the plain/mega/rotate treatments; highlight +
   // underline already carry their own accent moment, so a rule is redundant. The
   // masthead band already frames the header, so it suppresses the rule too.

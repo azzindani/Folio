@@ -119,6 +119,12 @@ export function createProject(args: { name: string; path?: string; theme?: strin
         path: projectDir,
         canvas: existing.config?.default_canvas,
         reused: true,
+        // Anti-loop nudge: a model that can't SEE its output tends to spin up a
+        // new project per "make it better" instead of looking. This project
+        // already exists — to improve a design, render_preview to SEE it, then
+        // patch_design / update_layer to edit it in place. Don't keep creating
+        // near-duplicate projects (list_designs shows what's already here).
+        hint: 'This project already exists — do NOT create more projects to "improve" a design. Call render_preview to SEE the current design, then edit it in place with patch_design or update_layer. Recreating from scratch loses your work and rarely fixes anything you can\'t see.',
         progress, context, handover,
       });
     }
