@@ -4,6 +4,7 @@ import type { Layer, Fill } from '../schema/types';
 import { hexToRgb, luminance } from './engine/reference';
 
 import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, expandFill, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer } from './shorthand-helpers';
+import { pickGridLayout } from './engine/mood-bank';
 
 import { composeBackground } from './shorthand-background';
 
@@ -119,6 +120,11 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
   // And MEASURE the wrapped title so a 2–3 line headline shrinks instead of
   // overflowing its fixed box into the subtitle / cards (the bug the vision
   // loop caught on the Hormuz poster).
+  // Structural variant: centred dashboard (default) vs a fully left-anchored
+  // editorial grid — seeded from the title so two card posters aren't identical.
+  const gAlign = (shStr(r['align'] ?? r['text_align']) as 'left' | 'center') || pickGridLayout(`${str(r['title'])} ${str(r['subtitle'])}`).align;
+  const headAlign = gAlign === 'left' ? 'left' : 'center';
+  const cardItemsAlign = gAlign === 'left' ? 'flex-start' : 'center';
   const headColor = readableOn(base, textColor);
   const headW = W - 2 * M;
   const headLimit = Y + Math.round(H * 0.39); // cap the header zone (top ~39%)
@@ -130,7 +136,7 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
     const maxTH = Math.round(H * 0.22);
     if (tH > maxTH) { tSizeH = Math.max(Math.round(W * 0.045), Math.floor(tSizeH * maxTH / tH)); tH = estTextHeight(title, tSizeH, headW, 1.1); }
     layers.push({ id: `${id}_title`, type: 'text', z: 30, x: X + M, y: cursorY, width: headW, height: tH,
-      content: { type: 'plain', value: title }, style: { font_size: tSizeH, font_weight: 800, color: headColor, align: 'center', line_height: 1.1, font_family: str(r['font'] ?? r['font_family'], m?.font ?? '') || undefined } } as unknown as Layer);
+      content: { type: 'plain', value: title }, style: { font_size: tSizeH, font_weight: 800, color: headColor, align: headAlign, line_height: 1.1, font_family: str(r['font'] ?? r['font_family'], m?.font ?? '') || undefined } } as unknown as Layer);
     cursorY += tH + Math.round(H * 0.012);
   }
   const subtitle = str(r['subtitle']);
@@ -138,7 +144,7 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
     const sSize = Math.round(W * 0.03);
     const sH = Math.min(estTextHeight(subtitle, sSize, headW, 1.25), Math.max(sSize, headLimit - cursorY));
     layers.push({ id: `${id}_subtitle`, type: 'text', z: 30, opacity: 0.8, x: X + M, y: cursorY, width: headW, height: sH,
-      content: { type: 'plain', value: subtitle }, style: { font_size: sSize, color: headColor, align: 'center', line_height: 1.25 } } as unknown as Layer);
+      content: { type: 'plain', value: subtitle }, style: { font_size: sSize, color: headColor, align: headAlign, line_height: 1.25 } } as unknown as Layer);
     cursorY += sH;
   }
   // Bottom of the actual header — the cards row is placed BELOW this, sized to its
@@ -181,11 +187,11 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
     const kids: Layer[] = [];
     if (it.icon) kids.push({ id: `${id}_c${i}_icon`, type: 'icon', z: 0, x: 0, y: 0, width: iconSz, height: iconSz, name: it.icon, size: iconSz, color: cardIcon } as unknown as Layer);
     if (it.title) kids.push({ id: `${id}_c${i}_title`, type: 'text', z: 1, x: 0, y: 0, width: innerW, height: estTextHeight(it.title, tSize, innerW, 1.15),
-      content: { type: 'plain', value: it.title }, style: { font_size: tSize, font_weight: 700, color: cardText, align: 'center', line_height: 1.15 } } as unknown as Layer);
+      content: { type: 'plain', value: it.title }, style: { font_size: tSize, font_weight: 700, color: cardText, align: headAlign, line_height: 1.15 } } as unknown as Layer);
     if (it.desc) kids.push({ id: `${id}_c${i}_desc`, type: 'text', z: 2, x: 0, y: 0, width: innerW, height: estTextHeight(it.desc, dSize, innerW, 1.4),
-      content: { type: 'plain', value: it.desc }, style: { font_size: dSize, color: cardMuted, align: 'center', line_height: 1.4 } } as unknown as Layer);
+      content: { type: 'plain', value: it.desc }, style: { font_size: dSize, color: cardMuted, align: headAlign, line_height: 1.4 } } as unknown as Layer);
     return { id: `${id}_card${i}`, type: 'auto_layout', z: i, x: 0, y: 0, width: cardW, height: cardH, direction: 'column',
-      gap: cardKidGap, padding: pad, align_items: 'center', justify_content: 'center', radius: 18,
+      gap: cardKidGap, padding: pad, align_items: cardItemsAlign, justify_content: 'center', radius: 18,
       fill: expandFill(cardFillResolved), layers: kids } as unknown as Layer;
   });
   // Chunk cards into rows of `cols` and stack them in a column container. For a
