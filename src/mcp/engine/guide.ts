@@ -57,6 +57,13 @@ z = stacking order (higher = front)
    dimensions the layer renders INVISIBLY. add_layers now rejects 0-dim
    layers with a clear error, but get it right first to save round-trips.
 
+🔒 HAND-PLACING A DELIBERATE COMPOSITION? Loose hand-placed layers are treated
+   as mistakes to auto-rescue (the engine re-measures, reflows + re-lights them).
+   To keep your EXACT placement + colors (intentional overlap, off-canvas bleed,
+   a stamp, a knockout on a band), wrap the primitives in ONE group
+   {type:"group", x:0, y:0, width:W, height:H, layers:[…]} OR set locked:true on
+   the layer/group — then the engine preserves your layout untouched.
+
 🎨 DESIGN LIKE A HUMAN — not an AI template. The #1 tell of AI-generated design
    is a dark-navy canvas + blue/purple GRADIENT + one glowing accent + centered
    text. Avoid that. Make it look art-directed:
