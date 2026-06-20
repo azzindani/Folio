@@ -69,12 +69,84 @@ function moodHash(s: string): number {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
   return h >>> 0;
 }
+// Relative luminance / saturation of a #RRGGBB (0..1) — used to place explicit
+// brand hexes (darkest → canvas, most-saturated → accent).
+function lumOf(hex: string): number {
+  const x = hex.replace('#', '');
+  return (0.2126 * parseInt(x.slice(0, 2), 16) + 0.7152 * parseInt(x.slice(2, 4), 16) + 0.0722 * parseInt(x.slice(4, 6), 16)) / 255;
+}
+function satOf(hex: string): number {
+  const x = hex.replace('#', '');
+  const r = parseInt(x.slice(0, 2), 16) / 255, g = parseInt(x.slice(2, 4), 16) / 255, b = parseInt(x.slice(4, 6), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  return mx === 0 ? 0 : (mx - mn) / mx;
+}
+
+// Build an art-direction straight from the brand hexes a brief states (e.g.
+// "ink #0B132B and accent #5BC0BE"). The darkest dark hex becomes the canvas,
+// the most-saturated becomes the accent — so a stated palette RENDERS in-brand
+// instead of being overridden by a topic-seeded default. font/headline are
+// borrowed from a hash-picked bank entry so type still varies per brief.
+function moodFromHexes(hexes: string[], seed: string): Mood {
+  const uniq = [...new Set(hexes.map(h => h.toLowerCase()))];
+  const byLum = [...uniq].sort((a, b) => lumOf(a) - lumOf(b));
+  const darkest = byLum[0] ?? '#0E0B14', lightest = byLum[byLum.length - 1] ?? '#F5F1EA';
+  const accent = [...uniq].sort((a, b) => satOf(b) - satOf(a))[0] ?? uniq[0] ?? '#7C5CFF';
+  let bg: string, text_color: string;
+  if (lumOf(darkest) < 0.28) { bg = darkest; text_color = '#F6F3EC'; }        // a dark brand hex → dark canvas
+  else if (lumOf(lightest) > 0.84) { bg = lightest; text_color = '#15181C'; } // a light brand hex → light canvas
+  else { bg = '#0E0B14'; text_color = '#F6F3EC'; }                            // only mid hexes → neutral dark
+  const acc = accent === bg ? (uniq.find(h => h !== bg) ?? accent) : accent;
+  const palette = [acc, ...uniq.filter(h => h !== acc && h !== bg)].slice(0, 3);
+  while (palette.length < 3) palette.push(acc);
+  const typ = MOOD_BANK[moodHash(seed) % MOOD_BANK.length] ?? DEFAULT_MOOD;
+  return { theme: isDarkHex(bg) ? 'bold-poster' : 'editorial-cream', bg, accent: acc, text_color, palette, bg_style: typ.bg_style, font: typ.font, headline: typ.headline };
+}
+
+// Explicit COLOUR WORDS → bank index, split light vs dark so "dark green" and
+// "sage green" land differently. First match wins. This HONORS a stated colour
+// ("gold and classy", "warm golden-hour", "navy") over the topic lane — the
+// opposite of templating: when the user names a colour, the engine obeys.
+const COLOR_WORDS: { test: RegExp; light: number; dark: number }[] = [
+  { test: /\b(gold|golden|golden[ -]?hour|champagne|brass)\b/i, light: 13, dark: 2 },
+  { test: /\b(amber|honey|ochre|mustard)\b/i, light: 9, dark: 17 },
+  { test: /\b(navy|indigo|cobalt|royal blue)\b/i, light: 10, dark: 4 },
+  { test: /\b(blue|azure|sky blue|cerulean)\b/i, light: 11, dark: 4 },
+  { test: /\b(teal|cyan|turquoise|aqua)\b/i, light: 11, dark: 3 },
+  { test: /\b(sage|mint|eucalyptus|pistachio)\b/i, light: 8, dark: 16 },
+  { test: /\b(green|forest|emerald|olive|moss|jade)\b/i, light: 8, dark: 7 },
+  { test: /\b(terracotta|rust|clay|brick|burnt[ -]?orange)\b/i, light: 9, dark: 17 },
+  { test: /\b(orange|coral|peach|apricot|salmon)\b/i, light: 15, dark: 0 },
+  { test: /\b(red|crimson|scarlet|cherry|maroon)\b/i, light: 14, dark: 0 },
+  { test: /\b(pink|rose|blush|fuchsia)\b/i, light: 15, dark: 19 },
+  { test: /\b(magenta|hot pink)\b/i, light: 15, dark: 19 },
+  { test: /\b(purple|violet|lavender|lilac|plum|aubergine|mauve)\b/i, light: 12, dark: 5 },
+  { test: /\b(sepia|brown|tan|beige|taupe|earthy|earth[ -]?tone|cream)\b/i, light: 9, dark: 6 },
+  { test: /\b(black\s*(?:and|&)\s*white|monochrome|gray\s?scale|grey\s?scale|\bmono\b)\b/i, light: 14, dark: 18 },
+];
+
+// An explicit colour intent stated in the brief, or null if none. Hexes win;
+// then a colour word (light vs dark variant chosen by any dark/light cue).
+function colorIntentMood(text: string, seed: string): Mood | null {
+  const hexes = text.match(/#[0-9a-fA-F]{6}\b/g);
+  if (hexes && hexes.length) return moodFromHexes(hexes, seed || text);
+  const cw = COLOR_WORDS.find(c => c.test.test(text));
+  if (!cw) return null;
+  const wantsDark = /\b(dark|darker|moody|noir|night|nighttime|midnight|charcoal|gothic|black|deep)\b/i.test(text);
+  const wantsLight = /\b(light|airy|bright|pale|pastel|soft|clean|minimal|cream|ivory|white|gentle|calm)\b/i.test(text);
+  const idx = wantsDark && !wantsLight ? cw.dark : cw.light;
+  return MOOD_BANK[idx] ?? DEFAULT_MOOD;
+}
+
 /**
- * Pick a topic-matched art-direction: a semantic lane if one matches `text`,
- * else a deterministic hash of `seed` → a stable, VARIED entry from the bank —
- * so unmatched topics don't collapse onto one default (the "same template" bug).
+ * Pick an art-direction. Order of authority: an EXPLICIT colour the brief states
+ * (a brand hex or a colour word) wins, then a semantic topic lane, then a stable
+ * hash of `seed` (so unmatched topics don't collapse onto one default). Honoring
+ * a stated colour is the point — a "gold and classy" brief must not come back mint.
  */
 export function pickMood(text: string, seed: string): Mood {
+  const ci = colorIntentMood(text, seed);
+  if (ci) return ci;
   const lane = LANES.find(l => l.test.test(text));
   if (lane) return MOOD_BANK[lane.idx] ?? DEFAULT_MOOD;
   return MOOD_BANK[moodHash(seed || text) % MOOD_BANK.length] ?? DEFAULT_MOOD;
@@ -214,13 +286,21 @@ export function pickSecLayout(seed: string): SecLayout {
 //   1 centered caps  — no rail, caps sans centered under a centered accent rule (poster)
 //   2 left serif     — mixed-case SERIF headline, left-anchored with an accent tick (editorial)
 //   3 centered serif — mixed-case SERIF headline centered with a short centered rule (elegant)
-// feature_grid used to ALWAYS centre its header and card content. Half the time
-// now go fully left-anchored (header + cards left, icons top-left) — a calmer
-// editorial grid vs the centred dashboard — so two card posters don't match.
-export interface GridLayout { align: 'left' | 'center'; }
+// feature_grid used to ALWAYS render the SAME tiled-card silhouette (rounded card,
+// icon-on-top, content centered) — so a feature poster, a "what's inside" box and
+// a steps deck all looked identical. Pick BOTH a structural archetype and an
+// alignment from the content so two card posters don't share a shape:
+//   archetype 'cards' — the tiled rounded-card grid (the dashboard default)
+//   archetype 'rows'  — full-width editorial ROWS (marker left, copy right, hairline
+//                       dividers, no card fill) — a wholly different bone structure
+// ~40% of grids now go 'rows'. align only applies to the 'cards' archetype.
+export interface GridLayout { align: 'left' | 'center'; archetype: 'cards' | 'rows'; }
 export function pickGridLayout(seed: string): GridLayout {
   const s = seed && seed.trim() ? seed : 'grid';
-  return { align: hashSalt(s, 31) % 2 === 0 ? 'left' : 'center' };
+  return {
+    align: hashSalt(s, 31) % 2 === 0 ? 'left' : 'center',
+    archetype: hashSalt(s, 33) % 5 < 2 ? 'rows' : 'cards',
+  };
 }
 
 export interface EventLayout { align: 'left' | 'center'; rail: boolean; serif: boolean; }

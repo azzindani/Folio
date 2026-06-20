@@ -48,6 +48,19 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
   editorial: { canvas: [1080, 1350], fields: ['kicker', 'title', 'subtitle (deck)', 'body — supporting paragraph', 'footer'] },
 };
 
+// When a brief routes to `sections` but is NOT data/research-driven (a personal
+// note, a non-numeric explainer, anything that slipped past event/editorial
+// routing), use a QUALITATIVE outline — prose blocks only, NO forced stats row,
+// chart or "Source:" line. This is the safety net against fabrication: a "congrats
+// on the new job" card must never sprout a donut chart of someone's "Humour 10%".
+const SECTIONS_QUALITATIVE: string[] = [
+  'intro — a 2-3 sentence framing of the topic',
+  'heading + text — facet #1, a heading + 2-3 sentences',
+  'heading + text — facet #2, a heading + 2-3 sentences',
+  'heading + text — facet #3, a heading + 2-3 sentences',
+  'callout {label,text} — the single warm takeaway (NO stats, NO chart, NO source)',
+];
+
 // Map a topic to a decorative motif that fits it, for filling negative space.
 function motifForTopic(s: string): string {
   const t = s.toLowerCase();
@@ -73,12 +86,31 @@ function inferType(p: string): string {
   // — don't let the ambiguous word "launch" route it to the EVENT preset (which
   // then ships a placeholder "EVENT" title when the model gives no event title).
   const hasProduct = /\b(product|app|tool|platform|saas|software|feature|features|extension|plugin|widget|library|framework)\b/i.test(p);
-  if (!hasProduct && /\b(event|flyer|launch|party|gig|concert|webinar|meetup|conference|festival|workshop|summit|expo|gala|ceremony|fundraiser|gathering)\b/i.test(p)) return 'event';
+  if (!hasProduct && /\b(event|flyer|launch|party|gig|concert|webinar|meetup|conference|festival|workshop|summit|expo|gala|ceremony|fundraiser|gathering|play|musical|recital|theatre|theater|drama|screening|premiere|matinee|showcase|exhibition|exhibit|ballet|opera|pantomime|cabaret|stand[- ]?up|open mic|talent show|variety show|comedy night|fashion show|art show|magic show|puppet show|fete|carnival|parade|reunion|rally)\b/i.test(p)) return 'event';
+  // A real-world MARKET / FAIR / BAZAAR (craft/artisan/farmers/flea/night/holiday…)
+  // is an event-POSTER, not a data infographic — but bare "market" is reserved for
+  // finance/research (a "market report"), so require an event-flavoured qualifier.
+  // Without this, "an artisan market poster" fell through to sections and the model
+  // fabricated a stats row + a donut chart ("Plant Goods 60%") to fill the skeleton.
+  if (/\b(?:(?:artisan|farmers?|flea|night|makers?|christmas|holiday|street|vintage|food|antique|sunday|weekend|pop[- ]?up|swap|record|plant|garden|vinyl)\s+(?:market|fair|bazaar|fayre)|craft\s+(?:market|fair|fayre)|street fair|county fair|village fair|fun ?fair|book fair|art fair|\bbazaar\b|\bfayre\b)\b/i.test(p)) return 'event';
   if (/\b(case study|before and after)\b/i.test(p)) return 'split';
   if (/\b(vs\.?|versus|comparison|compare|head[ -]?to[ -]?head|which is better|pros and cons)\b/i.test(p)) return 'comparison';
   if (/\b(feature|features|product|app|tool|platform|benefits|capabilities|why choose|launch)\b/i.test(p)) return 'feature_grid';
   if (/\b(\d+%|one (stat|number|figure)|single (stat|number))\b/i.test(p) && !/\b(report|trends|state of|overview)\b/i.test(p)) return 'stat';
-  if (/\b(report|state of|trends|overview|infographic|landscape|guide to|breakdown|analysis|deep dive|annual)\b/i.test(p)) return 'sections';
+  // An ANNOUNCEMENT / NOTICE / CELEBRATION / SIGN — a poster, NOT an infographic.
+  // These carry their own details (a name, a date, a line), so route to the light
+  // EVENT preset (kicker/title/details/footer). WITHOUT this they fell through to
+  // sections and the model fabricated a stats row + a pie chart + a "Source:" line
+  // to fill the dense skeleton (a save-the-date with a donut chart of "Love 40%").
+  if (/\b(save[ -]the[ -]date|wedding|vow renewal|engagement|anniversary|birthday|happy \d+|\d+th|baby shower|graduation|christening|invite|invitation|rsvp|announc|now open|grand opening|opening|reopening|sold out|back in stock|now hiring|we'?re hiring|hiring|lost|missing|found|reward|garage sale|yard sale|\bsale\b|% off|promo|coupon|discount|vote|polling|congrat\w*|thank you|farewell|leaving|goodbye|good luck|bon voyage|retire|memorial|in memoriam|open day|open studio|sign|notice|menu|special of the day|greeting|\bcard\b|film club|book club|movie night|film night|cinema night|potluck|housewarming)\b/i.test(p)) return 'event';
+  // An ESSAY / OPINION / QUOTE / COVER — a typographic editorial poster, not an
+  // infographic. ("story" is omitted on purpose — an instagram STORY is a format,
+  // not an essay, and would mis-route.)
+  if (/\b(editorial|opinion|essay|manifesto|think[ -]?piece|standfirst|quote|lyric|slogan|poem|poetry|brand story|founder'?s letter|book cover|album cover|magazine cover|zine cover|teaser|cover reveal)\b/i.test(p)) return 'editorial';
+  // Default: a content-DENSE explainer/report (the sections preset). Reserved for
+  // genuinely informational topics now that announcements/celebrations route to
+  // EVENT and essays/quotes/covers route to EDITORIAL above — so a save-the-date
+  // or a bakery sign no longer fabricates a stats row + pie chart + "Source:" line.
   return 'sections';
 }
 
@@ -198,7 +230,7 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
     });
   }
   const design_type = (args.type && OUTLINES[args.type]) ? args.type : inferType(prompt);
-  const outline = OUTLINES[design_type] ?? OUTLINES.sections;
+  let outline = OUTLINES[design_type] ?? OUTLINES.sections;
   const subject = subjectOf(prompt);
   const base = pickMoodVariant(prompt, subject, variant);
   // Procedural geometry seeded by the topic (+variant) — keeps a curated colour
@@ -206,6 +238,11 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   // variants of one topic, don't look alike.
   const mood: Mood = { ...base, bg_style: proceduralBgStyle(vSeed(subject || prompt), isDarkHex(base.bg)) };
   const research = needsResearch(prompt, design_type);
+  // SAFETY NET: a non-data sections brief gets the qualitative outline (no forced
+  // stats/chart/source) so nothing is fabricated even when routing mis-fires.
+  if (design_type === 'sections' && !research && outline.blocks) {
+    outline = { ...outline, blocks: SECTIONS_QUALITATIVE };
+  }
   const research_queries = research ? researchQueries(subject) : [];
   const [width, height] = outline.canvas;
 
@@ -226,10 +263,14 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   // on their whitespace, the motif stays CONDITIONAL: fill only a genuine gap.
   const motif = motifForTopic(subject);
   const fullWidthLayout = design_type === 'comparison' || design_type === 'pricing' || design_type === 'timeline';
+  // DATA presets (a report, an explainer, a single big stat) legitimately cite a
+  // source. POSTER presets (event/editorial/feature_grid/list) carry no figures —
+  // they must NOT sprout a fabricated stats row / chart / "Source:" line.
+  const isDataPreset = design_type === 'sections' || design_type === 'stat' || !!outline.blocks;
   const motifClause = (outline.blocks && !fullWidthLayout)
     ? `THEN add ONE decorative ${motif} motif to fill the open side space (these dense posters leave a wide blank column): append layers_shorthand:[{type:"motif", motif:"${motif}", pos:[${Math.round(width * 0.6)}, ${Math.round(height * 0.34)}, ${Math.round(width * 0.34)}, ${Math.round(height * 0.5)}], color:"${mood.accent}", z:1}] — a composed vector illustration on the right, BEHIND the text (low z) so it can never collide; resize its pos to whatever region the content actually left open.`
     : `IF the finished layout still leaves a large EMPTY band beside left-anchored content, add ONE ${motif} motif there to fill it — layers_shorthand:[{type:"motif", motif:"${motif}", pos:[x,y,w,h], color:"${mood.accent}", z:1}] — but NOT if the design is already full or deliberately minimal (whitespace is fine).`;
-  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs, or a missing source/footer, is the difference between a flat poster and a designed one — write real sentences and ALWAYS include the source. ${motifClause} Then diagnose_design until clean and seal.`;
+  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs is the difference between a flat poster and a designed one — write real sentences${isDataPreset ? ' and ALWAYS include the source.' : ' and fill the footer slot. This is a POSTER (no data) — do NOT add a stats row, a chart, or a "Source:" line; an event/announcement/invite lives on its headline + a few details, not invented figures.'} ${motifClause} Then diagnose_design until clean and seal.`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);

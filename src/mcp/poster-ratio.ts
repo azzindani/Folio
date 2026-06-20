@@ -74,14 +74,35 @@ function hasRelativeLayout(layer: Layer): boolean {
   return Array.isArray(kids) && (kids as Layer[]).some(hasRelativeLayout);
 }
 
-function scaleOrFill(layer: Layer, sx: number, gw: number, gh: number, newW: number, newH: number): void {
+// A masthead-BAND section (a full-bleed colour slab behind the header, id
+// `…_mband`) is a top-anchored cover archetype — its slab must stay flush to the
+// top edge, so a sparse band poster must NOT be vertically centered (that strands
+// an unpainted strip above the band).
+function hasMastheadBand(layer: Layer): boolean {
+  const o = layer as unknown as Record<string, unknown>;
+  if (typeof o['id'] === 'string' && (o['id'] as string).endsWith('_mband')) return true;
+  const kids = o['layers'];
+  return Array.isArray(kids) && (kids as Layer[]).some(hasMastheadBand);
+}
+
+function scaleOrFill(layer: Layer, sx: number, gw: number, gh: number, newW: number, newH: number, vShift: number): void {
   const o = layer as unknown as Record<string, unknown>;
   const kids = o['layers'];
-  if (Array.isArray(kids)) for (const k of kids as Layer[]) scaleOrFill(k, sx, gw, gh, newW, newH);
+  if (Array.isArray(kids)) for (const k of kids as Layer[]) scaleOrFill(k, sx, gw, gh, newW, newH, vShift);
   if (o['type'] === 'group') return; // outer/nested wrappers: children carry the coords
   if (isFullBleedBg(o, gw, gh)) {
     o['x'] = 0; o['y'] = 0; o['width'] = newW; o['height'] = newH;
     return;
+  }
+  // UNDERFLOW centering: nudge every non-bleed layer down by vShift so a SPARSE
+  // composition (a couple of stats / one chart) sits centered in the grown canvas
+  // instead of top-anchored over a dead bottom band. The full-bleed base + grain
+  // already fill (above); faint sweeps shifting a little is imperceptible. A y2
+  // (line endpoint) shifts too so lines stay intact.
+  if (vShift) {
+    o['y'] = Math.round(num(o, 'y') + vShift);
+    if (typeof o['y1'] === 'number') o['y1'] = Math.round(num(o, 'y1') + vShift);
+    if (typeof o['y2'] === 'number') o['y2'] = Math.round(num(o, 'y2') + vShift);
   }
   const t = o['type'];
   const w = num(o, 'width');
@@ -146,7 +167,16 @@ export function honorPosterRatio(
   // under-estimate its own height, and not touching y/height only ever gives any
   // such overflow MORE room ([gh, newH]) rather than pushing it off the bottom.
   const sx = newW / gw;
-  scaleOrFill(group, sx, gw, gh, newW, newH);
+  // On EXTREME underflow (the content fills less than ~⅘ of the grown canvas — a
+  // sparse infographic: a couple of stats or one chart), center the content
+  // vertically rather than leaving it top-anchored over a big dead bottom band.
+  // MODEST underflow (content fills most of the canvas) stays top-anchored — the
+  // deliberate "respect the requested dimension" behavior. Capped at 0.42 of the
+  // slack so there's always MORE room below than above (a preset that slightly
+  // under-measured its height can't be pushed off the bottom).
+  const slack = newH - gh;
+  const vShift = (gh <= reqH && slack > newH * 0.22 && !hasMastheadBand(group)) ? Math.round(slack * 0.42) : 0;
+  scaleOrFill(group, sx, gw, gh, newW, newH, vShift);
   g['x'] = 0; g['y'] = 0; g['width'] = newW; g['height'] = newH;
   for (const r of others) {
     const ro = r as unknown as Record<string, unknown>;

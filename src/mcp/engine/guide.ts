@@ -14,6 +14,33 @@ z = stacking order (higher = front)
    user EXPLICITLY asks ("give me 3 options", "a few variations", "2 versions"); then make
    exactly the number asked (use enrich_brief variant:0,1,2… — one call per option). A
    carousel/deck is still ONE design (multi-page), not multiple designs. When unsure: ONE.
+   ⚠️ OPTIONS / "different concepts" / "different moods" must be STRUCTURALLY different —
+   a DIFFERENT layout per option (a centered type-stack vs a split-canvas vs a cornered
+   asymmetric vs a full-bleed band), a different type treatment + composition + palette.
+   The SAME preset recolored with swapped copy is NOT 3 options — "cute" and "creepy" can't
+   be the same serif event card on two background tints. Reach past the one safe preset:
+   hand-build at least some, or pick a different preset per option, so they read as
+   genuinely distinct designs, not one template ×N.
+
+📦 A SET of N (the user NAMED a count — "5 quote cards", "12 monthly posters", "a card
+   per weekday", "a cover for each of the 6 episodes"): produce ALL N. Stopping at a
+   sample of 2-3 is a FAILURE — the user asked for the whole set. Same style/topic,
+   different content per item → design ONE item well (the look), then for EACH remaining
+   item duplicate_design it and patch_design the per-item content (or, for a clean
+   slot-driven set, export_template the first then batch_create with the N content sets).
+   Hold the shared look constant; vary ONLY the per-item content. Don't leave each card
+   near-empty ("Jan / plan") — give every one of the N the same richness as the first.
+
+✏️ EDIT / RESTYLE an existing design ("make it darker", "flip to a pastel palette",
+   "boxier", "airier", "declutter"): a rename is NOT an edit — you MUST change the
+   actual design. For a RECOLOR/restyle, read the design's current hexes (inspect_design
+   or read it), then patch_design with ONE {path:"recolor", value:{"#OLD":"#NEW", …}}
+   selector mapping every bg/text/accent hex to its new shade — that swaps the whole
+   palette in one call. (apply_theme does NOT recolor a design; it only sets the project
+   default, and designs use baked-in hexes.) For structural edits (airier/declutter →
+   remove layers + add whitespace; boxier → swap radii, add panels) use remove_layer +
+   add_layers / update_layer. If asked for BOTH versions, duplicate_design first, then
+   edit the copy — and make the two genuinely different, not identical files renamed.
 
 🧠 SHORT or vague prompt (e.g. "a poster about remote work", "a 6-slide carousel on X")?
    Call enrich_brief FIRST. Single design → best preset + a full content outline
@@ -88,6 +115,16 @@ z = stacking order (higher = front)
          {icon:"truck",  title:"Monthly Box",   desc:"Delivered to your door"},
          {icon:"award",  title:"Guaranteed",    desc:"Love it or full refund"}]}
    ])   ← title auto-wraps & auto-sizes; cards evenly spaced. card_fill/accent/text_color optional.
+   The grid also takes layout:"rows" (full-width editorial rows: marker left, copy right) or
+   "cards" (the tiled default) — vary it so two feature posters don't share a silhouette.
+
+🧱 STRUCTURE MATCHES MEANING — feature_grid is NOT the answer for everything. A card grid
+   flattens content that has its own shape. Reach for the matching preset instead:
+   • a comparison / "X vs Y"        → versus  (a true split, not cards)
+   • a history / roadmap / timeline → timeline (a connected spine, not cards)
+   • pricing plans / tiers          → pricing  (tier columns + a featured tier, not cards)
+   • steps / "N tips/reasons"       → list    (numbered rhythm, not cards)
+   Using a card grid for these is the #1 reason outputs look same-y. Match the structure.
 
 📋 A NUMBERED LIST? ("5 tips", "3 steps", "7 reasons", "N ways/habits/rules") — the
    most common poster, and the one hand-placing ALWAYS breaks (your headline wraps and
@@ -113,17 +150,23 @@ z = stacking order (higher = front)
    stack + margin accent bars, centered to fill the canvas — don't hand-place it (the title
    collides with the details and decor lands invisible).
 
-📰 RICH / DENSE / MULTI-SECTION? (an infographic, a report, a "state of X", anything with
-   several sections, stats, and paragraphs) — use the sections PRESET (aliases infographic/
-   document) on a TALL canvas (1080x1920+). ALWAYS give it a header — kicker + title (this is
-   the poster's headline; don't put it inside blocks) — THEN an ordered blocks:[{kind:…}] list
+📰 A DATA / REPORT / INFOGRAPHIC? (a "state of X", a "by the numbers", a report or explainer
+   built from real figures, sections and paragraphs) — use the sections PRESET (aliases
+   infographic/document) on a TALL canvas (1080x1920+). ALWAYS give it a header — kicker + title
+   (the poster's headline; don't put it inside blocks) — THEN an ordered blocks:[{kind:…}] list
    (intro/stats/heading/text/list/callout/quote/divider). The engine measures + flows every
-   block with editorial rhythm. This is how you make a CONTENT-RICH, professional layout —
-   supply a title + many blocks; never hand-place a multi-section document (it collides badly).
+   block with editorial rhythm; never hand-place a multi-section document (it collides badly).
    ⚠️ SIZE THE CANVAS TO THE CONTENT: budget ~280px of height per block (a stats row or bars
-   counts as one). 6 blocks → ~1080x1900, 8 blocks → ~1080x2400, 10 → ~1080x2900. A canvas too
-   short for the content overflows the footer. Keep block bodies to ~2 sentences; when in doubt
-   make the canvas TALLER (the engine distributes the slack — extra height never looks empty).
+   counts as one). 6 blocks → ~1080x1900, 8 blocks → ~1080x2400, 10 → ~1080x2900. Keep block
+   bodies to ~2 sentences; when in doubt make the canvas TALLER (the engine distributes slack).
+
+   ⛔ sections is NOT the default. It is ONLY for briefs that genuinely ARE a data/report piece.
+   MATCH THE PRESET TO THE BRIEF — a sign, flyer, invite, save-the-date, birthday, announcement,
+   "now open", "sold out", a lost-pet notice, a celebration → an EVENT or EDITORIAL poster (a
+   headline + a few details), NOT a sections infographic. A quote/manifesto/essay/cover → EDITORIAL.
+   🚫 NEVER fabricate a stats row, a pie/bar chart, or a "Source:" line to fill a sections skeleton
+   when the brief carries no data — a wedding save-the-date does NOT get a donut chart of "Love 40%".
+   If the brief has no figures, it is almost certainly an event/editorial/list poster, not sections.
 
 Follow next_action: every write tool returns next_action:{tool,params} — call
 it as your next tool call. create_design/append_page/seal_design/export_design
@@ -310,7 +353,36 @@ top-to-bottom with editorial rhythm + footer. Use a TALL canvas (1080x1920+). Ea
   This is THE tool for a magazine infographic / multi-section report — supply many blocks
   for a dense, organized, professional layout; don't hand-place sections (they collide).
 
-RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event/feature_grid/split): the engine composes a
+timeline (aliases roadmap, history, milestones): a connected chronological SPINE — a continuous
+accent line threaded through node dots, each entry's date heroed in the accent with a title +
+blurb beside it. THE tool for a history / roadmap / process-over-time — do NOT use feature_grid
+(a row of cards throws the chronology away). items=[{date,title,desc}].
+  {type:"timeline", pos:[0,0,1080,1350], bg:"#FAF5EC", accent:"#B8543C", kicker:"Since 2015",
+    title:"Company History", items:[
+      {date:"2015", title:"Founded", desc:"Two people, one garage."},
+      {date:"2019", title:"Series A", desc:"Scaled to 40 people."}, …]}
+
+pricing (aliases plans, tiers): a real pricing TABLE — tier columns side by side, each a heroed
+price + period + checked feature list, and ONE featured tier lifted taller with an accent fill +
+"MOST POPULAR". THE tool for plans/tiers — do NOT use feature_grid (it loses the price hierarchy
++ featured emphasis). plans=[{name,price,period,features:[…],featured?}]; flag the hero tier
+featured:true (else the middle one is heroed).
+  {type:"pricing", pos:[0,0,1080,1350], bg:"#0A0A0A", accent:"#7C5CFF", title:"Simple Pricing",
+    plans:[
+      {name:"Basic", price:"$10", period:"/mo", features:["10 users","Email support"]},
+      {name:"Pro", price:"$20", period:"/mo", featured:true, features:["100 users","Priority support","Analytics"]},
+      {name:"Team", price:"$40", period:"/mo", features:["Unlimited","Dedicated CSM"]}]}
+
+versus (aliases compare, vs): a true two-column SPLIT — A vs B headers either side of a center
+divider + a VS medallion, then per-aspect rows (label centered, A value left, B value right). THE
+tool for "X vs Y" — do NOT use feature_grid (a card grid hides the head-to-head). Provide
+a:{label}, b:{label}, rows:[{label,a,b}]  (or a:{label,points:[…]}, b:{label,points:[…]} for two lists).
+  {type:"versus", pos:[0,0,1080,1350], bg:"#0E0B14", accent:"#7C5CFF", title:"iOS vs Android",
+    a:{label:"iOS"}, b:{label:"Android"}, rows:[
+      {label:"Updates", a:"Day-one, 5+ yrs", b:"Varies by maker"},
+      {label:"Customization", a:"Limited", b:"Deep"}]}
+
+RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event/feature_grid/split/timeline/pricing/versus): the engine composes a
 layered, collision-proof background BEHIND the content so you never hand-place decor. Combine
 tokens with "+". Pass palette:[…] to color mesh/marble AND to make a gradient multi-hue. Keep
 bg as the base canvas color (light bg → keep text dark; dark bg → set text_color light). Tokens:

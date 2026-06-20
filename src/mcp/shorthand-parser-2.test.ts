@@ -461,7 +461,10 @@ describe('expandFill — tolerates the gradient shapes small models send', () =>
 describe('feature_grid preset (model gives content, engine owns layout)', () => {
   const payload = {
     hero: {
-      type: 'feature_grid', pos: [0, 0, 1080, 1080],
+      // layout:'cards' pins the tiled-grid archetype — the engine otherwise seeds
+      // 'cards' vs the 'rows' editorial archetype from the content (variety), and
+      // this case asserts the card structure specifically.
+      type: 'feature_grid', pos: [0, 0, 1080, 1080], layout: 'cards',
       title: 'Nova', subtitle: 'Your next-gen companion', bg: 'gradient',
       items: [
         { icon: 'zap', title: 'Fast Sync', desc: 'Instantly sync across devices' },
@@ -500,6 +503,20 @@ describe('feature_grid preset (model gives content, engine owns layout)', () => 
     const flat = JSON.stringify(g);
     expect(flat).toContain('Fast Sync');
     expect(flat).toContain('Secure Vault');
+    expect(flat).toContain('End-to-end encrypted notes');
+  });
+
+  it('layout:"rows" compiles to a flat editorial list (no card grid container), all content kept', () => {
+    const rowsPayload = { hero: { ...payload.hero, layout: 'rows' } };
+    const [g] = expandShorthandLayers(coerceShorthandLayers(rowsPayload)) as Array<Layer & { type?: string; layers?: Layer[] }>;
+    expect(g.type).toBe('group');
+    const kids = g.layers ?? [];
+    // The rows archetype is a flat composition — NO auto_layout card grid, and the
+    // per-item icons/titles/descs sit directly in the group, not nested in cards.
+    expect(kids.some(k => k.type === 'auto_layout')).toBe(false);
+    expect(kids.filter(k => k.type === 'icon').length).toBe(3);   // one marker per item
+    const flat = JSON.stringify(g);
+    expect(flat).toContain('Fast Sync');
     expect(flat).toContain('End-to-end encrypted notes');
   });
 

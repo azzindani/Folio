@@ -67,7 +67,28 @@ Structure:
   ✗ no Date.now() in render path
 ```
 
-### 0.4 Git Workflow
+### 0.4 Design Generation — Model-Led, Math-Backed
+
+```
+PRINCIPLE: the MODEL designs, the engine assists. Not the reverse.
+
+✗ NO hard-coded design engines — no preset "recipes" that emit a fixed
+  skeleton, no per-style canned layouts, no template-stamping that
+  dictates the look. These make every output typical + samey.
+✓ Prioritize MATH + SPATIAL calculation — geometry, ratios, grids,
+  alignment, spacing, fit/overflow, balance. Spatial correctness is the
+  engine's job; aesthetic choice is the model's.
+✓ Let the model design FREELY and write the payload itself — positions,
+  hierarchy, color, type, composition are model decisions.
+✓ MCP engines only SUPPORT + GUIDE: validate spatial math, expand
+  shorthand, fit/clamp to canvas, surface guidelines + hints. They make
+  the model's free design RENDER WELL — they do not replace its judgment.
+
+Litmus: if a change makes outputs more uniform, it's wrong. If it gives
+the model better spatial tooling to express its own intent, it's right.
+```
+
+### 0.5 Git Workflow
 
 ```
 Branch:  claude/refactor-claude-md-TpXBO

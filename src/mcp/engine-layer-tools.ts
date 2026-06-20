@@ -22,7 +22,7 @@ import { BUILTIN_THEMES } from '../themes/builtin';
 import type { NextAction } from './types';
 
 import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-geom';
-import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
+import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, fixInvisibleText, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
 
 const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
@@ -377,6 +377,17 @@ export function addLayers(args: {
   // is empty) — otherwise the poster's title renders invisible.
   const promoted = promoteCoveredTitle(activeLayers, spec.document.width, spec.document.height);
   if (promoted) progress.push(pInfo(`Surfaced ${promoted} covered title(s)`, 'a title hidden under a full-canvas preset was lifted into view'));
+
+  // Rescue near-invisible text (a nested style.color left dark on a dark bg, pale
+  // labels on a light bg) — recover the model's own flat color if it's legible,
+  // else force a backdrop-matched neutral. Illegible text is never the intent.
+  const relitTheme = ((): import('../schema/types').ThemeSpec | undefined => {
+    const th = spec.theme as { ref?: string; colors?: unknown } | undefined;
+    if (th?.ref) return BUILTIN_THEMES[th.ref];
+    return th?.colors ? (spec.theme as unknown as import('../schema/types').ThemeSpec) : undefined;
+  })();
+  const relit = fixInvisibleText(activeLayers, spec.document.width, spec.document.height, relitTheme);
+  if (relit) progress.push(pInfo(`Re-lit ${relit} near-invisible text(s)`, 'text that rendered invisible on its background was recolored to read'));
 
   // Re-center a title the model anchored at the canvas mid-line (docW/2 used as a
   // left edge → title stuck in the right half with an empty left).

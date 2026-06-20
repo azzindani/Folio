@@ -154,14 +154,19 @@ def build(idx, case):
     proj = f"suite-{idx:03d}"
     w, h = dims.split("x")
     is_carousel = intent == "carousel"
-    kind = "carousel (multi-page, 3-4 pages)" if is_carousel else "single poster"
-    theme_line = f' Use theme "{theme}".' if theme else " Pick a theme that fits the topic."
+    kind = "carousel (3-4 pages)" if is_carousel else "poster"
+    # Neutral, NON-STEERING brief: no "prefer a preset", no forced theme, no
+    # "one design / no variations". The model designs freely — the whole point is
+    # to observe what it (and the engine) produce UNPROMPTED, not to score whether
+    # it routed to the expected template. (intent/theme stay in the JSON only as
+    # metadata for the human vision review, never injected into the prompt.)
     prompt = (
-        f"Use the folio MCP to create ONE {kind}. "
+        f"Use the folio MCP to create a {kind}. "
         f"First call create_project with name EXACTLY \"{proj}\". "
-        f"Then create a {w}x{h} design titled \"{title}\" for: {brief}.{theme_line} "
-        f"Compose it with add_layers — prefer ONE preset that fits the intent over hand-placing. "
-        f"Then seal_design. Make exactly ONE design, no variations, and stop when sealed."
+        f"Then create a {w}x{h} design titled \"{title}\" for: {brief}. "
+        f"Design it however best fits the topic — you choose the theme, layout, "
+        f"typography, colour and composition. Build it with add_layers, then call "
+        f"seal_design when it's finished."
     )
     return {
         "id": idx, "project": proj, "title": title, "intent": intent,

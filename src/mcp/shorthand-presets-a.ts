@@ -3,10 +3,19 @@ import type { Layer, Fill } from '../schema/types';
 
 import { hexToRgb, luminance } from './engine/reference';
 
-import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, expandFill, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer } from './shorthand-helpers';
+import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, expandFill, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer, mixHex } from './shorthand-helpers';
 import { pickGridLayout } from './engine/mood-bank';
 
 import { composeBackground } from './shorthand-background';
+
+// FNV-1a over the content — seeds a STRUCTURAL variant for the editorial preset
+// (stable per content, varied across topics) so two essays don't share a shape.
+function edHashEditorial(s: string): number {
+  let h = 0x811c9dc5 >>> 0;
+  const t = s && s.trim() ? s : 'editorial';
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
 
 export function buildChartSpec(sh: ShorthandLayer): Record<string, unknown> {
   const raw = (sh as Record<string, unknown>)['spec'];
@@ -41,6 +50,15 @@ export function buildChartSpec(sh: ShorthandLayer): Record<string, unknown> {
 
 export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Layer {
   const r = sh as Record<string, unknown>;
+  // Structural archetype — the tiled rounded-card grid (default) OR full-width
+  // editorial ROWS (marker left, copy right, hairline dividers, no card fill).
+  // Overridable via layout/variant; else seeded from the content so two feature
+  // posters don't share the one tiled-card silhouette (the "same-y" complaint).
+  const layoutField = shStr(r['layout'] ?? r['variant'] ?? r['archetype']).toLowerCase();
+  const arch = (layoutField === 'rows' || layoutField === 'list' || layoutField === 'editorial' || layoutField === 'stack') ? 'rows'
+    : (layoutField === 'cards' || layoutField === 'grid' || layoutField === 'tiles') ? 'cards'
+    : pickGridLayout(`${shStr(r['title'])} ${shStr(r['subtitle'])}`).archetype;
+  if (arch === 'rows') return buildFeatureRows(sh, id, z);
   const X = sh.pos?.[0] ?? (typeof sh.x === 'number' ? sh.x : 0);
   const Y = sh.pos?.[1] ?? (typeof sh.y === 'number' ? sh.y : 0);
   const W = sh.pos?.[2] ?? (typeof sh.width === 'number' ? sh.width : 1080);
@@ -222,6 +240,72 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
   return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers } as unknown as Layer;
 }
 
+// feature_grid's ROWS archetype — full-width editorial rows instead of tiled
+// cards. Each feature is a row: a marker (icon, or a numbered badge) in the left
+// gutter, the title + description stacked to its right, with a hairline rule
+// between rows. A wholly different silhouette from the card grid; the canvas
+// sizes to the content. ONE call in, every coordinate owned by the engine.
+function buildFeatureRows(sh: ShorthandLayer, id: string, z: number): Layer {
+  const r = sh as Record<string, unknown>;
+  const { X, Y, W, H } = shBox(sh, 1080, 1080);
+  const title = shStr(r['title']);
+  const subtitle = shStr(r['subtitle']);
+  const rawItems = Array.isArray(r['items']) ? r['items'] : Array.isArray(r['cards']) ? r['cards'] : Array.isArray(r['features']) ? r['features'] : [];
+  const items = (rawItems as Record<string, unknown>[]).slice(0, 6).map(it => ({
+    icon: shStr(it['icon'] ?? it['symbol']),
+    title: shStr(it['title'] ?? it['label'] ?? it['name']),
+    desc: shStr(it['desc'] ?? it['description'] ?? it['text'] ?? it['body'] ?? it['benefit']),
+  }));
+  const m = seededDefaults(r, [title, subtitle, items.map(i => i.title).join(' ')]);
+  const bg = shStr(r['bg'], m?.bg ?? '#FAF5EC');
+  const accentC = shStr(r['accent'], m?.accent ?? '#B8543C');
+  const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
+  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
+  const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
+  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+
+  const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
+  const content: Layer[] = [];
+  let k = 1, cy = Y + Math.round(W * 0.085);
+  if (title) {
+    const ts = fitTitleSize(title, Math.round(W * 0.07), cW, titleFont), th = estTextHeight(title, ts, cW, 1.05);
+    content.push(txt(`${id}_title`, k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: text, line_height: 1.05, letter_spacing: -1, font_family: titleFont }));
+    cy += th + Math.round(W * 0.018);
+    content.push({ id: `${id}_rule`, type: 'rect', z: k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: text } } as unknown as Layer);
+    content.push({ id: `${id}_tick`, type: 'rect', z: k++, x: cX, y: Math.round(cy) - 2, width: Math.round(W * 0.13), height: 7, fill: { type: 'solid', color: accentC } } as unknown as Layer);
+    cy += Math.round(W * 0.03);
+  }
+  if (subtitle) {
+    const ss = Math.round(W * 0.028), s2 = estTextHeight(subtitle, ss, cW, 1.4);
+    content.push(txt(`${id}_sub`, k++, cX, cy, cW, s2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.4 }));
+    cy += s2 + Math.round(W * 0.03);
+  }
+  const gutter = Math.round(W * 0.11), tX = cX + gutter, tW = cW - gutter;
+  const iconSz = Math.round(W * 0.058), itSize = Math.round(W * 0.032), dSize = Math.round(W * 0.0215);
+  const rowGap = Math.round(W * 0.034);
+  items.forEach((it, i) => {
+    if (i > 0) { content.push({ id: `${id}_rd${i}`, type: 'rect', z: k++, x: cX, y: Math.round(cy - rowGap * 0.5), width: cW, height: 1.5, fill: { type: 'solid', color: mixHex(bg, text, 0.14) } } as unknown as Layer); }
+    const rowTop = cy;
+    const tH = estTextHeight(it.title, itSize, tW, 1.15);
+    const dH = it.desc ? estTextHeight(it.desc, dSize, tW, 1.4) : 0;
+    if (it.icon) content.push({ id: `${id}_ic${i}`, type: 'icon', z: k++, x: cX, y: rowTop, width: iconSz, height: iconSz, name: it.icon, size: iconSz, color: accentC } as unknown as Layer);
+    else content.push(txt(`${id}_n${i}`, k++, cX, rowTop - Math.round(itSize * 0.05), gutter, itSize * 1.4, String(i + 1).padStart(2, '0'), { font_size: Math.round(W * 0.04), font_weight: 800, color: accentC, line_height: 1.0, letter_spacing: -1, font_family: titleFont }));
+    if (it.title) content.push(txt(`${id}_t${i}`, k++, tX, cy, tW, tH, it.title, { font_size: itSize, font_weight: 700, color: text, line_height: 1.15 }));
+    if (it.desc) content.push(txt(`${id}_b${i}`, k++, tX, cy + tH + Math.round(itSize * 0.25), tW, dH, it.desc, { font_size: dSize, font_weight: 400, color: muted, line_height: 1.4 }));
+    cy += Math.max(iconSz, tH + (it.desc ? Math.round(itSize * 0.25) + dH : 0)) + rowGap;
+  });
+  if (items.length) cy -= rowGap;
+  const naturalH = Math.min(Math.round(W * 3.4), Math.max(Math.round(W * 0.6), Math.round(cy + W * 0.08 - Y)));
+  // Center the rows when the model's box is taller than the content (else short
+  // feature lists float at the top over a dead lower half).
+  const finalH = H > naturalH + Math.round(W * 0.05) ? H : naturalH;
+  const topPad = finalH > naturalH ? Math.round((finalH - naturalH) * 0.42) : 0;
+  if (topPad) for (const l of content) { const o = l as unknown as { y: number }; if (typeof o.y === 'number') o.y += topPad; }
+  const bgLayers = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, finalH, { bg, accent: accentC, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
+  content.forEach((l, i) => { (l as unknown as { z: number }).z = 30 + i; });
+  return { id, type: 'group', z, x: X, y: Y, width: W, height: finalH, layers: [...bgLayers, ...content] } as unknown as Layer;
+}
+
 // ── Marble backdrop preset ──────────────────────────────────
 // ONE shorthand layer → a full decorative background: soft radial-gradient
 // "marble" blobs clustered in the chosen corners (each fades to the canvas
@@ -328,28 +412,54 @@ export function buildEditorial(sh: ShorthandLayer, id: string, z: number): Layer
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter(c => typeof c === 'string') as string[];
   const M = Math.round(W * 0.08);
   const cW = W - 2 * M, cX = X + M;
+  // Structural variant (decorrelated from colour) so two editorials don't share
+  // the identical kicker+full-rule+left-title silhouette:
+  //   'rule'   — full-width hairline under the kicker, left-anchored (the classic)
+  //   'tick'   — a short accent TICK (no full line) + a bigger headline, left
+  //   'center' — a centered cover masthead (short accent rule, centered type) —
+  //              only when the body is short enough to centre-read
+  // An explicit align: overrides. All three still emit an `id_rule` layer.
+  const explicitAlign = shStr(r['align'] ?? r['text_align']);
+  const longBody = body.length > 150;
+  const hv = edHashEditorial(`${title} ${kicker} ${subtitle}`);
+  let style: 'rule' | 'tick' | 'center';
+  if (explicitAlign === 'center') style = longBody ? 'rule' : 'center';
+  else if (explicitAlign === 'left') style = hv % 2 ? 'tick' : 'rule';
+  else { const p = hv % 20; style = p < 9 ? 'rule' : p < 15 ? 'tick' : (longBody ? 'rule' : 'center'); }
+  const center = style === 'center';
+  const halign = center ? { align: 'center' as const } : {};
   const layers: Layer[] = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, H, { bg, accent, text: textColor, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
-  let cy = Y + Math.round(H * 0.13), k = layers.length;
+  let cy = Y + Math.round(H * (center ? 0.16 : 0.13)), k = layers.length;
   if (kicker) {
-    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase' }));
+    layers.push(txt(`${id}_kick`, z + k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.019), font_weight: 600, color: accent, letter_spacing: 1.5, text_transform: 'uppercase', ...halign }));
     cy += Math.round(H * 0.035);
   }
-  layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
-  cy += Math.round(H * 0.025);
+  if (style === 'rule') {
+    layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: cW, height: 3, fill: { type: 'solid', color: textColor } } as unknown as Layer);
+    cy += Math.round(H * 0.025);
+  } else if (style === 'tick') {
+    layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX, y: Math.round(cy), width: Math.round(W * 0.12), height: 7, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    cy += Math.round(H * 0.02);
+  } else {
+    const rw = Math.round(W * 0.16);
+    layers.push({ id: `${id}_rule`, type: 'rect', z: z + k++, x: cX + Math.round((cW - rw) / 2), y: Math.round(cy), width: rw, height: 5, fill: { type: 'solid', color: accent } } as unknown as Layer);
+    cy += Math.round(H * 0.028);
+  }
   if (title) {
     const edFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
-    const ts = fitTitleSize(title, Math.round(W * 0.085), cW, edFont), th = estTextHeight(title, ts, cW, 1.04);
-    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04, font_family: edFont }));
+    const titleScale = style === 'rule' ? 0.085 : 0.097;
+    const ts = fitTitleSize(title, Math.round(W * titleScale), cW, edFont), th = estTextHeight(title, ts, cW, 1.04);
+    layers.push(txt(`${id}_title`, z + k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: textColor, line_height: 1.04, font_family: edFont, ...halign }));
     cy += th + Math.round(H * 0.025);
   }
   if (subtitle) {
     const ss = Math.round(W * 0.032), sh2 = estTextHeight(subtitle, ss, cW, 1.35);
-    layers.push(txt(`${id}_sub`, z + k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.35 }));
+    layers.push(txt(`${id}_sub`, z + k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.35, ...halign }));
     cy += sh2 + Math.round(H * 0.025);
   }
   if (body) {
     const bs = Math.round(W * 0.022), bh = estTextHeight(body, bs, cW, 1.55);
-    layers.push(txt(`${id}_body`, z + k++, cX, cy, cW, bh, body, { font_size: bs, font_weight: 400, color: textColor, line_height: 1.55 }));
+    layers.push(txt(`${id}_body`, z + k++, cX, cy, cW, bh, body, { font_size: bs, font_weight: 400, color: textColor, line_height: 1.55, ...halign }));
   }
   if (footer) {
     const fy = Y + H - Math.round(H * 0.09);
