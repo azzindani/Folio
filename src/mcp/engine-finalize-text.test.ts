@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fixInvisibleText } from './engine-finalize-text';
+import { fixInvisibleText } from './engine-finalize-legibility';
 import type { Layer } from '../schema/types';
 
 const W = 1080, H = 1080;
@@ -10,6 +10,12 @@ const text = (id: string, value: string, style: Record<string, unknown>, flatCol
   ({ id, type: 'text', z: 1, x: 80, y: 100, width: 800, height: 80, content: { type: 'plain', value }, style, ...(flatColor ? { color: flatColor } : {}) } as unknown as Layer);
 
 const styleColor = (l: Layer): string => ((l as unknown as Record<string, unknown>)['style'] as Record<string, string>)['color'];
+// A positioned opaque shape (a band / card / badge behind the text).
+const shapeAt = (color: string, x: number, y: number, w: number, h: number, z: number, opacity = 1): Layer =>
+  ({ id: `s${z}`, type: 'rect', z, x, y, width: w, height: h, opacity, fill: { type: 'solid', color } } as unknown as Layer);
+// A text at an explicit position + z (the base `text` helper pins x:80 y:100 z:1).
+const textAt = (value: string, x: number, y: number, color: string): Layer =>
+  ({ id: 't', type: 'text', z: 2, x, y, width: 800, height: 80, content: { type: 'plain', value }, style: { color, font_size: 48 } } as unknown as Layer);
 
 describe('fixInvisibleText', () => {
   it('recovers the model\'s legible flat color when a nested style color is invisible', () => {
@@ -93,5 +99,61 @@ describe('fixInvisibleText', () => {
     const layers = [bgRect('#0A0A0A'), group];
     expect(fixInvisibleText(layers, W, H)).toBe(1);
     expect(styleColor(inner)).toBe('#FAFAFA');
+  });
+
+  it('keeps a white knockout that sits on a LOCAL dark band over a light page', () => {
+    // The common hero-band pattern: light page, dark band, white headline ON the
+    // band. Judged against the dominant light bg it would be wrongly darkened.
+    const band = shapeAt('#101010', 0, 80, W, 160, 1);
+    const head = textAt('HEADLINE', 80, 100, '#FFFFFF');
+    const layers = [bgRect('#F5EFE6'), band, head];
+    expect(fixInvisibleText(layers, W, H)).toBe(0);   // legible on its real backdrop
+    expect(styleColor(head)).toBe('#FFFFFF');
+  });
+
+  it('keeps dark text on a LOCAL light card over a dark page', () => {
+    const card = shapeAt('#F0F0F0', 40, 80, 900, 160, 1);
+    const body = textAt('Card body text', 80, 100, '#1E1E1E');
+    const layers = [bgRect('#0A0A0A'), card, body];
+    expect(fixInvisibleText(layers, W, H)).toBe(0);
+    expect(styleColor(body)).toBe('#1E1E1E');
+  });
+
+  it('still rescues invisible text that is NOT on a local panel', () => {
+    // Same light page + dark band, but the pale text floats BELOW the band on the
+    // bare page — no local cover → judged against the light bg → rescued.
+    const band = shapeAt('#101010', 0, 80, W, 160, 1);
+    const floating = textAt('a pale subhead', 80, 420, '#EFE7D6');
+    const layers = [bgRect('#F5EFE6'), band, floating];
+    expect(fixInvisibleText(layers, W, H)).toBe(1);
+    expect(styleColor(floating)).toBe('#141414');     // light page → dark text
+  });
+
+  it('re-lights a muted SATURATED color by darkening its hue, not nuking to black', () => {
+    // terracotta eyebrow on cream (CR ≈ 2.06 < 2.5) → re-lit, but it must stay
+    // terracotta (reddish), not flatten to #141414.
+    const layers = [bgRect('#F1E7D6'), text('t', 'BACK IN STOCK', { color: '#BD5733', font_size: 26 })];
+    expect(fixInvisibleText(layers, W, H)).toBe(1);
+    const c = styleColor(layers[1]).replace('#', '');
+    expect(c).not.toBe('141414');
+    const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+    expect(r).toBeGreaterThan(g);   // still reddish/warm, hue preserved
+    expect(r).toBeGreaterThan(b);
+  });
+
+  it('falls back to a neutral for a greyscale invisible color (no hue to keep)', () => {
+    const layers = [bgRect('#F2EFE6'), text('t', 'x', { color: '#C8C8C8', font_size: 30 })];
+    fixInvisibleText(layers, W, H);
+    expect(styleColor(layers[1])).toBe('#141414');   // light bg, greyscale → neutral dark
+  });
+
+  it('does NOT treat a translucent panel as a solid backdrop', () => {
+    // A 0.3-opacity dark band can't make white text legible on a light page, so the
+    // text is judged against the opaque ground (light) and rescued.
+    const sheer = shapeAt('#101010', 0, 80, W, 160, 1, 0.3);
+    const head = textAt('GHOST', 80, 100, '#FFFFFF');
+    const layers = [bgRect('#F0F0F0'), sheer, head];
+    expect(fixInvisibleText(layers, W, H)).toBe(1);
+    expect(styleColor(head)).toBe('#141414');
   });
 });
