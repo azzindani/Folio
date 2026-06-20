@@ -34,6 +34,12 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'stat', 'number', 'caption',
   'details', 'lines', 'info', 'date', 'venue', 'location', 'place', 'time', 'when', 'where',
   'blocks', 'sections', 'kind', 'cite', 'author', 'source', 'quote',
+  // timeline / pricing / versus structural presets + feature_grid layout variant
+  'layout', 'archetype', 'events', 'milestones', 'steps', 'phases', 'year',
+  'plans', 'tiers', 'options', 'price', 'period', 'per', 'interval', 'cycle',
+  'cost', 'amount', 'featured', 'popular', 'recommended', 'perks', 'includes', 'cta',
+  'a', 'b', 'left', 'right', 'option_a', 'option_b', 'first', 'second',
+  'rows', 'aspects', 'comparison', 'criteria', 'aspect', 'criterion', 'pros', 'list',
   // pattern / image fills (WS1)
   'pattern', 'fg', 'mode', 'tile_size', 'foreground', 'background',
   // parametric shapes (WS2)

@@ -39,6 +39,17 @@ describe('enrichBrief — thin prompt → rich plan', () => {
     expect(run('a flyer for a design systems conference').design_type).toBe('event');
   });
 
+  it('a craft/artisan MARKET or FAIR routes to event, not a sections infographic', () => {
+    // bare "market" is finance/research, but a real-world market/fair is a poster —
+    // without this it fell through to sections + a fabricated donut chart.
+    expect(run('a poster for a botanical artisan market').design_type).toBe('event');
+    expect(run('a farmers market poster, first sunday monthly').design_type).toBe('event');
+    expect(run('flyer for the village craft fair').design_type).toBe('event');
+    expect(run('a holiday makers market at the old glasshouse').design_type).toBe('event');
+    // a genuine finance/research "market" brief must NOT be hijacked to event
+    expect(run('the state of the AI market in 2025, with adoption data').design_type).toBe('sections');
+  });
+
   it('a tech topic gets a dark mood with a procedural grained background', () => {
     const r = run('the state of AI in healthcare') as unknown as { suggested: { bg: string; bg_style: string } };
     expect(r.suggested.bg.toLowerCase()).toBe('#0e0b14'); // indigo tech mood (colour is curated)

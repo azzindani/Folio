@@ -16,6 +16,32 @@ import { pageHasReadableContent } from './engine-layer-tools';
 
 import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
 
+// Global hex recolor: walk the whole spec and replace any color string that
+// exactly matches a key in `map` (case-insensitive) with its mapped value.
+// Lets a model RESTYLE a whole design ("make it darker", flip the palette) in ONE
+// patch_design selector — {path:"recolor", value:{"#FAF5EC":"#0A0A0A", …}} — instead
+// of N fragile per-layer paths. This is the only thing that recolors the COMMON
+// case: baked-in hexes (apply_theme only sets the project default, never re-skins a
+// design; most MCP designs use hardcoded hexes, not theme tokens, so apply_theme is
+// a no-op on them). Pairs with the invisible-text rescue: darken the bg here, and a
+// now-too-dark text is re-lit on the next add_layers/finalize pass.
+function recolorSpec(spec: unknown, map: Record<string, string>): number {
+  const lut: Record<string, string> = {};
+  for (const k of Object.keys(map)) if (typeof map[k] === 'string') lut[k.toLowerCase()] = map[k];
+  let n = 0;
+  const walk = (v: unknown): unknown => {
+    if (typeof v === 'string') { const hit = lut[v.toLowerCase()]; if (hit !== undefined) { n++; return hit; } return v; }
+    if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) v[i] = walk(v[i]); return v; }
+    if (v && typeof v === 'object') { const o = v as Record<string, unknown>; for (const k of Object.keys(o)) o[k] = walk(o[k]); return v; }
+    return v;
+  };
+  walk(spec);
+  return n;
+}
+const isRecolorSelector = (p: string): boolean => p === 'recolor' || p === 'recolor_all';
+const asHexMap = (v: unknown): Record<string, string> | null =>
+  v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, string>) : null;
+
 export function patchDesign(args: { design_path: string; selectors: { path: string; value: unknown }[]; dry_run?: boolean; project_path?: string }): ToolResult {
   const op = 'patch_design';
   const progress: ProgressItem[] = [];
@@ -31,7 +57,11 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
     const wouldPatch: string[] = [];
     const errors: string[] = [];
     for (const sel of args.selectors) {
-      if (setNestedValue(spec, sel.path, sel.value)) wouldPatch.push(sel.path);
+      if (isRecolorSelector(sel.path)) {
+        const map = asHexMap(sel.value);
+        if (map && recolorSpec(spec, map) > 0) wouldPatch.push(`recolor (${Object.keys(map).length} color(s))`);
+        else errors.push(`recolor: value must be a {oldHex:newHex} map and at least one color must match`);
+      } else if (setNestedValue(spec, sel.path, sel.value)) wouldPatch.push(sel.path);
       else errors.push(`${sel.path}: path did not resolve (missing parent, out-of-range index, or no filter match)`);
     }
     progress.push(errors.length === 0 ? pOk(`Dry-run: ${wouldPatch.length} path(s) valid`) : pWarn('Dry-run: some paths invalid', errors.join('; ')));
@@ -47,7 +77,12 @@ export function patchDesign(args: { design_path: string; selectors: { path: stri
   const unresolved: string[] = [];
   const inert: string[] = [];
   for (const sel of args.selectors) {
-    if (setNestedValue(spec, sel.path, sel.value)) {
+    if (isRecolorSelector(sel.path)) {
+      const map = asHexMap(sel.value);
+      const hits = map ? recolorSpec(spec, map) : 0;
+      if (hits > 0) patched.push(`recolor:${hits}`);
+      else unresolved.push('recolor (no color matched — pass {oldHex:newHex} from the design\'s actual colors)');
+    } else if (setNestedValue(spec, sel.path, sel.value)) {
       patched.push(sel.path);
       const w = inertPresetKeyWarning(spec, sel.path);
       if (w) inert.push(w);

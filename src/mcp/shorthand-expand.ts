@@ -7,6 +7,7 @@ import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths'
 import { shStr, ShorthandLayer, expandPosition, expandFill, expandStroke, mapAlignItems, mapJustify, textTypography } from './shorthand-helpers';
 import { buildChartSpec, buildFeatureGrid, buildDecor, buildEditorial, buildSplit } from './shorthand-presets-a';
 import { buildList, buildStat, buildEvent, buildSections } from './shorthand-presets-b';
+import { buildTimeline, buildPricing, buildVersus } from './shorthand-presets-c';
 
 import { motifLayers } from './shorthand-background';
 
@@ -236,6 +237,24 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'document':
     case 'report_poster':
       return buildSections(sh, String(sh.id ?? 'sections'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'timeline':
+    case 'roadmap':
+    case 'history':
+    case 'milestones':
+      return buildTimeline(sh, String(sh.id ?? 'timeline'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'pricing':
+    case 'plans':
+    case 'tiers':
+    case 'price_table':
+      return buildPricing(sh, String(sh.id ?? 'pricing'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'versus':
+    case 'compare':
+    case 'comparison':
+    case 'vs':
+      return buildVersus(sh, String(sh.id ?? 'versus'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'decor':
     case 'marble_bg':

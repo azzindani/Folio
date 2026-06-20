@@ -86,17 +86,32 @@ def send_prompt(text):
     tmux("send-keys", "-t", PANE, "Enter")
 
 
+# The ONLY thing the runner injects around the hand-written human brief: a
+# constant, non-creative scaffold naming the project so the output is locatable.
+# It is identical for all 100 cases, so it cannot bias design variety — every
+# difference between outputs comes from the (pure, hand-written) brief itself.
+SCAFFOLD = (
+    '(Setup — not part of the creative brief: use the Folio design tools, create a '
+    'project named "{proj}", and keep everything you make inside it. Seal each '
+    'design when it is finished.)\n\n{brief}'
+)
+
+
 def run_one(case, timeout, poll, settle, min_bytes):
     proj = case["project"]
+    n = int(case.get("n", 1) or 1)
+    # bulk (3·5·10·20) and multi-format briefs make several designs in one turn —
+    # give them proportionally longer before the timeout backstop fires.
+    eff_timeout = min(timeout + (n - 1) * 100, 1500)
     t0 = time.time()
-    send_prompt(case["prompt"])
+    send_prompt(SCAFFOLD.format(proj=proj, brief=case["prompt"]))
     # Advance when the design file STABILIZES (composition + seal done) for
     # `settle` consecutive polls AND has real content (> min_bytes, so a bare
     # create_design scaffold mid-think doesn't count). Backstopped by timeout.
     last = (0, 0, 0)
     stable = 0
     started = False
-    while time.time() - t0 < timeout:
+    while time.time() - t0 < eff_timeout:
         time.sleep(poll)
         sig = design_sig(proj)
         if sig[2] > 0:
@@ -118,9 +133,9 @@ def run_one(case, timeout, poll, settle, min_bytes):
     # the model stalled before add_layers. Require real content to count as built.
     composed = len(ds) > 0 and total_bytes >= min_bytes
     return {
-        "id": case["id"], "project": proj, "title": case["title"], "intent": case["intent"],
-        "theme": case["theme"], "dims": case["dims"], "carousel": case["carousel"],
-        "brief": case["brief"], "designs": ds, "design_count": len(ds),
+        "id": case["id"], "project": proj, "title": case.get("title", proj),
+        "job": case.get("job", "single"), "n": n, "tags": case.get("tags", ""),
+        "prompt": case["prompt"], "designs": ds, "design_count": len(ds),
         "bytes": total_bytes, "generated": composed, "started": started,
         "dur_s": round(time.time() - t0, 1), "mode": "live",
     }
@@ -143,7 +158,10 @@ def main():
     ap.add_argument("--timeout", type=int, default=300)
     ap.add_argument("--poll", type=int, default=6)
     ap.add_argument("--settle", type=int, default=4)
-    ap.add_argument("--min-bytes", type=int, default=1200)
+    # a bare create_design scaffold is ~260 bytes / 0 layers; a legitimately MINIMAL
+    # real design (a "BACK IN 10 MIN" sign, a tip-jar card) is ~600+ with real layers.
+    # 450 tells them apart without false-FAILing terse briefs (which SHOULD be small).
+    ap.add_argument("--min-bytes", type=int, default=450)
     a = ap.parse_args()
 
     cases = {c["id"]: c for c in json.load(open(USECASES))}

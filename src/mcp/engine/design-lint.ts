@@ -36,6 +36,14 @@ function solidColor(l: Layer): string | null {
     const s = o.stops?.[0]?.color;
     if (typeof s === 'string' && s.startsWith('#')) return s;
   }
+  // A SHAPE carrying its fill under top-level `color` (the renderer honors this as
+  // a solid fill) — without it a `color`-only bg rect is invisible to the backdrop
+  // check → a FALSE "no background" / "text invisible on #FFFFFF" note. Gated to
+  // shapes so a text layer's `color` (its text color) isn't misread as a fill.
+  if (f === undefined && (l.type === 'rect' || l.type === 'ellipse' || l.type === 'circle' || l.type === 'polygon' || l.type === 'path')) {
+    const c = (l as { color?: unknown }).color;
+    if (typeof c === 'string' && c.startsWith('#')) return c;
+  }
   return null;
 }
 

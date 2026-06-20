@@ -27,6 +27,28 @@ beforeEach(() => {
   resetDefIdCounter();
 });
 
+// ── Rect color fallback ─────────────────────────────────────
+
+describe('renderRect color fallback', () => {
+  it('renders fill from a bare `color` when no `fill` is set', () => {
+    // Small models emit {type:'rect', color:'#0A0A0A'} (no `fill`); without the
+    // fallback the rect renders fill="none" and a full-canvas background vanishes.
+    const layer = { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: 1080, height: 1080, color: '#0A0A0A' } as unknown as RectLayer;
+    const el = renderRect(layer, makeSVG());
+    expect(el.getAttribute('fill')).toBe('#0A0A0A');
+  });
+
+  it('still renders fill="none" when neither fill nor color is set', () => {
+    const layer = { id: 'r', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as unknown as RectLayer;
+    expect(renderRect(layer, makeSVG()).getAttribute('fill')).toBe('none');
+  });
+
+  it('prefers an explicit `fill` over `color`', () => {
+    const layer = { id: 'r2', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10, color: '#000000', fill: { type: 'solid', color: '#FF0000' } } as unknown as RectLayer;
+    expect(renderRect(layer, makeSVG()).getAttribute('fill')).toBe('#FF0000');
+  });
+});
+
 // ── Path ────────────────────────────────────────────────────
 
 describe('renderPath', () => {

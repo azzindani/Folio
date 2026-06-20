@@ -293,6 +293,40 @@ const ICON_ALIASES: Record<string, string> = {
   music: 'volume-2', sound: 'volume-2',
   cup: 'coffee', mug: 'coffee', espresso: 'coffee', latte: 'coffee', cafe: 'coffee', coffeebean: 'coffee', bean: 'coffee', beans: 'coffee', drink: 'coffee',
   delivery: 'truck', shipping: 'truck', ship: 'truck', deliverytruck: 'truck', van: 'truck', logistics: 'truck',
+  // ── hospitality / travel / wellness (a feature poster of amenities collapsed
+  // to all-dots when these common words had no Lucide id). Map to bundled glyphs.
+  beach: 'umbrella', beachfront: 'umbrella', resort: 'umbrella', umbrellabeach: 'umbrella', seaside: 'umbrella',
+  pool: 'droplet', swimming: 'droplet', swim: 'droplet', water: 'droplet', ocean: 'droplet', oceanview: 'droplet',
+  sea: 'droplet', wave: 'droplet', waves: 'droplet', snorkeling: 'droplet', snorkel: 'droplet', surfing: 'droplet',
+  sauna: 'droplet', hottub: 'droplet', jacuzzi: 'droplet', watersports: 'droplet',
+  spa: 'heart', wellness: 'heart', massage: 'heart', relaxation: 'heart', relax: 'heart', yoga: 'heart', meditation: 'heart',
+  restaurant: 'coffee', dining: 'coffee', finedining: 'coffee', cuisine: 'coffee', food: 'coffee', meal: 'coffee',
+  meals: 'coffee', menu: 'coffee', breakfast: 'coffee', brunch: 'coffee', lounge: 'coffee', bar: 'coffee',
+  kitchen: 'coffee', chef: 'coffee', cooking: 'coffee', cook: 'coffee', recipe: 'coffee', dine: 'coffee',
+  hotel: 'home', room: 'home', suite: 'home', accommodation: 'home', lodging: 'home', stay: 'home',
+  concierge: 'bell', reception: 'bell', frontdesk: 'bell',
+  checkin: 'key', keycard: 'key', access: 'key', entry: 'key', door: 'key',
+  parking: 'navigation', shuttle: 'navigation', transport: 'navigation', transfer: 'navigation',
+  kayak: 'anchor', kayaking: 'anchor', boat: 'anchor', boating: 'anchor', sailing: 'anchor', marina: 'anchor', harbor: 'anchor',
+  fitness: 'activity', gym: 'activity', workout: 'activity', exercise: 'activity', training: 'activity', cardio: 'activity',
+  sport: 'activity', sports: 'activity', running: 'activity', run: 'activity', health: 'heart-pulse',
+  // ── office / coworking / SaaS feature words
+  internet: 'wifi', network: 'wifi', fiber: 'wifi', connection: 'wifi', broadband: 'wifi', online: 'wifi', connectivity: 'wifi',
+  desk: 'monitor', workspace: 'monitor', screen: 'monitor', display: 'monitor', cockpit: 'monitor',
+  office: 'briefcase', work: 'briefcase', business: 'briefcase', coworking: 'briefcase', job: 'briefcase',
+  print: 'file-text', printer: 'file-text', printing: 'file-text', fax: 'file-text',
+  scanner: 'scan', scanning: 'scan', copier: 'copy', photocopy: 'copy',
+  supplies: 'package', materials: 'package', inventory: 'package', equipment: 'package', stationery: 'pen-tool',
+  security: 'shield', secure: 'shield', protection: 'shield', protect: 'shield', safety: 'shield',
+  encryption: 'lock', encrypted: 'lock', privacy: 'lock', private: 'lock', password: 'lock', authentication: 'lock', auth: 'lock', biometric: 'lock',
+  events: 'calendar', event: 'calendar', booking: 'calendar', reservation: 'calendar', appointment: 'calendar',
+  community: 'users', networking: 'users', members: 'users', membership: 'users', meeting: 'users', conference: 'users', collaboration: 'users', collaborate: 'users', social: 'users',
+  dashboard: 'bar-chart', reporting: 'bar-chart', report: 'bar-chart', reports: 'bar-chart', insights: 'bar-chart', insight: 'bar-chart', metrics: 'bar-chart', statistics: 'bar-chart', stats: 'bar-chart', data: 'bar-chart',
+  sync: 'refresh', backup: 'folder', storage: 'folder', files: 'folder', share: 'send', sharing: 'send',
+  speed: 'zap', fast: 'zap', performance: 'zap', instant: 'zap', quick: 'zap', realtime: 'zap', charging: 'zap', charge: 'zap', battery: 'zap',
+  range: 'navigation', mileage: 'navigation', distance: 'navigation', autonomous: 'cpu', ai: 'cpu', smart: 'cpu', intelligent: 'cpu', automation: 'cpu', robot: 'cpu',
+  interior: 'home', comfort: 'home', card: 'credit-card', transactions: 'credit-card', transaction: 'credit-card', banking: 'credit-card',
+  tools: 'settings', tool: 'settings', maintenance: 'settings',
 };
 
 const ICON_NAME_SET = new Set(Object.keys(LUCIDE_ICONS));
@@ -324,6 +358,11 @@ const EMOJI_ICONS: Record<string, string> = {
   '🧠': 'cpu', '🤖': 'cpu', '🧪': 'pipette', '🔬': 'search', '🩺': 'stethoscope', '💊': 'pill', '🩹': 'plus',
   '☁️': 'cloud', '❄️': 'snowflake', '🌡': 'thermometer', '☀️': 'sun', '⏳': 'clock', '⌛': 'clock', '⏲': 'timer',
   '📤': 'upload', '📥': 'download', '🔄': 'refresh', '♻': 'refresh', '♻️': 'refresh', '✂': 'scissors',
+  // office / utility emoji a model reaches for on coworking / SaaS feature cards
+  '🖨': 'file-text', '🖨️': 'file-text', '📠': 'file-text', '🗄': 'folder', '🗄️': 'folder', '🧰': 'settings',
+  '🔌': 'zap', '🔋': 'zap', '🛜': 'wifi', '📡': 'wifi', '🏧': 'credit-card', '🧮': 'bar-chart',
+  '🏖': 'umbrella', '🏖️': 'umbrella', '⛱': 'umbrella', '⛱️': 'umbrella', '🏝': 'umbrella', '🏊': 'droplet',
+  '🛎': 'bell', '🛏': 'home', '🍽': 'coffee', '🍴': 'coffee', '🥂': 'coffee', '🍷': 'coffee', '🚿': 'droplet', '🛁': 'droplet', '💆': 'heart',
   // produce / plants / food → leaf (a clean "fresh/market" glyph)
   '🥕': 'leaf', '🌽': 'leaf', '🍅': 'leaf', '🥦': 'leaf', '🥬': 'leaf', '🌱': 'leaf', '🌿': 'leaf', '🍃': 'leaf',
   '🍎': 'leaf', '🍏': 'leaf', '🍇': 'leaf', '🍓': 'leaf', '🍒': 'leaf', '🥗': 'leaf', '🌾': 'leaf', '🥒': 'leaf', '🫑': 'leaf',
@@ -331,7 +370,18 @@ const EMOJI_ICONS: Record<string, string> = {
   '☕': 'coffee', '🍵': 'coffee', '🫖': 'coffee',
   '🍯': 'droplet', '💧': 'droplet', '🫗': 'droplet', '🥛': 'droplet',
   '🧀': 'gift', '🧁': 'gift', '🍰': 'gift', '🍪': 'gift', '🍩': 'gift', '🍫': 'gift', '🍞': 'gift', '🥐': 'gift', '🥖': 'gift', '🎁': 'gift', '🥚': 'gift',
-  '🎵': 'volume-2', '🎶': 'volume-2', '🎤': 'volume-2', '🎸': 'volume-2',
+  // prepared / savory / fast food → coffee (bundled "dining" glyph). A blind model
+  // names a food card 🍔/🍕/🌮 and it must become a real glyph, not tofu/a dot.
+  '🍔': 'coffee', '🍕': 'coffee', '🌮': 'coffee', '🌯': 'coffee', '🌭': 'coffee', '🍟': 'coffee', '🥪': 'coffee', '🥙': 'coffee', '🧆': 'coffee', '🫔': 'coffee', '🥟': 'coffee', '🍗': 'coffee', '🍖': 'coffee', '🥘': 'coffee', '🍜': 'coffee', '🍲': 'coffee', '🍝': 'coffee', '🍛': 'coffee', '🍱': 'coffee', '🍣': 'coffee', '🍤': 'coffee', '🍳': 'coffee', '🥞': 'coffee', '🧇': 'coffee', '🥓': 'coffee', '🍿': 'coffee', '🥨': 'coffee', '🍙': 'coffee', '🍚': 'coffee', '🍘': 'coffee', '🍢': 'coffee',
+  // alcoholic / cold drinks → coffee (matches 🥂🍷); frozen desserts → gift (matches 🍰)
+  '🍺': 'coffee', '🍻': 'coffee', '🥃': 'coffee', '🍸': 'coffee', '🍹': 'coffee', '🍶': 'coffee', '🧉': 'coffee', '🍾': 'coffee', '🥤': 'coffee', '🧋': 'coffee',
+  '🍮': 'gift', '🍦': 'gift', '🍧': 'gift', '🍨': 'gift', '🥧': 'gift', '🍭': 'gift', '🍬': 'gift', '🍡': 'gift', '🍥': 'gift',
+  // more fruit / produce → leaf
+  '🍑': 'leaf', '🍐': 'leaf', '🍊': 'leaf', '🍋': 'leaf', '🍌': 'leaf', '🍉': 'leaf', '🍈': 'leaf', '🥝': 'leaf', '🥭': 'leaf', '🍍': 'leaf', '🥥': 'leaf', '🥑': 'leaf', '🧄': 'leaf', '🧅': 'leaf', '🥔': 'leaf', '🍠': 'leaf', '🥜': 'leaf', '🌰': 'leaf', '🍄': 'leaf', '🫐': 'leaf', '🫒': 'leaf', '🌶': 'leaf',
+  '🎵': 'volume-2', '🎶': 'volume-2', '🎤': 'volume-2', '🎸': 'volume-2', '🎷': 'volume-2', '🎺': 'volume-2', '🥁': 'volume-2', '🎹': 'volume-2', '🎻': 'volume-2',
+  // arts / film / stage / festival → nearest bundled glyph (no ticket/film/drama id)
+  '🎬': 'video', '📽': 'video', '📽️': 'video', '🎞': 'video', '🎙️': 'mic',
+  '🎭': 'star', '🎟': 'tag', '🎟️': 'tag', '🎫': 'tag', '🎪': 'star', '🖼️': 'image', '🪩': 'star',
   '👋': 'users', '🙌': 'users', '🤝': 'users', '👥': 'users', '🧑‍🤝‍🧑': 'users',
   '👤': 'user', '🧑': 'user', '🙂': 'user',
   '📍': 'map-pin', '📌': 'map-pin', '🗺': 'map', '🧭': 'map',
@@ -357,9 +407,7 @@ const EMOJI_ICONS: Record<string, string> = {
   '📞': 'phone', '☎': 'phone', '📧': 'mail', '✉': 'mail',
   '🏠': 'home', '🏡': 'home', '🏘': 'home', '🏚': 'home', '🏫': 'home',
   // potted plants / trees / cactus / clover / chili → leaf
-  '🪴': 'leaf', '🌳': 'leaf', '🌲': 'leaf', '🌴': 'leaf', '🪵': 'leaf', '🍀': 'leaf', '☘': 'leaf', '🌵': 'leaf', '🎋': 'leaf', '🌶': 'leaf',
-  // more fruit / nuts → leaf
-  '🍐': 'leaf', '🍊': 'leaf', '🍋': 'leaf', '🍌': 'leaf', '🥝': 'leaf', '🍑': 'leaf', '🥭': 'leaf', '🍍': 'leaf', '🫐': 'leaf', '🥥': 'leaf', '🌰': 'leaf', '🥜': 'leaf',
+  '🪴': 'leaf', '🌳': 'leaf', '🌲': 'leaf', '🌴': 'leaf', '🪵': 'leaf', '🍀': 'leaf', '☘': 'leaf', '🌵': 'leaf', '🎋': 'leaf',
   // kids / adults → user
   '🧒': 'user', '👶': 'user', '👦': 'user', '👧': 'user', '🧓': 'user', '👴': 'user', '👵': 'user', '👨': 'user', '👩': 'user',
   // more flowers → sun (matches the flower convention above)
@@ -367,7 +415,7 @@ const EMOJI_ICONS: Record<string, string> = {
   // bundled places / logistics / objects
   '🌍': 'globe', '🌎': 'globe', '🌏': 'globe', '🌐': 'globe',
   '📦': 'package', '🚚': 'truck', '🚛': 'truck', '🔑': 'key', '🗝': 'key',
-  '🎀': 'gift', '🍬': 'gift', '🍭': 'gift',
+  '🎀': 'gift',
 };
 
 /** Strip variation selectors, ZWJ and skin-tone modifiers so "❤️"/"👋🏽" match the base key. */

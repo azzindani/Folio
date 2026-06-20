@@ -431,14 +431,15 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
   const naturalH = hY + sumH + Math.round(W * 0.032) * Math.max(0, n - 1) + footerBand + Math.round(W * 0.04);
   // A page-fill slide is EXACTLY the page height (bg spans it → no strip); a
   // poster sizes to content. When the page is taller than the content, center the
-  // whole composition (topPad) — unless a masthead band is present, which is a
-  // top-anchored cover archetype whose slab is drawn at the page top.
+  // whole composition (topPad).
   const H = fillPage ? boxH : Math.max(Math.round(W * 0.9), Math.min(Math.round(W * 3.4), naturalH));
   // Vertically center the whole composition whenever the canvas is taller than the
   // content — a fixed fill page (carousel) OR a thin POSTER floored at W*0.9 (a
   // single stat + caption that used to sit top-anchored with a dead band below).
-  // The masthead slab is shifted by the same offset (below) so the band stays
-  // aligned with its reversed-out header text. Dense content (H==naturalH) → 0.
+  // A masthead band centers WITH the composition: the strip above the slab is the
+  // full-canvas background (composeBackground spans Y..Y+H), not an unpainted gap,
+  // so a centered band reads as an intentional centered cover. Dense content
+  // (H==naturalH) → 0.
   const topPad = H > naturalH ? Math.round((H - naturalH) * 0.42) : 0;
 
   // Rich engine-composed background when bg_style is set, else a flat wash.

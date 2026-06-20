@@ -78,5 +78,6 @@ tools/harness-suite/*
 !tools/harness-suite/*.py
 !tools/harness-suite/*.json
 !tools/harness-suite/*.md
-# but NOT the regenerated run results
-tools/harness-suite/results.json
+# but NOT the regenerated run results (results.json, results-old-engine.json,
+# results-prev-<ts>.json, etc. — local run dumps, not source)
+tools/harness-suite/results*.json

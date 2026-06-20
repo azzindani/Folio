@@ -2,11 +2,31 @@
 import type { RectLayer, CircleLayer, PathLayer, PolygonLayer, LineLayer, TextLayer, ImageLayer, IconLayer } from '../schema/types';
 import { createSVGElement, getOrCreateDefs, uniqueDefId } from './svg-utils';
 
-import { applyFill, resolveColorOrGradient } from './fill-renderer';
+import { applyFill, resolveColorOrGradient, type FillResult } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 
 import { wrapPlainText, applyCommonAttributes, applyStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
+
+// Resolve a shape's fill, tolerating a bare `color` string. Small models very
+// often emit `{type:'rect', color:'#0A0A0A'}` (color is the universal "make it
+// this colour" word) with no `fill`. The schema fill lives under `fill`, so
+// without this fallback the shape renders fill="none" (transparent) and a
+// full-canvas background rect silently VANISHES → a white poster (the #1
+// blank-design cause for verbose/mixed payloads that bypass shorthand expansion).
+// Treat a stray color as a solid fill so the model's unambiguous intent renders.
+function shapeFill(
+  layer: { fill?: unknown; color?: unknown },
+  svg: SVGSVGElement,
+  box: { width: number; height: number },
+): FillResult | null {
+  if (layer.fill !== undefined && layer.fill !== null) {
+    return applyFill(layer.fill as Parameters<typeof applyFill>[0], svg, box);
+  }
+  const c = layer.color;
+  if (typeof c === 'string' && c.trim()) return applyFill({ type: 'solid', color: c }, svg, box);
+  return null;
+}
 
 export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
   const x = layer.x ?? 0;
@@ -27,8 +47,8 @@ export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
     }
   }
 
-  if (layer.fill) {
-    const fillResult = applyFill(layer.fill, svg, { width: w, height: h });
+  const fillResult = shapeFill(layer, svg, { width: w, height: h });
+  if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) el.setAttribute('fill-opacity', String(fillResult.opacity));
   } else {
@@ -54,8 +74,8 @@ export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement
 
   const el = createSVGElement('ellipse', { cx, cy, rx, ry });
 
-  if (layer.fill) {
-    const fillResult = applyFill(layer.fill, svg, { width: rx * 2, height: ry * 2 });
+  const fillResult = shapeFill(layer, svg, { width: rx * 2, height: ry * 2 });
+  if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) {
       el.setAttribute('fill-opacity', String(fillResult.opacity));
@@ -77,12 +97,13 @@ export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
   const el = createSVGElement('path', { d: layer.d });
   if (layer.fill_rule) el.setAttribute('fill-rule', layer.fill_rule);
 
-  if (layer.fill) {
-    const fillResult = applyFill(layer.fill, svg, {
-      width: typeof layer.width === 'number' ? layer.width : 100,
-      height: typeof layer.height === 'number' ? layer.height : 100,
-    });
+  const fillResult = shapeFill(layer, svg, {
+    width: typeof layer.width === 'number' ? layer.width : 100,
+    height: typeof layer.height === 'number' ? layer.height : 100,
+  });
+  if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
+    if (fillResult.opacity !== undefined) el.setAttribute('fill-opacity', String(fillResult.opacity));
   } else {
     el.setAttribute('fill', 'none');
   }
@@ -116,12 +137,13 @@ export function renderPolygon(layer: PolygonLayer, svg: SVGSVGElement): SVGEleme
 
   const el = createSVGElement('polygon', { points });
 
-  if (layer.fill) {
-    const fillResult = applyFill(layer.fill, svg, {
-      width: typeof layer.width === 'number' ? layer.width : 0,
-      height: typeof layer.height === 'number' ? layer.height : 0,
-    });
+  const fillResult = shapeFill(layer, svg, {
+    width: typeof layer.width === 'number' ? layer.width : 0,
+    height: typeof layer.height === 'number' ? layer.height : 0,
+  });
+  if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
+    if (fillResult.opacity !== undefined) el.setAttribute('fill-opacity', String(fillResult.opacity));
   } else {
     el.setAttribute('fill', 'none');
   }

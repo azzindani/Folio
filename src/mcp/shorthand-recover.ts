@@ -11,7 +11,8 @@ export const PRESET_TYPES = new Set([
   'feature_grid', 'editorial', 'poster', 'split', 'list', 'steps', 'checklist',
   'numbered_list', 'stat', 'metric', 'big_number', 'event', 'flyer', 'hero',
   'sections', 'infographic', 'document', 'report_poster', 'decor', 'marble_bg',
-  'backdrop',
+  'backdrop', 'timeline', 'roadmap', 'history', 'milestones', 'pricing', 'plans',
+  'tiers', 'price_table', 'versus', 'compare', 'comparison', 'vs',
 ]);
 
 // Did coercion yield at least one real preset layer? Used to tell a parsed-OK
@@ -239,7 +240,8 @@ export function unwrapBareContainers(
 
 export const BLEED_PRESETS = new Set([
   'feature_grid', 'editorial', 'poster', 'event', 'flyer', 'hero', 'split',
-  'decor', 'marble_bg', 'backdrop',
+  'decor', 'marble_bg', 'backdrop', 'timeline', 'roadmap', 'history', 'milestones',
+  'pricing', 'plans', 'tiers', 'price_table', 'versus', 'compare', 'comparison', 'vs',
 ]);
 
 // A full-bleed preset added as a page layer WITHOUT an explicit box defaults to
@@ -402,6 +404,8 @@ export function demoteCoveringBackdrops(existing: Layer[], incoming: Layer[], do
 export const PAGE_PRESETS = new Set([
   'feature_grid', 'sections', 'infographic', 'document', 'report_poster',
   'editorial', 'poster', 'event', 'flyer', 'hero', 'split',
+  'timeline', 'roadmap', 'history', 'milestones', 'pricing', 'plans', 'tiers',
+  'price_table', 'versus', 'compare', 'comparison', 'vs',
 ]);
 
 export const DARK_LUM = 0.42; // matches buildFeatureGrid's bgDark threshold

@@ -246,6 +246,38 @@ describe('patchDesign — advanced', () => {
     const content = fs.readFileSync(designPath, 'utf-8');
     expect(content).toContain('Patched Name');
   });
+
+  it('recolor selector swaps every matching hex across the design (restyle in one call)', () => {
+    addLayers({
+      design_path: designPath,
+      layers: [
+        { id: 'bg', type: 'rect', x: 0, y: 0, width: 1080, height: 1080, fill: { type: 'solid', color: '#FAF5EC' } },
+        { id: 't1', type: 'text', x: 80, y: 100, width: 800, height: 80, content: { type: 'plain', value: 'Hi' }, style: { color: '#1A1A1A' } },
+        { id: 't2', type: 'text', x: 80, y: 200, width: 800, height: 60, content: { type: 'plain', value: 'Bye' }, style: { color: '#1A1A1A' } },
+      ] as unknown as Parameters<typeof addLayers>[0]['layers'],
+    });
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'recolor', value: { '#faf5ec': '#0A0A0A', '#1A1A1A': '#F5F5F5' } as unknown }],
+    });
+    const parsed = result as Record<string, unknown>;
+    expect((parsed.patched_paths as string[]).some(p => p.startsWith('recolor:'))).toBe(true);
+    const content = fs.readFileSync(designPath, 'utf-8');
+    expect(content).toContain('#0A0A0A');   // bg darkened (case-insensitive match)
+    expect(content).toContain('#F5F5F5');   // both texts lightened
+    expect(content).not.toContain('#FAF5EC');
+    expect(content).not.toContain('#1A1A1A');
+  });
+
+  it('recolor reports unresolved when no color matches', () => {
+    const result = patchDesign({
+      design_path: designPath,
+      selectors: [{ path: 'recolor', value: { '#123456': '#654321' } as unknown }],
+    });
+    const parsed = result as Record<string, unknown>;
+    // nothing matched → treated as an error (no phantom success)
+    expect(parsed.success === false || (parsed.unresolved as string[] | undefined)?.length).toBeTruthy();
+  });
 });
 
 // ── addLayer in carousel page ────────────────────────────────
