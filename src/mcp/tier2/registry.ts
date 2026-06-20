@@ -1,5 +1,6 @@
 // §7 Tier 2 — Design (10 tools): design lifecycle & layer manipulation
 import type { ToolDefinition } from '../types';
+import { isMinimalGuidance, freeComposeDescription } from '../guidance-mode';
 
 export const TIER2_TOOLS: ToolDefinition[] = [
   {
@@ -153,3 +154,11 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     },
   },
 ];
+
+// Frontier instances (FOLIO_GUIDANCE=minimal) drop the prescriptive aesthetic lead
+// from add_layers so the model's own design judgment isn't capped (§0.4). Default
+// (full) is untouched — the description is byte-identical for the blind-model path.
+if (isMinimalGuidance()) {
+  const addLayers = TIER2_TOOLS.find(t => t.name === 'add_layers');
+  if (addLayers) addLayers.description = freeComposeDescription(addLayers.description, true);
+}

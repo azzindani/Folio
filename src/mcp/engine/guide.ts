@@ -1,5 +1,6 @@
 // Engine reference guide — split into sections to stay within 1K output budget.
 // Default section (quick_ref) ≈200 tokens. Full guide = 4 calls ≈800 tokens total.
+import { isMinimalGuidance } from '../guidance-mode';
 
 const SECTIONS: Record<string, string> = {
 
@@ -568,10 +569,23 @@ Rebuild as layers (editable), NOT as a single image layer of the screenshot — 
 editable Folio design that matches the reference, not a pasted picture.`,
 };
 
+// Frontier (minimal) instances: prepend a note that reframes the aesthetic
+// prescription below as optional scaffolding — the model designs by its own
+// judgment; only the SPATIAL guarantees still apply. §0.4.
+const MINIMAL_PREAMBLE = `⚡ FREE-COMPOSE MODE — design by YOUR OWN judgment. The aesthetic suggestions below
+(flat canvas, no-gradient, specific fonts, ONE accent, left-anchor) are SCAFFOLDING
+for smaller models — treat them as optional; your palette, type, color + composition
+choices win. What ALWAYS applies: the SPATIAL guarantees — presets measure + fit so
+nothing collides; wrap deliberate hand-placement in ONE group or set locked:true to
+keep your EXACT layout; act on the returned overflow/contrast notes; default to ONE
+design. The engine is your renderer + ruler, not your art director.
+
+`;
+
 export function buildGuide(section?: string): string {
-  if (section && section in SECTIONS) return SECTIONS[section];
-  if (section) return `Unknown section "${section}". Available: ${Object.keys(SECTIONS).join(' | ')}`;
-  return SECTIONS['quick_ref'];
+  if (section && !(section in SECTIONS)) return `Unknown section "${section}". Available: ${Object.keys(SECTIONS).join(' | ')}`;
+  const body = section ? SECTIONS[section] : SECTIONS['quick_ref'];
+  return isMinimalGuidance() ? MINIMAL_PREAMBLE + body : body;
 }
 
 export const GUIDE_SECTIONS = Object.keys(SECTIONS);
