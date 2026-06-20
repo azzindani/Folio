@@ -3,7 +3,7 @@
 // backdrop it actually sits on (the dominant canvas wash OR a local band/card/badge).
 import type { Layer, ThemeSpec } from '../schema/types';
 import { resolveToken } from '../engine/token-resolver';
-import { layerBBox, layerText } from './engine-finalize-geom';
+import { layerBBox, layerText, isLocked } from './engine-finalize-geom';
 
 // ── Invisible text rescue ───────────────────────────────────
 // A vision-less model regularly ships text whose color is near-invisible on its
@@ -35,6 +35,7 @@ function flattenLayers(layers: Layer[]): Layer[] {
   const out: Layer[] = [];
   const walk = (ls: Layer[]): void => {
     for (const l of ls) {
+      if (isLocked(l)) continue;   // authored subtree — exempt from re-lighting
       out.push(l);
       const kids = (l as unknown as Record<string, unknown>)['layers'];
       if (Array.isArray(kids)) walk(kids as Layer[]);

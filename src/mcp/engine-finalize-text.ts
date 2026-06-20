@@ -6,13 +6,13 @@ import type { Layer, Page } from '../schema/types';
 import { estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 
-import { layerBBox, layerText, isMotifLayer, isFullBleedContentPreset, isFullCanvasBackdrop } from './engine-finalize-geom';
+import { layerBBox, layerText, isMotifLayer, isFullBleedContentPreset, isFullCanvasBackdrop, isLocked } from './engine-finalize-geom';
 
 export function spreadStackedText(layers: Layer[], docW: number, docH: number): number {
   const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };
   const toks = (s: string): Set<string> => new Set(s.toLowerCase().split(/[^a-z0-9$%]+/).filter(t => t.length >= 2));
   const similar = (a: Layer, b: Layer): boolean => { const ta = toks(layerText(a)), tb = [...toks(layerText(b))]; if (!ta.size || !tb.length) return false; return tb.filter(t => ta.has(t)).length / Math.max(ta.size, tb.length) >= 0.5; };
-  const texts = layers.filter(l => l.type === 'text' && layerText(l).trim());
+  const texts = layers.filter(l => l.type === 'text' && layerText(l).trim() && !isLocked(l));
   const n = texts.length;
   if (n < 2) return 0;
   const parent = texts.map((_, i) => i);
@@ -132,7 +132,7 @@ export function promoteCoveredTitle(layers: Layer[], docW: number, docH: number)
   const toReseat: Layer[] = []; // covered texts whose preset header is empty → re-seat up top
   for (let i = 0; i < layers.length; i++) {
     const t = layers[i];
-    if (t.type !== 'text' || !textVal(t).trim()) continue;
+    if (t.type !== 'text' || !textVal(t).trim() || isLocked(t)) continue;
     const tb = layerBBox(t), tz = zOf(t);
     const coverer = layers.find((p, j) => j !== i && isFullBleedContentPreset(p, docW, docH) && zOf(p) > tz
       && layerBBox(p).x <= tb.x + 1 && layerBBox(p).y <= tb.y + 1 && layerBBox(p).r >= tb.r - 1 && layerBBox(p).b >= tb.b - 1);
@@ -177,7 +177,7 @@ export function recenterHalfAnchoredText(layers: Layer[], docW: number, docH: nu
   const half = docW / 2, tol = docW * 0.03;
   let moved = 0;
   for (const t of layers) {
-    if (t.type !== 'text' || !layerText(t).trim()) continue;
+    if (t.type !== 'text' || !layerText(t).trim() || isLocked(t)) continue;
     const b = layerBBox(t), w = b.r - b.x;
     if (Math.abs(b.x - half) > tol) continue;     // left edge isn't on the mid-line
     if (b.r < docW * 0.8 || w > docW * 0.55) continue; // not the middle→right-edge signature
@@ -270,7 +270,7 @@ export function structureHandPlacedText(layers: Layer[], W: number, H: number): 
     if (!o['style'] || typeof o['style'] !== 'object') o['style'] = {};
     return o['style'] as Record<string, unknown>;
   };
-  const texts = layers.filter(l => l?.type === 'text');
+  const texts = layers.filter(l => l?.type === 'text' && !isLocked(l));
   const hasContainer = layers.some(l => l?.type === 'group' || l?.type === 'auto_layout');
   const unsized = texts.filter(l => styleOf(l)['font_size'] == null);
   // Only restructure a clearly hand-placed, mostly-unsized text poster.
@@ -344,7 +344,7 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   };
   // A motif is a behind-content decoration, not a flow row — never stack it (that
   // would shove it off-canvas). dropCollidingMotifs is the sole authority on it.
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];
@@ -410,7 +410,7 @@ export function fitOverflowingHeroText(layers: Layer[], _W: number, H: number): 
     const h = estTextHeight(text, fs, w, lh, fontCharFactor(font));
     return { h, lines: Math.max(1, Math.round(h / (fs * lh))), fs };
   };
-  const texts = layers.filter(l => measure(l));
+  const texts = layers.filter(l => !isLocked(l) && measure(l));
   if (texts.length < 2) return 0;                               // nothing to make room for
   const margin = Math.round(H * 0.14), gap = Math.round(H * 0.02);
   let fixed = 0;
@@ -437,7 +437,7 @@ export function fitOverflowingHeroText(layers: Layer[], _W: number, H: number): 
 export function setMeasuredTextHeights(layers: Layer[], _W: number): number {
   let set = 0;
   for (const l of layers) {
-    if (!l || l.type !== 'text') continue;
+    if (!l || l.type !== 'text' || isLocked(l)) continue;
     const o = l as unknown as Record<string, unknown>;
     const text = layerText(l).trim();
     if (!text) continue;

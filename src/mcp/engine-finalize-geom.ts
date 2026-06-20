@@ -121,6 +121,16 @@ export function layerText(l: Layer): string {
   return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : '');
 }
 
+// A layer the model (or the editor) marked `locked: true` asserts deliberate,
+// authored placement + styling — the auto-rescue passes (reflow / re-measure /
+// re-stack / re-center / re-light) must leave it ALONE. Opt-in, so it never
+// changes the blind-model path (which never sets it). A locked GROUP locks its
+// whole subtree (the rescue passes operate on top-level layers, so skipping the
+// group already exempts its children).
+export function isLocked(l: Layer): boolean {
+  return (l as unknown as Record<string, unknown>)['locked'] === true;
+}
+
 export function flattenRelativeGroups(layers: Layer[]): number {
   let moved = 0;
   for (const l of layers) {
