@@ -392,7 +392,17 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     const c = containerOf(l);
     if (c) { labelOf.set(l, c); containerY0.set(c, Number(o(c)['y']) || 0); }
   }
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !labelOf.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  // A layer the model deliberately bled off-canvas (a corner blob, an oversized
+  // accent circle, a half-bleed band) is intentional SCENERY, not a flow row —
+  // flow content is placed inside the canvas. Treating a bleeding decorative circle
+  // as a collision floor shoved the magazine-cover masthead 325px down the page.
+  // Exempt anything whose box runs meaningfully past an edge: never moved, never a
+  // floor. (Fully-off-canvas mistakes are still rescued by snapOffCanvasContent.)
+  const bleedsOffCanvas = (l: Layer): boolean => {
+    const b = boxOf(l);
+    return b.w > 0 && b.h > 0 && (b.x < -8 || b.y < -8 || b.x + b.w > W + 8 || b.y + b.h > H + 8);
+  };
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !labelOf.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];
@@ -525,6 +535,10 @@ export function clampShorthandToCanvas(layers: ShorthandLayer[], W: number, H: n
   if (!(W > 0) || !(H > 0)) return;
   for (const sh of layers) {
     const r = sh as Record<string, unknown>;
+    // A circle/ellipse the model bled off an edge is intentional decoration —
+    // clamping ONE axis distorts it into a squashed egg (the magazine-cover accent
+    // blob became an ellipse). Leave it; decollide's bleed-exemption handles it.
+    if (r['type'] === 'circle' || r['type'] === 'ellipse') continue;
     const p = r['pos'];
     if (Array.isArray(p) && p.length >= 4 && p.slice(0, 4).every(n => typeof n === 'number')) {
       const [x, y, w, h] = p as number[];
