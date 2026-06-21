@@ -600,11 +600,25 @@ export function dedupOverlappingDuplicates(layers: Layer[], docW: number, docH: 
     if (!ta.size || !tb.length) return false;
     return tb.filter(t => ta.has(t)).length / Math.max(ta.size, tb.length) >= 0.5;
   };
+  const idOf = (l: Layer): string => String((l as unknown as Record<string, unknown>)['id'] ?? '');
+  const norm = (l: Layer): string => layerText(l).toLowerCase().replace(/\s+/g, ' ').trim();
   const texts = layers.map((l, i) => ({ l, i })).filter(x => x.l.type === 'text' && layerText(x.l).trim());
   for (let a = 0; a < texts.length; a++) {
     if (drop.has(texts[a].i)) continue;
     for (let b = a + 1; b < texts.length; b++) {
       if (drop.has(texts[b].i)) continue;
+      // Rename-twins: an id collision produced `X` + `X-2` (distinct ids, same
+      // base). When the SAME line is re-placed across two add_layers calls the two
+      // copies land at DIFFERENT y (a menu split into two offset ladders), so the
+      // overlap test below misses them. If the base-id matches and the text is an
+      // EXACT duplicate, drop the earlier — the `-2` suffix only exists because the
+      // model reused the id, so one copy is always redundant. Keeps the last (the
+      // model's most recent placement).
+      const ba = baseId(texts[a].l);
+      if (ba && ba === baseId(texts[b].l) && idOf(texts[a].l) !== idOf(texts[b].l)) {
+        const na = norm(texts[a].l);
+        if (na.length >= 3 && na === norm(texts[b].l)) { drop.add(texts[a].i); break; }
+      }
       const A = layerBBox(texts[a].l), B = layerBBox(texts[b].l);
       const ox = Math.min(A.r, B.r) - Math.max(A.x, B.x), oy = Math.min(A.b, B.b) - Math.max(A.y, B.y);
       if (ox <= 0 || oy <= 0) continue;

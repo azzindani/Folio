@@ -17,6 +17,12 @@ describe('resolveIconName — tolerates the names small models emit', () => {
     expect(resolveIconName('bolt')).toBe('zap');
     expect(resolveIconName('location')).toBe('map-pin');
   });
+  it('maps plant/garden words to the leaf glyph (was a blank placeholder dot)', () => {
+    expect(resolveIconName('plant')).toBe('leaf');
+    expect(resolveIconName('sprout')).toBe('leaf');
+    expect(resolveIconName('garden')).toBe('leaf');
+    expect(resolveIconName('flower')).toBe('leaf');
+  });
   it('strips an "icon-" prefix', () => {
     expect(resolveIconName('icon-home')).toBe('home');
   });

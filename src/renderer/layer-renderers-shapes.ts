@@ -6,7 +6,7 @@ import { applyFill, resolveColorOrGradient, type FillResult } from './fill-rende
 import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 
-import { wrapPlainText, applyCommonAttributes, applyStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
+import { wrapPlainText, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
 
 // Resolve a shape's fill, tolerating a bare `color` string. Small models very
 // often emit `{type:'rect', color:'#0A0A0A'}` (color is the universal "make it
@@ -55,7 +55,8 @@ export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke, svg);
+  const sn = normalizeStroke(layer);
+  if (sn) applyStroke(el, sn, svg);
 
   applyCommonAttributes(el, layer);
 
@@ -84,7 +85,8 @@ export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke, svg);
+  const sn = normalizeStroke(layer);
+  if (sn) applyStroke(el, sn, svg);
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
@@ -108,7 +110,8 @@ export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke, svg);
+  const sn = normalizeStroke(layer);
+  if (sn) applyStroke(el, sn, svg);
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
@@ -148,7 +151,8 @@ export function renderPolygon(layer: PolygonLayer, svg: SVGSVGElement): SVGEleme
     el.setAttribute('fill', 'none');
   }
 
-  if (layer.stroke) applyStroke(el, layer.stroke, svg);
+  const sn = normalizeStroke(layer);
+  if (sn) applyStroke(el, sn, svg);
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
@@ -166,8 +170,9 @@ export function renderLine(layer: LineLayer, svg: SVGSVGElement): SVGElement {
   });
 
   el.setAttribute('fill', 'none');
-  if (layer.stroke) {
-    applyStroke(el, layer.stroke, svg);
+  const lineStroke = normalizeStroke(layer);
+  if (lineStroke) {
+    applyStroke(el, lineStroke, svg);
   } else {
     el.setAttribute('stroke', '#000');
     el.setAttribute('stroke-width', '1');

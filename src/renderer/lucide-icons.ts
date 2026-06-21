@@ -293,6 +293,12 @@ const ICON_ALIASES: Record<string, string> = {
   music: 'volume-2', sound: 'volume-2',
   cup: 'coffee', mug: 'coffee', espresso: 'coffee', latte: 'coffee', cafe: 'coffee', coffeebean: 'coffee', bean: 'coffee', beans: 'coffee', drink: 'coffee',
   delivery: 'truck', shipping: 'truck', ship: 'truck', deliverytruck: 'truck', van: 'truck', logistics: 'truck',
+  // ── plants / garden / nature (a gardening how-to cover rendered the `plant`
+  // icon as a blank placeholder dot — these common words had no Lucide id). The
+  // bundled `leaf` glyph reads cleanly for all of them.
+  plant: 'leaf', plants: 'leaf', sprout: 'leaf', seedling: 'leaf', houseplant: 'leaf', repot: 'leaf',
+  garden: 'leaf', gardening: 'leaf', flower: 'leaf', floral: 'leaf', bloom: 'leaf', botanical: 'leaf',
+  tree: 'leaf', foliage: 'leaf', succulent: 'leaf', herb: 'leaf', greenery: 'leaf', leaves: 'leaf', soil: 'leaf',
   // ── hospitality / travel / wellness (a feature poster of amenities collapsed
   // to all-dots when these common words had no Lucide id). Map to bundled glyphs.
   beach: 'umbrella', beachfront: 'umbrella', resort: 'umbrella', umbrellabeach: 'umbrella', seaside: 'umbrella',

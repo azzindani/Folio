@@ -48,7 +48,9 @@ let activeOptions: RenderOptions = {};
 // synchronously — i.e. before the mount — so caching one would serve back a
 // bare placeholder on the next render (the chart shows on load, then vanishes
 // on the first edit). Skip the cache for these so they always re-mount live.
-const UNCACHEABLE_TYPES = new Set<string>(['interactive_chart']);
+// `background`/`backdrop` render from the live canvas size (svg viewBox), not
+// from layer props alone, so the id-keyed cache could serve a stale-size clone.
+const UNCACHEABLE_TYPES = new Set<string>(['interactive_chart', 'background', 'backdrop']);
 
 export function renderLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
   // Isolation barrier: one malformed layer (e.g. a callout missing its body,
@@ -162,8 +164,37 @@ function evalShowIf(expr: string, layer: Layer): boolean {
   }
 }
 
+// A `background`/`backdrop` layer fills the whole canvas with its fill. When it
+// carries no fill (the model added a bare {type:background} placeholder and the
+// real page background comes from the theme/deck fallback), render nothing rather
+// than the unknown-type `[background: id]` diagnostic — the page is already
+// painted, so the only thing to remove is the artifact.
+function renderBackgroundLayer(layer: Layer, svg: SVGSVGElement): SVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const o = layer as unknown as Record<string, unknown>;
+  if (o['fill'] == null && o['color'] == null) {
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('data-layer-id', String(o['id'] ?? ''));
+    g.setAttribute('data-background', 'empty');
+    return g;
+  }
+  const vb = svg.viewBox?.baseVal;
+  const cw = vb && vb.width ? vb.width : Number(svg.getAttribute('width')) || (typeof o['width'] === 'number' ? (o['width'] as number) : 0);
+  const ch = vb && vb.height ? vb.height : Number(svg.getAttribute('height')) || (typeof o['height'] === 'number' ? (o['height'] as number) : 0);
+  return renderRect({ ...(layer as unknown as Record<string, unknown>), type: 'rect', x: 0, y: 0, width: cw, height: ch } as unknown as Parameters<typeof renderRect>[0], svg);
+}
+
 function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
   let el: SVGElement;
+  // `background`/`backdrop`: a full-bleed type a model reaches for (it expects the
+  // word "background" to fill the page). Handle it before the typed switch so the
+  // real cases keep their discriminated-union narrowing. Without this it fell to
+  // the default placeholder and printed `[background: id]` on the poster
+  // (suite-009 cover); the engine owns the spatial work (cover the canvas).
+  const lt = layer.type as string;
+  if (lt === 'background' || lt === 'backdrop') {
+    el = renderBackgroundLayer(layer, svg);
+  } else
   switch (layer.type) {
     case 'rect':          el = renderRect(layer, svg); break;
     // renderCircle already emits an <ellipse> element with rx/ry, so

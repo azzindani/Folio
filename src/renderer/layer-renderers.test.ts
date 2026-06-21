@@ -49,6 +49,37 @@ describe('renderRect color fallback', () => {
   });
 });
 
+// ── Bare-string stroke (hand-placed verbose layer) ──────────
+// A model hand-placing a framed photo box emits {stroke:'#C59A38', stroke_width:14}
+// (verbose form) instead of the canonical {color,width} object. Reading `.type`
+// off the string threw → the whole rect rendered as the `⚠ rect#id` error
+// placeholder (the suite-008 "Nonna" photo-frame bug). Must render the stroke.
+describe('renderRect bare-string stroke', () => {
+  it('renders a stroke from a bare color string + sibling stroke_width', () => {
+    const layer = { id: 'photo_frame', type: 'rect', z: 5, x: 0, y: 0, width: 880, height: 880,
+      fill: '#F8EED3', stroke: '#C59A38', stroke_width: 14 } as unknown as RectLayer;
+    const el = renderRect(layer, makeSVG());
+    expect(el.tagName).toBe('rect');               // not the error-placeholder <g>
+    expect(el.getAttribute('stroke')).toBe('#C59A38');
+    expect(el.getAttribute('stroke-width')).toBe('14'); // sibling width preserved, not defaulted to 1
+    expect(el.getAttribute('fill')).toBe('#F8EED3');
+  });
+
+  it('defaults width to 1 when stroke is a bare string with no sibling width', () => {
+    const layer = { id: 'r', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10, stroke: '#000' } as unknown as RectLayer;
+    const el = renderRect(layer, makeSVG());
+    expect(el.getAttribute('stroke')).toBe('#000');
+    expect(el.getAttribute('stroke-width')).toBe('1');
+  });
+
+  it('skips a malformed stroke object (no color) instead of crashing', () => {
+    const layer = { id: 'r', type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10, fill: '#FFF', stroke: { width: 3 } } as unknown as RectLayer;
+    const el = renderRect(layer, makeSVG());
+    expect(el.tagName).toBe('rect');
+    expect(el.getAttribute('stroke')).toBeNull();
+  });
+});
+
 // ── Path ────────────────────────────────────────────────────
 
 describe('renderPath', () => {
