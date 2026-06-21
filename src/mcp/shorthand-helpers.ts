@@ -146,6 +146,8 @@ export interface ShorthandLayer {
   height?: number | 'auto';
   opacity?: number;
   rotation?: number;
+  rotate?: number; // alias for rotation (CSS-style — what models reach for first)
+  angle?: number;  // alias for rotation
   flip_h?: boolean;
   flip_v?: boolean;
   visible?: boolean;
