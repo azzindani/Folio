@@ -125,14 +125,25 @@ describe('decollide keeps a label inside its node (label-on-shape composite)', (
     expect(yOf(lbl)).toBe(710);                        // stayed inside the box, not ejected below
   });
 
-  it('rides the label along when the node itself is pushed down', () => {
-    const above = rect('above', 530, 600, 220, 200);   // overlaps the node below → forces a push
+  it('a node + its label stay together as a unit (container is scenery)', () => {
     const node = rect('n', 530, 650, 220, 88);
     const lbl = label('l', 530, 680);                  // sits in node n
-    decollideHandPlaced([above, node, lbl], W, H);
-    const dy = yOf(node) - 650;
-    expect(dy).toBeGreaterThan(0);                      // node was pushed
-    expect(yOf(lbl)).toBe(680 + dy);                    // label moved with it
+    const other = txt('o', 60, 200);                   // a 2nd movable elsewhere
+    decollideHandPlaced([node, lbl, other], W, H);
+    expect(yOf(node)).toBe(650);                        // node (container) is scenery, not moved
+    expect(yOf(lbl)).toBe(680);                         // label stays inside it (not ejected)
+  });
+
+  it('a card holds label + value + a small footnote without ejecting any of them', () => {
+    // the medium-card gap: card bigger than 8x its label, smaller than a panel.
+    const card = rect('card', 60, 200, 300, 300);
+    const cl = label('cl', 88, 228);                   // small label near the top
+    const cv = label('cv', 88, 320);                   // value lower down
+    const cd = label('cd', 88, 430);                   // footnote near the bottom
+    decollideHandPlaced([card, cl, cv, cd], W, H);
+    expect(yOf(cl)).toBe(228);                          // none ejected below the card (y500)
+    expect(yOf(cv)).toBe(320);
+    expect(yOf(cd)).toBe(430);
   });
 
   it('a paragraph in a LARGE panel is still decollided (not mistaken for a label)', () => {
