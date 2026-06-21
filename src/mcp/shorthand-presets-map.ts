@@ -128,7 +128,13 @@ export function buildMindmap(sh: ShorthandLayer, id: string, z: number): Layer {
     }));
   }
 
-  const bgLayers = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, finalH,
+  // Playful default texture — the reference mind maps sit on a faint grid / dot
+  // paper. Seed-pick one (incl. the plain sweep) so two maps differ; bg_style:"solid"
+  // or any explicit value opts out.
+  const playfulBg = lum(bg) > 0.45
+    ? ['solid + graph_paper:soft', 'solid + dot_grid:soft', 'solid + grid:soft', defaultBgStyle(bg)][seed % 4]
+    : defaultBgStyle(bg);
+  const bgLayers = composeBackground(bgStyle || playfulBg, id, X, Y, W, finalH,
     { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo']) }, 0);
   return { id, type: 'group', z, x: X, y: Y, width: W, height: finalH, layers: [...bgLayers, ...layers] } as unknown as Layer;
 }

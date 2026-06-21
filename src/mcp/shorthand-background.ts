@@ -6,9 +6,23 @@ import { hexToRgb, luminance } from './engine/reference';
 
 import { asHex, PATTERN_NAMES, expandFill, BgCtx, mixHex } from './shorthand-helpers';
 
-export function parseBgSpec(spec: string): { base: string; baseArg: string; sweeps: string[]; overlays: string[] } {
+export interface PatternOverlay { name: string; strength: number; absOpacity?: number }
+// Parse a strength qualifier on a pattern token: soft/faint→quiet, bold/strong→loud,
+// a bare numeric (0–1) → an absolute opacity. Default 1 = the visible base.
+function strengthOf(arg: string): { strength: number; absOpacity?: number } {
+  const a = (arg ?? '').trim();
+  if (!a) return { strength: 1 };
+  const num = Number(a);
+  if (Number.isFinite(num) && num > 0 && num <= 1) return { strength: 1, absOpacity: num };
+  if (/faint|subtle|soft|whisper|ghost/.test(a)) return { strength: 0.32 };
+  if (/bold|strong|loud|heavy|solid/.test(a)) return { strength: 1.7 };
+  if (/medium|normal/.test(a)) return { strength: 1 };
+  return { strength: 1 };
+}
+
+export function parseBgSpec(spec: string): { base: string; baseArg: string; sweeps: string[]; overlays: PatternOverlay[] } {
   let base = 'solid', baseArg = '';
-  const sweeps: string[] = [], overlays: string[] = [];
+  const sweeps: string[] = [], overlays: PatternOverlay[] = [];
   for (const raw of spec.toLowerCase().split('+')) {
     const tk = raw.trim(); if (!tk) continue;
     const [nm0, arg = ''] = tk.split(':').map(s => s.trim());
@@ -33,8 +47,8 @@ export function parseBgSpec(spec: string): { base: string; baseArg: string; swee
     else if (nm === 'diag' || nm === 'diagonal' || nm === 'slash') sweeps.push('diag:' + (arg || 'tr'));
     else if (nm === 'wave' || nm === 'waveband' || nm === 'ribbon') sweeps.push('wave:' + (arg || 'bottom'));
     else if (nm === 'shards' || nm === 'confetti_shapes' || nm === 'scatter_shapes') sweeps.push('shards:' + (arg || 'mix'));
-    else if (nm === 'pattern') { const p = arg.replace(/[\s-]+/g, '_'); overlays.push(PATTERN_NAMES.has(p) ? p : 'dots'); }
-    else if (PATTERN_NAMES.has(nm)) overlays.push(nm);
+    else if (nm === 'pattern') { const parts = tk.split(':').map(s => s.trim()); const p = (parts[1] ?? '').replace(/[\s-]+/g, '_'); overlays.push({ name: PATTERN_NAMES.has(p) ? p : 'dots', ...strengthOf(parts[2] ?? '') }); }
+    else if (PATTERN_NAMES.has(nm)) overlays.push({ name: nm, ...strengthOf(arg) });
   }
   return { base, baseArg, sweeps, overlays };
 }
@@ -204,14 +218,19 @@ export function composeBackground(spec: string, idp: string, X: number, Y: numbe
     }
   }
 
-  // OVERLAY — whisper-faint pattern texture (no tile bg → the base shows
-  // through). Kept VERY low-contrast + sparse so it reads as a premium paper
-  // grain, never as a crowded screen. (Tuned down from fg .7/.4 · op .12/.07 ·
-  // scale 1.8 — user feedback: backgrounds were over-processed and crowded.)
-  for (const ov of overlays) {
-    const fg = dark ? mixHex(bgHex, text, 0.4) : mixHex(bgHex, text, 0.22);
-    layers.push({ id: `${idp}_tex`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'pattern', pattern: ov, fg, opacity: dark ? 0.055 : 0.035, scale: 2.6 } as unknown as Fill } as unknown as Layer);
-  }
+  // OVERLAY — a pattern texture (graph paper / dot grid / etc.). When the model
+  // NAMES a pattern it wants to SEE it, so the base is visible-but-tasteful and
+  // scales with the token's strength (`graph_paper:soft|bold|0.12`). The auto
+  // default never reaches here (defaultBgStyle emits a sweep grain, not a pattern),
+  // so loudening explicit patterns leaves quiet posters quiet.
+  overlays.forEach((ov, i) => {
+    // Grid/line patterns read as ink lines → a touch more contrast than dot fills.
+    const liney = /grid|graph_paper|blueprint|crosshatch|stripe|isometric|brick|carbon/.test(ov.name);
+    const fg = dark ? mixHex(bgHex, text, liney ? 0.6 : 0.45) : mixHex(bgHex, text, liney ? 0.5 : 0.32);
+    const visBase = dark ? 0.16 : 0.12;
+    const opacity = ov.absOpacity ?? Math.max(0.025, Math.min(0.55, visBase * ov.strength));
+    layers.push({ id: `${idp}_tex${i || ''}`, type: 'rect', z: z++, x: X, y: Y, width: W, height: H, fill: { type: 'pattern', pattern: ov.name, fg, opacity, scale: 2.4 } as unknown as Fill } as unknown as Layer);
+  });
   return layers;
 }
 
