@@ -3,7 +3,7 @@ import type { Layer } from '../schema/types';
 
 import { hexToRgb, luminance } from './engine/reference';
 import { pickSecLayout, pickEventLayout } from './engine/mood-bank';
-import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, mixHex, defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer, ListItem, SecCtx } from './shorthand-helpers';
+import { shStr, asHex, contrastRatio, readableOn, readablePair, seededDefaults, ShorthandLayer, mixHex, defaultBgStyle, estTextHeight, fitTitleSize, fontCharFactor, shBox, txt, footerLayer, ListItem, SecCtx } from './shorthand-helpers';
 
 import { renderSectionBlock } from './shorthand-sections';
 import { composeBackground } from './shorthand-background';
@@ -405,7 +405,16 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
   const gutter = rotateKick ? Math.round(W * 0.085) : 0;       // left clearance for the vertical spine
   const ccX = cX + gutter, ccW = cW - gutter;                  // content column (indented when a spine is present)
   const tsBase = mega ? Math.round(W * 0.094) : Math.round(W * 0.072);
-  const ts = title ? fitTitleSize(title, tsBase, ccW, titleFont, mega) : tsBase;  // shrink so the longest word fits
+  // A literally-uppercase headline (e.g. "WE GO LIVE IN 30 MINS") runs wider than
+  // the mixed-case 0.54 average AT WEIGHT 800 — the flat factor predicted 1 line, it
+  // rendered 2, and the subtitle collided into the wrapped line (suite-004). Treat
+  // caps like mega for both the longest-word shrink and the wrap-height reserve.
+  const titleIsCaps = mega || (!!title && /[A-Z]/.test(title) && title === title.toUpperCase());
+  const ts = title ? fitTitleSize(title, tsBase, ccW, titleFont, titleIsCaps) : tsBase;  // shrink so the longest word fits
+  // Caps/mega headlines render wider than the per-font average, so reserve their
+  // wrap height with a bumped factor — used by BOTH the masthead pre-reserve (hY)
+  // and the in-flow title box, so the band height and the subtitle y agree.
+  const titleCF = mega ? Math.max(0.66, fontCharFactor(titleFont) * 1.2) : fontCharFactor(titleFont) * (titleIsCaps ? 1.2 : 1);
 
   // Drop leading/trailing dividers (a rule at the very top/bottom is pointless
   // dead space — a common blind-model habit). Trim BEFORE measuring.
@@ -424,7 +433,7 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
   // sweep geometry (triangles, diagonals, waves) matches the page exactly.
   let hY = Math.round(W * 0.08);
   if (kicker && !rotateKick) hY += Math.round(headlineStyle === 'highlight' ? W * 0.052 : W * 0.045);
-  if (title) hY += estTextHeight(title, ts, ccW, tLH, mega ? 0.66 : 0.54) + Math.round(W * 0.02) + (headlineStyle === 'underline' ? Math.round(W * 0.018) : 0);
+  if (title) hY += estTextHeight(title, ts, ccW, tLH, titleCF) + Math.round(W * 0.02) + (headlineStyle === 'underline' ? Math.round(W * 0.018) : 0);
   if (subtitle) hY += estTextHeight(subtitle, Math.round(W * 0.028), ccW, 1.45) + Math.round(W * 0.025);
   if (kicker || title || subtitle) hY += Math.round(W * 0.05);
   const footerBand = footer ? Math.round(W * 0.1) : Math.round(W * 0.06);
@@ -471,10 +480,9 @@ export function buildSections(sh: ShorthandLayer, id: string, z: number): Layer 
     cy += Math.round(W * 0.045);
   }
   if (title) {
-    // Mega is uppercase and often falls back to a wider raster font than the
-    // measured display font, so it wraps to MORE lines than the 0.54 estimate
-    // predicts → the subtitle collided into it. Reserve with a wider factor.
-    const th = estTextHeight(title, ts, ccW, tLH, mega ? 0.66 : 0.54);
+    // Reserve the title's wrap height with the caps/mega-aware factor (titleCF) so
+    // the subtitle below never lands inside a wrapped uppercase line (suite-004).
+    const th = estTextHeight(title, ts, ccW, tLH, titleCF);
     // highlight with no kicker → put the marker band on the TITLE itself (a
     // knockout headline) so the treatment is never dormant on a kicker-less deck.
     const titleHi = headlineStyle === 'highlight' && !kicker && !band;

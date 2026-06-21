@@ -94,3 +94,42 @@ describe('sections poster — body shares one left edge; masthead band is tight'
     expect(bandBottom - subBottom).toBeLessThan(60);
   });
 });
+
+describe('sections header — an UPPERCASE headline reserves its wrapped height (suite-004 collision)', () => {
+  function flatten(l: Layer, out: Layer[] = []): Layer[] {
+    out.push(l);
+    const kids = (l as unknown as { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) kids.forEach(k => flatten(k, out));
+    return out;
+  }
+  // "WE GO LIVE IN 30 MINS" at weight 800 is wider than the 0.54 mixed-case
+  // average → the flat factor predicted ONE line, it rendered TWO, and the
+  // subtitle "Get ready…" overprinted the wrapped "MINS" line.
+  const sh = {
+    type: 'sections',
+    headline_style: 'rule',
+    font: 'IBM Plex Sans',   // the default sans (charFactor 0.54) — the case that under-reserved
+    kicker: 'LIVE STREAM',
+    title: 'WE GO LIVE IN 30 MINS',
+    subtitle: 'Get ready — countdown starts now',
+    blocks: [
+      { kind: 'heading_text', heading: 'What to Expect', body: 'Thrilling gameplay, live chat and surprise giveaways throughout the stream.' },
+    ],
+  } as unknown as ShorthandLayer;
+
+  it('the title box reserves ~2 lines and the subtitle starts below it (no overprint)', () => {
+    const all = flatten(expandShorthand(sh));
+    const title = all.find(a => /_title$/.test(a.id));
+    const sub = all.find(a => /_sub$/.test(a.id));
+    if (!title || !sub) throw new Error('expected _title and _sub layers in the sections header');
+    const t = title as unknown as { y: number; height: number };
+    const s = sub as unknown as { y: number; height: number };
+    const ts = (style(title).font_size as number) || 0;
+    expect(ts).toBeGreaterThan(0);
+    // pre-fix the reserved height was ~1 line (≈1.04×fontSize); the wrapped title
+    // needs ~2 lines so whatever sits below clears the real rendered bottom.
+    expect(t.height).toBeGreaterThan(ts * 1.6);
+    // the subtitle must begin at/after the title's reserved bottom — never inside it
+    expect(s.y).toBeGreaterThanOrEqual(t.y + t.height - 2);
+  });
+});
