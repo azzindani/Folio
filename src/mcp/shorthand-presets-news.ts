@@ -137,7 +137,9 @@ export function buildNewsletter(sh: ShorthandLayer, id: string, z: number): Laye
   // Spread the slack across the vertical seams (one per box row + lead + footer).
   const seams = Math.max(1, plan(0, 0).slots.length);
   const slack = Math.max(0, H - Math.round(probe.bottom + W * 0.06 - Y));
-  const grow = Math.min(Math.round(W * 0.06), Math.round(slack / seams));
+  // Cap per-seam growth generously so a FEW sections on a tall A4 still fill the page
+  // (the old W*0.06 cap left a ~40% dead band below a 4-card masthead newsletter).
+  const grow = Math.min(Math.round(W * 0.13), Math.round(slack / seams));
   const { slots, bottom } = plan(baseGap + grow, Math.round(W * 0.03) + grow);
   slots.forEach(s => panel(layers, id, s.idx, s.x, s.y, s.w, s.it, s.color, ctx, s.z));
   cy = bottom;
