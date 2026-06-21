@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { decollideHandPlaced, setMeasuredTextHeights } from './engine-finalize-text';
+import { decollideHandPlaced, setMeasuredTextHeights, clampShorthandToCanvas } from './engine-finalize-text';
 import { fixInvisibleText } from './engine-finalize-legibility';
+import type { ShorthandLayer } from './shorthand-helpers';
 import type { Layer } from '../schema/types';
 
 const W = 1080, H = 1350;
@@ -140,5 +141,41 @@ describe('decollide keeps a label inside its node (label-on-shape composite)', (
     const para2 = txt('t2', 120, 250);                  // overlaps para1 → must be pushed
     decollideHandPlaced([panel, para1, para2], W, H);
     expect(yOf(para2)).toBeGreaterThan(250);            // overprint rescue intact inside a big region
+  });
+});
+
+describe('decollide treats an off-canvas-bleed shape as scenery, not a collision floor', () => {
+  it('a bleeding accent circle does not shove a heading below it', () => {
+    // a big accent circle bleeding off the TOP (y<0) and the RIGHT (x+w>W)
+    const blob = { id: 'blob', type: 'circle', z: 1, x: 600, y: -180, width: 560, height: 560,
+      fill: { type: 'solid', color: '#FF4D1C' } } as unknown as Layer;
+    const head = txt('h', 60, 70);                       // overlaps the blob's left edge (600–660)
+    const body = txt('b', 60, 700);                      // 2nd movable, clear below
+    decollideHandPlaced([blob, head, body], W, H);
+    expect(yOf(head)).toBe(70);                          // masthead stayed at the top, not pushed down
+  });
+
+  it('an on-canvas shape that genuinely overlaps still pushes text (rescue intact)', () => {
+    const band = { id: 'band', type: 'rect', z: 1, x: 60, y: 60, width: 600, height: 80,
+      fill: { type: 'solid', color: '#222' } } as unknown as Layer;   // on-canvas band, smaller than the text
+    const t = txt('t', 60, 120);                          // straddles the band's bottom edge (not contained)
+    decollideHandPlaced([band, t], W, H);
+    expect(yOf(t)).toBeGreaterThan(120);                  // a real on-canvas floor still pushes overlapping text
+  });
+});
+
+describe('clampShorthandToCanvas respects an intentional circle/ellipse bleed', () => {
+  const posOf = (l: ShorthandLayer): number[] => (l as unknown as { pos: number[] }).pos;
+
+  it('leaves a bleeding circle undistorted (no squashed egg)', () => {
+    const blob = { id: 'blob', type: 'circle', pos: [700, -180, 560, 560] } as unknown as ShorthandLayer;
+    clampShorthandToCanvas([blob], 1080, 1400);
+    expect(posOf(blob)).toEqual([700, -180, 560, 560]);   // NOT clamped to width 380
+  });
+
+  it('still clamps a rect that overflows the right edge', () => {
+    const r = { id: 'r', type: 'rect', pos: [700, 100, 560, 80] } as unknown as ShorthandLayer;
+    clampShorthandToCanvas([r], 1080, 1400);
+    expect(posOf(r)[2]).toBe(380);                         // 1080 - 700
   });
 });
