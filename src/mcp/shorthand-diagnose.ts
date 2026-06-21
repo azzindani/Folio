@@ -9,6 +9,7 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   '__fillPage', '__variant', '__deckseed', '__theme',
   // canonical
   'id', 'type', 'z', 'pos', 'x', 'y', 'width', 'height', 'opacity', 'rotation',
+  'rotate', 'angle', // CSS-style aliases for rotation
   'flip_h', 'flip_v', 'visible', 'locked', 'fill', 'stroke', 'radius', 'text',
   'font', 'size', 'weight', 'color', 'align', 'text_decoration', 'src', 'fit',
   'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
@@ -75,7 +76,7 @@ export function diagnoseShorthandKeys(raw: ShorthandLayer[]): string[] {
   raw.forEach((sh, i) => {
     if (!sh || typeof sh !== 'object') return;
     const unknown = Object.keys(sh).filter(k => !KNOWN_SHORTHAND_KEYS.has(k));
-    if (unknown.length) notes.push(`layer "${sh.id ?? i}": unrecognized field(s) [${unknown.join(', ')}] were ignored. Text fields: text, font, size, weight, color, align, line_height (lh), letter_spacing (track). Box fields: pos, type, fill, stroke, radius, icon, src.`);
+    if (unknown.length) notes.push(`layer "${sh.id ?? i}": unrecognized field(s) [${unknown.join(', ')}] were ignored. Text fields: text, font, size, weight, color, align, line_height (lh), letter_spacing (track). Box fields: pos, type, fill, stroke, radius, opacity, rotation (rotate/angle), icon, src.`);
   });
   return notes;
 }

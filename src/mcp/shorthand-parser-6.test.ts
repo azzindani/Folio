@@ -1,5 +1,32 @@
 import { describe, it, expect } from 'vitest';
 import { expandShorthandLayers, coerceShorthandLayers } from './shorthand-parser';
+import { diagnoseShorthandKeys } from './shorthand-diagnose';
+import type { ShorthandLayer } from './shorthand-parser';
+
+describe('rotation — canonical + CSS-style aliases (frontier custom layouts)', () => {
+  it('maps rotation and the rotate/angle aliases onto layer.rotation', () => {
+    const [canon] = expandShorthandLayers([
+      { id: 'a', type: 'rect', pos: [0, 0, 100, 100], fill: '#000', rotation: 12 },
+    ] as unknown as ShorthandLayer[]) as Array<{ rotation?: number }>;
+    expect(canon.rotation).toBe(12);
+
+    const [byRotate] = expandShorthandLayers([
+      { id: 'b', type: 'text', pos: [0, 0, 400, 200], text: 'tilt', size: 80, rotate: -8 },
+    ] as unknown as ShorthandLayer[]) as Array<{ rotation?: number }>;
+    expect(byRotate.rotation).toBe(-8);
+
+    const [byAngle] = expandShorthandLayers([
+      { id: 'c', type: 'rect', pos: [0, 0, 100, 100], fill: '#000', angle: 45 },
+    ] as unknown as ShorthandLayer[]) as Array<{ rotation?: number }>;
+    expect(byAngle.rotation).toBe(45);
+  });
+
+  it('does not flag rotate/angle as unrecognized fields', () => {
+    expect(diagnoseShorthandKeys([
+      { id: 'a', type: 'rect', pos: [0, 0, 100, 100], fill: '#000', rotate: 10, angle: 10 },
+    ] as unknown as ShorthandLayer[])).toEqual([]);
+  });
+});
 
 describe('chart / kpi_card / component shorthand (data-viz + reuse)', () => {
   it('builds a bar-chart vega-lite spec from compact data', () => {

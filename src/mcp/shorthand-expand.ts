@@ -24,7 +24,8 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     ...pos,
   };
   if (sh.opacity   !== undefined) base['opacity']   = sh.opacity;
-  if (sh.rotation  !== undefined) base['rotation']  = sh.rotation;
+  const rot = sh.rotation ?? sh.rotate ?? sh.angle; // accept the CSS-style aliases models reach for
+  if (rot          !== undefined) base['rotation']  = rot;
   if (sh.flip_h    !== undefined) base['flip_h']    = sh.flip_h;
   if (sh.flip_v    !== undefined) base['flip_v']    = sh.flip_v;
   if (sh.visible   !== undefined) base['visible']   = sh.visible;
