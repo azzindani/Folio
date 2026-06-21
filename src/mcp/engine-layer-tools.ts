@@ -46,6 +46,60 @@ function resolveThemeColors(spec: DesignSpec): { bg: string; text: string } | nu
   return { bg, text: typeof text === 'string' && HEX_RE.test(text) ? text : '' };
 }
 
+// Does a layer paint the whole canvas? A `rect` filled (hex / $token / `color:`)
+// covering ≥90% at the origin, OR a `background`/`backdrop` type (the renderer
+// fills the page with its fill regardless of dims). Mirrors design-lint's detector.
+export function isFullCanvasBgRect(l: Layer, W: number, H: number): boolean {
+  const o = l as unknown as Record<string, unknown>;
+  const t = o['type'];
+  const okStr = (s: unknown): boolean => typeof s === 'string' && s.trim() !== '' && s !== 'none' && s !== 'transparent';
+  const f = o['fill'];
+  let hasFill = false;
+  if (typeof f === 'string') hasFill = okStr(f);
+  else if (f && typeof f === 'object') {
+    const fo = f as Record<string, unknown>;
+    // a solid `fill.color`, OR a GRADIENT / pattern (stops[] or a fill `type`) — all
+    // paint the canvas. Missing the gradient case made a composed-bg preset read as
+    // "no backdrop" → a redundant auto-bg got stacked on it.
+    hasFill = okStr(fo['color']) || Array.isArray(fo['stops']) || typeof fo['type'] === 'string';
+  }
+  if (!hasFill) hasFill = okStr(o['color']);                   // bare `color:` fallback
+  if (!hasFill) return false;
+  if (t === 'background' || t === 'backdrop') return true;     // renderer fills the page
+  if (t !== 'rect') return false;
+  const x = Number(o['x']) || 0, y = Number(o['y']) || 0, w = Number(o['width']) || 0, h = Number(o['height']) || 0;
+  return x <= 2 && y <= 2 && w * h >= W * H * 0.9;
+}
+
+// Any full-canvas backdrop present (recurses ONE level into groups — a preset wraps
+// its bg rect in its group, marble_bg/backdrop too).
+export function hasFullCanvasBackdrop(layers: Layer[], W: number, H: number): boolean {
+  for (const l of layers) {
+    if (isFullCanvasBgRect(l, W, H)) return true;
+    const kids = (l as unknown as Record<string, unknown>)['layers'];
+    if (Array.isArray(kids)) for (const k of kids as Layer[]) if (isFullCanvasBgRect(k, W, H)) return true;
+  }
+  return false;
+}
+
+// Is there anything worth grounding — real text, an image, icon, chart? (Don't paint
+// a ground onto a literally-empty scaffold; that's a different, model-side problem.)
+export function hasRenderableContent(layers: Layer[]): boolean {
+  for (const l of layers) {
+    const t = l?.type;
+    if (t === 'text' || t === 'rich_text') {
+      const c = (l as unknown as Record<string, unknown>)['content'];
+      const v = typeof c === 'string' ? c : (c && typeof c === 'object' ? (c as Record<string, unknown>)['value'] : '');
+      if (typeof v === 'string' && v.trim()) return true;
+    } else if (t === 'image' || t === 'icon' || t === 'chart' || t === 'kpi_card' || t === 'mermaid') {
+      return true;
+    }
+    const kids = (l as unknown as Record<string, unknown>)['layers'];
+    if (Array.isArray(kids) && hasRenderableContent(kids as Layer[])) return true;
+  }
+  return false;
+}
+
 export function addLayers(args: {
   design_path: string; page_id?: string; project_path?: string;
   layers?: Layer[]; layers_shorthand?: ShorthandLayer[]; task_path?: string;
@@ -341,6 +395,25 @@ export function addLayers(args: {
   if (!spec.pages) {
     const stacked = stackDistinctFullBleedPresets(activeLayers, spec.document, spec.document.width, spec.document.height);
     if (stacked) progress.push(pInfo(`Stacked ${stacked} full-bleed section(s) into bands`, 'distinct full-canvas sections were piled at one spot — split into a vertical brochure'));
+  }
+
+  // Guarantee a canvas GROUND: a blind model routinely omits the background, so a
+  // poster with real content but no full-canvas backdrop rasterizes to a stark WHITE
+  // void (suite-022 noir, suite-042 perfume). design-lint only WARNS the model (which
+  // it ignores), so paint the theme's own background as a back rect — the ground the
+  // theme already implies. A real bg (rect / token / preset group) is detected and we
+  // skip; an empty scaffold (no content) is left for the model. Never overrides intent
+  // (the theme color IS the intent), only fills an omission.
+  if (!spec.pages) {
+    const themeC = resolveThemeColors(spec);
+    const W = spec.document.width, H = spec.document.height;
+    if (themeC && hasRenderableContent(activeLayers) && !hasFullCanvasBackdrop(activeLayers, W, H)) {
+      let minZ = Infinity;
+      for (const l of activeLayers) { const z = Number((l as unknown as Record<string, unknown>)['z']); if (Number.isFinite(z)) minZ = Math.min(minZ, z); }
+      const bgZ = (Number.isFinite(minZ) ? minZ : 0) - 1;
+      activeLayers.unshift({ id: 'bg_auto', type: 'rect', z: bgZ, x: 0, y: 0, width: W, height: H, fill: { type: 'solid', color: themeC.bg } } as unknown as Layer);
+      progress.push(pInfo('Added a full-canvas background', `no background present → painted the theme ground (${themeC.bg}) so the canvas isn't a white void`));
+    }
   }
 
   // First collapse repeated strings from a rebuild to one copy each (runs before the
