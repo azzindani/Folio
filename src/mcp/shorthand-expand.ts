@@ -10,6 +10,7 @@ import { buildList, buildStat, buildEvent, buildSections } from './shorthand-pre
 import { buildPricing, buildVersus } from './shorthand-presets-c';
 import { buildTimeline } from './shorthand-presets-seq';
 import { buildMindmap } from './shorthand-presets-map';
+import { buildDoodles } from './shorthand-doodles';
 
 import { motifLayers } from './shorthand-background';
 
@@ -269,6 +270,11 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'marble_bg':
     case 'backdrop':
       return buildDecor(sh, String(sh.id ?? 'decor'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'doodles':
+    case 'scatter':
+    case 'confetti':
+      return buildDoodles(sh, String(sh.id ?? 'doodles'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'component':
       return {

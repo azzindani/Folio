@@ -306,7 +306,11 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       // Plain sans mixed-case keeps the original 0.52 → no change to those lines.
       const fam = (style.font_family ?? '').toLowerCase();
       const isMono = /\bmono\b|monospace|courier|consolas|menlo/.test(fam);
-      const isUpper = style.text_transform === 'uppercase';
+      // ALL-CAPS runs wider — whether forced via text_transform OR the string is
+      // already literally uppercase (a model very often types a CAPS headline). Both
+      // need the wider factor or the line under-wraps and bleeds off the right edge.
+      const isUpper = style.text_transform === 'uppercase'
+        || (value.length > 2 && value === value.toUpperCase() && /[A-Z]/.test(value));
       let factor = isMono ? 0.60 : 0.52;
       if (isUpper) factor += 0.06;
       const perChar = factor === 0.52 ? undefined
