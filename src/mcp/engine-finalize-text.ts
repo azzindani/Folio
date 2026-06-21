@@ -355,7 +355,11 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   };
   // A motif is a behind-content decoration, not a flow row — never stack it (that
   // would shove it off-canvas). dropCollidingMotifs is the sole authority on it.
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  // A connector/line is STRUCTURAL — its geometry is its endpoints (it joins two
+  // anchors the model placed deliberately); moving it orphans the join, so it's
+  // never a flow row nor a collision floor.
+  const isWire = (l: Layer): boolean => { const t = (l as { type?: string }).type; return t === 'connector' || t === 'line'; };
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];

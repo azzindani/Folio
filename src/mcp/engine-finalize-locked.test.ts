@@ -87,3 +87,24 @@ describe('decollide measures text to its TRUE wrapped height — a generous rese
     expect(yOf(b)).toBeGreaterThan(150);
   });
 });
+
+describe('decollide leaves structural wires (connector/line) where the model anchored them', () => {
+  // A connector joins two anchors the model placed deliberately; moving it orphans
+  // the join. It must be neither a movable flow row nor a collision floor.
+  const wire = (id: string, y: number): Layer =>
+    ({ id, type: 'connector', z: 1, x: 80, y, width: 1, height: 200, from: [80, y], to: [80, y + 200] }) as unknown as Layer;
+
+  it('never moves a connector even when a text sits across it', () => {
+    const c = wire('c', 100);
+    const t = txt('t', 80, 120);                       // overlaps the wire's bbox
+    decollideHandPlaced([c, t], W, H);
+    expect(yOf(c)).toBe(100);                          // wire stayed put
+  });
+
+  it('a connector is not a floor — a node beside it is not pushed down', () => {
+    const c = wire('c', 100);
+    const node = txt('node', 80, 110);                 // shares the wire's column
+    decollideHandPlaced([c, node], W, H);
+    expect(yOf(node)).toBe(110);                       // not shoved by the wire
+  });
+});

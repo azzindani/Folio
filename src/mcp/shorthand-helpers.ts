@@ -180,6 +180,15 @@ export interface ShorthandLayer {
   d?: string;
   sides?: number;
   x1?: number; y1?: number; x2?: number; y2?: number;
+  // Connector primitive: join two anchors with an optional arrowhead. The renderer
+  // owns the curve/arrow math (§0.4) — these just say where + how.
+  from?: [number, number];
+  to?: [number, number];
+  curve?: string;
+  bend?: number;
+  arrow?: string;
+  arrow_size?: number;
+  dashed?: boolean;
   definition?: string;
   code?: string;
   language?: string;
@@ -390,6 +399,41 @@ export function chartColorFields(sh: ShorthandLayer): Record<string, string> {
   if (typeof cr['track_color'] === 'string') out['track_color'] = cr['track_color'] as string;
   if (typeof lbl === 'string') out['label_color'] = lbl;
   if (typeof cr['value_color'] === 'string') out['value_color'] = cr['value_color'] as string;
+  return out;
+}
+
+// Expand a shorthand connector into the verbose fields the renderer reads
+// (from/to or x1,y1→x2,y2, curve, bend, arrow, arrow_size, dashed, stroke). The
+// shorthand path used to DROP all of these, collapsing a hand-authored diagram's
+// connectors to an empty 0,0 layer. Also derive a real bounding box from the
+// endpoints so the editor can select the line and the geometry passes see its
+// extent instead of a zero-size box pinned at the origin.
+export function connectorFields(sh: ShorthandLayer): Record<string, unknown> {
+  const cr = sh as unknown as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  const asPair = (v: unknown): [number, number] | null =>
+    Array.isArray(v) && v.length >= 2 && typeof v[0] === 'number' && typeof v[1] === 'number'
+      ? [v[0], v[1]] : null;
+  const from = asPair(cr['from']);
+  const to = asPair(cr['to']);
+  if (from) out['from'] = from;
+  if (to) out['to'] = to;
+  for (const k of ['x1', 'y1', 'x2', 'y2', 'bend', 'arrow_size'] as const) {
+    if (typeof cr[k] === 'number') out[k] = cr[k];
+  }
+  if (typeof cr['curve'] === 'string') out['curve'] = cr['curve'];
+  if (typeof cr['arrow'] === 'string') out['arrow'] = cr['arrow'];
+  if (cr['dashed'] === true) out['dashed'] = true;
+  if (sh.stroke !== undefined) out['stroke'] = expandStroke(sh.stroke);
+  else if (typeof sh.color === 'string') out['stroke'] = { color: sh.color, width: 2 };
+  const p1 = from ?? (typeof cr['x1'] === 'number' && typeof cr['y1'] === 'number' ? [cr['x1'], cr['y1']] as [number, number] : null);
+  const p2 = to ?? (typeof cr['x2'] === 'number' && typeof cr['y2'] === 'number' ? [cr['x2'], cr['y2']] as [number, number] : null);
+  if (p1 && p2) {
+    out['x'] = Math.min(p1[0], p2[0]);
+    out['y'] = Math.min(p1[1], p2[1]);
+    out['width'] = Math.max(1, Math.abs(p2[0] - p1[0]));
+    out['height'] = Math.max(1, Math.abs(p2[1] - p1[1]));
+  }
   return out;
 }
 
