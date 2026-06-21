@@ -15,19 +15,6 @@ import {
 import { composeBackground } from './shorthand-background';
 
 // ── Shared content readers ──────────────────────────────────
-interface TItem { date: string; title: string; desc: string }
-function readTimelineItems(v: unknown): TItem[] {
-  if (!Array.isArray(v)) return [];
-  return v.map((it) => {
-    const o = (it && typeof it === 'object' ? it : {}) as Record<string, unknown>;
-    return {
-      date: shStr(o['date'] ?? o['year'] ?? o['label'] ?? o['time'] ?? o['when'] ?? o['step']),
-      title: shStr(o['title'] ?? o['event'] ?? o['name'] ?? o['heading'] ?? (typeof it === 'string' ? it : '')),
-      desc: shStr(o['desc'] ?? o['description'] ?? o['text'] ?? o['body'] ?? o['detail']),
-    };
-  }).filter((i) => i.date || i.title || i.desc);
-}
-
 interface Plan { name: string; price: string; period: string; features: string[]; featured: boolean; cta: string }
 function readPlans(v: unknown): Plan[] {
   if (!Array.isArray(v)) return [];
@@ -58,107 +45,6 @@ function fitTall(layers: Layer[], naturalH: number, boxH: number, W: number): nu
   const topPad = Math.round((boxH - naturalH) * 0.42);
   for (const l of layers) { const o = l as unknown as { y: number }; if (typeof o.y === 'number') o.y += topPad; }
   return boxH;
-}
-
-// ── timeline ────────────────────────────────────────────────
-// A left SPINE (continuous accent line) threaded through node dots, with the
-// date heroed in the accent and the entry title + body to its right. The fit
-// pass sizes the canvas to the content. Genuinely different bones from a card
-// grid — the line carries the chronology a grid throws away.
-export function buildTimeline(sh: ShorthandLayer, id: string, z: number): Layer {
-  const r = sh as Record<string, unknown>;
-  const { X, Y, W, H } = shBox(sh);
-  const kicker = shStr(r['kicker'] ?? r['eyebrow']);
-  const title = shStr(r['title'] ?? r['headline']);
-  const subtitle = shStr(r['subtitle'] ?? r['deck'] ?? r['intro']);
-  const footer = shStr(r['footer']);
-  const items = readTimelineItems(r['items'] ?? r['events'] ?? r['milestones'] ?? r['steps'] ?? r['phases']);
-  const m = seededDefaults(r, [title, subtitle, kicker, items.map(i => i.title).join(' ')]);
-  const bg = shStr(r['bg'], m?.bg ?? '#FAF5EC');
-  const accent = shStr(r['accent'], m?.accent ?? '#B8543C');
-  const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
-  const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
-  const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
-  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
-
-  const M = Math.round(W * 0.08), cX = X + M, cW = W - 2 * M;
-  const nodeX = cX + Math.round(W * 0.035);          // spine line x (in the left gutter)
-  const gutter = Math.round(W * 0.135);              // text indent past the spine
-  const tX = cX + gutter, tW = cW - gutter;
-  const content: Layer[] = [];
-  let k = 1, cy = Y + Math.round(W * 0.08);
-
-  // Header — left-anchored kicker + headline + deck (no rule; the spine is the
-  // structural line of this layout).
-  if (kicker) {
-    content.push(txt(`${id}_kick`, k++, cX, cy, cW, 34, kicker, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.02), font_weight: 600, color: accent, letter_spacing: 2, text_transform: 'uppercase' }));
-    cy += Math.round(W * 0.045);
-  }
-  if (title) {
-    const ts = fitTitleSize(title, Math.round(W * 0.072), cW, titleFont), th = estTextHeight(title, ts, cW, 1.05);
-    content.push(txt(`${id}_title`, k++, cX, cy, cW, th, title, { font_size: ts, font_weight: 800, color: text, line_height: 1.05, letter_spacing: -1, font_family: titleFont }));
-    cy += th + Math.round(W * 0.02);
-  }
-  if (subtitle) {
-    const ss = Math.round(W * 0.028), sh2 = estTextHeight(subtitle, ss, cW, 1.4);
-    content.push(txt(`${id}_sub`, k++, cX, cy, cW, sh2, subtitle, { font_size: ss, font_weight: 400, color: muted, line_height: 1.4 }));
-    cy += sh2 + Math.round(W * 0.03);
-  }
-
-  // Entries — date (accent) → title → desc, each beside a node dot on the spine.
-  const dateSize = Math.round(W * 0.03), itSize = Math.round(W * 0.032), dSize = Math.round(W * 0.021);
-  const itemGap = Math.round(W * 0.038), dotR = Math.max(7, Math.round(W * 0.013));
-  const nodes: number[] = [];
-  items.forEach((it, i) => {
-    const nodeY = cy + Math.round(dateSize * 0.55);
-    nodes.push(nodeY);
-    if (it.date) {
-      const dh = estTextHeight(it.date, dateSize, tW, 1.1);
-      content.push(txt(`${id}_dt${i}`, k++, tX, cy, tW, dh, it.date, { font_size: dateSize, font_weight: 800, color: accent, line_height: 1.1, letter_spacing: -0.5, font_family: titleFont }));
-      cy += dh + Math.round(W * 0.008);
-    }
-    if (it.title) {
-      const th = estTextHeight(it.title, itSize, tW, 1.15);
-      content.push(txt(`${id}_tt${i}`, k++, tX, cy, tW, th, it.title, { font_size: itSize, font_weight: 700, color: text, line_height: 1.15 }));
-      cy += th + Math.round(W * 0.006);
-    }
-    if (it.desc) {
-      const dh = estTextHeight(it.desc, dSize, tW, 1.4);
-      content.push(txt(`${id}_td${i}`, k++, tX, cy, tW, dh, it.desc, { font_size: dSize, font_weight: 400, color: muted, line_height: 1.4 }));
-      cy += dh;
-    }
-    cy += itemGap;
-  });
-  if (items.length) cy -= itemGap;
-
-  // The continuous spine: a thin accent line from the first node to the last,
-  // drawn UNDER the dots. Then a hollow ring + filled core per node so it reads
-  // as a bead threaded on the line, not a stray dot.
-  const spine: Layer[] = [];
-  if (nodes.length) {
-    const top = nodes[0], bot = nodes[nodes.length - 1];
-    spine.push({ id: `${id}_spine`, type: 'rect', z: 0, x: nodeX - 2, y: top, width: 4, height: Math.max(4, bot - top), fill: { type: 'solid', color: mixHex(accent, bg, 0.45) } } as unknown as Layer);
-    nodes.forEach((ny, i) => {
-      spine.push({ id: `${id}_node${i}`, type: 'ellipse', z: 1, x: nodeX - dotR, y: ny - dotR, width: dotR * 2, height: dotR * 2, fill: { type: 'solid', color: accent } } as unknown as Layer);
-      spine.push({ id: `${id}_nin${i}`, type: 'ellipse', z: 2, x: nodeX - Math.round(dotR * 0.42), y: ny - Math.round(dotR * 0.42), width: Math.round(dotR * 0.84), height: Math.round(dotR * 0.84), fill: { type: 'solid', color: bg } } as unknown as Layer);
-    });
-  }
-
-  if (footer) {
-    cy += Math.round(W * 0.05);
-    content.push({ id: `${id}_frule`, type: 'rect', z: 0, x: cX, y: Math.round(cy), width: cW, height: 2, fill: { type: 'solid', color: muted } } as unknown as Layer);
-    cy += 14;
-    content.push(footerLayer(`${id}_footer`, 0, cX, Math.round(cy), cW, 30, footer, { font_family: 'IBM Plex Mono', font_size: Math.round(W * 0.016), font_weight: 500, color: muted, letter_spacing: 1 }, r));
-    cy += 30;
-  }
-
-  const naturalH = Math.min(Math.round(W * 3.6), Math.max(Math.round(W * 0.5), Math.round(cy + W * 0.07 - Y)));
-  const finalH = fitTall([...spine, ...content], naturalH, H, W);
-  const bgLayers = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, finalH, { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0);
-  // Re-stack: bg (composed z) → spine (z 30) → dots (z 31..) → content text (z 40+).
-  spine.forEach((l, i) => { (l as unknown as { z: number }).z = 30 + i; });
-  content.forEach((l, i) => { (l as unknown as { z: number }).z = 30 + spine.length + i; });
-  return { id, type: 'group', z, x: X, y: Y, width: W, height: finalH, layers: [...bgLayers, ...spine, ...content] } as unknown as Layer;
 }
 
 // ── pricing ─────────────────────────────────────────────────
