@@ -12,6 +12,7 @@ import { buildTimeline } from './shorthand-presets-seq';
 import { buildMindmap } from './shorthand-presets-map';
 import { buildDoodles } from './shorthand-doodles';
 import { buildRibbonCards, buildValueList } from './shorthand-presets-cards';
+import { buildNewsletter } from './shorthand-presets-news';
 
 import { motifLayers } from './shorthand-background';
 
@@ -248,11 +249,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'milestones':
       return buildTimeline(sh, String(sh.id ?? 'timeline'), typeof sh.z === 'number' ? sh.z : 0);
 
-    case 'mindmap':
-    case 'mind_map':
-    case 'brainstorm':
-    case 'concept_map':
-    case 'process_cards':
+    case 'mindmap': case 'mind_map': case 'brainstorm': case 'concept_map': case 'process_cards':
       return buildMindmap(sh, String(sh.id ?? 'mindmap'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'pricing':
@@ -272,20 +269,17 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'backdrop':
       return buildDecor(sh, String(sh.id ?? 'decor'), typeof sh.z === 'number' ? sh.z : 0);
 
-    case 'doodles':
-    case 'scatter':
-    case 'confetti':
+    case 'doodles': case 'scatter': case 'confetti':
       return buildDoodles(sh, String(sh.id ?? 'doodles'), typeof sh.z === 'number' ? sh.z : 0);
 
-    case 'ribbon_cards':
-    case 'tip_cards':
-    case 'ribbon':
+    case 'ribbon_cards': case 'tip_cards': case 'ribbon':
       return buildRibbonCards(sh, String(sh.id ?? 'ribbon_cards'), typeof sh.z === 'number' ? sh.z : 0);
 
-    case 'value_list':
-    case 'values':
-    case 'tips_list':
+    case 'value_list': case 'values': case 'tips_list':
       return buildValueList(sh, String(sh.id ?? 'value_list'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'newsletter': case 'bulletin': case 'digest':
+      return buildNewsletter(sh, String(sh.id ?? 'newsletter'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'component':
       return {
