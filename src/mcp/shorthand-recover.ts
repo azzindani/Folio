@@ -365,7 +365,10 @@ export function isFullCanvasOpaqueRect(l: Layer, docW: number, docH: number): bo
   const num = (v: unknown): number => (typeof v === 'number' ? v : 0);
   const x = num(a['x']), y = num(a['y']), w = num(a['width']), h = num(a['height']);
   if (!(x <= docW * 0.02 && y <= docH * 0.02 && w >= docW * 0.96 && h >= docH * 0.96)) return false;
-  const f = a['fill'];
+  // A rect's bare `color` is the renderer's fill fallback — a model that writes
+  // `color: '#FAF5EC'` (no `fill` object) still paints a solid wash, so treat it
+  // as a fill here too or a full-canvas backdrop slips the demotion.
+  const f = a['fill'] ?? a['color'];
   if (f == null) return false;
   if (typeof f === 'string') {
     const s = f.trim();
@@ -378,25 +381,25 @@ export function isFullCanvasOpaqueRect(l: Layer, docW: number, docH: number): bo
   return false;
 }
 
-// When add_layers drops a full-canvas opaque rect onto a page that ALREADY has
-// content, array order would paint it over everything (the renderer sorts by z,
-// stable — a new z:0 rect appended after a z:0 group wins the tie and covers it).
-// Demote each such rect strictly below every existing/incoming layer so it sinks
-// to the back: a redundant "background" becomes harmless instead of destructive.
-// Returns the count demoted. No-op when the target is empty (a real first bg).
+// A full-canvas opaque rect can only ever be a BACKGROUND — on top it blanks the
+// page (the renderer sorts by z, stable, so a z:0 rect appended after z:0 content
+// wins the tie and covers it). Demote each incoming such rect strictly below every
+// NON-backdrop layer so it sinks to the back. This catches both shapes the blind
+// model produces: (a) a background added in a LATER batch onto existing content,
+// and (b) text-first / background-LAST inside a SINGLE batch on a fresh page (the
+// "website-redesign-timeline" blank: 9 text layers then a full-canvas `color` rect
+// → array order painted the wash over the whole timeline). No-op when there is no
+// other content to protect (a lone first background renders fine at z:0).
 
 export function demoteCoveringBackdrops(existing: Layer[], incoming: Layer[], docW: number, docH: number): number {
-  if (!existing.length) return 0;
   const zOf = (l: Layer): number => (typeof (l as { z?: unknown }).z === 'number' ? (l as { z: number }).z : 0);
-  let minZ = Infinity;
-  for (const l of existing) minZ = Math.min(minZ, zOf(l));
-  for (const l of incoming) minZ = Math.min(minZ, zOf(l));
+  const isBg = (l: Layer): boolean => isFullCanvasOpaqueRect(l, docW, docH);
+  let minZ = Infinity, hasContent = false;
+  for (const l of [...existing, ...incoming]) { if (isBg(l)) continue; hasContent = true; minZ = Math.min(minZ, zOf(l)); }
+  if (!hasContent) return 0;
   let demoted = 0;
   for (const l of incoming) {
-    if (isFullCanvasOpaqueRect(l, docW, docH)) {
-      (l as { z: number }).z = minZ - 1 - demoted;
-      demoted++;
-    }
+    if (isBg(l)) { (l as { z: number }).z = minZ - 1 - demoted; demoted++; }
   }
   return demoted;
 }

@@ -15,7 +15,7 @@ export function renderGroup(
 ): SVGElement {
   const g = createSVGElement('g');
 
-  const sorted = [...layer.layers].sort((a, b) => a.z - b.z);
+  const sorted = [...layer.layers].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
   for (const child of sorted) {
     g.appendChild(renderLayerFn(child, svg));
   }
@@ -114,7 +114,7 @@ export function renderAutoLayout(
     g.appendChild(bg);
   }
 
-  const sorted = [...(layer.layers ?? [])].sort((a, b) => a.z - b.z);
+  const sorted = [...(layer.layers ?? [])].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
 
   const mainSizes = sorted.map(child =>
     isRow ? (typeof child.width  === 'number' ? child.width  : 0)

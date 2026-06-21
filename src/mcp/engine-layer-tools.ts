@@ -21,7 +21,7 @@ import { honorPosterRatio } from './poster-ratio';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import type { NextAction } from './types';
 
-import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-geom';
+import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-geom';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText } from './engine-finalize-legibility';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
@@ -170,6 +170,14 @@ export function addLayers(args: {
     : (args.layers ?? []);
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
 
+  // Canonicalize verbose text layers FIRST: fold a bare `text:"…"` alias + flat
+  // font/size/color shorthand into { content, style } before any pass that reads
+  // content.value (structure/decollide/empty-slot) or the schema validator runs.
+  // The shorthand path already normalizes; this rescues a hand-authored verbose
+  // text layer from rendering/exporting blank.
+  const textAliased = normalizeTextAliases(incoming);
+  if (textAliased) progress.push(pInfo(`Normalized ${textAliased} verbose text alias(es)`, 'text:/size:/color: → canonical content + style'));
+
   // Draw a foreignObject BAR chart natively so it isn't blank in PNG/PDF export.
   let rasterizedCharts = 0;
   for (let i = 0; i < incoming.length; i++) {
@@ -251,14 +259,14 @@ export function addLayers(args: {
     if (!args.page_id && pages.length === 1) progress.push(pInfo('Routed to the only page', pageId));
     if (!page.layers) page.layers = [];
     const sunk = demoteCoveringBackdrops(page.layers, incoming, spec.document.width, spec.document.height);
-    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind existing content`, 'a background added last would have blanked the page'));
+    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind page content`, 'a background added last would have blanked the page'));
     page.layers.push(...incoming);
     activeLayers = page.layers;
   } else {
     if (!spec.layers) spec.layers = [];
     const hadContent = spec.layers.length > 0;
     const sunk = demoteCoveringBackdrops(spec.layers, incoming, spec.document.width, spec.document.height);
-    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind existing content`, 'a background added last would have blanked the poster'));
+    if (sunk) progress.push(pInfo(`Sank ${sunk} full-canvas backdrop(s) behind poster content`, 'a background added last would have blanked the poster'));
     spec.layers.push(...incoming);
     activeLayers = spec.layers;
     // Auto-fit the canvas to a fresh single full-bleed preset. A flow preset
@@ -509,6 +517,7 @@ export function appendPage(args: {
   const layers: Layer[] = pageShorthand.length
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
+  normalizeTextAliases(layers); // canonicalize verbose text:/size:/color: → content+style
   // Never silently append an EMPTY page when content was MEANINGFULLY supplied
   // but coerced to nothing (e.g. a stringified shorthand that didn't parse) — a
   // blank slide would still report success and the dropped copy goes unnoticed,
