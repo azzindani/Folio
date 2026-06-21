@@ -26,13 +26,13 @@ export function readSeqItems(v: unknown): SeqItem[] {
   }).filter((i) => i.date || i.title || i.desc);
 }
 
-const lum = (h: string): number => { const r = hexToRgb(h); return r ? luminance(r) : 0.5; };
+export const lum = (h: string): number => { const r = hexToRgb(h); return r ? luminance(r) : 0.5; };
 
 // A ramp of distinct node colors. The model's palette wins (cycled); otherwise a
 // curated 8-hue wheel rotated by `seed` so two timelines never share a sequence.
 // Each color is nudged to stay legible against the background.
-const NODE_WHEEL = ['#3B5BA5', '#6D3B9E', '#B5374A', '#C75B2A', '#D99A1C', '#3F9A4E', '#1F8E84', '#7A4E2D'];
-function nodeColors(accent: string, palette: string[], n: number, bg: string, seed: number): string[] {
+export const NODE_WHEEL = ['#3B5BA5', '#6D3B9E', '#B5374A', '#C75B2A', '#D99A1C', '#3F9A4E', '#1F8E84', '#7A4E2D'];
+export function nodeColors(accent: string, palette: string[], n: number, bg: string, seed: number): string[] {
   const base = palette.length >= 3 ? palette : [accent, ...NODE_WHEEL];
   const bgL = lum(bg);
   const out: string[] = [];
