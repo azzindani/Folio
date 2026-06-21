@@ -164,6 +164,31 @@ describe('decollide treats an off-canvas-bleed shape as scenery, not a collision
   });
 });
 
+describe('decollide leaves large background panels as scenery (split-screen / sidebar)', () => {
+  const panel = (id: string, x: number, w: number): Layer =>
+    ({ id, type: 'rect', z: 0, x, y: 0, width: w, height: H, fill: { type: 'solid', color: '#141821' } }) as unknown as Layer;
+
+  it('does NOT cascade a full-height divider + two half-panels off-canvas', () => {
+    const panelL = panel('pL', 0, 540);
+    const panelR = panel('pR', 540, 540);
+    const seam = { id: 'seam', type: 'rect', z: 2, x: 536, y: 0, width: 8, height: H,
+      fill: { type: 'solid', color: '#FF5A2C' } } as unknown as Layer;
+    const headL = txt('hL', 60, 200);                  // a heading sitting on the left panel
+    decollideHandPlaced([panelL, panelR, seam, headL], W, H);
+    expect(yOf(panelR)).toBe(0);                        // half-panel stayed put (not shoved to 2730)
+    expect(yOf(seam)).toBe(0);                          // full-height divider stayed put
+  });
+
+  it('a large panel is not a floor — text placed on it is not ejected', () => {
+    const band = { id: 'band', type: 'rect', z: 0, x: 0, y: 0, width: W, height: 240,
+      fill: { type: 'solid', color: '#171A20' } } as unknown as Layer;   // full-width masthead band
+    const onBand = txt('t', 60, 80);                    // title on the band
+    const below = txt('b', 60, 320);                    // 2nd movable, below the band
+    decollideHandPlaced([band, onBand, below], W, H);
+    expect(yOf(onBand)).toBe(80);                       // title stayed on the band, not pushed below it
+  });
+});
+
 describe('clampShorthandToCanvas respects an intentional circle/ellipse bleed', () => {
   const posOf = (l: ShorthandLayer): number[] => (l as unknown as { pos: number[] }).pos;
 

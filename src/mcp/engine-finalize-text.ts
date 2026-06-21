@@ -402,7 +402,19 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     const b = boxOf(l);
     return b.w > 0 && b.h > 0 && (b.x < -8 || b.y < -8 || b.x + b.w > W + 8 || b.y + b.h > H + 8);
   };
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !labelOf.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  // A large NON-TEXT shape is a background PANEL that BACKS content — a split-screen
+  // half, a full-height sidebar, a masthead band, a full-height seam/divider — not a
+  // flow row. Like a full-canvas backdrop it must never be moved nor be a collision
+  // floor: otherwise a thin full-height divider overlapping two half-panels cascades
+  // them clean off the canvas (the split-screen "Before/After" wreck). Detected by
+  // covering ≥⅓ of the canvas OR spanning a full dimension (full-width / full-height).
+  const isBackdropPanel = (l: Layer): boolean => {
+    const t = (l as { type?: string }).type;
+    if (!(isShape(l) || t === 'image')) return false;
+    const b = boxOf(l);
+    return b.w > 0 && b.h > 0 && (b.w * b.h >= 0.33 * W * H || b.w >= 0.9 * W || b.h >= 0.9 * H);
+  };
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !labelOf.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];
