@@ -6,7 +6,7 @@ import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
 import { createSVGRoot, createSVGElement, resetDefIdCounter } from './svg-utils';
 import {
   renderRect, renderCircle, renderPath, renderPolygon,
-  renderLine, renderText, renderImage, renderIcon,
+  renderLine, renderText, renderImage, renderIcon, renderConnector,
   renderMermaid, renderChart, renderCode, renderMath, renderGroup,
   renderQRCode, renderAutoLayout,
   renderInteractiveChart, renderInteractiveTable, renderRichText,
@@ -194,6 +194,8 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
   const lt = layer.type as string;
   if (lt === 'background' || lt === 'backdrop') {
     el = renderBackgroundLayer(layer, svg);
+  } else if (lt === 'connector') {
+    el = renderConnector(layer as never, svg);
   } else
   switch (layer.type) {
     case 'rect':          el = renderRect(layer, svg); break;
