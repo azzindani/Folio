@@ -125,7 +125,13 @@ function paintRank(o: Record<string, unknown>, idx: number): number {
   const z = typeof o['z'] === 'number' ? (o['z'] as number) : 0;
   return z * 1e6 + idx;
 }
-const BACKDROP_SHAPES = new Set(['rect', 'ellipse', 'circle', 'polygon', 'path']);
+// A FILLED auto_layout / group is a real backdrop too — a feature_grid card, a
+// report panel, a callout box. Without them, text nested in a light card on a dark
+// canvas falls through to the dark wash and gets wrongly re-lit to white → invisible
+// on the card (suite-079 Streaky). A wrapper with no fill resolves to null and is
+// skipped, so only painted containers count; tree order makes a card outrank + cover
+// its own text, so each label is judged against the card it sits on.
+const BACKDROP_SHAPES = new Set(['rect', 'ellipse', 'circle', 'polygon', 'path', 'auto_layout', 'group']);
 // The LOCAL backdrop a text actually sits on: the opaque shape painted directly
 // behind it (highest paint-rank below the text) whose box substantially covers it —
 // a hero band, a card, a badge — NOT the dominant canvas wash. Without this, a
