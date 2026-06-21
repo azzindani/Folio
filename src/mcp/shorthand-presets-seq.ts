@@ -9,7 +9,7 @@ import type { Layer } from '../schema/types';
 import { hexToRgb, luminance } from './engine/reference';
 import {
   shStr, mixHex, readableOn, readablePair, seededDefaults, ShorthandLayer,
-  defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer,
+  defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer, headlineFont,
 } from './shorthand-helpers';
 import { composeBackground } from './shorthand-background';
 
@@ -66,7 +66,7 @@ export function buildTimeline(sh: ShorthandLayer, id: string, z: number): Layer 
   const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
-  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+  const titleFont = shStr(r['font'] ?? r['font_family']) || headlineFont(m?.font, String(r['title'] ?? r['headline'] ?? '') + id);
 
   const seed = Math.abs([...(title + items.map(i => i.title).join())].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) | 0, 7));
   const layout = seqLayout(r, seed);

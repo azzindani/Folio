@@ -494,6 +494,26 @@ export function fontCharFactor(font?: string): number {
   if (/orbitron|michroma|chakra petch|aldrich|electrolize/.test(f)) return 0.70;
   return 0.54;
 }
+
+// Faces that render WEAK as a poster masthead even at weight 800 — rounded
+// (Quicksand/Comfortaa/Varela), thin techno (Orbitron/Michroma/Audiowide), or light
+// geometrics. A structural-preset title in one of these looks far below the examples
+// bar (suite mind-map in Quicksand, timeline in Orbitron read thin and toy-like).
+const WEAK_HEADLINE = /quicksand|orbitron|audiowide|comfortaa|michroma|aldrich|electrolize|monoton|wallpoet|syncopate|varela|nunito|josefin/i;
+// Bundled STATIC-heavy faces — resvg renders a variable font (Montserrat[wght],
+// Space Grotesk…) at its default ~400 master, so weight:800 stays thin; only a
+// statically-heavy face (Anton, Bebas) actually renders bold in PNG/PDF export.
+const HEAVY_HEADLINE = ['Anton', 'Bebas Neue'];
+// Guarantee a structural-preset masthead reads BOLD: keep an already-strong mood face
+// (incl. serifs like Playfair), but swap a weak/thin or unset one for a heavy display
+// face picked deterministically from the seed (so two designs vary). An EXPLICIT model
+// font still wins upstream (resolve it before calling this).
+export function headlineFont(moodFont: string | undefined, seed: string): string {
+  if (moodFont && moodFont.trim() && !WEAK_HEADLINE.test(moodFont)) return moodFont;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return HEAVY_HEADLINE[(h >>> 0) % HEAVY_HEADLINE.length];
+}
 // Shrink a headline so its LONGEST WORD fits the column. A word can't wrap, so an
 // oversized single word (e.g. "CONFERENCE" in a large serif) bleeds off the right
 // edge — drop the size until it fits, floored at 0.45× so it never collapses.
