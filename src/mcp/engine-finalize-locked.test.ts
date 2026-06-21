@@ -66,3 +66,24 @@ describe('fixInvisibleText reads a STRING-fill backdrop (suite-103 teal / suite-
     expect(colOf(t)).toBe('#FFFFFF');
   });
 });
+
+describe('decollide measures text to its TRUE wrapped height — a generous reservation is not a phantom box', () => {
+  // The two-column editorial spread: each paragraph reserved 300px of layout height
+  // but wraps to ~112px. The old Math.max(given,measured) floor treated the 300px
+  // reservation as the collision box and shoved the row below it down by the full
+  // reservation; setMeasuredTextHeights then shrank the box and never reclaimed the
+  // gap → a dead band mid-column.
+  it('does NOT push the row below when it clears the TRUE measured bottom', () => {
+    const a = txt('a', 80, 100, { height: 300 });   // reserves 300, wraps to ~112
+    const b = txt('b', 80, 240, { height: 300 });    // clear of a's real text bottom (~212)
+    expect(decollideHandPlaced([a, b], W, H)).toBe(0);
+    expect(yOf(b)).toBe(240);                          // not shoved by the phantom reservation
+  });
+
+  it('STILL pushes a row that overlaps the TRUE measured box (rescue intact)', () => {
+    const a = txt('a', 80, 100, { height: 300 });   // true text bottom ≈ 212
+    const b = txt('b', 80, 150);                       // sits inside a's real text → overlaps
+    expect(decollideHandPlaced([a, b], W, H)).toBeGreaterThan(0);
+    expect(yOf(b)).toBeGreaterThan(150);
+  });
+});
