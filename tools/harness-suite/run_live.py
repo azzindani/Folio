@@ -93,7 +93,9 @@ def send_prompt(text):
 SCAFFOLD = (
     '(Setup — not part of the creative brief: use the Folio design tools, create a '
     'project named "{proj}", and keep everything you make inside it. Seal each '
-    'design when it is finished.)\n\n{brief}'
+    'design when it is finished. Work entirely within the Folio MCP tools — do NOT '
+    'launch research, web-search, or sub-agent tasks; compose the design directly '
+    'from the brief.)\n\n{brief}'
 )
 
 
