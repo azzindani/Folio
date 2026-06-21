@@ -73,9 +73,22 @@ describe('trimTrailingDeadBand — shrink a top-anchored poster on a non-standar
     expect(trimTrailingDeadBand(layers, DW, DH)).toBe(0);
   });
 
-  it('ignores a shape-only poster (no text/icon/image content)', () => {
-    const r = { id: 'r', type: 'rect', z: 1, x: 100, y: 100, width: 400, height: 400, fill: { type: 'solid', color: '#000' } } as unknown as Layer;
-    expect(trimTrailingDeadBand([r], DW, DH)).toBe(0);
+  it('counts a backing card rect toward the content extent (never trims through it)', () => {
+    // a card grid's bottom row is defined by the card RECTS, not their text — a
+    // text-only measure trimmed the canvas straight through the bottom cards.
+    const t = tx('t', 60, 60);                  // text near the top (y60–120)
+    const card = { id: 'card', type: 'rect', z: 1, x: 80, y: 200, width: 920, height: 400,
+      fill: { type: 'solid', color: '#222' } } as unknown as Layer;   // card bottom = 600
+    const newH = trimTrailingDeadBand([t, card], DW, DH);
+    expect(newH).toBeGreaterThanOrEqual(600);   // trim sits at/below the card bottom, not through it
+  });
+
+  it('still skips a full-canvas backdrop shape (it is background, not content)', () => {
+    const bg = { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: DW, height: DH, fill: { type: 'solid', color: '#000' } } as unknown as Layer;
+    const layers = [bg, tx('t1', 60, 90), tx('t2', 200, 60)];   // content y60..260
+    const newH = trimTrailingDeadBand(layers, DW, DH);
+    expect(newH).toBeGreaterThan(260);
+    expect(newH).toBeLessThan(560);             // bg ignored → trims to content, not the page height
   });
 });
 
