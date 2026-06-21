@@ -506,6 +506,33 @@ describe('feature_grid preset (model gives content, engine owns layout)', () => 
     expect(flat).toContain('End-to-end encrypted notes');
   });
 
+  it('a dark GRADIENT canvas gives cards DARK text (legible on the light card) — suite-079', () => {
+    // suite-079: bg was a dark linear-gradient Fill OBJECT. The old hex-only
+    // detection read it as non-dark, so cards kept the global LIGHT text on a
+    // light surface → invisible. The card title must end up DARK.
+    const gradPayload = { hero: { ...payload.hero, text_color: '#FAFAFA',
+      bg: { type: 'linear', stops: [{ color: '#14100A', offset: 0 }, { color: '#805A05', offset: 1 }] } } };
+    const [g] = expandShorthandLayers(coerceShorthandLayers(gradPayload)) as Array<Layer & { layers?: Layer[] }>;
+    const lum = (hex: string): number => {
+      const h = hex.replace('#', ''); if (h.length < 6) return 1;
+      return (0.2126 * parseInt(h.slice(0, 2), 16) + 0.7152 * parseInt(h.slice(2, 4), 16) + 0.0722 * parseInt(h.slice(4, 6), 16)) / 255;
+    };
+    const findCardTitle = (l: unknown): { style?: { color?: string } } | null => {
+      const o = l as { type?: string; layers?: unknown[] };
+      if (o?.type === 'auto_layout' && Array.isArray(o.layers)) {
+        const kt = o.layers.map(x => (x as { type?: string }).type).join(',');
+        if (kt === 'icon,text,text') return o.layers[1] as { style?: { color?: string } };
+      }
+      if (Array.isArray(o?.layers)) for (const k of o.layers) { const r = findCardTitle(k); if (r) return r; }
+      return null;
+    };
+    const title = findCardTitle(g);
+    expect(title).toBeTruthy();
+    const color = (title?.style?.color ?? '').toString();
+    expect(color).toMatch(/^#/);
+    expect(lum(color)).toBeLessThan(0.4);                  // dark text on the light card (was '#FAFAFA')
+  });
+
   it('layout:"rows" compiles to a flat editorial list (no card grid container), all content kept', () => {
     const rowsPayload = { hero: { ...payload.hero, layout: 'rows' } };
     const [g] = expandShorthandLayers(coerceShorthandLayers(rowsPayload)) as Array<Layer & { type?: string; layers?: Layer[] }>;

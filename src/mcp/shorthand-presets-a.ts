@@ -91,9 +91,31 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
   // that picks a dark canvas + light text would otherwise drop that light text
   // onto a light ($surface) card → invisible (the #1 feature_grid failure).
   // Resolve a concrete card surface and pick readable on-card colors.
-  const bgHex = asHex(typeof bgFill === 'string' ? bgFill : null);
-  const bgRgb = bgHex ? hexToRgb(bgHex) : null;
-  const bgDark = bgRgb ? luminance(bgRgb) < 0.42 : false;
+  // Detect a dark canvas whether bg is a HEX, a gradient STRING, or a Fill OBJECT.
+  // A gradient (e.g. '#14100A'→'#805a05') used to read as non-dark — asHex of a
+  // gradient/object is null — so the cards skipped the light-card/dark-text branch
+  // and dropped the global LIGHT text onto a light surface → invisible (suite-079).
+  const collectHexes = (f: string | Fill | undefined): string[] => {
+    if (!f) return [];
+    if (typeof f === 'string') {
+      const m2 = f.match(/#[0-9a-fA-F]{6}/g);
+      if (m2 && m2.length) return m2;
+      const h = asHex(f); return h ? [h] : [];
+    }
+    const o = f as unknown as Record<string, unknown>;
+    const out: string[] = [];
+    if (typeof o['color'] === 'string') { const h = asHex(o['color']); if (h) out.push(h); }
+    const stops = o['stops'];
+    if (Array.isArray(stops)) for (const s of stops) {
+      const sc = (s as Record<string, unknown>)?.['color'];
+      if (typeof sc === 'string') { const h = asHex(sc); if (h) out.push(h); }
+    }
+    return out;
+  };
+  const bgHexes = collectHexes(bgFill);
+  const bgDark = bgHexes.length
+    ? (bgHexes.reduce((sum, h) => { const rgb = hexToRgb(h); return sum + (rgb ? luminance(rgb) : 1); }, 0) / bgHexes.length) < 0.42
+    : false;
   const explicitCard = asHex(r['card_fill']);
   let cardFillResolved: string | Fill = cardFill;
   let cardText = textColor, cardMuted = muted, cardIcon = accent;
@@ -130,7 +152,7 @@ export function buildFeatureGrid(sh: ShorthandLayer, id: string, z: number): Lay
   // default — feature_grid reads best on a deep canvas) as the wash base, and
   // when no bg_style was given fall back to a tasteful designed default (glow/
   // sweep + grain) rather than a flat fill — flat reads as a template.
-  const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHex ?? '#0A0A0A');
+  const base = (typeof bgFill === 'string' ? bgFill : asHex(r['bg'])) ?? (bgHexes[0] ?? '#0A0A0A');
   composeBackground(bgStyle || defaultBgStyle(base), id, X, Y, W, H, { bg: base, accent, text: textColor, palette, image: str(r['bg_image'] ?? r['photo'] ?? r['bg_photo']) }, 0).forEach(l => layers.push(l));
   // The heading sits on the CANVAS wash, not on a card — so its colors must
   // contrast `base`, not the theme. A blind model that set a dark bg but left
