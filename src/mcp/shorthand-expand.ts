@@ -72,10 +72,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         } as TextStyle,
       } as Layer;
 
-    case 'connector':
-      // Endpoints/curve/arrow/stroke + a real bbox — the renderer owns the math.
-      // connector lives outside the LayerType union (renderer-side type, accepted by
-      // string match) so cast through unknown, matching the mindmap preset.
+    case 'connector':  // renderer-side type (outside LayerType) → endpoints/arrow + bbox, cast via unknown
       return { ...base, type: 'connector', ...connectorFields(sh) } as unknown as Layer;
 
     case 'line':
