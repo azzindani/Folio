@@ -70,6 +70,47 @@ export function normalizeReportAliases(incoming: Layer[]): void {
   }
 }
 
+/** Fold a VERBOSE text layer's `text:"…"` alias + flat style shorthand
+ *  (font/size/weight/color/lh/track) into the canonical { content:{type,value},
+ *  style:{…} } the schema requires. The lenient editor renderer tolerates a bare
+ *  `text` field, but the VALIDATOR + SVG/PDF export + the empty-slot/decollide
+ *  passes (which read `content.value`) do NOT — so a model that hand-authors
+ *  `{type:'text', text:'…', size:80, color:'#0A0A0A'}` (the blind-120B
+ *  "website-redesign-timeline" blank: 9 such layers) fails export and reads as an
+ *  empty slot. The shorthand path already normalizes this; this covers the verbose
+ *  path. Recurses into group/auto_layout children. Returns the count normalized. */
+
+export function normalizeTextAliases(incoming: Layer[]): number {
+  let n = 0;
+  const visit = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      const o = l as unknown as Record<string, unknown>;
+      if (l?.type === 'text') {
+        const c = o['content'];
+        const hasContent = typeof c === 'string'
+          ? c !== ''
+          : (c != null && typeof c === 'object' && String((c as Record<string, unknown>)['value'] ?? '') !== '');
+        if (!hasContent && typeof o['text'] === 'string' && o['text'] !== '') {
+          o['content'] = { type: 'plain', value: o['text'] };
+          delete o['text'];
+          n++;
+        }
+        // Lift flat style shorthand into `style`, then drop the top-level aliases
+        // so the stored layer is canonical (and `size`/`color` can't shadow a
+        // shape's own meaning downstream).
+        const s = (o['style'] && typeof o['style'] === 'object' ? o['style'] : {}) as Record<string, unknown>;
+        const lift = (from: string, to: string): void => { if (s[to] == null && o[from] != null) s[to] = o[from]; if (o[from] != null) delete o[from]; };
+        lift('font', 'font_family'); lift('size', 'font_size'); lift('weight', 'font_weight');
+        lift('color', 'color'); lift('lh', 'line_height'); lift('track', 'letter_spacing');
+        if (Object.keys(s).length) o['style'] = s;
+      }
+      if (Array.isArray(o['layers'])) visit(o['layers'] as Layer[]);
+    }
+  };
+  visit(incoming);
+  return n;
+}
+
 // A model may hand-author a `group` at (gx,gy) and position its children in the
 // group's LOCAL frame (child coords near 0), expecting the group origin to offset
 // them. The engine treats group x/y as bounds only — children render at ABSOLUTE

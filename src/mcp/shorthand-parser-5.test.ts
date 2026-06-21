@@ -224,6 +224,20 @@ describe('demoteCoveringBackdrops — a full-canvas rect added onto content sink
   it('no-op when the target page is empty (a legitimate first background)', () => {
     expect(demoteCoveringBackdrops([], [rect(0, { type: 'solid', color: '#fff' })], W, H)).toBe(0);
   });
+  it('sinks a background placed LAST in a single fresh-page batch (text-first, bg-last)', () => {
+    // the "website-redesign-timeline" blank: 9 texts then a full-canvas color rect,
+    // all in one add_layers call onto an empty page.
+    const text = (id: string): Layer => ({ id, type: 'text', z: 0, x: 186, y: 316, width: 800, height: 80, text: id } as unknown as Layer);
+    const incoming: Layer[] = [text('t1'), text('t2'), rect(0, '#FAF5EC')];
+    expect(demoteCoveringBackdrops([], incoming, W, H)).toBe(1);
+    expect((incoming[2] as Layer & { z: number }).z).toBeLessThan(0);
+  });
+  it('treats a bare `color` rect (no `fill` object) as an opaque cover', () => {
+    const colorRect = ({ id: 'bg', type: 'rect', x: 0, y: 0, width: W, height: H, color: '#FAF5EC' } as unknown as Layer);
+    const existing: Layer[] = [{ id: 'g', type: 'group', z: 0, x: 0, y: 0, width: W, height: H } as unknown as Layer];
+    expect(demoteCoveringBackdrops(existing, [colorRect], W, H)).toBe(1);
+    expect((colorRect as Layer & { z: number }).z).toBeLessThan(0);
+  });
   it('ignores a noise/texture overlay (not a solid cover)', () => {
     const existing: Layer[] = [{ id: 'g', type: 'group', z: 0, x: 0, y: 0, width: W, height: H } as unknown as Layer];
     expect(demoteCoveringBackdrops(existing, [rect(9, { type: 'noise', frequency: 0.9 })], W, H)).toBe(0);

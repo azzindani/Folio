@@ -279,7 +279,7 @@ function renderComponentLayer(layer: ComponentLayer, svg: SVGSVGElement): SVGEle
     g.setAttribute('transform', `translate(${layer.x ?? 0}, ${layer.y ?? 0})`);
   }
 
-  const sorted = [...resolvedLayers].sort((a, b) => a.z - b.z);
+  const sorted = [...resolvedLayers].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
   for (const child of sorted) {
     g.appendChild(renderLayer(child, svg));
   }
@@ -306,7 +306,7 @@ function renderComponentListLayer(layer: ComponentListLayer, svg: SVGSVGElement)
     const itemG = createSVGElement('g');
     itemG.setAttribute('transform', `translate(${layer.x ?? 0}, ${offsetY})`);
 
-    const sorted = [...resolvedLayers].sort((a, b) => a.z - b.z);
+    const sorted = [...resolvedLayers].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
     for (const child of sorted) {
       itemG.appendChild(renderLayer(child, svg));
     }
@@ -454,7 +454,7 @@ function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx
   }
 
   // Sort by z-index
-  return prepared.sort((a, b) => a.z - b.z);
+  return prepared.sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
 }
 
 export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVGSVGElement {
