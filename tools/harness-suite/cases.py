@@ -549,6 +549,74 @@ CASES = [
      "accessibility is the entire point. WCAG AAA contrast, very large type, clear numbered "
      "steps with simple supportive icons, nothing decorative fighting the message. Calm clinical "
      "blue, A3 portrait, readable by someone with low vision from a metre away."),
+
+    # ── EXAMPLE-LEVEL EXPECTATIONS (101-116) ─────────────────────────────────
+    # Hand-written briefs that ask for the STRUCTURED, illustrated designs in
+    # examples/ (timelines, mind maps, roadmaps, journeys, newsletters, lists,
+    # scrapbooks) — the quality bar. Render output side-by-side with the matching
+    # reference PNG. Still pure human briefs: no tool/preset names, no "make
+    # exactly one". See memory: project-folio-example-expectations.
+    ("single", 1, "timeline·project·phases",
+     "I need a project timeline for our website redesign — 8 phases from kickoff to launch, each "
+     "with a one-line description. Vertical, numbered, easy to follow at a glance. A4 portrait, "
+     "goes in the kickoff deck and up on the wall."),
+    ("single", 1, "timeline·career·portfolio",
+     "career timeline for my portfolio — Intern 2016, Junior Designer 2018, Designer 2020, Senior "
+     "2022, Art Director 2024, a sentence on each. Instagram portrait, clean and minimal, the years "
+     "alternating left and right down a centre line."),
+    ("single", 1, "roadmap·product·nownextlater",
+     "product roadmap, one page. Now / Next / Later / Someday across the top, three or four items "
+     "under each. Make it read like a real roadmap, not a to-do list. Our colour is teal. A4."),
+    ("single", 1, "infographic·customerjourney·stages",
+     "customer journey infographic — Awareness, Consideration, Decision, Onboarding, Advocacy. Five "
+     "numbered stages, a short blurb each, connected so it actually reads as a journey. Warm orange, "
+     "friendly, A4."),
+    ("single", 1, "mindmap·goals·playful",
+     "a mind map poster for my 2025 goals — middle says GROWTH, six branches: Health, Money, Career, "
+     "Learning, Relationships, Travel, a few words on each. Make it feel hand-made and playful — "
+     "pastel, rounded cards with little arrows linking them."),
+    ("single", 1, "poster·habits·steps",
+     "poster explaining how a habit forms, 5 steps: trigger, routine, reward, repeat, identity. "
+     "Numbered, one short sentence each. Playful but clean — black and white with one red accent and "
+     "little hand-drawn arrows between the steps."),
+    ("single", 1, "newsletter·community·monthly",
+     "monthly community newsletter, A4. Masthead 'RIVERSIDE NEWS', a date, a short editor's intro, "
+     "then four boxes: What's On, Volunteer Corner, Local Spotlight, Notices. Friendly, colourful, a "
+     "bit of illustration in the corners."),
+    ("single", 1, "flyer·brandvalues·list",
+     "one-pager of our five company values for the office wall — Integrity, Innovation, Customer "
+     "Focus, Accountability, Collaboration. Each numbered with a short paragraph and a small icon. "
+     "Professional, warm neutrals, A4 portrait."),
+    ("single", 1, "worksheet·allaboutme·kids",
+     "an 'All About Me' worksheet for my Grade 2 class — name, age, where I'm from, favourite "
+     "colour, favourite food, a fun fact. Cute and doodly, lots of space for kids to write, pastel."),
+    ("single", 1, "flyer·socialtips·cards",
+     "flyer: 4 tips to boost Instagram engagement — hooks, short-form video, save-able content, ask "
+     "questions. Each tip a little card with a number and a couple of bullet points. Modern, soft "
+     "colours, A4."),
+    ("single", 1, "poster·artprocess·scrapbook",
+     "poster about the creative process — 3 steps: the artist, the ideas, the artwork. I want it to "
+     "look like a scrapbook pinned to a corkboard: torn paper, sticky notes, little doodles. Messy "
+     "in a good way."),
+    ("single", 1, "newsletter·spring·garden",
+     "spring newsletter for the garden club, A4. A heading, a welcome note, then sections on what to "
+     "plant now, an upcoming event, and a member tip. Soft florals, pinks and blues, light and "
+     "pretty."),
+    ("single", 1, "roadmap·designprocess·ghostnumbers",
+     "a 'Product Design' process poster — 5 big numbered steps from identifying the problem to "
+     "launch and evaluation, a paragraph each, the step numbers huge and ghosted behind the text. "
+     "Yellow header band, A4."),
+    ("carousel", 5, "carousel·onboarding·steps",
+     "5-slide Instagram carousel walking new users through setup — create account, connect bank, set "
+     "a goal, automate, track. One numbered step per slide, consistent, calm fintech blue."),
+    ("single", 1, "timeline·milestones·anniversary",
+     "company milestones poster for our 10-year anniversary — 2015 founded, 2017 first 1k customers, "
+     "2019 Series A, 2021 went global, 2023 100k users, 2025 today. A celebratory timeline, gold and "
+     "navy, A2 for the lobby."),
+    ("single", 1, "mindmap·strategy·sixcards",
+     "mind-mapping poster for a planning workshop — six labelled cards (Vision, Goals, Timeline, "
+     "Actions, Resources, Review), each with two or three lines, joined by curving arrows. Big bold "
+     "title up top, organic doodle shapes in the background, calm teal and cream."),
 ]
 
 
@@ -564,7 +632,7 @@ def main():
             "tags": tags,
             "prompt": prompt,       # the PURE hand-written human brief — no tool names, no scaffold
         })
-    assert len(out) == 100, f"expected 100, got {len(out)}"
+    assert len(out) == 116, f"expected 116, got {len(out)}"
     here = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(here, "usecases.json")
     with open(path, "w") as f:
