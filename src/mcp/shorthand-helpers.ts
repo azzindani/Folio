@@ -499,7 +499,11 @@ export function fontCharFactor(font?: string): number {
 // (Quicksand/Comfortaa/Varela), thin techno (Orbitron/Michroma/Audiowide), or light
 // geometrics. A structural-preset title in one of these looks far below the examples
 // bar (suite mind-map in Quicksand, timeline in Orbitron read thin and toy-like).
-const WEAK_HEADLINE = /quicksand|orbitron|audiowide|comfortaa|michroma|aldrich|electrolize|monoton|wallpoet|syncopate|varela|nunito|josefin/i;
+// + VARIABLE sans that resvg draws at their ~400 default master (weight:800 is
+// ignored in PNG/PDF export → a weak masthead). Swapping them to a static-heavy face
+// is what actually lands the impactful title the examples bar shows. (Static serifs
+// like Playfair/Source Serif render fine and are NOT listed, so they're kept.)
+const WEAK_HEADLINE = /quicksand|orbitron|audiowide|comfortaa|michroma|aldrich|electrolize|monoton|wallpoet|syncopate|varela|nunito|josefin|space grotesk|bricolage|plus jakarta|jakarta sans|manrope|sora|outfit|lexend/i;
 // Bundled STATIC-heavy faces — resvg renders a variable font (Montserrat[wght],
 // Space Grotesk…) at its default ~400 master, so weight:800 stays thin; only a
 // statically-heavy face (Anton, Bebas) actually renders bold in PNG/PDF export.
