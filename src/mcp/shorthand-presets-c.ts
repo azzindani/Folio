@@ -10,7 +10,7 @@ import type { Layer } from '../schema/types';
 import { hexToRgb, luminance } from './engine/reference';
 import {
   shStr, asHex, mixHex, readableOn, readablePair, seededDefaults, ShorthandLayer,
-  defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer,
+  defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, footerLayer, headlineFont,
 } from './shorthand-helpers';
 import { composeBackground } from './shorthand-background';
 
@@ -66,7 +66,7 @@ export function buildPricing(sh: ShorthandLayer, id: string, z: number): Layer {
   const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
-  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+  const titleFont = shStr(r['font'] ?? r['font_family']) || headlineFont(m?.font, String(r['title'] ?? r['headline'] ?? '') + id);
   const N = Math.max(1, plans.length);
   // No plan flagged featured → hero the middle one (the conventional emphasis).
   if (plans.length && !plans.some(p => p.featured)) { const mid = plans[Math.floor((N - 1) / 2)]; if (mid) mid.featured = true; }
@@ -175,7 +175,7 @@ export function buildVersus(sh: ShorthandLayer, id: string, z: number): Layer {
   const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'] ?? r['bg_treatment'], m?.bg_style ?? '');
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
-  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+  const titleFont = shStr(r['font'] ?? r['font_family']) || headlineFont(m?.font, String(r['title'] ?? r['headline'] ?? '') + id);
   const colorA = accent;
   const colorB = palette.find(c => c !== accent && asHex(c) && contrastOK(c, bg)) ?? mixHex(text, bg, 0.05);
 

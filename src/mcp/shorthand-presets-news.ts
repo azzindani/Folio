@@ -6,7 +6,7 @@
 import type { Layer } from '../schema/types';
 import {
   shStr, mixHex, readableOn, readablePair, seededDefaults, ShorthandLayer,
-  defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt,
+  defaultBgStyle, estTextHeight, fitTitleSize, shBox, txt, headlineFont,
 } from './shorthand-helpers';
 import { composeBackground } from './shorthand-background';
 import { nodeColors, lum } from './shorthand-presets-seq';
@@ -88,7 +88,7 @@ export function buildNewsletter(sh: ShorthandLayer, id: string, z: number): Laye
   const { text, muted } = readablePair(bg, r['text_color'] ?? r['color'] ?? m?.text_color, r['muted']);
   const bgStyle = shStr(r['bg_style'] ?? r['background_style'], m?.bg_style ?? '');
   const palette = (Array.isArray(r['palette']) ? r['palette'] : (m?.palette ?? [])).filter((c): c is string => typeof c === 'string');
-  const titleFont = shStr(r['font'] ?? r['font_family'], m?.font ?? '') || undefined;
+  const titleFont = shStr(r['font'] ?? r['font_family']) || headlineFont(m?.font, String(r['title'] ?? r['headline'] ?? '') + id);
   const seed = Math.abs([...(title + items.map(i => i.title).join())].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) | 0, 13));
   const colors = nodeColors(accent, palette, Math.max(items.length, 1), bg, seed % 8);
   const ctx: NewsCtx = { bg, text, muted, colors, W, titleFont };
