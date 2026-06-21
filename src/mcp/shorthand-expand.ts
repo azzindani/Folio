@@ -7,7 +7,8 @@ import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths'
 import { shStr, ShorthandLayer, expandPosition, expandFill, expandStroke, mapAlignItems, mapJustify, textTypography } from './shorthand-helpers';
 import { buildChartSpec, buildFeatureGrid, buildDecor, buildEditorial, buildSplit } from './shorthand-presets-a';
 import { buildList, buildStat, buildEvent, buildSections } from './shorthand-presets-b';
-import { buildTimeline, buildPricing, buildVersus } from './shorthand-presets-c';
+import { buildPricing, buildVersus } from './shorthand-presets-c';
+import { buildTimeline } from './shorthand-presets-seq';
 
 import { motifLayers } from './shorthand-background';
 
