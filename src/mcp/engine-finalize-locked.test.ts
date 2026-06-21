@@ -108,3 +108,37 @@ describe('decollide leaves structural wires (connector/line) where the model anc
     expect(yOf(node)).toBe(110);                       // not shoved by the wire
   });
 });
+
+describe('decollide keeps a label inside its node (label-on-shape composite)', () => {
+  const rect = (id: string, x: number, y: number, w: number, h: number): Layer =>
+    ({ id, type: 'rect', z: 1, x, y, width: w, height: h, fill: { type: 'solid', color: '#161D29' } }) as unknown as Layer;
+  const label = (id: string, x: number, y: number): Layer =>
+    ({ id, type: 'text', z: 2, x, y, width: 220, height: 36,
+       content: { type: 'plain', value: 'Core API' }, style: { font_size: 24, line_height: 1.3 } }) as unknown as Layer;
+
+  it('does NOT eject a centered label out of its node', () => {
+    const node = rect('n', 530, 680, 220, 88);
+    const a = rect('a', 530, 400, 220, 88);            // a 2nd node so there are ≥2 movables
+    const lbl = label('l', 530, 710);                  // centered inside node n
+    decollideHandPlaced([a, node, lbl], W, H);
+    expect(yOf(lbl)).toBe(710);                        // stayed inside the box, not ejected below
+  });
+
+  it('rides the label along when the node itself is pushed down', () => {
+    const above = rect('above', 530, 600, 220, 200);   // overlaps the node below → forces a push
+    const node = rect('n', 530, 650, 220, 88);
+    const lbl = label('l', 530, 680);                  // sits in node n
+    decollideHandPlaced([above, node, lbl], W, H);
+    const dy = yOf(node) - 650;
+    expect(dy).toBeGreaterThan(0);                      // node was pushed
+    expect(yOf(lbl)).toBe(680 + dy);                    // label moved with it
+  });
+
+  it('a paragraph in a LARGE panel is still decollided (not mistaken for a label)', () => {
+    const panel = rect('p', 80, 200, 900, 900);         // ≫ 8× a paragraph → not a label box
+    const para1 = txt('t1', 120, 240);                  // wraps to ~2 lines
+    const para2 = txt('t2', 120, 250);                  // overlaps para1 → must be pushed
+    decollideHandPlaced([panel, para1, para2], W, H);
+    expect(yOf(para2)).toBeGreaterThan(250);            // overprint rescue intact inside a big region
+  });
+});
