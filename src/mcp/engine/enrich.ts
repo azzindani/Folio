@@ -42,6 +42,13 @@ const OUTLINES: Record<string, { canvas: [number, number]; blocks?: string[]; fi
     'a flow block {kind:"flow", items:[{title, desc}]} — 4-7 SEQUENTIAL steps, each a 1-3 word title + a one-sentence desc; the engine draws numbered nodes connected by arrows so steps never collide',
     'callout {label,text} — why the flow matters or the single key insight' ] },
   feature_grid: { canvas: [1080, 1080], fields: ['title', 'subtitle (one line)', 'items — 4-5 cards {icon, title, 1-line desc}'] },
+  // MIND MAP — a hub + branches; the engine draws the radial spokes or staggered
+  // card chain + curved connectors + scattered doodles. NOT a flat list.
+  mindmap: { canvas: [1080, 1400], preset: 'mindmap', fields: ['title — the CENTER topic', 'layout — "spokes" (radial hub) or "chain" (staggered cards)', 'items — 4-6 branches {title, desc (one sentence)}'] },
+  // NEWSLETTER — bordered masthead + lead note + a masonry of section boxes + footer.
+  newsletter: { canvas: [1080, 1530], preset: 'newsletter', fields: ['title (masthead)', 'subtitle', 'date', 'intro — a lead welcome note', 'sections — 4-6 boxes {title, desc OR bullets:[…]}; mark one wide:true', 'footer'] },
+  // BRAND VALUES — big rotated margin numbers, heading + body, dashed dividers.
+  value_list: { canvas: [1080, 1530], preset: 'value_list', fields: ['kicker (e.g. "these are our")', 'title', 'brand — a company tag (top-right)', 'items — 4-6 {title, desc}'] },
   stat: { canvas: [1080, 1350], fields: ['kicker — short eyebrow label', 'stat — the ONE big figure (researched, e.g. "$37B" / "9.4 hrs")', 'caption — a FULL sentence of context, 12-25 words (NOT a 2-3 word fragment)', 'footer — REQUIRED: cite a real source'] },
   list: { canvas: [1080, 1350], fields: ['kicker', 'title', 'items — 5-8 {title, desc}', 'footer'] },
   event: { canvas: [1080, 1350], fields: ['kicker', 'title', 'details — [date, venue, time]', 'footer'] },
@@ -75,6 +82,13 @@ function motifForTopic(s: string): string {
 }
 
 function inferType(p: string): string {
+  // MIND MAP / brainstorm — a hub + branches (radial) or a linked card chain. Checked
+  // first so "mind map of X" / "brainstorm" never falls through to a flat list.
+  if (/\b(mind ?map|mindmap|brainstorm|concept ?map|idea map|spider ?(?:diagram|map)|web of ideas)\b/i.test(p)) return 'mindmap';
+  // NEWSLETTER / bulletin — bordered masthead + masonry of section boxes.
+  if (/\b(newsletter|bulletin|gazette|digest|community update|monthly update|news ?letter)\b/i.test(p)) return 'newsletter';
+  // BRAND / company VALUES — a big-margin-number list (the "Brand Values" flyer).
+  if (/\b(brand values|core values|company values|our values|guiding principles|code of conduct|mission and values)\b/i.test(p)) return 'value_list';
   if (/\b(\d+|five|six|seven|eight|nine|ten)\s+(tips|steps|ways|reasons|rules|habits|lessons|principles|mistakes|tactics)\b/i.test(p)) return 'list';
   // PRICING tiers — a sections preset with a pricing block (even tier columns).
   if (/\b(pricing|price table|pricing tiers?|subscription (?:plans?|tiers?)|plans? and pricing|tiers? and pricing)\b/i.test(p)) return 'pricing';

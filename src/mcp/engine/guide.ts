@@ -132,6 +132,13 @@ z = stacking order (higher = front)
    • a history / roadmap / timeline → timeline (a connected spine, not cards)
    • pricing plans / tiers          → pricing  (tier columns + a featured tier, not cards)
    • steps / "N tips/reasons"       → list    (numbered rhythm, not cards)
+   • a mind map / brainstorm        → mindmap  (a hub + branches OR a linked card chain
+                                       + curved connectors + doodles; layout:"spokes"|"chain")
+   • a newsletter / bulletin        → newsletter (bordered masthead + lead + a masonry
+                                       of section boxes + footer)
+   • brand / core VALUES            → value_list (big rotated margin numbers + dividers)
+   • social-media "tips" cards      → ribbon_cards (a grid of ribbon-banner cards with
+                                       corner number badges)
    Using a card grid for these is the #1 reason outputs look same-y. Match the structure.
 
 📋 A NUMBERED LIST? ("5 tips", "3 steps", "7 reasons", "N ways/habits/rules") — the
