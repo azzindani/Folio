@@ -320,6 +320,50 @@ export function snapOffCanvasContent(layers: Layer[], docW: number, docH: number
   return snapped;
 }
 
+// A blind model often drops its FIRST hand-placed text at y:0 — flush against the
+// canvas top, so the title's ascenders clip and the poster reads cramped (no human
+// designer starts a headline at the very edge). When the topmost CONTENT sits within
+// docH*0.025 of the top AND the composition is sparse enough to have room below,
+// translate the whole content block down so the top clears a docH*0.05 margin —
+// relative spacing is preserved (a pure vertical shift). Skips preset/group layouts
+// (they own their internal margins) and dense layouts (no room → would clip the
+// bottom). Only ever ADDS breathing room; never removes it.
+export function ensureTopMargin(layers: Layer[], docW: number, docH: number): number {
+  if (!(docW > 0) || !(docH > 0)) return 0;
+  // Hand-placed only — a single preset/group container owns its own margins.
+  if (layers.some(l => l?.type === 'group' || l?.type === 'auto_layout')) return 0;
+  const isBg = (l: Layer): boolean => {
+    const b = layerBBox(l);
+    return (l.type === 'rect' || l.type === 'image') && (b.r - b.x) >= docW * 0.9 && (b.b - b.y) >= docH * 0.9;
+  };
+  const CONTENT = new Set(['text', 'rich_text', 'image', 'icon', 'kpi_card', 'chart', 'mermaid']);
+  const shiftable = layers.filter(l => l && !isBg(l) && !isMotifLayer(l) && !isLocked(l));
+  if (!shiftable.length) return 0;
+  // Measure the top/bottom from real CONTENT only — a degenerate decoration parked
+  // at (0,0) must not drive the margin or it over-shifts content that already clears.
+  let minY = Infinity, maxB = -Infinity;
+  for (const l of shiftable) {
+    if (!CONTENT.has(l.type)) continue;
+    const b = layerBBox(l);
+    if (b.r - b.x <= 0 || b.b - b.y <= 0) continue;
+    minY = Math.min(minY, b.y); maxB = Math.max(maxB, b.b);
+  }
+  if (!Number.isFinite(minY)) return 0;
+  if (minY >= Math.round(docH * 0.025)) return 0;          // already has a top margin
+  const shift = Math.round(docH * 0.05) - minY;
+  if (shift <= 0) return 0;
+  if (maxB + shift > docH * 0.98) return 0;                // no room — would push content off the bottom
+  let moved = 0;
+  for (const l of shiftable) {
+    const o = l as unknown as Record<string, unknown>;
+    const p = o['pos'];
+    if (Array.isArray(p) && p.length >= 2 && typeof p[1] === 'number') { p[1] = Math.round((p[1] as number) + shift); moved++; continue; }
+    if (typeof o['y1'] === 'number' && typeof o['y2'] === 'number') { o['y1'] = Math.round((o['y1'] as number) + shift); o['y2'] = Math.round((o['y2'] as number) + shift); moved++; continue; }
+    if (typeof o['y'] === 'number') { o['y'] = Math.round((o['y'] as number) + shift); moved++; }
+  }
+  return moved;
+}
+
 export function dropCollidingMotifs(layers: Layer[]): number {
   const content: Array<{ x: number; y: number; r: number; b: number }> = [];
   collectContentBoxes(layers, content);

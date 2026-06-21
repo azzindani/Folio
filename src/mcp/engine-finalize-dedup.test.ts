@@ -1,6 +1,47 @@
 import { describe, it, expect } from 'vitest';
-import { dedupOverlappingDuplicates, normalizeTextAliases, trimTrailingDeadBand } from './engine-finalize-geom';
+import { dedupOverlappingDuplicates, normalizeTextAliases, trimTrailingDeadBand, ensureTopMargin } from './engine-finalize-geom';
 import type { Layer } from '../schema/types';
+
+describe('ensureTopMargin — nudge a flush-top hand-placed poster down (suite-014)', () => {
+  const DW = 1080, DH = 1080;
+  const bg = (): Layer => ({ id: 'bg', type: 'rect', z: -1, x: 0, y: 0, width: DW, height: DH, fill: { type: 'solid', color: '#FAF5EC' } } as unknown as Layer);
+  const tx = (id: string, y: number, h: number): Layer =>
+    ({ id, type: 'text', z: 1, x: 65, y, width: 950, height: h, content: { type: 'plain', value: 'x' } } as unknown as Layer);
+
+  it('shifts a title placed at y:0 (+ its siblings) down so the top clears a margin', () => {
+    const title = tx('text_1', 0, 135);
+    const layers = [bg(), title, tx('text_2', 150, 135), tx('text_3', 300, 51)];
+    const moved = ensureTopMargin(layers, DW, DH);
+    expect(moved).toBe(3);                                  // 3 texts shifted, bg left alone
+    const ty = (title as unknown as { y: number }).y;
+    expect(ty).toBeGreaterThanOrEqual(Math.round(DH * 0.05) - 1);  // top now clears ~5%
+    expect((layers[0] as unknown as { y: number }).y).toBe(0);     // full-bleed bg untouched
+    // relative spacing preserved (title→sub gap stays 150)
+    expect((layers[2] as unknown as { y: number }).y - ty).toBe(150);
+  });
+
+  it('leaves a composition that already has a top margin alone', () => {
+    const layers = [bg(), tx('a', 120, 135), tx('b', 300, 60)];
+    expect(ensureTopMargin(layers, DW, DH)).toBe(0);
+  });
+
+  it('does NOT shift when content fills to the bottom (no room → would clip)', () => {
+    const layers = [bg(), tx('a', 0, 135), tx('b', 200, 135), tx('c', 980, 90)]; // bottom at 1070
+    expect(ensureTopMargin(layers, DW, DH)).toBe(0);
+  });
+
+  it('skips a preset/group layout (it owns its own margins)', () => {
+    const grp = { id: 'g', type: 'group', z: 0, x: 0, y: 0, width: DW, height: DH, layers: [tx('t', 0, 100)] } as unknown as Layer;
+    expect(ensureTopMargin([bg(), grp], DW, DH)).toBe(0);
+  });
+
+  it('drives the margin off CONTENT, not a degenerate decoration parked at (0,0)', () => {
+    // a stray zero-size line at origin must not over-shift content that already clears
+    const line0 = { id: 'ln', type: 'line', z: 2, x1: 0, y1: 0, x2: 1, y2: 0, stroke: { color: '#000', width: 2 } } as unknown as Layer;
+    const layers = [bg(), line0, tx('a', 120, 135), tx('b', 320, 60)];
+    expect(ensureTopMargin(layers, DW, DH)).toBe(0);        // real content already at y=120 → no shift
+  });
+});
 
 describe('trimTrailingDeadBand — shrink a top-anchored poster on a non-standard canvas', () => {
   const DW = 1080, DH = 1800;   // 0.60 — NOT a standard poster ratio

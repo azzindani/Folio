@@ -21,7 +21,7 @@ import { honorPosterRatio } from './poster-ratio';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import type { NextAction } from './types';
 
-import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates, trimTrailingDeadBand } from './engine-finalize-geom';
+import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates, trimTrailingDeadBand } from './engine-finalize-geom';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText } from './engine-finalize-legibility';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
@@ -391,6 +391,12 @@ export function addLayers(args: {
   // renders nowhere and the content is silently lost.
   const snappedOff = snapOffCanvasContent(activeLayers, spec.document.width, spec.document.height);
   if (snappedOff) progress.push(pInfo(`Snapped ${snappedOff} off-canvas layer(s) inside`, 'content placed past the canvas edge would have rendered nowhere'));
+
+  // Give a hand-placed composition flush against the top edge (a model that dropped
+  // its first text at y:0) a real top margin so the headline doesn't clip / read
+  // cramped — a pure downward shift, only when there is room below.
+  const topMargined = ensureTopMargin(activeLayers, spec.document.width, spec.document.height);
+  if (topMargined) progress.push(pInfo(`Added a top margin (${topMargined} layer(s) shifted)`, 'content flush against the canvas top edge was nudged down for breathing room'));
 
   // Surface a hand-placed title the model buried under a full-canvas preset's
   // background (lift it above the wash; re-seat it up top if the preset's header
