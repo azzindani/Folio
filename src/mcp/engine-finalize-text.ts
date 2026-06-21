@@ -334,14 +334,24 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     const c = o(l)['content'];
     return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : '');
   };
+  // A text box's collision height is what it RENDERS — its measured wrapped height,
+  // NOT a generous layout-reservation the model declared. The old Math.max(given,…)
+  // floor honored a too-tall reservation: a deliberate two-column spread where each
+  // paragraph reserved 360px but wrapped to 148px got its second row pushed down by
+  // the full 360, then setMeasuredTextHeights shrank the box to 148 and never
+  // reclaimed the gap — a dead band mid-column. Measure to truth (matching
+  // setMeasuredTextHeights, which snaps both ways), passing the font char factor so a
+  // condensed display face isn't over-measured. A too-SHORT box for long text still
+  // grows (measured > given), so the blind-model overprint rescue is intact.
   const measuredH = (l: Layer): number => {
     const r = o(l); const given = Number(r['height']) || 0;
     if (l.type !== 'text') return given;
     const style = (r['style'] as Record<string, unknown>) ?? {};
     const fs = Number(style['font_size']) || Math.round(W * 0.025);
     const lh = Number(style['line_height']) || 1.4;
+    const font = typeof style['font_family'] === 'string' ? style['font_family'] as string : '';
     const w = Number(r['width']) || W;
-    return Math.max(given, estTextHeight(textVal(l), fs, w, lh));
+    return estTextHeight(textVal(l), fs, w, lh, fontCharFactor(font));
   };
   // A motif is a behind-content decoration, not a flow row — never stack it (that
   // would shove it off-canvas). dropCollidingMotifs is the sole authority on it.
