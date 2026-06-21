@@ -9,6 +9,7 @@ import { buildChartSpec, buildFeatureGrid, buildDecor, buildEditorial, buildSpli
 import { buildList, buildStat, buildEvent, buildSections } from './shorthand-presets-b';
 import { buildPricing, buildVersus } from './shorthand-presets-c';
 import { buildTimeline } from './shorthand-presets-seq';
+import { buildMindmap } from './shorthand-presets-map';
 
 import { motifLayers } from './shorthand-background';
 
@@ -244,6 +245,13 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'history':
     case 'milestones':
       return buildTimeline(sh, String(sh.id ?? 'timeline'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'mindmap':
+    case 'mind_map':
+    case 'brainstorm':
+    case 'concept_map':
+    case 'process_cards':
+      return buildMindmap(sh, String(sh.id ?? 'mindmap'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'pricing':
     case 'plans':
