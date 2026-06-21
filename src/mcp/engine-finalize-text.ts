@@ -359,11 +359,14 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   // anchors the model placed deliberately); moving it orphans the join, so it's
   // never a flow row nor a collision floor.
   const isWire = (l: Layer): boolean => { const t = (l as { type?: string }).type; return t === 'connector' || t === 'line'; };
-  // A text whose box sits inside a SNUG non-text shape is a LABEL on that shape (a
-  // node caption, a button/pill text) — a deliberate composite, not a flow row.
-  // decollide used to eject every node label out the bottom of its box (the whole
-  // request-path diagram lost its captions). Treat the label as part of its
-  // container: never push it on its own, and ride it along if the container moves.
+  // A text whose box sits inside a non-text BACKING shape is a label/caption ON that
+  // shape (a node caption, a button/pill text, a card stat, a panel heading) — a
+  // deliberate composite, not a flow row. decollide used to eject such content out
+  // the bottom of its box (node captions, then card labels/deltas when the card was
+  // bigger than ~8× the text but smaller than a panel — the size-threshold middle
+  // gap). The fix is geometric, not size-based: ANY non-text shape larger than the
+  // text and holding ≥80% of it is its container. The content rides with the
+  // container and is never pushed on its own; the container itself is scenery.
   const boxOf = (l: Layer): { x: number; y: number; w: number; h: number } => {
     const r = o(l); return { x: Number(r['x']) || 0, y: Number(r['y']) || 0, w: Number(r['width']) || 0, h: Number(r['height']) || 0 };
   };
@@ -377,21 +380,21 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     if (ta <= 0) return null;
     let best: Layer | null = null; let bestArea = Infinity;
     for (const s of layers) {
-      if (s === t || !isShape(s) || isFullBleed(s) || isLocked(s)) continue;
+      if (s === t || !isShape(s) || isFullBleed(s) || isLocked(s)) continue;  // not the full-canvas bg
       const sb = boxOf(s); const sa = sb.w * sb.h;
-      if (sa < ta || sa > ta * 8) continue;          // a snug node/button box, not a big panel
+      if (sa < ta) continue;                          // a backing shape is larger than its content
       const ox = Math.max(0, Math.min(b.x + b.w, sb.x + sb.w) - Math.max(b.x, sb.x));
       const oy = Math.max(0, Math.min(b.y + b.h, sb.y + sb.h) - Math.max(b.y, sb.y));
       if (ox * oy >= 0.8 * ta && sa < bestArea) { best = s; bestArea = sa; }  // smallest holder
     }
     return best;
   };
-  const labelOf = new Map<Layer, Layer>();         // label → its container shape
-  const containerY0 = new Map<Layer, number>();    // container → its y before the loop
-  for (const l of layers) {
-    const c = containerOf(l);
-    if (c) { labelOf.set(l, c); containerY0.set(c, Number(o(c)['y']) || 0); }
-  }
+  // Every backing shape that holds content (a card, pill, node, panel) is scenery:
+  // never moved, never a collision floor for what sits on it. The CONTENT stays
+  // movable, so two genuinely overlapping captions inside the same card still
+  // de-collide against each other (the overprint rescue survives inside a card).
+  const containerShapes = new Set<Layer>();
+  for (const l of layers) { const c = containerOf(l); if (c) containerShapes.add(c); }
   // A layer the model deliberately bled off-canvas (a corner blob, an oversized
   // accent circle, a half-bleed band) is intentional SCENERY, not a flow row —
   // flow content is placed inside the canvas. Treating a bleeding decorative circle
@@ -414,7 +417,7 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     const b = boxOf(l);
     return b.w > 0 && b.h > 0 && (b.w * b.h >= 0.33 * W * H || b.w >= 0.9 * W || b.h >= 0.9 * H);
   };
-  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !labelOf.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
+  const movable = layers.filter(l => l && !isFullBleed(l) && !isMotifLayer(l) && !isWire(l) && !bleedsOffCanvas(l) && !isBackdropPanel(l) && !containerShapes.has(l) && !isLocked(l) && typeof o(l)['x'] === 'number' && typeof o(l)['y'] === 'number');
   if (movable.length < 2) return 0;
   const ordered = [...movable].sort((a, b) => (Number(o(a)['y']) - Number(o(b)['y'])) || (Number(o(a)['x']) - Number(o(b)['x'])));
   const placed: { x: number; w: number; bot: number }[] = [];
@@ -430,14 +433,6 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     for (const p of placed) if (x < p.x + p.w && p.x < x + w) floor = Math.max(floor, p.bot + gap);
     if (floor > top + 1) { top = Math.round(floor); r['y'] = top; moved++; }
     placed.push({ x, w, bot: top + mh });
-  }
-  // Ride each contained label along with its container if the container was pushed,
-  // so a node caption stays inside its box instead of being left behind.
-  for (const [label, container] of labelOf) {
-    const y0 = containerY0.get(container);
-    if (y0 === undefined) continue;
-    const dy = (Number(o(container)['y']) || 0) - y0;
-    if (dy !== 0) o(label)['y'] = (Number(o(label)['y']) || 0) + dy;
   }
   return moved;
 }
