@@ -210,6 +210,9 @@ describe('detectTextOverlap — catches hand-placed colliding cards (small-model
     expect(note).not.toBeNull();
     expect(note).toContain('feature_grid');
     expect(note).toContain('overlap');
+    // it also surfaces the deliberate-overlap escape hatch so a frontier model
+    // doing intentional layering isn't only steered to a preset
+    expect(note).toContain('locked:true');
     // and it surfaces first in diagnoseLayers
     expect(diagnoseLayers(layers)[0]).toContain('feature_grid');
   });

@@ -133,7 +133,7 @@ export function detectTextOverlap(layers: Layer[]): string | null {
   if (colliding.size < 2) return null;
   const ids = [...colliding];
   const shown = ids.slice(0, 6).join(', ') + (ids.length > 6 ? '…' : '');
-  return `${ids.length} text layers overlap (${shown}) — hand-placed coordinates collide, so they render on top of each other illegibly. For cards/columns/rows DON'T hand-place x/y: use the feature_grid preset ({type:"feature_grid", title, subtitle, items:[{icon,title,desc}]}) or a row/column container — the engine spaces them with no overlap.`;
+  return `${ids.length} text layers overlap (${shown}) — by default the engine reads this as a hand-placed pile and reflows them apart. If it's a MISTAKE (cards/columns/rows dropped at the same spot) DON'T hand-place x/y: use the feature_grid preset ({type:"feature_grid", title, subtitle, items:[{icon,title,desc}]}) or a row/column container so the engine spaces them. If the overlap is DELIBERATE (a ghost numeral behind a headline, type knocked over a panel, a layered stamp) set locked:true on these layers — or wrap the whole composition in one {type:"group", locked:true, pos:[0,0,W,H], layers:[…]} — and the engine keeps your exact placement, color and overlap untouched.`;
 }
 
 // Inspect expanded layers for things that render but not the way the model
