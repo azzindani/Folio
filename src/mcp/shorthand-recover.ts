@@ -16,6 +16,7 @@ export const PRESET_TYPES = new Set([
   'mindmap', 'mind_map', 'brainstorm', 'concept_map', 'process_cards',
   'doodles', 'scatter', 'confetti',
   'ribbon_cards', 'tip_cards', 'ribbon', 'value_list', 'values', 'tips_list',
+  'newsletter', 'bulletin', 'digest',
 ]);
 
 // Did coercion yield at least one real preset layer? Used to tell a parsed-OK

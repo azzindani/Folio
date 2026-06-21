@@ -38,6 +38,9 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'nodes', 'branches', 'ideas', 'topic', 'center', 'concept_map', 'topics',
   'doodles', 'doodle', 'density', 'count', 'kinds', 'opacity',
   'tips', 'bullets', 'points', 'brand', 'tag', 'org', 'numbering', 'values',
+  // newsletter preset
+  'masthead', 'tagline', 'byline', 'by', 'issue', 'month', 'handle', 'intro',
+  'lead', 'note', 'intro_title', 'lead_title', 'stories', 'wide', 'span', 'full',
   // timeline / pricing / versus structural presets + feature_grid layout variant
   'layout', 'archetype', 'events', 'milestones', 'steps', 'phases', 'year',
   'plans', 'tiers', 'options', 'price', 'period', 'per', 'interval', 'cycle',
