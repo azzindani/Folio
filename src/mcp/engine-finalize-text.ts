@@ -6,7 +6,8 @@ import type { Layer, Page } from '../schema/types';
 import { estTextHeight } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 
-import { layerBBox, layerText, isMotifLayer, isFullBleedContentPreset, isFullCanvasBackdrop, isLocked } from './engine-finalize-geom';
+import { layerBBox, layerText, isMotifLayer, isLocked } from './engine-finalize-geom';
+import { isFullBleedContentPreset, isFullCanvasBackdrop } from './engine-finalize-presets';
 
 export function spreadStackedText(layers: Layer[], docW: number, docH: number): number {
   const fontOf = (l: Layer): number => { const st = (l as unknown as Record<string, unknown>)['style'] as Record<string, unknown> | undefined; return st && typeof st['font_size'] === 'number' ? st['font_size'] as number : 16; };

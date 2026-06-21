@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { dedupOverlappingDuplicates, normalizeTextAliases, trimTrailingDeadBand, ensureTopMargin } from './engine-finalize-geom';
+import { normalizeTextAliases, trimTrailingDeadBand, ensureTopMargin } from './engine-finalize-geom';
+import { dedupOverlappingDuplicates } from './engine-finalize-presets';
 import type { Layer } from '../schema/types';
 
 describe('ensureTopMargin — nudge a flush-top hand-placed poster down (suite-014)', () => {
