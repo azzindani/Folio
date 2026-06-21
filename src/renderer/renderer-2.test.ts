@@ -3,6 +3,28 @@ import { renderPage, renderLayer, invalidateCache } from './renderer';
 import { createSVGRoot } from './svg-utils';
 import type { Layer, RectLayer } from '../schema/types';
 
+describe('background / backdrop full-bleed type', () => {
+  beforeEach(() => { invalidateCache(); });
+
+  it('renders a content-less `background` layer as nothing, NOT the `[background: id]` placeholder', () => {
+    // suite-009 cover: model added a bare {id:bg, type:background} per page → it
+    // hit the default placeholder and printed `[background: bg]` on the poster.
+    const layers = [{ id: 'bg', type: 'background', z: 0 } as unknown as Layer];
+    const svg = renderPage(layers, 1080, 1350);
+    expect(svg.textContent ?? '').not.toContain('background: bg');
+    expect(svg.querySelector('[data-background="empty"]')).toBeTruthy();
+  });
+
+  it('covers the whole canvas with the fill when a `background` layer carries one', () => {
+    const layers = [{ id: 'bg', type: 'background', z: 0, fill: { type: 'solid', color: '#101820' } } as unknown as Layer];
+    const svg = renderPage(layers, 1080, 1350);
+    const rect = svg.querySelector('rect[fill="#101820"]');
+    expect(rect).toBeTruthy();
+    expect(rect?.getAttribute('width')).toBe('1080');
+    expect(rect?.getAttribute('height')).toBe('1350');
+  });
+});
+
 describe('buildClipDefs — rotation with non-numeric width/height (lines 255-256)', () => {
   beforeEach(() => { invalidateCache(); });
 

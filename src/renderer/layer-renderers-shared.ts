@@ -52,20 +52,59 @@ export function applyCommonAttributes(
   if (layer.opacity !== undefined) el.setAttribute('opacity', String(layer.opacity));
 }
 
-export function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; width: number; dash?: number[]; linecap?: string; linejoin?: string }, svg?: SVGSVGElement): void {
-  const strokeColor = typeof stroke.color === 'string'
-    ? stroke.color
-    : resolveColorOrGradient(stroke.color, getOrCreateDefs(svg ?? el.ownerSVGElement as SVGSVGElement));
+// A hand-placed shape may carry `stroke` as a bare color string (with the width
+// in a sibling `stroke_width`/`strokeWidth`) — the natural verbose form — instead
+// of the canonical {color, width} object the shorthand parser emits. Reading
+// `.color`/`.type` off a string threw (→ the `⚠ type#id` error placeholder), so
+// normalize either shape here. Returns null when there is no usable stroke.
+export function normalizeStroke(
+  layer: unknown,
+): { color: ColorOrGradient; width: number; dash?: number[]; linecap?: string; linejoin?: string } | null {
+  const o = layer as Record<string, unknown>;
+  const s = o['stroke'];
+  if (s == null) return null;
+  const num = (v: unknown, d: number): number =>
+    typeof v === 'number' && Number.isFinite(v)
+      ? v
+      : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))
+        ? Number(v)
+        : d;
+  const sibling = o['stroke_width'] ?? o['strokeWidth'] ?? o['stroke-width'];
+  if (typeof s === 'string') {
+    return s.trim() ? { color: s, width: num(sibling, 1) } : null;
+  }
+  if (typeof s === 'object') {
+    const so = s as Record<string, unknown>;
+    if (so['color'] == null) return null; // malformed object → skip, don't crash
+    return {
+      color: so['color'] as ColorOrGradient,
+      width: num(so['width'] ?? sibling, 1),
+      dash: Array.isArray(so['dash']) ? (so['dash'] as number[]) : undefined,
+      linecap: typeof so['linecap'] === 'string' ? (so['linecap'] as string) : undefined,
+      linejoin: typeof so['linejoin'] === 'string' ? (so['linejoin'] as string) : undefined,
+    };
+  }
+  return null;
+}
+
+export function applyStroke(el: SVGElement, stroke: { color: ColorOrGradient; width: number; dash?: number[]; linecap?: string; linejoin?: string } | string, svg?: SVGSVGElement): void {
+  // Defensive: tolerate a bare string or a malformed object so a shape never
+  // crashes the whole layer into the error placeholder.
+  const s = typeof stroke === 'string' ? { color: stroke, width: 1 } : stroke;
+  if (s == null || s.color == null) return;
+  const strokeColor = typeof s.color === 'string'
+    ? s.color
+    : resolveColorOrGradient(s.color, getOrCreateDefs(svg ?? el.ownerSVGElement as SVGSVGElement));
   el.setAttribute('stroke', strokeColor);
-  el.setAttribute('stroke-width', String(stroke.width));
-  if (stroke.dash) {
-    el.setAttribute('stroke-dasharray', stroke.dash.join(' '));
+  el.setAttribute('stroke-width', String(s.width));
+  if (s.dash) {
+    el.setAttribute('stroke-dasharray', s.dash.join(' '));
   }
-  if (stroke.linecap) {
-    el.setAttribute('stroke-linecap', stroke.linecap);
+  if (s.linecap) {
+    el.setAttribute('stroke-linecap', s.linecap);
   }
-  if (stroke.linejoin) {
-    el.setAttribute('stroke-linejoin', stroke.linejoin);
+  if (s.linejoin) {
+    el.setAttribute('stroke-linejoin', s.linejoin);
   }
 }
 

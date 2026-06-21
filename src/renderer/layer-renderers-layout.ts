@@ -6,7 +6,7 @@ import { applyFill } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 
 import { encodeQR } from './qr/encode';
-import { applyCommonAttributes, applyStroke, normalizePadding, escHtml, foPreview, numOr } from './layer-renderers-shared';
+import { applyCommonAttributes, applyStroke, normalizeStroke, normalizePadding, escHtml, foPreview, numOr } from './layer-renderers-shared';
 
 export function renderGroup(
   layer: GroupLayer,
@@ -109,7 +109,8 @@ export function renderAutoLayout(
     bg.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) bg.setAttribute('opacity', String(fillResult.opacity));
     fillResult.extraElements?.forEach(el => g.appendChild(el));
-    if (layer.stroke) applyStroke(bg, layer.stroke, svg);
+    const bgStroke = normalizeStroke(layer);
+    if (bgStroke) applyStroke(bg, bgStroke, svg);
     g.appendChild(bg);
   }
 
