@@ -12,6 +12,7 @@ import {
 } from './shorthand-helpers';
 import { composeBackground } from './shorthand-background';
 import { readSeqItems, nodeColors, lum, type SeqItem } from './shorthand-presets-seq';
+import { scatterLayers, type KeepOut } from './shorthand-doodles';
 
 interface MapCtx {
   bg: string; surface: string; text: string; muted: string;
@@ -39,7 +40,10 @@ function measureCard(it: SeqItem, w: number, c: MapCtx): CardGeom {
 function card(layers: Layer[], id: string, i: number, x: number, y: number, w: number,
   it: SeqItem, c: MapCtx, zBase: number): number {
   const { padX, padY, inner, pillFont, bodyFont, headH, titleH, bodyH, h } = measureCard(it, w, c);
-  const node = c.colors[i % c.colors.length];
+  // A pale palette colour can match the light card surface → the pill vanishes.
+  // Deepen it until the band reads against the card.
+  let node = c.colors[i % c.colors.length];
+  if (Math.abs(lum(node) - lum(c.surface)) < 0.2) node = mixHex(node, lum(c.surface) > 0.5 ? '#15110D' : '#FFFFFF', 0.42);
 
   layers.push({ id: `${id}_sh${i}`, type: 'rect', z: zBase, x: x + 5, y: y + 7, width: w, height: h,
     radius: 16, fill: { type: 'solid', color: mixHex(c.bg, '#000000', 0.16) } } as unknown as Layer);
@@ -93,14 +97,36 @@ export function buildMindmap(sh: ShorthandLayer, id: string, z: number): Layer {
   const colors = nodeColors(accent, palette, Math.max(items.length, 1), bg, seed % 8);
   // Card surface: a near-white tint of the bg so cards read as paper on the canvas.
   const surface = lum(bg) > 0.5 ? mixHex(bg, '#FFFFFF', 0.55) : mixHex(bg, '#FFFFFF', 0.92);
-  const ctx: MapCtx = { bg, surface, text, muted, colors, titleFont, W };
+  // Body copy sits ON the card surface, NOT the canvas — colour it for the surface
+  // (a dark canvas with light cards needs dark body text, not the bg-readable light).
+  const cardText = readableOn(surface, '#1A1A1A') === '#FFFFFF' ? mixHex(surface, '#FFFFFF', 0.85) : mixHex(surface, '#15110D', 0.82);
+  const ctx: MapCtx = { bg, surface, text: cardText, muted, colors, titleFont, W };
 
   const layers: Layer[] = [];
-  const bodyStart = 0;
   const finalH = layout === 'spokes'
     ? buildSpokes(layers, id, { X, Y, W, H }, title, kicker, accent, text, muted, ctx, items)
     : buildChain(layers, id, { X, Y, W, H }, title, kicker, accent, text, muted, ctx, items);
-  void bodyStart;
+
+  // Margin doodles — the reference mind maps all carry seeded confetti in the empty
+  // gutters. On by default (set doodles:false to drop them); kept clear of every
+  // card / hub / title via keep-out, behind the content, and seed-varied per design.
+  const wantDoodles = r['doodles'] !== false && r['doodle'] !== false && shStr(r['doodles']) !== 'off';
+  if (wantDoodles) {
+    const keepOut: KeepOut[] = [];
+    for (const l of layers) {
+      const o = l as unknown as { id: string; type: string; x?: number; y?: number; width?: number; height?: number };
+      if ((o.type === 'rect' || o.type === 'text') && /_(cd|hub|hubt|pl|title|kick|bd|tt)\d*$/.test(o.id)
+        && typeof o.x === 'number' && typeof o.width === 'number') {
+        keepOut.push({ x: o.x, y: o.y ?? 0, w: o.width, h: typeof o.height === 'number' ? o.height : 0 });
+      }
+    }
+    const dColors = colors.map(c => mixHex(c, bg, 0.05));
+    layers.unshift(...scatterLayers({ X, Y, W, H: finalH }, {
+      count: layout === 'spokes' ? 9 : 13, colors: dColors, idp: `${id}_doo`, z0: 4, seed: seed * 7 + 3,
+      sizeMin: Math.round(W * 0.022), sizeMax: Math.round(W * 0.05), sw: Math.max(2, Math.round(W * 0.006)),
+      keepOut, opacity: 0.9,
+    }));
+  }
 
   const bgLayers = composeBackground(bgStyle || defaultBgStyle(bg), id, X, Y, W, finalH,
     { bg, accent, text, palette, image: shStr(r['bg_image'] ?? r['photo']) }, 0);
@@ -123,8 +149,9 @@ function header(layers: Layer[], id: string, b: Box, title: string, kicker: stri
     cy += Math.round(b.W * 0.045);
   }
   if (title) {
-    const ts = fitTitleSize(title, Math.round(b.W * 0.085), b.W - 2 * M, ctx.titleFont, false);
-    const th = estTextHeight(title, ts, b.W - 2 * M, 1.0);
+    const isCaps = title.length > 2 && title === title.toUpperCase() && /[A-Z]/.test(title);
+    const ts = fitTitleSize(title, Math.round(b.W * 0.085), b.W - 2 * M, ctx.titleFont, isCaps);
+    const th = estTextHeight(title, ts, b.W - 2 * M, 1.04, isCaps ? 0.6 : 0.54);
     layers.push(txt(`${id}_title`, 9, b.X + M, cy, b.W - 2 * M, th + 6, title, { font_size: ts, font_weight: 800,
       color: titleColor, line_height: 1.02, letter_spacing: -0.5, font_family: ctx.titleFont, align: center ? 'center' : 'left' }));
     cy += th + Math.round(b.W * 0.03);
