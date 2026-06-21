@@ -14,6 +14,8 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'font', 'size', 'weight', 'color', 'align', 'text_decoration', 'src', 'fit',
   'alt', 'icon', 'icon_size', 'name', 'd', 'sides', 'x1', 'y1', 'x2', 'y2',
   'definition', 'code', 'language', 'expression', 'layers',
+  // connector primitive (join two anchors → curved/elbow/straight line + arrow)
+  'from', 'to', 'curve', 'bend', 'arrow', 'arrow_size', 'dashed',
   // typography craft
   'line_height', 'letter_spacing', 'lh', 'leading', 'track', 'tracking',
   // auto_layout / container

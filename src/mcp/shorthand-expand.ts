@@ -4,7 +4,7 @@ import type { Layer, TextContent, TextStyle } from '../schema/types';
 
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 
-import { shStr, ShorthandLayer, expandPosition, expandFill, expandStroke, mapAlignItems, mapJustify, textTypography, chartColorFields } from './shorthand-helpers';
+import { shStr, ShorthandLayer, expandPosition, expandFill, expandStroke, mapAlignItems, mapJustify, textTypography, chartColorFields, connectorFields } from './shorthand-helpers';
 import { buildChartSpec, buildFeatureGrid, buildDecor, buildEditorial, buildSplit } from './shorthand-presets-a';
 import { buildList, buildStat, buildEvent, buildSections } from './shorthand-presets-b';
 import { buildPricing, buildVersus } from './shorthand-presets-c';
@@ -71,6 +71,12 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
           ...textTypography(sh),
         } as TextStyle,
       } as Layer;
+
+    case 'connector':
+      // Endpoints/curve/arrow/stroke + a real bbox — the renderer owns the math.
+      // connector lives outside the LayerType union (renderer-side type, accepted by
+      // string match) so cast through unknown, matching the mindmap preset.
+      return { ...base, type: 'connector', ...connectorFields(sh) } as unknown as Layer;
 
     case 'line':
       return {

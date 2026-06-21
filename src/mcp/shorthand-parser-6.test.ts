@@ -28,6 +28,45 @@ describe('rotation — canonical + CSS-style aliases (frontier custom layouts)',
   });
 });
 
+describe('connector shorthand — bespoke diagrams (join two anchors)', () => {
+  it('expands from/to + arrow/curve/stroke and derives a real bbox', () => {
+    const [c] = expandShorthandLayers(coerceShorthandLayers({
+      cAB: { type: 'connector', from: [640, 238], to: [640, 400], arrow: 'end', curve: 'straight', stroke: '#5B677A' },
+    })) as Array<{ type?: string; from?: [number, number]; to?: [number, number]; arrow?: string; curve?: string; stroke?: { color?: string; width?: number }; x?: number; y?: number; width?: number; height?: number }>;
+    expect(c.type).toBe('connector');
+    expect(c.from).toEqual([640, 238]);
+    expect(c.to).toEqual([640, 400]);
+    expect(c.arrow).toBe('end');
+    expect(c.curve).toBe('straight');
+    expect(c.stroke).toEqual({ color: '#5B677A', width: 2 });
+    // bbox from the endpoints (so the editor can select + geometry sees its extent)
+    expect(c.x).toBe(640);
+    expect(c.y).toBe(238);
+    expect(c.width).toBe(1);          // vertical line → min width 1
+    expect(c.height).toBe(162);
+  });
+
+  it('accepts the x1,y1→x2,y2 endpoint form + bend/dashed/arrow_size', () => {
+    const [c] = expandShorthandLayers(coerceShorthandLayers({
+      c: { type: 'connector', x1: 100, y1: 100, x2: 300, y2: 200, curve: 'arc', bend: 0.3, dashed: true, arrow_size: 16, color: '#888' },
+    })) as Array<{ x1?: number; y2?: number; bend?: number; dashed?: boolean; arrow_size?: number; stroke?: { color?: string }; x?: number; width?: number }>;
+    expect(c.x1).toBe(100);
+    expect(c.y2).toBe(200);
+    expect(c.bend).toBe(0.3);
+    expect(c.dashed).toBe(true);
+    expect(c.arrow_size).toBe(16);
+    expect(c.stroke).toEqual({ color: '#888', width: 2 });
+    expect(c.x).toBe(100);
+    expect(c.width).toBe(200);
+  });
+
+  it('does not flag connector fields as unrecognized', () => {
+    expect(diagnoseShorthandKeys([
+      { id: 'c', type: 'connector', from: [0, 0], to: [10, 10], curve: 'elbow', bend: 0.2, arrow: 'both', arrow_size: 12, dashed: true, stroke: '#000' },
+    ] as unknown as ShorthandLayer[])).toEqual([]);
+  });
+});
+
 describe('chart / kpi_card / component shorthand (data-viz + reuse)', () => {
   it('builds a bar-chart vega-lite spec from compact data', () => {
     const [c] = expandShorthandLayers(coerceShorthandLayers({
