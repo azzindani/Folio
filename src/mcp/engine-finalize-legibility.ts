@@ -73,6 +73,16 @@ function avgHex(hexes: string[]): string | null {
 // darkens pale text that actually sits on a dark gradient (the HALON canvas bug).
 function rectFillHex(o: Record<string, unknown>, theme: ThemeSpec | undefined): string | null {
   const f = o['fill'];
+  // A bare STRING fill (`fill: '#8B4513'`/`fill: '$accent'`) is what the renderer's
+  // fill fallback paints — the legibility pass must read it too, else a dark
+  // string-fill canvas reads as "no backdrop" and dark text is wrongly judged
+  // against the (light) theme default and left invisible (suite-111 brown scrapbook,
+  // suite-103 teal roadmap).
+  if (typeof f === 'string') {
+    const s = f.trim();
+    if (s === '' || s === 'none' || s === 'transparent') return null;
+    return resolveCol(s, theme);
+  }
   if (f && typeof f === 'object' && !Array.isArray(f)) {
     const fo = f as Record<string, unknown>;
     if (typeof fo['color'] === 'string') return resolveCol(fo['color'], theme);

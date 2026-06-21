@@ -49,3 +49,20 @@ describe('locked layers are exempt from the auto-rescue passes', () => {
     expect(colOf(inner)).toBe('#111111');
   });
 });
+
+describe('fixInvisibleText reads a STRING-fill backdrop (suite-103 teal / suite-111 brown)', () => {
+  it('re-lights dark text on a string-fill dark canvas', () => {
+    // the blind-model brown scrapbook: `fill: '#8B4513'` (a STRING, not {type,color})
+    // — was read as "no backdrop" so #555 body stayed invisible on brown.
+    const bg = { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: W, height: H, fill: '#8B4513' } as unknown as Layer;
+    const t = txt('t', 80, 400, { style: { color: '#555555', font_size: 16 } });
+    expect(fixInvisibleText([bg, t], W, H)).toBe(1);
+    expect(colOf(t)).not.toBe('#555555');     // re-lit to clear the brown
+  });
+  it('leaves legible text on a string-fill canvas alone', () => {
+    const bg = { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: W, height: H, fill: '#8B4513' } as unknown as Layer;
+    const t = txt('t', 80, 400, { style: { color: '#FFFFFF', font_size: 16 } });
+    expect(fixInvisibleText([bg, t], W, H)).toBe(0);
+    expect(colOf(t)).toBe('#FFFFFF');
+  });
+});
