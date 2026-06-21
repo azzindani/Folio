@@ -441,7 +441,7 @@ export function addLayers(args: {
 
 // Pure-decoration leaf types — a slide built from ONLY these renders blank.
 
-export const DECORATIVE_LAYER_TYPES = new Set(['rect', 'ellipse', 'circle', 'line', 'path', 'polygon', 'polyline', 'particle']);
+export const DECORATIVE_LAYER_TYPES = new Set(['rect', 'ellipse', 'circle', 'line', 'path', 'polygon', 'polyline', 'particle', 'connector', 'background', 'backdrop']);
 // Does a page carry any readable content (text/image/icon/chart/preset), or is
 // it only background shapes? Recurses into groups/containers.
 

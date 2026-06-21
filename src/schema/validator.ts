@@ -12,6 +12,7 @@ export interface ValidationError {
 // otherwise-valid designs in export_design.
 const VALID_LAYER_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'path', 'polygon', 'polyline', 'line',
+  'connector', 'background', 'backdrop',
   'text', 'image', 'icon', 'component', 'component_list',
   'mermaid', 'chart', 'code', 'math', 'group',
   'qrcode', 'auto_layout',
