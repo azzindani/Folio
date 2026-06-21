@@ -34,6 +34,10 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'stat', 'number', 'caption',
   'details', 'lines', 'info', 'date', 'venue', 'location', 'place', 'time', 'when', 'where',
   'blocks', 'sections', 'kind', 'cite', 'author', 'source', 'quote',
+  // mind-map / doodles / ribbon-cards / value-list presets
+  'nodes', 'branches', 'ideas', 'topic', 'center', 'concept_map', 'topics',
+  'doodles', 'doodle', 'density', 'count', 'kinds', 'opacity',
+  'tips', 'bullets', 'points', 'brand', 'tag', 'org', 'numbering', 'values',
   // timeline / pricing / versus structural presets + feature_grid layout variant
   'layout', 'archetype', 'events', 'milestones', 'steps', 'phases', 'year',
   'plans', 'tiers', 'options', 'price', 'period', 'per', 'interval', 'cycle',

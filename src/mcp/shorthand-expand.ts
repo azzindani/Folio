@@ -11,6 +11,7 @@ import { buildPricing, buildVersus } from './shorthand-presets-c';
 import { buildTimeline } from './shorthand-presets-seq';
 import { buildMindmap } from './shorthand-presets-map';
 import { buildDoodles } from './shorthand-doodles';
+import { buildRibbonCards, buildValueList } from './shorthand-presets-cards';
 
 import { motifLayers } from './shorthand-background';
 
@@ -275,6 +276,16 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     case 'scatter':
     case 'confetti':
       return buildDoodles(sh, String(sh.id ?? 'doodles'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'ribbon_cards':
+    case 'tip_cards':
+    case 'ribbon':
+      return buildRibbonCards(sh, String(sh.id ?? 'ribbon_cards'), typeof sh.z === 'number' ? sh.z : 0);
+
+    case 'value_list':
+    case 'values':
+    case 'tips_list':
+      return buildValueList(sh, String(sh.id ?? 'value_list'), typeof sh.z === 'number' ? sh.z : 0);
 
     case 'component':
       return {
