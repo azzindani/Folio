@@ -61,9 +61,11 @@ z = stacking order (higher = front)
 🔒 HAND-PLACING A DELIBERATE COMPOSITION? Loose hand-placed layers are treated
    as mistakes to auto-rescue (the engine re-measures, reflows + re-lights them).
    To keep your EXACT placement + colors (intentional overlap, off-canvas bleed,
-   a stamp, a knockout on a band), wrap the primitives in ONE group
-   {type:"group", x:0, y:0, width:W, height:H, layers:[…]} OR set locked:true on
-   the layer/group — then the engine preserves your layout untouched.
+   a stamp, a knockout on a band, a rotated element), wrap the primitives in ONE
+   group {type:"group", x:0, y:0, width:W, height:H, layers:[…]} OR set locked:true
+   on the layer/group — then the engine preserves your layout untouched. Tilt any
+   layer with rotate:<deg>. (Load the \`layers\` guide section for the full
+   frontier-composition toolkit: rotation, locked dashboards, colored data viz.)
 
 🎨 DESIGN LIKE A HUMAN — not an AI template. The #1 tell of AI-generated design
    is a dark-navy canvas + blue/purple GRADIENT + one glowing accent + centered
@@ -468,7 +470,24 @@ Notes:
 - z is required — use 0=background, 5=images, 10=text, 15=decorators, 20=overlays
 - All coordinates in px; origin is top-left corner
 - opacity: 0.0–1.0 (default 1.0)
-- radius: number (uniform) or [tl,tr,br,bl] (per-corner)`,
+- radius: number (uniform) or [tl,tr,br,bl] (per-corner)
+
+Frontier custom composition (you can SEE the render — compose freely, then verify):
+- ROTATE any layer with rotate:<deg> (aliases angle / rotation) — tilted stamps,
+  kickers, ghost numerals, corner badges. Rotates about the layer's center.
+- KEEP an exact custom layout (deliberate overlap, off-canvas bleed, layered depth,
+  asymmetry) by wrapping the whole composition in ONE locked group
+  {type:"group", locked:true, pos:[0,0,W,H], layers:[…]}. The engine then skips its
+  auto-rescue (no reflow / re-light / decollide / recenter) and renders your EXACT
+  placement + colors — including intentional overlap and faint ghost tints it would
+  otherwise "fix". You own the geometry; render_preview + iterate.
+- DATA VIZ on a custom canvas: {type:"chart", chart:"bar", data:[{label,value}]} is
+  rasterized to native bars so it shows in PNG/PDF — even nested inside a (locked)
+  group. Color it to match your canvas: accent (bars) · value_color · label_color ·
+  track_color; without them it falls back to theme tokens.
+- A dense DASHBOARD = one locked group holding bg + masthead + stat tiles (rect panel
+  + big number + mono label) + a colored chart + a footer rule. Group children carry
+  ABSOLUTE coords (the group applies no render transform).`,
 
   workflow: `# Workflow Details
 
