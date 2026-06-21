@@ -518,6 +518,13 @@ export function appendPage(args: {
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
   normalizeTextAliases(layers); // canonicalize verbose text:/size:/color: → content+style
+  // De-collide HAND-PLACED page text the same way the poster path does: a weak
+  // model stamps a carousel cover's title + subtitle at the same center, so they
+  // overprint into an illegible smear (suite-114 "Create Account" over its deck).
+  // No-op on a preset page (one group) or a clean layout; full-bleed rects are
+  // exempt. Pages previously skipped this — they were assumed to flow a preset.
+  const pageReflowed = decollideHandPlaced(layers, spec.document.width, spec.document.height);
+  if (pageReflowed) progress.push(pInfo(`Reflowed ${pageReflowed} overlapping layer(s) on the page`, 'hand-placed page text → no overprint'));
   // Never silently append an EMPTY page when content was MEANINGFULLY supplied
   // but coerced to nothing (e.g. a stringified shorthand that didn't parse) — a
   // blank slide would still report success and the dropped copy goes unnoticed,
