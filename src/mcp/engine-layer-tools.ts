@@ -375,6 +375,17 @@ export function addLayers(args: {
   const measured = setMeasuredTextHeights(activeLayers, spec.document.width);
   if (measured) progress.push(pInfo(`Measured ${measured} text height(s)`, 'set true wrapped height so overlap/overflow passes can see the box'));
 
+  // Cross-batch de-collide: the decollideHandPlaced(incoming) above sees ONLY the
+  // current batch, so a poster hand-placed across SEVERAL add_layers calls keeps
+  // the overlaps the per-batch pass couldn't see (suite-106: five numbered rows
+  // added in interleaved batches overprinted). Re-run on the MERGED set, but ONLY
+  // when the whole poster is hand-placed (no full-bleed preset group) so a preset's
+  // own composition is never reflowed.
+  if (!spec.pages && !activeLayers.some(l => isFullBleedContentPreset(l, spec.document.width, spec.document.height))) {
+    const recollided = decollideHandPlaced(activeLayers, spec.document.width, spec.document.height);
+    if (recollided) progress.push(pInfo(`Reflowed ${recollided} cross-batch overlapping layer(s)`, 'merged hand-placed text added across calls → no overprint'));
+  }
+
   // Pull any top-level content layer the model placed fully off-canvas back
   // inside (e.g. a title computed at y:1095 on a 1080 poster) — otherwise it
   // renders nowhere and the content is silently lost.
