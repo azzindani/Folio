@@ -898,5 +898,149 @@
   "n": 1,
   "tags": "poster·publichealth·a11y·aaa",
   "prompt": "A public-health poster for a clinic wall on the steps of proper hand-washing — and accessibility is the entire point. WCAG AAA contrast, very large type, clear numbered steps with simple supportive icons, nothing decorative fighting the message. Calm clinical blue, A3 portrait, readable by someone with low vision from a metre away."
+ },
+ {
+  "id": 101,
+  "project": "suite-101",
+  "title": "timeline·project·phases",
+  "job": "single",
+  "n": 1,
+  "tags": "timeline·project·phases",
+  "prompt": "I need a project timeline for our website redesign — 8 phases from kickoff to launch, each with a one-line description. Vertical, numbered, easy to follow at a glance. A4 portrait, goes in the kickoff deck and up on the wall."
+ },
+ {
+  "id": 102,
+  "project": "suite-102",
+  "title": "timeline·career·portfolio",
+  "job": "single",
+  "n": 1,
+  "tags": "timeline·career·portfolio",
+  "prompt": "career timeline for my portfolio — Intern 2016, Junior Designer 2018, Designer 2020, Senior 2022, Art Director 2024, a sentence on each. Instagram portrait, clean and minimal, the years alternating left and right down a centre line."
+ },
+ {
+  "id": 103,
+  "project": "suite-103",
+  "title": "roadmap·product·nownextlater",
+  "job": "single",
+  "n": 1,
+  "tags": "roadmap·product·nownextlater",
+  "prompt": "product roadmap, one page. Now / Next / Later / Someday across the top, three or four items under each. Make it read like a real roadmap, not a to-do list. Our colour is teal. A4."
+ },
+ {
+  "id": 104,
+  "project": "suite-104",
+  "title": "infographic·customerjourney·stages",
+  "job": "single",
+  "n": 1,
+  "tags": "infographic·customerjourney·stages",
+  "prompt": "customer journey infographic — Awareness, Consideration, Decision, Onboarding, Advocacy. Five numbered stages, a short blurb each, connected so it actually reads as a journey. Warm orange, friendly, A4."
+ },
+ {
+  "id": 105,
+  "project": "suite-105",
+  "title": "mindmap·goals·playful",
+  "job": "single",
+  "n": 1,
+  "tags": "mindmap·goals·playful",
+  "prompt": "a mind map poster for my 2025 goals — middle says GROWTH, six branches: Health, Money, Career, Learning, Relationships, Travel, a few words on each. Make it feel hand-made and playful — pastel, rounded cards with little arrows linking them."
+ },
+ {
+  "id": 106,
+  "project": "suite-106",
+  "title": "poster·habits·steps",
+  "job": "single",
+  "n": 1,
+  "tags": "poster·habits·steps",
+  "prompt": "poster explaining how a habit forms, 5 steps: trigger, routine, reward, repeat, identity. Numbered, one short sentence each. Playful but clean — black and white with one red accent and little hand-drawn arrows between the steps."
+ },
+ {
+  "id": 107,
+  "project": "suite-107",
+  "title": "newsletter·community·monthly",
+  "job": "single",
+  "n": 1,
+  "tags": "newsletter·community·monthly",
+  "prompt": "monthly community newsletter, A4. Masthead 'RIVERSIDE NEWS', a date, a short editor's intro, then four boxes: What's On, Volunteer Corner, Local Spotlight, Notices. Friendly, colourful, a bit of illustration in the corners."
+ },
+ {
+  "id": 108,
+  "project": "suite-108",
+  "title": "flyer·brandvalues·list",
+  "job": "single",
+  "n": 1,
+  "tags": "flyer·brandvalues·list",
+  "prompt": "one-pager of our five company values for the office wall — Integrity, Innovation, Customer Focus, Accountability, Collaboration. Each numbered with a short paragraph and a small icon. Professional, warm neutrals, A4 portrait."
+ },
+ {
+  "id": 109,
+  "project": "suite-109",
+  "title": "worksheet·allaboutme·kids",
+  "job": "single",
+  "n": 1,
+  "tags": "worksheet·allaboutme·kids",
+  "prompt": "an 'All About Me' worksheet for my Grade 2 class — name, age, where I'm from, favourite colour, favourite food, a fun fact. Cute and doodly, lots of space for kids to write, pastel."
+ },
+ {
+  "id": 110,
+  "project": "suite-110",
+  "title": "flyer·socialtips·cards",
+  "job": "single",
+  "n": 1,
+  "tags": "flyer·socialtips·cards",
+  "prompt": "flyer: 4 tips to boost Instagram engagement — hooks, short-form video, save-able content, ask questions. Each tip a little card with a number and a couple of bullet points. Modern, soft colours, A4."
+ },
+ {
+  "id": 111,
+  "project": "suite-111",
+  "title": "poster·artprocess·scrapbook",
+  "job": "single",
+  "n": 1,
+  "tags": "poster·artprocess·scrapbook",
+  "prompt": "poster about the creative process — 3 steps: the artist, the ideas, the artwork. I want it to look like a scrapbook pinned to a corkboard: torn paper, sticky notes, little doodles. Messy in a good way."
+ },
+ {
+  "id": 112,
+  "project": "suite-112",
+  "title": "newsletter·spring·garden",
+  "job": "single",
+  "n": 1,
+  "tags": "newsletter·spring·garden",
+  "prompt": "spring newsletter for the garden club, A4. A heading, a welcome note, then sections on what to plant now, an upcoming event, and a member tip. Soft florals, pinks and blues, light and pretty."
+ },
+ {
+  "id": 113,
+  "project": "suite-113",
+  "title": "roadmap·designprocess·ghostnumbers",
+  "job": "single",
+  "n": 1,
+  "tags": "roadmap·designprocess·ghostnumbers",
+  "prompt": "a 'Product Design' process poster — 5 big numbered steps from identifying the problem to launch and evaluation, a paragraph each, the step numbers huge and ghosted behind the text. Yellow header band, A4."
+ },
+ {
+  "id": 114,
+  "project": "suite-114",
+  "title": "carousel·onboarding·steps",
+  "job": "carousel",
+  "n": 5,
+  "tags": "carousel·onboarding·steps",
+  "prompt": "5-slide Instagram carousel walking new users through setup — create account, connect bank, set a goal, automate, track. One numbered step per slide, consistent, calm fintech blue."
+ },
+ {
+  "id": 115,
+  "project": "suite-115",
+  "title": "timeline·milestones·anniversary",
+  "job": "single",
+  "n": 1,
+  "tags": "timeline·milestones·anniversary",
+  "prompt": "company milestones poster for our 10-year anniversary — 2015 founded, 2017 first 1k customers, 2019 Series A, 2021 went global, 2023 100k users, 2025 today. A celebratory timeline, gold and navy, A2 for the lobby."
+ },
+ {
+  "id": 116,
+  "project": "suite-116",
+  "title": "mindmap·strategy·sixcards",
+  "job": "single",
+  "n": 1,
+  "tags": "mindmap·strategy·sixcards",
+  "prompt": "mind-mapping poster for a planning workshop — six labelled cards (Vision, Goals, Timeline, Actions, Resources, Review), each with two or three lines, joined by curving arrows. Big bold title up top, organic doodle shapes in the background, calm teal and cream."
  }
 ]
