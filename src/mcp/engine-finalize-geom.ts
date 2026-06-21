@@ -433,3 +433,20 @@ export function rasterizeBarChartLayer(l: Layer): Layer | null {
   });
   return { id: cid, type: 'group', z: typeof o['z'] === 'number' ? (o['z'] as number) : 0, x, y, width: w, height: h, layers: kids } as unknown as Layer;
 }
+
+// Rasterize every bar chart in the tree — including ones nested inside a group or
+// auto_layout — so a grouped/locked dashboard's charts aren't blank in PNG/PDF.
+// Rasterization is a RENDER-FIDELITY transform (foreignObject → rects), not a
+// layout rescue, so it must reach into containers the finalize passes otherwise
+// skip. Group children already carry absolute coords, so the nested chart's x/y
+// rasterize correctly in place.
+export function rasterizeChartsDeep(layers: Layer[]): number {
+  let n = 0;
+  for (let i = 0; i < layers.length; i++) {
+    const native = rasterizeBarChartLayer(layers[i]);
+    if (native) { layers[i] = native; n++; continue; }
+    const kids = (layers[i] as unknown as Record<string, unknown>)['layers'];
+    if (Array.isArray(kids)) n += rasterizeChartsDeep(kids as Layer[]);
+  }
+  return n;
+}

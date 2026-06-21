@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rasterizeBarChartLayer } from './engine-finalize-geom';
+import { rasterizeBarChartLayer, rasterizeChartsDeep } from './engine-finalize-geom';
 import type { Layer } from '../schema/types';
 
 // A hand-placed bar chart (frontier dashboards) must rasterize to rect bars AND
@@ -35,5 +35,33 @@ describe('rasterizeBarChartLayer — colors for hand-placed frontier dashboards'
     expect(g).not.toBeNull();
     expect(barOf(g as Layer).every(b => fillColor(b) === '#FF3D00')).toBe(true);
     expect(valOf(g as Layer).every(v => textColor(v) === '#FAFAFA')).toBe(true);
+  });
+});
+
+describe('rasterizeChartsDeep — reaches charts nested in a (locked) group', () => {
+  const data = [{ label: 'Rust', value: 83 }, { label: 'Go', value: 68 }];
+
+  it('rasterizes a chart inside a group so a grouped/locked dashboard is not blank', () => {
+    const layers = [
+      { id: 'dash', type: 'group', locked: true, x: 0, y: 0, width: 1080, height: 1000, layers: [
+        { id: 'bg', type: 'rect', x: 0, y: 0, width: 1080, height: 1000, fill: { type: 'solid', color: '#0E0F13' } },
+        { id: 'c', type: 'chart', x: 60, y: 200, width: 800, height: 400, chart_type: 'bar', data },
+      ] },
+    ] as unknown as Layer[];
+    const n = rasterizeChartsDeep(layers);
+    expect(n).toBe(1);
+    // the chart child is now a group of rect bars (no chart layer left in the tree)
+    const dashKids = (layers[0] as unknown as { layers: Array<Record<string, unknown>> }).layers;
+    const chartChild = dashKids.find(l => l['id'] === 'c') as Record<string, unknown>;
+    expect(chartChild['type']).toBe('group');
+    expect(dashKids.some(l => l['type'] === 'chart')).toBe(false);
+  });
+
+  it('rasterizes a top-level chart too (parity with the old flat pass)', () => {
+    const layers = [
+      { id: 'c', type: 'chart', x: 0, y: 0, width: 800, height: 300, chart_type: 'bar', data },
+    ] as unknown as Layer[];
+    expect(rasterizeChartsDeep(layers)).toBe(1);
+    expect((layers[0] as unknown as Record<string, unknown>)['type']).toBe('group');
   });
 });

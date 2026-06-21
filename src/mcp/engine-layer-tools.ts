@@ -21,7 +21,7 @@ import { honorPosterRatio } from './poster-ratio';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import type { NextAction } from './types';
 
-import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeBarChartLayer, trimTrailingDeadBand } from './engine-finalize-geom';
+import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
 import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-presets';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText } from './engine-finalize-legibility';
@@ -233,12 +233,10 @@ export function addLayers(args: {
   const textAliased = normalizeTextAliases(incoming);
   if (textAliased) progress.push(pInfo(`Normalized ${textAliased} verbose text alias(es)`, 'text:/size:/color: → canonical content + style'));
 
-  // Draw a foreignObject BAR chart natively so it isn't blank in PNG/PDF export.
-  let rasterizedCharts = 0;
-  for (let i = 0; i < incoming.length; i++) {
-    const native = rasterizeBarChartLayer(incoming[i]);
-    if (native) { incoming[i] = native; rasterizedCharts++; }
-  }
+  // Draw a foreignObject BAR chart natively so it isn't blank in PNG/PDF export —
+  // recursing into groups/auto_layouts so a grouped or locked dashboard's charts
+  // rasterize too (render fidelity, not a layout rescue, so locking doesn't skip it).
+  const rasterizedCharts = rasterizeChartsDeep(incoming);
   if (rasterizedCharts) progress.push(pInfo(`Rasterized ${rasterizedCharts} bar chart(s)`, 'foreignObject charts render BLANK in PNG → drew native rect bars'));
 
   // Bake any local-framed hand-authored group offset into its children (the
