@@ -384,6 +384,9 @@ export function fontCharFactor(font: string): number {
   const f = (font || '').toLowerCase();
   if (/mono|courier|consolas/.test(f)) return 0.6;
   if (/bebas|anton|oswald|archivo narrow|condensed|teko|fjalla/.test(f)) return 0.4;
+  // Wide display faces fit fewer chars/line → under-reserve height without this.
+  if (/audiowide|bungee|wallpoet|monoton|syncopate|black ops/.test(f)) return 0.82;
+  if (/orbitron|michroma|chakra petch|aldrich|electrolize/.test(f)) return 0.70;
   return 0.54;
 }
 

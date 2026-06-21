@@ -485,6 +485,13 @@ export function fontCharFactor(font?: string): number {
   const f = font.toLowerCase();
   if (/mono|courier|consol/.test(f)) return 0.6;
   if (/bebas|anton|oswald|archivo narrow|condensed/.test(f)) return 0.42;
+  // Extra-wide display faces (Audiowide runs ~1.0/char in caps) — without a
+  // heavier factor a long headline WORD stays huge and bleeds off the right edge
+  // (suite-011 "A MIDSUMME[R]"). Shrink hard.
+  if (/audiowide|bungee|wallpoet|monoton|syncopate|black ops/.test(f)) return 0.82;
+  // Wide geometric/techno faces, wider than the 0.54 average (suite-002 Orbitron
+  // "SOURDOUGH" clipped off the edge). Heavier than default, lighter than extra-wide.
+  if (/orbitron|michroma|chakra petch|aldrich|electrolize/.test(f)) return 0.70;
   return 0.54;
 }
 // Shrink a headline so its LONGEST WORD fits the column. A word can't wrap, so an
