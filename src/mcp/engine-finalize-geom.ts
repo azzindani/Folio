@@ -133,10 +133,21 @@ export function trimTrailingDeadBand(layers: Layer[], docW: number, docH: number
       if (!l) continue;
       const kids = (l as unknown as Record<string, unknown>)['layers'];
       if (Array.isArray(kids)) { visit(kids as Layer[]); continue; }    // descend; the group box itself isn't content
-      if (l.type !== 'text' && l.type !== 'icon' && l.type !== 'image') continue;
-      if (l.type === 'text' && !layerText(l).trim()) continue;          // an empty text box isn't content
+      // Count text/icon/image AND backing shapes (cards, panels, bands) toward the
+      // content extent: a card grid's bottom row is defined by the card RECTS, not
+      // their text, so a text-only measure trimmed the canvas straight through the
+      // bottom cards (clipping their rounded corners).
+      const ct = l.type;
+      const isContent = ct === 'text' || ct === 'icon' || ct === 'image'
+        || ct === 'rect' || ct === 'circle' || ct === 'ellipse' || ct === 'path' || ct === 'polygon';
+      if (!isContent) continue;
+      if (ct === 'text' && !layerText(l).trim()) continue;              // an empty text box isn't content
       const b = layerBBox(l);
       if (b.b <= b.y) continue;
+      // a full-canvas backdrop shape is BACKGROUND, not content extent — skip it, else
+      // `bottom` is always the page height and nothing ever trims.
+      if (ct !== 'text' && ct !== 'icon' && ct !== 'image'
+        && (b.r - b.x) >= docW * 0.9 && (b.b - b.y) >= docH * 0.9) continue;
       top = Math.min(top, b.y); bottom = Math.max(bottom, b.b); found = true;
     }
   };
