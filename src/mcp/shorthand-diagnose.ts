@@ -24,6 +24,7 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // chart / kpi_card / component
   'chart', 'data', 'spec', 'value', 'label', 'delta', 'format', 'ref', 'slots', 'variant', 'overrides',
   'bar_color', 'track_color', 'value_color', 'label_color', // hand-placed chart colors (frontier dashboards)
+  'colors', 'line_color', // donut slice palette + line color (hand-placed donut/line)
   // feature_grid preset
   'items', 'features', 'title', 'subtitle', 'card_fill', 'accent', 'text_color', 'muted', 'bg', 'columns',
   'preset', 'bg_gradient', 'benefit',

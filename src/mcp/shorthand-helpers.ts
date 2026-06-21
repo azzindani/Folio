@@ -386,19 +386,24 @@ export function expandStroke(stroke: string | { color: string; width: number }):
   return stroke;
 }
 
-// Optional colors a model can put on a hand-placed chart so the rasterized bars
-// match a custom canvas (rasterizeBarChartLayer reads these). `accent` aliases the
-// bar color; `text_color`/`color` alias the label color. Only provided keys are
-// returned — the rasterizer falls back to theme tokens for the rest.
-export function chartColorFields(sh: ShorthandLayer): Record<string, string> {
+// Optional colors a model can put on a hand-placed chart so the rasterized chart
+// matches a custom canvas (rasterizeBarChartLayer + rasterizeNonBarChartLayer read
+// these). `accent` aliases the bar/line color; `text_color`/`color` alias the label
+// color; `colors` is the donut slice palette. Only provided keys are returned — the
+// rasterizer falls back to theme tokens for the rest.
+export function chartColorFields(sh: ShorthandLayer): Record<string, unknown> {
   const cr = sh as unknown as Record<string, unknown>;
-  const out: Record<string, string> = {};
+  const out: Record<string, unknown> = {};
   const bar = cr['bar_color'] ?? cr['accent'];
   const lbl = cr['label_color'] ?? cr['text_color'] ?? cr['color'];
   if (typeof bar === 'string') out['bar_color'] = bar;
   if (typeof cr['track_color'] === 'string') out['track_color'] = cr['track_color'] as string;
   if (typeof lbl === 'string') out['label_color'] = lbl;
   if (typeof cr['value_color'] === 'string') out['value_color'] = cr['value_color'] as string;
+  // donut/line: an explicit accent (line + donut ramp seed) and a donut slice palette
+  if (typeof cr['accent'] === 'string') out['accent'] = cr['accent'];
+  if (typeof cr['line_color'] === 'string') out['line_color'] = cr['line_color'];
+  if (Array.isArray(cr['colors'])) out['colors'] = (cr['colors'] as unknown[]).filter(c => typeof c === 'string');
   return out;
 }
 

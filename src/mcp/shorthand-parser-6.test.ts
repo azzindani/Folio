@@ -99,6 +99,21 @@ describe('chart / kpi_card / component shorthand (data-viz + reuse)', () => {
     expect(k.border_radius).toBe(12);
   });
 
+  it('passes a donut slice palette + accent through (hand-placed data viz colors)', () => {
+    const [d] = expandShorthandLayers(coerceShorthandLayers({
+      don: { type: 'chart', chart: 'donut', pos: [0, 0, 440, 380], data: [{ label: 'A', value: 6 }, { label: 'B', value: 4 }], colors: ['#FF3D00', '#1E88E5'], accent: '#FF3D00' },
+    })) as Array<{ type?: string; colors?: string[]; accent?: string }>;
+    expect(d.type).toBe('chart');
+    expect(d.colors).toEqual(['#FF3D00', '#1E88E5']);
+    expect(d.accent).toBe('#FF3D00');
+  });
+
+  it('does not flag donut colors / line_color as unrecognized', () => {
+    expect(diagnoseShorthandKeys([
+      { id: 'd', type: 'chart', chart: 'donut', pos: [0, 0, 440, 380], data: [{ label: 'A', value: 1 }], colors: ['#FF3D00'], line_color: '#FF3D00' },
+    ] as unknown as ShorthandLayer[])).toEqual([]);
+  });
+
   it('passes component ref/slots/variant through', () => {
     const [c] = expandShorthandLayers(coerceShorthandLayers({
       inst: { type: 'component', pos: [0, 0, 300, 200], ref: 'feature-card', slots: { title: 'Fast' }, variant: 'dark' },

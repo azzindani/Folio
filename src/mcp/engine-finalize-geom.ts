@@ -3,6 +3,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 
 import { isDeliberatePosterRatio } from './poster-ratio';
+import { rasterizeNonBarChartLayer } from './engine-finalize-charts';
 
 export function collectLayerIds(spec: DesignSpec): Set<string> {
   const ids = new Set<string>();
@@ -443,7 +444,7 @@ export function rasterizeBarChartLayer(l: Layer): Layer | null {
 export function rasterizeChartsDeep(layers: Layer[]): number {
   let n = 0;
   for (let i = 0; i < layers.length; i++) {
-    const native = rasterizeBarChartLayer(layers[i]);
+    const native = rasterizeBarChartLayer(layers[i]) ?? rasterizeNonBarChartLayer(layers[i]);
     if (native) { layers[i] = native; n++; continue; }
     const kids = (layers[i] as unknown as Record<string, unknown>)['layers'];
     if (Array.isArray(kids)) n += rasterizeChartsDeep(kids as Layer[]);
