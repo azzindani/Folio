@@ -485,6 +485,12 @@ Frontier custom composition (you can SEE the render — compose freely, then ver
   rasterized to native bars so it shows in PNG/PDF — even nested inside a (locked)
   group. Color it to match your canvas: accent (bars) · value_color · label_color ·
   track_color; without them it falls back to theme tokens.
+- DIAGRAMS / FLOWCHARTS: join two anchors with a connector — {type:"connector",
+  from:[x,y], to:[x,y], arrow:"end"|"both", curve:"straight"|"elbow"|"arc"|"s",
+  bend:0-1, stroke:{color,width}}. The engine draws the curve + arrowhead and never
+  reflows a connector or its nodes. A LABEL centered inside a node rect stays inside
+  it (label-on-shape is preserved, not ejected), so hand-place nodes (rect + centered
+  text) at any positions and wire them — no locked group needed for a spaced-out graph.
 - A dense DASHBOARD = one locked group holding bg + masthead + stat tiles (rect panel
   + big number + mono label) + a colored chart + a footer rule. Group children carry
   ABSOLUTE coords (the group applies no render transform).`,
