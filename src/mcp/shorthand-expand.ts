@@ -4,7 +4,7 @@ import type { Layer, TextContent, TextStyle } from '../schema/types';
 
 import { shapePath, type ShapeName, type ShapeBox } from '../engine/shape-paths';
 
-import { shStr, ShorthandLayer, expandPosition, expandFill, expandStroke, mapAlignItems, mapJustify, textTypography } from './shorthand-helpers';
+import { shStr, ShorthandLayer, expandPosition, expandFill, expandStroke, mapAlignItems, mapJustify, textTypography, chartColorFields } from './shorthand-helpers';
 import { buildChartSpec, buildFeatureGrid, buildDecor, buildEditorial, buildSplit } from './shorthand-presets-a';
 import { buildList, buildStat, buildEvent, buildSections } from './shorthand-presets-b';
 import { buildPricing, buildVersus } from './shorthand-presets-c';
@@ -297,6 +297,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
         ...base,
         type: 'chart',
         spec: buildChartSpec(sh),
+        ...chartColorFields(sh), // optional bar/track/label/value colors for hand-placed (rasterized) charts
       } as Layer;
 
     case 'kpi_card':

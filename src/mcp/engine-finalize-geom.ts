@@ -411,16 +411,25 @@ export function rasterizeBarChartLayer(l: Layer): Layer | null {
   const labelW = Math.round(w * 0.26), valW = Math.round(w * 0.12);
   const trackX = x + labelW, trackW = Math.max(20, w - labelW - valW);
   const fs = Math.max(13, Math.min(28, Math.round(rowH * 0.3)));
+  // Model-supplied colors win (a frontier dashboard sets the palette); else theme
+  // tokens. The data VALUE defaults to $text, not $muted — a muted value is the
+  // most-important number rendered illegibly, and on a hand-set canvas it re-lights
+  // to a clashing color.
+  const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v : null);
+  const barColor = str(o['bar_color']) ?? '$accent';
+  const trackColor = str(o['track_color']) ?? '$muted';
+  const labelColor = str(o['label_color']) ?? '$text';
+  const valueColor = str(o['value_color']) ?? labelColor;
   const cid = String(o['id'] ?? 'chart');
   const kids: Layer[] = [];
   let k = 0;
   items.forEach((it, i) => {
     const ry = Math.round(y + i * rowH + (rowH - barH) / 2);
     const bw = Math.max(4, Math.round(trackW * (Math.abs(it.value) / max)));
-    kids.push({ id: `${cid}_l${i}`, type: 'text', z: k++, x, y: ry + Math.round((barH - fs) / 2) - 2, width: labelW - 12, height: barH + 6, content: { type: 'plain', value: it.label }, style: { font_size: fs, font_weight: 600, color: '$text', line_height: 1.1 } } as unknown as Layer);
-    kids.push({ id: `${cid}_t${i}`, type: 'rect', z: k++, x: trackX, y: ry, width: trackW, height: barH, opacity: 0.14, fill: { type: 'solid', color: '$muted' }, radius: 4 } as unknown as Layer);
-    kids.push({ id: `${cid}_b${i}`, type: 'rect', z: k++, x: trackX, y: ry, width: bw, height: barH, fill: { type: 'solid', color: '$accent' }, radius: 4 } as unknown as Layer);
-    kids.push({ id: `${cid}_v${i}`, type: 'text', z: k++, x: trackX + bw + 8, y: ry + Math.round((barH - fs) / 2), width: valW + 40, height: barH, content: { type: 'plain', value: String(it.value) }, style: { font_family: 'IBM Plex Mono', font_size: fs, font_weight: 700, color: '$muted' } } as unknown as Layer);
+    kids.push({ id: `${cid}_l${i}`, type: 'text', z: k++, x, y: ry + Math.round((barH - fs) / 2) - 2, width: labelW - 12, height: barH + 6, content: { type: 'plain', value: it.label }, style: { font_size: fs, font_weight: 600, color: labelColor, line_height: 1.1 } } as unknown as Layer);
+    kids.push({ id: `${cid}_t${i}`, type: 'rect', z: k++, x: trackX, y: ry, width: trackW, height: barH, opacity: 0.14, fill: { type: 'solid', color: trackColor }, radius: 4 } as unknown as Layer);
+    kids.push({ id: `${cid}_b${i}`, type: 'rect', z: k++, x: trackX, y: ry, width: bw, height: barH, fill: { type: 'solid', color: barColor }, radius: 4 } as unknown as Layer);
+    kids.push({ id: `${cid}_v${i}`, type: 'text', z: k++, x: trackX + bw + 8, y: ry + Math.round((barH - fs) / 2), width: valW + 40, height: barH, content: { type: 'plain', value: String(it.value) }, style: { font_family: 'IBM Plex Mono', font_size: fs, font_weight: 700, color: valueColor } } as unknown as Layer);
   });
   return { id: cid, type: 'group', z: typeof o['z'] === 'number' ? (o['z'] as number) : 0, x, y, width: w, height: h, layers: kids } as unknown as Layer;
 }
