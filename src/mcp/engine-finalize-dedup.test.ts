@@ -1,6 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { dedupOverlappingDuplicates, normalizeTextAliases } from './engine-finalize-geom';
+import { dedupOverlappingDuplicates, normalizeTextAliases, trimTrailingDeadBand } from './engine-finalize-geom';
 import type { Layer } from '../schema/types';
+
+describe('trimTrailingDeadBand — shrink a top-anchored poster on a non-standard canvas', () => {
+  const DW = 1080, DH = 1800;   // 0.60 — NOT a standard poster ratio
+  const tx = (id: string, y: number, h: number): Layer =>
+    ({ id, type: 'text', z: 1, x: 80, y, width: 920, height: h, content: { type: 'plain', value: 'x' } } as unknown as Layer);
+
+  it('trims a top-anchored sparse poster + clamps its full-canvas bg', () => {
+    const bg = { id: 'bg', type: 'rect', z: 0, x: 0, y: 0, width: DW, height: DH, fill: { type: 'solid', color: '#FAD' } } as unknown as Layer;
+    const layers = [bg, tx('t1', 60, 90), tx('t2', 200, 60), tx('t3', 320, 60)]; // content y60..380
+    const newH = trimTrailingDeadBand(layers, DW, DH);
+    expect(newH).toBeGreaterThan(380);
+    expect(newH).toBeLessThan(560);             // ~content bottom (380) + a margin
+    expect((bg as unknown as { height: number }).height).toBe(newH);   // bg clamped
+  });
+
+  it('respects a DELIBERATE ratio (4:5) — a sparse Instagram post stays 4:5', () => {
+    const layers = [tx('t1', 60, 90), tx('t2', 200, 60)];
+    expect(trimTrailingDeadBand(layers, 1080, 1350)).toBe(0);   // 4:5 → never trimmed
+  });
+
+  it('leaves a vertically-centered composition alone (large top gap)', () => {
+    const t = tx('mid', 800, 200);              // centered on 1800 → topGap 800 > 15%
+    expect(trimTrailingDeadBand([t], DW, DH)).toBe(0);
+  });
+
+  it('leaves a content-filling poster alone (no dead band)', () => {
+    const layers = [tx('a', 60, 90), tx('b', 800, 200), tx('c', 1600, 120)];
+    expect(trimTrailingDeadBand(layers, DW, DH)).toBe(0);
+  });
+
+  it('ignores a shape-only poster (no text/icon/image content)', () => {
+    const r = { id: 'r', type: 'rect', z: 1, x: 100, y: 100, width: 400, height: 400, fill: { type: 'solid', color: '#000' } } as unknown as Layer;
+    expect(trimTrailingDeadBand([r], DW, DH)).toBe(0);
+  });
+});
 
 describe('normalizeTextAliases — verbose text:/flat-style → canonical content+style', () => {
   it('folds a bare text: alias + flat font/size/color into content + style (the blank-timeline fix)', () => {
