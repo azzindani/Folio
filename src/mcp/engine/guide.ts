@@ -481,10 +481,15 @@ Frontier custom composition (you can SEE the render — compose freely, then ver
   auto-rescue (no reflow / re-light / decollide / recenter) and renders your EXACT
   placement + colors — including intentional overlap and faint ghost tints it would
   otherwise "fix". You own the geometry; render_preview + iterate.
-- DATA VIZ on a custom canvas: {type:"chart", chart:"bar", data:[{label,value}]} is
-  rasterized to native bars so it shows in PNG/PDF — even nested inside a (locked)
-  group. Color it to match your canvas: accent (bars) · value_color · label_color ·
-  track_color; without them it falls back to theme tokens.
+- DATA VIZ on a custom canvas: {type:"chart", chart:"bar"|"donut"|"line", data:[…]}
+  rasterizes to native shapes so it shows in PNG/PDF — even nested inside a (locked)
+  group. bar/donut want [{label,value}]; line wants [{x,y}]. Color it to match your
+  canvas: bar → bar_color/value_color/label_color/track_color; donut → colors:[hex,…]
+  (slice palette) + label_color/value_color; line → accent (line+area). Falls back to
+  theme tokens. A donut draws arcs + a %-legend; a line draws a polyline + area + dots.
+- BLEED a decorative shape (an accent circle, a half-bleed band) off any canvas edge
+  freely — it's kept as scenery (not reflowed, not clamped, never a collision floor),
+  so it won't shove your content. No locked group needed for a single bleeding accent.
 - DIAGRAMS / FLOWCHARTS: join two anchors with a connector — {type:"connector",
   from:[x,y], to:[x,y], arrow:"end"|"both", curve:"straight"|"elbow"|"arc"|"s",
   bend:0-1, stroke:{color,width}}. The engine draws the curve + arrowhead and never
