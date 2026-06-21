@@ -21,7 +21,7 @@ import { honorPosterRatio } from './poster-ratio';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import type { NextAction } from './types';
 
-import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-geom';
+import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, dropCollidingMotifs, rasterizeBarChartLayer, CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates, trimTrailingDeadBand } from './engine-finalize-geom';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText } from './engine-finalize-legibility';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
@@ -421,6 +421,12 @@ export function addLayers(args: {
   if (spec.pages) {
     const bgAdded = ensureDeckPageBackgrounds(spec.pages, spec.document.width, spec.document.height);
     if (bgAdded) progress.push(pInfo(`Added a deck background to ${bgAdded} slide(s)`, 'matched the shared deck color so the cover is cohesive'));
+  } else {
+    // Trim a trailing dead band: a top-anchored poster whose content fills only the
+    // upper canvas (a flow preset that over-measured, or sparse hand-placed content)
+    // — shrink the page to the real content so there's no empty lower half.
+    const trimmed = trimTrailingDeadBand(activeLayers, spec.document.width, spec.document.height);
+    if (trimmed) { progress.push(pInfo(`Trimmed the canvas to ${trimmed}px`, 'removed a dead band of background below the last content')); spec.document.height = trimmed; }
   }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];

@@ -4,6 +4,7 @@ import type { DesignSpec, Layer } from '../schema/types';
 import { estTextHeight } from './shorthand-parser';
 
 import { fontCharFactor } from './engine-finalize-text';
+import { isDeliberatePosterRatio } from './poster-ratio';
 
 export function collectLayerIds(spec: DesignSpec): Set<string> {
   const ids = new Set<string>();
@@ -109,6 +110,62 @@ export function normalizeTextAliases(incoming: Layer[]): number {
   };
   visit(incoming);
   return n;
+}
+
+// A poster whose real content fills only the TOP of an over-tall canvas strands a
+// dead band of background below the last element: a flow preset that over-measured
+// its own height (buildSections `naturalH` ≈ 1.8× the true extent — suite-113), or
+// a sparse hand-placed poster (suite-112/115). Shrink the DOCUMENT to the true
+// content extent + a bottom margin matching the top, and clamp full-canvas
+// backdrops/groups to it. ONLY when the composition is clearly TOP-ANCHORED — a
+// centered/balanced layout has a matching top gap and is left untouched. Measures
+// MEANINGFUL leaves (text/icon/image) so a background wash or corner-decor shape
+// never counts as content (conservative: under-trim is benign, over-trim clips).
+// Returns the new height, or 0 if unchanged. Poster-only — never a fixed slide.
+export function trimTrailingDeadBand(layers: Layer[], docW: number, docH: number): number {
+  // Honor a DELIBERATE poster ratio (4:5, 9:16, 1:1, A4, …): a sparse 4:5 Instagram
+  // post must STAY 4:5, not become a strip — its whitespace is the format the user
+  // chose, not a dead band (honorPosterRatio's domain). Only rescue genuinely
+  // mismatched / non-standard canvases the model picked by accident.
+  if (isDeliberatePosterRatio(docW, docH)) return 0;
+  let top = Infinity, bottom = -Infinity, found = false;
+  const visit = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      if (!l) continue;
+      const kids = (l as unknown as Record<string, unknown>)['layers'];
+      if (Array.isArray(kids)) { visit(kids as Layer[]); continue; }    // descend; the group box itself isn't content
+      if (l.type !== 'text' && l.type !== 'icon' && l.type !== 'image') continue;
+      if (l.type === 'text' && !layerText(l).trim()) continue;          // an empty text box isn't content
+      const b = layerBBox(l);
+      if (b.b <= b.y) continue;
+      top = Math.min(top, b.y); bottom = Math.max(bottom, b.b); found = true;
+    }
+  };
+  visit(layers);
+  if (!found || bottom <= 0) return 0;
+  const topGap = Math.max(0, top), bottomGap = docH - bottom;
+  // Fire ONLY on genuinely TOP-ANCHORED content (a masthead/title near the top with
+  // a dead band below). A centered/balanced layout — buildSections' `topPad` cover,
+  // a deliberate minimalist poster — has a large top gap and is left entirely alone.
+  if (topGap > docH * 0.15) return 0;
+  if (bottomGap <= docH * 0.12) return 0;       // no meaningful dead band
+  const margin = Math.max(topGap, Math.round(docW * 0.05));
+  const newH = Math.round(bottom + margin);
+  if (newH >= docH - Math.round(docH * 0.02)) return 0;  // negligible shrink
+  // Clamp full-canvas backdrops + the full-bleed preset group (and its bg children)
+  // so nothing declares a height past the trimmed page.
+  const clamp = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      if (!l) continue;
+      const o = l as unknown as Record<string, unknown>;
+      const b = layerBBox(l);
+      const fullCanvas = (b.r - b.x) >= docW * 0.9 && (b.b - b.y) >= docH * 0.9;
+      if (fullCanvas && typeof o['height'] === 'number' && (o['height'] as number) > newH) o['height'] = newH;
+      if (Array.isArray(o['layers'])) clamp(o['layers'] as Layer[]);
+    }
+  };
+  clamp(layers);
+  return newH;
 }
 
 // A model may hand-author a `group` at (gx,gy) and position its children in the
