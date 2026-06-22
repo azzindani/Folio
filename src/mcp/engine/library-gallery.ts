@@ -60,7 +60,8 @@ function card(d: LibraryDesign, project: string, href: string | null, key: strin
     ? `<img loading="lazy" src="${esc(href)}" alt="">`
     : `<div class="ph">${esc(d.type)}</div>`;
   const opts = cols.filter((c, i, a) => a.indexOf(c) === i)
-    .map(c => `<option value="${esc(c)}"${c === col ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    .map(c => `<option value="${esc(c)}"${c === col ? ' selected' : ''}>${esc(c)}</option>`).join('')
+    + `<option value="__new__">+ New collection…</option>`;
   return `<div class="card" data-name="${esc((d.name + ' ' + d.type + ' ' + project).toLowerCase())}" data-type="${esc(d.type.toLowerCase())}" data-col="${esc(col)}" data-key="${esc(key)}">
     <a class="open" href="${esc(link)}" target="_blank" rel="noopener">
       <div class="thumb">${thumb}</div>
@@ -101,21 +102,27 @@ h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:#8A93A6;font-size:
 .col-chip,.chip{white-space:nowrap}.mv{font-size:14px;padding:7px 8px}}`;
 
 const SCRIPT = `const q=document.getElementById('q'),cards=[...document.querySelectorAll('.card')];
-const chips=[...document.querySelectorAll('.chip')],colChips=[...document.querySelectorAll('.col-chip')];
+const chips=[...document.querySelectorAll('.chip')],colsEl=document.querySelector('.cols');
 let type='',col='';
-function counts(){for(const ch of colChips){const v=ch.dataset.c||'';const n=v?cards.filter(c=>c.dataset.col===v).length:cards.length;const s=ch.querySelector('.ct');if(s)s.textContent=n;}}
+const colChipEls=()=>[...colsEl.querySelectorAll('.col-chip')];
+function counts(){for(const ch of colChipEls()){const v=ch.dataset.c||'';const n=v?cards.filter(c=>c.dataset.col===v).length:cards.length;const s=ch.querySelector('.ct');if(s)s.textContent=n;}}
 function apply(){const t=q.value.toLowerCase().trim();let any=false;
 for(const c of cards){const m=(!t||c.dataset.name.includes(t))&&(!type||c.dataset.type===type)&&(!col||c.dataset.col===col);c.style.display=m?'':'none';if(m)any=true;}
 document.getElementById('empty').style.display=any?'none':'block';}
 q.addEventListener('input',apply);
 for(const ch of chips){ch.addEventListener('click',()=>{const v=ch.dataset.t||'';type=type===v?'':v;for(const x of chips)x.classList.toggle('on',x.dataset.t===type&&type!=='');apply();});}
-for(const ch of colChips){ch.addEventListener('click',()=>{const v=ch.dataset.c||'';col=(v===''?'':(col===v?'':v));for(const x of colChips)x.classList.toggle('on',(x.dataset.c||'')===col);apply();});}
-for(const c of cards){const sel=c.querySelector('.mv');if(!sel)continue;
-sel.addEventListener('change',async()=>{const to=sel.value,prev=c.dataset.col;c.classList.add('saving');
+colsEl.addEventListener('click',e=>{const ch=e.target.closest('.col-chip');if(!ch)return;const v=ch.dataset.c||'';col=(v===''?'':(col===v?'':v));for(const x of colChipEls())x.classList.toggle('on',(x.dataset.c||'')===col);apply();});
+function ensureTab(name){if(colChipEls().some(ch=>ch.dataset.c===name))return;const sp=document.createElement('span');sp.className='col-chip';sp.dataset.c=name;sp.innerHTML=name+' <span class="ct"></span>';const uns=colChipEls().find(ch=>(ch.dataset.c||'')==='Unsorted');colsEl.insertBefore(sp,uns||null);}
+function addOptionEverywhere(name){for(const c of cards){const s=c.querySelector('.mv');if(!s||[...s.options].some(o=>o.value===name))continue;const o=document.createElement('option');o.value=name;o.textContent=name;s.insertBefore(o,s.querySelector('option[value="__new__"]'));}}
+async function save(c,sel,to){const prev=c.dataset.col;c.classList.add('saving');
 try{const r=await fetch('/__library/assign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({design:c.dataset.key,collection:to})});
-if(!r.ok)throw 0;const j=await r.json();c.dataset.col=j.collection;}
+if(!r.ok)throw 0;const j=await r.json();c.dataset.col=j.collection;sel.value=j.collection;}
 catch(e){sel.value=prev;alert('Could not save — make sure you are still signed in.');}
-c.classList.remove('saving');counts();apply();});}
+c.classList.remove('saving');counts();apply();}
+for(const c of cards){const sel=c.querySelector('.mv');if(!sel)continue;
+sel.addEventListener('change',()=>{let to=sel.value;
+if(to==='__new__'){const name=(prompt('New collection name:')||'').trim();if(!name){sel.value=c.dataset.col;return;}ensureTab(name);addOptionEverywhere(name);sel.value=name;to=name;}
+save(c,sel,to);});}
 counts();apply();`;
 
 export function exportLibraryGallery(args: { output_path?: string; max_thumbnails?: number; search?: string; type?: string }): ToolResult {
