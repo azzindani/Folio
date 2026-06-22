@@ -25,7 +25,7 @@ import type { NextAction } from './types';
 import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
 import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-presets';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
-import { fixInvisibleText } from './engine-finalize-legibility';
+import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
 
 const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
@@ -487,6 +487,12 @@ export function addLayers(args: {
   })();
   const relit = fixInvisibleText(activeLayers, spec.document.width, spec.document.height, relitTheme);
   if (relit) progress.push(pInfo(`Re-lit ${relit} near-invisible text(s)`, 'text that rendered invisible on its background was recolored to read'));
+
+  // Mechanical typographic fix: ALL-CAPS always needs ≥0.06em tracking (the #1
+  // AI tell in blind-model output). Adds it only where missing; never overrides
+  // the model's own tracking/look (§0.4 — engine assists, doesn't redesign).
+  const tracked = fixCapsTracking(activeLayers);
+  if (tracked) progress.push(pInfo(`Tracked ${tracked} ALL-CAPS text(s)`, 'caps without letter-spacing read cramped/generic — added ~0.06em'));
 
   // Re-center a title the model anchored at the canvas mid-line (docW/2 used as a
   // left edge → title stuck in the right half with an empty left).
