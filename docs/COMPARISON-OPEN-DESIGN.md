@@ -228,8 +228,8 @@ dependency, deployable via `docker cp src` (no editor rebuild).
 | **A4** three-axis model | ✅ Folded into A1 | The `craft` index frames preset(shape) × theme(brand) × craft(universal). |
 | **A5** 80/20 soul + identifiability test | ✅ Folded into A1 | In the `craft` index; quotable in the guide. |
 | **A3** richer theme format | ✅ Schema + exemplars | `ThemeSpec` gained optional `atmosphere` / `type_ladder` (`TypeLadderRole[]`) / `section_rhythm` (non-breaking, non-rendering). Populated for `dark-tech`, `editorial-cream`, `swiss-international`. `apply_theme` now returns a `brand` block + a "Brand voice" progress note so the model inherits the voice + an authored type ladder. |
-| A3 — `DESIGN.md` bulk import | ⏳ Deferred | Schema is ready; importing a curated 10–15 brand subset is a follow-up (a converter from OD's `tokens.css` + prose → Folio theme YAML). Attribute as "inspired-by". |
-| **A6** PPTX export | ⏳ Deferred | Needs a new dependency (`pptxgenjs`) → bundle/ops impact; hold for an explicit greenlight + real editable-deck demand. |
+| A3 — `DESIGN.md` bulk import | ✅ Shipped | `tools/import-design-systems.mjs` parses OD `DESIGN.md` (palette→roles with contrast guards, font families → bundled substitutes, the type-ladder table, atmosphere, rhythm) → `src/themes/brand-pack.ts` (12 "inspired-by" themes: apple, linear, notion, stripe, vercel, airbnb, spotify, github, figma, slack, nike, mono), merged into `BUILTIN_THEMES`. Re-runnable. |
+| **A6** PPTX export | ✅ Shipped | `src/export/pptx-export.ts` — a **dependency-free** PPTX writer (tiny STORED-zip + OOXML), image-per-slide via the existing resvg path. Wired as `export_design` `format:"pptx"`. Deploys via `docker cp` (no new dep / image rebuild). Validated with `python-pptx` + `unzip -t`. Native editable-text export remains a future enhancement. |
 | **A7** artifact vocabulary | ⏳ Deferred | Low value; revisit when the library/report split is next touched. |
 
 Tests: `craft.test.ts` + `ai-slop-lint.test.ts` (new) green; 408 MCP-engine tests pass;

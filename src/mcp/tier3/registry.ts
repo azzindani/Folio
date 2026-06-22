@@ -18,7 +18,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'export_design',
-    description: 'Export a design to SVG, PNG, PDF or HTML (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf is a true VECTOR PDF: text is embedded as real, selectable/copy-paste glyphs that stay crisp at any zoom, drawn over a high-DPI raster for backgrounds/gradients/effects, with clickable links — no Puppeteer/Chromium needed.',
+    description: 'Export a design to SVG, PNG, PDF, HTML or PPTX (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf is a true VECTOR PDF: text is embedded as real, selectable/copy-paste glyphs that stay crisp at any zoom, drawn over a high-DPI raster for backgrounds/gradients/effects, with clickable links — no Puppeteer/Chromium needed. pptx is a PowerPoint deck — one full-bleed image slide per page (pixel-faithful; opens in PowerPoint/Keynote/Slides as an editable container).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -26,7 +26,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         // All four produce real files; a carousel yields one file per page.
         // pdf is a vector PDF (selectable text + raster backdrop), built
         // in-process via jsPDF — no Puppeteer step.
-        format:       { type: 'string', enum: ['svg', 'html', 'pdf', 'png'] },
+        format:       { type: 'string', enum: ['svg', 'html', 'pdf', 'png', 'pptx'] },
         output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
         scale:        { type: 'number', description: 'Scale factor 1–3', default: 2 },

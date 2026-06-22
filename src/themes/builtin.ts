@@ -1,4 +1,5 @@
 import type { ThemeSpec } from '../schema/types';
+import { BRAND_THEMES } from './brand-pack';
 
 const SHARED_SCALE = {
   display: { size: 96, weight: 800, line_height: 1.0 },
@@ -39,6 +40,10 @@ const SHARP_RADII: ThemeSpec['radii'] = {
 const NO_GLOW = '0 0 0 rgba(0,0,0,0)';
 
 export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
+  // "Inspired-by" brand systems imported from Open Design DESIGN.md (see
+  // ./brand-pack + tools/import-design-systems.mjs). Spread first so a curated
+  // core theme below always wins an id collision.
+  ...BRAND_THEMES,
   'dark-tech': {
     _protocol: 'theme/v1',
     name: 'Dark Tech',
