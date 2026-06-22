@@ -19,6 +19,9 @@ import { resolveShortLink } from '../mcp/engine/short-link';
 // Pure fs overlay (no engine.ts side effects) — lets the gallery persist a
 // design's collection from the browser/phone via POST /__library/assign.
 import { assignDesign } from '../mcp/engine/library-collections';
+// Filesystem ops (pure fs + YAML, no rendering) — rename / delete(→trash) /
+// move, surfaced to the gallery via POST /__library/manage.
+import { renameDesign, deleteDesign, moveDesign } from '../mcp/engine/library-manage';
 
 // Token validation — reuses the OAuth access-token store from the MCP
 // server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
@@ -240,6 +243,36 @@ Bun.serve({
           status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
         });
       } catch { return new Response('Assign failed', { status: 500 }); }
+    }
+
+    // ── POST /__library/manage — rename / delete(→trash) / move a design ──
+    // The filesystem half of the gallery's self-serve management. Same token
+    // auth + body cap + traversal guard; reuses the library-manage ops. Delete
+    // is recoverable (moves to <project>/.trash, never unlinks). Body:
+    // {action:"rename"|"delete"|"move", design:<relKey>, name?, project?}.
+    if (url.pathname === '/__library/manage' && req.method === 'POST') {
+      const auth = req.headers.get('authorization') ?? '';
+      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookie;
+      if (!presented || !isValidToken(presented)) return new Response('Unauthorized', { status: 401 });
+      if (parseInt(req.headers.get('content-length') ?? '0', 10) > 8192) return new Response('Payload too large', { status: 413 });
+      let body: { action?: unknown; design?: unknown; name?: unknown; project?: unknown };
+      try { body = (await req.json()) as typeof body; } catch { return new Response('Bad JSON', { status: 400 }); }
+      const action = typeof body.action === 'string' ? body.action : '';
+      const design = typeof body.design === 'string' ? body.design : '';
+      if (!design || design.includes('..') || path.isAbsolute(design)) return new Response('Bad design key', { status: 400 });
+      const abs = path.join(PROJECTS_DIR, design);
+      let result: { success?: boolean } & Record<string, unknown>;
+      if (action === 'rename') result = renameDesign({ design_path: abs, new_name: typeof body.name === 'string' ? body.name : '' });
+      else if (action === 'delete') result = deleteDesign({ design_path: abs });
+      else if (action === 'move') result = moveDesign({ design_path: abs, target_project: typeof body.project === 'string' ? body.project : '' });
+      else return new Response('Unknown action', { status: 400 });
+      const ok = !!result.success;
+      return new Response(JSON.stringify({ ok, ...result }), {
+        status: ok ? 200 : 400, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
     }
 
     // Auth check for /__project_files/* — accept a Bearer token, a
