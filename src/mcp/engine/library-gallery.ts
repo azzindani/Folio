@@ -72,8 +72,8 @@ function card(d: LibraryDesign, project: string, href: string | null, key: strin
   </div>`;
 }
 
-const STYLE = `:root{--bg:#0E1116;--fg:#E6EAF0;--panel:#161B22;--panel2:#0A0D12;--bd:#232A35;--bd2:#2A323F;--mut:#8A93A6;--mut2:#566076;--acc:#3B82F6;--acc2:#1D4ED8;--shadow:rgba(0,0,0,.35)}
-:root[data-theme=light]{--bg:#F4F6FA;--fg:#1B2433;--panel:#FFFFFF;--panel2:#EBEFF5;--bd:#E2E7EF;--bd2:#D2DAE5;--mut:#5E6A7E;--mut2:#8893A6;--acc:#2563EB;--acc2:#1D4ED8;--shadow:rgba(20,30,50,.10)}
+const STYLE = `:root{--bg:#0E1116;--fg:#E6EAF0;--panel:#161B22;--panel2:#0A0D12;--bd:#232A35;--bd2:#2A323F;--mut:#8A93A6;--mut2:#566076;--acc:#3B82F6;--acc2:#1D4ED8}
+:root[data-theme=light]{--bg:#F4F6FA;--fg:#1B2433;--panel:#FFFFFF;--panel2:#EBEFF5;--bd:#E2E7EF;--bd2:#D2DAE5;--mut:#5E6A7E;--mut2:#8893A6;--acc:#2563EB;--acc2:#1D4ED8}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg)}
 header{position:sticky;top:0;background:var(--bg);backdrop-filter:blur(8px);padding:20px 28px;border-bottom:1px solid var(--bd);z-index:5}
 h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:var(--mut);font-size:13px}
