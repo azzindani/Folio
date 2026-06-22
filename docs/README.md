@@ -25,6 +25,7 @@ talks JSON-RPC over HTTP with a bearer token.
 | [DESIGN.md](DESIGN.md) | The design system + complete `.design.yaml` payload spec, layer schema, tokens | …you're hand-authoring YAML or adding a layer type |
 | [REPORT_ENGINE.md](REPORT_ENGINE.md) | Interactive flow-layout reports: components, datasets, `$data.*`/`$agg.*`, export | …you're building data-driven HTML reports |
 | [UX_ROADMAP.md](UX_ROADMAP.md) | Editor feature matrix vs Figma/Photoshop/Canva; what's shipped/missing | …you're prioritizing editor work |
+| [COMPARISON-OPEN-DESIGN.md](COMPARISON-OPEN-DESIGN.md) | Folio vs Open Design (nexu-io): capability map + ranked list of adaptable features (craft rulebooks, anti-slop linter, brand `DESIGN.md` systems) | …you're scoping what to borrow from the design-agent ecosystem |
 
 ---
 
