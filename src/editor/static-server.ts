@@ -16,6 +16,9 @@ import { verifyJwt, signJwt, jwtSecret } from '../mcp/jwt';
 // Pure, side-effect-free resolver (fs + a hash only) — maps a short /o/<code>
 // back to the design path so we can 302 to the full tokenized editor URL.
 import { resolveShortLink } from '../mcp/engine/short-link';
+// Pure fs overlay (no engine.ts side effects) — lets the gallery persist a
+// design's collection from the browser/phone via POST /__library/assign.
+import { assignDesign } from '../mcp/engine/library-collections';
 
 // Token validation — reuses the OAuth access-token store from the MCP
 // server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
@@ -191,6 +194,32 @@ Bun.serve({
       const secret = jwtSecret();
       if (secret) p.set('token', signJwt({ sub: 'default', kind: 'editor' }, secret, 60 * 60 * 24 * 30));
       return new Response(null, { status: 302, headers: { Location: `/?${p.toString()}`, 'Cache-Control': 'no-store' } });
+    }
+
+    // ── POST /__library/assign — persist a design's collection ──────────
+    // Self-serve organising from the gallery (web + mobile): move a design
+    // into a collection or clear it. Same token auth as /__project_files;
+    // writes only the non-destructive collections manifest — files untouched.
+    if (url.pathname === '/__library/assign' && req.method === 'POST') {
+      const auth = req.headers.get('authorization') ?? '';
+      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookie;
+      if (!presented || !isValidToken(presented)) return new Response('Unauthorized', { status: 401 });
+      if (parseInt(req.headers.get('content-length') ?? '0', 10) > 8192) return new Response('Payload too large', { status: 413 });
+      let body: { design?: unknown; collection?: unknown };
+      try { body = (await req.json()) as typeof body; } catch { return new Response('Bad JSON', { status: 400 }); }
+      const design = typeof body.design === 'string' ? body.design : '';
+      const collection = typeof body.collection === 'string' ? body.collection : '';
+      // The design key must stay inside the projects root (no traversal).
+      if (!design || design.includes('..') || path.isAbsolute(design)) return new Response('Bad design key', { status: 400 });
+      try {
+        assignDesign(PROJECTS_DIR, design, collection);
+        return new Response(JSON.stringify({ ok: true, design, collection: collection.trim() || 'Unsorted' }), {
+          status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+        });
+      } catch { return new Response('Assign failed', { status: 500 }); }
     }
 
     // Auth check for /__project_files/* — accept a Bearer token, a
