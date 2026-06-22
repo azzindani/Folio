@@ -11,6 +11,7 @@ import { validateReport } from '../report/report-validator';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 
 import { lintComposition, reviewComposition } from './engine/design-lint';
+import { lintAiSlop } from './engine/ai-slop-lint';
 
 import { buildEditorLink } from './engine/editor-link';
 
@@ -526,7 +527,7 @@ export function addLayers(args: {
   // Quality critic — advisory; only when the page looks "complete" (the full
   // poster has been composed, not a 2-layer partial), so we guide, not nag.
   const review = activeLayers.length >= 6
-    ? reviewComposition(activeLayers, spec.document.width, spec.document.height)
+    ? [...reviewComposition(activeLayers, spec.document.width, spec.document.height), ...lintAiSlop(activeLayers)]
     : [];
   const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint, ...review];
   for (const n of notes) progress.push(pInfo('Layer note', n));

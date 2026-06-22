@@ -1,6 +1,7 @@
 // Engine reference guide — split into sections to stay within 1K output budget.
 // Default section (quick_ref) ≈200 tokens. Full guide = 4 calls ≈800 tokens total.
 import { isMinimalGuidance } from '../guidance-mode';
+import { craft, CRAFT_SECTIONS } from './craft';
 
 const SECTIONS: Record<string, string> = {
 
@@ -245,7 +246,13 @@ Rules:
     off-canvas, collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy) each
     with a fix; FIX EVERY error then re-run it until zero errors. align_layers fixes
     alignment; render_preview(design_path) returns a PNG so you can SEE the result.
-    Fix → re-check → seal.`,
+    Fix → re-check → seal.
+
+🎨 CRAFT (universal taste rules — read once): get_engine_guide({section:"craft"}) for the
+   3-axis model (preset=shape · theme=brand · craft=universal) + the 80/20 soul rule +
+   the identifiability test. Sub-rulebooks: "anti_slop" (the AI tells to avoid — default
+   indigo, purple→blue gradient, emoji-icons, invented metrics), "color" (ONE accent,
+   neutrals 70–90%), "type" (one entry point, 3–5× headline), "ux_laws", "a11y".`,
 
   shorthand: `# Shorthand Syntax (layers_shorthand field)
 pos:[x,y,w,h] replaces x/y/width/height.
@@ -620,9 +627,16 @@ design. The engine is your renderer + ruler, not your art director.
 `;
 
 export function buildGuide(section?: string): string {
-  if (section && !(section in SECTIONS)) return `Unknown section "${section}". Available: ${Object.keys(SECTIONS).join(' | ')}`;
+  if (section) {
+    // Craft rulebooks live in ./craft (kept out of this file's 700-line budget).
+    const c = craft(section);
+    if (c) return isMinimalGuidance() ? MINIMAL_PREAMBLE + c : c;
+    if (!(section in SECTIONS)) {
+      return `Unknown section "${section}". Available: ${[...Object.keys(SECTIONS), ...CRAFT_SECTIONS].join(' | ')}`;
+    }
+  }
   const body = section ? SECTIONS[section] : SECTIONS['quick_ref'];
   return isMinimalGuidance() ? MINIMAL_PREAMBLE + body : body;
 }
 
-export const GUIDE_SECTIONS = Object.keys(SECTIONS);
+export const GUIDE_SECTIONS = [...Object.keys(SECTIONS), ...CRAFT_SECTIONS];

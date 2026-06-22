@@ -9,6 +9,25 @@ export interface TypographyScale {
   line_height: number;
 }
 
+/**
+ * One rung of a brand TYPE LADDER — a richer, role-named type scale than the
+ * flat `typography.scale`. Mirrors the per-role row of an Open Design `DESIGN.md`
+ * (role · size · weight · line-height · tracking) so the model inherits an
+ * authored hierarchy instead of guessing sizes. Pure guidance — non-rendering.
+ */
+export interface TypeLadderRole {
+  /** Display name, e.g. "Hero Display", "Section Heading", "Body", "Caption". */
+  role: string;
+  /** px. */
+  size: number;
+  weight?: number;
+  line_height?: number;
+  /** letter-spacing in px (negative tightens display; ALL-CAPS wants ≥0.06em). */
+  tracking?: number;
+  /** When to reach for this rung. */
+  notes?: string;
+}
+
 export interface ThemeSpec {
   _protocol: 'theme/v1';
   name: string;
@@ -24,6 +43,16 @@ export interface ThemeSpec {
   };
   effects: Record<string, string | number>;
   radii: Record<string, number>;
+  // ── Optional brand-character fields (theme/v1.1, non-breaking, non-rendering) ──
+  // Surfaced to the model by apply_theme/list_themes so a theme carries the BRAND
+  // VOICE — atmosphere, an authored type ladder, section rhythm — not just tokens.
+  // The prose half of an Open Design `DESIGN.md`. Ignored by the renderer.
+  /** 1–3 sentences on the brand's visual tone (the "feel" the design should hit). */
+  atmosphere?: string;
+  /** Role-named type ladder; richer than `typography.scale` for hierarchy choices. */
+  type_ladder?: TypeLadderRole[];
+  /** How sections pace across a multi-page/long design (density, alternation). */
+  section_rhythm?: string;
 }
 
 // ── Palette ─────────────────────────────────────────────────

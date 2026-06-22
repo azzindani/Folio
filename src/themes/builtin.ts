@@ -60,6 +60,16 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       blur_glass: 12,
     },
     radii: SHARED_RADII,
+    atmosphere: 'Engineered product-tech: deep indigo-navy fields, ONE hot-coral accent, generous negative space. Confident and precise, never decorative — type and the single accent carry it.',
+    type_ladder: [
+      { role: 'Display', size: 96, weight: 800, line_height: 1.0, tracking: -2, notes: 'One per page — the focal hero number or word.' },
+      { role: 'Headline', size: 64, weight: 700, line_height: 1.05, tracking: -1 },
+      { role: 'Section', size: 40, weight: 700, line_height: 1.15 },
+      { role: 'Card title', size: 24, weight: 600, line_height: 1.2 },
+      { role: 'Body', size: 18, weight: 400, line_height: 1.6 },
+      { role: 'Label', size: 13, weight: 600, line_height: 1.0, tracking: 1.2, notes: 'ALL-CAPS eyebrow — needs the tracking.' },
+    ],
+    section_rhythm: 'Alternate one dense data/feature block with one breathing statement block; let a single hero number or headline own each page.',
   },
 
   'light-clean': {
@@ -336,6 +346,16 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       blur_glass: 8,
     },
     radii: SHARED_RADII,
+    atmosphere: 'Warm print editorial: cream paper, oxblood + forest accents, Playfair display over a serif text face. Magazine calm — wide margins, ranged-left columns, type as the hero, not boxes.',
+    type_ladder: [
+      { role: 'Title', size: 88, weight: 700, line_height: 1.05, tracking: -1, notes: 'Playfair display — the cover/opening line.' },
+      { role: 'Deck', size: 34, weight: 400, line_height: 1.3, notes: 'Standfirst/intro in the serif text face.' },
+      { role: 'Heading', size: 28, weight: 700, line_height: 1.25 },
+      { role: 'Pull-quote', size: 30, weight: 400, line_height: 1.35, notes: 'Italic; the page peak.' },
+      { role: 'Body', size: 19, weight: 400, line_height: 1.6 },
+      { role: 'Caption', size: 13, weight: 600, line_height: 1.4, tracking: 0.6, notes: 'Caps byline/credit.' },
+    ],
+    section_rhythm: 'Long-form reading rhythm — a strong opening spread, then a steady single column with pull-quotes as the peaks; whitespace, not rules, separates sections.',
   },
 
   'corporate-slate': {
@@ -412,6 +432,15 @@ export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
       blur_glass: 0,
     },
     radii: SHARP_RADII,
+    atmosphere: 'Swiss/International grid: pure white + black, ONE primary red, hard square corners, zero shadow. Objective and mathematical — strict columns, flush-left, asymmetric balance.',
+    type_ladder: [
+      { role: 'Giant', size: 140, weight: 700, line_height: 0.95, tracking: -3, notes: 'Dramatic scale jump — the whole point of the grid.' },
+      { role: 'Headline', size: 56, weight: 700, line_height: 1.05, tracking: -1 },
+      { role: 'Subhead', size: 28, weight: 500, line_height: 1.2 },
+      { role: 'Body', size: 17, weight: 400, line_height: 1.5 },
+      { role: 'Caption', size: 12, weight: 600, line_height: 1.3, tracking: 0.8, notes: 'Caps grid label.' },
+    ],
+    section_rhythm: 'Strict modular grid; vary scale dramatically (one giant headline against small captions) and spend the red ONCE as the single point of emphasis.',
   },
 
   // Gallery / editorial-minimal — bright neutral, ink type, one rose accent.

@@ -213,3 +213,24 @@ analysis**, not licensed brand assets, and label Folio themes accordingly (e.g.
 brand contracts, the craft rulebooks, and the anti-slop linter — to make the model
 design better up front and to catch slop after, without compromising the
 "model-designs / engine-assists" principle.
+
+---
+
+## 7. Implementation status (2026-06-22)
+
+The taste layer (A1/A2/A4/A5) + the A3 schema shipped — all MCP-side, no new
+dependency, deployable via `docker cp src` (no editor rebuild).
+
+| Item | Status | Where |
+|---|---|---|
+| **A1** craft rulebooks + guide injection | ✅ Shipped | `src/mcp/engine/craft.ts` — 5 modules (`anti_slop`, `color`, `type`, `ux_laws`, `a11y`) + `craft` index; `craftFor(kind)` scales them by design type. Reachable via `get_engine_guide({section:…})` (enum extended in `tier1/registry.ts`); `quick_ref` points at them. |
+| **A2** AI-slop lint pass | ✅ Shipped | `src/mcp/engine/ai-slop-lint.ts` — `lintAiSlop()` flags indigo accent, two-stop trust gradient, emoji-as-icon, invented metrics, filler copy, all-caps-no-tracking, accent overuse. Folded into `diagnose_design` findings (`code:"ai_slop"`) + `add_layers` review notes. |
+| **A4** three-axis model | ✅ Folded into A1 | The `craft` index frames preset(shape) × theme(brand) × craft(universal). |
+| **A5** 80/20 soul + identifiability test | ✅ Folded into A1 | In the `craft` index; quotable in the guide. |
+| **A3** richer theme format | ✅ Schema + exemplars | `ThemeSpec` gained optional `atmosphere` / `type_ladder` (`TypeLadderRole[]`) / `section_rhythm` (non-breaking, non-rendering). Populated for `dark-tech`, `editorial-cream`, `swiss-international`. `apply_theme` now returns a `brand` block + a "Brand voice" progress note so the model inherits the voice + an authored type ladder. |
+| A3 — `DESIGN.md` bulk import | ⏳ Deferred | Schema is ready; importing a curated 10–15 brand subset is a follow-up (a converter from OD's `tokens.css` + prose → Folio theme YAML). Attribute as "inspired-by". |
+| **A6** PPTX export | ⏳ Deferred | Needs a new dependency (`pptxgenjs`) → bundle/ops impact; hold for an explicit greenlight + real editable-deck demand. |
+| **A7** artifact vocabulary | ⏳ Deferred | Low value; revisit when the library/report split is next touched. |
+
+Tests: `craft.test.ts` + `ai-slop-lint.test.ts` (new) green; 408 MCP-engine tests pass;
+`tsc` + `eslint` clean; every touched file ≤700 lines.

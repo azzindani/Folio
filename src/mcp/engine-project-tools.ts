@@ -1,7 +1,7 @@
 // Folio MCP engine — project/design/task CRUD + inspect tools. Split from engine.ts; verbatim bodies.
 import * as fs from 'fs';
 import * as path from 'path';
-import type { DesignSpec, Layer, Page } from '../schema/types';
+import type { DesignSpec, Layer, Page, ThemeSpec } from '../schema/types';
 import type { ToolResult } from './types';
 import { BUILTIN_THEMES } from '../themes/builtin';
 
@@ -237,11 +237,26 @@ export function applyTheme(args: { project_path: string; theme_id: string }): To
   writeYAML(projectPath, project);
   progress.push(pOk(`Active theme set to "${args.theme_id}"`, `${(project.designs ?? []).length} design(s) affected`));
 
+  // Surface the theme's BRAND CHARACTER (theme/v1.1) so the model inherits the
+  // voice — atmosphere + an authored type ladder + section rhythm — not just the
+  // color tokens. Resolve from the builtin or the seeded theme YAML.
+  const spec = BUILTIN_THEMES[args.theme_id]
+    ?? (themeEntry.path && fs.existsSync(path.join(args.project_path, themeEntry.path))
+      ? readYAML<ThemeSpec>(path.join(args.project_path, themeEntry.path)) : undefined);
+  const brand = spec && (spec.atmosphere || spec.type_ladder || spec.section_rhythm)
+    ? {
+      ...(spec.atmosphere ? { atmosphere: spec.atmosphere } : {}),
+      ...(spec.type_ladder ? { type_ladder: spec.type_ladder } : {}),
+      ...(spec.section_rhythm ? { section_rhythm: spec.section_rhythm } : {}),
+    }
+    : undefined;
+  if (brand?.atmosphere) progress.push(pInfo('Brand voice', `${brand.atmosphere} — design to this, not just the palette.`));
+
   const context = buildContext(op, `Applied theme "${args.theme_id}" to project`, [
     { type: 'project', path: projectPath, role: 'updated' },
   ]);
   const handover = buildHandover('PROJECT', { project_path: args.project_path });
-  return okResult(op, { active_theme: args.theme_id, affected_designs: (project.designs ?? []).length, progress, context, handover }, bak);
+  return okResult(op, { active_theme: args.theme_id, affected_designs: (project.designs ?? []).length, ...(brand ? { brand } : {}), progress, context, handover }, bak);
 }
 
 export function duplicateDesign(args: { design_path: string; new_name: string; project_path?: string }): ToolResult {
