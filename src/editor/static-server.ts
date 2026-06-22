@@ -98,6 +98,26 @@ const UNAUTHORIZED_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="u
 <style>body{font:16px/1.55 system-ui,-apple-system,sans-serif;background:#0A0E27;color:#E8F0FF;display:grid;place-items:center;min-height:100vh;margin:0}.card{max-width:440px;padding:36px;background:#141A3A;border-radius:18px}h2{margin:0 0 12px}code{background:#0A0E27;padding:2px 7px;border-radius:6px;color:#22D3EE}p{color:#B8C0D9}</style></head>
 <body><div class="card"><h2>Folio editor</h2><p>This editor is protected by an access token. Open it with your token appended to the URL:</p><p><code>?token=YOUR_TOKEN</code></p><p>The link returned by <code>open_in_editor</code> already includes one. After the first load your session is remembered for 30 days — no username or password.</p></div></body></html>`;
 
+// A "Library" entry point injected into the editor shell so the cross-project
+// Design Library is reachable from the editor itself. The editor bundle is
+// prebuilt and the build is memory-capped on this host, so rather than rebuild
+// dist we inject a tiny script that clones the existing top-bar "Catalog" button
+// into a matching "Library" button beside it (opens /library in a new tab).
+// Falls back to a fixed-position pill if the toolbar can't be located, and a
+// MutationObserver re-adds it if the toolbar re-renders. Purely additive — it
+// adds one element and can't alter the SPA's own behaviour.
+const EDITOR_LIBRARY_BTN = `<script>(function(){var ID='folio-library-btn';
+function findCatalog(){var els=document.querySelectorAll('button,a,[role=button]');
+for(var i=0;i<els.length;i++){var t=(els[i].textContent||'').trim().toLowerCase();if(t==='catalog'||t.indexOf('catalog')>=0)return els[i];}return null;}
+function go(e){if(e){e.preventDefault();e.stopPropagation();}window.open('/library','_blank','noopener');}
+function inject(){if(document.getElementById(ID))return true;var cat=findCatalog();if(!cat||!cat.parentNode)return false;
+var lib=cat.cloneNode(true);lib.id=ID;lib.textContent='Library';lib.setAttribute('title','Open the cross-project Design Library');
+lib.addEventListener('click',go);cat.parentNode.insertBefore(lib,cat.nextSibling);return true;}
+function fallback(){if(document.getElementById(ID))return;var a=document.createElement('a');a.id=ID;a.href='/library';a.target='_blank';a.rel='noopener';a.textContent='▦ Library';
+a.style.cssText='position:fixed;left:12px;bottom:12px;z-index:2147483000;padding:8px 12px;border-radius:10px;background:#161B22;color:#C9D2E3;border:1px solid #2A323F;font:600 12px system-ui,sans-serif;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.35)';document.body.appendChild(a);}
+var n=0,iv=setInterval(function(){n++;if(inject()||n>40){clearInterval(iv);if(!document.getElementById(ID))fallback();
+try{new MutationObserver(function(){if(!document.getElementById(ID))inject();}).observe(document.body,{childList:true,subtree:true});}catch(e){}}},250);})();</script>`;
+
 function parseCookies(header: string | undefined): Record<string, string> {
   if (!header) return {};
   const out: Record<string, string> = {};
@@ -337,9 +357,14 @@ Bun.serve({
     }
     const body = fs.readFileSync(target);
     const headers: Record<string, string> = { 'Content-Type': mime(target) };
-    if (target === INDEX_HTML) headers['Cache-Control'] = 'no-cache';
-    else if (target.includes('/assets/')) headers['Cache-Control'] = 'public, max-age=31536000, immutable';
     if (setSessionCookie) headers['Set-Cookie'] = setSessionCookie;
+    if (target === INDEX_HTML) {
+      // Inject the Library entry point into the editor shell (no dist rebuild).
+      headers['Cache-Control'] = 'no-cache';
+      const html = body.toString('utf8').replace('</body>', `${EDITOR_LIBRARY_BTN}</body>`);
+      return new Response(html, { status: 200, headers });
+    }
+    if (target.includes('/assets/')) headers['Cache-Control'] = 'public, max-age=31536000, immutable';
     return new Response(body, { status: 200, headers });
   },
 });
