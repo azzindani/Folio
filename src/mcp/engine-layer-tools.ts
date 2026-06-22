@@ -19,7 +19,7 @@ import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset,
 import type { ShorthandLayer } from './shorthand-parser';
 import { readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import { honorPosterRatio } from './poster-ratio';
-import { BUILTIN_THEMES } from '../themes/builtin';
+import { ALL_THEMES } from '../themes/all-themes';
 import type { NextAction } from './types';
 
 import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
@@ -40,7 +40,7 @@ const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
 function resolveThemeColors(spec: DesignSpec): { bg: string; text: string } | null {
   const th = spec.theme as { ref?: string; colors?: Record<string, unknown> } | undefined;
   if (!th) return null;
-  const colors = th.colors ?? (th.ref ? (BUILTIN_THEMES[th.ref]?.colors as Record<string, unknown> | undefined) : undefined);
+  const colors = th.colors ?? (th.ref ? (ALL_THEMES[th.ref]?.colors as Record<string, unknown> | undefined) : undefined);
   if (!colors) return null;
   const bg = colors['background'];
   if (typeof bg !== 'string' || !HEX_RE.test(bg)) return null;
@@ -482,7 +482,7 @@ export function addLayers(args: {
   // else force a backdrop-matched neutral. Illegible text is never the intent.
   const relitTheme = ((): import('../schema/types').ThemeSpec | undefined => {
     const th = spec.theme as { ref?: string; colors?: unknown } | undefined;
-    if (th?.ref) return BUILTIN_THEMES[th.ref];
+    if (th?.ref) return ALL_THEMES[th.ref];
     return th?.colors ? (spec.theme as unknown as import('../schema/types').ThemeSpec) : undefined;
   })();
   const relit = fixInvisibleText(activeLayers, spec.document.width, spec.document.height, relitTheme);

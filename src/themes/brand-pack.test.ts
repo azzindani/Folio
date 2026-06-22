@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BRAND_THEMES } from './brand-pack';
-import { BUILTIN_THEMES } from './builtin';
+import { ALL_THEMES } from './all-themes';
 
 const lum = (h: string): number => {
   const p = (i: number): number => parseInt(h.slice(i, i + 2), 16) / 255;
@@ -30,7 +30,7 @@ describe('brand-pack (DESIGN.md → ThemeSpec import)', () => {
       }
       expect(t.typography.families.heading, id).toBeTruthy();
       expect(t.typography.scale.body.size, id).toBeGreaterThan(0);
-      expect(BUILTIN_THEMES[id], `${id} in BUILTIN_THEMES`).toBe(t);
+      expect(ALL_THEMES[id], `${id} in ALL_THEMES`).toBe(t);
     }
   });
 

@@ -3,7 +3,7 @@
 import { JSDOM } from 'jsdom';
 import { invalidateCache } from '../../renderer/renderer';
 import { renderEntry } from '../../renderer/render-entry';
-import { BUILTIN_THEMES } from '../../themes/builtin';
+import { ALL_THEMES } from '../../themes/all-themes';
 import type { DesignSpec, ThemeSpec, ComponentSpec } from '../../schema/types';
 
 let serializer: { serializeToString(el: Node): string } | null = null;
@@ -36,7 +36,7 @@ export function renderToSVGElement(spec: DesignSpec, formulaContext?: import('..
   // render with real values. Without a theme, renderDesign leaves tokens
   // unresolved and they fall back to black — invisible content. Default to the
   // referenced builtin theme; callers can pass a custom ThemeSpec to override.
-  const resolvedTheme = theme ?? (spec.theme?.ref ? BUILTIN_THEMES[spec.theme.ref] : undefined);
+  const resolvedTheme = theme ?? (spec.theme?.ref ? ALL_THEMES[spec.theme.ref] : undefined);
   // Server-side export is stateless and the MCP process is long-lived: the
   // render cache (keyed by layer.id) would otherwise leak across designs —
   // a same-id+same-hash layer reuses a prior render's element WITHOUT

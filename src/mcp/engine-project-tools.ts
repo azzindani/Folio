@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer, Page, ThemeSpec } from '../schema/types';
 import type { ToolResult } from './types';
-import { BUILTIN_THEMES } from '../themes/builtin';
+import { ALL_THEMES } from '../themes/all-themes';
 
 import type { ProgressItem } from './types';
 
@@ -140,8 +140,8 @@ export function createProject(args: { name: string; path?: string; theme?: strin
   // Default to a flat, art-directed EDITORIAL theme (warm cream + terracotta,
   // serif display) — not the old dark-navy + magenta + glow "Dark Tech", which
   // is the canonical AI-template look. Write the chosen builtin verbatim.
-  const themeId = args.theme && BUILTIN_THEMES[args.theme] ? args.theme : 'editorial-cream';
-  const theme = BUILTIN_THEMES[themeId];
+  const themeId = args.theme && ALL_THEMES[args.theme] ? args.theme : 'editorial-cream';
+  const theme = ALL_THEMES[themeId];
   writeYAML(path.join(projectDir, `themes/${themeId}.theme.yaml`), theme);
   progress.push(pInfo('Wrote default theme', `${themeId}.theme.yaml`));
 
@@ -193,7 +193,7 @@ export function listThemes(args: { project_path: string }): ToolResult {
   const seededIds = new Set(themes.map(t => t.id));
   // Surface builtin themes that aren't yet seeded so the agent knows the
   // full menu — apply_theme will auto-write them on demand.
-  const available_builtins = Object.keys(BUILTIN_THEMES).filter(id => !seededIds.has(id));
+  const available_builtins = Object.keys(ALL_THEMES).filter(id => !seededIds.has(id));
   progress.push(pOk(`Found ${themes.length} theme(s) on disk, ${available_builtins.length} builtin(s) available on demand`));
   const context = buildContext(op, `Listed ${themes.length} theme(s)`);
   const handover = buildHandover('PROJECT', { project_path: args.project_path });
@@ -213,12 +213,12 @@ export function applyTheme(args: { project_path: string; theme_id: string }): To
   // Auto-seed builtin themes: an LLM agent can request any of the 14 builtins
   // even if the project was created with only the default seeded. Lazily
   // write the YAML and register it in project.themes before activation.
-  if (!themeEntry && BUILTIN_THEMES[args.theme_id]) {
+  if (!themeEntry && ALL_THEMES[args.theme_id]) {
     const themeDir = path.join(args.project_path, 'themes');
     fs.mkdirSync(themeDir, { recursive: true });
     const relPath = `themes/${args.theme_id}.theme.yaml`;
     const absPath = path.join(args.project_path, relPath);
-    writeYAML(absPath, BUILTIN_THEMES[args.theme_id]);
+    writeYAML(absPath, ALL_THEMES[args.theme_id]);
     themeEntry = { id: args.theme_id, path: relPath, active: false };
     themes.push(themeEntry);
     project.themes = themes;
@@ -226,7 +226,7 @@ export function applyTheme(args: { project_path: string; theme_id: string }): To
   }
 
   if (!themeEntry) {
-    const available = [...themes.map(t => t.id), ...Object.keys(BUILTIN_THEMES)];
+    const available = [...themes.map(t => t.id), ...Object.keys(ALL_THEMES)];
     return errResult(op, `Theme not found: ${args.theme_id}`, `Available: ${available.join(', ')}`, progress);
   }
 
@@ -240,7 +240,7 @@ export function applyTheme(args: { project_path: string; theme_id: string }): To
   // Surface the theme's BRAND CHARACTER (theme/v1.1) so the model inherits the
   // voice — atmosphere + an authored type ladder + section rhythm — not just the
   // color tokens. Resolve from the builtin or the seeded theme YAML.
-  const spec = BUILTIN_THEMES[args.theme_id]
+  const spec = ALL_THEMES[args.theme_id]
     ?? (themeEntry.path && fs.existsSync(path.join(args.project_path, themeEntry.path))
       ? readYAML<ThemeSpec>(path.join(args.project_path, themeEntry.path)) : undefined);
   const brand = spec && (spec.atmosphere || spec.type_ladder || spec.section_rhythm)
