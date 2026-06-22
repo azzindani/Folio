@@ -3,7 +3,7 @@ import { resolveLayerTokens, type TokenResolutionContext } from '../engine/token
 import { resolveComponent } from '../engine/component-resolver';
 import { expandPositionShorthand } from '../schema/validator';
 import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
-import { createSVGRoot, createSVGElement, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot, createSVGElement } from './svg-utils';
 import {
   renderRect, renderCircle, renderPath, renderPolygon,
   renderLine, renderText, renderImage, renderIcon, renderConnector,
@@ -147,8 +147,16 @@ function renderLayerInner(layer: Layer, svg: SVGSVGElement): SVGElement {
 
   const el = renderLayerUncached(layer, svg);
 
-  // Store in cache
-  renderCache.set(layer.id, { hash: layerHash, svg: el.cloneNode(true) as SVGElement });
+  // Store in cache — but ONLY when the element is self-contained. A layer whose
+  // fill/effect/clip created an entry in the shared <defs> (gradient, pattern,
+  // noise, filter, clip-path, mask, textpath) references it via url(#id). The
+  // cache clones the element but NOT the def, so replaying a cached clone into a
+  // fresh SVG (every page-strip thumbnail + a re-rendered canvas) would dangle
+  // that reference → the fill silently drops out (blank/white). Skip caching
+  // those; cheap solid/text layers still cache.
+  if (!(el as Element).outerHTML.includes('url(#')) {
+    renderCache.set(layer.id, { hash: layerHash, svg: el.cloneNode(true) as SVGElement });
+  }
 
   return el;
 }
@@ -458,7 +466,12 @@ function prepareLayers(layers: Layer[], ctx?: TokenResolutionContext, formulaCtx
 }
 
 export function renderDesign(spec: DesignSpec, options: RenderOptions = {}): SVGSVGElement {
-  resetDefIdCounter();
+  // NOTE: do NOT reset the def-id counter per render. The editor keeps many SVGs
+  // alive in one document at once (canvas + page-strip thumbnails + preview), and
+  // `url(#id)` resolves document-wide to the FIRST match — so restarting ids at 1
+  // each render made every SVG define id="rg-1" etc., cross-wiring gradients/clips
+  // between pages (backgrounds blink + change colour on page switch). A monotonic
+  // global counter keeps every def id unique across all coexisting SVGs.
   activeOptions = options;
 
   const { width, height } = spec.document;
@@ -552,7 +565,8 @@ export function renderPage(
   height: number,
   options: RenderOptions = {},
 ): SVGSVGElement {
-  resetDefIdCounter();
+  // See renderDesign: the def-id counter stays monotonic (no per-render reset) so
+  // thumbnails + canvas + preview SVGs never share def ids in the editor's DOM.
   activeOptions = options;
 
   const svg = createSVGRoot(width, height);
