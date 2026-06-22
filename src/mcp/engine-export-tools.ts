@@ -21,6 +21,7 @@ import { buildEditorLink } from './engine/editor-link';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
+import { buildPptx, type PptxSlide } from '../export/pptx-export';
 
 import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
@@ -254,6 +255,37 @@ export function exportDesign(args: { design_path: string; format: string; output
       return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, links: linkCount, vector_runs: vectorRuns, notes, progress, context, handover });
     } catch (err) {
       return errResult(op, `PDF render failed: ${(err as Error).message}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF vector text.', progress);
+    }
+  }
+  if (args.format === 'pptx') {
+    try {
+      // One full-bleed image slide per page (resvg raster, same path as PNG/PDF),
+      // packed into a dependency-free PPTX. Editable container, pixel-faithful slides.
+      const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;
+      const missingFonts = new Set<string>();
+      const rasterize = (svgStr: string): Buffer => {
+        for (const f of unbundledFonts(svgStr)) missingFonts.add(f);
+        return Buffer.from(new Resvg(svgStr, {
+          fitTo: { mode: 'zoom', value: scale },
+          background: '#FFFFFF',
+          font: resvgFontOption(),
+        }).render().asPng());
+      };
+      const W = spec.document.width, H = spec.document.height;
+      const slides: PptxSlide[] = multiPage
+        ? pages.map(page => ({ png: rasterize(renderPageSVG(page)), width: W, height: H }))
+        : [{ png: rasterize(renderToSVGString(spec, undefined, undefined, componentRegistry)), width: W, height: H }];
+      const pptx = buildPptx(slides, spec.meta.name || 'Folio Deck');
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, pptx);
+      progress.push(pOk('PPTX written', `${path.basename(outPath)} (${pptx.length} bytes · ${slides.length} slide(s) @ ${scale}×)`));
+      const notes = [...assetNotes, ...(missingFonts.size ? [`Fonts not bundled for raster export — slides used a fallback (they render correctly in the editor): ${[...missingFonts].join(', ')}.`] : []),
+        'PPTX slides are full-bleed images (pixel-faithful, not editable text). For editable text use the editor; for selectable text export format="pdf".'];
+      const context = buildContext(op, `PPTX exported for "${spec.meta.name}" — ${slides.length} slide(s)`, [{ type: 'pptx', path: outPath, role: 'output' }]);
+      const handover = buildHandover('EXPORT', { design_path: dPath });
+      return okResult(op, { format: 'pptx', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pptx.length, slides: slides.length, scale, notes, progress, context, handover });
+    } catch (err) {
+      return errResult(op, `PPTX render failed: ${(err as Error).message}`, 'Try format="png" or "pdf" to isolate; PPTX = resvg raster slides in an OOXML zip.', progress);
     }
   }
   if (args.format === 'png') {
