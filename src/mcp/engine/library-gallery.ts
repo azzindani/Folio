@@ -67,36 +67,46 @@ function card(d: LibraryDesign, project: string, href: string | null, key: strin
       <div class="thumb">${thumb}</div>
       <div class="meta"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.type)} · ${dims}${pages}</span><span class="proj">${esc(project)}</span></div>
     </a>
-    <div class="bar"><span class="mvlbl">in</span><select class="mv" aria-label="Move to collection">${opts}</select></div>
+    <div class="bar"><span class="mvlbl">in</span><select class="mv" aria-label="Move to collection">${opts}</select><button class="ops-t" type="button" title="Rename / move / delete" aria-label="Manage">⋯</button></div>
+    <div class="ops" hidden><button type="button" data-op="rename">Rename</button><button type="button" data-op="move">Move</button><button type="button" data-op="delete">Delete</button></div>
   </div>`;
 }
 
-const STYLE = `*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,-apple-system,sans-serif;background:#0E1116;color:#E6EAF0}
-header{position:sticky;top:0;background:#0E1116ee;backdrop-filter:blur(8px);padding:20px 28px;border-bottom:1px solid #222833;z-index:5}
-h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:#8A93A6;font-size:13px}
-#q{margin-top:12px;width:100%;max-width:420px;padding:9px 14px;border-radius:10px;border:1px solid #2A323F;background:#161B22;color:#E6EAF0;font-size:14px}
-.proj{padding:22px 28px}.chips{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
-.chip{padding:5px 12px;border-radius:999px;border:1px solid #2A323F;background:#161B22;color:#9AA3B6;font-size:12px;cursor:pointer;user-select:none}
-.chip:hover{border-color:#3B82F6}.chip.on{background:#3B82F6;border-color:#3B82F6;color:#fff}
+const STYLE = `:root{--bg:#0E1116;--fg:#E6EAF0;--panel:#161B22;--panel2:#0A0D12;--bd:#232A35;--bd2:#2A323F;--mut:#8A93A6;--mut2:#566076;--acc:#3B82F6;--acc2:#1D4ED8;--shadow:rgba(0,0,0,.35)}
+:root[data-theme=light]{--bg:#F4F6FA;--fg:#1B2433;--panel:#FFFFFF;--panel2:#EBEFF5;--bd:#E2E7EF;--bd2:#D2DAE5;--mut:#5E6A7E;--mut2:#8893A6;--acc:#2563EB;--acc2:#1D4ED8;--shadow:rgba(20,30,50,.10)}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg)}
+header{position:sticky;top:0;background:var(--bg);backdrop-filter:blur(8px);padding:20px 28px;border-bottom:1px solid var(--bd);z-index:5}
+h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:var(--mut);font-size:13px}
+.theme-btn{position:absolute;top:18px;right:24px;background:var(--panel);border:1px solid var(--bd2);color:var(--fg);border-radius:9px;padding:7px 11px;font-size:13px;cursor:pointer}
+.theme-btn:hover{border-color:var(--acc)}
+#q{margin-top:12px;width:100%;max-width:420px;padding:9px 14px;border-radius:10px;border:1px solid var(--bd2);background:var(--panel);color:var(--fg);font-size:14px}
+.chips{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:5px 12px;border-radius:999px;border:1px solid var(--bd2);background:var(--panel);color:var(--mut);font-size:12px;cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--acc)}.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .grid{padding:22px 28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
-.card{text-decoration:none;color:inherit;background:#161B22;border:1px solid #232A35;border-radius:12px;overflow:hidden;transition:.15s;display:block}
-.card:hover{border-color:#3B82F6;transform:translateY(-2px)}
-.thumb{aspect-ratio:1;background:#0A0D12;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.thumb img{width:100%;height:100%;object-fit:contain}.ph{color:#3D4759;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;overflow:hidden;transition:.15s}
+.card:hover{border-color:var(--acc);transform:translateY(-2px)}
+.thumb{aspect-ratio:1;background:var(--panel2);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:contain}.ph{color:var(--mut2);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
 .meta{padding:10px 12px}.nm{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sub{color:#7A839A;font-size:11px}.proj{display:block;color:#566076;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.empty{display:none;padding:60px;text-align:center;color:#5C6678}
+.sub{color:var(--mut);font-size:11px}.proj{display:block;color:var(--mut2);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{display:none;padding:60px;text-align:center;color:var(--mut2)}
 .open{text-decoration:none;color:inherit;display:block}
 .cols{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.cols .lbl{color:#566076;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-right:2px}
-.col-chip{padding:5px 12px;border-radius:8px;border:1px solid #2A323F;background:#161B22;color:#C9D2E3;font-size:12px;font-weight:600;cursor:pointer;user-select:none}
-.col-chip:hover{border-color:#3B82F6}.col-chip.on{background:#1D4ED8;border-color:#1D4ED8;color:#fff}
+.cols .lbl{color:var(--mut2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-right:2px}
+.col-chip{padding:5px 12px;border-radius:8px;border:1px solid var(--bd2);background:var(--panel);color:var(--fg);font-size:12px;font-weight:600;cursor:pointer;user-select:none}
+.col-chip:hover{border-color:var(--acc)}.col-chip.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
 .col-chip .ct{font-weight:400;opacity:.6;margin-left:5px}
-.bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid #232A35}
-.mvlbl{color:#566076;font-size:11px}
-.mv{flex:1;min-width:0;background:#0E1116;color:#9AA3B6;border:1px solid #2A323F;border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer}
-.mv:hover{border-color:#3B82F6}.card.saving{opacity:.55}
-@media(max-width:600px){header{padding:14px 16px}h1{font-size:18px}
+.bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--bd)}
+.mvlbl{color:var(--mut2);font-size:11px}
+.mv{flex:1;min-width:0;background:var(--bg);color:var(--fg);border:1px solid var(--bd2);border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer}
+.mv:hover{border-color:var(--acc)}.card.saving{opacity:.55}
+.ops-t{background:transparent;border:1px solid var(--bd2);color:var(--mut);border-radius:7px;padding:4px 8px;cursor:pointer;font-size:13px;line-height:1}
+.ops-t:hover{border-color:var(--acc);color:var(--fg)}
+.ops{display:flex;gap:6px;padding:0 10px 10px}.ops[hidden]{display:none}
+.ops button{flex:1;background:var(--panel2);border:1px solid var(--bd2);color:var(--mut);border-radius:7px;padding:6px 4px;font-size:11px;cursor:pointer}
+.ops button:hover{border-color:var(--acc);color:var(--fg)}.ops button[data-op=delete]:hover{border-color:#EF4444;color:#EF4444}
+@media(max-width:600px){header{padding:14px 16px}h1{font-size:18px}.theme-btn{top:12px;right:14px}
 .grid{padding:14px 16px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .cols,.chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
 .col-chip,.chip{white-space:nowrap}.mv{font-size:14px;padding:7px 8px}}`;
@@ -123,6 +133,20 @@ for(const c of cards){const sel=c.querySelector('.mv');if(!sel)continue;
 sel.addEventListener('change',()=>{let to=sel.value;
 if(to==='__new__'){const name=(prompt('New collection name:')||'').trim();if(!name){sel.value=c.dataset.col;return;}ensureTab(name);addOptionEverywhere(name);sel.value=name;to=name;}
 save(c,sel,to);});}
+var T=document.getElementById('theme');
+function setT(m){document.documentElement.dataset.theme=m;if(T)T.textContent=(m==='light'?'☾ Dark':'☀ Light');try{localStorage.setItem('folio-lib-theme',m);}catch(e){}}
+setT(document.documentElement.dataset.theme||'dark');
+if(T)T.addEventListener('click',function(){setT(document.documentElement.dataset.theme==='light'?'dark':'light');});
+async function manage(c,payload){c.classList.add('saving');
+try{const r=await fetch('/__library/manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||'failed');c.classList.remove('saving');return j;}
+catch(e){c.classList.remove('saving');alert('Could not '+payload.action+': '+(e.message||'error'));return null;}}
+for(const c of cards){const tg=c.querySelector('.ops-t'),ops=c.querySelector('.ops');if(!tg||!ops)continue;
+tg.addEventListener('click',function(){ops.hidden=!ops.hidden;});
+ops.addEventListener('click',async function(e){const btn=e.target.closest('button[data-op]');if(!btn)return;const op=btn.dataset.op,nm=c.querySelector('.nm'),cur=nm?nm.textContent:'';
+if(op==='rename'){const name=(prompt('Rename design:',cur)||'').trim();if(name&&name!==cur){const j=await manage(c,{action:'rename',design:c.dataset.key,name:name});if(j){if(nm)nm.textContent=name;const pj=c.querySelector('.proj');c.dataset.name=(name+' '+c.dataset.type+' '+(pj?pj.textContent:'')).toLowerCase();}}}
+else if(op==='move'){const project=(prompt('Move to which existing project? (project name)')||'').trim();if(project){const j=await manage(c,{action:'move',design:c.dataset.key,project:project});if(j&&j.design_path){c.dataset.key=String(j.design_path).split('/').slice(-3).join('/');const pj=c.querySelector('.proj');if(pj)pj.textContent=project;}}}
+else if(op==='delete'){if(confirm('Delete "'+cur+'"? It moves to .trash (recoverable).')){const j=await manage(c,{action:'delete',design:c.dataset.key});if(j){c.remove();const i=cards.indexOf(c);if(i>=0)cards.splice(i,1);counts();}}}
+ops.hidden=true;apply();});}
 counts();apply();`;
 
 export function exportLibraryGallery(args: { output_path?: string; max_thumbnails?: number; search?: string; type?: string }): ToolResult {
@@ -153,8 +177,8 @@ export function exportLibraryGallery(args: { output_path?: string; max_thumbnail
   const colTabs = `<div class="cols"><span class="lbl">Collections</span><span class="col-chip on" data-c="">All <span class="ct"></span></span>`
     + cols.map(c => `<span class="col-chip" data-c="${esc(c)}">${esc(c)} <span class="ct"></span></span>`).join('') + `</div>`;
 
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title><style>${STYLE}</style></head>
-<body><header><h1>Design Library</h1><div class="stat">${totalProjects} projects · ${totalDesigns} designs${(args.search || args.type) ? ` · filtered` : ''} · pick a collection per card to organise</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off">${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title><script>try{var m=localStorage.getItem('folio-lib-theme');if(m)document.documentElement.dataset.theme=m;}catch(e){}</script><style>${STYLE}</style></head>
+<body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${totalProjects} projects · ${totalDesigns} designs${(args.search || args.type) ? ` · filtered` : ''} · pick a collection per card to organise</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off">${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
 <div class="grid">${cards}</div>
 <div id="empty" class="empty">No designs match your search.</div>
 <script>${SCRIPT}</script></body></html>`;
