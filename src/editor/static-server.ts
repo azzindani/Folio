@@ -270,6 +270,20 @@ Bun.serve({
       }
     }
 
+    // ── /library → the Design Library gallery ──────────────────────────
+    // Friendly alias for the generated <projects>/library.html (a thumbnail
+    // file-manager over every design). We redirect to the auth'd
+    // /__project_files route rather than serve here, so the gallery's relative
+    // thumbnail paths (.library/thumbs/*) resolve under the same prefix. Auth
+    // has already passed above (cookie / bearer / token-strip), so a plain 302
+    // carries the session cookie onto the follow-up request.
+    if (url.pathname === '/library' || url.pathname === '/library.html') {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: '/__project_files/library.html', 'Cache-Control': 'no-store' },
+      });
+    }
+
     // Side-effect: when a ?token= is present on the initial editor load,
     // promote it to a folio_session cookie so subsequent navigation works
     // without the token in the URL. (Belt-and-suspenders: the redirect above
