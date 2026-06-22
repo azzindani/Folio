@@ -95,6 +95,20 @@ export function normalizeTextAliases(incoming: Layer[]): number {
           delete o['text'];
           n++;
         }
+        // LLMs frequently emit a literal backslash-n inside a YAML plain or
+        // single-quoted scalar (where \n is two chars, NOT a newline) when they
+        // mean a line break — it then renders verbatim ("9TH\nBYOB", suite-001).
+        // De-escape to the real control char so the line splitter (renderer +
+        // text-measure both split on '\n') breaks it correctly. Idempotent.
+        const cv = o['content'];
+        if (typeof cv === 'string' && /\\[nrt]/.test(cv)) {
+          o['content'] = deEscapeText(cv); n++;
+        } else if (cv && typeof cv === 'object') {
+          const obj = cv as Record<string, unknown>;
+          if (typeof obj['value'] === 'string' && /\\[nrt]/.test(obj['value'])) {
+            obj['value'] = deEscapeText(obj['value']); n++;
+          }
+        }
         // Lift flat style shorthand into `style`, then drop the top-level aliases
         // so the stored layer is canonical (and `size`/`color` can't shadow a
         // shape's own meaning downstream).
@@ -227,6 +241,13 @@ export function layerBBox(l: Layer): { x: number; y: number; r: number; b: numbe
 export function layerText(l: Layer): string {
   const c = (l as unknown as Record<string, unknown>)['content'];
   return typeof c === 'string' ? c : (c && typeof c === 'object' ? String((c as Record<string, unknown>)['value'] ?? '') : '');
+}
+
+// Convert LLM-emitted literal escape sequences (backslash-n/r/t written as two
+// characters in a non-double-quoted YAML scalar) into real control chars. Only
+// \n \r \t — never touches other backslashes (a deliberate "\d" stays intact).
+export function deEscapeText(s: string): string {
+  return s.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\\t/g, ' ');
 }
 
 // A layer the model (or the editor) marked `locked: true` asserts deliberate,

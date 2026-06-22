@@ -128,6 +128,21 @@ describe('normalizeTextAliases — verbose text:/flat-style → canonical conten
     expect(kids[0]['content']).toEqual({ type: 'plain', value: 'keep' });
     expect(kids[1]['content']).toEqual({ type: 'plain', value: 'lift me' });
   });
+  it('de-escapes a literal backslash-n into a real newline (suite-001 fix)', () => {
+    const layers = [
+      { type: 'text', content: { type: 'plain', value: 'SATURDAY, THE SQUAT OFF 9TH\\nBYOB' } },
+      { type: 'text', content: 'line1\\r\\nline2' },                    // bare-string content + \r\n
+    ] as unknown as Layer[];
+    expect(normalizeTextAliases(layers)).toBe(2);
+    expect((layers[0] as unknown as { content: { value: string } }).content.value)
+      .toBe('SATURDAY, THE SQUAT OFF 9TH\nBYOB');
+    expect((layers[1] as unknown as { content: string }).content).toBe('line1\nline2');
+  });
+  it('leaves a genuine backslash sequence (not n/r/t) intact', () => {
+    const layers = [{ type: 'text', content: { type: 'plain', value: 'C:\\dev' } }] as unknown as Layer[];
+    expect(normalizeTextAliases(layers)).toBe(0);
+    expect((layers[0] as unknown as { content: { value: string } }).content.value).toBe('C:\\dev');
+  });
 });
 
 const W = 1080, H = 1620;
