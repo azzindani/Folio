@@ -10,8 +10,9 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       properties: {
         section: {
           type: 'string',
-          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference'],
-          description: 'Guide section to load (default: quick_ref)',
+          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference',
+            'craft', 'anti_slop', 'color', 'type', 'ux_laws', 'a11y'],
+          description: 'Guide section to load (default: quick_ref). craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks.',
           default: 'quick_ref',
         },
       },
