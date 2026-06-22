@@ -1,5 +1,4 @@
 import type { ThemeSpec } from '../schema/types';
-import { BRAND_THEMES } from './brand-pack';
 
 const SHARED_SCALE = {
   display: { size: 96, weight: 800, line_height: 1.0 },
@@ -39,11 +38,13 @@ const SHARP_RADII: ThemeSpec['radii'] = {
 // get effectively no glow — depth comes from a hairline rule or hard shadow.
 const NO_GLOW = '0 0 0 rgba(0,0,0,0)';
 
+// Core themes only — kept lean because the EDITOR bundles this map (theme
+// picker + client-side render). The imported "inspired-by" brand systems live
+// in ./brand-pack and are merged into ALL_THEMES (./all-themes) for the MCP/
+// server side only (apply_theme seeds them to disk, so the editor reads a
+// brand-themed design's theme from the project, not from this bundle). This
+// split keeps the editor main entry under its 500KB budget.
 export const BUILTIN_THEMES: Record<string, ThemeSpec> = {
-  // "Inspired-by" brand systems imported from Open Design DESIGN.md (see
-  // ./brand-pack + tools/import-design-systems.mjs). Spread first so a curated
-  // core theme below always wins an id collision.
-  ...BRAND_THEMES,
   'dark-tech': {
     _protocol: 'theme/v1',
     name: 'Dark Tech',
