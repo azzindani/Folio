@@ -36,9 +36,10 @@ def run_one(case, timeout, max_turns):
         f"--allowedTools mcp__folio --max-turns {max_turns} --output-format json"
     )
     cmd = ["docker", "exec", HARNESS, "bash", "-lc", inner]
-    rec = {"id": case["id"], "project": proj, "title": case["title"],
-           "intent": case["intent"], "theme": case["theme"], "dims": case["dims"],
-           "carousel": case["carousel"]}
+    # usecases.json schema: id/project/title/job/n/tags/prompt (the rewritten
+    # hand-authored suite). Use .get() so a future schema tweak can't crash the run.
+    rec = {"id": case["id"], "project": proj, "title": case.get("title", ""),
+           "job": case.get("job"), "n": case.get("n"), "tags": case.get("tags")}
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         out = p.stdout.strip()
