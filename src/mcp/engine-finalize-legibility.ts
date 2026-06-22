@@ -233,3 +233,38 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
   });
   return fixed;
 }
+
+/** True if a string is set in ALL-CAPS (≥4 letters, no lowercase). */
+function isLiteralCaps(v: string): boolean {
+  const letters = v.replace(/[^A-Za-z]/g, '');
+  return letters.length >= 4 && letters === letters.toUpperCase() && /[A-Z]/.test(letters);
+}
+
+/**
+ * ALL-CAPS without letter-spacing is a generic "AI" tell AND reads cramped — caps
+ * always wants ≥0.06em tracking (a UNIVERSAL typographic rule; see the craft/type
+ * rulebook). This is a MECHANICAL fix, not an aesthetic one (§0.4): it adds tracking
+ * only to caps text that has effectively none, and never touches the model's own
+ * tracking, colors, or layout — so it can't make outputs more uniform. Mutates the
+ * layers in place; returns the count fixed.
+ */
+export function fixCapsTracking(layers: Layer[]): number {
+  let fixed = 0;
+  for (const l of flattenLayers(layers)) {
+    if (l.type !== 'text') continue;
+    const v = layerText(l).trim();
+    if (!v) continue;
+    const o = l as unknown as Record<string, unknown>;
+    const st = (o['style'] as Record<string, unknown>) ?? {};
+    const upper = st['text_transform'] === 'uppercase' || isLiteralCaps(v);
+    if (!upper) continue;
+    const size = typeof st['font_size'] === 'number' ? st['font_size'] as number
+      : (typeof o['size'] === 'number' ? o['size'] as number : 16);
+    const cur = typeof st['letter_spacing'] === 'number' ? st['letter_spacing'] as number : 0;
+    const floor = Math.max(1, Math.round(size * 0.06));   // ~0.06em
+    if (cur >= floor) continue;                            // model already tracked it
+    o['style'] = { ...st, letter_spacing: floor };
+    fixed++;
+  }
+  return fixed;
+}
