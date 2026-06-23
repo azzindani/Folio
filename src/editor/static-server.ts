@@ -26,7 +26,7 @@ import { renameDesign, deleteDesign, moveDesign } from '../mcp/engine/library-ma
 // current) + render/cache thumbnails on demand. The page builder is shared with
 // the export_library_gallery snapshot; here we serve it live at /library.
 import { collectLibrary } from '../mcp/engine/library';
-import { buildLibraryPage, renderThumb, thumbFileName } from '../mcp/engine/library-gallery';
+import { buildLibraryPage, renderThumb, thumbFileName, renderCardForDesign } from '../mcp/engine/library-gallery';
 import { loadCollections, allCollections } from '../mcp/engine/library-collections';
 
 // Token validation — reuses the OAuth access-token store from the MCP
@@ -201,6 +201,68 @@ function safeJoinProject(rel: string): string | null {
   return joined;
 }
 
+// ── Live Design Library SSE hub ────────────────────────────────────────────
+// ONE shared poller (lazy: runs only while ≥1 /library tab is connected) walks
+// the projects dir every few seconds, diffs against the previous snapshot, and
+// PUSHES add / update / remove card events to every connected tab — so a newly
+// sealed design slides into the grid with no page reload (the old poll+reload
+// flashed the whole page). fs-only scan; the per-design header read happens only
+// for the handful that actually changed.
+interface LibClient { ctrl: ReadableStreamDefaultController<Uint8Array>; }
+const libClients = new Set<LibClient>();
+const LIB_MAX_CLIENTS = 64;
+const LIB_ENC = new TextEncoder();
+let libPrev: Map<string, number> | null = null;        // relKey → mtimeMs
+let libTimer: ReturnType<typeof setInterval> | null = null;
+
+function libScan(): Map<string, number> {
+  const m = new Map<string, number>();
+  let ents: import('fs').Dirent[] = [];
+  try { ents = fs.readdirSync(PROJECTS_DIR, { withFileTypes: true }); } catch { return m; }
+  for (const ent of ents) {
+    if (!ent.isDirectory() || ent.name.startsWith('.')) continue;
+    const dd = path.join(PROJECTS_DIR, ent.name, 'designs');
+    let files: string[] = [];
+    try { files = fs.readdirSync(dd).filter(f => f.endsWith('.design.yaml')); } catch { continue; }
+    for (const f of files) {
+      try { m.set(`${ent.name}/designs/${f}`, fs.statSync(path.join(dd, f)).mtimeMs); } catch { /* gone mid-scan */ }
+    }
+  }
+  return m;
+}
+
+function libEmit(ev: string, data: string): void {
+  const frame = LIB_ENC.encode(`event: ${ev}\ndata: ${data}\n\n`);
+  for (const c of [...libClients]) { try { c.ctrl.enqueue(frame); } catch { libClients.delete(c); } }
+}
+
+function libTick(): void {
+  const cur = libScan();
+  if (libPrev) {
+    const collState = loadCollections(PROJECTS_DIR);
+    const cols = allCollections(collState);
+    const thumbHref = (key: string): string => `/__library/thumb?d=${encodeURIComponent(key)}`;
+    for (const [key, mt] of cur) {
+      const prev = libPrev.get(key);
+      if (prev === mt) continue;
+      if (prev === undefined) {
+        const c = renderCardForDesign({ root: PROJECTS_DIR, designPath: path.join(PROJECTS_DIR, key), collState, cols, thumbHref });
+        if (c) libEmit('add', JSON.stringify({ key, html: c.html }));
+      } else {
+        libEmit('update', JSON.stringify({ key, t: Math.floor(mt) }));     // thumbnail changed → bust src
+      }
+    }
+    for (const key of libPrev.keys()) if (!cur.has(key)) libEmit('remove', JSON.stringify({ key }));
+  }
+  libPrev = cur;
+  // Heartbeat: a comment keeps the stream alive through proxies when idle.
+  const ping = LIB_ENC.encode(`: ping\n\n`);
+  for (const c of [...libClients]) { try { c.ctrl.enqueue(ping); } catch { libClients.delete(c); } }
+}
+
+function libStart(): void { if (!libTimer) { libPrev = libScan(); libTimer = setInterval(libTick, 3000); } }
+function libStop(): void { if (libTimer) { clearInterval(libTimer); libTimer = null; } libPrev = null; }
+
 Bun.serve({
   port: PORT,
   hostname: HOST,
@@ -349,6 +411,37 @@ Bun.serve({
       });
     }
 
+    // ── GET /__library/events — SSE stream of live design add/update/remove ──
+    // The /library page subscribes here; the shared poller pushes a card's HTML
+    // on create, a cache-bust on thumbnail change, and a key on delete, so open
+    // tabs update IN PLACE with no reload (kills the old poll+reload blink).
+    if (url.pathname === '/__library/events' && req.method === 'GET') {
+      const auth = req.headers.get('authorization') ?? '';
+      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookie;
+      if (authConfigured() && (!presented || !isValidToken(presented))) return new Response('Unauthorized', { status: 401 });
+      if (libClients.size >= LIB_MAX_CLIENTS) return new Response('Too many live clients', { status: 503 });
+      let self: LibClient | null = null;
+      const stream = new ReadableStream<Uint8Array>({
+        start(ctrl) {
+          self = { ctrl };
+          libClients.add(self);
+          libStart();
+          try { ctrl.enqueue(LIB_ENC.encode(`retry: 5000\n: connected\n\n`)); } catch { /* client already gone */ }
+        },
+        cancel() {
+          if (self) libClients.delete(self);
+          if (libClients.size === 0) libStop();
+        },
+      });
+      return new Response(stream, {
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' },
+      });
+    }
+
     // Auth check for /__project_files/* — accept a Bearer token, a
     // ?token= query param (Jupyter-style — the link from open_in_editor
     // includes one), or a folio_session cookie set by a previous token-
@@ -436,11 +529,13 @@ Bun.serve({
     if (url.pathname === '/library' || url.pathname === '/library.html') {
       const { projects, totalProjects, totalDesigns } = collectLibrary({ sort: 'modified', includeLinks: true });
       const collState = loadCollections(PROJECTS_DIR);
+      // ?partial=grid → just the card markup, for the SSE client's reconnect resync.
+      const gridOnly = url.searchParams.get('partial') === 'grid';
       const html = buildLibraryPage({
         projects, totalProjects, totalDesigns, root: PROJECTS_DIR,
         cols: allCollections(collState), collState,
         thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`,
-        live: true,
+        live: true, gridOnly,
       });
       return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
     }

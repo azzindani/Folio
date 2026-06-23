@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exportLibraryGallery, buildLibraryPage } from './library-gallery';
+import { exportLibraryGallery, buildLibraryPage, renderCardForDesign } from './library-gallery';
 import { loadCollections, allCollections } from './library-collections';
 import type { LibraryProject } from './library';
 
@@ -62,6 +62,20 @@ describe('library gallery', () => {
     expect(html).toContain('Cover &lt;script&gt;');
     expect(html).not.toContain('<script>x</script>');
   });
+
+  it('renderCardForDesign builds one card (key + html) from a design path', () => {
+    writeDesign(tmp, 'alpha', 'a1.design.yaml', 'Cover', 'poster');
+    const cs = loadCollections(tmp);
+    const out = renderCardForDesign({
+      root: tmp, designPath: path.join(tmp, 'alpha', 'designs', 'a1.design.yaml'),
+      collState: cs, cols: allCollections(cs), thumbHref: k => `/__library/thumb?d=${encodeURIComponent(k)}`,
+    });
+    expect(out).not.toBeNull();
+    expect(out!.key).toBe('alpha/designs/a1.design.yaml');
+    expect(out!.html).toContain('class="card"');
+    expect(out!.html).toContain('Cover');
+    expect(out!.html).toContain('/__library/thumb?d=');
+  });
 });
 
 describe('buildLibraryPage (shared live + snapshot renderer)', () => {
@@ -97,11 +111,24 @@ describe('buildLibraryPage (shared live + snapshot renderer)', () => {
     expect(html).toContain('data-t="carousel"');
   });
 
-  it('wires the auto-refresh signature + poll only when served live', () => {
+  it('subscribes to live SSE updates only when served live (no poll/reload)', () => {
     const live = build(true);
-    expect(live).toContain('window.__libSig=');
-    expect(live).toContain('/__library/stat');
-    expect(live).toContain('"count":2');
-    expect(build(false)).not.toContain('window.__libSig=');
+    expect(live).toContain('window.__libLive=true');     // live flag
+    expect(live).toContain('/__library/events');          // SSE subscription
+    expect(live).toContain('EventSource');
+    expect(live).not.toContain('location.reload');        // the old blink is gone
+    expect(build(false)).not.toContain('window.__libLive=true');  // assignment only when live
+  });
+
+  it('gridOnly returns just the card markup (for the reconnect resync), no chrome', () => {
+    const grid = buildLibraryPage({
+      projects, totalProjects: 1, totalDesigns: 2, root: '/p',
+      cols: allCollections(collState), collState,
+      thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`, live: true, gridOnly: true,
+    });
+    expect(grid).toContain('class="card"');
+    expect(grid).not.toContain('<html');
+    expect(grid).not.toContain('<header');
+    expect(grid).not.toContain('EventSource');
   });
 });

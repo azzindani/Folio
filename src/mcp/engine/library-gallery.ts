@@ -23,8 +23,9 @@ import type { ToolResult } from '../types';
 import { okResult, errResult, buildContext, pOk, pInfo, readYAML } from './utils';
 import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
-import { collectLibrary, type LibraryDesign, type LibraryProject } from './library';
+import { collectLibrary, readDesignHeader, type LibraryDesign, type LibraryProject } from './library';
 import { loadCollections, allCollections, effectiveCollection, relKey, type CollectionsState } from './library-collections';
+import { buildEditorLink } from './editor-link';
 
 const esc = (s: string): string => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const slug = (s: string): string => s.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 120);
@@ -83,6 +84,27 @@ function card(d: LibraryDesign, project: string, href: string | null, key: strin
   </div>`;
 }
 
+/** Render ONE card for a design at `designPath` (cheap header read). Used by the
+ *  live SSE hub to push a just-created design's card to open /library tabs. */
+export function renderCardForDesign(opts: {
+  root: string; designPath: string; collState: CollectionsState; cols: string[];
+  thumbHref: (key: string) => string;
+}): { key: string; html: string } | null {
+  let mtime = 0;
+  try { mtime = fs.statSync(opts.designPath).mtimeMs; } catch { return null; }
+  const h = readDesignHeader(opts.designPath);
+  const project = path.basename(path.dirname(path.dirname(opts.designPath)));
+  const d: LibraryDesign = {
+    name: h.name ?? path.basename(opts.designPath).replace(/\.design\.yaml$/, ''),
+    type: h.type ?? 'poster', design_path: opts.designPath,
+    width: h.width, height: h.height, pages: h.pages,
+    modified: new Date(mtime).toISOString(),
+    open_url: buildEditorLink(opts.designPath).open_url,
+  };
+  const key = relKey(opts.root, opts.designPath);
+  return { key, html: card(d, project, opts.thumbHref(key), key, effectiveCollection(key, project, opts.collState), opts.cols) };
+}
+
 const STYLE = `:root{--bg:#0E1116;--fg:#E6EAF0;--panel:#161B22;--panel2:#0A0D12;--bd:#232A35;--bd2:#2A323F;--mut:#8A93A6;--mut2:#566076;--acc:#3B82F6;--acc2:#1D4ED8}
 :root[data-theme=light]{--bg:#F4F6FA;--fg:#1B2433;--panel:#FFFFFF;--panel2:#EBEFF5;--bd:#E2E7EF;--bd2:#D2DAE5;--mut:#5E6A7E;--mut2:#8893A6;--acc:#2563EB;--acc2:#1D4ED8}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg)}
@@ -90,8 +112,10 @@ header{position:sticky;top:0;background:var(--bg);backdrop-filter:blur(8px);padd
 h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:var(--mut);font-size:13px}
 .theme-btn{position:absolute;top:18px;right:24px;background:var(--panel);border:1px solid var(--bd2);color:var(--fg);border-radius:9px;padding:7px 11px;font-size:13px;cursor:pointer}
 .theme-btn:hover{border-color:var(--acc)}
-.refresh{position:absolute;top:18px;right:120px;background:var(--acc);border:1px solid var(--acc);color:#fff;border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;animation:pulse 1.6s infinite}
-.refresh[hidden]{display:none}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.66}}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#9aa4b5;margin-left:6px;vertical-align:middle;transition:background .3s}
+.live-dot.on{background:#22C55E}
+.card.justadded{animation:addglow 1.5s ease-out}
+@keyframes addglow{0%{border-color:var(--acc)}60%{border-color:var(--acc)}100%{border-color:var(--bd)}}
 #q{margin-top:12px;width:100%;max-width:420px;padding:9px 14px;border-radius:10px;border:1px solid var(--bd2);background:var(--panel);color:var(--fg);font-size:14px}
 .toolbar{margin-top:12px;display:flex;flex-wrap:wrap;gap:18px;align-items:center}
 .sorts,.cols,.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -134,7 +158,7 @@ body[data-view=list] .card .meta{padding:0;display:flex;gap:16px;align-items:bas
 body[data-view=list] .card .nm{font-size:14px}body[data-view=list] .card .proj{margin-top:0}
 body[data-view=list] .card .when{display:inline}
 body[data-view=list] .card .bar{border-top:0;margin-left:auto}
-@media(max-width:600px){header{padding:14px 16px}h1{font-size:18px}.theme-btn{top:12px;right:14px}.refresh{right:96px;top:12px}
+@media(max-width:600px){header{padding:14px 16px}h1{font-size:18px}.theme-btn{top:12px;right:14px}
 .grid{padding:14px 16px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .toolbar,.cols,.chips,.sorts{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
 .col-chip,.chip,.sortb{white-space:nowrap}.mv{font-size:14px;padding:7px 8px}}`;
@@ -174,27 +198,39 @@ catch(e){sel.value=prev;alert('Could not save — make sure you are still signed
 c.classList.remove('saving');counts();apply();}
 function ensureTab(name){if(colChipEls().some(ch=>ch.dataset.c===name))return;const sp=document.createElement('span');sp.className='col-chip';sp.dataset.c=name;sp.innerHTML=name+' <span class="ct"></span>';const uns=colChipEls().find(ch=>(ch.dataset.c||'')==='Unsorted');if(colsEl)colsEl.insertBefore(sp,uns||null);}
 function addOptionEverywhere(name){for(const c of cards){const s=c.querySelector('.mv');if(!s||[...s.options].some(o=>o.value===name))continue;const o=document.createElement('option');o.value=name;o.textContent=name;s.insertBefore(o,s.querySelector('option[value="__new__"]'));}}
-for(const c of cards){const sel=c.querySelector('.mv');if(!sel)continue;
-sel.addEventListener('change',()=>{let to=sel.value;
-if(to==='__new__'){const name=(prompt('New collection name:')||'').trim();if(!name){sel.value=c.dataset.col;return;}ensureTab(name);addOptionEverywhere(name);sel.value=name;to=name;}
-save(c,sel,to);});}
 async function manage(c,payload){c.classList.add('saving');
 try{const r=await fetch('/__library/manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||'failed');c.classList.remove('saving');return j;}
 catch(e){c.classList.remove('saving');alert('Could not '+payload.action+': '+(e.message||'error'));return null;}}
-for(const c of cards){const tg=c.querySelector('.ops-t'),ops=c.querySelector('.ops');if(!tg||!ops)continue;
+function bindCard(c){const sel=c.querySelector('.mv');
+if(sel)sel.addEventListener('change',()=>{let to=sel.value;
+if(to==='__new__'){const name=(prompt('New collection name:')||'').trim();if(!name){sel.value=c.dataset.col;return;}ensureTab(name);addOptionEverywhere(name);sel.value=name;to=name;}
+save(c,sel,to);});
+const tg=c.querySelector('.ops-t'),ops=c.querySelector('.ops');if(!tg||!ops)return;
 tg.addEventListener('click',function(){ops.hidden=!ops.hidden;});
 ops.addEventListener('click',async function(e){const btn=e.target.closest('button[data-op]');if(!btn)return;const op=btn.dataset.op,nm=c.querySelector('.nm'),cur=nm?nm.textContent:'';
 if(op==='rename'){const name=(prompt('Rename design:',cur)||'').trim();if(name&&name!==cur){const j=await manage(c,{action:'rename',design:c.dataset.key,name:name});if(j){if(nm)nm.textContent=name;const pj=c.querySelector('.proj');c.dataset.name=(name+' '+c.dataset.type+' '+(pj?pj.textContent:'')).toLowerCase();c.dataset.nm=name.toLowerCase();}}}
 else if(op==='move'){const project=(prompt('Move to which existing project? (project name)')||'').trim();if(project){const j=await manage(c,{action:'move',design:c.dataset.key,project:project});if(j&&j.design_path){c.dataset.key=String(j.design_path).split('/').slice(-3).join('/');const pj=c.querySelector('.proj');if(pj)pj.textContent=project;}}}
 else if(op==='delete'){if(confirm('Delete "'+cur+'"? It moves to .trash (recoverable).')){const j=await manage(c,{action:'delete',design:c.dataset.key});if(j){c.remove();const i=cards.indexOf(c);if(i>=0)cards.splice(i,1);counts();}}}
 ops.hidden=true;apply();});}
-const SIG=window.__libSig||null;
-async function poll(){try{const r=await fetch('/__library/stat',{headers:{Accept:'application/json'}});if(!r.ok)return;const s=await r.json();
-if(SIG&&(s.count!==SIG.count||s.newest!==SIG.newest)){const b=document.getElementById('refresh');const d=s.count-SIG.count;
-if(b){b.hidden=false;b.textContent=(d>0?('▲ '+d+' new design'+(d===1?'':'s')):'Library updated')+' · refresh';}
-if(!q.value.trim())location.reload();}}catch(e){}}
-const rb=document.getElementById('refresh');if(rb)rb.addEventListener('click',function(){location.reload();});
-if(SIG)setInterval(poll,7000);
+for(const c of cards)bindCard(c);
+// ── Live updates over SSE (no page reload → no blink) ──
+// The server pushes add / update / remove events as designs change on disk;
+// we splice cards into the grid in place, respecting the current sort+filter.
+function cardByKey(k){for(const c of cards)if(c.dataset.key===k)return c;return null;}
+function onAdd(m){if(!m||!m.key||cardByKey(m.key))return;grid.insertAdjacentHTML('afterbegin',m.html);const el=grid.firstElementChild;if(!el)return;el.classList.add('justadded');cards.push(el);bindCard(el);counts();sortNow();apply();}
+function onUpdate(m){if(!m||!m.key)return;const el=cardByKey(m.key);if(!el)return;const img=el.querySelector('.thumb img');if(img){const base=img.getAttribute('src').split('&t=')[0];img.setAttribute('src',base+'&t='+(m.t||''));el.classList.remove('noimg');}}
+function onRemove(m){if(!m||!m.key)return;const el=cardByKey(m.key);if(!el)return;el.remove();const i=cards.indexOf(el);if(i>=0)cards.splice(i,1);counts();apply();}
+// On (re)connect, if our card count drifted from the server's, swap just the
+// grid body (one fetch, header/scroll preserved) — covers any missed event.
+async function reconcile(){try{const r=await fetch('/__library/stat',{headers:{Accept:'application/json'}});if(!r.ok)return;const s=await r.json();if(s.count===cards.length)return;
+const g=await fetch(location.pathname+'?partial=grid',{headers:{Accept:'text/html'}});if(!g.ok)return;grid.innerHTML=await g.text();cards.length=0;for(const el of grid.querySelectorAll('.card')){cards.push(el);bindCard(el);}counts();setSort(sortKey);}catch(e){}}
+var dot=document.getElementById('livedot');
+if(window.__libLive&&window.EventSource){var opened=false;var es=new EventSource('/__library/events');
+es.onopen=function(){if(dot)dot.classList.add('on');if(opened)reconcile();else{opened=true;setTimeout(reconcile,800);}};
+es.onerror=function(){if(dot)dot.classList.remove('on');};
+es.addEventListener('add',function(e){try{onAdd(JSON.parse(e.data));}catch(x){}});
+es.addEventListener('update',function(e){try{onUpdate(JSON.parse(e.data));}catch(x){}});
+es.addEventListener('remove',function(e){try{onRemove(JSON.parse(e.data));}catch(x){}});}
 setSort(sortKey);setView(view);counts();apply();`;
 
 /** Build the full Library page HTML. `thumbHref` resolves each card's preview src
@@ -209,6 +245,7 @@ export function buildLibraryPage(opts: {
   thumbHref: (d: LibraryDesign, key: string, project: string) => string | null;
   filtered?: boolean;
   live?: boolean;
+  gridOnly?: boolean;
 }): string {
   // One flat, dense grid of every design — newest first, project shown per card.
   const flat: { d: LibraryDesign; project: string }[] = [];
@@ -218,6 +255,8 @@ export function buildLibraryPage(opts: {
     const key = relKey(opts.root, d.design_path);
     return card(d, project, opts.thumbHref(d, key, project), key, effectiveCollection(key, project, opts.collState), opts.cols);
   }).join('\n');
+  // Partial: just the card markup, for the SSE client's on-reconnect grid swap.
+  if (opts.gridOnly) return cards;
   const types = [...new Set(flat.map(x => x.d.type.toLowerCase()))].filter(Boolean).sort();
   const chips = types.map(t => `<span class="chip" data-t="${esc(t)}">${esc(t)}</span>`).join('');
   const colTabs = `<div class="cols"><span class="lbl">Collections</span><span class="col-chip on" data-c="">All <span class="ct"></span></span>`
@@ -228,14 +267,13 @@ export function buildLibraryPage(opts: {
     + `<button class="sortb" data-s="type" type="button">Type</button>`
     + `<button class="sortb" data-s="project" type="button">Project</button>`
     + `<span class="viewt"><button class="viewb" data-v="grid" type="button" title="Grid view">▦</button><button class="viewb" data-v="list" type="button" title="List view">☰</button></span></div>`;
-  const newest = flat.length ? flat[0]!.d.modified : '';
-  const sig = opts.live ? `<script>window.__libSig=${JSON.stringify({ count: opts.totalDesigns, newest })};</script>` : '';
-  const liveBadge = opts.live ? ` · <span style="color:var(--acc)">live</span>` : '';
+  const live = opts.live ? `<script>window.__libLive=true;</script>` : '';
+  const liveBadge = opts.live ? ` · live<span class="live-dot" id="livedot"></span>` : '';
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title><script>try{var m=localStorage.getItem('folio-lib-theme');if(m)document.documentElement.dataset.theme=m;var v=localStorage.getItem('folio-lib-view');if(v)document.body&&(document.body.dataset.view=v);}catch(e){}</script><style>${STYLE}</style></head>
-<body><header><button id="refresh" class="refresh" type="button" hidden>Library updated · refresh</button><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><div class="toolbar">${sorts}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
+<body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><div class="toolbar">${sorts}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
 <div class="grid">${cards}</div>
 <div id="empty" class="empty">No designs match your search.</div>
-${sig}<script>${SCRIPT}</script></body></html>`;
+${live}<script>${SCRIPT}</script></body></html>`;
 }
 
 export function exportLibraryGallery(args: { output_path?: string; max_thumbnails?: number; search?: string; type?: string }): ToolResult {
