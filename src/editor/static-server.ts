@@ -22,6 +22,12 @@ import { assignDesign } from '../mcp/engine/library-collections';
 // Filesystem ops (pure fs + YAML, no rendering) — rename / delete(→trash) /
 // move, surfaced to the gallery via POST /__library/manage.
 import { renameDesign, deleteDesign, moveDesign } from '../mcp/engine/library-manage';
+// Live Design Library — scan the whole collection on every request (always
+// current) + render/cache thumbnails on demand. The page builder is shared with
+// the export_library_gallery snapshot; here we serve it live at /library.
+import { collectLibrary } from '../mcp/engine/library';
+import { buildLibraryPage, renderThumb, thumbFileName } from '../mcp/engine/library-gallery';
+import { loadCollections, allCollections } from '../mcp/engine/library-collections';
 
 // Token validation — reuses the OAuth access-token store from the MCP
 // server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
@@ -281,6 +287,68 @@ Bun.serve({
       });
     }
 
+    // ── GET /__library/thumb?d=<relKey> — render+cache a design thumbnail ──
+    // Live preview for the /library gallery: rasterize the design's first page
+    // to a small PNG on demand, cache under <projects>/.library/thumbs/ keyed by
+    // the design's mtime, and 304 when the browser already holds the current
+    // one. 404 when the design can't render (the card shows "no preview"). Same
+    // cookie/bearer/token auth as the rest of /__library/*.
+    if (url.pathname === '/__library/thumb' && req.method === 'GET') {
+      const auth = req.headers.get('authorization') ?? '';
+      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookie;
+      if (authConfigured() && (!presented || !isValidToken(presented))) return new Response('Unauthorized', { status: 401 });
+      const d = url.searchParams.get('d') ?? '';
+      if (!d || d.includes('..') || path.isAbsolute(d)) return new Response('Bad design key', { status: 400 });
+      const abs = safeJoinProject(d);
+      if (!abs || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) return new Response('Not found', { status: 404 });
+      const mtime = Math.floor(fs.statSync(abs).mtimeMs);
+      const etag = `"t${mtime}"`;
+      if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'no-cache' } });
+      const thumbsDir = path.join(PROJECTS_DIR, '.library', 'thumbs');
+      const cachePath = path.join(thumbsDir, thumbFileName(abs));
+      let png: Buffer | null = null;
+      try { if (fs.existsSync(cachePath) && fs.statSync(cachePath).mtimeMs >= mtime) png = fs.readFileSync(cachePath); } catch { /* re-render below */ }
+      if (!png) {
+        png = renderThumb(abs);
+        if (png) { try { fs.mkdirSync(thumbsDir, { recursive: true }); fs.writeFileSync(cachePath, png); } catch { /* serve uncached */ } }
+      }
+      if (!png) return new Response('No preview', { status: 404 });
+      // Wrap in a fresh ArrayBuffer-backed view: renderThumb's Buffer is typed
+      // Buffer<ArrayBufferLike>, which a SharedArrayBuffer could back and so is
+      // not a valid BodyInit; a copied Uint8Array always is.
+      return new Response(new Uint8Array(png), { status: 200, headers: { 'Content-Type': 'image/png', ETag: etag, 'Cache-Control': 'no-cache' } });
+    }
+
+    // ── GET /__library/stat — cheap {count,newest} signature for live refresh ──
+    // The /library page polls this every few seconds; when count or the newest
+    // mtime changes (a design was just sealed), it auto-refreshes so new work
+    // appears on its own. fs-only stat walk — no YAML parse — so it stays cheap
+    // even when polled by several open tabs.
+    if (url.pathname === '/__library/stat' && req.method === 'GET') {
+      const auth = req.headers.get('authorization') ?? '';
+      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookie;
+      if (authConfigured() && (!presented || !isValidToken(presented))) return new Response('Unauthorized', { status: 401 });
+      let count = 0, newest = 0;
+      try {
+        for (const ent of fs.readdirSync(PROJECTS_DIR, { withFileTypes: true })) {
+          if (!ent.isDirectory() || ent.name.startsWith('.')) continue;
+          const dd = path.join(PROJECTS_DIR, ent.name, 'designs');
+          let files: string[] = [];
+          try { files = fs.readdirSync(dd).filter(f => f.endsWith('.design.yaml')); } catch { continue; }
+          for (const f of files) { count++; try { newest = Math.max(newest, fs.statSync(path.join(dd, f)).mtimeMs); } catch { /* gone mid-scan */ } }
+        }
+      } catch { /* no projects dir */ }
+      return new Response(JSON.stringify({ count, newest: newest ? new Date(newest).toISOString() : '' }), {
+        status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
+
     // Auth check for /__project_files/* — accept a Bearer token, a
     // ?token= query param (Jupyter-style — the link from open_in_editor
     // includes one), or a folio_session cookie set by a previous token-
@@ -358,18 +426,23 @@ Bun.serve({
       }
     }
 
-    // ── /library → the Design Library gallery ──────────────────────────
-    // Friendly alias for the generated <projects>/library.html (a thumbnail
-    // file-manager over every design). We redirect to the auth'd
-    // /__project_files route rather than serve here, so the gallery's relative
-    // thumbnail paths (.library/thumbs/*) resolve under the same prefix. Auth
-    // has already passed above (cookie / bearer / token-strip), so a plain 302
-    // carries the session cookie onto the follow-up request.
+    // ── /library → the LIVE Design Library gallery ─────────────────────
+    // Rendered fresh on every request: collectLibrary scans the whole projects
+    // dir (cheap header parse), so a design sealed seconds ago is already here —
+    // no re-export needed. Each card points at /__library/thumb (rendered +
+    // cached on demand), and the page polls /__library/stat to auto-refresh
+    // when new work lands. Auth already passed above (editor gate); the cookie
+    // it set rides along on the thumb/stat fetches.
     if (url.pathname === '/library' || url.pathname === '/library.html') {
-      return new Response(null, {
-        status: 302,
-        headers: { Location: '/__project_files/library.html', 'Cache-Control': 'no-store' },
+      const { projects, totalProjects, totalDesigns } = collectLibrary({ sort: 'modified', includeLinks: true });
+      const collState = loadCollections(PROJECTS_DIR);
+      const html = buildLibraryPage({
+        projects, totalProjects, totalDesigns, root: PROJECTS_DIR,
+        cols: allCollections(collState), collState,
+        thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`,
+        live: true,
       });
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
     }
 
     // Side-effect: when a ?token= is present on the initial editor load,
