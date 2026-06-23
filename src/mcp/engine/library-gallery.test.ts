@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exportLibraryGallery } from './library-gallery';
+import { exportLibraryGallery, buildLibraryPage } from './library-gallery';
+import { loadCollections, allCollections } from './library-collections';
+import type { LibraryProject } from './library';
 
 function writeDesign(root: string, project: string, file: string, name: string, type: string): void {
   const dir = path.join(root, project, 'designs');
@@ -59,5 +61,47 @@ describe('library gallery', () => {
     const html = fs.readFileSync(r.gallery_path, 'utf8');
     expect(html).toContain('Cover &lt;script&gt;');
     expect(html).not.toContain('<script>x</script>');
+  });
+});
+
+describe('buildLibraryPage (shared live + snapshot renderer)', () => {
+  const collState = loadCollections(os.tmpdir());
+  const projects: LibraryProject[] = [{
+    name: 'noise-band', project_path: '/p/noise-band', modified: '2026-06-22T10:00:00.000Z', design_count: 2,
+    designs: [
+      { name: 'Concrete Lung Flyer', type: 'poster', design_path: '/p/noise-band/designs/a.design.yaml', width: 1080, height: 1080, modified: '2026-06-22T10:00:00.000Z' },
+      { name: 'Tour Carousel', type: 'carousel', design_path: '/p/noise-band/designs/b.design.yaml', width: 1080, height: 1350, pages: 3, modified: '2026-06-21T09:00:00.000Z' },
+    ],
+  }];
+  const build = (live: boolean): string => buildLibraryPage({
+    projects, totalProjects: 1, totalDesigns: 2, root: '/p',
+    cols: allCollections(collState), collState,
+    thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`, live,
+  });
+
+  it('renders a card per design with a live thumbnail src + sortable data attrs', () => {
+    const html = build(true);
+    expect(html).toContain('<title>Folio — Design Library</title>');
+    expect(html).toContain('Concrete Lung Flyer');
+    expect(html).toContain('Tour Carousel');
+    expect(html).toContain('/__library/thumb?d=');
+    expect(html).toContain('data-mod="2026-06-22T10:00:00.000Z"');
+    expect(html).toContain('data-proj="noise-band"');
+  });
+
+  it('includes sort controls, a grid/list view toggle, and type chips', () => {
+    const html = build(true);
+    for (const s of ['newest', 'name', 'type', 'project']) expect(html).toContain(`data-s="${s}"`);
+    expect(html).toContain('data-v="grid"');
+    expect(html).toContain('data-v="list"');
+    expect(html).toContain('data-t="carousel"');
+  });
+
+  it('wires the auto-refresh signature + poll only when served live', () => {
+    const live = build(true);
+    expect(live).toContain('window.__libSig=');
+    expect(live).toContain('/__library/stat');
+    expect(live).toContain('"count":2');
+    expect(build(false)).not.toContain('window.__libSig=');
   });
 });
