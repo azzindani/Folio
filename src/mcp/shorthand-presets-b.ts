@@ -236,7 +236,11 @@ export function buildEvent(sh: ShorthandLayer, id: string, z: number): Layer {
   // renderer. Without this a title that wraps to 3 caps lines under-budgets and
   // the details overlap its last line (diagnose can't see inside the preset).
   // Shrink the (often very large) title so its longest word fits the width.
-  const capsFactor = titleCaps ? 0.60 : 0.54;
+  // Caps factor 0.64 (was 0.60): at very large title sizes the renderer wraps a
+  // multi-word caps headline WIDER than 0.60 predicts — "KIT & THE COAST" budgeted
+  // for 2 lines but rendered 3, so the hero date overlapped the overflow (suite-074).
+  // 0.64 matches the renderer's wrap; short single-word titles are unaffected.
+  const capsFactor = titleCaps ? 0.64 : 0.54;
   const ts = fitTitleSize(title, Math.round(W * (serif ? 0.135 : 0.15)), cW, titleFontResolved, titleCaps), titleH = estTextHeight(title, ts, cW, serif ? 1.05 : 1.0, capsFactor);
   // Hero the date — pull the first date-like line out of the stack and render it
   // big in the accent (the prominent "JULY 18" an event poster wants), leaving the
