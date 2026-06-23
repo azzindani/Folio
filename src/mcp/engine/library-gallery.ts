@@ -125,6 +125,12 @@ h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:var(--mut);font-si
 .viewt{display:inline-flex;border:1px solid var(--bd2);border-radius:8px;overflow:hidden}
 .viewb{background:var(--panel);border:0;color:var(--mut);padding:5px 10px;font-size:13px;cursor:pointer}
 .viewb.on{background:var(--acc);color:#fff}
+.folders{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.folderf{background:var(--panel);color:var(--fg);border:1px solid var(--bd2);border-radius:8px;padding:5px 8px;font-size:12px;max-width:220px;cursor:pointer}
+.folderf:hover{border-color:var(--acc)}
+.fbtn{background:var(--panel);color:var(--mut);border:1px solid var(--bd2);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer}
+.fbtn:hover{border-color:var(--acc);color:var(--fg)}.fbtn[hidden]{display:none}
+.fbtn-danger:hover{border-color:#EF4444;color:#EF4444}
 .chip{padding:5px 12px;border-radius:999px;border:1px solid var(--bd2);background:var(--panel);color:var(--mut);font-size:12px;cursor:pointer;user-select:none}
 .chip:hover{border-color:var(--acc)}.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
 .grid{padding:22px 28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
@@ -165,12 +171,12 @@ body[data-view=list] .card .bar{border-top:0;margin-left:auto}
 
 const SCRIPT = `const q=document.getElementById('q'),cards=[...document.querySelectorAll('.card')],grid=document.querySelector('.grid');
 const chips=[...document.querySelectorAll('.chip')],colsEl=document.querySelector('.cols');
-let type='',col='';
+let type='',col='',fdir='';
 const colChipEls=()=>colsEl?[...colsEl.querySelectorAll('.col-chip')]:[];
 function counts(){for(const ch of colChipEls()){const v=ch.dataset.c||'';const n=v?cards.filter(c=>c.dataset.col===v).length:cards.length;const s=ch.querySelector('.ct');if(s)s.textContent=n;}}
-function apply(){const t=q.value.toLowerCase().trim();let any=false;
-for(const c of cards){const m=(!t||c.dataset.name.includes(t))&&(!type||c.dataset.type===type)&&(!col||c.dataset.col===col);c.style.display=m?'':'none';if(m)any=true;}
-document.getElementById('empty').style.display=any?'none':'block';}
+function apply(){const t=q.value.toLowerCase().trim();const fl=fdir.toLowerCase();let any=false;
+for(const c of cards){const m=(!t||c.dataset.name.includes(t))&&(!type||c.dataset.type===type)&&(!col||c.dataset.col===col)&&(!fl||c.dataset.proj===fl);c.style.display=m?'':'none';if(m)any=true;}
+const e=document.getElementById('empty');if(e)e.style.display=any?'none':'block';}
 q.addEventListener('input',apply);
 for(const ch of chips){ch.addEventListener('click',()=>{const v=ch.dataset.t||'';type=type===v?'':v;for(const x of chips)x.classList.toggle('on',x.dataset.t===type&&type!=='');apply();});}
 if(colsEl)colsEl.addEventListener('click',e=>{const ch=e.target.closest('.col-chip');if(!ch)return;const v=ch.dataset.c||'';col=(v===''?'':(col===v?'':v));for(const x of colChipEls())x.classList.toggle('on',(x.dataset.c||'')===col);apply();});
@@ -213,6 +219,16 @@ else if(op==='move'){const project=(prompt('Move to which existing project? (pro
 else if(op==='delete'){if(confirm('Delete "'+cur+'"? It moves to .trash (recoverable).')){const j=await manage(c,{action:'delete',design:c.dataset.key});if(j){c.remove();const i=cards.indexOf(c);if(i>=0)cards.splice(i,1);counts();}}}
 ops.hidden=true;apply();});}
 for(const c of cards)bindCard(c);
+// ── Folders (real project directories): filter + create / rename / delete ──
+var folderf=document.getElementById('folderf'),newf=document.getElementById('newfolder'),renf=document.getElementById('renfolder'),delf=document.getElementById('delfolder');
+function syncFolderBtns(){if(renf)renf.hidden=!fdir;if(delf)delf.hidden=!fdir;}
+if(folderf)folderf.addEventListener('change',function(){fdir=folderf.value;syncFolderBtns();apply();});
+async function folderOp(payload){try{var r=await fetch('/__library/folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});var j=await r.json().catch(function(){return{};});if(!r.ok||!j.ok)throw new Error(j.error||'failed');return j;}catch(e){alert('Could not '+payload.action+' folder: '+(e.message||'error'));return null;}}
+function addFolderOption(name){if(!folderf)return;for(var i=0;i<folderf.options.length;i++)if(folderf.options[i].value===name)return;var o=document.createElement('option');o.value=name;o.textContent=name+' (0)';folderf.appendChild(o);}
+if(newf)newf.addEventListener('click',async function(){var name=(prompt('New folder name:')||'').trim();if(!name)return;var j=await folderOp({action:'create',name:name});if(j&&j.project){addFolderOption(j.project);folderf.value=j.project;fdir=j.project;syncFolderBtns();apply();}});
+if(renf)renf.addEventListener('click',async function(){if(!fdir)return;var name=(prompt('Rename folder "'+fdir+'" to:',fdir)||'').trim();if(!name||name===fdir)return;var old=fdir;var j=await folderOp({action:'rename',name:old,new_name:name});if(j&&j.project){for(var i=0;i<folderf.options.length;i++)if(folderf.options[i].value===old){var cm=(folderf.options[i].textContent.match(/\\(\\d+\\)\\s*$/)||[''])[0];folderf.options[i].value=j.project;folderf.options[i].textContent=j.project+(cm?' '+cm:'');}fdir=j.project;folderf.value=j.project;syncFolderBtns();apply();}});
+if(delf)delf.addEventListener('click',async function(){if(!fdir)return;if(!confirm('Delete folder "'+fdir+'"? It moves to .trash (recoverable).'))return;var old=fdir;var j=await folderOp({action:'delete',name:old});if(j){for(var i=0;i<folderf.options.length;i++)if(folderf.options[i].value===old){folderf.remove(i);break;}fdir='';if(folderf)folderf.value='';syncFolderBtns();apply();}});
+syncFolderBtns();
 // ── Live updates over SSE (no page reload → no blink) ──
 // The server pushes add / update / remove events as designs change on disk;
 // we splice cards into the grid in place, respecting the current sort+filter.
@@ -267,10 +283,18 @@ export function buildLibraryPage(opts: {
     + `<button class="sortb" data-s="type" type="button">Type</button>`
     + `<button class="sortb" data-s="project" type="button">Project</button>`
     + `<span class="viewt"><button class="viewb" data-v="grid" type="button" title="Grid view">▦</button><button class="viewb" data-v="list" type="button" title="List view">☰</button></span></div>`;
+  const folderList = opts.projects.map(p => ({ name: p.name, n: p.design_count })).sort((a, b) => a.name.localeCompare(b.name));
+  const folderOpts = `<option value="">All folders (${opts.totalProjects})</option>`
+    + folderList.map(f => `<option value="${esc(f.name)}">${esc(f.name)} (${f.n})</option>`).join('');
+  const folders = `<div class="folders"><span class="lbl">Folder</span>`
+    + `<select id="folderf" class="folderf" aria-label="Filter by folder">${folderOpts}</select>`
+    + `<button id="newfolder" class="fbtn" type="button" title="Create a new folder">+ New</button>`
+    + `<button id="renfolder" class="fbtn" type="button" title="Rename the selected folder" hidden>Rename</button>`
+    + `<button id="delfolder" class="fbtn fbtn-danger" type="button" title="Delete the selected folder" hidden>Delete</button></div>`;
   const live = opts.live ? `<script>window.__libLive=true;</script>` : '';
   const liveBadge = opts.live ? ` · live<span class="live-dot" id="livedot"></span>` : '';
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title><script>try{var m=localStorage.getItem('folio-lib-theme');if(m)document.documentElement.dataset.theme=m;var v=localStorage.getItem('folio-lib-view');if(v)document.body&&(document.body.dataset.view=v);}catch(e){}</script><style>${STYLE}</style></head>
-<body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><div class="toolbar">${sorts}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
+<body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><div class="toolbar">${sorts}${folders}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
 <div class="grid">${cards}</div>
 <div id="empty" class="empty">No designs match your search.</div>
 ${live}<script>${SCRIPT}</script></body></html>`;

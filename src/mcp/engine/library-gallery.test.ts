@@ -111,6 +111,16 @@ describe('buildLibraryPage (shared live + snapshot renderer)', () => {
     expect(html).toContain('data-t="carousel"');
   });
 
+  it('includes folder filesystem controls (folder select + create/rename/delete)', () => {
+    const html = build(true);
+    expect(html).toContain('id="folderf"');                  // folder filter select
+    expect(html).toContain('<option value="noise-band">');    // a real folder option
+    expect(html).toContain('id="newfolder"');                 // create
+    expect(html).toContain('id="renfolder"');                 // rename
+    expect(html).toContain('id="delfolder"');                 // delete
+    expect(html).toContain('/__library/folder');              // POST endpoint wired in script
+  });
+
   it('subscribes to live SSE updates only when served live (no poll/reload)', () => {
     const live = build(true);
     expect(live).toContain('window.__libLive=true');     // live flag

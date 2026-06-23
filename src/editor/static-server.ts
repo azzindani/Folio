@@ -22,6 +22,9 @@ import { assignDesign } from '../mcp/engine/library-collections';
 // Filesystem ops (pure fs + YAML, no rendering) — rename / delete(→trash) /
 // move, surfaced to the gallery via POST /__library/manage.
 import { renameDesign, deleteDesign, moveDesign } from '../mcp/engine/library-manage';
+// Folder (project-directory) ops — create / rename / delete(→trash), surfaced
+// to the gallery via POST /__library/folder.
+import { createFolder, renameFolder, deleteFolder, type FolderResult } from '../mcp/engine/library-folders';
 // Live Design Library — scan the whole collection on every request (always
 // current) + render/cache thumbnails on demand. The page builder is shared with
 // the export_library_gallery snapshot; here we serve it live at /library.
@@ -346,6 +349,34 @@ Bun.serve({
       const ok = !!result.success;
       return new Response(JSON.stringify({ ok, ...result }), {
         status: ok ? 200 : 400, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
+
+    // ── POST /__library/folder — create / rename / delete a folder (project) ──
+    // The directory half of the file-manager. Same token auth + body cap as the
+    // other /__library/* mutations; ops live in library-folders.ts (name-validated,
+    // delete → recoverable root .trash). Designs inside a renamed/deleted folder
+    // re-sync through the SSE hub automatically (their paths changed).
+    if (url.pathname === '/__library/folder' && req.method === 'POST') {
+      const auth = req.headers.get('authorization') ?? '';
+      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      const qtoken = url.searchParams.get('token') ?? '';
+      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
+      const presented = bearer || qtoken || cookie;
+      if (!presented || !isValidToken(presented)) return new Response('Unauthorized', { status: 401 });
+      if (parseInt(req.headers.get('content-length') ?? '0', 10) > 8192) return new Response('Payload too large', { status: 413 });
+      let body: { action?: unknown; name?: unknown; new_name?: unknown };
+      try { body = (await req.json()) as typeof body; } catch { return new Response('Bad JSON', { status: 400 }); }
+      const action = typeof body.action === 'string' ? body.action : '';
+      const name = typeof body.name === 'string' ? body.name : '';
+      const newName = typeof body.new_name === 'string' ? body.new_name : '';
+      let result: FolderResult;
+      if (action === 'create') result = createFolder(PROJECTS_DIR, name);
+      else if (action === 'rename') result = renameFolder(PROJECTS_DIR, name, newName);
+      else if (action === 'delete') result = deleteFolder(PROJECTS_DIR, name);
+      else return new Response('Unknown action', { status: 400 });
+      return new Response(JSON.stringify({ ok: result.success, ...result }), {
+        status: result.success ? 200 : 400, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
       });
     }
 
