@@ -105,10 +105,19 @@ function rectFillHex(o: Record<string, unknown>, theme: ThemeSpec | undefined): 
 function backdropColor(flat: Layer[], docW: number, docH: number, theme: ThemeSpec | undefined): string | null {
   let best: { z: number; color: string } | null = null;
   for (const l of flat) {
-    if (l.type !== 'rect') continue;
-    const b = layerBBox(l);
-    if (!(b.x <= docW * 0.03 && b.y <= docH * 0.03 && (b.r - b.x) >= docW * 0.94 && (b.b - b.y) >= docH * 0.94)) continue;
+    const lt = l.type as string;
     const o = l as unknown as Record<string, unknown>;
+    // A `background`/`backdrop` layer paints the whole page regardless of its dims;
+    // a `rect` qualifies only when it actually covers the canvas. Both define the
+    // dominant wash — without the background case, a dark `type:background` was
+    // ignored and the pass fell back to the (light) theme, darkening legible white
+    // text to dark-on-dark (suite-079).
+    const isBgType = lt === 'background' || lt === 'backdrop';
+    if (!isBgType) {
+      if (lt !== 'rect') continue;
+      const b = layerBBox(l);
+      if (!(b.x <= docW * 0.03 && b.y <= docH * 0.03 && (b.r - b.x) >= docW * 0.94 && (b.b - b.y) >= docH * 0.94)) continue;
+    }
     const c = rectFillHex(o, theme);
     if (!c) continue;
     const z = typeof o['z'] === 'number' ? o['z'] as number : 0;
@@ -131,7 +140,7 @@ function paintRank(o: Record<string, unknown>, idx: number): number {
 // on the card (suite-079 Streaky). A wrapper with no fill resolves to null and is
 // skipped, so only painted containers count; tree order makes a card outrank + cover
 // its own text, so each label is judged against the card it sits on.
-const BACKDROP_SHAPES = new Set(['rect', 'ellipse', 'circle', 'polygon', 'path', 'auto_layout', 'group']);
+const BACKDROP_SHAPES = new Set(['rect', 'ellipse', 'circle', 'polygon', 'path', 'auto_layout', 'group', 'background', 'backdrop']);
 // The LOCAL backdrop a text actually sits on: the opaque shape painted directly
 // behind it (highest paint-rank below the text) whose box substantially covers it —
 // a hero band, a card, a badge — NOT the dominant canvas wash. Without this, a
