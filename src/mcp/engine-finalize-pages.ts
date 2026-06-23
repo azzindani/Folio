@@ -1,0 +1,49 @@
+// Folio MCP engine — per-page finalize sweep. A design's geometry/legibility
+// passes historically ran only on TOP-LEVEL poster layers; a multi-page design
+// written in one shot (inline pages[]) had its page layers finalized nowhere, so
+// a carousel kept positionless / overlapping / dark-on-dark page content
+// (suite-009/074/079). This sweep runs the same rescue chain over every page +
+// the root layers, so ANY build path (incremental, bulk, or a re-seal of an old
+// file) converges on the same legible result. Every pass is idempotent — a clean
+// design is a no-op.
+import type { DesignSpec, Layer, ThemeSpec } from '../schema/types';
+import { ALL_THEMES } from '../themes/all-themes';
+import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill } from './engine-finalize-autoplace';
+import { decollideHandPlaced } from './engine-finalize-text';
+import { fixInvisibleText } from './engine-finalize-legibility';
+
+export interface PageFinalizeTotals { nulls: number; placed: number; bgFilled: number; reflowed: number; relit: number; }
+
+export function themeSpecOf(spec: DesignSpec): ThemeSpec | undefined {
+  const th = spec.theme as { ref?: string; colors?: unknown } | undefined;
+  if (th?.ref) return ALL_THEMES[th.ref];
+  return th?.colors ? (spec.theme as unknown as ThemeSpec) : undefined;
+}
+
+/** The rescue chain over ONE layers array: strip nulls → flow positionless →
+ *  de-collide → re-light. Idempotent. Mutates in place; returns the counts. */
+export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?: ThemeSpec): PageFinalizeTotals {
+  const t: PageFinalizeTotals = { nulls: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0 };
+  if (!Array.isArray(layers) || !layers.length) return t;
+  t.nulls = stripNullLayers(layers);
+  t.placed = placePositionlessLayers(layers, w, h);
+  t.bgFilled = ensureBackgroundFill(layers, w, h) ? 1 : 0;   // before the re-light, so it judges the real bg
+  t.reflowed = decollideHandPlaced(layers, w, h);
+  t.relit = fixInvisibleText(layers, w, h, theme);
+  return t;
+}
+
+/** Run the rescue chain over root layers + every page. Mutates spec in place. */
+export function finalizeSpecPages(spec: DesignSpec): PageFinalizeTotals {
+  const totals: PageFinalizeTotals = { nulls: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0 };
+  const w = spec.document.width, h = spec.document.height, theme = themeSpecOf(spec);
+  const arrays: Layer[][] = [];
+  if (Array.isArray(spec.layers)) arrays.push(spec.layers);
+  for (const p of spec.pages ?? []) if (Array.isArray(p.layers)) arrays.push(p.layers);
+  for (const ls of arrays) {
+    const t = finalizePageLayers(ls, w, h, theme);
+    totals.nulls += t.nulls; totals.placed += t.placed; totals.bgFilled += t.bgFilled;
+    totals.reflowed += t.reflowed; totals.relit += t.relit;
+  }
+  return totals;
+}

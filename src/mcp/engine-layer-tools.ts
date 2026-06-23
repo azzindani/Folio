@@ -26,6 +26,8 @@ import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTe
 import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-presets';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
+import { stripNullLayers, placePositionlessLayers } from './engine-finalize-autoplace';
+import { finalizePageLayers, themeSpecOf as resolveThemeSpec } from './engine-finalize-pages';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
 
 const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
@@ -233,6 +235,13 @@ export function addLayers(args: {
   // text layer from rendering/exporting blank.
   const textAliased = normalizeTextAliases(incoming);
   if (textAliased) progress.push(pInfo(`Normalized ${textAliased} verbose text alias(es)`, 'text:/size:/color: → canonical content + style'));
+
+  // Strip a stray `- null` before any pass reads `.id` off it (crashes loadDesign
+  // + poisons the file — suite-030); then flow positionless poster layers.
+  const nulled = stripNullLayers(incoming);
+  if (nulled) progress.push(pInfo(`Dropped ${nulled} null layer(s)`, 'editor-crash guard — a null layer breaks loadDesign'));
+  const placed = spec.pages ? 0 : placePositionlessLayers(incoming, spec.document.width, spec.document.height);
+  if (placed) progress.push(pInfo(`Placed ${placed} positionless layer(s)`, 'flowed into a centered column'));
 
   // Draw a foreignObject BAR chart natively so it isn't blank in PNG/PDF export —
   // recursing into groups/auto_layouts so a grouped or locked dashboard's charts
@@ -480,11 +489,7 @@ export function addLayers(args: {
   // Rescue near-invisible text (a nested style.color left dark on a dark bg, pale
   // labels on a light bg) — recover the model's own flat color if it's legible,
   // else force a backdrop-matched neutral. Illegible text is never the intent.
-  const relitTheme = ((): import('../schema/types').ThemeSpec | undefined => {
-    const th = spec.theme as { ref?: string; colors?: unknown } | undefined;
-    if (th?.ref) return ALL_THEMES[th.ref];
-    return th?.colors ? (spec.theme as unknown as import('../schema/types').ThemeSpec) : undefined;
-  })();
+  const relitTheme = resolveThemeSpec(spec);
   const relit = fixInvisibleText(activeLayers, spec.document.width, spec.document.height, relitTheme);
   if (relit) progress.push(pInfo(`Re-lit ${relit} near-invisible text(s)`, 'text that rendered invisible on its background was recolored to read'));
 
@@ -620,13 +625,16 @@ export function appendPage(args: {
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
   normalizeTextAliases(layers); // canonicalize verbose text:/size:/color: → content+style
-  // De-collide HAND-PLACED page text the same way the poster path does: a weak
-  // model stamps a carousel cover's title + subtitle at the same center, so they
-  // overprint into an illegible smear (suite-114 "Create Account" over its deck).
-  // No-op on a preset page (one group) or a clean layout; full-bleed rects are
-  // exempt. Pages previously skipped this — they were assumed to flow a preset.
-  const pageReflowed = decollideHandPlaced(layers, spec.document.width, spec.document.height);
-  if (pageReflowed) progress.push(pInfo(`Reflowed ${pageReflowed} overlapping layer(s) on the page`, 'hand-placed page text → no overprint'));
+  // Rescue chain on the page layers: strip `- null` (editor-crash), FLOW
+  // positionless layers (else a verbose carousel page piles at the origin where
+  // align:center overflows the left edge — suite-079), de-collide (suite-114),
+  // re-light dark-on-dark (suite-009). Pages historically only de-collided.
+  const pf = finalizePageLayers(layers, spec.document.width, spec.document.height, resolveThemeSpec(spec));
+  if (pf.nulls) progress.push(pInfo(`Dropped ${pf.nulls} null layer(s) on the page`, 'editor-crash guard'));
+  if (pf.placed) progress.push(pInfo(`Placed ${pf.placed} positionless layer(s) on the page`, 'flowed into a centered column'));
+  if (pf.bgFilled) progress.push(pInfo(`Filled an empty page background`, 'transparent bg → solid from text polarity'));
+  if (pf.reflowed) progress.push(pInfo(`Reflowed ${pf.reflowed} overlapping layer(s) on the page`, 'no overprint'));
+  if (pf.relit) progress.push(pInfo(`Re-lit ${pf.relit} low-contrast layer(s) on the page`, 'dark-on-dark → legible'));
   // Never silently append an EMPTY page when content was MEANINGFULLY supplied
   // but coerced to nothing (e.g. a stringified shorthand that didn't parse) — a
   // blank slide would still report success and the dropped copy goes unnoticed,

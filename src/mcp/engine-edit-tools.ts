@@ -13,6 +13,7 @@ import { buildEditorLink } from './engine/editor-link';
 import type { NextAction } from './types';
 
 import { pageHasReadableContent } from './engine-layer-tools';
+import { finalizeSpecPages } from './engine-finalize-pages';
 
 import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
 
@@ -205,6 +206,16 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   if (fitDocumentToSolePreset(spec)) progress.push(pInfo('Fitted canvas to content', `${spec.document.width}×${spec.document.height}`));
+  // Final per-page rescue sweep: strip null layers, flow positionless ones,
+  // de-collide overlaps, re-light dark-on-dark — over the ROOT layers AND every
+  // page. Catches a multi-page design written in one shot (whose page layers no
+  // earlier pass touched) and self-heals an older broken file on re-seal.
+  const swept = finalizeSpecPages(spec);
+  if (swept.nulls) progress.push(pInfo(`Dropped ${swept.nulls} null layer(s)`, 'editor-crash guard'));
+  if (swept.placed) progress.push(pInfo(`Placed ${swept.placed} positionless layer(s)`, 'flowed into a centered column'));
+  if (swept.bgFilled) progress.push(pInfo(`Filled ${swept.bgFilled} empty background(s)`, 'transparent bg → solid from text polarity'));
+  if (swept.reflowed) progress.push(pInfo(`Reflowed ${swept.reflowed} overlapping layer(s)`, 'measured text → no overprint'));
+  if (swept.relit) progress.push(pInfo(`Re-lit ${swept.relit} low-contrast layer(s)`, 'dark-on-dark / pale-on-pale → legible'));
   spec._mode = 'complete';
   if (spec.meta.generation) spec.meta.generation.status = 'complete';
   spec.meta.modified = new Date().toISOString().split('T')[0];

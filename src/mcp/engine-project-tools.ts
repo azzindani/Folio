@@ -31,6 +31,19 @@ export function createDesign(args: { project_path: string; name: string; type?: 
   const designPath = path.join(args.project_path, `designs/${designId}.design.yaml`);
   const today = new Date().toISOString().split('T')[0];
 
+  // Physical dimensions (mm / inches) mistaken for px — a "90×38" wine label
+  // renders as a 90×38px postage stamp (suite-026). When BOTH sides are far below
+  // any real screen canvas, scale up preserving aspect so the long side ≈ 1080px.
+  // Gated at <200 so genuine small web sizes (300×250 ad, 160×600 skyscraper) are
+  // left alone.
+  let w = args.width ?? 1080, h = args.height ?? 1080;
+  if (w > 0 && h > 0 && Math.max(w, h) < 200) {
+    const k = 1080 / Math.max(w, h);
+    const nw = Math.round(w * k), nh = Math.round(h * k);
+    progress.push(pInfo('Scaled up a sub-pixel canvas', `${w}×${h} → ${nw}×${nh} (physical dims read as px)`));
+    w = nw; h = nh;
+  }
+
   const spec: DesignSpec = {
     _protocol: 'design/v1',
     _mode: type === 'carousel' ? 'in_progress' : 'complete',
@@ -39,7 +52,7 @@ export function createDesign(args: { project_path: string; name: string; type?: 
       created: today, modified: today, generator: 'mcp',
       generation: type === 'carousel' ? { status: 'in_progress', total_pages: 0, completed_pages: 0 } : undefined,
     },
-    document: { width: args.width ?? 1080, height: args.height ?? 1080, unit: 'px', dpi: 96 },
+    document: { width: w, height: h, unit: 'px', dpi: 96 },
     theme: { ref: args.theme_ref ?? 'editorial-cream' },
     ...(type === 'carousel' ? { pages: [] } : { layers: [] }),
   };

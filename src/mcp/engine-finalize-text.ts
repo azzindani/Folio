@@ -327,6 +327,11 @@ export function structureHandPlacedText(layers: Layer[], W: number, H: number): 
 export function decollideHandPlaced(layers: Layer[], W: number, H: number): number {
   const o = (l: Layer): Record<string, unknown> => l as unknown as Record<string, unknown>;
   const isFullBleed = (l: Layer): boolean => {
+    // A `background`/`backdrop` layer paints the whole page regardless of its
+    // declared dims — it is scenery, never a collision participant. Without this
+    // a full-bleed bg with real dims ejects the content sitting ON it off the
+    // bottom (suite-079, once positionless content was flowed onto a sized bg).
+    if ((l.type as string) === 'background' || (l.type as string) === 'backdrop') return true;
     const r = o(l); const w = Number(r['width']) || 0; const h = Number(r['height']) || 0;
     return (l.type === 'rect' || l.type === 'image') && w >= W * 0.9 && h >= H * 0.9;
   };
