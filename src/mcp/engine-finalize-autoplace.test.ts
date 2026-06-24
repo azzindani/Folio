@@ -1,6 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers } from './engine-finalize-autoplace';
+import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers, dropPlaceholderText } from './engine-finalize-autoplace';
 import type { Layer } from '../schema/types';
+
+describe('dropPlaceholderText', () => {
+  it('drops obvious leftover placeholders (suite-031 "Cover line 1")', () => {
+    const layers = [
+      { id: 'a', type: 'text', content: { type: 'plain', value: 'FALLOW' } },
+      { id: 'b', type: 'text', content: { type: 'plain', value: 'Cover line 1' } },
+      { id: 'c', type: 'text', content: { type: 'plain', value: 'Cover line 2' } },
+      { id: 'd', type: 'text', content: { type: 'plain', value: 'Lorem ipsum dolor' } },
+      { id: 'e', type: 'text', content: { type: 'plain', value: 'Your title here' } },
+    ] as unknown as Layer[];
+    expect(dropPlaceholderText(layers)).toBe(4);
+    expect(layers).toHaveLength(1);
+    expect((layers[0] as unknown as Record<string, Record<string, unknown>>)['content']['value']).toBe('FALLOW');
+  });
+  it('never drops real copy', () => {
+    const layers = [
+      { id: 'a', type: 'text', content: { type: 'plain', value: 'Spring Plant Sale' } },
+      { id: 'b', type: 'text', content: { type: 'plain', value: 'Cover the whole bed in mulch' } },
+    ] as unknown as Layer[];
+    expect(dropPlaceholderText(layers)).toBe(0);
+    expect(layers).toHaveLength(2);
+  });
+});
 
 describe('recoverEmbeddedLayers', () => {
   it('parses an array of layer specs serialized into one text layer (suite-033/084)', () => {

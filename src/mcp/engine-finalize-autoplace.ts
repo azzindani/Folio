@@ -43,6 +43,27 @@ function textOf(o: Rec): string {
   return typeof o['text'] === 'string' ? (o['text'] as string) : '';
 }
 
+// Obvious throwaway placeholder strings a model leaves in an unfinished design
+// (suite-031 "Cover line 1".."Cover line 4"). Conservative — only matches text
+// that is CLEARLY a placeholder, never real copy.
+const PLACEHOLDER_RE = /^(cover\s*line\s*\d*|lorem(\s+ipsum.*)?|(your|add|enter|insert)\s+(text|title|name|headline|subtitle|content|tagline|copy)(\s+here)?|(body|heading|headline|sub-?title|title|caption|paragraph|tagline)(\s*(text|here|goes\s*here))?|text\s*(goes\s*)?here|placeholder(\s*text)?|todo|tbd|x+|n\/a|\[.*\]|lorem)$/i;
+
+/** Drop text layers whose content is an obvious leftover placeholder so an
+ *  unfinished template never ships with "Cover line 1" visible. Recurses groups. */
+export function dropPlaceholderText(layers: Layer[]): number {
+  if (!Array.isArray(layers)) return 0;
+  let dropped = 0;
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const l = layers[i];
+    if (!l || typeof l !== 'object') continue;
+    const o = l as unknown as Rec;
+    if (Array.isArray(o['layers'])) dropped += dropPlaceholderText(o['layers'] as Layer[]);
+    if (o['type'] !== 'text') continue;
+    if (PLACEHOLDER_RE.test(textOf(o).trim())) { layers.splice(i, 1); dropped++; }
+  }
+  return dropped;
+}
+
 /** One parsed object (from an embedded-JSON blob) → a valid layer. Maps the flat
  *  aliases the model emitted (text/font/fontSize/fill) onto content+style. */
 function coerceLayer(p: unknown, idx: number): Layer | null {

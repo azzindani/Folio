@@ -8,7 +8,7 @@
 // design is a no-op.
 import type { DesignSpec, Layer, ThemeSpec } from '../schema/types';
 import { ALL_THEMES } from '../themes/all-themes';
-import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers } from './engine-finalize-autoplace';
+import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers, dropPlaceholderText } from './engine-finalize-autoplace';
 import { decollideHandPlaced } from './engine-finalize-text';
 import { fixInvisibleText } from './engine-finalize-legibility';
 
@@ -27,7 +27,7 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
   if (!Array.isArray(layers) || !layers.length) return t;
   t.nulls = stripNullLayers(layers);
   const rec = recoverEmbeddedLayers(layers);
-  t.recovered = rec.recovered + rec.dropped;
+  t.recovered = rec.recovered + rec.dropped + dropPlaceholderText(layers);
   t.placed = placePositionlessLayers(layers, w, h);
   t.bgFilled = ensureBackgroundFill(layers, w, h) ? 1 : 0;   // before the re-light, so it judges the real bg
   t.reflowed = decollideHandPlaced(layers, w, h);
