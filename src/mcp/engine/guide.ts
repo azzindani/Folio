@@ -54,6 +54,23 @@ z = stacking order (higher = front)
    asked, then create_design+add_layers (poster) or create_task+append_page
    (carousel). Don't ship sparse output when the topic deserves a dense, researched one.
 
+🖼️ RICHNESS — FILL THE PAGE (the #2 quality gap after AI-slop). A headline + two
+   lines on an empty canvas reads as a DRAFT, not a finished piece. For any
+   CONTENT brief (infographic, newsletter, timeline, how-to, guide, report, menu,
+   tips, process, "by the numbers", journey, mind-map) the bar is a DENSE,
+   ILLUSTRATED document — like the examples gallery, not a lone headline:
+   • NO DEAD SPACE: content (or a deliberate full-bleed shape/texture/band) reaches
+     all four margins. If half the canvas is empty, add a section / data-viz block /
+     sidebar — or size the canvas down to the content. Never ship the void.
+   • BUILD A PICTURE: carry VISUALS, not just text — an icon per point, a
+     chart/donut/bars for any number, a connector path or numbered nodes for a
+     sequence, framed cards, a patterned or two-tone background.
+   • COLOR: 2–4 hues working together (bg + 2 accents + a neutral), not one accent
+     on mono. • STRUCTURE: reach for the rich preset — sections (multi-block),
+     feature_grid, timeline, mindmap, journey — over a single text layer.
+   Plain SIGNAGE (a shop sign, one short announcement) stays minimal; this is for
+   content-rich briefs, where sparse = unfinished.
+
 ⚠️ EVERY sized layer (rect, image, ellipse, icon, group, chart, kpi_card…)
    MUST have a positive width AND height — or use pos:[x,y,w,h]. Without
    dimensions the layer renders INVISIBLY. add_layers now rejects 0-dim
