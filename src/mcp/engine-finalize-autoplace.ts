@@ -34,6 +34,69 @@ export function stripNullLayers(layers: unknown): number {
 
 function num(v: unknown): number | undefined { return typeof v === 'number' && isFinite(v) ? v : undefined; }
 
+const EMBEDDED_LAYER_RE = /"(type|text|content|fill|font|fontSize|font_size|x|y|width|height|style)"\s*:/;
+
+function textOf(o: Rec): string {
+  const c = o['content'];
+  if (typeof c === 'string') return c;
+  if (c && typeof c === 'object' && typeof (c as Rec)['value'] === 'string') return (c as Rec)['value'] as string;
+  return typeof o['text'] === 'string' ? (o['text'] as string) : '';
+}
+
+/** One parsed object (from an embedded-JSON blob) → a valid layer. Maps the flat
+ *  aliases the model emitted (text/font/fontSize/fill) onto content+style. */
+function coerceLayer(p: unknown, idx: number): Layer | null {
+  if (!p || typeof p !== 'object') return null;
+  const o = p as Rec;
+  const type = typeof o['type'] === 'string' ? (o['type'] as string) : 'text';
+  const out: Rec = { id: `recovered_${idx}`, type, z: idx };
+  for (const k of ['x', 'y', 'width', 'height', 'rotation', 'opacity']) if (typeof o[k] === 'number') out[k] = o[k];
+  if (type === 'text') {
+    const txt = textOf(o);
+    if (!txt.trim()) return null;
+    out['content'] = { type: 'plain', value: txt };
+    const st: Rec = (o['style'] && typeof o['style'] === 'object') ? { ...(o['style'] as Rec) } : {};
+    if (typeof st['font'] === 'string' && st['font_family'] == null) { st['font_family'] = st['font']; delete st['font']; }
+    if (typeof o['font'] === 'string' && st['font_family'] == null) st['font_family'] = o['font'];
+    if (typeof o['fontSize'] === 'number' && st['font_size'] == null) st['font_size'] = o['fontSize'];
+    if (typeof o['fill'] === 'string' && st['color'] == null) st['color'] = o['fill'];
+    if (typeof o['color'] === 'string' && st['color'] == null) st['color'] = o['color'];
+    out['style'] = st;
+  } else {
+    if (o['fill'] != null) out['fill'] = o['fill'];
+    if (typeof o['color'] === 'string') out['color'] = o['color'];
+  }
+  return out as unknown as Layer;
+}
+
+/** A weak model sometimes serializes an ARRAY of layer specs into ONE text
+ *  layer's content — the engine then renders the raw JSON blob as literal text
+ *  (suite-033 "BAD WEATHER" code, suite-084 baby-garcia). Detect a text layer
+ *  whose value is embedded layer-JSON, parse it, and splice the real layers in
+ *  its place; if it won't parse, DROP it (never ship rendered code). Recurses
+ *  into group children. Returns {recovered, dropped}. */
+export function recoverEmbeddedLayers(layers: Layer[]): { recovered: number; dropped: number } {
+  if (!Array.isArray(layers)) return { recovered: 0, dropped: 0 };
+  let recovered = 0, dropped = 0;
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const l = layers[i];
+    if (!l || typeof l !== 'object') continue;
+    const o = l as unknown as Rec;
+    if (Array.isArray(o['layers'])) { const r = recoverEmbeddedLayers(o['layers'] as Layer[]); recovered += r.recovered; dropped += r.dropped; }
+    if (o['type'] !== 'text') continue;
+    const s = textOf(o).trim();
+    if (!(s.startsWith('[') || s.startsWith('{')) || !EMBEDDED_LAYER_RE.test(s)) continue;
+    let parsed: unknown;
+    try { parsed = JSON.parse(s); } catch { layers.splice(i, 1); dropped++; continue; }
+    const arr = Array.isArray(parsed) ? parsed : [parsed];
+    const built = arr.map((p, j) => coerceLayer(p, i + j)).filter((x): x is Layer => x != null);
+    if (!built.length) { layers.splice(i, 1); dropped++; continue; }
+    layers.splice(i, 1, ...built);
+    recovered += built.length;
+  }
+  return { recovered, dropped };
+}
+
 function isPositionless(o: Rec): boolean {
   const pos = o['pos'];
   if (Array.isArray(pos) && pos.length >= 2 && typeof pos[0] === 'number' && typeof pos[1] === 'number') return false;

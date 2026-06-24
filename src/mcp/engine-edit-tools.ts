@@ -212,6 +212,7 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   // earlier pass touched) and self-heals an older broken file on re-seal.
   const swept = finalizeSpecPages(spec);
   if (swept.nulls) progress.push(pInfo(`Dropped ${swept.nulls} null layer(s)`, 'editor-crash guard'));
+  if (swept.recovered) progress.push(pInfo(`Recovered ${swept.recovered} embedded JSON-in-text layer(s)`, 'stringified layer array → real layers (or dropped)'));
   if (swept.placed) progress.push(pInfo(`Placed ${swept.placed} positionless layer(s)`, 'flowed into a centered column'));
   if (swept.bgFilled) progress.push(pInfo(`Filled ${swept.bgFilled} empty background(s)`, 'transparent bg → solid from text polarity'));
   if (swept.reflowed) progress.push(pInfo(`Reflowed ${swept.reflowed} overlapping layer(s)`, 'measured text → no overprint'));

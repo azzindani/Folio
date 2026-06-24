@@ -26,7 +26,7 @@ import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTe
 import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-presets';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
-import { stripNullLayers, placePositionlessLayers } from './engine-finalize-autoplace';
+import { stripNullLayers, placePositionlessLayers, recoverEmbeddedLayers } from './engine-finalize-autoplace';
 import { finalizePageLayers, themeSpecOf as resolveThemeSpec } from './engine-finalize-pages';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
 
@@ -240,6 +240,9 @@ export function addLayers(args: {
   // + poisons the file — suite-030); then flow positionless poster layers.
   const nulled = stripNullLayers(incoming);
   if (nulled) progress.push(pInfo(`Dropped ${nulled} null layer(s)`, 'editor-crash guard — a null layer breaks loadDesign'));
+  // Recover a layer-array serialized into ONE text layer (else it renders as a raw JSON blob — suite-033/084).
+  const rec = recoverEmbeddedLayers(incoming);
+  if (rec.recovered || rec.dropped) progress.push(pInfo(`Recovered ${rec.recovered}, dropped ${rec.dropped} JSON-in-text layer(s)`, 'a stringified layer array was rendering as literal text'));
   const placed = spec.pages ? 0 : placePositionlessLayers(incoming, spec.document.width, spec.document.height);
   if (placed) progress.push(pInfo(`Placed ${placed} positionless layer(s)`, 'flowed into a centered column'));
 
@@ -625,16 +628,13 @@ export function appendPage(args: {
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
   normalizeTextAliases(layers); // canonicalize verbose text:/size:/color: → content+style
-  // Rescue chain on the page layers: strip `- null` (editor-crash), FLOW
-  // positionless layers (else a verbose carousel page piles at the origin where
-  // align:center overflows the left edge — suite-079), de-collide (suite-114),
-  // re-light dark-on-dark (suite-009). Pages historically only de-collided.
+  // Rescue chain on the page layers (recover JSON-in-text → strip null → flow
+  // positionless → fill bg → de-collide → re-light); pages historically only
+  // de-collided, so a verbose carousel page piled at the origin (suite-079/009).
   const pf = finalizePageLayers(layers, spec.document.width, spec.document.height, resolveThemeSpec(spec));
-  if (pf.nulls) progress.push(pInfo(`Dropped ${pf.nulls} null layer(s) on the page`, 'editor-crash guard'));
-  if (pf.placed) progress.push(pInfo(`Placed ${pf.placed} positionless layer(s) on the page`, 'flowed into a centered column'));
-  if (pf.bgFilled) progress.push(pInfo(`Filled an empty page background`, 'transparent bg → solid from text polarity'));
-  if (pf.reflowed) progress.push(pInfo(`Reflowed ${pf.reflowed} overlapping layer(s) on the page`, 'no overprint'));
-  if (pf.relit) progress.push(pInfo(`Re-lit ${pf.relit} low-contrast layer(s) on the page`, 'dark-on-dark → legible'));
+  for (const [n, msg] of [[pf.nulls, 'null layer(s) dropped (editor-crash guard)'], [pf.recovered, 'JSON-in-text layer(s) recovered'], [pf.placed, 'positionless layer(s) flowed into a column'], [pf.bgFilled, 'empty background(s) filled from text polarity'], [pf.reflowed, 'overlapping layer(s) reflowed'], [pf.relit, 'low-contrast layer(s) re-lit']] as [number, string][]) {
+    if (n) progress.push(pInfo(`Page: ${n} ${msg}`, 'rescue pass'));
+  }
   // Never silently append an EMPTY page when content was MEANINGFULLY supplied
   // but coerced to nothing (e.g. a stringified shorthand that didn't parse) — a
   // blank slide would still report success and the dropped copy goes unnoticed,
