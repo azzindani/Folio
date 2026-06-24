@@ -46,7 +46,11 @@ export function createDesign(args: { project_path: string; name: string; type?: 
 
   const spec: DesignSpec = {
     _protocol: 'design/v1',
-    _mode: type === 'carousel' ? 'in_progress' : 'complete',
+    // A freshly-created design is EMPTY — it is a draft until add_layers + seal,
+    // not 'complete'. The old poster default of 'complete' made an abandoned,
+    // never-filled poster masquerade as a finished design (suite-025/056/066
+    // empties shipped looking sealed). seal_design sets 'complete'.
+    _mode: 'in_progress',
     meta: {
       id: generateId(), name: args.name, type: type as 'poster' | 'carousel',
       created: today, modified: today, generator: 'mcp',
