@@ -1,6 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill } from './engine-finalize-autoplace';
+import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers } from './engine-finalize-autoplace';
 import type { Layer } from '../schema/types';
+
+describe('recoverEmbeddedLayers', () => {
+  it('parses an array of layer specs serialized into one text layer (suite-033/084)', () => {
+    const blob = JSON.stringify([
+      { type: 'text', text: 'BAD WEATHER', font: 'Anton', fontSize: 36, fill: '#FFFFFF', x: 378, y: 60 },
+      { type: 'text', text: 'DRIZZLE', fontSize: 64, fill: '#1A1A1A', x: 80, y: 120 },
+    ]);
+    const layers = [{ id: 't', type: 'text', content: { type: 'plain', value: blob } }] as unknown as Layer[];
+    const r = recoverEmbeddedLayers(layers);
+    expect(r.recovered).toBe(2);
+    expect(layers).toHaveLength(2);
+    const a = layers[0] as unknown as Record<string, Record<string, unknown>>;
+    expect(a['content']['value']).toBe('BAD WEATHER');           // real text, not JSON
+    expect(a['style']['font_family']).toBe('Anton');             // font → style.font_family
+    expect(a['style']['font_size']).toBe(36);                    // fontSize → style.font_size
+    expect(a['style']['color']).toBe('#FFFFFF');                 // fill → style.color
+    expect((layers[0] as unknown as Record<string, number>)['x']).toBe(378);
+  });
+  it('drops an unparseable JSON-in-text layer rather than render code', () => {
+    const layers = [{ id: 't', type: 'text', text: '[{"type":"text","text":"x" BROKEN' }] as unknown as Layer[];
+    const r = recoverEmbeddedLayers(layers);
+    expect(r.dropped).toBe(1);
+    expect(layers).toHaveLength(0);
+  });
+  it('leaves a normal text layer (even one with brackets) untouched', () => {
+    const layers = [{ id: 't', type: 'text', content: { type: 'plain', value: 'See you at [the park]!' } }] as unknown as Layer[];
+    expect(recoverEmbeddedLayers(layers)).toEqual({ recovered: 0, dropped: 0 });
+    expect(layers).toHaveLength(1);
+  });
+});
 
 describe('stripNullLayers', () => {
   it('removes a literal null layer (the suite-030 editor-crash bug)', () => {
