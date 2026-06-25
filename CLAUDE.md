@@ -1,11 +1,11 @@
 # CLAUDE.md — Folio Design Engine
 # Local-first YAML graphic design engine | LLM-first architecture
-# v2.5.0 | Phase 1–5 complete
+# v0.1.0 | Phases 1–5 shipped · MCP deployed (folio.casava.space)
 
 > Full docs live in docs/ — see docs/README.md for the index. Key: docs/ARCHITECTURE.md
-> (architecture), docs/MCP.md + docs/TOOLS.md (MCP engine + all 49 tools), docs/DEPLOYMENT.md
-> (deploy + endpoints), docs/INTEGRATIONS.md (claude.ai/Claude Code/LM Studio/harnesses),
-> docs/EDITOR.md (visual editor), docs/DESIGN.md (design system + payload format).
+> (architecture + full module index), docs/MCP.md + docs/TOOLS.md (MCP engine + tools),
+> docs/DEPLOYMENT.md (deploy + endpoints), docs/INTEGRATIONS.md (claude.ai/Claude
+> Code/LM Studio/harnesses), docs/EDITOR.md (visual editor), docs/DESIGN.md (payload format).
 
 ---
 
@@ -62,6 +62,8 @@ Structure:
   ✓ pure functions where possible
   ✓ explicit error handling on every async call
   ✓ tests written alongside code, not after
+  ✓ every src/ file ≤700 lines (eslint max-lines enforces) — split into
+    siblings; oversized originals are FACADES that re-export siblings
   ✗ no style string blobs (blocks animation)
   ✗ no Math.random() in render path (seed with layer id)
   ✗ no Date.now() in render path
@@ -91,10 +93,9 @@ the model better spatial tooling to express its own intent, it's right.
 ### 0.5 Git Workflow
 
 ```
-Branch:  claude/refactor-claude-md-TpXBO
-Push:    git push -u origin <branch>
-Retry:   up to 4× on network failure (backoff: 2s, 4s, 8s, 16s)
-Never:   push main directly · --no-verify · --force without approval
+Branch:  NONE — work on main; commit + push directly (no feature branches)
+Push:    git push origin main · retry up to 4× on network fail (2s,4s,8s,16s)
+Never:   --no-verify · --force without approval
 PRs:     only when user explicitly requests
 ```
 
@@ -122,114 +123,59 @@ Full spec: docs/DESIGN.md. Full architecture: docs/ARCHITECTURE.md.
 
 ---
 
-## 2. STACK (summary)
+## 2. STACK + DEPLOY
 
 ```
-Build:     Vite + TypeScript (strict)
+Lang:      TypeScript (strict)
+Runtime:   bun --smol — MCP + editor servers run straight from src (NO build step)
+Build:     Vite (editor dist only; build is RAM-heavy → OOMs on tight hosts, avoid)
 Render:    SVG-in-HTML (no Canvas API, no Fabric.js)
-Framework: Vanilla TS (no React/Vue/Svelte)
-Drag:      interact.js
-Editor:    Monaco (lazy loaded)
+Framework: Vanilla TS (no React/Vue/Svelte) · drag = interact.js · editor = Monaco (lazy)
 YAML:      js-yaml
 Renderers: marked.js (always) · mermaid/vega-lite/katex/prism (lazy)
-Export:    dom-to-image-more + jsPDF + SVG serialize
-MCP:       Node.js stdio, reads/writes .yaml files directly
-Tests:     Vitest (unit) · Playwright (E2E + visual)
+Export:    dom-to-image-more + jsPDF + resvg (vector PDF) + Puppeteer (hi-fi PDF/frames)
+Tests:     Vitest (unit, 1000+) · Playwright (E2E + visual)
 ```
 
 Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
 
----
-
-## 3. MODULE MAP
-
-| Module | Path | Status |
-|---|---|---|
-| Types | `src/schema/types.ts` | ✓ Complete |
-| Parser | `src/schema/parser.ts` | ✓ Complete |
-| Validator | `src/schema/validator.ts` | ✓ Complete |
-| Token resolver | `src/engine/token-resolver.ts` | ✓ Complete |
-| Shorthand expander | `src/engine/shorthand-expander.ts` | ✓ Complete |
-| Component resolver | `src/engine/component-resolver.ts` | ✓ Complete |
-| SVG renderer | `src/renderer/renderer.ts` | ✓ Complete |
-| Layer renderers | `src/renderer/layer-renderers.ts` | ✓ Complete |
-| Fill renderer | `src/renderer/fill-renderer.ts` | ✓ Complete |
-| Effects renderer | `src/renderer/effects-renderer.ts` | ✓ Complete |
-| Editor app | `src/editor/app.ts` | ✓ Complete |
-| Canvas manager | `src/editor/canvas.ts` | ✓ Complete |
-| Interactions | `src/editor/interactions.ts` | ✓ Complete |
-| State manager | `src/editor/state.ts` | ✓ Complete |
-| Keyboard | `src/editor/keyboard.ts` | ✓ Complete |
-| Payload editor | `src/editor/payload-editor.ts` | ✓ Complete |
-| Exporter | `src/export/exporter.ts` | ✓ Complete |
-| Report HTML assembler | `src/export/html-assembler.ts` | ✓ Complete |
-| Mode B runtime | `src/export/mode-b-runtime.ts` | ✓ Complete |
-| Script sandbox | `src/export/script-sandbox.ts` | ✓ Complete |
-| Puppeteer PDF | `src/export/puppeteer-pdf.ts` | ✓ Complete |
-| Presentation assembler | `src/export/presentation-assembler.ts` | ✓ Complete |
-| Lottie export | `src/export/lottie-export.ts` | ✓ Complete |
-| Animation frame export (GIF/MP4/WebM + ffmpeg) | `src/export/animation-export.ts` | ✓ Complete |
-| Remote clicker SSE server | `src/export/remote-server.ts` | ✓ Complete |
-| Collaborative editing SSE server | `src/collab/collab-server.ts` | ✓ Complete |
-| Animation CSS | `src/animation/css-generator.ts` | ✓ Complete |
-| Keyframe engine | `src/animation/keyframe-engine.ts` | ✓ Complete |
-| Page transition CSS | `src/animation/transition-css.ts` | ✓ Complete |
-| Formula evaluator | `src/scripting/formula.ts` | ✓ Complete |
-| MCP tool handlers | `src/mcp/tool-handlers.ts` | ✓ Complete |
-| MCP server | `src/mcp/mcp-server.ts` | ✓ Complete |
-| Shorthand parser | `src/mcp/shorthand-parser.ts` | ✓ Complete |
-| File access | `src/fs/file-access.ts` | ✓ Complete |
-| File watcher | `src/fs/file-watcher.ts` | ✓ Complete |
-| Layer panel | `src/ui/panels/layer-panel.ts` | ✓ Complete |
-| Properties panel | `src/ui/panels/properties-panel.ts` | ✓ Complete |
-| Timeline panel | `src/ui/panels/timeline-panel.ts` | ✓ Complete |
-| Report data loader | `src/report/data-loader.ts` | ✓ Complete |
-| Report aggregator | `src/report/aggregator.ts` | ✓ Complete |
-| Report binder | `src/report/binder.ts` | ✓ Complete |
-| Report navigation | `src/report/navigation.ts` | ✓ Complete |
-| Problems panel | `src/ui/panels/problems-panel.ts` | ✓ Complete |
-| File tree | `src/ui/panels/file-tree.ts` | ✓ Complete |
-| Page strip | `src/ui/panels/page-strip.ts` | ✓ Complete |
-| Command palette | `src/ui/palette/command-palette.ts` | ✓ Complete |
-| Align toolbar | `src/ui/tools/align-toolbar.ts` | ✓ Complete |
-| Toolbox | `src/ui/tools/toolbox.ts` | ✓ Complete |
-| Built-in themes | `src/themes/builtin.ts` | ✓ Complete |
-| Debug util | `src/utils/debug.ts` | ✓ Complete |
+Deploy — folio.casava.space (docker container `folio`, bun --smol, mem_limit 4g):
+```
+FOLIO_MODE=both → http-server.ts :3333 (MCP HTTP API) + static-server.ts :4173 (editor)
+                  dispatched by scripts/docker-entrypoint.sh (modes: ui · mcp · both)
+Auth:    HS256 JWT (src/mcp/jwt.ts) — falls back to FOLIO_API_KEY; editor ?token=<key> → cookie
+Deploy:  docker cp src/mcp/<file> folio:/app/src/mcp/<file> && docker restart folio  (~4s, no build)
+         editor-side changes need a dist rebuild (avoid — OOMs the host)
+Harness: tools/harness-suite/run_live.py drives the live model session (see docs/INTEGRATIONS.md)
+```
 
 ---
 
-## 4. KNOWN GAPS
+## 3. CODE MAP
 
-| Gap | Area | Priority | Status |
-|---|---|---|---|
-| Report interactive HTML export | Export | Phase 2 | ✓ Done |
-| Report MCP tools (generate_report, bind_data, export_report) | MCP | Phase 2 | ✓ Done |
-| Mode B interactive output (state, scripts, data binding) | Export | Phase 2 | ✓ Done |
-| Scripting sandbox (iframe/SES) | Security | Phase 2 | ✓ Done |
-| Puppeteer PDF (high-fidelity) | Export | Phase 2 | ✓ Done |
-| Formula binding (=expr PowerApps-style) | Scripting | Phase 4 | ✓ Done |
-| Page transitions (17 types) | Animation | Phase 4 | ✓ Done |
-| Presentation assembler + MCP tools | Export/MCP | Phase 4 | ✓ Done |
-| Timeline editor UI (scrubber + keyframe panel) | Animation | Phase 4 | ✓ Done |
-| Lottie export (AnimationSpec → JSON) | Export | Phase 4 | ✓ Done |
-| GIF/MP4 frame capture (Puppeteer-based) | Export | Phase 4 | ✓ Done |
-| Particle effects layer type | Renderer | Phase 4 | ✓ Done |
-| Motion path animation (SVG animateMotion) | Renderer | Phase 4 | ✓ Done |
-| 3D perspective transforms (rotate3d) | Renderer | Phase 4 | ✓ Done |
-| Scroll-triggered animations | Runtime | Phase 4 | ✓ Done |
-| Teleprompter mode | Presenter | Phase 4 | ✓ Done |
-| set_formula_context + debug_formula MCP tools | MCP | Phase 4 | ✓ Done |
-| inspect_timeline + add_keyframe MCP tools | MCP | Phase 4 | ✓ Done |
-| WebM encoding (ffmpeg integration) | Export | Phase 5 | ✓ Done |
-| Remote clicker SSE server | Presenter | Phase 5 | ✓ Done |
-| Collaborative editing (SSE file-watch) | Editor | Phase 5 | ✓ Done |
-| export_animation MCP tool | MCP | Phase 5 | ✓ Done |
-| setup_remote_presenter MCP tool | MCP | Phase 5 | ✓ Done |
-| setup_collab MCP tool | MCP | Phase 5 | ✓ Done |
+Where things live (full per-module index in docs/ARCHITECTURE.md — 401 .ts files):
+
+```
+src/schema/    parse · validate · types        (types.ts = facade → siblings)
+src/engine/    token-resolver · shorthand-expander · component-resolver
+src/renderer/  SVG render + layer/fill/effects  (layer-renderers.ts = facade)
+src/editor/    editor app · canvas · state · keyboard · static-server.ts
+src/export/    PNG · vector/hi-fi PDF · Lottie · animation · presentation · report
+src/mcp/       MCP surface — http-server.ts (entry) · tool-handlers ·
+               shorthand-parser (facade) · shorthand-presets-{a,b,c,cards,map,news,seq} ·
+               engine-finalize-* (geom/text/legibility/autoplace/pages — the rescue
+               passes that make blind-model payloads render well) ·
+               engine/guide.ts (model steering) · craft.ts · ai-slop-lint.ts · jwt.ts
+src/ui/        editor panels · command palette · align/toolbox tools
+src/report/    interactive report: data-loader · aggregator · binder · navigation
+src/{animation,scripting,collab,fs,themes,utils}/   as named
+```
+
+RULE: edit the real sibling, NOT the facade. Any file pushing 700 lines → split.
 
 ---
 
-## 5. PERFORMANCE TARGETS (non-negotiable)
+## 4. PERFORMANCE TARGETS (non-negotiable)
 
 ```
 Cold start:              < 1s
@@ -244,10 +190,10 @@ Memory (200L):           < 150MB
 
 ---
 
-## 6. DEFINITION OF DONE
+## 5. DEFINITION OF DONE
 
 ```
-Code:   ✓ zero TS errors · no console.log · no TODOs · errors handled
+Code:   ✓ zero TS errors · no console.log · no TODOs · errors handled · files ≤700 lines
 Tests:  ✓ unit passing · coverage target met · E2E covers flow
 CI:     ✓ all checks green · bundle <5% regression · perf <10% regression
 ```
