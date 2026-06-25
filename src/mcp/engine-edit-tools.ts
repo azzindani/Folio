@@ -14,6 +14,7 @@ import type { NextAction } from './types';
 
 import { pageHasReadableContent } from './engine-layer-tools';
 import { finalizeSpecPages } from './engine-finalize-pages';
+import { pruneEmptyDrafts } from './engine-project-tools';
 
 import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
 
@@ -222,6 +223,25 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
   progress.push(pOk('Design sealed', `${spec.pages?.length ?? 0} page(s), ${spec.layers?.length ?? 0} root layer(s)`));
+
+  // Prune abandoned empty in-progress drafts left beside this now-sealed design —
+  // a model that created a draft, never filled it, then built the real design in
+  // a new file leaves an orphan ~280-byte blank stub (suite-021/034/053/056/058/
+  // 084). Safe at seal time: a sibling still empty when THIS design is done is
+  // abandoned. Never touches a sealed design or one with any content.
+  const projDir = path.dirname(path.dirname(dPath));
+  const pruned = pruneEmptyDrafts(projDir, dPath);
+  if (pruned.length) {
+    progress.push(pInfo(`Pruned ${pruned.length} empty draft(s)`, pruned.join(', ')));
+    const projYaml = path.join(projDir, 'project.yaml');
+    if (fs.existsSync(projYaml)) {
+      const proj = readYAML<{ designs?: { path?: string }[] }>(projYaml);
+      if (Array.isArray(proj.designs)) {
+        proj.designs = proj.designs.filter(d => !(typeof d.path === 'string' && pruned.includes(path.basename(d.path))));
+        writeYAML(projYaml, proj);
+      }
+    }
+  }
 
   const link = buildEditorLink(dPath);
   progress.push(pOk('Editor link', link.short_url ?? link.open_url));

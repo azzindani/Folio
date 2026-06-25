@@ -157,25 +157,71 @@ function colorOf(o: Rec): string | undefined {
   return typeof c === 'string' ? c : undefined;
 }
 
-/** A fill-less `type:background` renders TRANSPARENT — light text then vanishes on
- *  export (white page) and only looks dark in the editor because the chrome shows
- *  through (suite-079: white text + orange accent + empty bg). When a backdrop has
- *  no fill, concretize one from the TEXT polarity (mostly-light text ⇒ near-black
- *  bg, mostly-dark text ⇒ cream) so every renderer agrees and the re-light pass
- *  judges the true backdrop. Returns true if a fill was assigned. */
-export function ensureBackgroundFill(layers: Layer[], docW: number, docH: number): boolean {
-  const bg = layers.find(l => {
-    const o = l as unknown as Rec;
-    return isBackdrop(o, docW, docH) && o['fill'] == null && o['color'] == null;
-  });
-  if (!bg) return false;
+/** Pick a legible backdrop color from the TEXT polarity: mostly-light text ⇒
+ *  near-black bg, mostly-dark text ⇒ cream. Returns undefined when there is no
+ *  text to judge. */
+function polarityBg(layers: Layer[]): string | undefined {
   const lums = layers
     .filter(l => (l as unknown as Rec)['type'] === 'text')
     .map(l => relLum(colorOf(l as unknown as Rec)))
     .filter(v => v >= 0);
-  if (!lums.length) return false;
+  if (!lums.length) return undefined;
   const lightText = lums.filter(v => v > 0.5).length >= lums.length / 2;
-  (bg as unknown as Rec)['fill'] = { type: 'solid', color: lightText ? '#0A0A0A' : '#FAF5EC' };
+  return lightText ? '#0A0A0A' : '#FAF5EC';
+}
+
+/** True if ANY backdrop ELEMENT exists in the tree (full-bleed rect/image or a
+ *  background/backdrop type), filled OR not, including nested inside a group. The
+ *  inject only fires when a page has NO background element whatsoever (suite-080:
+ *  bare text on the canvas) — never a second bg on a design that already has a
+ *  background slot (even an as-yet-unfilled one in a wrapping group). */
+function hasBackdrop(layers: Layer[], docW: number, docH: number): boolean {
+  for (const l of layers) {
+    const o = l as unknown as Rec;
+    const t = o['type'];
+    if (t === 'background' || t === 'backdrop') return true;
+    if (t === 'rect' || t === 'image') {
+      const w = num(o['width']), h = num(o['height']);
+      if (w !== undefined && h !== undefined && w >= docW * 0.9 && h >= docH * 0.9) return true;
+    }
+    const kids = o['layers'] ?? o['children'];
+    if (Array.isArray(kids) && hasBackdrop(kids as Layer[], docW, docH)) return true;
+  }
+  return false;
+}
+
+/** A page/poster needs an opaque backdrop or it renders TRANSPARENT — dark text
+ *  then vanishes against a dark viewer and light text against a white export.
+ *  Two faults, both fixed here:
+ *   1. a fill-less `type:background` (suite-079) → concretize from text polarity.
+ *   2. NO backdrop layer at all, just text on the bare canvas (suite-080's
+ *      carousel: dark Playfair on transparent pages → illegible) → inject a
+ *      full-bleed background so the page is self-contained on every renderer.
+ *  `themeBg` (the doc theme's canvas color) is preferred for the injected bg so
+ *  pages match the design's intent; the later re-light pass fixes any contrast.
+ *  Returns true if it changed the layers. Idempotent — an opaque bg is a no-op. */
+export function ensureBackgroundFill(layers: Layer[], docW: number, docH: number, themeBg?: string): boolean {
+  // 1. an existing fill-less backdrop → concretize from text polarity.
+  const empty = layers.find(l => {
+    const o = l as unknown as Rec;
+    return isBackdrop(o, docW, docH) && o['fill'] == null && o['color'] == null;
+  });
+  if (empty) {
+    const c = polarityBg(layers);
+    if (!c) return false;
+    (empty as unknown as Rec)['fill'] = { type: 'solid', color: c };
+    return true;
+  }
+  // 2. a backdrop element already present (incl. nested in a group) → leave it.
+  if (hasBackdrop(layers, docW, docH)) return false;
+  // 3. no backdrop at all but real content present → inject one.
+  const hasContent = layers.some(l => {
+    const t = (l as unknown as Rec)['type'];
+    return t === 'text' || t === 'shape' || t === 'rect' || t === 'image' || t === 'icon' || t === 'group';
+  });
+  if (!hasContent) return false;
+  const color = themeBg ?? polarityBg(layers) ?? '#FAF5EC';
+  layers.unshift({ id: '_bg_auto', type: 'background', x: 0, y: 0, width: docW, height: docH, z: -1, fill: { type: 'solid', color } } as unknown as Layer);
   return true;
 }
 

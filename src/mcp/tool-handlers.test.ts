@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { createProject, listDesigns, createDesign, appendPage, patchDesign } from './engine';
+import { createProject, listDesigns, createDesign, appendPage, patchDesign, sealDesign, addLayers } from './engine';
 
 let tmpDir: string;
 
@@ -88,6 +88,32 @@ describe('listDesigns', () => {
     const result = listDesigns({ project_path: projectPath });
     expect(result.success).toBe(true);
     expect(result.designs as unknown[]).toHaveLength(2);
+  });
+});
+
+describe('seal_design prunes abandoned empty drafts', () => {
+  it('removes a sibling empty in-progress draft when the real design is sealed (suite-021/034/...)', () => {
+    const projectPath = path.join(tmpDir, 'prune-proj');
+    createProject({ name: 'Prune', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'Stub' });   // created, never filled
+    createDesign({ project_path: projectPath, name: 'Real' });
+    const realPath = path.join(projectPath, 'designs/real.design.yaml');
+    addLayers({ design_path: realPath, layers: [{ id: 'h', type: 'text', x: 100, y: 100, width: 800, height: 120, content: { type: 'plain', value: 'Real Design' }, style: { font_size: 64, color: '#1A1A1A' } }] as unknown as Parameters<typeof addLayers>[0]['layers'] });
+    const r = sealDesign({ design_path: realPath });
+    expect(r.success).toBe(true);
+    expect(fs.existsSync(path.join(projectPath, 'designs/stub.design.yaml'))).toBe(false); // pruned
+    expect(fs.existsSync(realPath)).toBe(true);                  // kept
+  });
+  it('does NOT prune a sibling that has real content', () => {
+    const projectPath = path.join(tmpDir, 'keep-proj');
+    createProject({ name: 'Keep', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'One' });
+    addLayers({ design_path: path.join(projectPath, 'designs/one.design.yaml'), layers: [{ id: 'a', type: 'text', x: 100, y: 100, width: 800, height: 120, content: { type: 'plain', value: 'One' }, style: { font_size: 64, color: '#1A1A1A' } }] as unknown as Parameters<typeof addLayers>[0]['layers'] });
+    createDesign({ project_path: projectPath, name: 'Two' });
+    const twoPath = path.join(projectPath, 'designs/two.design.yaml');
+    addLayers({ design_path: twoPath, layers: [{ id: 'c', type: 'text', x: 100, y: 100, width: 800, height: 120, content: { type: 'plain', value: 'Two' }, style: { font_size: 64, color: '#1A1A1A' } }] as unknown as Parameters<typeof addLayers>[0]['layers'] });
+    sealDesign({ design_path: twoPath });
+    expect(fs.existsSync(path.join(projectPath, 'designs/one.design.yaml'))).toBe(true); // kept
   });
 });
 
