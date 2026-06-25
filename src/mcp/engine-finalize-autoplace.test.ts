@@ -148,8 +148,30 @@ describe('placePositionlessLayers', () => {
       expect(ensureBackgroundFill(layers, 1080, 1080)).toBe(false);
       expect((layers[0] as unknown as Record<string, Record<string, string>>)['fill']['color']).toBe('#123456');
     });
-    it('no-ops when there is no backdrop layer', () => {
-      const layers = [{ id: 't', type: 'text', x: 10, y: 10, style: { color: '#FFFFFF' } }] as unknown as Layer[];
+    it('INJECTS a full-bleed background when a content page has NONE (suite-080)', () => {
+      // dark Playfair text on a bare canvas → transparent page → injects a bg.
+      const layers = [{ id: 't', type: 'text', x: 86, y: 478, style: { color: '#1A1A1A' } }] as unknown as Layer[];
+      expect(ensureBackgroundFill(layers, 1080, 1080)).toBe(true);
+      const bg = layers[0] as unknown as Record<string, unknown>;
+      expect(bg['type']).toBe('background');
+      expect(bg['width']).toBe(1080); expect(bg['height']).toBe(1080);
+      // dark text ⇒ light bg, so the text is legible on every renderer
+      expect((bg['fill'] as Record<string, string>)['color']).toBe('#FAF5EC');
+    });
+    it('uses the THEME background color for the injected bg when provided', () => {
+      const layers = [{ id: 't', type: 'text', style: { color: '#FFFFFF' } }] as unknown as Layer[];
+      expect(ensureBackgroundFill(layers, 1080, 1080, '#102030')).toBe(true);
+      expect((layers[0] as unknown as Record<string, Record<string, string>>)['fill']['color']).toBe('#102030');
+    });
+    it('is idempotent — does not stack a second bg on re-run', () => {
+      const layers = [{ id: 't', type: 'text', style: { color: '#1A1A1A' } }] as unknown as Layer[];
+      ensureBackgroundFill(layers, 1080, 1080);
+      const n = layers.length;
+      expect(ensureBackgroundFill(layers, 1080, 1080)).toBe(false);
+      expect(layers).toHaveLength(n);
+    });
+    it('does NOT inject into an empty (layerless) stub', () => {
+      const layers = [] as unknown as Layer[];
       expect(ensureBackgroundFill(layers, 1080, 1080)).toBe(false);
     });
   });

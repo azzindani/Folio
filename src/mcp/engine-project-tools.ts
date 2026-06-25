@@ -18,6 +18,33 @@ import type { NextAction } from './types';
 
 import { isConstrained } from './engine-runtime-tools';
 
+/** Delete abandoned EMPTY in-progress drafts in a project's designs/ dir. A model
+ *  that calls create_design, never fills it, then creates another leaves an orphan
+ *  0-layer stub that renders blank and clutters the project (suite-021/034/053/
+ *  056/058/084 each shipped a ~280-byte empty draft beside the real design). Only
+ *  touches drafts that are `in_progress` with NO layers AND NO pages — never a
+ *  sealed design or one with any content. Returns the basenames pruned. */
+export function pruneEmptyDrafts(projectPath: string, keepPath: string): string[] {
+  const dir = path.join(projectPath, 'designs');
+  let files: string[];
+  try { files = fs.readdirSync(dir); } catch { return []; }
+  const keep = path.resolve(keepPath);
+  const pruned: string[] = [];
+  for (const f of files) {
+    if (!f.endsWith('.design.yaml')) continue;
+    const fp = path.join(dir, f);
+    if (path.resolve(fp) === keep) continue;
+    let spec: { _mode?: string; layers?: unknown[]; pages?: unknown[] };
+    try { spec = readYAML(fp); } catch { continue; }
+    const emptyLayers = !Array.isArray(spec.layers) || spec.layers.length === 0;
+    const emptyPages = !Array.isArray(spec.pages) || spec.pages.length === 0;
+    if (spec._mode === 'in_progress' && emptyLayers && emptyPages) {
+      try { fs.unlinkSync(fp); pruned.push(f); } catch { /* best-effort */ }
+    }
+  }
+  return pruned;
+}
+
 export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
   const op = 'create_design';
   const progress: ProgressItem[] = [];

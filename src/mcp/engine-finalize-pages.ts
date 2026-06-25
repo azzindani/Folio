@@ -29,7 +29,8 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
   const rec = recoverEmbeddedLayers(layers);
   t.recovered = rec.recovered + rec.dropped + dropPlaceholderText(layers);
   t.placed = placePositionlessLayers(layers, w, h);
-  t.bgFilled = ensureBackgroundFill(layers, w, h) ? 1 : 0;   // before the re-light, so it judges the real bg
+  const themeBg = (theme?.colors as Record<string, unknown> | undefined)?.['background'];
+  t.bgFilled = ensureBackgroundFill(layers, w, h, typeof themeBg === 'string' ? themeBg : undefined) ? 1 : 0;   // before the re-light, so it judges the real bg
   t.reflowed = decollideHandPlaced(layers, w, h);
   t.relit = fixInvisibleText(layers, w, h, theme);
   return t;
