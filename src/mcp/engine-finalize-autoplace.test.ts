@@ -15,13 +15,26 @@ describe('dropPlaceholderText', () => {
     expect(layers).toHaveLength(1);
     expect((layers[0] as unknown as Record<string, Record<string, unknown>>)['content']['value']).toBe('FALLOW');
   });
+  it('drops bare EMPTY/Blank/Untitled stubs (suite-038 "EMPTY" ×12)', () => {
+    const layers = [
+      { id: 'a', type: 'text', content: { type: 'plain', value: 'Jane Cooper' } },
+      { id: 'b', type: 'text', content: { type: 'plain', value: 'EMPTY' } },
+      { id: 'c', type: 'text', content: { type: 'plain', value: 'blank' } },
+      { id: 'd', type: 'text', content: { type: 'plain', value: 'Untitled' } },
+    ] as unknown as Layer[];
+    expect(dropPlaceholderText(layers)).toBe(3);
+    expect(layers).toHaveLength(1);
+    expect((layers[0] as unknown as Record<string, Record<string, unknown>>)['content']['value']).toBe('Jane Cooper');
+  });
   it('never drops real copy', () => {
     const layers = [
       { id: 'a', type: 'text', content: { type: 'plain', value: 'Spring Plant Sale' } },
       { id: 'b', type: 'text', content: { type: 'plain', value: 'Cover the whole bed in mulch' } },
+      { id: 'c', type: 'text', content: { type: 'plain', value: 'Leave the page blank' } },
+      { id: 'd', type: 'text', content: { type: 'plain', value: 'Empty your mind' } },
     ] as unknown as Layer[];
     expect(dropPlaceholderText(layers)).toBe(0);
-    expect(layers).toHaveLength(2);
+    expect(layers).toHaveLength(4);
   });
 });
 

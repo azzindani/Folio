@@ -46,7 +46,7 @@ function textOf(o: Rec): string {
 // Obvious throwaway placeholder strings a model leaves in an unfinished design
 // (suite-031 "Cover line 1".."Cover line 4"). Conservative — only matches text
 // that is CLEARLY a placeholder, never real copy.
-const PLACEHOLDER_RE = /^(cover\s*line\s*\d*|lorem(\s+ipsum.*)?|(your|add|enter|insert)\s+(text|title|name|headline|subtitle|content|tagline|copy)(\s+here)?|(body|heading|headline|sub-?title|title|caption|paragraph|tagline)(\s*(text|here|goes\s*here))?|text\s*(goes\s*)?here|placeholder(\s*text)?|todo|tbd|x+|n\/a|\[.*\]|lorem)$/i;
+const PLACEHOLDER_RE = /^(cover\s*line\s*\d*|lorem(\s+ipsum.*)?|(your|add|enter|insert)\s+(text|title|name|headline|subtitle|content|tagline|copy)(\s+here)?|(body|heading|headline|sub-?title|title|caption|paragraph|tagline)(\s*(text|here|goes\s*here))?|text\s*(goes\s*)?here|placeholder(\s*text)?|empty|blank|untitled|todo|tbd|x+|n\/a|\[.*\]|lorem)$/i;
 
 /** Drop text layers whose content is an obvious leftover placeholder so an
  *  unfinished template never ships with "Cover line 1" visible. Recurses groups. */
