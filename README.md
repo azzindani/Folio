@@ -20,7 +20,7 @@ Full guides live in [`docs/`](docs/README.md):
 
 - **49 MCP tools** across 3 tiers: Basic (15), Design (10), Export (24)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
-- **Multiple transports** — stdio (local LM Studio / Claude Code), HTTP + SSE (Claude Connectors, Hermes, OpenClaw, any MCP-over-HTTP client)
+- **Multiple transports** — stdio (local LM Studio / Claude Code) and spec-compliant **Streamable HTTP** (Claude Connectors, LM Studio remote, Hermes, OpenClaw, any MCP-over-HTTP client), with an optional tool-result SSE stream
 - **Multi-token auth** — issue named bearer tokens per connector; audit log records which token called which tool
 - **Self-hostable via Docker** — single image, compose file, optional Caddy sidecar for auto-HTTPS
 - **Browser editor over the same URL** — visual editor and MCP API share one domain when behind a reverse proxy
@@ -317,6 +317,16 @@ Auth: Authorization: Bearer <token>
 ```
 
 `tools/list`, `tools/call`, and `initialize` follow the standard MCP wire protocol — no Folio-specific extensions.
+
+The `/mcp` endpoint implements the **Streamable HTTP** transport per the MCP spec, so strict MCP SDK clients connect cleanly:
+
+| Request | Response |
+|---|---|
+| `POST /mcp` (a request with `id`) | `200` + JSON-RPC reply |
+| `POST /mcp` (a `notifications/*` message) | `202 Accepted`, empty body |
+| `GET` / `DELETE /mcp` | `405` + `Allow: POST` (server is stateless — no server→client stream or session) |
+
+If a client errors on the `GET`/notification behavior it predates the current spec — bridge it with `mcp-remote` (see [LM Studio over HTTP](#lm-studio-over-http--drive-a-docker-hosted-folio-with-a-local-model)).
 
 ### Anthropic Claude Connectors (claude.ai)
 
@@ -946,7 +956,7 @@ Folio/
 ├── .env.example                 ← env template
 ├── tokens.example.json          ← multi-token template
 ├── tests/                       ← Playwright e2e + visual regression
-└── src/**/*.test.ts             ← 2,600+ Vitest unit + integration tests
+└── src/**/*.test.ts             ← 2,900+ Vitest unit + integration tests
 ```
 
 ---
