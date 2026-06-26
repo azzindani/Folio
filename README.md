@@ -379,6 +379,29 @@ One HTTP endpoint exposes **all 49 tools** (no tier split over HTTP). Designs th
 >   -H "Content-Type: application/json" \
 >   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'   # → 49
 > ```
+> If the curl prints `49` but LM Studio still won't connect, it's the client, not the server — use the stdio bridge below.
+
+#### If LM Studio won't connect over HTTP — stdio bridge fallback
+
+Older LM Studio builds (and some other clients) don't speak remote/HTTP MCP, or their HTTP transport is finicky. The reliable workaround is [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) — a tiny stdio↔HTTP proxy LM Studio launches as a normal `command`, so from LM Studio's side it's a local stdio server while it talks to your Docker endpoint underneath. Needs Node.js on the machine.
+
+```json
+{
+  "mcpServers": {
+    "folio": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://folio.casava.space/mcp",
+        "--header", "Authorization:Bearer ${FOLIO_TOKEN}"
+      ],
+      "env": { "FOLIO_TOKEN": "<YOUR_FOLIO_TOKEN>" }
+    }
+  }
+}
+```
+
+> Why this works when the direct config doesn't: `mcp-remote` runs the full MCP SDK client itself and handles the Streamable-HTTP handshake, auth header, and reconnects — LM Studio only has to do stdio, which every version supports. (The Folio server is spec-compliant either way: `GET /mcp` → 405, `notifications/*` → 202; if a client trips on those, it's out of date.)
 
 ### Hermes, OpenClaw, and other MCP-over-HTTP agents
 
