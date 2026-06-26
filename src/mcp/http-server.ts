@@ -52,7 +52,7 @@ const editorClients = new Set<http.ServerResponse>();
 function setCORS(res: http.ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
 }
 function jsonReply(res: http.ServerResponse, status: number, body: unknown): void {
   setCORS(res);
@@ -218,6 +218,13 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     }
     let parsed: MCPRequest;
     try { parsed = JSON.parse(body) as MCPRequest; } catch { jsonReply(res, 400, { jsonrpc: '2.0', id: 0, error: { code: -32700, message: 'Parse error' } }); return; }
+    // JSON-RPC notifications (the `notifications/*` namespace, e.g.
+    // notifications/initialized) take 202 Accepted + EMPTY body per the MCP
+    // Streamable-HTTP spec. Returning a response object to a notification makes
+    // strict SDK clients (LM Studio) reject the connection.
+    if (typeof parsed.method === 'string' && parsed.method.startsWith('notifications/')) {
+      setCORS(res); res.writeHead(202); res.end(); return;
+    }
     const { response, raw, toolName } = handleMCP(parsed);
     // Audit: which named token invoked which tool. Token VALUES are never logged.
     if (parsed.method === 'tools/call' && toolName) {
@@ -230,6 +237,17 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
       if (filePath) editorBroadcast('file_changed', filePath, toolName);
     }
     jsonReply(res, 200, response);
+    return;
+  }
+
+  // Streamable-HTTP: this server is stateless and has no server→client stream,
+  // so the optional GET (open SSE stream) and DELETE (end session) on /mcp are
+  // unsupported. Return 405 (not 404) with an Allow header so MCP SDK clients
+  // (LM Studio) treat it as "no stream offered" and proceed instead of erroring.
+  if (pathOnly === '/mcp' && (method === 'GET' || method === 'DELETE')) {
+    setCORS(res);
+    res.writeHead(405, { 'Content-Type': 'application/json', Allow: 'POST, OPTIONS' });
+    res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Method Not Allowed: POST JSON-RPC to /mcp; this endpoint exposes no GET stream.' } }));
     return;
   }
 
