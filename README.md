@@ -413,6 +413,20 @@ Older LM Studio builds (and some other clients) don't speak remote/HTTP MCP, or 
 
 > Why this works when the direct config doesn't: `mcp-remote` runs the full MCP SDK client itself and handles the Streamable-HTTP handshake, auth header, and reconnects — LM Studio only has to do stdio, which every version supports. (The Folio server is spec-compliant either way: `GET /mcp` → 405, `notifications/*` → 202; if a client trips on those, it's out of date.)
 
+#### Using Folio once it's connected
+
+Either config above lands you in the same place: a `folio` server exposing 49 tools. From a fresh LM Studio chat —
+
+1. **Turn the server on.** Saving `mcp.json` reloads MCP servers. In a chat, open the **integrations / plug** control next to the message box and enable **folio**. LM Studio runs `tools/list` and shows **49 tools** under it. A red/error badge means the connection failed — re-check the token + URL, or switch to the `mcp-remote` bridge above.
+2. **Use a tool-calling model.** MCP only works with models that support function calling (Qwen 2.5 / Qwen 3, Llama 3.x, Mistral-small, …). A model without tool support silently ignores the server. Give it generous context — these flows chain 4–6 tool calls.
+3. **Ask it to design — give a project path + a brief.** For example:
+   > Create a project at `/home/folio/projects/launch`, then design a bold dark-tech poster announcing **"Q3 Launch — Oct 14"** with a red pill badge. Seal it and export as SVG.
+
+   The model chains `create_project → create_design → add_layers → seal_design → export_design`. Paths must be **absolute and inside the container** (`/home/folio/projects/...` — see [Absolute Paths](#important-absolute-paths)); on the Docker host they land under `./folio-projects`.
+4. **See / edit the result.** The model returns an `open_in_editor` link — or open the bundled editor yourself (`https://folio.your-domain.tld/` hosted, `http://localhost:4173/` local Docker) to adjust the design by hand. The editor live-reloads as the model writes.
+
+> Smaller local models stay on track with less in context. If it thrashes or ignores the tools, tell it to call **`get_engine_guide`** first, or open with **`enrich_brief`** to turn a one-line brief into a structured plan before it builds.
+
 ### Hermes, OpenClaw, and other MCP-over-HTTP agents
 
 Any client that speaks JSON-RPC over HTTP with a bearer header works. Minimal config shape:
