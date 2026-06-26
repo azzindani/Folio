@@ -76,7 +76,7 @@ test('1. Boot + core flows produce zero console errors', async ({ page }) => {
   // Flow A: open the catalog, switch tabs, search, escape.
   await page.locator('.activity-bar button, .activity-bar .activity-btn').nth(1).click().catch(() => {});
   await page.waitForTimeout(150);
-  await page.locator('button').filter({ hasText: /^Catalog$/ }).first().click();
+  await page.locator('[data-action="catalog"]').first().click();
   await page.waitForSelector('.catalog', { timeout: 5000 });
   await shot(page, '01b-catalog-open');
   for (const tab of ['themes', 'reports', 'featured', 'templates']) {
@@ -258,7 +258,7 @@ test('5. Escape closes the catalog overlay', async ({ page }) => {
   await waitForEditor(page);
   await page.locator('.activity-bar button, .activity-bar .activity-btn').nth(1).click().catch(() => {});
   await page.waitForTimeout(150);
-  await page.locator('button').filter({ hasText: /^Catalog$/ }).first().click();
+  await page.locator('[data-action="catalog"]').first().click();
   await page.waitForSelector('.catalog', { timeout: 5000 });
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);

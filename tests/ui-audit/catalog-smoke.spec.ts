@@ -27,14 +27,18 @@ test('Folio Catalog — browse + pick + open', async ({ page }) => {
   await page.waitForTimeout(200);
 
   // Open the catalog
-  await page.locator('button').filter({ hasText: /^Catalog$/ }).first().click();
+  await page.locator('[data-action="catalog"]').first().click();
   await page.waitForSelector('.catalog', { timeout: 5000 });
   await page.waitForTimeout(300);
   await shot(page, '01-templates-tab');
 
-  // Verify all 4 tabs are present
+  // Verify the full tab set is present (templates / themes / palettes / type /
+  // effects / reports / featured).
   const tabs = page.locator('.catalog-tab');
-  await expect(tabs).toHaveCount(4);
+  await expect(tabs).toHaveCount(7);
+  for (const t of ['templates', 'themes', 'palettes', 'type', 'effects', 'reports', 'featured']) {
+    await expect(page.locator(`.catalog-tab[data-tab="${t}"]`)).toHaveCount(1);
+  }
 
   // Search bar narrows the template list
   const initialCards = await page.locator('.tmpl-card[data-template]').count();
