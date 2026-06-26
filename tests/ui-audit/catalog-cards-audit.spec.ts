@@ -59,7 +59,7 @@ async function openCatalog(page: Page): Promise<boolean> {
   for (let i = 0; i < n; i++) {
     await activityBtns.nth(i).click({ timeout: 2000 }).catch(() => {});
     await page.waitForTimeout(200);
-    const catBtn = page.locator('button').filter({ hasText: /^Catalog$/ }).first();
+    const catBtn = page.locator('[data-action="catalog"]').first();
     if (await catBtn.count() > 0 && await catBtn.isVisible().catch(() => false)) {
       await catBtn.click().catch(() => {});
       if (await page.waitForSelector('.catalog', { timeout: 3000 }).then(() => true).catch(() => false)) return true;
