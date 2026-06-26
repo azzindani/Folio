@@ -346,22 +346,39 @@ Hosted (HTTP transport):
 }
 ```
 
-### LM Studio over HTTP (instead of stdio)
+### LM Studio over HTTP — drive a Docker-hosted Folio with a local model
 
-LM Studio supports HTTP MCP servers since v0.3. Add to `mcp.json`:
+LM Studio supports HTTP MCP servers since v0.3, so a model running locally in LM Studio can drive a Folio that's already up in Docker (on your laptop or a VPS) — no stdio subprocess, no second clone of the repo.
+
+**LM Studio → Developer (`</>`) → Edit `mcp.json`** and paste this, pointing `url` at your Docker endpoint:
 
 ```json
 {
   "mcpServers": {
     "folio": {
-      "url": "http://localhost:3333/mcp",
-      "headers": { "Authorization": "Bearer sk-folio-lmstudio-..." }
+      "url": "https://folio.casava.space/mcp",
+      "headers": { "Authorization": "Bearer <YOUR_FOLIO_TOKEN>" }
     }
   }
 }
 ```
 
-Useful when you're running Folio in Docker and don't want LM Studio to clone its own copy.
+Swap the `url` + bearer for your own deployment:
+
+| Where Folio runs | `url` | Token |
+|---|---|---|
+| Hosted (VPS + Caddy TLS) | `https://folio.your-domain.tld/mcp` | a value from `tokens.json`, or your `FOLIO_API_KEY` |
+| Local Docker (`docker compose up`) | `http://localhost:3333/mcp` | optional on localhost — drop `headers` entirely if no auth is set |
+
+One HTTP endpoint exposes **all 49 tools** (no tier split over HTTP). Designs the model creates land in the container's `/home/folio/projects` (host `./folio-projects`) and open in the bundled editor at the same host — `https://folio.your-domain.tld/` or `http://localhost:4173/`.
+
+> Smoke-test the endpoint before wiring it into LM Studio:
+> ```bash
+> curl -s https://folio.casava.space/mcp \
+>   -H "Authorization: Bearer <YOUR_FOLIO_TOKEN>" \
+>   -H "Content-Type: application/json" \
+>   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'   # → 49
+> ```
 
 ### Hermes, OpenClaw, and other MCP-over-HTTP agents
 
