@@ -10,6 +10,7 @@ import { authorize, describeAuth, loadTokens } from './auth';
 import { handleOAuth } from './oauth';
 import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
 import { normalizeProjectPaths } from './normalize-paths';
+import { rateLimiterFromEnv } from './rate-limit';
 
 // Cap the /mcp request body so a single large POST can't buffer unboundedly
 // into the heap and OOM the memory-capped container. 32 MiB is generous for a
@@ -41,6 +42,22 @@ const FILE_MUTATING_TOOLS = new Set([
 ]);
 
 const ALL_TOOLS: ToolDefinition[] = [...TIER1_TOOLS, ...TIER2_TOOLS, ...TIER3_TOOLS];
+
+// §2a — Per-identity rate limiter for POST /mcp (the only event-loop-blocking
+// route). Keyed by token-name + client IP so it isolates clients in both
+// multi-token and shared-single-key deploys. null = disabled (env opt-out).
+const rateLimiter = rateLimiterFromEnv();
+
+/** Best client IP for rate-limit keying. Uses the LAST X-Forwarded-For hop —
+ *  the value our trusted edge proxy (Caddy) appended, which is the real peer and
+ *  cannot be spoofed by a client injecting its own XFF header (a client-set value
+ *  lands to the left of it). No XFF (direct deploy) → the socket peer. Falls back
+ *  to a constant so a missing address can't crash keying. */
+function clientIp(req: http.IncomingMessage): string {
+  const xff = req.headers['x-forwarded-for'];
+  const hops = (Array.isArray(xff) ? xff.join(',') : (xff ?? '')).split(',').map(s => s.trim()).filter(Boolean);
+  return (hops.length ? hops[hops.length - 1] : req.socket?.remoteAddress ?? 'unknown') || 'unknown';
+}
 
 // §2 — SSE client registries
 //   sseClients      — generic /mcp/sse stream (every tool response)
@@ -206,6 +223,21 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   }
 
   if (pathOnly === '/mcp' && method === 'POST') {
+    // Rate-limit BEFORE reading the body so a flood is rejected cheaply. Keyed
+    // by token+IP; emits 429 + Retry-After (the standard back-off signal) so the
+    // event loop can't be monopolised by one client's burst of heavy calls.
+    if (rateLimiter) {
+      const dec = rateLimiter.take(`${tokenName}|${clientIp(req)}`, Date.now());
+      res.setHeader('X-RateLimit-Limit', String(rateLimiter.burst));
+      res.setHeader('X-RateLimit-Remaining', String(dec.remaining));
+      if (!dec.ok) {
+        const retryS = Math.max(1, Math.ceil(dec.retryAfterMs / 1000));
+        res.setHeader('Retry-After', String(retryS));
+        process.stderr.write(`[mcp] token=${tokenName} RATE-LIMITED retry=${retryS}s\n`);
+        jsonReply(res, 429, { jsonrpc: '2.0', id: null, error: { code: -32029, message: `Rate limit exceeded — retry after ${retryS}s.` } });
+        return;
+      }
+    }
     let body: string;
     try { body = await readBody(req); }
     catch (e) {
@@ -264,6 +296,14 @@ export function startHttpServer(): void {
   }).listen(port, () => {
     process.stderr.write(`folio-mcp-http listening on :${port}\n`);
     process.stderr.write(`[mcp] auth: ${describeAuth()}\n`);
+    if (rateLimiter) {
+      process.stderr.write(`[mcp] rate limit: ${rateLimiter.burst} burst, ${rateLimiter.perSec}/s per token+IP\n`);
+      // Evict idle buckets so the Map can't grow unbounded. unref() keeps the
+      // timer from holding the process open.
+      setInterval(() => rateLimiter.sweep(Date.now()), 60_000).unref();
+    } else {
+      process.stderr.write(`[mcp] rate limit: disabled\n`);
+    }
   });
 }
 

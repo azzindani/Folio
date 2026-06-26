@@ -867,6 +867,8 @@ docker compose up -d   # → http://localhost:4173
 | `PORT` | `4173` | Visual editor port (in-container) |
 | `FOLIO_PROJECTS_DIR` | `/home/folio/projects` | Where designs live inside the container |
 | `FOLIO_OUTPUT_BUDGET` | `1000` | Max tokens per MCP tool response |
+| `FOLIO_RATE_BURST` | `40` | Rate limit: bucket capacity (max burst) per token+IP on `POST /mcp`. `0` disables |
+| `FOLIO_RATE_PER_SEC` | `10` | Rate limit: steady refill rate (requests/sec) per token+IP. `0` disables |
 | `FOLIO_MCP_TIER` | `1` | stdio mode only: `1` basic, `2` basic+design, `3` all |
 | `MCP_CONSTRAINED_MODE` | `false` | Set `true` to reduce result sizes for low-RAM machines |
 | `FOLIO_TOKENS_FILE` | unset | Path to JSON file of named tokens (highest priority) |
@@ -885,6 +887,19 @@ Set `FOLIO_OUTPUT_BUDGET` to cap tool response size in tokens. Default is `1000`
 ### Constrained mode
 
 Set `MCP_CONSTRAINED_MODE=true` to reduce result set sizes for lower-memory machines. This halves list row limits, layer row limits, and search result counts.
+
+### Rate limiting
+
+`POST /mcp` is the only event-loop-blocking route (tool handlers run synchronously in one process — see the note below), so a burst of heavy calls from one client can stall every other client. A per-**(token + client-IP)** token bucket caps each identity; overflow gets `429 Too Many Requests` + `Retry-After`, and every reply carries `X-RateLimit-Limit` / `X-RateLimit-Remaining`.
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `FOLIO_RATE_BURST` | `40` | Bucket capacity — how many back-to-back requests are allowed before throttling |
+| `FOLIO_RATE_PER_SEC` | `10` | Steady refill rate once the burst is spent |
+
+Defaults are generous for an LLM driving Folio (it can't out-pace 10/s). Set **either** var to `0` to disable. Behind Caddy the client IP is taken from the last `X-Forwarded-For` hop (the proxy-appended, un-spoofable peer), so buckets isolate per real client even when everyone shares one `FOLIO_API_KEY`.
+
+> **Why per-request, not per-connection:** Folio runs as a single `bun --smol` process and each tool handler is synchronous, so tool *execution* is serialized — one heavy call (`render_preview`, `export_*`) blocks the loop until it finishes. The rate limit protects that single lane; for true parallel throughput, run multiple `folio` containers behind Caddy (each its own event loop) sharing the `./folio-projects` volume.
 
 ---
 
