@@ -41,7 +41,7 @@ Full guides live in [`docs/`](docs/README.md):
 - **Component library** — reusable layer groups with named slot definitions
 - **Carousel / multi-page** — incremental page-by-page generation with task state tracking
 - **dry_run validation** — `patch_design` validates all selectors before writing
-- **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, align toolbar, Monaco YAML editor with bidirectional sync
+- **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, smart alignment guides, align toolbar, multi-page editing, server-backed auto-save, and a Monaco YAML editor with bidirectional sync
 - **Live editor refresh** — `/editor/events` SSE pushes file-change events so the browser reloads instantly when an MCP tool mutates a design
 - **Remote clicker** — `setup_remote_presenter` MCP tool generates SSE server + client JS for HTTP-controlled slide navigation
 - **Collaborative editing** — `setup_collab` MCP tool generates SSE file-watch server; multi-user design sync via `/patch` + `/events` endpoints
@@ -488,6 +488,7 @@ When deployed behind Caddy it's reachable at `https://your-domain/`. The editor 
 | Zoom | Ctrl+scroll or pinch; Ctrl+0 to fit canvas |
 | Pan | Space+drag or middle-mouse drag |
 | Guides | Drag from rulers to place snap guides |
+| Smart guides | While dragging, snaps to the grid and to other layers' edges/centres (including siblings nested inside a grouped poster) and draws alignment lines |
 | Grid | G to toggle; configurable columns, gutter, baseline |
 | Annotations | Alt+hover shows distance between selected layer and hovered layer |
 
@@ -499,7 +500,7 @@ When deployed behind Caddy it's reachable at `https://your-domain/`. The editor 
 | Properties panel | Position, size, fill, stroke, effects, transform (z / opacity / rotation / flip), blend mode — all fields live-update the canvas |
 | Problems panel | Validation errors and warnings with layer ID and message; click to select the offending layer |
 | File tree | Browse and open `.design.yaml`, `.template.yaml`, `.component.yaml` files |
-| Page strip | Carousel page thumbnails — click to navigate, drag to reorder |
+| Page strip | Page thumbnails — click to navigate; **+** adds a page; right-click to duplicate / move / rename / delete. Adding a page to a single-page design converts it to multi-page |
 | Payload editor | Monaco YAML editor (VS Code engine) with inline validation, syntax highlighting, and bidirectional sync with the canvas |
 | Command palette | Ctrl+K or `/` — search and execute any action by name |
 | Align toolbar | Align left/center/right/top/middle/bottom; distribute horizontally/vertically; match width/height |
@@ -521,7 +522,8 @@ When deployed behind Caddy it's reachable at `https://your-domain/`. The editor 
 | `Ctrl+G` / `Ctrl+Shift+G` | Group / Ungroup |
 | `Ctrl+[` / `Ctrl+]` | Send backward / Bring forward |
 | `Ctrl+0` | Fit canvas to screen |
-| `Ctrl+S` | Save file |
+| `Ctrl+Alt+N` | New blank design (size / aspect-ratio picker) |
+| `Ctrl+S` | Save — writes back to the server design, or **Save to Library** for a new one |
 | `Delete` | Delete selected layer(s) |
 
 ### Export (from editor)
@@ -985,7 +987,7 @@ Folio/
 ├── .env.example                 ← env template
 ├── tokens.example.json          ← multi-token template
 ├── tests/                       ← Playwright e2e + visual regression
-└── src/**/*.test.ts             ← 2,900+ Vitest unit + integration tests
+└── src/**/*.test.ts             ← 3,000+ Vitest unit + integration tests
 ```
 
 ---

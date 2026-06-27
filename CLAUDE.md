@@ -134,7 +134,7 @@ Framework: Vanilla TS (no React/Vue/Svelte) · drag = interact.js · editor = Mo
 YAML:      js-yaml
 Renderers: marked.js (always) · mermaid/vega-lite/katex/prism (lazy)
 Export:    dom-to-image-more + jsPDF + resvg (vector PDF) + Puppeteer (hi-fi PDF/frames)
-Tests:     Vitest (unit, 1000+) · Playwright (E2E + visual)
+Tests:     Vitest (unit, 3000+) · Playwright (E2E + visual)
 ```
 
 Never: React/Vue/jQuery/Lodash/axios/Bootstrap/CDN at runtime.
@@ -153,7 +153,7 @@ Harness: tools/harness-suite/run_live.py drives the live model session (see docs
 
 ## 3. CODE MAP
 
-Where things live (full per-module index in docs/ARCHITECTURE.md — 401 .ts files):
+Where things live (full per-module index in docs/ARCHITECTURE.md — 407 .ts files):
 
 ```
 src/schema/    parse · validate · types        (types.ts = facade → siblings)
