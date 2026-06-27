@@ -503,7 +503,9 @@ export class EditorApp extends EditorAppBase {
       : suggested;
     if (input === null) return true; // cancelled — handled, no download fallback
     const slug = input.trim().replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'untitled';
-    const rel = `drafts/${slug}.design.yaml`;
+    // The library enumerates <project>/designs/*.design.yaml — write under a
+    // designs/ subdir of the drafts project so the new design shows up there.
+    const rel = `drafts/designs/${slug}.design.yaml`;
     const { showToast } = await import('../utils/toast');
     try {
       await this.putDesignToServer(rel, this.getYAML());
