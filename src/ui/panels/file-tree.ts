@@ -20,6 +20,10 @@ export class FileTreeManager {
   private state: StateManager;
   private onOpen: (yaml: string, name: string, handle: unknown) => void;
   private onSave: () => string;
+  /** Optional server-backed save. Returns true when it handled the save (so we
+   *  skip the legacy file-download fallback), false to fall through to a local
+   *  file download. Lets a library/MCP design save back to the server. */
+  private onServerSave?: () => Promise<boolean>;
 
   constructor(
     container: HTMLElement,
@@ -27,12 +31,14 @@ export class FileTreeManager {
     callbacks: {
       onOpen: (yaml: string, name: string, handle: unknown) => void;
       onSave: () => string;
+      onServerSave?: () => Promise<boolean>;
     },
   ) {
     this.container = container;
     this.state = state;
     this.onOpen = callbacks.onOpen;
     this.onSave = callbacks.onSave;
+    this.onServerSave = callbacks.onServerSave;
     this.build();
     this.state.subscribe(this.onStateChange.bind(this));
   }
@@ -145,6 +151,18 @@ export class FileTreeManager {
   }
 
   triggerSave(): void {
+    // Prefer the server sink (auto-save target / library) when present; only a
+    // design with no server backing falls through to a local file download.
+    if (this.onServerSave) {
+      this.onServerSave()
+        .then((handled) => { if (!handled) this.saveLocal(); })
+        .catch(() => this.saveLocal());
+      return;
+    }
+    this.saveLocal();
+  }
+
+  private saveLocal(): void {
     const yaml = this.onSave();
     const name = (this.state.get().design?.meta.name ?? 'design').replace(/\s+/g, '-').toLowerCase() + '.design.yaml';
     saveFile(yaml, name)

@@ -243,7 +243,7 @@ export abstract class CanvasBase {
     this.clearSmartGuides();
     const w = typeof layer.width === 'number' ? layer.width : 0;
     const h = typeof layer.height === 'number' ? layer.height : 0;
-    const others = this.state.getCurrentLayers().filter(l => l.id !== draggedId);
+    const others = this.guideTargets(draggedId);
     const TOLERANCE = 4;
 
     const guides: { x1: number; y1: number; x2: number; y2: number }[] = [];
@@ -302,6 +302,53 @@ export abstract class CanvasBase {
       svg.appendChild(line);
     }
     this.selectionOverlay.appendChild(svg);
+  }
+
+  /** Every layer that can serve as an alignment target for `draggedId`: the
+   *  whole page tree flattened, MINUS the dragged layer and its own descendants.
+   *  Presets ship a poster as ONE group, so the dragged layer's siblings/cousins
+   *  live nested inside it — a top-level `getCurrentLayers()` scan misses them and
+   *  no guides ever appear. Ancestor groups stay in (snap to a container/canvas
+   *  edge is useful), only the dragged subtree is excluded. */
+  protected guideTargets(draggedId: string): Layer[] {
+    const out: Layer[] = [];
+    const walk = (layers: Layer[], inDragged: boolean): void => {
+      for (const l of layers) {
+        const isDragged = l.id === draggedId;
+        if (!isDragged && !inDragged) out.push(l);
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (Array.isArray(kids)) walk(kids, inDragged || isDragged);
+      }
+    };
+    walk(this.state.getCurrentLayers(), false);
+    return out;
+  }
+
+  /** Anchoring: snap the dragged layer's box to a nearby target layer's edge or
+   *  centre (left/centre/right · top/middle/bottom) within SNAP px, so components
+   *  line up to EACH OTHER, not just to ruler guides. Returns adjusted {x,y}. */
+  protected snapToLayers(draggedId: string, x: number, y: number, layer: Layer): { x: number; y: number } {
+    const w = typeof layer.width === 'number' ? layer.width : 0;
+    const h = typeof layer.height === 'number' ? layer.height : 0;
+    const SNAP = 6;
+    let outX = x, outY = y, bestDx = SNAP, bestDy = SNAP;
+    for (const o of this.guideTargets(draggedId)) {
+      const ox = o.x ?? 0;
+      const oy = o.y ?? 0;
+      const ow = typeof o.width === 'number' ? o.width : 0;
+      const oh = typeof o.height === 'number' ? o.height : 0;
+      // X: our {left, centre, right} → their {left, centre, right}
+      for (const [a, b] of [[x, ox], [x + w / 2, ox + ow / 2], [x + w, ox + ow]] as const) {
+        const d = Math.abs(a - b);
+        if (d < bestDx) { bestDx = d; outX = Math.round(x + (b - a)); }
+      }
+      // Y: our {top, middle, bottom} → their {top, middle, bottom}
+      for (const [a, b] of [[y, oy], [y + h / 2, oy + oh / 2], [y + h, oy + oh]] as const) {
+        const d = Math.abs(a - b);
+        if (d < bestDy) { bestDy = d; outY = Math.round(y + (b - a)); }
+      }
+    }
+    return { x: outX, y: outY };
   }
 
   protected clearSmartGuides(): void {
