@@ -60,7 +60,7 @@ export class PageStrip {
     `;
     addBtn.textContent = '+';
     addBtn.title = 'Add page';
-    addBtn.addEventListener('click', () => this.addPage());
+    addBtn.addEventListener('click', () => this.state.addPage());
     this.strip.appendChild(addBtn);
   }
 
@@ -161,6 +161,20 @@ export class PageStrip {
       return btn;
     };
 
+    const pageCount = this.state.get().design?.pages?.length ?? 0;
+
+    menu.appendChild(item('Duplicate page', () => {
+      this.state.goToPage(pageIndex);
+      this.state.duplicateCurrentPage();
+    }));
+
+    if (pageIndex > 0) {
+      menu.appendChild(item('Move left', () => { this.state.goToPage(pageIndex); this.state.movePage(-1); }));
+    }
+    if (pageCount > 1 && pageIndex < pageCount - 1) {
+      menu.appendChild(item('Move right', () => { this.state.goToPage(pageIndex); this.state.movePage(1); }));
+    }
+
     menu.appendChild(item('Rename page…', () => {
       const design = this.state.get().design;
       if (!design?.pages) return;
@@ -172,15 +186,10 @@ export class PageStrip {
       }
     }));
 
-    const design = this.state.get().design;
-    if ((design?.pages?.length ?? 0) > 1) {
+    if (pageCount > 1) {
       menu.appendChild(item('Delete page', () => {
-        const d = this.state.get().design;
-        if (!d?.pages) return;
-        const pages = d.pages.filter((_, i) => i !== pageIndex);
-        const idx = Math.min(this.state.get().currentPageIndex, pages.length - 1);
-        this.state.set('design', { ...d, pages });
-        this.state.set('currentPageIndex', Math.max(0, idx), false);
+        this.state.goToPage(pageIndex);
+        this.state.deleteCurrentPage();
       }));
     }
 
@@ -192,21 +201,4 @@ export class PageStrip {
     setTimeout(() => document.addEventListener('click', dismiss, true), 0);
   }
 
-  private addPage(): void {
-    const design = this.state.get().design;
-    if (!design) return;
-
-    const pages = design.pages ?? [];
-    const newPage: Page = {
-      id: `page_${pages.length + 1}`,
-      label: `Page ${pages.length + 1}`,
-      layers: [],
-    };
-
-    this.state.set('design', {
-      ...design,
-      pages: [...pages, newPage],
-    });
-    this.state.set('currentPageIndex', pages.length, false);
-  }
 }

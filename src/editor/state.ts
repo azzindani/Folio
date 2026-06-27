@@ -1,5 +1,6 @@
 import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
+import { addBlankPage, duplicatePage, deletePage, movePage as movePageOp } from './state-pages';
 
 export type ToolId =
   | 'select' | 'text' | 'rect' | 'circle' | 'line'
@@ -48,6 +49,8 @@ export class StateManager {
   private redoStack: EditorState[] = [];
   private batchingDepth = 0;
   private batchedKeys = new Set<keyof EditorState>();
+  /** Monotonic counter making generated page/layer ids unique within a session. */
+  private pageOpSeq = 0;
 
   constructor() {
     this.state = {
@@ -352,5 +355,55 @@ export class StateManager {
     } else if (this.state.design.layers) {
       this.set('design', { ...this.state.design, layers: removeFromArray(this.state.design.layers) }, false);
     }
+  }
+
+  // ── Page operations ─────────────────────────────────────
+  // Single source of truth for paging — the toolbar, page strip, command
+  // palette and keyboard all route here. Each converts a single-page design to
+  // pages[] on first use (via the pure helpers) so paging works from any design.
+
+  /** Append a blank page after the current one and switch to it. */
+  addPage(): void {
+    if (!this.state.design) return;
+    this.pushUndo();
+    const { design, index } = addBlankPage(this.state.design, this.state.currentPageIndex, ++this.pageOpSeq);
+    this.set('design', design, false);
+    this.set('currentPageIndex', index, false);
+  }
+
+  /** Duplicate the current page (fresh layer ids) and switch to the copy. */
+  duplicateCurrentPage(): void {
+    if (!this.state.design) return;
+    this.pushUndo();
+    const { design, index } = duplicatePage(this.state.design, this.state.currentPageIndex, ++this.pageOpSeq);
+    this.set('design', design, false);
+    this.set('currentPageIndex', index, false);
+  }
+
+  /** Delete the current page (never the last one). */
+  deleteCurrentPage(): void {
+    if (!this.state.design) return;
+    this.pushUndo();
+    const { design, index } = deletePage(this.state.design, this.state.currentPageIndex);
+    this.set('design', design, false);
+    this.set('currentPageIndex', index, false);
+  }
+
+  /** Move the current page one slot left (-1) or right (+1). */
+  movePage(direction: -1 | 1): void {
+    if (!this.state.design) return;
+    const from = this.state.currentPageIndex;
+    this.pushUndo();
+    const { design, index } = movePageOp(this.state.design, from, from + direction);
+    this.set('design', design, false);
+    this.set('currentPageIndex', index, false);
+  }
+
+  /** Switch to a page by index (clamped to the page range). */
+  goToPage(index: number): void {
+    const d = this.state.design;
+    if (!d) return;
+    const len = d.pages && d.pages.length > 0 ? d.pages.length : 1;
+    this.set('currentPageIndex', Math.max(0, Math.min(index, len - 1)), false);
   }
 }

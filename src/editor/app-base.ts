@@ -527,18 +527,7 @@ export abstract class EditorAppBase {
     });
 
     // Canvas resize dialog
-    q('#canvas-resize')?.addEventListener('click', () => {
-      const doc = this.state.get().design?.document;
-      if (!doc) return;
-      canvasResizeDialog.open(
-        { width: doc.width, height: doc.height, dpi: doc.dpi ?? 96, unit: (doc.unit ?? 'px') as import('../ui/dialogs/canvas-resize').CanvasDocSpec['unit'] },
-        (spec) => {
-          const design = this.state.get().design;
-          if (!design) return;
-          this.state.set('design', { ...design, document: { ...design.document, ...spec } });
-        },
-      );
-    });
+    q('#canvas-resize')?.addEventListener('click', () => this.openResizeDialog());
 
     // Presentation mode (F5)
     q('#status-preview')?.addEventListener('click', () => this.presentation.open());
@@ -604,6 +593,21 @@ export abstract class EditorAppBase {
       '';
     inputEl.value = primary;
     inputEl.placeholder = `${layer.type} — edit value`;
+  }
+
+  /** Open the canvas-resize / aspect-ratio dialog for the current design.
+   *  Shared by the status-bar button and the command palette. */
+  openResizeDialog(): void {
+    const doc = this.state.get().design?.document;
+    if (!doc) return;
+    canvasResizeDialog.open(
+      { width: doc.width, height: doc.height, dpi: doc.dpi ?? 96, unit: (doc.unit ?? 'px') as import('../ui/dialogs/canvas-resize').CanvasDocSpec['unit'] },
+      (spec) => {
+        const design = this.state.get().design;
+        if (!design) return;
+        this.state.set('design', { ...design, document: { ...design.document, ...spec } });
+      },
+    );
   }
 
 }
