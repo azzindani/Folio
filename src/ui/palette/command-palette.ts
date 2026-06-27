@@ -135,6 +135,15 @@ export class CommandPalette {
           state.set('currentPageIndex', state.get().currentPageIndex - 1, false);
         }
       }},
+      { id: 'add-page', label: 'Add Page', category: 'Page', action: () => state.addPage() },
+      { id: 'duplicate-page', label: 'Duplicate Page', category: 'Page', action: () => state.duplicateCurrentPage() },
+      { id: 'delete-page', label: 'Delete Page', category: 'Page', action: () => state.deleteCurrentPage() },
+      { id: 'move-page-left', label: 'Move Page Left', category: 'Page', action: () => state.movePage(-1) },
+      { id: 'move-page-right', label: 'Move Page Right', category: 'Page', action: () => state.movePage(1) },
+
+      // Design
+      { id: 'new-design', label: 'New Blank Design…', category: 'Design', shortcut: 'Ctrl+Alt+N', action: () => app.newDesignDialog() },
+      { id: 'resize-canvas', label: 'Resize Canvas / Aspect Ratio…', category: 'Design', action: () => app.openResizeDialog() },
     ];
   }
 

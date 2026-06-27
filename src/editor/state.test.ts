@@ -405,4 +405,49 @@ describe('StateManager', () => {
       expect(sm.getCurrentLayers()).toEqual([]);
     });
   });
+
+  describe('page operations', () => {
+    const rect = (id: string): Layer => ({ id, type: 'rect', z: 0, x: 0, y: 0, width: 10, height: 10 } as unknown as Layer);
+
+    it('addPage converts a single-page design and switches to the new blank page', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([rect('a')]), false);
+      sm.addPage();
+      expect(sm.get().design?.pages).toHaveLength(2);
+      expect(sm.get().currentPageIndex).toBe(1);
+      expect(sm.getCurrentLayers()).toEqual([]); // landed on the blank page
+    });
+
+    it('duplicateCurrentPage clones the page and is undoable', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([rect('a'), rect('b')]), false);
+      sm.addPage();              // [page1(a,b), page2()]
+      sm.goToPage(0);
+      sm.duplicateCurrentPage(); // copy of page1 inserted at index 1
+      expect(sm.get().design?.pages).toHaveLength(3);
+      expect(sm.get().currentPageIndex).toBe(1);
+      sm.undo();
+      expect(sm.get().design?.pages).toHaveLength(2);
+    });
+
+    it('deleteCurrentPage removes a page but never the last', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([rect('a')]), false);
+      sm.addPage();
+      sm.deleteCurrentPage();
+      expect(sm.get().design?.pages).toHaveLength(1);
+      sm.deleteCurrentPage(); // last page — no-op
+      expect(sm.get().design?.pages).toHaveLength(1);
+    });
+
+    it('movePage reorders and goToPage clamps', () => {
+      const sm = new StateManager();
+      sm.set('design', makeDesign([rect('a')]), false);
+      sm.addPage(); sm.addPage(); // 3 pages, on index 2
+      sm.movePage(-1);
+      expect(sm.get().currentPageIndex).toBe(1);
+      sm.goToPage(99);
+      expect(sm.get().currentPageIndex).toBe(2);
+    });
+  });
 });

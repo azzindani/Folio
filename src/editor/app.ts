@@ -40,6 +40,8 @@ import { loadFullTypePack } from '../styles/type-pack-loader';
 import { loadFullEffectsPack } from '../styles/effects-pack-loader';
 import { EditorAppBase } from './app-base';
 import { SAMPLE_DESIGN } from './sample-design';
+import { makeBlankDesign } from './blank-design';
+import { canvasResizeDialog, type CanvasDocSpec } from '../ui/dialogs/canvas-resize';
 
 export class EditorApp extends EditorAppBase {
   /** Path (relative to the projects dir) of the design when it was opened from
@@ -534,6 +536,37 @@ export class EditorApp extends EditorAppBase {
       body: yaml,
     });
     if (!r.ok) throw new Error(`PUT ${url} → ${r.status}`);
+  }
+
+  /** Open the New-Design dialog (size / aspect-ratio picker), then build a fresh
+   *  blank design at the chosen dimensions. */
+  newDesignDialog(): void {
+    const doc = this.state.get().design?.document;
+    canvasResizeDialog.open(
+      {
+        width: doc?.width ?? 1080,
+        height: doc?.height ?? 1080,
+        dpi: doc?.dpi ?? 96,
+        unit: (doc?.unit ?? 'px') as CanvasDocSpec['unit'],
+      },
+      (spec) => this.newBlankDesign(spec),
+      { title: 'New Design', confirmLabel: 'Create' },
+    );
+  }
+
+  /** Replace the canvas with a fresh blank design. Detaches the server-save
+   *  target so the new design saves into the library on first save rather than
+   *  overwriting whatever design was open before. */
+  newBlankDesign(spec: CanvasDocSpec): void {
+    const design = makeBlankDesign({
+      width: spec.width, height: spec.height, unit: spec.unit, dpi: spec.dpi,
+      now: new Date().toISOString(),
+    });
+    this.serverDesignRel = null;
+    this.autoSave.setServerSink(null);
+    this.state.set('currentPageIndex', 0, false);
+    this.loadDesign(design);
+    void import('../utils/toast').then(({ showToast }) => showToast('New blank design', 'success'));
   }
 
   printDesign(bleed = 0): void {

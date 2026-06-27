@@ -95,6 +95,7 @@ export class KeyboardManager {
         description: 'Bring forward',
       },
       // File shortcuts
+      { key: 'n', ctrl: true, alt: true, action: () => this.app.newDesignDialog(), description: 'New blank design' },
       { key: 'o', ctrl: true, action: () => this.app.fileTree?.triggerOpen(), description: 'Open file' },
       { key: 's', ctrl: true, action: () => this.app.fileTree?.triggerSave(), description: 'Save file' },
       // Clipboard

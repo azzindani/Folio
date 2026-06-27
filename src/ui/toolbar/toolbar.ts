@@ -36,6 +36,24 @@ export class ToolbarManager {
       </div>
 
       <div class="toolbar-center" style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-sm" data-action="new-design"
+          title="New blank design (Ctrl+Alt+N)" aria-label="New blank design"
+          style="display:flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          <span>New</span>
+        </button>
+        <button class="btn btn-sm" data-action="add-page"
+          title="Add a page (turns this into a multi-page design)" aria-label="Add page"
+          style="display:flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="2.5" y="1.5" width="7" height="9" rx="0.6" stroke="currentColor" stroke-width="1.1"/>
+            <path d="M10.5 6.5h2M11.5 5.5v2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+          </svg>
+          <span>Add Page</span>
+        </button>
+        <span style="color:var(--color-border);flex-shrink:0">&#x2502;</span>
         <button class="btn btn-sm toolbar-catalog-btn"
           data-action="catalog"
           title="Open Folio Catalog — browse templates, themes, reports (Ctrl+Shift+C)"
@@ -115,6 +133,8 @@ export class ToolbarManager {
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
     if (action === 'catalog') { this.app.openCatalog(); return; }
+    if (action === 'new-design') { this.app.newDesignDialog(); return; }
+    if (action === 'add-page') { this.state.addPage(); return; }
 
     if (action === 'export') {
       e.stopPropagation();

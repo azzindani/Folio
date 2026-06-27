@@ -26,13 +26,22 @@ const PRESETS: Record<string, { w: number; h: number; label: string }> = {
   'Twitter Post':   { w: 1600, h: 900, label: 'Twitter Post (1600×900px)' },
   'Presentation':   { w: 1920, h: 1080, label: 'Presentation (1920×1080px)' },
   '4K':             { w: 3840, h: 2160, label: '4K UHD (3840×2160px)' },
+  // Common aspect ratios — pick by shape, not a platform.
+  'Square 1:1':     { w: 1080, h: 1080, label: 'Square 1:1 (1080×1080)' },
+  'Portrait 4:5':   { w: 1080, h: 1350, label: 'Portrait 4:5 (1080×1350)' },
+  'Portrait 3:4':   { w: 1080, h: 1440, label: 'Portrait 3:4 (1080×1440)' },
+  'Portrait 2:3':   { w: 1080, h: 1620, label: 'Portrait 2:3 (1080×1620)' },
+  'Vertical 9:16':  { w: 1080, h: 1920, label: 'Vertical 9:16 (1080×1920)' },
+  'Wide 16:9':      { w: 1920, h: 1080, label: 'Wide 16:9 (1920×1080)' },
 };
 
 export class CanvasResizeDialog {
   private overlay: HTMLElement | null = null;
 
-  open(current: CanvasDocSpec, onConfirm: ConfirmCallback): void {
+  open(current: CanvasDocSpec, onConfirm: ConfirmCallback, opts?: { title?: string; confirmLabel?: string }): void {
     this.close();
+    const title = opts?.title ?? 'Resize Canvas';
+    const confirmLabel = opts?.confirmLabel ?? 'Apply';
 
     const unit: RulerUnit = (['px','mm','cm','in'] as RulerUnit[]).includes(current.unit as RulerUnit)
       ? current.unit as RulerUnit : 'px';
@@ -48,9 +57,9 @@ export class CanvasResizeDialog {
     this.overlay = document.createElement('div');
     this.overlay.className = 'dialog-overlay';
     this.overlay.innerHTML = `
-      <div class="dialog-box" role="dialog" aria-modal="true" aria-label="Resize Canvas">
+      <div class="dialog-box" role="dialog" aria-modal="true" aria-label="${title}">
         <div class="dialog-header">
-          <span class="dialog-title">Resize Canvas</span>
+          <span class="dialog-title">${title}</span>
           <button class="dialog-close" aria-label="Close">✕</button>
         </div>
         <div class="dialog-body">
@@ -91,7 +100,7 @@ export class CanvasResizeDialog {
         </div>
         <div class="dialog-footer">
           <button class="btn" id="cr-cancel">Cancel</button>
-          <button class="btn btn-primary" id="cr-confirm">Apply</button>
+          <button class="btn btn-primary" id="cr-confirm">${confirmLabel}</button>
         </div>
       </div>`;
 
