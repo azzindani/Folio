@@ -2,36 +2,58 @@
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-06-07
+## [0.1.0] - 2026-06-27
 
-First public release. Consolidates the internal Phase 1–5 work (the full
-historical changelog is preserved under [1.0.0] below) and introduces
-reference-image–driven design.
+First public release of Folio — a local-first, LLM-first YAML graphic-design
+engine. A model writes semantic shorthand YAML; the engine compiles it to SVG
+and makes it render well; a visual editor and an MCP tool surface sit on top.
+Consolidates the internal Phase 1–5 work (full history under [1.0.0] below).
 
-### Added
+### Design engine + MCP
 
-- **Reference-image → design (MCP)** — new `extract_reference` tool. Turns a
-  reference design (Canva export, screenshot, or SVG the user wants to match)
-  into a deterministic, role-mapped palette (background/surface/text/accent/
-  secondary/border) + a recommended Folio canvas + a step-by-step composition
-  brief the model fills by looking at the image. Dimensions come from
-  header-only parsing (PNG/JPEG/GIF/WebP/SVG — no pixel decode, no new deps).
-  Accepts `data:` URLs and local file paths; degrades to model-observed
-  `colors:[…]` for remote URLs. Returns a `palette_spec` and a `next_action`
-  baton straight into `create_design`.
-- **`reference` engine-guide section** + a quick_ref pointer teaching the
-  match-this-design loop: `extract_reference → create_design → add_layers`,
-  rebuilding the reference as native editable layers (not a pasted screenshot).
-- **Reference underlay (editor)** — Shift-drop an image onto the canvas to add
-  it as a locked, dimmed tracing layer (`ImageLayer.role: 'reference'`) sized to
-  fit the canvas, and seed the color palette from it. Build native layers on
-  top, then hide/remove the underlay before exporting.
+- **MCP server (38 tools)** over Streamable-HTTP — create/append/seal designs,
+  add/update/remove layers, themes, templates, export, library, reference.
+  Deployed at folio.casava.space (Docker, `bun --smol`, no build step).
+- **Model-led, math-backed generation** — the engine validates spatial math,
+  expands shorthand, fits/clamps to canvas, and heals blind-model payloads at
+  seal (geometry, legibility, auto-place, page balance) without dictating the
+  look. The model designs; the engine makes it render well.
+- **Streamable-HTTP compliance** so strict MCP-SDK clients (LM Studio, Claude
+  Desktop / Code, claude.ai custom connector) connect cleanly — OAuth + PKCE
+  plus HS256-JWT / API-key auth, with a stdio fallback via `mcp-remote`.
+- **Per-client rate limiting** on POST /mcp (token-bucket, 429 + Retry-After)
+  guarding the single-threaded server.
+- **Reference-image → design** — `extract_reference` turns a Canva export,
+  screenshot, or SVG into a deterministic role-mapped palette + recommended
+  canvas + a composition brief the model fills by looking at the image
+  (header-only parse of PNG/JPEG/GIF/WebP/SVG — no pixel decode, no new deps).
+- **Exports** — PNG, self-contained HTML, interactive HTML reports, and a
+  hybrid **vector PDF** (selectable text over a raster fallback).
+
+### Visual editor
+
+- SVG canvas: zoom/pan, drag, shift-click multi-select, resize/rotate, inline
+  text editing.
+- **Alignment & anchoring** — smart guides + snap to other layers' edges and
+  centres, seeing siblings nested inside grouped (preset) posters.
+- **Design operations** — New blank design; canvas resize with aspect-ratio
+  presets (1:1, 4:5, 3:4, 2:3, 9:16, 16:9); multi-page support with a thumbnail
+  page strip to add / duplicate / delete / reorder pages from any design.
+- **Server-backed auto-save + Save to Library** — a design opened from the MCP
+  or library auto-saves back every 30s and on Ctrl+S; a brand-new design saves
+  into the library.
+- Theme / palette / type / effects pickers, command palette, keyboard
+  shortcuts, layer + properties + problems panels, and a cross-project design
+  **library gallery** (browse, thumbnails, search, editor links).
+- **Reference underlay** — Shift-drop an image to add a locked, dimmed tracing
+  layer (`ImageLayer.role: 'reference'`) and seed the palette from it; build
+  native layers on top, then hide/remove before exporting.
 
 ### CI/CD
 
-- Release pipeline now publishes a Docker image to GitHub Container Registry
-  (`ghcr.io/<owner>/folio:<version>` + `:latest`) on every `v*.*.*` tag, in
-  addition to the per-platform release tarballs.
+- Release pipeline publishes a Docker image to GitHub Container Registry
+  (`ghcr.io/<owner>/folio:<version>` + `:latest`) and per-platform tarballs
+  (linux / mac / windows) on every `v*.*.*` tag.
 
 ## [1.0.0] - 2026-04-09
 
