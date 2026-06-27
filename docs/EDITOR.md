@@ -48,6 +48,20 @@ header, a `?token=` query param, or a `folio_session` cookie. A valid `?token=`
 pasted link authenticates the whole tab without re-challenging on every asset fetch.
 Behind Caddy, the `?token` path bypasses the editor's HTTP Basic Auth (Jupyter-style).
 
+### 2.2 Saving
+
+| Backing | Behaviour |
+|---|---|
+| **Server design** (opened from MCP / library) | Auto-saves the YAML back every 30s when dirty, and on `Ctrl+S`, via `PUT /__project_files/<path>`. The live library refreshes from the new mtime. |
+| **New / unsaved design** | `Ctrl+S` (or **Save**) runs **Save to Library** — names the design and writes it to `drafts/designs/<name>.design.yaml` so it appears in the gallery, then keeps auto-saving there. |
+| **Local file** (desktop Chrome) | Auto-saves to the opened `FileSystemFileHandle`; other browsers download on save. |
+
+### 2.3 Starting a design
+
+- **New** (toolbar · `Ctrl+Alt+N` · palette → *New Blank Design*) opens a size / aspect-ratio picker (1:1, 4:5, 3:4, 2:3, 9:16, 16:9, A4, …) and creates a blank canvas.
+- **Resize Canvas** (status-bar ⊞ · palette) changes the document size / ratio of the current design.
+- **Add Page** (toolbar · palette) starts or extends a multi-page design.
+
 ---
 
 ## 3. LIVE REFRESH (watch the LLM work)
@@ -96,7 +110,7 @@ SVG-in-HTML — vector-native, pixel-perfect at any zoom.
 | **Properties** | Context-aware per layer type: position, size, fill, stroke, radius, effects, transform (z/opacity/rotation/flip), blend mode — live-updates the canvas. Flow-report layers expose **Span + Height** instead of x/y |
 | **Problems** | Validation errors/warnings with layer ID + message; click to select the offender; re-runs on every change |
 | **File tree** | Open `.design.yaml` / `.template.yaml` / `.component.yaml` |
-| **Page strip** | Carousel page thumbnails — click to navigate, drag to reorder |
+| **Page strip** | Page thumbnails — click to navigate; **+** adds a page; right-click for duplicate / move left·right / rename / delete. Paging starts from any design: adding a page to a single-page poster converts it to multi-page |
 | **Timeline** | Animation keyframe scrubber + per-layer tracks |
 | **Payload (Monaco)** | VS Code's editor (lazy-loaded) over the raw YAML — inline validation, syntax highlighting, **bidirectional sync** with the canvas (300ms debounce, re-entrancy-guarded) |
 | **Command palette** | Ctrl+K or `/` — search and run any action by name |
@@ -121,8 +135,9 @@ transforms and the Scripts panel manages report scripts. See [REPORT_ENGINE.md](
 | `T` | Text | `Ctrl+G` / `Ctrl+Shift+G` | Group / Ungroup |
 | `L` | Line | `Ctrl+[` / `Ctrl+]` | Send backward / Bring forward |
 | `G` | Toggle grid | `Ctrl+0` | Fit canvas to screen |
-| `Ctrl+K` / `/` | Command palette | `Ctrl+S` | Save file |
-| `Delete` | Delete selection | `Esc` | Clear selection / close palette |
+| `Ctrl+K` / `/` | Command palette | `Ctrl+S` | Save (to server / library) |
+| `Ctrl+Alt+N` | New blank design | `Esc` | Clear selection / close palette |
+| `Delete` | Delete selection | | |
 
 Clipboard copies layers **as YAML**, so you can paste between designs or into the
 Monaco panel.

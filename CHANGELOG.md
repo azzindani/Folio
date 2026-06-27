@@ -11,7 +11,7 @@ Consolidates the internal Phase 1–5 work (full history under [1.0.0] below).
 
 ### Design engine + MCP
 
-- **MCP server (38 tools)** over Streamable-HTTP — create/append/seal designs,
+- **MCP server (49 tools)** over Streamable-HTTP — create/append/seal designs,
   add/update/remove layers, themes, templates, export, library, reference.
   Deployed at folio.casava.space (Docker, `bun --smol`, no build step).
 - **Model-led, math-backed generation** — the engine validates spatial math,
