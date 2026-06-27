@@ -155,6 +155,12 @@ jobs:
         with:
           context: .
           push: true
+          # Tests already ran in the `validate` + `e2e-release` jobs on the
+          # standard runner; re-running them inside the bun/alpine image build
+          # is redundant and trips a transitive-dep ESM/CJS resolution error
+          # there. Skip them for the image build only.
+          build-args: |
+            SKIP_TESTS=1
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
