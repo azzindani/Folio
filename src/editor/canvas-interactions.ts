@@ -287,7 +287,7 @@ export abstract class CanvasInteractions extends CanvasBase {
       let newX = Math.round(origX + dx);
       let newY = Math.round(origY + dy);
 
-      // Snap to ruler guides
+      // Snap to ruler guides, then anchor to other layers' edges/centres.
       if (this.state.get().snapEnabled) {
         const { guides } = this.state.get();
         const SNAP = 6;
@@ -298,6 +298,9 @@ export abstract class CanvasInteractions extends CanvasBase {
             if (Math.abs(newY - g.position) < SNAP) newY = g.position;
           }
         }
+        const anchored = this.snapToLayers(layerId, newX, newY, layer);
+        newX = anchored.x;
+        newY = anchored.y;
       }
 
       this.state.updateLayer(layerId, { x: newX, y: newY }, false);

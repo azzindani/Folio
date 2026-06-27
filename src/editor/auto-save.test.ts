@@ -118,4 +118,48 @@ describe('AutoSaveManager', () => {
     await mgr.saveNow();
     expect(onSaved).not.toHaveBeenCalled();
   });
+
+  it('saves through a server sink (designs opened from the library)', async () => {
+    const onSaved = vi.fn();
+    const sink = vi.fn().mockResolvedValue(undefined);
+    const mgr = new AutoSaveManager(1000, async () => 'yaml: 1');
+    mgr.setServerSink(sink);
+    mgr.onSavedCallback(onSaved);
+    expect(mgr.hasSink()).toBe(true);
+    await mgr.saveNow();
+    expect(sink).toHaveBeenCalledWith('yaml: 1');
+    expect(onSaved).toHaveBeenCalled();
+  });
+
+  it('server sink takes priority over a file handle', async () => {
+    const sink = vi.fn().mockResolvedValue(undefined);
+    const handle = makeHandle();
+    const mgr = new AutoSaveManager(1000, async () => 'yaml: 2');
+    mgr.setFileHandle(handle);
+    mgr.setServerSink(sink);
+    await mgr.saveNow();
+    expect(sink).toHaveBeenCalled();
+    expect(handle.createWritable).not.toHaveBeenCalled();
+  });
+
+  it('setServerSink(null) detaches the server sink', async () => {
+    const sink = vi.fn().mockResolvedValue(undefined);
+    const getSave = vi.fn().mockResolvedValue('yaml: 3');
+    const mgr = new AutoSaveManager(1000, getSave);
+    mgr.setServerSink(sink);
+    mgr.setServerSink(null);
+    expect(mgr.hasSink()).toBe(false);
+    await mgr.saveNow();
+    expect(getSave).not.toHaveBeenCalled(); // no sink → flush bails early
+  });
+
+  it('onError fires when the server sink rejects', async () => {
+    const onError = vi.fn();
+    const sink = vi.fn().mockRejectedValue(new Error('network'));
+    const mgr = new AutoSaveManager(1000, async () => 'yaml: 4');
+    mgr.setServerSink(sink);
+    mgr.onErrorCallback(onError);
+    await mgr.saveNow();
+    expect(onError).toHaveBeenCalled();
+  });
 });

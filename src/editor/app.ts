@@ -42,6 +42,11 @@ import { EditorAppBase } from './app-base';
 import { SAMPLE_DESIGN } from './sample-design';
 
 export class EditorApp extends EditorAppBase {
+  /** Path (relative to the projects dir) of the design when it was opened from
+   *  the library / MCP — the target for server-backed auto-save. Null until a
+   *  design is opened from or first saved into the library. */
+  private serverDesignRel: string | null = null;
+
   constructor(container: HTMLElement) {
     super();
     this.container = container;
@@ -102,6 +107,7 @@ export class EditorApp extends EditorAppBase {
           this.state.get().design && (this.state.get().design!.meta.name = name.replace(/\..*$/, ''));
         },
         onSave: () => this.getYAML(),
+        onServerSave: () => this.saveToActiveTarget(),
       },
     );
 
@@ -325,6 +331,10 @@ export class EditorApp extends EditorAppBase {
       }
       const yamlContent = await r.text();
       this.loadFromYAML(yamlContent);
+      // Route auto-save (and Ctrl+S) back to this server file so edits persist
+      // in the library — no browser file handle needed.
+      this.serverDesignRel = rel;
+      this.autoSave.setServerSink((y) => this.putDesignToServer(rel, y));
       void import('../utils/toast').then(({ showToast }) => showToast(`Loaded ${rel.split('/').pop() ?? rel}`, 'success'));
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -452,6 +462,76 @@ export class EditorApp extends EditorAppBase {
     const design = this.state.get().design;
     if (!design) return '';
     return serializeYAML(design);
+  }
+
+  /** Manual save (Ctrl+S / Save button). Persists through the active sink — the
+   *  server design path or an opened local file — or, for a brand-new design
+   *  with no backing file yet, saves it INTO the library. Returns true when the
+   *  save was handled, so the caller skips the legacy file-download fallback. */
+  private async saveToActiveTarget(): Promise<boolean> {
+    const { showToast } = await import('../utils/toast');
+    // Server-backed design (opened from / saved into the library).
+    if (this.serverDesignRel) {
+      try {
+        await this.putDesignToServer(this.serverDesignRel, this.getYAML());
+        this.state.set('dirty', false, false);
+        showToast('Saved', 'success');
+      } catch {
+        showToast('Save failed — auto-save will retry', 'error');
+      }
+      return true;
+    }
+    // A local file opened via the picker — flush to its handle.
+    if (this.autoSave.hasSink()) {
+      this.autoSave.markDirty();
+      const ok = await this.autoSave.saveNow();
+      showToast(ok ? 'Saved' : 'Save failed', ok ? 'success' : 'error');
+      return true;
+    }
+    // Brand-new design with no backing file — save it into the library.
+    return this.saveNewToLibrary();
+  }
+
+  /** First save of an unsaved design: name it and write it into the library
+   *  under drafts/, then keep auto-saving there. */
+  private async saveNewToLibrary(): Promise<boolean> {
+    const design = this.state.get().design;
+    if (!design) return false;
+    const suggested = (design.meta?.name ?? 'untitled').trim() || 'untitled';
+    const input = typeof window !== 'undefined' && typeof window.prompt === 'function'
+      ? window.prompt('Save to library as:', suggested)
+      : suggested;
+    if (input === null) return true; // cancelled — handled, no download fallback
+    const slug = input.trim().replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'untitled';
+    const rel = `drafts/${slug}.design.yaml`;
+    const { showToast } = await import('../utils/toast');
+    try {
+      await this.putDesignToServer(rel, this.getYAML());
+      this.serverDesignRel = rel;
+      this.autoSave.setServerSink((y) => this.putDesignToServer(rel, y));
+      this.state.set('dirty', false, false);
+      showToast(`Saved to library · ${rel}`, 'success');
+    } catch {
+      showToast('Save to library failed', 'error');
+    }
+    return true;
+  }
+
+  /** PUT the design YAML to its server file (creates the project dir if new). */
+  private async putDesignToServer(rel: string, yaml: string): Promise<void> {
+    const url = `/__project_files/${rel.split('/').map(encodeURIComponent).join('/')}`;
+    const token = this.readEditorToken();
+    const r = await fetch(url, {
+      method: 'PUT',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'text/yaml; charset=utf-8',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: yaml,
+    });
+    if (!r.ok) throw new Error(`PUT ${url} → ${r.status}`);
   }
 
   printDesign(bleed = 0): void {

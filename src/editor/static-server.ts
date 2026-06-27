@@ -154,6 +154,9 @@ const DIST = path.resolve(process.env['FOLIO_DIST_DIR'] ?? 'dist');
 // /files/*) guarantees the request inherits whatever auth the editor itself
 // has, since both share the catch-all editor handler.
 const PROJECTS_DIR = path.resolve(process.env['FOLIO_PROJECTS_DIR'] ?? './folio-projects');
+// Cap a PUT /__project_files write — a design can embed base64 images, so this
+// is generous, but bounds a single write so a runaway body can't exhaust the heap.
+const MAX_DESIGN_BYTES = Number(process.env['FOLIO_MAX_DESIGN_BYTES'] ?? 20 * 1024 * 1024);
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -485,6 +488,35 @@ Bun.serve({
       const presented = bearer || qtoken || cookie;
       if (!presented || !isValidToken(presented)) {
         return new Response('Unauthorized', { status: 401 });
+      }
+
+      // ── PUT/POST: write a design's YAML back to disk ────────────────────
+      // The editor's server-backed auto-save + "Save to Library" land here.
+      // Creates the parent project dir for a brand-new design. Only
+      // *.design.yaml may ever be written — never an arbitrary file. The live
+      // library SSE poller picks up the mtime change and refreshes open tabs.
+      if (req.method === 'PUT' || req.method === 'POST') {
+        const rawRel = url.pathname.slice('/__project_files/'.length);
+        const target = safeJoinProject(rawRel);
+        let relDecoded = rawRel;
+        try { relDecoded = decodeURIComponent(rawRel); } catch { /* keep raw */ }
+        if (!target || relDecoded.includes('..') || !relDecoded.endsWith('.design.yaml')) {
+          return new Response('Only *.design.yaml may be written', { status: 400 });
+        }
+        if (parseInt(req.headers.get('content-length') ?? '0', 10) > MAX_DESIGN_BYTES) {
+          return new Response('Payload too large', { status: 413 });
+        }
+        let yaml: string;
+        try { yaml = await req.text(); } catch { return new Response('Bad body', { status: 400 }); }
+        if (yaml.length === 0) return new Response('Empty body', { status: 400 });
+        if (yaml.length > MAX_DESIGN_BYTES) return new Response('Payload too large', { status: 413 });
+        try {
+          fs.mkdirSync(path.dirname(target), { recursive: true });
+          fs.writeFileSync(target, yaml, 'utf-8');
+        } catch { return new Response('Write failed', { status: 500 }); }
+        return new Response(JSON.stringify({ ok: true, path: relDecoded }), {
+          status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+        });
       }
 
       // /issue-style strip: when a valid token rides in on ?token= and there's no

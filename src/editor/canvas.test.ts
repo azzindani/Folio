@@ -613,6 +613,37 @@ describe('CanvasManager — smart guides (drawSmartGuides)', () => {
     // Just verify it didn't throw
     expect(state.getCurrentLayers().find(l => l.id === 'r1')).toBeDefined();
   });
+
+  it('sees layers nested in a group as guide/snap targets', () => {
+    // Presets ship the whole poster as ONE group — the dragged child's siblings
+    // live INSIDE that group, invisible to a top-level scan. guideTargets must
+    // flatten into the group and exclude only the dragged subtree.
+    const child1 = { ...makeRect('c1'), x: 100, y: 40 } as Layer;
+    const child2 = { ...makeRect('c2'), x: 500, y: 40 } as Layer;
+    const group = { id: 'g1', type: 'group', z: 1, x: 0, y: 0, layers: [child1, child2] } as unknown as Layer;
+    const { manager } = setup([group]);
+    const m = manager as unknown as { guideTargets(id: string): Layer[]; snapToLayers(id: string, x: number, y: number, l: Layer): { x: number; y: number } };
+
+    const targets = m.guideTargets('c1').map(l => l.id);
+    expect(targets).toContain('c2');  // sibling is a target
+    expect(targets).toContain('g1');  // ancestor group too
+    expect(targets).not.toContain('c1'); // never the dragged layer itself
+
+    // Dragging c1 to x≈497 (3px shy of c2.x=500) snaps its left edge to 500.
+    const snapped = m.snapToLayers('c1', 497, 41, child1);
+    expect(snapped.x).toBe(500);
+    expect(snapped.y).toBe(40); // top edge anchors to c2.y=40 (1px away)
+  });
+
+  it('does not snap when no target is within tolerance', () => {
+    const child1 = { ...makeRect('c1'), x: 100, y: 40 } as Layer;
+    const child2 = { ...makeRect('c2'), x: 500, y: 300 } as Layer;
+    const group = { id: 'g1', type: 'group', z: 1, x: 0, y: 0, layers: [child1, child2] } as unknown as Layer;
+    const { manager } = setup([group]);
+    const m = manager as unknown as { snapToLayers(id: string, x: number, y: number, l: Layer): { x: number; y: number } };
+    const snapped = m.snapToLayers('c1', 250, 200, child1); // far from any edge/centre
+    expect(snapped).toEqual({ x: 250, y: 200 });
+  });
 });
 
 // ── onMouseMoveForAnnotations ────────────────────────────────
