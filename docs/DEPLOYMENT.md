@@ -162,6 +162,16 @@ the Design Library, and `/__project_files/*`) lock this down without adding a lo
 | `FOLIO_EDITOR_RATE_BURST` | `240` | Per-IP token-bucket size (a page load is many small assets, so it's generous). `0` disables. |
 | `FOLIO_EDITOR_RATE_PER_SEC` | `80` | Per-IP steady refill rate. Overflow → **429 + Retry-After**, so one client's flood can't monopolise the single-threaded server. |
 | `FOLIO_EDITOR_MAX_HEAVY` | `8` | Max concurrent **expensive** ops (thumbnail rasterize, full-library scan). Beyond it → **503 + Retry-After:1**, so a burst can't pile up and OOM/peg the container. `0` = unlimited. |
+| `FOLIO_EDITOR_TOKEN_TTL_MS` | `1800000` (30 min) | Editor-link / session lifetime. **Short + sliding** (see below). |
+
+**Sliding-session links (no IP-lock, no login)** — the recommended way to show a link
+on a recording. Every link a tool returns carries a short-lived token (`FOLIO_EDITOR_TOKEN_TTL_MS`,
+default **30 min**). The session **slides**: the editor's ~30-second auto-save renews the
+window on each beat, so an open editor never lapses, while **30 min of inactivity lets the
+link expire**. Reopening a design from the Library mints a **fresh** window — over and over.
+Net: a link caught on screen is dead shortly after you stop, with no allow-list and no login.
+The token rides in a `HttpOnly`, `SameSite=Lax` cookie (stripped from the address bar on first
+load). Raise the TTL for hand-off links that must survive overnight.
 
 Finding your IP to allow-list: `curl https://<host>/__ip` → `{"ip":"…","allow_list_active":…}`.
 `/__ip` is intentionally exempt from the allow-list (it reveals only the caller's own
