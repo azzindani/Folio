@@ -129,7 +129,13 @@ function findCatalog(){var els=document.querySelectorAll('button,a,[role=button]
 for(var i=0;i<els.length;i++){var t=(els[i].textContent||'').trim().toLowerCase();if(t==='catalog'||t.indexOf('catalog')>=0)return els[i];}return null;}
 function go(e){if(e){e.preventDefault();e.stopPropagation();}window.open('/library','_blank','noopener');}
 function inject(){if(document.getElementById(ID))return true;var cat=findCatalog();if(!cat||!cat.parentNode)return false;
-var lib=cat.cloneNode(true);lib.id=ID;lib.textContent='Library';lib.setAttribute('title','Open the cross-project Design Library');
+var lib=cat.cloneNode(true);lib.id=ID;lib.removeAttribute('data-action');
+lib.setAttribute('title','Open the cross-project Design Library');lib.setAttribute('aria-label','Open the Design Library');
+/* Keep the cloned button's icon+label structure (don't nuke it via textContent),
+   so Library matches its toolbar siblings and collapses to icon-only on mobile.
+   Swap the catalog grid glyph for a distinct stacked-shelves icon. */
+var svg=lib.querySelector('svg');if(svg){svg.innerHTML='<rect x="1.5" y="2" width="11" height="3" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="5.5" width="11" height="3" rx="0.5" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="9" width="11" height="3" rx="0.5" stroke="currentColor" stroke-width="1.2"/>';}
+var span=lib.querySelector('span');if(span){span.textContent='Library';}else{lib.appendChild(document.createTextNode('Library'));}
 lib.addEventListener('click',go);cat.parentNode.insertBefore(lib,cat.nextSibling);return true;}
 function fallback(){if(document.getElementById(ID))return;var a=document.createElement('a');a.id=ID;a.href='/library';a.target='_blank';a.rel='noopener';a.textContent='▦ Library';
 a.style.cssText='position:fixed;left:12px;bottom:12px;z-index:2147483000;padding:8px 12px;border-radius:10px;background:#161B22;color:#C9D2E3;border:1px solid #2A323F;font:600 12px system-ui,sans-serif;text-decoration:none';document.body.appendChild(a);}
