@@ -47,4 +47,24 @@ describe('short-link store (mangle-proof /o/<code> editor links)', () => {
     expect(resolveShortLink('zzzznotreal99')).toBeNull();
     expect(resolveShortLink('')).toBeNull();
   });
+
+  it('a short link SELF-EXPIRES after its TTL; only re-issuing revives it', () => {
+    process.env['FOLIO_SHORT_LINK_TTL_MS'] = String(30 * 60 * 1000); // 30 min
+    const t0 = 1_000_000_000;
+    const code = registerShortLink('/p/a.design.yaml', undefined, t0);
+    expect(resolveShortLink(code, t0 + 60_000)).not.toBeNull();        // inside window
+    expect(resolveShortLink(code, t0 + 31 * 60 * 1000)).toBeNull();     // expired
+    // resolving NEVER extends the window (a leaked code can't keep itself alive)
+    expect(resolveShortLink(code, t0 + 31 * 60 * 1000)).toBeNull();
+    // re-issuing (owner action / Library open) refreshes it → live again
+    registerShortLink('/p/a.design.yaml', undefined, t0 + 31 * 60 * 1000);
+    expect(resolveShortLink(code, t0 + 31 * 60 * 1000 + 1000)).not.toBeNull();
+    delete process.env['FOLIO_SHORT_LINK_TTL_MS'];
+  });
+
+  it('a legacy entry with no exp is treated as expired (closes the permanent door)', () => {
+    const code = shortCode('/p/legacy.design.yaml');
+    fs.writeFileSync(path.join(dir, '.short-links.json'), JSON.stringify({ [code]: { path: '/p/legacy.design.yaml' } }));
+    expect(resolveShortLink(code)).toBeNull();
+  });
 });

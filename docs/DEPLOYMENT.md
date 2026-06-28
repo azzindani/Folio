@@ -173,6 +173,13 @@ Net: a link caught on screen is dead shortly after you stop, with no allow-list 
 The token rides in a `HttpOnly`, `SameSite=Lax` cookie (stripped from the address bar on first
 load). Raise the TTL for hand-off links that must survive overnight.
 
+Both link forms expire on this clock: the long `?token=` URL (the embedded JWT) **and** the
+short `/o/<code>` link (`FOLIO_SHORT_LINK_TTL_MS`, default = the session TTL). A short link
+does **not** revive itself when visited — only re-issuing it (a tool call, or **opening the
+design from the Library**) refreshes its window. So after the window lapses, the *only* way
+back to a live link is through the Library, which is reachable solely via the never-shown
+session cookie — a leaked or expired link can't re-enter on its own.
+
 Finding your IP to allow-list: `curl https://<host>/__ip` → `{"ip":"…","allow_list_active":…}`.
 `/__ip` is intentionally exempt from the allow-list (it reveals only the caller's own
 address). Blocked requests are logged: `[serve-static] BLOCKED ip=… GET /…`.
