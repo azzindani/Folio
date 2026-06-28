@@ -25,7 +25,7 @@ code is required* — if the client can talk MCP, it can drive Folio.
 ```
 ┌─────────────┐   MCP (JSON-RPC 2.0)   ┌──────────────────────────┐
 │   HOST/LLM  │  ───────────────────▶  │   Folio MCP server        │
-│ claude.ai   │   tools/list           │   50 tools, 3 tiers       │
+│ claude.ai   │   tools/list           │   21 tools, 3 tiers       │
 │ Claude Code │   tools/call           │   stdio  OR  HTTP+SSE     │
 │ LM Studio   │  ◀───────────────────  │   reads/writes .yaml      │
 │ any harness │   ToolResult + next     │   server-side SVG export  │
@@ -64,7 +64,7 @@ A long-lived HTTP server exposing JSON-RPC at `POST /mcp`, with optional SSE str
 
 - Entry point: `src/mcp/http-server.ts` (`bun run src/mcp/http-server.ts`).
 - Port: `FOLIO_PORT` (default `3333`).
-- Always serves the **full 50-tool union** (tiers are a stdio-only concept).
+- Always serves the **full 21-tool union** (tiers are a stdio-only concept).
 - Auth: Bearer token (or OAuth — see [DEPLOYMENT.md](DEPLOYMENT.md)).
 - Best for: claude.ai Custom Connectors, remote Claude Code, Hermes, OpenClaw, any
   MCP-over-HTTP agent, and the Docker deployment.
@@ -85,13 +85,13 @@ identical — only framing and auth differ.
 ## 3. TIERS (stdio only)
 
 Tools are grouped so a small-context model can register only what it can use. Over
-HTTP all 50 are always present; over stdio you choose.
+HTTP all 21 are always present; over stdio you choose.
 
 | Tier | `FOLIO_MCP_TIER` | Count | What it adds |
 |---|---|---|---|
-| Basic | `1` | 15 | projects, lists, tasks, library browse, themes, rename/move/delete, enrich_brief |
-| Design | `2` | 10 | create_design, add_layers, inspect, patch, seal, extract_reference |
-| Export | `3` | 24 | export_design, templates, components, reports, presentations, animation, formula, collab, diagnose, render_preview |
+| Foundation | `1` | 6 | get_engine_guide, enrich_brief, create_project, manage_design (list/browse/inspect/rename/dup/move/delete/resume/gallery), themes (list/apply), tasks (list/create/resume) |
+| Compose | `2` | 7 | create_design, add_layers, edit_layer (add/update/remove/align), append_page, patch_design, seal_design, extract_reference |
+| Output + Advanced | `3` | 8 | render_preview, diagnose_design, export_design, open_in_editor, templates, report, presentation, animation (each a multiplexed `op` tool) |
 
 Tiers are **exclusive** — register tier 1, 2, and 3 as three separate servers to get
 the union without duplicate tool names, or register `all` for the whole surface in a
@@ -125,7 +125,7 @@ Standard MCP JSON-RPC 2.0. No Folio-specific extensions on `initialize` / `tools
 
 ```jsonc
 → {"jsonrpc":"2.0","id":2,"method":"tools/list"}
-← {"jsonrpc":"2.0","id":2,"result":{"tools":[ /* 50 ToolDefinition objects */ ]}}
+← {"jsonrpc":"2.0","id":2,"result":{"tools":[ /* 21 ToolDefinition objects */ ]}}
 ```
 
 ### 4.3 Calling a tool
@@ -148,7 +148,7 @@ BASE=https://folio.example.com ; TOK=sk-folio-...
 curl -s $BASE/health | jq .                       # {"status":"ok",...}
 curl -s $BASE/tokens/whoami -H "Authorization: Bearer $TOK" | jq .
 curl -s $BASE/mcp -H "Authorization: Bearer $TOK" -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # 50
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # 21
 ```
 
 ---
@@ -196,7 +196,7 @@ is usually 2–3 refinement rounds, not one shot.
 
 `create_design` / `append_page` / `seal_design` / `export_design` return an
 `open_url` — a tokenized, ready-to-click editor link (no separate `open_in_editor`
-call needed). `export_report` returns `view_url` (the **final** interactive HTML — give
+call needed). `report` (op:export) returns `view_url` (the **final** interactive HTML — give
 the user *that*) and `edit_url`. The token is a stateless 30-day JWT when a JWT secret
 is configured. See [EDITOR.md](EDITOR.md).
 
@@ -205,9 +205,9 @@ is configured. See [EDITOR.md](EDITOR.md).
 After any context reset the model can recover exact state:
 
 ```
-resume_task(task_path)   → exact next tool + params for a carousel
-resume_design(path)      → carousel page-generation progress
-list_tasks(project_path) → find a lost task_path
+tasks op:resume(task_path)   → exact next tool + params for a carousel
+manage_design op:resume(path)      → carousel page-generation progress
+tasks op:list(project_path) → find a lost task_path
 ```
 
 ---
@@ -313,7 +313,7 @@ patch the weakest thing, repeat.
 ### 8.2 Carousel (multi-page, incremental)
 
 ```
-1. create_task   (pages=[{label,hints}])  → first append_page baton
+1. tasks op:create   (pages=[{label,hints}])  → first append_page baton
 2. append_page   (per page; pass task_path) → repeat until remaining==0
 3. seal_design
 ```
@@ -321,11 +321,11 @@ patch the weakest thing, repeat.
 ### 8.3 Interactive report (flow layout)
 
 ```
-1. generate_report  (layout:"flow", pages, data_sources)
-2. bind_data        (inline/json/csv/query/transform datasets)
-3. add_layers       (flow widgets, each with a span 1–12)
-4. validate_report  (lint data_refs/fields/actions — fix errors)
-5. export_report    (theme) → view_url (the deliverable) + edit_url
+1. report   op:generate   (layout:"flow", pages, data_sources)
+2. report   op:report op:bind_data   (inline/json/csv/query/transform datasets)
+3. add_layers              (flow widgets, each with a span 1–12)
+4. report   op:validate    (lint data_refs/fields/actions — fix errors)
+5. report   op:export      (theme) → view_url (the deliverable) + edit_url
 ```
 
 See [REPORT_ENGINE.md](REPORT_ENGINE.md).
@@ -333,10 +333,10 @@ See [REPORT_ENGINE.md](REPORT_ENGINE.md).
 ### 8.4 Presentation (animated deck)
 
 ```
-1. create_presentation  (1920×1080, slides, 17 transitions, auto-advance)
-2. append_page          (per slide)
-3. set_formula_context / add_keyframe   (optional)
-4. export_presentation  → self-contained HTML presenter (keyboard/touch/teleprompter)
+1. presentation  op:create   (1920×1080, slides, 17 transitions, auto-advance)
+2. append_page                (per slide)
+3. report op:formula / animation op:keyframe   (optional)
+4. presentation  op:export   → self-contained HTML presenter (keyboard/touch/teleprompter)
 ```
 
 ### 8.5 Patch a sealed design

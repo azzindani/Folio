@@ -28,20 +28,20 @@ z = stacking order (higher = front)
    per weekday", "a cover for each of the 6 episodes"): produce ALL N. Stopping at a
    sample of 2-3 is a FAILURE — the user asked for the whole set. Same style/topic,
    different content per item → design ONE item well (the look), then for EACH remaining
-   item duplicate_design it and patch_design the per-item content (or, for a clean
-   slot-driven set, export_template the first then batch_create with the N content sets).
+   item manage_design(op:duplicate) it and patch_design the per-item content (or, for a clean
+   slot-driven set, templates(op:export) the first then templates(op:batch) with the N content sets).
    Hold the shared look constant; vary ONLY the per-item content. Don't leave each card
    near-empty ("Jan / plan") — give every one of the N the same richness as the first.
 
 ✏️ EDIT / RESTYLE an existing design ("make it darker", "flip to a pastel palette",
    "boxier", "airier", "declutter"): a rename is NOT an edit — you MUST change the
-   actual design. For a RECOLOR/restyle, read the design's current hexes (inspect_design
+   actual design. For a RECOLOR/restyle, read the design's current hexes (manage_design(op:inspect)
    or read it), then patch_design with ONE {path:"recolor", value:{"#OLD":"#NEW", …}}
    selector mapping every bg/text/accent hex to its new shade — that swaps the whole
-   palette in one call. (apply_theme does NOT recolor a design; it only sets the project
+   palette in one call. (themes(op:apply) does NOT recolor a design; it only sets the project
    default, and designs use baked-in hexes.) For structural edits (airier/declutter →
-   remove layers + add whitespace; boxier → swap radii, add panels) use remove_layer +
-   add_layers / update_layer. If asked for BOTH versions, duplicate_design first, then
+   remove layers + add whitespace; boxier → swap radii, add panels) use edit_layer(op:remove) +
+   add_layers / edit_layer(op:update). If asked for BOTH versions, manage_design(op:duplicate) first, then
    edit the copy — and make the two genuinely different, not identical files renamed.
 
 🧠 SHORT or vague prompt (e.g. "a poster about remote work", "a 6-slide carousel on X")?
@@ -51,7 +51,7 @@ z = stacking order (higher = front)
    shared bg_style/palette across pages. Either way it returns a topic-matched
    bg_style/palette and — for factual topics — web-research queries to run before
    composing (figures REAL, not invented). Follow its instruction: research if
-   asked, then create_design+add_layers (poster) or create_task+append_page
+   asked, then create_design+add_layers (poster) or tasks(op:create)+append_page
    (carousel). Don't ship sparse output when the topic deserves a dense, researched one.
 
 🖼️ RICHNESS — FILL THE PAGE (the #2 quality gap after AI-slop). A headline + two
@@ -221,7 +221,7 @@ Poster workflow:
   4. export_design(design_path, format="svg")   (optional)
 
 Carousel workflow:
-  1. create_task(project_path, task_name, brief, pages=[{label,hints}])
+  1. tasks(op:create, project_path, task_name, brief, pages=[{label,hints}])
   2. append_page(design_path, page_id, layers_shorthand=[…], task_path=…)
      → repeat until next_action.remaining==0 (each call returns open_url for the new page)
   3. seal_design(design_path)
@@ -230,7 +230,7 @@ Rules:
   - Always use layers_shorthand (verbose works too but is 5× the tokens)
   - Every sized layer needs pos:[x,y,w,h] OR width+height — no exceptions
   - Always pass task_path in append_page — enables auto-handover
-  - Call resume_task(task_path) after any context reset
+  - Call tasks(op:resume, task_path) after any context reset
   - 3–8 layers per page is ideal
   - Load guide sections on demand: shorthand | layers | workflow | reference
   - MATCHING a reference image (Canva/screenshot)? Call extract_reference FIRST
@@ -261,7 +261,7 @@ Rules:
     your next call.
   - VERIFY before sealing: diagnose_design(design_path) lists problems (text_overflow,
     off-canvas, collisions, near-miss MISALIGNMENT, low contrast, weak hierarchy) each
-    with a fix; FIX EVERY error then re-run it until zero errors. align_layers fixes
+    with a fix; FIX EVERY error then re-run it until zero errors. edit_layer(op:align) fixes
     alignment; render_preview(design_path) returns a PNG so you can SEE the result.
     Fix → re-check → seal.
 
@@ -441,7 +441,7 @@ bg as the base canvas color (light bg → keep text dark; dark bg → set text_c
 Chart:     {type:"chart", chart:"bar"|"line"|"area"|"pie"|"donut", pos:[..], data:[{x,y}..]}
            (label/value/name/count also map to x/y; or pass a raw vega-lite spec:{...})
 KPI:       {type:"kpi_card", pos:[..], label:"Revenue", value:"$1.2M", delta:"+12%", icon:"dollar-sign", fill:"#16213E"}
-Component: {type:"component", pos:[..], ref:"<saved-id>", slots:{...}}  (make one via save_as_component)
+Component: {type:"component", pos:[..], ref:"<saved-id>", slots:{...}}  (make one via templates(op:save_component))
   NOTE: chart + kpi_card render in the editor & HTML export but NOT in PNG (they use foreignObject).
 
 Text shorthand fields:  text, font, size, weight, color, align, line_height, letter_spacing, text_decoration:"underline"|"line-through"
@@ -539,9 +539,9 @@ handover protocol:
   carry_forward: params to re-use in your next call
 
 Context reset recovery:
-  1. Call resume_task(task_path) → get exact next tool + params
-  2. Or call resume_design(design_path) → check carousel progress
-  3. Or call list_tasks(project_path) → find task_path if lost
+  1. Call tasks(op:resume, task_path) → get exact next tool + params
+  2. Or call manage_design(op:resume, design_path) → check carousel progress
+  3. Or call tasks(op:list, project_path) → find task_path if lost
 
 Patch workflow (editing sealed designs):
   1. patch_design(design_path, selectors=[{path,value}], dry_run=true)  ← validate first
@@ -551,28 +551,28 @@ Patch workflow (editing sealed designs):
 Interactive HTML reports (dashboards, EDA, financial decks):
   USE layout:"flow" — a responsive editorial document (12-col grid, NO fixed canvas).
   Layers are placed by a span field (1–12), NOT x/y/width/height — they reflow on any screen.
-  1. generate_report(project_path, name, layout:"flow", accent:"#f5c842",
+  1. report(op:generate, project_path, name, layout:"flow", accent:"#f5c842",
        font_heading:"Playfair Display", font_body:"Inter", max_width:1200,
        pages:[{id:"overview",label:"Overview"}], data_sources:[{id:"rev",type:"inline",rows:[…]}])
-  2. bind_data(design_path, datasets:[{id, rows:[…]}])   ← add/replace datasets anytime
+  2. report(op:bind_data, design_path, datasets:[{id, rows:[…]}])   ← add/replace datasets anytime
   3. add_layers(design_path, page_id, layers:[ …flow widgets, each with a span… ])
        hero/headings → {type:"rich_text", span:12, font_family:"Playfair Display", font_size:42, content:"**Title**", format:"markdown"}
        KPI row       → {type:"kpi_card", span:3, label, value, format:"currency"|"number"|"percent", delta, sparkline_data, sparkline_field}
        charts        → {type:"interactive_chart", span:6|8, height:340, chart_type:"line"|"bar"|"area"|"pie"|"donut", data_ref, x_field, y_field, title}
        data table    → {type:"interactive_table", span:12, data_ref, filterable:true, exportable:true, pagination:true, page_size:10,
                          columns:[{field,title,sortable:true,formatter:"currency"|"number"|"percent"|"badge"|"delta",align:"right"}]}
-  4. validate_report(design_path) → {ok, errors, warnings, diagnostics[]} — LINT cross-refs
+  4. report(op:validate, design_path) → {ok, errors, warnings, diagnostics[]} — LINT cross-refs
      (every chart/table data_ref + x/y field resolves to a real dataset, buttons open existing
      modals, transforms group by present fields). Run it after add_layers; fix errors before export.
-  5. export_report(design_path, theme:"dark"|"light") → self-contained .report.html
+  5. report(op:export, design_path, theme:"dark"|"light") → self-contained .report.html
      (also returns diagnostics; resolves transform datasets at export).
-     ★ DELIVERABLE: export_report returns view_url — a tokenized link that renders the
+     ★ DELIVERABLE: report(op:export) returns view_url — a tokenized link that renders the
        FINAL interactive HTML directly in the browser. Give the user THAT, not the editor
        link. The editor canvas is an authoring view, not a faithful preview of the export;
-       export_report.view_url is the real result. (edit_url is also returned for editing.)
+       report(op:export).view_url is the real result. (edit_url is also returned for editing.)
   Defaults if span omitted: kpi=3, chart=6, table/rich_text=12. accent seeds chart colors + links.
   Tables sort/filter/paginate/CSV-export client-side; charts use Chart.js (CDN). All in one HTML file.
-  DATA SOURCES (bind_data datasets[] or report.data.sources): type:"inline" {rows:[…]} ·
+  DATA SOURCES (report(op:bind_data) datasets[] or report.data.sources): type:"inline" {rows:[…]} ·
   "json"/"csv" {path} · "query" {engine:"http", url, query?:"dot.path"} fetches JSON (sql/duckdb
   need a server connector) · "transform" {from:"<srcId>", group_by, agg:"sum|avg|min|max|count",
   value} = a derived group-by aggregation, chart-bindable as data_ref (x=group_by, y=value).

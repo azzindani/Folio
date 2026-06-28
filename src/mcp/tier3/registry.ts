@@ -1,50 +1,22 @@
-// §7 Tier 3 — Export (24 tools): export, templates, components, reports, presentations, animation, formula, collab, QA
+// §7 Tier 3 — Output + Advanced (8 tools): inspect/preview, export, editor link,
+// and the four advanced subsystems (templates, reports, presentations, animation)
+// each folded into ONE multiplexed tool with an `op` discriminator. Capability is
+// identical to the old per-tool surface — only the tool count shrank.
 import type { ToolDefinition } from '../types';
 
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
-    name: 'open_in_editor',
-    description: 'Return a clickable, token-embedded URL that opens a design in the Folio editor (live-refreshes as later tools edit the file). NOTE: create_design/append_page/seal_design/export_design already return this as open_url — only call this to re-open, focus a page, or open the editor home.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string',  description: 'Path to .design.yaml — omit to open the editor at its home page' },
-        project_path: { type: 'string',  description: 'Project dir for resolving relative design_path' },
-        editor_url:   { type: 'string',  description: 'Override editor base URL (default: $FOLIO_EDITOR_URL or http://localhost:4173)' },
-        page:         { type: 'number',  description: 'Page index to focus (1-based)' },
-      },
-      required: [],
-    },
-  },
-  {
-    name: 'export_design',
-    description: 'Export a design to SVG, PNG, PDF, HTML or PPTX (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf is a true VECTOR PDF: text is embedded as real, selectable/copy-paste glyphs that stay crisp at any zoom, drawn over a high-DPI raster for backgrounds/gradients/effects, with clickable links — no Puppeteer/Chromium needed. pptx is a PowerPoint deck — one full-bleed image slide per page (pixel-faithful; opens in PowerPoint/Keynote/Slides as an editable container).',
+    name: 'render_preview',
+    description: 'Render the design to a PNG and return it INLINE as an image so you can SEE what you produced (no file written). Use it to visually verify a composition or confirm a fix — pair with diagnose_design. Foreground charts/KPIs that need a browser still only appear in the editor; everything else (shapes, patterns, text, fills) rasterizes here.',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        // All four produce real files; a carousel yields one file per page.
-        // pdf is a vector PDF (selectable text + raster backdrop), built
-        // in-process via jsPDF — no Puppeteer step.
-        format:       { type: 'string', enum: ['svg', 'html', 'pdf', 'png', 'pptx'] },
-        output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-        scale:        { type: 'number', description: 'Scale factor 1–3', default: 2 },
+        page_id:      { type: 'string', description: 'Carousel: preview one page (omit = first page)' },
+        scale:        { type: 'number', description: 'Raster scale 0.5–2 (default 1)', default: 1 },
       },
-      required: ['design_path', 'format'],
-    },
-  },
-  {
-    name: 'export_library_gallery',
-    description: 'Build a self-contained HTML "file manager" for the WHOLE design library — every project and design as a thumbnail card with a live search box and click-through to open each in the editor. Writes <projects>/library.html plus cached thumbnails (re-runs only re-render changed designs). Open the file in a browser to browse everything you\'ve made. Optionally filter with `search`/`type`, or cap first-build rendering with `max_thumbnails`.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        output_path:    { type: 'string', description: 'Where to write the gallery HTML (default <projects>/library.html)' },
-        max_thumbnails: { type: 'number', description: 'Max NEW thumbnails to render this call (default 120; cached ones are free). Re-run to fill the rest.' },
-        search:         { type: 'string', description: 'Only include designs/projects matching this substring' },
-        type:           { type: 'string', description: 'Only include designs of this type' },
-      },
+      required: ['design_path'],
     },
   },
   {
@@ -61,302 +33,127 @@ export const TIER3_TOOLS: ToolDefinition[] = [
     },
   },
   {
-    name: 'render_preview',
-    description: 'Render the design to a PNG and return it INLINE as an image so you can SEE what you produced (no file written). Use it to visually verify a composition or confirm a fix — pair with diagnose_design. Foreground charts/KPIs that need a browser still only appear in the editor; everything else (shapes, patterns, text, fills) rasterizes here.',
+    name: 'export_design',
+    description: 'Export a design to SVG, PNG, PDF, HTML or PPTX (all produce real files). A carousel exports one file per page (`<name>-p1.svg`, `-p2.svg`, …); output_paths lists them. pdf is a true VECTOR PDF: text is embedded as real, selectable/copy-paste glyphs that stay crisp at any zoom, drawn over a high-DPI raster for backgrounds/gradients/effects, with clickable links — no Puppeteer/Chromium needed. pptx is a PowerPoint deck — one full-bleed image slide per page (pixel-faithful; opens in PowerPoint/Keynote/Slides as an editable container). For an INTERACTIVE report use report(op:export); for a presentation HTML/video use presentation(op:export) / animation(op:export).',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
+        format:       { type: 'string', enum: ['svg', 'html', 'pdf', 'png', 'pptx'] },
+        output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-        page_id:      { type: 'string', description: 'Carousel: preview one page (omit = first page)' },
-        scale:        { type: 'number', description: 'Raster scale 0.5–2 (default 1)', default: 1 },
+        scale:        { type: 'number', description: 'Scale factor 1–3', default: 2 },
       },
-      required: ['design_path'],
+      required: ['design_path', 'format'],
     },
   },
   {
-    name: 'align_layers',
-    description: 'Auto-align / distribute / snap-to-grid a set of layers — the fix for diagnose_design misalignment findings. operation: left|right|top|bottom|center_h|center_v (align edges/centers across the group), distribute_h|distribute_v (even spacing, needs ≥3), snap_grid (round each to the grid). Mutates positions and writes the YAML (with a backup).',
+    name: 'open_in_editor',
+    description: 'Return a clickable, token-embedded URL that opens a design in the Folio editor (live-refreshes as later tools edit the file). NOTE: create_design/append_page/seal_design/export_design already return this as open_url — only call this to re-open, focus a page, or open the editor home.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        layer_ids:    { type: 'array', description: 'Layer IDs to align', items: { type: 'string' } },
-        operation:    { type: 'string', enum: ['left', 'right', 'top', 'bottom', 'center_h', 'center_v', 'distribute_h', 'distribute_v', 'snap_grid'] },
-        grid:         { type: 'number', description: 'Grid size px for snap_grid (default 8)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-        page_id:      { type: 'string', description: 'Carousel page id (omit = first page)' },
-      },
-      required: ['design_path', 'layer_ids', 'operation'],
-    },
-  },
-  {
-    name: 'batch_create',
-    description: 'Generate N designs from one template using an array of slot objects.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        project_path: { type: 'string', description: 'Path to project directory' },
-        template_id:  { type: 'string', description: 'Template ID to use' },
-        slots_array:  { type: 'array', description: 'One slot object per design', items: { type: 'object' } },
-      },
-      required: ['project_path', 'template_id', 'slots_array'],
-    },
-  },
-  {
-    name: 'save_as_component',
-    description: 'Extract layers into .component.yaml and replace with component instance.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:    { type: 'string', description: 'Path to source .design.yaml' },
-        layer_ids:      { type: 'array', description: 'Layer IDs to extract', items: { type: 'string' } },
-        component_name: { type: 'string', description: 'Name for the new component' },
-        project_path:   { type: 'string', description: 'Path to project directory' },
-      },
-      required: ['design_path', 'layer_ids', 'component_name', 'project_path'],
-    },
-  },
-  {
-    name: 'export_template',
-    description: 'Export design as .template.yaml skeleton with named slots.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to source .design.yaml' },
-        output_path:  { type: 'string', description: 'Output path for .template.yaml (auto if omitted)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path'],
-    },
-  },
-  {
-    name: 'list_templates',
-    description: 'Browse the built-in template catalog (the same 432 templates shown in the editor Catalog). Returns slim metadata {id, name, type, tags, width, height, slots, themeRef}. Filter by search text or tag. Feed a returned id straight to list_template_slots / inject_template — no path needed.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        search: { type: 'string', description: 'Free-text match over id/name/tags' },
-        tag:    { type: 'string', description: 'Exact tag filter, e.g. "poster", "resume", "instagram"' },
-        limit:  { type: 'number', description: 'Max results (default 60, max 300)' },
+        design_path:  { type: 'string',  description: 'Path to .design.yaml — omit to open the editor at its home page' },
+        project_path: { type: 'string',  description: 'Project dir for resolving relative design_path' },
+        editor_url:   { type: 'string',  description: 'Override editor base URL (default: $FOLIO_EDITOR_URL or http://localhost:4173)' },
+        page:         { type: 'number',  description: 'Page index to focus (1-based)' },
       },
       required: [],
     },
   },
   {
-    name: 'inject_template',
-    description: 'Inject slot values into a template to produce a .design.yaml. template_path accepts a real .template.yaml path OR a built-in catalog id (e.g. "tmpl-resume-modern", from list_templates) — a built-in writes the design into the projects dir.',
+    name: 'templates',
+    description: 'Built-in template catalog + reusable components — pick `op`:\n• list — browse the 432 built-in catalog templates (same as the editor Catalog); slim metadata {id,name,type,tags,width,height,slots,themeRef}; filter search/tag/limit. Feed a returned id straight to op:slots / op:inject.\n• slots — list injectable slots (paths/types/hints) of a template (req: template_path = a real .template.yaml path OR a built-in catalog id).\n• inject — fill slot values → a new .design.yaml (req: template_path, slots map; a built-in writes into the projects dir).\n• export — turn a sealed design into a reusable .template.yaml skeleton with named slots (req: design_path).\n• save_component — extract layers into a .component.yaml + replace them with an instance (req: design_path, layer_ids, component_name, project_path).\n• batch — generate N designs from one template + an array of slot objects (req: project_path, template_id, slots_array).',
     inputSchema: {
       type: 'object',
       properties: {
-        template_path: { type: 'string', description: 'Path to a .template.yaml, OR a built-in catalog id / filename (see list_templates)' },
-        slots:         { type: 'object', description: 'Map of slot_id → value', properties: {} },
-        output_path:   { type: 'string', description: 'Output path for .design.yaml (auto if omitted)' },
+        op:             { type: 'string', enum: ['list', 'slots', 'inject', 'export', 'save_component', 'batch'], description: 'Which template/component action to run.' },
+        search:         { type: 'string', description: 'op:list — free-text match over id/name/tags.' },
+        tag:            { type: 'string', description: 'op:list — exact tag filter (e.g. "poster", "resume").' },
+        limit:          { type: 'number', description: 'op:list — max results (default 60, max 300).' },
+        template_path:  { type: 'string', description: 'op:slots/inject — a real .template.yaml path OR a built-in catalog id / filename (see op:list).' },
+        slots:          { type: 'object', description: 'op:inject — map of slot_id → value.', properties: {} },
+        output_path:    { type: 'string', description: 'op:inject/export — output path (auto if omitted).' },
+        design_path:    { type: 'string', description: 'op:export/save_component — source .design.yaml.' },
+        project_path:   { type: 'string', description: 'Project dir (op:export/save_component/batch).' },
+        layer_ids:      { type: 'array', description: 'op:save_component — layer IDs to extract.', items: { type: 'string' } },
+        component_name: { type: 'string', description: 'op:save_component — name for the new component.' },
+        template_id:    { type: 'string', description: 'op:batch — template id (or a design name in the project to clone).' },
+        slots_array:    { type: 'array', description: 'op:batch — one slot object per design.', items: { type: 'object' } },
       },
-      required: ['template_path', 'slots'],
+      required: ['op'],
     },
   },
   {
-    name: 'list_template_slots',
-    description: 'List injectable slots in a template with paths, types, hints. template_path accepts a real .template.yaml path OR a built-in catalog id (see list_templates).',
-    inputSchema: {
-      type: 'object',
-      properties: { template_path: { type: 'string', description: 'Path to a .template.yaml, OR a built-in catalog id / filename (see list_templates)' } },
-      required: ['template_path'],
-    },
-  },
-  // ── Report tools ──────────────────────────────────────────
-  {
-    name: 'generate_report',
-    description: 'Scaffold a new report-type design with pages, navigation, and optional data sources. Use layout:"flow" for a responsive interactive dashboard/report (12-col grid, layers placed by a span field, no fixed canvas) — set accent + font_heading/font_body for an editorial look.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        project_path:  { type: 'string', description: 'Path to project directory' },
-        name:          { type: 'string', description: 'Report name' },
-        layout:        { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar', 'flow'], default: 'paged', description: 'flow = responsive 12-col grid (span-based, no fixed canvas) — best for interactive HTML reports' },
-        nav_type:      { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar' },
-        pages:         { type: 'array', description: 'Array of {id?, label} page specs', items: { type: 'object' } },
-        width:         { type: 'number', default: 1080 },
-        height:        { type: 'number', default: 1080 },
-        data_sources:  { type: 'array', description: 'Optional inline/json/csv data sources', items: { type: 'object' } },
-        max_width:     { type: 'number', description: 'Flow reports: centered container max width in px (default 1200)' },
-        accent:        { type: 'string', description: 'Flow reports: accent color (CSS) — seeds chart palette + links + active states' },
-        font_heading:  { type: 'string', description: 'Flow reports: heading font family (Google font name, e.g. "Playfair Display")' },
-        font_body:     { type: 'string', description: 'Flow reports: body font family (Google font name, e.g. "Inter")' },
-      },
-      required: ['project_path', 'name', 'pages'],
-    },
-  },
-  {
-    name: 'bind_data',
-    description: 'Attach or update inline datasets on a report design for $data.* / $agg.* expressions.',
+    name: 'report',
+    description: 'Interactive data-report subsystem (type:report designs) — pick `op`:\n• generate — scaffold a report with pages/nav/optional data; layout:"flow" = responsive 12-col interactive dashboard (set accent + font_heading/font_body) (req: project_path, name, pages).\n• bind_data — attach/update inline datasets for $data.* / $agg.* expressions (req: design_path, datasets:[{id,rows[]}]).\n• validate — lint cross-refs (charts/tables/filters resolve to real datasets+fields, buttons open real modals) BEFORE export; returns {ok,errors,warnings} (req: design_path).\n• export — assemble into a self-contained interactive HTML; returns view_url (the real result to give the user) + edit_url (req: design_path).\n• formula — store state/data context for =expr bindings on a design (req: design_path).\n• debug — evaluate one =formula against a context and return the typed result (req: formula).',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        datasets:     { type: 'array', description: 'Array of {id, rows[]}', items: { type: 'object' } },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        op:           { type: 'string', enum: ['generate', 'bind_data', 'validate', 'export', 'formula', 'debug'], description: 'Which report action to run.' },
+        project_path: { type: 'string', description: 'Project dir (op:generate; resolves relative design_path elsewhere).' },
+        name:         { type: 'string', description: 'op:generate — report name.' },
+        layout:       { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar', 'flow'], default: 'paged', description: 'op:generate — flow = responsive 12-col interactive grid.' },
+        nav_type:     { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar', description: 'op:generate — navigation style.' },
+        pages:        { type: 'array', description: 'op:generate — [{id?, label}] page specs.', items: { type: 'object' } },
+        width:        { type: 'number', default: 1080, description: 'op:generate — canvas width.' },
+        height:       { type: 'number', default: 1080, description: 'op:generate — canvas height.' },
+        data_sources: { type: 'array', description: 'op:generate — optional inline/json/csv data sources.', items: { type: 'object' } },
+        max_width:    { type: 'number', description: 'op:generate (flow) — centered container max width px (default 1200).' },
+        accent:       { type: 'string', description: 'op:generate (flow) — accent color seeding charts/links/active states.' },
+        font_heading: { type: 'string', description: 'op:generate (flow) — heading font family (Google font name).' },
+        font_body:    { type: 'string', description: 'op:generate (flow) — body font family (Google font name).' },
+        design_path:  { type: 'string', description: 'op:bind_data/validate/export/formula/debug — the .design.yaml.' },
+        datasets:     { type: 'array', description: 'op:bind_data — [{id, rows[]}].', items: { type: 'object' } },
+        output_path:  { type: 'string', description: 'op:export — output .html path (auto if omitted).' },
+        theme:        { type: 'string', enum: ['light', 'dark'], default: 'dark', description: 'op:export — report theme.' },
+        state:        { type: 'object', description: 'op:formula/debug — state variables.', properties: {} },
+        data:         { type: 'object', description: 'op:formula/debug — data variables.', properties: {} },
+        formula:      { type: 'string', description: 'op:debug — formula string starting with =.' },
       },
-      required: ['design_path', 'datasets'],
+      required: ['op'],
     },
   },
   {
-    name: 'export_report',
-    description: 'Assemble a report design into a self-contained interactive HTML file. Returns view_url — a tokenized link that renders the FINAL interactive report directly in a browser. Give the user view_url (the real result), not the editor link; edit_url is also returned for editing the source.',
+    name: 'presentation',
+    description: 'Slide presentations + live presenting/collab — pick `op`:\n• create — scaffold a presentation design (1920×1080) with slides + transition (req: project_path, name, pages:[{label,notes?}]).\n• export — assemble a presentation/carousel/motion into a self-contained HTML presenter with transitions + keyboard nav (req: design_path).\n• remote — generate a remote-clicker setup: client JS + curl commands to drive slides over HTTP (opt: port, design_path).\n• collab — generate a collaborative-editing SSE file-watch server for multi-user sync (req: design_path).',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml (must be type: report)' },
-        output_path:  { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
-        theme:        { type: 'string', enum: ['light', 'dark'], default: 'dark' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        op:           { type: 'string', enum: ['create', 'export', 'remote', 'collab'], description: 'Which presentation action to run.' },
+        project_path: { type: 'string', description: 'Project dir (op:create; resolves relative design_path elsewhere).' },
+        name:         { type: 'string', description: 'op:create — presentation name.' },
+        pages:        { type: 'array', description: 'op:create — [{id?, label, notes?}] slide specs.', items: { type: 'object' } },
+        transition:   { type: 'string', enum: ['none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'zoom-in', 'zoom-out', 'flip-h', 'flip-v', 'cube-left', 'cube-right', 'reveal', 'wipe-left', 'wipe-right', 'dissolve', 'morph'], default: 'fade', description: 'op:create — slide transition.' },
+        auto_advance: { type: 'number', description: 'op:create/export — auto-advance delay ms (0 = manual).' },
+        width:        { type: 'number', default: 1920, description: 'op:create — slide width.' },
+        height:       { type: 'number', default: 1080, description: 'op:create — slide height.' },
+        theme:        { type: 'string', enum: ['dark', 'light'], default: 'dark', description: 'op:create/export — presenter theme.' },
+        design_path:  { type: 'string', description: 'op:export/remote/collab — the .design.yaml.' },
+        output_path:  { type: 'string', description: 'op:export — output .html path (auto if omitted).' },
+        port:         { type: 'number', description: 'op:remote (default 3737) / op:collab (default 3738) — server port.' },
       },
-      required: ['design_path'],
+      required: ['op'],
     },
   },
   {
-    name: 'validate_report',
-    description: 'Lint an interactive report\'s cross-references BEFORE exporting: every chart/table/filter resolves to a real dataset + field, buttons open existing modals, transforms group by present fields. Returns {ok, errors, warnings, diagnostics[]}. Call after add_layers to catch silent breakage.',
+    name: 'animation',
+    description: 'Animation timeline + motion export — pick `op`:\n• timeline — show a design\'s keyframe tracks as an ASCII timeline (req: design_path; page_id to filter).\n• keyframe — add/replace a keyframe on a layer\'s timeline (req: design_path, layer_id, keyframe:{t:ms, x?, y?, opacity?, scale?, rotation?}).\n• export — render a presentation/motion design to GIF/MP4/WebM (requires Puppeteer + optionally ffmpeg) (req: design_path, type).',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml (must be type: report)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        op:           { type: 'string', enum: ['timeline', 'keyframe', 'export'], description: 'Which animation action to run.' },
+        design_path:  { type: 'string', description: 'Path to .design.yaml.' },
+        page_id:      { type: 'string', description: 'op:timeline — optional page filter.' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path.' },
+        layer_id:     { type: 'string', description: 'op:keyframe — target layer id.' },
+        keyframe:     { type: 'object', description: 'op:keyframe — {t:ms, x?, y?, opacity?, scale?, rotation?}.', properties: {} },
+        type:         { type: 'string', enum: ['gif', 'mp4', 'webm'], description: 'op:export — output format.' },
+        output_path:  { type: 'string', description: 'op:export — output file path (auto if omitted).' },
+        fps:          { type: 'number', description: 'op:export — frames per second (default 10 gif, 30 mp4/webm).' },
+        duration:     { type: 'number', description: 'op:export — animation duration ms (default 3000).' },
       },
-      required: ['design_path'],
-    },
-  },
-  // ── Presentation tools ────────────────────────────────────
-  {
-    name: 'create_presentation',
-    description: 'Scaffold a presentation-type design (1920×1080) with slides, transitions, and presentation settings.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        project_path:  { type: 'string', description: 'Path to project directory' },
-        name:          { type: 'string', description: 'Presentation name' },
-        pages:         { type: 'array', description: 'Array of {id?, label, notes?} slide specs', items: { type: 'object' } },
-        transition:    { type: 'string', enum: ['none','fade','slide-left','slide-right','slide-up','slide-down','zoom-in','zoom-out','flip-h','flip-v','cube-left','cube-right','reveal','wipe-left','wipe-right','dissolve','morph'], default: 'fade' },
-        auto_advance:  { type: 'number', description: 'Auto-advance delay ms (0 = manual)' },
-        width:         { type: 'number', default: 1920 },
-        height:        { type: 'number', default: 1080 },
-        theme:         { type: 'string', enum: ['dark', 'light'], default: 'dark' },
-      },
-      required: ['project_path', 'name', 'pages'],
-    },
-  },
-  {
-    name: 'export_presentation',
-    description: 'Assemble a presentation/carousel/motion design into a self-contained HTML presenter with transitions, keyboard nav, and audio.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:   { type: 'string', description: 'Path to .design.yaml (must be type: presentation/carousel/motion)' },
-        output_path:   { type: 'string', description: 'Output .html path (auto-derived if omitted)' },
-        theme:         { type: 'string', enum: ['light', 'dark'], default: 'dark' },
-        auto_advance:  { type: 'number', description: 'Override auto-advance delay ms' },
-        project_path:  { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path'],
-    },
-  },
-  // ── Formula tools ─────────────────────────────────────────
-  {
-    name: 'set_formula_context',
-    description: 'Store state/data context for formula binding on a design. Used by export tools to resolve =expr bindings.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        state:        { type: 'object', description: 'Key-value state variables', properties: {} },
-        data:         { type: 'object', description: 'Dataset key-value map', properties: {} },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path'],
-    },
-  },
-  {
-    name: 'debug_formula',
-    description: 'Evaluate a formula expression against a given context and return the result with type info.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        formula:      { type: 'string', description: 'Formula string starting with =' },
-        state:        { type: 'object', description: 'State variables', properties: {} },
-        data:         { type: 'object', description: 'Data variables', properties: {} },
-        design_path:  { type: 'string', description: 'Optional: load context from .formula.json' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['formula'],
-    },
-  },
-  {
-    name: 'inspect_timeline',
-    description: 'Show animation keyframe tracks for a design as ASCII timeline.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        page_id:      { type: 'string', description: 'Optional page filter' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path'],
-    },
-  },
-  {
-    name: 'add_keyframe',
-    description: 'Add or replace a keyframe on a layer animation timeline.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        layer_id:     { type: 'string', description: 'Target layer id' },
-        keyframe:     { type: 'object', description: '{t:ms, x?, y?, opacity?, scale?, rotation?}', properties: {} },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path', 'layer_id', 'keyframe'],
-    },
-  },
-  {
-    name: 'export_animation',
-    description: 'Export a presentation design as GIF, MP4, or WebM animation (requires Puppeteer + optionally ffmpeg).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        type:         { type: 'string', enum: ['gif', 'mp4', 'webm'], description: 'Output format' },
-        output_path:  { type: 'string', description: 'Output file path (auto-derived if omitted)' },
-        fps:          { type: 'number', description: 'Frames per second (default 10 for gif, 30 for mp4/webm)' },
-        duration:     { type: 'number', description: 'Animation duration in ms (default 3000)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path', 'type'],
-    },
-  },
-  {
-    name: 'setup_remote_presenter',
-    description: 'Generate remote clicker setup: client JS snippet + curl commands to control slides over HTTP.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        port:         { type: 'number', description: 'Port for the remote server (default 3737)' },
-        design_path:  { type: 'string', description: 'Optional: path to .design.yaml' },
-        project_path: { type: 'string', description: 'Project dir' },
-      },
-    },
-  },
-  {
-    name: 'setup_collab',
-    description: 'Generate collaborative editing server setup: SSE file-watch server for multi-user design sync.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml to watch' },
-        port:         { type: 'number', description: 'Port for the collab server (default 3738)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path'],
+      required: ['op', 'design_path'],
     },
   },
 ];

@@ -9,7 +9,7 @@ Full guides live in [`docs/`](docs/README.md):
 | Doc | Covers |
 |---|---|
 | [docs/MCP.md](docs/MCP.md) | Folio as an MCP engine — transports, tiers, protocol, workflows, shorthand |
-| [docs/TOOLS.md](docs/TOOLS.md) | Reference for all 50 MCP tools (params, returns, examples) |
+| [docs/TOOLS.md](docs/TOOLS.md) | Reference for all 21 MCP tools (params, returns, examples) |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy modes, Docker + Caddy/TLS, endpoints, env vars, auth, ops |
 | [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) | Connect claude.ai, Claude Code, LM Studio, Hermes/OpenClaw, the editor |
 | [docs/EDITOR.md](docs/EDITOR.md) | Visual editor — canvas, panels, shortcuts, export, live refresh |
@@ -18,7 +18,7 @@ Full guides live in [`docs/`](docs/README.md):
 
 ## Features
 
-- **50 MCP tools** across 3 tiers: Basic (15), Design (10), Export (25)
+- **21 MCP tools** across 3 tiers: Foundation (6), Compose (7), Output (8)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Multiple transports** — stdio (local LM Studio / Claude Code) and spec-compliant **Streamable HTTP** (Claude Connectors, LM Studio remote, Hermes, OpenClaw, any MCP-over-HTTP client), with an optional tool-result SSE stream
 - **Multi-token auth** — issue named bearer tokens per connector; audit log records which token called which tool
@@ -29,13 +29,13 @@ Full guides live in [`docs/`](docs/README.md):
 - **Operation receipt logging** — full audit trail at `~/.folio/ops.log`
 - **Constrained output mode** — caps tool responses at 1,000 tokens for local models (configurable)
 - **Handover protocol** — every response includes the next 3 suggested tool calls with pre-filled params so LLMs can chain tools without losing state
-- **Context recovery** — `resume_task` and `resume_design` restore full carousel state after context resets
+- **Context recovery** — `tasks` (op:resume) and `manage_design` (op:resume) restore full carousel state after context resets
 - **Shorthand layer syntax** — `pos:[x,y,w,h]`, `fill:"#hex"`, `icon:"star"` — ~80% fewer tokens than verbose YAML
 - **14 layer types** — rect, circle, text, line, path, icon, image, group, mermaid, chart, code, math, component, particle
-- **Interactive report HTML** — `export_report` assembles multi-page reports into a self-contained `.html` with navigation runtime, `$data.*` expression binding, and Mode A interactions
-- **Presentation engine** — `create_presentation` + `export_presentation` produce 17-transition self-contained HTML decks with keyboard nav, touch swipe, auto-advance, teleprompter mode, and audio cues
-- **Formula binding** — PowerApps-style `=expression` on any layer property; `set_formula_context` + `debug_formula` MCP tools; secure sandboxed evaluator
-- **Animation timeline** — keyframe scrubber UI panel, `inspect_timeline` + `add_keyframe` MCP tools, Lottie JSON export, GIF/MP4/WebM export (ffmpeg when available)
+- **Interactive report HTML** — `report` (op:export) assembles multi-page reports into a self-contained `.html` with navigation runtime, `$data.*` expression binding, and Mode A interactions
+- **Presentation engine** — `presentation` (op:create) + `presentation` (op:export) produce 17-transition self-contained HTML decks with keyboard nav, touch swipe, auto-advance, teleprompter mode, and audio cues
+- **Formula binding** — PowerApps-style `=expression` on any layer property; `report` (op:formula) + `report` (op:debug) MCP tools; secure sandboxed evaluator
+- **Animation timeline** — keyframe scrubber UI panel, `animation` (op:timeline) + `animation` (op:keyframe) MCP tools, Lottie JSON export, GIF/MP4/WebM export (ffmpeg when available)
 - **Motion + effects** — SVG `animateMotion` path animation, particle effects layer, 3D `rotate3d` transforms, scroll-triggered animations
 - **Theme token system** — `$primary`, `$heading`, `$text_muted` resolved at render time from active theme
 - **Component library** — reusable layer groups with named slot definitions
@@ -43,8 +43,8 @@ Full guides live in [`docs/`](docs/README.md):
 - **dry_run validation** — `patch_design` validates all selectors before writing
 - **Visual editor** — browser canvas with 8-point resize handles, rotation, rubber-band multi-select, smart alignment guides, align toolbar, multi-page editing, server-backed auto-save, and a Monaco YAML editor with bidirectional sync
 - **Live editor refresh** — `/editor/events` SSE pushes file-change events so the browser reloads instantly when an MCP tool mutates a design
-- **Remote clicker** — `setup_remote_presenter` MCP tool generates SSE server + client JS for HTTP-controlled slide navigation
-- **Collaborative editing** — `setup_collab` MCP tool generates SSE file-watch server; multi-user design sync via `/patch` + `/events` endpoints
+- **Remote clicker** — `presentation` (op:remote) MCP tool generates SSE server + client JS for HTTP-controlled slide navigation
+- **Collaborative editing** — `presentation` (op:collab) MCP tool generates SSE file-watch server; multi-user design sync via `/patch` + `/events` endpoints
 - **Modular architecture** — thin MCP wrappers, zero domain logic in servers; all business logic in `engine.ts`
 
 ---
@@ -133,7 +133,7 @@ The first launch clones the repo and installs dependencies (~1–2 minutes). Sub
 ```
 
 4. Wait for the green dot next to each server
-5. Start chatting — the model will see all 50 tools
+5. Start chatting — the model will see all 21 tools
 
 > For small models (≤32K context), use only `folio_basic` (15 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
 
@@ -333,7 +333,7 @@ If a client errors on the `GET`/notification behavior it predates the current sp
 1. Go to **Settings → Connectors → Add custom connector**.
 2. URL: `https://folio.your-domain.tld/mcp`
 3. Auth: **Bearer token**, value from `tokens.json`.
-4. Save. Claude.ai will run `tools/list` and surface all 50 tools.
+4. Save. Claude.ai will run `tools/list` and surface all 21 tools.
 
 > The full claude.ai OAuth + PKCE walkthrough is in [docs/INTEGRATIONS.md §2](docs/INTEGRATIONS.md).
 
@@ -380,14 +380,14 @@ Swap the `url` + bearer for your own deployment:
 | Hosted (VPS + Caddy TLS) | `https://folio.your-domain.tld/mcp` | a value from `tokens.json`, or your `FOLIO_API_KEY` |
 | Local Docker (`docker compose up`) | `http://localhost:3333/mcp` | optional on localhost — drop `headers` entirely if no auth is set |
 
-One HTTP endpoint exposes **all 50 tools** (no tier split over HTTP). Designs the model creates land in the container's `/home/folio/projects` (host `./folio-projects`) and open in the bundled editor at the same host — `https://folio.your-domain.tld/` or `http://localhost:4173/`.
+One HTTP endpoint exposes **all 21 tools** (no tier split over HTTP). Designs the model creates land in the container's `/home/folio/projects` (host `./folio-projects`) and open in the bundled editor at the same host — `https://folio.your-domain.tld/` or `http://localhost:4173/`.
 
 > Smoke-test the endpoint before wiring it into LM Studio:
 > ```bash
 > curl -s https://folio.casava.space/mcp \
 >   -H "Authorization: Bearer <YOUR_FOLIO_TOKEN>" \
 >   -H "Content-Type: application/json" \
->   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'   # → 50
+>   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'   # → 21
 > ```
 > If the curl prints `49` but LM Studio still won't connect, it's the client, not the server — use the stdio bridge below.
 
@@ -415,9 +415,9 @@ Older LM Studio builds (and some other clients) don't speak remote/HTTP MCP, or 
 
 #### Using Folio once it's connected
 
-Either config above lands you in the same place: a `folio` server exposing 50 tools. From a fresh LM Studio chat —
+Either config above lands you in the same place: a `folio` server exposing 21 tools. From a fresh LM Studio chat —
 
-1. **Turn the server on.** Saving `mcp.json` reloads MCP servers. In a chat, open the **integrations / plug** control next to the message box and enable **folio**. LM Studio runs `tools/list` and shows **50 tools** under it. A red/error badge means the connection failed — re-check the token + URL, or switch to the `mcp-remote` bridge above.
+1. **Turn the server on.** Saving `mcp.json` reloads MCP servers. In a chat, open the **integrations / plug** control next to the message box and enable **folio**. LM Studio runs `tools/list` and shows **21 tools** under it. A red/error badge means the connection failed — re-check the token + URL, or switch to the `mcp-remote` bridge above.
 2. **Use a tool-calling model.** MCP only works with models that support function calling (Qwen 2.5 / Qwen 3, Llama 3.x, Mistral-small, …). A model without tool support silently ignores the server. Give it generous context — these flows chain 4–6 tool calls.
 3. **Ask it to design — give a project path + a brief.** For example:
    > Create a project at `/home/folio/projects/launch`, then design a bold dark-tech poster announcing **"Q3 Launch — Oct 14"** with a red pill badge. Seal it and export as SVG.
@@ -451,7 +451,7 @@ curl -s https://folio.your-domain.tld/health | jq .
 curl -s https://folio.your-domain.tld/tokens/whoami \
      -H "Authorization: Bearer sk-folio-..." | jq .
 
-# 3. tools/list (returns all 50 tool definitions)
+# 3. tools/list (returns all 21 tool definitions)
 curl -s https://folio.your-domain.tld/mcp \
      -H "Authorization: Bearer sk-folio-..." \
      -H "Content-Type: application/json" \
@@ -682,76 +682,43 @@ The MCP path-resolver gates every read/write to the calling user's home director
 
 ## Available Tools
 
-### Tier 1 — Basic (15 tools)
+**21 tools across 3 tiers.** The surface was consolidated 50 → 21 so models stop fixating on a few and the long tail stays discoverable — the hot core-loop tools stay 1:1, the long tail is folded into **multiplexed tools** that take an `op` (no capability removed). Full per-op reference: [docs/TOOLS.md](docs/TOOLS.md).
 
-Project management, navigation, task planning, and library/theme ops. Safe to use with any model — minimal token cost.
-
-| Tool | Purpose |
-|---|---|
-| `get_engine_guide` | Load engine reference guide by section: `quick_ref`, `shorthand`, `layers`, `workflow`, `reference` (~200 tokens each) |
-| `enrich_brief` | Turn a short/vague prompt into a rich content plan (best preset + outline, or a per-page carousel plan) — start here when the brief is thin |
-| `create_project` | Scaffold project directory with `designs/`, `assets/`, `themes/`, `exports/` and `project.yaml` |
-| `list_designs` | List all `.design.yaml` files in a project with status and page count |
-| `browse_library` | Cross-project catalog of the whole library — every project + design, newest first |
-| `rename_design` | Change a design's display name (file path left unchanged so editor links survive) |
-| `delete_design` | Move a design to the project's `.trash/` (recoverable) |
-| `move_design` | Move a design's file into another project |
-| `list_tasks` | List task files with progress status (pages done / total) |
-| `list_themes` | List available themes registered in `project.yaml` |
-| `apply_theme` | Set active theme for a project — updates `project.yaml` |
-| `duplicate_design` | Copy a design with a new name and fresh UUID — registers in `project.yaml` |
-| `create_task` | Plan a multi-page carousel — scaffolds task file and first design, returns first `append_page` baton |
-| `resume_task` | Read task state and return exact next tool call — use after any context reset |
-| `resume_design` | Read carousel generation state to continue appending pages |
-
-### Tier 2 — Design (10 tools)
-
-Full design lifecycle — create, inspect, build, edit. All write tools create a `.mcp_versions/` snapshot before touching disk.
+### Tier 1 — Foundation (6 tools)
 
 | Tool | Purpose |
 |---|---|
-| `create_design` | Create a new blank `.design.yaml` (poster or carousel) registered in `project.yaml` |
-| `extract_reference` | Turn a reference image (Canva export / screenshot / SVG) into a palette + canvas + composition brief |
-| `inspect_design` | Return design metadata, layer summary, page list, and validation errors |
-| `add_layers` | Add one or more layers using shorthand syntax — 80% fewer tokens than verbose YAML |
-| `append_page` | Add a page to a carousel design; returns next `append_page` baton or `seal_design` when done |
-| `add_layer` | Add a single layer by ID — surgical insert without replacing others |
-| `update_layer` | Update specific fields on an existing layer by ID |
-| `remove_layer` | Remove a layer by ID |
-| `patch_design` | Apply JSON-pointer selectors to any field; supports `dry_run: true` to validate before writing |
-| `seal_design` | Mark design complete, validate all layers, freeze `_mode: complete` |
+| `get_engine_guide` | Load an engine guide section (`quick_ref`/`shorthand`/`layers`/`workflow`/`craft`/…) |
+| `enrich_brief` | Turn a short/vague prompt into a rich content plan — start here when the brief is thin |
+| `create_project` | Scaffold a project (`designs/`, `assets/`, `themes/`, `exports/`, `project.yaml`) |
+| `manage_design` | **op:** list · browse · inspect · rename · duplicate · move · delete · resume · gallery — per-design + whole-library management |
+| `themes` | **op:** list · apply — project theme management |
+| `tasks` | **op:** create · list · resume — multi-page carousel/deck planning + context recovery |
 
-### Tier 3 — Export (24 tools)
-
-SVG/HTML/PNG export, batch generation, templates, component extraction, report assembly, presentations, formula binding, animation, collaboration, and QA (diagnose / preview / align).
+### Tier 2 — Compose (7 tools)
 
 | Tool | Purpose |
 |---|---|
-| `open_in_editor` | Return a `http://…/?file=…&mcp_url=…` URL that opens the design in the visual editor with live MCP refresh wired up |
-| `export_design` | Export to SVG/PNG (server-side jsdom renderer) or self-contained HTML; PDF stages HTML for Puppeteer |
-| `export_library_gallery` | Build a self-contained `library.html` file-manager (thumbnails + search + editor links) for the whole library |
-| `diagnose_design` | Scan for issues the model is blind to — off-canvas, collisions, misalignment, invisible/low-contrast text, weak hierarchy — each with a fix |
-| `render_preview` | Render to a PNG and return it inline as an image so the model can *see* the result |
-| `align_layers` | Auto-align / distribute / snap-to-grid a set of layers — the fix for diagnose misalignment findings |
-| `validate_report` | Lint an interactive report's cross-references (datasets, fields, actions) before export |
-| `export_template` | Export sealed design as `.template.yaml` skeleton with named `{{slot}}` placeholders |
-| `list_template_slots` | List all injectable slots in a `.template.yaml` with paths, types, and hints |
-| `inject_template` | Fill template slots with new content to produce a `.design.yaml` |
-| `batch_create` | Generate N designs from one template using an array of slot objects |
-| `save_as_component` | Extract selected layers into a `.component.yaml` and replace with a component instance |
-| `generate_report` | Scaffold a `report`-type design with pages, navigation (sidebar/topbar/tabs/dots), and optional data sources |
-| `bind_data` | Attach or update inline datasets on a report design; fields support `$data.*` / `$agg.*` expressions |
-| `export_report` | Assemble a report design into a self-contained interactive HTML file with navigation runtime |
-| `create_presentation` | Scaffold a 1920×1080 presentation design with slides, 17 transition types, and presenter settings |
-| `export_presentation` | Assemble presentation into self-contained HTML with keyboard nav, touch swipe, teleprompter, and audio |
-| `set_formula_context` | Persist state/data context for `=expression` formula bindings on a design |
-| `debug_formula` | Evaluate a `=expression` against a given context and return result with type info |
-| `inspect_timeline` | Show animation keyframe tracks for a design as ASCII timeline |
-| `add_keyframe` | Add or replace a keyframe on a layer's animation timeline |
-| `export_animation` | Export presentation as GIF/MP4/WebM (Puppeteer frame capture + ffmpeg encoding when available) |
-| `setup_remote_presenter` | Generate SSE remote clicker: client JS snippet + curl commands for HTTP-controlled slide navigation |
-| `setup_collab` | Generate SSE collaborative editing server: file-watch + `/patch` + `/events` endpoints for multi-user sync |
+| `create_design` | Create a `.design.yaml` (poster or carousel) + an editor `open_url` |
+| `add_layers` | Compose a poster/page in one call via shorthand — prefers presets |
+| `edit_layer` | **op:** add · update · remove · align — single-layer edits + alignment |
+| `append_page` | Add one carousel page; returns the next baton |
+| `patch_design` | Dot-path selector edits on a sealed design (`dry_run`, `recolor`) |
+| `seal_design` | Finalize + heal a design; returns the export `next_action` |
+| `extract_reference` | Reference image → role-mapped palette + canvas + composition brief |
 
+### Tier 3 — Output + Advanced (8 tools)
+
+| Tool | Purpose |
+|---|---|
+| `render_preview` | Render to a PNG returned inline so the model can *see* the result |
+| `diagnose_design` | Scan for off-canvas / collision / misalignment / invisible-text / weak-hierarchy issues |
+| `export_design` | Export to SVG / PNG / PDF (vector, selectable text) / HTML / PPTX |
+| `open_in_editor` | Tokenized, live-refreshing editor link |
+| `templates` | **op:** list · slots · inject · export · save_component · batch — 432-template catalog + reusable components |
+| `report` | **op:** generate · report op:bind_data · validate · export · formula · debug — interactive data reports |
+| `presentation` | **op:** create · export · remote · collab — slide decks + live presenting/collab |
+| `animation` | **op:** timeline · keyframe · export — motion timeline + GIF/MP4/WebM |
 ---
 
 ## Workflow Reference
@@ -770,7 +737,7 @@ SVG/HTML/PNG export, batch generation, templates, component extraction, report a
 
 ```
 1. create_project  → project scaffold
-2. create_task     → plan pages=[{label,hints}], returns first append_page baton
+2. tasks op:create     → plan pages=[{label,hints}], returns first append_page baton
 3. append_page     → add layers for page 1; repeat until remaining==0
 4. seal_design     → validate + freeze
 5. export_design   → format: svg
@@ -779,11 +746,11 @@ SVG/HTML/PNG export, batch generation, templates, component extraction, report a
 ### Report (interactive HTML document)
 
 ```
-1. generate_report  → scaffold report .design.yaml (pages, nav, layout)
-2. bind_data        → attach inline datasets for $data.* / $agg.* expressions
+1. report op:generate  → scaffold report .design.yaml (pages, nav, layout)
+2. report op:bind_data        → attach inline datasets for $data.* / $agg.* expressions
 3. append_page      → add layers to each page (supports data-driven layers)
 4. seal_design      → validate + freeze
-5. export_report    → assemble self-contained .report.html with nav runtime
+5. report op:export    → assemble self-contained .report.html with nav runtime
 ```
 
 The exported HTML is fully self-contained — one file, no external dependencies. Navigation, page switching, and data bindings are powered by a 2 KB inline runtime (`window.Folio.nav`). Supports sidebar, topbar, tabs, and dot navigation.
@@ -791,11 +758,11 @@ The exported HTML is fully self-contained — one file, no external dependencies
 ### Presentation (animated slide deck)
 
 ```
-1. create_presentation → scaffold 1920×1080 design (slides, transitions, auto-advance)
+1. presentation op:create → scaffold 1920×1080 design (slides, transitions, auto-advance)
 2. append_page         → add layers to each slide
-3. set_formula_context → bind state/data for =expression properties (optional)
-4. add_keyframe        → add animation keyframes per layer (optional)
-5. export_presentation → self-contained HTML presenter with keyboard nav + teleprompter
+3. report op:formula → bind state/data for =expression properties (optional)
+4. animation op:keyframe        → add animation keyframes per layer (optional)
+5. presentation op:export → self-contained HTML presenter with keyboard nav + teleprompter
 ```
 
 The exported HTML is fully self-contained — 17 CSS transition types, keyboard/touch nav, auto-advance timer, speaker notes, teleprompter mode, fullscreen, audio cue playback, and `window.FolioPresenter` runtime API.
@@ -943,7 +910,7 @@ Folio/
 ├── src/
 │   ├── mcp/
 │   │   ├── index.ts             ← stdio entry point; selects tier via FOLIO_MCP_TIER (1|2|3|all)
-│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker); serves all 50 tools
+│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker); serves all 21 tools
 │   │   ├── handlers.ts          ← ALL_HANDLERS = TIER1∪TIER2∪TIER3 (single dispatch map)
 │   │   ├── auth.ts              ← token loader (file / inline / single-key / open)
 │   │   ├── jwt.ts               ← HS256 editor-link JWTs + master bearer

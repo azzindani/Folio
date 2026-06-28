@@ -4,71 +4,63 @@
 // folio-t2 + folio-t3 as three servers and sees their union (no duplicate tool
 // names). For clients that want the full surface from ONE registration, the
 // combined `all` server (FOLIO_MCP_TIER=all) serves ALL_HANDLERS.
+//
+// The surface is CONSOLIDATED to 21 tools: hot core-loop tools stay 1:1 with an
+// engine fn; the long tail is folded into multiplexed tools that route on an
+// `op` discriminator (see dispatch.ts). Every engine capability is still
+// reachable — only the tool count shrank (50 → 21).
 import * as engine from './engine';
+import * as d from './dispatch';
+import { remapToolRefs } from './tool-remap';
 import type { ToolResult } from './types';
 
 export type Handler = (args: Record<string, unknown>) => ToolResult;
 
-export const TIER1_HANDLERS: Record<string, Handler> = {
-  get_engine_guide:  (a) => engine.getEngineGuide(a as Parameters<typeof engine.getEngineGuide>[0]),
-  enrich_brief:      (a) => engine.enrichBrief(a as Parameters<typeof engine.enrichBrief>[0]),
-  list_tasks:        (a) => engine.listTasks(a as Parameters<typeof engine.listTasks>[0]),
-  create_project:    (a) => engine.createProject(a as Parameters<typeof engine.createProject>[0]),
-  list_designs:      (a) => engine.listDesigns(a as Parameters<typeof engine.listDesigns>[0]),
-  browse_library:    (a) => engine.browseLibrary(a as Parameters<typeof engine.browseLibrary>[0]),
-  rename_design:     (a) => engine.renameDesign(a as Parameters<typeof engine.renameDesign>[0]),
-  delete_design:     (a) => engine.deleteDesign(a as Parameters<typeof engine.deleteDesign>[0]),
-  move_design:       (a) => engine.moveDesign(a as Parameters<typeof engine.moveDesign>[0]),
-  list_themes:       (a) => engine.listThemes(a as Parameters<typeof engine.listThemes>[0]),
-  apply_theme:       (a) => engine.applyTheme(a as Parameters<typeof engine.applyTheme>[0]),
-  duplicate_design:  (a) => engine.duplicateDesign(a as Parameters<typeof engine.duplicateDesign>[0]),
-  resume_design:     (a) => engine.resumeDesign(a as Parameters<typeof engine.resumeDesign>[0]),
-  create_task:       (a) => engine.createTask(a as Parameters<typeof engine.createTask>[0]),
-  resume_task:       (a) => engine.resumeTask(a as Parameters<typeof engine.resumeTask>[0]),
+// Every handler's forward hints (next_action / suggested_next) still speak the
+// pre-consolidation tool names; remap them to the consolidated {tool, op} so a
+// model that follows a hint calls a tool that actually exists.
+const remap = (m: Record<string, Handler>): Record<string, Handler> =>
+  Object.fromEntries(Object.entries(m).map(([k, h]) => [k, (a: Record<string, unknown>) => remapToolRefs(h(a))]));
+
+// Tier 1 — guidance, project, discovery/library, theming, tasks.
+const TIER1_RAW: Record<string, Handler> = {
+  get_engine_guide: (a) => engine.getEngineGuide(a as Parameters<typeof engine.getEngineGuide>[0]),
+  enrich_brief:     (a) => engine.enrichBrief(a as Parameters<typeof engine.enrichBrief>[0]),
+  create_project:   (a) => engine.createProject(a as Parameters<typeof engine.createProject>[0]),
+  manage_design:    (a) => d.dispatchManageDesign(a),
+  themes:           (a) => d.dispatchThemes(a),
+  tasks:            (a) => d.dispatchTasks(a),
 };
 
-export const TIER2_HANDLERS: Record<string, Handler> = {
-  inspect_design:   (a) => engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]),
+// Tier 2 — design lifecycle + layer composition/editing + reference.
+const TIER2_RAW: Record<string, Handler> = {
+  create_design:     (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
+  add_layers:        (a) => engine.addLayers(a as Parameters<typeof engine.addLayers>[0]),
+  edit_layer:        (a) => d.dispatchEditLayer(a),
+  patch_design:      (a) => engine.patchDesign(a as Parameters<typeof engine.patchDesign>[0]),
+  append_page:       (a) => engine.appendPage(a as Parameters<typeof engine.appendPage>[0]),
+  seal_design:       (a) => engine.sealDesign(a as Parameters<typeof engine.sealDesign>[0]),
   extract_reference: (a) => engine.extractReference(a as Parameters<typeof engine.extractReference>[0]),
-  add_layers:     (a) => engine.addLayers(a as Parameters<typeof engine.addLayers>[0]),
-  create_design:  (a) => engine.createDesign(a as Parameters<typeof engine.createDesign>[0]),
-  append_page:    (a) => engine.appendPage(a as Parameters<typeof engine.appendPage>[0]),
-  patch_design:   (a) => engine.patchDesign(a as Parameters<typeof engine.patchDesign>[0]),
-  seal_design:    (a) => engine.sealDesign(a as Parameters<typeof engine.sealDesign>[0]),
-  add_layer:      (a) => engine.addLayer(a as Parameters<typeof engine.addLayer>[0]),
-  update_layer:   (a) => engine.updateLayer(a as Parameters<typeof engine.updateLayer>[0]),
-  remove_layer:   (a) => engine.removeLayer(a as Parameters<typeof engine.removeLayer>[0]),
 };
 
-export const TIER3_HANDLERS: Record<string, Handler> = {
-  open_in_editor:      (a) => engine.openInEditor(a as Parameters<typeof engine.openInEditor>[0]),
-  export_design:       (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
-  export_library_gallery: (a) => engine.exportLibraryGallery(a as Parameters<typeof engine.exportLibraryGallery>[0]),
-  diagnose_design:     (a) => engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]),
-  render_preview:      (a) => engine.renderPreview(a as Parameters<typeof engine.renderPreview>[0]),
-  align_layers:        (a) => engine.alignLayers(a as Parameters<typeof engine.alignLayers>[0]),
-  batch_create:        (a) => engine.batchCreate(a as Parameters<typeof engine.batchCreate>[0]),
-  save_as_component:   (a) => engine.saveAsComponent(a as Parameters<typeof engine.saveAsComponent>[0]),
-  export_template:     (a) => engine.exportTemplate(a as Parameters<typeof engine.exportTemplate>[0]),
-  inject_template:     (a) => engine.injectTemplate(a as Parameters<typeof engine.injectTemplate>[0]),
-  list_template_slots: (a) => engine.listTemplateSlots(a as Parameters<typeof engine.listTemplateSlots>[0]),
-  list_templates:      (a) => engine.listTemplates(a as Parameters<typeof engine.listTemplates>[0]),
-  generate_report:     (a) => engine.generateReport(a as Parameters<typeof engine.generateReport>[0]),
-  bind_data:           (a) => engine.bindData(a as Parameters<typeof engine.bindData>[0]),
-  export_report:       (a) => engine.exportReport(a as Parameters<typeof engine.exportReport>[0]),
-  validate_report:     (a) => engine.validateReportDesign(a as Parameters<typeof engine.validateReportDesign>[0]),
-  create_presentation: (a) => engine.createPresentation(a as Parameters<typeof engine.createPresentation>[0]),
-  export_presentation: (a) => engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]),
-  set_formula_context: (a) => engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]),
-  debug_formula:       (a) => engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]),
-  inspect_timeline:       (a) => engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]),
-  add_keyframe:           (a) => engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]),
-  export_animation:       (a) => engine.exportAnimation(a as Parameters<typeof engine.exportAnimation>[0]),
-  setup_remote_presenter: (a) => engine.setupRemotePresenter(a as Parameters<typeof engine.setupRemotePresenter>[0]),
-  setup_collab:           (a) => engine.setupCollab(a as Parameters<typeof engine.setupCollab>[0]),
+// Tier 3 — inspect/output + the advanced subsystems (templates, reports,
+// presentations, animation), each folded into one multiplexed tool.
+const TIER3_RAW: Record<string, Handler> = {
+  render_preview:  (a) => engine.renderPreview(a as Parameters<typeof engine.renderPreview>[0]),
+  diagnose_design: (a) => engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]),
+  export_design:   (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
+  open_in_editor:  (a) => engine.openInEditor(a as Parameters<typeof engine.openInEditor>[0]),
+  templates:       (a) => d.dispatchTemplates(a),
+  report:          (a) => d.dispatchReport(a),
+  presentation:    (a) => d.dispatchPresentation(a),
+  animation:       (a) => d.dispatchAnimation(a),
 };
 
-/** Full surface — every tool, for the combined `all` stdio server. */
+export const TIER1_HANDLERS: Record<string, Handler> = remap(TIER1_RAW);
+export const TIER2_HANDLERS: Record<string, Handler> = remap(TIER2_RAW);
+export const TIER3_HANDLERS: Record<string, Handler> = remap(TIER3_RAW);
+
+/** Full surface — every tool, for the combined `all` stdio server + HTTP. */
 export const ALL_HANDLERS: Record<string, Handler> = {
   ...TIER1_HANDLERS, ...TIER2_HANDLERS, ...TIER3_HANDLERS,
 };

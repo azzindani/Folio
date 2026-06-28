@@ -34,11 +34,13 @@ const HANDLERS: Record<string, Handler> = ALL_HANDLERS;
 // Tools whose results signal that a .design.yaml file just changed.
 // The editor SSE channel notifies any connected editor instance so it can
 // reload the file without the user re-opening it.
+// Consolidated tool names that can write a design file (some only on certain
+// ops, e.g. manage_design op:rename, templates op:inject) — over-inclusion only
+// triggers a harmless extra editor refresh, so list every tool that may mutate.
 const FILE_MUTATING_TOOLS = new Set([
-  'create_design', 'patch_design', 'seal_design', 'apply_theme',
-  'add_layer', 'add_layers', 'update_layer', 'remove_layer', 'append_page',
-  'inject_template', 'save_as_component', 'duplicate_design',
-  'batch_create', 'bind_data', 'generate_report', 'add_keyframe',
+  'create_design', 'add_layers', 'edit_layer', 'patch_design', 'seal_design',
+  'append_page', 'themes', 'manage_design', 'tasks',
+  'templates', 'report', 'presentation', 'animation',
 ]);
 
 const ALL_TOOLS: ToolDefinition[] = [...TIER1_TOOLS, ...TIER2_TOOLS, ...TIER3_TOOLS];

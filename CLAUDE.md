@@ -161,7 +161,10 @@ src/engine/    token-resolver · shorthand-expander · component-resolver
 src/renderer/  SVG render + layer/fill/effects  (layer-renderers.ts = facade)
 src/editor/    editor app · canvas · state · keyboard · static-server.ts
 src/export/    PNG · vector/hi-fi PDF · Lottie · animation · presentation · report
-src/mcp/       MCP surface — http-server.ts (entry) · tool-handlers ·
+src/mcp/       MCP surface (21 consolidated tools) — http-server.ts (entry) ·
+               tier{1,2,3}/registry.ts (tool defs) · handlers.ts + dispatch.ts
+               (op-multiplexed routing onto engine fns) · tool-remap.ts (old→new
+               next_action hints) · tool-handlers ·
                shorthand-parser (facade) · shorthand-presets-{a,b,c,cards,map,news,seq} ·
                engine-finalize-* (geom/text/legibility/autoplace/pages — the rescue
                passes that make blind-model payloads render well) ·

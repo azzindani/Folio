@@ -1,32 +1,24 @@
-// §7 Tier 2 — Design (10 tools): design lifecycle & layer manipulation
+// §7 Tier 2 — Compose (7 tools): design lifecycle, layer composition + editing,
+// reference matching. (edit_layer folds add/update/remove/align onto an `op`
+// discriminator; the create/add/patch/seal/append/reference tools are unchanged.)
 import type { ToolDefinition } from '../types';
 import { isMinimalGuidance, freeComposeDescription } from '../guidance-mode';
 
 export const TIER2_TOOLS: ToolDefinition[] = [
   {
-    name: 'inspect_design',
-    description: 'Read a design\'s structure (layer IDs, types, z-order, positions) cheaply. Use to verify state before seal_design, or to find a layer_id for update_layer/remove_layer/patch_design. Read-only.',
+    name: 'create_design',
+    description: 'Create a new design and get a clickable editor open_url (unique token) to view it immediately. type="poster" = single page → next_action is add_layers. type="carousel" = multi-page → next_action is append_page (repeat per page). theme_ref sets the palette+fonts; for a human, art-directed look pick a flat-canvas theme that fits the topic — "editorial-cream"/"gallery" (warm/minimal serif), "bold-poster" (near-black + vermillion), "swiss-international" (paper + red/blue), "mono-print"/"brutalist-mono" — rather than a dark glowy tech theme. Always follow the returned next_action.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml (relative ok with project_path)' },
-        page_id:      { type: 'string', description: 'Page ID (carousel only; omit to list pages)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        project_path: { type: 'string', description: 'Project name (bare, e.g. "ai-poster") or path to the project dir. A bare name is placed in the projects dir automatically — do not build absolute /home/... paths.' },
+        name:         { type: 'string', description: 'Design name' },
+        type:         { type: 'string', enum: ['poster', 'carousel'], default: 'poster' },
+        width:        { type: 'number', description: 'Canvas width px', default: 1080 },
+        height:       { type: 'number', description: 'Canvas height px', default: 1080 },
+        theme_ref:    { type: 'string', description: 'Theme reference ID' },
       },
-      required: ['design_path'],
-    },
-  },
-  {
-    name: 'extract_reference',
-    description: 'Turn a REFERENCE design (a Canva export, screenshot, or SVG the user wants to match) into a deterministic palette + recommended canvas + a step-by-step composition brief. You (the model) already SEE the image — this tool supplies what you guess badly: exact pixel dimensions and a role-mapped palette (background/surface/text/accent/secondary/border). Call it FIRST when the user says "make it like this", "match this design", or attaches a reference. Pass colors:[…] = the main hex you observe in the image, and/or image = a data: URL or a local file path (https URLs are not fetched — send observed colors instead). Returns palette_spec + a brief; then create_design at the recommended canvas and add_layers using the EXACT hex, reproducing the reference layout (do NOT fall back to a centered navy-gradient template).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        colors:       { type: 'array', description: 'Array of the main hex colors you observe in the reference, e.g. ["#0A0A0A","#FF3D00","#FAFAFA"] — most reliable input', items: { type: 'string' } },
-        image:        { type: 'string', description: 'Optional: a data: URL (data:image/png;base64,… or data:image/svg+xml,…) or a local file path. Used for EXACT dimensions + (SVG) exact colors. Remote http(s) URLs are not fetched.' },
-        project_path: { type: 'string', description: 'Optional project name — when given, next_action points straight at create_design' },
-        name:         { type: 'string', description: 'Optional name for the design/palette derived from this reference' },
-      },
+      required: ['project_path', 'name'],
     },
   },
   {
@@ -46,19 +38,23 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     },
   },
   {
-    name: 'create_design',
-    description: 'Create a new design and get a clickable editor open_url (unique token) to view it immediately. type="poster" = single page → next_action is add_layers. type="carousel" = multi-page → next_action is append_page (repeat per page). theme_ref sets the palette+fonts; for a human, art-directed look pick a flat-canvas theme that fits the topic — "editorial-cream"/"gallery" (warm/minimal serif), "bold-poster" (near-black + vermillion), "swiss-international" (paper + red/blue), "mono-print"/"brutalist-mono" — rather than a dark glowy tech theme. Always follow the returned next_action.',
+    name: 'edit_layer',
+    description: 'Edit individual layers on a sealed/in-progress design — pick `op` (for BULK composition use add_layers instead):\n• add — add ONE layer (req: design_path, layer). Sized layers need width+height.\n• update — merge props into a layer by ID (req: design_path, layer_id, props). Snapshots before write.\n• remove — delete a layer by ID (req: design_path, layer_id).\n• align — auto-align/distribute/snap a set of layers, the fix for diagnose_design misalignment (req: design_path, layer_ids, operation = left|right|top|bottom|center_h|center_v|distribute_h|distribute_v|snap_grid).\nCAROUSEL: pages share layer IDs (sections_1 etc.) — pass page_id to scope update/remove/align to ONE page, or every page with that ID is hit.',
     inputSchema: {
       type: 'object',
       properties: {
-        project_path: { type: 'string', description: 'Project name (bare, e.g. "ai-poster") or path to the project dir. A bare name is placed in the projects dir automatically — do not build absolute /home/... paths.' },
-        name:         { type: 'string', description: 'Design name' },
-        type:         { type: 'string', enum: ['poster', 'carousel'], default: 'poster' },
-        width:        { type: 'number', description: 'Canvas width px', default: 1080 },
-        height:       { type: 'number', description: 'Canvas height px', default: 1080 },
-        theme_ref:    { type: 'string', description: 'Theme reference ID' },
+        op:           { type: 'string', enum: ['add', 'update', 'remove', 'align'], description: 'Which layer edit to run.' },
+        design_path:  { type: 'string', description: 'Path to .design.yaml.' },
+        page_id:      { type: 'string', description: 'Carousel: scope the edit to one page (IDs repeat across pages).' },
+        project_path: { type: 'string', description: 'Project dir — enables relative design_path.' },
+        layer:        { type: 'object', description: 'op:add — the layer specification.', properties: {} },
+        layer_id:     { type: 'string', description: 'op:update/remove — the layer ID.' },
+        props:        { type: 'object', description: 'op:update — properties to merge.', properties: {} },
+        layer_ids:    { type: 'array', description: 'op:align — layer IDs to align.', items: { type: 'string' } },
+        operation:    { type: 'string', enum: ['left', 'right', 'top', 'bottom', 'center_h', 'center_v', 'distribute_h', 'distribute_v', 'snap_grid'], description: 'op:align — alignment operation (distribute_* needs ≥3 layers).' },
+        grid:         { type: 'number', description: 'op:align — grid size px for snap_grid (default 8).' },
       },
-      required: ['project_path', 'name'],
+      required: ['op', 'design_path'],
     },
   },
   {
@@ -82,7 +78,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'patch_design',
-    description: 'Edit a SEALED design via dot-path selectors (e.g. layers[3].style.color). Run dry_run=true first to validate paths, then apply, then seal_design again. Snapshots before write. RESTYLE/RECOLOR a whole design in ONE selector with {path:"recolor", value:{"#OLDHEX":"#NEWHEX", …}} — it swaps every matching color (bg, text, accents) across all layers. Use this to "make it darker"/flip the palette: inspect_design or read the design to get its actual hexes, then map each to the new shade (apply_theme does NOT recolor a design — it only sets the project default, and most designs use baked-in hexes).',
+    description: 'Edit a SEALED design via dot-path selectors (e.g. layers[3].style.color). Run dry_run=true first to validate paths, then apply, then seal_design again. Snapshots before write. RESTYLE/RECOLOR a whole design in ONE selector with {path:"recolor", value:{"#OLDHEX":"#NEWHEX", …}} — it swaps every matching color (bg, text, accents) across all layers. Use this to "make it darker"/flip the palette: manage_design(op:inspect) or read the design to get its actual hexes, then map each to the new shade (themes(op:apply) does NOT recolor a design — it only sets the project default, and most designs use baked-in hexes).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -100,7 +96,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'seal_design',
-    description: 'Finalize a design (poster: after add_layers; carousel: after the last append_page). Returns the editor open_url. → next_action is export_design; you can also open_in_editor. Edit a sealed design only via patch_design.',
+    description: 'Finalize a design (poster: after add_layers; carousel: after the last append_page). Returns the editor open_url. → next_action is export_design; you can also open_in_editor. Edit a sealed design only via patch_design / edit_layer.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -111,46 +107,16 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     },
   },
   {
-    name: 'add_layer',
-    description: 'Add ONE layer. Prefer add_layers (plural) to add several at once — fewer round-trips. Sized layers need width+height.',
+    name: 'extract_reference',
+    description: 'Turn a REFERENCE design (a Canva export, screenshot, or SVG the user wants to match) into a deterministic palette + recommended canvas + a step-by-step composition brief. You (the model) already SEE the image — this tool supplies what you guess badly: exact pixel dimensions and a role-mapped palette (background/surface/text/accent/secondary/border). Call it FIRST when the user says "make it like this", "match this design", or attaches a reference. Pass colors:[…] = the main hex you observe in the image, and/or image = a data: URL or a local file path (https URLs are not fetched — send observed colors instead). Returns palette_spec + a brief; then create_design at the recommended canvas and add_layers using the EXACT hex, reproducing the reference layout (do NOT fall back to a centered navy-gradient template).',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        page_id:      { type: 'string', description: 'Page ID (carousel only)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-        layer:        { type: 'object', description: 'Layer specification', properties: {} },
+        colors:       { type: 'array', description: 'Array of the main hex colors you observe in the reference, e.g. ["#0A0A0A","#FF3D00","#FAFAFA"] — most reliable input', items: { type: 'string' } },
+        image:        { type: 'string', description: 'Optional: a data: URL (data:image/png;base64,… or data:image/svg+xml,…) or a local file path. Used for EXACT dimensions + (SVG) exact colors. Remote http(s) URLs are not fetched.' },
+        project_path: { type: 'string', description: 'Optional project name — when given, next_action points straight at create_design' },
+        name:         { type: 'string', description: 'Optional name for the design/palette derived from this reference' },
       },
-      required: ['design_path', 'layer'],
-    },
-  },
-  {
-    name: 'update_layer',
-    description: 'Merge props into a layer by ID. Snapshots before write. CAROUSEL: pass page_id to scope the edit to one page — carousel pages share layer IDs (sections_1 etc.), so without it every page with that ID is patched.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        layer_id:     { type: 'string', description: 'Layer ID to update' },
-        page_id:      { type: 'string', description: 'Carousel: restrict the update to this page (recommended — IDs repeat across pages)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-        props:        { type: 'object', description: 'Properties to merge', properties: {} },
-      },
-      required: ['design_path', 'layer_id', 'props'],
-    },
-  },
-  {
-    name: 'remove_layer',
-    description: 'Remove a layer by ID. CAROUSEL: pass page_id to scope removal to one page — pages share layer IDs (sections_1 etc.), so WITHOUT page_id the same ID is removed from EVERY page (this silently empties sibling slides).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml' },
-        layer_id:     { type: 'string', description: 'Layer ID to remove' },
-        page_id:      { type: 'string', description: 'Carousel: restrict removal to this page (recommended — IDs repeat across pages)' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path', 'layer_id'],
     },
   },
 ];

@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Consolidated the MCP tool surface 50 → 21.** Models (local, harness, and
+  frontier) kept reaching for the same handful of tools while the long tail went
+  unused, so the surface is trimmed: the hot core-loop tools stay 1:1, and the
+  long tail is folded into 8 **multiplexed tools** that take an `op`
+  discriminator — `manage_design`, `themes`, `tasks`, `edit_layer`, `templates`,
+  `report`, `presentation`, `animation`. **No capability removed** — every former
+  tool maps to one `op`, routed in `src/mcp/dispatch.ts` to the unchanged engine
+  functions (and their tests). Forward hints (`next_action` / `suggested_next`)
+  are remapped centrally so a model that follows a hint always lands on a tool
+  that exists. Tiers re-grouped: Foundation (6) · Compose (7) · Output+Advanced (8).
+
+
 ## [0.1.0] - 2026-06-27
 
 First public release of Folio — a local-first, LLM-first YAML graphic-design

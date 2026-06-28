@@ -3,7 +3,7 @@
 # Phase 2 feature set
 
 > Part of the Folio docs — index at [docs/README.md](README.md). Report MCP tools
-> (`generate_report` · `bind_data` · `validate_report` · `export_report`) are documented
+> (`report` (op:generate) · `report` (op:report op:bind_data) · `report` (op:validate) · `report` (op:export)) are documented
 > in [TOOLS.md](TOOLS.md); the authoring workflow is in [MCP.md §8.3](MCP.md).
 
 ---
@@ -396,12 +396,12 @@ New MCP tools for report generation:
 
 | tool | description |
 |---|---|
-| `generate_report` | Create report spec from brief + data |
+| `report` (op:generate) | Create report spec from brief + data |
 | `generate_report_from_file` | Auto-analyze CSV/JSON + generate |
 | `add_report_page` | Append page to report |
-| `bind_data` | Wire data source to layer |
+| `report` (op:report op:bind_data) | Wire data source to layer |
 | `preview_data` | Sample rows from data source |
-| `export_report` | Export as interactive HTML |
+| `report` (op:export) | Export as interactive HTML |
 
 ---
 

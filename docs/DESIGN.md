@@ -898,7 +898,7 @@ meta:
     last_operation: append_page
 ```
 
-MCP `resume_design(design_id)` reads `completed_pages` and continues. Partial files are valid + openable.
+MCP `manage_design op:resume(design_id)` reads `completed_pages` and continues. Partial files are valid + openable.
 
 ### 11.5 Layer ID Stability Rules
 
@@ -1428,7 +1428,7 @@ Week 10: release pipeline, coverage reporting, perf benchmarks, bundle size gate
 - Incremental generation protocol (create → append → seal → export)
 - Puppeteer integration (high-fidelity PDF export)
 - Context compression for local LLM
-- Batch generation (batch_create tool)
+- Batch generation (templates op:batch tool)
 - Resume protocol (recover from crashed generation)
 ```
 
