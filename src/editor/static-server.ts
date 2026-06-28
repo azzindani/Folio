@@ -14,7 +14,7 @@ import * as fs from 'fs';
 // Pure (fs + side-effect-free HS256 jwt) — no server start, no IO at import.
 import {
   authConfigured, isValidToken, parseCookies, presentedToken,
-  sessionCookieHeader, mintSessionToken, slidingSessionCookie,
+  sessionCookieHeader, mintSessionToken, mintOutputToken, slidingSessionCookie,
 } from './editor-auth';
 // Pure, side-effect-free resolver (fs + a hash only) — maps a short /o/<code>
 // back to the design path so we can 302 to the full tokenized editor URL.
@@ -260,7 +260,9 @@ Bun.serve({
       p.set('file', target.path);
       if (typeof target.page === 'number') p.set('page', String(target.page));
       p.set('mcp_url', process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`);
-      const tok = mintSessionToken();
+      // Ephemeral output token for the redirect; the strip step upgrades the
+      // landing to a durable 30-day session cookie.
+      const tok = mintOutputToken();
       if (tok) p.set('token', tok);
       return new Response(null, { status: 302, headers: { Location: `/?${p.toString()}`, 'Cache-Control': 'no-store' } });
     }
@@ -495,14 +497,15 @@ Bun.serve({
 
       // /issue-style strip: when a valid token rides in on ?token= and there's no
       // cookie yet, set the session cookie and 302 to the same path minus `token`,
-      // so the secret leaves the address bar / history. No loop: the redirect
-      // target has no token param (cookie carries auth on the follow-up request).
+      // so the secret leaves the address bar / history. The cookie is a FRESH
+      // durable 30-day session token — NOT the (maybe 30-min output) token that
+      // brought us here — so opening an output link grants the always-on session.
       if (qtoken && !cookie) {
         url.searchParams.delete('token');
         const dest = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
         return new Response(null, {
           status: 302,
-          headers: { Location: dest, 'Set-Cookie': sessionCookieHeader(qtoken) },
+          headers: { Location: dest, 'Set-Cookie': sessionCookieHeader(mintSessionToken()) },
         });
       }
 
@@ -546,7 +549,7 @@ Bun.serve({
         const dest = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
         return new Response(null, {
           status: 302,
-          headers: { Location: dest, 'Set-Cookie': sessionCookieHeader(qtoken) },
+          headers: { Location: dest, 'Set-Cookie': sessionCookieHeader(mintSessionToken()) },
         });
       }
     }
@@ -589,7 +592,7 @@ Bun.serve({
     const initialToken = url.searchParams.get('token');
     const hasSessionCookie = !!parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'];
     const setSessionCookie = initialToken && isValidToken(initialToken) && !hasSessionCookie
-      ? sessionCookieHeader(initialToken)
+      ? sessionCookieHeader(mintSessionToken())
       : null;
 
     let target = safeJoin(url.pathname === '/' ? '/index.html' : url.pathname);

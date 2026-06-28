@@ -123,12 +123,20 @@ export function jwtSecret(): string | null {
   return null;
 }
 
-/** Editor session / link lifetime in ms — the ONE source both the token mint and
- *  the editor server's session cookie read. A SHORT, SLIDING window: a link's
- *  token expires after this much idle time, but active use re-mints it (the
- *  editor auto-save heartbeat) and reopening from the Library grants a fresh one.
- *  Default 30 minutes; override with FOLIO_EDITOR_TOKEN_TTL_MS (ms). */
+/** EDITOR + LIBRARY session lifetime in ms — the durable "logged-in" window for
+ *  the folio_session cookie. The editor and library must stay ALWAYS-ON for the
+ *  operator, so this is long (default 30 DAYS; override FOLIO_EDITOR_TOKEN_TTL_MS).
+ *  It is NOT the lifetime of a shown/shared OUTPUT link — that's outputLinkTtlMs. */
 export function editorSessionTtlMs(): number {
   const env = parseInt(process.env['FOLIO_EDITOR_TOKEN_TTL_MS'] ?? '', 10);
+  return Number.isFinite(env) && env > 0 ? env : 30 * 24 * 60 * 60 * 1000;
+}
+
+/** OUTPUT-LINK lifetime in ms — the ephemeral window for a generated design link
+ *  (the `?token=` in open_url/view_url and the /o/<code> short link). SHORT so a
+ *  link shown on a recording self-expires; reopening the design from the (always-
+ *  on) Library mints a fresh one. Default 30 MINUTES; override FOLIO_OUTPUT_LINK_TTL_MS. */
+export function outputLinkTtlMs(): number {
+  const env = parseInt(process.env['FOLIO_OUTPUT_LINK_TTL_MS'] ?? '', 10);
   return Number.isFinite(env) && env > 0 ? env : 30 * 60 * 1000;
 }
