@@ -162,23 +162,31 @@ the Design Library, and `/__project_files/*`) lock this down without adding a lo
 | `FOLIO_EDITOR_RATE_BURST` | `240` | Per-IP token-bucket size (a page load is many small assets, so it's generous). `0` disables. |
 | `FOLIO_EDITOR_RATE_PER_SEC` | `80` | Per-IP steady refill rate. Overflow → **429 + Retry-After**, so one client's flood can't monopolise the single-threaded server. |
 | `FOLIO_EDITOR_MAX_HEAVY` | `8` | Max concurrent **expensive** ops (thumbnail rasterize, full-library scan). Beyond it → **503 + Retry-After:1**, so a burst can't pile up and OOM/peg the container. `0` = unlimited. |
-| `FOLIO_EDITOR_TOKEN_TTL_MS` | `1800000` (30 min) | Editor-link / session lifetime. **Short + sliding** (see below). |
+| `FOLIO_EDITOR_TOKEN_TTL_MS` | `2592000000` (30 **days**) | **Editor + Library session** lifetime — the durable, always-on cookie. |
+| `FOLIO_OUTPUT_LINK_TTL_MS` | `1800000` (30 **min**) | **Output-link** lifetime — the `?token=` in a generated `open_url`/`view_url` and the `/o/<code>` short link. **Ephemeral** (see below). |
 
-**Sliding-session links (no IP-lock, no login)** — the recommended way to show a link
-on a recording. Every link a tool returns carries a short-lived token (`FOLIO_EDITOR_TOKEN_TTL_MS`,
-default **30 min**). The session **slides**: the editor's ~30-second auto-save renews the
-window on each beat, so an open editor never lapses, while **30 min of inactivity lets the
-link expire**. Reopening a design from the Library mints a **fresh** window — over and over.
-Net: a link caught on screen is dead shortly after you stop, with no allow-list and no login.
-The token rides in a `HttpOnly`, `SameSite=Lax` cookie (stripped from the address bar on first
-load). Raise the TTL for hand-off links that must survive overnight.
+**Two lifetimes, deliberately separate (no IP-lock, no login).** The editor and the
+Design Library are the operator's app — they must stay **always-on**, so the `folio_session`
+cookie they run on is **durable (30 days, `FOLIO_EDITOR_TOKEN_TTL_MS`)** and slides on
+activity. A **generated output link** is a different thing: a thing you *show* — so the
+`?token=` in `open_url`/`view_url` and the `/o/<code>` short link are **ephemeral
+(30 min, `FOLIO_OUTPUT_LINK_TTL_MS`)**. A link caught on a recording is dead 30 min later.
 
-Both link forms expire on this clock: the long `?token=` URL (the embedded JWT) **and** the
-short `/o/<code>` link (`FOLIO_SHORT_LINK_TTL_MS`, default = the session TTL). A short link
-does **not** revive itself when visited — only re-issuing it (a tool call, or **opening the
-design from the Library**) refreshes its window. So after the window lapses, the *only* way
-back to a live link is through the Library, which is reachable solely via the never-shown
-session cookie — a leaked or expired link can't re-enter on its own.
+The two don't collide. **Opening** an output link (within its 30 min) **upgrades you to the
+30-day session**: the cookie is minted **fresh** server-side as a session token — it does
+**not** inherit the short output token's clock. So you stay logged into the editor/library
+for 30 days, while the standalone link you showed still expires. To bring an expired output
+back, **open the design from the (always-on) Library** — that mints a brand-new 30-min link,
+over and over. The short `/o/<code>` link expires on the same output clock
+(`FOLIO_SHORT_LINK_TTL_MS`, default = `FOLIO_OUTPUT_LINK_TTL_MS`) and does **not** revive
+itself when visited — only re-issuing it (a tool call, or opening the design from the Library)
+does. The token rides in a `HttpOnly`, `SameSite=Lax` cookie, stripped from the address bar
+on first load.
+
+> Recording note: an output link opened *within* its 30-min window grants the opener the
+> 30-day session too (there's no login to tell you apart from a viewer). For the published-
+> video case this is moot — the link is dead long before anyone watches. If you ever need
+> the tight window even live, set `FOLIO_ALLOW_IPS` (above) or shorten `FOLIO_OUTPUT_LINK_TTL_MS`.
 
 Finding your IP to allow-list: `curl https://<host>/__ip` → `{"ip":"…","allow_list_active":…}`.
 `/__ip` is intentionally exempt from the allow-list (it reveals only the caller's own
@@ -261,11 +269,12 @@ Generate strong tokens: `openssl rand -hex 32`.
 
 ### 7.2 JWT — stateless editor links
 
-`FOLIO_JWT_SECRET` (HS256; falls back to `FOLIO_API_KEY` if unset) signs the editor-link
-tokens that `open_in_editor` / `create_design` embed in their `open_url`. These are
-**stateless 30-day JWTs** — no server store, survive restarts (a pasted link no longer
-dies after an hour). The raw secret also works as a master bearer. TTL via
-`FOLIO_EDITOR_TOKEN_TTL_MS` (default 30 days).
+`FOLIO_JWT_SECRET` (HS256; falls back to `FOLIO_API_KEY` if unset) signs every editor
+token — no server store, survive restarts. Two TTLs (see §5.3): the `?token=` an
+`open_in_editor` / `create_design` embeds in its `open_url` is an **ephemeral 30-min output
+token** (`FOLIO_OUTPUT_LINK_TTL_MS`); opening it mints the **durable 30-day session** cookie
+(`FOLIO_EDITOR_TOKEN_TTL_MS`) that keeps the editor + library always-on. The raw secret also
+works as a master bearer.
 
 ### 7.3 OAuth 2.0 + PKCE — the claude.ai connector path
 
@@ -313,7 +322,8 @@ Tail it: `docker compose logs -f folio`.
 | `FOLIO_TOKENS` | unset | Inline `"name:val,name2:val2"` |
 | `FOLIO_API_KEY` | unset | Single shared bearer (legacy) |
 | `FOLIO_JWT_SECRET` | unset → `FOLIO_API_KEY` | HS256 secret for editor-link JWTs + master bearer |
-| `FOLIO_EDITOR_TOKEN_TTL_MS` | `2592000000` (30d) | Editor-link token lifetime |
+| `FOLIO_EDITOR_TOKEN_TTL_MS` | `2592000000` (30d) | Editor + Library **session** lifetime (durable cookie) |
+| `FOLIO_OUTPUT_LINK_TTL_MS` | `1800000` (30m) | **Output-link** lifetime (`open_url`/`view_url` `?token`, `/o` short link) |
 | `FOLIO_OAUTH_CLIENT_ID` | `claude-ai` | Pinned OAuth client id |
 | `FOLIO_OAUTH_CLIENT_SECRET` | unset (public) | Set only for a confidential client |
 | `FOLIO_OAUTH_STATE_DIR` | `<projects>/.oauth-state` | Persisted OAuth tokens |

@@ -11,7 +11,7 @@
 // can import resolveShortLink() without pulling in MCP/OAuth module side effects.
 import * as fs from 'fs';
 import * as path from 'path';
-import { editorSessionTtlMs } from '../jwt';
+import { outputLinkTtlMs } from '../jwt';
 
 /** Stored entry. `exp` (epoch ms) makes a short link SELF-EXPIRE — without it the
  *  /o/<code> route was a permanent door that re-minted a fresh session on every
@@ -24,12 +24,12 @@ function storeFile(): string {
   return path.join(process.env['FOLIO_PROJECTS_DIR'] ?? '/home/folio/projects', '.short-links.json');
 }
 
-/** Short-link lifetime (ms). Defaults to the editor session window (30 min) so a
- *  shown /o/<code> dies on the same clock as the link it 302s to; override with
- *  FOLIO_SHORT_LINK_TTL_MS. */
+/** Short-link lifetime (ms). Defaults to the OUTPUT-link window (30 min) — a shown
+ *  /o/<code> is an ephemeral output artifact, NOT the durable editor/library
+ *  session; override with FOLIO_SHORT_LINK_TTL_MS. */
 function shortLinkTtlMs(): number {
   const env = parseInt(process.env['FOLIO_SHORT_LINK_TTL_MS'] ?? '', 10);
-  return Number.isFinite(env) && env > 0 ? env : editorSessionTtlMs();
+  return Number.isFinite(env) && env > 0 ? env : outputLinkTtlMs();
 }
 
 /**

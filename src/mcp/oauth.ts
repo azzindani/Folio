@@ -20,7 +20,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type * as http from 'http';
 import { loadTokens } from './auth';
-import { signJwt, jwtSecret, editorSessionTtlMs } from './jwt';
+import { signJwt, jwtSecret, outputLinkTtlMs } from './jwt';
 import { readBodyCapped } from '../utils/http-body';
 
 // OAuth bodies are public (pre-auth) and tiny — login forms, code exchanges,
@@ -172,15 +172,15 @@ export function resolveOAuthToken(token: string): string | null {
  *
  * Harnesses-lab style: when a JWT secret is configured the token is a STATELESS
  * HS256 JWT — it carries its own expiry, needs no server-side store, and survives
- * restarts. The lifetime is a SHORT, SLIDING window (default 30 min, override
- * with FOLIO_EDITOR_TOKEN_TTL_MS): the link self-expires when idle, but the
- * editor's auto-save heartbeat re-mints the session cookie while you work and
- * reopening from the Library grants a fresh window — see editorSessionTtlMs() +
- * slidingSessionCookie(). With no secret (unauthenticated mode) we fall back to
- * the legacy opaque, persisted access token so links still work.
+ * restarts. This mints the token embedded in a generated OUTPUT link (open_url /
+ * view_url), so its lifetime is the SHORT output window (default 30 min, override
+ * FOLIO_OUTPUT_LINK_TTL_MS) — a link shown on a recording self-expires. Opening it
+ * upgrades the holder to a durable 30-day editor/library SESSION cookie (minted
+ * fresh server-side, see editor-auth.mintSessionToken). With no secret
+ * (unauthenticated mode) we fall back to the legacy opaque access token.
  */
 export function mintEditorToken(principal: string = 'default', ttlMs?: number): string {
-  const ttl = ttlMs ?? editorSessionTtlMs();
+  const ttl = ttlMs ?? outputLinkTtlMs();
 
   const secret = jwtSecret();
   if (secret) {

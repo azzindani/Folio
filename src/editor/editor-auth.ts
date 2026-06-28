@@ -2,14 +2,18 @@
 // under the 700-line budget AND to centralise the token model the SLIDING session
 // builds on. Pure (fs + the side-effect-free HS256 jwt module) — no server start.
 //
-// Session model: a link's token is a short-lived HS256 JWT (editorSessionTtlMs,
-// default 30 min). It SLIDES — every active request re-mints the cookie via
-// slidingSessionCookie(), so the editor's 30-second auto-save heartbeat keeps an
-// open session alive indefinitely, while 30 min of inactivity lets it lapse.
-// Reopening a design from the Library mints a brand-new window. No login, no IP.
+// Session model — TWO lifetimes, deliberately separate:
+//   • the EDITOR + LIBRARY session (the folio_session cookie) is DURABLE — 30 days
+//     (editorSessionTtlMs), always-on for the operator. It slides on activity.
+//   • a generated OUTPUT link (open_url / view_url / /o short link) is EPHEMERAL —
+//     30 min (outputLinkTtlMs) — so a link shown on a recording self-expires.
+// Opening an output link UPGRADES the holder to the durable session: the cookie is
+// minted fresh as a 30-day session token here (mintSessionToken), NOT inherited
+// from the short output token. So "open the design from the always-on Library" just
+// works, while the standalone link still dies in 30 min. No login, no IP.
 import * as path from 'path';
 import * as fs from 'fs';
-import { verifyJwt, signJwt, jwtSecret, editorSessionTtlMs } from '../mcp/jwt';
+import { verifyJwt, signJwt, jwtSecret, editorSessionTtlMs, outputLinkTtlMs } from '../mcp/jwt';
 
 // OAuth-issued / open_in_editor access tokens (access-tokens.json, expiring).
 // Read live so a token minted by the MCP process in the same container is seen.
@@ -97,11 +101,19 @@ export function sessionCookieHeader(token: string): string {
   return `folio_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
-/** A fresh editor-session JWT (goes in ?token / the cookie). Empty when no
- *  secret is configured (open mode — no token needed). */
+/** A fresh DURABLE session JWT (30-day) for the folio_session cookie — the editor
+ *  + library "logged-in" credential. Empty when no secret (open mode). */
 export function mintSessionToken(): string {
   const secret = jwtSecret();
   return secret ? signJwt({ sub: 'default', kind: 'editor' }, secret, Math.floor(editorSessionTtlMs() / 1000)) : '';
+}
+
+/** A fresh EPHEMERAL output-link JWT (30-min) — for a /o short-link 302's ?token.
+ *  It only needs to authenticate the redirect; the cookie it lands on is upgraded
+ *  to a durable session token by the strip step. Empty when no secret. */
+export function mintOutputToken(): string {
+  const secret = jwtSecret();
+  return secret ? signJwt({ sub: 'default', kind: 'output' }, secret, Math.floor(outputLinkTtlMs() / 1000)) : '';
 }
 
 /** SLIDING refresh: given the token on an authenticated request, re-mint a fresh
