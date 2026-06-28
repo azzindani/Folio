@@ -2,21 +2,8 @@
 
 ## [Unreleased]
 
-### Changed
 
-- **Consolidated the MCP tool surface 50 → 21.** Models (local, harness, and
-  frontier) kept reaching for the same handful of tools while the long tail went
-  unused, so the surface is trimmed: the hot core-loop tools stay 1:1, and the
-  long tail is folded into 8 **multiplexed tools** that take an `op`
-  discriminator — `manage_design`, `themes`, `tasks`, `edit_layer`, `templates`,
-  `report`, `presentation`, `animation`. **No capability removed** — every former
-  tool maps to one `op`, routed in `src/mcp/dispatch.ts` to the unchanged engine
-  functions (and their tests). Forward hints (`next_action` / `suggested_next`)
-  are remapped centrally so a model that follows a hint always lands on a tool
-  that exists. Tiers re-grouped: Foundation (6) · Compose (7) · Output+Advanced (8).
-
-
-## [0.1.0] - 2026-06-27
+## [0.1.0] - 2026-06-28
 
 First public release of Folio — a local-first, LLM-first YAML graphic-design
 engine. A model writes semantic shorthand YAML; the engine compiles it to SVG
@@ -25,9 +12,19 @@ Consolidates the internal Phase 1–5 work (full history under [1.0.0] below).
 
 ### Design engine + MCP
 
-- **MCP server (49 tools)** over Streamable-HTTP — create/append/seal designs,
-  add/update/remove layers, themes, templates, export, library, reference.
-  Deployed at folio.casava.space (Docker, `bun --smol`, no build step).
+- **MCP server — 21 op-multiplexed tools** over Streamable-HTTP. The hot
+  core-loop tools (create_design, add_layers, patch_design, seal_design,
+  append_page, render_preview, diagnose_design, export_design) stay first-class;
+  the long tail folds into 8 `op`-routed tools — `manage_design`, `themes`,
+  `tasks`, `edit_layer`, `templates`, `report`, `presentation`, `animation` — so
+  models stop fixating on a few and the rest stays discoverable. **No capability
+  removed**: every former tool maps to one `op`, and forward hints are remapped
+  so a model that follows one always lands on a tool that exists. Deployed at
+  folio.casava.space (Docker, `bun --smol`, no build step).
+- **Built-in template catalog over MCP** — `templates {op:list}` browses the 432
+  editor-catalog templates and `{op:inject}` fills one by id, so a model can use
+  the same templates a human browses (those assets were previously unreachable
+  from the tool surface).
 - **Model-led, math-backed generation** — the engine validates spatial math,
   expands shorthand, fits/clamps to canvas, and heals blind-model payloads at
   seal (geometry, legibility, auto-place, page balance) without dictating the
