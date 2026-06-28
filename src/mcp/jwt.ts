@@ -122,3 +122,13 @@ export function jwtSecret(): string | null {
   if (apiKey && apiKey.length > 0) return apiKey;
   return null;
 }
+
+/** Editor session / link lifetime in ms — the ONE source both the token mint and
+ *  the editor server's session cookie read. A SHORT, SLIDING window: a link's
+ *  token expires after this much idle time, but active use re-mints it (the
+ *  editor auto-save heartbeat) and reopening from the Library grants a fresh one.
+ *  Default 30 minutes; override with FOLIO_EDITOR_TOKEN_TTL_MS (ms). */
+export function editorSessionTtlMs(): number {
+  const env = parseInt(process.env['FOLIO_EDITOR_TOKEN_TTL_MS'] ?? '', 10);
+  return Number.isFinite(env) && env > 0 ? env : 30 * 60 * 1000;
+}

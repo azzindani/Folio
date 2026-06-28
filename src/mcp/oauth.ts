@@ -20,7 +20,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type * as http from 'http';
 import { loadTokens } from './auth';
-import { signJwt, jwtSecret } from './jwt';
+import { signJwt, jwtSecret, editorSessionTtlMs } from './jwt';
 import { readBodyCapped } from '../utils/http-body';
 
 // OAuth bodies are public (pre-auth) and tiny — login forms, code exchanges,
@@ -171,16 +171,16 @@ export function resolveOAuthToken(token: string): string | null {
  * /__project_files + /editor/events calls inherit access.
  *
  * Harnesses-lab style: when a JWT secret is configured the token is a STATELESS
- * 30-day HS256 JWT — it carries its own expiry, needs no server-side store, and
- * survives restarts, so a pasted link no longer dies after an hour (the old 1h
- * opaque-token pain). Default TTL 30 days, override with
- * FOLIO_EDITOR_TOKEN_TTL_MS. With no secret (unauthenticated mode) we fall back
- * to the legacy opaque, persisted access token so links still work.
+ * HS256 JWT — it carries its own expiry, needs no server-side store, and survives
+ * restarts. The lifetime is a SHORT, SLIDING window (default 30 min, override
+ * with FOLIO_EDITOR_TOKEN_TTL_MS): the link self-expires when idle, but the
+ * editor's auto-save heartbeat re-mints the session cookie while you work and
+ * reopening from the Library grants a fresh window — see editorSessionTtlMs() +
+ * slidingSessionCookie(). With no secret (unauthenticated mode) we fall back to
+ * the legacy opaque, persisted access token so links still work.
  */
-const DEFAULT_EDITOR_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export function mintEditorToken(principal: string = 'default', ttlMs?: number): string {
-  const envTtl = parseInt(process.env['FOLIO_EDITOR_TOKEN_TTL_MS'] ?? '', 10);
-  const ttl = ttlMs ?? (Number.isFinite(envTtl) && envTtl > 0 ? envTtl : DEFAULT_EDITOR_TOKEN_TTL_MS);
+  const ttl = ttlMs ?? editorSessionTtlMs();
 
   const secret = jwtSecret();
   if (secret) {

@@ -9,10 +9,13 @@
 //   FOLIO_DIST_DIR (default ./dist)
 import * as path from 'path';
 import * as fs from 'fs';
-// Pure, side-effect-free HS256 verify — safe to import into the editor process
-// without pulling in MCP/OAuth module side effects (no server start, no IO at
-// import). Lets the editor validate the stateless JWTs mintEditorToken now issues.
-import { verifyJwt, signJwt, jwtSecret } from '../mcp/jwt';
+// Auth + session helpers (token validation, cookie parsing, and the SLIDING
+// 30-min session: short-lived link tokens that active use / reopening renews).
+// Pure (fs + side-effect-free HS256 jwt) — no server start, no IO at import.
+import {
+  authConfigured, isValidToken, parseCookies, presentedToken,
+  sessionCookieHeader, mintSessionToken, slidingSessionCookie,
+} from './editor-auth';
 // Pure, side-effect-free resolver (fs + a hash only) — maps a short /o/<code>
 // back to the design path so we can 302 to the full tokenized editor URL.
 import { resolveShortLink } from '../mcp/engine/short-link';
@@ -37,77 +40,6 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 
 const GUARDS = loadEditorGuards();
-
-// Token validation — reuses the OAuth access-token store from the MCP
-// server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
-// so this in-process registry is the source of truth. When running UI-only
-// we fall back to the persisted JSON file the MCP server writes.
-function loadValidTokens(): Map<string, { principal: string; expires_at: number }> {
-  const file = path.join(
-    process.env['FOLIO_OAUTH_STATE_DIR']
-      ?? path.join(process.env['FOLIO_PROJECTS_DIR'] ?? '/tmp', '.oauth-state'),
-    'access-tokens.json',
-  );
-  try {
-    if (!fs.existsSync(file)) return new Map();
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, { principal: string; expires_at: number }>;
-    const now = Date.now();
-    const m = new Map<string, { principal: string; expires_at: number }>();
-    for (const [k, v] of Object.entries(parsed)) if (v.expires_at > now) m.set(k, v);
-    return m;
-  } catch { return new Map(); }
-}
-
-// Static "lab" bearer tokens — the SAME secrets the MCP and the Harnesses lab
-// use (FOLIO_TOKENS_FILE / FOLIO_TOKENS / FOLIO_API_KEY). Mirrors the parsing in
-// src/mcp/auth.ts so one token opens both the MCP and the editor. Read inline
-// (not imported) to keep the editor process free of MCP/OAuth module side-effects.
-function loadStaticTokens(): Set<string> {
-  const out = new Set<string>();
-  const file = process.env['FOLIO_TOKENS_FILE'];
-  if (file) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>;
-      for (const v of Object.values(parsed)) if (typeof v === 'string' && v.length > 0) out.add(v);
-    } catch { /* missing/invalid file → no static tokens from here */ }
-  }
-  const inline = process.env['FOLIO_TOKENS'];
-  if (inline) {
-    for (const pair of inline.split(',')) {
-      const value = pair.split(':').slice(1).join(':').trim();
-      if (value.length > 0) out.add(value);
-    }
-  }
-  const single = process.env['FOLIO_API_KEY'];
-  if (single && single.length > 0) out.add(single);
-  return out;
-}
-
-// True when ANY auth is configured. When false (no tokens anywhere) the editor
-// serves openly — same posture as the MCP's unauthenticated mode — so a local
-// run isn't locked out of its own UI. A bare FOLIO_JWT_SECRET counts as
-// configured even with no static tokens (matches loadTokens in src/mcp/auth.ts).
-function authConfigured(): boolean {
-  return loadStaticTokens().size > 0 || !!jwtSecret();
-}
-
-function isValidToken(token: string): boolean {
-  if (!token) return false;
-  // 1. OAuth-issued / open_in_editor access token (access-tokens.json, expiring).
-  const rec = loadValidTokens().get(token);
-  if (rec && rec.expires_at > Date.now()) return true;
-  // 2. Static lab/MCP bearer — never expires; one token for MCP + editor.
-  if (loadStaticTokens().has(token)) return true;
-  // 3. Stateless HS256 JWT (the kind mintEditorToken now issues) + raw secret
-  //    as master bearer. Verified by signature + exp — no store to consult.
-  const secret = jwtSecret();
-  if (secret && (token === secret || verifyJwt(token, secret).ok)) return true;
-  return false;
-}
-
-// Cookie lifetime for the editor session. 30 days so the lab token, pasted once
-// via ?token=, keeps the editor open without re-prompting (was 1h).
-const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 // Shown when the editor is opened without a valid token (no Bearer / ?token= /
 // cookie). Replaces the reverse-proxy's HTTP Basic Auth prompt with a plain
@@ -147,16 +79,6 @@ function fallback(){if(document.getElementById(ID))return;var a=document.createE
 a.style.cssText='position:fixed;left:12px;bottom:12px;z-index:2147483000;padding:8px 12px;border-radius:10px;background:#161B22;color:#C9D2E3;border:1px solid #2A323F;font:600 12px system-ui,sans-serif;text-decoration:none';document.body.appendChild(a);}
 var n=0,iv=setInterval(function(){n++;if(inject()||n>40){clearInterval(iv);if(!document.getElementById(ID))fallback();
 try{new MutationObserver(function(){if(!document.getElementById(ID))inject();}).observe(document.body,{childList:true,subtree:true});}catch(e){}}},250);})();</script>`;
-
-function parseCookies(header: string | undefined): Record<string, string> {
-  if (!header) return {};
-  const out: Record<string, string> = {};
-  for (const pair of header.split(';')) {
-    const [k, ...rest] = pair.trim().split('=');
-    if (k) out[k] = decodeURIComponent(rest.join('='));
-  }
-  return out;
-}
 
 const PORT = parseInt(process.env['PORT'] ?? '4173', 10);
 const HOST = process.env['HOST'] ?? '0.0.0.0';
@@ -338,8 +260,8 @@ Bun.serve({
       p.set('file', target.path);
       if (typeof target.page === 'number') p.set('page', String(target.page));
       p.set('mcp_url', process.env['FOLIO_MCP_PUBLIC_URL'] ?? `http://localhost:${process.env['FOLIO_PORT'] ?? '3333'}`);
-      const secret = jwtSecret();
-      if (secret) p.set('token', signJwt({ sub: 'default', kind: 'editor' }, secret, 60 * 60 * 24 * 30));
+      const tok = mintSessionToken();
+      if (tok) p.set('token', tok);
       return new Response(null, { status: 302, headers: { Location: `/?${p.toString()}`, 'Cache-Control': 'no-store' } });
     }
 
@@ -537,6 +459,10 @@ Bun.serve({
       if (!presented || !isValidToken(presented)) {
         return new Response('Unauthorized', { status: 401 });
       }
+      // Sliding session: every authenticated hit renews the window. The editor
+      // auto-saves here every ~30s, so an OPEN editor never lapses; once it's
+      // closed, the last window runs out and the link self-expires.
+      const refresh = slidingSessionCookie(presented);
 
       // ── PUT/POST: write a design's YAML back to disk ────────────────────
       // The editor's server-backed auto-save + "Save to Library" land here.
@@ -563,7 +489,7 @@ Bun.serve({
           fs.writeFileSync(target, yaml, 'utf-8');
         } catch { return new Response('Write failed', { status: 500 }); }
         return new Response(JSON.stringify({ ok: true, path: relDecoded }), {
-          status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+          status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...(refresh ? { 'Set-Cookie': refresh } : {}) },
         });
       }
 
@@ -576,10 +502,7 @@ Bun.serve({
         const dest = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
         return new Response(null, {
           status: 302,
-          headers: {
-            Location: dest,
-            'Set-Cookie': `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`,
-          },
+          headers: { Location: dest, 'Set-Cookie': sessionCookieHeader(qtoken) },
         });
       }
 
@@ -590,6 +513,7 @@ Bun.serve({
       }
       const body = fs.readFileSync(target);
       const headers: Record<string, string> = { 'Content-Type': mime(target), 'Cache-Control': 'no-store' };
+      if (refresh) headers['Set-Cookie'] = refresh;
       return new Response(body, { status: 200, headers });
     }
 
@@ -622,13 +546,14 @@ Bun.serve({
         const dest = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
         return new Response(null, {
           status: 302,
-          headers: {
-            Location: dest,
-            'Set-Cookie': `folio_session=${encodeURIComponent(qtoken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`,
-          },
+          headers: { Location: dest, 'Set-Cookie': sessionCookieHeader(qtoken) },
         });
       }
     }
+
+    // Sliding session for the authenticated navigation below (editor shell +
+    // /library): renew the 30-min window on each load so browsing keeps it alive.
+    const sessRefresh = slidingSessionCookie(presentedToken(req, url));
 
     // ── /library → the LIVE Design Library gallery ─────────────────────
     // Rendered fresh on every request: collectLibrary scans the whole projects
@@ -652,7 +577,7 @@ Bun.serve({
           thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`,
           live: true, gridOnly,
         });
-        return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+        return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', ...(sessRefresh ? { 'Set-Cookie': sessRefresh } : {}) } });
       } finally { GUARDS.heavy.release(); }
     }
 
@@ -664,7 +589,7 @@ Bun.serve({
     const initialToken = url.searchParams.get('token');
     const hasSessionCookie = !!parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'];
     const setSessionCookie = initialToken && isValidToken(initialToken) && !hasSessionCookie
-      ? `folio_session=${encodeURIComponent(initialToken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE}`
+      ? sessionCookieHeader(initialToken)
       : null;
 
     let target = safeJoin(url.pathname === '/' ? '/index.html' : url.pathname);
@@ -684,6 +609,9 @@ Bun.serve({
     if (target === INDEX_HTML) {
       // Inject the Library entry point into the editor shell (no dist rebuild).
       headers['Cache-Control'] = 'no-cache';
+      // Slide the session on each shell load (when not already setting one from a
+      // ?token first-load), so an open/reopened editor keeps its 30-min window.
+      if (!setSessionCookie && sessRefresh) headers['Set-Cookie'] = sessRefresh;
       const html = body.toString('utf8').replace('</body>', `${EDITOR_NO_SHADOW}${EDITOR_LIBRARY_BTN}</body>`);
       return new Response(html, { status: 200, headers });
     }
