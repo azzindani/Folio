@@ -1,6 +1,6 @@
 # TOOLS.md — Folio MCP Tool Reference
 
-> Complete reference for all **49 MCP tools**, grouped by tier. For the protocol,
+> Complete reference for all **50 MCP tools**, grouped by tier. For the protocol,
 > workflows, and shorthand see [MCP.md](MCP.md). Source of truth: `src/mcp/tier{1,2,3}/registry.ts`
 > (schemas) and `src/mcp/handlers.ts` (`ALL_HANDLERS`).
 
@@ -16,7 +16,7 @@
 |---|---|---|
 | 1 Basic | get_engine_guide, enrich_brief, create_project, list_designs, list_tasks, list_themes, apply_theme, duplicate_design, browse_library, rename_design, delete_design, move_design, create_task, resume_task, resume_design | 15 |
 | 2 Design | create_design, inspect_design, add_layers, add_layer, append_page, update_layer, remove_layer, patch_design, seal_design, extract_reference | 10 |
-| 3 Export | open_in_editor, export_design, export_template, list_template_slots, inject_template, batch_create, save_as_component, generate_report, bind_data, export_report, validate_report, create_presentation, export_presentation, set_formula_context, debug_formula, inspect_timeline, add_keyframe, export_animation, setup_remote_presenter, setup_collab, diagnose_design, render_preview, align_layers, export_library_gallery | 24 |
+| 3 Export | open_in_editor, export_design, export_template, list_templates, list_template_slots, inject_template, batch_create, save_as_component, generate_report, bind_data, export_report, validate_report, create_presentation, export_presentation, set_formula_context, debug_formula, inspect_timeline, add_keyframe, export_animation, setup_remote_presenter, setup_collab, diagnose_design, render_preview, align_layers, export_library_gallery | 25 |
 
 ---
 
@@ -157,17 +157,22 @@ Build a self-contained `library.html` file-manager for the whole library (thumbn
 
 ### Templates & components
 
+#### `list_templates`
+Browse the **built-in template catalog** — the same 432 templates shown in the editor's Catalog dialog — so a model can pick one to inject. Returns slim metadata `{id, name, type, tags, width, height, slots, themeRef}`.
+- **Opt:** `search` (free-text over id/name/tags), `tag` (exact tag), `limit` (default 60, max 300).
+- Feed a returned `id` straight to `list_template_slots` / `inject_template` — no file path needed.
+
 #### `export_template`
 Export a sealed design as a `.template.yaml` skeleton with named `{{slot}}` placeholders.
 - **Req:** `design_path`. **Opt:** `output_path`, `project_path`.
 
 #### `list_template_slots`
 List injectable slots in a template (paths, types, hints).
-- **Req:** `template_path`.
+- **Req:** `template_path` — a real `.template.yaml` path **or a built-in catalog id** (e.g. `tmpl-resume-cv`, from `list_templates`).
 
 #### `inject_template`
 Fill template slots → a new `.design.yaml`.
-- **Req:** `template_path`, `slots` (slot_id → value map). **Opt:** `output_path`.
+- **Req:** `template_path` (real path **or a built-in catalog id**), `slots` (slot_id → value map). **Opt:** `output_path`. A built-in source writes the design into the projects dir.
 
 #### `batch_create`
 Generate N designs from one template using an array of slot objects.

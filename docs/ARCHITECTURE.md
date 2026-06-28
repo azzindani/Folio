@@ -135,7 +135,7 @@ source of truth (`http-server.ts §1`).
 ### 3.2 Tiers
 
 Tools are grouped into three tiers so a small local model can load only what it can
-handle. The HTTP server always serves the full union (49); only stdio is tiered.
+handle. The HTTP server always serves the full union (50); only stdio is tiered.
 
 | Tier | Name | Count | Registry | Purpose |
 |---|---|---|---|---|
@@ -471,7 +471,7 @@ in `project.yaml` via `apply_theme`.
 | Doc | Covers |
 |---|---|
 | [MCP.md](MCP.md) | MCP standard, transports, tiers, wire protocol, workflows, shorthand |
-| [TOOLS.md](TOOLS.md) | Every one of the 49 tools — params, returns, examples |
+| [TOOLS.md](TOOLS.md) | Every one of the 50 tools — params, returns, examples |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Docker, Caddy/TLS, endpoints, env vars, auth, backups |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | claude.ai, Claude Code, LM Studio, Hermes/OpenClaw, editor wiring |
 | [EDITOR.md](EDITOR.md) | Visual editor: canvas, panels, shortcuts, export, live refresh |

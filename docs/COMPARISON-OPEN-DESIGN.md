@@ -18,7 +18,7 @@ the stack**:
 |---|---|---|
 | **What it is** | A **render engine + spec format**. YAML → SVG/HTML/PDF/animation. The `.design.yaml` is the product. | A **design workspace + knowledge base**. Native desktop app (macOS/Win) that drives *coding agents* to emit real HTML/CSS/PPTX/MP4 artifacts in a sandboxed iframe. |
 | **Output medium** | SVG-in-HTML, compiled from a typed spec by Folio's own renderer. | Real HTML/CSS/JS artifacts written by the agent, previewed in an iframe. |
-| **Core asset** | The **engine** (parser, shorthand, token resolver, spatial finalize, 49 MCP tools). | The **content library** (151 brand `DESIGN.md` systems, 13 `craft/` rulebooks, 155 skills, 109 templates) + a model router (AMR). |
+| **Core asset** | The **engine** (parser, shorthand, token resolver, spatial finalize, 50 MCP tools). | The **content library** (151 brand `DESIGN.md` systems, 13 `craft/` rulebooks, 155 skills, 109 templates) + a model router (AMR). |
 | **Strength** | Deterministic spatial correctness, one render path, rich export matrix, self-hosted MCP. | Curated design *knowledge* + anti-AI-slop linting + brand contracts the agent reads. |
 
 **The takeaway:** Open Design's **engine/app layer does not port** to Folio (different
@@ -46,7 +46,7 @@ high-value, low-risk, and license-compatible.
 | Decks / presentations | ✅ | ✅ | Folio `presentation-assembler` (PDF); OD Deck → **PPTX**/PDF. OD has PPTX, Folio doesn't. |
 | PDF export (vector text) | ✅ | ✅ | Folio bundled-TTF vector PDF; OD via Chromium. |
 | Visual editor (drag/resize/panels) | ✅ | 🟡 | Folio has a full Monaco+canvas editor; OD is iframe-preview + comment queue, not a layer editor. **Folio stronger.** |
-| MCP server (stdio + HTTP, auth) | ✅ | ✅ | Both. Folio: 49 tools, JWT/OAuth. OD: `od mcp install <agent>`. |
+| MCP server (stdio + HTTP, auth) | ✅ | ✅ | Both. Folio: 50 tools, JWT/OAuth. OD: `od mcp install <agent>`. |
 | Brand **design-system** library | 🟡 | ✅ | Folio: 17 token themes. OD: **151 prose+token `DESIGN.md`** contracts. **OD far ahead.** |
 | **Craft knowledge** rulebooks (color/type/a11y/anti-slop) | 🟡 | ✅ | Folio: scattered in MCP steering + `craft/` design skills marketplace. OD: 13 dense, opt-in, partly **auto-linted**. **OD ahead.** |
 | **Anti-AI-slop linter** (auto-checked) | 🟡 | ✅ | Folio: `diagnose_design` + legibility passes. OD: `lint-artifact.ts` blocks 7 cardinal sins by rule-id. **Adaptable.** |

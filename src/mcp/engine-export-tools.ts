@@ -9,7 +9,7 @@ import { jsPDF } from 'jspdf';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 
-import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
+import { exportAsTemplate, injectIntoTemplate } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover, generateId } from './engine/utils';
 import type { TemplateSlot } from '../schema/template';
@@ -23,7 +23,6 @@ import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './en
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
 
-import type { NextAction } from './types';
 import { assembleReportHTML } from '../export/html-assembler';
 
 import type { LoadedDataset } from '../report/data-loader';
@@ -627,67 +626,3 @@ export function saveAsComponent(args: { design_path: string; layer_ids: string[]
   const handover = buildHandover('COMPOSE', { design_path: dPath, project_path: args.project_path });
   return okResult(op, { component_id: componentId, component_path: componentPath, layers_extracted: extracted.length, instance_id: instance.id, progress, context, handover }, bak);
 }
-
-export function exportTemplate(args: { design_path: string; output_path?: string; project_path?: string }): ToolResult {
-  const op = 'export_template';
-  const progress: ProgressItem[] = [];
-  const dPath = resolveDesignPath(args.design_path, args.project_path);
-  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
-
-  const spec = readYAML<DesignSpec>(dPath);
-  progress.push(pOk('Loaded design', path.basename(dPath)));
-  const template = exportAsTemplate(spec);
-  const outPath = args.output_path ?? dPath.replace(/\.design\.yaml$/, '.template.yaml');
-  writeYAML(outPath, template);
-  progress.push(pOk(`Wrote template (${template.slots.length} slot(s))`, path.basename(outPath)));
-
-  const slots = template.slots.map(s => ({ id: s.id, path: s.path, type: s.type, hint: s.hint }));
-  const next_action: NextAction = { tool: 'inject_template', params: { template_path: outPath, slots: Object.fromEntries(slots.map(s => [s.id, ''])) }, remaining: 1, hint: 'Fill slot values then call inject_template.' };
-  const context = buildContext(op, `Exported template with ${slots.length} slot(s)`, [
-    { type: 'template', path: outPath, role: 'created' },
-  ]);
-  const handover = buildHandover('EXPORT', { template_path: outPath });
-  return okResult(op, { template_path: outPath, template_file: path.basename(outPath), slot_count: slots.length, slots, next_action, progress, context, handover });
-}
-
-export function injectTemplate(args: { template_path: string; slots: Record<string, unknown>; output_path?: string }): ToolResult {
-  const op = 'inject_template';
-  const progress: ProgressItem[] = [];
-  const tPath = resolveDesignPath(args.template_path);
-  if (!fs.existsSync(tPath)) return errResult(op, `Template not found: ${tPath}`, 'Check the template_path value.');
-
-  const template = readYAML<TemplateSpec>(tPath);
-  if (template._protocol !== 'template/v1') return errResult(op, 'File is not a template', 'Expected _protocol: template/v1', progress);
-  progress.push(pOk('Loaded template', path.basename(tPath)));
-
-  const design = injectIntoTemplate(template, args.slots);
-  design.meta.modified = new Date().toISOString().split('T')[0];
-  const outPath = args.output_path ?? tPath.replace(/\.template\.yaml$/, `.${Date.now().toString(36)}.design.yaml`);
-  writeYAML(outPath, design);
-  progress.push(pOk(`Injected ${Object.keys(args.slots).length} slot(s)`, path.basename(outPath)));
-
-  const next_action: NextAction = { tool: 'export_design', params: { design_path: outPath, format: 'svg' }, remaining: 1, hint: 'Export with export_design or open in editor.' };
-  const context = buildContext(op, `Injected ${Object.keys(args.slots).length} slot(s) → ${path.basename(outPath)}`, [
-    { type: 'design', path: outPath, role: 'created' },
-  ]);
-  const handover = buildHandover('EXPORT', { design_path: outPath });
-  return okResult(op, { design_path: outPath, design_file: path.basename(outPath), slots_injected: Object.keys(args.slots).length, next_action, progress, context, handover });
-}
-
-export function listTemplateSlots(args: { template_path: string }): ToolResult {
-  const op = 'list_template_slots';
-  const progress: ProgressItem[] = [];
-  const tPath = resolveDesignPath(args.template_path);
-  if (!fs.existsSync(tPath)) return errResult(op, `Template not found: ${tPath}`, 'Check the template_path value.');
-
-  const template = readYAML<TemplateSpec>(tPath);
-  if (template._protocol !== 'template/v1') return errResult(op, 'File is not a template', 'Expected _protocol: template/v1', progress);
-
-  const slots = listSlots(template);
-  progress.push(pOk(`Found ${slots.length} slot(s)`, path.basename(tPath)));
-  const context = buildContext(op, `Listed ${slots.length} slot(s) in template`);
-  const handover = buildHandover('EXPORT', { template_path: tPath });
-  return okResult(op, { slots, count: slots.length, progress, context, handover });
-}
-
-// ── Presentation MCP tools ───────────────────────────────────

@@ -18,7 +18,7 @@ talks JSON-RPC over HTTP with a bearer token.
 |---|---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture: engine core, MCP layering, data flows, render pipeline, transports/endpoints, build & test | …you want the whole-system mental model or plan to extend it |
 | [MCP.md](MCP.md) | Folio as an MCP engine: standard, stdio + HTTP transports, the 3 tiers, JSON-RPC wire protocol, the handover/`next_action` contract, shorthand & presets, token budgets, workflows | …you're driving Folio from an LLM |
-| [TOOLS.md](TOOLS.md) | Reference for all **49 MCP tools** — params, returns, examples | …you need a specific tool's signature |
+| [TOOLS.md](TOOLS.md) | Reference for all **50 MCP tools** — params, returns, examples | …you need a specific tool's signature |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | The 4 deploy modes, Docker + Caddy/TLS, the full endpoint table, every env var, auth (multi-token / JWT / OAuth), backups, ops | …you're hosting Folio or exposing endpoints |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Connect claude.ai, Claude Code, LM Studio, Hermes/OpenClaw/any harness; the editor live-refresh wiring | …you're plugging a specific client in |
 | [EDITOR.md](EDITOR.md) | The visual editor: canvas, panels, shortcuts, export, Monaco YAML, live SSE refresh, link/auth mechanics | …you (or your user) edit designs in the browser |
@@ -50,8 +50,8 @@ checklist → the [root README](../README.md) Development section.
 ## At a glance
 
 ```
-Transports   stdio (FOLIO_MCP_TIER=1|2|3|all)  ·  HTTP + SSE (:3333, full 49-tool union)
-Tools        49 across 3 tiers — Basic (15) · Design (10) · Export (24)
+Transports   stdio (FOLIO_MCP_TIER=1|2|3|all)  ·  HTTP + SSE (:3333, full 50-tool union)
+Tools        50 across 3 tiers — Basic (15) · Design (10) · Export (25)
 Auth         multi-token file / inline · single key · open · JWT editor links · OAuth2+PKCE
 Endpoints    POST /mcp · GET /mcp/sse · GET /editor/events · GET /health · /oauth/* · /.well-known/oauth-*
 Editor       :4173 (Bun static server) · live SSE refresh · Monaco YAML · SVG/PNG/PDF/HTML export

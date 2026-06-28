@@ -51,7 +51,7 @@ the Caddy TLS profile.
 4. On that page, **paste a Folio API key** — any value from `tokens.json` or your
    `FOLIO_API_KEY`. This is the principal the issued OAuth token will act as.
 5. claude.ai completes the PKCE exchange, stores the access + refresh tokens, runs
-   `tools/list`, and surfaces all 49 tools.
+   `tools/list`, and surfaces all 50 tools.
 
 ### 2.2 What happens under the hood
 
@@ -186,7 +186,7 @@ the audit log records which connector called which tool. Verify connectivity:
 ```bash
 curl -s https://folio.your-domain.tld/mcp \
   -H "Authorization: Bearer sk-folio-hermes-..." -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # → 49
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # → 50
 ```
 
 > **Custom harness checklist:** (1) `initialize` → expect `protocolVersion 2024-11-05`;
