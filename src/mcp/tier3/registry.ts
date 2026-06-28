@@ -131,12 +131,25 @@ export const TIER3_TOOLS: ToolDefinition[] = [
     },
   },
   {
-    name: 'inject_template',
-    description: 'Inject slot values into template to produce a .design.yaml.',
+    name: 'list_templates',
+    description: 'Browse the built-in template catalog (the same 432 templates shown in the editor Catalog). Returns slim metadata {id, name, type, tags, width, height, slots, themeRef}. Filter by search text or tag. Feed a returned id straight to list_template_slots / inject_template — no path needed.',
     inputSchema: {
       type: 'object',
       properties: {
-        template_path: { type: 'string', description: 'Path to .template.yaml' },
+        search: { type: 'string', description: 'Free-text match over id/name/tags' },
+        tag:    { type: 'string', description: 'Exact tag filter, e.g. "poster", "resume", "instagram"' },
+        limit:  { type: 'number', description: 'Max results (default 60, max 300)' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'inject_template',
+    description: 'Inject slot values into a template to produce a .design.yaml. template_path accepts a real .template.yaml path OR a built-in catalog id (e.g. "tmpl-resume-modern", from list_templates) — a built-in writes the design into the projects dir.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        template_path: { type: 'string', description: 'Path to a .template.yaml, OR a built-in catalog id / filename (see list_templates)' },
         slots:         { type: 'object', description: 'Map of slot_id → value', properties: {} },
         output_path:   { type: 'string', description: 'Output path for .design.yaml (auto if omitted)' },
       },
@@ -145,10 +158,10 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'list_template_slots',
-    description: 'List injectable slots in a .template.yaml with paths, types, hints.',
+    description: 'List injectable slots in a template with paths, types, hints. template_path accepts a real .template.yaml path OR a built-in catalog id (see list_templates).',
     inputSchema: {
       type: 'object',
-      properties: { template_path: { type: 'string', description: 'Path to .template.yaml' } },
+      properties: { template_path: { type: 'string', description: 'Path to a .template.yaml, OR a built-in catalog id / filename (see list_templates)' } },
       required: ['template_path'],
     },
   },

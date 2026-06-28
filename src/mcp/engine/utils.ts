@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import yaml from 'js-yaml';
 import type { ToolResult, ProgressItem, ContextField, Handover, SuggestedNext } from '../types';
+import { builtinTemplatesDir } from './builtin-templates';
 
 // §18 — reject paths outside the allowed roots. Three roots accepted:
 //   1. user home dir
@@ -23,6 +24,10 @@ export function resolvePath(filePath: string): string {
     resolved === root || resolved.startsWith(root + path.sep);
   if (under(home) || under(tmp)) return resolved;
   if (projects && under(path.resolve(projects))) return resolved;
+  // The app's own built-in template catalog (dist/public assets) is a
+  // legitimate read root so MCP can inject the templates the editor browses.
+  const builtin = builtinTemplatesDir();
+  if (builtin && under(path.resolve(builtin))) return resolved;
   throw new Error(`Path outside allowed directories: ${filePath}`);
 }
 

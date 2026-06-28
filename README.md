@@ -9,7 +9,7 @@ Full guides live in [`docs/`](docs/README.md):
 | Doc | Covers |
 |---|---|
 | [docs/MCP.md](docs/MCP.md) | Folio as an MCP engine — transports, tiers, protocol, workflows, shorthand |
-| [docs/TOOLS.md](docs/TOOLS.md) | Reference for all 49 MCP tools (params, returns, examples) |
+| [docs/TOOLS.md](docs/TOOLS.md) | Reference for all 50 MCP tools (params, returns, examples) |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy modes, Docker + Caddy/TLS, endpoints, env vars, auth, ops |
 | [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) | Connect claude.ai, Claude Code, LM Studio, Hermes/OpenClaw, the editor |
 | [docs/EDITOR.md](docs/EDITOR.md) | Visual editor — canvas, panels, shortcuts, export, live refresh |
@@ -18,7 +18,7 @@ Full guides live in [`docs/`](docs/README.md):
 
 ## Features
 
-- **49 MCP tools** across 3 tiers: Basic (15), Design (10), Export (24)
+- **50 MCP tools** across 3 tiers: Basic (15), Design (10), Export (25)
 - **CREATE → COMPOSE → SEAL → EXPORT** workflow for structured design generation
 - **Multiple transports** — stdio (local LM Studio / Claude Code) and spec-compliant **Streamable HTTP** (Claude Connectors, LM Studio remote, Hermes, OpenClaw, any MCP-over-HTTP client), with an optional tool-result SSE stream
 - **Multi-token auth** — issue named bearer tokens per connector; audit log records which token called which tool
@@ -133,7 +133,7 @@ The first launch clones the repo and installs dependencies (~1–2 minutes). Sub
 ```
 
 4. Wait for the green dot next to each server
-5. Start chatting — the model will see all 49 tools
+5. Start chatting — the model will see all 50 tools
 
 > For small models (≤32K context), use only `folio_basic` (15 tools). For 64K+ models, add `folio_design`. For 128K models, all three.
 
@@ -333,7 +333,7 @@ If a client errors on the `GET`/notification behavior it predates the current sp
 1. Go to **Settings → Connectors → Add custom connector**.
 2. URL: `https://folio.your-domain.tld/mcp`
 3. Auth: **Bearer token**, value from `tokens.json`.
-4. Save. Claude.ai will run `tools/list` and surface all 49 tools.
+4. Save. Claude.ai will run `tools/list` and surface all 50 tools.
 
 > The full claude.ai OAuth + PKCE walkthrough is in [docs/INTEGRATIONS.md §2](docs/INTEGRATIONS.md).
 
@@ -380,14 +380,14 @@ Swap the `url` + bearer for your own deployment:
 | Hosted (VPS + Caddy TLS) | `https://folio.your-domain.tld/mcp` | a value from `tokens.json`, or your `FOLIO_API_KEY` |
 | Local Docker (`docker compose up`) | `http://localhost:3333/mcp` | optional on localhost — drop `headers` entirely if no auth is set |
 
-One HTTP endpoint exposes **all 49 tools** (no tier split over HTTP). Designs the model creates land in the container's `/home/folio/projects` (host `./folio-projects`) and open in the bundled editor at the same host — `https://folio.your-domain.tld/` or `http://localhost:4173/`.
+One HTTP endpoint exposes **all 50 tools** (no tier split over HTTP). Designs the model creates land in the container's `/home/folio/projects` (host `./folio-projects`) and open in the bundled editor at the same host — `https://folio.your-domain.tld/` or `http://localhost:4173/`.
 
 > Smoke-test the endpoint before wiring it into LM Studio:
 > ```bash
 > curl -s https://folio.casava.space/mcp \
 >   -H "Authorization: Bearer <YOUR_FOLIO_TOKEN>" \
 >   -H "Content-Type: application/json" \
->   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'   # → 49
+>   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools | length'   # → 50
 > ```
 > If the curl prints `49` but LM Studio still won't connect, it's the client, not the server — use the stdio bridge below.
 
@@ -415,9 +415,9 @@ Older LM Studio builds (and some other clients) don't speak remote/HTTP MCP, or 
 
 #### Using Folio once it's connected
 
-Either config above lands you in the same place: a `folio` server exposing 49 tools. From a fresh LM Studio chat —
+Either config above lands you in the same place: a `folio` server exposing 50 tools. From a fresh LM Studio chat —
 
-1. **Turn the server on.** Saving `mcp.json` reloads MCP servers. In a chat, open the **integrations / plug** control next to the message box and enable **folio**. LM Studio runs `tools/list` and shows **49 tools** under it. A red/error badge means the connection failed — re-check the token + URL, or switch to the `mcp-remote` bridge above.
+1. **Turn the server on.** Saving `mcp.json` reloads MCP servers. In a chat, open the **integrations / plug** control next to the message box and enable **folio**. LM Studio runs `tools/list` and shows **50 tools** under it. A red/error badge means the connection failed — re-check the token + URL, or switch to the `mcp-remote` bridge above.
 2. **Use a tool-calling model.** MCP only works with models that support function calling (Qwen 2.5 / Qwen 3, Llama 3.x, Mistral-small, …). A model without tool support silently ignores the server. Give it generous context — these flows chain 4–6 tool calls.
 3. **Ask it to design — give a project path + a brief.** For example:
    > Create a project at `/home/folio/projects/launch`, then design a bold dark-tech poster announcing **"Q3 Launch — Oct 14"** with a red pill badge. Seal it and export as SVG.
@@ -451,7 +451,7 @@ curl -s https://folio.your-domain.tld/health | jq .
 curl -s https://folio.your-domain.tld/tokens/whoami \
      -H "Authorization: Bearer sk-folio-..." | jq .
 
-# 3. tools/list (returns all 49 tool definitions)
+# 3. tools/list (returns all 50 tool definitions)
 curl -s https://folio.your-domain.tld/mcp \
      -H "Authorization: Bearer sk-folio-..." \
      -H "Content-Type: application/json" \
@@ -943,7 +943,7 @@ Folio/
 ├── src/
 │   ├── mcp/
 │   │   ├── index.ts             ← stdio entry point; selects tier via FOLIO_MCP_TIER (1|2|3|all)
-│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker); serves all 49 tools
+│   │   ├── http-server.ts       ← HTTP + SSE transport (used by Docker); serves all 50 tools
 │   │   ├── handlers.ts          ← ALL_HANDLERS = TIER1∪TIER2∪TIER3 (single dispatch map)
 │   │   ├── auth.ts              ← token loader (file / inline / single-key / open)
 │   │   ├── jwt.ts               ← HS256 editor-link JWTs + master bearer

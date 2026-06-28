@@ -9,6 +9,7 @@ export { renameDesign, deleteDesign, moveDesign } from './engine/library-manage'
 export { createDesign, createProject, listDesigns, listThemes, applyTheme, duplicateDesign, resumeDesign, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign } from './engine-project-tools';
 export { addLayers, appendPage } from './engine-layer-tools';
 export { patchDesign, sealDesign, addLayer, updateLayer, removeLayer } from './engine-edit-tools';
-export { collectHrefRects, exportDesign, diagnoseDesign, renderPreview, alignLayers, batchCreate, saveAsComponent, exportTemplate, injectTemplate, listTemplateSlots } from './engine-export-tools';
+export { collectHrefRects, exportDesign, diagnoseDesign, renderPreview, alignLayers, batchCreate, saveAsComponent } from './engine-export-tools';
+export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from './engine-template-tools';
 export { createPresentation, exportPresentation, generateReport, bindData, exportReport, validateReportDesign } from './engine-report-tools';
 export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';

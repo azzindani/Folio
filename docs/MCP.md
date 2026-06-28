@@ -25,7 +25,7 @@ code is required* — if the client can talk MCP, it can drive Folio.
 ```
 ┌─────────────┐   MCP (JSON-RPC 2.0)   ┌──────────────────────────┐
 │   HOST/LLM  │  ───────────────────▶  │   Folio MCP server        │
-│ claude.ai   │   tools/list           │   49 tools, 3 tiers       │
+│ claude.ai   │   tools/list           │   50 tools, 3 tiers       │
 │ Claude Code │   tools/call           │   stdio  OR  HTTP+SSE     │
 │ LM Studio   │  ◀───────────────────  │   reads/writes .yaml      │
 │ any harness │   ToolResult + next     │   server-side SVG export  │
@@ -64,7 +64,7 @@ A long-lived HTTP server exposing JSON-RPC at `POST /mcp`, with optional SSE str
 
 - Entry point: `src/mcp/http-server.ts` (`bun run src/mcp/http-server.ts`).
 - Port: `FOLIO_PORT` (default `3333`).
-- Always serves the **full 49-tool union** (tiers are a stdio-only concept).
+- Always serves the **full 50-tool union** (tiers are a stdio-only concept).
 - Auth: Bearer token (or OAuth — see [DEPLOYMENT.md](DEPLOYMENT.md)).
 - Best for: claude.ai Custom Connectors, remote Claude Code, Hermes, OpenClaw, any
   MCP-over-HTTP agent, and the Docker deployment.
@@ -85,7 +85,7 @@ identical — only framing and auth differ.
 ## 3. TIERS (stdio only)
 
 Tools are grouped so a small-context model can register only what it can use. Over
-HTTP all 49 are always present; over stdio you choose.
+HTTP all 50 are always present; over stdio you choose.
 
 | Tier | `FOLIO_MCP_TIER` | Count | What it adds |
 |---|---|---|---|
@@ -125,7 +125,7 @@ Standard MCP JSON-RPC 2.0. No Folio-specific extensions on `initialize` / `tools
 
 ```jsonc
 → {"jsonrpc":"2.0","id":2,"method":"tools/list"}
-← {"jsonrpc":"2.0","id":2,"result":{"tools":[ /* 49 ToolDefinition objects */ ]}}
+← {"jsonrpc":"2.0","id":2,"result":{"tools":[ /* 50 ToolDefinition objects */ ]}}
 ```
 
 ### 4.3 Calling a tool
@@ -148,7 +148,7 @@ BASE=https://folio.example.com ; TOK=sk-folio-...
 curl -s $BASE/health | jq .                       # {"status":"ok",...}
 curl -s $BASE/tokens/whoami -H "Authorization: Bearer $TOK" | jq .
 curl -s $BASE/mcp -H "Authorization: Bearer $TOK" -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # 49
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # 50
 ```
 
 ---
