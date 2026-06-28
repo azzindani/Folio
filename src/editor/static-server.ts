@@ -31,6 +31,12 @@ import { createFolder, renameFolder, deleteFolder, type FolderResult } from '../
 import { collectLibrary } from '../mcp/engine/library';
 import { buildLibraryPage, renderThumb, thumbFileName, renderCardForDesign } from '../mcp/engine/library-gallery';
 import { loadCollections, allCollections } from '../mcp/engine/library-collections';
+// Front-door guards: IP allow-list ("only me, even if the link leaks, no login"),
+// per-IP rate limit (flood shield), and a concurrency cap on expensive ops
+// (thumbnail render / library scan) so the single-core container can't collapse.
+import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
+
+const GUARDS = loadEditorGuards();
 
 // Token validation — reuses the OAuth access-token store from the MCP
 // server. Compose runs UI + MCP in the same container (FOLIO_MODE=both)
@@ -200,9 +206,10 @@ if (!fs.existsSync(INDEX_HTML)) {
   process.exit(1);
 }
 
+interface BunServer { requestIP?: (req: Request) => { address: string } | null }
 declare const Bun: { serve: (opts: {
   port: number; hostname: string;
-  fetch: (req: Request) => Promise<Response> | Response;
+  fetch: (req: Request, server: BunServer) => Promise<Response> | Response;
 }) => unknown };
 
 function safeJoinProject(rel: string): string | null {
@@ -278,8 +285,39 @@ function libStop(): void { if (libTimer) { clearInterval(libTimer); libTimer = n
 Bun.serve({
   port: PORT,
   hostname: HOST,
-  async fetch(req) {
+  async fetch(req, server) {
     const url = new URL(req.url);
+    const ip = clientIp(req.headers.get('x-forwarded-for'), server?.requestIP?.(req)?.address);
+
+    // ── GET /__ip — report the IP we resolve the caller as, so the operator can
+    // populate FOLIO_ALLOW_IPS. Deliberately exempt from the allow-list + auth:
+    // it only ever reveals the caller's OWN address (which they already control).
+    if (url.pathname === '/__ip') {
+      return new Response(JSON.stringify({ ip, allow_list_active: GUARDS.allowListActive }), {
+        status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
+
+    // ── IP allow-list — the "only me, even if the link leaks, no login" gate.
+    // When FOLIO_ALLOW_IPS is set, a request from any other IP is refused BEFORE
+    // the short-link / auth / static handlers, so a leaked URL is inert
+    // off-network. Unset → open (unchanged default).
+    if (!ipAllowed(ip, GUARDS.allow)) {
+      process.stderr.write(`[serve-static] BLOCKED ip=${ip} ${req.method} ${url.pathname}\n`);
+      return new Response('Forbidden — this Folio instance is restricted to allow-listed addresses.', { status: 403, headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    // ── Per-IP rate limit — shed a flood cheaply (429 + Retry-After) so one
+    // client's burst can't monopolise the single-threaded server. Generous burst
+    // (a page load is many small assets); an SSE stream costs one token to open,
+    // then runs free.
+    if (GUARDS.limiter) {
+      const dec = GUARDS.limiter.take(ip, Date.now());
+      if (!dec.ok) {
+        const retryS = Math.max(1, Math.ceil(dec.retryAfterMs / 1000));
+        return new Response('Too Many Requests', { status: 429, headers: { 'Retry-After': String(retryS), 'Cache-Control': 'no-store' } });
+      }
+    }
 
     // ── Short editor link: /o/<code> → 302 to the full tokenized editor URL ──
     // The whole point: a small model copies this ~40-char link faithfully, then
@@ -414,7 +452,11 @@ Bun.serve({
       let png: Buffer | null = null;
       try { if (fs.existsSync(cachePath) && fs.statSync(cachePath).mtimeMs >= mtime) png = fs.readFileSync(cachePath); } catch { /* re-render below */ }
       if (!png) {
-        png = renderThumb(abs);
+        // Rasterizing blocks the single event loop; cap concurrent renders so a
+        // burst of cache-misses can't pile up. Cache hits above skip the gate.
+        if (!GUARDS.heavy.tryAcquire()) return new Response('Server busy — retry shortly', { status: 503, headers: { 'Retry-After': '1', 'Cache-Control': 'no-store' } });
+        try { png = renderThumb(abs); }
+        finally { GUARDS.heavy.release(); }
         if (png) { try { fs.mkdirSync(thumbsDir, { recursive: true }); fs.writeFileSync(cachePath, png); } catch { /* serve uncached */ } }
       }
       if (!png) return new Response('No preview', { status: 404 });
@@ -596,17 +638,22 @@ Bun.serve({
     // when new work lands. Auth already passed above (editor gate); the cookie
     // it set rides along on the thumb/stat fetches.
     if (url.pathname === '/library' || url.pathname === '/library.html') {
-      const { projects, totalProjects, totalDesigns } = collectLibrary({ sort: 'modified', includeLinks: true });
-      const collState = loadCollections(PROJECTS_DIR);
-      // ?partial=grid → just the card markup, for the SSE client's reconnect resync.
-      const gridOnly = url.searchParams.get('partial') === 'grid';
-      const html = buildLibraryPage({
-        projects, totalProjects, totalDesigns, root: PROJECTS_DIR,
-        cols: allCollections(collState), collState,
-        thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`,
-        live: true, gridOnly,
-      });
-      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+      // collectLibrary scans the whole projects tree — cap concurrent scans so a
+      // burst of /library hits can't pile up and peg the container.
+      if (!GUARDS.heavy.tryAcquire()) return new Response('Server busy — retry shortly', { status: 503, headers: { 'Retry-After': '1', 'Cache-Control': 'no-store' } });
+      try {
+        const { projects, totalProjects, totalDesigns } = collectLibrary({ sort: 'modified', includeLinks: true });
+        const collState = loadCollections(PROJECTS_DIR);
+        // ?partial=grid → just the card markup, for the SSE client's reconnect resync.
+        const gridOnly = url.searchParams.get('partial') === 'grid';
+        const html = buildLibraryPage({
+          projects, totalProjects, totalDesigns, root: PROJECTS_DIR,
+          cols: allCollections(collState), collState,
+          thumbHref: (_d, key) => `/__library/thumb?d=${encodeURIComponent(key)}`,
+          live: true, gridOnly,
+        });
+        return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+      } finally { GUARDS.heavy.release(); }
     }
 
     // Side-effect: when a ?token= is present on the initial editor load,
@@ -646,3 +693,5 @@ Bun.serve({
 });
 
 process.stderr.write(`[serve-static] serving ${DIST} on http://${HOST}:${PORT}\n`);
+process.stderr.write(`[serve-static] access guards: ip-allow-list=${GUARDS.allowListActive ? 'ON' : 'off'} · rate-limit=${GUARDS.limiter ? `${GUARDS.limiter.burst} burst/${GUARDS.limiter.perSec}/s per IP` : 'off'} · heavy-concurrency=${GUARDS.heavy.max || 'unlimited'}\n`);
+if (GUARDS.limiter) setInterval(() => GUARDS.limiter!.sweep(Date.now()), 60_000).unref();

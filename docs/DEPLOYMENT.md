@@ -149,6 +149,33 @@ Runtime guards: `/mcp` body ≤ `FOLIO_MAX_BODY_BYTES` (32 MiB), OAuth bodies �
 `editorBroadcast` skips files over `FOLIO_MAX_BROADCAST_BYTES` (16 MiB), dead SSE
 clients pruned on write. Steady state ≈ 230 MiB idle, ≈ 400 MiB during PNG export.
 
+### 5.3 Access hardening — the editor / library front-door
+
+The link any tool returns (`open_url`, `short_url`, `view_url`) is **self-authenticating**:
+possession = access, no login. That is convenient but means a *leaked* link is usable by
+anyone who sees it. Three opt-in guards on the editor server (`:4173` — the editor,
+the Design Library, and `/__project_files/*`) lock this down without adding a login.
+
+| Env var | Default | Effect |
+|---|---|---|
+| `FOLIO_ALLOW_IPS` | *(unset = open)* | Comma/space list of exact IPs **and IPv4 CIDRs** (e.g. `203.0.113.7, 10.0.0.0/8`). When set, every request from any other IP is refused with **403 before** the short-link / auth / static handlers — so a leaked link is **inert off-network**. This is the "only me, even if the link leaks, no login" control. |
+| `FOLIO_EDITOR_RATE_BURST` | `240` | Per-IP token-bucket size (a page load is many small assets, so it's generous). `0` disables. |
+| `FOLIO_EDITOR_RATE_PER_SEC` | `80` | Per-IP steady refill rate. Overflow → **429 + Retry-After**, so one client's flood can't monopolise the single-threaded server. |
+| `FOLIO_EDITOR_MAX_HEAVY` | `8` | Max concurrent **expensive** ops (thumbnail rasterize, full-library scan). Beyond it → **503 + Retry-After:1**, so a burst can't pile up and OOM/peg the container. `0` = unlimited. |
+
+Finding your IP to allow-list: `curl https://<host>/__ip` → `{"ip":"…","allow_list_active":…}`.
+`/__ip` is intentionally exempt from the allow-list (it reveals only the caller's own
+address). Blocked requests are logged: `[serve-static] BLOCKED ip=… GET /…`.
+
+The client IP is taken from the **last `X-Forwarded-For` hop** (the value the trusted
+edge proxy appends) so a client can't spoof an allow-listed address by injecting its own
+XFF. `/mcp` (`:3333`) has its own per-token+IP limiter (`FOLIO_RATE_BURST` / `FOLIO_RATE_PER_SEC`);
+leave the allow-list **off** there if a remote model (claude.ai, a hosted harness) must reach it.
+
+> The public domain in every link is **not hard-coded** — it comes from `FOLIO_EDITOR_URL`
+> + `FOLIO_MCP_PUBLIC_URL` (default `http://localhost:4173` / `:3333`). Change those two env
+> vars and every generated link follows; no code edit, no rebuild.
+
 ---
 
 ## 6. ENDPOINT REFERENCE (HTTP mode)
