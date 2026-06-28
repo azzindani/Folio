@@ -2192,7 +2192,9 @@ button:focus:not(:focus-visible) { outline: none; }
 @media (max-width: 767px) {
   #app {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--toolbar-height) 1fr var(--statusbar-height);
+    /* toolbar row is `auto` so it can grow to a second line on narrow phones
+       instead of clipping its controls */
+    grid-template-rows: auto 1fr var(--statusbar-height);
     grid-template-areas:
       "toolbar"
       "canvas"
@@ -2201,12 +2203,38 @@ button:focus:not(:focus-visible) { outline: none; }
 
   .activity-bar, .formula-bar, .r-activity-bar { display: none; }
 
-  /* Compact toolbar on mobile: hide secondary chrome, keep core controls */
-  .toolbar { padding: 0 8px; gap: 6px; }
+  /* Compact toolbar on mobile. The New/Add Page buttons used to push the
+     Visual/Payload toggle + undo/redo/Export cluster off the clipped right
+     edge. Fix: hide secondary chrome, collapse the icon buttons to icon-only,
+     and let the toolbar WRAP to a second row so every control stays visible —
+     nothing cropped, nothing hidden behind a non-obvious scroll. */
+  .toolbar {
+    padding: 4px 6px;
+    gap: 4px 6px;
+    min-width: 0;
+    height: auto;
+    min-height: var(--toolbar-height);
+    flex-wrap: wrap;
+    overflow: visible;
+    justify-content: flex-start;
+  }
   .toolbar .toolbar-project-name { display: none; }
   .toolbar .toolbar-left > span:nth-child(2) { display: none; } /* hide divider */
+  .toolbar .toolbar-left strong { display: none; } /* hide "Folio" wordmark, keep icon */
   .toolbar .toolbar-theme-select { display: none; }
-  .toolbar .mode-toggle button { padding: 6px 10px; }
+  .toolbar .mode-toggle button { padding: 5px 8px; font-size: 12px; }
+  .toolbar .btn, .toolbar .btn-sm { padding-left: 8px; padding-right: 8px; }
+  /* Icon-only: drop the labels on New / Add Page / Catalog to keep the toolbar
+     to a single row on most phones. */
+  .toolbar [data-action="new-design"] span,
+  .toolbar [data-action="add-page"] span,
+  .toolbar .toolbar-catalog-btn span { display: none; }
+  .toolbar .toolbar-center > span { display: none; } /* the New|Catalog divider */
+  /* Clusters + the centre's own buttons may wrap rather than overflow. */
+  .toolbar .toolbar-left,
+  .toolbar .toolbar-center,
+  .toolbar .toolbar-right { flex-wrap: wrap; min-width: 0; }
+  .toolbar .toolbar-center { gap: 4px 6px; }
 
   /* Status bar: only essential controls on mobile, no overflow */
   .status-bar { padding: 0 4px; gap: 0; }
