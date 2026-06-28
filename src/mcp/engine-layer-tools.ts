@@ -10,7 +10,7 @@ import { validateReport } from '../report/report-validator';
 
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 
-import { lintComposition, reviewComposition } from './engine/design-lint';
+import { lintComposition, reviewComposition, lockedHealNote } from './engine/design-lint';
 import { lintAiSlop } from './engine/ai-slop-lint';
 
 import { buildEditorLink } from './engine/editor-link';
@@ -460,14 +460,12 @@ export function addLayers(args: {
   const measured = setMeasuredTextHeights(activeLayers, spec.document.width);
   if (measured) progress.push(pInfo(`Measured ${measured} text height(s)`, 'set true wrapped height so overlap/overflow passes can see the box'));
 
-  // Cross-batch de-collide: the decollideHandPlaced(incoming) above sees ONLY the
-  // current batch, so a poster hand-placed across SEVERAL add_layers calls keeps
-  // the overlaps the per-batch pass couldn't see (suite-106: five numbered rows
-  // added in interleaved batches overprinted). Re-run on the MERGED set, but ONLY
-  // when the whole poster is hand-placed (no full-bleed preset group) so a preset's
-  // own composition is never reflowed.
+  // Cross-batch de-collide: the per-batch pass sees ONLY the current call, so a
+  // poster hand-placed across SEVERAL add_layers calls overprints (suite-106). Re-run
+  // on the MERGED set — but only when fully hand-placed, never inside a preset group.
+  let recollided = 0;
   if (!spec.pages && !activeLayers.some(l => isFullBleedContentPreset(l, spec.document.width, spec.document.height))) {
-    const recollided = decollideHandPlaced(activeLayers, spec.document.width, spec.document.height);
+    recollided = decollideHandPlaced(activeLayers, spec.document.width, spec.document.height);
     if (recollided) progress.push(pInfo(`Reflowed ${recollided} cross-batch overlapping layer(s)`, 'merged hand-placed text added across calls → no overprint'));
   }
 
@@ -477,15 +475,13 @@ export function addLayers(args: {
   const snappedOff = snapOffCanvasContent(activeLayers, spec.document.width, spec.document.height);
   if (snappedOff) progress.push(pInfo(`Snapped ${snappedOff} off-canvas layer(s) inside`, 'content placed past the canvas edge would have rendered nowhere'));
 
-  // Give a hand-placed composition flush against the top edge (a model that dropped
-  // its first text at y:0) a real top margin so the headline doesn't clip / read
-  // cramped — a pure downward shift, only when there is room below.
+  // Give a composition flush against the top edge (first text at y:0) a real top
+  // margin so the headline doesn't clip — a downward shift, only when there's room.
   const topMargined = ensureTopMargin(activeLayers, spec.document.width, spec.document.height);
   if (topMargined) progress.push(pInfo(`Added a top margin (${topMargined} layer(s) shifted)`, 'content flush against the canvas top edge was nudged down for breathing room'));
 
-  // Surface a hand-placed title the model buried under a full-canvas preset's
-  // background (lift it above the wash; re-seat it up top if the preset's header
-  // is empty) — otherwise the poster's title renders invisible.
+  // Surface a hand-placed title buried under a full-canvas preset's background
+  // (lift it above the wash; re-seat up top if the header's empty) — else invisible.
   const promoted = promoteCoveredTitle(activeLayers, spec.document.width, spec.document.height);
   if (promoted) progress.push(pInfo(`Surfaced ${promoted} covered title(s)`, 'a title hidden under a full-canvas preset was lifted into view'));
 
@@ -543,7 +539,10 @@ export function addLayers(args: {
   const review = activeLayers.length >= 6
     ? [...reviewComposition(activeLayers, spec.document.width, spec.document.height), ...lintAiSlop(activeLayers)]
     : [];
-  const notes = [...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint, ...review];
+  // Heal touched hand-placed layers → lead with the locked-group opt-out (lets a
+  // strong model keep deliberate art-direction; surfaces only when heal fired).
+  const heal = lockedHealNote([[relit, 're-lit'], [recollided, 'reflowed'], [snappedOff, 'snapped-in'], [recentered, 're-centered'], [spread, 'un-stacked'], [droppedMotifs, 'dropped-motif']], spec.document.width, spec.document.height);
+  const notes = [...(heal ? [heal] : []), ...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint, ...review];
   for (const n of notes) progress.push(pInfo('Layer note', n));
   // Report cross-reference diagnostics (charts→datasets, buttons→modals, …) so
   // the LLM building the report sees broken refs immediately, not at export.
@@ -676,7 +675,8 @@ export function appendPage(args: {
   writeYAML(dPath, spec);
   progress.push(pOk(`Appended page "${pageId}"`, `total: ${spec.pages.length} page(s)`));
 
-  const notes = [...(pageShorthand.length ? diagnoseShorthandKeys(pageShorthand) : []), ...diagnoseLayers(layers)];
+  const pageHealNote = lockedHealNote([[pf.relit, 're-lit'], [pf.reflowed, 'reflowed']], spec.document.width, spec.document.height);
+  const notes = [...(pageHealNote ? [pageHealNote] : []), ...(pageShorthand.length ? diagnoseShorthandKeys(pageShorthand) : []), ...diagnoseLayers(layers)];
   for (const n of notes) progress.push(pInfo('Layer note', n));
 
   let next_action: NextAction | undefined;

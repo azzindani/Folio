@@ -239,3 +239,27 @@ export function reviewComposition(layers: Layer[], canvasW: number, _canvasH: nu
 
   return notes.slice(0, 4);
 }
+
+/**
+ * Discoverability nudge for a model composing by hand. The auto-heal passes
+ * (re-light / reflow / re-center / snap-in / un-stack / drop-motif) treat loose
+ * layers as mistakes to rescue — which WRECKS a deliberate composition (a faint
+ * ghost numeral, intentional overlap, off-canvas bleed). The opt-out — a locked
+ * group — already exists, but a model only learns it by reading the guide. So the
+ * MOMENT heal modifies hand-placed layers, tell it how to keep its EXACT intent.
+ * Surfaces ONLY when healing fired, and heal NEVER touches a locked group — so it
+ * can't nag a model that already locked its layout. The highest-leverage way a
+ * strong model finds `locked` with zero deep-diving. `parts` = [count, label] per
+ * heal pass that ran.
+ */
+export function lockedHealNote(parts: Array<[number, string]>, w: number, h: number): string | null {
+  const fired = parts.filter(([n]) => n > 0);
+  const total = fired.reduce((s, [n]) => s + n, 0);
+  if (total === 0) return null;
+  const detail = fired.map(([n, label]) => `${label} ${n}`).join(', ');
+  return `🔒 Auto-healed ${total} hand-placed layer(s) (${detail}). If that was DELIBERATE art-direction `
+    + `(ghost/low-contrast text, intentional overlap, off-canvas bleed, a rotated stamp, precise asymmetry), `
+    + `wrap your layers in ONE locked group {type:"group",locked:true,pos:[0,0,${w},${h}],layers:[…]} `
+    + `(or set locked:true on the layer) and re-send — the engine then preserves your EXACT geometry + colors. `
+    + `render_preview to verify. Loose layers stay auto-healed (best for quick/typical work).`;
+}

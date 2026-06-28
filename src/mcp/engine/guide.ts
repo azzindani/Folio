@@ -82,8 +82,12 @@ z = stacking order (higher = front)
    a stamp, a knockout on a band, a rotated element), wrap the primitives in ONE
    group {type:"group", x:0, y:0, width:W, height:H, layers:[…]} OR set locked:true
    on the layer/group — then the engine preserves your layout untouched. Tilt any
-   layer with rotate:<deg>. (Load the \`layers\` guide section for the full
-   frontier-composition toolkit: rotation, locked dashboards, colored data viz.)
+   layer with rotate:<deg>. If you compose LOOSE and the engine rescues something
+   you meant, add_layers' \`notes\` flags it ("🔒 Auto-healed N…") and points right
+   back here — then wrap+lock and re-send. You can SEE the result: render_preview
+   returns an inline PNG, so compose → look → lock what's deliberate → iterate.
+   (Load the \`layers\` guide section for the full frontier-composition toolkit:
+   rotation, locked dashboards, colored data viz.)
 
 🎨 DESIGN LIKE A HUMAN — not an AI template. The #1 tell of AI-generated design
    is a dark-navy canvas + blue/purple GRADIENT + one glowing accent + centered
