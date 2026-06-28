@@ -51,7 +51,7 @@ the Caddy TLS profile.
 4. On that page, **paste a Folio API key** — any value from `tokens.json` or your
    `FOLIO_API_KEY`. This is the principal the issued OAuth token will act as.
 5. claude.ai completes the PKCE exchange, stores the access + refresh tokens, runs
-   `tools/list`, and surfaces all 50 tools.
+   `tools/list`, and surfaces all 21 tools.
 
 ### 2.2 What happens under the hood
 
@@ -186,7 +186,7 @@ the audit log records which connector called which tool. Verify connectivity:
 ```bash
 curl -s https://folio.your-domain.tld/mcp \
   -H "Authorization: Bearer sk-folio-hermes-..." -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # → 50
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq '.result.tools|length'   # → 21
 ```
 
 > **Custom harness checklist:** (1) `initialize` → expect `protocolVersion 2024-11-05`;
@@ -229,9 +229,9 @@ in one tab, keep the editor open in another, and watch it update.
 
 ### 6.3 Reports & presentations
 
-`export_report` returns **`view_url`** — give the user *that* (the final interactive
+`report` (op:export) returns **`view_url`** — give the user *that* (the final interactive
 HTML), not the editor link; the canvas is an authoring view, not a faithful preview of
-the export. `export_presentation` writes a self-contained HTML presenter. Full editor
+the export. `presentation` (op:export) writes a self-contained HTML presenter. Full editor
 guide: [EDITOR.md](EDITOR.md).
 
 ---
@@ -240,9 +240,9 @@ guide: [EDITOR.md](EDITOR.md).
 
 Two MCP tools generate standalone SSE helpers (separate from the main server):
 
-- **`setup_remote_presenter`** → an SSE clicker server + client JS snippet + curl
+- **`presentation` (op:remote)** → an SSE clicker server + client JS snippet + curl
   commands to drive slide navigation over HTTP (phone-as-remote). Default port `3737`.
-- **`setup_collab`** → an SSE file-watch server with `/patch` + `/events` for multi-user
+- **`presentation` (op:collab)** → an SSE file-watch server with `/patch` + `/events` for multi-user
   design sync. Default port `3738`.
 
 Both return ready-to-run code; they don't auto-start inside the main container.

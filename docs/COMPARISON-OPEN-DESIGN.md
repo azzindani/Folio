@@ -18,7 +18,7 @@ the stack**:
 |---|---|---|
 | **What it is** | A **render engine + spec format**. YAML → SVG/HTML/PDF/animation. The `.design.yaml` is the product. | A **design workspace + knowledge base**. Native desktop app (macOS/Win) that drives *coding agents* to emit real HTML/CSS/PPTX/MP4 artifacts in a sandboxed iframe. |
 | **Output medium** | SVG-in-HTML, compiled from a typed spec by Folio's own renderer. | Real HTML/CSS/JS artifacts written by the agent, previewed in an iframe. |
-| **Core asset** | The **engine** (parser, shorthand, token resolver, spatial finalize, 50 MCP tools). | The **content library** (151 brand `DESIGN.md` systems, 13 `craft/` rulebooks, 155 skills, 109 templates) + a model router (AMR). |
+| **Core asset** | The **engine** (parser, shorthand, token resolver, spatial finalize, 21 MCP tools). | The **content library** (151 brand `DESIGN.md` systems, 13 `craft/` rulebooks, 155 skills, 109 templates) + a model router (AMR). |
 | **Strength** | Deterministic spatial correctness, one render path, rich export matrix, self-hosted MCP. | Curated design *knowledge* + anti-AI-slop linting + brand contracts the agent reads. |
 
 **The takeaway:** Open Design's **engine/app layer does not port** to Folio (different
@@ -46,7 +46,7 @@ high-value, low-risk, and license-compatible.
 | Decks / presentations | ✅ | ✅ | Folio `presentation-assembler` (PDF); OD Deck → **PPTX**/PDF. OD has PPTX, Folio doesn't. |
 | PDF export (vector text) | ✅ | ✅ | Folio bundled-TTF vector PDF; OD via Chromium. |
 | Visual editor (drag/resize/panels) | ✅ | 🟡 | Folio has a full Monaco+canvas editor; OD is iframe-preview + comment queue, not a layer editor. **Folio stronger.** |
-| MCP server (stdio + HTTP, auth) | ✅ | ✅ | Both. Folio: 50 tools, JWT/OAuth. OD: `od mcp install <agent>`. |
+| MCP server (stdio + HTTP, auth) | ✅ | ✅ | Both. Folio: 21 tools, JWT/OAuth. OD: `od mcp install <agent>`. |
 | Brand **design-system** library | 🟡 | ✅ | Folio: 17 token themes. OD: **151 prose+token `DESIGN.md`** contracts. **OD far ahead.** |
 | **Craft knowledge** rulebooks (color/type/a11y/anti-slop) | 🟡 | ✅ | Folio: scattered in MCP steering + `craft/` design skills marketplace. OD: 13 dense, opt-in, partly **auto-linted**. **OD ahead.** |
 | **Anti-AI-slop linter** (auto-checked) | 🟡 | ✅ | Folio: `diagnose_design` + legibility passes. OD: `lint-artifact.ts` blocks 7 cardinal sins by rule-id. **Adaptable.** |
@@ -118,7 +118,7 @@ per role), spacing, components, section rhythm. Folio's themes (`src/themes/buil
 
 **How for Folio:** two tiers.
 1. *Cheap win:* extend Folio's theme schema with optional `atmosphere`, `type_ladder`,
-   and `section_rhythm` fields, and let `apply_theme`/`get_engine_guide` surface them so
+   and `section_rhythm` fields, and let `themes` (op:apply)/`get_engine_guide` surface them so
    the model inherits a real ladder instead of guessing sizes. This directly attacks the
    "samey / centered / one-size headline" failures logged in `project-folio-frontier-freehand`.
 2. *Bigger:* import a curated subset of OD's `DESIGN.md` systems (Apache-2.0, attribute)
@@ -227,7 +227,7 @@ dependency, deployable via `docker cp src` (no editor rebuild).
 | **A2** AI-slop lint pass | ✅ Shipped | `src/mcp/engine/ai-slop-lint.ts` — `lintAiSlop()` flags indigo accent, two-stop trust gradient, emoji-as-icon, invented metrics, filler copy, all-caps-no-tracking, accent overuse. Folded into `diagnose_design` findings (`code:"ai_slop"`) + `add_layers` review notes. |
 | **A4** three-axis model | ✅ Folded into A1 | The `craft` index frames preset(shape) × theme(brand) × craft(universal). |
 | **A5** 80/20 soul + identifiability test | ✅ Folded into A1 | In the `craft` index; quotable in the guide. |
-| **A3** richer theme format | ✅ Schema + exemplars | `ThemeSpec` gained optional `atmosphere` / `type_ladder` (`TypeLadderRole[]`) / `section_rhythm` (non-breaking, non-rendering). Populated for `dark-tech`, `editorial-cream`, `swiss-international`. `apply_theme` now returns a `brand` block + a "Brand voice" progress note so the model inherits the voice + an authored type ladder. |
+| **A3** richer theme format | ✅ Schema + exemplars | `ThemeSpec` gained optional `atmosphere` / `type_ladder` (`TypeLadderRole[]`) / `section_rhythm` (non-breaking, non-rendering). Populated for `dark-tech`, `editorial-cream`, `swiss-international`. `themes` (op:apply) now returns a `brand` block + a "Brand voice" progress note so the model inherits the voice + an authored type ladder. |
 | A3 — `DESIGN.md` bulk import | ✅ Shipped | `tools/import-design-systems.mjs` parses OD `DESIGN.md` (palette→roles with contrast guards, font families → bundled substitutes, the type-ladder table, atmosphere, rhythm) → `src/themes/brand-pack.ts` (12 "inspired-by" themes: apple, linear, notion, stripe, vercel, airbnb, spotify, github, figma, slack, nike, mono), merged into `BUILTIN_THEMES`. Re-runnable. |
 | **A6** PPTX export | ✅ Shipped | `src/export/pptx-export.ts` — a **dependency-free** PPTX writer (tiny STORED-zip + OOXML), image-per-slide via the existing resvg path. Wired as `export_design` `format:"pptx"`. Deploys via `docker cp` (no new dep / image rebuild). Validated with `python-pptx` + `unzip -t`. Native editable-text export remains a future enhancement. |
 | **A7** artifact vocabulary | ⏳ Deferred | Low value; revisit when the library/report split is next touched. |

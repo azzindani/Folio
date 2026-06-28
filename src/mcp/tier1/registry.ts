@@ -1,4 +1,6 @@
-// §7 Tier 1 — Basic (15 tools): project management, navigation, tasks, library, theming
+// §7 Tier 1 — Foundation (6 tools): guidance, project, design/library management,
+// theming, multi-page tasks. (Consolidated surface — manage_design/themes/tasks
+// fold the old per-op tools onto an `op` discriminator; capability unchanged.)
 import type { ToolDefinition } from '../types';
 
 export const TIER1_TOOLS: ToolDefinition[] = [
@@ -20,7 +22,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'enrich_brief',
-    description: 'START HERE when the prompt is SHORT or vague (e.g. "a poster about remote work" or "a 6-slide carousel on X"). Turns a one-line idea into a RICH content plan so the output is dense, not sparse. For a single design: infers the best preset + a full block/field outline (the richness floor). For a CAROUSEL/deck/slides (auto-detected, or pass type:"carousel"): returns output_type:"carousel" + page_count + a per-page plan (pages:[{role,label,preset,hints}]) following a cohesive cover→content→data→takeaway arc with ONE shared bg_style/palette. Either way it picks a topic-matched bg_style + palette + colors and — for factual topics — the exact web-research queries to run FIRST so figures are real, not invented. Returns needs_research + research_queries + an instruction; follow it (research if asked) then create_design/create_task + add_layers/append_page.',
+    description: 'START HERE when the prompt is SHORT or vague (e.g. "a poster about remote work" or "a 6-slide carousel on X"). Turns a one-line idea into a RICH content plan so the output is dense, not sparse. For a single design: infers the best preset + a full block/field outline (the richness floor). For a CAROUSEL/deck/slides (auto-detected, or pass type:"carousel"): returns output_type:"carousel" + page_count + a per-page plan (pages:[{role,label,preset,hints}]) following a cohesive cover→content→data→takeaway arc with ONE shared bg_style/palette. Either way it picks a topic-matched bg_style + palette + colors and — for factual topics — the exact web-research queries to run FIRST so figures are real, not invented. Returns needs_research + research_queries + an instruction; follow it (research if asked) then create_design/tasks(op:create) + add_layers/append_page.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -29,15 +31,6 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         variant: { type: 'number', description: 'Optional — OMIT for a normal single-design request (the default: one design only). Use ONLY when the user EXPLICITLY asks for N OPTIONS/variations of the same topic: call once per option with variant:0,1,2,… — each returns a DISTINCT art-direction (palette + typography treatment + background geometry) for the same content. 0 = the topic-apt default. Deterministic, so variant 3 always looks the same.' },
       },
       required: ['prompt'],
-    },
-  },
-  {
-    name: 'list_tasks',
-    description: 'List task files in a project with progress status.',
-    inputSchema: {
-      type: 'object',
-      properties: { project_path: { type: 'string', description: 'Path to project directory' } },
-      required: ['project_path'],
     },
   },
   {
@@ -55,129 +48,59 @@ export const TIER1_TOOLS: ToolDefinition[] = [
     },
   },
   {
-    name: 'list_designs',
-    description: 'List designs in a project. Returns max 40 items.',
-    inputSchema: {
-      type: 'object',
-      properties: { project_path: { type: 'string', description: 'Path to project directory' } },
-      required: ['project_path'],
-    },
-  },
-  {
-    name: 'browse_library',
-    description: 'Browse the WHOLE design library — every project and design stored in the projects dir, not just one project (list_designs is per-project). Your file-manager view of the collection: each design\'s name, type, canvas size, page count and last-modified, grouped by project, newest first. Use it to find a design across projects, see everything you\'ve made, or pick something to reopen. Filter with `search` (matches project or design name), `type` (poster/carousel/report/…) or `project`; sort by modified/name/designs. Pass include_links:true to get an open-in-editor URL per design. Read-only.',
+    name: 'manage_design',
+    description: 'Find, inspect and manage designs + the whole library — one tool, pick `op`:\n• list — designs in ONE project (req: project_path).\n• browse — the WHOLE library across every project (file-manager view: name, type, canvas, pages, modified, newest first; filter search/type/project, sort modified|name|designs, include_links for editor URLs). Read-only.\n• inspect — read a design\'s structure (layer IDs/types/z-order/positions) cheaply to verify state or find a layer_id (req: design_path; page_id for one carousel page). Read-only.\n• rename — change a design\'s display name; the file path is left unchanged so editor links never break (req: design_path, new_name).\n• duplicate — copy a design with a new name + UUID (req: design_path, new_name).\n• move — move a design\'s file into another project, target must exist (req: design_path, target_project).\n• delete — move a design to the project .trash/ (recoverable, never a hard delete) (req: design_path).\n• resume — read a carousel\'s generation state to continue appending (req: design_path).\n• gallery — build a self-contained library.html file-manager with thumbnails + search (opt: output_path, max_thumbnails, search, type).',
     inputSchema: {
       type: 'object',
       properties: {
-        search:        { type: 'string', description: 'Substring filter on project OR design name' },
-        type:          { type: 'string', description: 'Only designs of this type (poster/carousel/report/presentation/motion)' },
-        project:       { type: 'string', description: 'Only projects whose name contains this' },
-        sort:          { type: 'string', enum: ['modified', 'name', 'designs'], description: 'Sort projects (default: modified, newest first)' },
-        limit:         { type: 'number', description: 'Max projects to return (default 40, max 200)' },
-        designs_per_project: { type: 'number', description: 'Max designs shown per project (default 8, max 40)' },
-        include_links: { type: 'boolean', description: 'Add an open-in-editor URL per design (default false)' },
+        op:            { type: 'string', enum: ['list', 'browse', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'gallery'], description: 'Which management action to run.' },
+        project_path:  { type: 'string', description: 'Project dir / bare name. Required for op:list; for others, resolves a relative design_path.' },
+        design_path:   { type: 'string', description: 'Path to the .design.yaml (op: inspect/rename/duplicate/move/delete/resume).' },
+        new_name:      { type: 'string', description: 'op:rename/duplicate — the new display name.' },
+        target_project: { type: 'string', description: 'op:move — destination project (bare name or path; must exist).' },
+        page_id:       { type: 'string', description: 'op:inspect — a carousel page id (omit to list pages).' },
+        search:        { type: 'string', description: 'op:browse/gallery — substring filter on project OR design name.' },
+        type:          { type: 'string', description: 'op:browse/gallery — only designs of this type (poster/carousel/report/presentation/motion).' },
+        project:       { type: 'string', description: 'op:browse — only projects whose name contains this.' },
+        sort:          { type: 'string', enum: ['modified', 'name', 'designs'], description: 'op:browse — sort order (default modified, newest first).' },
+        limit:         { type: 'number', description: 'op:browse — max projects (default 40, max 200).' },
+        designs_per_project: { type: 'number', description: 'op:browse — max designs shown per project (default 8, max 40).' },
+        include_links: { type: 'boolean', description: 'op:browse — add an open-in-editor URL per design (default false).' },
+        output_path:   { type: 'string', description: 'op:gallery — where to write the gallery HTML (default <projects>/library.html).' },
+        max_thumbnails: { type: 'number', description: 'op:gallery — max NEW thumbnails to render this call (default 120; cached are free).' },
       },
+      required: ['op'],
     },
   },
   {
-    name: 'rename_design',
-    description: 'Rename a design\'s display name (its meta.name, what the library shows). The FILE path is left unchanged on purpose so existing editor links never break. Library-management op — pair with browse_library.',
+    name: 'themes',
+    description: 'Theme management for a project — pick `op`:\n• list — themes registered in project.yaml + available builtins (req: project_path).\n• apply — set the active theme; updates project.yaml default_theme and lazily seeds a builtin if needed (req: project_path, theme_id).\nNote: apply sets the PROJECT default; it does NOT recolor an existing design\'s baked-in hexes — use patch_design {path:"recolor"} for that.',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to the .design.yaml' },
-        new_name:     { type: 'string', description: 'New display name' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
+        op:           { type: 'string', enum: ['list', 'apply'], description: 'list or apply.' },
+        project_path: { type: 'string', description: 'Path to project directory.' },
+        theme_id:     { type: 'string', description: 'op:apply — theme ID to activate.' },
       },
-      required: ['design_path', 'new_name'],
+      required: ['op', 'project_path'],
     },
   },
   {
-    name: 'delete_design',
-    description: 'Delete a design by moving it to the project\'s .trash/ (RECOVERABLE — never a hard delete; restore by moving it back out). Library-management op.',
+    name: 'tasks',
+    description: 'Multi-page carousel/deck task planning — pick `op`:\n• create — plan a multi-page design + scaffold it; returns the first append_page baton (req: project_path, task_name, brief, pages:[{label,hints}]).\n• list — task files in a project with progress status (req: project_path).\n• resume — read a task\'s state and get the exact next tool call, e.g. after a context reset (req: task_path).',
     inputSchema: {
       type: 'object',
       properties: {
-        design_path:  { type: 'string', description: 'Path to the .design.yaml to delete' },
-        project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
-      },
-      required: ['design_path'],
-    },
-  },
-  {
-    name: 'move_design',
-    description: 'Move a design\'s file into another project (name collisions get a suffix). Returns the new path + an editor link. Library-management op — the target project must already exist (create_project).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:    { type: 'string', description: 'Path to the .design.yaml to move' },
-        target_project: { type: 'string', description: 'Destination project (bare name like "my-project" or a path)' },
-        project_path:   { type: 'string', description: 'Source project dir — enables relative design_path' },
-      },
-      required: ['design_path', 'target_project'],
-    },
-  },
-  {
-    name: 'list_themes',
-    description: 'List available themes registered in project.yaml.',
-    inputSchema: {
-      type: 'object',
-      properties: { project_path: { type: 'string', description: 'Path to project directory' } },
-      required: ['project_path'],
-    },
-  },
-  {
-    name: 'apply_theme',
-    description: 'Set active theme for a project. Updates project.yaml default_theme.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        project_path: { type: 'string', description: 'Path to project directory' },
-        theme_id:     { type: 'string', description: 'Theme ID to activate' },
-      },
-      required: ['project_path', 'theme_id'],
-    },
-  },
-  {
-    name: 'duplicate_design',
-    description: 'Copy a design with a new name and UUID. Registers in project.yaml.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to source .design.yaml' },
-        new_name:     { type: 'string', description: 'Name for the duplicated design' },
-        project_path: { type: 'string', description: 'Project directory (for registry update)' },
-      },
-      required: ['design_path', 'new_name'],
-    },
-  },
-  {
-    name: 'resume_design',
-    description: 'Read carousel generation state to continue appending pages.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        design_path:  { type: 'string', description: 'Path to .design.yaml file' },
-        project_path: { type: 'string', description: 'Project dir (optional — enables relative paths)' },
-      },
-      required: ['design_path'],
-    },
-  },
-  {
-    name: 'create_task',
-    description: 'Plan multi-page carousel + scaffold. Returns first append_page baton.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        project_path: { type: 'string', description: 'Path to project directory' },
-        task_name:    { type: 'string', description: 'Task / design name' },
-        brief:        { type: 'string', description: 'One-sentence description of the full design' },
-        theme:        { type: 'string', description: 'Theme ID (default: editorial-cream — flat/art-directed; avoid dark glowy themes)' },
-        width:        { type: 'number', description: 'Canvas width px', default: 1080 },
-        height:       { type: 'number', description: 'Canvas height px', default: 1080 },
+        op:           { type: 'string', enum: ['create', 'list', 'resume'], description: 'create, list or resume.' },
+        project_path: { type: 'string', description: 'Path to project directory (op:create/list).' },
+        task_name:    { type: 'string', description: 'op:create — task / design name.' },
+        brief:        { type: 'string', description: 'op:create — one-sentence description of the full design.' },
+        theme:        { type: 'string', description: 'op:create — theme ID (default editorial-cream; flat/art-directed).' },
+        width:        { type: 'number', description: 'op:create — canvas width px (default 1080).', default: 1080 },
+        height:       { type: 'number', description: 'op:create — canvas height px (default 1080).', default: 1080 },
         pages: {
           type: 'object',
-          description: 'Page plan: [{label:"Cover",hints:"bold headline"}]',
+          description: 'op:create — page plan: [{label:"Cover",hints:"bold headline"}].',
           items: {
             type: 'object',
             properties: {
@@ -188,17 +111,9 @@ export const TIER1_TOOLS: ToolDefinition[] = [
             required: ['label'],
           },
         },
+        task_path:    { type: 'string', description: 'op:resume — path to .task.yaml (from op:create).' },
       },
-      required: ['project_path', 'task_name', 'brief', 'pages'],
-    },
-  },
-  {
-    name: 'resume_task',
-    description: 'Read task state and get exact next tool call. Use after context reset.',
-    inputSchema: {
-      type: 'object',
-      properties: { task_path: { type: 'string', description: 'Path to .task.yaml (from create_task)' } },
-      required: ['task_path'],
+      required: ['op'],
     },
   },
 ];
