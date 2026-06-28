@@ -63,7 +63,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'templates',
-    description: 'Built-in template catalog + reusable components — pick `op`:\n• list — browse the 432 built-in catalog templates (same as the editor Catalog); slim metadata {id,name,type,tags,width,height,slots,themeRef}; filter search/tag/limit. Feed a returned id straight to op:slots / op:inject.\n• slots — list injectable slots (paths/types/hints) of a template (req: template_path = a real .template.yaml path OR a built-in catalog id).\n• inject — fill slot values → a new .design.yaml (req: template_path, slots map; a built-in writes into the projects dir).\n• export — turn a sealed design into a reusable .template.yaml skeleton with named slots (req: design_path).\n• save_component — extract layers into a .component.yaml + replace them with an instance (req: design_path, layer_ids, component_name, project_path).\n• batch — generate N designs from one template + an array of slot objects (req: project_path, template_id, slots_array).',
+    description: 'Built-in template catalog + reusable components — pick `op`:\n• list — browse the 432 built-in catalog templates (same as the editor Catalog); slim metadata {id,name,type,tags,width,height,slots,themeRef}; filter search/tag/limit. Feed a returned id straight to op:slots / op:inject.\n• slots — list injectable slots (paths/types/hints) of a template (req: template_path = a real .template.yaml path OR a built-in catalog id).\n• inject — fill slot values → a new .design.yaml (req: template_path, slots map; a built-in writes into the projects dir).\n• export — turn a sealed design into a reusable .template.yaml skeleton with named slots (req: design_path).\n• save_component — extract layers into a .component.yaml + replace them with an instance (req: design_path, layer_ids, component_name, project_path).\n• batch — generate N designs from one template + an array of slot objects (req: project_path, template_id = a built-in catalog id OR a project .template.yaml id OR a design name to clone, slots_array).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -78,7 +78,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         project_path:   { type: 'string', description: 'Project dir (op:export/save_component/batch).' },
         layer_ids:      { type: 'array', description: 'op:save_component — layer IDs to extract.', items: { type: 'string' } },
         component_name: { type: 'string', description: 'op:save_component — name for the new component.' },
-        template_id:    { type: 'string', description: 'op:batch — template id (or a design name in the project to clone).' },
+        template_id:    { type: 'string', description: 'op:batch — a built-in catalog id, a project .template.yaml id, or a design name in the project to clone.' },
         slots_array:    { type: 'array', description: 'op:batch — one slot object per design.', items: { type: 'object' } },
       },
       required: ['op'],

@@ -144,7 +144,7 @@ Built-in template catalog (432 templates) + reusable components. **Req:** `op`.
 - `inject` (req template_path, slots) — fill slots → a new .design.yaml.
 - `export` (req design_path) — turn a design into a `.template.yaml` skeleton.
 - `save_component` (req design_path, layer_ids, component_name, project_path) — extract a `.component.yaml`.
-- `batch` (req project_path, template_id, slots_array) — N designs from one template.
+- `batch` (req project_path, template_id, slots_array) — N designs from one template. `template_id` accepts a **built-in catalog id** (same as `inject`), a project `.template.yaml` id, or a design name to clone.
 
 ### `report`  ·  *op-multiplexed*
 Interactive data-report subsystem (type:report). **Req:** `op`.

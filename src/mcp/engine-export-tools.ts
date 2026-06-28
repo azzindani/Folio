@@ -18,6 +18,7 @@ import { resvgFontOption, unbundledFonts } from './engine/fonts';
 
 import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink } from './engine/editor-link';
+import { resolveBuiltinTemplate } from './engine/builtin-templates';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
@@ -511,9 +512,12 @@ function matchSlot(key: string, slots: TemplateSlot[], used: Set<string>): Templ
     ?? null;
 }
 
-/** Resolve a batch template_id to a TemplateSpec: an explicit `.template.yaml`,
- *  else a project design (exported to a template so its dimensions, theme and
- *  layout carry into every variant). */
+/** Resolve a batch template_id to a TemplateSpec, in precedence order:
+ *  1. an explicit project `.template.yaml`,
+ *  2. a project design (exported to a template so its dimensions, theme and
+ *     layout carry into every variant),
+ *  3. a built-in catalog id (the SAME assets `templates {op:inject}` / `{op:slots}`
+ *     resolve) — so a catalog id usable for inject also works for batch. */
 function resolveBatchTemplate(projectPath: string, templateId: string): TemplateSpec | null {
   const tpl = resolveDesignPath(`templates/${templateId}.template.yaml`, projectPath);
   if (fs.existsSync(tpl)) {
@@ -524,6 +528,11 @@ function resolveBatchTemplate(projectPath: string, templateId: string): Template
   for (const id of [templateId, slug]) {
     const dp = resolveDesignPath(`designs/${id}.design.yaml`, projectPath);
     if (fs.existsSync(dp)) return exportAsTemplate(readYAML<DesignSpec>(dp));
+  }
+  const builtin = resolveBuiltinTemplate(templateId);
+  if (builtin && fs.existsSync(builtin)) {
+    const t = readYAML<TemplateSpec>(builtin);
+    if (t._protocol === 'template/v1') return t;
   }
   return null;
 }
@@ -554,7 +563,7 @@ export function batchCreate(args: { project_path: string; template_id: string; s
   const template = resolveBatchTemplate(args.project_path, args.template_id);
   if (!template) {
     return errResult(op, `Template not found: ${args.template_id}`,
-      'template_id must be a .template.yaml id (see export_template) OR a design name in this project to clone. Run create_project + a source design first.', progress);
+      'template_id must be a built-in catalog id (see templates {op:list}), a project .template.yaml id (see templates {op:export}), OR a design name in this project to clone.', progress);
   }
   const slots = template.slots ?? [];
 
