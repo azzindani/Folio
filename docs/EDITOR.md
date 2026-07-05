@@ -14,7 +14,7 @@
 |---|---|---|
 | Local dev (HMR) | `http://localhost:5173` | `npm run dev` (Vite) |
 | Local Docker | `http://localhost:4173` | `docker compose up -d` |
-| VPS behind Caddy | `https://your-domain/` | TLS profile + Basic Auth |
+| VPS behind Caddy | `https://your-domain/` | TLS profile + access-token gate (no Basic Auth) |
 
 In Docker the editor is served by `src/editor/static-server.ts` (a Bun static server),
 **not** `vite preview` — it serves the built `dist/` and exposes project files at
@@ -46,7 +46,9 @@ header, a `?token=` query param, or a `folio_session` cookie. A valid `?token=`
 (a stateless 30-day JWT when `FOLIO_JWT_SECRET` is configured — see
 [DEPLOYMENT.md §7.2](DEPLOYMENT.md)) is **promoted to a `folio_session` cookie**, so a
 pasted link authenticates the whole tab without re-challenging on every asset fetch.
-Behind Caddy, the `?token` path bypasses the editor's HTTP Basic Auth (Jupyter-style).
+The editor is gated solely by the access token / `folio_session` cookie (Jupyter-style) —
+there is no HTTP Basic Auth in front of it; an unauthenticated hit gets a plain
+"access token required" page, not a browser username/password popup.
 
 ### 2.2 Saving
 

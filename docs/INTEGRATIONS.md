@@ -210,9 +210,9 @@ edits paint in real time.
 https://folio.your-domain.tld/?file=<path>&mcp_url=<base>&token=<jwt>
 ```
 
-- The `?token=` bypasses the editor's Basic Auth, the static server validates it (a
-  stateless 30-day JWT when `FOLIO_JWT_SECRET` is set), and sets a `folio_session`
-  cookie so subsequent same-tab navigation just works.
+- The `?token=` is validated by the static server (a stateless 30-day JWT when
+  `FOLIO_JWT_SECRET` is set) — the sole editor gate, no Basic Auth in front — and sets
+  a `folio_session` cookie so subsequent same-tab navigation just works.
 - The editor opens an `EventSource` on `<mcp_url>/editor/events`.
 
 ### 6.2 The refresh loop
