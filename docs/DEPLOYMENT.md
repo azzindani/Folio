@@ -224,7 +224,7 @@ leave the allow-list **off** there if a remote model (claude.ai, a hosted harnes
 
 | Path | Auth | Purpose |
 |---|---|---|
-| `/` and assets | basicauth or `?token=` / cookie | The visual editor app |
+| `/` and assets | `?token=` / Bearer / `folio_session` cookie (app is sole gate) | The visual editor app |
 | `/__project_files/*` | Bearer / `?token=` / `folio_session` cookie | Fetch a `.design.yaml` for the editor |
 
 ### 6.3 Caddy routing (TLS profile)
@@ -235,13 +235,16 @@ leave the allow-list **off** there if a remote model (claude.ai, a hosted harnes
 /mcp · /mcp/* · /tokens/* · /health   → folio:3333   [Bearer; /health public]
 /.well-known/oauth-* · /oauth/*        → folio:3333   [public — connector discovery]
 /editor/events?token=*                 → folio:3333   [token-validated by MCP]
-/editor/events                         → folio:3333   [basicauth]
+/editor/events                         → folio:3333   [token / cookie — plain 401, no popup]
 /__project_files/*                     → folio:4173   [token or cookie]
 /files · /files/*                      → /srv/files   [basicauth — download exports]
-everything else (/, assets)            → folio:4173   [basicauth, or ?token→cookie]
+everything else (/, assets)            → folio:4173   [?token→cookie; app is the sole gate, no basicauth]
 ```
 
-`/.well-known/*` and `/oauth/*` are deliberately **not** behind basicauth so claude.ai
+The editor is **not** behind Basic Auth — `folio:4173` gates it with the access
+token / `folio_session` cookie and serves its own "access token required" page
+otherwise (no browser username/password popup). Basic Auth remains only on the
+`/files` raw-download browser. `/.well-known/*` and `/oauth/*` are deliberately **not** behind basicauth so claude.ai
 can discover and complete the OAuth dance unauthenticated. `X-Forwarded-Proto`/`-Host`
 are forwarded so the engine builds correct absolute URLs.
 

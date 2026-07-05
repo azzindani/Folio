@@ -101,9 +101,10 @@ services:
     environment:
       FOLIO_DOMAIN:     ${FOLIO_DOMAIN:?set FOLIO_DOMAIN in .env (e.g. folio.example.com)}
       FOLIO_ACME_EMAIL: ${FOLIO_ACME_EMAIL:?set FOLIO_ACME_EMAIL in .env for Let's Encrypt registration}
-      # HTTP Basic Auth in front of the editor route. Required by the
-      # Caddyfile — empty values make Caddy fail to start. Remove the
-      # basicauth blocks in caddy/Caddyfile to disable entirely.
+      # HTTP Basic Auth for the /files raw-download browser ONLY. The editor
+      # itself is NOT behind Basic Auth — it is gated by the access token /
+      # folio_session cookie inside the app (folio:4173). Leave blank if you
+      # don't expose /files; the Caddyfile keeps the site parseable either way.
       FOLIO_BASIC_USER: ${FOLIO_BASIC_USER:-}
       FOLIO_BASIC_HASH: ${FOLIO_BASIC_HASH:-}
     ports:
