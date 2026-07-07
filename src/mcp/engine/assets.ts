@@ -101,7 +101,15 @@ function sampleRasterColors(buf: Buffer, ext: string): Pick<AssetMeta, 'dominant
   try {
     // Lazy require keeps module load cheap for callers that never ingest.
     const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
-    const mime = Object.entries(MIME_EXT).find(([, e]) => e === ext)?.[0] ?? 'image/png';
+    // Sniff the BYTES first — a PNG hand-copied as .jpg would fail a
+    // mime-hinted decode and silently lose its colors (live-audit finding).
+    const sniffed =
+      buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 ? 'image/png'
+      : buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xd8 ? 'image/jpeg'
+      : buf.length >= 3 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 ? 'image/gif'
+      : buf.length >= 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP' ? 'image/webp'
+      : undefined;
+    const mime = sniffed ?? Object.entries(MIME_EXT).find(([, e]) => e === ext)?.[0] ?? 'image/png';
     const uri = `data:${mime};base64,${buf.toString('base64')}`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SAMPLE}" height="${SAMPLE}">` +
       `<image width="${SAMPLE}" height="${SAMPLE}" preserveAspectRatio="xMidYMid slice" href="${uri}"/></svg>`;

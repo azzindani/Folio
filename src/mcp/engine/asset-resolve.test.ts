@@ -84,6 +84,14 @@ describe('resolveImageAssets', () => {
     expect(pageImg.src).toMatch(/^data:/);
   });
 
+  it('sniffs content over a lying extension (PNG bytes named .jpg)', () => {
+    fs.writeFileSync(path.join(proj, 'assets/images/liar.jpg'), Buffer.from(PNG_B64, 'base64'));
+    const spec = makeSpec([img('a', 'assets/images/liar.jpg')]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect(notes).toEqual([]);
+    expect((spec.layers![0] as Layer & { src: string }).src).toMatch(/^data:image\/png;base64,/);
+  });
+
   it('keeps the historical base-dir search order', () => {
     expect(assetBaseDirs('/p/designs/d.design.yaml', '/p')).toEqual([
       '/p/designs', '/p', '/p', '/p/assets',
