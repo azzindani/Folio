@@ -157,8 +157,12 @@ export function diagnoseLayers(layers: Layer[]): string[] {
         if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a blank fallback circle. Use a real name, e.g.: ${SUGGESTED_ICONS}.`);
       } else if (l.type === 'image') {
         const src = (l as Layer & { src?: string }).src ?? '';
-        if (src && !/^(https?:|data:|file:|\/\/)/i.test(src)) {
-          notes.push(`image "${l.id}": src "${src}" is a local file — it renders only if that asset exists in the project, else a placeholder frame shows. Use an https:// URL, or replace the photo with a fill/gradient/shape/icon you can render directly.`);
+        if (src && /^(https?:|\/\/)/i.test(src)) {
+          // Remote URLs render in the browser editor but CANNOT be fetched by
+          // server-side PNG/PDF export — the #1 looks-right-then-blank trap.
+          notes.push(`image "${l.id}": remote URL srcs show in the EDITOR only — PNG/PDF exports render a placeholder instead. Store the file first: manage_design {op:"asset_add", project_path, name:"photo.jpg", data:"data:image/…;base64,…"} then use src:"assets/images/photo.jpg".`);
+        } else if (src && !/^(data:|file:)/i.test(src) && !/^assets\//.test(src)) {
+          notes.push(`image "${l.id}": src "${src}" is a local file — it renders only if that file exists in the project. Prefer project assets: manage_design {op:"asset_list"} shows what you can use as src:"assets/images/…"; {op:"asset_add"} stores new ones.`);
         }
       } else if (l.type === 'text') {
         const v = (l as Layer & { content?: { value?: string } }).content?.value;

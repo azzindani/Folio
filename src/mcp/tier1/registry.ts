@@ -12,9 +12,9 @@ export const TIER1_TOOLS: ToolDefinition[] = [
       properties: {
         section: {
           type: 'string',
-          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference',
+          enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference', 'assets',
             'craft', 'anti_slop', 'color', 'type', 'ux_laws', 'a11y'],
-          description: 'Guide section to load (default: quick_ref). craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks.',
+          description: 'Guide section to load (default: quick_ref). assets = photos/logos/fonts in designs (asset_add/asset_list workflow). craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks.',
           default: 'quick_ref',
         },
       },
@@ -49,11 +49,11 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'manage_design',
-    description: 'Find, inspect and manage designs + the whole library — one tool, pick `op`:\n• list — designs in ONE project (req: project_path).\n• browse — the WHOLE library across every project (file-manager view: name, type, canvas, pages, modified, newest first; filter search/type/project, sort modified|name|designs, include_links for editor URLs). Read-only.\n• inspect — read a design\'s structure (layer IDs/types/z-order/positions) cheaply to verify state or find a layer_id (req: design_path; page_id for one carousel page). Read-only.\n• rename — change a design\'s display name; the file path is left unchanged so editor links never break (req: design_path, new_name).\n• duplicate — copy a design with a new name + UUID (req: design_path, new_name).\n• move — move a design\'s file into another project, target must exist (req: design_path, target_project).\n• delete — move a design to the project .trash/ (recoverable, never a hard delete) (req: design_path).\n• resume — read a carousel\'s generation state to continue appending (req: design_path).\n• gallery — build a self-contained library.html file-manager with thumbnails + search (opt: output_path, max_thumbnails, search, type).',
+    description: 'Find, inspect and manage designs, ASSETS + the whole library — one tool, pick `op`:\n• list — designs in ONE project (req: project_path).\n• browse — the WHOLE library across every project (file-manager view: name, type, canvas, pages, modified, newest first; filter search/type/project, sort modified|name|designs, include_links for editor URLs). Read-only.\n• inspect — read a design\'s structure (layer IDs/types/z-order/positions) cheaply to verify state or find a layer_id (req: design_path; page_id for one carousel page). Read-only.\n• rename — change a design\'s display name; the file path is left unchanged so editor links never break (req: design_path, new_name).\n• duplicate — copy a design with a new name + UUID (req: design_path, new_name).\n• move — move a design\'s file into another project, target must exist (req: design_path, target_project).\n• delete — move a design to the project .trash/ (recoverable, never a hard delete) (req: design_path).\n• resume — read a carousel\'s generation state to continue appending (req: design_path).\n• gallery — build a self-contained library.html file-manager with thumbnails + search (opt: output_path, max_thumbnails, search, type).\n• asset_add — store a photo/logo/font in the project\'s assets/ and get back its dims + dominant colors + a ready-to-place image-layer stub (req: project_path, name w/ extension, data = data: URI OR source_path; opt: kind:"icons", alt). Then reference it as src:"assets/images/<name>" — never inline base64 into a design.\n• asset_list — every asset in the project with width/height, dominant_colors, luminance (dark|light|busy → busy needs a text scrim) and alt, so you can place images you cannot see (req: project_path; opt: search, kind, limit).\n• asset_delete — soft-delete an asset to .trash (req: project_path, asset_path like "assets/images/x.jpg").',
     inputSchema: {
       type: 'object',
       properties: {
-        op:            { type: 'string', enum: ['list', 'browse', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'gallery'], description: 'Which management action to run.' },
+        op:            { type: 'string', enum: ['list', 'browse', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'gallery', 'asset_add', 'asset_list', 'asset_delete'], description: 'Which management action to run.' },
         project_path:  { type: 'string', description: 'Project dir / bare name. Required for op:list; for others, resolves a relative design_path.' },
         design_path:   { type: 'string', description: 'Path to the .design.yaml (op: inspect/rename/duplicate/move/delete/resume).' },
         new_name:      { type: 'string', description: 'op:rename/duplicate — the new display name.' },
@@ -68,6 +68,12 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         include_links: { type: 'boolean', description: 'op:browse — add an open-in-editor URL per design (default false).' },
         output_path:   { type: 'string', description: 'op:gallery — where to write the gallery HTML (default <projects>/library.html).' },
         max_thumbnails: { type: 'number', description: 'op:gallery — max NEW thumbnails to render this call (default 120; cached are free).' },
+        name:          { type: 'string', description: 'op:asset_add — filename WITH extension (png/jpg/webp/gif/avif/svg/ttf/otf/woff2), e.g. "team.jpg".' },
+        data:          { type: 'string', description: 'op:asset_add — the file as a data: URI (data:image/png;base64,…). Alternative: source_path.' },
+        source_path:   { type: 'string', description: 'op:asset_add — copy an existing file already under the projects dir instead of passing data.' },
+        kind:          { type: 'string', enum: ['images', 'icons', 'fonts'], description: 'op:asset_add/asset_list — folder override/filter (auto-detected from the extension by default).' },
+        alt:           { type: 'string', description: 'op:asset_add — short description of what the image shows (a vision-less model\'s only eyes — always provide it).' },
+        asset_path:    { type: 'string', description: 'op:asset_delete — project-relative path like "assets/images/team.jpg" (from asset_list).' },
       },
       required: ['op'],
     },

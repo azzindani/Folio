@@ -168,7 +168,7 @@ export function createProject(args: { name: string; path?: string; theme?: strin
         // already exists — to improve a design, render_preview to SEE it, then
         // patch_design / update_layer to edit it in place. Don't keep creating
         // near-duplicate projects (list_designs shows what's already here).
-        hint: 'This project already exists — do NOT create more projects to "improve" a design. Call render_preview to SEE the current design, then edit it in place with patch_design or update_layer. Recreating from scratch loses your work and rarely fixes anything you can\'t see.',
+        hint: 'This project already exists — do NOT create more projects to "improve" a design. Call render_preview to SEE the current design, then edit it in place with patch_design or edit_layer {op:"update"}. Recreating from scratch loses your work and rarely fixes anything you can\'t see.',
         progress, context, handover,
       });
     }
@@ -500,12 +500,31 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
   const limit = LIMITS.layer_rows;
   const constrained = isConstrained();
 
+  // Recurse into groups — LOCKED groups included (their children were
+  // invisible here before, which dead-ended edit_layer on any child id).
+  // Children carry `parent` and inherit `locked` so the model knows why an
+  // update may refuse and what to unlock.
   const summarise = (layers: Layer[] = []) => {
-    if (constrained && layers.length > limit) {
-      progress.push(pWarn('Constrained mode: returning metadata only', `${layers.length} layers total`));
+    type Row = { id: string; type: string; z?: number; x: number; y: number; w: unknown; h: unknown; parent?: string; locked?: boolean };
+    const rows: Row[] = [];
+    const walk = (ls: Layer[], parent?: string, parentLocked?: boolean): void => {
+      for (const l of ls) {
+        const locked = Boolean((l as { locked?: unknown }).locked) || Boolean(parentLocked);
+        rows.push({
+          id: l.id, type: l.type, z: l.z, x: l.x ?? 0, y: l.y ?? 0,
+          w: l.width ?? 0, h: (l as unknown as Record<string, unknown>)['height'] ?? 0,
+          ...(parent ? { parent } : {}), ...(locked ? { locked: true } : {}),
+        });
+        const children = (l as Layer & { layers?: Layer[] }).layers;
+        if (l.type === 'group' && Array.isArray(children)) walk(children, l.id, locked);
+      }
+    };
+    walk(layers);
+    if (constrained && rows.length > limit) {
+      progress.push(pWarn('Constrained mode: returning metadata only', `${rows.length} layers total`));
       return [];
     }
-    return layers.slice(0, limit).map(l => ({ id: l.id, type: l.type, z: l.z, x: l.x ?? 0, y: l.y ?? 0, w: l.width ?? 0, h: (l as unknown as Record<string, unknown>)['height'] ?? 0 }));
+    return rows.slice(0, limit);
   };
 
   if (args.page_id && spec.pages) {

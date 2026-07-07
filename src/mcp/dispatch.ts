@@ -36,8 +36,11 @@ export function dispatchManageDesign(a: Args): ToolResult {
     case 'resume':    return engine.resumeDesign(a as Parameters<typeof engine.resumeDesign>[0]);
     case 'browse':    return engine.browseLibrary(a as Parameters<typeof engine.browseLibrary>[0]);
     case 'gallery':   return engine.exportLibraryGallery(a as Parameters<typeof engine.exportLibraryGallery>[0]);
+    case 'asset_add':    return engine.assetAdd(a as Parameters<typeof engine.assetAdd>[0]);
+    case 'asset_list':   return engine.assetList(a as Parameters<typeof engine.assetList>[0]);
+    case 'asset_delete': return engine.assetDelete(a as Parameters<typeof engine.assetDelete>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_list', 'asset_delete']);
   }
 }
 

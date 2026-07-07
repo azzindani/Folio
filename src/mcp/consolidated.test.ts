@@ -57,6 +57,18 @@ describe('op dispatch', () => {
     expect(r.success).toBe(true);
   });
 
+  it('manage_design asset ops route end-to-end (add → list → delete)', () => {
+    const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+    const add = ALL_HANDLERS['manage_design']({ op: 'asset_add', project_path: projectPath, name: 'dot.png', data: PNG, alt: 'dot' }) as ToolResult & { asset: { path: string } };
+    expect(add.success).toBe(true);
+    expect(add.asset.path).toBe('assets/images/dot.png');
+    const list = ALL_HANDLERS['manage_design']({ op: 'asset_list', project_path: projectPath }) as ToolResult & { assets: { path: string }[] };
+    expect(list.success).toBe(true);
+    expect(list.assets.map(a => a.path)).toContain('assets/images/dot.png');
+    const del = ALL_HANDLERS['manage_design']({ op: 'asset_delete', project_path: projectPath, asset_path: 'assets/images/dot.png' });
+    expect(del.success).toBe(true);
+  });
+
   it('an unknown op returns a helpful error listing valid ops', () => {
     const r = ALL_HANDLERS['edit_layer']({ op: 'frobnicate', design_path: 'x' });
     expect(r.success).toBe(false);

@@ -355,15 +355,32 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const spec = readYAML<DesignSpec>(dPath);
   let found = false;
+  let lockedBy: string | null = null; // nearest locked ANCESTOR of the target, if any
 
-  const patch = (layers: Layer[]): Layer[] =>
-    layers.map(l => { if (l.id === args.layer_id) { found = true; return { ...l, ...args.props } as Layer; } return l; });
+  // Recurse into groups so children of a group (every MCP poster is ONE
+  // group) are editable — matching what the editor can already do. A child
+  // under a LOCKED group is reported, not silently skipped: unlocking the
+  // GROUP itself stays possible because the group has no locked ancestor.
+  const patch = (layers: Layer[], lockedAncestor?: string): Layer[] =>
+    layers.map(l => {
+      if (l.id === args.layer_id) {
+        found = true;
+        if (lockedAncestor) { lockedBy = lockedAncestor; return l; }
+        return { ...l, ...args.props } as Layer;
+      }
+      const children = (l as Layer & { layers?: Layer[] }).layers;
+      if (l.type === 'group' && Array.isArray(children)) {
+        const nextLock = lockedAncestor ?? ((l as { locked?: unknown }).locked ? l.id : undefined);
+        return { ...l, layers: patch(children, nextLock) } as Layer;
+      }
+      return l;
+    });
 
   // page_id scopes the edit to ONE carousel page — without it the same id on
   // sibling pages would all be patched (carousel groups share ids).
   if (args.page_id) {
     const page = spec.pages?.find(p => p.id === args.page_id);
-    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use inspect_design to list page IDs.', progress);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use manage_design {op:"inspect"} to list page IDs.', progress);
     if (page.layers) page.layers = patch(page.layers);
   } else {
     const hits = pagesWithLayer(spec, args.layer_id);
@@ -371,7 +388,11 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
     if (spec.layers) spec.layers = patch(spec.layers);
     if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = patch(page.layers); }
   }
-  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use inspect_design to find layer IDs.', progress);
+  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use manage_design {op:"inspect"} to find layer IDs — group children are listed with a parent field.', progress);
+  if (lockedBy) {
+    return errResult(op, `Layer "${args.layer_id}" is inside the LOCKED group "${lockedBy}" — not modified.`,
+      `Unlock first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}, apply your edit, then re-lock with props:{locked:true}. (locked also exempts the group from engine heal passes.)`, progress);
+  }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
@@ -399,7 +420,7 @@ export function removeLayer(args: { design_path: string; layer_id: string; page_
   // silently emptied 3 pages when one page's group was deleted by id.
   if (args.page_id) {
     const page = spec.pages?.find(p => p.id === args.page_id);
-    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use inspect_design to list page IDs.', progress);
+    if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use manage_design {op:"inspect"} to list page IDs.', progress);
     if (page.layers) page.layers = drop(page.layers);
   } else {
     const hits = pagesWithLayer(spec, args.layer_id);
@@ -407,7 +428,7 @@ export function removeLayer(args: { design_path: string; layer_id: string; page_
     if (spec.layers) spec.layers = drop(spec.layers);
     if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = drop(page.layers); }
   }
-  if (removed === 0) return errResult(op, `Layer not found: ${args.layer_id}`, args.page_id ? `No layer "${args.layer_id}" on page "${args.page_id}".` : 'Use inspect_design to find layer IDs.', progress);
+  if (removed === 0) return errResult(op, `Layer not found: ${args.layer_id}`, args.page_id ? `No layer "${args.layer_id}" on page "${args.page_id}".` : 'Use manage_design {op:"inspect"} to find layer IDs.', progress);
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);

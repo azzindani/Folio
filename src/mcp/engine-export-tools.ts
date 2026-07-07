@@ -21,6 +21,7 @@ import { buildEditorLink } from './engine/editor-link';
 import { resolveBuiltinTemplate } from './engine/builtin-templates';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
+import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
 
@@ -28,29 +29,9 @@ import { assembleReportHTML } from '../export/html-assembler';
 
 import type { LoadedDataset } from '../report/data-loader';
 
-export function flagMissingImages(spec: DesignSpec, baseDirs: string[]): string[] {
-  const notes: string[] = [];
-  const dirs = baseDirs.filter(Boolean);
-  const visit = (layers: Layer[] | undefined): void => {
-    for (const l of layers ?? []) {
-      if (l.type === 'image') {
-        const img = l as Layer & { src?: string };
-        const src = img.src;
-        if (typeof src === 'string' && src.trim() && !/^(https?:|data:|file:|\/\/)/i.test(src)) {
-          const found = dirs.some(d => { try { return fs.existsSync(path.resolve(d, src)); } catch { return false; } });
-          if (!found) {
-            img.src = '';
-            notes.push(`image "${l.id}": asset "${src}" not found — exported as a placeholder frame. Use a real file path, an https:// URL, or swap it for a fill/shape/icon.`);
-          }
-        }
-      }
-      if (l.type === 'group') visit((l as Layer & { layers?: Layer[] }).layers);
-    }
-  };
-  visit(spec.layers);
-  for (const p of spec.pages ?? []) visit((p as Page & { layers?: Layer[] }).layers);
-  return notes;
-}
+// Image/asset resolution lives in engine/asset-resolve.ts — ONE resolver for
+// render_preview and export_design (embed file-backed srcs, placeholder +
+// note everything unrenderable; no silent blanks).
 
 // Load the project's saved components into a registry so `type:component`
 // layers resolve during export (the renderer needs componentRegistry; without
@@ -104,11 +85,8 @@ export function exportDesign(args: { design_path: string; format: string; output
   const criticals = validateDesignSpec(spec).filter(e => e.severity === 'error');
   if (criticals.length > 0) return errResult(op, `Validation errors: ${criticals.map(e => e.message).join('; ')}`, 'Fix errors then retry.', progress);
 
-  const assetNotes = flagMissingImages(spec, [
-    path.dirname(dPath), path.dirname(path.dirname(dPath)),
-    ...(args.project_path ? [args.project_path, path.join(args.project_path, 'assets')] : []),
-  ]);
-  for (const n of assetNotes) progress.push(pInfo('Missing asset', n));
+  const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
+  for (const n of assetNotes) progress.push(pInfo('Image note', n));
 
   // Load project components so `type:component` layers resolve in the export.
   const componentRegistry = loadComponentRegistry(args.project_path ?? path.dirname(path.dirname(dPath)));
@@ -384,6 +362,9 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
     findings = run(spec.layers ?? []);
   }
 
+  // Image audit — unresolvable srcs (would blank in exports) + distortion/upscale.
+  findings.push(...auditImageAssets(spec, dPath, args.project_path));
+
   const errors = findings.filter(f => f.severity === 'error');
   const warnings = findings.filter(f => f.severity === 'warning');
   const suggestions = findings.filter(f => f.severity === 'suggestion');
@@ -413,6 +394,8 @@ export function renderPreview(args: { design_path: string; project_path?: string
   const componentRegistry = loadComponentRegistry(args.project_path ?? path.dirname(path.dirname(dPath)));
   const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
   try {
+    // Same asset resolution as export_design — preview must show the truth.
+    const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
     const renderSpec = (spec.pages?.length)
       ? ({ ...spec, layers: (args.page_id ? spec.pages.find(p => p.id === args.page_id) : spec.pages[0])?.layers ?? [], pages: undefined } as DesignSpec)
       : spec;
@@ -422,7 +405,10 @@ export function renderPreview(args: { design_path: string; project_path?: string
       fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(),
     }).render().asPng());
     progress.push(pOk('Rendered preview', `${png.length} bytes @ ${scale}×`));
-    const notes = missing.length ? [`Fonts not bundled for raster (fell back; render correctly in the editor): ${missing.join(', ')}`] : [];
+    const notes = [
+      ...assetNotes,
+      ...(missing.length ? [`Fonts not bundled for raster (fell back; render correctly in the editor): ${missing.join(', ')}`] : []),
+    ];
     const context = buildContext(op, `Preview of "${spec.meta.name}"`);
     const _attachments = [{ type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' }];
     return okResult(op, { status: 'ok', bytes: png.length, scale, ...(notes.length ? { notes } : {}), progress, context, _attachments });
@@ -606,7 +592,7 @@ export function saveAsComponent(args: { design_path: string; layer_ids: string[]
 
   const spec = readYAML<DesignSpec>(dPath);
   const extracted = (spec.layers ?? []).filter(l => args.layer_ids.includes(l.id));
-  if (extracted.length === 0) return errResult(op, `No matching layers for IDs: ${args.layer_ids.join(', ')}`, 'Use inspect_design to get layer IDs.', progress);
+  if (extracted.length === 0) return errResult(op, `No matching layers for IDs: ${args.layer_ids.join(', ')}`, 'Use manage_design {op:"inspect"} to get layer IDs.', progress);
 
   const componentId = args.component_name.toLowerCase().replace(/\s+/g, '-');
   const componentPath = path.join(args.project_path, `components/${componentId}.component.yaml`);
