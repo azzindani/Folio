@@ -111,7 +111,48 @@ A blind model must be able to use a photo it cannot see:
   upscaled beyond native size, text over busy image without scrim, missing
   asset src.
 
-## 8. What is NOT in scope for assets v1
+## 8. Hard invariants (live-audit additions, 2026-07-07)
+
+Empirical testing (`gap-audit/image-src-matrix` on the live deployment)
+found silent failure everywhere; these are now non-negotiable invariants:
+
+### 8.1 NO SILENT BLANKS — anywhere, ever
+Any `src` the renderer cannot turn into pixels **must** produce the styled
+placeholder frame AND a note/finding, in **all four** surfaces: editor
+canvas, `render_preview`, `export_design`, `diagnose_design`. Verified
+current behavior fails this in 7 of 10 cells (file-exists exports a silent
+blank; https exports a silent blank; preview never warns; diagnose is
+image-blind). A model or human must never learn about a blank hole from the
+final PDF.
+
+### 8.2 PREVIEW == EXPORT (image parity)
+`render_preview` must run the exact same asset resolution as
+`export_design`, and the editor must display the same set of images the
+export will produce. Today three different truths exist (editor shows https,
+export doesn't; export placeholder-frames missing files, preview doesn't).
+One resolver, three consumers.
+
+### 8.3 The engine must never recommend a src type it cannot export
+`add_layers` notes currently steer models to `https://` URLs that export
+blank. Guidance text is part of the contract: every src form the guide or a
+note suggests must round-trip to PNG/PDF.
+
+### 8.4 Images as fills, not just layers
+`renderImageFill()` exists in the engine (image/texture fills for shapes)
+— the asset system must cover it too: `fill:{type:"image", src:"assets/…"}`
+resolves by the same rules as an image layer, enabling shaped/masked photos
+without a separate mask implementation.
+
+### 8.5 Photo-first archetypes (the BIG quality bar)
+Once assets flow, the design bar rises: hero-image posters (full-bleed photo
++ scrim + type), image-and-text editorial splits, photo card grids, logo
+lockups in footers — each an archetype the model can reach by intent
+("use the uploaded team photo as the hero"), with the legibility pass
+guaranteeing text-over-photo contrast. Target: a photo-bearing brief
+produces examples/-level output where the PHOTO is the design's dominant
+element, not a pasted rectangle.
+
+## 9. What is NOT in scope for assets v1
 
 ```
 ✗ image editing (retouch, background removal) — treatments only

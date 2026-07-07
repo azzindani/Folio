@@ -41,7 +41,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 1.1 | Click to select layer | ✓ | M | |
 | 1.2 | Shift-click to add/remove | ✓ | M | |
 | 1.3 | Marquee (rubber-band) selection | ✓ | M | drag on empty canvas |
-| 1.4 | Click-through nested layers (alt-click) | ✗ | M | currently selects topmost only |
+| 1.4 | Click-through nested layers (alt-click) | ✓ | M | click selects nested children (even in locked groups); Alt+click cycles stacked layers (live-verified 2026-07-07) |
 | 1.5 | Tab / Shift-Tab to cycle layers | ✗ | N | |
 | 1.6 | Select Same → fill / stroke / type | ✗ | N | "Select all rects with red fill" |
 | 1.7 | Lock / unlock layer | ✓ | M | |
@@ -57,7 +57,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 2.1 | Move (drag with arrow nudge) | ✓ | M | |
 | 2.2 | Resize from 8 handles | ✓ | M | |
 | 2.3 | Resize with Shift = aspect lock | ✓ | M | |
-| 2.4 | Resize with Alt = from center | ✗ | M | Photoshop / Illustrator standard |
+| 2.4 | Resize with Alt = from center | ✓ | M | Alt+drag handle (Quick Tips; live-verified) |
 | 2.5 | Rotate via handle | ✓ | M | |
 | 2.6 | Rotate snap to 15° (Shift) | ✓ | M | |
 | 2.7 | Skew / shear | ✗ | N | |
@@ -89,7 +89,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 4.3 | Star / arrow shapes | ◐ | M | shapes in toolbox; no editor for star points |
 | 4.4 | Pen tool (bezier paths) | ◐ | M | layer type exists; no editor UI |
 | 4.5 | Path editing handles (anchors) | ✗ | M | |
-| 4.6 | Boolean ops (union / subtract / intersect / exclude) | ✗ | M | |
+| 4.6 | Boolean ops (union / subtract / intersect / exclude) | ◐ | M | BOOLEAN/MASK panel ships Clip Mask (intersect) + Release Mask; true path booleans unverified |
 | 4.7 | Convert shape to path | ✗ | N | |
 | 4.8 | Smooth / corner / asymmetric anchor types | ✗ | N | |
 | 4.9 | Custom shape library / assets | ◐ | N | components panel partial |
@@ -133,7 +133,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 6.11 | Stroke (border) with width / dash | ✓ | M | |
 | 6.12 | Stroke alignment (inside / center / outside) | ✗ | N | |
 | 6.13 | Multi-stop gradient | ✓ | M | |
-| 6.14 | Gradient editor with handles | ✗ | M | currently numeric only |
+| 6.14 | Gradient editor with handles | ◐ | M | fill UI = Solid/Linear/Radial/None picker; no on-canvas stop handles; NO pattern/image fill option at all |
 | 6.15 | Color contrast checker | ✓ | N | a11y panel |
 
 ## 7. Effects
@@ -252,8 +252,8 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 |---|---|---|---|---|
 | 14.1 | Marquee select multiple | ✓ | M | |
 | 14.2 | Shift-click add to selection | ✓ | M | |
-| 14.3 | Common bbox handles for multi-select | ✗ | M | currently per-layer handles |
-| 14.4 | Group transform (resize all proportionally) | ✗ | M | |
+| 14.3 | Common bbox handles for multi-select | ◐ | M | bbox + handles ARE drawn; but see 14.4 |
+| 14.4 | Group transform (resize all proportionally) | ✗ | M | handle drag resizes ONE layer only (live-measured 2026-07-07) — the bbox is visual-only |
 | 14.5 | Group rotate | ✗ | N | |
 | 14.6 | Align toolbar shows on multi-select | ✓ | M | |
 | 14.7 | Multi-select properties (common-only) | ◐ | M | |
@@ -290,20 +290,25 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 
 ## Priority backlog (next iterations)
 
-Tier-1 (must-have, broken or missing):
-1. Click-through nested layers (alt-click, item 1.4)
-2. Resize from center (alt-key, 2.4)
-3. Flip H / V (2.14)
+Tier-1 (must-have, broken or missing — re-audited live 2026-07-07;
+~~struck~~ items verified shipped):
+1. ~~Click-through nested layers (1.4)~~ shipped
+2. ~~Resize from center (2.4)~~ shipped
+3. ~~Flip H / V (2.14)~~ shipped
 4. Inner shadow (7.2)
-5. Layer blend modes (7.7)
-6. Common bbox handles for multi-select + group transform (14.3, 14.4)
+5. ~~Layer blend modes (7.7)~~ shipped
+6. TRUE group transform — the multi-select bbox is drawn but handle drag
+   resizes one layer only (14.4; 14.3 is ◐)
 7. Alt-click hover highlight on canvas (1.10)
 8. Right-panel icon-button nav for parity with left (10.6)
 9. Background flicker fix (13.4)
-10. Boolean ops (4.6)
+10. Full path booleans — union/subtract/exclude (4.6 is ◐: clip-mask only)
 11. SVG import (12.8)
 12. Constraints / pinning for responsive (15.5)
 13. Per-corner radius (4.2)
+14. Pattern + image FILL controls in the properties panel (engine renders
+    both; no UI at all — 6.4/6.14)
+15. Assets panel + project-asset image src rendering (see GAP-ANALYSIS §1)
 
 Tier-2 (nice-to-have, often-asked):
 14. Pen tool path editing (4.4, 4.5)

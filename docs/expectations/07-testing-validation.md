@@ -65,7 +65,19 @@ container OOM (1g → 4g fixed it) · OpenRouter :free daily 429 (resets 00:00 U
 Engine dashboards must exclude infra failures or they poison quality metrics.
 Model failures (timeout/thrash/sparse) are logged as MODEL, not patched over.
 
-## 5. Verification discipline for changes
+## 5. Claims are verified LIVE before they are planned
+
+The 2026-07-07 audit found the docs wrong in both directions: the asset gap
+was WORSE than the code audit said (happy-path file exports a silent blank),
+while several "missing" editor features were already shipped (alt-click
+cycling, resize-from-center, clip-mask booleans, multi-select bbox).
+Standing rule: any feature matrix row or gap claim that will drive work gets
+re-verified against the LIVE deployment (an MCP end-to-end run and/or a
+Playwright pass) before it enters a roadmap. Live repro fixtures are kept,
+not deleted (e.g. `gap-audit/designs/image-src-matrix.design.yaml`), and the
+acceptance criteria of the fixing work package point at them.
+
+## 6. Verification discipline for changes
 
 - Engine finalize/heal changes: reproduce the broken payload from harness
   jsonl FIRST, fix, then verify via live MCP render (`render_preview` + parse

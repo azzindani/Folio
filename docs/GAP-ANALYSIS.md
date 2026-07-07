@@ -1,17 +1,51 @@
 # GAP-ANALYSIS.md — Expectation vs Current Condition
-# 2026-07-07 · v0.1.0 baseline · verified against src (not docs)
+# 2026-07-07 · v0.1.0 baseline · verified against src AND live-tested
 
 > Method: expectations ([EXPECTATIONS.md](EXPECTATIONS.md)) vs code audit of
-> `src/mcp`, `src/renderer`, `src/export`, `src/editor`, `src/fs`, `src/themes`.
-> Severity: 🔴 blocks the product bar · 🟠 hurts daily use · 🟡 polish.
-> "Next" = the concrete first action; work packages in [ROADMAP.md](ROADMAP.md).
+> `src/mcp`, `src/renderer`, `src/export`, `src/editor`, `src/fs`, `src/themes`,
+> **then empirically verified on the live deployment** (MCP end-to-end runs +
+> Playwright against the live editor; test fixture:
+> `gap-audit/designs/image-src-matrix.design.yaml` — keep it, it's the WP-1
+> acceptance repro). Severity: 🔴 blocks the product bar · 🟠 hurts daily use ·
+> 🟡 polish. "Next" = the concrete first action; work packages in [ROADMAP.md](ROADMAP.md).
+>
+> Lesson from the live pass: **the docs were wrong in BOTH directions** — the
+> asset hole is deeper than coded-audit suggested (silent blank even on the
+> happy path), while several "missing" editor features already exist
+> (UX_ROADMAP was stale). Verify against the live product before planning.
 
 ---
 
 ## 1. Assets + file system — THE structural gap 🔴
 
 Asset handling is a first-class *concept* with **no ingest path and no model
-surface**. Verified current state:
+surface** — and live testing shows rendering is broken even past that.
+
+**Live-verified src matrix (2026-07-07, `gap-audit/image-src-matrix`):**
+
+| `src` variant | render_preview | export PNG/SVG | editor canvas |
+|---|---|---|---|
+| `assets/…`, file missing | blank, **no placeholder** | placeholder + note | broken-image icon |
+| `assets/…`, file **exists** | blank | **SILENT BLANK — no note** (existence check passes, nothing embeds the file for resvg) | broken-image icon (relative URL hits the SPA → `text/html` 200) |
+| invalid `data:` URI | silent blank | silent blank | broken |
+| valid `data:` URI | ✓ | ✓ | ✓ (but base64 lives in the YAML) |
+| `https://` URL | blank, no note | **silent blank, no note** | ✓ loads |
+
+Three traps that upgrade the severity beyond the code audit:
+1. **The happy path is the worst path** — a real file in `<project>/assets/images/`
+   passes `flagMissingImages()` (so no placeholder, no note) yet still exports
+   a blank hole. There is currently NO working way to put a project photo into
+   a deliverable except inlining base64 into the YAML.
+2. **The engine steers models into the trap** — `add_layers` notes literally
+   recommend "Use an https:// URL", which renders in the editor and silently
+   vanishes from every server export. Looks-right-in-editor, blank-in-PDF.
+3. **Preview ≠ export** — `render_preview` skips the missing-asset pass
+   entirely, so a model that dutifully previews still can't see the problem.
+
+Verified working foundation: resvg 2.6.2 renders `data:` URIs fine (both
+`href` and `xlink:href`) — the WP-1.3 embed-at-export approach is sound.
+
+Code-audit state (still true):
 
 ```
 EXISTS   create_project scaffolds assets/{fonts,icons,images}; project.yaml
@@ -33,7 +67,9 @@ EXISTS   src/fs/project-folder.ts — browser-local folder assets as blob URLs
 |---|---|---|
 | No upload endpoint (HTTP or MCP) — a photo cannot enter the server at all | 🔴 | `POST /__project_files/<project>/assets/…` on static-server + `manage_design {op:"asset_add"}` (ROADMAP WP-1.1/1.2) |
 | No asset listing for models — a model can't know what assets exist | 🔴 | `manage_design {op:"asset_list"}` reading dir + manifest (WP-1.2) |
-| `src:"assets/…"` doesn't render in the editor (no /__project_files rewrite) and isn't embedded in resvg PNG/PDF (jsdom href stays a relative path → blank or placeholder) | 🔴 | one resolver used by canvas + svg-export: rewrite (editor) / data-URI-embed (server) (WP-1.3) |
+| `src:"assets/…"` doesn't render ANYWHERE (live-confirmed): editor gets SPA HTML at the relative URL; preview + export leave the relative href for resvg, which can't resolve it → silent blank even when the file exists | 🔴 | one resolver used by canvas + preview + export: rewrite (editor) / data-URI-embed (server); preview MUST share it (WP-1.3) |
+| No unresolvable-src warning in preview, and none at export when the file exists / src is https or a bad data: URI — silent blanks | 🔴 | "no silent blanks" invariant: placeholder + note in preview AND export for every src the renderer cannot produce pixels for (WP-1.3/1.4) |
+| `add_layers` note text actively recommends https:// srcs that exports can't render | 🟠 | reword the note now (1-line fix); https ingest lands with WP-1.2 |
 | Editor drop = transient/base64 src, bloats YAML, dies on export | 🟠 | reroute drop through the upload endpoint (WP-1.1) |
 | `$project.assets.*` token documented in DESIGN.md but absent from token-resolver | 🟡 | marked SPEC-ONLY in DESIGN.md (done); implement or drop with WP-1 |
 | No asset metadata for blind models (dims, dominant colors, luminance, alt) | 🟠 | compute at ingest (decodeImage exists in reference.ts — reuse) (WP-1.2) |
@@ -56,25 +92,35 @@ EXISTS   src/fs/project-folder.ts — browser-local folder assets as blob URLs
 | Gap | Severity | Next |
 |---|---|---|
 | Gemma 3n E4B floor NEVER validated (30B-class was; E4B is 8× smaller) | 🟠 | dedicated harness run at tier-1/budget-600; fix cycle (WP-3.1, uses claude.lab rig) |
-| Locked-group children opaque to `edit_layer`/`inspect` (carousel gotcha) | 🟠 | recurse-with-lock-flag in inspect + targeted update (WP-3.2) |
+| Locked-group children opaque to `edit_layer`/`inspect` — live-confirmed: `inspect` lists the group with NO children; `update` on a child → "Layer not found" with the misleading hint "Use inspect_design" (which won't show it either). The EDITOR can select/edit those children fine, so the escape hatch exists but only for humans | 🟠 | recurse-with-lock-flag in inspect + targeted update (WP-3.2) |
+| Free-text hints still carry pre-consolidation tool names (`inspect_design`, …) — `tool-remap.ts` rewrites structured `next_action`/`suggested_next` but not prose; a model following the prose calls a tool that doesn't exist | 🟡 | sweep engine hint strings for old names (fold into WP-3.2) |
 | append_page renames on existing page_id — no in-place page replace; deck fixes = full rebuild | 🟠 | make same-page_id append an explicit replace (WP-3.3) |
 | Model-class budget presets scattered (MCP.md table only) | 🟡 | INTEGRATIONS.md per-client presets (WP-3.4, docs) |
 
-## 4. Editor / studio 🟠 tier-1 backlog open
+## 4. Editor / studio 🟠 — live audit REVERSED half the backlog
 
-Shipped this cycle (verified): deep selection, page ops, aspect presets,
-server auto-save, live library, tablet/mobile fixes, href field, reference
-underlay. Remaining (UX_ROADMAP tier-1, all ✗ in code):
+Playwright pass against the live editor (2026-07-07). **Already shipped,
+contrary to UX_ROADMAP:** alt-click cycles stacked layers + alt-drag resizes
+from center (both advertised in Quick Tips), click-through selects nested
+children directly — even inside a LOCKED group (properties panel opens the
+child; layers panel shows the lock), multi-select draws a common bbox with
+handles + a floating ops toolbar + "Save selection as component", a
+BOOLEAN / MASK panel exists (Clip Mask intersect / Release Mask), blend modes
++ Flip H/V + Link URL are in the properties panel.
 
-| Gap | Severity |
-|---|---|
-| Ad-hoc multi-select: no common bbox, no group transform | 🟠 |
-| No alt-click click-through into groups (MCP designs are ONE group — this hurts most) | 🟠 |
-| Boolean ops, SVG-import-to-layers, constraints/pinning | 🟠 |
-| Gradient editor handles; pattern/grain/blend have no panel UI (engine renders them) | 🟠 |
-| Per-corner radius, resize-from-center, first-load flicker | 🟡 |
+Real remaining gaps (all live-verified):
 
-Next: WP-4 batch; note editor changes need a dist rebuild (CI/runner — host OOMs).
+| Gap | Severity | Evidence |
+|---|---|---|
+| Multi-select group transform is FAKE: common bbox + handles are drawn, but dragging a handle resizes ONE layer only (measured: second layer 158×17 → 82×37 while first stayed 455×31) | 🟠 | WP-4.1 rescopes to "make the drawn bbox a true proportional group transform" |
+| Fill UI offers Solid · Linear · Radial · None ONLY — no Pattern, no Image fill (engine renders both; models can author them, humans can't) | 🟠 | properties panel dump on a rect |
+| No Assets panel — activity bar = Layers · Files · Components · Icons · Find&Replace (+ right: Properties · Data · Scripts · Colors · Animate · Timeline · Issues · A11y) | 🟠 | pairs with WP-1 |
+| `assets/…` image srcs broken on canvas (SPA HTML at relative URL) | 🔴 | counted in §1 |
+| Full path booleans (union/subtract/…) beyond clip-mask unverified; SVG-import-to-layers, constraints/pinning, per-corner radius, first-load flicker still open | 🟡 | WP-4 rest |
+
+Next: WP-4 (rescoped); editor changes need a dist rebuild (CI/runner — host OOMs).
+**Process note:** UX_ROADMAP rows must be re-verified against the live editor
+before being roadmapped — this pass flipped 1.4, 2.4, 4.6(◐), 14.3(◐).
 
 ## 5. Outputs 🟢 near bar
 

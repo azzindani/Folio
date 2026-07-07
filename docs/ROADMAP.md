@@ -106,12 +106,26 @@ dir rescan — files are truth). No base64 in `.design.yaml`.
   BEFORE resvg/jsPDF/PPTX/HTML assembly; keep `flagMissingImages()` search
   order (design dir → parent → project → project/assets) as THE contract for
   both. SVG export: inline by default.
-- **Accept**: same design with `src:"assets/images/x.jpg"` renders the image
-  in (a) editor canvas, (b) render_preview PNG, (c) export_design png/pdf/
-  html — byte-deterministic; missing file still yields the placeholder frame
-  + note in all three.
+- **Do (additions from the 2026-07-07 live audit)**: `render_preview` MUST run
+  the same resolver as export (today it skips even the missing-asset pass);
+  enforce the **no-silent-blanks invariant** — any unresolvable src (missing
+  file, unfetchable https, undecodable data: URI) yields the placeholder
+  frame + note in preview AND export (today a file that EXISTS exports a
+  silent blank because only existence is checked, nothing embeds); reword the
+  `add_layers` note that recommends `https://` srcs (exports can't fetch
+  them); extend the resolver to image FILLS (`fill:{type:"image"}`,
+  `renderImageFill`) with the same rules.
+- **Accept**: the live fixture `gap-audit/designs/image-src-matrix.design.yaml`
+  (KEEP it — it is the acceptance repro; place any test file at
+  `gap-audit/assets/images/team.jpg`) renders panel A (assets/ path), panel B
+  (data: URI) and panel C (https, once ingest-fetch or an explicit
+  cannot-export note exists) correctly and identically in (a) editor canvas,
+  (b) render_preview, (c) export_design png/pdf/html — and every
+  unresolvable variant shows placeholder + note in all three. resvg 2.6.2
+  data-URI rendering is verified working (href AND xlink:href), so failures
+  are resolver bugs, not resvg.
 - **Test**: renderer unit w/ mock fs; export integration writing a real
-  1×1 png fixture; visual snapshot.
+  png fixture; visual snapshot; the 10-cell src matrix as a table test.
 
 ### WP-1.4 · Model-facing intelligence
 - **Files**: `src/mcp/engine/guide.ts` (+`assets` section ≤200 tokens),
@@ -200,8 +214,17 @@ less (ground rule 2).
   locked child fails with a hint naming the unlock path (patch_design on the
   group's locked field) instead of silently no-oping.
 - **Files**: `src/mcp/engine-project-tools.ts` (inspectDesign),
-  `src/mcp/engine-edit-tools.ts`. **Accept**: carousel gotcha memo case
-  passes; no rescue-pass behavior change (`isLocked` untouched).
+  `src/mcp/engine-edit-tools.ts`. **Accept**: live-verified failure case
+  passes — `manage_design {op:inspect}` on `gap-audit/image-src-matrix`
+  lists the `locked_panel` children (with a lock flag), and
+  `edit_layer {op:update, layer_id:"lp_accent"}` either applies or fails
+  with a hint naming the actual unlock path. No rescue-pass behavior change
+  (`isLocked` untouched).
+- **Also**: sweep engine hint/error STRINGS for pre-consolidation tool names
+  (live-caught: "Use inspect_design to find layer IDs") — `tool-remap.ts`
+  rewrites structured fields only, so prose must name consolidated tools
+  (`manage_design {op:inspect}`); grep engine-*.ts for the 34 old names in
+  the REMAP table.
 
 ### WP-3.3 · append_page in-place replace
 - Today `append_page` with an existing `page_id` RENAMES (dupes) — fixing one
@@ -227,11 +250,14 @@ against the LIVE container (server-injected UI like the Library button is
 absent in vite preview). Playwright at desktop/tablet/mobile widths per item.
 Keep editor chrome flat (no drop-shadows).
 
+Live audit (2026-07-07) found several items already shipped — scopes below
+are corrected; re-verify each against the live editor before starting.
+
 | WP | Item | Key files | Accept |
 |---|---|---|---|
-| 4.1 | Ad-hoc multi-select: common bbox + proportional group transform + group rotate | `src/editor/canvas-interactions.ts`, `canvas-draw.ts`, `interactions.ts` | marquee 3 layers → one bbox; corner-drag scales all; undo = one step |
-| 4.2 | Alt-click click-through + canvas hover highlight | `canvas-interactions.ts` (`findLayerDeep` exists — reuse) | alt-click cycles depth under cursor into MCP group-wrapped designs |
-| 4.3 | Boolean ops (union/subtract/intersect/exclude) → path layer | new `src/editor/boolean-ops.ts` (flatten shapes to paths; consider vendored path-boolean lib — NO runtime CDN) | two overlapping rects → union path renders identically in resvg |
+| 4.1 | Make the multi-select bbox REAL: common bbox + handles already render, but a handle drag resizes ONE layer (live-measured). Wire the drag to proportional group scale + group rotate | `src/editor/canvas-interactions.ts`, `canvas-draw.ts`, `interactions.ts` | marquee/shift-select 2+ layers → corner-drag scales ALL proportionally (measure both bboxes); undo = one step |
+| 4.2 | ~~Alt-click click-through~~ SHIPPED (click reaches nested/locked children; Alt+click cycles stacks). Remaining: canvas hover highlight before click (1.10) | `canvas-interactions.ts` | hovered layer outlines before click |
+| 4.3 | Complete booleans: Clip Mask (intersect)/Release Mask exist; add union/subtract/exclude → path layer | new `src/editor/boolean-ops.ts` (flatten shapes to paths; vendored path-boolean lib — NO runtime CDN) | two overlapping rects → union path renders identically in resvg |
 | 4.4 | SVG import → layers | new `src/editor/svg-import.ts` (parse foreign SVG → rect/circle/path/text/group layers; unsupported nodes → path fallback) | a Figma-exported SVG lands editable; export round-trips |
 | 4.5 | Gradient handles + pattern/grain/blend panel controls | `src/ui/panels/properties-panel-base.ts`, new gradient overlay in `canvas-draw.ts` | drag stops on canvas; pattern picker writes the same fill spec MCP emits |
 | 4.6 | Small batch: resize-from-center (Alt), per-corner radius, constraints/pinning, first-load flicker | `interactions.ts`, `schema/types/primitives.ts` (radius per-corner — renderer + validator + shorthand too), `app-base.ts` | UX_ROADMAP rows flip to ✓; visual snapshots updated deliberately |

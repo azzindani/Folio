@@ -63,8 +63,10 @@ on a 20-design blind harness run.
 (editor drag-drop, HTTP, or MCP op); assets live under `<project>/assets/` as
 plain files; the model can LIST assets (with dimensions + dominant colors, so
 a blind model places them intelligently) and PLACE them (`src:"assets/…"`)
-and every surface — editor canvas, PNG, PDF, HTML — resolves them
-identically. No base64 blobs inside YAML. All within the 21 tools.
+and every surface — editor canvas, preview, PNG, PDF, HTML — resolves them
+identically. Two hard invariants (live-audit 2026-07-07): **no silent
+blanks** (unresolvable src → placeholder + note, everywhere) and **preview ==
+export** image parity. No base64 blobs inside YAML. All within the 21 tools.
 
 **4 · Editor.** Any MCP-produced design is fully editable (grouped selection,
 nested edit, page ops). Studio works desktop/tablet/phone. Library is the
