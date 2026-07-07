@@ -40,10 +40,16 @@ export function makeReferenceLayer(
 export class ImageImportHandler {
   private state: StateManager;
   private palette: ColorPaletteManager | null = null;
+  // Server-backed designs: upload dropped rasters to <project>/assets/images
+  // and reference them by relative path — a plain file on the server instead
+  // of a base64 blob bloating the YAML. Returns the relative src, or null to
+  // fall back to the inline data-URL path (local files, upload failure).
+  private uploader: ((name: string, blob: Blob) => Promise<string | null>) | null = null;
 
   constructor(state: StateManager) { this.state = state; }
 
   setPalette(p: ColorPaletteManager): void { this.palette = p; }
+  setUploader(fn: ((name: string, blob: Blob) => Promise<string | null>) | null): void { this.uploader = fn; }
 
   wire(container: HTMLElement): void {
     container.addEventListener('paste',   e => { void this.onPaste(e); });
@@ -171,7 +177,18 @@ export class ImageImportHandler {
     // Convert to data URL so the src survives page reloads (blob URLs are session-only)
     const dataUrl = await blobToDataUrl(blob);
     const { w, h } = await imgSize(dataUrl);
-    const layer = makeLayer(dataUrl, w, h, nextId('img'));
+    // Server-backed design → store as a project asset and reference the path.
+    let src = dataUrl;
+    if (this.uploader) {
+      const name = ((blob as File).name || `pasted-${Date.now().toString(36)}.png`).toLowerCase();
+      const rel = await this.uploader(name, blob);
+      if (rel) {
+        src = rel;
+        void import('../utils/toast').then(({ showToast }) =>
+          showToast(`Saved to project assets · ${rel}`, 'success'));
+      }
+    }
+    const layer = makeLayer(src, w, h, nextId('img'));
     const colors = await extractDominantColors(blob);
     this.commit(layer, colors);
   }

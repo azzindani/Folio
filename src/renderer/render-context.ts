@@ -41,3 +41,25 @@ export function getPreviewRows(dataRef?: string): Record<string, unknown>[] {
 export function getPreviewAccent(): string {
   return accent;
 }
+
+// ── Editor asset-URL resolution ───────────────────────────────
+// A design saved on the server references images as project-relative paths
+// (src:"assets/images/x.jpg"). In the BROWSER those must fetch through the
+// authenticated /__project_files/<project>/… mount — a bare relative URL
+// resolves against the SPA origin and gets HTML back (broken image). The
+// editor app installs a resolver once it knows which project the open design
+// belongs to; server-side rendering never sets one (exports embed data: URIs
+// via engine/asset-resolve.ts instead).
+
+let assetUrlResolver: ((src: string) => string) | null = null;
+
+export function setAssetUrlResolver(fn: ((src: string) => string) | null): void {
+  assetUrlResolver = fn;
+}
+
+/** Map a project-relative image src to a fetchable URL (editor only). */
+export function resolveAssetUrl(src: string): string {
+  if (!assetUrlResolver || !src) return src;
+  if (/^(data:|blob:|https?:|\/\/|\/|#)/i.test(src)) return src;
+  return assetUrlResolver(src);
+}
