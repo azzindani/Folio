@@ -12,6 +12,9 @@ Legend:
 - N  nice-to-have
 
 Source ranking: cross-tool consensus + frequency on competitor feature pages.
+Last audited 2026-07-07 (post v0.1.0). Editor-UI matrix — engine capability may
+lead the editor UI (a ◐ often means "engine renders it, no panel control yet").
+Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -64,7 +67,7 @@ Source ranking: cross-tool consensus + frequency on competitor feature pages.
 | 2.11 | Distort / Perspective transform | ✗ | N | |
 | 2.12 | Warp / mesh transform | ✗ | N | |
 | 2.13 | Pivot point picker | ✗ | N | rotate around custom anchor |
-| 2.14 | Flip horizontal / vertical | ✗ | M | one-click in toolbar |
+| 2.14 | Flip horizontal / vertical | ✓ | M | Transform panel |
 
 ## 3. Alignment & distribution
 
@@ -120,13 +123,13 @@ Source ranking: cross-tool consensus + frequency on competitor feature pages.
 | 6.1 | Solid color fill | ✓ | M | |
 | 6.2 | Linear / radial gradient | ✓ | M | |
 | 6.3 | Image fill | ◐ | M | image layer yes; image-as-fill no |
-| 6.4 | Pattern / tile fill | ✗ | N | |
+| 6.4 | Pattern / tile fill | ◐ | N | engine renders patterns (dots/grid/halftone/…); no editor UI control |
 | 6.5 | Color picker with eyedropper | ◐ | M | eyedropper tool registered, behavior? |
 | 6.6 | HEX / RGB / HSL inputs | ✓ | M | |
 | 6.7 | Color swatches / saved palette | ✓ | M | color palette panel |
 | 6.8 | Theme colors (semantic tokens) | ✓ | M | $primary, $surface etc. |
 | 6.9 | Recent colors history | ✗ | N | |
-| 6.10 | Document palette extraction | ✗ | N | "extract palette from image" |
+| 6.10 | Document palette extraction | ◐ | N | MCP `extract_reference` + Shift+drop underlay seeds palette; no standalone panel |
 | 6.11 | Stroke (border) with width / dash | ✓ | M | |
 | 6.12 | Stroke alignment (inside / center / outside) | ✗ | N | |
 | 6.13 | Multi-stop gradient | ✓ | M | |
@@ -142,8 +145,8 @@ Source ranking: cross-tool consensus + frequency on competitor feature pages.
 | 7.3 | Blur (Gaussian) | ◐ | M | layer effect exists |
 | 7.4 | Background blur (frosted glass) | ✗ | N | |
 | 7.5 | Glow / outer glow | ◐ | N | |
-| 7.6 | Noise / grain | ✗ | N | |
-| 7.7 | Layer blend modes | ✗ | M | multiply / overlay / screen etc. |
+| 7.6 | Noise / grain | ◐ | N | engine effect (feTurbulence) ships; no panel control |
+| 7.7 | Layer blend modes | ✓ | M | mix-blend-mode in effects renderer + properties panel |
 | 7.8 | Mask (clip path) | ◐ | M | clip layer type exists |
 | 7.9 | Mask with alpha (luminance / vector) | ✗ | N | |
 | 7.10 | Adjustment layers (brightness / hue) | ✗ | N | |
@@ -227,7 +230,7 @@ Source ranking: cross-tool consensus + frequency on competitor feature pages.
 | 12.8 | Import SVG | ✗ | M | parse foreign SVG to layers |
 | 12.9 | Import PSD / Sketch / Figma | ✗ | N | |
 | 12.10 | Import image (PNG/JPG/HEIC) | ✓ | M | |
-| 12.11 | Drag-drop file onto canvas | ◐ | M | partial |
+| 12.11 | Drag-drop file onto canvas | ✓ | M | drop = image layer; Shift+drop = reference underlay |
 | 12.12 | Copy / paste from / to other tools | ◐ | M | text only |
 | 12.13 | Slice / export region | ✗ | N | |
 

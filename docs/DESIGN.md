@@ -743,7 +743,10 @@ radius: "$radius_lg"           # → theme.radii.lg
 color: "{{accent}}"            # → resolved from component slots
 content: "{{label}}"
 
-# Project asset reference
+# Project asset reference — SPEC ONLY, NOT IMPLEMENTED YET
+# (token-resolver has no $project.* handling; see docs/GAP-ANALYSIS.md.
+#  Today an image layer src must be a data: URI, an https URL, or a path
+#  that exists relative to the design/project/assets dir at export time.)
 src: "$project.assets.images.diagram-base"
 ```
 

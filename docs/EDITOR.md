@@ -39,6 +39,12 @@ Three ways:
 3. **Local file** (dev / desktop Chrome) — the File System Access API opens any file;
    other browsers fall back to `<input type=file>` + download.
 
+Drag-and-drop an image onto the canvas to add it as an image layer;
+**Shift+drop** imports it as a locked, 40%-dimmed **reference underlay** for
+tracing (and seeds the palette from it) — pairs with the `extract_reference`
+MCP tool. Works on desktop, tablet, and phone widths; the toolbar collapses to
+icon-only on mobile.
+
 ### 2.1 Editor auth (static server)
 
 The static server gates `/` and `/__project_files/*` and accepts, in order: a Bearer

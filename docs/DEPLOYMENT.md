@@ -31,7 +31,7 @@ FOLIO_MCP_TIER=all bun run src/mcp/index.ts        # smoke test (Ctrl-C to stop)
 ```
 
 Then register it in your MCP client (`mcp.json`) — see [INTEGRATIONS.md §3](INTEGRATIONS.md).
-`FOLIO_MCP_TIER` chooses the surface: `1` (15 tools), `2`, `3`, or `all` (49).
+`FOLIO_MCP_TIER` chooses the surface: `1` (6 tools), `2` (7), `3` (8), or `all` (21).
 
 > Node fallback (no Bun): `node --loader ts-node/esm src/mcp/index.ts`.
 
@@ -81,18 +81,16 @@ Hermes, OpenClaw, or any MCP-over-HTTP client can reach it.
    FOLIO_ACME_EMAIL=you@your-domain.tld
    FOLIO_MODE=both
    FOLIO_TOKENS_FILE=/home/folio/tokens.json
-   # Editor browser login (required by the TLS profile):
-   FOLIO_BASIC_USER=admin
-   FOLIO_BASIC_HASH=<bcrypt hash, see below>
+   # Optional — only if you use the /files raw-download browser:
+   # FOLIO_BASIC_USER=admin
+   # FOLIO_BASIC_HASH=<bcrypt hash: docker run --rm caddy:2-alpine caddy hash-password --plaintext '...'; escape $ as $$>
    ```
+   The **editor itself needs no Basic Auth** — it is gated solely by the access
+   token / `folio_session` cookie (see §5.3 and §7.2). Basic Auth applies only to
+   the optional `/files` download browser.
 5. **Edit `tokens.json`** — replace every placeholder with a long random string
    (`openssl rand -hex 32`). Keep it out of git (`.gitignore` excludes it).
-6. **Generate the editor Basic-Auth hash:**
-   ```bash
-   docker run --rm caddy:2-alpine caddy hash-password --plaintext 'your-pass'
-   # paste into FOLIO_BASIC_HASH; escape every $ as $$ for compose substitution
-   ```
-7. **Bring it up with TLS:**
+6. **Bring it up with TLS:**
    ```bash
    docker compose --profile tls up -d --build
    ```
@@ -144,7 +142,8 @@ breaks the import graph. (The editor only needs a rebuild if `dist/` changed.)
 
 ### 5.2 Memory limits
 
-`docker-compose.yml` sets `mem_limit: 1g` (override with `FOLIO_MEM_LIMIT`, e.g. `2g`).
+`docker-compose.yml` sets `mem_limit: 4g` (override with `FOLIO_MEM_LIMIT`; 1 GiB
+OOM-killed the MCP server mid-harness-run, so don't go below 2g under load).
 Runtime guards: `/mcp` body ≤ `FOLIO_MAX_BODY_BYTES` (32 MiB), OAuth bodies ≤ 256 KiB,
 `editorBroadcast` skips files over `FOLIO_MAX_BROADCAST_BYTES` (16 MiB), dead SSE
 clients pruned on write. Steady state ≈ 230 MiB idle, ≈ 400 MiB during PNG export.
@@ -334,8 +333,8 @@ Tail it: `docker compose logs -f folio`.
 | `FOLIO_MCP_PUBLIC_URL` | derived from `FOLIO_DOMAIN` | Public MCP base baked into links |
 | `FOLIO_DOMAIN` | unset | Public hostname (Caddy TLS profile) |
 | `FOLIO_ACME_EMAIL` | unset | Let's Encrypt registration email |
-| `FOLIO_BASIC_USER` / `FOLIO_BASIC_HASH` | unset | Editor Basic Auth (required by TLS profile) |
-| `FOLIO_MEM_LIMIT` | `1g` | Container memory ceiling |
+| `FOLIO_BASIC_USER` / `FOLIO_BASIC_HASH` | unset | Basic Auth for the optional `/files` download browser only (the editor is token/cookie-gated, no Basic Auth) |
+| `FOLIO_MEM_LIMIT` | `4g` | Container memory ceiling |
 | `FOLIO_MAX_BODY_BYTES` | `33554432` | `/mcp` request body cap |
 | `FOLIO_MAX_BROADCAST_BYTES` | `16777216` | Max file size read for editor SSE fan-out |
 | `FOLIO_SKIP_TESTS` | `0` | `1` skips the test suite during `docker build` |

@@ -26,6 +26,10 @@ talks JSON-RPC over HTTP with a bearer token.
 | [REPORT_ENGINE.md](REPORT_ENGINE.md) | Interactive flow-layout reports: components, datasets, `$data.*`/`$agg.*`, export | …you're building data-driven HTML reports |
 | [UX_ROADMAP.md](UX_ROADMAP.md) | Editor feature matrix vs Figma/Photoshop/Canva; what's shipped/missing | …you're prioritizing editor work |
 | [COMPARISON-OPEN-DESIGN.md](COMPARISON-OPEN-DESIGN.md) | Folio vs Open Design (nexu-io): capability map + ranked list of adaptable features (craft rulebooks, anti-slop linter, brand `DESIGN.md` systems) | …you're scoping what to borrow from the design-agent ecosystem |
+| [EXPECTATIONS.md](EXPECTATIONS.md) + [expectations/](expectations/) | The product bar, per area (design quality, model support, **assets/file system**, editor, outputs, ops, testing) — 7 detailed files | …you want to know what "done" means |
+| [REQUIREMENTS.md](REQUIREMENTS.md) | Must-have / nice-to-have per area, with shipped/partial/missing state; the 21-tool constraint | …you're deciding what to build |
+| [GAP-ANALYSIS.md](GAP-ANALYSIS.md) | Expectation vs verified current condition, severity-ranked, with next actions | …you want the honest delta |
+| [ROADMAP.md](ROADMAP.md) | Self-contained work packages (P1 assets → P6 release), executable by any agent without prior context | …you're picking up the work |
 
 ---
 
@@ -43,6 +47,9 @@ endpoint) → [INTEGRATIONS.md](INTEGRATIONS.md) (connect your client).
 **Contributor** → [ARCHITECTURE.md](ARCHITECTURE.md) → the §10 "Extending Folio"
 checklist → the [root README](../README.md) Development section.
 
+**Planner / next-agent picking up work** → [EXPECTATIONS.md](EXPECTATIONS.md) →
+[GAP-ANALYSIS.md](GAP-ANALYSIS.md) → [ROADMAP.md](ROADMAP.md) (work packages).
+
 **Designer / editor user** → [EDITOR.md](EDITOR.md) → [DESIGN.md](DESIGN.md).
 
 ---
@@ -55,7 +62,7 @@ Tools        21 across 3 tiers — Foundation (6) · Compose (7) · Output (8)
 Auth         multi-token file / inline · single key · open · JWT editor links · OAuth2+PKCE
 Endpoints    POST /mcp · GET /mcp/sse · GET /editor/events · GET /health · /oauth/* · /.well-known/oauth-*
 Editor       :4173 (Bun static server) · live SSE refresh · Monaco YAML · SVG/PNG/PDF/HTML export
-Layer types  35 (rect…progress) · Themes 17 built-in · Render SVG-in-HTML, deterministic
+Layer types  35+ (rect…progress) · Themes 29 (17 builtin + 12 brand) · Render SVG-in-HTML, deterministic
 Deploy       Docker (oven/bun, runs from src) · optional Caddy auto-HTTPS · runs offline
 ```
 
