@@ -22,8 +22,12 @@
 | M | Editor drag-drop saves the dropped image to `<project>/assets/images/` + inserts layer referencing the saved path (no base64-in-YAML) | ✗ (drop inserts transient src today) |
 | M | `manage_design {op:"asset_add"}` — data: URI in, file + manifest out, dims + dominant colors returned | ✗ |
 | M | `manage_design {op:"asset_list"}` — manifest with dims/colors/luminance/alt (blind-model placeable) | ✗ |
-| M | `src:"assets/…"` resolves identically: editor canvas (→ /__project_files) · resvg PNG (→ data-URI embed) · vector PDF · self-contained HTML | ✗ (export lookup exists; editor + PNG embed don't) |
-| M | Missing-asset behavior: styled placeholder + note (never blank, never crash) | ✓ |
+| M | `src:"assets/…"` resolves identically: editor canvas (→ /__project_files) · render_preview · resvg PNG (→ data-URI embed) · vector PDF · self-contained HTML | ✗ (live-verified broken in ALL surfaces — even with the file on disk, export is a silent blank) |
+| M | **No silent blanks**: unresolvable src → placeholder + note in editor, preview, export AND diagnose (all four) | ✗ (works only for missing-file-at-export; 7 of 10 matrix cells fail silently) |
+| M | Preview == export image parity (one resolver, three consumers) | ✗ (editor shows https, export blanks it; preview never warns) |
+| M | Engine guidance never recommends a src type exports can't render (https note today) | ✗ (1-line reword + WP-1.2) |
+| N | Image FILLS (`fill:{type:"image"}`) resolve by the same asset rules as image layers | ✗ (renderImageFill exists; no asset plumbing) |
+| N | Photo-first archetypes: hero-image poster, photo split, photo card grid — reachable by intent once assets flow | ✗ (expectation 03 §8.5) |
 | M | Asset caps: per-file + per-project quota, env-tunable | ✗ |
 | M | `diagnose_design` flags stretched/upscaled images + text-over-busy-photo without scrim | ✗ |
 | N | `manage_design {op:"asset_delete"}` → .trash + ref flagging | ✗ |
@@ -70,9 +74,9 @@
 | M | MCP-design editability: deep selection, page ops, href field, save-to-library | ✓ |
 | M | Live SSE refresh + library live catalog | ✓ |
 | M | Desktop/tablet/phone widths all operable | ✓ |
-| M | Common bbox + group transform for ad-hoc multi-select | ✗ |
-| M | Alt-click click-through nested selection | ✗ |
-| M | Boolean ops on shapes | ✗ |
+| M | Common bbox + TRUE group transform for ad-hoc multi-select | ◐ (bbox+handles drawn; drag resizes one layer only — live-verified) |
+| M | Alt-click click-through nested selection | ✓ (click reaches nested/locked children; Alt+click cycles stacks) |
+| M | Boolean ops on shapes | ◐ (Clip Mask/Release Mask panel shipped; union/subtract unverified) |
 | M | SVG import → layers | ✗ |
 | M | Constraints/pinning; per-corner radius; resize-from-center | ✗ |
 | M | Gradient editor handles; pattern/grain/blend panel controls | ✗ (engine renders; no UI) |
