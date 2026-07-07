@@ -18,6 +18,17 @@ const EXT_MIME: Record<string, string> = {
   gif: 'image/gif', avif: 'image/avif', svg: 'image/svg+xml',
 };
 
+// Trust the BYTES over the filename — a PNG saved as .jpg would make resvg
+// JPEG-decode PNG bytes and silently render nothing (live-audit finding).
+function sniffMime(buf: Buffer, ext: string): string | undefined {
+  if (buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png';
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xd8) return 'image/jpeg';
+  if (buf.length >= 3 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) return 'image/gif';
+  if (buf.length >= 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
+  if (buf.slice(0, 512).toString('utf8').trimStart().startsWith('<')) return 'image/svg+xml';
+  return EXT_MIME[ext];
+}
+
 /** Search order — the same contract flagMissingImages used. */
 export function assetBaseDirs(designPath: string, projectPath?: string): string[] {
   const dirs = [path.dirname(designPath), path.dirname(path.dirname(designPath))];
@@ -59,9 +70,9 @@ function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
       const abs = path.resolve(d, rel);
       if (fs.existsSync(abs) && fs.statSync(abs).isFile()) {
         const ext = (abs.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
-        const mime = EXT_MIME[ext];
-        if (!mime) return { kind: 'blank', note: `image "${id}": "${s}" is not a supported image type — use png/jpg/webp/gif/avif/svg.` };
         const buf = fs.readFileSync(abs);
+        const mime = sniffMime(buf, ext);
+        if (!mime) return { kind: 'blank', note: `image "${id}": "${s}" is not a supported image type — use png/jpg/webp/gif/avif/svg.` };
         return { kind: 'embed', dataUri: `data:${mime};base64,${buf.toString('base64')}` };
       }
     } catch { /* try the next base dir */ }
