@@ -14,31 +14,33 @@
 
 ---
 
-## A. Assets + file system (expectation 03) — the new front
+## A. Assets + file system (expectation 03) — **musts SHIPPED 2026-07-07**
+(commits 7376445 · 1ff5e7e · 43907f3 — live-verified on the deployed container)
 
 | P | Req | State |
 |---|---|---|
-| M | HTTP upload endpoint on :4173 (`POST /__project_files/<project>/assets/…`, auth-gated, size-capped, type-allowlisted) | ✗ |
-| M | Editor drag-drop saves the dropped image to `<project>/assets/images/` + inserts layer referencing the saved path (no base64-in-YAML) | ✗ (drop inserts transient src today) |
-| M | `manage_design {op:"asset_add"}` — data: URI in, file + manifest out, dims + dominant colors returned | ✗ |
-| M | `manage_design {op:"asset_list"}` — manifest with dims/colors/luminance/alt (blind-model placeable) | ✗ |
-| M | `src:"assets/…"` resolves identically: editor canvas (→ /__project_files) · render_preview · resvg PNG (→ data-URI embed) · vector PDF · self-contained HTML | ✗ (live-verified broken in ALL surfaces — even with the file on disk, export is a silent blank) |
-| M | **No silent blanks**: unresolvable src → placeholder + note in editor, preview, export AND diagnose (all four) | ✗ (works only for missing-file-at-export; 7 of 10 matrix cells fail silently) |
-| M | Preview == export image parity (one resolver, three consumers) | ✗ (editor shows https, export blanks it; preview never warns) |
-| M | Engine guidance never recommends a src type exports can't render (https note today) | ✗ (1-line reword + WP-1.2) |
-| N | Image FILLS (`fill:{type:"image"}`) resolve by the same asset rules as image layers | ✗ (renderImageFill exists; no asset plumbing) |
-| N | Photo-first archetypes: hero-image poster, photo split, photo card grid — reachable by intent once assets flow | ✗ (expectation 03 §8.5) |
-| M | Asset caps: per-file + per-project quota, env-tunable | ✗ |
-| M | `diagnose_design` flags stretched/upscaled images + text-over-busy-photo without scrim | ✗ |
-| N | `manage_design {op:"asset_delete"}` → .trash + ref flagging | ✗ |
+| M | HTTP upload endpoint on :4173 (`POST /__project_files/<project>/assets/…`, auth-gated, size-capped, type-allowlisted) | ✓ (verified 200/413/415/401) |
+| M | Editor drag-drop saves the dropped image to `<project>/assets/images/` + inserts layer referencing the saved path (no base64-in-YAML) | ✓ (local-file designs keep the inline fallback) |
+| M | `manage_design {op:"asset_add"}` — data: URI in, file + manifest out, dims + dominant colors returned | ✓ (+ alt field, ready-to-place layer_stub baton) |
+| M | `manage_design {op:"asset_list"}` — manifest with dims/colors/luminance/alt (blind-model placeable) | ✓ (merges on-disk orphans) |
+| M | `src:"assets/…"` resolves identically: editor canvas (→ /__project_files) · render_preview · resvg PNG (→ data-URI embed) · vector PDF · self-contained HTML | ✓ (ONE resolver, byte-sniffed mime; fixture verified in all surfaces) |
+| M | **No silent blanks**: unresolvable src → placeholder + note in editor, preview, export AND diagnose (all four) | ✓ (missing file / https / bad data: URI) |
+| M | Preview == export image parity (one resolver, three consumers) | ✓ (documented exception: editor CAN display https; exports placeholder + note) |
+| M | Engine guidance never recommends a src type exports can't render | ✓ (add_layers note → asset_add/asset_list) |
+| M | Asset caps: per-file + per-project quota, env-tunable | ✓ (FOLIO_MAX_ASSET_BYTES 8MiB · FOLIO_MAX_ASSETS_TOTAL 256MiB) |
+| M | `diagnose_design` flags unresolvable + stretched (>5%) + upscaled (>2×) images | ✓ (text-over-busy scrim check pending; luminance class ships in asset_list) |
+| N | Image FILLS (`fill:{type:"image"}`, incl. multi-fill) resolve by the same asset rules | ✓ |
+| N | `manage_design {op:"asset_delete"}` → .trash + ref note | ✓ |
+| N | `get_engine_guide {section:"assets"}` | ✓ |
+| N | svg script-stripping at ingest (editor executes svg) | ✓ |
+| N | Photo-first archetypes: hero-image poster, photo split, photo card grid (expectation 03 §8.5) | ✗ (now unblocked) |
 | N | `extract_reference {store:true}` — analyzed reference saved as asset | ✗ |
-| N | `get_engine_guide {section:"assets"}` | ✗ |
-| N | Photo treatments: mask shapes, focal-point crop, auto-scrim; duotone verified on image layers | ◐ (effects pipeline exists; image-layer plumbing unverified) |
-| N | Project font upload → editor FontFace + server export font set | ✗ |
+| N | Photo treatments: mask shapes, focal-point crop, auto-scrim (WP-1.5) | ◐ (fit/fills/effects ship; masks/focal pending) |
+| N | Project font upload → editor FontFace + server export font set (WP-1.6) | ✗ |
 | N | `_shared` cross-project asset library | ✗ |
 | N | https-URL ingest (opt-in env, off for air-gapped) | ✗ |
 | N | Editor asset panel (browse assets, drag onto canvas) | ✗ |
-| N | `$project.assets.*` token resolution (currently spec-only in DESIGN.md) | ✗ |
+| N | `$project.assets.*` token resolution (spec-only in DESIGN.md) | ✗ |
 
 ## B. Design quality (expectation 01)
 
@@ -65,7 +67,7 @@
 | M | Context recovery (tasks/design resume) | ✓ |
 | M | Gemma 3n E4B floor validated by a real harness run | ◐ (30B-class validated; E4B run not yet done) |
 | N | Per-model-class OUTPUT_BUDGET presets documented in INTEGRATIONS.md | ◐ |
-| N | Locked-group children inspectable via edit_layer/inspect | ✗ (known gap) |
+| N | Locked-group children inspectable via edit_layer/inspect | ✓ (shipped 2026-07-07: inspect recurses w/ parent+locked; update returns unlock recipe) |
 
 ## D. Editor / studio (expectation 04)
 
@@ -91,7 +93,7 @@
 | M | Vector PDF: selectable text + clickable links + per-page carousels | ✓ |
 | M | Self-contained HTML / report / presenter exports | ✓ |
 | M | renderEntry() single render path | ✓ |
-| M | Assets embedded at export (once A ships) | ✗ (blocked on A) |
+| M | Assets embedded at export | ✓ (shipped with A — data-URI embed, byte-sniffed) |
 | N | PPTX editable text (raster today) | ✗ |
 | N | Editor-button vector PDF (browser TTF gap) | ✗ |
 | N | Lottie/GIF/MP4 kept green with optional deps absent | ✓ |
@@ -104,7 +106,7 @@
 | M | Editor front-door: token/cookie sole gate + opt-in IP/rate/heavy guards | ✓ |
 | M | 4g mem envelope survives harness + editor concurrently | ✓ |
 | M | Snapshots + .trash soft deletes | ✓ |
-| M | Asset quota enforcement (once A ships) | ✗ |
+| M | Asset quota enforcement | ✓ (shipped with A) |
 | N | Backup/restore one-liner doc (rsync recipe) | ✓ (documented) |
 | N | Graceful optional-dep absence messages audit | ◐ |
 
@@ -115,6 +117,6 @@
 | M | Hand-written 100-case suite + diversity eval | ✓ |
 | M | Vision-critic loop rig (render harness + review protocol) | ✓ (rig exists) |
 | M | Gemma 3n E4B floor run + fix cycle | ✗ (planned — claude.lab harness) |
-| M | Asset-system test coverage (upload → place → export round-trip) | ✗ (with A) |
+| M | Asset-system test coverage (upload → place → export round-trip) | ✓ (28 unit+integration tests; CI wiring = WP-6.1) |
 | M | Infra-vs-engine triage discipline in every harness report | ✓ |
 | N | Scheduled regression replay of past FAIL clusters | ◐ (manual today) |

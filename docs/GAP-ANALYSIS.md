@@ -16,10 +16,24 @@
 
 ---
 
-## 1. Assets + file system — THE structural gap 🔴
+## 1. Assets + file system — ~~THE structural gap 🔴~~ → **SHIPPED 2026-07-07**
 
-Asset handling is a first-class *concept* with **no ingest path and no model
-surface** — and live testing shows rendering is broken even past that.
+> Closed by commits 7376445 · 1ff5e7e · 43907f3 (WP-1.1…1.4 + editor side),
+> live-verified on the deployed container against this fixture. What shipped:
+> `manage_design` ops `asset_add`/`asset_list`/`asset_delete` (21 tools
+> unchanged) with dims + dominant colors + luminance + alt; HTTP upload
+> `POST /__project_files/<project>/assets/<kind>/<file>`; ONE resolver for
+> preview + export (data-URI embed, byte-sniffed mime) covering image layers
+> AND image fills; NO-SILENT-BLANKS (placeholder + note everywhere);
+> `diagnose_design` image audit (unresolvable/distorted/upscaled); `assets`
+> guide section; editor maps relative srcs through the authed mount and
+> drops/pastes upload to project assets instead of inlining base64.
+> Remaining nice-to-haves: `extract_reference {store:true}`, project fonts
+> (WP-1.6), `_shared` cross-project library, editor asset panel, `$project.*`
+> tokens. The matrix below is the PRE-fix record, kept for history.
+
+Asset handling WAS a first-class *concept* with **no ingest path and no model
+surface** — and live testing showed rendering broken even past that.
 
 **Live-verified src matrix (2026-07-07, `gap-audit/image-src-matrix`):**
 
@@ -92,8 +106,8 @@ EXISTS   src/fs/project-folder.ts — browser-local folder assets as blob URLs
 | Gap | Severity | Next |
 |---|---|---|
 | Gemma 3n E4B floor NEVER validated (30B-class was; E4B is 8× smaller) | 🟠 | dedicated harness run at tier-1/budget-600; fix cycle (WP-3.1, uses claude.lab rig) |
-| Locked-group children opaque to `edit_layer`/`inspect` — live-confirmed: `inspect` lists the group with NO children; `update` on a child → "Layer not found" with the misleading hint "Use inspect_design" (which won't show it either). The EDITOR can select/edit those children fine, so the escape hatch exists but only for humans | 🟠 | recurse-with-lock-flag in inspect + targeted update (WP-3.2) |
-| Free-text hints still carry pre-consolidation tool names (`inspect_design`, …) — `tool-remap.ts` rewrites structured `next_action`/`suggested_next` but not prose; a model following the prose calls a tool that doesn't exist | 🟡 | sweep engine hint strings for old names (fold into WP-3.2) |
+| ~~Locked-group children opaque to `edit_layer`/`inspect`~~ **SHIPPED 2026-07-07** — inspect recurses (children carry `parent` + inherited `locked`); update on a locked child returns the exact unlock→edit→re-lock recipe; live-verified | ✓ | done (WP-3.2, commit 7376445) |
+| ~~Free-text hints with pre-consolidation tool names~~ **SHIPPED** — prose hints rewritten to consolidated forms (`manage_design {op:"inspect"}` etc.) | ✓ | done (WP-3.2) |
 | append_page renames on existing page_id — no in-place page replace; deck fixes = full rebuild | 🟠 | make same-page_id append an explicit replace (WP-3.3) |
 | Model-class budget presets scattered (MCP.md table only) | 🟡 | INTEGRATIONS.md per-client presets (WP-3.4, docs) |
 
@@ -147,16 +161,21 @@ reach it.
 
 ---
 
-## What to do next — priority order
+## What to do next — priority order (updated 2026-07-07 after the ship wave)
 
-1. **WP-1 Asset System** (🔴 cluster) — the only structural gap; unlocks
-   "combine assets with design via MCP". 21-tool constraint respected
-   (`manage_design` ops + `extract_reference` field + guide section).
-2. **WP-3.1 E4B floor run** — proves the local-model claim end-to-end; cheap
-   once assets are stable (reuses harness rig).
-3. **WP-4 editor tier-1 batch** — biggest human-side friction (multi-select +
-   alt-click first: they hurt every MCP-design edit).
-4. **WP-2 design-power resumption** — quality compounding, not blocking.
-5. **WP-5/6 polish** — PPTX text, browser PDF, scripted regression replay.
+~~1. WP-1 Asset System~~ **SHIPPED + live-verified** (7376445 · 1ff5e7e ·
+43907f3). ~~WP-3.2 locked-group + prose hints~~ **SHIPPED**.
+
+1. **WP-3.1 E4B floor run** — proves the local-model claim end-to-end;
+   assets are now stable (reuses harness rig; operator-assisted, user said
+   "later"). Include the NEW asset workflow in the run (asset_add → place).
+2. **WP-4 editor tier-1 batch** — true group transform first (bbox is
+   visual-only), then pattern/image fill UI + asset panel.
+3. **WP-2 design-power resumption** + photo-first archetypes (expectation 03
+   §8.5 — hero-photo posters now unblocked by the asset system).
+4. **WP-1 leftovers (nice-to-have)** — extract_reference store:true, project
+   fonts, `_shared` library, WP-3.3 append_page replace.
+5. **WP-5/6 polish** — PPTX text, browser PDF, scripted regression replay,
+   asset round-trip in CI (WP-6.1 — unit tests shipped; wire into CI job).
 
 Full work packages with acceptance criteria: [ROADMAP.md](ROADMAP.md).
