@@ -1,6 +1,7 @@
 // Folio renderer — SVG-native shape/text/image/icon renderers (verbatim).
 import type { RectLayer, CircleLayer, PathLayer, PolygonLayer, LineLayer, TextLayer, ImageLayer, IconLayer } from '../schema/types';
 import { createSVGElement, getOrCreateDefs, uniqueDefId } from './svg-utils';
+import { resolveAssetUrl } from './render-context';
 
 import { applyFill, resolveColorOrGradient, type FillResult } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
@@ -394,7 +395,10 @@ export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
     y: layer.y ?? 0,
     width: typeof layer.width === 'number' ? layer.width : 100,
     height: typeof layer.height === 'number' ? layer.height : 100,
-    href: layer.src,
+    // Editor: project-relative srcs route through /__project_files (see
+    // render-context). Server export: no resolver installed — srcs arrive
+    // pre-embedded as data: URIs.
+    href: resolveAssetUrl(layer.src),
   });
 
   if (layer.fit === 'cover' || layer.fit === 'contain') {

@@ -1,5 +1,6 @@
 import { StateManager } from './state';
 import { CanvasManager } from './canvas';
+import { setAssetUrlResolver } from '../renderer/render-context';
 import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
@@ -332,6 +333,10 @@ export class EditorApp extends EditorAppBase {
         return;
       }
       const yamlContent = await r.text();
+      // Install the asset-URL resolver BEFORE the first render — the canvas
+      // caches per-layer SVG, so a resolver installed after loadFromYAML
+      // would leave relative image srcs broken until the layer changes.
+      this.wireProjectAssets(rel);
       this.loadFromYAML(yamlContent);
       // Route auto-save (and Ctrl+S) back to this server file so edits persist
       // in the library — no browser file handle needed.
@@ -347,6 +352,28 @@ export class EditorApp extends EditorAppBase {
       void import('../utils/toast').then(({ showToast }) =>
         showToast(`Could not open ${rel.split('/').pop() ?? rel}: ${msg}`, 'error'));
     }
+  }
+
+  /** Server-backed design: route relative image srcs through the authed
+   *  project-files mount, and turn image DROPS into project-asset uploads
+   *  (plain file + src:"assets/images/…", not base64 inside the YAML). */
+  private wireProjectAssets(designRel: string): void {
+    const project = designRel.split('/')[0];
+    if (!project) return;
+    const enc = (p: string): string => p.split('/').map(encodeURIComponent).join('/');
+    setAssetUrlResolver((src) => `/__project_files/${encodeURIComponent(project)}/${enc(src)}`);
+    this.imageImport.setUploader(async (name, blob) => {
+      const token = this.readEditorToken();
+      try {
+        const r = await fetch(`/__project_files/${encodeURIComponent(project)}/assets/images/${encodeURIComponent(name)}`, {
+          method: 'POST', credentials: 'include', body: blob,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!r.ok) return null;
+        const j = await r.json() as { ok?: boolean; asset?: { path?: string } };
+        return j.ok && j.asset?.path ? j.asset.path : null;
+      } catch { return null; }
+    });
   }
 
   setActiveFileHandle(handle: FileSystemFileHandle, content: string): void {
@@ -513,6 +540,7 @@ export class EditorApp extends EditorAppBase {
       await this.putDesignToServer(rel, this.getYAML());
       this.serverDesignRel = rel;
       this.autoSave.setServerSink((y) => this.putDesignToServer(rel, y));
+      this.wireProjectAssets(rel);
       this.state.set('dirty', false, false);
       showToast(`Saved to library · ${rel}`, 'success');
     } catch {

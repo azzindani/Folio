@@ -1,6 +1,7 @@
 import type { Fill, LinearGradientFill, RadialGradientFill, ConicGradientFill, NoiseFill, ImageFill, ColorOrGradient } from '../schema/types';
 import { createSVGElement, uniqueDefId, getOrCreateDefs } from './svg-utils';
 import { renderPattern } from './pattern-renderer';
+import { resolveAssetUrl } from './render-context';
 
 export interface FillResult {
   fill: string;
@@ -171,8 +172,9 @@ function renderImageFill(
     preserveAspectRatio: preserve,
     opacity: fill.opacity !== undefined ? String(fill.opacity) : undefined,
   });
-  image.setAttribute('href', fill.src);
-  image.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', fill.src);
+  const fillHref = resolveAssetUrl(fill.src);
+  image.setAttribute('href', fillHref);
+  image.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', fillHref);
   pattern.appendChild(image);
   defs.appendChild(pattern);
   return `url(#${id})`;
