@@ -250,12 +250,19 @@ the engine measures and positions everything):
 |---|---|
 | `editorial` (poster) | text-forward poster: kicker · rule · headline · deck · body · footer |
 | `feature_grid` | feature/benefit cards |
-| `list` (steps, checklist) | "N tips/steps/reasons" numbered/bulleted list |
+| `list` (steps, checklist, numbered_list) | "N tips/steps/reasons" numbered/bulleted list |
 | `stat` (metric, big_number) | one dominant statistic |
 | `event` (flyer, hero) | event/launch flyer (big title + details) |
-| `sections` (infographic, document) | rich multi-section report/infographic (tall canvas) |
+| `sections` (infographic, document, report_poster) | rich multi-section report/infographic (tall canvas) |
 | `split` | two-panel editorial (color/pattern block + text) |
 | `decor` (marble_bg, backdrop) | a designed background in one layer |
+| `pricing` (plans, tiers, price_table) | pricing/plan tiers with true table structure |
+| `versus` (compare, comparison, vs) | two-column head-to-head comparison |
+| `timeline` (roadmap, history, milestones) | sequential milestones along a spine |
+| `mindmap` (mind_map, brainstorm, concept_map, process_cards) | hub-and-spoke / chained concept map with connectors |
+| `ribbon_cards` (tip_cards, ribbon) | ribbon-accented tip cards |
+| `value_list` (values, tips_list) | value/principle rows |
+| `newsletter` (bulletin, digest) | multi-story newsletter layout |
 
 Plus `bg_style` (a "+"-combined grammar: `gradient + curve + dots`, `mesh + glow +
 grain`, …) composes a collision-proof layered background behind the content. The full

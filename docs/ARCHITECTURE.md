@@ -83,8 +83,8 @@ API is unchanged. When editing, go to the real sibling module, not the facade:
 
 | Facade (import path) | Real modules behind it |
 |---|---|
-| `src/mcp/engine.ts` | `engine-{project,layer,edit,export,report,runtime}-tools.ts` + `engine-finalize-{geom,text}.ts` |
-| `src/mcp/shorthand-parser.ts` | `shorthand-{helpers,presets-a,presets-b,sections,background,expand,recover,diagnose}.ts` |
+| `src/mcp/engine.ts` | `engine-{project,layer,edit,export,report,runtime,template}-tools.ts` + `engine/{reference,enrich,library,library-gallery,library-manage}.ts` + `engine-finalize-{geom,text,legibility,autoplace,pages,charts,presets}.ts` |
+| `src/mcp/shorthand-parser.ts` | `shorthand-{helpers,presets-a,presets-b,presets-c,presets-cards,presets-map,presets-news,presets-seq,sections,background,doodles,expand,recover,diagnose}.ts` |
 | `src/renderer/layer-renderers.ts` | `layer-renderers-{shared,shapes,embed,layout}.ts` |
 | `src/schema/types.ts` | `types/{primitives,layers,document}.ts` (barrel) |
 
@@ -139,9 +139,9 @@ handle. The HTTP server always serves the full union (21); only stdio is tiered.
 
 | Tier | Name | Count | Registry | Purpose |
 |---|---|---|---|---|
-| 1 | Basic | 15 | `tier1/registry.ts` | Projects, navigation, tasks, library, theming — no heavy writes |
-| 2 | Design | 10 | `tier2/registry.ts` | Full design lifecycle: create → compose → inspect → patch → seal |
-| 3 | Export | 24 | `tier3/registry.ts` | SVG/HTML/PDF export, templates, components, reports, presentations, animation, formula, collab |
+| 1 | Foundation | 6 | `tier1/registry.ts` | Guidance, brief enrichment, projects, design/library management (`manage_design`), theming (`themes`), tasks (`tasks`) |
+| 2 | Compose | 7 | `tier2/registry.ts` | Full design lifecycle: create → compose → edit (`edit_layer`) → patch → seal + reference extraction |
+| 3 | Output + Advanced | 8 | `tier3/registry.ts` | Preview/diagnose/export/editor-link + the four multiplexed subsystems: `templates`, `report`, `presentation`, `animation` |
 
 `FOLIO_MCP_TIER` selects the stdio surface: `1`, `2`, `3`, or `all`/`0` (full union
 in one registration). `index.ts` dispatches; tiers are exclusive (register 1+2+3 as
@@ -170,7 +170,29 @@ than a bare string — this is what makes Folio drivable by weak models:
 `FOLIO_OUTPUT_BUDGET` token cap (default 1000). The **next_action** and **handover**
 protocols let a model chain tools without re-deriving state. See [MCP.md §5](MCP.md).
 
-### 3.4 Path normalization
+### 3.4 Finalize / heal passes — the blind-model rescue layer
+
+Every layer-writing tool (`add_layers`, `append_page`; `patch_design`/`seal_design`
+re-run the page sweep) pipes the payload through deterministic finalize passes
+before the YAML hits disk. They are why a vision-less model's payload still
+renders well. Split by the 700-line budget into:
+
+| Module | Passes |
+|---|---|
+| `engine-finalize-geom.ts` | id dedup, alias normalization (`text:`→content, report aliases), relative-group flattening, off-canvas snap, top margin, colliding-motif drop, `trimTrailingDeadBand` (poster-ratio-aware), bar-chart rasterization |
+| `engine-finalize-presets.ts` | stacked/duplicate content-preset collapse, thrash-duplicate drop |
+| `engine-finalize-text.ts` | stacked-text spread, duplicate-text dedup, hero text fit-to-box (`fitOverflowingHeroText`), measured text heights, hand-placed structure + decollide, deck page backgrounds |
+| `engine-finalize-legibility.ts` | `fixInvisibleText` (judges the LOCAL backdrop, re-lights preserving hue), `fixCapsTracking` (ALL-CAPS ≥0.06em) |
+| `engine-finalize-autoplace.ts` | null-layer strip, placeholder-text drop, embedded-layer recovery, background fill, positionless auto-place |
+| `engine-finalize-pages.ts` | `finalizeSpecPages` — runs the sweep per page across a whole multi-page design |
+| `engine-finalize-charts.ts` | donut/pie/line/area native-draw rasterization (foreignObject charts would be blank in PNG/PDF) |
+
+Two invariants: **`locked: true` exempts a layer/group from every rescue pass**
+(the frontier-model escape hatch — heal notes surface it), and **a backing shape
+never ejects content contained inside it** (unified containment — decollide must
+not wreck deliberate geometry).
+
+### 3.5 Path normalization
 
 `normalizeProjectPaths()` runs on every `tools/call` (HTTP) before the handler.
 LLMs guess absolute paths badly, so it rewrites `project_path`/`path`/`design_path`
@@ -222,19 +244,29 @@ tools/call (JSON-RPC over stdio or HTTP)
 
 ### 4.3 Export flow
 
+**`renderEntry()` (`src/renderer/render-entry.ts`) is the ONE render path** —
+editor canvas, browser exporter, and MCP server-side export all call it, so
+what you see is what you export. Don't re-branch pages/flow logic elsewhere.
+
 ```
 Browser export (toolbar):  src/export/exporter.ts
    exportToSVG()   XMLSerializer
    exportToPNG()   SVG → Image → Canvas → PNG (×1/×2/×3)
-   exportToPDF()   PNG per page → jsPDF (lazy)
+   exportToPDF()   PNG per page → jsPDF (lazy; raster — browser TTF gap)
    exportToHTML()  SVG + design JSON + animation CSS → self-contained .html
 
-Server-side export (MCP export_design):  src/mcp/engine/svg-export.ts
-   jsdom document → renderer.ts renderDesign() → serialize → .svg file
-   (no browser; runs under Bun/Node in the container)
+Server-side export (MCP export_design):  src/mcp/engine-export-tools.ts
+   SVG    jsdom document → renderEntry() → serialize → .svg
+   PNG    @resvg/resvg-js raster with bundled TTFs (src/mcp/fonts/, ~34 faces)
+   PDF    hybrid VECTOR — resvg hi-DPI raster underlay + jsPDF selectable text
+          runs with embedded fonts (clickable links via collectHrefRects)
+   PPTX   one resvg-rastered slide per page in an OOXML zip
+   Hi-fi PDF / video frames: Puppeteer (src/export/puppeteer-pdf.ts, optional)
 
-Report / presentation export:  src/export/*-assembler.ts
-   design + datasets + runtime → one self-contained .html
+Report / presentation export:  src/export/{html,presentation}-assembler.ts
+   design + datasets + window.Folio runtime → one self-contained .html
+Animation export:  src/export/animation-export.ts → GIF/MP4/WebM (Puppeteer+ffmpeg)
+Lottie:  src/export/lottie-export.ts
 ```
 
 ---
@@ -289,11 +321,14 @@ toggle/tooltip/callout/progress`) power flow-layout reports — see [REPORT_ENGI
 
 Any color/font value prefixed with `$` resolves against the active theme at render
 time: `$primary`, `$surface`, `$text_muted`, `$heading` (→ `typography.families.heading`).
-**17 built-in themes** ship in `src/themes/builtin.ts`: `dark-tech light-clean ocean-blue
-neon-bloom indigo-pro sunset-glow mono-print forest-deep pastel-dream high-contrast
-brutalist-mono cyber-synthwave editorial-cream corporate-slate bold-poster
-swiss-international gallery`. Custom themes live in a project's `themes/` and are
-registered in `project.yaml`.
+**29 themes** ship via `src/themes/all-themes.ts` (`ALL_THEMES = BRAND_THEMES + BUILTIN_THEMES`):
+17 builtins in `builtin.ts` (`dark-tech light-clean ocean-blue neon-bloom indigo-pro
+sunset-glow mono-print forest-deep pastel-dream high-contrast brutalist-mono
+cyber-synthwave editorial-cream corporate-slate bold-poster swiss-international gallery`)
++ 12 brand-pack themes in `brand-pack.ts` (`apple linear notion stripe vercel airbnb
+spotify github figma slack nike mono`). Themes carry brand-character fields
+(atmosphere / type_ladder / section_rhythm) that steer generation, not just colors.
+Custom themes live in a project's `themes/` and are registered in `project.yaml`.
 
 ### 6.4 Z-index bands
 
@@ -378,7 +413,7 @@ Per-client setup: [INTEGRATIONS.md](INTEGRATIONS.md).
 
 ### 8.3 Memory safety
 
-The container is memory-capped (default `mem_limit: 1g`). Guards: `/mcp` body capped
+The container is memory-capped (default `mem_limit: 4g`; 1g proved too tight under harness load). Guards: `/mcp` body capped
 at `FOLIO_MAX_BODY_BYTES` (32 MiB), OAuth bodies at 256 KiB, `editorBroadcast` skips
 files over `FOLIO_MAX_BROADCAST_BYTES` (16 MiB), dead SSE clients are pruned on write,
 and both servers run under `bun --smol`.

@@ -390,18 +390,21 @@ window.Folio = {
 
 ---
 
-## 6. MCP TOOLS (Phase 2)
+## 6. MCP TOOLS
 
-New MCP tools for report generation:
+One multiplexed `report` tool (see [TOOLS.md](TOOLS.md)):
 
-| tool | description |
+| op | description |
 |---|---|
-| `report` (op:generate) | Create report spec from brief + data |
-| `generate_report_from_file` | Auto-analyze CSV/JSON + generate |
-| `add_report_page` | Append page to report |
-| `report` (op:report op:bind_data) | Wire data source to layer |
-| `preview_data` | Sample rows from data source |
-| `report` (op:export) | Export as interactive HTML |
+| `generate` | Scaffold report (`layout:"flow"` = responsive 12-col dashboard) |
+| `bind_data` | Attach datasets for `$data.*` / `$agg.*` |
+| `validate` | Lint chart/table/filter cross-refs before export |
+| `export` | Self-contained interactive HTML → `view_url` (deliverable) + `edit_url` |
+| `formula` | Store state/data context for `=expr` bindings |
+| `debug` | Evaluate one `=formula` against a context |
+
+Pages are appended with the normal `append_page`; layers with `add_layers`
+(flow widgets carry a `span` 1–12).
 
 ---
 
@@ -427,33 +430,34 @@ project/
 ```
 Report mode  → foreignObject wrappers → interactive HTML elements
 Poster mode  → static SVG fallback (no interactivity)
-Export HTML  → standalone file, all JS inlined, no CDN
+Export HTML  → standalone runtime (window.Folio) inlined; charts load Chart.js
+               (and Plotly only when a chart sets library:'plotly') from CDN —
+               the ONE documented exception to the no-CDN rule
 Export PDF   → Puppeteer render of HTML export
-Export PNG   → dom-to-image of first page
+Export PNG   → resvg raster (server) / canvas (browser)
 ```
 
-Layer rendering dispatch:
-1. `interactive_chart` → `<div class="folio-chart">` in foreignObject → Plotly.newPlot()
-2. `interactive_table` → `<div class="folio-table">` in foreignObject → new Tabulator()
-3. `rich_text` → `<div class="folio-richtext">` in foreignObject → marked.parse()
-4. `kpi_card` → `<div class="folio-kpi">` in foreignObject → template HTML
-5. `map` → `<div class="folio-map">` in foreignObject → L.map()
-6. `embed_code` → `<iframe srcdoc="...">` in foreignObject
-7. `popup` → `<div class="folio-popup">` appended to body, shown/hidden via JS
+Layer rendering dispatch (`src/export/interactive-renderers.ts`):
+1. `interactive_chart` → Chart.js (default) or Plotly (`library:'plotly'`; raw specs static, mapped traces re-filter live)
+2. `interactive_table` → native sortable/filterable table wired to `window.Folio` filters
+3. `rich_text` → marked.parse()
+4. `kpi_card` → template HTML (currency/number/percent/date formatters)
+5. `embed_code` → `<iframe srcdoc="...">`
+6. `popup` → modal shown/hidden via runtime actions
+7. Components: `button tabs accordion filter_bar toggle tooltip callout progress`
+   on the shared `window.Folio` state/events/filters runtime — `filter_bar`
+   links tables + charts live. Actions: `set toggle open_modal close_modal
+   filter scroll_to download_csv open_url`.
 
 ---
 
 ## 9. IMPLEMENTATION STATUS
 
-| feature | status |
-|---|---|
-| types.ts extensions | ✓ complete |
-| src/report/ module | ✓ skeleton |
-| renderer stubs (foreignObject) | ✓ complete |
-| data loader | ✓ complete |
-| data normalizer | ✓ complete |
-| aggregator | ✓ complete |
-| binder | ✓ complete |
-| navigation runtime | ✓ skeleton |
-| interactive HTML export | Phase 2 |
-| MCP tools | Phase 2 |
+All shipped: types, `src/report/` (loader · normalizer · aggregator · binder ·
+navigation · report-validator), the full interactive component library on the
+shared `window.Folio` runtime, flow layout (`src/renderer/flow-layout.ts`),
+studio editing (span/height drag, Data panel, Scripts panel), `report` MCP ops,
+self-contained interactive HTML export. Data sources: inline · http(json) ·
+cached-rows offline fallback; `query`/`sql`/`duckdb` declared but fail-loud
+(no shipped connector). Reference showcase: the IDX market-intel demo
+(38-stock dashboard).

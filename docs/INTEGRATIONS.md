@@ -147,7 +147,7 @@ for the full surface without duplicate tool names, or a single `all`:
 }
 ```
 
-Tier sizing for local models: **≤32K ctx → tier 1 only** (15 tools); **64K → 1+2**;
+Tier sizing for local models: **≤32K ctx → tier 1 only** (6 tools); **64K → 1+2** (13);
 **128K → all three**. Windows: use the PowerShell self-updating bootstrap from the
 [README](../README.md#local--lm-studio-stdio); pre-clone once to avoid the first-launch
 timeout.
