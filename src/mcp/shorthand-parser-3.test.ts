@@ -174,13 +174,23 @@ describe('diagnoseLayers — self-correction notes for the tool loop', () => {
     expect(notes.find(n => n.includes('cap') && n.includes('empty'))).toBeTruthy();
   });
 
-  it('stays silent for a well-formed set (resolved icon, URL image, real text)', () => {
+  it('stays silent for a well-formed set (resolved icon, assets/ image, real text)', () => {
     const layers: Layer[] = [
       { id: 'ico', type: 'icon', z: 0, x: 0, y: 0, name: 'star', size: 24 },
-      { id: 'pic', type: 'image', z: 0, x: 0, y: 0, width: 10, height: 10, src: 'https://example.com/a.png' },
+      { id: 'pic', type: 'image', z: 0, x: 0, y: 0, width: 10, height: 10, src: 'assets/images/a.png' },
       { id: 'cap', type: 'text', z: 0, x: 0, y: 0, width: 10, height: 10, content: { type: 'plain', value: 'Hi' } },
     ] as unknown as Layer[];
     expect(diagnoseLayers(layers)).toEqual([]);
+  });
+
+  it('warns that a remote-URL image src is editor-only (blank in PNG/PDF exports)', () => {
+    const layers: Layer[] = [
+      { id: 'pic', type: 'image', z: 0, x: 0, y: 0, width: 10, height: 10, src: 'https://example.com/a.png' },
+    ] as unknown as Layer[];
+    const notes = diagnoseLayers(layers);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/EDITOR only/);
+    expect(notes[0]).toMatch(/asset_add/);
   });
 
   it('accepts a synonym icon name without a note', () => {

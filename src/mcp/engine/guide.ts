@@ -632,6 +632,34 @@ Loop:
 
 Rebuild as layers (editable), NOT as a single image layer of the screenshot — the point is an
 editable Folio design that matches the reference, not a pasted picture.`,
+
+  assets: `# Project Assets — photos, logos, fonts in designs
+Assets live as FILES under <project>/assets/{images,icons,fonts}. Reference them
+as src:"assets/images/<name>" — NEVER inline base64 into a design, NEVER use an
+https:// URL as a layer src (it shows in the editor but exports render a
+placeholder — server exports cannot fetch the web).
+
+Workflow:
+  1. manage_design {op:"asset_list", project_path}   ← what exists: per asset you
+     get width/height, dominant_colors, luminance (dark|light|busy) and alt —
+     enough to place an image you cannot see.
+  2. manage_design {op:"asset_add", project_path, name:"team.jpg",
+     data:"data:image/jpeg;base64,…", alt:"five people at a whiteboard"}
+     ← stores the file + returns a ready-to-place layer_stub. alt is REQUIRED
+     practice — it is a vision-less model's only eyes later.
+  3. Place: {type:"image", src:"assets/images/team.jpg", pos:[x,y,w,h], fit:"cover"}
+     • Respect the native aspect (width/height from asset_list) or set fit:"cover".
+     • luminance:"busy" → put a scrim between the photo and any text on top:
+       {type:"rect", pos:[same], fill:"rgba(0,0,0,0.45)"} under the text layer.
+     • Shapes take image FILLS too: fill:{type:"image", src:"assets/images/…",
+       mode:"cover"|"contain"|"tile"} — a photo inside a circle/blob/card.
+  4. render_preview → any image the export can't resolve shows a placeholder
+     frame + a note naming the fix. diagnose_design flags distortion (>5%
+     aspect mismatch) and >2× upscaling.
+
+Sizing: a hero photo is a DESIGN element — full-bleed + scrim + type on top
+beats a small floating rectangle. Match photo tones to the palette (duotone/
+overlay effects) instead of dropping an off-palette image on the canvas.`,
 };
 
 // Frontier (minimal) instances: prepend a note that reframes the aesthetic

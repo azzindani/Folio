@@ -38,6 +38,8 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 // per-IP rate limit (flood shield), and a concurrency cap on expensive ops
 // (thumbnail render / library scan) so the single-core container can't collapse.
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
+// Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
+import { ingestAsset, AssetError, maxAssetBytes } from '../mcp/engine/assets';
 
 const GUARDS = loadEditorGuards();
 
@@ -476,8 +478,36 @@ Bun.serve({
         const target = safeJoinProject(rawRel);
         let relDecoded = rawRel;
         try { relDecoded = decodeURIComponent(rawRel); } catch { /* keep raw */ }
+
+        // ── Asset upload: POST /__project_files/<project>/assets/<kind>/<file>
+        // Raw bytes in, plain file + manifest entry out (same ingest the MCP
+        // op uses: sanitize, type allowlist, per-file + per-project caps,
+        // svg script strip, dims + dominant colors).
+        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts)\/([^/]+)$/);
+        if (assetMatch && target && !relDecoded.includes('..')) {
+          const projectDir = safeJoinProject(assetMatch[1]);
+          if (!projectDir || !fs.existsSync(projectDir)) {
+            return new Response(JSON.stringify({ ok: false, error: `No such project: ${assetMatch[1]}` }), { status: 404, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+          }
+          if (parseInt(req.headers.get('content-length') ?? '0', 10) > maxAssetBytes()) {
+            return new Response(JSON.stringify({ ok: false, error: 'Asset too large' }), { status: 413, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+          }
+          let buf: Buffer;
+          try { buf = Buffer.from(await req.arrayBuffer()); } catch { return new Response('Bad body', { status: 400 }); }
+          try {
+            const { entry, warnings } = ingestAsset({ projectDir, name: assetMatch[3], data: buf, kind: assetMatch[2] });
+            return new Response(JSON.stringify({ ok: true, asset: entry, warnings }), {
+              status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...(refresh ? { 'Set-Cookie': refresh } : {}) },
+            });
+          } catch (e) {
+            const status = e instanceof AssetError ? e.status : 500;
+            const hint = e instanceof AssetError ? e.hint : '';
+            return new Response(JSON.stringify({ ok: false, error: (e as Error).message, hint }), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+          }
+        }
+
         if (!target || relDecoded.includes('..') || !relDecoded.endsWith('.design.yaml')) {
-          return new Response('Only *.design.yaml may be written', { status: 400 });
+          return new Response('Only *.design.yaml or assets/* may be written', { status: 400 });
         }
         if (parseInt(req.headers.get('content-length') ?? '0', 10) > MAX_DESIGN_BYTES) {
           return new Response('Payload too large', { status: 413 });
