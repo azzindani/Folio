@@ -241,22 +241,18 @@ less (ground rule 2).
   OUTPUT_BUDGET, CONSTRAINED_MODE) per client section. Keep MCP.md §3 the
   source; link, don't duplicate numbers.
 
-### WP-3.5 · Seal-time duplicate-section collapse (from 120B smoke run)
-- Symptom: 120B thrash appended "What's Inside" 5× + offer 2×; seal kept all.
-- Detect: ≥2 layer clusters whose normalized text content matches ≥80% and
-  whose bboxes stack/overlap → keep the first (highest-quality: most layers
-  resolved), drop the rest, re-run autoplace + dead-band trim.
-- Files: new `src/mcp/engine-finalize-dedupe.ts` wired into seal sweep.
-- Accept: roastery-launch repro seals to ONE section set at requested ratio.
+### WP-3.5 · Seal-time duplicate-section collapse — **SHIPPED 2026-07-10**
+`src/mcp/engine-finalize-dedupe.ts` in the seal sweep (before decollide):
+identical ≥24-char text signatures at any depth + stacked ≥12-char echoes +
+(thrash-gated) repeated identical images → keep first-in-flow; then compact
+>160px gaps between surviving top-level content. Live repro: 20 blocks
+collapsed, idempotent re-seal. 7 unit tests.
 
-### WP-3.6 · Requested-ratio hardening
-- Symptom: explicit Instagram-portrait ask; model ballooned doc height
-  1350 → 4826 and the engine honored it.
-- When meta.type=poster AND the project canvas is a deliberate ratio
-  (4:5/9:16/1:1 — reuse isDeliberatePosterRatio), a model-supplied doc
-  height >1.5× canvas → reflow/paginate instead of balloon (respect the
-  honorPosterRatio precedent, but for model-set height too).
-- Accept: same brief re-run → 1080×1350 output or an explicit carousel.
+### WP-3.6 · Requested-ratio hardening — **SHIPPED 2026-07-10 (warn tier)**
+Dead-band trim now runs at SEAL (posters); after rescue, ratio >2:1 with
+meta.type=poster → loud `pWarn` + carousel hint in seal progress (engine
+guides, never overrides model composition — §0.4). Full auto-reflow to the
+exact requested ratio stays future work if the warning proves insufficient.
 
 ---
 

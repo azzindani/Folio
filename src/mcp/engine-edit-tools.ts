@@ -14,6 +14,8 @@ import type { NextAction } from './types';
 
 import { pageHasReadableContent } from './engine-layer-tools';
 import { finalizeSpecPages } from './engine-finalize-pages';
+import { collapseDuplicateSections } from './engine-finalize-dedupe';
+import { trimTrailingDeadBand } from './engine-finalize-geom';
 import { pruneEmptyDrafts } from './engine-project-tools';
 
 import { setNestedValue, inertPresetKeyWarning } from './engine-runtime-tools';
@@ -207,11 +209,32 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   if (fitDocumentToSolePreset(spec)) progress.push(pInfo('Fitted canvas to content', `${spec.document.width}×${spec.document.height}`));
+  // Duplicate-SECTION collapse BEFORE the sweep, so decollide/re-light run on
+  // the deduped set. A thrashing model stacks the same preset block down the
+  // page (live 120B: "What's Inside" ×5 → 4826px canvas); keep the first copy
+  // of any repeated content block, close the gaps.
+  {
+    let deduped = 0;
+    if (Array.isArray(spec.layers)) deduped += collapseDuplicateSections(spec.layers, spec.document.width, spec.document.height);
+    for (const p of spec.pages ?? []) if (Array.isArray(p.layers)) deduped += collapseDuplicateSections(p.layers, spec.document.width, spec.document.height);
+    if (deduped) progress.push(pInfo(`Collapsed ${deduped} duplicated content block(s)`, 'identical sections stacked by rebuild passes — kept the first of each'));
+  }
   // Final per-page rescue sweep: strip null layers, flow positionless ones,
   // de-collide overlaps, re-light dark-on-dark — over the ROOT layers AND every
   // page. Catches a multi-page design written in one shot (whose page layers no
   // earlier pass touched) and self-heals an older broken file on re-seal.
   const swept = finalizeSpecPages(spec);
+  // Requested-ratio hardening: a poster whose height ballooned (thrash, model-
+  // set height) gets the dead-band trim at SEAL too, then a loud warning +
+  // carousel hint if it still isn't a poster ratio.
+  if (!spec.pages && Array.isArray(spec.layers)) {
+    const trimmed = trimTrailingDeadBand(spec.layers, spec.document.width, spec.document.height);
+    if (trimmed) { spec.document.height = trimmed; progress.push(pInfo(`Trimmed the canvas to ${trimmed}px`, 'removed the dead band below the last content')); }
+    const ratio = spec.document.height / Math.max(1, spec.document.width);
+    if ((spec.meta.type ?? 'poster') === 'poster' && ratio > 2.0) {
+      progress.push(pWarn('Canvas is a scroll, not a poster', `${spec.document.width}×${spec.document.height} (${ratio.toFixed(1)}:1) — a poster should be 4:5/9:16/1:1. Split the content into a CAROUSEL (create_design type:"carousel" + append_page per section) or cut sections.`));
+    }
+  }
   if (swept.nulls) progress.push(pInfo(`Dropped ${swept.nulls} null layer(s)`, 'editor-crash guard'));
   if (swept.recovered) progress.push(pInfo(`Recovered ${swept.recovered} embedded JSON-in-text layer(s)`, 'stringified layer array → real layers (or dropped)'));
   if (swept.placed) progress.push(pInfo(`Placed ${swept.placed} positionless layer(s)`, 'flowed into a centered column'));

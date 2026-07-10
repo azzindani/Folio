@@ -132,6 +132,18 @@ export function lintAiSlop(layers: Layer[]): string[] {
     notes.push(`text "${emojiIcon.id}" is an emoji used as an icon — use the \`icon\` layer type (monoline, currentColor) instead of an emoji glyph (anti_slop rule 3).`);
   }
 
+  // 3b. The "image"/"photo" glyph used as a decorative bullet — it renders as
+  // a framed mountain+sun that readers parse as a BROKEN THUMBNAIL, not an
+  // icon (observed: a blind model marked every feature row with it).
+  const brokenLook = all.filter(l => {
+    if (l.type !== 'icon') return false;
+    const n = String((l as { name?: unknown }).name ?? '').toLowerCase();
+    return n === 'image' || n === 'img' || n === 'photo' || n === 'picture' || n === 'pic' || n === 'gallery';
+  });
+  if (brokenLook.length > 0) {
+    notes.push(`icon "${brokenLook[0].id}" uses name:"image" — that glyph reads as a BROKEN image placeholder, not decoration. Pick a semantic icon per item (coffee, package, truck, star, check, zap, …)${brokenLook.length > 1 ? ` — ${brokenLook.length} layers affected` : ''}.`);
+  }
+
   // 4. Invented metrics + 5. Filler copy.
   for (const l of all) {
     if (l.type !== 'text') continue;

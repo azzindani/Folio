@@ -181,14 +181,21 @@ model found the uploaded photo via asset_list, placed it with fit, export
 embedded it (4 hero instances render). Composition FAILED the floor:
 "What's Inside" section appended 5×, offer block 2× (thrash), document
 height ballooned 1080×1350 → 1080×4826 despite an explicit Instagram-
-portrait ask, mid-page text collisions survived seal. New engine items →
-**WP-3.5 seal-time duplicate-section collapse** (same normalized text
-block ≥2× overlapping/stacked → keep first) and **WP-3.6 requested-ratio
-hardening** (poster + explicit aspect in brief → engine refuses doc-height
-balloon, reflows instead). Repro: roastery-launch project on the live
-container. Also unexplained: espresso-hero placed at icon size renders the
-PLACEHOLDER glyph while the big placements render fine — repro before
-diagnosing.
+portrait ask, mid-page text collisions survived seal.
+
+**→ SHIPPED same day (engine-finalize-dedupe.ts, in seal):** WP-3.5
+duplicate-content collapse — identical ≥24-char text signatures at ANY
+depth (whole preset groups, nested rows), stacked ≥12-char short-text
+echoes, and (gated on thrash detected) repeated identical images; then
+gap compaction (collapse >160px voids between surviving content) + the
+dead-band trim now also runs at seal. WP-3.6 — poster ratio >2:1 after
+rescue → loud seal warning + carousel hint. Live re-seal of the wrecked
+repro: 20 blocks collapsed, 4826→3943px, single copy of every section,
+idempotent on re-seal (0 removed). Remaining sparseness sits INSIDE the
+model's own group bboxes — deliberately not restructured (§0.4 model-led).
+The "placeholder glyph at icon size" was NOT an asset bug: the model chose
+lucide icon name:"image" as its list bullet (reads as a broken thumbnail)
+— now an ai-slop-lint note steers models to semantic icons.
 
 ---
 
