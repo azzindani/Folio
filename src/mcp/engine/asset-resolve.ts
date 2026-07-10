@@ -12,6 +12,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { Fill } from '../../schema/types';
 import { parseDimensions } from './reference';
+import { readAssetManifest } from './assets';
 
 const EXT_MIME: Record<string, string> = {
   png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
@@ -144,6 +145,71 @@ export function auditImageAssets(spec: DesignSpec, designPath: string, projectPa
   };
   visit(clone.layers);
   for (const p of clone.pages ?? []) visit((p as Page & { layers?: Layer[] }).layers);
+  // Text-on-busy-image check runs on the ORIGINAL spec (the clone's srcs were
+  // just rewritten to data: URIs, losing the assets/ path the manifest keys on).
+  findings.push(...auditBusyImageText(spec, designPath, projectPath));
+  return findings;
+}
+
+/**
+ * WP-1.4: a vision-less model can't see that its headline landed on a BUSY
+ * photo. Ingest already classifies each asset's luminance (dark|light|busy) —
+ * flag text sitting ≥60% on a busy image with no painted scrim between them
+ * in z. Suggestion-tier: a deliberate art-directed overlap stays legal (§0.4).
+ */
+function auditBusyImageText(spec: DesignSpec, designPath: string, projectPath?: string): ImageFinding[] {
+  const findings: ImageFinding[] = [];
+  const projectDir = projectPath ?? path.dirname(path.dirname(designPath));
+  const manifest = readAssetManifest(projectDir);
+  const busyPaths = new Set<string>();
+  for (const rows of Object.values(manifest)) {
+    for (const e of rows ?? []) if (e.luminance === 'busy') busyPaths.add(e.path.replace(/^\.\//, ''));
+  }
+  if (!busyPaths.size) return findings;
+
+  const box = (l: Layer): { x: number; y: number; w: number; h: number; z: number } => {
+    const r = l as unknown as Record<string, unknown>;
+    return { x: Number(r['x']) || 0, y: Number(r['y']) || 0, w: Number(r['width']) || 0, h: Number(r['height']) || 0, z: Number(r['z']) || 0 };
+  };
+  // Fraction of box `a` covered by box `b`.
+  const coveredBy = (a: ReturnType<typeof box>, b: ReturnType<typeof box>): number => {
+    const ox = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+    const oy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    return a.w * a.h > 0 ? (ox * oy) / (a.w * a.h) : 0;
+  };
+  const checkArray = (layers: Layer[] | undefined, page?: string): void => {
+    const flat: Layer[] = [];
+    const collect = (ls?: Layer[]): void => {
+      for (const l of ls ?? []) { if (l) { flat.push(l); if (l.type === 'group') collect((l as Layer & { layers?: Layer[] }).layers); } }
+    };
+    collect(layers);
+    const busyImages = flat.filter(l => l.type === 'image'
+      && busyPaths.has(String((l as Layer & { src?: string }).src ?? '').replace(/^\.\//, '')));
+    if (!busyImages.length) return;
+    for (const t of flat) {
+      if (t.type !== 'text') continue;
+      const tb = box(t);
+      if (tb.w <= 0) continue;
+      if (tb.h <= 0) tb.h = 48;                                   // unmeasured blind-model box
+      for (const im of busyImages) {
+        const ib = box(im);
+        if (tb.z <= ib.z || coveredBy(tb, ib) < 0.6) continue;    // not really ON the photo
+        const hasScrim = flat.some(s => {
+          if (s === t || s === im || s.type === 'text' || s.type === 'group' || s.type === 'image') return false;
+          const sb = box(s);
+          const opac = typeof (s as Layer & { opacity?: number }).opacity === 'number' ? (s as Layer & { opacity: number }).opacity : 1;
+          return sb.z > ib.z && sb.z < tb.z && opac >= 0.25 && coveredBy(tb, sb) >= 0.8;
+        });
+        if (!hasScrim) {
+          findings.push({ code: 'text_on_busy_image', severity: 'suggestion', layer_id: t.id,
+            message: `text "${t.id}"${page ? ` (page ${page})` : ''} sits on busy photo "${im.id}" with no scrim — add a rect between them (e.g. fill:"#00000066", z between the image and the text) or move the text off the photo.` });
+        }
+        break;                                                    // one finding per text
+      }
+    }
+  };
+  checkArray(spec.layers);
+  for (const p of spec.pages ?? []) checkArray((p as Page & { layers?: Layer[] }).layers, p.id);
   return findings;
 }
 

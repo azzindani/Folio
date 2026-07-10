@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { resolveImageAssets, assetBaseDirs } from './asset-resolve';
+import { resolveImageAssets, assetBaseDirs, auditImageAssets } from './asset-resolve';
 import type { DesignSpec, Layer } from '../../schema/types';
 
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
@@ -97,5 +97,57 @@ describe('resolveImageAssets', () => {
     // holds on Windows runners too ('\\p\\assets').
     const dirs = assetBaseDirs('/p/designs/d.design.yaml', '/p').map(d => d.replace(/\\/g, '/'));
     expect(dirs).toEqual(['/p/designs', '/p', '/p', '/p/assets']);
+  });
+});
+
+describe('auditImageAssets — text on a BUSY photo without a scrim (WP-1.4)', () => {
+  let tmp: string, proj: string, dPath: string;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-busy-'));
+    proj = path.join(tmp, 'proj');
+    fs.mkdirSync(path.join(proj, 'designs'), { recursive: true });
+    fs.mkdirSync(path.join(proj, 'assets/images'), { recursive: true });
+    fs.writeFileSync(path.join(proj, 'assets/images/crowd.png'), Buffer.from(PNG_B64, 'base64'));
+    // JSON is valid YAML — write the manifest the ingest pipeline would.
+    fs.writeFileSync(path.join(proj, 'project.yaml'), JSON.stringify({
+      name: 'proj',
+      assets: { images: [{ id: 'crowd', path: 'assets/images/crowd.png', kind: 'images', bytes: 68, luminance: 'busy', added: '2026-07-11' }] },
+    }));
+    dPath = path.join(proj, 'designs/d.design.yaml');
+  });
+  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  const photo = (): Layer => ({ id: 'photo', type: 'image', z: 1, x: 0, y: 0, width: 100, height: 100, src: 'assets/images/crowd.png' } as unknown as Layer);
+  const headline = (): Layer => ({ id: 'headline', type: 'text', z: 5, x: 10, y: 40, width: 80, height: 0, content: { type: 'plain', value: 'BIG NIGHT' }, style: { font_size: 24 } } as unknown as Layer);
+
+  it('flags a headline sitting on a busy photo with no scrim', () => {
+    const spec = makeSpec([photo(), headline()]);
+    const findings = auditImageAssets(spec, dPath, proj);
+    const f = findings.find(x => x.code === 'text_on_busy_image');
+    expect(f).toBeTruthy();
+    expect(f!.layer_id).toBe('headline');
+    expect(f!.severity).toBe('suggestion');
+    expect(f!.message).toMatch(/scrim/);
+  });
+
+  it('stays quiet when a scrim rect sits between the photo and the text', () => {
+    const scrim = { id: 'scrim', type: 'rect', z: 3, x: 5, y: 35, width: 90, height: 60, opacity: 0.5, fill: { type: 'solid', color: '#000000' } } as unknown as Layer;
+    const spec = makeSpec([photo(), scrim, headline()]);
+    const findings = auditImageAssets(spec, dPath, proj);
+    expect(findings.find(x => x.code === 'text_on_busy_image')).toBeUndefined();
+  });
+
+  it('stays quiet for text BESIDE the photo and for non-busy assets', () => {
+    const beside = { ...headline() } as unknown as Record<string, unknown>;
+    beside['x'] = 200;                                            // off the photo
+    const spec = makeSpec([photo(), beside as unknown as Layer]);
+    expect(auditImageAssets(spec, dPath, proj).find(x => x.code === 'text_on_busy_image')).toBeUndefined();
+    // flip manifest to light → no flag even when overlapping
+    fs.writeFileSync(path.join(proj, 'project.yaml'), JSON.stringify({
+      name: 'proj',
+      assets: { images: [{ id: 'crowd', path: 'assets/images/crowd.png', kind: 'images', bytes: 68, luminance: 'light', added: '2026-07-11' }] },
+    }));
+    const spec2 = makeSpec([photo(), headline()]);
+    expect(auditImageAssets(spec2, dPath, proj).find(x => x.code === 'text_on_busy_image')).toBeUndefined();
   });
 });
