@@ -12,6 +12,7 @@
  * Composition model unchanged: a "selection" is { templateId, themeId },
  * orthogonal axes joined via injectIntoTemplate + theme.ref override.
  */
+import { chromeIcon } from '../../editor/chrome-icons';
 import { loadCatalogIndex, loadFullTemplate, findIndexEntry, peekTemplate } from '../../templates/builtin-loader';
 import { loadThemeCatalog, getThemeById } from '../../templates/theme-registry';
 import { injectIntoTemplate, type TemplateSpec } from '../../schema/template';
@@ -416,9 +417,9 @@ export class CatalogDialog extends CatalogDialogBase {
       `<span class="rail-x">×</span>`,
       `<span class="rail-chip">${escapeHTML(th?.name ?? '—')}</span>`,
     ];
-    if (pal) chips.push(`<span class="rail-x">+</span>`, this.removableChip('palette', '🎨', pal.name));
+    if (pal) chips.push(`<span class="rail-x">+</span>`, this.removableChip('palette', chromeIcon('palette', 12), pal.name));
     if (tp)  chips.push(`<span class="rail-x">+</span>`, this.removableChip('type',    'Aa', tp.name));
-    if (ep)  chips.push(`<span class="rail-x">+</span>`, this.removableChip('effects', '✨', ep.name));
+    if (ep)  chips.push(`<span class="rail-x">+</span>`, this.removableChip('effects', chromeIcon('sparkles', 12), ep.name));
     pick.innerHTML = chips.join('');
 
     // Honest status when the picked effects pack can't visibly land on

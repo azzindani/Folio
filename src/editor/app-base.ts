@@ -2,6 +2,7 @@
 // Split out of app.ts to stay within the line budget. EditorApp (app.ts) extends
 // this with the constructor, init(), and design load/export/theme operations. Verbatim.
 import { StateManager } from './state';
+import { chromeIcon } from './chrome-icons';
 import { CanvasManager } from './canvas';
 import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
@@ -82,22 +83,22 @@ export abstract class EditorAppBase {
       </div>
 
       <div class="activity-bar">
-        <button class="act-btn active" data-panel="layers" title="Layers (⌘⇧L)">&#9776;</button>
-        <button class="act-btn" data-panel="files" title="Files (⌘⇧E)">&#128193;</button>
-        <button class="act-btn" data-panel="project-assets" title="Project assets">&#128444;</button>
-        <button class="act-btn" data-panel="components" title="Components (⌘⇧K)">&#11041;</button>
-        <button class="act-btn" data-panel="icons" title="Icons (⌘⇧I)">&#11088;</button>
-        <button class="act-btn" data-panel="find" title="Find &amp; Replace (⌘H)">&#128269;</button>
+        <button class="act-btn active" data-panel="layers" title="Layers (⌘⇧L)">${chromeIcon('layers')}</button>
+        <button class="act-btn" data-panel="files" title="Files (⌘⇧E)">${chromeIcon('folder')}</button>
+        <button class="act-btn" data-panel="project-assets" title="Project assets">${chromeIcon('image')}</button>
+        <button class="act-btn" data-panel="components" title="Components (⌘⇧K)">${chromeIcon('component')}</button>
+        <button class="act-btn" data-panel="icons" title="Icons (⌘⇧I)">${chromeIcon('star')}</button>
+        <button class="act-btn" data-panel="find" title="Find &amp; Replace (⌘H)">${chromeIcon('search')}</button>
         <div class="act-spacer"></div>
-        <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">&#9790;</button>
+        <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">${chromeIcon('moon')}</button>
       </div>
 
       <div class="mob-backdrop"></div>
 
       <nav class="mobile-nav" aria-label="Mobile navigation">
-        <button class="mob-nav-btn" data-mob="layers" title="Layers">&#9776;</button>
-        <button class="mob-nav-btn" data-mob="props" title="Properties">&#9881;</button>
-        <button class="mob-nav-btn" data-mob="cmd" title="Command palette">&#128269;</button>
+        <button class="mob-nav-btn" data-mob="layers" title="Layers">${chromeIcon('layers', 18)}</button>
+        <button class="mob-nav-btn" data-mob="props" title="Properties">${chromeIcon('sliders', 18)}</button>
+        <button class="mob-nav-btn" data-mob="cmd" title="Command palette">${chromeIcon('search', 18)}</button>
       </nav>
 
       <div class="left-panel">
@@ -117,7 +118,7 @@ export abstract class EditorAppBase {
           <div class="asset-panel">
             <div class="asset-panel-header">
               <span class="asset-panel-title">Assets</span>
-              <button class="asset-open-btn" id="open-folder-btn" title="Open project folder">&#128193; Open Folder</button>
+              <button class="asset-open-btn" id="open-folder-btn" title="Open project folder">${chromeIcon('folder', 13)} Open Folder</button>
             </div>
             <div class="asset-grid" id="asset-grid"></div>
           </div>
@@ -189,14 +190,14 @@ export abstract class EditorAppBase {
       </div>
 
       <div class="r-activity-bar" role="tablist" aria-label="Right panel tabs">
-        <button class="act-btn rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">&#9881;</button>
-        <button class="act-btn rpanel-tab" data-tab="data" title="Data" aria-label="Data">&#9638;</button>
-        <button class="act-btn rpanel-tab" data-tab="scripts" title="Scripts" aria-label="Scripts">&#60;&#47;&#62;</button>
-        <button class="act-btn rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">&#127912;</button>
-        <button class="act-btn rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">&#9889;</button>
-        <button class="act-btn rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">&#9201;</button>
-        <button class="act-btn rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">&#9888;</button>
-        <button class="act-btn rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">&#9855;</button>
+        <button class="act-btn rpanel-tab active" data-tab="properties" title="Properties" aria-label="Properties">${chromeIcon('sliders')}</button>
+        <button class="act-btn rpanel-tab" data-tab="data" title="Data" aria-label="Data">${chromeIcon('table')}</button>
+        <button class="act-btn rpanel-tab" data-tab="scripts" title="Scripts" aria-label="Scripts">${chromeIcon('code')}</button>
+        <button class="act-btn rpanel-tab" data-tab="colors" title="Colors" aria-label="Colors">${chromeIcon('palette')}</button>
+        <button class="act-btn rpanel-tab" data-tab="animate" title="Animate" aria-label="Animate">${chromeIcon('zap')}</button>
+        <button class="act-btn rpanel-tab" data-tab="timeline" title="Timeline" aria-label="Timeline">${chromeIcon('clock')}</button>
+        <button class="act-btn rpanel-tab" data-tab="problems" title="Issues" aria-label="Issues">${chromeIcon('alert')}</button>
+        <button class="act-btn rpanel-tab" data-tab="a11y" title="Accessibility" aria-label="Accessibility">${chromeIcon('a11y')}</button>
       </div>
 
       <div class="status-bar">
@@ -401,14 +402,14 @@ export abstract class EditorAppBase {
     // Restore persisted theme
     const saved = localStorage.getItem('folio:ui-theme') ?? 'dark';
     root.setAttribute('data-theme', saved);
-    btn.innerHTML = saved === 'light' ? '&#9790;' : '&#9788;';
+    btn.innerHTML = saved === 'light' ? chromeIcon('moon') : chromeIcon('sun');
     btn.title = saved === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
 
     btn.addEventListener('click', () => {
       const isLight = root.getAttribute('data-theme') === 'light';
       const next = isLight ? 'dark' : 'light';
       root.setAttribute('data-theme', next);
-      btn.innerHTML = next === 'light' ? '&#9790;' : '&#9788;';
+      btn.innerHTML = next === 'light' ? chromeIcon('moon') : chromeIcon('sun');
       btn.title = next === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
       localStorage.setItem('folio:ui-theme', next);
       this.payloadEditor?.setTheme(next);
@@ -474,7 +475,8 @@ export abstract class EditorAppBase {
     btn.addEventListener('click', async () => {
       try {
         await projectFolder.open();
-        btn.textContent = `📁 ${projectFolder.rootName}`;
+        btn.innerHTML = chromeIcon('folder', 13);
+        btn.appendChild(document.createTextNode(` ${projectFolder.rootName}`));
       } catch (err) {
         const { showToast } = await import('../utils/toast');
         showToast((err as Error).message, 'warning');

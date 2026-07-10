@@ -272,6 +272,13 @@ html, body {
   border-radius: 2px 0 0 2px;
 }
 
+/* Chrome icons are inline stroke SVGs on currentColor (src/editor/
+   chrome-icons.ts) — keep them out of hit-testing so button handlers that
+   read e.target still see the button. */
+.act-btn svg, .mob-nav-btn svg, .tool-btn svg, .sb-btn svg, .asset-open-btn svg { pointer-events: none; flex-shrink: 0; }
+.asset-open-btn { display: inline-flex; align-items: center; gap: 5px; }
+.rail-chip svg { vertical-align: -2px; }
+
 .act-btn {
   width: 36px; height: 36px;
   border: none;
