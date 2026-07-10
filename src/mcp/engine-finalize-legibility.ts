@@ -237,6 +237,11 @@ export function fixInvisibleText(layers: Layer[], docW: number, docH: number, th
     // 2. Else re-light the model's OWN color — keep its hue, push the lightness
     //    until legible (a backdrop-matched neutral only when it's greyscale).
     if (!next) next = relight(effHex, bd, bdLum);
+    // relight can cap out — e.g. pure white on a saturated mid-tone still
+    // misses the target ratio, so the best candidate IS the current color.
+    // Writing it back is a no-op, but counting it made every re-seal of a
+    // sealed design report a phantom "Re-lit 1". A no-op must stay silent.
+    if (typeof eff === 'string' && next.toLowerCase() === eff.toLowerCase()) return;
     o['style'] = { ...st, color: next };
     fixed++;
   });

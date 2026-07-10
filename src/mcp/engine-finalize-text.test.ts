@@ -16,6 +16,9 @@ const shapeAt = (color: string, x: number, y: number, w: number, h: number, z: n
 // A text at an explicit position + z (the base `text` helper pins x:80 y:100 z:1).
 const textAt = (value: string, x: number, y: number, color: string): Layer =>
   ({ id: 't', type: 'text', z: 2, x, y, width: 800, height: 80, content: { type: 'plain', value }, style: { color, font_size: 48 } } as unknown as Layer);
+// A label sized INTO the 230×64 pill at (120,840) so the pill is its local backdrop.
+const pillLabel = (color: string): Layer =>
+  ({ id: 't', type: 'text', z: 2, x: 120, y: 856, width: 230, height: 32, content: { type: 'plain', value: '3 STEPS' }, style: { color, font_size: 24 } } as unknown as Layer);
 
 describe('fixInvisibleText', () => {
   it('recovers the model\'s legible flat color when a nested style color is invisible', () => {
@@ -145,6 +148,25 @@ describe('fixInvisibleText', () => {
     const layers = [bgRect('#F2EFE6'), text('t', 'x', { color: '#C8C8C8', font_size: 30 })];
     fixInvisibleText(layers, W, H);
     expect(styleColor(layers[1])).toBe('#141414');   // light bg, greyscale → neutral dark
+  });
+
+  it('re-seal stays SILENT when relight caps out at the current color (no phantom count)', () => {
+    // #FAFAFA on a saturated vermillion pill misses the target ratio, and the
+    // best relight candidate IS #FAFAFA — nothing changes, so nothing may be
+    // counted. (Every seal of pour-over-guide-v2 reported a phantom "Re-lit 1".)
+    const pill = shapeAt('#c4552a', 120, 840, 230, 64, 1);
+    const lbl = pillLabel('#FAFAFA');
+    const layers = [bgRect('#f4efe6'), pill, lbl];
+    expect(fixInvisibleText(layers, W, H)).toBe(0);
+    expect(styleColor(lbl)).toBe('#FAFAFA');           // untouched
+  });
+
+  it('still counts a REAL relight, and the follow-up run is a no-op', () => {
+    const pill = shapeAt('#c4552a', 120, 840, 230, 64, 1);
+    const lbl = pillLabel('#f4efe6');                    // low-contrast cream → re-lit
+    const layers = [bgRect('#f4efe6'), pill, lbl];
+    expect(fixInvisibleText(layers, W, H)).toBe(1);
+    expect(fixInvisibleText(layers, W, H)).toBe(0);      // idempotent in count, not just bytes
   });
 
   it('does NOT treat a translucent panel as a solid backdrop', () => {
