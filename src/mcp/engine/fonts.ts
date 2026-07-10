@@ -34,13 +34,47 @@ export function bundledFamilies(): Set<string> {
   return out;
 }
 
-/** resvg `font` option: load the bundled dir + system fonts, DejaVu as last resort. */
-export function resvgFontOption(): {
+// ── Project fonts (WP-1.6) — TTF/OTF the operator uploaded to
+//    <project>/assets/fonts. resvg reads the real name tables, so rendering is
+//    exact; only the unbundled-WARNING heuristic below is filename-based.
+
+/** `<project>/assets/fonts` when it exists, else null. */
+export function projectFontsDir(projectDir?: string): string | null {
+  if (!projectDir) return null;
+  const d = path.join(projectDir, 'assets', 'fonts');
+  try { return fs.statSync(d).isDirectory() ? d : null; } catch { return null; }
+}
+
+export { fontFamilyFromFilename } from '../../utils/font-name';
+import { fontFamilyFromFilename, isFontFile } from '../../utils/font-name';
+
+/** Lowercased family guesses for every font file in the project (no cache —
+ *  operators upload mid-session and the dir listing is tiny). */
+export function projectFontFamilies(projectDir?: string): Set<string> {
+  const out = new Set<string>();
+  const pd = projectFontsDir(projectDir);
+  if (!pd) return out;
+  try {
+    for (const f of fs.readdirSync(pd)) {
+      if (!isFontFile(f)) continue;
+      const fam = fontFamilyFromFilename(f);
+      if (fam) out.add(fam);
+    }
+  } catch { /* unreadable dir → none */ }
+  return out;
+}
+
+/** resvg `font` option: bundled dir (+ the project's assets/fonts when given)
+ *  + system fonts, DejaVu as last resort. */
+export function resvgFontOption(projectDir?: string): {
   fontDirs: string[];
   loadSystemFonts: boolean;
   defaultFontFamily: string;
 } {
-  return { fontDirs: [FONTS_DIR], loadSystemFonts: true, defaultFontFamily: 'DejaVu Sans' };
+  const dirs = [FONTS_DIR];
+  const pd = projectFontsDir(projectDir);
+  if (pd) dirs.push(pd);
+  return { fontDirs: dirs, loadSystemFonts: true, defaultFontFamily: 'DejaVu Sans' };
 }
 
 const GENERIC = new Set([
@@ -53,9 +87,10 @@ const GENERIC = new Set([
  * (deduped, generics excluded). Empty when every referenced font is available —
  * or when no manifest is present.
  */
-export function unbundledFonts(svg: string): string[] {
+export function unbundledFonts(svg: string, projectDir?: string): string[] {
   const have = bundledFamilies();
   if (have.size === 0) return [];
+  const project = projectFontFamilies(projectDir);
   const seen = new Set<string>();
   const missing: string[] = [];
   const re = /font-family="([^"]+)"/g;
@@ -66,7 +101,7 @@ export function unbundledFonts(svg: string): string[] {
     const key = fam.toLowerCase();
     if (!fam || GENERIC.has(key) || seen.has(key)) continue;
     seen.add(key);
-    if (!have.has(key)) missing.push(fam);
+    if (!have.has(key) && !project.has(key)) missing.push(fam);
   }
   return missing;
 }

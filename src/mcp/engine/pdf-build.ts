@@ -37,6 +37,7 @@ export function addVectorPdfPage(
   page: PdfPageInput,
   scale: number,
   registered: Set<string>,
+  projectDir?: string,
 ): number {
   const svgEl = page.svg;
 
@@ -44,7 +45,7 @@ export function addVectorPdfPage(
   // paint them too (double text / fuzzy ghosting otherwise).
   const draw: { run: VectorTextRun; pick: FontPick }[] = [];
   for (const cand of extractVectorTextCandidates(svgEl)) {
-    const picks = cand.runs.map(r => pickFont(r.family, r.weight));
+    const picks = cand.runs.map(r => pickFont(r.family, r.weight, projectDir));
     if (picks.some(p => p === null)) continue; // unbundled font → keep in raster
     cand.el.remove();
     cand.runs.forEach((run, i) => draw.push({ run, pick: picks[i] as FontPick }));
@@ -54,7 +55,7 @@ export function addVectorPdfPage(
   const png = Buffer.from(new Resvg(stripped, {
     fitTo: { mode: 'zoom', value: scale },
     background: 'rgba(255,255,255,1)',
-    font: resvgFontOption(),
+    font: resvgFontOption(projectDir),
   }).render().asPng());
 
   const wPt = page.width * PX2PT;

@@ -25,7 +25,7 @@ import { KeyboardManager } from './keyboard';
 import { parseDesign, serializeYAML } from '../schema/parser';
 import { validateDesignSpec } from '../schema/validator';
 import type { DesignSpec, ThemeSpec } from '../schema/types';
-import { ensureDesignFonts } from '../styles/font-loader';
+import { ensureDesignFonts, loadProjectFonts } from '../styles/font-loader';
 import { fileWatcher } from '../fs/file-watcher';
 import { BUILTIN_THEMES } from '../themes/builtin';
 import { TabBarManager } from '../ui/tabs/tab-bar';
@@ -370,6 +370,7 @@ export class EditorApp extends EditorAppBase {
     const enc = (p: string): string => p.split('/').map(encodeURIComponent).join('/');
     setAssetUrlResolver((src) => `/__project_files/${encodeURIComponent(project)}/${enc(src)}`);
     this.assetPanel?.setProject(project, this.readEditorToken() ?? null);
+    void this.loadProjectFonts(project);
     this.imageImport.setUploader(async (name, blob) => {
       const token = this.readEditorToken();
       try {
@@ -382,6 +383,25 @@ export class EditorApp extends EditorAppBase {
         return j.ok && j.asset?.path ? j.asset.path : null;
       } catch { return null; }
     });
+  }
+
+  /** Register the project's uploaded TTF/OTF families with the FontFace API so
+   *  the live editor renders them (matching resvg raster + vector PDF, which
+   *  read the same files server-side). Best-effort — a listing failure just
+   *  leaves the editor on fallback fonts. */
+  private async loadProjectFonts(project: string): Promise<void> {
+    try {
+      const token = this.readEditorToken();
+      const r = await fetch(`/__project_files/${encodeURIComponent(project)}/__assets`, {
+        credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!r.ok) return;
+      const j = await r.json() as { ok?: boolean; assets?: Array<{ path: string; kind: string }> };
+      const fonts = (j.assets ?? []).filter(a => a.kind === 'fonts');
+      if (fonts.length === 0) return;
+      const enc = (p: string): string => p.split('/').map(encodeURIComponent).join('/');
+      loadProjectFonts(fonts, (p) => `/__project_files/${encodeURIComponent(project)}/${enc(p)}`);
+    } catch { /* offline / unauthed — fallback fonts are fine */ }
   }
 
   setActiveFileHandle(handle: FileSystemFileHandle, content: string): void {

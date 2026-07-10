@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { fontsDir } from './fonts';
+import { fontsDir, projectFontsDir, fontFamilyFromFilename } from './fonts';
 import { selectFontFile, type FontSelection } from '../../export/pdf-font-select';
 
 export type FontPick = FontSelection;
@@ -24,13 +24,33 @@ function fontFiles(): Record<string, string[]> {
   return _files;
 }
 
-/** Resolve a font-family + weight to a bundled TTF, or null when not bundled
- *  (the caller then leaves that text in the raster rather than mis-rendering it). */
-export function pickFont(family: string, weight: number): FontPick | null {
-  return selectFontFile(fontFiles(), family, weight);
+// Project-font map (WP-1.6): family-guess → ABSOLUTE file paths under
+// <project>/assets/fonts, so an uploaded TTF embeds as selectable vector text
+// exactly like a bundled one. Absolute paths keep fontFileBase64 unambiguous.
+function projectFontFiles(projectDir?: string): Record<string, string[]> {
+  const pd = projectFontsDir(projectDir);
+  if (!pd) return {};
+  const out: Record<string, string[]> = {};
+  try {
+    for (const f of fs.readdirSync(pd)) {
+      if (!/\.(ttf|otf)$/i.test(f)) continue;      // jsPDF embeds TTF/OTF only
+      const fam = fontFamilyFromFilename(f);
+      if (!fam) continue;
+      (out[fam] ??= []).push(path.join(pd, f));
+    }
+  } catch { /* unreadable dir → none */ }
+  return out;
 }
 
-/** Base64 of a bundled TTF, for jsPDF.addFileToVFS. */
+/** Resolve a font-family + weight to a bundled OR project TTF, or null when
+ *  neither has it (the caller then leaves that text in the raster). */
+export function pickFont(family: string, weight: number, projectDir?: string): FontPick | null {
+  return selectFontFile(fontFiles(), family, weight)
+    ?? selectFontFile(projectFontFiles(projectDir), family, weight);
+}
+
+/** Base64 of a bundled (relative) or project (absolute path) TTF, for
+ *  jsPDF.addFileToVFS. */
 export function fontFileBase64(file: string): string {
-  return fs.readFileSync(path.join(fontsDir(), file)).toString('base64');
+  return fs.readFileSync(path.isAbsolute(file) ? file : path.join(fontsDir(), file)).toString('base64');
 }
