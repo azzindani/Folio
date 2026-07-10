@@ -127,7 +127,13 @@ dir rescan — files are truth). No base64 in `.design.yaml`.
 - **Test**: renderer unit w/ mock fs; export integration writing a real
   png fixture; visual snapshot; the 10-cell src matrix as a table test.
 
-### WP-1.4 · Model-facing intelligence
+### WP-1.4 · Model-facing intelligence — **SHIPPED 2026-07-11**
+Distortion >5% + upscale >2× flags and the `assets` guide section shipped
+with the asset system; this WP added the third diagnose flag — `text_on_busy_
+image` (text ≥60% on a manifest-classified busy photo with no painted scrim
+between them in z, suggestion tier) — and `enrich_brief {project_path}`: when
+the project holds assets the plan says so up front (`project_assets` counts +
+an asset_list/place clause, alt-text named). Live-verified. Original spec:
 - **Files**: `src/mcp/engine/guide.ts` (+`assets` section ≤200 tokens),
   `src/mcp/engine/enrich.ts` (mention available assets when project has
   any), `src/mcp/engine-export-tools.ts`/`diagnose` path (new checks).

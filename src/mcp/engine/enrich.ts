@@ -5,9 +5,10 @@
 // and — when the topic is factual — the web-research queries the model should run
 // FIRST (so figures are real, not invented). The model does the research + writing.
 import type { ToolResult, ProgressItem } from '../types';
-import { okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
+import { okResult, pOk, pInfo, buildContext, buildHandover, resolveProjectPath } from './utils';
 import { pickMoodVariant, proceduralBgStyle, isDarkHex, type Mood } from './mood-bank';
 import { isMinimalGuidance } from '../guidance-mode';
+import { readAssetManifest } from './assets';
 
 
 // Per-preset rich outline + recommended canvas. Each entry the model fills with
@@ -207,12 +208,30 @@ function planPages(subject: string, count: number, mood: Mood): PageSpec[] {
   return pages.slice(0, count);
 }
 
-export function enrichBrief(args: { prompt?: string; type?: string; variant?: number }): ToolResult {
+export function enrichBrief(args: { prompt?: string; type?: string; variant?: number; project_path?: string }): ToolResult {
   const op = 'enrich_brief';
   const progress: ProgressItem[] = [];
   const prompt = (args.prompt ?? '').trim();
   if (!prompt) {
     return okResult(op, { error_hint: 'Pass a prompt (a short topic/intent).', progress: [pInfo('No prompt given')] });
+  }
+  // WP-1.4: when the target project already holds uploaded assets, say so UP
+  // FRONT — a blind model won't discover them mid-composition, and a real
+  // photo/logo beats any procedural background. Purely additive: no
+  // project_path (the common "no project yet" case) changes nothing.
+  let assetClause = '';
+  let assetSummary: { images: number; icons: number; fonts: number } | undefined;
+  if (args.project_path) {
+    try {
+      const manifest = readAssetManifest(resolveProjectPath(args.project_path));
+      const n = (k: 'images' | 'icons' | 'fonts'): number => manifest[k]?.length ?? 0;
+      if (n('images') + n('icons') + n('fonts') > 0) {
+        assetSummary = { images: n('images'), icons: n('icons'), fonts: n('fonts') };
+        const alts = (manifest.images ?? []).slice(0, 3).map(e => e.alt || e.path.split('/').pop()).join(', ');
+        assetClause = ` The project already holds ${assetSummary.images} image(s)${assetSummary.icons ? ` + ${assetSummary.icons} icon(s)` : ''}${alts ? ` (${alts}${(manifest.images?.length ?? 0) > 3 ? ', …' : ''})` : ''} — run manage_design {op:"asset_list"} and PLACE the relevant ones (src:"assets/images/<name>", fit:"cover") instead of leaving the design photo-less.`;
+        progress.push(pInfo(`Project has uploaded assets`, `${assetSummary.images} image(s), ${assetSummary.icons} icon(s), ${assetSummary.fonts} font(s)`));
+      }
+    } catch { /* unreadable project → no clause */ }
   }
   // variant N ⇒ the Nth DISTINCT art-direction of the SAME topic — for "give me
   // N options". 0 = the topic-apt default (unchanged); >0 rotates palette +
@@ -233,7 +252,7 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
     const research_instruction = research
       ? 'Factual topic: FIRST run the research_queries with your web tools for REAL figures. Do NOT invent statistics.'
       : 'No external research needed — use the details in the prompt.';
-    const instruction = `${research_instruction} Build a ${count}-page CAROUSEL. Put the SAME bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)} on EVERY page (set them on each page's preset layer) for a cohesive deck. Flow: create_task with width:${cw}, height:${ch} and the pages below (label + hints), then append_page per page passing layers_shorthand as a real JSON ARRAY of ONE preset object (editorial or sections) per its hints — NEVER hand-place text/stats/icons/charts on a slide (they collide). Each page's preset MUST carry the bg_style/bg/accent/text_color above. Keep stat VALUES short ("55%", "15M"); put descriptions in the label. One clear message per slide. Then run diagnose_design on the WHOLE design; if ANY page reports errors, replace that page's layers with a single preset layer and re-diagnose. Do NOT seal_design until EVERY page is error-free.`;
+    const instruction = `${research_instruction} Build a ${count}-page CAROUSEL. Put the SAME bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", palette:${JSON.stringify(mood.palette)} on EVERY page (set them on each page's preset layer) for a cohesive deck. Flow: create_task with width:${cw}, height:${ch} and the pages below (label + hints), then append_page per page passing layers_shorthand as a real JSON ARRAY of ONE preset object (editorial or sections) per its hints — NEVER hand-place text/stats/icons/charts on a slide (they collide). Each page's preset MUST carry the bg_style/bg/accent/text_color above. Keep stat VALUES short ("55%", "15M"); put descriptions in the label. One clear message per slide. Then run diagnose_design on the WHOLE design; if ANY page reports errors, replace that page's layers with a single preset layer and re-diagnose. Do NOT seal_design until EVERY page is error-free.${assetClause}`;
     progress.push(pOk(`Planned a ${count}-page carousel`, research ? `${research_queries.length} research queries` : 'no research needed'));
     const context = buildContext(op, `Enriched brief → ${count}-page carousel`);
     const handover = buildHandover('DESIGN', {}, { type: 'carousel' });
@@ -241,6 +260,7 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
       output_type: 'carousel', topic: subject, page_count: count, variant,
       needs_research: research, research_queries, research_instruction,
       pages, suggested: { ...mood, width: cw, height: ch }, canvas: { width: cw, height: ch },
+      ...(assetSummary ? { project_assets: assetSummary } : {}),
       instruction, progress, context, handover,
     });
   }
@@ -285,7 +305,7 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   const motifClause = (outline.blocks && !fullWidthLayout)
     ? `THEN add ONE decorative ${motif} motif to fill the open side space (these dense posters leave a wide blank column): append layers_shorthand:[{type:"motif", motif:"${motif}", pos:[${Math.round(width * 0.6)}, ${Math.round(height * 0.34)}, ${Math.round(width * 0.34)}, ${Math.round(height * 0.5)}], color:"${mood.accent}", z:1}] — a composed vector illustration on the right, BEHIND the text (low z) so it can never collide; resize its pos to whatever region the content actually left open.`
     : `IF the finished layout still leaves a large EMPTY band beside left-anchored content, add ONE ${motif} motif there to fill it — layers_shorthand:[{type:"motif", motif:"${motif}", pos:[x,y,w,h], color:"${mood.accent}", z:1}] — but NOT if the design is already full or deliberately minimal (whitespace is fine).`;
-  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs is the difference between a flat poster and a designed one — write real sentences${isDataPreset ? ' and ALWAYS include the source.' : ' and fill the footer slot. This is a POSTER (no data) — do NOT add a stats row, a chart, or a "Source:" line; an event/announcement/invite lives on its headline + a few details, not invented figures.'} ${motifClause} Then diagnose_design until clean and seal.${isMinimalGuidance() ? ' [FREE-COMPOSE MODE: the bg_style/bg/accent/font/palette above are OPTIONAL suggestions for smaller models — design by your own judgment instead; choose whatever palette, type + composition you think best and the engine will measure + fit it.]' : ''}`;
+  const instruction = `${research_instruction} ${fill} Create the design at EXACTLY ${width}×${height}px (use these dimensions — do not default to a square). Set bg_style:"${mood.bg_style}", bg:"${mood.bg}", accent:"${mood.accent}", text_color:"${mood.text_color}", font:"${mood.font}", headline_style:"${mood.headline}", palette:${JSON.stringify(mood.palette)} (bg_style is a GEOMETRIC recipe — copy it verbatim; font is the display face; headline_style is the title treatment — highlight/underline/mega/rotate/rule). Fill EVERY slot with specific, dense content — this is the richness floor, add more blocks if the topic warrants. A thin fragment where a full sentence belongs is the difference between a flat poster and a designed one — write real sentences${isDataPreset ? ' and ALWAYS include the source.' : ' and fill the footer slot. This is a POSTER (no data) — do NOT add a stats row, a chart, or a "Source:" line; an event/announcement/invite lives on its headline + a few details, not invented figures.'} ${motifClause} Then diagnose_design until clean and seal.${isMinimalGuidance() ? ' [FREE-COMPOSE MODE: the bg_style/bg/accent/font/palette above are OPTIONAL suggestions for smaller models — design by your own judgment instead; choose whatever palette, type + composition you think best and the engine will measure + fit it.]' : ''}${assetClause}`;
 
   progress.push(pOk(`Planned a "${design_type}" design`, research ? `${research_queries.length} research queries` : 'no research needed'));
   const context = buildContext(op, `Enriched brief → ${design_type}${research ? ' (research first)' : ''}`);
@@ -293,6 +313,7 @@ export function enrichBrief(args: { prompt?: string; type?: string; variant?: nu
   return okResult(op, {
     output_type: 'poster', topic: subject, design_type, variant, needs_research: research, research_queries, research_instruction,
     outline: outline.blocks ?? outline.fields, suggested: { ...mood, width, height },
+    ...(assetSummary ? { project_assets: assetSummary } : {}),
     canvas: { width, height }, instruction, progress, context, handover,
   });
 }

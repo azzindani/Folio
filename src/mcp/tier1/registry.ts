@@ -29,6 +29,7 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         prompt: { type: 'string', description: 'The user\'s topic/intent — even one line, e.g. "the state of remote work" or "a feature poster for my CI tool".' },
         type:   { type: 'string', description: 'Optional preset hint (sections/feature_grid/stat/event/list/split/editorial). Omit to let the engine infer it.' },
         variant: { type: 'number', description: 'Optional — OMIT for a normal single-design request (the default: one design only). Use ONLY when the user EXPLICITLY asks for N OPTIONS/variations of the same topic: call once per option with variant:0,1,2,… — each returns a DISTINCT art-direction (palette + typography treatment + background geometry) for the same content. 0 = the topic-apt default. Deterministic, so variant 3 always looks the same.' },
+        project_path: { type: 'string', description: 'Optional — the target project (bare name). When it already holds uploaded assets (photos/logos), the plan tells you to asset_list + place them instead of leaving the design photo-less.' },
       },
       required: ['prompt'],
     },
