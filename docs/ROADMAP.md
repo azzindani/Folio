@@ -271,12 +271,12 @@ first-load flicker gone. New verified breakage promoted to the top.
 
 | WP | Item | Key files | Accept |
 |---|---|---|---|
-| 4.1 | TABLET 768–1023 rescue (🔴 B8): (a) default-collapse the left overlay on load ≤1023px, (b) kill 276px page hScroll — `overflow-x: clip` on `#app` in the tablet media block (parked `translateX(105%)` overlays count toward scrollWidth), (c) verify fit-on-load pans correctly | `src/editor/app-base.ts` (wireActivityBar init), `src/styles/main.css` @768–1023 block | load live at 820×1024 → canvas visible + fit, no hScroll, panel opens/closes via activity bar |
-| 4.2 | Right-click context menu (B10): duplicate · delete · group/ungroup · lock/unlock · bring/send order · copy/paste — reuse existing keyboard actions | new `src/editor/context-menu.ts` + `canvas-interactions.ts` (contextmenu handler) | right-click a layer → menu; every item works; Esc/click-away closes |
-| 4.3 | Floating align toolbar de-clip (B9): position below ruler, never overlapping formula bar | `canvas-draw.ts` / `src/ui/toolbar` float positioning | select any layer at 1600/1280 → toolbar fully visible |
-| 4.4 | Multi-select properties: Group/Ungroup button + align/distribute row + combined bbox X/Y/W/H (14.7) | `src/ui/panels/properties-panel*.ts` | 2+ selection shows Group (⌘G) + align buttons; group works from panel |
-| 4.5 | Touch tap targets ≥40px (B11) + Font Family shows resolved token font (B12) | `src/styles/main.css` @(pointer: coarse), `properties-panel-base.ts` | audit `tinyTapTargets` = 0 on touch; $heading shows its resolved family |
-| 4.6 | Asset panel: browse `<project>/assets` w/ thumbnails, click/drag inserts image layer (pairs with shipped WP-1 asset ops) | new left-panel view + `static-server.ts` asset-list GET | uploaded asset appears in panel; click inserts layer with `assets/…` src that renders |
+| ~~4.1~~ | **SHIPPED 2026-07-10** — tablet rescue: default-collapse ≤1023px + `overflow: clip; position: relative` on `#app` (BOTH axes — x-only makes #app a scroll container) + later `left: 0` on the overlay (abspos grid items anchor to their GRID AREA, so `left: var(--activity-bar-width)` double-counted → 36px toolbox sliver over the canvas) | `app-base.ts`, `main.css` | ✓ live 820×1180: no hScroll, no sliver, canvas full width |
+| ~~4.2~~ | **SHIPPED 2026-07-10** — right-click context menu; actions extracted to shared `layer-actions.ts` so keyboard + menu + panels drive ONE implementation | `context-menu.ts`, `layer-actions.ts` | ✓ live |
+| ~~4.3~~ | **SHIPPED 2026-07-10** — align toolbar `top: calc(ruler + 8px)` | `main.css` | ✓ live |
+| ~~4.4~~ | **SHIPPED 2026-07-10** — multi-select panel: bounds + Group/Ungroup + align/distribute grid | `properties-panel.ts` | ✓ live |
+| 4.5 | ~~Touch tap targets ≥40px (B11)~~ **SHIPPED 2026-07-10** · REMAINING: Font Family shows resolved token font (B12) | `properties-panel-base.ts` | $heading shows its resolved family |
+| ~~4.6~~ | **SHIPPED 2026-07-10** — Assets panel (left rail): GET `/__project_files/<project>/__assets` (shares `collectAssets` with MCP asset_list), thumbnails, click-inserts at native aspect | `asset-panel.ts`, `static-server.ts` | ✓ live + 120B blind E2E |
 | 4.7 | Complete booleans: add union/subtract/exclude → path layer | new `src/editor/boolean-ops.ts` (vendored path lib — NO runtime CDN) | two overlapping rects → union path renders identically in resvg |
 | 4.8 | SVG import → layers | new `src/editor/svg-import.ts` | a Figma-exported SVG lands editable; export round-trips |
 | 4.9 | Gradient handles on canvas + pattern/image fill panel controls | `properties-panel-base.ts`, gradient overlay in `canvas-draw.ts` | drag stops on canvas; pattern/image picker writes the same fill spec MCP emits |
