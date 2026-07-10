@@ -198,13 +198,17 @@ less (ground rule 2).
 - **Accept per WS**: 3+ example-level cases rendered + vision-reviewed; suite
   green; diversity eval does not regress.
 
-### WP-2.2 · Catalog packs over MCP (no new tools)
-- Editor Catalog has palettes/type-pairing/effects packs with NO MCP surface.
-  Expose read-only: `themes {op:"packs", kind:"palette|type|effects"}` OR
-  guide sections (`get_engine_guide {section:"palettes"}`) — pick whichever
-  keeps token cost lowest; registry schema + dispatch update accordingly.
-- **Accept**: a model can name a pack and get usable values (hexes/pairings)
-  in ≤300 tokens.
+### WP-2.2 · Catalog packs over MCP — SHIPPED
+- Read-only `themes {op:"packs"}` (new op on the frozen `themes` tool — no new
+  tool): omit `kind` → the three kinds + counts; `kind:"palette|type|effects"`
+  (+ optional `search`) → filtered listing with values inline; `+id` → one
+  pack's full usable values. Reads the compact `src/styles/{palette,type-pack,
+  effects-pack}-index.json` the editor lazy-loads (swatches / families /
+  effectKeys). Files: `src/mcp/engine/packs.ts` (NEW), `dispatch.ts`,
+  `tier1/registry.ts` (op enum + args; `project_path` no longer required so
+  packs needs no project).
+- **Accept**: met live — `id:"80s-pop"` returns 5 hexes in 98 tokens; a named
+  type pack returns heading/body/mono; `search` filters by tag/name. All ≤300.
 
 ### WP-2.3 · Theme-honoring mood seeding (deferred as regression-risky — care)
 - `src/mcp/engine/enrich.ts` + mood-bank: when the project theme is
