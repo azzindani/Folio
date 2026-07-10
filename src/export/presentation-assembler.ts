@@ -1,5 +1,6 @@
 import type { DesignSpec, Page, PageTransition } from '../schema/types';
 import { renderToSVGString } from '../mcp/engine/svg-export';
+import { FAVICON_LINK } from '../utils/favicon';
 import { generateLayerCSS, generateStaggerCSS } from '../animation/css-generator';
 import { generateTransitionCSS, transitionClassName } from '../animation/transition-css';
 
@@ -46,6 +47,7 @@ export function assemblePresentationHTML(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escHtml(title)}</title>
+${FAVICON_LINK}
 <style>
 ${PRESENTATION_BASE_CSS}
 ${transitionCSS}

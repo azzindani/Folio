@@ -18,6 +18,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Resvg } from '@resvg/resvg-js';
+import { FAVICON_LINK } from '../../utils/favicon';
 import type { DesignSpec } from '../../schema/types';
 import type { ToolResult } from '../types';
 import { okResult, errResult, buildContext, pOk, pInfo, readYAML } from './utils';
@@ -304,7 +305,7 @@ export function buildLibraryPage(opts: {
     + `<button id="delfolder" class="fbtn fbtn-danger" type="button" title="Delete the selected folder" hidden>Delete</button></div>`;
   const live = opts.live ? `<script>window.__libLive=true;</script>` : '';
   const liveBadge = opts.live ? ` · live<span class="live-dot" id="livedot"></span>` : '';
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title><script>try{var m=localStorage.getItem('folio-lib-theme');if(m)document.documentElement.dataset.theme=m;var v=localStorage.getItem('folio-lib-view');if(v)document.body&&(document.body.dataset.view=v);}catch(e){}</script><style>${STYLE}</style></head>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Folio — Design Library</title>${FAVICON_LINK}<script>try{var m=localStorage.getItem('folio-lib-theme');if(m)document.documentElement.dataset.theme=m;var v=localStorage.getItem('folio-lib-view');if(v)document.body&&(document.body.dataset.view=v);}catch(e){}</script><style>${STYLE}</style></head>
 <body><header><button id="theme" class="theme-btn" type="button" title="Toggle light / dark theme">☀ Light</button><h1>Design Library</h1><div class="stat">${opts.totalProjects} projects · ${opts.totalDesigns} designs${opts.filtered ? ` · filtered` : ''}${liveBadge}</div><input id="q" type="search" placeholder="Search designs, projects…" autocomplete="off"><div class="toolbar">${sorts}${folders}</div>${colTabs}${chips ? `<div class="chips">${chips}</div>` : ''}</header>
 <div class="grid">${cards}</div>
 <div id="empty" class="empty">No designs match your search.</div>

@@ -1,4 +1,5 @@
 import type { DesignSpec, ThemeSpec, Layer } from '../schema/types';
+import { FAVICON_LINK } from '../utils/favicon';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { renderEntry } from '../renderer/render-entry';
@@ -363,6 +364,7 @@ export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Pr
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${spec.meta.name}</title>
+  ${FAVICON_LINK}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; display: flex; align-items: center; justify-content: center; background: #111; }
