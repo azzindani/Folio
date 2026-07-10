@@ -1,4 +1,5 @@
 import { type StateManager, type EditorState, type ToolId } from '../../editor/state';
+import { chromeIcon } from '../../editor/chrome-icons';
 
 interface ToolDef {
   id: ToolId;
@@ -10,27 +11,27 @@ interface ToolDef {
 
 const TOOLS: ToolDef[] = [
   // Selection
-  { id: 'select',     icon: '&#x2B0C;', label: 'Select',      key: 'V' },
-  { id: 'hand',       icon: '&#x270B;', label: 'Pan',         key: 'H' },
+  { id: 'select',     icon: chromeIcon('cursor'),  label: 'Select',      key: 'V' },
+  { id: 'hand',       icon: chromeIcon('hand'),    label: 'Pan',         key: 'H' },
 
   // Shapes
-  { id: 'rect',       icon: '&#x25A1;', label: 'Rectangle',   key: 'R', group: 'shapes' },
-  { id: 'circle',     icon: '&#x25CB;', label: 'Circle',      key: 'C' },
-  { id: 'polygon',    icon: '&#x2B21;', label: 'Polygon',     key: 'P' },
-  { id: 'star',       icon: '&#x2606;', label: 'Star',        key: '' },
-  { id: 'line',       icon: '&#x2014;', label: 'Line',        key: 'L' },
-  { id: 'arrow',      icon: '&#x2192;', label: 'Arrow',       key: '' },
+  { id: 'rect',       icon: chromeIcon('square'),  label: 'Rectangle',   key: 'R', group: 'shapes' },
+  { id: 'circle',     icon: chromeIcon('circle'),  label: 'Circle',      key: 'C' },
+  { id: 'polygon',    icon: chromeIcon('hexagon'), label: 'Polygon',     key: 'P' },
+  { id: 'star',       icon: chromeIcon('star'),    label: 'Star',        key: '' },
+  { id: 'line',       icon: chromeIcon('line'),    label: 'Line',        key: 'L' },
+  { id: 'arrow',      icon: chromeIcon('arrow'),   label: 'Arrow',       key: '' },
 
   // Drawing
-  { id: 'pen',        icon: '&#x270F;', label: 'Pen',         key: 'P', group: 'draw' },
+  { id: 'pen',        icon: chromeIcon('pen'),     label: 'Pen',         key: 'P', group: 'draw' },
 
   // Content
-  { id: 'frame',      icon: '&#x29C9;', label: 'Frame',       key: 'F', group: 'content' },
-  { id: 'text',       icon: 'T',        label: 'Text',        key: 'T' },
-  { id: 'image',      icon: '&#x1F5BC;', label: 'Image',     key: '' },
+  { id: 'frame',      icon: chromeIcon('frame'),   label: 'Frame',       key: 'F', group: 'content' },
+  { id: 'text',       icon: 'T',                   label: 'Text',        key: 'T' },
+  { id: 'image',      icon: chromeIcon('image'),   label: 'Image',       key: '' },
 
   // Color
-  { id: 'eyedropper', icon: '&#x1F489;', label: 'Eyedropper', key: 'I', group: 'color' },
+  { id: 'eyedropper', icon: chromeIcon('eyedropper'), label: 'Eyedropper', key: 'I', group: 'color' },
 ];
 
 export class ToolboxManager {

@@ -1,4 +1,5 @@
 import { type StateManager, type EditorState } from '../../editor/state';
+import { chromeIcon } from '../../editor/chrome-icons';
 import { openFile, saveFile } from '../../fs/file-access';
 
 const RECENT_KEY = 'folio:recentFiles';
@@ -104,7 +105,7 @@ export class FileTreeManager {
     }
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--color-surface-2);border-radius:4px">
-        <span style="font-size:14px">&#x1F4C4;</span>
+        <span style="display:inline-flex">${chromeIcon('file', 14)}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${design.meta.name}</div>
           <div style="font-size:10px;color:var(--color-text-muted)">${design.meta.type} · ${(design.layers ?? design.pages ?? []).length} ${design.pages ? 'pages' : 'layers'}</div>
@@ -125,7 +126,7 @@ export class FileTreeManager {
       <div class="filetree-recent-item" style="display:flex;align-items:center;gap:6px;padding:4px 6px;
         border-radius:4px;cursor:pointer;font-size:11px;color:var(--color-text-muted)"
         data-name="${name}">
-        <span style="font-size:11px">&#x1F4C4;</span>
+        <span style="display:inline-flex">${chromeIcon('file', 11)}</span>
         <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
       </div>`).join('');
 

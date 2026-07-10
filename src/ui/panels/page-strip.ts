@@ -85,7 +85,7 @@ export class PageStrip {
     const svgWrap = document.createElement('div');
     svgWrap.style.cssText = `
       width: ${THUMB_W}px; height: ${THUMB_H}px; overflow: hidden;
-      flex-shrink: 0; background: #fff; position: relative;
+      flex-shrink: 0; background: var(--color-surface-2); position: relative;
     `;
 
     try {

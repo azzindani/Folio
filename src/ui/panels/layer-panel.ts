@@ -3,8 +3,8 @@ import type { Layer, GroupLayer } from '../../schema/types';
 
 const LAYER_ICONS: Record<string, string> = {
   rect: '▭', circle: '◯', ellipse: '⬭', path: '✒', polygon: '⬡',
-  line: '—', polyline: '∿', connector: '⤳', text: 'T', image: '🖼', icon: '✦',
-  background: '▧', backdrop: '▨', particle: '✳', map: '🗺',
+  line: '—', polyline: '∿', connector: '⤳', text: 'T', image: '▦', icon: '✦',
+  background: '▧', backdrop: '▨', particle: '❋', map: '⌖',
   embed_code: '⌗', component_list: '≔', auto_layout: '⚏',
   component: '⊞', mermaid: '➡', chart: '≡',
   code: '<>', math: 'π', group: '▣', qrcode: '⊞',
