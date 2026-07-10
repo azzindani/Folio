@@ -399,16 +399,28 @@ export abstract class PropertiesPanelBase {
     const opts = fonts.map(f =>
       `<option value="${f}"${f === current ? ' selected' : ''}>${f}</option>`
     ).join('');
-    const preview = current || 'Inter';
+    // B12: a token value ($heading) or an empty field told the user nothing.
+    // Resolve against the active theme so the REAL family is visible — the
+    // input keeps the raw value, so a token stays a token when edited.
+    let resolved = '';
+    if (!current || current.startsWith('$')) {
+      const fams = this.state?.get?.().theme?.typography?.families ?? {};
+      const key = current ? current.slice(1) : 'body';
+      resolved = fams[key] ?? fams['body'] ?? '';
+    }
+    const preview = (current && !current.startsWith('$') ? current : resolved) || 'Inter';
+    const hint = current.startsWith('$') && resolved
+      ? `<div style="font-size:10px;color:var(--color-text-muted);margin-top:2px">→ ${resolved}</div>`
+      : '';
     return `
       <div style="margin-bottom:6px">
         <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Font Family</div>
         <input list="font-datalist" class="prop-input" data-prop="${prop}" value="${current}"
-          placeholder="theme default"
+          placeholder="${resolved ? `${resolved} (theme)` : 'theme default'}"
           style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
                  border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;
                  font-family:'${preview}',sans-serif">
-        <datalist id="font-datalist">${opts}</datalist>
+        <datalist id="font-datalist">${opts}</datalist>${hint}
       </div>`;
   }
 
