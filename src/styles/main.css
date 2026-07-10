@@ -2197,6 +2197,8 @@ button:focus:not(:focus-visible) { outline: none; }
 @media (min-width: 768px) and (max-width: 1023px) {
   #app {
     grid-template-columns: var(--activity-bar-width) 0px 1fr 0px var(--activity-bar-width);
+    /* statusbar row auto so its safe-area padding can grow it */
+    grid-template-rows: var(--toolbar-height) var(--formula-bar-height) 1fr auto;
     grid-template-areas:
       "toolbar   toolbar  toolbar  toolbar  toolbar"
       "formula   formula  formula  formula  formula"
@@ -2213,7 +2215,11 @@ button:focus:not(:focus-visible) { outline: none; }
        that must escape (menus, toasts, dialogs) is position:fixed. */
     position: relative;
     overflow: clip;
+    /* iPad Safari: track the visible viewport so the statusbar isn't
+       rendered below the screen (same rationale as the phone block). */
+    height: 100dvh;
   }
+  .status-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: auto; min-height: var(--statusbar-height); }
 
   .left-panel {
     position: absolute;
@@ -2252,12 +2258,25 @@ button:focus:not(:focus-visible) { outline: none; }
   #app {
     grid-template-columns: 1fr;
     /* toolbar row is `auto` so it can grow to a second line on narrow phones
-       instead of clipping its controls */
-    grid-template-rows: auto 1fr var(--statusbar-height);
+       instead of clipping its controls. statusbar row is `auto` too so its
+       safe-area padding (home indicator) can grow it. */
+    grid-template-rows: auto 1fr auto;
     grid-template-areas:
       "toolbar"
       "canvas"
       "statusbar";
+    /* Real phones: 100% of <html> tracks the LARGE viewport while browser
+       chrome (URL bar) is visible, so the bottom bars render below the
+       screen — "the editor is cropped". dvh follows the visible viewport. */
+    height: 100dvh;
+  }
+  /* The zoom/status bar is the BOTTOM-MOST element — pad it above the iOS
+     home indicator / Android gesture bar (env() needs viewport-fit=cover,
+     set in index.html). */
+  .status-bar {
+    height: auto;
+    min-height: var(--statusbar-height);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .activity-bar, .formula-bar, .r-activity-bar { display: none; }
@@ -2300,11 +2319,12 @@ button:focus:not(:focus-visible) { outline: none; }
   .status-pages { display: none; }
   .sb-info { display: none; }
 
-  /* Mobile bottom nav bar */
+  /* Mobile bottom nav bar — sits above the statusbar, which now grows by
+     the safe-area inset, so the offset must include it too. */
   .mobile-nav {
     display: flex;
     position: fixed;
-    bottom: var(--statusbar-height);
+    bottom: calc(var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
     left: 0; right: 0;
     height: var(--mobile-nav-height);
     background: var(--color-surface);
@@ -2313,7 +2333,6 @@ button:focus:not(:focus-visible) { outline: none; }
     align-items: center;
     justify-content: space-around;
     padding: 0 8px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     gap: 4px;
   }
 
@@ -2324,7 +2343,7 @@ button:focus:not(:focus-visible) { outline: none; }
   .left-panel {
     display: flex !important;
     position: fixed;
-    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height));
+    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
     left: 0; right: 0;
     height: 65vh;
     width: auto !important;
@@ -2344,7 +2363,7 @@ button:focus:not(:focus-visible) { outline: none; }
   .properties-panel {
     display: flex !important;
     position: fixed;
-    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height));
+    bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
     left: 0; right: 0;
     height: 65vh;
     z-index: 195;
