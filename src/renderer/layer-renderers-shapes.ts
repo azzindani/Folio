@@ -6,6 +6,7 @@ import { resolveAssetUrl } from './render-context';
 import { applyFill, resolveColorOrGradient, type FillResult } from './fill-renderer';
 import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
+import { shapePath } from '../engine/shape-paths';
 
 import { wrapPlainText, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
 
@@ -390,25 +391,100 @@ export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
     return makeImagePlaceholder(layer, w, h, svg);
   }
 
+  const x = layer.x ?? 0;
+  const y = layer.y ?? 0;
+  const w = typeof layer.width === 'number' ? layer.width : 100;
+  const h = typeof layer.height === 'number' ? layer.height : 100;
+
   const el = createSVGElement('image', {
-    x: layer.x ?? 0,
-    y: layer.y ?? 0,
-    width: typeof layer.width === 'number' ? layer.width : 100,
-    height: typeof layer.height === 'number' ? layer.height : 100,
+    x, y, width: w, height: h,
     // Editor: project-relative srcs route through /__project_files (see
     // render-context). Server export: no resolver installed — srcs arrive
     // pre-embedded as data: URIs.
     href: resolveAssetUrl(layer.src),
   });
 
-  if (layer.fit === 'cover' || layer.fit === 'contain') {
+  // focal:[fx,fy] (0–1) — keep the subject when cover-cropping. SVG's
+  // preserveAspectRatio only knows thirds (Min/Mid/Max), which is exactly the
+  // "keep the face in the left third" control a blind model needs, and it
+  // rasterizes identically in resvg.
+  if (Array.isArray(layer.focal) && layer.focal.length === 2) {
+    const part = (v: number): string => (v < 0.34 ? 'Min' : v > 0.66 ? 'Max' : 'Mid');
+    const fx = Math.max(0, Math.min(1, Number(layer.focal[0]) || 0));
+    const fy = Math.max(0, Math.min(1, Number(layer.focal[1]) || 0));
+    el.setAttribute('preserveAspectRatio', `x${part(fx)}Y${part(fy)} slice`);
+  } else if (layer.fit === 'cover' || layer.fit === 'contain') {
     el.setAttribute('preserveAspectRatio', layer.fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet');
+  } else if (layer.mask) {
+    el.setAttribute('preserveAspectRatio', 'xMidYMid slice');   // a mask implies cover
   }
 
-  applyCommonAttributes(el, layer);
-  if (layer.effects) applyEffects(el, layer.effects, svg);
+  if (!layer.mask && !layer.overlay && !layer.frame) {
+    applyCommonAttributes(el, layer);
+    if (layer.effects) applyEffects(el, layer.effects, svg);
+    return el;
+  }
 
-  return el;
+  // Treatments: <g> [clip(img + overlay)] + frame — pure SVG, resvg-safe.
+  const g = createSVGElement('g', {});
+  let clipRef: string | undefined;
+  if (layer.mask) {
+    const cid = uniqueDefId('imgclip');
+    const clip = createSVGElement('clipPath', { id: cid });
+    clip.appendChild(createSVGElement('path', { d: imageMaskPath(layer.mask, x, y, w, h, layer.id) }));
+    getOrCreateDefs(svg).appendChild(clip);
+    clipRef = `url(#${cid})`;
+  }
+  const inner = createSVGElement('g', clipRef ? { 'clip-path': clipRef } : {});
+  inner.appendChild(el);
+  if (layer.overlay) {
+    const o = layer.overlay;
+    const scrim = createSVGElement('rect', {
+      x, y, width: w, height: h,
+      fill: o.fill ?? '#000000', opacity: String(o.opacity ?? 0.35),
+    });
+    if (o.blend) scrim.setAttribute('style', `mix-blend-mode:${o.blend}`);
+    inner.appendChild(scrim);
+  }
+  g.appendChild(inner);
+  if (layer.frame) {
+    const f = layer.frame;
+    const off = f.offset ?? 0;
+    const d = layer.mask
+      ? imageMaskPath(layer.mask, x - off, y - off, w + off * 2, h + off * 2, layer.id)
+      : `M ${x - off} ${y - off} h ${w + off * 2} v ${h + off * 2} h ${-(w + off * 2)} Z`;
+    g.appendChild(createSVGElement('path', {
+      d, fill: 'none', stroke: f.stroke ?? '#1A1A1A', 'stroke-width': String(f.width ?? 3),
+    }));
+  }
+  applyCommonAttributes(g, layer);
+  if (layer.effects) applyEffects(g, layer.effects, svg);
+  return g;
+}
+
+/** Mask outline for a photo treatment — absolute coords so the same fn draws
+ *  the clip AND the (offset) frame stroke. Blob is seeded from the layer id,
+ *  so re-renders are stable (no Math.random in the render path). */
+function imageMaskPath(mask: NonNullable<ImageLayer['mask']>, x: number, y: number, w: number, h: number, id: string): string {
+  switch (mask) {
+    case 'circle':   // ellipse inscribed in the box (a square box = a true circle)
+      return `M ${x} ${y + h / 2} a ${w / 2} ${h / 2} 0 1 0 ${w} 0 a ${w / 2} ${h / 2} 0 1 0 ${-w} 0 Z`;
+    case 'rounded': {
+      const r = Math.min(w, h) * 0.14;
+      return roundedRectPath(x, y, w, h, { tl: r, tr: r, br: r, bl: r });
+    }
+    case 'arch': {   // semicircular top + straight sides (portrait doorway crop)
+      const r = w / 2;
+      if (h <= r) return roundedRectPath(x, y, w, h, { tl: h / 2, tr: h / 2, br: 0, bl: 0 });
+      return `M ${x} ${y + h} L ${x} ${y + r} A ${r} ${r} 0 0 1 ${x + w} ${y + r} L ${x + w} ${y + h} Z`;
+    }
+    case 'hex':      // flat-top hexagon inscribed in the box
+      return `M ${x + w * 0.25} ${y} L ${x + w * 0.75} ${y} L ${x + w} ${y + h / 2} L ${x + w * 0.75} ${y + h} L ${x + w * 0.25} ${y + h} L ${x} ${y + h / 2} Z`;
+    case 'blob': {
+      const seed = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+      return shapePath('blob', { x, y, w, h }, { seed }).d;
+    }
+  }
 }
 
 // Native-SVG placeholder (rect + glyph + label). Built from primitives, not a

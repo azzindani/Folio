@@ -144,7 +144,15 @@ an asset_list/place clause, alt-text named). Live-verified. Original spec:
 - **Accept**: seeded broken design triggers all three notes; guide section
   returns; enrich_brief on an asset-bearing project mentions them.
 
-### WP-1.5 · Photo treatments
+### WP-1.5 · Photo treatments — **SHIPPED 2026-07-11**
+`mask:"circle|blob|arch|rounded|hex"` (clipPath, implies cover) ·
+`focal:[fx,fy]` (0–1 → preserveAspectRatio thirds) · `overlay:{fill,opacity,
+blend}` scrim inside the mask · `frame:{stroke,width,offset}` outline
+following the mask shape. Blob is layer-id-seeded (deterministic). All
+verified in a live resvg render (5-cell proof sheet). Also fixed: image
+shorthand silently DROPPED `fit` (asset stubs recommend fit:"cover"!) —
+fit/alt/role/crop now pass through. Guide assets section documents the
+treatments. Original spec:
 - **Files**: `src/mcp/shorthand-expand.ts` + `shorthand-helpers.ts` (image
   shorthand fields), `src/renderer/layer-renderers-shapes.ts` (renderImage:
   clip-path masks, focal crop via preserveAspectRatio+viewBox math),

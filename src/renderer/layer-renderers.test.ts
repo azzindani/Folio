@@ -277,6 +277,59 @@ describe('renderImage', () => {
     expect(el.querySelector('text')?.textContent).toBe('image');
     expect(el.getAttribute('data-layer-id')).toBe('ph');
   });
+
+  // ── WP-1.5 photo treatments — pure SVG (clipPath + primitives), resvg-safe ──
+
+  it('mask:"circle" clips via a defs clipPath and implies cover', () => {
+    const svg = makeSVG();
+    const layer = { id: 'm1', type: 'image', z: 0, x: 100, y: 100, width: 200, height: 200, src: '/p.jpg', mask: 'circle' } as unknown as ImageLayer;
+    const el = renderImage(layer, svg);
+    expect(el.tagName).toBe('g');
+    const inner = el.querySelector('g[clip-path^="url(#"]');
+    expect(inner).not.toBeNull();
+    const cid = inner!.getAttribute('clip-path')!.match(/url\(#([^)]+)\)/)![1];
+    const clip = svg.querySelector(`clipPath#${cid} path`);
+    expect(clip).not.toBeNull();
+    expect(inner!.querySelector('image')?.getAttribute('preserveAspectRatio')).toBe('xMidYMid slice');
+  });
+
+  it('focal:[0.2,0.8] anchors the cover crop to the matching third', () => {
+    const layer = { id: 'f1', type: 'image', z: 0, x: 0, y: 0, width: 100, height: 100, src: '/p.jpg', focal: [0.2, 0.8] } as unknown as ImageLayer;
+    const el = renderImage(layer, makeSVG());
+    expect(el.getAttribute('preserveAspectRatio')).toBe('xMinYMax slice');
+  });
+
+  it('overlay paints a scrim rect INSIDE the clip, over the image', () => {
+    const svg = makeSVG();
+    const layer = { id: 'o1', type: 'image', z: 0, x: 0, y: 0, width: 100, height: 100, src: '/p.jpg', mask: 'rounded', overlay: { fill: '#102030', opacity: 0.5 } } as unknown as ImageLayer;
+    const el = renderImage(layer, svg);
+    const inner = el.querySelector('g[clip-path]')!;
+    const scrim = inner.querySelector('rect');
+    expect(scrim?.getAttribute('fill')).toBe('#102030');
+    expect(scrim?.getAttribute('opacity')).toBe('0.5');
+    expect(inner.children[0].tagName).toBe('image');            // image first, scrim over it
+  });
+
+  it('frame strokes the mask outline OUTSIDE the clip (not clipped away)', () => {
+    const svg = makeSVG();
+    const layer = { id: 'fr1', type: 'image', z: 0, x: 0, y: 0, width: 100, height: 100, src: '/p.jpg', mask: 'hex', frame: { stroke: '#c4552a', width: 4, offset: 6 } } as unknown as ImageLayer;
+    const el = renderImage(layer, svg);
+    const frame = [...el.children].find(c => c.tagName === 'path');
+    expect(frame).toBeTruthy();
+    expect(frame!.getAttribute('stroke')).toBe('#c4552a');
+    expect(frame!.getAttribute('fill')).toBe('none');
+    expect(frame!.parentElement?.getAttribute('clip-path')).toBeNull();
+  });
+
+  it('blob mask is deterministic per layer id (no Math.random in the render path)', () => {
+    const mk = (): string => {
+      const svg = makeSVG();
+      const layer = { id: 'blob-x', type: 'image', z: 0, x: 0, y: 0, width: 120, height: 90, src: '/p.jpg', mask: 'blob' } as unknown as ImageLayer;
+      renderImage(layer, svg);
+      return svg.querySelector('clipPath path')!.getAttribute('d')!;
+    };
+    expect(mk()).toBe(mk());
+  });
 });
 
 // ── Icon ────────────────────────────────────────────────────
