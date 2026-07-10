@@ -226,15 +226,11 @@ less (ground rule 2).
   (`manage_design {op:inspect}`); grep engine-*.ts for the 34 old names in
   the REMAP table.
 
-### WP-3.3 · append_page in-place replace
-- Today `append_page` with an existing `page_id` RENAMES (dupes) — fixing one
-  deck page means rebuilding the deck. Make same-`page_id` an explicit
-  replace: require `replace:true` to overwrite (else keep today's rename +
-  return a hint), preserve page order, snapshot first, re-run per-page
-  finalize + cross-page decollide.
-- **Files**: `src/mcp/engine-layer-tools.ts` (appendPage), tier2 registry
-  schema, tests incl. resume/task interaction. **Accept**: replace a middle
-  page of a 5-page carousel; order + other pages byte-identical.
+### WP-3.3 · append_page in-place replace — **SHIPPED 2026-07-11**
+`replace:true` + existing `page_id` overwrites that page IN PLACE (order +
+other pages byte-identical — unit-asserted); label kept when not passed;
+editor link focuses the replaced slot. Without `replace` the rename survives
+and the hint names the flag. Live-verified both paths on a 4-page deck.
 
 ### WP-3.4 · Per-client budget presets (docs only)
 - INTEGRATIONS.md: add the model-class table (E4B/9B/30B/frontier → tier,

@@ -100,8 +100,8 @@ Single-layer edits (use add_layers for bulk). **Req:** `op`, `design_path`. Pass
 - `align` (req layer_ids, operation = left|right|top|bottom|center_h|center_v|distribute_h|distribute_v|snap_grid; `grid`) — the fix for diagnose_design misalignment.
 
 ### `append_page`
-Add ONE page to a carousel (raw `layers_shorthand` or `template_ref`+`slots`). Repeat until `next_action.remaining==0`, then seal_design. Keep ONE palette + heading font across pages.
-- **Req:** `design_path`. **Opt:** `page_id`, `label`, `template_ref`, `slots`, `layers`, `layers_shorthand`, `task_path`.
+Add ONE page to a carousel (raw `layers_shorthand` or `template_ref`+`slots`). Repeat until `next_action.remaining==0`, then seal_design. Keep ONE palette + heading font across pages. An existing `page_id` + `replace:true` overwrites that page IN PLACE (order + other pages untouched) — the way to fix one deck page; without `replace` it renames to `<id>-2`.
+- **Req:** `design_path`. **Opt:** `page_id`, `label`, `template_ref`, `slots`, `layers`, `layers_shorthand`, `task_path`, `replace`.
 
 ### `patch_design`
 Edit a sealed design via dot-path selectors (e.g. `layers[3].style.color`); `dry_run` first. Recolor in one selector with `{path:"recolor", value:{"#OLD":"#NEW"}}`.

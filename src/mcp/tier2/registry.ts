@@ -72,6 +72,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
         layers:           { type: 'array', description: 'Verbose layers array', items: { type: 'object' } },
         layers_shorthand: { type: 'array', description: 'Compact shorthand — 80% fewer tokens', items: { type: 'object' } },
         task_path:        { type: 'string', description: 'Path to .task.yaml — enables handover baton' },
+        replace:          { type: 'boolean', description: 'With an EXISTING page_id: overwrite that page IN PLACE (order + other pages untouched) instead of renaming to page_id-2. The way to fix one deck page without rebuilding.' },
       },
       required: ['design_path'],
     },

@@ -292,6 +292,46 @@ describe('sealDesign', () => {
     expect(ids).toContain('cover-2');
   });
 
+  it('replace:true overwrites an existing page IN PLACE — order + other pages byte-identical (WP-3.3)', () => {
+    const projectPath = path.join(tmpDir, 'pgreplace-project');
+    createProject({ name: 'PgReplace', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'PgReplace', type: 'carousel', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/pgreplace.design.yaml');
+    for (const id of ['p1', 'p2', 'p3', 'p4', 'p5']) {
+      appendPage({ design_path: designPath, page_id: id, label: id.toUpperCase(),
+        layers_shorthand: [{ type: 'sections', title: `Slide ${id}`, blocks: [{ kind: 'text', text: id }] }] as unknown as ShorthandLayer[] });
+    }
+    const before = parseYAMLDesign(designPath);
+    const othersBefore = (before.pages ?? []).filter(p => p.id !== 'p3');
+
+    const res = appendPage({ design_path: designPath, page_id: 'p3', replace: true,
+      layers_shorthand: [{ type: 'sections', title: 'Rewritten middle', blocks: [{ kind: 'text', text: 'new' }] }] as unknown as ShorthandLayer[] });
+    expect(res.success).toBe(true);
+    expect((res as unknown as { page_id: string }).page_id).toBe('p3');
+    expect((res as unknown as { page_count: number }).page_count).toBe(5);
+
+    const after = parseYAMLDesign(designPath);
+    expect((after.pages ?? []).map(p => p.id)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);   // order preserved, no p3-2
+    const othersAfter = (after.pages ?? []).filter(p => p.id !== 'p3');
+    expect(JSON.stringify(othersAfter)).toBe(JSON.stringify(othersBefore));                // untouched pages identical
+    const p3 = (after.pages ?? []).find(p => p.id === 'p3');
+    expect(JSON.stringify(p3)).toContain('Rewritten middle');                              // content actually replaced
+    expect(p3?.label).toBe('P3');                                                          // label kept when not passed
+  });
+
+  it('same page_id WITHOUT replace still renames (back-compat) and hints at replace:true', () => {
+    const projectPath = path.join(tmpDir, 'pghint-project');
+    createProject({ name: 'PgHint', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'PgHint', type: 'carousel', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/pghint.design.yaml');
+    appendPage({ design_path: designPath, page_id: 'cover', layers_shorthand: [{ type: 'sections', title: 'A', blocks: [{ kind: 'text', text: 'a' }] }] as unknown as ShorthandLayer[] });
+    const res = appendPage({ design_path: designPath, page_id: 'cover', layers_shorthand: [{ type: 'sections', title: 'B', blocks: [{ kind: 'text', text: 'b' }] }] as unknown as ShorthandLayer[] });
+    const prog = JSON.stringify((res as unknown as { progress?: unknown[] }).progress ?? []);
+    expect(prog).toContain('replace:true');
+    const ids = (parseYAMLDesign(designPath).pages ?? []).map(p => p.id);
+    expect(ids).toEqual(['cover', 'cover-2']);
+  });
+
   it('HONORS a deliberate 1080×1920 (9:16) even for short content — bg fills, no shrink', () => {
     const projectPath = path.join(tmpDir, 'fitbg-project');
     createProject({ name: 'FitBg', path: projectPath });
