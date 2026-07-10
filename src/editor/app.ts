@@ -32,7 +32,6 @@ import { TabBarManager } from '../ui/tabs/tab-bar';
 import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
 import { AutoSaveManager } from './auto-save';
 import { ColorPaletteManager } from '../ui/panels/color-palette';
-import { catalogDialog } from '../ui/dialogs/catalog';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
@@ -654,20 +653,28 @@ export class EditorApp extends EditorAppBase {
    * any future surface all trigger the same flow.
    */
   openCatalog(): void {
-    void catalogDialog.open({
-      onOpen: (design, label, picks) => {
-        const yaml = serializeYAML(design);
-        this.loadFromYAML(yaml);
-        const current = this.state.get().design;
-        if (current) current.meta.name = label.replace(/\..*$/, '');
-        // Apply style overlay picks immediately so the canvas matches
-        // the rail preview without waiting for the async ref resolver
-        // started by loadDesign. The full specs are already cached by
-        // the dialog's per-card lookups.
-        if (picks?.palette)     this.state.set('palette',     picks.palette);
-        if (picks?.typePack)    this.state.set('typePack',    picks.typePack);
-        if (picks?.effectsPack) this.state.set('effectsPack', picks.effectsPack);
-      },
-    });
+    // Lazy chunk: the catalog dialog (+ template/theme/pack loaders) is heavy
+    // and only needed once the user opens it — keep it out of the main entry
+    // (CI enforces a 500KB main-bundle budget).
+    void import('../ui/dialogs/catalog')
+      .then(({ catalogDialog }) => catalogDialog.open({
+        onOpen: (design, label, picks) => {
+          const yaml = serializeYAML(design);
+          this.loadFromYAML(yaml);
+          const current = this.state.get().design;
+          if (current) current.meta.name = label.replace(/\..*$/, '');
+          // Apply style overlay picks immediately so the canvas matches
+          // the rail preview without waiting for the async ref resolver
+          // started by loadDesign. The full specs are already cached by
+          // the dialog's per-card lookups.
+          if (picks?.palette)     this.state.set('palette',     picks.palette);
+          if (picks?.typePack)    this.state.set('typePack',    picks.typePack);
+          if (picks?.effectsPack) this.state.set('effectsPack', picks.effectsPack);
+        },
+      }))
+      .catch(async (err: unknown) => {
+        const { showToast } = await import('../utils/toast');
+        showToast(`Catalog failed to load: ${(err as Error).message}`, 'warning');
+      });
   }
 }
