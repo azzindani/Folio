@@ -1,6 +1,7 @@
 import { type StateManager } from '../editor/state';
 import { renderDesign, renderPage } from '../renderer/renderer';
 import type { DesignSpec } from '../schema/types';
+import { FAVICON_LINK } from '../utils/favicon';
 
 export interface PrintOptions {
   bleed?: number;        // bleed margin in px (default 0)
@@ -63,6 +64,7 @@ export function openPrintWindow(state: StateManager, opts: PrintOptions = {}): v
 <head>
   <meta charset="utf-8">
   <title>${design.meta.name} — Print</title>
+  ${FAVICON_LINK}
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #e8e8e8; font-family: sans-serif; }

@@ -6,6 +6,7 @@ import type { ToolResult } from './types';
 
 import { Resvg } from '@resvg/resvg-js';
 import { jsPDF } from 'jspdf';
+import { FAVICON_LINK } from '../utils/favicon';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 
@@ -164,7 +165,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         : renderToSVGString(spec, undefined, undefined, componentRegistry);
       const html: string = spec.meta.type === 'report'
         ? assembleReportHTML(spec, datasets, {})
-        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title><style>body{margin:0}.folio-page{display:block;margin:0 auto}.folio-page+.folio-page{margin-top:16px}</style></head><body>${body}</body></html>`;
+        : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title>${FAVICON_LINK}<style>body{margin:0}.folio-page{display:block;margin:0 auto}.folio-page+.folio-page{margin-top:16px}</style></head><body>${body}</body></html>`;
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, html, 'utf-8');
       progress.push(pOk('HTML written', path.basename(outPath)));

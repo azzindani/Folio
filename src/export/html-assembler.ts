@@ -3,6 +3,7 @@ import type { LoadedDataset } from '../report/data-loader';
 import { bindLayers } from '../report/binder';
 import { renderNavigation } from '../report/navigation';
 import { renderToSVGStringUniversal as renderToSVGString } from './svg-string';
+import { FAVICON_LINK } from '../utils/favicon';
 import {
   collectInteractiveLayers,
   isInteractiveLayer,
@@ -93,6 +94,7 @@ export function assembleReportHTML(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${escHtml(title)}</title>
+  ${FAVICON_LINK}
   ${fontLink}
   ${chartJsTag}
   <style>${REPORT_CSS}</style>

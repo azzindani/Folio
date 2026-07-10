@@ -20,6 +20,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type * as http from 'http';
 import { loadTokens } from './auth';
+import { FAVICON_LINK } from '../utils/favicon';
 import { signJwt, jwtSecret, outputLinkTtlMs } from './jwt';
 import { readBodyCapped } from '../utils/http-body';
 
@@ -320,7 +321,7 @@ function handleAuthorizeGet(req: http.IncomingMessage, res: http.ServerResponse,
     .join('\n');
 
   html(res, 200, `<!doctype html>
-<html><head><meta charset="utf-8"><title>Folio · Authorize</title>
+<html><head><meta charset="utf-8"><title>Folio · Authorize</title>${FAVICON_LINK}
 <style>
   body{font-family:Inter,system-ui,sans-serif;background:#0e0e16;color:#e8e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
   .card{background:#16182a;padding:32px;border-radius:12px;border:1px solid #2a2a4a;max-width:420px;width:100%}
