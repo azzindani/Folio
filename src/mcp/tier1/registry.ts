@@ -81,15 +81,19 @@ export const TIER1_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'themes',
-    description: 'Theme management for a project — pick `op`:\n• list — themes registered in project.yaml + available builtins (req: project_path).\n• apply — set the active theme; updates project.yaml default_theme and lazily seeds a builtin if needed (req: project_path, theme_id).\nNote: apply sets the PROJECT default; it does NOT recolor an existing design\'s baked-in hexes — use patch_design {path:"recolor"} for that.',
+    description: 'Themes + curated catalog packs — pick `op`:\n• list — themes registered in project.yaml + available builtins (req: project_path).\n• apply — set the active theme; updates project.yaml default_theme and lazily seeds a builtin if needed (req: project_path, theme_id).\n• packs — READ-ONLY catalog packs the editor offers, for hand-picking values (NO project_path needed). kind="palette" → curated colour sets (usable hexes), kind="type" → font pairings (heading/body/mono), kind="effects" → effect key sets. Omit kind for the three kinds + counts; pass search to filter by tag/name; pass id for ONE pack\'s full values to drop into layer fills/fonts/effects.\nNote: apply sets the PROJECT default; it does NOT recolor an existing design\'s baked-in hexes — use patch_design {path:"recolor"} for that.',
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['list', 'apply'], description: 'list or apply.' },
-        project_path: { type: 'string', description: 'Path to project directory.' },
+        op:           { type: 'string', enum: ['list', 'apply', 'packs'], description: 'list, apply, or packs.' },
+        project_path: { type: 'string', description: 'Path to project directory (op:list/apply).' },
         theme_id:     { type: 'string', description: 'op:apply — theme ID to activate.' },
+        kind:         { type: 'string', enum: ['palette', 'type', 'effects'], description: 'op:packs — pack family. Omit for kinds + counts.' },
+        id:           { type: 'string', description: 'op:packs — a pack id for its full usable values.' },
+        search:       { type: 'string', description: 'op:packs — filter packs by tag/name/description.' },
+        limit:        { type: 'number', description: 'op:packs — max packs in a listing (default 24, cap 60).' },
       },
-      required: ['op', 'project_path'],
+      required: ['op'],
     },
   },
   {

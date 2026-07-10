@@ -99,6 +99,9 @@ z = stacking order (higher = front)
      "Inter"/"Public Sans" · LABELS "IBM Plex Mono"/"JetBrains Mono".
    • Tight headlines: lh:1.0–1.05, track:-1..-2. Mono labels: UPPERCASE, track:1.5.
    • ONE accent color, used 1–2× (a stat, a rule) — never on everything.
+   • CATALOG PACKS: for a ready hand-picked palette or font pairing, call
+     themes(op:packs, kind:"palette"|"type", search:"<vibe>") → an id → its hexes
+     / heading·body·mono families to drop straight into layer fills + fonts.
    • ASYMMETRY + whitespace: left-anchor at x:80–100, leave a column empty. Don't
      center everything. Depth via a 2–4px RULE/line, NOT glows or soft shadows.
    • radius: 0 (editorial/print) OR 999 (pills) — avoid the 8–16 "templated" middle.

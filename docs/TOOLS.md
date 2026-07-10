@@ -30,7 +30,7 @@ tools stay 1:1; the long tail is folded into **multiplexed tools** that take an
 | Tool | ops → former tool |
 |---|---|
 | `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery |
-| `themes` | list→list_themes · apply→apply_theme |
+| `themes` | list→list_themes · apply→apply_theme · packs→(new) catalog packs |
 | `tasks` | list→list_tasks · create→create_task · resume→resume_task |
 | `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers |
 | `templates` | list→list_templates · slots→list_template_slots · inject→inject_template · export→export_template · save_component→save_as_component · batch→batch_create |
@@ -68,9 +68,10 @@ Find, inspect and manage designs + the whole library. **Req:** `op`.
 - `gallery` — build `library.html` (thumbnails + search); `output_path`, `max_thumbnails`, `search`, `type`.
 
 ### `themes`  ·  *op-multiplexed*
-**Req:** `op`, `project_path`.
+**Req:** `op` (`project_path` req for list/apply, NOT packs).
 - `list` — themes in project.yaml + available builtins.
 - `apply` (req theme_id) — set the project default theme (lazily seeds a builtin). Does **not** recolor a design — use `patch_design {path:"recolor"}` for that.
+- `packs` — read-only editor catalog packs. Omit `kind` → the three kinds + counts. `kind:"palette|type|effects"` (+ `search`) → filtered listing with values inline. `+id` → one pack's full values: palette→hexes, type→heading/body/mono families, effects→effect keys. Needs no project.
 
 ### `tasks`  ·  *op-multiplexed*
 Multi-page carousel/deck planning. **Req:** `op`.

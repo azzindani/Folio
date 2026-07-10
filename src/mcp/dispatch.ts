@@ -48,7 +48,8 @@ export function dispatchThemes(a: Args): ToolResult {
   switch (a['op']) {
     case 'list':  return engine.listThemes(a as Parameters<typeof engine.listThemes>[0]);
     case 'apply': return engine.applyTheme(a as Parameters<typeof engine.applyTheme>[0]);
-    default:      return badOp('themes', a['op'], ['list', 'apply']);
+    case 'packs': return engine.listPacks(a as Parameters<typeof engine.listPacks>[0]);
+    default:      return badOp('themes', a['op'], ['list', 'apply', 'packs']);
   }
 }
 
