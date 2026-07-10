@@ -99,34 +99,42 @@ html, body {
   transition: grid-template-columns 0.18s ease;
 }
 
-/* Collapsed left panel (activity bars still visible) */
-#app.panel-collapsed {
-  grid-template-columns:
-    var(--activity-bar-width)
-    0px
-    1fr
-    var(--right-panel-width)
-    var(--activity-bar-width);
-}
+/* Collapsed panel grid templates — DESKTOP ONLY. The .panel-collapsed class
+   is also set below 1024px (panels are overlays there and start collapsed),
+   and `#app.panel-collapsed` outranks the media-query `#app` overrides by
+   specificity: unscoped, this 5-column desktop template replaced the mobile
+   single-column grid and squeezed .canvas-section into the 48px first
+   column (canvas overflowed it visually; Monaco collapsed to a sliver). */
+@media (min-width: 1024px) {
+  /* Collapsed left panel (activity bars still visible) */
+  #app.panel-collapsed {
+    grid-template-columns:
+      var(--activity-bar-width)
+      0px
+      1fr
+      var(--right-panel-width)
+      var(--activity-bar-width);
+  }
 
-/* Collapsed right panel (right activity bar still visible) */
-#app.rpanel-collapsed {
-  grid-template-columns:
-    var(--activity-bar-width)
-    min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - 200px))
-    1fr
-    0px
-    var(--activity-bar-width);
-}
+  /* Collapsed right panel (right activity bar still visible) */
+  #app.rpanel-collapsed {
+    grid-template-columns:
+      var(--activity-bar-width)
+      min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - 200px))
+      1fr
+      0px
+      var(--activity-bar-width);
+  }
 
-/* Both panels collapsed */
-#app.panel-collapsed.rpanel-collapsed {
-  grid-template-columns:
-    var(--activity-bar-width)
-    0px
-    1fr
-    0px
-    var(--activity-bar-width);
+  /* Both panels collapsed */
+  #app.panel-collapsed.rpanel-collapsed {
+    grid-template-columns:
+      var(--activity-bar-width)
+      0px
+      1fr
+      0px
+      var(--activity-bar-width);
+  }
 }
 
 /* When the right panel is collapsed, accent the activity bar's inner (canvas-
