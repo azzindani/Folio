@@ -573,7 +573,7 @@ export function pageHasReadableContent(layers: Layer[]): boolean {
 export function appendPage(args: {
   design_path: string; page_id?: string; label?: string; template_ref?: string;
   slots?: Record<string, unknown>; layers?: Layer[]; layers_shorthand?: ShorthandLayer[];
-  task_path?: string; project_path?: string;
+  task_path?: string; project_path?: string; replace?: boolean;
 }): ToolResult {
   const op = 'append_page';
   const progress: ProgressItem[] = [];
@@ -658,13 +658,24 @@ export function appendPage(args: {
   // Ensure a UNIQUE page id. A model that labels two slides the same (or passes
   // page_id twice) would otherwise create duplicate ids — which makes a page_id-
   // scoped op (render_preview/remove_layer/update_layer) ambiguous and can break
-  // navigation/export. Suffix on collision, mirroring the layer-id de-dupe.
+  // navigation/export. Suffix on collision, mirroring the layer-id de-dupe —
+  // UNLESS replace:true, which makes the same page_id an explicit IN-PLACE
+  // replace (WP-3.3): fixing one deck page no longer means rebuilding the deck.
   const desiredId = args.page_id ?? `page_${spec.pages.length + 1}`;
-  const taken = new Set(spec.pages.map(p => p.id));
+  const existingIdx = spec.pages.findIndex(p => p.id === desiredId);
   let pageId = desiredId;
-  for (let n = 2; taken.has(pageId); n++) pageId = `${desiredId}-${n}`;
-  if (pageId !== desiredId) progress.push(pInfo(`Renamed colliding page id`, `${desiredId} → ${pageId}`));
-  spec.pages.push({ id: pageId, label: args.label ?? `Page ${spec.pages.length + 1}`, template_ref: args.template_ref, slots: args.slots, layers });
+  let replacedAt = -1;
+  if (existingIdx >= 0 && args.replace) {
+    const prev = spec.pages[existingIdx];
+    spec.pages[existingIdx] = { id: desiredId, label: args.label ?? prev.label, template_ref: args.template_ref, slots: args.slots, layers };
+    replacedAt = existingIdx;
+    progress.push(pOk(`Replaced page "${desiredId}" in place`, `position ${existingIdx + 1} of ${spec.pages.length} — order and other pages untouched`));
+  } else {
+    const taken = new Set(spec.pages.map(p => p.id));
+    for (let n = 2; taken.has(pageId); n++) pageId = `${desiredId}-${n}`;
+    if (pageId !== desiredId) progress.push(pInfo(`Renamed colliding page id`, `${desiredId} → ${pageId} — pass replace:true to overwrite the existing page in place instead`));
+    spec.pages.push({ id: pageId, label: args.label ?? `Page ${spec.pages.length + 1}`, template_ref: args.template_ref, slots: args.slots, layers });
+  }
 
   if (spec.meta.generation) {
     spec.meta.generation.completed_pages = spec.pages.length;
@@ -673,7 +684,7 @@ export function appendPage(args: {
   }
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
-  progress.push(pOk(`Appended page "${pageId}"`, `total: ${spec.pages.length} page(s)`));
+  if (replacedAt < 0) progress.push(pOk(`Appended page "${pageId}"`, `total: ${spec.pages.length} page(s)`));
 
   const pageHealNote = lockedHealNote([[pf.relit, 're-lit'], [pf.reflowed, 'reflowed']], spec.document.width, spec.document.height);
   const notes = [...(pageHealNote ? [pageHealNote] : []), ...(pageShorthand.length ? diagnoseShorthandKeys(pageShorthand) : []), ...diagnoseLayers(layers)];
@@ -688,13 +699,15 @@ export function appendPage(args: {
     progress.push(pInfo('Task updated', next_action.tool));
   }
 
-  const context = buildContext(op, `Appended page "${pageId}" — ${spec.pages.length} total`, [
+  const context = buildContext(op, replacedAt >= 0
+    ? `Replaced page "${pageId}" in place — ${spec.pages.length} total`
+    : `Appended page "${pageId}" — ${spec.pages.length} total`, [
     { type: 'design', path: dPath, role: 'updated' },
   ]);
   const remaining = next_action ? next_action.remaining : 0;
   const handover = buildHandover(remaining === 0 ? 'SEAL' : 'COMPOSE', {
     design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}),
   }, { type: 'carousel' });
-  const link = buildEditorLink(dPath, { page: spec.pages.length - 1 });
+  const link = buildEditorLink(dPath, { page: replacedAt >= 0 ? replacedAt : spec.pages.length - 1 });
   return okResult(op, { page_id: pageId, page_count: spec.pages.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(notes.length ? { notes } : {}), ...(next_action ? { next_action } : {}), progress, context, handover, _attachments: [link.attachment] }, bak);
 }
