@@ -381,7 +381,14 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
   };
   const containerOf = (t: Layer): Layer | null => {
     if (t.type !== 'text') return null;
-    const b = boxOf(t); const ta = b.w * b.h;
+    const b = boxOf(t);
+    // Blind models leave hand-placed text with height 0 (they can't see wrap).
+    // A zero-height box has zero area, so the ≥80%-inside test below could never
+    // fire and a card EJECTED its own label out the bottom (empty white slabs,
+    // step text floating between them). Measure to truth, like every other
+    // collision decision in this pass.
+    if (b.h <= 0) b.h = measuredH(t);
+    const ta = b.w * b.h;
     if (ta <= 0) return null;
     let best: Layer | null = null; let bestArea = Infinity;
     for (const s of layers) {
