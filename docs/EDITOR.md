@@ -107,6 +107,7 @@ SVG-in-HTML — vector-native, pixel-perfect at any zoom.
 | Grid | `G` toggles; configurable columns, gutter, baseline |
 | Smart guides | Snap to grid + sibling layer edges while dragging |
 | Annotations | Alt+hover shows the distance between the selected and hovered layer |
+| Context menu | Right-click a layer: duplicate / copy / paste / group / bring-forward / send-backward / flip / lock / delete (with shortcut hints) |
 
 ---
 
@@ -118,11 +119,24 @@ SVG-in-HTML — vector-native, pixel-perfect at any zoom.
 | **Properties** | Context-aware per layer type: position, size, fill, stroke, radius, effects, transform (z/opacity/rotation/flip), blend mode — live-updates the canvas. Flow-report layers expose **Span + Height** instead of x/y |
 | **Problems** | Validation errors/warnings with layer ID + message; click to select the offender; re-runs on every change |
 | **File tree** | Open `.design.yaml` / `.template.yaml` / `.component.yaml` |
+| **Assets** | Project `assets/` thumbnails (left rail); click inserts the image as a layer at native aspect, centered. Same store the MCP `manage_design {op:asset_*}` tools use |
 | **Page strip** | Page thumbnails — click to navigate; **+** adds a page; right-click for duplicate / move left·right / rename / delete. Paging starts from any design: adding a page to a single-page poster converts it to multi-page |
 | **Timeline** | Animation keyframe scrubber + per-layer tracks |
 | **Payload (Monaco)** | VS Code's editor (lazy-loaded) over the raw YAML — inline validation, syntax highlighting, **bidirectional sync** with the canvas (300ms debounce, re-entrancy-guarded) |
 | **Command palette** | Ctrl+K or `/` — search and run any action by name |
 | **Align toolbar** | Align L/C/R · T/M/B; distribute H/V; match width/height |
+
+Multi-select shows a dedicated Properties view: selection bounds,
+Group/Ungroup, and an align/distribute grid.
+
+### 5.0 Mobile & tablet
+
+Phones (<768px): single-column layout, bottom nav (layers / properties /
+palette as bottom sheets), page strip above the nav, safe-area-aware bottom
+bars (`viewport-fit=cover` + `100dvh` — nothing hides under the browser chrome
+or home indicator). Tablets (768–1023px): panels become slide-in overlays off
+the activity bars, collapsed by default so the canvas gets the full width.
+Touch targets in the toolbar are ≥40px on coarse pointers.
 
 ### 5.1 Studio editing of flow-report layers
 

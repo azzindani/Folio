@@ -2,6 +2,45 @@
 
 ## [Unreleased]
 
+### Editor
+
+- **Editor rescue batch** — tablet 768–1023px layout fixed (overlay panels
+  default-collapsed, no horizontal scroll, no panel sliver over the canvas);
+  right-click canvas context menu (duplicate/copy/paste/group/z-order/flip/
+  lock/delete) backed by shared `layer-actions.ts`; multi-select properties
+  panel (bounds, group/ungroup, align/distribute grid); project **Assets
+  panel** in the left rail (click inserts the image at native aspect);
+  ≥40px touch targets.
+- **Real-phone crop fixed** — `viewport-fit=cover` + `100dvh` + safe-area
+  padding on the bottom bars; collapse grid templates media-scoped so
+  portrait phones get the full-width canvas (was a 48px sliver).
+- **Multipage audit fixes** — stale "Page" row in the properties panel,
+  page strip hidden under the mobile nav, parked tablet panel sliver,
+  missing layer-type icons; page switch / thrash / add / duplicate /
+  delete / undo / presentation verified live with gradient defs intact.
+- **Monoline chrome icons** — every emoji in the editor UI replaced with a
+  shared stroke-SVG set on `currentColor` (`editor/chrome-icons.ts`);
+  page-strip thumbnails use the chrome surface instead of hard-coded white.
+- **Catalog lazy-loaded** — main entry 512KB → ~488KB (budget enforced in CI).
+
+### Engine
+
+- **Height-0 shorthand text is containable** — blind-model text (no height)
+  had zero box area, so the containment test never fired and a card ejected
+  its own label/body at seal; text height is now measured before the test.
+- **Idempotent re-seal reporting** — no more phantom "Re-lit 1" when relight
+  caps out at the text's current color; a no-op stays silent.
+- **Seal-time dedupe** (`engine-finalize-dedupe.ts`) — repeated section
+  thrash (identical text signatures at any depth, stacked echoes, repeated
+  images) collapses to first-in-flow + gap compaction; scroll-ratio posters
+  get a carousel hint.
+
+### Branding
+
+- **Folio tab icon on every HTML surface** (`utils/favicon.ts`, inline
+  data-URI): /library gallery, exported gallery/report/presentation/print/
+  animation HTML, design HTML exports, OAuth + token pages — previously
+  only the editor had it.
 
 ## [0.1.0] - 2026-06-28
 
