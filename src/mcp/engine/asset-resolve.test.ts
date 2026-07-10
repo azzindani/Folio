@@ -93,8 +93,9 @@ describe('resolveImageAssets', () => {
   });
 
   it('keeps the historical base-dir search order', () => {
-    expect(assetBaseDirs('/p/designs/d.design.yaml', '/p')).toEqual([
-      '/p/designs', '/p', '/p', '/p/assets',
-    ]);
+    // path.join uses the platform separator — normalize so the assertion
+    // holds on Windows runners too ('\\p\\assets').
+    const dirs = assetBaseDirs('/p/designs/d.design.yaml', '/p').map(d => d.replace(/\\/g, '/'));
+    expect(dirs).toEqual(['/p/designs', '/p', '/p', '/p/assets']);
   });
 });
