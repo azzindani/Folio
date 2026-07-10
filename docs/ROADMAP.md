@@ -186,15 +186,21 @@ Context: a 6-workstream program for richer, less-AI output; WS1 (pattern +
 texture fills, duotone) shipped. Litmus for every item: MORE variance, never
 less (ground rule 2).
 
-### WP-2.1 · WS2–6 workstreams
-- Rough scope (re-derive detail from `docs/COMPARISON-OPEN-DESIGN.md` +
-  `src/mcp/engine/craft.ts`): WS2 spot-illustration/doodle vocabulary beyond
-  the shipped scatter (`shorthand-doodles.ts`), WS3 editorial grid systems
-  (baseline/column snap hints in guide + diagnose), WS4 texture/print
-  finishes (riso/halftone/paper — extend `shorthand-background.ts` grammar),
-  WS5 type craft (optical sizing, tighter ladder enforcement via themes
-  type_ladder), WS6 layout motifs (bleeds, overlaps, rotated blocks — verify
-  finalize passes don't fight them; extend containment tests).
+### WP-2.1 · WS2–6 workstreams — WS4 SHIPPED (concrete subset)
+- **WS4 texture/print finishes — DONE**: four new print-finish patterns —
+  `newsprint` (fine dot screen), `riso` (coarse spot-print dots), `engraving`
+  (etched hairlines), `mezzotint` (aquatint stipple). All deterministic +
+  seamless-tileable + resvg-safe. Files: `src/schema/types/primitives.ts`
+  (PatternName), `src/renderer/pattern-renderer.ts` (BASE_TILE + builders),
+  `src/mcp/shorthand-helpers.ts` (PATTERN_NAMES), `shorthand-background.ts`
+  (liney contrast for engraving), `engine/guide.ts` (model vocabulary).
+  Rendered + vision-reviewed via a 4-cell resvg proof sheet (all read distinct);
+  full renderer + bg-texture suites green.
+- **Remaining (deferred)**: WS2 spot-illustration/doodle vocabulary beyond the
+  shipped scatter (`shorthand-doodles.ts`), WS3 editorial grid systems
+  (baseline/column snap hints in guide + diagnose), WS5 type craft (optical
+  sizing, tighter ladder via themes type_ladder), WS6 layout motifs (bleeds,
+  overlaps, rotated blocks — verify finalize passes don't fight them).
 - **Accept per WS**: 3+ example-level cases rendered + vision-reviewed; suite
   green; diversity eval does not regress.
 

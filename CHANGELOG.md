@@ -34,6 +34,19 @@
   thrash (identical text signatures at any depth, stacked echoes, repeated
   images) collapses to first-in-flow + gap compaction; scroll-ratio posters
   get a carousel hint.
+- **Project fonts** — a TTF/OTF uploaded to `<project>/assets/fonts` now
+  renders everywhere: live editor (FontFace off the project-files mount),
+  PNG (resvg reads the project dir), and selectable text in the vector PDF
+  (jsPDF embeds the project file). `resvgFontOption`/`unbundledFonts`/`pickFont`
+  take an optional project dir; the unbundled-font warning recognizes project
+  families. Shared pure `utils/font-name.ts` (filename→family/weight).
+- **Catalog packs over MCP** — `themes {op:"packs"}` exposes the editor's
+  curated colour PALETTES, TYPE pairings, and EFFECTS sets read-only: name a
+  pack, get usable hexes / heading·body·mono families / effect keys (a single
+  pack is ≤100 tokens). No new tool, no project needed.
+- **Print-finish patterns** — `newsprint`, `riso`, `engraving`, `mezzotint`
+  join the pattern-fill vocabulary: deterministic, seamless-tileable,
+  resvg-safe hand-printed grain for less-templated, more-editorial fields.
 
 ### Branding
 

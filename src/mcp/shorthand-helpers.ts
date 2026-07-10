@@ -245,6 +245,7 @@ export const PATTERN_NAMES = new Set([
   'diagonal_stripes', 'crosshatch', 'checkerboard', 'chevron', 'zigzag',
   'triangles', 'waves', 'scallop', 'plus', 'cross', 'scatter', 'confetti',
   'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
+  'newsprint', 'riso', 'engraving', 'mezzotint',
 ]);
 
 // Parse a compact pattern string: "pattern:halftone", "halftone/#1a1a1a",

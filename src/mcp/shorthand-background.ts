@@ -225,7 +225,7 @@ export function composeBackground(spec: string, idp: string, X: number, Y: numbe
   // so loudening explicit patterns leaves quiet posters quiet.
   overlays.forEach((ov, i) => {
     // Grid/line patterns read as ink lines → a touch more contrast than dot fills.
-    const liney = /grid|graph_paper|blueprint|crosshatch|stripe|isometric|brick|carbon/.test(ov.name);
+    const liney = /grid|graph_paper|blueprint|crosshatch|stripe|isometric|brick|carbon|engraving/.test(ov.name);
     const fg = dark ? mixHex(bgHex, text, liney ? 0.6 : 0.45) : mixHex(bgHex, text, liney ? 0.5 : 0.32);
     const visBase = dark ? 0.16 : 0.12;
     const opacity = ov.absOpacity ?? Math.max(0.025, Math.min(0.55, visBase * ov.strength));

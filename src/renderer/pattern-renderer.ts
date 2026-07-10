@@ -21,6 +21,7 @@ const BASE_TILE: Record<PatternName, number> = {
   chevron: 26, zigzag: 26, triangles: 28, waves: 32, scallop: 26,
   plus: 30, cross: 26, scatter: 72, confetti: 80, halftone: 18, blueprint: 80,
   carbon: 16, houndstooth: 32, brick: 36,
+  newsprint: 9, riso: 40, engraving: 14, mezzotint: 26,
 };
 
 type Builder = (g: SVGElement, c: TileCtx) => void;
@@ -136,6 +137,40 @@ const BUILDERS: Record<PatternName, Builder> = {
     path(g, `M0 ${h}l0 ${q}l${q} ${-q}Z`, fg, 1, true);
     path(g, `M${h} ${h}l${h} 0l${-q} ${q}Z`, fg, 1, true);
     path(g, `M${h} ${h}l0 ${h}l${q} ${-q}Z`, fg, 1, true);
+  },
+  // ── Print finishes (WS4) — hand-printed grain, all deterministic ───────
+  // Newsprint — very fine offset dot screen (tight tile) → newspaper halftone.
+  newsprint: (g, { t, fg, w }) => {
+    circle(g, t * 0.25, t * 0.25, t * 0.16 * w, fg);
+    circle(g, t * 0.75, t * 0.75, t * 0.16 * w, fg);
+  },
+  // Riso — coarse risograph screen: bold, slightly irregular offset dots on a
+  // big tile so the "spot-color print" texture reads at poster scale.
+  riso: (g, { t, fg, w }) => {
+    const d = (x: number, y: number, r: number): void => circle(g, t * x, t * y, t * r * w, fg);
+    d(0.18, 0.20, 0.10); d(0.62, 0.14, 0.075); d(0.40, 0.46, 0.11);
+    d(0.84, 0.52, 0.085); d(0.14, 0.72, 0.09); d(0.68, 0.80, 0.10);
+    d(0.92, 0.90, 0.06); d(0.34, 0.90, 0.07);
+  },
+  // Engraving — fine parallel hairlines (banknote / etched shading). Horizontal
+  // rules tile seamlessly top-to-bottom; hair-thin weight keeps it a texture.
+  engraving: (g, { t, fg, w }) => {
+    let d = '';
+    for (let i = 0; i < 4; i++) { const y = (i + 0.5) * (t / 4); d += `M0 ${y}H${t}`; }
+    path(g, d, fg, Math.max(0.4, t * 0.03 * w), false);
+  },
+  // Mezzotint — dense deterministic speckle (aquatint / stipple grain). Fixed
+  // pseudo-scatter of tiny dots; edge-hugging marks are mirrored so tiles seam.
+  mezzotint: (g, { t, fg, w }) => {
+    const pts: Array<[number, number, number]> = [
+      [0.06, 0.12, 0.030], [0.22, 0.05, 0.022], [0.38, 0.18, 0.028], [0.55, 0.09, 0.020],
+      [0.72, 0.16, 0.032], [0.90, 0.07, 0.024], [0.12, 0.34, 0.026], [0.30, 0.40, 0.020],
+      [0.48, 0.30, 0.030], [0.66, 0.44, 0.022], [0.84, 0.36, 0.028], [0.04, 0.58, 0.024],
+      [0.24, 0.66, 0.032], [0.44, 0.56, 0.020], [0.62, 0.62, 0.028], [0.80, 0.70, 0.026],
+      [0.96, 0.60, 0.022], [0.16, 0.88, 0.030], [0.36, 0.82, 0.024], [0.58, 0.92, 0.028],
+      [0.76, 0.84, 0.020], [0.92, 0.94, 0.030],
+    ];
+    for (const [x, y, r] of pts) circle(g, t * x, t * y, t * r * w * 1.4, fg);
   },
 };
 
