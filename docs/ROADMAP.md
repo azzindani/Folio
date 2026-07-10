@@ -164,11 +164,19 @@ treatments. Original spec:
 - **Accept**: treatment matrix design (one image per treatment) exports PNG
   with all treatments visible; editor renders identically.
 
-### WP-1.6 · Project fonts (nice-to-have — do last in P1)
-- **Files**: `src/mcp/engine/fonts.ts` + `pdf-fonts.ts` (extend lookup to
-  `<project>/assets/fonts`), `src/editor/app-base.ts` (FontFace load from
-  manifest).
+### WP-1.6 · Project fonts — SHIPPED
+- **Files**: `src/utils/font-name.ts` (NEW — pure filename→family/weight, shared
+  client+server), `src/mcp/engine/fonts.ts` + `pdf-fonts.ts` (lookup extended to
+  `<project>/assets/fonts`: `resvgFontOption`/`unbundledFonts`/`pickFont` take an
+  optional `projectDir`), `src/mcp/engine-export-tools.ts` + `engine/pdf-build.ts`
+  (thread project dir through render_preview/export/vector-PDF), `src/styles/
+  font-loader.ts` (`loadProjectFonts` — FontFace from `/__project_files` mount),
+  `src/editor/app.ts` (`loadProjectFonts` on project open, off the `__assets` list).
 - **Accept**: uploaded TTF renders in editor + PNG + selectable in vector PDF.
+  Live-verified on a `wp16-fonttest` project (non-bundled family `Zephyr Signal`):
+  family discovered from filename, resvg pointed at the project dir, unbundled
+  warning suppressed with projDir / raised without, vector-PDF resolves the
+  project TTF, real resvg PNG renders the glyphs (2489 vs 490 blank-control bytes).
 
 ---
 

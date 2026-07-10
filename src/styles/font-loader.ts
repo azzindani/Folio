@@ -76,9 +76,43 @@ export function ensureDesignFonts(families: string[]): void {
   }
 }
 
+// ── Project fonts (WP-1.6) ────────────────────────────────────
+// TTF/OTF the operator uploaded to <project>/assets/fonts. These aren't on
+// Google Fonts, so the <link> path above can't reach them — register each with
+// the FontFace API pointed at the authed project-files mount, so the editor
+// renders the operator's own typeface (matching resvg raster + vector PDF,
+// which read the same files server-side). Idempotent per family+weight; a fetch
+// failure on one file leaves the rest intact.
+const loadedProjectFonts = new Set<string>();
+
+/** Font asset rows (path under assets/fonts) + a resolver to their fetch URL. */
+export function loadProjectFonts(
+  fonts: Array<{ path: string }>,
+  urlFor: (path: string) => string,
+): void {
+  if (typeof document === 'undefined' || !('fonts' in document)) return;
+  void import('../utils/font-name').then(({ fontFamilyFromFilename, fontWeightFromFilename, isFontFile }) => {
+    for (const f of fonts) {
+      const file = f.path.split('/').pop() ?? '';
+      if (!isFontFile(file)) continue;
+      const family = fontFamilyFromFilename(file);
+      const weight = fontWeightFromFilename(file);
+      if (!family) continue;
+      const key = `${family}::${weight}`;
+      if (loadedProjectFonts.has(key)) continue;
+      loadedProjectFonts.add(key);
+      try {
+        const face = new FontFace(family, `url("${urlFor(f.path)}")`, { weight, display: 'swap' });
+        void face.load().then(loaded => { (document as unknown as { fonts: FontFaceSet }).fonts.add(loaded); }).catch(() => { loadedProjectFonts.delete(key); });
+      } catch { loadedProjectFonts.delete(key); }
+    }
+  }).catch(() => { /* module load failed — leave editor on fallback fonts */ });
+}
+
 /** Test hook — reset the injection guard so a re-mount can re-inject. */
 export function _resetFontLoader(): void {
   injected = false;
   loadedDesignFamilies.clear();
+  loadedProjectFonts.clear();
   document.head.querySelectorAll('[data-folio-fonts="type-packs"],[data-folio-fonts="design"]').forEach(el => el.remove());
 }

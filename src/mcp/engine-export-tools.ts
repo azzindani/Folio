@@ -76,9 +76,12 @@ export function collectHrefRects(layers: Layer[]): { x: number; y: number; w: nu
 }
 
 export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number; project_path?: string }): ToolResult {
+  // Project dir for project-scoped fonts (WP-1.6) — resolvable even when only
+  // design_path was passed (designs live at <project>/designs/<file>).
   const op = 'export_design';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
+  const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
 
   const spec = readYAML<DesignSpec>(dPath);
@@ -209,11 +212,11 @@ export function exportDesign(args: { design_path: string; format: string; output
         const el = renderToSVGElement(s.spec, undefined, undefined, componentRegistry);
         const w = dim(el, 'width', spec.document.width);
         const h = dim(el, 'height', spec.document.height);
-        for (const f of unbundledFonts(serializeSVGElement(el))) missingFonts.add(f);
+        for (const f of unbundledFonts(serializeSVGElement(el), projDir)) missingFonts.add(f);
         const orient = w >= h ? 'landscape' : 'portrait';
         if (!pdf) pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(w), toPt(h)], compress: true });
         else pdf.addPage([toPt(w), toPt(h)], orient);
-        vectorRuns += addVectorPdfPage(pdf as unknown as PdfDoc, { svg: el, width: w, height: h }, scale, registered);
+        vectorRuns += addVectorPdfPage(pdf as unknown as PdfDoc, { svg: el, width: w, height: h }, scale, registered, projDir);
         for (const r of collectHrefRects(s.layers)) {
           pdf.link(toPt(r.x), toPt(r.y), toPt(r.w), toPt(r.h), { url: r.href });
         }
@@ -243,11 +246,11 @@ export function exportDesign(args: { design_path: string; format: string; output
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 2;
       const missingFonts = new Set<string>();
       const rasterize = (svgStr: string): Buffer => {
-        for (const f of unbundledFonts(svgStr)) missingFonts.add(f);
+        for (const f of unbundledFonts(svgStr, projDir)) missingFonts.add(f);
         return Buffer.from(new Resvg(svgStr, {
           fitTo: { mode: 'zoom', value: scale },
           background: '#FFFFFF',
-          font: resvgFontOption(),
+          font: resvgFontOption(projDir),
         }).render().asPng());
       };
       const W = spec.document.width, H = spec.document.height;
@@ -282,11 +285,11 @@ export function exportDesign(args: { design_path: string; format: string; output
       // resvg's `fitTo: { mode: 'zoom' }` scales the rendered raster while
       // keeping the SVG viewBox aspect ratio.
       const rasterize = (svgStr: string): Buffer => {
-        for (const f of unbundledFonts(svgStr)) missingFonts.add(f);
+        for (const f of unbundledFonts(svgStr, projDir)) missingFonts.add(f);
         return Buffer.from(new Resvg(svgStr, {
           fitTo: { mode: 'zoom', value: scale },
           background: 'rgba(0,0,0,0)',
-          font: resvgFontOption(),
+          font: resvgFontOption(projDir),
         }).render().asPng());
       };
       const fontNote = (): string[] =>
@@ -401,9 +404,10 @@ export function renderPreview(args: { design_path: string; project_path?: string
       ? ({ ...spec, layers: (args.page_id ? spec.pages.find(p => p.id === args.page_id) : spec.pages[0])?.layers ?? [], pages: undefined } as DesignSpec)
       : spec;
     const svgStr = renderToSVGString(renderSpec, undefined, undefined, componentRegistry);
-    const missing = unbundledFonts(svgStr);
+    const previewProjDir = args.project_path ?? path.dirname(path.dirname(dPath));
+    const missing = unbundledFonts(svgStr, previewProjDir);
     const png = Buffer.from(new Resvg(svgStr, {
-      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(),
+      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(previewProjDir),
     }).render().asPng());
     progress.push(pOk('Rendered preview', `${png.length} bytes @ ${scale}×`));
     const notes = [
