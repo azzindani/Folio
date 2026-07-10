@@ -175,6 +175,21 @@ reach it.
 | E4B-floor harness run missing (see §3) | 🟠 | WP-3.1 via claude.lab.casava.space + vision review |
 | FAIL-cluster regression replay is manual | 🟡 | scripted replay (WP-6.2) |
 
+**120B smoke run (2026-07-10, nemotron-3-super-120b via harness-claude,
+1 case, asset workflow):** the ASSET PIPELINE passes blind end-to-end —
+model found the uploaded photo via asset_list, placed it with fit, export
+embedded it (4 hero instances render). Composition FAILED the floor:
+"What's Inside" section appended 5×, offer block 2× (thrash), document
+height ballooned 1080×1350 → 1080×4826 despite an explicit Instagram-
+portrait ask, mid-page text collisions survived seal. New engine items →
+**WP-3.5 seal-time duplicate-section collapse** (same normalized text
+block ≥2× overlapping/stacked → keep first) and **WP-3.6 requested-ratio
+hardening** (poster + explicit aspect in brief → engine refuses doc-height
+balloon, reflows instead). Repro: roastery-launch project on the live
+container. Also unexplained: espresso-hero placed at icon size renders the
+PLACEHOLDER glyph while the big placements render fine — repro before
+diagnosing.
+
 ---
 
 ## What to do next — priority order (updated 2026-07-07 after the ship wave)
