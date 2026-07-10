@@ -2223,7 +2223,12 @@ button:focus:not(:focus-visible) { outline: none; }
 
   .left-panel {
     position: absolute;
-    left: var(--activity-bar-width);
+    /* Containing block is the 0-width `lpanel` GRID AREA (abspos grid items
+       anchor to their area, not #app), which already sits past the activity
+       bar — left:0 here, not var(--activity-bar-width), or the panel lands
+       48px too far right: open shows a gap, closed (-105%) leaves a ~36px
+       sliver of the toolbox peeking over the canvas and page strip. */
+    left: 0;
     top: calc(var(--toolbar-height) + var(--formula-bar-height));
     bottom: var(--statusbar-height);
     width: clamp(220px, 30vw, 320px);
@@ -2338,6 +2343,11 @@ button:focus:not(:focus-visible) { outline: none; }
 
   /* Reserve space above mobile nav in status bar */
   .status-bar { z-index: 210; }
+
+  /* The fixed bottom nav paints over the last 52px of the canvas column —
+     harmless for the zoomable canvas, but the page strip is bottom-anchored
+     UI: its thumb labels and "+" button were hidden behind the nav. Clear it. */
+  #page-strip-section { margin-bottom: var(--mobile-nav-height); }
 
   /* Left panel — bottom sheet */
   .left-panel {

@@ -31,7 +31,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
   }
 
   private onStateChange(state: EditorState, changedKeys: (keyof EditorState)[]): void {
-    if (changedKeys.some(k => ['selectedLayerIds', 'design'].includes(k))) {
+    if (changedKeys.some(k => ['selectedLayerIds', 'design', 'currentPageIndex'].includes(k))) {
       this.render();
     }
   }

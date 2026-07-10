@@ -2,8 +2,10 @@ import { type StateManager, type EditorState } from '../../editor/state';
 import type { Layer, GroupLayer } from '../../schema/types';
 
 const LAYER_ICONS: Record<string, string> = {
-  rect: '▭', circle: '◯', path: '✒', polygon: '⬡',
-  line: '—', text: 'T', image: '🖼', icon: '✦',
+  rect: '▭', circle: '◯', ellipse: '⬭', path: '✒', polygon: '⬡',
+  line: '—', polyline: '∿', connector: '⤳', text: 'T', image: '🖼', icon: '✦',
+  background: '▧', backdrop: '▨', particle: '✳', map: '🗺',
+  embed_code: '⌗', component_list: '≔', auto_layout: '⚏',
   component: '⊞', mermaid: '➡', chart: '≡',
   code: '<>', math: 'π', group: '▣', qrcode: '⊞',
   interactive_chart: '≣', interactive_table: '⊟', kpi_card: '◳', rich_text: '¶',
