@@ -158,6 +158,16 @@ export interface ImageLayer extends BaseLayer {
    *  the user is matching) — built on top of, then hidden/removed before export.
    *  Defaults to a normal content image when absent. */
   role?: 'content' | 'reference';
+  // ── Photo treatments (WP-1.5) — pure SVG (clipPath + primitives), so every
+  //    treatment rasterizes identically in resvg exports, not just the editor.
+  /** Clip the photo to a shape; implies cover-fit. */
+  mask?: 'circle' | 'blob' | 'arch' | 'rounded' | 'hex';
+  /** Crop focus [fx, fy] as 0–1 fractions — keeps the subject when cover-cropping. */
+  focal?: [number, number];
+  /** Legibility scrim painted OVER the photo (inside the mask). */
+  overlay?: { fill?: string; opacity?: number; blend?: string };
+  /** Outline around the photo/mask shape. */
+  frame?: { stroke?: string; width?: number; offset?: number };
 }
 
 export interface IconLayer extends BaseLayer {

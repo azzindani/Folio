@@ -650,7 +650,12 @@ Workflow:
   3. Place: {type:"image", src:"assets/images/team.jpg", pos:[x,y,w,h], fit:"cover"}
      • Respect the native aspect (width/height from asset_list) or set fit:"cover".
      • luminance:"busy" → put a scrim between the photo and any text on top:
-       {type:"rect", pos:[same], fill:"rgba(0,0,0,0.45)"} under the text layer.
+       {type:"rect", pos:[same], fill:"rgba(0,0,0,0.45)"} under the text layer —
+       or use the built-in overlay treatment (next line).
+     • TREATMENTS (all rasterize in exports): mask:"circle|blob|arch|rounded|hex"
+       (shape-crops the photo), focal:[fx,fy] 0–1 (keep the subject when cover-
+       cropping, e.g. [0.3,0.2] = face upper-left), overlay:{fill,opacity} (a
+       legibility scrim INSIDE the mask), frame:{stroke,width,offset} (outline).
      • Shapes take image FILLS too: fill:{type:"image", src:"assets/images/…",
        mode:"cover"|"contain"|"tile"} — a photo inside a circle/blob/card.
   4. render_preview → any image the export can't resolve shows a placeholder
