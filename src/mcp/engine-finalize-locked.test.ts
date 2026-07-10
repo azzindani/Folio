@@ -146,6 +146,27 @@ describe('decollide keeps a label inside its node (label-on-shape composite)', (
     expect(yOf(cd)).toBe(430);
   });
 
+  it('keeps a HEIGHT-0 label inside its card (blind-model shorthand text)', () => {
+    // Blind models leave hand-placed text with height 0 — an unmeasured box has
+    // zero area, so the ≥80%-inside containment test never fired and the card
+    // ejected its own step number/title/body below it (pour-over-guide wreck:
+    // empty white slabs with the content floating between them).
+    const card = rect('card', 120, 280, 840, 280);
+    const num  = { id: 'num', type: 'text', z: 2, x: 160, y: 320, width: 90, height: 0,
+      content: { type: 'plain', value: '01' }, style: { font_size: 56 } } as unknown as Layer;
+    const head = { id: 'head', type: 'text', z: 2, x: 300, y: 320, width: 620, height: 0,
+      content: { type: 'plain', value: 'Bloom' }, style: { font_size: 36 } } as unknown as Layer;
+    const body = { id: 'body', type: 'text', z: 2, x: 300, y: 380, width: 620, height: 0,
+      content: { type: 'plain', value: 'Pour 60 g of water over the grounds and wait 35 seconds.' },
+      style: { font_size: 26 } } as unknown as Layer;
+    decollideHandPlaced([card, num, head, body], W, H);
+    expect(yOf(num)).toBe(320);                         // stayed inside the card, not ejected
+    expect(yOf(head)).toBe(320);
+    // body may take a small text-vs-text nudge below the heading (intra-card
+    // decollide stays live by design) but must NOT be ejected past the card.
+    expect(yOf(body)).toBeLessThan(430);                // ejection would land >560 (card bottom)
+  });
+
   it('a paragraph in a LARGE panel is still decollided (not mistaken for a label)', () => {
     const panel = rect('p', 80, 200, 900, 900);         // ≫ 8× a paragraph → not a label box
     const para1 = txt('t1', 120, 240);                  // wraps to ~2 lines
