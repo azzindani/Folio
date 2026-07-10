@@ -1106,7 +1106,8 @@ button:focus:not(:focus-visible) { outline: none; }
 /* ── ALIGN TOOLBAR ────────────────────────────────────────── */
 .align-toolbar {
   position: absolute;
-  top: 8px;
+  /* below the rulers — at 8px the 24px ruler strip covered the top half */
+  top: calc(var(--ruler-size, 24px) + 8px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1146,6 +1147,37 @@ button:focus:not(:focus-visible) { outline: none; }
   visibility: hidden;
   transform: translateX(-50%) translateY(-4px);
 }
+
+/* ── CANVAS CONTEXT MENU ──────────────────────────────────── */
+.canvas-context-menu {
+  position: fixed;
+  z-index: 500;
+  min-width: 190px;
+  padding: 4px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+}
+.ccm-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+}
+.ccm-item:hover:not(:disabled) { background: var(--color-surface-3); }
+.ccm-item:disabled { opacity: 0.35; cursor: default; }
+.ccm-hint { color: var(--color-text-muted); font-size: 11px; }
+.ccm-sep { height: 1px; margin: 4px 6px; background: var(--color-border); }
 
 /* ── TOAST ────────────────────────────────────────────────── */
 .toast {
@@ -2054,6 +2086,14 @@ button:focus:not(:focus-visible) { outline: none; }
   .panel-resize-handle--x { width: 12px; margin: 0 -6px; }
   .panel-resize-handle--y { height: 12px; margin: -6px 0; }
 }
+/* Touch tap targets — 9 toolbar controls measured <32px on phones (B11).
+   40px is the Android/iOS minimum comfortable target. */
+@media (pointer: coarse) {
+  .toolbar .btn, .toolbar .btn-sm, .toolbar .mode-toggle button,
+  .toolbar button { min-height: 40px; min-width: 40px; }
+  .mob-nav-btn { min-height: 44px; }
+  .align-btn { width: 36px; height: 36px; }
+}
 
 /* ── TOOL GRID WRAP ───────────────────────────────────────── */
 /* Grid layout — tools auto-fill, separators span full width */
@@ -2154,6 +2194,17 @@ button:focus:not(:focus-visible) { outline: none; }
       "formula   formula  formula  formula  formula"
       "actbar    lpanel   canvas   canvas   ractbar"
       "statusbar statusbar statusbar statusbar statusbar";
+    /* Slide-in overlays are parked off-screen via translateX(±105%); those
+       transforms still count toward document scrollWidth, which used to give
+       the whole page a 276px horizontal scroll. Clip, don't scroll.
+       BOTH axes: `overflow-x: clip` alone makes the visible y-axis compute
+       to auto, turning #app into a scroll container — the opposite of the
+       intent. And #app must be the panels' CONTAINING BLOCK (position:
+       relative) or their absolute positioning anchors to <body> and the
+       clip never applies (the window itself scrolled 276px). Everything
+       that must escape (menus, toasts, dialogs) is position:fixed. */
+    position: relative;
+    overflow: clip;
   }
 
   .left-panel {

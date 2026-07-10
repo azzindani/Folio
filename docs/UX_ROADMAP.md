@@ -12,8 +12,10 @@ Legend:
 - N  nice-to-have
 
 Source ranking: cross-tool consensus + frequency on competitor feature pages.
-Last audited 2026-07-07 (post v0.1.0). Editor-UI matrix — engine capability may
-lead the editor UI (a ◐ often means "engine renders it, no panel control yet").
+Last audited 2026-07-10 — deep Playwright sweep of the LIVE editor at 1600/1280/
+820/390/360px, model-level geometry verification (not DOM-bbox guessing).
+Editor-UI matrix — engine capability may lead the editor UI (a ◐ often means
+"engine renders it, no panel control yet").
 Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROADMAP.md).
 
 ---
@@ -63,7 +65,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 2.7 | Skew / shear | ✗ | N | |
 | 2.8 | Free transform combo (W/H/Skew/Rotate in one panel) | ✗ | N | |
 | 2.9 | Numeric transform input | ◐ | M | properties panel has X/Y/W/H but no skew/rotation field set |
-| 2.10 | Multi-layer group transform (resize all proportionally) | ◐ | M | grouped layers OK, ad-hoc selection no |
+| 2.10 | Multi-layer group transform (resize all proportionally) | ✓ | M | ad-hoc multi-select handle drag scales ALL layers proportionally around group origin — model-level verified 2026-07-10 (×1.353 uniform, undo restores); earlier "one layer only" was a minimap-bbox measurement artifact |
 | 2.11 | Distort / Perspective transform | ✗ | N | |
 | 2.12 | Warp / mesh transform | ✗ | N | |
 | 2.13 | Pivot point picker | ✗ | N | rotate around custom anchor |
@@ -85,7 +87,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | # | Feature | Folio | Pri | Notes |
 |---|---|---|---|---|
 | 4.1 | Rectangle / ellipse / line / polygon | ✓ | M | |
-| 4.2 | Rounded corners (per-corner) | ◐ | M | uniform radius only |
+| 4.2 | Rounded corners (per-corner) | ✓ | M | uniform ↔ per-corner toggle in properties panel (`toggle-corners`) |
 | 4.3 | Star / arrow shapes | ◐ | M | shapes in toolbox; no editor for star points |
 | 4.4 | Pen tool (bezier paths) | ◐ | M | layer type exists; no editor UI |
 | 4.5 | Path editing handles (anchors) | ✗ | M | |
@@ -200,7 +202,10 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 10.12 | Detachable / docked panels | ✗ | N | |
 | 10.13 | Touch / pen tablet support | ◐ | N | pointer events, no pressure |
 | 10.14 | Tablet pressure sensitivity | ✗ | N | |
-| 10.15 | Right-click context menu | ◐ | M | partial |
+| 10.15 | Right-click context menu | ✗ | M | live-verified 2026-07-10: right-click on a layer SELECTS it but NO menu appears |
+| 10.16 | Toolbar tap targets ≥40px on touch | ✗ | M | 9 toolbar buttons <32px at every width incl. phones (New/Add Page/Catalog/Library/Visual/Payload/Undo/Redo/Export) |
+| 10.17 | Tablet 768–1023px layout usable | ✗ | M | live-verified 2026-07-10: left overlay OPEN by default covering canvas + 276px horizontal page overflow (parked `translateX(105%)` props panel adds to scrollWidth) + initial view not fit (canvas panned ~-235px) |
+| 10.18 | Floating align toolbar not clipped | ✗ | M | on any selection the floating align bar overlaps the ruler, top half clipped under the formula bar (all desktop widths) |
 
 ## 11. Workflow & history
 
@@ -241,7 +246,7 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 13.1 | Atomic canvas swap (no white flash) | ✓ | M | |
 | 13.2 | Per-interaction undo (not per-pixel) | ✓ | M | fixed this session |
 | 13.3 | rAF throttle on drag | ✗ | N | reverted, breaks tests; revisit |
-| 13.4 | Background flicker on initial load | ✗ | M | "start with blank canvas" — pending |
+| 13.4 | Background flicker on initial load | ✓ | M | not reproducible 2026-07-10: live first paint at DCL+200ms is already the full dark UI, no flash at any width |
 | 13.5 | GPU compositing where appropriate | ✗ | N | |
 | 13.6 | Lazy-load Monaco / heavy modules | ✓ | M | |
 | 13.7 | Bundle <500KB main entry | ✓ | M | 328KB |
@@ -252,11 +257,11 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 |---|---|---|---|---|
 | 14.1 | Marquee select multiple | ✓ | M | |
 | 14.2 | Shift-click add to selection | ✓ | M | |
-| 14.3 | Common bbox handles for multi-select | ◐ | M | bbox + handles ARE drawn; but see 14.4 |
-| 14.4 | Group transform (resize all proportionally) | ✗ | M | handle drag resizes ONE layer only (live-measured 2026-07-07) — the bbox is visual-only |
+| 14.3 | Common bbox handles for multi-select | ✓ | M | bbox + 8 handles drawn and functional |
+| 14.4 | Group transform (resize all proportionally) | ✓ | M | RE-VERIFIED at model level 2026-07-10: corner drag scales every selected layer's x/y/w/h proportionally around the group origin; single undo restores all. The 2026-07-07 "one layer only" claim measured minimap clones — wrong |
 | 14.5 | Group rotate | ✗ | N | |
-| 14.6 | Align toolbar shows on multi-select | ✓ | M | |
-| 14.7 | Multi-select properties (common-only) | ◐ | M | |
+| 14.6 | Align toolbar shows on multi-select | ◐ | M | shows but CLIPPED (see 10.18) |
+| 14.7 | Multi-select properties (common-only) | ◐ | M | panel shows only BOOLEAN/MASK — no Group/Ungroup button, no align row, no combined X/Y/W/H |
 
 ## 15. Photoshop / Figma niceties
 
@@ -290,25 +295,29 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 
 ## Priority backlog (next iterations)
 
-Tier-1 (must-have, broken or missing — re-audited live 2026-07-07;
+Tier-1 (must-have, broken or missing — re-audited live 2026-07-10;
 ~~struck~~ items verified shipped):
-1. ~~Click-through nested layers (1.4)~~ shipped
-2. ~~Resize from center (2.4)~~ shipped
-3. ~~Flip H / V (2.14)~~ shipped
-4. Inner shadow (7.2)
-5. ~~Layer blend modes (7.7)~~ shipped
-6. TRUE group transform — the multi-select bbox is drawn but handle drag
-   resizes one layer only (14.4; 14.3 is ◐)
-7. Alt-click hover highlight on canvas (1.10)
-8. Right-panel icon-button nav for parity with left (10.6)
-9. Background flicker fix (13.4)
-10. Full path booleans — union/subtract/exclude (4.6 is ◐: clip-mask only)
-11. SVG import (12.8)
-12. Constraints / pinning for responsive (15.5)
-13. Per-corner radius (4.2)
-14. Pattern + image FILL controls in the properties panel (engine renders
-    both; no UI at all — 6.4/6.14)
-15. Assets panel + project-asset image src rendering (see GAP-ANALYSIS §1)
+1. TABLET 768–1023px rescue: default-collapse the left overlay, kill the
+   276px horizontal page overflow, fit view on load (10.17)
+2. Right-click context menu — none exists at all (10.15)
+3. Floating align toolbar clipped under formula bar on every selection (10.18)
+4. Multi-select properties: Group/Ungroup + align/distribute row + bbox
+   X/Y/W/H (14.7)
+5. Toolbar tap targets ≥40px on touch devices (10.16)
+6. Pattern + image FILL controls in the properties panel (engine renders
+   both; no UI at all — 6.4/6.14)
+7. Assets panel: browse project assets, insert as layer (pairs with the
+   shipped MCP asset system — GAP-ANALYSIS §1)
+8. SVG import (12.8)
+9. Constraints / pinning for responsive (15.5)
+10. Inner shadow (7.2)
+11. Alt-click hover highlight on canvas (1.10)
+12. Right-panel icon-button nav for parity with left (10.6)
+13. Full path booleans — union/subtract/exclude (4.6 is ◐: clip-mask only)
+14. ~~TRUE group transform (14.4)~~ VERIFIED ALREADY WORKING (model-level)
+15. ~~Per-corner radius (4.2)~~ shipped (toggle in panel)
+16. ~~Resize from center (2.4)~~ · ~~Click-through nested (1.4)~~ ·
+    ~~Flip H/V (2.14)~~ · ~~Blend modes (7.7)~~ · ~~Flicker (13.4)~~ shipped
 
 Tier-2 (nice-to-have, often-asked):
 14. Pen tool path editing (4.4, 4.5)
@@ -319,14 +328,19 @@ Tier-2 (nice-to-have, often-asked):
 
 ---
 
-## Bug list (observed in Playwright self-simulation)
+## Bug list (observed in live Playwright audits)
 
 | # | Bug | Severity | Repro |
 |---|---|---|---|
 | B1 | Resize handles unreachable beyond canvas-area edge | high | ✓ fixed via auto-fit |
 | B2 | Selection handles destroyed and re-created on every state change | medium | 60 swaps per drag |
 | B3 | Per-move undo snapshot pollutes undo stack | high | ✓ fixed previous commit |
-| B4 | Background flicker on first design load | medium | dimmer between activity-bar and design bg |
+| B4 | Background flicker on first design load | medium | ✓ not reproducible live 2026-07-10 |
 | B5 | Right panel uses text tabs (Props / Color / etc.); inconsistent with left icon nav | medium | UX request |
 | B6 | Visual snapshots lacked baseline coverage for new auto-fit zoom | low | ✓ regenerated |
 | B7 | Layer name span in left panel can swallow canvas-targeted clicks if user mis-aims | low | known, alt-click would help |
+| B8 | Tablet 768–1023: left overlay open on load, hides canvas; 276px page hScroll from parked `translateX(105%)` panels; view not fit | high | load live editor at 820×1024 |
+| B9 | Floating align toolbar overlaps ruler, top half clipped under formula bar | high | select any layer at any desktop width |
+| B10 | Right-click shows no context menu (selects only) | high | right-click any layer |
+| B11 | 9 toolbar buttons <32px tap target on touch | medium | audit `tinyTapTargets` at 390px |
+| B12 | Font Family input renders empty for token/default fonts | low | select text layer using $heading |

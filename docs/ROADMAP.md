@@ -250,20 +250,24 @@ against the LIVE container (server-injected UI like the Library button is
 absent in vite preview). Playwright at desktop/tablet/mobile widths per item.
 Keep editor chrome flat (no drop-shadows).
 
-Live audit (2026-07-07) found several items already shipped — scopes below
-are corrected; re-verify each against the live editor before starting.
+Deep live audit 2026-07-10 (5 viewports, MODEL-level geometry) re-scoped this
+package: ~~4.1 group transform~~ VERIFIED WORKING (proportional scale around
+group origin + single undo — the 07-07 "one layer" claim measured minimap
+clones). Also already shipped: Alt=center resize, per-corner radius toggle,
+first-load flicker gone. New verified breakage promoted to the top.
 
 | WP | Item | Key files | Accept |
 |---|---|---|---|
-| 4.1 | Make the multi-select bbox REAL: common bbox + handles already render, but a handle drag resizes ONE layer (live-measured). Wire the drag to proportional group scale + group rotate | `src/editor/canvas-interactions.ts`, `canvas-draw.ts`, `interactions.ts` | marquee/shift-select 2+ layers → corner-drag scales ALL proportionally (measure both bboxes); undo = one step |
-| 4.2 | ~~Alt-click click-through~~ SHIPPED (click reaches nested/locked children; Alt+click cycles stacks). Remaining: canvas hover highlight before click (1.10) | `canvas-interactions.ts` | hovered layer outlines before click |
-| 4.3 | Complete booleans: Clip Mask (intersect)/Release Mask exist; add union/subtract/exclude → path layer | new `src/editor/boolean-ops.ts` (flatten shapes to paths; vendored path-boolean lib — NO runtime CDN) | two overlapping rects → union path renders identically in resvg |
-| 4.4 | SVG import → layers | new `src/editor/svg-import.ts` (parse foreign SVG → rect/circle/path/text/group layers; unsupported nodes → path fallback) | a Figma-exported SVG lands editable; export round-trips |
-| 4.5 | Gradient handles + pattern/grain/blend panel controls | `src/ui/panels/properties-panel-base.ts`, new gradient overlay in `canvas-draw.ts` | drag stops on canvas; pattern picker writes the same fill spec MCP emits |
-| 4.6 | Small batch: resize-from-center (Alt), per-corner radius, constraints/pinning, first-load flicker | `interactions.ts`, `schema/types/primitives.ts` (radius per-corner — renderer + validator + shorthand too), `app-base.ts` | UX_ROADMAP rows flip to ✓; visual snapshots updated deliberately |
-
-Also fold in: asset panel (browse `<project>/assets`, drag to canvas) once
-WP-1 ships — reuse the file-tree panel pattern.
+| 4.1 | TABLET 768–1023 rescue (🔴 B8): (a) default-collapse the left overlay on load ≤1023px, (b) kill 276px page hScroll — `overflow-x: clip` on `#app` in the tablet media block (parked `translateX(105%)` overlays count toward scrollWidth), (c) verify fit-on-load pans correctly | `src/editor/app-base.ts` (wireActivityBar init), `src/styles/main.css` @768–1023 block | load live at 820×1024 → canvas visible + fit, no hScroll, panel opens/closes via activity bar |
+| 4.2 | Right-click context menu (B10): duplicate · delete · group/ungroup · lock/unlock · bring/send order · copy/paste — reuse existing keyboard actions | new `src/editor/context-menu.ts` + `canvas-interactions.ts` (contextmenu handler) | right-click a layer → menu; every item works; Esc/click-away closes |
+| 4.3 | Floating align toolbar de-clip (B9): position below ruler, never overlapping formula bar | `canvas-draw.ts` / `src/ui/toolbar` float positioning | select any layer at 1600/1280 → toolbar fully visible |
+| 4.4 | Multi-select properties: Group/Ungroup button + align/distribute row + combined bbox X/Y/W/H (14.7) | `src/ui/panels/properties-panel*.ts` | 2+ selection shows Group (⌘G) + align buttons; group works from panel |
+| 4.5 | Touch tap targets ≥40px (B11) + Font Family shows resolved token font (B12) | `src/styles/main.css` @(pointer: coarse), `properties-panel-base.ts` | audit `tinyTapTargets` = 0 on touch; $heading shows its resolved family |
+| 4.6 | Asset panel: browse `<project>/assets` w/ thumbnails, click/drag inserts image layer (pairs with shipped WP-1 asset ops) | new left-panel view + `static-server.ts` asset-list GET | uploaded asset appears in panel; click inserts layer with `assets/…` src that renders |
+| 4.7 | Complete booleans: add union/subtract/exclude → path layer | new `src/editor/boolean-ops.ts` (vendored path lib — NO runtime CDN) | two overlapping rects → union path renders identically in resvg |
+| 4.8 | SVG import → layers | new `src/editor/svg-import.ts` | a Figma-exported SVG lands editable; export round-trips |
+| 4.9 | Gradient handles on canvas + pattern/image fill panel controls | `properties-panel-base.ts`, gradient overlay in `canvas-draw.ts` | drag stops on canvas; pattern/image picker writes the same fill spec MCP emits |
+| 4.10 | Constraints/pinning + canvas hover highlight (1.10) | `interactions.ts`, `canvas-interactions.ts` | pinned layer keeps edge offset on doc resize; hovered layer outlines |
 
 ---
 

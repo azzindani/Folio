@@ -1,12 +1,8 @@
 import { StateManager } from './state';
 import type { EditorApp } from './app';
-import type { Layer } from '../schema/types';
-import { serializeYAML, parseYAML } from '../schema/parser';
 import { smartDuplicate } from '../utils/smart-duplicate';
 import { flipHorizontal, flipVertical } from './interactions';
-
-let duplicateCounter = 0;
-let groupCounter = 0;
+import * as actions from './layer-actions';
 
 interface ShortcutDef {
   key: string;
@@ -141,27 +137,9 @@ export class KeyboardManager {
     }
   }
 
-  private deleteSelected(): void {
-    const ids = this.state.get().selectedLayerIds;
-    for (const id of ids) {
-      this.state.removeLayer(id);
-    }
-    this.state.set('selectedLayerIds', []);
-  }
+  private deleteSelected(): void { actions.deleteSelected(this.state); }
 
-  private duplicateSelected(): void {
-    const layers = this.state.getSelectedLayers();
-    for (const layer of layers) {
-      const clone = {
-        ...layer,
-        id: `${layer.id}-copy-${++duplicateCounter}`,
-        x: (layer.x ?? 0) + 20,
-        y: (layer.y ?? 0) + 20,
-        z: layer.z + 1,
-      };
-      this.state.addLayer(clone);
-    }
-  }
+  private duplicateSelected(): void { actions.duplicateSelected(this.state); }
 
   private smartDuplicateSelected(): void {
     const layers = this.state.getSelectedLayers();
@@ -170,86 +148,18 @@ export class KeyboardManager {
     for (const d of dupes) this.state.addLayer(d);
   }
 
-  private adjustZ(delta: number): void {
-    const ids = this.state.get().selectedLayerIds;
-    for (const id of ids) {
-      const layers = this.state.getCurrentLayers();
-      const layer = layers.find(l => l.id === id);
-      if (layer) {
-        this.state.updateLayer(id, { z: layer.z + delta * 10 });
-      }
-    }
-  }
+  private adjustZ(delta: number): void { actions.adjustZ(this.state, delta); }
 
-  private copySelected(): void {
-    const layers = this.state.getSelectedLayers();
-    if (layers.length === 0) return;
-    // Serialize as YAML array so paste can read it back
-    const snippet = serializeYAML(layers.length === 1 ? layers[0] : layers);
-    navigator.clipboard?.writeText(snippet).catch(() => {/* clipboard not available */});
-  }
+  private copySelected(): void { actions.copySelected(this.state); }
 
-  private pasteFromClipboard(): void {
-    navigator.clipboard?.readText().then(text => {
-      try {
-        // Clipboard content can be either a layers array or a single layer object
-        const parsed = parseYAML<Layer[] | Layer>(text);
-        const rawLayers: Layer[] = Array.isArray(parsed) ? parsed : [parsed];
-        const newIds: string[] = [];
-        for (const layer of rawLayers) {
-          if (typeof layer !== 'object' || !layer || !('type' in layer)) continue;
-          const newId = `${layer.id}-paste-${++duplicateCounter}`;
-          newIds.push(newId);
-          this.state.addLayer({ ...layer, id: newId, x: (layer.x ?? 0) + 20, y: (layer.y ?? 0) + 20 } as Layer);
-        }
-        if (newIds.length > 0) this.state.set('selectedLayerIds', newIds);
-      } catch {
-        // Invalid clipboard content — ignore
-      }
-    }).catch(() => {/* clipboard not available */});
-  }
+  private pasteFromClipboard(): void { actions.pasteFromClipboard(this.state); }
 
   private flipSelectedH(): void { flipHorizontal(this.state); }
   private flipSelectedV(): void { flipVertical(this.state); }
 
-  private groupSelected(): void {
-    const layers = this.state.getSelectedLayers();
-    if (layers.length < 2) return;
-    const maxZ = Math.max(...layers.map(l => l.z));
-    const groupId = `group-${++groupCounter}`;
-    const minX = Math.min(...layers.map(l => l.x ?? 0));
-    const minY = Math.min(...layers.map(l => l.y ?? 0));
-    const maxX = Math.max(...layers.map(l => (l.x ?? 0) + (typeof l.width  === 'number' ? l.width  : 0)));
-    const maxY = Math.max(...layers.map(l => (l.y ?? 0) + (typeof l.height === 'number' ? l.height : 0)));
-    const groupLayer: Layer = {
-      id: groupId,
-      type: 'group',
-      z: maxZ,
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-      layers: layers,
-    } as unknown as Layer;
+  private groupSelected(): void { actions.groupSelected(this.state); }
 
-    for (const l of layers) this.state.removeLayer(l.id);
-    this.state.addLayer(groupLayer);
-    this.state.set('selectedLayerIds', [groupId]);
-  }
-
-  private ungroupSelected(): void {
-    const selected = this.state.getSelectedLayers();
-    const groups = selected.filter(l => l.type === 'group');
-    for (const group of groups) {
-      const children: Layer[] = (group as unknown as { layers: Layer[] }).layers ?? [];
-      this.state.removeLayer(group.id);
-      for (const child of children) this.state.addLayer(child);
-    }
-    if (groups.length > 0) {
-      const childIds = groups.flatMap(g => ((g as unknown as { layers: Layer[] }).layers ?? []).map((l: Layer) => l.id));
-      this.state.set('selectedLayerIds', childIds);
-    }
-  }
+  private ungroupSelected(): void { actions.ungroupSelected(this.state); }
 
   getShortcuts(): ShortcutDef[] {
     return this.shortcuts;

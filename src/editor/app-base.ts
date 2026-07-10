@@ -33,6 +33,7 @@ import { ImageImportHandler } from './image-import-handler';
 import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
+import { AssetPanelManager } from '../ui/panels/asset-panel';
 
 export abstract class EditorAppBase {
   protected container!: HTMLElement;
@@ -67,6 +68,7 @@ export abstract class EditorAppBase {
   protected imageImport!: ImageImportHandler;
   protected timelinePanel!: TimelinePanelManager;
   protected colorSchemePanel!: ColorSchemePanelManager;
+  protected assetPanel!: AssetPanelManager;
 
   protected buildLayout(): void {
     this.container.innerHTML = `
@@ -82,6 +84,7 @@ export abstract class EditorAppBase {
       <div class="activity-bar">
         <button class="act-btn active" data-panel="layers" title="Layers (⌘⇧L)">&#9776;</button>
         <button class="act-btn" data-panel="files" title="Files (⌘⇧E)">&#128193;</button>
+        <button class="act-btn" data-panel="project-assets" title="Project assets">&#128444;</button>
         <button class="act-btn" data-panel="components" title="Components (⌘⇧K)">&#11041;</button>
         <button class="act-btn" data-panel="icons" title="Icons (⌘⇧I)">&#11088;</button>
         <button class="act-btn" data-panel="find" title="Find &amp; Replace (⌘H)">&#128269;</button>
@@ -118,6 +121,11 @@ export abstract class EditorAppBase {
             </div>
             <div class="asset-grid" id="asset-grid"></div>
           </div>
+        </div>
+
+        <div class="left-panel-view" data-panel="project-assets">
+          <div class="panel-header">Project assets</div>
+          <div class="project-assets-content" style="flex:1;overflow-y:auto"></div>
         </div>
 
         <div class="left-panel-view" data-panel="components">
@@ -303,6 +311,11 @@ export abstract class EditorAppBase {
         b.setAttribute('aria-expanded', String(!collapsed && isCurrent));
       });
     };
+
+    // Below desktop the left panel is a slide-in overlay (z-120) — starting
+    // expanded means it covers the canvas on load and the design looks
+    // missing. Start collapsed there; the activity bar re-opens it.
+    if (window.matchMedia('(max-width: 1023px)').matches) setCollapsed(true);
 
     actBtns.forEach(btn => {
       btn.addEventListener('click', () => {

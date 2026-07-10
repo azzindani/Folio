@@ -17,6 +17,8 @@ import { MinimapManager } from '../ui/panels/minimap';
 import { AccessibilityChecker } from '../ui/panels/accessibility-checker';
 import { openPrintWindow } from '../export/print-mode';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
+import { CanvasContextMenu } from './context-menu';
+import { AssetPanelManager } from '../ui/panels/asset-panel';
 import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
@@ -99,6 +101,7 @@ export class EditorApp extends EditorAppBase {
     );
 
     this.alignToolbar = new AlignToolbar(primaryPane, this.state);
+    new CanvasContextMenu(this.state, primaryPane as HTMLElement);
 
     this.fileTree = new FileTreeManager(
       this.container.querySelector('.file-tree-content')!,
@@ -137,6 +140,11 @@ export class EditorApp extends EditorAppBase {
 
     this.iconBrowser = new IconBrowserManager(
       this.container.querySelector('.icon-browser-content')!,
+      this.state,
+    );
+
+    this.assetPanel = new AssetPanelManager(
+      this.container.querySelector('.project-assets-content')!,
       this.state,
     );
 
@@ -362,6 +370,7 @@ export class EditorApp extends EditorAppBase {
     if (!project) return;
     const enc = (p: string): string => p.split('/').map(encodeURIComponent).join('/');
     setAssetUrlResolver((src) => `/__project_files/${encodeURIComponent(project)}/${enc(src)}`);
+    this.assetPanel?.setProject(project, this.readEditorToken() ?? null);
     this.imageImport.setUploader(async (name, blob) => {
       const token = this.readEditorToken();
       try {

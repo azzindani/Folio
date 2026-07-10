@@ -39,7 +39,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 // (thumbnail render / library scan) so the single-core container can't collapse.
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
-import { ingestAsset, AssetError, maxAssetBytes } from '../mcp/engine/assets';
+import { ingestAsset, collectAssets, AssetError, maxAssetBytes } from '../mcp/engine/assets';
 
 const GUARDS = loadEditorGuards();
 
@@ -467,6 +467,29 @@ Bun.serve({
       // auto-saves here every ~30s, so an OPEN editor never lapses; once it's
       // closed, the last window runs out and the link self-expires.
       const refresh = slidingSessionCookie(presented);
+
+      // ── GET /__project_files/<project>/__assets — asset listing for the
+      // editor asset panel. Same manifest+disk merge the MCP asset_list op
+      // uses (collectAssets), so panel and model always see the same set.
+      if (req.method === 'GET') {
+        const assetsListMatch = url.pathname.slice('/__project_files/'.length).match(/^([^/]+)\/__assets$/);
+        if (assetsListMatch) {
+          let projName = assetsListMatch[1];
+          try { projName = decodeURIComponent(projName); } catch { /* keep raw */ }
+          const projectDir = safeJoinProject(projName);
+          if (!projectDir || !fs.existsSync(projectDir)) {
+            return new Response(JSON.stringify({ ok: false, assets: [] }), { status: 404, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+          }
+          try {
+            const assets = collectAssets(projectDir);
+            return new Response(JSON.stringify({ ok: true, assets }), {
+              status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...(refresh ? { 'Set-Cookie': refresh } : {}) },
+            });
+          } catch (e) {
+            return new Response(JSON.stringify({ ok: false, error: (e as Error).message, assets: [] }), { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+          }
+        }
+      }
 
       // ── PUT/POST: write a design's YAML back to disk ────────────────────
       // The editor's server-backed auto-save + "Save to Library" land here.

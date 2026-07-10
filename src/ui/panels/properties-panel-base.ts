@@ -404,6 +404,7 @@ export abstract class PropertiesPanelBase {
       <div style="margin-bottom:6px">
         <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Font Family</div>
         <input list="font-datalist" class="prop-input" data-prop="${prop}" value="${current}"
+          placeholder="theme default"
           style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
                  border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;
                  font-family:'${preview}',sans-serif">
