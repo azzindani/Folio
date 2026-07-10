@@ -83,7 +83,7 @@ API is unchanged. When editing, go to the real sibling module, not the facade:
 
 | Facade (import path) | Real modules behind it |
 |---|---|
-| `src/mcp/engine.ts` | `engine-{project,layer,edit,export,report,runtime,template}-tools.ts` + `engine/{reference,enrich,library,library-gallery,library-manage}.ts` + `engine-finalize-{geom,text,legibility,autoplace,pages,charts,presets}.ts` |
+| `src/mcp/engine.ts` | `engine-{project,layer,edit,export,report,runtime,template}-tools.ts` + `engine/{reference,enrich,library,library-gallery,library-manage}.ts` + `engine-finalize-{geom,text,legibility,autoplace,pages,charts,presets,dedupe}.ts` |
 | `src/mcp/shorthand-parser.ts` | `shorthand-{helpers,presets-a,presets-b,presets-c,presets-cards,presets-map,presets-news,presets-seq,sections,background,doodles,expand,recover,diagnose}.ts` |
 | `src/renderer/layer-renderers.ts` | `layer-renderers-{shared,shapes,embed,layout}.ts` |
 | `src/schema/types.ts` | `types/{primitives,layers,document}.ts` (barrel) |
@@ -181,6 +181,7 @@ renders well. Split by the 700-line budget into:
 |---|---|
 | `engine-finalize-geom.ts` | id dedup, alias normalization (`text:`→content, report aliases), relative-group flattening, off-canvas snap, top margin, colliding-motif drop, `trimTrailingDeadBand` (poster-ratio-aware), bar-chart rasterization |
 | `engine-finalize-presets.ts` | stacked/duplicate content-preset collapse, thrash-duplicate drop |
+| `engine-finalize-dedupe.ts` | seal-time section dedupe — identical text signatures at ANY depth + stacked echoes + thrash-gated image dedupe → keep first-in-flow, then gap-walk compaction of >160px voids |
 | `engine-finalize-text.ts` | stacked-text spread, duplicate-text dedup, hero text fit-to-box (`fitOverflowingHeroText`), measured text heights, hand-placed structure + decollide, deck page backgrounds |
 | `engine-finalize-legibility.ts` | `fixInvisibleText` (judges the LOCAL backdrop, re-lights preserving hue), `fixCapsTracking` (ALL-CAPS ≥0.06em) |
 | `engine-finalize-autoplace.ts` | null-layer strip, placeholder-text drop, embedded-layer recovery, background fill, positionless auto-place |
@@ -351,7 +352,10 @@ Custom themes live in a project's `themes/` and are registered in `project.yaml`
 | `editor/app.ts` (+`app-base`) | Bootstrap: builds layout, instantiates managers, loads theme + sample design, wires the file watcher / SSE. |
 | `editor/canvas.ts` (+`-base/-interactions/-draw`) | SVG container, selection overlay, pointer drag/rotate, wheel zoom/pan, smart guides, rulers. |
 | `editor/interactions.ts` | interact.js draggable (snap to grid/edges) + resizable (8 handles). |
-| `editor/keyboard.ts` | All shortcuts (undo/redo, tools, clipboard-as-YAML, group, z-order). |
+| `editor/keyboard.ts` | All shortcuts (undo/redo, tools, clipboard-as-YAML, group, z-order) — thin wrappers over `layer-actions.ts`. |
+| `editor/layer-actions.ts` | ONE implementation of delete/duplicate/z-order/copy/paste/group/ungroup/lock, shared by keyboard, context menu and panels. |
+| `editor/context-menu.ts` | Right-click canvas menu (duplicate/copy/paste/group/z-order/flip/lock/delete, ⌘ hints, edge-flip positioning). |
+| `editor/chrome-icons.ts` | Shared monoline stroke-SVG chrome icons on `currentColor` (activity bars, mobile nav, toolbox, theme toggle…) — no emoji in editor chrome. `utils/favicon.ts` is the sibling for browser-tab icons on every emitted HTML page. |
 | `editor/payload-editor.ts` | Monaco (lazy). Two-way sync, 300ms debounce, validation markers, re-entrancy guards. |
 | `editor/static-server.ts` | **Bun static file server** for the built editor in Docker. Serves `dist/`, mounts `FOLIO_PROJECTS_DIR` at `/__project_files/*`, validates a Bearer/`?token=`/`folio_session` cookie (JWT-aware), sets the session cookie. *(Replaces the old `vite preview`.)* |
 
