@@ -68,13 +68,18 @@ function card(d: LibraryDesign, project: string, href: string | null, key: strin
   const dims = d.width && d.height ? `${d.width}×${d.height}` : '';
   const pages = d.pages && d.pages > 1 ? ` · ${d.pages}p` : '';
   const link = d.open_url ?? '#';
+  // Extreme aspect ratios (a healed scroll-poster, a wide banner) letterbox
+  // into an unreadable sliver inside the square thumb — crop from the start
+  // edge instead so the card shows real content.
+  const ratio = d.width && d.height ? d.height / d.width : 1;
+  const aspectCls = ratio > 1.65 ? ' tall' : ratio < 0.6 ? ' wide' : '';
   const thumb = href
     ? `<img loading="lazy" src="${esc(href)}" alt="" onerror="this.parentNode.classList.add('noimg')">`
     : `<div class="ph">${esc(d.type)}</div>`;
   const opts = cols.filter((c, i, a) => a.indexOf(c) === i)
     .map(c => `<option value="${esc(c)}"${c === col ? ' selected' : ''}>${esc(c)}</option>`).join('')
     + `<option value="__new__">+ New collection…</option>`;
-  return `<div class="card" data-name="${esc((d.name + ' ' + d.type + ' ' + project).toLowerCase())}" data-nm="${esc(d.name.toLowerCase())}" data-type="${esc(d.type.toLowerCase())}" data-proj="${esc(project.toLowerCase())}" data-mod="${esc(d.modified)}" data-col="${esc(col)}" data-key="${esc(key)}">
+  return `<div class="card${aspectCls}" data-name="${esc((d.name + ' ' + d.type + ' ' + project).toLowerCase())}" data-nm="${esc(d.name.toLowerCase())}" data-type="${esc(d.type.toLowerCase())}" data-proj="${esc(project.toLowerCase())}" data-mod="${esc(d.modified)}" data-col="${esc(col)}" data-key="${esc(key)}">
     <a class="open" href="${esc(link)}" target="_blank" rel="noopener">
       <div class="thumb">${thumb}</div>
       <div class="meta"><span class="nm">${esc(d.name)}</span><span class="sub">${esc(d.type)} · ${dims}${pages}</span><span class="proj">${esc(project)}</span><span class="when">${esc(d.modified.slice(0, 10))}</span></div>
@@ -138,6 +143,8 @@ h1{margin:0 0 10px;font-size:20px;font-weight:700}.stat{color:var(--mut);font-si
 .card:hover{border-color:var(--acc);transform:translateY(-2px)}
 .thumb{aspect-ratio:1;background:var(--panel2);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .thumb img{width:100%;height:100%;object-fit:contain}.ph,.noimg .thumb::after{color:var(--mut2);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.card.tall .thumb img{object-fit:cover;object-position:top}
+.card.wide .thumb img{object-fit:cover;object-position:left}
 .noimg .thumb::after{content:"no preview"}.noimg .thumb img{display:none}
 .meta{padding:10px 12px}.nm{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sub{color:var(--mut);font-size:11px}.proj{display:block;color:var(--mut2);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -167,7 +174,11 @@ body[data-view=list] .card .bar{border-top:0;margin-left:auto}
 @media(max-width:600px){header{padding:14px 16px}h1{font-size:18px}.theme-btn{top:12px;right:14px}
 .grid{padding:14px 16px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .toolbar,.cols,.chips,.sorts{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
-.col-chip,.chip,.sortb{white-space:nowrap}.mv{font-size:14px;padding:7px 8px}}`;
+.col-chip,.chip,.sortb{white-space:nowrap}.mv{font-size:14px;padding:7px 8px}
+/* visible scroll affordance — without it a clipped pill row reads as broken */
+.toolbar::-webkit-scrollbar,.cols::-webkit-scrollbar,.chips::-webkit-scrollbar,.sorts::-webkit-scrollbar{height:4px}
+.toolbar::-webkit-scrollbar-thumb,.cols::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb,.sorts::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+.toolbar,.cols,.chips,.sorts{scrollbar-width:thin;scrollbar-color:var(--bd2) transparent}}`;
 
 const SCRIPT = `const q=document.getElementById('q'),cards=[...document.querySelectorAll('.card')],grid=document.querySelector('.grid');
 const chips=[...document.querySelectorAll('.chip')],colsEl=document.querySelector('.cols');

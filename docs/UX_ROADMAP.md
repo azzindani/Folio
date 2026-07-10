@@ -344,3 +344,6 @@ Tier-2 (nice-to-have, often-asked):
 | B10 | Right-click shows no context menu (selects only) | high | right-click any layer |
 | B11 | 9 toolbar buttons <32px tap target on touch | medium | audit `tinyTapTargets` at 390px |
 | B12 | Font Family input renders empty for token/default fonts | low | select text layer using $heading |
+| B13 | Library card for an extreme-aspect design (e.g. a healed 1080×3943 scroll-poster) letterboxes into an unreadable SLIVER in the square thumb — reads as a broken card, and as the newest design it leads the whole library | medium | ✓ fixed 2026-07-10: `.card.tall/.wide` crop from the start edge (object-fit cover) |
+| B14 | Library mobile pill rows (SORT/COLLECTIONS/chips) scroll horizontally with NO affordance — the clipped "Unsorted" pill reads as cut off/broken | low | ✓ fixed 2026-07-10: thin scrollbar affordance ≤600px |
+| B15 | Library layout audited 2026-07-10 after user report: 5 viewports + light/dark + search/open/manage — grid, overflow, thumbs, auth all sound; the "broken" impression was B13 (test-run scroll-poster as newest card) + B14 | — | lib-findings.json in session scratchpad |
