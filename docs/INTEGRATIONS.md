@@ -194,6 +194,22 @@ curl -s https://folio.your-domain.tld/mcp \
 > with `{name, arguments}`; (5) parse the `content[0].text` as the `ToolResult` JSON and
 > **follow `next_action`** to chain tools. See [MCP.md §5](MCP.md) for the result contract.
 
+### 5.1 Per-model budget presets
+
+Size the server's response budget to the model driving it — small local models
+drown in verbose tool results, frontier models waste nothing. Semantics of both
+knobs live in [MCP.md §9](MCP.md) (link, don't re-derive):
+
+| Model class (example) | `FOLIO_OUTPUT_BUDGET` | `MCP_CONSTRAINED_MODE` | Notes |
+|---|---|---|---|
+| ~4B local (Gemma 3n E4B) | `400` | `true` | shortest results, halved list limits; lean on `next_action` only |
+| ~7–12B local (Llama, Qwen) | `600` | `true` | keeps progress lines, trims suggestions |
+| ~30B local (Nemotron/Qwen 30B) | `800` | `false` | default row limits are fine |
+| 100B+ / hosted frontier | `1000` (default) | `false` | full results incl. handover suggestions |
+
+Set them on the server (Docker `environment:` / `.env`) — they are per-deployment,
+not per-request; run one container per budget tier if you mix model classes.
+
 ---
 
 ## 6. The visual editor — live refresh
