@@ -6,6 +6,11 @@ import { removeBackground } from '../../utils/bg-remover';
 import { attachWheelAdjustAll } from '../inputs/wheel-adjust';
 import { renderReportFields, hasReportFields } from './report-fields';
 import { PropertiesPanelBase } from './properties-panel-base';
+import {
+  alignLeft, alignRight, alignTop, alignBottom,
+  alignCenterH, alignCenterV, distributeH, distributeV,
+} from '../../editor/interactions';
+import { groupSelected, ungroupSelected } from '../../editor/layer-actions';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -40,17 +45,64 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
     }
 
     if (selected.length > 1) {
-      this.content.innerHTML = `
-        <div style="padding:8px">
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">${selected.length} layers selected</div>
-          ${selected.length === 2 ? this.renderBooleanOpsSection() : ''}
-        </div>`;
-      if (selected.length === 2) this.bindBooleanOps(selected[0], selected[1]);
+      this.renderMultiSelect(selected);
       return;
     }
 
     const layer = selected[0];
     this.renderLayerProperties(layer);
+  }
+
+  private renderMultiSelect(selected: Layer[]): void {
+    const n = selected.length;
+    const num = (v: unknown): number => (typeof v === 'number' ? v : 0);
+    const minX = Math.min(...selected.map(l => num(l.x)));
+    const minY = Math.min(...selected.map(l => num(l.y)));
+    const maxX = Math.max(...selected.map(l => num(l.x) + num(l.width)));
+    const maxY = Math.max(...selected.map(l => num(l.y) + num(l.height)));
+    const hasGroup = selected.some(l => l.type === 'group');
+    const aligns: Array<[string, string, string]> = [
+      ['align-left', '⫷', 'Align left edges'], ['align-ch', '⫶', 'Center horizontally'],
+      ['align-right', '⫸', 'Align right edges'], ['align-top', '⫯', 'Align top edges'],
+      ['align-cv', '⫱', 'Center vertically'], ['align-bottom', '⫰', 'Align bottom edges'],
+      ['dist-h', '⇹', 'Distribute horizontally'], ['dist-v', '⇳', 'Distribute vertically'],
+    ];
+    this.content.innerHTML = `
+      <div style="padding:8px">
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">${n} layers selected</div>
+        <div class="prop-section">
+          <div class="prop-section-header">Selection</div>
+          <div class="prop-section-body" style="padding:8px">
+            <div class="prop-info-row"><span>Bounds</span><span>${Math.round(minX)}, ${Math.round(minY)}</span></div>
+            <div class="prop-info-row"><span>Size</span><span>${Math.round(maxX - minX)} × ${Math.round(maxY - minY)}</span></div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button class="prop-btn" data-multi-action="group" style="flex:1" title="Group selection (Ctrl+G)">⧉ Group</button>
+              <button class="prop-btn" data-multi-action="ungroup" style="flex:1" title="Ungroup (Ctrl+Shift+G)" ${hasGroup ? '' : 'disabled'}>⧇ Ungroup</button>
+            </div>
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-header">Align &amp; distribute</div>
+          <div class="prop-section-body" style="padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+            ${aligns.map(([k, icon, title]) => `<button class="prop-btn" data-multi-action="${k}" title="${title}" ${k.startsWith('dist') && n < 3 ? 'disabled' : ''}>${icon}</button>`).join('')}
+          </div>
+        </div>
+        ${n === 2 ? this.renderBooleanOpsSection() : ''}
+      </div>`;
+    this.bindMultiSelect(selected);
+    if (n === 2) this.bindBooleanOps(selected[0], selected[1]);
+  }
+
+  private bindMultiSelect(_selected: Layer[]): void {
+    const fns: Record<string, (state: StateManager) => void> = {
+      'group': groupSelected, 'ungroup': ungroupSelected,
+      'align-left': alignLeft, 'align-ch': alignCenterH, 'align-right': alignRight,
+      'align-top': alignTop, 'align-cv': alignCenterV, 'align-bottom': alignBottom,
+      'dist-h': distributeH, 'dist-v': distributeV,
+    };
+    this.content.querySelectorAll<HTMLButtonElement>('[data-multi-action]').forEach(btn => {
+      btn.addEventListener('click', () => fns[btn.dataset.multiAction!]?.(this.state));
+    });
   }
 
   private renderEmptyState(): void {

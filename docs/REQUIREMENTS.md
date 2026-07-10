@@ -75,14 +75,19 @@
 |---|---|---|
 | M | MCP-design editability: deep selection, page ops, href field, save-to-library | ✓ |
 | M | Live SSE refresh + library live catalog | ✓ |
-| M | Desktop/tablet/phone widths all operable | ✓ |
-| M | Common bbox + TRUE group transform for ad-hoc multi-select | ◐ (bbox+handles drawn; drag resizes one layer only — live-verified) |
+| M | Desktop/phone widths operable | ✓ (phone toolbar wraps, panels = sheets; live-swept 2026-07-10) |
+| M | TABLET 768–1023px operable | ✗ (live 2026-07-10: left overlay open on load hides canvas + 276px page hScroll + view not fit — B8) |
+| M | Common bbox + TRUE group transform for ad-hoc multi-select | ✓ (RE-VERIFIED at model level 2026-07-10: proportional scale of all selected layers + single undo; 07-07 "one layer" claim was a minimap measurement artifact) |
+| M | Right-click context menu on canvas | ✗ (right-click selects, no menu — B10) |
+| M | Floating align toolbar fully visible | ✗ (clipped under formula bar on every selection — B9) |
+| M | Multi-select panel: Group/Ungroup + align + bbox X/Y/W/H | ✗ (only BOOLEAN/MASK shown) |
+| M | Touch tap targets ≥40px | ✗ (9 toolbar buttons <32px — B11) |
 | M | Alt-click click-through nested selection | ✓ (click reaches nested/locked children; Alt+click cycles stacks) |
 | M | Boolean ops on shapes | ◐ (Clip Mask/Release Mask panel shipped; union/subtract unverified) |
 | M | SVG import → layers | ✗ |
-| M | Constraints/pinning; per-corner radius; resize-from-center | ✗ |
-| M | Gradient editor handles; pattern/grain/blend panel controls | ✗ (engine renders; no UI) |
-| M | First-load background flicker fix | ✗ |
+| M | Constraints/pinning | ✗ (but per-corner radius ✓ panel toggle · resize-from-center ✓ Alt-drag, center-preservation verified) |
+| M | Gradient editor handles; pattern/grain/blend panel controls | ◐ (blend dropdown ✓; Solid/Linear/Radial/None fill UI ✓; NO image/pattern fill UI) |
+| M | First-load background flicker fix | ✓ (not reproducible live 2026-07-10 — first paint at DCL+200ms already complete) |
 | N | Asset panel (see A) · icon-nav right panel · history panel · isolation mode | ✗ |
 
 ## E. Outputs (expectation 05)

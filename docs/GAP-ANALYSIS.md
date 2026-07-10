@@ -122,19 +122,35 @@ handles + a floating ops toolbar + "Save selection as component", a
 BOOLEAN / MASK panel exists (Clip Mask intersect / Release Mask), blend modes
 + Flip H/V + Link URL are in the properties panel.
 
-Real remaining gaps (all live-verified):
+**2026-07-10 deep sweep** (5 viewports, model-level geometry): the 07-07
+"group transform is FAKE" finding was itself a measurement artifact — the
+probe measured minimap clones, not the model. Corner-drag on an ad-hoc
+multi-select scales EVERY layer proportionally around the group origin and
+one undo restores all (verified: title 900×160→1216×215, caption 840×48→
+1135×64, both ×1.353). Also already-working: Alt=resize-from-center
+(center preserved exactly), per-corner radius toggle, ⌘K palette, marquee,
+Add Page → strip appears, inline text edit, first paint clean at +200ms.
+
+Real remaining gaps (all live-verified 2026-07-10):
 
 | Gap | Severity | Evidence |
 |---|---|---|
-| Multi-select group transform is FAKE: common bbox + handles are drawn, but dragging a handle resizes ONE layer only (measured: second layer 158×17 → 82×37 while first stayed 455×31) | 🟠 | WP-4.1 rescopes to "make the drawn bbox a true proportional group transform" |
+| TABLET 768–1023 broken: left overlay OPEN on load covering canvas; 276px page hScroll (parked `translateX(105%)` props panel counts toward scrollWidth); view not fit (~-235px pan) | 🔴 | B8 — load at 820×1024 |
+| NO right-click context menu — right-click selects the layer, no menu ever appears | 🟠 | B10 |
+| Floating align toolbar overlaps ruler, top half clipped under formula bar, on every selection at every desktop width | 🟠 | B9 |
+| Multi-select properties panel = BOOLEAN/MASK only — no Group/Ungroup button, no align/distribute, no bbox X/Y/W/H (align exists ONLY in the clipped floating bar; Ctrl+G undiscoverable) | 🟠 | 14.7 |
 | Fill UI offers Solid · Linear · Radial · None ONLY — no Pattern, no Image fill (engine renders both; models can author them, humans can't) | 🟠 | properties panel dump on a rect |
-| No Assets panel — activity bar = Layers · Files · Components · Icons · Find&Replace (+ right: Properties · Data · Scripts · Colors · Animate · Timeline · Issues · A11y) | 🟠 | pairs with WP-1 |
-| `assets/…` image srcs broken on canvas (SPA HTML at relative URL) | 🔴 | counted in §1 |
-| Full path booleans (union/subtract/…) beyond clip-mask unverified; SVG-import-to-layers, constraints/pinning, per-corner radius, first-load flicker still open | 🟡 | WP-4 rest |
+| No Assets panel — activity bar = Layers · Files · Components · Icons · Find&Replace (+ right: Properties · Data · Scripts · Colors · Animate · Timeline · Issues · A11y) | 🟠 | pairs with WP-1 (asset ops shipped, no GUI) |
+| 9 toolbar buttons <32px tap target incl. on phones | 🟡 | B11 |
+| Font Family input empty for token/default fonts | 🟡 | B12 |
+| Full path booleans (union/subtract/…) beyond clip-mask unverified; SVG-import-to-layers, constraints/pinning still open | 🟡 | WP-4 rest |
+| Cold load ≈3.3–4.4s to DCL over network (target <1s; TLS+latency inflates — needs a bundle/waterfall pass before judging) | 🟡 | audit `load.msToDCL` |
 
-Next: WP-4 (rescoped); editor changes need a dist rebuild (CI/runner — host OOMs).
+Next: WP-4 (re-scoped 2026-07-10); editor dist now builds locally (~8s).
 **Process note:** UX_ROADMAP rows must be re-verified against the live editor
-before being roadmapped — this pass flipped 1.4, 2.4, 4.6(◐), 14.3(◐).
+before being roadmapped — AND geometry claims must be measured at MODEL level
+(`__folio.state.get().design`), never via DOM/minimap bboxes: both 07-07
+directions of error came from DOM measurement.
 
 ## 5. Outputs 🟢 near bar
 
@@ -166,11 +182,14 @@ reach it.
 ~~1. WP-1 Asset System~~ **SHIPPED + live-verified** (7376445 · 1ff5e7e ·
 43907f3). ~~WP-3.2 locked-group + prose hints~~ **SHIPPED**.
 
-1. **WP-3.1 E4B floor run** — proves the local-model claim end-to-end;
-   assets are now stable (reuses harness rig; operator-assisted, user said
-   "later"). Include the NEW asset workflow in the run (asset_add → place).
-2. **WP-4 editor tier-1 batch** — true group transform first (bbox is
-   visual-only), then pattern/image fill UI + asset panel.
+1. **WP-4 editor UX rescue batch** (re-scoped 2026-07-10) — tablet 768–1023
+   rescue (🔴) → context menu → align-toolbar de-clip → multi-select panel
+   (Group + align + bbox) → touch tap targets → then pattern/image fill UI +
+   asset panel. ~~True group transform~~ verified already working.
+2. **WP-3.1 model-floor harness run** — proves the local-model claim
+   end-to-end via claude.lab.casava.space (120B available; swap to another
+   free model if needed) + vision review. Include the asset workflow
+   (asset_add → place).
 3. **WP-2 design-power resumption** + photo-first archetypes (expectation 03
    §8.5 — hero-photo posters now unblocked by the asset system).
 4. **WP-1 leftovers (nice-to-have)** — extract_reference store:true, project

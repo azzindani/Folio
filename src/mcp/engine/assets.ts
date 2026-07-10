@@ -326,18 +326,15 @@ export function assetAdd(args: { project_path?: string; name?: string; data?: st
   }
 }
 
-export function assetList(args: { project_path?: string; search?: string; kind?: string; limit?: number }): ToolResult {
-  const op = 'asset_list';
-  const proj = requireProject(op, args.project_path);
-  if (isErr(proj)) return proj;
-  const manifest = readAssetManifest(proj.dir);
-
-  // Files are the truth: pick up anything on disk the manifest doesn't know
-  // (hand-copied, HTTP-uploaded before manifest support, …) with cheap meta.
+// Manifest + on-disk merge. Files are the truth: pick up anything on disk the
+// manifest doesn't know (hand-copied, HTTP-uploaded pre-manifest, …) with
+// cheap meta. Shared by the MCP asset_list op and the editor asset panel.
+export function collectAssets(projectDir: string): AssetEntry[] {
+  const manifest = readAssetManifest(projectDir);
   const byPath = new Map<string, AssetEntry>();
   for (const k of KINDS) for (const e of manifest[k] ?? []) byPath.set(e.path, e);
   for (const k of KINDS) {
-    const dir = path.join(proj.dir, 'assets', k);
+    const dir = path.join(projectDir, 'assets', k);
     if (!fs.existsSync(dir)) continue;
     for (const f of fs.readdirSync(dir)) {
       const rel = `assets/${k}/${f}`;
@@ -356,8 +353,14 @@ export function assetList(args: { project_path?: string; search?: string; kind?:
       });
     }
   }
+  return [...byPath.values()];
+}
 
-  let rows = [...byPath.values()];
+export function assetList(args: { project_path?: string; search?: string; kind?: string; limit?: number }): ToolResult {
+  const op = 'asset_list';
+  const proj = requireProject(op, args.project_path);
+  if (isErr(proj)) return proj;
+  let rows = collectAssets(proj.dir);
   if (args.kind && KINDS.includes(args.kind as AssetKind)) rows = rows.filter(r => r.kind === args.kind);
   if (args.search) {
     const q = args.search.toLowerCase();
