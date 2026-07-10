@@ -437,7 +437,7 @@ bg as the base canvas color (light bg → keep text dark; dark bg → set text_c
   base:    gradient (or gradient:vert / gradient:135 / gradient:horiz) · mesh · marble · radial · solid · photo
   sweep:   curve (curved sweep) · glow (spotlight) · band/band_top (accent edge bar) · grain (film noise) · vignette
            curve & glow take a PLACEMENT: curve:tr|tl|br|bl (default tr) · glow:top|bottom|center|left|right (default top)
-  texture: any pattern name (dots · grid · graph_paper · halftone · blueprint · carbon · waves · chevron…)
+  texture: any pattern name (dots · grid · graph_paper · halftone · blueprint · carbon · waves · chevron · newsprint · riso · engraving · mezzotint…)
   photo:   base "photo" + bg_image:"https://…" → full-bleed image with an auto legibility scrim (editor/HTML; PNG shows the scrim)
   e.g.  bg_style:"gradient + curve + dots"          (warm editorial)
         bg_style:"mesh + glow + grain"              (premium dark report — pair bg:"#0E0B14", text_color:"#F5F1EA", palette:[…])
@@ -469,6 +469,9 @@ Pattern fill: any fillable layer → fill:{type:"pattern", pattern:"<name>", fg:
          checkerboard chevron zigzag triangles waves scallop plus cross scatter confetti
          halftone blueprint carbon houndstooth brick.  (e.g. a halftone or crosshatch
          field beats a navy→purple gradient for an editorial look.)
+         PRINT FINISHES (hand-printed grain): newsprint (fine dot screen) · riso
+         (coarse spot-print dots) · engraving (etched hairlines) · mezzotint
+         (aquatint stipple). Best low-opacity over a warm paper base.
 Image/texture fill: fill:{type:"image", src:"https://…", mode:"tile"|"cover"|"contain"}
 Effects (any layer, esp. images): effects:{duotone:{shadow:"#1B1B3A",highlight:"#F5C518"}, grain:0.4,
          posterize:4, saturate:1.2, blend_mode:"multiply", backdrop_blur:12}

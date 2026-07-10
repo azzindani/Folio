@@ -11,6 +11,7 @@ const ALL: PatternName[] = [
   'diagonal_stripes', 'crosshatch', 'checkerboard', 'chevron', 'zigzag',
   'triangles', 'waves', 'scallop', 'plus', 'cross', 'scatter', 'confetti',
   'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
+  'newsprint', 'riso', 'engraving', 'mezzotint',
 ];
 
 beforeEach(() => resetDefIdCounter());

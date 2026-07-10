@@ -53,7 +53,9 @@ export type PatternName =
   | 'stripes' | 'diagonal_stripes' | 'crosshatch' | 'checkerboard'
   | 'chevron' | 'zigzag' | 'triangles' | 'waves' | 'scallop'
   | 'plus' | 'cross' | 'scatter' | 'confetti' | 'halftone' | 'blueprint'
-  | 'carbon' | 'houndstooth' | 'brick';
+  | 'carbon' | 'houndstooth' | 'brick'
+  // Print finishes (WS4) — riso/newsprint/etched grain for a hand-printed feel.
+  | 'newsprint' | 'riso' | 'engraving' | 'mezzotint';
 
 export interface PatternFill {
   type: 'pattern';
