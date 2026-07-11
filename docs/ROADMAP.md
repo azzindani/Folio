@@ -308,7 +308,7 @@ first-load flicker gone. New verified breakage promoted to the top.
 | 4.7 | Complete booleans: add union/subtract/exclude → path layer | new `src/editor/boolean-ops.ts` (vendored path lib — NO runtime CDN) | two overlapping rects → union path renders identically in resvg |
 | 4.8 | SVG import → layers | new `src/editor/svg-import.ts` | a Figma-exported SVG lands editable; export round-trips |
 | 4.9 | Gradient handles on canvas + pattern/image fill panel controls | `properties-panel-base.ts`, gradient overlay in `canvas-draw.ts` | drag stops on canvas; pattern/image picker writes the same fill spec MCP emits |
-| 4.10 | Constraints/pinning + canvas hover highlight (1.10) | `interactions.ts`, `canvas-interactions.ts` | pinned layer keeps edge offset on doc resize; hovered layer outlines |
+| ~~4.10~~ | **SHIPPED 2026-07-11** — hover highlight was already wired (`canvas.ts` onCanvasHover → `.canvas-hover-box`); NEW pin constraints: pure `editor/pin-constraints.ts` (edge-offset hold + both-edges stretch + proportional float for unpinned axes, recurses groups against the doc) applied in `openResizeDialog`; L/T/R/B pin toggles in the properties panel (`properties-panel-base.ts` + `bindPinControl`) | `pin-constraints.ts`, `app-base.ts`, `properties-panel{,-base}.ts` | ✓ unit + live E2E: right-pinned box holds its 100px gap on 1000→1400 resize (x→1200) |
 
 ---
 

@@ -22,6 +22,12 @@
   shared stroke-SVG set on `currentColor` (`editor/chrome-icons.ts`);
   page-strip thumbnails use the chrome surface instead of hard-coded white.
 - **Catalog lazy-loaded** — main entry 512KB → ~488KB (budget enforced in CI).
+- **Pin constraints (responsive resize)** — L/T/R/B pin toggles in the
+  properties panel; resizing the document holds each pinned layer's edge
+  offset (both opposing edges → the layer stretches; unpinned axes float
+  proportionally). Pure `editor/pin-constraints.ts`, applied on canvas resize.
+- **Project fonts in the editor** — an uploaded TTF/OTF now loads via the
+  FontFace API so the live canvas matches PNG/PDF export.
 
 ### Engine
 

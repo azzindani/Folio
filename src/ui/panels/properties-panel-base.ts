@@ -151,6 +151,27 @@ export abstract class PropertiesPanelBase {
         ${this.renderNumberInput('y', 'Y', layer.y ?? 0)}
         ${this.renderNumberInput('width', 'W', typeof layer.width === 'number' ? layer.width : 0)}
         ${this.renderNumberInput('height', 'H', typeof layer.height === 'number' ? layer.height : 0)}
+      </div>${this.renderPinControl(layer)}`;
+  }
+
+  // WP-4.10 — pin toggles: which edges hold their offset when the doc resizes.
+  // Left+Right (or Top+Bottom) both lit → the layer STRETCHES on that axis.
+  protected renderPinControl(layer: Layer): string {
+    const c = (layer as { constraints?: Record<string, boolean> }).constraints ?? {};
+    const on = (k: string): string => c[k]
+      ? 'background:var(--color-accent,#3b82f6);color:#fff;border-color:var(--color-accent,#3b82f6)'
+      : 'background:var(--color-bg);color:var(--color-text-muted);border-color:var(--color-border)';
+    const btn = (edge: string, label: string): string =>
+      `<button type="button" class="pin-btn" data-pin="${edge}" title="Pin ${edge}"
+        style="width:22px;height:22px;border:1px solid;border-radius:4px;font-size:10px;cursor:pointer;padding:0;${on(edge)}">${label}</button>`;
+    return `
+      <div style="margin-top:8px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:4px">Pin to edges (resize)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,22px);gap:3px;justify-content:start">
+          <span></span>${btn('top', 'T')}<span></span>
+          ${btn('left', 'L')}<span style="width:22px"></span>${btn('right', 'R')}
+          <span></span>${btn('bottom', 'B')}<span></span>
+        </div>
       </div>`;
   }
 

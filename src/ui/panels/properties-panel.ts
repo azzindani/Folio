@@ -238,6 +238,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
     this.bindGradientEditor(layer);
     this.bindEffectsButtons(layer);
     this.bindReportArrays(layer);
+    this.bindPinControl(layer);
     this.bindAccordions();
     if (layer.type === 'image') this.bindSVGRecolor(layer as ImageLayer);
     this.restoreFocus(focus);
@@ -288,6 +289,21 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
           if (Number.isInteger(idx) && idx >= 0 && idx < arr.length) arr.splice(idx, 1);
         }
         this.applyPropertyChange(layer.id, def.prop, arr);
+      });
+    });
+  }
+
+  // WP-4.10 — toggle a pin edge on/off; writes layer.constraints.<edge>.
+  private bindPinControl(layer: Layer): void {
+    this.content.querySelectorAll<HTMLButtonElement>('.pin-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const edge = btn.dataset.pin;
+        if (!edge) return;
+        const cur = this.state.getCurrentLayers().find(l => l.id === layer.id) as unknown as
+          { constraints?: Record<string, boolean> } | undefined;
+        const c = { ...(cur?.constraints ?? {}) };
+        if (c[edge]) delete c[edge]; else c[edge] = true;
+        this.applyPropertyChange(layer.id, 'constraints', Object.keys(c).length ? c : undefined);
       });
     });
   }
