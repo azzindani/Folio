@@ -11,6 +11,7 @@ import { handleOAuth } from './oauth';
 import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
 import { normalizeProjectPaths } from './normalize-paths';
 import { rateLimiterFromEnv } from './rate-limit';
+import { startUpdateChecks, getUpdateStatus, currentVersion } from './update-check';
 
 // Cap the /mcp request body so a single large POST can't buffer unboundedly
 // into the heap and OOM the memory-capped container. 32 MiB is generous for a
@@ -88,7 +89,7 @@ function handleMCP(req: MCPRequest): DispatchResult {
   const { id, method, params } = req;
   switch (method) {
     case 'initialize':
-      return { response: { jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'folio-mcp-http', version: '1.0.0' } } } };
+      return { response: { jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'folio-mcp-http', version: currentVersion() } } } };
     case 'notifications/initialized':
       return { response: { jsonrpc: '2.0', id, result: null } };
     case 'tools/list':
@@ -178,7 +179,22 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   if (method === 'OPTIONS') { setCORS(res); res.writeHead(204); res.end(); return; }
 
   if (pathOnly === '/health' && method === 'GET') {
-    jsonReply(res, 200, { status: 'ok', version: '1.0.0', tiers: ['1', '2', '3'], auth: loadTokens().mode }); return;
+    const upd = getUpdateStatus();
+    jsonReply(res, 200, {
+      status: 'ok',
+      version: upd.current,                 // was hardcoded '1.0.0' — report the real package version
+      update_available: upd.update_available,
+      tiers: ['1', '2', '3'],
+      auth: loadTokens().mode,
+    });
+    return;
+  }
+
+  // Unauthenticated like /health: the running version + whether upstream has a
+  // newer release. Lets a monitor / cron alert on a stale deployment without
+  // holding an API token. Reports only THIS server's own version state.
+  if (pathOnly === '/version' && method === 'GET') {
+    jsonReply(res, 200, getUpdateStatus()); return;
   }
 
   // OAuth and well-known endpoints run BEFORE the bearer check so the
@@ -298,6 +314,7 @@ export function startHttpServer(): void {
   }).listen(port, () => {
     process.stderr.write(`folio-mcp-http listening on :${port}\n`);
     process.stderr.write(`[mcp] auth: ${describeAuth()}\n`);
+    startUpdateChecks();
     if (rateLimiter) {
       process.stderr.write(`[mcp] rate limit: ${rateLimiter.burst} burst, ${rateLimiter.perSec}/s per token+IP\n`);
       // Evict idle buckets so the Map can't grow unbounded. unref() keeps the

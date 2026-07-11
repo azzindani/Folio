@@ -100,12 +100,82 @@ a minute. Confirm:
 
 ```bash
 curl -fsS https://folio.your-domain.tld/health
-# → {"status":"ok","version":"1.0.0","tiers":["1","2","3"],"auth":"multi"}
+# → {"status":"ok","version":"0.1.1","update_available":false,"tiers":["1","2","3"],"auth":"multi"}
 
 curl -H "Authorization: Bearer <one-of-your-tokens>" \
      https://folio.your-domain.tld/tokens/whoami
 # → {"token":"claude-desktop","auth_mode":"multi"}
 ```
+
+---
+
+## 4.5 STAYING UP TO DATE
+
+Two separate mechanisms. **Detection is on by default; applying is not.**
+
+### Detect — every deployment, no setup
+
+The engine polls the GitHub Releases API (daily, jittered, floored at 1h) and caches the
+answer. Ask any instance what it's running:
+
+```bash
+curl -fsS https://folio.your-domain.tld/version
+# → {"current":"0.1.1","latest":"0.2.0","update_available":true,
+#    "release_url":"https://github.com/azzindani/Folio/releases/tag/v0.2.0",
+#    "checked_at":"2026-07-11T05:40:00Z","enabled":true}
+```
+
+`/version` and `/health` are **unauthenticated** (like `/health` already was), so a monitor
+or a cron one-liner can alert on a stale deployment without holding an API token:
+
+```bash
+# nag me daily if my box is behind
+curl -fsS localhost:3333/version | grep -q '"update_available":true' && echo "Folio update available"
+```
+
+A new release also logs once, at detection:
+`[update] Folio 0.2.0 is available (running 0.1.1) — https://…`
+
+Properties worth knowing:
+- **No telemetry.** An anonymous, unauthenticated `GET api.github.com/repos/…/releases/latest`.
+  No install id, no version report, nothing about you leaves the box.
+- **Fail-silent.** Offline, rate-limited or DNS-dead → the check returns null and the last
+  known answer stands. It can never affect serving.
+- **Opt out** with `FOLIO_UPDATE_CHECK=0` (air-gapped / no-outbound-calls policies).
+- Watching a fork? `FOLIO_UPDATE_REPO=you/YourFork`.
+
+### Apply — pick your posture
+
+| Posture | How | Trade-off |
+|---|---|---|
+| **Manual** (default) | `/version` tells you; you run `scripts/update.sh` or `docker compose pull && up -d` | Full control; you must actually look |
+| **Pinned** | `FOLIO_IMAGE=ghcr.io/azzindani/folio:0.1.1` | Reproducible; review each release, upgrade on purpose |
+| **Unattended** | `--profile autoupdate` (Watchtower) | Security fixes land by themselves; so does a bad release |
+
+Unattended:
+
+```bash
+# .env
+FOLIO_IMAGE=ghcr.io/azzindani/folio:latest      # Watchtower pulls a REGISTRY tag —
+                                                # it cannot rebuild a local source build
+docker compose --profile autoupdate up -d --pull always --no-build
+```
+
+Watchtower runs label-scoped (`WATCHTOWER_LABEL_ENABLE`), so it only ever touches the
+`folio` container — never anything else on the host. It polls the registry daily
+(`FOLIO_AUTOUPDATE_INTERVAL_SEC`), pulls a new digest of the tag, and recreates the
+container with the same env/mounts. Projects live on a bind mount and survive.
+
+Be deliberate about this: unattended upgrade means a bad release — or anyone who
+compromises the registry — reaches your host with no human in the loop. The honest default
+for a design engine holding your files is **pinned + notified**, which is why `autoupdate`
+is opt-in.
+
+> **Why polling and not a GitHub webhook?** A `release` webhook needs a publicly reachable
+> URL and a shared secret *per deployment*. Most self-hosted installs sit behind NAT with no
+> inbound port, so a webhook can't reach them at all. An outbound poll works everywhere with
+> zero configuration. (If your instance *is* public and you want instant delivery, point a
+> repo webhook at your own CD runner — that's a deploy pipeline concern, not the engine's.)
 
 ---
 
