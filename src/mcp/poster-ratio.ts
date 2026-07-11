@@ -41,12 +41,33 @@ const STANDARD_RATIOS: readonly number[] = [
 
 const TOL = 0.02;
 
+// The same standard ratios, plus 16:10 — recognized in EITHER orientation. Used
+// to decide whether a canvas was chosen DELIBERATELY (so the engine must not
+// resize it), which is orientation-agnostic: a 3840×2160 (16:9) conference
+// poster or a 1920×1080 slide is every bit as deliberate as a 4:5 social post.
+// Kept separate from STANDARD_RATIOS because honorPosterRatio's horizontal
+// stretch is only sound for portrait/square.
+const CANVAS_RATIOS: readonly number[] = [...STANDARD_RATIOS, 10 / 16];
+
 /** True when `w×h` matches a standard portrait/square poster ratio (≤ square). */
 export function isDeliberatePosterRatio(w: number, h: number): boolean {
   if (!(w > 0) || !(h > 0)) return false;
   const r = w / h;
   if (r > 1 + TOL) return false; // portrait or square only
   return STANDARD_RATIOS.some(s => Math.abs(r - s) <= TOL);
+}
+
+/**
+ * True when `w×h` matches a standard canvas ratio in EITHER orientation (16:9,
+ * 3:2, 4:3, ISO A, 16:10, 1:1, 4:5, 9:16 …) — i.e. a size the user meant. Such a
+ * canvas must never be auto-resized by a rescue pass; only a NON-standard canvas
+ * (one the model likely picked by accident, e.g. 1080×2400) is fair game.
+ */
+export function isDeliberateCanvasRatio(w: number, h: number): boolean {
+  if (!(w > 0) || !(h > 0)) return false;
+  const r = w / h;
+  const portrait = r > 1 ? 1 / r : r;   // fold landscape onto its portrait twin
+  return CANVAS_RATIOS.some(s => Math.abs(portrait - s) <= TOL);
 }
 
 function num(o: Record<string, unknown>, k: string): number {

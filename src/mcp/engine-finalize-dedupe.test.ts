@@ -75,6 +75,41 @@ describe('collapseDuplicateSections (WP-3.5 — 120B thrash rescue)', () => {
     expect(secA.layers.map(l => l.id)).toEqual(['hA', 'rA']);
   });
 
+  // A repeated string in a DIFFERENT visual role is deliberate design, not a
+  // rebuild artifact: the 4K conference poster printed its repo URL small+teal
+  // in the header and again big+white in the footer CTA, and the CTA copy was
+  // silently deleted (both ≥24 chars, identical characters).
+  it('keeps a repeated string that carries a different visual role', () => {
+    const styled = (id: string, value: string, y: number, size: number, color: string): Layer =>
+      ({
+        id, type: 'text', z: 10, x: 2700, y, width: 900, height: 50,
+        content: { type: 'plain', value }, style: { font_size: size, color },
+      } as unknown as Layer);
+    const url = 'github.com/azzindani/Folio';
+    const layers = [
+      styled('header_url', url, 212, 26, '#0FA3A3'),   // header credit
+      styled('cta_url', url, 1774, 34, '#FFFFFF'),     // footer CTA
+    ];
+    expect(collapseDuplicateSections(layers, 3840, 2160)).toBe(0);
+    expect(layers.map(l => l.id)).toEqual(['header_url', 'cta_url']);
+  });
+
+  // Same words, same style, but side by side = a deliberate multi-column layout
+  // (identical cards in a grid), not a model stamping the block down one column.
+  it('keeps identical blocks that sit side by side rather than stacked', () => {
+    const col = (id: string, x: number): Layer =>
+      ({
+        id, type: 'group', z: 10, x, y: 400, width: 800, height: 300,
+        layers: [{
+          id: `${id}_t`, type: 'text', z: 11, x, y: 420, width: 760, height: 60,
+          content: { type: 'plain', value: 'Unlimited seats, priority support, audit log' },
+        } as unknown as Layer],
+      } as unknown as Layer);
+    const layers = [col('colA', 100), col('colB', 1000)];
+    expect(collapseDuplicateSections(layers, 3840, 2160)).toBe(0);
+    expect(layers.map(l => l.id)).toEqual(['colA', 'colB']);
+  });
+
   it('drops a stacked short-text echo but keeps a far-apart deliberate echo', () => {
     const layers = [
       text('offer1', '20% Off First Box', 560, 34),
