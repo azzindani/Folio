@@ -28,6 +28,11 @@
   proportionally). Pure `editor/pin-constraints.ts`, applied on canvas resize.
 - **Project fonts in the editor** — an uploaded TTF/OTF now loads via the
   FontFace API so the live canvas matches PNG/PDF export.
+- **Editor-button vector PDF** — the in-editor PDF export now produces true
+  selectable vector text (embedded TrueType) by fetching the bundled fonts from
+  `/fonts` (copied into `dist/fonts` at build, served by the static-server),
+  matching the MCP server's PDF. Falls back to raster + invisible selectable
+  text when fonts are unreachable.
 - **PPTX editable text** — exported slides now carry native, selectable/editable
   text boxes over the pixel-faithful background image (was image-only). Text with
   a solid-hex colour and no rotation/effect is promoted and hidden from the

@@ -330,10 +330,18 @@ first-load flicker gone. New verified breakage promoted to the top.
   text at the right EMU position/size/weight/colour; token-coloured text stays
   in the raster. (No LibreOffice in CI to auto-open; OOXML is standard txBox.)
 
-### WP-5.2 · Editor-button vector PDF
-- Browser path lacks the bundled TTFs. Either fetch font subset from the
-  server (`/__project_files`-style endpoint serving `src/mcp/fonts` subset)
-  or accept documented raster. Decide by bundle-size budget (<500KB gz).
+### WP-5.2 · Editor-button vector PDF — SHIPPED 2026-07-11
+- Chosen path: SERVE the fonts, don't bundle them (keeps the bundle budget).
+  The build (`folioFontsPlugin.writeBundle`) copies `src/mcp/fonts/*.ttf` +
+  `manifest.json` into `dist/fonts/`; the production static-server serves
+  `dist/` so `/fonts/manifest.json` + `/fonts/<ttf>` resolve (verified live:
+  both 200). The editor PDF export (`exporter.ts exportToPDF` → `pdf-vector-
+  browser` + `pdf-fonts-browser.loadVectorFont`) fetches the TTF bytes and
+  embeds them in jsPDF, preferring true vector for non-interactive designs and
+  falling back to raster+invisible-text otherwise.
+- **Accept**: met — live E2E exports a text poster from the editor; the PDF
+  starts `%PDF` and contains `FontFile2` (an embedded TrueType program) →
+  selectable vector text, not a flat raster. Production `/fonts/*` serve 200.
 
 ---
 
