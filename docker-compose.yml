@@ -30,9 +30,18 @@ services:
       context: .
       args:
         SKIP_TESTS: ${FOLIO_SKIP_TESTS:-0}
-    image: folio:latest
+    # Default: build from the local source tree. To run the PUBLISHED image
+    # instead (required for auto-update — Watchtower can only pull a registry
+    # tag, it cannot rebuild your source):
+    #   FOLIO_IMAGE=ghcr.io/azzindani/folio:latest  in .env
+    #   docker compose up -d --pull always --no-build
+    image: ${FOLIO_IMAGE:-folio:latest}
     container_name: folio
     restart: unless-stopped
+    labels:
+      # Scopes the optional Watchtower below to THIS container only (it runs
+      # with label-enable, so nothing else on the host is ever touched).
+      com.centurylinklabs.watchtower.enable: "true"
     # Memory ceiling — capped well above measured steady state (~230 MiB
     # idle, ~400 MiB during PNG export). 1 GiB OOM-killed the MCP http-server
     # mid-run during a sustained 116-case harness sweep (spikes well past 1 GiB
@@ -69,6 +78,12 @@ services:
       # production deployments. Derive from FOLIO_DOMAIN when set.
       FOLIO_EDITOR_URL:      ${FOLIO_EDITOR_URL:-${FOLIO_DOMAIN:+https://${FOLIO_DOMAIN}}}
       FOLIO_MCP_PUBLIC_URL:  ${FOLIO_MCP_PUBLIC_URL:-${FOLIO_DOMAIN:+https://${FOLIO_DOMAIN}}}
+      # Upstream release check: polls GitHub Releases (default daily) and
+      # reports on /health + /version. Notify-only — it never restarts itself.
+      # Set to 0 for an air-gapped / no-outbound-calls deployment.
+      FOLIO_UPDATE_CHECK:       ${FOLIO_UPDATE_CHECK:-1}
+      FOLIO_UPDATE_INTERVAL_MS: ${FOLIO_UPDATE_INTERVAL_MS:-}
+      FOLIO_UPDATE_REPO:        ${FOLIO_UPDATE_REPO:-}
     ports:
       # Exposed on the host only when running WITHOUT the tls profile. With
       # Caddy in front you'd typically remove these and keep the engine on
@@ -117,6 +132,40 @@ services:
       - ./folio-projects:/srv/files:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - folio_net
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # OPT-IN auto-update.  docker compose --profile autoupdate up -d
+  #
+  # Detection (polling GitHub Releases) is built into the engine and is ON by
+  # default — see /version. APPLYING an update is deliberately separate and
+  # OFF by default, because unattended upgrades are a real trade-off:
+  #   + you get security fixes without touching the box
+  #   − a bad release lands on your deployment automatically, and anyone who
+  #     compromises the upstream registry runs code on your host
+  # Pin a tag (FOLIO_IMAGE=ghcr.io/azzindani/folio:0.1.1) if you'd rather
+  # review each release and update on purpose — the /version endpoint will
+  # still tell you when one is out.
+  #
+  # REQUIRES a registry image: set FOLIO_IMAGE=ghcr.io/azzindani/folio:latest.
+  # Watchtower pulls new digests of a TAG; it cannot rebuild a local source
+  # build, so with the default `folio:latest` build it has nothing to pull.
+  # ───────────────────────────────────────────────────────────────────────────
+  watchtower:
+    image: containrrr/watchtower
+    container_name: folio-watchtower
+    profiles: ["autoupdate"]
+    restart: unless-stopped
+    environment:
+      # Only containers labelled watchtower.enable=true (i.e. folio) — never
+      # anything else you happen to run on this host.
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"          # bin the superseded image
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      WATCHTOWER_POLL_INTERVAL: ${FOLIO_AUTOUPDATE_INTERVAL_SEC:-86400}   # daily
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - folio_net
 

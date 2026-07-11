@@ -17,6 +17,8 @@
 #   /tokens/whoami          → folio:3333  (token sanity check)            [Bearer]
 #   /files · /files/*       → /srv/files  (read-only file browser)        [basicauth — separate download surface]
 #   /health                 → folio:3333  (unauthenticated liveness)
+#   /version                → folio:3333  (unauthenticated — running version +
+#                                          upstream release check)
 #
 # Caddy terminates TLS and forwards Authorization: Bearer untouched for /mcp.
 # The EDITOR is NOT behind Basic Auth: the static-server (folio:4173) is the
@@ -34,7 +36,10 @@
     encode zstd gzip
 
     # MCP JSON-RPC + Anthropic Custom Connector endpoint.
-    @mcp path /mcp /mcp/* /tokens/* /health
+    # /version is public alongside /health so a monitor can alert on a stale
+    # deployment without holding an API token (it reports only this server's
+    # own version + whether upstream has a newer release).
+    @mcp path /mcp /mcp/* /tokens/* /health /version
     handle @mcp {
         reverse_proxy folio:3333 {
             flush_interval -1
