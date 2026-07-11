@@ -177,13 +177,10 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
     }
 
     case 'image': {
-      const out: Record<string, unknown> = { ...base, type: 'image', src: sh.src ?? '' };
-      // fit was silently dropped (asset_add's own layer stub recommends
-      // fit:"cover"!) — pass it and the WP-1.5 photo treatments through.
       const shr = sh as unknown as Record<string, unknown>;
-      for (const k of ['fit', 'alt', 'role', 'crop', 'mask', 'focal', 'overlay', 'frame'] as const) {
-        if (shr[k] !== undefined) out[k] = shr[k];
-      }
+      const out: Record<string, unknown> = { ...base, type: 'image', src: sh.src ?? '' };
+      // pass fit (was silently dropped) + the WP-1.5 photo treatments through.
+      for (const k of ['fit', 'alt', 'role', 'crop', 'mask', 'focal', 'overlay', 'frame'] as const) if (shr[k] !== undefined) out[k] = shr[k];
       return out as unknown as Layer;
     }
 

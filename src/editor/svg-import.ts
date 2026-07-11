@@ -13,7 +13,6 @@ export interface SVGImportLayers {
   height: number;
 }
 
-const NS = 'http://www.w3.org/2000/svg';
 const RENDERABLE = ['path', 'rect', 'circle', 'ellipse', 'line', 'polygon', 'polyline', 'text'];
 
 function ctmOf(el: SVGGraphicsElement): Matrix {
