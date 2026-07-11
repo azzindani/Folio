@@ -20,14 +20,20 @@ export abstract class PropertiesPanelBase {
           Boolean / Mask
         </div>
         <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:8px">
-          Top layer clips bottom layer.
+          Combine two shapes into one path, or clip (top over bottom).
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">
+          <button class="btn btn-sm bool-op-btn" data-op="union">Union</button>
+          <button class="btn btn-sm bool-op-btn" data-op="subtract">Subtract</button>
+          <button class="btn btn-sm bool-op-btn" data-op="intersect">Intersect</button>
+          <button class="btn btn-sm bool-op-btn" data-op="exclude">Exclude</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <button class="btn btn-sm bool-op-btn" data-op="clip-mask" style="width:100%;text-align:left">
-            ⊓ Clip Mask (intersect)
+            Clip Mask (non-destructive)
           </button>
           <button class="btn btn-sm bool-op-btn" data-op="release" style="width:100%;text-align:left">
-            ✕ Release Mask
+            Release Mask
           </button>
         </div>
       </div>`;

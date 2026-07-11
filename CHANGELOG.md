@@ -28,6 +28,10 @@
   proportionally). Pure `editor/pin-constraints.ts`, applied on canvas resize.
 - **Project fonts in the editor** — an uploaded TTF/OTF now loads via the
   FontFace API so the live canvas matches PNG/PDF export.
+- **Path booleans** — Union / Subtract / Intersect / Exclude two selected
+  shapes into one new `path` layer (`editor/boolean-ops.ts`, bundled
+  `polygon-clipping`, lazy-loaded — no runtime CDN). Renders identically in the
+  editor and resvg export.
 - **Gradient handles + pattern/image fill controls** — a selected gradient
   layer shows draggable axis handles on the canvas (linear endpoints → angle,
   radial center + radius); new Pattern and Image fill tabs in the properties
