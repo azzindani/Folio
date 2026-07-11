@@ -24,7 +24,10 @@ test('editor PDF export embeds real fonts (vector, not raster)', async ({ page }
 
   const pdfBytes: Uint8Array = await page.evaluate(async () => {
     const f = (window as unknown as { __folio: { getYAML(): string } }).__folio;
+    // Runtime paths resolved by the Vite dev server (not by tsc).
+    // @ts-expect-error browser-only module URL
     const { parseDesign } = await import('/src/schema/parser.ts');
+    // @ts-expect-error browser-only module URL
     const { exportToPDF } = await import('/src/export/exporter.ts');
     const spec = parseDesign(f.getYAML());
     const blob = await exportToPDF(spec, { format: 'pdf', scale: 2 });
