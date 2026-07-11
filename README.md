@@ -2,6 +2,13 @@
 
 A self-hosted MCP server and browser-based graphic design editor that gives local LLMs structured tools to generate, edit, and export designs as plain YAML files. No cloud APIs, no subscriptions — everything runs on your machine or your VPS.
 
+> **Already running Folio?** Since **v0.1.2** an instance tells you when it is out of date:
+> `curl -fsS <your-host>/version` → `{"current":"0.1.2","latest":"…","update_available":false}`.
+> Anything *other* than that JSON — a **404**, or a **401** if you run the Caddy/TLS profile
+> (the old Caddyfile doesn't route `/version`) — means you are on a **pre-0.1.2 build that will
+> never notice a new release**. Upgrade once by hand ([Updating](#updating)); every release
+> after that announces itself.
+
 ## Documentation
 
 Full guides live in [`docs/`](docs/README.md):
@@ -234,7 +241,7 @@ Caddy will request a Let's Encrypt certificate for `FOLIO_DOMAIN` and start term
 
 ```bash
 curl -fsS https://folio.your-domain.tld/health
-# → {"status":"ok","version":"1.0.0","tiers":["1","2","3"],"auth":"multi"}
+# → {"status":"ok","version":"0.1.2","update_available":false,"tiers":["1","2","3"],"auth":"multi"}
 
 curl -H "Authorization: Bearer <one-of-your-tokens>" \
      https://folio.your-domain.tld/tokens/whoami
@@ -243,12 +250,62 @@ curl -H "Authorization: Bearer <one-of-your-tokens>" \
 
 ### Updating
 
+**Is my deployment current?** Since v0.1.2 every instance checks the GitHub Releases API
+(daily) and answers for itself, on a public endpoint that needs no token:
+
+```bash
+curl -fsS https://folio.your-domain.tld/version
+# → {"current":"0.1.2","latest":"0.1.2","update_available":false, ...}
+#
+# behind?
+# → {"current":"0.1.2","latest":"0.1.3","update_available":true,
+#    "release_url":"https://github.com/azzindani/Folio/releases/tag/v0.1.3"}
+```
+
+It also logs once when a release appears (`[update] Folio 0.1.3 is available …`), so a
+one-liner is enough to nag you:
+
+```bash
+curl -fsS localhost:3333/version | grep -q '"update_available":true' && echo "Folio update available"
+```
+
+No telemetry — an anonymous, unauthenticated `GET` to GitHub; nothing about you or your
+designs leaves the box. Turn it off entirely with `FOLIO_UPDATE_CHECK=0`.
+
+> **Running something older than v0.1.2?** It has no `/version` endpoint and will never tell
+> you it is out of date — a self-updater cannot bootstrap itself into a build that predates it.
+> You are on a pre-0.1.2 build if `curl -fsS <your-host>/version` returns **404**, or **401**
+> on the Caddy/TLS profile (the old Caddyfile routes only `/health` publicly, so `/version`
+> falls through to the editor's token gate), or if `/health` has no `update_available` field.
+> Upgrade once by hand with the steps below and every release after that announces itself.
+>
+> Upgrading a Caddy/TLS deploy? `git pull` brings the new `caddy/Caddyfile` — make sure Caddy
+> actually reloads it. A single-file bind mount keeps serving the **old inode** until the proxy
+> container is restarted (`docker compose restart caddy`), and `caddy validate` *inside* the
+> running container will happily validate the stale copy.
+
+**Upgrade:**
+
 ```bash
 git pull
 docker compose --profile tls up -d --build
 ```
 
 The build runs unit + integration tests by default. If you want a quick redeploy, set `FOLIO_SKIP_TESTS=1` in `.env`.
+
+Prefer not to build from source? Run the published image and pin the version you reviewed:
+
+```bash
+# .env
+FOLIO_IMAGE=ghcr.io/azzindani/folio:0.1.2      # or :latest
+docker compose up -d --pull always --no-build
+```
+
+**Unattended upgrades** are opt-in — `docker compose --profile autoupdate up -d` adds a
+Watchtower scoped by label to the `folio` container only. Weigh it honestly: you get fixes
+without touching the box, but a bad release (or a compromised registry) also reaches you with
+no human in the loop. The default posture is *pinned + notified*. Full table in
+[docs/DEPLOYMENT.md §4.5](docs/DEPLOYMENT.md).
 
 ### Backups
 
