@@ -2,7 +2,7 @@
 // helpers. Split out of properties-panel.ts to stay within the line budget;
 // PropertiesPanelManager extends this with lifecycle + event binding. Verbatim.
 import { type StateManager } from '../../editor/state';
-import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, ImageLayer, LinearGradientFill, RadialGradientFill, GradientStop } from '../../schema/types';
+import type { Layer, RectLayer, CircleLayer, TextLayer, LineLayer, ImageLayer, LinearGradientFill, RadialGradientFill, GradientStop, PatternFill, ImageFill, PatternName } from '../../schema/types';
 import { extractSVGColors } from '../../utils/svg-importer';
 import { flowGridMetrics } from '../../renderer/flow-layout';
 import { widthToSpan } from '../../editor/flow-edit';
@@ -245,10 +245,12 @@ export abstract class PropertiesPanelBase {
   protected renderFillFields(fill: (RectLayer | CircleLayer)['fill']): string {
     const activeType = fill?.type ?? 'none';
     const types: Array<{ key: string; label: string }> = [
-      { key: 'solid',  label: 'Solid'  },
-      { key: 'linear', label: 'Linear' },
-      { key: 'radial', label: 'Radial' },
-      { key: 'none',   label: 'None'   },
+      { key: 'solid',   label: 'Solid'   },
+      { key: 'linear',  label: 'Linear'  },
+      { key: 'radial',  label: 'Radial'  },
+      { key: 'pattern', label: 'Pattern' },
+      { key: 'image',   label: 'Image'   },
+      { key: 'none',    label: 'None'    },
     ];
     const tabs = types.map(t => {
       const active = activeType === t.key;
@@ -268,6 +270,10 @@ export abstract class PropertiesPanelBase {
       body = this.renderLinearGradientFields(fill);
     } else if (fill.type === 'radial') {
       body = this.renderRadialGradientFields(fill);
+    } else if (fill.type === 'pattern') {
+      body = this.renderPatternFillFields(fill as unknown as PatternFill);
+    } else if (fill.type === 'image') {
+      body = this.renderImageFillFields(fill as unknown as ImageFill);
     }
 
     return `
@@ -345,6 +351,58 @@ export abstract class PropertiesPanelBase {
     });
     html += '</div>';
     return html;
+  }
+
+  // WP-4.9 — pattern fill controls. Writes the SAME spec the MCP emits:
+  // {type:'pattern', pattern, fg, bg?, scale?, opacity?}. Names mirror the
+  // engine's PATTERN_NAMES so a panel-authored pattern round-trips to export.
+  protected renderPatternFillFields(fill: PatternFill): string {
+    const names: PatternName[] = [
+      'dots', 'dot_grid', 'grid', 'graph_paper', 'isometric', 'stripes',
+      'diagonal_stripes', 'crosshatch', 'checkerboard', 'chevron', 'zigzag',
+      'triangles', 'waves', 'scallop', 'plus', 'cross', 'scatter', 'confetti',
+      'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
+      'newsprint', 'riso', 'engraving', 'mezzotint',
+    ];
+    const cur = fill.pattern ?? 'dots';
+    const opts = names.map(n => `<option value="${n}"${n === cur ? ' selected' : ''}>${n.replace(/_/g, ' ')}</option>`).join('');
+    return `
+      <div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Pattern</div>
+        <select class="prop-input" data-prop="fill.pattern"
+          style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;margin-bottom:6px">${opts}</select>
+        ${this.renderColorField('fill.fg', 'Marks (fg)', fill.fg ?? '#1a1a1a')}
+        ${this.renderColorField('fill.bg', 'Background (bg)', fill.bg ?? '#ffffff')}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          ${this.renderNumberInput('fill.scale', 'Scale', fill.scale ?? 1)}
+          ${this.renderNumberField('fill.opacity', 'Opacity', fill.opacity ?? 1, 0, 1, 0.05)}
+        </div>
+      </div>`;
+  }
+
+  // WP-4.9 — image/texture fill. Writes {type:'image', src, mode, tile_size?,
+  // opacity?} exactly as the MCP shorthand normalizes it.
+  protected renderImageFillFields(fill: ImageFill): string {
+    const mode = fill.mode ?? 'cover';
+    const modeOpt = (m: string, label: string): string =>
+      `<option value="${m}"${m === mode ? ' selected' : ''}>${label}</option>`;
+    return `
+      <div>
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Image source (URL or assets/…)</div>
+        <input type="text" class="prop-input" data-prop="fill.src" value="${(fill.src ?? '').replace(/"/g, '&quot;')}"
+          placeholder="assets/images/photo.jpg"
+          style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;margin-bottom:6px">
+        <div style="font-size:10px;color:var(--color-text-muted);margin-bottom:3px">Fit</div>
+        <select class="prop-input" data-prop="fill.mode"
+          style="width:100%;background:var(--color-bg);border:1px solid var(--color-border);
+                 border-radius:4px;padding:4px 6px;color:var(--color-text);font-size:12px;margin-bottom:6px">
+          ${modeOpt('cover', 'Cover (fill shape)')}${modeOpt('contain', 'Contain (fit inside)')}${modeOpt('tile', 'Tile (repeat)')}
+        </select>
+        ${mode === 'tile' ? this.renderNumberInput('fill.tile_size', 'Tile px', fill.tile_size ?? 96) : ''}
+        ${this.renderNumberField('fill.opacity', 'Opacity', fill.opacity ?? 1, 0, 1, 0.05)}
+      </div>`;
   }
 
   protected renderGradientThumb(color: string, position: number, index: number): string {

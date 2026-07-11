@@ -5,6 +5,7 @@ import { widthToSpan, computeInsertIndex, insertIndicatorRect } from './flow-edi
 import type { Layer } from '../schema/types';
 import { RULER_SIZE } from './canvas-draw';
 import { CanvasBase } from './canvas-base';
+import { linearEndpoints, angleFromDrag, radialCenter, radialRadiusPoint, radiusFromDrag } from './gradient-handles';
 
 let layerCounter = 0;
 
@@ -557,6 +558,86 @@ export abstract class CanvasInteractions extends CanvasBase {
         this.state.set('panY', panY - e.deltaY, false);
       });
     }
+  }
+
+  // WP-4.9 — draw on-canvas gradient handles for a single selected layer whose
+  // fill is a linear/radial gradient, appended to the selection overlay. Handles
+  // live in the same bbox-px space as the resize handles (the overlay is already
+  // transformed to match the SVG), so positions are plain bbox offsets.
+  protected appendGradientHandles(frag: DocumentFragment, id: string, bbox: { x: number; y: number; width: number; height: number }): void {
+    const layer = this.findLayerDeep(id) as unknown as { fill?: { type?: string; angle?: number; cx?: number; cy?: number; radius?: number } } | undefined;
+    const fill = layer?.fill;
+    if (!fill || (fill.type !== 'linear' && fill.type !== 'radial')) return;
+    const at = (fx: number, fy: number): { x: number; y: number } => ({ x: bbox.x + fx * bbox.width, y: bbox.y + fy * bbox.height });
+
+    const dot = (p: { x: number; y: number }, cls: string, kind: string): HTMLDivElement => {
+      const h = document.createElement('div');
+      h.className = `grad-handle grad-handle-${cls}`;
+      h.style.cssText = `position:absolute;left:${p.x - 6}px;top:${p.y - 6}px;width:12px;height:12px;`
+        + 'border-radius:50%;background:#fff;border:2px solid var(--color-accent,#3b82f6);'
+        + 'pointer-events:auto;cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:2';
+      h.dataset.gradHandle = kind;
+      h.addEventListener('pointerdown', (ev) => this.startGradientDrag(ev, id, kind, bbox));
+      return h;
+    };
+    const line = (a: { x: number; y: number }, b: { x: number; y: number }): HTMLDivElement => {
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      const l = document.createElement('div');
+      l.className = 'grad-axis';
+      l.style.cssText = `position:absolute;left:${a.x}px;top:${a.y}px;width:${len}px;height:0;`
+        + `border-top:1px dashed var(--color-accent,#3b82f6);transform-origin:0 0;transform:rotate(${ang}deg);pointer-events:none;z-index:1`;
+      return l;
+    };
+
+    if (fill.type === 'linear') {
+      const { p1, p2 } = linearEndpoints(fill.angle ?? 135);
+      const a = at(p1.x, p1.y), b = at(p2.x, p2.y);
+      frag.appendChild(line(a, b));
+      frag.appendChild(dot(a, 'p1', 'p1'));
+      frag.appendChild(dot(b, 'p2', 'p2'));
+    } else {
+      const c = radialCenter(fill.cx, fill.cy);
+      const r = radialRadiusPoint(fill.cx, fill.cy, fill.radius);
+      const cP = at(c.x, c.y), rP = at(Math.min(1, r.x), r.y);
+      frag.appendChild(line(cP, rP));
+      frag.appendChild(dot(cP, 'center', 'center'));
+      frag.appendChild(dot(rP, 'radius', 'radius'));
+    }
+  }
+
+  // Drag a gradient handle → live-update fill.angle (linear) or fill.cx/cy/radius
+  // (radial). Screen→user conversion mirrors startRotate.
+  protected startGradientDrag(e: PointerEvent, id: string, kind: string, bbox: { x: number; y: number; width: number; height: number }): void {
+    e.stopPropagation();
+    const layer = this.findLayerDeep(id);
+    if (!layer || layer.locked) return;
+    const { zoom, panX, panY } = this.state.get();
+    const vpRect = this.container.getBoundingClientRect();
+    const cx = vpRect.left + RULER_SIZE + ((bbox.x + bbox.width / 2) * zoom + panX);
+    const cy = vpRect.top + RULER_SIZE + ((bbox.y + bbox.height / 2) * zoom + panY);
+    let started = false;
+
+    const onMove = (me: PointerEvent): void => {
+      if (!started) { started = true; this.state.beginInteraction(); }
+      const dx = me.clientX - cx, dy = me.clientY - cy;
+      const fill = { ...(this.findLayerDeep(id) as unknown as { fill?: Record<string, unknown> })?.fill } as Record<string, unknown>;
+      if (kind === 'p1' || kind === 'p2') {
+        fill.angle = angleFromDrag(dx, dy, kind);
+      } else if (kind === 'center') {
+        fill.cx = Math.max(0, Math.min(100, Math.round(((me.clientX - (vpRect.left + RULER_SIZE + panX)) / zoom - bbox.x) / bbox.width * 100)));
+        fill.cy = Math.max(0, Math.min(100, Math.round(((me.clientY - (vpRect.top + RULER_SIZE + panY)) / zoom - bbox.y) / bbox.height * 100)));
+      } else {
+        fill.radius = radiusFromDrag(dx / zoom, bbox.width);
+      }
+      this.state.updateLayer(id, { fill } as unknown as Partial<Layer>, false);
+    };
+    const onUp = (): void => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   }
 
 }
