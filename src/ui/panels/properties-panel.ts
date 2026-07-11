@@ -501,6 +501,17 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
           ],
         };
         break;
+      case 'pattern':
+        newFill = {
+          type: 'pattern',
+          pattern: 'dots',
+          fg: currentFill?.color ?? currentFill?.stops?.[0]?.color ?? '#1a1a1a',
+          bg: '#ffffff',
+        };
+        break;
+      case 'image':
+        newFill = { type: 'image', src: '', mode: 'cover' };
+        break;
       case 'none':
         newFill = { type: 'none' };
         break;

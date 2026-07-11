@@ -368,6 +368,9 @@ export class CanvasManager extends CanvasInteractions {
         });
         frag.appendChild(rotateHandle);
       }
+
+      // WP-4.9 — gradient axis handles (linear/radial fills only).
+      this.appendGradientHandles(frag, id, bbox);
     }
 
     this.selectionOverlay.appendChild(frag);

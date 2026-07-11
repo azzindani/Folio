@@ -28,6 +28,11 @@
   proportionally). Pure `editor/pin-constraints.ts`, applied on canvas resize.
 - **Project fonts in the editor** — an uploaded TTF/OTF now loads via the
   FontFace API so the live canvas matches PNG/PDF export.
+- **Gradient handles + pattern/image fill controls** — a selected gradient
+  layer shows draggable axis handles on the canvas (linear endpoints → angle,
+  radial center + radius); new Pattern and Image fill tabs in the properties
+  panel write the exact fill spec the MCP emits, so panel-authored fills
+  round-trip to export.
 
 ### Engine
 
