@@ -81,6 +81,7 @@
     "marked": "^18.0.2",
     "mermaid": "^11.14.0",
     "monaco-editor": "^0.55.1",
+    "polygon-clipping": "^0.15.7",
     "prismjs": "^1.30.0",
     "vega-embed": "^7.1.0"
   },

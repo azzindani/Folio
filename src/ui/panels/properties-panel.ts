@@ -311,6 +311,7 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
   private bindBooleanOps(layerA: Layer, layerB: Layer): void {
     // Determine top (higher z) and bottom (lower z) layers
     const [top, bottom] = layerA.z > layerB.z ? [layerA, layerB] : [layerB, layerA];
+    const BOOL: readonly string[] = ['union', 'subtract', 'intersect', 'exclude'];
 
     this.content.querySelectorAll<HTMLButtonElement>('.bool-op-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -322,9 +323,48 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
         } else if (op === 'release') {
           this.state.updateLayer(bottom.id, { clip_path_ref: undefined } as Partial<Layer>);
           this.state.updateLayer(top.id, { visible: true } as Partial<Layer>);
+        } else if (op && BOOL.includes(op)) {
+          void this.runPathBoolean(top, bottom, op as 'union' | 'subtract' | 'intersect' | 'exclude', btn);
         }
       });
     });
+  }
+
+  // WP-4.7 — merge two shapes into one NEW path layer (union/subtract/intersect/
+  // exclude). Subtract removes the TOP shape from the bottom (bottom − top). The
+  // source layers are removed; the result inherits the bottom layer's fill.
+  private async runPathBoolean(
+    top: Layer, bottom: Layer, op: 'union' | 'subtract' | 'intersect' | 'exclude', btn: HTMLButtonElement,
+  ): Promise<void> {
+    btn.disabled = true;
+    try {
+      const { booleanPathD } = await import('../../editor/boolean-ops');
+      // subtract = bottom − top, so pass (bottom, top); others are commutative.
+      const [a, b] = op === 'subtract' ? [bottom, top] : [top, bottom];
+      const d = await booleanPathD(a, b, op);
+      if (!d) {
+        const { showToast } = await import('../../utils/toast');
+        showToast('Boolean produced no shape (do the layers overlap?)', 'error');
+        return;
+      }
+      const src = bottom as unknown as { fill?: unknown; stroke?: unknown; z?: number; opacity?: number };
+      const result = {
+        id: `bool-${op}-${Math.max(top.z, bottom.z)}-${(bottom.id).slice(0, 6)}`,
+        type: 'path', d,
+        z: Math.max(top.z, bottom.z),
+        ...(src.fill !== undefined ? { fill: src.fill } : { fill: { type: 'solid', color: '#6c5ce7' } }),
+        ...(src.stroke !== undefined ? { stroke: src.stroke } : {}),
+        ...(src.opacity !== undefined ? { opacity: src.opacity } : {}),
+      } as unknown as Layer;
+      this.state.batch(() => {
+        this.state.removeLayer(top.id);
+        this.state.removeLayer(bottom.id);
+        this.state.addLayer(result);
+        this.state.set('selectedLayerIds', [result.id]);
+      });
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   private bindEffectsButtons(layer: Layer): void {
