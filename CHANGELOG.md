@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-07-11
+## [0.1.1] - 2026-07-11
 
 Editor power tools + export fidelity + engine reach. Second release: the visual
 editor gains pin constraints, on-canvas gradient handles, pattern/image fill
