@@ -99,9 +99,8 @@ z = stacking order (higher = front)
      "Inter"/"Public Sans" · LABELS "IBM Plex Mono"/"JetBrains Mono".
    • Tight headlines: lh:1.0–1.05, track:-1..-2. Mono labels: UPPERCASE, track:1.5.
    • ONE accent color, used 1–2× (a stat, a rule) — never on everything.
-   • CATALOG PACKS: for a ready hand-picked palette or font pairing, call
-     themes(op:packs, kind:"palette"|"type", search:"<vibe>") → an id → its hexes
-     / heading·body·mono families to drop straight into layer fills + fonts.
+   • CATALOG PACKS: themes(op:packs, kind:"palette"|"type", search:"<vibe>") → an
+     id → ready hexes / heading·body·mono families for layer fills + fonts.
    • ASYMMETRY + whitespace: left-anchor at x:80–100, leave a column empty. Don't
      center everything. Depth via a 2–4px RULE/line, NOT glows or soft shadows.
    • radius: 0 (editorial/print) OR 999 (pills) — avoid the 8–16 "templated" middle.
@@ -469,9 +468,8 @@ Pattern fill: any fillable layer → fill:{type:"pattern", pattern:"<name>", fg:
          checkerboard chevron zigzag triangles waves scallop plus cross scatter confetti
          halftone blueprint carbon houndstooth brick.  (e.g. a halftone or crosshatch
          field beats a navy→purple gradient for an editorial look.)
-         PRINT FINISHES (hand-printed grain): newsprint (fine dot screen) · riso
-         (coarse spot-print dots) · engraving (etched hairlines) · mezzotint
-         (aquatint stipple). Best low-opacity over a warm paper base.
+         PRINT FINISHES (hand-printed grain, best low-opacity over paper):
+         newsprint · riso · engraving · mezzotint.
 Image/texture fill: fill:{type:"image", src:"https://…", mode:"tile"|"cover"|"contain"}
 Effects (any layer, esp. images): effects:{duotone:{shadow:"#1B1B3A",highlight:"#F5C518"}, grain:0.4,
          posterize:4, saturate:1.2, blend_mode:"multiply", backdrop_blur:12}
