@@ -2,6 +2,62 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-11
+
+Know your version, keep your canvas. A deployed Folio can now tell you when a new
+release exists, and two finalize passes no longer damage a deliberately
+hand-built poster.
+
+### Added
+
+- **Upstream release detection** (`src/mcp/update-check.ts`) — the engine polls
+  the GitHub Releases API (daily, jittered, floored at 1h) and reports the result
+  on a new unauthenticated `GET /version`, plus `update_available` on `/health`:
+
+  ```json
+  {"current":"0.1.2","latest":"0.1.3","update_available":true,
+   "release_url":"https://github.com/azzindani/Folio/releases/tag/v0.1.3"}
+  ```
+
+  A monitor or a one-line cron can now alert on a stale deployment without
+  holding an API token. Polling rather than a webhook, because a release webhook
+  needs a public URL and a secret *per deployment* and most self-hosted installs
+  sit behind NAT with no inbound port. No telemetry (an anonymous, unauthenticated
+  GET — nothing about you is sent), fail-silent (offline or rate-limited keeps the
+  last good answer and never affects serving), opt out with `FOLIO_UPDATE_CHECK=0`,
+  point at a fork with `FOLIO_UPDATE_REPO`.
+- **Opt-in auto-apply** — `docker compose --profile autoupdate up -d` adds a
+  label-scoped Watchtower that can only ever touch the `folio` container. Kept
+  separate from detection and OFF by default: a server that pulls and restarts
+  *itself* can die mid-render, and it turns any registry compromise into code
+  execution on every deployment. Requires a registry image
+  (`FOLIO_IMAGE=ghcr.io/azzindani/folio:latest`). Posture table (manual / pinned /
+  unattended) in `docs/DEPLOYMENT.md` §4.5.
+
+### Fixed
+
+- **A deliberate canvas is no longer resized by a rescue pass.**
+  `trimTrailingDeadBand` honored a deliberate ratio only in *portrait*, so any
+  **landscape** canvas was trimmable. Composing a 3840×2160 (16:9) conference
+  poster over several `add_layers` calls looks top-anchored while the lower
+  columns are still on the way — the pass rewrote `document.height` 2160 → 368
+  (the height of the header band) and snapped the next column into the remnant.
+  New `isDeliberateCanvasRatio` recognizes standard ratios in **either**
+  orientation (16:9, 3:2, 4:3, ISO A, 16:10, 1:1, 4:5, 9:16 …) and gates the trim.
+- **Seal-time de-dupe no longer deletes a legitimate layer.**
+  `collapseDuplicateSections` keyed on text *characters* alone, at any depth and
+  with no proximity check, so a poster printing its repo URL small+teal in the
+  header and again big+white in the footer CTA had the CTA **silently deleted** —
+  leaving an empty text husk that then failed export with `"Text layer requires
+  content"`. The signature now carries each text's size/colour/weight (the same
+  words in a different visual role are not a duplicate), and a duplicate must
+  *overlap its twin horizontally* — thrash stacks down one column, while identical
+  blocks side by side are a deliberate multi-column layout (that one was latent:
+  identical cards in a grid would have been collapsed).
+- **The server knows its own version.** `/health` and the MCP `serverInfo` reported
+  a hardcoded `1.0.0` regardless of the package version; both now read
+  `package.json`.
+
 ## [0.1.1] - 2026-07-11
 
 Editor power tools + export fidelity + engine reach. Second release: the visual
