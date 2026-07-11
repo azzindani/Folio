@@ -63,6 +63,21 @@ describe('trimTrailingDeadBand — shrink a top-anchored poster on a non-standar
     expect(trimTrailingDeadBand(layers, 1080, 1350)).toBe(0);   // 4:5 → never trimmed
   });
 
+  // A LANDSCAPE standard ratio is just as deliberate as a portrait one. A 4K
+  // (16:9) conference poster composed over several add_layers calls looks
+  // top-anchored while its lower columns are still on the way — trimming it
+  // mid-compose collapsed document.height 2160 → the height of its header band.
+  it('respects a DELIBERATE landscape ratio (16:9 4K poster mid-compose)', () => {
+    const band = { id: 'band', type: 'rect', z: 1, x: 0, y: 0, width: 3840, height: 368, fill: { type: 'solid', color: '#10141A' } } as unknown as Layer;
+    const title = tx('title', 108, 210);        // only the header exists so far
+    expect(trimTrailingDeadBand([band, title], 3840, 2160)).toBe(0);
+  });
+
+  it('still trims a NON-standard landscape canvas (picked by accident)', () => {
+    const layers = [tx('t1', 60, 90), tx('t2', 200, 60)];   // content y60..260
+    expect(trimTrailingDeadBand(layers, 3000, 1400)).toBeGreaterThan(0);   // 2.14 — no standard ratio
+  });
+
   it('leaves a vertically-centered composition alone (large top gap)', () => {
     const t = tx('mid', 800, 200);              // centered on 1800 → topGap 800 > 15%
     expect(trimTrailingDeadBand([t], DW, DH)).toBe(0);

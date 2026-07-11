@@ -7,10 +7,21 @@
 // backdrops) never sees it.
 //
 // Signature = the normalized concatenation of every descendant text value.
-// Two top-level layers sharing a ≥24-char signature is thrash, not design —
-// deliberate repetition (column labels, background typography) is short or
-// differs somewhere. Keep the FIRST copy in flow (topmost), drop the rest,
-// and close each removed band by shifting everything below it up.
+// Two CONTAINER layers sharing a ≥24-char signature AND sitting on top of one
+// another is thrash, not design. Keep the FIRST copy in flow (topmost), drop the
+// rest, and close each removed band by shifting everything below it up.
+//
+// Two guards keep this off deliberate design (both regressions found in the
+// wild, on a 4K conference poster):
+//   • SAME PRESENTATION — a rebuild stamps copies identical in content AND
+//     style; a DESIGNER who repeats a string gives it a different role. That
+//     poster printed its repo URL small+teal in the header and again big+white
+//     in the footer CTA, and the CTA was silently deleted. So the signature
+//     carries each text's size/colour/weight, not just its characters.
+//   • MUST STACK — a duplicate is only thrash if it overlaps its twin
+//     horizontally (a model re-issuing the same block writes it down the SAME
+//     column). Two identical blocks side by side are a deliberate multi-column
+//     layout, not a rebuild artifact.
 import type { Layer } from '../schema/types';
 import { layerBBox, layerText } from './engine-finalize-geom';
 
@@ -21,20 +32,41 @@ function norm(s: string): string {
     .replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-/** Normalized text content of a layer INCLUDING all descendants, in order. */
-function textSignature(l: Layer): string {
+/** A text layer's visual role: size/colour/weight (shorthand or verbose style). */
+function styleKey(l: Layer): string {
+  const o = l as unknown as Record<string, unknown>;
+  const st = (o['style'] ?? {}) as Record<string, unknown>;
+  const pick = (...ks: string[]): string => {
+    for (const k of ks) {
+      const v = st[k] ?? o[k];
+      if (v !== undefined && v !== null && v !== '') return String(v);
+    }
+    return '';
+  };
+  return `${pick('font_size', 'size')}/${pick('color')}/${pick('weight', 'font_weight')}`;
+}
+
+/**
+ * Signature of a layer INCLUDING all descendants: each text's normalized value
+ * PLUS its visual role, so the same words in a different size/colour (a header
+ * URL vs a footer CTA) are NOT one block duplicated. `chars` counts only the
+ * real characters, so the style suffix can't inflate a short text past
+ * MIN_SIG_CHARS.
+ */
+function textSignature(l: Layer): { key: string; chars: number } {
   const parts: string[] = [];
+  let chars = 0;
   const visit = (x: Layer): void => {
     if (!x) return;
     if (x.type === 'text') {
       const v = norm(layerText(x));
-      if (v) parts.push(v);
+      if (v) { parts.push(`${v}|${styleKey(x)}`); chars += v.length; }
     }
     const kids = (x as unknown as Record<string, unknown>)['layers'];
     if (Array.isArray(kids)) for (const k of kids as Layer[]) visit(k);
   };
   visit(l);
-  return parts.join('\n');
+  return { key: parts.join('\n'), chars };
 }
 
 interface Node { arr: Layer[]; idx: number; layer: Layer; top: boolean }
@@ -75,14 +107,14 @@ export function collapseDuplicateSections(layers: Layer[], docW: number, docH: n
 
   const nodes = collectNodes(layers);
 
-  // Pass 1 — duplicated BLOCKS: same full text signature (≥24 chars) at any
-  // depth. Keep the copy highest in the flow; skip nodes nested inside an
+  // Pass 1 — duplicated BLOCKS: same text+style signature (≥24 real chars) at
+  // any depth. Keep the copy highest in the flow; skip nodes nested inside an
   // already-dropped ancestor (their array gets spliced with the ancestor).
   const bySig = new Map<string, Node[]>();
   for (const n of nodes) {
     const sig = textSignature(n.layer);
-    if (sig.length < MIN_SIG_CHARS) continue;
-    bySig.set(sig, [...(bySig.get(sig) ?? []), n]);
+    if (sig.chars < MIN_SIG_CHARS) continue;
+    bySig.set(sig.key, [...(bySig.get(sig.key) ?? []), n]);
   }
   const dropNodes: Node[] = [];
   const dropped = new Set<Layer>();
@@ -100,9 +132,17 @@ export function collapseDuplicateSections(layers: Layer[], docW: number, docH: n
     // text-bearing child — never drop the child of a KEPT parent.
     const kept = sorted[0];
     const keptKids = (kept.layer as unknown as Record<string, unknown>)['layers'];
+    const kb = layerBBox(kept.layer);
     for (const n of sorted.slice(1)) {
       if (Array.isArray(keptKids) && (keptKids as Layer[]).includes(n.layer)) continue;
       if (insideDropped(n)) continue;
+      // Thrash stacks in the SAME column; a twin sitting beside its original is a
+      // deliberate multi-column layout (identical cards in a grid, a repeated
+      // sidebar block) — leave it alone.
+      const b = layerBBox(n.layer);
+      const minW = Math.min(kb.r - kb.x, b.r - b.x);
+      const xOverlap = Math.min(kb.r, b.r) - Math.max(kb.x, b.x);
+      if (!(minW > 0 && xOverlap > 0.5 * minW)) continue;
       dropNodes.push(n); dropped.add(n.layer);
     }
   }

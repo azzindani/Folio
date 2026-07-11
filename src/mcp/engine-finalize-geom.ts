@@ -2,7 +2,7 @@
 // Content-preset stacking + duplicate collapse split out to engine-finalize-presets.ts (700-line budget).
 import type { DesignSpec, Layer } from '../schema/types';
 
-import { isDeliberatePosterRatio } from './poster-ratio';
+import { isDeliberateCanvasRatio } from './poster-ratio';
 import { rasterizeNonBarChartLayer } from './engine-finalize-charts';
 
 export function collectLayerIds(spec: DesignSpec): Set<string> {
@@ -136,11 +136,14 @@ export function normalizeTextAliases(incoming: Layer[]): number {
 // never counts as content (conservative: under-trim is benign, over-trim clips).
 // Returns the new height, or 0 if unchanged. Poster-only — never a fixed slide.
 export function trimTrailingDeadBand(layers: Layer[], docW: number, docH: number): number {
-  // Honor a DELIBERATE poster ratio (4:5, 9:16, 1:1, A4, …): a sparse 4:5 Instagram
-  // post must STAY 4:5, not become a strip — its whitespace is the format the user
-  // chose, not a dead band (honorPosterRatio's domain). Only rescue genuinely
-  // mismatched / non-standard canvases the model picked by accident.
-  if (isDeliberatePosterRatio(docW, docH)) return 0;
+  // Honor a DELIBERATE canvas ratio (4:5, 9:16, 1:1, A4, 16:9, 3:2, …) in EITHER
+  // orientation: a sparse 4:5 Instagram post must STAY 4:5, not become a strip —
+  // its whitespace is the format the user chose, not a dead band. The same holds
+  // LANDSCAPE: a 3840×2160 conference poster composed over several add_layers
+  // calls looks top-anchored while the lower columns are still on their way, and
+  // trimming it mid-compose collapsed the canvas to the height of its header.
+  // Only rescue genuinely mismatched / non-standard canvases picked by accident.
+  if (isDeliberateCanvasRatio(docW, docH)) return 0;
   let top = Infinity, bottom = -Infinity, found = false;
   const visit = (ls?: Layer[]): void => {
     for (const l of ls ?? []) {
