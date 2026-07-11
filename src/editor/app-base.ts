@@ -3,6 +3,7 @@
 // this with the constructor, init(), and design load/export/theme operations. Verbatim.
 import { StateManager } from './state';
 import { chromeIcon } from './chrome-icons';
+import { applyPinConstraints } from './pin-constraints';
 import { CanvasManager } from './canvas';
 import { PayloadEditor } from './payload-editor';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
@@ -620,7 +621,10 @@ export abstract class EditorAppBase {
       (spec) => {
         const design = this.state.get().design;
         if (!design) return;
-        this.state.set('design', { ...design, document: { ...design.document, ...spec } });
+        const from = { width: doc.width, height: doc.height };
+        const to = { width: spec.width, height: spec.height };
+        const layers = applyPinConstraints(design.layers ?? [], from, to);
+        this.state.set('design', { ...design, layers, document: { ...design.document, ...spec } });
       },
     );
   }
