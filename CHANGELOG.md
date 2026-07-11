@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-11
+
+Editor power tools + export fidelity + engine reach. Second release: the visual
+editor gains pin constraints, on-canvas gradient handles, pattern/image fill
+controls, path booleans, and SVG-import-to-layers; PPTX and the editor-button
+PDF now carry native selectable text; the MCP engine adds project fonts, catalog
+packs, photo treatments, model-facing asset intelligence, and print-finish
+patterns; plus asset round-trip + FAIL-cluster regression suites.
+
 ### Editor
 
 - **Editor rescue batch** — tablet 768–1023px layout fixed (overlay panels
