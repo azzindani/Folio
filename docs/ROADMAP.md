@@ -347,16 +347,20 @@ first-load flicker gone. New verified breakage promoted to the top.
 
 # P6 — TEST/INFRA HARDENING + RELEASE
 
-### WP-6.1 · Asset round-trip suite
-- Integration: upload (HTTP + MCP) → list → place → editor render (Playwright)
-  → PNG/PDF export assert image bytes present → delete → placeholder+note.
-  Add to CI integration job (runner has RAM for it).
+### WP-6.1 · Asset round-trip suite — SHIPPED 2026-07-11
+- `tests/integration/asset-roundtrip.test.ts` (real disk I/O, temp project):
+  add (MCP `asset_add`) → file+manifest → list → place in a design → export
+  resolver EMBEDS the bytes (data-URI, no silent blank) → delete → resolver now
+  emits a placeholder + a NOTE (never a silent blank); a remote URL likewise
+  explains the embed path. Runs in the CI integration job (`tests/**/*.test.ts`).
 
-### WP-6.2 · Scripted FAIL-cluster regression replay
-- Script (tools/harness-suite): replay stored failing payloads from past
-  clusters (blank-poster z-sort, carousel overprint, style-lift, multipage
-  heal, sections-spatial) straight against handlers — no model needed —
-  assert healed geometry. Nightly-able.
+### WP-6.2 · Scripted FAIL-cluster regression replay — SHIPPED 2026-07-11
+- `tests/integration/fail-cluster-replay.test.ts` — replays stored failing
+  payloads straight against the engine (no model), one guard per past cluster:
+  blank-poster z-sort NaN (a non-finite z never blanks the render), blank-design
+  dropped-style lift (canonical-shaped shorthand keeps its accent colour + font
+  through the legibility pass), carousel overprint decollide (same-origin texts
+  get distinct y after seal). Runs in the CI integration job.
 
 ### WP-6.3 · Release v0.2.0
 - Enrich `CHANGELOG.md` `[0.2.0]` section FIRST (release.yml builds the body
