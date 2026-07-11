@@ -5,6 +5,34 @@ import { exportToHTML } from '../../export/exporter';
 
 let paletteLayerCounter = 0;
 
+// WP-4.8 — pick an .svg file and drop its shapes in as editable layers.
+async function importSvgAsLayers(state: StateManager): Promise<void> {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.svg,image/svg+xml';
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const { svgToLayers } = await import('../../editor/svg-import');
+      const topZ = Math.max(0, ...state.getCurrentLayers().map(l => l.z ?? 0));
+      const { layers } = svgToLayers(text, topZ + 1);
+      const { showToast } = await import('../../utils/toast');
+      if (!layers.length) { showToast('No importable shapes found in the SVG', 'error'); return; }
+      state.batch(() => {
+        for (const l of layers) state.addLayer(l);
+        state.set('selectedLayerIds', layers.map(l => l.id));
+      });
+      showToast(`Imported ${layers.length} layer${layers.length > 1 ? 's' : ''} from SVG`, 'success');
+    } catch (e) {
+      const { showToast } = await import('../../utils/toast');
+      showToast(`SVG import failed: ${(e as Error).message}`, 'error');
+    }
+  };
+  input.click();
+}
+
 export interface Command {
   id: string;
   label: string;
@@ -66,6 +94,7 @@ export class CommandPalette {
         for (const id of state.get().selectedLayerIds) state.removeLayer(id);
         state.set('selectedLayerIds', []);
       }},
+      { id: 'import-svg-layers', label: 'Import SVG as Layers…', category: 'Layer', action: () => { void importSvgAsLayers(state); }},
 
       // Align
       { id: 'align-left', label: 'Align Left', category: 'Align', action: () => alignLeft(state) },

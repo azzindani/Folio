@@ -28,6 +28,10 @@
   proportionally). Pure `editor/pin-constraints.ts`, applied on canvas resize.
 - **Project fonts in the editor** — an uploaded TTF/OTF now loads via the
   FontFace API so the live canvas matches PNG/PDF export.
+- **SVG import → editable layers** — "Import SVG as Layers…" turns a Figma/
+  Illustrator SVG into native rect/ellipse/line/polygon/path/text layers, with
+  each element's transform baked into absolute coordinates so it round-trips to
+  export (`editor/svg-import.ts` + affine path transformer).
 - **Path booleans** — Union / Subtract / Intersect / Exclude two selected
   shapes into one new `path` layer (`editor/boolean-ops.ts`, bundled
   `polygon-clipping`, lazy-loaded — no runtime CDN). Renders identically in the
