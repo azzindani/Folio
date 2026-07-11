@@ -25,6 +25,7 @@ import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './en
 import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
+import { extractPptxTexts } from '../export/pptx-text-extract';
 
 import { assembleReportHTML } from '../export/html-assembler';
 
@@ -254,15 +255,31 @@ export function exportDesign(args: { design_path: string; format: string; output
         }).render().asPng());
       };
       const W = spec.document.width, H = spec.document.height;
+      // WP-5.1 — promote reproducible text to NATIVE editable/selectable boxes;
+      // hide those layers in the background raster so nothing is drawn twice.
+      const hideInLayers = (layers: Layer[], ids: Set<string>): Layer[] =>
+        layers.map(l => {
+          const g = l as { id?: string; type?: string; layers?: Layer[] };
+          if (g.type === 'group' && Array.isArray(g.layers)) return { ...l, layers: hideInLayers(g.layers, ids) } as Layer;
+          return g.id && ids.has(g.id) ? ({ ...l, visible: false } as Layer) : l;
+        });
+      const slideFor = (layers: Layer[], renderLayers: (ls: Layer[]) => string): PptxSlide => {
+        const { texts, hideIds } = extractPptxTexts(layers);
+        const bg = hideIds.size ? hideInLayers(layers, hideIds) : layers;
+        return { png: rasterize(renderLayers(bg)), width: W, height: H, texts };
+      };
+      const renderLs = (ls: Layer[]): string =>
+        renderToSVGString({ ...spec, layers: ls, pages: undefined } as DesignSpec, undefined, undefined, componentRegistry);
       const slides: PptxSlide[] = multiPage
-        ? pages.map(page => ({ png: rasterize(renderPageSVG(page)), width: W, height: H }))
-        : [{ png: rasterize(renderToSVGString(spec, undefined, undefined, componentRegistry)), width: W, height: H }];
+        ? pages.map(page => slideFor(page.layers ?? [], renderLs))
+        : [slideFor(spec.layers ?? [], renderLs)];
+      const totalTexts = slides.reduce((s, sl) => s + (sl.texts?.length ?? 0), 0);
       const pptx = buildPptx(slides, spec.meta.name || 'Folio Deck');
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, pptx);
-      progress.push(pOk('PPTX written', `${path.basename(outPath)} (${pptx.length} bytes · ${slides.length} slide(s) @ ${scale}×)`));
+      progress.push(pOk('PPTX written', `${path.basename(outPath)} (${pptx.length} bytes · ${slides.length} slide(s) @ ${scale}× · ${totalTexts} editable text box(es))`));
       const notes = [...assetNotes, ...(missingFonts.size ? [`Fonts not bundled for raster export — slides used a fallback (they render correctly in the editor): ${[...missingFonts].join(', ')}.`] : []),
-        'PPTX slides are full-bleed images (pixel-faithful, not editable text). For editable text use the editor; for selectable text export format="pdf".'];
+        `PPTX slides = a pixel-faithful background image + ${totalTexts} NATIVE text box(es) you can select/edit in PowerPoint/Impress (solid-hex text with no rotation/effect is promoted; the rest stays baked in the image).`];
       const context = buildContext(op, `PPTX exported for "${spec.meta.name}" — ${slides.length} slide(s)`, [{ type: 'pptx', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
       return okResult(op, { format: 'pptx', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pptx.length, slides: slides.length, scale, notes, progress, context, handover });
