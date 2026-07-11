@@ -314,12 +314,21 @@ first-load flicker gone. New verified breakage promoted to the top.
 
 # P5 — EXPORT POLISH (nice-to-have)
 
-### WP-5.1 · PPTX editable text
-- Replace raster-only slides with raster background + native text boxes for
-  top-level text layers (positions/fonts from the design). Keep raster
-  fallback for effect-heavy layers. **Files**: `src/export/pptx-export.ts`,
-  `src/mcp/engine-export-tools.ts`. **Accept**: text selectable in
-  LibreOffice Impress; layout visually unchanged.
+### WP-5.1 · PPTX editable text — SHIPPED 2026-07-11
+- Slides = pixel-faithful background image + NATIVE `<p:sp>` text boxes
+  (editable + selectable in PowerPoint/Impress). `pptx-text-extract.ts` walks
+  the layer tree (recurses groups) and promotes text whose appearance is
+  reproducible (solid-hex colour, no rotation/effect/curve, no transformed
+  ancestor); promoted layers are hidden in the raster so nothing draws twice —
+  everything else stays baked in the image (the "keep raster fallback" rule),
+  so the slide is always visually unchanged. Multi-paragraph, bold/italic,
+  align/valign, font family, text-transform, and px→EMU/pt conversion handled.
+- **Files**: `src/export/pptx-export.ts` (+ PptxText/txBox XML),
+  `src/export/pptx-text-extract.ts` (NEW), `src/mcp/engine-export-tools.ts`.
+- **Accept**: met — real export produces a valid PPTX (unzip -t clean) whose
+  slide holds the background `<p:pic>` + a `<p:sp>` txBox with the design's
+  text at the right EMU position/size/weight/colour; token-coloured text stays
+  in the raster. (No LibreOffice in CI to auto-open; OOXML is standard txBox.)
 
 ### WP-5.2 · Editor-button vector PDF
 - Browser path lacks the bundled TTFs. Either fetch font subset from the

@@ -21,12 +21,29 @@ const RT = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 const EMU_PER_PX = 9525;   // 914400 EMU/inch ÷ 96 px/inch
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 
+/** A native (editable, selectable) text box overlaid on the slide image. Coords
+ *  are source px; the background raster is rendered WITHOUT these layers so the
+ *  text isn't drawn twice. */
+export interface PptxText {
+  text: string;              // may contain \n for multiple paragraphs
+  x: number; y: number; w: number; h: number;   // px
+  sizePt: number;            // font size in points
+  color: string;             // #RRGGBB
+  bold?: boolean;
+  italic?: boolean;
+  align?: 'l' | 'ctr' | 'r';
+  valign?: 't' | 'ctr' | 'b';
+  font?: string;
+}
+
 export interface PptxSlide {
-  /** PNG bytes for the full-slide image. */
+  /** PNG bytes for the full-slide image (background — excludes any `texts`). */
   png: Buffer;
   /** Source page pixel dimensions (used for the slide size + aspect). */
   width: number;
   height: number;
+  /** Native text boxes drawn over the image (WP-5.1 — editable/selectable). */
+  texts?: PptxText[];
 }
 
 // ── STORED zip (method 0) — the only container a .pptx needs ──────────────────
@@ -211,7 +228,35 @@ function theme(): string {
     `</a:theme>`;
 }
 
-function slideXml(cx: number, cy: number, name: string): string {
+function hex6(c: string): string {
+  const m = /^#?([0-9a-fA-F]{6})/.exec(c.trim());
+  if (m) return m[1].toUpperCase();
+  const m3 = /^#?([0-9a-fA-F]{3})$/.exec(c.trim());
+  if (m3) return m3[1].split('').map(ch => ch + ch).join('').toUpperCase();
+  return '000000';
+}
+
+// A native text box (<p:sp> txBox) — editable + selectable in PowerPoint/Impress.
+function textShapeXml(t: PptxText, id: number): string {
+  const off = (v: number): number => Math.round(v * EMU_PER_PX);
+  const sz = Math.max(100, Math.round(t.sizePt * 100));   // OOXML: pt × 100
+  const rPr = `<a:rPr lang="en-US" sz="${sz}" b="${t.bold ? 1 : 0}" i="${t.italic ? 1 : 0}" dirty="0">` +
+    `<a:solidFill><a:srgbClr val="${hex6(t.color)}"/></a:solidFill>` +
+    (t.font ? `<a:latin typeface="${esc(t.font)}"/>` : '') + `</a:rPr>`;
+  const paras = t.text.split('\n').map(line => {
+    const run = line ? `<a:r>${rPr}<a:t>${esc(line)}</a:t></a:r>` : `<a:endParaRPr sz="${sz}"/>`;
+    return `<a:p><a:pPr algn="${t.align ?? 'l'}"/>${run}</a:p>`;
+  }).join('');
+  return `<p:sp>` +
+    `<p:nvSpPr><p:cNvPr id="${id}" name="Text ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>` +
+    `<p:spPr><a:xfrm><a:off x="${off(t.x)}" y="${off(t.y)}"/><a:ext cx="${off(t.w)}" cy="${off(t.h)}"/></a:xfrm>` +
+    `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>` +
+    `<p:txBody><a:bodyPr wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="${t.valign ?? 't'}"/><a:lstStyle/>${paras}</p:txBody>` +
+    `</p:sp>`;
+}
+
+function slideXml(cx: number, cy: number, name: string, texts: PptxText[] = []): string {
+  const textShapes = texts.map((t, i) => textShapeXml(t, 10 + i)).join('');
   return XML + `<p:sld xmlns:a="${A}" xmlns:r="${R}" xmlns:p="${P}">` +
     `<p:cSld><p:spTree>${EMPTY_TREE}` +
     `<p:pic>` +
@@ -219,6 +264,7 @@ function slideXml(cx: number, cy: number, name: string): string {
     `<p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
     `<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>` +
     `</p:pic>` +
+    textShapes +
     `</p:spTree></p:cSld>` +
     `<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>` +
     `</p:sld>`;
@@ -254,7 +300,7 @@ export function buildPptx(slides: PptxSlide[], title = 'Folio Deck'): Buffer {
     { name: 'ppt/slideLayouts/_rels/slideLayout1.xml.rels', data: s(slideLayoutRels()) },
   ];
   slides.forEach((sl, i) => {
-    entries.push({ name: `ppt/slides/slide${i + 1}.xml`, data: s(slideXml(cx, cy, `${title} ${i + 1}`)) });
+    entries.push({ name: `ppt/slides/slide${i + 1}.xml`, data: s(slideXml(cx, cy, `${title} ${i + 1}`, sl.texts)) });
     entries.push({ name: `ppt/slides/_rels/slide${i + 1}.xml.rels`, data: s(slideRels(i)) });
     entries.push({ name: `ppt/media/image${i + 1}.png`, data: sl.png });
   });

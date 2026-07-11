@@ -28,6 +28,11 @@
   proportionally). Pure `editor/pin-constraints.ts`, applied on canvas resize.
 - **Project fonts in the editor** — an uploaded TTF/OTF now loads via the
   FontFace API so the live canvas matches PNG/PDF export.
+- **PPTX editable text** — exported slides now carry native, selectable/editable
+  text boxes over the pixel-faithful background image (was image-only). Text with
+  a solid-hex colour and no rotation/effect is promoted and hidden from the
+  raster so nothing draws twice; effect-heavy or token-coloured text stays baked
+  in — the slide always looks identical.
 - **SVG import → editable layers** — "Import SVG as Layers…" turns a Figma/
   Illustrator SVG into native rect/ellipse/line/polygon/path/text layers, with
   each element's transform baked into absolute coordinates so it round-trips to
