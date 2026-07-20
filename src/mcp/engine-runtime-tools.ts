@@ -227,8 +227,18 @@ export function inspectTimeline(args: {
     layers = spec.layers ?? [];
   }
 
+  // Flatten before building tracks: buildTimelineTracks takes a flat array, so
+  // a timeline built from the top level alone would report zero tracks for any
+  // design whose content sits inside a group — which is every carousel page
+  // this engine writes, and now every layer op:keyframe can reach.
+  const flatten = (ls: Layer[]): Layer[] =>
+    ls.flatMap(l => {
+      const children = (l as Layer & { layers?: Layer[] }).layers;
+      return Array.isArray(children) ? [l, ...flatten(children)] : [l];
+    });
+
   const tracks = buildTimelineTracks(
-    layers.map(l => ({
+    flatten(layers).map(l => ({
       id: l.id,
       label: (l as { label?: string }).label,
       animation: l.animation,
@@ -252,12 +262,26 @@ export function addKeyframeToLayer(args: {
   const bak = snapshot(dPath);
   const spec = readYAML<DesignSpec>(dPath);
 
-  // Search top-level layers first, then each page
+  // Search top-level layers first, then each page — descending into groups.
+  //
+  // The walk has to recurse: every carousel page this engine authors is ONE
+  // locked group wrapping the whole composition, so a top-level-only search
+  // found nothing on any MCP-built deck and reported "Layer not found" for ids
+  // that were plainly there. Nested groups are legal at any depth, so recurse
+  // rather than special-casing one level.
   let found = false;
   const applyToLayer = (layer: Layer): Layer => {
-    if (layer.id !== args.layer_id) return layer;
-    found = true;
-    return { ...layer, animation: addKeyframe(layer.animation ?? {}, args.keyframe) };
+    if (found) return layer;
+    if (layer.id === args.layer_id) {
+      found = true;
+      return { ...layer, animation: addKeyframe(layer.animation ?? {}, args.keyframe) };
+    }
+    const children = (layer as Layer & { layers?: Layer[] }).layers;
+    if (Array.isArray(children)) {
+      const next = children.map(applyToLayer);
+      if (found) return { ...layer, layers: next } as Layer;
+    }
+    return layer;
   };
 
   if (spec.layers) {
@@ -272,7 +296,13 @@ export function addKeyframeToLayer(args: {
     }
   }
 
-  if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Check layer_id.');
+  if (!found) {
+    return errResult(
+      op,
+      `Layer not found: ${args.layer_id}`,
+      'Run manage_design(op:inspect) to list the real layer ids, including those inside groups.',
+    );
+  }
 
   writeYAML(dPath, spec);
   return okResult(op, { layer_id: args.layer_id, keyframe: args.keyframe }, bak);
