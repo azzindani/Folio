@@ -20,6 +20,9 @@ import { getClientScript } from '../export/remote-server';
 import { tryFfmpeg } from '../export/animation-export';
 import { buildAnimatedSVG, wrapAnimatedHTML } from '../export/svg-animate';
 import { renderToSVGString } from './engine/svg-export';
+import { resvgFontOption } from './engine/fonts';
+import { encodeGIF, type GifFrame } from '../export/gif-encode';
+import { specAt, frameTimes, animationDuration } from '../export/gif-frames';
 
 /** True when Puppeteer can actually be loaded — the raster routes need it to capture frames. */
 function tryPuppeteer(): boolean {
@@ -369,6 +372,58 @@ export function exportAnimation(args: {
     });
   }
 
+  // ── GIF: rendered and encoded in-process, no ffmpeg ────────
+  if (type === 'gif') {
+    const pageIndex = pageIndexFor(spec, args.page_id);
+    const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
+    const runMs = args.duration ?? animationDuration(layers);
+    if (runMs <= 0) {
+      return errResult(
+        op,
+        'Nothing in this design is animated, so a GIF would be a single still frame.',
+        'Add motion with animation(op:motion) or animation(op:keyframe) first, ' +
+        'or use export_design(format:"png") if a still is what you want.',
+      );
+    }
+
+    const fps = args.fps ?? 12;
+    const times = frameTimes(runMs, fps);
+    const frames: GifFrame[] = [];
+    try {
+      const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
+      for (const t of times) {
+        const svg = renderToSVGString(withActivePage(specAt(spec, pageIndex, t), 0));
+        const rendered = new Resvg(svg, { font: resvgFontOption(path.dirname(path.dirname(dPath))) }).render();
+        frames.push({
+          pixels: new Uint8ClampedArray(rendered.pixels),
+          delayMs: Math.round(1000 / fps),
+        });
+      }
+    } catch (e) {
+      return errResult(op, `Frame rendering failed: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.');
+    }
+
+    const gif = encodeGIF(frames, {
+      width: spec.document.width,
+      height: spec.document.height,
+      loopCount: 0,
+    });
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, gif);
+
+    return okResult(op, {
+      design_path: dPath,
+      output_path: outputPath,
+      type,
+      frames: frames.length,
+      fps,
+      duration: runMs,
+      bytes: gif.length,
+      note: 'Encoded in-process — no ffmpeg or Puppeteer involved. ' +
+        'For anywhere that renders SVG, type:"svg" is smaller and stays sharp at any size.',
+    });
+  }
+
   // ── Raster routes: honest about what the host can actually do ──
   const hasFfmpeg = tryFfmpeg();
   const hasPuppeteer = tryPuppeteer();
@@ -398,7 +453,7 @@ export function exportAnimation(args: {
     output_path: outputPath,
     source_html: htmlPath,
     type,
-    fps: args.fps ?? (type === 'gif' ? 10 : 30),
+    fps: args.fps ?? 30, // only mp4/webm reach here; gif is encoded in-process above
     duration: args.duration ?? 3000,
     ffmpeg_available: hasFfmpeg,
     next_action: 'Encode the captured HTML with exportToAnimation() from src/export/animation-export.ts.',
