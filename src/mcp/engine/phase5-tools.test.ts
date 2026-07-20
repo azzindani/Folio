@@ -84,7 +84,10 @@ describe('exportAnimation', () => {
       return true;
     })();
 
-    for (const type of ['gif', 'mp4', 'webm'] as const) {
+    // gif is no longer in this group: it is rendered and LZW-encoded in-process,
+    // so it works on a host with neither binary. Only the video formats still
+    // need Puppeteer to capture frames and ffmpeg to encode them.
+    for (const type of ['mp4', 'webm'] as const) {
       it(`type:"${type}" refuses clearly when the host lacks the binaries`, () => {
         if (hasDeps) return; // the refusal path is unreachable here
         const dPath = makePresentationDesign();
@@ -98,9 +101,16 @@ describe('exportAnimation', () => {
     it('reports fps defaults when the host can encode', () => {
       if (!hasDeps) return;
       const dPath = makePresentationDesign();
-      expect(exportAnimation({ design_path: dPath, type: 'gif' })['fps']).toBe(10);
       expect(exportAnimation({ design_path: dPath, type: 'mp4' })['fps']).toBe(30);
-      expect(exportAnimation({ design_path: dPath, type: 'gif', fps: 15 })['fps']).toBe(15);
+    });
+  });
+
+  describe('gif', () => {
+    it('says a still design has nothing to animate rather than writing one frame', () => {
+      const r = exportAnimation({ design_path: makePresentationDesign(), type: 'gif' });
+      expect(r.success).toBe(false);
+      expect(String(r['error'])).toMatch(/nothing is animated|Nothing in this design is animated/i);
+      expect(String(r['hint'])).toContain('animation(op:motion)');
     });
   });
 });
