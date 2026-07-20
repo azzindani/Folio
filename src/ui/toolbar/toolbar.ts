@@ -68,6 +68,8 @@ export class ToolbarManager {
         <div class="mode-toggle">
           <button class="mode-btn active" data-mode="visual">Visual</button>
           <button class="mode-btn" data-mode="payload">Payload</button>
+          <button class="mode-btn" data-mode="preview"
+            title="Live interactive preview — runs the real exported report">Preview</button>
         </div>
       </div>
 
@@ -124,7 +126,7 @@ export class ToolbarManager {
     const target = e.target as HTMLElement;
 
     if (target.classList.contains('mode-btn')) {
-      const mode = target.dataset.mode as 'visual' | 'payload';
+      const mode = target.dataset.mode as 'visual' | 'payload' | 'preview';
       this.state.set('mode', mode, false);
       return;
     }

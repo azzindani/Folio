@@ -41,6 +41,21 @@ describe('interactive components — export', () => {
     expect(h).toContain('data-folio-action="close_modal:m1"');
   });
 
+  it('rich_text renders text authored as `body`, not just `content`', () => {
+    // AccordionItem calls this field `body`, so authors reach for `body` here
+    // too. Before the alias it rendered an empty div and said nothing.
+    const h = html([{ id: 'r', type: 'rich_text', z: 0, body: 'Vite dominates the **build**' } as unknown as Layer]);
+    expect(h).toContain('Vite dominates the');
+    expect(h).toContain('<strong>build</strong>');
+  });
+
+  it('accordion renders an item authored as `content`', () => {
+    const h = html([{ id: 'a', type: 'accordion', z: 0, items: [
+      { title: 'Q', content: 'the answer' },
+    ] } as unknown as Layer]);
+    expect(h).toContain('the answer');
+  });
+
   it('tabs render a tab bar + panels that recurse into child layers', () => {
     const h = html([{ id: 't', type: 'tabs', z: 0, tabs: [
       { label: 'One', layers: [{ id: 'k', type: 'kpi_card', z: 0, label: 'X', value: 1 }] },
