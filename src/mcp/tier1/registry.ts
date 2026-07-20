@@ -13,8 +13,8 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         section: {
           type: 'string',
           enum: ['quick_ref', 'shorthand', 'layers', 'workflow', 'reference', 'assets',
-            'craft', 'anti_slop', 'color', 'type', 'ux_laws', 'a11y'],
-          description: 'Guide section to load (default: quick_ref). assets = photos/logos/fonts in designs (asset_add/asset_list workflow). craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks.',
+            'craft', 'anti_slop', 'color', 'type', 'ux_laws', 'a11y', 'marks'],
+          description: 'Guide section to load (default: quick_ref). assets = photos/logos/fonts in designs (asset_add/asset_list workflow). craft/anti_slop/color/type/ux_laws/a11y = universal design-craft rulebooks. marks = identity/logo construction (optical centring, overshoot, small-size survival, lockups, clearspace) — the engine measures a mark you draw, it never generates one.',
           default: 'quick_ref',
         },
       },

@@ -16,6 +16,7 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import type { TemplateSlot } from '../schema/template';
 
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
+import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 
 import { analyzeLayers, type Finding } from './engine/diagnose';
 import { buildEditorLink } from './engine/editor-link';
@@ -404,6 +405,23 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   // Image audit — unresolvable srcs (would blank in exports) + distortion/upscale.
   findings.push(...auditImageAssets(spec, dPath, args.project_path));
 
+  // Mark geometry — only for designs shaped like an identity mark. Measuring a
+  // nine-page carousel at six raster sizes would cost seconds and say nothing.
+  let mark: MarkAudit | undefined;
+  if (!args.page_id && looksLikeMark(spec)) {
+    try {
+      const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
+      const svg = renderToSVGString(spec);
+      const rendered = new Resvg(svg, { font: resvgFontOption(path.dirname(path.dirname(dPath))) }).render();
+      mark = auditMark({
+        width: rendered.width,
+        height: rendered.height,
+        pixels: new Uint8ClampedArray(rendered.pixels),
+      });
+      for (const note of mark.notes) progress.push(pInfo('Mark', note));
+    } catch { /* measurement is best-effort; the rest of the diagnosis still stands */ }
+  }
+
   const errors = findings.filter(f => f.severity === 'error');
   const warnings = findings.filter(f => f.severity === 'warning');
   const suggestions = findings.filter(f => f.severity === 'suggestion');
@@ -415,7 +433,9 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   return okResult(op, {
     ok: errors.length === 0, summary,
     counts: { errors: errors.length, warnings: warnings.length, suggestions: suggestions.length },
-    findings: findings.slice(0, 40), progress, context,
+    findings: findings.slice(0, 40),
+    ...(mark ? { mark } : {}),
+    progress, context,
   });
 }
 

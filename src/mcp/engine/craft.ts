@@ -1,4 +1,5 @@
 // Craft knowledge — brand-agnostic, universal design rules the model carries
+import { guideMarks, MARKS_SECTIONS } from './guide-marks';
 // BEFORE it designs (vs design-lint, which catches violations AFTER). Adapted
 // for Folio's spec model: tokens are `$token`, fills/type live in the YAML, the
 // look is the MODEL's call — these are the universal rules a competent designer
@@ -184,12 +185,13 @@ These are gates, not goals — an interactive report that fails them is broken, 
 /** Slugs that map onto a craft rulebook (excludes the `craft` index itself). */
 export const CRAFT_MODULES = ['anti_slop', 'color', 'type', 'ux_laws', 'a11y'] as const;
 
-/** All craft section slugs (index + modules), for the guide section enum. */
-export const CRAFT_SECTIONS = Object.keys(CRAFT);
+/** All craft section slugs, plus the mark-geometry section that rides this
+ *  resolver so guide.ts stays inside its 700-line budget. */
+export const CRAFT_SECTIONS = [...Object.keys(CRAFT), ...MARKS_SECTIONS];
 
-/** A craft rulebook by slug, or null if unknown. */
+/** A craft rulebook (or the marks guide) by slug, or null if unknown. */
 export function craft(slug: string): string | null {
-  return CRAFT[slug] ?? null;
+  return CRAFT[slug] ?? guideMarks(slug);
 }
 
 /**
