@@ -147,3 +147,127 @@ describe('addKeyframeToLayer', () => {
     expect(r['keyframe']).toEqual(kf);
   });
 });
+
+describe('addKeyframeToLayer — nested groups', () => {
+  function writeGroupedDesign(dPath: string): void {
+    // The shape every MCP-authored carousel page has: one locked group wrapping
+    // the whole composition, with a nested group inside it.
+    const yaml = [
+      '_protocol: "design/v1"',
+      'meta:',
+      '  id: "g1"',
+      '  name: "Grouped"',
+      '  type: "poster"',
+      '  created: ""',
+      '  modified: ""',
+      'document:',
+      '  width: 1080',
+      '  height: 1080',
+      '  unit: "px"',
+      'layers:',
+      '  - id: page_group',
+      '    type: group',
+      '    locked: true',
+      '    x: 0',
+      '    y: 0',
+      '    width: 1080',
+      '    height: 1080',
+      '    layers:',
+      '      - id: headline',
+      '        type: text',
+      '        text: "Hi"',
+      '        x: 100',
+      '        y: 100',
+      '        width: 400',
+      '        height: 60',
+      '      - id: inner_group',
+      '        type: group',
+      '        x: 0',
+      '        y: 0',
+      '        width: 500',
+      '        height: 500',
+      '        layers:',
+      '          - id: deep_dot',
+      '            type: ellipse',
+      '            x: 10',
+      '            y: 10',
+      '            width: 40',
+      '            height: 40',
+    ].join('\n');
+    fs.writeFileSync(dPath, yaml);
+  }
+
+  it('reaches a layer inside a locked group', () => {
+    const dPath = path.join(tmpDir, 'grouped.design.yaml');
+    writeGroupedDesign(dPath);
+    const r = addKeyframeToLayer({ design_path: dPath, layer_id: 'headline', keyframe: { t: 0, opacity: 0 } });
+    expect(r.success).toBe(true);
+    expect(fs.readFileSync(dPath, 'utf-8')).toContain('animation');
+  });
+
+  it('reaches a layer nested two groups deep', () => {
+    const dPath = path.join(tmpDir, 'grouped2.design.yaml');
+    writeGroupedDesign(dPath);
+    const r = addKeyframeToLayer({ design_path: dPath, layer_id: 'deep_dot', keyframe: { t: 500, scale: 1.2 } });
+    expect(r.success).toBe(true);
+    const out = fs.readFileSync(dPath, 'utf-8');
+    expect(out).toContain('deep_dot');
+    expect(out).toContain('animation');
+  });
+
+  it('still animates the group itself when the group is the target', () => {
+    const dPath = path.join(tmpDir, 'grouped3.design.yaml');
+    writeGroupedDesign(dPath);
+    const r = addKeyframeToLayer({ design_path: dPath, layer_id: 'page_group', keyframe: { t: 0, opacity: 1 } });
+    expect(r.success).toBe(true);
+  });
+
+  it('reports a genuinely missing id, and says how to find the real one', () => {
+    const dPath = path.join(tmpDir, 'grouped4.design.yaml');
+    writeGroupedDesign(dPath);
+    const r = addKeyframeToLayer({ design_path: dPath, layer_id: 'nope', keyframe: { t: 0, opacity: 1 } });
+    expect(r.success).toBe(false);
+    expect(String(r['hint'])).toContain('inspect');
+  });
+
+  it('leaves sibling layers untouched', () => {
+    const dPath = path.join(tmpDir, 'grouped5.design.yaml');
+    writeGroupedDesign(dPath);
+    addKeyframeToLayer({ design_path: dPath, layer_id: 'deep_dot', keyframe: { t: 0, opacity: 0 } });
+    const out = fs.readFileSync(dPath, 'utf-8');
+    // Exactly one layer gained an animation block.
+    expect((out.match(/animation:/g) ?? []).length).toBe(1);
+  });
+});
+
+describe('inspectTimeline — nested groups', () => {
+  it('shows a track for a keyframed layer inside a group', () => {
+    const dPath = path.join(tmpDir, 'tl-nested.design.yaml');
+    fs.writeFileSync(dPath, [
+      '_protocol: "design/v1"',
+      'meta: { id: "t1", name: "T", type: "poster", created: "", modified: "" }',
+      'document: { width: 100, height: 100, unit: "px" }',
+      'layers:',
+      '  - id: grp',
+      '    type: group',
+      '    x: 0',
+      '    y: 0',
+      '    width: 100',
+      '    height: 100',
+      '    layers:',
+      '      - id: kid',
+      '        type: rect',
+      '        x: 0',
+      '        y: 0',
+      '        width: 10',
+      '        height: 10',
+    ].join('\n'));
+    addKeyframeToLayer({ design_path: dPath, layer_id: 'kid', keyframe: { t: 0, opacity: 0 } });
+    addKeyframeToLayer({ design_path: dPath, layer_id: 'kid', keyframe: { t: 400, opacity: 1 } });
+
+    const r = inspectTimeline({ design_path: dPath });
+    expect(r.success).toBe(true);
+    expect(r['track_count']).toBe(1);
+    expect(JSON.stringify(r['tracks'])).toContain('kid');
+  });
+});
