@@ -54,6 +54,18 @@ Motion you can actually get out, and a print PDF that is the size you asked for.
   browser-bound to the editor panel and unreachable from MCP. No new tool and
   no new op — the operation is still "put this image in the project".
 
+- **Mark geometry in `diagnose_design`** — for a design shaped like an identity
+  mark (single page, roughly square, <=800px, <=8 layers) the result carries a
+  `mark` block: optical centre (centroid of ink vs bounding box, with the
+  direction to nudge), scale survival at 16/24/32/64/128/512px, contrast against
+  white/black/mid-grey, and a clearspace rule in the mark's own units. Plus
+  `get_engine_guide(section:"marks")`. The engine MEASURES a mark you drew; it
+  never generates one — preset marks are why AI logos all look alike.
+
+- **`animation(op:export, type:"gif")` works with no ffmpeg** — frames rendered
+  through resvg, median-cut quantized, LZW-encoded in-process. Verified on the
+  container: 1080x1080, 14 frames, 303 KB, decoded frame-by-frame with Pillow.
+
 - **Pure-TypeScript PNG codec** (`src/utils/png-codec.ts`) and
   **`bg-remove-core.ts`** — no `canvas`, no `sharp`, nothing needing a native
   build in a `bun --smol` container. The editor and the server now run one
@@ -70,6 +82,23 @@ Motion you can actually get out, and a print PDF that is the size you asked for.
   file, and WP-1.1/1.2/1.3/3.2 still read as open months after shipping.
 
 ### Fixed
+
+- **Animated SVG/HTML/GIF exports shipped with missing images.** These routes
+  called the renderer directly and skipped the asset resolution `export_design`
+  has always done, so the file went out carrying `src="assets/images/logo.png"` —
+  a path that resolves to nothing once it leaves the project directory. The
+  export reported success and the image was simply absent.
+
+- **A GIF of an `alternate` loop snapped on repeat.** Only the outward leg was
+  exported, so a pulse ended mid-swell — a visible jolt each cycle the CSS
+  version never has.
+
+- **Mark legibility was judged on colour variety**, so a bold one-colour
+  silhouette — the mark most likely to survive anywhere — was reported
+  illegible while busy marks passed. Rebased on coverage retention.
+
+- **Clearspace read a solid disc's diameter as a stroke width**, advising 696px
+  of padding for a 400px mark on a 512px canvas.
 
 - **`animation(op:keyframe)` could not reach any layer in a carousel.** Every
   page this engine authors is one locked group, and the walk was top-level
