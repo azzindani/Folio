@@ -56,7 +56,9 @@ surface renders them. Storage contract: files under `<project>/assets/
 {images,icons,fonts}/`, manifest in `project.yaml` `assets:` (regenerable by
 dir rescan — files are truth). No base64 in `.design.yaml`.
 
-### WP-1.1 · HTTP ingest + editor drag-drop rerouting
+### ~~WP-1.1~~ · HTTP ingest + editor drag-drop rerouting
+
+**SHIPPED (7376445 · 1ff5e7e · 43907f3) — per GAP-ANALYSIS.md §1.**
 - **Files**: `src/editor/static-server.ts` (routes; note: server file, no dist
   rebuild), `src/editor/image-import-handler.ts` + `src/editor/auto-save.ts`
   (client → dist rebuild), new `src/mcp/engine/assets.ts` (shared fs helpers:
@@ -76,7 +78,9 @@ dir rescan — files are truth). No base64 in `.design.yaml`.
 - **Test**: unit for assets.ts; integration route tests next to
   static-server tests; Playwright drop test at desktop width.
 
-### WP-1.2 · MCP asset ops (manage_design) + metadata
+### ~~WP-1.2~~ · MCP asset ops (manage_design) + metadata
+
+**SHIPPED — plus v0.1.3 `process:{remove_bg,fit}` on asset_add.**
 - **Files**: `src/mcp/dispatch.ts` (`dispatchManageDesign`),
   `src/mcp/tier1/registry.ts` (manage_design schema: add ops
   `asset_add|asset_list|asset_delete`), `src/mcp/engine/assets.ts`,
@@ -95,7 +99,9 @@ dir rescan — files are truth). No base64 in `.design.yaml`.
   trimming; reconnect caveat: clients cache tools/list — reconnect to see
   schema changes.
 
-### WP-1.3 · Uniform src resolution (editor + resvg + PDF + HTML)
+### ~~WP-1.3~~ · Uniform src resolution (editor + resvg + PDF + HTML)
+
+**SHIPPED — WP-6.1 round-trip test asserts the embed.**
 - **Files**: `src/renderer/render-entry.ts` or a new
   `src/renderer/asset-resolver.ts` (ONE resolver, injected context),
   `src/editor/canvas.ts` (base URL context), `src/mcp/engine/svg-export.ts` +
@@ -240,7 +246,9 @@ less (ground rule 2).
 - **Accept**: ≥90% sealed, ≥18/20 strong, 0 blank posters, published sizing
   row for E4B verified in MCP.md §3.
 
-### WP-3.2 · Locked-group children inspectable
+### ~~WP-3.2~~ · Locked-group children inspectable
+
+**SHIPPED (7376445) — and v0.1.3 made op:keyframe/op:timeline recurse into groups too.**
 - `manage_design {op:"inspect"}` + `edit_layer {op:"update"}`: recurse into
   `locked` groups read-only (inspect shows children + lock flag); update on a
   locked child fails with a hint naming the unlock path (patch_design on the

@@ -1,5 +1,10 @@
 # UX Roadmap — Folio
 
+> **Verify before roadmapping.** Rows in this file have gone stale more than once —
+> WP-4.x items shipped 2026-07-10/11 were never struck through, and 12.5 claimed
+> GIF/MP4/WebM export worked throughout a period when the tool wrote no file at
+> all. Check the behaviour on the live container before treating a ✓ as true.
+
 Comprehensive feature matrix benchmarked against Photoshop, Figma, Illustrator,
 Sketch, Affinity Designer, and Canva. Tracks what Folio has, what's missing,
 priority (must-have / nice-to-have), and effort.
@@ -229,8 +234,10 @@ Companion planning docs: [GAP-ANALYSIS.md](GAP-ANALYSIS.md) · [ROADMAP.md](ROAD
 | 12.2 | Export SVG | ✓ | M | |
 | 12.3 | Export PDF | ✓ | M | jspdf + Puppeteer |
 | 12.4 | Export HTML | ✓ | M | including interactive report |
-| 12.5 | Export GIF / WebM / MP4 | ✓ | N | |
-| 12.6 | Export Lottie (animations) | ✓ | N | |
+| 12.5 | Export animated SVG / HTML | ✓ | N | v0.1.3 — in-process, no ffmpeg/Puppeteer; the route that works on the deployed container |
+| 12.6 | Export GIF / WebM / MP4 | ◐ | N | code path exists but needs ffmpeg **and** Puppeteer, which folio.casava.space has NEITHER of — refuses with a pointer to type:"svg". Pure-TS GIF encoder is planned (ROADMAP-v0.1.3 WS-A1). This row read ✓ for months while `animation(op:export)` produced no file at all. |
+| 12.7 | Export Lottie (animations) | ✓ | N | |
+| 12.8 | `animation(op:motion)` preset → keyframes | ✓ | N | v0.1.3 |
 | 12.7 | Batch export (per-layer / per-page) | ✓ | M | |
 | 12.8 | Import SVG | ✗ | M | parse foreign SVG to layers |
 | 12.9 | Import PSD / Sketch / Figma | ✗ | N | |

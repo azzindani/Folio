@@ -33,7 +33,59 @@ Motion you can actually get out, and a print PDF that is the size you asked for.
   caller that needs a real video can demand one and get a hard error instead of
   a silent downgrade, and a caller that only wants frames need not shell out.
 
+- **`animation(op:motion)`** — apply a motion preset across layers in one call
+  instead of one call per layer per keyframe (a six-item stagger was
+  twenty-four):
+
+  ```
+  animation(op:"motion", preset:"rise", layer_ids:["l1","l2","l3"], stagger_ms:120)
+  ```
+
+  Entrances (`fade_in`, `rise`, `settle`, `scale_in`, `sweep_in`) and loops
+  (`pulse`, `float`, `spin`, `drift`, `breathe`). These are mechanics, not
+  looks — none decides layout, colour, hierarchy or composition — and what they
+  write is ordinary keyframes, so `op:timeline` shows them and `op:keyframe`
+  overrides any single one. A locked group is one target and is not broken
+  apart. MCP tools remain 21.
+
+- **`process:` on `manage_design(op:asset_add)`** — `{remove_bg:true}` cuts a
+  flat backdrop out of a PNG so a logo or product shot sits on any canvas
+  colour, `{fit:{w,h,mode}}` resamples. Background removal existed but was
+  browser-bound to the editor panel and unreachable from MCP. No new tool and
+  no new op — the operation is still "put this image in the project".
+
+- **Pure-TypeScript PNG codec** (`src/utils/png-codec.ts`) and
+  **`bg-remove-core.ts`** — no `canvas`, no `sharp`, nothing needing a native
+  build in a `bun --smol` container. The editor and the server now run one
+  background-removal implementation instead of two.
+
+### Changed
+
+- **`document.dpi`, motion presets and image processing all landed without a
+  new tool.** The surface is still exactly 21 tools, per `docs/ROADMAP.md`
+  ground rule 1.
+
+- **`docs/UX_ROADMAP.md` and `docs/ROADMAP.md` corrected.** Row 12.5 recorded
+  GIF/MP4/WebM export as shipped throughout the period the tool produced no
+  file, and WP-1.1/1.2/1.3/3.2 still read as open months after shipping.
+
 ### Fixed
+
+- **`animation(op:keyframe)` could not reach any layer in a carousel.** Every
+  page this engine authors is one locked group, and the walk was top-level
+  only — so it returned "Layer not found" for ids that were plainly there, and
+  the whole keyframe API was unreachable on the engine's own output.
+  `inspectTimeline` had the matching half: `buildTimelineTracks` takes a flat
+  array, so it reported zero tracks for those same designs.
+
+- **Entrances finished displaced.** `generateKeyframeCSS` treated the first
+  keyframe as the rest position, which cannot express "start displaced, end at
+  rest" — a rise began at rest and ended 24px above where the layer was drawn.
+  `playback.origin` now states which convention applies.
+
+- **Background detection averaged the four corners**, so one dark corner — a
+  vignette, or a mark clipping the edge — dragged the target colour off the
+  actual backdrop and the fill matched nothing. Now a median over the border.
 
 - **`animation(op:export)` reported success without producing a file.** It
   rendered HTML to a temp path, deleted it, and returned `okResult` with an
