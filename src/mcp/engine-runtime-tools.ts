@@ -18,6 +18,34 @@ import { buildTimelineTracks, renderTimelineASCII, addKeyframe } from '../ui/pan
 import type { Keyframe } from '../animation/types';
 import { getClientScript } from '../export/remote-server';
 import { tryFfmpeg } from '../export/animation-export';
+import { buildAnimatedSVG, wrapAnimatedHTML } from '../export/svg-animate';
+import { renderToSVGString } from './engine/svg-export';
+
+/** True when Puppeteer can actually be loaded — the raster routes need it to capture frames. */
+function tryPuppeteer(): boolean {
+  if (typeof require === 'undefined') return false;
+  try { require.resolve('puppeteer'); return true; } catch { return false; }
+}
+
+/** Resolve a page_id to its index; 0 when absent or unmatched (a poster has one page). */
+function pageIndexFor(spec: DesignSpec, pageId?: string): number {
+  if (!pageId) return 0;
+  const idx = (spec.pages ?? []).findIndex((p: Page) => p.id === pageId);
+  return idx >= 0 ? idx : 0;
+}
+
+/**
+ * Narrow a multi-page spec to the single page being exported.
+ *
+ * renderToSVGString always renders the first page, so exporting page 4 of a
+ * carousel would silently hand back page 1. Slicing the spec is honest about
+ * what is being rendered and keeps the render path itself untouched.
+ */
+function withActivePage(spec: DesignSpec, pageIndex: number): DesignSpec {
+  const pages = spec.pages;
+  if (!pages || pages.length <= pageIndex) return spec;
+  return { ...spec, pages: [pages[pageIndex]] };
+}
 
 export function setFormulaContext(args: {
   design_path: string;
@@ -254,7 +282,7 @@ export function addKeyframeToLayer(args: {
 
 export function exportAnimation(args: {
   design_path: string;
-  type: 'gif' | 'mp4' | 'webm';
+  type: 'svg' | 'html' | 'gif' | 'mp4' | 'webm';
   output_path?: string;
   fps?: number;
   duration?: number;
@@ -265,8 +293,65 @@ export function exportAnimation(args: {
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
 
-  // Build HTML for the design, then record animation frames
   const spec = readYAML<DesignSpec>(dPath);
+  const type = args.type;
+  const baseName = path.basename(dPath, '.design.yaml');
+  const ext = type === 'html' ? 'html' : type === 'svg' ? 'svg' : type;
+  const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', `${baseName}.${ext}`);
+
+  // ── Binary-free routes: produce a real file, here, now ──────
+  //
+  // These exist because the raster routes below cannot run on a deployment
+  // without Puppeteer and ffmpeg — which is the normal case, including
+  // folio.casava.space. SVG animates natively, so no encoder is needed.
+  if (type === 'svg' || type === 'html') {
+    const pageIndex = pageIndexFor(spec, args.page_id);
+    let built: { svg: string; animatedLayers: string[] };
+    try {
+      built = buildAnimatedSVG(spec, {
+        pageIndex,
+        renderSVG: (s, idx) => renderToSVGString(idx > 0 ? withActivePage(s, idx) : s),
+      });
+    } catch (e) {
+      return errResult(op, `Failed to render: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.');
+    }
+
+    const content = type === 'html'
+      ? wrapAnimatedHTML(built.svg, spec.meta?.name ?? baseName)
+      : built.svg;
+
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, content, 'utf-8');
+
+    // A still file is a legitimate result, but it is almost never what someone
+    // asking for an animation wanted — say so rather than letting them find out.
+    const still = built.animatedLayers.length === 0;
+    return okResult(op, {
+      design_path: dPath,
+      output_path: outputPath,
+      type,
+      bytes: Buffer.byteLength(content),
+      animated_layers: built.animatedLayers,
+      ...(still ? {
+        warning: 'No layer carries an animation, so this file is a still image.',
+        next_action: 'Add motion with animation(op:keyframe) or animation(op:motion), then export again.',
+      } : {}),
+    });
+  }
+
+  // ── Raster routes: honest about what the host can actually do ──
+  const hasFfmpeg = tryFfmpeg();
+  const hasPuppeteer = tryPuppeteer();
+  if (!hasFfmpeg || !hasPuppeteer) {
+    const missing = [!hasPuppeteer && 'puppeteer', !hasFfmpeg && 'ffmpeg'].filter(Boolean).join(' + ');
+    return errResult(
+      op,
+      `${type} export needs ${missing}, which this host does not have.`,
+      'Use type:"svg" for a vector animation or type:"html" for a shareable file — ' +
+      'both are produced in-process with no extra software, and stay sharp at any size.',
+    );
+  }
+
   let html: string;
   try {
     html = assemblePresentationHTML(spec, {});
@@ -274,30 +359,19 @@ export function exportAnimation(args: {
     return errResult(op, `Failed to render HTML: ${(e as Error).message}`, 'Ensure the design has valid pages.');
   }
 
-  const ext = args.type === 'gif' ? 'gif' : args.type === 'mp4' ? 'mp4' : 'webm';
-  const baseName = path.basename(dPath, '.design.yaml');
-  const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', `${baseName}.${ext}`);
   const htmlPath = outputPath + '.tmp.html';
-
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(htmlPath, html);
-
-  // Since exportToAnimation is async, we return instructions for running it
-  // The MCP tool provides instructions; actual encode is via CLI/script
-  fs.unlinkSync(htmlPath);
-
-  const hasFfmpeg = tryFfmpeg();
 
   return okResult(op, {
     design_path: dPath,
     output_path: outputPath,
-    type: args.type,
-    fps: args.fps ?? (args.type === 'gif' ? 10 : 30),
+    source_html: htmlPath,
+    type,
+    fps: args.fps ?? (type === 'gif' ? 10 : 30),
     duration: args.duration ?? 3000,
     ffmpeg_available: hasFfmpeg,
-    hint: hasFfmpeg
-      ? `Run: npx folio export-anim "${dPath}" --type ${args.type} --output "${outputPath}"`
-      : 'ffmpeg not found. Install ffmpeg then re-run this tool.',
+    next_action: 'Encode the captured HTML with exportToAnimation() from src/export/animation-export.ts.',
   });
 }
 

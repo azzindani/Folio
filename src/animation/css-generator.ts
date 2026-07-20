@@ -94,6 +94,76 @@ export function generateLayerCSS(layerId: string, anim: AnimationSpec): string {
   return rules.join('\n');
 }
 
+// ── Keyframe timeline → CSS ─────────────────────────────────
+
+/**
+ * Turn a keyframe timeline into a real `@keyframes` rule.
+ *
+ * This is the half of the animation model that `generateLayerCSS` never
+ * covered: `animation(op:keyframe)` writes `layer.animation.keyframes`, and
+ * nothing downstream read them, so a hand-authored timeline produced no motion
+ * at all. Enter/exit/loop are canned effects; this is the arbitrary case.
+ *
+ * Positions are emitted as a translate DELTA from the first keyframe rather
+ * than absolute coordinates, because the layer is already drawn at its own x/y
+ * by the renderer — animating absolute values would double the offset and
+ * throw the layer off-canvas. `transform-box: fill-box` makes rotate/scale turn
+ * about the layer's own centre instead of the SVG root origin, which is what
+ * anyone writing `rotation: 90` means.
+ */
+export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): string {
+  const frames = anim.keyframes;
+  if (!frames || frames.length < 2) return '';
+
+  const sorted = [...frames].sort((a, b) => a.t - b.t);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const playback = anim.playback;
+  // A timeline whose frames end at 0ms has no duration to divide by; fall back
+  // to the declared playback duration, then to a sane default.
+  const span = last.t - first.t;
+  const duration = playback?.duration ?? (span > 0 ? span : 1000);
+  if (duration <= 0) return '';
+
+  const baseX = typeof first.x === 'number' ? first.x : 0;
+  const baseY = typeof first.y === 'number' ? first.y : 0;
+
+  const steps: string[] = [];
+  for (const kf of sorted) {
+    const pct = Math.max(0, Math.min(100, ((kf.t - first.t) / duration) * 100));
+    const decls: string[] = [];
+
+    const parts: string[] = [];
+    const dx = typeof kf.x === 'number' ? kf.x - baseX : 0;
+    const dy = typeof kf.y === 'number' ? kf.y - baseY : 0;
+    if (dx !== 0 || dy !== 0) parts.push(`translate(${dx}px, ${dy}px)`);
+    if (typeof kf.rotation === 'number' && kf.rotation !== 0) parts.push(`rotate(${kf.rotation}deg)`);
+    if (typeof kf.scale === 'number' && kf.scale !== 1) parts.push(`scale(${kf.scale})`);
+    if (parts.length > 0) decls.push(`transform: ${parts.join(' ')};`);
+
+    if (typeof kf.opacity === 'number') decls.push(`opacity: ${kf.opacity};`);
+    const fill = kf['fill.color'];
+    if (typeof fill === 'string') decls.push(`fill: ${fill};`);
+    const stroke = kf['stroke.color'];
+    if (typeof stroke === 'string') decls.push(`stroke: ${stroke};`);
+
+    if (decls.length > 0) steps.push(`${Number(pct.toFixed(3))}% { ${decls.join(' ')} }`);
+  }
+
+  if (steps.length === 0) return '';
+
+  const name = `kf-${layerId}`;
+  const easing = playback?.easing ?? 'ease-in-out';
+  const iteration = playback?.loop ? 'infinite' : '1';
+  const direction = playback?.direction ?? 'normal';
+
+  return [
+    `@keyframes ${name} { ${steps.join(' ')} }`,
+    `[data-layer-id="${layerId}"] { transform-box: fill-box; transform-origin: center; ` +
+      `animation: ${name} ${duration}ms ${easing} 0ms ${iteration} ${direction} both; }`,
+  ].join('\n');
+}
+
 // ── Generate stagger CSS ────────────────────────────────────
 export function generateStaggerCSS(sequence: AnimationSpec['sequence']): string {
   if (!sequence) return '';
@@ -124,6 +194,9 @@ export function generateDesignAnimationCSS(
   for (const [layerId, anim] of layerAnimations) {
     const css = generateLayerCSS(layerId, anim);
     if (css) parts.push(css);
+
+    const kf = generateKeyframeCSS(layerId, anim);
+    if (kf) parts.push(kf);
 
     if (anim.sequence) {
       parts.push(generateStaggerCSS(anim.sequence));

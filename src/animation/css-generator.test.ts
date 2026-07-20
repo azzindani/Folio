@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateLayerCSS, generateStaggerCSS, generateDesignAnimationCSS } from './css-generator';
+import { generateLayerCSS, generateStaggerCSS, generateDesignAnimationCSS, generateKeyframeCSS } from './css-generator';
 import type { AnimationSpec } from './types';
 
 describe('generateLayerCSS', () => {
@@ -175,5 +175,64 @@ describe('generateLayerCSS — loop types shake/bounce/breathe', () => {
   it('generates breathe loop CSS', () => {
     const css = generateLayerCSS('el', { loop: { type: 'breathe', duration: 2000, amplitude: 1 } });
     expect(css).toContain('opacity');
+  });
+});
+
+describe('generateKeyframeCSS', () => {
+  it('emits a @keyframes rule bound to the layer selector', () => {
+    const css = generateKeyframeCSS('box', {
+      keyframes: [{ t: 0, opacity: 0 }, { t: 500, opacity: 1 }],
+      playback: { duration: 500 },
+    });
+    expect(css).toContain('@keyframes kf-box');
+    expect(css).toContain('[data-layer-id="box"]');
+    expect(css).toContain('0% { opacity: 0; }');
+    expect(css).toContain('100% { opacity: 1; }');
+  });
+
+  it('emits position as a delta from the first keyframe', () => {
+    // The renderer already draws the layer at its own x/y. Emitting absolute
+    // coordinates here would add the offset twice and eject it from the canvas.
+    const css = generateKeyframeCSS('m', {
+      keyframes: [{ t: 0, x: 100, y: 50 }, { t: 1000, x: 160, y: 50 }],
+      playback: { duration: 1000 },
+    });
+    expect(css).toContain('translate(60px, 0px)');
+    expect(css).not.toContain('translate(160px');
+    // The 0% frame is a no-op here, so it is omitted entirely — CSS interpolates
+    // from the element's own computed transform, which is exactly translate(0,0).
+    expect(css).toContain('{ 100% {');
+  });
+
+  it('rotates about the layer centre, not the SVG origin', () => {
+    const css = generateKeyframeCSS('r', {
+      keyframes: [{ t: 0, rotation: 0 }, { t: 800, rotation: 90 }],
+      playback: { duration: 800 },
+    });
+    expect(css).toContain('transform-box: fill-box');
+    expect(css).toContain('transform-origin: center');
+    expect(css).toContain('rotate(90deg)');
+  });
+
+  it('marks a looping timeline infinite', () => {
+    const css = generateKeyframeCSS('l', {
+      keyframes: [{ t: 0, scale: 1 }, { t: 1000, scale: 1.2 }],
+      playback: { duration: 1000, loop: true, direction: 'alternate' },
+    });
+    expect(css).toContain('infinite');
+    expect(css).toContain('alternate');
+  });
+
+  it('returns nothing for a timeline that cannot animate', () => {
+    expect(generateKeyframeCSS('a', {})).toBe('');
+    expect(generateKeyframeCSS('a', { keyframes: [{ t: 0, opacity: 1 }] })).toBe('');
+  });
+
+  it('falls back to the playback duration when all frames share a time', () => {
+    const css = generateKeyframeCSS('z', {
+      keyframes: [{ t: 0, opacity: 0 }, { t: 0, opacity: 1 }],
+      playback: { duration: 400 },
+    });
+    expect(css).toContain('400ms');
   });
 });

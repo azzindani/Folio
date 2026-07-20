@@ -138,17 +138,17 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'animation',
-    description: 'Animation timeline + motion export — pick `op`:\n• timeline — show a design\'s keyframe tracks as an ASCII timeline (req: design_path; page_id to filter).\n• keyframe — add/replace a keyframe on a layer\'s timeline (req: design_path, layer_id, keyframe:{t:ms, x?, y?, opacity?, scale?, rotation?}).\n• export — render a presentation/motion design to GIF/MP4/WebM (requires Puppeteer + optionally ffmpeg) (req: design_path, type).',
+    description: 'Animation timeline + motion export — pick `op`:\n• timeline — show a design\'s keyframe tracks as an ASCII timeline (req: design_path; page_id to filter).\n• keyframe — add/replace a keyframe on a layer\'s timeline (req: design_path, layer_id, keyframe:{t:ms, x?, y?, opacity?, scale?, rotation?}).\n• export — write a motion file (req: design_path, type). type:"svg" and type:"html" are the DEFAULT CHOICE: real animated files written in-process, no extra software, vector-sharp at any size and usually a few KB. type:"gif"/"mp4"/"webm" are raster and need Puppeteer + ffmpeg installed on the host — they return a clear error where those are absent rather than a broken file.',
     inputSchema: {
       type: 'object',
       properties: {
         op:           { type: 'string', enum: ['timeline', 'keyframe', 'export'], description: 'Which animation action to run.' },
         design_path:  { type: 'string', description: 'Path to .design.yaml.' },
-        page_id:      { type: 'string', description: 'op:timeline — optional page filter.' },
+        page_id:      { type: 'string', description: 'op:timeline — page filter. op:export — which page of a multi-page design to render (default: first).' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path.' },
         layer_id:     { type: 'string', description: 'op:keyframe — target layer id.' },
         keyframe:     { type: 'object', description: 'op:keyframe — {t:ms, x?, y?, opacity?, scale?, rotation?}.', properties: {} },
-        type:         { type: 'string', enum: ['gif', 'mp4', 'webm'], description: 'op:export — output format.' },
+        type:         { type: 'string', enum: ['svg', 'html', 'gif', 'mp4', 'webm'], description: 'op:export — output format. svg = self-contained animated SVG (no dependencies, vector). html = the same SVG in a shareable single file that honors prefers-reduced-motion. gif/mp4/webm = raster, host must have Puppeteer + ffmpeg.' },
         output_path:  { type: 'string', description: 'op:export — output file path (auto if omitted).' },
         fps:          { type: 'number', description: 'op:export — frames per second (default 10 gif, 30 mp4/webm).' },
         duration:     { type: 'number', description: 'op:export — animation duration ms (default 3000).' },

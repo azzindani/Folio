@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import { exportAnimation, setupRemotePresenter, setupCollab, createPresentation } from '../engine';
 
 let tmpDir: string;
@@ -25,59 +26,82 @@ describe('exportAnimation', () => {
     expect(r.success).toBe(false);
   });
 
-  it('returns ok for a valid presentation design (gif)', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'gif' });
-    expect(r.success).toBe(true);
-    expect(r['type']).toBe('gif');
+  // These cases used to assert success:true for gif/mp4/webm on a host with
+  // neither Puppeteer nor ffmpeg, and none of them checked that a file existed.
+  // The implementation obliged: it wrote a temp HTML, deleted it, and returned
+  // ok with an output_path pointing at nothing, plus a hint naming a CLI
+  // (`npx folio export-anim`) that was never built. The tests were the reason
+  // that survived. They now assert the two things that actually matter — a real
+  // file on disk, or a refusal that says what to do instead.
+
+  describe('binary-free routes', () => {
+    for (const type of ['svg', 'html'] as const) {
+      it(`type:"${type}" writes a real file`, () => {
+        const dPath = makePresentationDesign();
+        const r = exportAnimation({ design_path: dPath, type });
+        expect(r.success).toBe(true);
+        const out = r['output_path'] as string;
+        expect(fs.existsSync(out)).toBe(true);
+        expect(fs.statSync(out).size).toBeGreaterThan(0);
+        expect(r['bytes']).toBeGreaterThan(0);
+      });
+    }
+
+    it('writes SVG content for type:"svg"', () => {
+      const dPath = makePresentationDesign();
+      const r = exportAnimation({ design_path: dPath, type: 'svg' });
+      expect(fs.readFileSync(r['output_path'] as string, 'utf-8')).toContain('<svg');
+    });
+
+    it('wraps the SVG in a document for type:"html"', () => {
+      const dPath = makePresentationDesign();
+      const r = exportAnimation({ design_path: dPath, type: 'html' });
+      const html = fs.readFileSync(r['output_path'] as string, 'utf-8');
+      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('<svg');
+    });
+
+    it('warns when the design has no animation rather than implying motion', () => {
+      const dPath = makePresentationDesign();
+      const r = exportAnimation({ design_path: dPath, type: 'svg' });
+      expect(r['animated_layers']).toEqual([]);
+      expect(String(r['warning'])).toContain('still image');
+    });
+
+    it('honors a custom output_path', () => {
+      const dPath = makePresentationDesign();
+      const outPath = path.join(tmpDir, 'exports', 'custom.svg');
+      const r = exportAnimation({ design_path: dPath, type: 'svg', output_path: outPath });
+      expect(r['output_path']).toBe(outPath);
+      expect(fs.existsSync(outPath)).toBe(true);
+    });
   });
 
-  it('returns ok for mp4 type', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'mp4' });
-    expect(r.success).toBe(true);
-    expect(r['type']).toBe('mp4');
-  });
+  describe('raster routes', () => {
+    const hasDeps = ((): boolean => {
+      try { require.resolve('puppeteer'); } catch { return false; }
+      try { execSync('ffmpeg -version', { stdio: 'ignore' }); } catch { return false; }
+      return true;
+    })();
 
-  it('returns ok for webm type', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'webm' });
-    expect(r.success).toBe(true);
-    expect(r['type']).toBe('webm');
-  });
+    for (const type of ['gif', 'mp4', 'webm'] as const) {
+      it(`type:"${type}" refuses clearly when the host lacks the binaries`, () => {
+        if (hasDeps) return; // the refusal path is unreachable here
+        const dPath = makePresentationDesign();
+        const r = exportAnimation({ design_path: dPath, type });
+        expect(r.success).toBe(false);
+        // The refusal has to name the way forward, not just the problem.
+        expect(String(r['hint'] ?? r['error'])).toContain('svg');
+      });
+    }
 
-  it('includes hint with ffmpeg_available', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'gif' });
-    expect(r.success).toBe(true);
-    expect(typeof r['ffmpeg_available']).toBe('boolean');
-    expect(typeof r['hint']).toBe('string');
-  });
-
-  it('uses custom output_path when provided', () => {
-    const dPath = makePresentationDesign();
-    const outPath = path.join(tmpDir, 'exports', 'custom.gif');
-    const r = exportAnimation({ design_path: dPath, type: 'gif', output_path: outPath });
-    expect(r.success).toBe(true);
-    expect(r['output_path']).toBe(outPath);
-  });
-
-  it('uses custom fps', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'gif', fps: 15 });
-    expect(r['fps']).toBe(15);
-  });
-
-  it('defaults fps to 10 for gif', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'gif' });
-    expect(r['fps']).toBe(10);
-  });
-
-  it('defaults fps to 30 for mp4', () => {
-    const dPath = makePresentationDesign();
-    const r = exportAnimation({ design_path: dPath, type: 'mp4' });
-    expect(r['fps']).toBe(30);
+    it('reports fps defaults when the host can encode', () => {
+      if (!hasDeps) return;
+      const dPath = makePresentationDesign();
+      expect(exportAnimation({ design_path: dPath, type: 'gif' })['fps']).toBe(10);
+      expect(exportAnimation({ design_path: dPath, type: 'mp4' })['fps']).toBe(30);
+      expect(exportAnimation({ design_path: dPath, type: 'gif', fps: 15 })['fps']).toBe(15);
+    });
   });
 });
 
