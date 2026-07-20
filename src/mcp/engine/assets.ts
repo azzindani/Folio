@@ -13,6 +13,8 @@ import {
 import { parseDimensions, parseSvg, dedupeColors, toHex, luminance as lumOf } from './reference';
 
 // ── Types ─────────────────────────────────────────────────────
+import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-process';
+
 export type AssetKind = 'images' | 'icons' | 'fonts';
 
 export interface AssetEntry {
@@ -199,6 +201,7 @@ export interface IngestArgs {
   sourcePath?: string;         // in-sandbox file to copy (MCP op)
   kind?: string;               // optional 'icons' override
   alt?: string;
+  process?: ProcessSpec;       // optional pixel work (background removal, resize)
 }
 export class AssetError extends Error {
   constructor(message: string, public status: number, public hint: string) { super(message); }
@@ -261,6 +264,22 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
     }
   }
 
+  // Process BEFORE writing and before metadata extraction, so the stored file
+  // and its manifest entry describe the same pixels. This also gets the
+  // transparency handling right for free: sampleRasterColors already skips
+  // pixels below alpha 128, so a cut-out reports the subject's colours rather
+  // than the backdrop that was just removed.
+  if (hasWork(args.process)) {
+    try {
+      const processed = processAsset(buf, clean.ext, args.process);
+      buf = processed.buffer;
+      warnings.push(...processed.notes);
+    } catch (e) {
+      if (e instanceof ProcessError) throw new AssetError(e.message, 422, e.hint);
+      throw e;
+    }
+  }
+
   const kind = targetKind(clean.kind, args.kind);
   const dir = path.join(args.projectDir, 'assets', kind);
   fs.mkdirSync(dir, { recursive: true });
@@ -293,7 +312,7 @@ function requireProject(op: string, projectPath?: string): { dir: string } | Too
 }
 const isErr = (r: { dir: string } | ToolResult): r is ToolResult => 'success' in r;
 
-export function assetAdd(args: { project_path?: string; name?: string; data?: string; source_path?: string; kind?: string; alt?: string }): ToolResult {
+export function assetAdd(args: { project_path?: string; name?: string; data?: string; source_path?: string; kind?: string; alt?: string; process?: ProcessSpec }): ToolResult {
   const op = 'asset_add';
   const proj = requireProject(op, args.project_path);
   if (isErr(proj)) return proj;
@@ -302,7 +321,7 @@ export function assetAdd(args: { project_path?: string; name?: string; data?: st
   try {
     const { entry, warnings } = ingestAsset({
       projectDir: proj.dir, name: args.name,
-      dataUri: args.data, sourcePath: args.source_path, kind: args.kind, alt: args.alt,
+      dataUri: args.data, sourcePath: args.source_path, kind: args.kind, alt: args.alt, process: args.process,
     });
     progress.push(pOk('Asset saved', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
