@@ -62,11 +62,22 @@ export function contrastRatio(a: [number, number, number], b: [number, number, n
  * a mark under 3:1 is genuinely hard to make out, not merely subtle.
  */
 export function markContrast(img: RasterImage, backgrounds = ['#FFFFFF', '#000000', '#808080']): ContrastResult {
-  let r = 0, g = 0, b = 0, n = 0;
+  // The DOMINANT colour, not the mean.
+  //
+  // Averaging every visible pixel invents a colour the mark does not contain:
+  // a blue ring around a white centre averaged to #80aff8, a pale blue present
+  // nowhere in the design, and then reported that fictional colour's contrast.
+  // Bucketing and taking the largest cluster returns a colour actually on the
+  // page — the same approach the asset pipeline uses for dominant_colors.
+  const buckets = new Map<string, { n: number; r: number; g: number; b: number }>();
+  let n = 0;
   for (let i = 0; i < img.pixels.length; i += 4) {
-    const a = img.pixels[i + 3];
-    if (a < 128) continue;
-    r += img.pixels[i]; g += img.pixels[i + 1]; b += img.pixels[i + 2];
+    if (img.pixels[i + 3] < 128) continue;
+    const r = img.pixels[i], g = img.pixels[i + 1], b = img.pixels[i + 2];
+    const k = `${r >> 5},${g >> 5},${b >> 5}`;
+    const cur = buckets.get(k) ?? { n: 0, r: 0, g: 0, b: 0 };
+    cur.n++; cur.r += r; cur.g += g; cur.b += b;
+    buckets.set(k, cur);
     n++;
   }
 
@@ -74,7 +85,8 @@ export function markContrast(img: RasterImage, backgrounds = ['#FFFFFF', '#00000
     return { ink: '#000000', cases: [], notes: ['The mark has no visible pixels to measure.'] };
   }
 
-  const ink: [number, number, number] = [r / n, g / n, b / n];
+  const top = [...buckets.values()].sort((a, b) => b.n - a.n)[0];
+  const ink: [number, number, number] = [top.r / top.n, top.g / top.n, top.b / top.n];
   const cases: ContrastCase[] = backgrounds.map(bg => {
     const ratio = contrastRatio(ink, hexToRgb(bg));
     return { background: bg, ratio: Math.round(ratio * 100) / 100, passes: ratio >= 3 };
@@ -163,8 +175,14 @@ export function clearspace(img: RasterImage): ClearspaceResult {
   // circle has no stem but still needs breathing room.
   const isSolid = median === 0 || median > markSize * 0.25;
   const unit = Math.max(1, Math.round(isSolid ? markSize / 10 : median));
+  // Say "no reliable stroke", not "no stroke". A ring reads as solid here
+  // because the runs crossing its filled centre and any inner element outweigh
+  // the two short runs through the stroke itself, so the median lands on the
+  // whole width. The fallback is still a sound clearspace unit; claiming the
+  // mark HAS no stroke would be describing the measurement as if it were the
+  // design.
   const unitBasis = isSolid
-    ? `1/10 of the mark (${unit}px) — solid form, no stroke to measure`
+    ? `1/10 of the mark (${unit}px) — no single reliable stroke width to measure`
     : `median stroke width (${unit}px)`;
   const padding = unit * 2;
 

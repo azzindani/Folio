@@ -398,7 +398,32 @@ export function exportAnimation(args: {
     }
 
     const fps = args.fps ?? 12;
-    const times = frameTimes(runMs, fps);
+
+    // Cap the frame count against a memory budget, not a fixed number.
+    //
+    // Every frame is held as RGBA until the encoder runs, so the cost scales
+    // with canvas AREA: one 1080x1080 frame is 4.6 MB, and a design whose
+    // longest loop is 6s at 12fps wants 72 of them — 335 MB, in a 4g container
+    // that is also serving requests. At 1440x1440 the same animation would not
+    // fit at all. Budgeting ~180 MB of frame buffer keeps a big canvas to few
+    // frames and a small one to many, which is the right trade in both cases.
+    const FRAME_BUDGET_BYTES = 180 * 1024 * 1024;
+    const perFrame = Math.max(1, spec.document.width * spec.document.height * 4);
+    const maxFrames = Math.max(2, Math.min(150, Math.floor(FRAME_BUDGET_BYTES / perFrame)));
+
+    let times = frameTimes(runMs, fps);
+    let capNote: string | undefined;
+    if (times.length > maxFrames) {
+      // Drop the frame RATE rather than truncating the run: a shorter, smoother
+      // clip would cut the animation off mid-move, while a coarser one still
+      // shows the whole thing. Never silently — say what was reduced.
+      const cappedFps = Math.max(1, Math.floor((maxFrames / runMs) * 1000));
+      times = frameTimes(runMs, cappedFps);
+      capNote = `Sampled at ${cappedFps}fps instead of ${fps}: ${Math.round(runMs)}ms at ${fps}fps needs ` +
+        `${Math.round((runMs / 1000) * fps)} frames of ${spec.document.width}x${spec.document.height}, ` +
+        `beyond this host's frame-memory budget. Pass a shorter duration, or export type:"svg" for full smoothness at any length.`;
+    }
+
     const frames: GifFrame[] = [];
     try {
       const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
@@ -407,7 +432,7 @@ export function exportAnimation(args: {
         const rendered = new Resvg(svg, { font: resvgFontOption(path.dirname(path.dirname(dPath))) }).render();
         frames.push({
           pixels: new Uint8ClampedArray(rendered.pixels),
-          delayMs: Math.round(1000 / fps),
+          delayMs: Math.max(10, Math.round(runMs / times.length)),
         });
       }
     } catch (e) {
@@ -427,10 +452,13 @@ export function exportAnimation(args: {
       output_path: outputPath,
       type,
       frames: frames.length,
-      fps,
+      fps: Math.round((frames.length / runMs) * 1000),
       duration: runMs,
       bytes: gif.length,
-      ...(gifAssetNotes.length ? { notes: gifAssetNotes } : {}),
+      ...((): Record<string, unknown> => {
+        const n = [...gifAssetNotes, ...(capNote ? [capNote] : [])];
+        return n.length ? { notes: n } : {};
+      })(),
       note: 'Encoded in-process — no ffmpeg or Puppeteer involved. ' +
         'For anywhere that renders SVG, type:"svg" is smaller and stays sharp at any size.',
     });

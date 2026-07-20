@@ -143,9 +143,15 @@ describe('contrast', () => {
     expect(r.notes.join(' ')).toContain('every tested background');
   });
 
-  it('ignores transparent pixels when averaging the ink', () => {
+  it('ignores transparent pixels when picking the ink', () => {
     const half = raster(40, (x) => (x < 20 ? [200, 0, 0, 255] : CLEAR));
     expect(markContrast(half).ink.toLowerCase()).toBe('#c80000');
+  });
+
+  it('picks the dominant colour rather than blending two', () => {
+    // Two-thirds red, one-third white: the answer is red, not pink.
+    const two = raster(30, (x) => (x < 20 ? [200, 0, 0, 255] : [255, 255, 255, 255]));
+    expect(markContrast(two).ink.toLowerCase()).toBe('#c80000');
   });
 });
 
@@ -227,7 +233,7 @@ describe('clearspace — solid forms', () => {
     const disc = raster(512, (x, y) => (Math.hypot(x - 256, y - 256) < 200 ? BLACK : CLEAR));
     const r = clearspace(disc);
     expect(r.padding).toBeLessThan(512);
-    expect(r.unitBasis).toContain('solid form');
+    expect(r.unitBasis).toContain('no single reliable stroke');
     expect(r.unit).toBeCloseTo(40, -1); // ~1/10 of the 400px mark
   });
 
@@ -259,5 +265,45 @@ describe('opticalCenter — documented limit', () => {
       return t >= 0 && t <= 1 && Math.abs(y - 100) <= (1 - t) * 60 ? BLACK : CLEAR;
     });
     expect(opticalCenter(tri).needsAdjustment).toBe(true);
+  });
+});
+
+describe('auditMark — opaque backdrops', () => {
+  /** A ring mark drawn on an opaque white canvas — how designs are normally authored. */
+  function ringOnWhite(size = 200): RasterImage {
+    return raster(size, (x, y) => {
+      const d = Math.hypot(x - size / 2, y - size / 2);
+      const ring = d < size * 0.42 && d > size * 0.28;
+      return ring ? [27, 110, 243, 255] : [255, 255, 255, 255];
+    });
+  }
+
+  it('derives the silhouette instead of treating the whole canvas as ink', () => {
+    // Live bug: with an opaque background every pixel is alpha 255, so coverage
+    // read 1.0 and a perfectly legible mark was reported as reading at NO size.
+    const audit = auditMark(ringOnWhite());
+    expect(audit.scale_survival.minimumSize).not.toBeNull();
+    expect(audit.notes.join(' ')).toContain('silhouette');
+  });
+
+  it('reports a colour the mark actually contains, not an average of two', () => {
+    // Averaging a blue ring with its white centre produced #80aff8 — a pale
+    // blue present nowhere in the design, whose contrast was then reported.
+    const audit = auditMark(ringOnWhite());
+    expect(audit.contrast.ink.toLowerCase()).toBe('#1b6ef3');
+  });
+
+  it('reports coverage well below 1.0 once the backdrop is removed', () => {
+    const audit = auditMark(ringOnWhite());
+    for (const step of audit.scale_survival.steps) {
+      expect(step.coverage).toBeLessThan(0.6);
+      expect(step.coverage).toBeGreaterThan(0);
+    }
+  });
+
+  it('leaves an already-transparent mark alone', () => {
+    const disc = raster(120, (x, y) => (Math.hypot(x - 60, y - 60) < 40 ? BLACK : CLEAR));
+    const audit = auditMark(disc);
+    expect(audit.notes.join(' ')).not.toContain('silhouette');
   });
 });

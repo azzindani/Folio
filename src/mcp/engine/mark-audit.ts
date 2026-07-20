@@ -12,6 +12,7 @@ import type { DesignSpec } from '../../schema/types';
 import type { RasterImage } from '../../utils/png-codec';
 import { opticalCenter, scaleSurvival, type OpticalCenterResult, type ScaleSurvivalResult } from './marks';
 import { markContrast, clearspace, type ContrastResult, type ClearspaceResult } from './marks-contrast';
+import { removeBackgroundPixels } from '../../utils/bg-remove-core';
 
 export interface MarkAudit {
   optical_center: OpticalCenterResult;
@@ -60,14 +61,46 @@ function countLayers(layers: unknown[]): number {
   return n;
 }
 
+/**
+ * Separate mark from backdrop when the render has no transparency.
+ *
+ * Every measurement here works on the mark's SILHOUETTE, which means it needs
+ * to know which pixels are the mark. A design authored the normal way in this
+ * engine has an opaque background rect covering the canvas, so every pixel is
+ * alpha 255 and the "silhouette" becomes the whole square: coverage reads 1.0,
+ * the centroid is the canvas centre, the ink colour averages to the backdrop,
+ * and the bounding box is the full canvas. The audit then confidently reports
+ * that a perfectly legible mark "does not read at any size" — worse than
+ * saying nothing.
+ *
+ * The border-seeded flood fill already used for asset background removal
+ * recovers the silhouette exactly. It is the same question, so it is the same
+ * code: whatever the edges agree on is backdrop, and an enclosed region of that
+ * colour (the hole in a ring) correctly stays part of the mark.
+ */
+function withDerivedSilhouette(img: RasterImage): { img: RasterImage; derived: boolean } {
+  let opaque = 0;
+  const total = img.pixels.length / 4;
+  for (let i = 3; i < img.pixels.length; i += 4) if (img.pixels[i] >= 250) opaque++;
+  if (opaque / total < 0.98) return { img, derived: false };
+
+  const copy = new Uint8ClampedArray(img.pixels);
+  removeBackgroundPixels(copy, img.width, img.height, { feather: 0 });
+  return { img: { width: img.width, height: img.height, pixels: copy }, derived: true };
+}
+
 /** Run every mark measurement over an already-rasterised design. */
-export function auditMark(img: RasterImage): MarkAudit {
+export function auditMark(raw: RasterImage): MarkAudit {
+  const { img, derived } = withDerivedSilhouette(raw);
   const oc = opticalCenter(img);
   const ss = scaleSurvival(img);
   const ct = markContrast(img);
   const cs = clearspace(img);
 
   const notes: string[] = [];
+  if (derived) {
+    notes.push('Measured against the mark\'s silhouette, separated from its opaque backdrop by a border flood fill. If the backdrop is part of the identity, these figures describe what sits on top of it.');
+  }
 
   if (oc.needsAdjustment) {
     const dx = Math.round(oc.offset.x * 10) / 10;
