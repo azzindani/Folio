@@ -22,6 +22,7 @@ import { buildAnimatedSVG, wrapAnimatedHTML } from '../export/svg-animate';
 import { renderToSVGString } from './engine/svg-export';
 import { resvgFontOption } from './engine/fonts';
 import { resolveImageAssets } from './engine/asset-resolve';
+import { syncAnimationsToSpec } from './engine/animation-sync';
 import { encodeGIF, type GifFrame } from '../export/gif-encode';
 import { specAt, frameTimes, animationDuration } from '../export/gif-frames';
 
@@ -308,6 +309,9 @@ export function addKeyframeToLayer(args: {
     );
   }
 
+  // Mirror into spec.animations, which is the field the EDITOR reads. Without
+  // it the design exports with motion and opens in the editor perfectly static.
+  syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
   return okResult(op, { layer_id: args.layer_id, keyframe: args.keyframe }, bak);
 }

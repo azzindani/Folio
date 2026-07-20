@@ -13,6 +13,7 @@ import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo } from './utils';
 import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, type MotionPreset } from './motion-presets';
+import { syncAnimationsToSpec } from './animation-sync';
 
 // A `type` alias, not an `interface`: dispatch.ts casts its Record<string,
 // unknown> arg bag to Parameters<typeof applyMotion>[0], and an interface has
@@ -150,6 +151,9 @@ export function applyMotion(args: MotionArgs): ToolResult {
   else if (spec.pages?.[0]) spec.pages[0].layers = applied;
   else spec.layers = applied;
 
+  // Mirror into spec.animations — the field the editor loads into state and
+  // turns into its canvas <style> block. See animation-sync.ts.
+  syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
 
   const totalMs = (args.duration ?? 0) + stagger * (targets.length - 1);

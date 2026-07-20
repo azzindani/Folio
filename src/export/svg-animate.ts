@@ -82,7 +82,34 @@ export function injectStyle(svg: string, css: string): string {
 export function buildAnimatedSVG(spec: DesignSpec, opts: AnimatedSVGOptions): AnimatedSVGResult {
   const pageIndex = opts.pageIndex ?? 0;
   const svg = opts.renderSVG(spec, pageIndex);
-  const anims = collectLayerAnimations(pageLayers(spec, pageIndex));
+
+  const layers = pageLayers(spec, pageIndex);
+  const anims = collectLayerAnimations(layers);
+
+  // Also honour the top-level `spec.animations` map. That is the shape the
+  // EDITOR reads and writes, so a design animated there — rather than through
+  // the MCP ops, which write per-layer — would otherwise export as a still.
+  // Per-layer wins on a conflict: it is the authoritative field, and the
+  // top-level map is a mirror of it.
+  const ids = new Set<string>();
+  const collectIds = (ls: Layer[]): void => {
+    for (const l of ls) {
+      if (typeof l.id === 'string') ids.add(l.id);
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      if (Array.isArray(kids)) collectIds(kids);
+    }
+  };
+  collectIds(layers);
+
+  const specAnims = (spec as DesignSpec & { animations?: Record<string, AnimationSpec> }).animations;
+  if (specAnims) {
+    for (const [id, anim] of Object.entries(specAnims)) {
+      // Only for layers actually on THIS page — a carousel's map covers every
+      // page, and styling an absent id would emit dead CSS.
+      if (!anims.has(id) && ids.has(id) && anim) anims.set(id, anim);
+    }
+  }
+
   const css = anims.size > 0 ? generateDesignAnimationCSS(anims) : '';
   return { svg: injectStyle(svg, css), animatedLayers: [...anims.keys()] };
 }
