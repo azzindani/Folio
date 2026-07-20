@@ -115,15 +115,42 @@ export function buildAnimatedSVG(spec: DesignSpec, opts: AnimatedSVGOptions): An
 }
 
 /**
- * Wrap an animated SVG in a single HTML file.
+ * Wrap an animated SVG in a single HTML file — the playback surface.
  *
- * Same pixels as the bare SVG, but it opens in any browser with a background
- * and centring, and `prefers-reduced-motion` is honored — a looping animation
- * that cannot be stopped is an accessibility problem, and the SVG on its own
- * has nowhere sensible to put that rule.
+ * This is the file to open when you want to WATCH the animation, and it exists
+ * because a one-shot entrance is otherwise nearly impossible to see: CSS plays
+ * it once when the document loads, and by the time anyone has finished opening
+ * the file it has already finished. There is no way to ask CSS to run it again
+ * without touching the DOM, so the page carries a Replay control that does.
+ *
+ * Replay works by removing every animation, forcing a reflow, and restoring
+ * them. Re-assigning the same animation name is a no-op to the engine — the
+ * declaration has not changed, so nothing restarts — and the forced reflow
+ * between the two is what makes the browser treat it as new.
+ *
+ * `prefers-reduced-motion` is honored: a loop the viewer cannot stop is an
+ * accessibility problem, and the bare SVG has nowhere sensible to put that rule.
  */
-export function wrapAnimatedHTML(svg: string, title: string): string {
-  const safeTitle = title.replace(/[<>&]/g, (c) => (c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&amp;'));
+export function wrapAnimatedHTML(svg: string, title: string, animated = true): string {
+  const esc = (s: string): string => s.replace(/[<>&]/g, (c) => (c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&amp;'));
+  const safeTitle = esc(title);
+
+  const controls = animated ? `
+<div class="bar">
+  <button id="replay" type="button">↻ Replay</button>
+  <span class="hint">Loops run continuously · entrances play once</span>
+</div>
+<script>
+  document.getElementById('replay').addEventListener('click', function () {
+    var svg = document.querySelector('svg');
+    if (!svg) return;
+    var nodes = svg.querySelectorAll('*');
+    for (var i = 0; i < nodes.length; i++) nodes[i].style.animation = 'none';
+    void svg.getBoundingClientRect();   // force reflow — without it nothing restarts
+    for (var j = 0; j < nodes.length; j++) nodes[j].style.animation = '';
+  });
+</script>` : '';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,16 +158,33 @@ export function wrapAnimatedHTML(svg: string, title: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${safeTitle}</title>
 <style>
-  html, body { margin: 0; height: 100%; }
-  body { display: grid; place-items: center; background: #f4f4f2; }
-  svg { max-width: 100vw; max-height: 100vh; height: auto; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; padding: 24px; box-sizing: border-box; background: #f4f4f2;
+    font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  svg { max-width: 100%; max-height: 80vh; height: auto; }
+  .bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: inherit; padding: 8px 16px; border: 1px solid #c9c9c4; border-radius: 6px;
+    background: #fff; color: #1c1c1a; cursor: pointer;
+  }
+  button:hover { background: #ecebe7; }
+  .hint { color: #6b6b66; font-size: 12px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #17171a; color: #e8e8e4; }
+    button { background: #24242a; border-color: #3a3a42; color: #e8e8e4; }
+    button:hover { background: #2f2f37; }
+    .hint { color: #93939a; }
+  }
   @media (prefers-reduced-motion: reduce) {
     svg * { animation: none !important; }
   }
 </style>
 </head>
 <body>
-${svg}
+${svg}${controls}
 </body>
 </html>
 `;

@@ -147,6 +147,27 @@ describe('wrapAnimatedHTML', () => {
   it('escapes markup in the title', () => {
     expect(wrapAnimatedHTML(STUB_SVG, '<script>&')).toContain('&lt;script&gt;&amp;');
   });
+
+  it('carries a Replay control, because a one-shot entrance is otherwise unwatchable', () => {
+    // CSS plays a one-shot once at document load — by the time anyone has
+    // finished opening the file it has already finished.
+    const html = wrapAnimatedHTML(STUB_SVG, 'x');
+    expect(html).toContain('Replay');
+    expect(html).toContain('id="replay"');
+  });
+
+  it('forces a reflow between clearing and restoring the animation', () => {
+    // Re-assigning the same animation name is a no-op to the engine; the reflow
+    // between the two is the entire mechanism.
+    expect(wrapAnimatedHTML(STUB_SVG, 'x')).toContain('getBoundingClientRect');
+  });
+
+  it('omits the control for a still design', () => {
+    // A button that visibly does nothing is worse than no button.
+    const html = wrapAnimatedHTML(STUB_SVG, 'x', false);
+    expect(html).not.toContain('Replay');
+    expect(html).not.toContain('<script>');
+  });
 });
 
 describe('buildAnimatedSVG — editor-authored animations', () => {
