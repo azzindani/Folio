@@ -236,3 +236,26 @@ describe('generateKeyframeCSS', () => {
     expect(css).toContain('400ms');
   });
 });
+
+describe('generateKeyframeCSS — origin', () => {
+  it('origin:"offset" ends an entrance at rest, not displaced', () => {
+    // The bug this pins: under the default the FIRST frame is rest, so a "rise"
+    // authored as y:24 → y:0 started at rest and ENDED at translate(0,-24px) —
+    // the layer finished 24px above where it was drawn.
+    const css = generateKeyframeCSS('e', {
+      keyframes: [{ t: 0, y: 24, opacity: 0 }, { t: 700, y: 0, opacity: 1 }],
+      playback: { duration: 700, origin: 'offset' },
+    });
+    expect(css).toContain('translate(0px, 24px)');
+    expect(css).not.toContain('-24px');
+  });
+
+  it('default origin keeps delta-from-first for hand-authored motion', () => {
+    const css = generateKeyframeCSS('h', {
+      keyframes: [{ t: 0, x: 100 }, { t: 500, x: 160 }],
+      playback: { duration: 500 },
+    });
+    expect(css).toContain('translate(60px, 0px)');
+    expect(css).not.toContain('translate(100px');
+  });
+});

@@ -66,6 +66,24 @@ export interface KeyframeAnimation {
     loop?: boolean;
     easing?: EasingFunction;
     direction?: 'normal' | 'reverse' | 'alternate';
+    /**
+     * Delay before the timeline starts, ms. This is what makes a stagger a
+     * stagger: the same keyframes on every layer, offset per layer.
+     */
+    delay?: number;
+    /**
+     * How x/y in the keyframes relate to where the renderer drew the layer.
+     *
+     *   'first'  (default) the FIRST keyframe is the rest position and later
+     *            frames are deltas from it. Right for hand-authored motion:
+     *            inspect a layer at x:100, write x:100 → x:160, get a 60px
+     *            move that ends displaced.
+     *   'offset' every value is a delta from the authored position, so 0 means
+     *            "where the layer already is". Required for entrances, which
+     *            must START displaced and END at rest — impossible under
+     *            'first', where the opening frame is rest by definition.
+     */
+    origin?: 'first' | 'offset';
   };
 }
 
