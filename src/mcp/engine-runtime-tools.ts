@@ -361,7 +361,9 @@ export function exportAnimation(args: {
     }
 
     const content = type === 'html'
-      ? wrapAnimatedHTML(built.svg, spec.meta?.name ?? baseName)
+      // A still design gets no Replay control — a button that visibly does
+      // nothing is worse than no button.
+      ? wrapAnimatedHTML(built.svg, spec.meta?.name ?? baseName, built.animatedLayers.length > 0)
       : built.svg;
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
