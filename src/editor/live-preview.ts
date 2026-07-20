@@ -13,8 +13,13 @@
 
 import type { DesignSpec } from '../schema/types';
 import type { StateManager, EditorState } from './state';
-import { assembleReportHTML } from '../export/html-assembler';
 import { loadPreviewDatasets } from './preview-data';
+
+// html-assembler is imported DYNAMICALLY, not statically. It pulls in the whole
+// interactive-renderer + report stack; a static import folds all of that into
+// the main entry chunk and pushes it past the 500 KB budget. Preview is an
+// opt-in mode, so the cost belongs in a lazy chunk loaded on first use —
+// exporter.ts imports it the same way for the same reason.
 
 const REBUILD_DEBOUNCE_MS = 300;
 
@@ -79,6 +84,14 @@ export class LivePreview {
 
     window.addEventListener('message', this.onMessage);
     this.state.subscribe(this.onStateChange);
+
+    // This module is loaded lazily, so the user may already be in preview mode
+    // by the time it arrives — that mode change fired before we subscribed.
+    // Sync to current state rather than waiting for the next one.
+    if (this.state.get().mode === 'preview') {
+      this.container.style.display = 'flex';
+      this.scheduleRebuild(true);
+    }
   }
 
   private onMessage = (e: MessageEvent): void => {
@@ -168,6 +181,7 @@ export class LivePreview {
       this.setStatus('', 'info');
     }
 
+    const { assembleReportHTML } = await import('../export/html-assembler');
     const html = assembleReportHTML(design, datasets, {
       theme: this.theme,
       title: design.meta.name,

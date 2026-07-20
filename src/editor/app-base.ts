@@ -6,7 +6,7 @@ import { chromeIcon } from './chrome-icons';
 import { applyPinConstraints } from './pin-constraints';
 import { CanvasManager } from './canvas';
 import { PayloadEditor } from './payload-editor';
-import { LivePreview } from './live-preview';
+import type { LivePreview } from './live-preview';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
@@ -406,8 +406,21 @@ export abstract class EditorAppBase {
     const section = this.container.querySelector<HTMLElement>('.canvas-section');
     if (!section || this.livePreview) return;
     const theme = document.documentElement.getAttribute('data-theme') ?? 'dark';
-    this.livePreview = new LivePreview(this.state, section);
-    this.livePreview.setTheme(theme);
+    // Lazy — the module drags in the whole report/interactive-render stack, and
+    // Preview is an opt-in mode. Keeping it out of the main entry chunk is what
+    // holds the bundle under its 500 KB budget. The constructor syncs to the
+    // CURRENT mode, so switching to Preview before this resolves still works.
+    void import('./live-preview')
+      .then(({ LivePreview }) => {
+        if (this.livePreview) return;
+        this.livePreview = new LivePreview(this.state, section);
+        this.livePreview.setTheme(theme);
+      })
+      .catch(() => {
+        void import('../utils/toast').then(({ showToast }) => {
+          showToast('Live preview unavailable — visual and payload modes still work', 'warning');
+        });
+      });
   }
 
   protected wireThemeToggle(): void {

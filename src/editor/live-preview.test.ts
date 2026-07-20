@@ -3,6 +3,18 @@ import { LivePreview } from './live-preview';
 import { loadPreviewDatasets } from './preview-data';
 import { StateManager } from './state';
 import type { DesignSpec, DataSource } from '../schema/types';
+// Warm the module registry: LivePreview loads html-assembler via a dynamic
+// import (it is lazy so it stays out of the main bundle chunk). Importing it
+// here means that dynamic import resolves from cache on a microtask, which
+// `settle()` below can reliably drain under fake timers.
+import '../export/html-assembler';
+
+/** Run pending timers, then drain microtasks so the lazy import lands. */
+async function settle(): Promise<void> {
+  await vi.runAllTimersAsync();
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  await vi.runAllTimersAsync();
+}
 
 function reportSpec(): DesignSpec {
   return {
@@ -84,11 +96,26 @@ describe('LivePreview', () => {
 
     state.set('design', reportSpec(), false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
     expect(container?.style.display).toBe('flex');
 
     state.set('mode', 'visual', false);
     expect(container?.style.display).toBe('none');
+  });
+
+  it('syncs to preview mode set BEFORE it was constructed', async () => {
+    // The module is lazy-loaded, so the user can switch to Preview before it
+    // arrives — that mode change fires with nobody subscribed. Constructing
+    // into an already-preview state must still show and build.
+    preview.dispose();
+    const late = new StateManager();
+    late.set('design', reportSpec(), false);
+    late.set('mode', 'preview', false);
+    preview = new LivePreview(late, mount);
+    await settle();
+    const containers = mount.querySelectorAll<HTMLElement>('.live-preview');
+    expect(containers[containers.length - 1]?.style.display).toBe('flex');
+    expect(preview.getHTML()).toContain('<html');
   });
 
   it('sandboxes the frame without allow-same-origin', () => {
@@ -103,7 +130,7 @@ describe('LivePreview', () => {
   it('builds the real report HTML with bound data', async () => {
     state.set('design', reportSpec(), false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
 
     const html = preview.getHTML();
     expect(html).toContain('<html');
@@ -117,7 +144,7 @@ describe('LivePreview', () => {
   it('does not rebuild when the design has not changed', async () => {
     state.set('design', reportSpec(), false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
     const first = preview.getHTML();
 
     const frame = mount.querySelector('iframe') as HTMLIFrameElement;
@@ -125,7 +152,7 @@ describe('LivePreview', () => {
     // Same spec object re-set: identical HTML, so the frame must be left alone
     // rather than reloaded (a reload discards live filter/chart state).
     state.set('design', reportSpec(), false);
-    await vi.runAllTimersAsync();
+    await settle();
     expect(frame.srcdoc).toBe('SENTINEL');
     expect(preview.getHTML()).toBe(first);
   });
@@ -137,7 +164,7 @@ describe('LivePreview', () => {
     ];
     state.set('design', spec, false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
 
     const status = mount.querySelector<HTMLElement>('.live-preview-status');
     expect(status?.style.display).toBe('block');
@@ -149,7 +176,7 @@ describe('LivePreview', () => {
     // A spec with no pages array at all — assembler input it cannot honour.
     state.set('design', { version: '1.0', meta: { name: 'x' } } as unknown as DesignSpec, false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
     // Either it built an empty shell or it reported failure; what it must not
     // do is throw out of the state listener and break the editor.
     expect(mount.querySelector('.live-preview')).not.toBeNull();
@@ -158,7 +185,7 @@ describe('LivePreview', () => {
   it('ignores postMessage from windows other than its own frame', async () => {
     state.set('design', reportSpec(), false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
 
     // A hostile frame claiming a scroll position must not be trusted.
     window.dispatchEvent(new MessageEvent('message', {
@@ -169,7 +196,7 @@ describe('LivePreview', () => {
     // the component still rebuilds cleanly).
     state.set('mode', 'visual', false);
     state.set('mode', 'preview', false);
-    await vi.runAllTimersAsync();
+    await settle();
     expect(preview.getHTML()).toContain('<html');
   });
 });
