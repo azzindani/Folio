@@ -148,3 +148,47 @@ describe('wrapAnimatedHTML', () => {
     expect(wrapAnimatedHTML(STUB_SVG, '<script>&')).toContain('&lt;script&gt;&amp;');
   });
 });
+
+describe('buildAnimatedSVG — editor-authored animations', () => {
+  const renderSVG = (): string => STUB_SVG;
+
+  it('honours the top-level spec.animations map', () => {
+    // The editor reads and writes this shape, not layer.animation. A design
+    // animated there would otherwise export as a still.
+    const s = spec({ layers: [layer('box')] }) as DesignSpec & { animations?: Record<string, unknown> };
+    s.animations = {
+      box: { keyframes: [{ t: 0, opacity: 0 }, { t: 500, opacity: 1 }], playback: { duration: 500 } },
+    };
+    const r = buildAnimatedSVG(s, { renderSVG });
+    expect(r.animatedLayers).toEqual(['box']);
+    expect(r.svg).toContain('@keyframes kf-box');
+  });
+
+  it('prefers the per-layer field when both disagree', () => {
+    const s = spec({
+      layers: [layer('box', {
+        animation: { keyframes: [{ t: 0, scale: 1 }, { t: 900, scale: 2 }], playback: { duration: 900 } },
+      })],
+    }) as DesignSpec & { animations?: Record<string, unknown> };
+    s.animations = {
+      box: { keyframes: [{ t: 0, opacity: 0 }, { t: 100, opacity: 1 }], playback: { duration: 100 } },
+    };
+    const r = buildAnimatedSVG(s, { renderSVG });
+    expect(r.svg).toContain('900ms');
+    expect(r.svg).not.toContain('100ms');
+  });
+
+  it('ignores map entries for layers not on this page', () => {
+    // A carousel's map covers every page; styling an absent id emits dead CSS.
+    const s = spec({
+      pages: [
+        { id: 'p1', layers: [layer('here')] },
+        { id: 'p2', layers: [layer('elsewhere')] },
+      ],
+    } as Partial<DesignSpec>) as DesignSpec & { animations?: Record<string, unknown> };
+    s.animations = {
+      elsewhere: { keyframes: [{ t: 0, opacity: 0 }, { t: 100, opacity: 1 }], playback: { duration: 100 } },
+    };
+    expect(buildAnimatedSVG(s, { renderSVG, pageIndex: 0 }).animatedLayers).toEqual([]);
+  });
+});
