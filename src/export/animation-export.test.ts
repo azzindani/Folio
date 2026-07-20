@@ -4,6 +4,16 @@ import * as os from 'os';
 import * as path from 'path';
 import { exportToAnimation, tryFfmpeg, encodeWithFfmpeg } from './animation-export';
 
+// The frame-capture cases below assert the manifest branch, so they all pass
+// `encoder: 'none'`. They used to just trust the host not to have ffmpeg: green
+// on a bare CI runner, and four hard failures the moment ffmpeg showed up on a
+// dev box, where the real encode ran against fake Buffer.from('PNG') frames.
+//
+// Mocking `child_process` does not fix that — vi.mock does not intercept the
+// Node builtin here (tryFfmpeg() still returned true under the mock), and a test
+// that lies about the host is the wrong shape anyway. The encoder is a real
+// option instead, so these cases state which branch they mean.
+
 let tmpDir: string;
 beforeEach(() => { tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-anim-test-')); });
 afterEach(() => { fs.rmSync(tmpDir, { recursive: true, force: true }); });
@@ -52,7 +62,7 @@ describe('exportToAnimation', () => {
       },
     });
 
-    const r = await exportToAnimation(htmlPath, outPath, { type: 'gif', fps: 5, duration: 1000 }, factory);
+    const r = await exportToAnimation(htmlPath, outPath, { type: 'gif', fps: 5, duration: 1000, encoder: 'none' }, factory);
     expect(r.success).toBe(true);
     expect(r.frames).toBe(5); // 5fps × 1s
     expect(r.output_path).toContain('.frames.json');
@@ -75,7 +85,7 @@ describe('exportToAnimation', () => {
       },
     });
 
-    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.mp4'), { type: 'mp4', fps: 10, duration: 500 }, factory);
+    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.mp4'), { type: 'mp4', fps: 10, duration: 500, encoder: 'none' }, factory);
     expect(r.success).toBe(true);
     expect(r.frames).toBe(5);
   });
@@ -95,7 +105,7 @@ describe('exportToAnimation', () => {
       },
     });
 
-    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.gif'), { type: 'gif', fps: 5, duration: 200 }, factory);
+    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.gif'), { type: 'gif', fps: 5, duration: 200, encoder: 'none' }, factory);
     const manifest = JSON.parse(fs.readFileSync(r.output_path as string, 'utf-8')) as { type: string; fps: number };
     expect(manifest.type).toBe('gif');
     expect(manifest.fps).toBe(5);
@@ -123,9 +133,53 @@ describe('exportToAnimation', () => {
         }),
       },
     });
-    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.webm'), { type: 'webm', fps: 5, duration: 200 }, factory);
+    const r = await exportToAnimation(htmlPath, path.join(tmpDir, 'out.webm'), { type: 'webm', fps: 5, duration: 200, encoder: 'none' }, factory);
     expect(r.success).toBe(true);
     expect(r.frames).toBe(1); // 5fps × 0.2s = 1
+  });
+});
+
+describe('encoder option', () => {
+  const factory = async () => ({
+    browser: {
+      close: async () => { return; },
+      newPage: async () => ({
+        setViewport: async () => { return; },
+        goto: async () => { return; },
+        screenshot: async () => Buffer.from('PNG'),
+        evaluate: async () => { return; },
+        close: async () => { return; },
+      }),
+    },
+  });
+
+  it('encoder:"none" emits a manifest regardless of what the host has', async () => {
+    const r = await exportToAnimation(
+      makeHtml(), path.join(tmpDir, 'out.gif'),
+      { type: 'gif', fps: 5, duration: 200, encoder: 'none' }, factory,
+    );
+    expect(r.success).toBe(true);
+    expect(r.output_path).toContain('.frames.json');
+  });
+
+  it('encoder:"ffmpeg" fails loudly instead of silently degrading', async () => {
+    if (tryFfmpeg()) return; // host has ffmpeg — the failure path is unreachable
+    const r = await exportToAnimation(
+      makeHtml(), path.join(tmpDir, 'out.gif'),
+      { type: 'gif', fps: 5, duration: 200, encoder: 'ffmpeg' }, factory,
+    );
+    expect(r.success).toBe(false);
+    expect(r.error).toContain('ffmpeg');
+    expect(r.error).toContain('encoder:"none"');
+  });
+
+  it('defaults to auto, which never hard-fails on a missing encoder', async () => {
+    const r = await exportToAnimation(
+      makeHtml(), path.join(tmpDir, 'out.gif'),
+      { type: 'gif', fps: 5, duration: 200 }, factory,
+    );
+    // ffmpeg present → a real gif; absent → a manifest. Either way, success.
+    expect(r.success).toBe(true);
   });
 });
 

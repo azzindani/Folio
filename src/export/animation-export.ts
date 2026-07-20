@@ -9,6 +9,20 @@ export interface AnimationExportOptions {
   width?: number;
   height?: number;
   slides?: number[];
+  /**
+   * Which encoder to use once the frames are captured.
+   *
+   *   auto    probe for ffmpeg; encode if present, else emit the frame manifest
+   *   ffmpeg  require ffmpeg; fail loudly rather than silently degrading
+   *   none    never shell out — always emit the manifest
+   *
+   * `auto` is the historical behavior and stays the default. The other two
+   * exist because "did you get a video?" must not depend on what happens to be
+   * installed on the host: a caller that needs a real file wants a hard error,
+   * and a caller that only wants frames should not pay for a subprocess. Tests
+   * use `none` to exercise the manifest branch without mocking a Node builtin.
+   */
+  encoder?: 'auto' | 'ffmpeg' | 'none';
 }
 
 export interface AnimationExportResult {
@@ -123,10 +137,27 @@ export async function exportToAnimation(
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-    if (tryFfmpeg()) {
-      encodeWithFfmpeg(frameDir, outputPath, opts);
-      fs.rmSync(frameDir, { recursive: true, force: true });
-      return { success: true, output_path: outputPath, frames: frameCount };
+    const encoder = opts.encoder ?? 'auto';
+    if (encoder === 'ffmpeg' && !tryFfmpeg()) {
+      throw new Error(
+        'encoder:"ffmpeg" requested but ffmpeg is not on PATH. Install ffmpeg, ' +
+        'or use encoder:"none" to get the frame manifest instead.',
+      );
+    }
+
+    if (encoder !== 'none' && tryFfmpeg()) {
+      try {
+        encodeWithFfmpeg(frameDir, outputPath, opts);
+        fs.rmSync(frameDir, { recursive: true, force: true });
+        return { success: true, output_path: outputPath, frames: frameCount };
+      } catch (err) {
+        // `auto` means best-effort: ffmpeg being *present* is not the same as
+        // ffmpeg *succeeding* (a bad codec build, an unwritable target, a frame
+        // it refuses to read). Falling through to the manifest keeps the frames
+        // the caller already paid to capture. `ffmpeg` asked for a video and
+        // gets the real reason it did not get one.
+        if (encoder === 'ffmpeg') throw err;
+      }
     }
 
     const manifest = { type: opts.type, frames: frameCount, fps, frameDir: null, outputPath };
