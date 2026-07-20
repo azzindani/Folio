@@ -21,7 +21,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'diagnose_design',
-    description: 'Built-in troubleshooter — scans a design for problems the model is blind to and returns structured findings with fixes: off-canvas layers, collisions/overlap pile-ups, near-miss MISALIGNMENT (edges off by a few px), tiny text, low-contrast/invisible text, missing background, plus quality critique (weak hierarchy, accent sprawl, crowded margins). Run it after composing and before seal_design; fix the errors/warnings, then render_preview to confirm.',
+    description: 'Built-in troubleshooter — scans a design for problems the model is blind to and returns structured findings with fixes: off-canvas layers, collisions/overlap pile-ups, near-miss MISALIGNMENT (edges off by a few px), tiny text, low-contrast/invisible text, missing background, plus quality critique (weak hierarchy, accent sprawl, crowded margins). For a design shaped like an IDENTITY MARK (single page, roughly square, <=1200px, few layers) it also returns `mark`: optical_center (centroid-of-ink vs bounding-box centre — box-centring is what makes a play triangle look pushed left), scale_survival (rendered at 16/24/32/64/128/512px, reporting where detail collapses), contrast against white/black/mid-grey, and a clearspace rule derived from the mark\'s own stroke width. It MEASURES a mark you drew; it never generates one. See get_engine_guide(section:"marks"). Run it after composing and before seal_design; fix the errors/warnings, then render_preview to confirm.',
     inputSchema: {
       type: 'object',
       properties: {
