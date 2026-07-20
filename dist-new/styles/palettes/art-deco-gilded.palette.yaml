@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: art-deco-gilded
+name: Art Deco Gilded
+version: "1.0.0"
+tags: [art-deco, luxury, gatsby, gold, ornate]
+description: "Black, ivory and gold with emerald and ruby — Gatsby-era opulence and Chrysler-Building geometry."
+colors:
+  background: "#0E0E10"
+  surface:    "#181819"
+  surface_2:  "#232325"
+  primary:    "#C9A24A"
+  secondary:  "#1F6E54"
+  accent:     "#9E1B32"
+  text:       "#F2EAD3"
+  text_muted: "#A89F88"
+  border:     "#3A3A3D"
+  success:    "#3E8E6D"
+  warning:    "#D4A536"
+  danger:     "#B33144"

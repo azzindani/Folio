@@ -1,0 +1,336 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — closing techniques. 1080×1350 portrait. Brutalist mono.
+meta:
+  id: tmpl-linkedin-closing-techniques-5slide
+  name: LinkedIn Closing Techniques (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, sales, closing, techniques, 4-5]
+  description: "5-slide LinkedIn carousel: three closing plays that still work without being pushy."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "SALES // CLOSING" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 520
+        width: 920
+        height: 0
+        content: { type: plain, value: "3 closing plays\nthat still work\nin 2026." }
+        style: { font_family: $heading, font_size: 92, font_weight: 900, color: $text, line_height: 0.98, letter_spacing: -0.03 }
+      - id: subtitle
+        type: text
+        z: 12
+        x: 80
+        y: 940
+        width: 920
+        height: 0
+        content: { type: plain, value: "No tricks. No urgency theater. Just three honest ways to ask for the deal." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "1/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Why pushy closes fail
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "// THE PROBLEM" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Why pushy closes fail." }
+        style: { font_family: $heading, font_size: 78, font_weight: 900, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 12
+        x: 80
+        y: 480
+        width: 920
+        height: 0
+        content: { type: plain, value: "Modern buyers have done their research. \"Sign today or the price goes up\" reads as desperate, not decisive.\n\nThe closes below work because they put the customer in the driver's seat — without giving up control of the deal." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "2/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · Technique 01 ─────────────────────────────────
+  - id: t1
+    label: Technique 01
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 }
+      - id: name
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "The Summary Close" }
+        style: { font_family: $heading, font_size: 72, font_weight: 900, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: when-label
+        type: text
+        z: 12
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHEN TO USE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: when
+        type: text
+        z: 13
+        x: 80
+        y: 400
+        width: 920
+        height: 0
+        content: { type: plain, value: "End of demo, all decision-makers in the room, no major objections raised." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: example-card, type: rect, z: 14, x: 80, y: 620, width: 920, height: 240, radius: 8, fill: { type: solid, color: "$surface" } }
+      - id: example-label
+        type: text
+        z: 15
+        x: 112
+        y: 650
+        width: 880
+        height: 0
+        content: { type: plain, value: "EXAMPLE DIALOGUE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: example-text
+        type: text
+        z: 16
+        x: 112
+        y: 690
+        width: 880
+        height: 0
+        content: { type: plain, value: "\"So — we'll cut your onboarding by 60%, save the team 12 hours a week, and lock the rate for two years. Should we get the paperwork started?\"" }
+        style: { font_family: $mono, font_size: 20, color: $text, line_height: 1.5 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "3/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · Technique 02 ─────────────────────────────────
+  - id: t2
+    label: Technique 02
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 }
+      - id: name
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "The Question Close" }
+        style: { font_family: $heading, font_size: 72, font_weight: 900, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: when-label
+        type: text
+        z: 12
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHEN TO USE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: when
+        type: text
+        z: 13
+        x: 80
+        y: 400
+        width: 920
+        height: 0
+        content: { type: plain, value: "Buyer keeps deflecting. You need to surface what's actually blocking the deal." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - { id: example-card, type: rect, z: 14, x: 80, y: 620, width: 920, height: 240, radius: 8, fill: { type: solid, color: "$surface" } }
+      - id: example-label
+        type: text
+        z: 15
+        x: 112
+        y: 650
+        width: 880
+        height: 0
+        content: { type: plain, value: "EXAMPLE DIALOGUE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: example-text
+        type: text
+        z: 16
+        x: 112
+        y: 690
+        width: 880
+        height: 0
+        content: { type: plain, value: "\"If price weren't a factor and we could start Monday — is there anything else holding you back from saying yes?\"" }
+        style: { font_family: $mono, font_size: 20, color: $text, line_height: 1.5 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "4/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Technique 03 + CTA ───────────────────────────
+  - id: t3
+    label: Technique 03 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
+      - id: number
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.2 }
+      - id: name
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "The Next-Step Close" }
+        style: { font_family: $heading, font_size: 72, font_weight: 900, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 }
+      - id: when-label
+        type: text
+        z: 12
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHEN TO USE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36, text_transform: uppercase }
+      - id: when
+        type: text
+        z: 13
+        x: 80
+        y: 400
+        width: 920
+        height: 0
+        content: { type: plain, value: "Mid-funnel. Champion is excited but committee needs more time." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - { id: example-card, type: rect, z: 14, x: 80, y: 620, width: 920, height: 240, radius: 8, fill: { type: solid, color: "rgba(255,255,255,0.12)" } }
+      - id: example-text
+        type: text
+        z: 16
+        x: 112
+        y: 660
+        width: 880
+        height: 0
+        content: { type: plain, value: "\"Let's lock in Thursday for the security review and Friday for the procurement intro. If both go clean, we sign Monday — that work?\"" }
+        style: { font_family: $mono, font_size: 20, color: "#FFFFFF", line_height: 1.5 }
+      - { id: cta-btn, type: rect, z: 17, x: 80, y: 1000, width: 360, height: 72, radius: 8, fill: { type: solid, color: "$primary" } }
+      - id: cta-text
+        type: text
+        z: 18
+        x: 80
+        y: 1022
+        width: 360
+        height: 0
+        content: { type: plain, value: "Follow for more →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: handle
+        type: text
+        z: 19
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,  path: "pages[0].layers[3].content.value", type: text, hint: "Cover title",         default: "3 closing plays\nthat still work\nin 2026." }
+  - { id: intro_body,   path: "pages[1].layers[4].content.value", type: text, hint: "Intro body",          default: "Modern buyers have done their research." }
+  - { id: t1_name,      path: "pages[2].layers[3].content.value", type: text, hint: "Technique 1 name",    default: "The Summary Close" }
+  - { id: t1_when,      path: "pages[2].layers[5].content.value", type: text, hint: "Technique 1 when",    default: "End of demo with decision-makers." }
+  - { id: t1_example,   path: "pages[2].layers[8].content.value", type: text, hint: "Technique 1 example", default: "\"So — we'll cut onboarding by 60%...\"" }
+  - { id: t2_name,      path: "pages[3].layers[3].content.value", type: text, hint: "Technique 2 name",    default: "The Question Close" }
+  - { id: t2_when,      path: "pages[3].layers[5].content.value", type: text, hint: "Technique 2 when",    default: "Buyer keeps deflecting." }
+  - { id: t2_example,   path: "pages[3].layers[8].content.value", type: text, hint: "Technique 2 example", default: "\"If price weren't a factor...\"" }
+  - { id: t3_name,      path: "pages[4].layers[3].content.value", type: text, hint: "Technique 3 name",    default: "The Next-Step Close" }
+  - { id: t3_when,      path: "pages[4].layers[5].content.value", type: text, hint: "Technique 3 when",    default: "Mid-funnel, committee needs more time." }
+  - { id: t3_example,   path: "pages[4].layers[7].content.value", type: text, hint: "Technique 3 example", default: "\"Let's lock in Thursday for security review...\"" }
+  - { id: handle,       path: "pages[4].layers[10].content.value", type: text, hint: "Handle",             default: "@yourhandle" }

@@ -1,0 +1,223 @@
+_protocol: template/v1
+
+# CD jewel case front (1200×1200 square).
+# Brutalist-mono: bold thick borders, mono type, artist + album,
+# central image plate, parental advisory sticker, year stamp.
+meta:
+  id: tmpl-cd-jewel-case-cover
+  name: CD Jewel Case Cover
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, cd, jewel-case, music, album, brutalist, square]
+  description: "CD jewel case front: artist, album, image plate, advisory, year."
+
+document:
+  width: 1200
+  height: 1200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1200
+    fill: { type: solid, color: "$background" }
+
+  - id: outer-frame
+    type: rect
+    z: 1
+    x: 40
+    y: 40
+    width: 1120
+    height: 1120
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 6 }
+
+  - id: header-bar
+    type: rect
+    z: 2
+    x: 40
+    y: 40
+    width: 1120
+    height: 140
+    fill: { type: solid, color: "$text" }
+
+  - id: artist
+    type: text
+    z: 10
+    x: 80
+    y: 90
+    width: 1040
+    height: 0
+    content: { type: plain, value: "THE BRUTALIST SOCIETY" }
+    style:
+      font_family: $mono
+      font_size: 44
+      font_weight: 900
+      color: $background
+      letter_spacing: 0.04
+      text_transform: uppercase
+
+  - id: artist-meta
+    type: text
+    z: 11
+    x: 80
+    y: 144
+    width: 1040
+
+
+    content: { type: plain, value: "FOURTH STUDIO ALBUM" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $background
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: image-plate
+    type: rect
+    z: 12
+    x: 120
+    y: 240
+    width: 960
+    height: 720
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: image-crosshatch-1
+    type: line
+    z: 13
+    x1: 120
+    y1: 240
+    x2: 1080
+    y2: 960
+    stroke: { color: "$text", width: 1 }
+    opacity: 0.3
+
+  - id: image-crosshatch-2
+    type: line
+    z: 14
+    x1: 1080
+    y1: 240
+    x2: 120
+    y2: 960
+    stroke: { color: "$text", width: 1 }
+    opacity: 0.3
+
+  - id: image-label
+    type: text
+    z: 15
+    x: 120
+    y: 580
+    width: 960
+    height: 0
+    opacity: 0.3
+    content: { type: plain, value: "Cover art" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: album-rule
+    type: rect
+    z: 20
+    x: 80
+    y: 1000
+    width: 60
+    height: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: album-title
+    type: text
+    z: 21
+    x: 80
+    y: 1020
+    width: 1040
+    height: 0
+    content: { type: plain, value: "CONCRETE & GLASS" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.02
+      text_transform: uppercase
+
+  - id: advisory-block
+    type: rect
+    z: 30
+    x: 80
+    y: 1110
+    width: 230
+    height: 50
+    fill: { type: solid, color: "$text" }
+
+  - id: advisory-text
+    type: text
+    z: 31
+    x: 80
+    y: 1122
+    width: 230
+    height: 0
+    content: { type: plain, value: "PARENTAL ADVISORY" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 900
+      color: $background
+      letter_spacing: 0.12
+      text_align: center
+      text_transform: uppercase
+
+  - id: advisory-sub
+    type: text
+    z: 32
+    x: 80
+    y: 1142
+    width: 230
+    height: 0
+    content: { type: plain, value: "EXPLICIT CONTENT" }
+    style:
+      font_family: $mono
+      font_size: 9
+      font_weight: 700
+      color: $background
+      letter_spacing: 0.18
+      text_align: center
+      text_transform: uppercase
+
+  - id: year
+    type: text
+    z: 40
+    x: 80
+    y: 1124
+    width: 1040
+    height: 0
+    content: { type: plain, value: "2026" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 900
+      color: $primary
+      letter_spacing: 0.06
+      text_align: right
+
+slots:
+  - { id: artist, path: "layers[3].content.value",  type: text, hint: "Artist / band name", default: "THE BRUTALIST SOCIETY" }
+  - { id: album,  path: "layers[10].content.value", type: text, hint: "Album title",        default: "CONCRETE & GLASS" }
+  - { id: year,   path: "layers[14].content.value", type: text, hint: "Release year",       default: "2026" }

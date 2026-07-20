@@ -1,0 +1,122 @@
+_protocol: template/v1
+
+# 6-slide LinkedIn carousel · Code review best practices.
+# Cover → intro → 4 principle slides with code snippets → CTA.
+meta:
+  id: tmpl-linkedin-code-review-6slide
+  name: LinkedIn Code Review (6 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, engineering, devops, code-review, dark, 4-5]
+  description: "LinkedIn 4:5 carousel · 4 principles of code reviews that don't suck, with code snippets."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+pages:
+  # ── 1 · Cover ─────────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "01 / 06" }, style: { font_family: $mono, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "ENGINEERING · 2026" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.34, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 480, width: 960, height: 0, content: { type: plain, value: "Code Reviews\nThat Don't Suck" }, style: { font_family: $heading, font_size: 104, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: subtitle, type: text, z: 13, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "4 principles to ship faster, kinder, smarter." }, style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.4 } }
+      - { id: swipe, type: text, z: 14, x: 60, y: 1240, width: 960, height: 0, content: { type: plain, value: "Swipe →" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.2 } }
+
+  # ── 2 · Intro ─────────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "02 / 06" }, style: { font_family: $mono, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 200, width: 960, height: 0, content: { type: plain, value: "WHY THIS MATTERS" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.34, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 250, width: 960, height: 0, content: { type: plain, value: "PR feedback shapes culture." }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: body, type: text, z: 13, x: 60, y: 480, width: 960, height: 0, content: { type: plain, value: "Bad reviews leak trust, slow velocity, and burn out senior engineers.\n\nGood reviews ship better software AND raise the team's floor." }, style: { font_family: $body, font_size: 28, color: $text, line_height: 1.55 } }
+      - { id: highlight-bar, type: rect, z: 14, x: 60, y: 940, width: 12, height: 220, fill: { type: solid, color: "$accent" } }
+      - { id: highlight-text, type: text, z: 15, x: 100, y: 950, width: 920, height: 0, content: { type: plain, value: "Treat every PR as a teaching moment in both directions — the reviewer learns too." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5, font_style: italic } }
+
+  # ── 3 · Principle 01 Tone ─────────────────────────────────
+  - id: tone
+    label: 01 Tone
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "03 / 06" }, style: { font_family: $mono, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 180, width: 200, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.3 } }
+      - { id: title, type: text, z: 12, x: 60, y: 230, width: 960, height: 0, content: { type: plain, value: "Tone" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
+      - { id: rule, type: text, z: 13, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "Comment on the code, never the coder." }, style: { font_family: $body, font_size: 30, color: $text, line_height: 1.4 } }
+      - { id: card, type: rect, z: 20, x: 60, y: 540, width: 960, height: 700, radius: 14, fill: { type: solid, color: "$surface" } }
+      - { id: card-label, type: text, z: 21, x: 92, y: 570, width: 900, height: 0, content: { type: plain, value: "EXAMPLE" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: bad-tag, type: text, z: 22, x: 92, y: 620, width: 200, height: 0, content: { type: plain, value: "// ✗ harsh" }, style: { font_family: $mono, font_size: 18, color: $secondary } }
+      - { id: bad-snippet, type: text, z: 23, x: 92, y: 660, width: 900, height: 0, content: { type: plain, value: "\"Why on earth would you write it like this?\nDid you even test it?\"" }, style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: good-tag, type: text, z: 24, x: 92, y: 880, width: 200, height: 0, content: { type: plain, value: "// ✓ kind" }, style: { font_family: $mono, font_size: 18, color: $accent } }
+      - { id: good-snippet, type: text, z: 25, x: 92, y: 920, width: 900, height: 0, content: { type: plain, value: "\"This loop could miss the empty case —\ncan we add a guard for items.length === 0?\"" }, style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.5 } }
+
+  # ── 4 · Principle 02 Scope ────────────────────────────────
+  - id: scope
+    label: 02 Scope
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "04 / 06" }, style: { font_family: $mono, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 180, width: 200, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.3 } }
+      - { id: title, type: text, z: 12, x: 60, y: 230, width: 960, height: 0, content: { type: plain, value: "Scope" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
+      - { id: rule, type: text, z: 13, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "Review what's in the diff, not what could be." }, style: { font_family: $body, font_size: 30, color: $text, line_height: 1.4 } }
+      - { id: card, type: rect, z: 20, x: 60, y: 540, width: 960, height: 700, radius: 14, fill: { type: solid, color: "$surface" } }
+      - { id: card-label, type: text, z: 21, x: 92, y: 570, width: 900, height: 0, content: { type: plain, value: "EXAMPLE" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: ctx-tag, type: text, z: 22, x: 92, y: 620, width: 900, height: 0, content: { type: plain, value: "// PR: fix off-by-one in pagination" }, style: { font_family: $mono, font_size: 18, color: $text_muted } }
+      - { id: scope-snippet, type: text, z: 23, x: 92, y: 690, width: 900, height: 0, content: { type: plain, value: "for (let i = 1; i <= pages; i++) {\n  fetchPage(i);\n}" }, style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.55 } }
+      - { id: comment-tag, type: text, z: 24, x: 92, y: 920, width: 900, height: 0, content: { type: plain, value: "// ✓ stays in scope" }, style: { font_family: $mono, font_size: 18, color: $accent } }
+      - { id: comment-text, type: text, z: 25, x: 92, y: 960, width: 900, height: 0, content: { type: plain, value: "\"Bounds look correct now. The rewrite\nto Promise.all can be a follow-up PR.\"" }, style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.5 } }
+
+  # ── 5 · Principle 03 Suggest ──────────────────────────────
+  - id: suggest
+    label: 03 Suggest
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "05 / 06" }, style: { font_family: $mono, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 180, width: 200, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.3 } }
+      - { id: title, type: text, z: 12, x: 60, y: 230, width: 960, height: 0, content: { type: plain, value: "Suggest, don't dictate" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: rule, type: text, z: 13, x: 60, y: 380, width: 960, height: 0, content: { type: plain, value: "Ask questions. Offer alternatives. Leave the keys with the author." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 } }
+      - { id: card, type: rect, z: 20, x: 60, y: 580, width: 960, height: 660, radius: 14, fill: { type: solid, color: "$surface" } }
+      - { id: card-label, type: text, z: 21, x: 92, y: 610, width: 900, height: 0, content: { type: plain, value: "GITHUB SUGGESTION" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: suggest-snippet, type: text, z: 22, x: 92, y: 660, width: 900, height: 0, content: { type: plain, value: "```suggestion\nconst total = items.reduce(\n  (sum, x) => sum + x.price, 0\n);\n```\n\n\"Optional — reduce is a bit clearer\nhere, but your for-loop also works.\"" }, style: { font_family: $mono, font_size: 22, color: $text, line_height: 1.55 } }
+
+  # ── 6 · CTA ───────────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.45)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "06 / 06" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 220, width: 200, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.3 } }
+      - { id: title, type: text, z: 12, x: 60, y: 280, width: 960, height: 0, content: { type: plain, value: "Approve fast.\nNitpick later." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: sub, type: text, z: 13, x: 60, y: 620, width: 960, height: 0, content: { type: plain, value: "If it's safe and shippable, merge.\nLeave the polish for a follow-up." }, style: { font_family: $body, font_size: 30, color: "#F0F0FF", line_height: 1.4 } }
+      - { id: cta-btn, type: rect, z: 14, x: 60, y: 940, width: 360, height: 72, radius: 36, fill: { type: solid, color: "#FFFFFF" } }
+      - { id: cta-text, type: text, z: 15, x: 60, y: 962, width: 360, height: 0, content: { type: plain, value: "Save → share with your team" }, style: { font_family: $body, font_size: 20, font_weight: 700, color: "#03001C", text_align: center } }
+      - { id: handle, type: text, z: 16, x: 60, y: 1240, width: 960, height: 0, content: { type: plain, value: "@yourhandle · #engineering" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF", letter_spacing: 0.2 } }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",            default: "Code Reviews\nThat Don't Suck" }
+  - { id: cover_subtitle, path: "pages[0].layers[5].content.value", type: text, hint: "Cover subtitle",            default: "4 principles to ship faster, kinder, smarter." }
+  - { id: intro_title,    path: "pages[1].layers[4].content.value", type: text, hint: "Intro title",               default: "PR feedback shapes culture." }
+  - { id: intro_body,     path: "pages[1].layers[5].content.value", type: text, hint: "Intro body",                default: "Bad reviews leak trust, slow velocity, and burn out senior engineers.\n\nGood reviews ship better software AND raise the team's floor." }
+  - { id: tone_rule,      path: "pages[2].layers[5].content.value", type: text, hint: "01 Tone rule",              default: "Comment on the code, never the coder." }
+  - { id: scope_rule,     path: "pages[3].layers[5].content.value", type: text, hint: "02 Scope rule",             default: "Review what's in the diff, not what could be." }
+  - { id: suggest_rule,   path: "pages[4].layers[5].content.value", type: text, hint: "03 Suggest rule",           default: "Ask questions. Offer alternatives. Leave the keys with the author." }
+  - { id: cta_title,      path: "pages[5].layers[5].content.value", type: text, hint: "CTA title",                 default: "Approve fast.\nNitpick later." }
+  - { id: cta_handle,     path: "pages[5].layers[8].content.value", type: text, hint: "Handle / hashtags",         default: "@yourhandle · #engineering" }

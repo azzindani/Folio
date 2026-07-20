@@ -1,0 +1,399 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — unit economics explainer for non-finance founders.
+# 1080×1350 portrait, dark-tech theme.
+meta:
+  id: tmpl-linkedin-unit-economics-5slide
+  name: LinkedIn Unit Economics (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, finance, unit-economics, ltv, cac, 4-5]
+  description: "5-slide unit economics primer — cover, why it matters, LTV, CAC, LTV/CAC ratio + CTA."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+pages:
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "1 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 400
+        width: 960
+        height: 0
+        content: { type: plain, value: "FINANCE FOR FOUNDERS" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "Unit economics\nfor non-finance founders." }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.02, letter_spacing: -0.03 }
+      - id: subline
+        type: text
+        z: 13
+        x: 60
+        y: 880
+        width: 960
+        height: 0
+        content: { type: plain, value: "Three numbers every CEO should know cold." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.4 }
+      - id: swipe
+        type: text
+        z: 14
+        x: 60
+        y: 1240
+        width: 960
+        height: 0
+        content: { type: plain, value: "Swipe →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: $primary }
+
+  - id: why
+    label: Why it matters
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "2 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "WHY IT MATTERS" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "Revenue hides bad businesses. Unit economics expose them." }
+        style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 60
+        y: 580
+        width: 960
+        height: 0
+        content: { type: plain, value: "You can grow revenue 100% YoY and still go bankrupt if every customer costs more to acquire than they ever return.\n\nUnit economics ask one question: does this customer make us money — and how long until they do?" }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+
+  - id: metric-1
+    label: Metric 01 LTV
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "3 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "01 · LIFETIME VALUE" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "LTV" }
+        style: { font_family: $heading, font_size: 180, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.04 }
+      - id: formula-card
+        type: rect
+        z: 20
+        x: 60
+        y: 480
+        width: 960
+        height: 130
+        radius: 0
+        fill: { type: solid, color: "$surface" }
+      - id: formula-label
+        type: text
+        z: 21
+        x: 92
+        y: 502
+        width: 900
+        height: 0
+        content: { type: plain, value: "FORMULA" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: formula-value
+        type: text
+        z: 22
+        x: 92
+        y: 540
+        width: 900
+        height: 0
+        content: { type: plain, value: "ARPU × Gross margin × Customer lifetime (months)" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 }
+      - id: healthy-label
+        type: text
+        z: 30
+        x: 60
+        y: 680
+        width: 960
+        height: 0
+        content: { type: plain, value: "HEALTHY RANGE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: healthy-body
+        type: text
+        z: 31
+        x: 60
+        y: 720
+        width: 960
+        height: 0
+        content: { type: plain, value: "> 3× CAC for B2B SaaS · > $200 for prosumer · varies wildly by motion." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: improve-label
+        type: text
+        z: 40
+        x: 60
+        y: 900
+        width: 960
+        height: 0
+        content: { type: plain, value: "HOW TO IMPROVE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: improve-body
+        type: text
+        z: 41
+        x: 60
+        y: 940
+        width: 960
+        height: 0
+        content: { type: plain, value: "Cut churn first (every 1 point = ~10% LTV). Then raise ARPU via upsells and annual plans." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+
+  - id: metric-2
+    label: Metric 02 CAC
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "4 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "02 · CUSTOMER ACQUISITION COST" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "CAC" }
+        style: { font_family: $heading, font_size: 180, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.04 }
+      - id: formula-card
+        type: rect
+        z: 20
+        x: 60
+        y: 480
+        width: 960
+        height: 130
+        radius: 0
+        fill: { type: solid, color: "$surface" }
+      - id: formula-label
+        type: text
+        z: 21
+        x: 92
+        y: 502
+        width: 900
+        height: 0
+        content: { type: plain, value: "FORMULA" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: formula-value
+        type: text
+        z: 22
+        x: 92
+        y: 540
+        width: 900
+        height: 0
+        content: { type: plain, value: "(Sales spend + Marketing spend) ÷ New customers" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 }
+      - id: healthy-label
+        type: text
+        z: 30
+        x: 60
+        y: 680
+        width: 960
+        height: 0
+        content: { type: plain, value: "HEALTHY RANGE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: healthy-body
+        type: text
+        z: 31
+        x: 60
+        y: 720
+        width: 960
+        height: 0
+        content: { type: plain, value: "Payback < 12 months for SMB · < 24 months for enterprise · < 6 months for self-serve." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: improve-label
+        type: text
+        z: 40
+        x: 60
+        y: 900
+        width: 960
+        height: 0
+        content: { type: plain, value: "HOW TO IMPROVE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: improve-body
+        type: text
+        z: 41
+        x: 60
+        y: 940
+        width: 960
+        height: 0
+        content: { type: plain, value: "Tighten ICP. Kill underperforming channels. Build referral + content compounding loops." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+
+  - id: metric-3-cta
+    label: Metric 03 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "5 / 5" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "03 · THE RATIO" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "LTV / CAC" }
+        style: { font_family: $heading, font_size: 140, font_weight: 900, color: "#FFFFFF", line_height: 1, letter_spacing: -0.04 }
+      - id: formula-value
+        type: text
+        z: 22
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "Healthy: > 3.0    ·    Investable: > 4.0    ·    Broken: < 1.0" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF", line_height: 1.4 }
+      - id: improve-body
+        type: text
+        z: 31
+        x: 60
+        y: 600
+        width: 960
+        height: 0
+        content: { type: plain, value: "Raise the ratio by extending retention (LTV) or shortening payback (CAC). Don't try both at once." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: cta-heading
+        type: text
+        z: 40
+        x: 60
+        y: 880
+        width: 960
+        height: 0
+        content: { type: plain, value: "Know your three numbers." }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: cta-sub
+        type: text
+        z: 41
+        x: 60
+        y: 1060
+        width: 960
+        height: 0
+        content: { type: plain, value: "Follow for more founder finance breakdowns." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF" }
+      - id: handle
+        type: text
+        z: 42
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",   default: "Unit economics\nfor non-finance founders." }
+  - { id: why_title,      path: "pages[1].layers[4].content.value", type: text, hint: "Why headline",     default: "Revenue hides bad businesses. Unit economics expose them." }
+  - { id: ltv_formula,    path: "pages[2].layers[7].content.value", type: text, hint: "LTV formula",      default: "ARPU × Gross margin × Customer lifetime (months)" }
+  - { id: ltv_healthy,    path: "pages[2].layers[9].content.value", type: text, hint: "LTV healthy",      default: "> 3× CAC for B2B SaaS · > $200 for prosumer · varies wildly by motion." }
+  - { id: ltv_improve,    path: "pages[2].layers[11].content.value", type: text, hint: "LTV improve",      default: "Cut churn first (every 1 point = ~10% LTV). Then raise ARPU via upsells and annual plans." }
+  - { id: cac_formula,    path: "pages[3].layers[7].content.value", type: text, hint: "CAC formula",      default: "(Sales spend + Marketing spend) ÷ New customers" }
+  - { id: cac_healthy,    path: "pages[3].layers[9].content.value", type: text, hint: "CAC healthy",      default: "Payback < 12 months for SMB · < 24 months for enterprise · < 6 months for self-serve." }
+  - { id: cac_improve,    path: "pages[3].layers[11].content.value", type: text, hint: "CAC improve",      default: "Tighten ICP. Kill underperforming channels. Build referral + content compounding loops." }
+  - { id: ratio_band,     path: "pages[4].layers[5].content.value", type: text, hint: "Ratio bands",      default: "Healthy: > 3.0    ·    Investable: > 4.0    ·    Broken: < 1.0" }
+  - { id: cta_heading,    path: "pages[4].layers[7].content.value", type: text, hint: "CTA heading",      default: "Know your three numbers." }
+  - { id: cta_handle,     path: "pages[4].layers[9].content.value", type: text, hint: "Footer handle",    default: "@yourhandle" }

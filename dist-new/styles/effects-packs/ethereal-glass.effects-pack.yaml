@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: ethereal-glass
+name: Ethereal Glass
+version: "1.0.0"
+tags: [glass, frosted, ethereal, luminous, glassmorphism]
+description: "High backdrop blur with luminous low-alpha shadows — frosted glassmorphism register."
+effects:
+  shadow_card:   "0 12px 48px rgba(255,255,255,0.08), 0 4px 16px rgba(120,180,255,0.06)"
+  shadow_glow:   "0 0 36px rgba(180,220,255,0.28)"
+  shadow_inset:  "inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(255,255,255,0.08)"
+  shadow_text:   "0 1px 12px rgba(255,255,255,0.30)"
+  blur_glass:    28
+  blur_backdrop: 24

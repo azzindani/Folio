@@ -1,0 +1,549 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn carousel — pre-raise founder checklist.
+# 1080×1350 portrait, indigo-pro theme.
+meta:
+  id: tmpl-linkedin-fundraising-checklist-7slide
+  name: LinkedIn Fundraising Checklist (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, finance, fundraising, founder, checklist, 4-5]
+  description: "7-slide pre-raise checklist — cover, intro, 5 prep slides (story/numbers/pipeline/data room/targets), CTA."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+pages:
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "1 / 7" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 400
+        width: 960
+        height: 0
+        content: { type: plain, value: "FOUNDER PLAYBOOK" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "Before you raise:\nthe founder checklist." }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.04, letter_spacing: -0.03 }
+      - id: subline
+        type: text
+        z: 13
+        x: 60
+        y: 900
+        width: 960
+        height: 0
+        content: { type: plain, value: "5 things every investor wants ready — before you even ask." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: swipe
+        type: text
+        z: 14
+        x: 60
+        y: 1240
+        width: 960
+        height: 0
+        content: { type: plain, value: "Swipe →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: $primary }
+
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "2 / 7" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "THE FRAME" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "Fundraising is a sales process. Run it like one." }
+        style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 60
+        y: 580
+        width: 960
+        height: 0
+        content: { type: plain, value: "The best raises take 4-8 weeks. The worst stretch 9+ months and burn the founder.\n\nThe difference is preparation: 5 workstreams ready before you take the first call." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+
+  - id: prep-1
+    label: Prep 01 Story
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "3 / 7" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Story" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: item-1
+        type: text
+        z: 20
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ One-sentence company description" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-2
+        type: text
+        z: 21
+        x: 60
+        y: 540
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Why now — market shift in 30 seconds" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-3
+        type: text
+        z: 22
+        x: 60
+        y: 620
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ 12-slide deck + 5-slide teaser" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-4
+        type: text
+        z: 23
+        x: 60
+        y: 700
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Founder-market fit answer (2 mins)" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-5
+        type: text
+        z: 24
+        x: 60
+        y: 780
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Loom walkthrough of the deck" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+
+  - id: prep-2
+    label: Prep 02 Numbers
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "4 / 7" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Numbers" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: item-1
+        type: text
+        z: 20
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Monthly P&L for last 12 months" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-2
+        type: text
+        z: 21
+        x: 60
+        y: 540
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Cohort retention + LTV / CAC by month" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-3
+        type: text
+        z: 22
+        x: 60
+        y: 620
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ 24-month plan with hiring + burn" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-4
+        type: text
+        z: 23
+        x: 60
+        y: 700
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Bottom-up TAM (not Gartner)" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-5
+        type: text
+        z: 24
+        x: 60
+        y: 780
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Use-of-funds chart for the round" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+
+  - id: prep-3
+    label: Prep 03 Pipeline
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "5 / 7" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Pipeline" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: item-1
+        type: text
+        z: 20
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Customer logos + revenue per logo" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-2
+        type: text
+        z: 21
+        x: 60
+        y: 540
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Sales pipeline coverage (3-5×)" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-3
+        type: text
+        z: 22
+        x: 60
+        y: 620
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ 5+ customer reference calls lined up" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-4
+        type: text
+        z: 23
+        x: 60
+        y: 700
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Win/loss notes for last 20 deals" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-5
+        type: text
+        z: 24
+        x: 60
+        y: 780
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ NPS + product usage cohort data" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+
+  - id: prep-4
+    label: Prep 04 Data room
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "6 / 7" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Data room" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 }
+      - id: item-1
+        type: text
+        z: 20
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Cap table — current + post-money" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-2
+        type: text
+        z: 21
+        x: 60
+        y: 540
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Customer + vendor contracts" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-3
+        type: text
+        z: 22
+        x: 60
+        y: 620
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Org chart + key hires roadmap" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-4
+        type: text
+        z: 23
+        x: 60
+        y: 700
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ IP assignments + open-source license review" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+      - id: item-5
+        type: text
+        z: 24
+        x: 60
+        y: 780
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Prior round docs + SAFEs / notes" }
+        style: { font_family: $body, font_size: 28, color: $text, line_height: 1.5 }
+
+  - id: prep-5-cta
+    label: Prep 05 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "7 / 7" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "05" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36 }
+      - id: name
+        type: text
+        z: 12
+        x: 60
+        y: 210
+        width: 960
+        height: 0
+        content: { type: plain, value: "Targets" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 }
+      - id: item-1
+        type: text
+        z: 20
+        x: 60
+        y: 380
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ 40-60 ranked investor list" }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: item-2
+        type: text
+        z: 21
+        x: 60
+        y: 440
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Warm intro path mapped per fund" }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: item-3
+        type: text
+        z: 22
+        x: 60
+        y: 500
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ First-meeting batch (5-7 in same week)" }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: item-4
+        type: text
+        z: 23
+        x: 60
+        y: 560
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Lead investor target shortlist" }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: item-5
+        type: text
+        z: 24
+        x: 60
+        y: 620
+        width: 960
+        height: 0
+        content: { type: plain, value: "☐ Walk-away terms (price, ownership)" }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: cta-heading
+        type: text
+        z: 30
+        x: 60
+        y: 850
+        width: 960
+        height: 0
+        content: { type: plain, value: "Prep before pitch beats pitch every time." }
+        style: { font_family: $heading, font_size: 52, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: cta-sub
+        type: text
+        z: 31
+        x: 60
+        y: 1080
+        width: 960
+        height: 0
+        content: { type: plain, value: "Follow for more founder strategy playbooks." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF" }
+      - id: handle
+        type: text
+        z: 32
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+
+slots:
+  - { id: cover_title,     path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",   default: "Before you raise:\nthe founder checklist." }
+  - { id: cover_subline,   path: "pages[0].layers[5].content.value", type: text, hint: "Cover subline",    default: "5 things every investor wants ready — before you even ask." }
+  - { id: intro_title,     path: "pages[1].layers[4].content.value", type: text, hint: "Intro headline",   default: "Fundraising is a sales process. Run it like one." }
+  - { id: prep_1_name,     path: "pages[2].layers[4].content.value", type: text, hint: "Prep 01 name",     default: "Story" }
+  - { id: prep_1_item_1,   path: "pages[2].layers[5].content.value", type: text, hint: "Prep 01 item 1",   default: "☐ One-sentence company description" }
+  - { id: prep_2_name,     path: "pages[3].layers[4].content.value", type: text, hint: "Prep 02 name",     default: "Numbers" }
+  - { id: prep_2_item_1,   path: "pages[3].layers[5].content.value", type: text, hint: "Prep 02 item 1",   default: "☐ Monthly P&L for last 12 months" }
+  - { id: prep_3_name,     path: "pages[4].layers[4].content.value", type: text, hint: "Prep 03 name",     default: "Pipeline" }
+  - { id: prep_3_item_1,   path: "pages[4].layers[5].content.value", type: text, hint: "Prep 03 item 1",   default: "☐ Customer logos + revenue per logo" }
+  - { id: prep_4_name,     path: "pages[5].layers[4].content.value", type: text, hint: "Prep 04 name",     default: "Data room" }
+  - { id: prep_4_item_1,   path: "pages[5].layers[5].content.value", type: text, hint: "Prep 04 item 1",   default: "☐ Cap table — current + post-money" }
+  - { id: prep_5_name,     path: "pages[6].layers[4].content.value", type: text, hint: "Prep 05 name",     default: "Targets" }
+  - { id: cta_heading,     path: "pages[6].layers[10].content.value", type: text, hint: "CTA heading",     default: "Prep before pitch beats pitch every time." }
+  - { id: cta_handle,      path: "pages[6].layers[12].content.value", type: text, hint: "Footer handle",   default: "@yourhandle" }

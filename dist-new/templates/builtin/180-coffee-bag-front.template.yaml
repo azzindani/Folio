@@ -1,0 +1,472 @@
+_protocol: template/v1
+
+# Coffee bag front panel — 1200×1500 portrait, forest-deep theme.
+# Specialty third-wave coffee aesthetic: roastery brand top, origin
+# (e.g. "ETHIOPIA YIRGACHEFFE") huge, roast level + processing badges,
+# tasting notes (3 flavor pills), weight + roasted-on date footer,
+# brewing recommendation strip. Coffee bean illustration spot.
+meta:
+  id: tmpl-coffee-bag-front
+  name: Coffee Bag Front
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, coffee, beverage, specialty, portrait]
+  description: "Specialty coffee bag front panel with roastery, origin, tasting notes, roast level, and date."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  # ── Top header band ───────────────────────────────────────
+  - id: header-band
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1200
+    height: 140
+    fill: { type: solid, color: "$primary" }
+
+  # ── Roastery brand ────────────────────────────────────────
+  - id: roastery
+    type: text
+    z: 5
+    x: 80
+    y: 44
+    width: 1040
+    height: 0
+    content: { type: plain, value: "STONE & EMBER" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  - id: roastery-sub
+    type: text
+    z: 6
+    x: 80
+    y: 86
+    width: 1040
+    height: 0
+    content: { type: plain, value: "specialty coffee roasters · est. 2014"
+    }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.2
+
+  # ── Coffee bean illustration (path) ───────────────────────
+  - id: bean-1
+    type: path
+    z: 10
+    d: "M 600 240 Q 660 240 660 320 Q 660 400 600 400 Q 540 400 540 320 Q 540 240 600 240 Z M 600 240 L 600 400"
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  # ── Eyebrow ───────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 15
+    x: 80
+    y: 460
+    width: 1040
+    height: 0
+    content: { type: plain, value: "SINGLE ORIGIN · LOT 042" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.42
+
+  # ── Origin HUGE ───────────────────────────────────────────
+  - id: origin-country
+    type: text
+    z: 20
+    x: 80
+    y: 500
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ETHIOPIA" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: $text
+      text_align: center
+      line_height: 0.95
+      letter_spacing: -0.02
+      text_transform: uppercase
+
+  - id: origin-region
+    type: text
+    z: 21
+    x: 80
+    y: 612
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Yirgacheffe" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_style: italic
+      color: $primary
+      text_align: center
+      line_height: 1.1
+
+  # ── Divider ───────────────────────────────────────────────
+  - id: divider
+    type: rect
+    z: 25
+    x: 480
+    y: 700
+    width: 240
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # ── Roast + processing badges ─────────────────────────────
+  - id: badge-roast-box
+    type: rect
+    z: 30
+    x: 280
+    y: 740
+    width: 280
+    height: 80
+    radius: 40
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: badge-roast-label
+    type: text
+    z: 31
+    x: 280
+    y: 758
+    width: 280
+    height: 0
+    content: { type: plain, value: "ROAST" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: badge-roast-value
+    type: text
+    z: 32
+    x: 280
+    y: 780
+    width: 280
+    height: 0
+    content: { type: plain, value: "Medium-Light" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  - id: badge-proc-box
+    type: rect
+    z: 33
+    x: 640
+    y: 740
+    width: 280
+    height: 80
+    radius: 40
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: badge-proc-label
+    type: text
+    z: 34
+    x: 640
+    y: 758
+    width: 280
+    height: 0
+    content: { type: plain, value: "PROCESS" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: badge-proc-value
+    type: text
+    z: 35
+    x: 640
+    y: 780
+    width: 280
+    height: 0
+    content: { type: plain, value: "Natural" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 700
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  # ── Tasting notes section ─────────────────────────────────
+  - id: notes-eyebrow
+    type: text
+    z: 40
+    x: 80
+    y: 880
+    width: 1040
+    height: 0
+    content: { type: plain, value: "TASTING NOTES" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.42
+
+  # ── Flavor pill 1 ─────────────────────────────────────────
+  - id: pill-1
+    type: rect
+    z: 41
+    x: 120
+    y: 930
+    width: 300
+    height: 100
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: pill-1-icon
+    type: text
+    z: 42
+    x: 120
+    y: 950
+    width: 300
+    height: 0
+    content: { type: plain, value: "✦" }
+    style: { font_family: $heading, font_size: 22, color: $primary, text_align: center }
+
+  - id: pill-1-text
+    type: text
+    z: 43
+    x: 120
+    y: 988
+    width: 300
+    height: 0
+    content: { type: plain, value: "Blueberry" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, text_align: center }
+
+  # ── Flavor pill 2 ─────────────────────────────────────────
+  - id: pill-2
+    type: rect
+    z: 44
+    x: 450
+    y: 930
+    width: 300
+    height: 100
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: pill-2-icon
+    type: text
+    z: 45
+    x: 450
+    y: 950
+    width: 300
+    height: 0
+    content: { type: plain, value: "✦" }
+    style: { font_family: $heading, font_size: 22, color: $primary, text_align: center }
+
+  - id: pill-2-text
+    type: text
+    z: 46
+    x: 450
+    y: 988
+    width: 300
+    height: 0
+    content: { type: plain, value: "Bergamot" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, text_align: center }
+
+  # ── Flavor pill 3 ─────────────────────────────────────────
+  - id: pill-3
+    type: rect
+    z: 47
+    x: 780
+    y: 930
+    width: 300
+    height: 100
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: pill-3-icon
+    type: text
+    z: 48
+    x: 780
+    y: 950
+    width: 300
+    height: 0
+    content: { type: plain, value: "✦" }
+    style: { font_family: $heading, font_size: 22, color: $primary, text_align: center }
+
+  - id: pill-3-text
+    type: text
+    z: 49
+    x: 780
+    y: 988
+    width: 300
+    height: 0
+    content: { type: plain, value: "Dark Chocolate" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, text_align: center }
+
+  # ── Brewing recommendation strip ──────────────────────────
+  - id: brew-strip
+    type: rect
+    z: 55
+    x: 80
+    y: 1100
+    width: 1040
+    height: 100
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: brew-eyebrow
+    type: text
+    z: 56
+    x: 100
+    y: 1118
+    width: 1000
+    height: 0
+    content: { type: plain, value: "BREWING RECOMMENDATION" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: brew-text
+    type: text
+    z: 57
+    x: 100
+    y: 1148
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Pour-over · V60 · 1:16 ratio · 94°C · 3:00 total brew time" }
+    style:
+      font_family: $heading
+      font_size: 20
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+
+  # ── Footer rule ───────────────────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 60
+    x: 80
+    y: 1260
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Weight + roast date ───────────────────────────────────
+  - id: weight-label
+    type: text
+    z: 61
+    x: 80
+    y: 1290
+    width: 480
+    height: 0
+    content: { type: plain, value: "NET WEIGHT" }
+    style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.42, text_align: left }
+
+  - id: weight-value
+    type: text
+    z: 62
+    x: 80
+    y: 1320
+    width: 480
+    height: 0
+    content: { type: plain, value: "340 g · 12 oz" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text, text_align: left, line_height: 1.2 }
+
+  - id: roast-date-label
+    type: text
+    z: 63
+    x: 640
+    y: 1290
+    width: 480
+    height: 0
+    content: { type: plain, value: "ROASTED ON" }
+    style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.42, text_align: right }
+
+  - id: roast-date-value
+    type: text
+    z: 64
+    x: 640
+    y: 1320
+    width: 480
+    height: 0
+    content: { type: plain, value: "May 14, 2026" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text, text_align: right, line_height: 1.2 }
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer
+    type: text
+    z: 70
+    x: 80
+    y: 1430
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ROASTED IN PORTLAND, OREGON  ·  BEST WITHIN 60 DAYS OF ROAST DATE" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.32
+
+slots:
+  - { id: roastery,        path: "layers[2].content.value",  type: text, hint: "Roastery name",          default: "STONE & EMBER" }
+  - { id: origin,          path: "layers[6].content.value",  type: text, hint: "Origin country",         default: "ETHIOPIA" }
+  - { id: roast_level,     path: "layers[11].content.value", type: text, hint: "Roast level",            default: "Medium-Light" }
+  - { id: processing,      path: "layers[14].content.value", type: text, hint: "Processing method",      default: "Natural" }
+  - { id: tasting_note_1,  path: "layers[18].content.value", type: text, hint: "Tasting note 1",         default: "Blueberry" }
+  - { id: tasting_note_2,  path: "layers[21].content.value", type: text, hint: "Tasting note 2",         default: "Bergamot" }
+  - { id: tasting_note_3,  path: "layers[24].content.value", type: text, hint: "Tasting note 3",         default: "Dark Chocolate" }
+  - { id: weight_g,        path: "layers[30].content.value", type: text, hint: "Net weight",             default: "340 g · 12 oz" }
+  - { id: roast_date,      path: "layers[32].content.value", type: text, hint: "Roast date",             default: "May 14, 2026" }

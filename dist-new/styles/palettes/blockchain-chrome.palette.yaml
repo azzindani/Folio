@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: blockchain-chrome
+name: Blockchain Chrome
+version: "1.0.0"
+tags: [tech, blockchain, crypto, chrome, bitcoin, metallic]
+description: "Chrome silver, bitcoin gold, crypto green, obsidian, arctic white — blockchain finance."
+colors:
+  background: "#F2F3F5"
+  surface:    "#E6E8EC"
+  surface_2:  "#D5D9E0"
+  primary:    "#F7931A"
+  secondary:  "#2A2D33"
+  accent:     "#16C784"
+  text:       "#15171C"
+  text_muted: "#5A6072"
+  border:     "#C0C5D0"
+  success:    "#16C784"
+  warning:    "#F7931A"
+  danger:     "#EA3943"

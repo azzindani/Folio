@@ -1,0 +1,175 @@
+_protocol: template/v1
+
+# IAB Wide Skyscraper 160×600 — vertical tall ad.
+# Brand top → headline → 3 stacked benefits → CTA bottom. Dark-tech theme.
+meta:
+  id: tmpl-ad-skyscraper
+  name: Ad Skyscraper
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ad, banner, skyscraper, iab, "160x600", portrait, dark]
+  description: "IAB 160×600 wide skyscraper ad with brand, vertical headline, three benefit bullets, and CTA."
+
+document:
+  width: 160
+  height: 600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 160
+    height: 600
+    fill: { type: solid, color: $background }
+  - id: glow
+    type: circle
+    z: 1
+    cx: 80
+    cy: 80
+    rx: 120
+    ry: 120
+    fill: { type: none }
+    opacity: 0.35
+
+  - id: accent-top
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 160
+    height: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: brand
+    type: text
+    z: 3
+    x: 12
+    y: 24
+    width: 136
+    height: 0
+    content: { type: plain, value: "◆ Pulse OS" }
+    style:
+      font_family: $heading
+      font_size: 15
+      font_weight: 800
+      color: $text
+      text_align: center
+
+  - id: headline
+    type: text
+    z: 4
+    x: 12
+    y: 76
+    width: 136
+    height: 0
+    content: { type: plain, value: "Code\nlike it's\n2030." }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.02
+      text_align: center
+
+  - id: divider
+    type: rect
+    z: 5
+    x: 40
+    y: 220
+    width: 80
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: benefit-1
+    type: text
+    z: 6
+    x: 12
+    y: 242
+    width: 136
+    height: 0
+    content: { type: plain, value: "✓ AI copilot" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: $text
+      line_height: 1.35
+      text_align: center
+
+  - id: benefit-2
+    type: text
+    z: 7
+    x: 12
+    y: 322
+    width: 136
+    height: 0
+    content: { type: plain, value: "✓ 1-click deploy" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: $text
+      line_height: 1.35
+      text_align: center
+
+  - id: benefit-3
+    type: text
+    z: 8
+    x: 12
+    y: 402
+    width: 136
+    height: 0
+    content: { type: plain, value: "✓ Live collab" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: $text
+      line_height: 1.35
+      text_align: center
+
+  - id: cta-bg
+    type: rect
+    z: 9
+    x: 16
+    y: 510
+    width: 128
+    height: 52
+    radius: 26
+    fill: { type: solid, color: "$primary" }
+    effects:
+      shadow:
+        - { dx: 0, dy: 6, blur: 16, color: "rgba(0,0,0,0.45)" }
+
+  - id: cta-text
+    type: text
+    z: 10
+    x: 16
+    y: 528
+    width: 128
+    height: 0
+    content: { type: plain, value: "Start free →" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+slots:
+  - { id: brand,      path: "layers[3].content.value",  type: text, hint: "Brand name",   default: "◆ Pulse OS" }
+  - { id: headline,   path: "layers[4].content.value",  type: text, hint: "Headline (3 short lines)", default: "Code\nlike it's\n2030." }
+  - { id: benefit_1,  path: "layers[6].content.value",  type: text, hint: "Benefit 1",    default: "✓ AI copilot" }
+  - { id: benefit_2,  path: "layers[7].content.value",  type: text, hint: "Benefit 2",    default: "✓ 1-click deploy" }
+  - { id: benefit_3,  path: "layers[8].content.value",  type: text, hint: "Benefit 3",    default: "✓ Live collab" }
+  - { id: cta_label,  path: "layers[10].content.value", type: text, hint: "CTA label",    default: "Start free →" }

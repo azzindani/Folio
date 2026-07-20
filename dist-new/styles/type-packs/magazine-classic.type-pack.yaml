@@ -1,0 +1,12 @@
+_protocol: type-pack/v1
+id: magazine-classic
+name: Magazine Classic
+version: "1.0.0"
+tags: [magazine, classic, print, didone, editorial]
+description: "Bodoni Moda with Crimson Pro body — classic high-contrast print magazine voice."
+families:
+  heading: "Bodoni Moda"
+  body:    "Crimson Pro"
+  mono:    "Courier Prime"
+  display: "Bodoni Moda"
+  accent:  "Crimson Pro"

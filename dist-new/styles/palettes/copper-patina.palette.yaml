@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: copper-patina
+name: Copper Patina
+version: "1.0.0"
+tags: [material, copper, patina, oxidized, warm]
+description: "Burnished copper meets verdigris green over warm cream — aged architectural metal."
+colors:
+  background: "#F2EAD8"
+  surface:    "#E2D6BC"
+  surface_2:  "#C8B894"
+  primary:    "#9A4A20"
+  secondary:  "#3E7A6A"
+  accent:     "#5FA28C"
+  text:       "#1F1610"
+  text_muted: "#5A4A38"
+  border:     "#A88E64"
+  success:    "#3E7A4E"
+  warning:    "#B86A1E"
+  danger:     "#8E3018"

@@ -1,0 +1,300 @@
+_protocol: template/v1
+
+# 4-slide LinkedIn carousel — customer churn causes & fixes. 1080×1350 portrait. High contrast.
+meta:
+  id: tmpl-linkedin-churn-causes-4slide
+  name: LinkedIn Churn Causes (4 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, sales, customer-success, churn, retention, 4-5]
+  description: "4-slide LinkedIn carousel on why SaaS customers leave and the three fixes that move the needle."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "CUSTOMER SUCCESS · 2026" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 520
+        width: 920
+        height: 0
+        content: { type: plain, value: "Why your\ncustomers\nare leaving." }
+        style: { font_family: $heading, font_size: 104, font_weight: 900, color: $text, line_height: 0.98, letter_spacing: -0.03 }
+      - id: subtitle
+        type: text
+        z: 12
+        x: 80
+        y: 1000
+        width: 920
+        height: 0
+        content: { type: plain, value: "By the numbers — and the three fixes that actually move retention." }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: counter
+        type: text
+        z: 20
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "1/4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · By the numbers ───────────────────────────────
+  - id: numbers
+    label: By the numbers
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "BY THE NUMBERS" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "What the data says." }
+        style: { font_family: $heading, font_size: 52, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: stat1-value
+        type: text
+        z: 20
+        x: 80
+        y: 360
+        width: 920
+        height: 0
+        content: { type: plain, value: "68%" }
+        style: { font_family: $heading, font_size: 140, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.03 }
+      - id: stat1-caption
+        type: text
+        z: 21
+        x: 80
+        y: 530
+        width: 920
+        height: 0
+        content: { type: plain, value: "of churn happens in the first 90 days." }
+        style: { font_family: $body, font_size: 24, color: $text_muted, line_height: 1.4 }
+      - id: stat2-value
+        type: text
+        z: 22
+        x: 80
+        y: 640
+        width: 920
+        height: 0
+        content: { type: plain, value: "5×" }
+        style: { font_family: $heading, font_size: 140, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.03 }
+      - id: stat2-caption
+        type: text
+        z: 23
+        x: 80
+        y: 810
+        width: 920
+        height: 0
+        content: { type: plain, value: "cheaper to keep a customer than to acquire a new one." }
+        style: { font_family: $body, font_size: 24, color: $text_muted, line_height: 1.4 }
+      - id: stat3-value
+        type: text
+        z: 24
+        x: 80
+        y: 920
+        width: 920
+        height: 0
+        content: { type: plain, value: "1 in 3" }
+        style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.03 }
+      - id: stat3-caption
+        type: text
+        z: 25
+        x: 80
+        y: 1080
+        width: 920
+        height: 0
+        content: { type: plain, value: "customers churn silently — they never tell you why." }
+        style: { font_family: $body, font_size: 24, color: $text_muted, line_height: 1.4 }
+      - id: counter
+        type: text
+        z: 30
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "2/4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · The fix ──────────────────────────────────────
+  - id: fix
+    label: The fix
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "THE FIX" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "Three actions that move retention." }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: a1-number
+        type: text
+        z: 20
+        x: 80
+        y: 460
+        width: 80
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary }
+      - id: a1-text
+        type: text
+        z: 21
+        x: 80
+        y: 510
+        width: 920
+        height: 0
+        content: { type: plain, value: "Define what \"activated\" means — and call every customer the day after they hit it." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.45 }
+      - id: a2-number
+        type: text
+        z: 22
+        x: 80
+        y: 700
+        width: 80
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary }
+      - id: a2-text
+        type: text
+        z: 23
+        x: 80
+        y: 750
+        width: 920
+        height: 0
+        content: { type: plain, value: "Score health weekly. Anything yellow gets a human within 48 hours — not an automated email." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.45 }
+      - id: a3-number
+        type: text
+        z: 24
+        x: 80
+        y: 940
+        width: 80
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary }
+      - id: a3-text
+        type: text
+        z: 25
+        x: 80
+        y: 990
+        width: 920
+        height: 0
+        content: { type: plain, value: "Exit-interview every churned account. Patterns appear after 5 — and they always surprise you." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.45 }
+      - id: counter
+        type: text
+        z: 30
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "3/4" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · CTA ──────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 12, fill: { type: solid, color: "$accent" } }
+      - id: heading
+        type: text
+        z: 11
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "Audit your churn\nthis week." }
+        style: { font_family: $heading, font_size: 100, font_weight: 900, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 }
+      - id: sub
+        type: text
+        z: 12
+        x: 80
+        y: 740
+        width: 920
+        height: 0
+        content: { type: plain, value: "Pick 5 churned customers from last quarter. Call them. Listen. The fixes will be obvious." }
+        style: { font_family: $body, font_size: 26, color: "#FFFFFF", line_height: 1.45 }
+      - { id: cta-btn, type: rect, z: 13, x: 80, y: 940, width: 380, height: 72, radius: 36, fill: { type: solid, color: "$primary" } }
+      - id: cta-text
+        type: text
+        z: 14
+        x: 80
+        y: 962
+        width: 380
+        height: 0
+        content: { type: plain, value: "Save the playbook →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: "#FFFFFF", text_align: center }
+      - id: handle
+        type: text
+        z: 15
+        x: 80
+        y: 1280
+        width: 920
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover title",     default: "Why your\ncustomers\nare leaving." }
+  - { id: cover_subtitle, path: "pages[0].layers[4].content.value", type: text, hint: "Cover subtitle",  default: "By the numbers — and the three fixes." }
+  - { id: stat1_value,    path: "pages[1].layers[4].content.value", type: text, hint: "Stat 1 value",    default: "68%" }
+  - { id: stat1_caption,  path: "pages[1].layers[5].content.value", type: text, hint: "Stat 1 caption",  default: "of churn happens in the first 90 days." }
+  - { id: stat2_value,    path: "pages[1].layers[6].content.value", type: text, hint: "Stat 2 value",    default: "5×" }
+  - { id: stat2_caption,  path: "pages[1].layers[7].content.value", type: text, hint: "Stat 2 caption",  default: "cheaper to keep a customer." }
+  - { id: stat3_value,    path: "pages[1].layers[8].content.value", type: text, hint: "Stat 3 value",    default: "1 in 3" }
+  - { id: stat3_caption,  path: "pages[1].layers[9].content.value", type: text, hint: "Stat 3 caption",  default: "customers churn silently." }
+  - { id: fix_action_1,   path: "pages[2].layers[5].content.value", type: text, hint: "Action 1",        default: "Define what activated means." }
+  - { id: fix_action_2,   path: "pages[2].layers[7].content.value", type: text, hint: "Action 2",        default: "Score health weekly." }
+  - { id: fix_action_3,   path: "pages[2].layers[9].content.value", type: text, hint: "Action 3",        default: "Exit-interview every churned account." }
+  - { id: cta_heading,    path: "pages[3].layers[2].content.value", type: text, hint: "CTA heading",     default: "Audit your churn\nthis week." }
+  - { id: handle,         path: "pages[3].layers[6].content.value", type: text, hint: "Handle",          default: "@yourhandle" }

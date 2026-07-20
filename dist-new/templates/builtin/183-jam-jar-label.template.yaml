@@ -1,0 +1,357 @@
+_protocol: template/v1
+
+# Homemade jam jar label — 800×800 square, sunset-glow theme.
+# Cottage-core farm aesthetic: farm/brand top, "STRAWBERRY JAM" big,
+# fruit illustration (overlapping circles forming berries), "Small Batch
+# · Hand-Picked" tagline, weight + ingredients + canning date footer.
+# Decorative scalloped circle frame.
+meta:
+  id: tmpl-jam-jar-label
+  name: Jam Jar Label
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, jam, food, farm, cottage, square]
+  description: "Homemade jam jar label with farm brand, flavor, fruit illustration, tagline, and canning date."
+
+document:
+  width: 800
+  height: 800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 800
+    height: 800
+    fill: { type: solid, color: "$background" }
+
+  # ── Outer circle frame (scalloped feel via two rings) ─────
+  - id: ring-outer
+    type: circle
+    z: 1
+    cx: 400
+    cy: 400
+    r: 370
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: ring-mid
+    type: circle
+    z: 2
+    cx: 400
+    cy: 400
+    r: 354
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: ring-inner
+    type: circle
+    z: 3
+    cx: 400
+    cy: 400
+    r: 340
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Scalloped dots around frame ───────────────────────────
+  - id: scallop-1
+    type: circle
+    z: 4
+    cx: 400
+    cy: 50
+    r: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: scallop-2
+    type: circle
+    z: 5
+    cx: 400
+    cy: 750
+    r: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: scallop-3
+    type: circle
+    z: 6
+    cx: 50
+    cy: 400
+    r: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: scallop-4
+    type: circle
+    z: 7
+    cx: 750
+    cy: 400
+    r: 6
+    fill: { type: solid, color: "$primary" }
+
+  # ── Farm / brand top ──────────────────────────────────────
+  - id: brand
+    type: text
+    z: 15
+    x: 100
+    y: 130
+    width: 600
+    height: 0
+    content: { type: plain, value: "BLACKBIRD FARM" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  - id: brand-sub
+    type: text
+    z: 16
+    x: 100
+    y: 164
+    width: 600
+    height: 0
+    content: { type: plain, value: "established 1987 · vermont"
+    }
+    style:
+      font_family: $body
+      font_size: 11
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.18
+
+  # ── Top divider ───────────────────────────────────────────
+  - id: div-top-l
+    type: line
+    z: 17
+    x1: 280
+    y1: 200
+    x2: 360
+    y2: 200
+    stroke: { color: "$primary", width: 1 }
+
+  - id: div-top-leaf
+    type: path
+    z: 18
+    d: "M 370 184 Q 400 200 430 184 Q 400 216 370 184 Z"
+    fill: { type: solid, color: "$primary" }
+
+  - id: div-top-r
+    type: line
+    z: 19
+    x1: 440
+    y1: 200
+    x2: 520
+    y2: 200
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Fruit illustration (3 berry circles) ──────────────────
+  - id: berry-1
+    type: circle
+    z: 25
+    cx: 360
+    cy: 280
+    r: 24
+    fill: { type: solid, color: "$primary" }
+
+  - id: berry-2
+    type: circle
+    z: 26
+    cx: 410
+    cy: 270
+    r: 28
+    fill: { type: solid, color: "$secondary" }
+
+  - id: berry-3
+    type: circle
+    z: 27
+    cx: 460
+    cy: 285
+    r: 24
+    fill: { type: solid, color: "$primary" }
+
+  - id: berry-leaf
+    type: path
+    z: 28
+    d: "M 410 232 Q 426 222 432 240 Q 418 248 410 232 Z"
+    fill: { type: solid, color: "$text" }
+
+  - id: berry-stem
+    type: rect
+    z: 29
+    x: 408
+    y: 232
+    width: 3
+    height: 18
+    fill: { type: solid, color: "$text" }
+
+  # ── Flavor HUGE ───────────────────────────────────────────
+  - id: flavor
+    type: text
+    z: 35
+    x: 80
+    y: 350
+    width: 640
+    height: 0
+    content: { type: plain, value: "STRAWBERRY" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.02
+      text_transform: uppercase
+
+  - id: flavor-sub
+    type: text
+    z: 36
+    x: 80
+    y: 426
+    width: 640
+    height: 0
+    content: { type: plain, value: "preserves" }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_style: italic
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  # ── Tagline ───────────────────────────────────────────────
+  - id: tagline
+    type: text
+    z: 40
+    x: 100
+    y: 510
+    width: 600
+    height: 0
+    content: { type: plain, value: "✦  small batch  ·  hand-picked  ·  no pectin  ✦" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 600
+      color: $text
+      text_align: center
+      letter_spacing: 0.18
+
+  # ── Mid divider ───────────────────────────────────────────
+  - id: div-mid
+    type: rect
+    z: 45
+    x: 280
+    y: 560
+    width: 240
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  # ── Ingredients ───────────────────────────────────────────
+  - id: ing-eyebrow
+    type: text
+    z: 50
+    x: 100
+    y: 580
+    width: 600
+    height: 0
+    content: { type: plain, value: "INGREDIENTS" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: ing-list
+    type: text
+    z: 51
+    x: 140
+    y: 604
+    width: 520
+    height: 0
+    content: { type: plain, value: "Fresh strawberries, cane sugar, fresh lemon juice." }
+    style:
+      font_family: $body
+      font_size: 12
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  # ── Bottom rule ───────────────────────────────────────────
+  - id: bot-rule
+    type: rect
+    z: 55
+    x: 200
+    y: 660
+    width: 400
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Weight + canning date ─────────────────────────────────
+  - id: weight
+    type: text
+    z: 56
+    x: 100
+    y: 680
+    width: 280
+    height: 0
+    content: { type: plain, value: "NET WT 8 OZ" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text
+      text_align: center
+      letter_spacing: 0.32
+
+  - id: canned-date
+    type: text
+    z: 57
+    x: 420
+    y: 680
+    width: 280
+    height: 0
+    content: { type: plain, value: "CANNED  ·  06.12.2026" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text
+      text_align: center
+      letter_spacing: 0.32
+
+  - id: refrigerate
+    type: text
+    z: 58
+    x: 100
+    y: 710
+    width: 600
+    height: 0
+    content: { type: plain, value: "refrigerate after opening · best within 12 months"
+    }
+    style:
+      font_family: $body
+      font_size: 10
+      font_style: italic
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: brand,        path: "layers[8].content.value",  type: text, hint: "Farm / brand name",   default: "BLACKBIRD FARM" }
+  - { id: flavor,       path: "layers[18].content.value", type: text, hint: "Jam flavor",          default: "STRAWBERRY" }
+  - { id: weight_oz,    path: "layers[25].content.value", type: text, hint: "Net weight",          default: "NET WT 8 OZ" }
+  - { id: ingredients,  path: "layers[23].content.value", type: text, hint: "Ingredients list",    default: "Fresh strawberries, cane sugar, fresh lemon juice." }
+  - { id: canned_on,    path: "layers[26].content.value", type: text, hint: "Canned-on date",      default: "CANNED  ·  06.12.2026" }

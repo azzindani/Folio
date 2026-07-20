@@ -1,0 +1,74 @@
+_protocol: template/v1
+
+# Sympathy / condolence card — 1080×1500 portrait, mono-print theme.
+# Elegant serif header, soft floral corner accents, condolence prose, signature.
+meta:
+  id: tmpl-sympathy-card
+  name: Sympathy Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, sympathy, condolence, reverent, monochrome, portrait]
+  description: "Reverent sympathy card with soft floral border, condolence message, and signature line."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: mono-print
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
+  # 1 thin outer frame
+  - { id: outer-frame, type: rect, z: 1, x: 100, y: 100, width: 880, height: 1300, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 0.5 } }
+
+  # ── Soft floral corners (3 small circles per corner) ────
+  # 2-4 — top-left
+  - { id: tl-p1, type: circle, z: 3, cx: 110, cy: 130, rx: 16, ry: 16, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: tl-p2, type: circle, z: 3, cx: 140, cy: 110, rx: 11, ry: 11, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: tl-p3, type: circle, z: 3, cx: 170, cy: 135, rx: 8,  ry: 8,  fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  # 5-7 — top-right
+  - { id: tr-p1, type: circle, z: 3, cx: 970, cy: 130, rx: 16, ry: 16, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: tr-p2, type: circle, z: 3, cx: 940, cy: 110, rx: 11, ry: 11, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: tr-p3, type: circle, z: 3, cx: 910, cy: 135, rx: 8,  ry: 8,  fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  # 8-10 — bottom-left
+  - { id: bl-p1, type: circle, z: 3, cx: 110, cy: 1370, rx: 16, ry: 16, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: bl-p2, type: circle, z: 3, cx: 140, cy: 1390, rx: 11, ry: 11, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: bl-p3, type: circle, z: 3, cx: 170, cy: 1365, rx: 8,  ry: 8,  fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  # 11-13 — bottom-right
+  - { id: br-p1, type: circle, z: 3, cx: 970, cy: 1370, rx: 16, ry: 16, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: br-p2, type: circle, z: 3, cx: 940, cy: 1390, rx: 11, ry: 11, fill: { type: solid, color: "$text" }, opacity: 0.18 }
+  - { id: br-p3, type: circle, z: 3, cx: 910, cy: 1365, rx: 8,  ry: 8,  fill: { type: solid, color: "$text" }, opacity: 0.18 }
+
+  # 14 — header eyebrow
+  - { id: eyebrow, type: text, z: 10, x: 80, y: 320, width: 920, height: 0, content: { type: plain, value: "WITH DEEPEST SYMPATHY" }, style: { font_family: $body, font_size: 18, font_weight: 600, color: "$text", text_align: center, letter_spacing: 0.7, text_transform: uppercase } }
+
+  # 15 — divider
+  - { id: divider, type: rect, z: 11, x: 490, y: 380, width: 100, height: 1, fill: { type: solid, color: "$text" } }
+
+  # 16 — main script line
+  - { id: script, type: text, z: 12, x: 80, y: 440, width: 920, height: 0, content: { type: plain, value: "in loving remembrance" }, style: { font_family: $heading, font_size: 52, font_style: italic, color: "$text", text_align: center, line_height: 1.2 } }
+
+  # 17 — recipient
+  - { id: recipient, type: text, z: 20, x: 80, y: 600, width: 920, height: 0, content: { type: plain, value: "Dear Caroline and family," }, style: { font_family: $heading, font_size: 26, font_style: italic, color: "$text", text_align: center, line_height: 1.4 } }
+
+  # 18 — message
+  - { id: message, type: text, z: 21, x: 160, y: 700, width: 760, height: 0, content: { type: plain, value: "There are no words that can ease the weight of this loss, but please know that your family is held in our thoughts and our hearts. May the memories of David's quiet kindness and his easy laughter be a steady comfort in the days ahead. We are here for whatever you need — a meal, an errand, an afternoon of silence." }, style: { font_family: $body, font_size: 21, color: "$text", text_align: center, line_height: 1.8 } }
+
+  # 19 — small divider
+  - { id: divider-2, type: rect, z: 22, x: 510, y: 1160, width: 60, height: 1, fill: { type: solid, color: "$text" } }
+
+  # 20 — signoff
+  - { id: signoff, type: text, z: 23, x: 80, y: 1200, width: 920, height: 0, content: { type: plain, value: "with deepest sympathy," }, style: { font_family: $heading, font_size: 24, font_style: italic, color: "$text_muted", text_align: center } }
+  # 21 — signed
+  - { id: signed, type: text, z: 24, x: 80, y: 1260, width: 920, height: 0, content: { type: plain, value: "The Whitfield Family" }, style: { font_family: $heading, font_size: 32, font_weight: 500, color: "$text", text_align: center, line_height: 1.3 } }
+
+slots:
+  - { id: recipient, path: "layers[17].content.value", type: text, hint: "Recipient salutation",   default: "Dear Caroline and family," }
+  - { id: message,   path: "layers[18].content.value", type: text, hint: "Condolence message",     default: "There are no words that can ease the weight of this loss, but please know that your family is held in our thoughts and our hearts. May the memories of David's quiet kindness and his easy laughter be a steady comfort in the days ahead. We are here for whatever you need — a meal, an errand, an afternoon of silence." }
+  - { id: signed_by, path: "layers[21].content.value", type: text, hint: "Signed by",              default: "The Whitfield Family" }

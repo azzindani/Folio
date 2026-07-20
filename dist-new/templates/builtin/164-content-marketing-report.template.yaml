@@ -1,0 +1,306 @@
+_protocol: template/v1
+
+# Content marketing quarterly — eyebrow, hero, 5 KPIs (pieces, pageviews,
+# time on page, conversions, MQLs), 12-week pageview trend, top content
+# table, channel-traffic donut, topic performance bar.
+meta:
+  id: tmpl-content-marketing-report
+  name: Content Marketing · Quarterly
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, content, marketing, seo, quarterly, interactive]
+  description: "Content marketing report: publishing cadence, pageviews, engagement, conversion funnel, channel and topic performance."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: pageview_trend
+        type: inline
+        rows:
+          - { week: W01, pageviews: 184200, conversions:  624 }
+          - { week: W02, pageviews: 196800, conversions:  682 }
+          - { week: W03, pageviews: 212400, conversions:  748 }
+          - { week: W04, pageviews: 228600, conversions:  812 }
+          - { week: W05, pageviews: 246800, conversions:  894 }
+          - { week: W06, pageviews: 268400, conversions:  962 }
+          - { week: W07, pageviews: 282600, conversions: 1024 }
+          - { week: W08, pageviews: 298400, conversions: 1098 }
+          - { week: W09, pageviews: 316200, conversions: 1184 }
+          - { week: W10, pageviews: 334800, conversions: 1268 }
+          - { week: W11, pageviews: 352600, conversions: 1342 }
+          - { week: W12, pageviews: 374200, conversions: 1438 }
+      - id: top_content
+        type: inline
+        rows:
+          - { piece: "The Ultimate Guide to React Server Components",        pageviews: 184200, avg_time_sec: 384, conversions: 246, topic: "Engineering" }
+          - { piece: "How We Cut Our AWS Bill by 60% in One Quarter",        pageviews: 156800, avg_time_sec: 412, conversions: 312, topic: "DevOps"      }
+          - { piece: "B2B SaaS Pricing — A Practical Framework",             pageviews: 142400, avg_time_sec: 446, conversions: 408, topic: "SaaS"        }
+          - { piece: "Designing Onboarding That Converts in 60 Seconds",     pageviews: 128600, avg_time_sec: 358, conversions: 284, topic: "Product"     }
+          - { piece: "Postgres Performance Tuning Cheat Sheet",              pageviews: 118400, avg_time_sec: 296, conversions: 142, topic: "Engineering" }
+          - { piece: "Cohort Analysis 101 for PM and Marketing Teams",       pageviews: 102800, avg_time_sec: 324, conversions: 198, topic: "Analytics"   }
+          - { piece: "Why Async Beats Async — A Founder's Take",             pageviews:  94600, avg_time_sec: 286, conversions: 124, topic: "Leadership"  }
+          - { piece: "Customer Interview Templates We Actually Use",         pageviews:  86400, avg_time_sec: 378, conversions: 216, topic: "Product"     }
+          - { piece: "SEO in 2026 — What Actually Moves the Needle",         pageviews: 124800, avg_time_sec: 412, conversions: 268, topic: "Marketing"   }
+          - { piece: "From Zero to 1M ARR — Our First-Year Playbook",        pageviews: 198400, avg_time_sec: 482, conversions: 384, topic: "SaaS"        }
+      - id: channel_traffic
+        type: inline
+        rows:
+          - { channel: "Organic Search",  share_pct: 42 }
+          - { channel: "Social",          share_pct: 18 }
+          - { channel: "Email",           share_pct: 14 }
+          - { channel: "Direct",          share_pct: 12 }
+          - { channel: "Referral",        share_pct:  8 }
+          - { channel: "Paid",            share_pct:  6 }
+      - id: topic_performance
+        type: inline
+        rows:
+          - { topic: "Engineering",   pageviews: 482400, engagement_pct: 64 }
+          - { topic: "Product",       pageviews: 386200, engagement_pct: 72 }
+          - { topic: "SaaS",          pageviews: 412800, engagement_pct: 68 }
+          - { topic: "Marketing",     pageviews: 264200, engagement_pct: 58 }
+          - { topic: "DevOps",        pageviews: 198400, engagement_pct: 62 }
+          - { topic: "Analytics",     pageviews: 168200, engagement_pct: 66 }
+          - { topic: "Leadership",    pageviews: 142800, engagement_pct: 54 }
+          - { topic: "Design",        pageviews: 124600, engagement_pct: 70 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        letter_spacing: 1
+        color: "$text_muted"
+        content: "ACME GROWTH · Q1 2026 · CONTENT MARKETING REVIEW"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**Content Marketing — Q1 2026**\n*Publishing output, pageview trend, top performers, and channel mix.*"
+
+      - id: kpi-pieces
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Pieces Published
+        value: 64
+        format: number
+        delta: 18.5
+        delta_format: percent
+
+      - id: kpi-pageviews
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Pageviews
+        value: 3284600
+        format: number
+        delta: 28.4
+        delta_format: percent
+        sparkline_data: pageview_trend
+        sparkline_field: pageviews
+        sparkline_color: "$primary"
+
+      - id: kpi-time
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Avg Time on Page
+        value: 386
+        format: number
+        delta: 8.2
+        delta_format: percent
+
+      - id: kpi-conversions
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Conversions
+        value: 12842
+        format: number
+        delta: 32.6
+        delta_format: percent
+
+      - id: kpi-mqls
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: MQLs
+        value: 1842
+        format: number
+        delta: 26.4
+        delta_format: percent
+
+      - id: section-trend
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
+        content: "**Pageview Trend — Last 12 Weeks**"
+
+      - id: chart-trend
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 400
+        chart_type: line
+        data_ref: pageview_trend
+        x_field: week
+        y_field: pageviews
+        title: Weekly Pageviews vs Conversions
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-content
+        type: rich_text
+        x: 60
+        y: 900
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
+        content: "**Top 10 Content Pieces — Quarterly**"
+
+      - id: tbl-content
+        type: interactive_table
+        x: 60
+        y: 960
+        width: 1160
+        height: 540
+        data_ref: top_content
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: piece,          title: Piece,           width: 460, sortable: true }
+          - { field: pageviews,      title: Pageviews,       width: 180, sortable: true, formatter: number,  align: right }
+          - { field: avg_time_sec,   title: Avg Time (s),    width: 180, sortable: true, formatter: number,  align: right }
+          - { field: conversions,    title: Conversions,     width: 180, sortable: true, formatter: number,  align: right }
+          - { field: topic,          title: Topic,           width: 160, sortable: true, formatter: badge }
+
+      - id: section-channels
+        type: rich_text
+        x: 60
+        y: 1540
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
+        content: "**Channel Mix — Traffic Sources**"
+
+      - id: chart-channels
+        type: interactive_chart
+        x: 60
+        y: 1600
+        width: 540
+        height: 380
+        chart_type: donut
+        data_ref: channel_traffic
+        x_field: channel
+        y_field: share_pct
+        title: Traffic by Channel (%)
+        legend: true
+        animate: true
+
+      - id: chart-topics
+        type: interactive_chart
+        x: 620
+        y: 1600
+        width: 600
+        height: 380
+        chart_type: bar
+        data_ref: topic_performance
+        x_field: topic
+        y_field: pageviews
+        title: Pageviews by Topic
+        legend: false
+        grid: true
+        animate: true
+
+      - id: section-topics
+        type: rich_text
+        x: 60
+        y: 2020
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 26
+        font_weight: 800
+        letter_spacing: -0.02
+        content: "**Topic Engagement Detail**"
+
+      - id: tbl-topics
+        type: interactive_table
+        x: 60
+        y: 2080
+        width: 1160
+        height: 300
+        data_ref: topic_performance
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: topic,           title: Topic,           width: 380, sortable: true, formatter: badge }
+          - { field: pageviews,       title: Pageviews,       width: 380, sortable: true, formatter: number,  align: right }
+          - { field: engagement_pct,  title: Engagement %,    width: 400, sortable: true, formatter: percent, align: right }
+
+slots:
+  - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",     default: "**Content Marketing — Q1 2026**\n*Publishing output, pageview trend, top performers, channel mix, and topic engagement.*" }
+  - { id: report_eyebrow,      path: "pages[0].layers[0].content",  type: text, hint: "Brand eyebrow",    default: "ACME GROWTH · Q1 2026 · CONTENT MARKETING REVIEW" }
+  - { id: trend_section,       path: "pages[0].layers[7].content",  type: text, hint: "Trend heading",    default: "**Pageview Trend — Last 12 Weeks**" }
+  - { id: content_section,     path: "pages[0].layers[9].content",  type: text, hint: "Content heading",  default: "**Top 10 Content Pieces — Quarterly**" }
+  - { id: channels_section,    path: "pages[0].layers[11].content", type: text, hint: "Channels heading", default: "**Channel Mix — Traffic Sources**" }
+  - { id: topics_section,      path: "pages[0].layers[14].content", type: text, hint: "Topics heading",   default: "**Topic Engagement Detail**" }

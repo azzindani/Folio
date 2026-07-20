@@ -1,0 +1,79 @@
+_protocol: template/v1
+
+# Baby shower invite — 1080×1500 portrait, pastel-dream theme.
+# Soft pastel arc, bottle + onesie icons, parents-to-be name block, details.
+meta:
+  id: tmpl-baby-shower-invite
+  name: Baby Shower Invite
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, invitation, baby, shower, pastel, portrait]
+  description: "Pastel baby shower invite with parents-to-be names, baby-themed iconography, and registry link."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
+
+  # ── Top pastel arc ───────────────────────────────────────
+  - { id: top-arc, type: circle, z: 2, cx: 540, cy: -200, rx: 720, ry: 720, fill: { type: none }, opacity: 0.45 }
+
+  - { id: side-blob-l, type: circle, z: 2, cx: -120, cy: 1400, rx: 300, ry: 300, fill: { type: none }, opacity: 0.4 }
+  - { id: side-blob-r, type: circle, z: 2, cx: 1200, cy: 1340, rx: 300, ry: 300, fill: { type: none }, opacity: 0.4 }
+
+  # ── Baby-themed icons (simple geo shapes) ────────────────
+  # bottle (left)
+  - { id: bottle-body,  type: rect,   z: 5, x: 100, y: 240, width: 70, height: 110, fill: { type: solid, color: "$primary" }, opacity: 0.55, radius: 16 }
+  - { id: bottle-cap,   type: rect,   z: 6, x: 110, y: 220, width: 50, height: 22, fill: { type: solid, color: "$primary" }, opacity: 0.7, radius: 6 }
+  - { id: bottle-nipple,type: circle, z: 7, cx: 135, cy: 210, rx: 12, ry: 12, fill: { type: solid, color: "$primary" }, opacity: 0.85 }
+
+  # onesie (right) – simplified
+  - { id: onesie-body, type: rect,   z: 5, x: 900, y: 240, width: 90, height: 110, fill: { type: solid, color: "$secondary" }, opacity: 0.55, radius: 24 }
+  - { id: onesie-neck, type: circle, z: 6, cx: 945, cy: 240, rx: 18, ry: 12, fill: { type: solid, color: "$background" } }
+
+  # ── Eyebrow ──────────────────────────────────────────────
+  - { id: eyebrow, type: text, z: 10, x: 80, y: 360, width: 920, height: 0, content: { type: plain, value: "OH BABY  ·  YOU'RE INVITED" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
+
+  - { id: title, type: text, z: 11, x: 80, y: 420, width: 920, height: 0, content: { type: plain, value: "Baby Shower" }, style: { font_family: $heading, font_size: 88, font_weight: 600, font_style: italic, color: "$text", text_align: center, line_height: 1.1, letter_spacing: -0.02 } }
+
+  - { id: divider-1, type: rect, z: 12, x: 490, y: 580, width: 100, height: 2, fill: { type: solid, color: "$primary" } }
+
+  - { id: honoring, type: text, z: 13, x: 80, y: 620, width: 920, height: 0, content: { type: plain, value: "honoring" }, style: { font_family: $body, font_size: 22, color: "$text_muted", text_align: center, font_style: italic } }
+
+  - { id: parents, type: text, z: 14, x: 80, y: 680, width: 920, height: 0, content: { type: plain, value: "Sarah & James Whitfield" }, style: { font_family: $heading, font_size: 52, font_weight: 600, color: "$primary", text_align: center, line_height: 1.2 } }
+
+  - { id: gender, type: text, z: 15, x: 80, y: 780, width: 920, height: 0, content: { type: plain, value: "as they welcome their little one" }, style: { font_family: $body, font_size: 22, color: "$text", text_align: center, line_height: 1.4 } }
+
+  # ── Details panel ────────────────────────────────────────
+  - { id: panel, type: rect, z: 20, x: 140, y: 880, width: 800, height: 320, fill: { type: solid, color: "$surface" }, radius: 24, opacity: 0.6 }
+
+  - { id: date-lbl, type: text, z: 21, x: 140, y: 920, width: 800, height: 0, content: { type: plain, value: "WHEN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.4 } }
+  - { id: date,     type: text, z: 22, x: 140, y: 950, width: 800, height: 0, content: { type: plain, value: "Sunday, August 9, 2026" }, style: { font_family: $heading, font_size: 28, font_weight: 600, color: "$text", text_align: center, line_height: 1.3 } }
+
+  - { id: time-lbl, type: text, z: 23, x: 140, y: 1010, width: 800, height: 0, content: { type: plain, value: "AT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.4 } }
+  - { id: time,     type: text, z: 24, x: 140, y: 1040, width: 800, height: 0, content: { type: plain, value: "Two o'clock in the afternoon" }, style: { font_family: $heading, font_size: 24, font_weight: 500, color: "$text", text_align: center } }
+
+  - { id: venue-lbl, type: text, z: 25, x: 140, y: 1100, width: 800, height: 0, content: { type: plain, value: "WHERE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.4 } }
+  - { id: venue,     type: text, z: 26, x: 140, y: 1130, width: 800, height: 0, content: { type: plain, value: "The Willow Room · 312 Magnolia Lane" }, style: { font_family: $heading, font_size: 24, font_weight: 500, color: "$text", text_align: center, line_height: 1.3 } }
+
+  # ── Registry ─────────────────────────────────────────────
+  - { id: registry-lbl, type: text, z: 30, x: 80, y: 1260, width: 920, height: 0, content: { type: plain, value: "REGISTRY" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$primary", text_align: center, letter_spacing: 0.5 } }
+  - { id: registry,     type: text, z: 31, x: 80, y: 1300, width: 920, height: 0, content: { type: plain, value: "babylist.com/whitfield-2026" }, style: { font_family: $mono, font_size: 22, font_weight: 600, color: "$text", text_align: center, letter_spacing: 0.05 } }
+
+  - { id: rsvp, type: text, z: 32, x: 80, y: 1380, width: 920, height: 0, content: { type: plain, value: "Kindly RSVP by August 1 to host@whitfieldshower.com" }, style: { font_family: $body, font_size: 16, color: "$text_muted", text_align: center, line_height: 1.5 } }
+
+slots:
+  - { id: parents,      path: "layers[13].content.value", type: text, hint: "Parents-to-be names",   default: "Sarah & James Whitfield" }
+  - { id: date,         path: "layers[17].content.value", type: text, hint: "Shower date",           default: "Sunday, August 9, 2026" }
+  - { id: time,         path: "layers[19].content.value", type: text, hint: "Shower time",           default: "Two o'clock in the afternoon" }
+  - { id: venue,        path: "layers[21].content.value", type: text, hint: "Venue / address",       default: "The Willow Room · 312 Magnolia Lane" }
+  - { id: registry_url, path: "layers[23].content.value", type: text, hint: "Registry URL",          default: "babylist.com/whitfield-2026" }

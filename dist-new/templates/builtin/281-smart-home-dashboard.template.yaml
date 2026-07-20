@@ -1,0 +1,657 @@
+_protocol: template/v1
+
+# Smart-home dashboard — 1920×1080 landscape, light-clean theme.
+# 6 device tiles, room temperature widget, energy-usage bar chart.
+meta:
+  id: tmpl-smart-home-dashboard
+  name: Smart Home Dashboard
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [dashboard, smart-home, iot, controls, landscape, light]
+  description: "Smart-home control panel with 6 device tile cards, temperature widget, and an energy-usage bar chart."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  # ── Header ────────────────────────────────────────────────
+  - id: home-name
+    type: text
+    z: 10
+    x: 60
+    y: 56
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Maple Street Home" }
+    style:
+      font_family: $heading
+      font_size: 40
+      font_weight: 800
+      color: $text
+      letter_spacing: -0.02
+
+  - id: home-sub
+    type: text
+    z: 11
+    x: 60
+    y: 110
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Good evening · 7 devices online" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+
+  # ── Temperature widget (right side header) ────────────────
+  - id: temp-bg
+    type: rect
+    z: 12
+    x: 1500
+    y: 40
+    width: 360
+    height: 120
+    radius: 20
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: temp-label
+    type: text
+    z: 13
+    x: 1524
+    y: 64
+    width: 200
+    height: 0
+    content: { type: plain, value: "LIVING ROOM" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.2
+
+  - id: current-temp
+    type: text
+    z: 14
+    x: 1524
+    y: 88
+    width: 320
+    height: 0
+    content: { type: plain, value: "72°F" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 800
+      color: $primary
+      letter_spacing: -0.02
+
+  # ── Device tile: Light ────────────────────────────────────
+  - id: tile-light-bg
+    type: rect
+    z: 20
+    x: 60
+    y: 220
+    width: 380
+    height: 220
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: tile-light-icon
+    type: circle
+    z: 21
+    cx: 110
+    cy: 280
+    rx: 24
+    ry: 24
+    fill: { type: solid, color: "$accent" }
+
+  - id: tile-light-name
+    type: text
+    z: 22
+    x: 84
+    y: 332
+    width: 320
+    height: 0
+    content: { type: plain, value: "Living Room Light" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: tile-light-status
+    type: text
+    z: 23
+    x: 84
+    y: 366
+    width: 200
+    height: 0
+    content: { type: plain, value: "On · 80%" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: tile-light-toggle
+    type: rect
+    z: 24
+    x: 332
+    y: 388
+    width: 80
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: tile-light-knob
+    type: circle
+    z: 25
+    cx: 396
+    cy: 406
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Device tile: Thermostat ───────────────────────────────
+  - id: tile-therm-bg
+    type: rect
+    z: 30
+    x: 460
+    y: 220
+    width: 380
+    height: 220
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: tile-therm-icon
+    type: circle
+    z: 31
+    cx: 510
+    cy: 280
+    rx: 24
+    ry: 24
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 4 }
+
+  - id: tile-therm-name
+    type: text
+    z: 32
+    x: 484
+    y: 332
+    width: 320
+    height: 0
+    content: { type: plain, value: "Thermostat" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: tile-therm-status
+    type: text
+    z: 33
+    x: 484
+    y: 366
+    width: 200
+    height: 0
+    content: { type: plain, value: "Auto · 72°F" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: tile-therm-toggle
+    type: rect
+    z: 34
+    x: 732
+    y: 388
+    width: 80
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: tile-therm-knob
+    type: circle
+    z: 35
+    cx: 796
+    cy: 406
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Device tile: Lock ─────────────────────────────────────
+  - id: tile-lock-bg
+    type: rect
+    z: 40
+    x: 860
+    y: 220
+    width: 380
+    height: 220
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: tile-lock-icon
+    type: rect
+    z: 41
+    x: 894
+    y: 264
+    width: 32
+    height: 28
+    radius: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: tile-lock-name
+    type: text
+    z: 42
+    x: 884
+    y: 332
+    width: 320
+    height: 0
+    content: { type: plain, value: "Front Door" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: tile-lock-status
+    type: text
+    z: 43
+    x: 884
+    y: 366
+    width: 200
+    height: 0
+    content: { type: plain, value: "Locked" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: tile-lock-toggle
+    type: rect
+    z: 44
+    x: 1132
+    y: 388
+    width: 80
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$border" }
+
+  - id: tile-lock-knob
+    type: circle
+    z: 45
+    cx: 1150
+    cy: 406
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Device tile: Music ────────────────────────────────────
+  - id: tile-music-bg
+    type: rect
+    z: 50
+    x: 1260
+    y: 220
+    width: 380
+    height: 220
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: tile-music-icon
+    type: circle
+    z: 51
+    cx: 1310
+    cy: 280
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "$secondary" }
+
+  - id: tile-music-name
+    type: text
+    z: 52
+    x: 1284
+    y: 332
+    width: 320
+    height: 0
+    content: { type: plain, value: "Kitchen Speaker" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: tile-music-status
+    type: text
+    z: 53
+    x: 1284
+    y: 366
+    width: 280
+    height: 0
+    content: { type: plain, value: "Playing · Lo-Fi" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: tile-music-toggle
+    type: rect
+    z: 54
+    x: 1532
+    y: 388
+    width: 80
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: tile-music-knob
+    type: circle
+    z: 55
+    cx: 1596
+    cy: 406
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Device tile: Camera ───────────────────────────────────
+  - id: tile-cam-bg
+    type: rect
+    z: 60
+    x: 60
+    y: 460
+    width: 380
+    height: 220
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: tile-cam-icon
+    type: rect
+    z: 61
+    x: 88
+    y: 502
+    width: 44
+    height: 32
+    radius: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: tile-cam-name
+    type: text
+    z: 62
+    x: 84
+    y: 572
+    width: 320
+    height: 0
+    content: { type: plain, value: "Driveway Cam" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: tile-cam-status
+    type: text
+    z: 63
+    x: 84
+    y: 606
+    width: 200
+    height: 0
+    content: { type: plain, value: "Recording" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: tile-cam-toggle
+    type: rect
+    z: 64
+    x: 332
+    y: 628
+    width: 80
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: tile-cam-knob
+    type: circle
+    z: 65
+    cx: 396
+    cy: 646
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Device tile: Vacuum ───────────────────────────────────
+  - id: tile-vac-bg
+    type: rect
+    z: 70
+    x: 460
+    y: 460
+    width: 380
+    height: 220
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: tile-vac-icon
+    type: circle
+    z: 71
+    cx: 510
+    cy: 520
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "$accent" }
+
+  - id: tile-vac-name
+    type: text
+    z: 72
+    x: 484
+    y: 572
+    width: 320
+    height: 0
+    content: { type: plain, value: "Robot Vacuum" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $text
+
+  - id: tile-vac-status
+    type: text
+    z: 73
+    x: 484
+    y: 606
+    width: 200
+    height: 0
+    content: { type: plain, value: "Idle · Docked" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: tile-vac-toggle
+    type: rect
+    z: 74
+    x: 732
+    y: 628
+    width: 80
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$border" }
+
+  - id: tile-vac-knob
+    type: circle
+    z: 75
+    cx: 750
+    cy: 646
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "#FFFFFF" }
+
+  # ── Energy usage chart ────────────────────────────────────
+  - id: chart-bg
+    type: rect
+    z: 80
+    x: 860
+    y: 460
+    width: 1000
+    height: 560
+    radius: 24
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 4, blur: 16, color: "rgba(0,0,0,0.06)" }
+
+  - id: chart-title
+    type: text
+    z: 81
+    x: 894
+    y: 500
+    width: 600
+    height: 0
+    content: { type: plain, value: "Energy Usage · This Week" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 700
+      color: $text
+
+  - id: chart-sub
+    type: text
+    z: 82
+    x: 894
+    y: 540
+    width: 600
+    height: 0
+    content: { type: plain, value: "Total: 142 kWh · ↓ 8% vs last week" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+
+  # Bars
+  - id: bar-mon
+    type: rect
+    z: 83
+    x: 920
+    y: 720
+    width: 100
+    height: 240
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+  - id: bar-tue
+    type: rect
+    z: 84
+    x: 1050
+    y: 760
+    width: 100
+    height: 200
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+  - id: bar-wed
+    type: rect
+    z: 85
+    x: 1180
+    y: 700
+    width: 100
+    height: 260
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+  - id: bar-thu
+    type: rect
+    z: 86
+    x: 1310
+    y: 780
+    width: 100
+    height: 180
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+  - id: bar-fri
+    type: rect
+    z: 87
+    x: 1440
+    y: 660
+    width: 100
+    height: 300
+    radius: 8
+    fill: { type: solid, color: "$accent" }
+  - id: bar-sat
+    type: rect
+    z: 88
+    x: 1570
+    y: 740
+    width: 100
+    height: 220
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+  - id: bar-sun
+    type: rect
+    z: 89
+    x: 1700
+    y: 780
+    width: 100
+    height: 180
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.7
+
+  - id: chart-labels
+    type: text
+    z: 90
+    x: 894
+    y: 980
+    width: 940
+    height: 0
+    content: { type: plain, value: "M     T     W     T     F     S     S" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      text_align: left
+      letter_spacing: 0.4
+
+slots:
+  - { id: home_name,    path: "layers[1].content.value", type: text, hint: "Home name",     default: "Maple Street Home" }
+  - { id: current_temp, path: "layers[5].content.value", type: text, hint: "Current temperature",  default: "72°F" }

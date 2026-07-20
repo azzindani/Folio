@@ -1,0 +1,384 @@
+_protocol: template/v1
+
+# Wine bottle wrap-around label — 700×1200 portrait, editorial-cream theme.
+# Estate name top in elegant serif, decorative gold hairline rules,
+# vintage year centered, grape variety + region block, tasting notes
+# (3 lines), volume / alcohol % footer with monogram seal.
+meta:
+  id: tmpl-wine-bottle-label
+  name: Wine Bottle Label
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, wine, bottle, beverage, editorial, portrait]
+  description: "Estate wine bottle wrap-around label with vintage, variety, region, tasting notes, and ABV footer."
+
+document:
+  width: 700
+  height: 1200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 700
+    height: 1200
+    fill: { type: solid, color: "$background" }
+
+  # ── Inner frame with gold border ──────────────────────────
+  - id: frame-outer
+    type: rect
+    z: 1
+    x: 40
+    y: 40
+    width: 620
+    height: 1120
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: frame-inner
+    type: rect
+    z: 2
+    x: 56
+    y: 56
+    width: 588
+    height: 1088
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Decorative gold flourish top ──────────────────────────
+  - id: flourish-top-left
+    type: line
+    z: 5
+    x1: 120
+    y1: 130
+    x2: 280
+    y2: 130
+    stroke: { color: "$primary", width: 1 }
+
+  - id: flourish-top-diamond
+    type: rect
+    z: 6
+    x: 340
+    y: 122
+    width: 16
+    height: 16
+    rotation: 45
+    fill: { type: solid, color: "$primary" }
+
+  - id: flourish-top-right
+    type: line
+    z: 7
+    x1: 420
+    y1: 130
+    x2: 580
+    y2: 130
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Estate name (serif eyebrow) ───────────────────────────
+  - id: estate-eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 160
+    width: 540
+    height: 0
+    content: { type: plain, value: "ESTATE BOTTLED" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: estate-name
+    type: text
+    z: 11
+    x: 80
+    y: 200
+    width: 540
+    height: 0
+    content: { type: plain, value: "Château Beaumont-Laval" }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 700
+      color: $text
+      text_align: center
+      line_height: 1.1
+      letter_spacing: -0.01
+
+  # ── Vintage year (massive) ────────────────────────────────
+  - id: vintage-rule-top
+    type: rect
+    z: 15
+    x: 230
+    y: 300
+    width: 240
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: vintage
+    type: text
+    z: 16
+    x: 80
+    y: 320
+    width: 540
+    height: 0
+    content: { type: plain, value: "2019" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 300
+      color: $primary
+      text_align: center
+      line_height: 1
+      letter_spacing: 0.04
+
+  - id: vintage-rule-bot
+    type: rect
+    z: 17
+    x: 230
+    y: 440
+    width: 240
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  # ── Grape variety ─────────────────────────────────────────
+  - id: variety
+    type: text
+    z: 20
+    x: 80
+    y: 480
+    width: 540
+    height: 0
+    content: { type: plain, value: "Cabernet Sauvignon" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.2
+
+  # ── Region ────────────────────────────────────────────────
+  - id: region-eyebrow
+    type: text
+    z: 21
+    x: 80
+    y: 540
+    width: 540
+    height: 0
+    content: { type: plain, value: "APPELLATION" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.36
+      text_align: center
+      text_transform: uppercase
+
+  - id: region
+    type: text
+    z: 22
+    x: 80
+    y: 568
+    width: 540
+    height: 0
+    content: { type: plain, value: "Saint-Émilion · Bordeaux · France" }
+    style:
+      font_family: $heading
+      font_size: 18
+      color: $text
+      text_align: center
+      line_height: 1.3
+
+  # ── Tasting notes ─────────────────────────────────────────
+  - id: notes-rule
+    type: rect
+    z: 30
+    x: 240
+    y: 640
+    width: 220
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: notes-eyebrow
+    type: text
+    z: 31
+    x: 80
+    y: 660
+    width: 540
+    height: 0
+    content: { type: plain, value: "TASTING NOTES" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: note-1
+    type: text
+    z: 32
+    x: 80
+    y: 700
+    width: 540
+    height: 0
+    content: { type: plain, value: "Black cherry · cedar · graphite" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  - id: note-2
+    type: text
+    z: 33
+    x: 80
+    y: 730
+    width: 540
+    height: 0
+    content: { type: plain, value: "Silken tannins, lingering finish" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  - id: note-3
+    type: text
+    z: 34
+    x: 80
+    y: 760
+    width: 540
+    height: 0
+    content: { type: plain, value: "Aged 18 months in French oak" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  # ── Monogram seal ─────────────────────────────────────────
+  - id: seal-circle-outer
+    type: circle
+    z: 50
+    cx: 350
+    cy: 900
+    r: 56
+    fill: { type: none }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: seal-circle-inner
+    type: circle
+    z: 51
+    cx: 350
+    cy: 900
+    r: 44
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: seal-monogram
+    type: text
+    z: 52
+    x: 294
+    y: 876
+    width: 112
+    height: 0
+    content: { type: plain, value: "B·L" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: $primary
+      text_align: center
+      line_height: 1.5
+
+  # ── Footer rule ───────────────────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 60
+    x: 80
+    y: 1020
+    width: 540
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  # ── Volume / ABV footer ───────────────────────────────────
+  - id: volume-label
+    type: text
+    z: 61
+    x: 80
+    y: 1050
+    width: 240
+    height: 0
+    content: { type: plain, value: "750 ml" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: left
+      letter_spacing: 0.08
+
+  - id: abv-label
+    type: text
+    z: 62
+    x: 380
+    y: 1050
+    width: 240
+    height: 0
+    content: { type: plain, value: "14.5% alc./vol." }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: right
+      letter_spacing: 0.08
+
+  - id: produce-of
+    type: text
+    z: 63
+    x: 80
+    y: 1090
+    width: 540
+    height: 0
+    content: { type: plain, value: "PRODUCT OF FRANCE  ·  CONTAINS SULFITES" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: estate_name,   path: "layers[7].content.value",  type: text, hint: "Estate / château name", default: "Château Beaumont-Laval" }
+  - { id: vintage,       path: "layers[9].content.value",  type: text, hint: "Vintage year",          default: "2019" }
+  - { id: variety,       path: "layers[11].content.value", type: text, hint: "Grape variety",         default: "Cabernet Sauvignon" }
+  - { id: region,        path: "layers[13].content.value", type: text, hint: "Appellation / region",  default: "Saint-Émilion · Bordeaux · France" }
+  - { id: tasting_notes, path: "layers[16].content.value", type: text, hint: "Tasting notes line 1",  default: "Black cherry · cedar · graphite" }
+  - { id: alcohol_pct,   path: "layers[24].content.value", type: text, hint: "Alcohol percentage",    default: "14.5% alc./vol." }

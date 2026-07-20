@@ -1,0 +1,187 @@
+_protocol: template/v1
+
+# iPad wallpaper — 2048×2732 portrait (iPad Pro 12.9"), pastel-dream theme.
+# Multiple gradient orbs and subtle line patterns; centered optional text.
+meta:
+  id: tmpl-ipad-wallpaper
+  name: iPad Wallpaper
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [wallpaper, ipad, tablet, pastel, orbs, portrait]
+  description: "iPad Pro wallpaper with multiple soft gradient orbs, subtle line patterns, and optional centered text."
+
+document:
+  width: 2048
+  height: 2732
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 2048
+    height: 2732
+    fill:
+      type: linear
+      angle: 160
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$surface", position: 100 }
+
+  # ── Orbs ──────────────────────────────────────────────────
+  - id: orb-1
+    type: circle
+    z: 10
+    cx: 520
+    cy: 620
+    rx: 540
+    ry: 540
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.55
+
+  - id: orb-2
+    type: circle
+    z: 11
+    cx: 1620
+    cy: 980
+    rx: 620
+    ry: 620
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.55
+
+  - id: orb-3
+    type: circle
+    z: 12
+    cx: 380
+    cy: 1820
+    rx: 700
+    ry: 700
+    fill:
+      type: radial
+      stops:
+        - { color: "$accent", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.5
+
+  - id: orb-4
+    type: circle
+    z: 13
+    cx: 1720
+    cy: 2200
+    rx: 580
+    ry: 580
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.5
+
+  - id: orb-5
+    type: circle
+    z: 14
+    cx: 1024
+    cy: 1366
+    rx: 460
+    ry: 460
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.4
+
+  # ── Subtle line pattern (horizontal sweeps) ───────────────
+  - id: pattern-line-1
+    type: line
+    z: 20
+    x1: 0
+    y1: 480
+    x2: 2048
+    y2: 480
+    stroke: { color: "$text_muted", width: 1, opacity: 0.18 }
+
+  - id: pattern-line-2
+    type: line
+    z: 21
+    x1: 0
+    y1: 1080
+    x2: 2048
+    y2: 1080
+    stroke: { color: "$text_muted", width: 1, opacity: 0.14 }
+
+  - id: pattern-line-3
+    type: line
+    z: 22
+    x1: 0
+    y1: 1680
+    x2: 2048
+    y2: 1680
+    stroke: { color: "$text_muted", width: 1, opacity: 0.14 }
+
+  - id: pattern-line-4
+    type: line
+    z: 23
+    x1: 0
+    y1: 2280
+    x2: 2048
+    y2: 2280
+    stroke: { color: "$text_muted", width: 1, opacity: 0.18 }
+
+  # ── Subtle diagonal accents ───────────────────────────────
+  - id: diag-1
+    type: line
+    z: 24
+    x1: 1600
+    y1: 0
+    x2: 2048
+    y2: 600
+    stroke: { color: "$accent", width: 2, opacity: 0.25 }
+
+  - id: diag-2
+    type: line
+    z: 25
+    x1: 0
+    y1: 2200
+    x2: 600
+    y2: 2732
+    stroke: { color: "$accent", width: 2, opacity: 0.25 }
+
+  # ── Optional centered text ────────────────────────────────
+  - id: optional-text
+    type: text
+    z: 40
+    x: 200
+    y: 2580
+    width: 1648
+    height: 0
+    content: { type: plain, value: "Stay curious." }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 500
+      color: $text
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.04
+    opacity: 0.65
+
+slots:
+  - { id: optional_text, path: "layers[12].content.value", type: text, hint: "Optional centered text", default: "Stay curious." }

@@ -499,18 +499,32 @@ export function renderKpiCard(layer: KpiCardLayer, _svg: SVGSVGElement): SVGElem
   const valStr = typeof layer.value === 'number'
     ? formatKpiValue(layer.value, layer.format, layer.currency, layer.decimals)
     : String(layer.value);
-  const deltaStr = layer.delta !== undefined
-    ? formatKpiValue(Number(layer.delta), layer.delta_format === 'percent' ? 'percent' : 'number', undefined, 1)
-    : undefined;
+  // A delta is not always a number. "unchanged", "was 2", "flat" are ordinary
+  // things to write on a KPI card, and coercing them produced a literal
+  // "▼ NaN" on the canvas — the interactive HTML export renders the same field
+  // as plain text, so the editor preview and the export disagreed about the
+  // same design. Only treat it as numeric when it actually parses.
+  const deltaRaw = layer.delta;
+  const deltaNum = deltaRaw !== undefined && deltaRaw !== null && String(deltaRaw).trim() !== ''
+    ? Number(deltaRaw)
+    : NaN;
+  const deltaIsNumeric = Number.isFinite(deltaNum);
+  const deltaStr = deltaRaw === undefined
+    ? undefined
+    : deltaIsNumeric
+      ? formatKpiValue(deltaNum, layer.delta_format === 'percent' ? 'percent' : 'number', undefined, 1)
+      : String(deltaRaw);
   const posColor = layer.delta_positive_color ?? '#00b894';
   const negColor = layer.delta_negative_color ?? '#e17055';
-  const deltaNum = layer.delta !== undefined ? Number(layer.delta) : 0;
-  const deltaColor = deltaNum >= 0 ? posColor : negColor;
+  // A non-numeric delta gets the neutral text colour and no arrow: an arrow
+  // asserts a direction the text has not claimed.
+  const deltaColor = !deltaIsNumeric ? 'currentColor' : deltaNum >= 0 ? posColor : negColor;
+  const deltaArrow = !deltaIsNumeric ? '' : deltaNum >= 0 ? '▲ ' : '▼ ';
 
   card.innerHTML = `
     <div class="kpi-label" xmlns="http://www.w3.org/1999/xhtml" style="font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.08em;">${escHtml(layer.label)}</div>
     <div class="kpi-value" xmlns="http://www.w3.org/1999/xhtml" style="font-size:36px;font-weight:700;line-height:1;">${escHtml(valStr)}</div>
-    ${deltaStr ? `<div class="kpi-delta" xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px;color:${deltaColor};">${escHtml((deltaNum >= 0 ? '▲ ' : '▼ ') + deltaStr)}</div>` : ''}
+    ${deltaStr ? `<div class="kpi-delta" xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px;color:${deltaColor};">${escHtml(deltaArrow + deltaStr)}</div>` : ''}
     ${layer.sparkline_data ? `<canvas class="kpi-sparkline" data-data-ref="${escHtml(layer.sparkline_data ?? '')}" data-field="${escHtml(layer.sparkline_field ?? '')}" data-color="${escHtml(layer.sparkline_color ?? '#6c5ce7')}" style="width:100%;height:40px;"></canvas>` : ''}
   `;
 

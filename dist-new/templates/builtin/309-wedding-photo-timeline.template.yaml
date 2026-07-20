@@ -1,0 +1,104 @@
+_protocol: template/v1
+
+# Wedding photo timeline — 1240×1754 (A4) portrait, editorial-cream theme.
+# Couple header, 8-row schedule for photographer/coordinator with start-end times
+# and locations. Photographer credit footer.
+meta:
+  id: tmpl-wedding-photo-timeline
+  name: Wedding Photography Timeline
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, photography, timeline, schedule, a4, editorial, portrait]
+  description: "A4 photographer/coordinator timeline with eight moment-by-moment slots, times, and locations."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: frame, type: rect, z: 1, x: 70, y: 70, width: 1100, height: 1614, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 2 top ornament
+  - { id: orn-top, type: text, z: 5, x: 0, y: 130, width: 1240, height: 0, content: { type: plain, value: "❦  ·  ❦" }, style: { font_family: $heading, font_size: 22, color: "$primary", text_align: center, letter_spacing: 0.4 } }
+  # 3 couple
+  - { id: couple, type: text, z: 10, x: 0, y: 170, width: 1240, height: 0, content: { type: plain, value: "Amelia & Jonathan" }, style: { font_family: $heading, font_size: 52, font_style: italic, color: "$text", text_align: center, line_height: 1.1 } }
+  # 4 wedding date sub
+  - { id: wed-date, type: text, z: 11, x: 0, y: 240, width: 1240, height: 0, content: { type: plain, value: "24 MAY 2026 · COTSWOLDS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7 } }
+  # 5 title
+  - { id: title, type: text, z: 12, x: 0, y: 290, width: 1240, height: 0, content: { type: plain, value: "Photography Timeline" }, style: { font_family: $heading, font_size: 44, font_style: italic, color: "$primary", text_align: center, line_height: 1 } }
+  # 6 rule
+  - { id: rule-top, type: rect, z: 13, x: 570, y: 370, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 7 header row bg
+  - { id: hd-bg, type: rect, z: 14, x: 110, y: 410, width: 1020, height: 40, fill: { type: solid, color: "$surface" } }
+  # 8 header time col
+  - { id: hd-time, type: text, z: 15, x: 130, y: 420, width: 220, height: 0, content: { type: plain, value: "TIME" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.7 } }
+  # 9 header moment col
+  - { id: hd-moment, type: text, z: 15, x: 360, y: 420, width: 360, height: 0, content: { type: plain, value: "MOMENT" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.7 } }
+  # 10 header location col
+  - { id: hd-loc, type: text, z: 15, x: 740, y: 420, width: 370, height: 0, content: { type: plain, value: "LOCATION" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.7 } }
+  # 11 row 1 getting ready
+  - { id: r1-time, type: text, z: 20, x: 130, y: 480, width: 220, height: 0, content: { type: plain, value: "11:00 – 13:30" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r1-moment, type: text, z: 20, x: 360, y: 480, width: 360, height: 0, content: { type: plain, value: "Getting Ready" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r1-loc, type: text, z: 20, x: 740, y: 480, width: 370, height: 0, content: { type: plain, value: "Bridal suite · Willowfield House" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r1-line, type: rect, z: 21, x: 110, y: 520, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 12 row 2 first look
+  - { id: r2-time, type: text, z: 20, x: 130, y: 540, width: 220, height: 0, content: { type: plain, value: "13:45 – 14:15" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r2-moment, type: text, z: 20, x: 360, y: 540, width: 360, height: 0, content: { type: plain, value: "First Look" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r2-loc, type: text, z: 20, x: 740, y: 540, width: 370, height: 0, content: { type: plain, value: "Walled garden, east lawn" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r2-line, type: rect, z: 21, x: 110, y: 580, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 13 row 3 family portraits
+  - { id: r3-time, type: text, z: 20, x: 130, y: 600, width: 220, height: 0, content: { type: plain, value: "14:20 – 15:00" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r3-moment, type: text, z: 20, x: 360, y: 600, width: 360, height: 0, content: { type: plain, value: "Family Portraits" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r3-loc, type: text, z: 20, x: 740, y: 600, width: 370, height: 0, content: { type: plain, value: "Chapel steps · shot list attached" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r3-line, type: rect, z: 21, x: 110, y: 640, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 14 row 4 bridal party
+  - { id: r4-time, type: text, z: 20, x: 130, y: 660, width: 220, height: 0, content: { type: plain, value: "15:05 – 15:30" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r4-moment, type: text, z: 20, x: 360, y: 660, width: 360, height: 0, content: { type: plain, value: "Bridal Party" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r4-loc, type: text, z: 20, x: 740, y: 660, width: 370, height: 0, content: { type: plain, value: "Lavender path, west garden" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r4-line, type: rect, z: 21, x: 110, y: 700, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 15 row 5 couple
+  - { id: r5-time, type: text, z: 20, x: 130, y: 720, width: 220, height: 0, content: { type: plain, value: "15:35 – 16:00" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r5-moment, type: text, z: 20, x: 360, y: 720, width: 360, height: 0, content: { type: plain, value: "Couple Portraits" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r5-loc, type: text, z: 20, x: 740, y: 720, width: 370, height: 0, content: { type: plain, value: "Orchard meadow at golden hour" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r5-line, type: rect, z: 21, x: 110, y: 760, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 16 row 6 ceremony
+  - { id: r6-time, type: text, z: 20, x: 130, y: 780, width: 220, height: 0, content: { type: plain, value: "16:30 – 17:15" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r6-moment, type: text, z: 20, x: 360, y: 780, width: 360, height: 0, content: { type: plain, value: "Ceremony" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r6-loc, type: text, z: 20, x: 740, y: 780, width: 370, height: 0, content: { type: plain, value: "St. Margaret's Chapel · aisle + altar" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r6-line, type: rect, z: 21, x: 110, y: 820, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 17 row 7 reception
+  - { id: r7-time, type: text, z: 20, x: 130, y: 840, width: 220, height: 0, content: { type: plain, value: "17:30 – 22:00" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r7-moment, type: text, z: 20, x: 360, y: 840, width: 360, height: 0, content: { type: plain, value: "Reception Coverage" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r7-loc, type: text, z: 20, x: 740, y: 840, width: 370, height: 0, content: { type: plain, value: "Marquee · toasts, first dance, cake cut" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r7-line, type: rect, z: 21, x: 110, y: 880, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.3 }
+  # 18 row 8 send-off
+  - { id: r8-time, type: text, z: 20, x: 130, y: 900, width: 220, height: 0, content: { type: plain, value: "22:15 – 22:30" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$primary" } }
+  - { id: r8-moment, type: text, z: 20, x: 360, y: 900, width: 360, height: 0, content: { type: plain, value: "Send-off" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text" } }
+  - { id: r8-loc, type: text, z: 20, x: 740, y: 900, width: 370, height: 0, content: { type: plain, value: "Sparkler tunnel · circular driveway" }, style: { font_family: $body, font_size: 15, color: "$text_muted" } }
+  - { id: r8-line, type: rect, z: 21, x: 110, y: 940, width: 1020, height: 1, fill: { type: solid, color: "$primary" }, opacity: 0.5 }
+  # 19 notes block heading
+  - { id: notes-title, type: text, z: 30, x: 120, y: 1000, width: 1000, height: 0, content: { type: plain, value: "Notes for the day" }, style: { font_family: $heading, font_size: 28, font_style: italic, color: "$primary" } }
+  # 20 notes body
+  - { id: notes-body, type: text, z: 31, x: 120, y: 1060, width: 1000, height: 0, content: { type: plain, value: "· Bouquets and boutonnières arrive at 10:30 — please photograph still-life set\n· Couple has requested a candid roll during cocktail hour, no posed group shots\n· Light dinner provided for vendors at 19:00 in the staff lounge\n· Final shutter at 22:30 — sparkler send-off ends the contracted coverage\n· Backup ceremony plan: long gallery, west wing, in the event of rain" }, style: { font_family: $body, font_size: 16, color: "$text", line_height: 1.7 } }
+  # 21 rule
+  - { id: rule-bot, type: rect, z: 40, x: 570, y: 1480, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 22 photographer credit
+  - { id: photog, type: text, z: 41, x: 0, y: 1510, width: 1240, height: 0, content: { type: plain, value: "Photography · Margot Hayes Studio" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: center } }
+  # 23 contact
+  - { id: contact, type: text, z: 42, x: 0, y: 1560, width: 1240, height: 0, content: { type: plain, value: "+44 7700 900 122 · margot@hayesstudio.co" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: center, letter_spacing: 0.3 } }
+  # 24 bottom ornament
+  - { id: orn-bot, type: text, z: 43, x: 0, y: 1620, width: 1240, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 20, color: "$primary", text_align: center } }
+
+slots:
+  - { id: couple_names,      path: "layers[3].content.value",  type: text, hint: "Couple names",         default: "Amelia & Jonathan" }
+  - { id: wedding_date,      path: "layers[4].content.value",  type: text, hint: "Wedding date / venue", default: "24 MAY 2026 · COTSWOLDS" }
+  - { id: photographer_name, path: "layers[46].content.value", type: text, hint: "Photographer name",    default: "Photography · Margot Hayes Studio" }

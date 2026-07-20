@@ -1,0 +1,442 @@
+_protocol: template/v1
+
+# Settings page — 1080×1920 portrait, light-clean theme.
+# Header + back arrow, 8 settings rows with icon/label/chevron, sign-out bottom.
+meta:
+  id: tmpl-settings-page
+  name: Settings Page
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [settings, ui, screen, mobile, ios, portrait, light]
+  description: "Mobile settings screen with header + back arrow, 8 settings rows, and a red sign-out action."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill: { type: solid, color: "$background" }
+
+  # ── Header ────────────────────────────────────────────────
+  - id: back-arrow
+    type: path
+    z: 5
+    d: "M 90 130 L 60 100 L 90 70"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 6 }
+
+  - id: header
+    type: text
+    z: 6
+    x: 60
+    y: 80
+    width: 960
+    height: 0
+    content: { type: plain, value: "Settings" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $text
+      text_align: center
+      letter_spacing: -0.02
+
+  - id: user-email
+    type: text
+    z: 7
+    x: 60
+    y: 160
+    width: 960
+    height: 0
+    content: { type: plain, value: "you@company.com" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      text_align: center
+
+  # ── Row 1: Profile ────────────────────────────────────────
+  - id: row1-bg
+    type: rect
+    z: 10
+    x: 60
+    y: 260
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row1-icon
+    type: circle
+    z: 11
+    cx: 124
+    cy: 308
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "$primary" }
+
+  - id: row1-label
+    type: text
+    z: 12
+    x: 176
+    y: 294
+    width: 700
+    height: 0
+    content: { type: plain, value: "Profile" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row1-chev
+    type: path
+    z: 13
+    d: "M 956 296 L 976 308 L 956 320"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 2: Notifications ──────────────────────────────────
+  - id: row2-bg
+    type: rect
+    z: 14
+    x: 60
+    y: 372
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row2-icon
+    type: rect
+    z: 15
+    x: 104
+    y: 398
+    width: 40
+    height: 44
+    radius: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: row2-label
+    type: text
+    z: 16
+    x: 176
+    y: 406
+    width: 700
+    height: 0
+    content: { type: plain, value: "Notifications" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row2-chev
+    type: path
+    z: 17
+    d: "M 956 408 L 976 420 L 956 432"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 3: Privacy ────────────────────────────────────────
+  - id: row3-bg
+    type: rect
+    z: 18
+    x: 60
+    y: 484
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row3-icon
+    type: rect
+    z: 19
+    x: 104
+    y: 510
+    width: 40
+    height: 44
+    radius: 20
+    fill: { type: solid, color: "$secondary" }
+
+  - id: row3-label
+    type: text
+    z: 20
+    x: 176
+    y: 518
+    width: 700
+    height: 0
+    content: { type: plain, value: "Privacy" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row3-chev
+    type: path
+    z: 21
+    d: "M 956 520 L 976 532 L 956 544"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 4: Display ────────────────────────────────────────
+  - id: row4-bg
+    type: rect
+    z: 22
+    x: 60
+    y: 596
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row4-icon
+    type: circle
+    z: 23
+    cx: 124
+    cy: 644
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "$accent" }
+
+  - id: row4-label
+    type: text
+    z: 24
+    x: 176
+    y: 630
+    width: 700
+    height: 0
+    content: { type: plain, value: "Display & Brightness" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row4-chev
+    type: path
+    z: 25
+    d: "M 956 632 L 976 644 L 956 656"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 5: Language ───────────────────────────────────────
+  - id: row5-bg
+    type: rect
+    z: 26
+    x: 60
+    y: 708
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row5-icon
+    type: rect
+    z: 27
+    x: 104
+    y: 734
+    width: 40
+    height: 44
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: row5-label
+    type: text
+    z: 28
+    x: 176
+    y: 742
+    width: 700
+    height: 0
+    content: { type: plain, value: "Language & Region" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row5-chev
+    type: path
+    z: 29
+    d: "M 956 744 L 976 756 L 956 768"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 6: Storage ────────────────────────────────────────
+  - id: row6-bg
+    type: rect
+    z: 30
+    x: 60
+    y: 820
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row6-icon
+    type: rect
+    z: 31
+    x: 104
+    y: 846
+    width: 40
+    height: 44
+    radius: 8
+    fill: { type: solid, color: "$secondary" }
+
+  - id: row6-label
+    type: text
+    z: 32
+    x: 176
+    y: 854
+    width: 700
+    height: 0
+    content: { type: plain, value: "Storage" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row6-chev
+    type: path
+    z: 33
+    d: "M 956 856 L 976 868 L 956 880"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 7: Account ────────────────────────────────────────
+  - id: row7-bg
+    type: rect
+    z: 34
+    x: 60
+    y: 932
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row7-icon
+    type: circle
+    z: 35
+    cx: 124
+    cy: 980
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "$primary" }
+
+  - id: row7-label
+    type: text
+    z: 36
+    x: 176
+    y: 966
+    width: 700
+    height: 0
+    content: { type: plain, value: "Account" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row7-chev
+    type: path
+    z: 37
+    d: "M 956 968 L 976 980 L 956 992"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Row 8: About ──────────────────────────────────────────
+  - id: row8-bg
+    type: rect
+    z: 38
+    x: 60
+    y: 1044
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: row8-icon
+    type: circle
+    z: 39
+    cx: 124
+    cy: 1092
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+
+  - id: row8-label
+    type: text
+    z: 40
+    x: 176
+    y: 1078
+    width: 700
+    height: 0
+    content: { type: plain, value: "About" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text
+
+  - id: row8-chev
+    type: path
+    z: 41
+    d: "M 956 1080 L 976 1092 L 956 1104"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text_muted", width: 3 }
+
+  # ── Sign out ──────────────────────────────────────────────
+  - id: signout-bg
+    type: rect
+    z: 50
+    x: 60
+    y: 1740
+    width: 960
+    height: 96
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: signout-text
+    type: text
+    z: 51
+    x: 60
+    y: 1768
+    width: 960
+    height: 0
+    content: { type: plain, value: "Sign out" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 700
+      color: "#dc2626"
+      text_align: center
+
+slots:
+  - { id: user_email, path: "layers[2].content.value", type: text, hint: "Signed-in user email", default: "you@company.com" }

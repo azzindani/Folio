@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: pixel-crisp
+name: Pixel Crisp
+version: "1.0.0"
+tags: [pixel, retro, 8bit, arcade, stepped]
+description: "Hard 2px stepped offset, zero blur — 8-bit pixel-art register."
+effects:
+  shadow_card:   "2px 2px 0 #000"
+  shadow_glow:   "3px 3px 0 #00ffaa, 4px 4px 0 #000"
+  shadow_inset:  "inset 1px 1px 0 #ffffff, inset -1px -1px 0 #000000"
+  shadow_text:   "1px 1px 0 #000, 2px 2px 0 #000"
+  blur_glass:    0
+  blur_backdrop: 0

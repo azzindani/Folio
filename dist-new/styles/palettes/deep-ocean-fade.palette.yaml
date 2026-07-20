@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: deep-ocean-fade
+name: Deep Ocean Fade
+version: "1.0.0"
+tags: [gradient, ocean, depth, blue, immersive]
+description: "Pale aqua receding through ocean blue and navy into abyssal black — full-water-column descent."
+colors:
+  background: "#06121C"
+  surface:    "#0E1F2E"
+  surface_2:  "#173044"
+  primary:    "#9CD6E0"
+  secondary:  "#2674A2"
+  accent:     "#0F3D4E"
+  text:       "#E4F1F4"
+  text_muted: "#7E9CA8"
+  border:     "#264658"
+  success:    "#4FB99A"
+  warning:    "#D8A848"
+  danger:     "#D85850"

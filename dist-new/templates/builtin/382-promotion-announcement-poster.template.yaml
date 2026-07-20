@@ -1,0 +1,424 @@
+_protocol: template/v1
+
+# Single-page LinkedIn promotion announcement poster.
+# 4:5 portrait 1200×1500. indigo-pro theme. Big display title + avatar + 3 fact cards.
+meta:
+  id: tmpl-promotion-announcement-poster
+  name: Promotion Announcement Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, career, promotion, announcement, 4-5]
+  description: "LinkedIn 4:5 poster announcing a promotion with avatar, big title, and 3 fact cards."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: accent-dot
+    type: circle
+    z: 5
+    cx: 1110
+    cy: 130
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 120
+    width: 1040
+    height: 0
+    content: { type: plain, value: "PROMOTED" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: title
+    type: text
+    z: 21
+    x: 80
+    y: 200
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Director of\nEngineering" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: $text
+      line_height: 0.98
+      letter_spacing: -0.03
+
+  - id: subtitle
+    type: text
+    z: 22
+    x: 80
+    y: 460
+    width: 1040
+    height: 0
+    content: { type: plain, value: "From Engineering Manager to Director of Engineering." }
+    style:
+      font_family: $body
+      font_size: 28
+      color: $text_muted
+      line_height: 1.4
+
+  - id: avatar-ring
+    type: circle
+    z: 25
+    cx: 200
+    cy: 700
+    rx: 100
+    ry: 100
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+
+  - id: avatar
+    type: circle
+    z: 26
+    cx: 200
+    cy: 700
+    rx: 88
+    ry: 88
+    fill: { type: solid, color: "$surface" }
+
+  - id: avatar-initials
+    type: text
+    z: 27
+    x: 100
+    y: 670
+    width: 200
+    height: 0
+    content: { type: plain, value: "AB" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $primary
+      text_align: center
+
+  - id: avatar-name
+    type: text
+    z: 28
+    x: 340
+    y: 660
+    width: 780
+    height: 0
+    content: { type: plain, value: "Alex Brennan" }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 700
+      color: $text
+      line_height: 1.2
+
+  - id: avatar-tagline
+    type: text
+    z: 29
+    x: 340
+    y: 720
+    width: 780
+    height: 0
+    content: { type: plain, value: "Building developer platforms · 12 yrs in" }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text_muted
+      line_height: 1.4
+
+  - id: card-1-bg
+    type: rect
+    z: 30
+    x: 80
+    y: 900
+    width: 333
+    height: 200
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-1-label
+    type: text
+    z: 31
+    x: 112
+    y: 930
+    width: 280
+    height: 0
+    content: { type: plain, value: "YEARS AT FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-1-value
+    type: text
+    z: 32
+    x: 112
+    y: 970
+    width: 280
+    height: 0
+    content: { type: plain, value: "6" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 800
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.02
+
+  - id: card-1-caption
+    type: text
+    z: 33
+    x: 112
+    y: 1060
+    width: 280
+    height: 0
+    content: { type: plain, value: "From eng manager to director" }
+    style:
+      font_family: $body
+      font_size: 15
+      color: $text_muted
+      line_height: 1.4
+
+  - id: card-2-bg
+    type: rect
+    z: 30
+    x: 433
+    y: 900
+    width: 334
+    height: 200
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-2-label
+    type: text
+    z: 31
+    x: 465
+    y: 930
+    width: 280
+    height: 0
+    content: { type: plain, value: "TEAM SIZE" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-2-value
+    type: text
+    z: 32
+    x: 465
+    y: 970
+    width: 280
+    height: 0
+    content: { type: plain, value: "32" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 800
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.02
+
+  - id: card-2-caption
+    type: text
+    z: 33
+    x: 465
+    y: 1060
+    width: 280
+    height: 0
+    content: { type: plain, value: "Across 4 product squads" }
+    style:
+      font_family: $body
+      font_size: 15
+      color: $text_muted
+      line_height: 1.4
+
+  - id: card-3-bg
+    type: rect
+    z: 30
+    x: 787
+    y: 900
+    width: 333
+    height: 200
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-3-label
+    type: text
+    z: 31
+    x: 819
+    y: 930
+    width: 280
+    height: 0
+    content: { type: plain, value: "FOCUS AREA" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-3-value
+    type: text
+    z: 32
+    x: 819
+    y: 980
+    width: 280
+    height: 0
+    content: { type: plain, value: "Platform" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.02
+
+  - id: card-3-caption
+    type: text
+    z: 33
+    x: 819
+    y: 1060
+    width: 280
+    height: 0
+    content: { type: plain, value: "DX · infra · internal tools" }
+    style:
+      font_family: $body
+      font_size: 15
+      color: $text_muted
+      line_height: 1.4
+
+  - id: thanks
+    type: text
+    z: 40
+    x: 80
+    y: 1180
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Grateful to my team and everyone who pushed me here." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.5
+
+  - id: cta-btn
+    type: rect
+    z: 50
+    x: 80
+    y: 1280
+    width: 280
+    height: 64
+    radius: 32
+    fill: { type: solid, color: "$primary" }
+
+  - id: cta-text
+    type: text
+    z: 51
+    x: 80
+    y: 1298
+    width: 280
+    height: 0
+    content: { type: plain, value: "Connect →" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: author
+    type: text
+    z: 60
+    x: 80
+    y: 1400
+    width: 700
+    height: 0
+    content: { type: plain, value: "@alexbrennan · 17 May 2026" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.04
+
+  - id: page-mark
+    type: text
+    z: 61
+    x: 880
+    y: 1400
+    width: 240
+    height: 0
+    content: { type: plain, value: "FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  accent-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.25 }
+  title:
+    enter: { type: scale_in, duration: 700, delay: 100, easing: ease-out }
+  avatar:
+    enter: { type: fade_in, duration: 500, delay: 300, easing: ease-out }
+  card-1-bg:
+    enter: { type: fade_up, duration: 500, delay: 500, easing: ease-out }
+  card-2-bg:
+    enter: { type: fade_up, duration: 500, delay: 700, easing: ease-out }
+  card-3-bg:
+    enter: { type: fade_up, duration: 500, delay: 900, easing: ease-out }
+
+slots:
+  - { id: eyebrow,         path: "layers[3].content.value",  type: text, hint: "Eyebrow tag",          default: "PROMOTED" }
+  - { id: title,           path: "layers[4].content.value",  type: text, hint: "New role title",       default: "Director of\nEngineering" }
+  - { id: subtitle,        path: "layers[5].content.value",  type: text, hint: "From → To subtitle",   default: "From Engineering Manager to Director of Engineering." }
+  - { id: avatar_initials, path: "layers[8].content.value",  type: text, hint: "Avatar initials",      default: "AB" }
+  - { id: avatar_name,     path: "layers[9].content.value",  type: text, hint: "Your name",            default: "Alex Brennan" }
+  - { id: avatar_tagline,  path: "layers[10].content.value", type: text, hint: "Short bio",            default: "Building developer platforms · 12 yrs in" }
+  - { id: card_1_value,    path: "layers[13].content.value", type: text, hint: "Years value",          default: "6" }
+  - { id: card_2_value,    path: "layers[17].content.value", type: text, hint: "Team size value",      default: "32" }
+  - { id: card_3_value,    path: "layers[21].content.value", type: text, hint: "Focus area value",     default: "Platform" }
+  - { id: thanks,          path: "layers[23].content.value", type: text, hint: "Thanks line",          default: "Grateful to my team..." }
+  - { id: author,          path: "layers[26].content.value", type: text, hint: "Handle + date",        default: "@alexbrennan · 17 May 2026" }

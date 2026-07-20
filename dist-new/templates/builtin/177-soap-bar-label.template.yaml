@@ -1,0 +1,285 @@
+_protocol: template/v1
+
+# Artisan soap bar wrap — 1200×600 landscape, pastel-dream theme.
+# Soft botanical aesthetic: brand top, soap variety big centered, scent
+# descriptor, ingredients list, weight + handmade certification footer.
+# Decorative leaf-like paths in corners.
+meta:
+  id: tmpl-soap-bar-label
+  name: Soap Bar Label
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, soap, beauty, artisan, pastel, landscape]
+  description: "Artisan soap bar wrap with brand, variety, scent description, ingredients, and handmade certification."
+
+document:
+  width: 1200
+  height: 600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 600
+    fill: { type: solid, color: $background }
+  # ── Frame ─────────────────────────────────────────────────
+  - id: frame
+    type: rect
+    z: 1
+    x: 32
+    y: 32
+    width: 1136
+    height: 536
+    radius: 12
+    fill: { type: none }
+    stroke: { color: "$primary", width: 1 }
+
+  # ── Decorative botanical paths (corners) ──────────────────
+  - id: leaf-tl
+    type: path
+    z: 5
+    d: "M 60 60 Q 100 80 120 130 Q 140 100 180 90 Q 150 60 120 80 Q 90 50 60 60 Z"
+    fill: { type: solid, color: "$secondary" }
+
+  - id: leaf-br
+    type: path
+    z: 6
+    d: "M 1140 540 Q 1100 520 1080 470 Q 1060 500 1020 510 Q 1050 540 1080 520 Q 1110 550 1140 540 Z"
+    fill: { type: solid, color: "$secondary" }
+
+  - id: dot-tl
+    type: circle
+    z: 7
+    cx: 200
+    cy: 110
+    r: 5
+    fill: { type: solid, color: "$primary" }
+
+  - id: dot-br
+    type: circle
+    z: 8
+    cx: 1000
+    cy: 490
+    r: 5
+    fill: { type: solid, color: "$primary" }
+
+  # ── Brand top ─────────────────────────────────────────────
+  - id: brand
+    type: text
+    z: 10
+    x: 80
+    y: 80
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WILD ROOT" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.48
+      text_transform: uppercase
+
+  - id: brand-sub
+    type: text
+    z: 11
+    x: 80
+    y: 112
+    width: 1040
+    height: 0
+    content: { type: plain, value: "apothecary & soapworks" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.12
+
+  # ── Divider line with center dot ──────────────────────────
+  - id: divider-left
+    type: line
+    z: 15
+    x1: 400
+    y1: 158
+    x2: 580
+    y2: 158
+    stroke: { color: "$border", width: 1 }
+
+  - id: divider-dot
+    type: circle
+    z: 16
+    cx: 600
+    cy: 158
+    r: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: divider-right
+    type: line
+    z: 17
+    x1: 620
+    y1: 158
+    x2: 800
+    y2: 158
+    stroke: { color: "$border", width: 1 }
+
+  # ── Variety (huge) ────────────────────────────────────────
+  - id: variety
+    type: text
+    z: 20
+    x: 80
+    y: 190
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Lavender & Oat Milk" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 700
+      color: $text
+      text_align: center
+      line_height: 1.05
+      letter_spacing: -0.02
+
+  # ── Scent description ────────────────────────────────────
+  - id: scent
+    type: text
+    z: 25
+    x: 160
+    y: 300
+    width: 880
+    height: 0
+    content: { type: plain, value: "Calming French lavender with creamy oat milk · soothes & softens" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.5
+
+  # ── Ingredients section ───────────────────────────────────
+  - id: ing-eyebrow
+    type: text
+    z: 30
+    x: 80
+    y: 380
+    width: 1040
+    height: 0
+    content: { type: plain, value: "INGREDIENTS" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: ing-list
+    type: text
+    z: 31
+    x: 120
+    y: 408
+    width: 960
+    height: 0
+    content: { type: plain, value: "Saponified olive oil, coconut oil, shea butter, oat milk, lavender essential oil, dried lavender buds, kaolin clay." }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text
+      text_align: center
+      line_height: 1.6
+
+  # ── Footer rule ───────────────────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 40
+    x: 80
+    y: 490
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Footer: weight | handmade | batch ─────────────────────
+  - id: weight
+    type: text
+    z: 41
+    x: 80
+    y: 510
+    width: 320
+    height: 0
+    content: { type: plain, value: "NET WT 4.5 OZ / 128 g" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text
+      text_align: left
+      letter_spacing: 0.16
+
+  - id: handmade-badge
+    type: text
+    z: 42
+    x: 400
+    y: 510
+    width: 400
+    height: 0
+    content: { type: plain, value: "✦ HANDMADE · SMALL BATCH ✦" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.24
+
+  - id: batch
+    type: text
+    z: 43
+    x: 800
+    y: 510
+    width: 320
+    height: 0
+    content: { type: plain, value: "Batch No. 023" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: $text_muted
+      text_align: right
+      letter_spacing: 0.12
+
+  - id: footer-cert
+    type: text
+    z: 44
+    x: 80
+    y: 538
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Made in small batches with organic, plant-based ingredients · wildroot.co" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_style: italic
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: brand,              path: "layers[6].content.value",  type: text, hint: "Brand name",            default: "WILD ROOT" }
+  - { id: variety,            path: "layers[11].content.value", type: text, hint: "Soap variety",          default: "Lavender & Oat Milk" }
+  - { id: scent_description,  path: "layers[12].content.value", type: text, hint: "Scent description",     default: "Calming French lavender with creamy oat milk · soothes & softens" }
+  - { id: ingredients,        path: "layers[14].content.value", type: text, hint: "Ingredients list",      default: "Saponified olive oil, coconut oil, shea butter, oat milk, lavender essential oil, dried lavender buds, kaolin clay." }
+  - { id: weight_g,           path: "layers[16].content.value", type: text, hint: "Net weight",            default: "NET WT 4.5 OZ / 128 g" }

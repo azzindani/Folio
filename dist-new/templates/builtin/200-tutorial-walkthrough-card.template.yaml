@@ -1,0 +1,313 @@
+_protocol: template/v1
+
+# Tutorial step card — 1080×1920 portrait, indigo-pro theme.
+# "STEP 2 OF 5" eyebrow, progress bar, title, screenshot, instructions, Next + Skip CTAs.
+meta:
+  id: tmpl-tutorial-walkthrough-card
+  name: Tutorial Walkthrough Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [app, screen, onboarding, tutorial, walkthrough, portrait, indigo]
+  description: "In-app tutorial step card with progress bar, screenshot placeholder, instructions, and Next/Skip CTAs."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill: { type: solid, color: "$background" }
+
+  # ── Close button (top-right) ──────────────────────────────
+  - id: close
+    type: text
+    z: 5
+    x: 60
+    y: 80
+    width: 960
+    height: 0
+    content: { type: plain, value: "✕" }
+    style:
+      font_family: $body
+      font_size: 28
+      color: $text_muted
+      text_align: right
+
+  # ── Eyebrow ───────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 160
+    width: 920
+    height: 0
+    content: { type: plain, value: "STEP 2 OF 5" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.32
+
+  # ── Progress bar ──────────────────────────────────────────
+  - id: prog-track
+    type: rect
+    z: 11
+    x: 80
+    y: 200
+    width: 920
+    height: 8
+    radius: 4
+    fill: { type: solid, color: "$surface2" }
+
+  - id: prog-fill
+    type: rect
+    z: 12
+    x: 80
+    y: 200
+    width: 368
+    height: 8
+    radius: 4
+    fill: { type: solid, color: $primary }
+  # ── Title ─────────────────────────────────────────────────
+  - id: title
+    type: text
+    z: 20
+    x: 80
+    y: 280
+    width: 920
+    height: 0
+    content: { type: plain, value: "Connect your\nfirst data source" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 800
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.025
+
+  # ── Screenshot placeholder ────────────────────────────────
+  - id: shot-shadow
+    type: rect
+    z: 29
+    x: 100
+    y: 530
+    width: 880
+    height: 700
+    radius: 20
+    fill: { type: solid, color: "rgba(0,0,0,0.18)" }
+
+  - id: shot-bg
+    type: rect
+    z: 30
+    x: 80
+    y: 510
+    width: 920
+    height: 700
+    radius: 20
+    fill: { type: solid, color: $surface }
+    stroke: { color: "$border", width: 1 }
+
+  - id: shot-bar
+    type: rect
+    z: 31
+    x: 80
+    y: 510
+    width: 920
+    height: 56
+    radius: 20
+    fill: { type: solid, color: "$surface2" }
+
+  - id: shot-dot-1
+    type: circle
+    z: 32
+    cx: 116
+    cy: 538
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$secondary" }
+
+  - id: shot-dot-2
+    type: circle
+    z: 33
+    cx: 142
+    cy: 538
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$accent" }
+
+  - id: shot-dot-3
+    type: circle
+    z: 34
+    cx: 168
+    cy: 538
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: shot-card-1
+    type: rect
+    z: 35
+    x: 130
+    y: 620
+    width: 380
+    height: 260
+    radius: 12
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: shot-card-2
+    type: rect
+    z: 36
+    x: 570
+    y: 620
+    width: 380
+    height: 260
+    radius: 12
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+
+  - id: shot-card-3
+    type: rect
+    z: 37
+    x: 130
+    y: 920
+    width: 820
+    height: 240
+    radius: 12
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: shot-label
+    type: text
+    z: 38
+    x: 80
+    y: 1170
+    width: 920
+    height: 0
+    content: { type: plain, value: "▷  Watch a 90-second walkthrough" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: center
+
+  # ── Instructions ──────────────────────────────────────────
+  - id: instr-header
+    type: text
+    z: 40
+    x: 80
+    y: 1290
+    width: 920
+    height: 0
+    content: { type: plain, value: "HOW IT WORKS" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: $text_muted
+      letter_spacing: 0.3
+
+  - id: instructions
+    type: text
+    z: 41
+    x: 80
+    y: 1330
+    width: 920
+    height: 0
+    content: { type: plain, value: "Pick from Postgres, BigQuery, Snowflake, or upload a CSV. We'll auto-detect your schema and surface the metrics that matter most — usually in under a minute." }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text
+      line_height: 1.55
+
+  # ── CTAs row ──────────────────────────────────────────────
+  - id: skip-bg
+    type: rect
+    z: 50
+    x: 80
+    y: 1700
+    width: 280
+    height: 88
+    radius: 44
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$border", width: 2 }
+
+  - id: skip-text
+    type: text
+    z: 51
+    x: 80
+    y: 1726
+    width: 280
+    height: 0
+    content: { type: plain, value: "Skip" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+
+  - id: next-bg
+    type: rect
+    z: 52
+    x: 400
+    y: 1700
+    width: 600
+    height: 88
+    radius: 44
+    fill: { type: solid, color: "$primary" }
+    effects:
+      shadow:
+        - { dx: 0, dy: 12, blur: 24, color: "rgba(99,102,241,0.42)" }
+
+  - id: next-text
+    type: text
+    z: 53
+    x: 400
+    y: 1726
+    width: 600
+    height: 0
+    content: { type: plain, value: "Next  →" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  # ── Footer hint ───────────────────────────────────────────
+  - id: footer
+    type: text
+    z: 60
+    x: 60
+    y: 1830
+    width: 960
+    height: 0
+    content: { type: plain, value: "You can revisit this tutorial anytime from Settings → Help" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: step_number,  path: "layers[2].content.value",  type: text, hint: "Step eyebrow",           default: "STEP 2 OF 5" }
+  - { id: total_steps,  path: "layers[2].content.value",  type: text, hint: "Full step eyebrow text", default: "STEP 2 OF 5" }
+  - { id: title,        path: "layers[5].content.value",  type: text, hint: "Step title (2 lines)",   default: "Connect your\nfirst data source" }
+  - { id: instructions, path: "layers[17].content.value", type: text, hint: "Instructions paragraph", default: "Pick from Postgres, BigQuery, Snowflake, or upload a CSV. We'll auto-detect your schema and surface the metrics that matter most — usually in under a minute." }

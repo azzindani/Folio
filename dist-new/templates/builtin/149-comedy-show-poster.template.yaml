@@ -1,0 +1,344 @@
+_protocol: template/v1
+
+# Stand-up comedy poster (1200×1800 portrait).
+# Brutalist-mono: comedian name SCREAMING ALL-CAPS top, "LIVE IN [city]",
+# venue + date block, special guest line, OVER 18 advisory.
+meta:
+  id: tmpl-comedy-show-poster
+  name: Comedy Show Poster
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, comedy, standup, brutalist, tour]
+  description: "Brutalist stand-up comedy poster with huge comedian name and live-in-city date block."
+
+document:
+  width: 1200
+  height: 1800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1800
+    fill: { type: solid, color: "$background" }
+
+  - id: top-block
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1200
+    height: 120
+    fill: { type: solid, color: "$text" }
+
+  - id: bottom-block
+    type: rect
+    z: 2
+    x: 0
+    y: 1680
+    width: 1200
+    height: 120
+    fill: { type: solid, color: "$text" }
+
+  - id: top-text
+    type: text
+    z: 10
+    x: 60
+    y: 50
+    width: 1080
+    height: 0
+    content: { type: plain, value: "LIVE · ONE NIGHT ONLY · NO REFUNDS · YOU LAUGH OR YOU LEAVE" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 800
+      color: $background
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: name-line-1
+    type: text
+    z: 20
+    x: 40
+    y: 220
+    width: 1120
+    height: 0
+    content: { type: plain, value: "DEAN" }
+    style:
+      font_family: $heading
+      font_size: 280
+      font_weight: 900
+      color: $text
+      line_height: 0.86
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: name-line-2
+    type: text
+    z: 21
+    x: 40
+    y: 460
+    width: 1120
+    height: 0
+    content: { type: plain, value: "QUARTERMAINE" }
+    style:
+      font_family: $heading
+      font_size: 160
+      font_weight: 900
+      color: $text
+      line_height: 0.86
+      letter_spacing: -0.03
+      text_align: center
+      text_transform: uppercase
+
+  - id: divider-1
+    type: rect
+    z: 30
+    x: 0
+    y: 680
+    width: 1200
+    height: 6
+    fill: { type: solid, color: "$text" }
+
+  - id: tour-name
+    type: text
+    z: 31
+    x: 60
+    y: 720
+    width: 1080
+    height: 0
+    content: { type: plain, value: "THE “LOUDER, IDIOT” TOUR" }
+    style:
+      font_family: $heading
+      font_size: 60
+      font_weight: 900
+      color: $text
+      letter_spacing: 0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: divider-2
+    type: rect
+    z: 32
+    x: 0
+    y: 820
+    width: 1200
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: live-in
+    type: text
+    z: 40
+    x: 60
+    y: 900
+    width: 1080
+    height: 0
+    content: { type: plain, value: "LIVE IN" }
+    style:
+      font_family: $mono
+      font_size: 32
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: city
+    type: text
+    z: 41
+    x: 60
+    y: 950
+    width: 1080
+    height: 0
+    content: { type: plain, value: "MANCHESTER" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 900
+      color: $text
+      letter_spacing: -0.02
+      text_align: center
+      text_transform: uppercase
+
+  - id: divider-3
+    type: rect
+    z: 50
+    x: 60
+    y: 1160
+    width: 1080
+    height: 4
+    fill: { type: solid, color: "$text" }
+
+  - id: venue-label
+    type: text
+    z: 51
+    x: 60
+    y: 1200
+    width: 1080
+    height: 0
+    content: { type: plain, value: "VENUE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.46
+      text_align: center
+      text_transform: uppercase
+
+  - id: venue
+    type: text
+    z: 52
+    x: 60
+    y: 1240
+    width: 1080
+    height: 0
+    content: { type: plain, value: "THE APOLLO BALLROOM" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 900
+      color: $text
+      letter_spacing: 0.01
+      text_align: center
+      text_transform: uppercase
+
+  - id: date
+    type: text
+    z: 53
+    x: 60
+    y: 1320
+    width: 1080
+    height: 0
+    content: { type: plain, value: "FRIDAY · 06 MARCH 2026" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 800
+      color: $text
+      letter_spacing: 0.18
+      text_align: center
+      text_transform: uppercase
+
+  - id: time
+    type: text
+    z: 54
+    x: 60
+    y: 1380
+    width: 1080
+    height: 0
+    content: { type: plain, value: "DOORS 19:30 · CURTAIN 20:00" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: divider-4
+    type: rect
+    z: 60
+    x: 60
+    y: 1460
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: special-guest-label
+    type: text
+    z: 61
+    x: 60
+    y: 1490
+    width: 1080
+    height: 0
+    content: { type: plain, value: "WITH SPECIAL GUEST" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.46
+      text_align: center
+      text_transform: uppercase
+
+  - id: special-guest
+    type: text
+    z: 62
+    x: 60
+    y: 1530
+    width: 1080
+    height: 0
+    content: { type: plain, value: "RHIANNA MOSSGROVE" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 900
+      color: $text
+      letter_spacing: 0.01
+      text_align: center
+      text_transform: uppercase
+
+  - id: advisory-box
+    type: rect
+    z: 70
+    x: 460
+    y: 1610
+    width: 280
+    height: 50
+    fill: { type: solid, color: "$text" }
+
+  - id: advisory-text
+    type: text
+    z: 71
+    x: 460
+    y: 1622
+    width: 280
+    height: 0
+    content: { type: plain, value: "OVER 18 ONLY" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 900
+      color: $background
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: bottom-text
+    type: text
+    z: 80
+    x: 60
+    y: 1710
+    width: 1080
+    height: 0
+    content: { type: plain, value: "TICKETS · QUARTERMAINE.LIVE · STRICTLY NO LATECOMERS" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 800
+      color: $background
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: comedian_name, path: "layers[4].content.value",  type: text, hint: "Comedian first name (huge)", default: "DEAN" }
+  - { id: comedian_last, path: "layers[5].content.value",  type: text, hint: "Comedian last name",         default: "QUARTERMAINE" }
+  - { id: venue,         path: "layers[13].content.value", type: text, hint: "Venue name",                 default: "THE APOLLO BALLROOM" }
+  - { id: date,          path: "layers[14].content.value", type: text, hint: "Show date",                  default: "FRIDAY · 06 MARCH 2026" }
+  - { id: time,          path: "layers[15].content.value", type: text, hint: "Doors + curtain time",       default: "DOORS 19:30 · CURTAIN 20:00" }
+  - { id: special_guest, path: "layers[18].content.value", type: text, hint: "Special guest name",         default: "RHIANNA MOSSGROVE" }

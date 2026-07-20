@@ -1,0 +1,156 @@
+_protocol: template/v1
+
+# Lab results report — 1240×1754 A4 portrait, light-clean theme.
+# Clinic header, patient info block, 10-row test table with reference
+# ranges and H/L/N flags, reviewer signature footer.
+meta:
+  id: tmpl-lab-results-report
+  name: Lab Results Report
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, health, medical, laboratory, results, clinical, a4, report]
+  description: "Clinical lab results report with patient info block, 10-test panel, reference ranges, and H/L/N flags."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+  # 1 — clinic header band
+  - { id: header-band, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 140, fill: { type: solid, color: "$primary" } }
+  # 2 — clinic name
+  - { id: clinic-name, type: text, z: 2, x: 80, y: 36, width: 800, height: 0, content: { type: plain, value: "Linden Crossing Diagnostic Lab" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: "#FFFFFF", line_height: 1.2 } }
+  # 3 — clinic addr
+  - { id: clinic-addr, type: text, z: 3, x: 80, y: 78, width: 800, height: 0, content: { type: plain, value: "218 Linden Crossing · Albany, NY 12210 · (518) 555-0142 · CLIA #33D1098765" }, style: { font_family: $mono, font_size: 12, color: "#DBEAFE", line_height: 1.4 } }
+  # 4 — title right
+  - { id: doc-title, type: text, z: 4, x: 80, y: 100, width: 1080, height: 0, content: { type: plain, value: "LABORATORY REPORT" }, style: { font_family: $heading, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, text_align: right, text_transform: uppercase } }
+  # 5 — patient block bg
+  - { id: pinfo-bg, type: rect, z: 5, x: 80, y: 180, width: 1080, height: 160, radius: 8, fill: { type: solid, color: "$surface" } }
+  # 6 — patient name label
+  - { id: p-name-label, type: text, z: 6, x: 100, y: 200, width: 480, height: 0, content: { type: plain, value: "PATIENT" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 7 — patient name
+  - { id: patient-name, type: text, z: 7, x: 100, y: 218, width: 480, height: 0, content: { type: plain, value: "Margaret E. Sullivan" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 8 — dob label
+  - { id: p-dob-label, type: text, z: 8, x: 100, y: 260, width: 480, height: 0, content: { type: plain, value: "DOB · SEX · MRN" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 9 — dob value
+  - { id: p-dob, type: text, z: 9, x: 100, y: 278, width: 480, height: 0, content: { type: plain, value: "04/12/1942 · F · MRN 00478291" }, style: { font_family: $mono, font_size: 14, color: "$text", line_height: 1.4 } }
+  # 10 — phys label
+  - { id: phys-label, type: text, z: 10, x: 640, y: 200, width: 500, height: 0, content: { type: plain, value: "ORDERING PHYSICIAN" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 11 — phys value
+  - { id: phys-value, type: text, z: 11, x: 640, y: 218, width: 500, height: 0, content: { type: plain, value: "Dr. Aaron Chen, MD" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 12 — collected label
+  - { id: coll-label, type: text, z: 12, x: 640, y: 260, width: 500, height: 0, content: { type: plain, value: "COLLECTED · REPORTED" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 13 — collected value
+  - { id: coll-value, type: text, z: 13, x: 640, y: 278, width: 500, height: 0, content: { type: plain, value: "May 14, 2026 · May 16, 2026" }, style: { font_family: $mono, font_size: 14, color: "$text", line_height: 1.4 } }
+  # 14 — panel title
+  - { id: panel-title, type: text, z: 20, x: 80, y: 380, width: 1080, height: 0, content: { type: plain, value: "Comprehensive Metabolic Panel (CMP-14)" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 15 — table header bg
+  - { id: th-bg, type: rect, z: 21, x: 80, y: 430, width: 1080, height: 40, fill: { type: solid, color: "$surface" } }
+  # 16 — th test
+  - { id: th-test, type: text, z: 22, x: 100, y: 442, width: 360, height: 0, content: { type: plain, value: "TEST" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 17 — th value
+  - { id: th-value, type: text, z: 23, x: 480, y: 442, width: 160, height: 0, content: { type: plain, value: "RESULT" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 18 — th units
+  - { id: th-units, type: text, z: 24, x: 660, y: 442, width: 120, height: 0, content: { type: plain, value: "UNITS" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 19 — th range
+  - { id: th-range, type: text, z: 25, x: 800, y: 442, width: 240, height: 0, content: { type: plain, value: "REFERENCE RANGE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 20 — th flag
+  - { id: th-flag, type: text, z: 26, x: 1060, y: 442, width: 80, height: 0, content: { type: plain, value: "FLAG" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_align: right } }
+  # 21 — Row 1: Glucose
+  - { id: t1-name, type: text, z: 30, x: 100, y: 488, width: 360, height: 0, content: { type: plain, value: "Glucose, fasting" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t1-val,  type: text, z: 30, x: 480, y: 488, width: 160, height: 0, content: { type: plain, value: "112" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: "$text" } }
+  - { id: t1-u,    type: text, z: 30, x: 660, y: 488, width: 120, height: 0, content: { type: plain, value: "mg/dL" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t1-r,    type: text, z: 30, x: 800, y: 488, width: 240, height: 0, content: { type: plain, value: "70 – 99" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t1-f,    type: text, z: 30, x: 1060, y: 488, width: 80, height: 0, content: { type: plain, value: "H" }, style: { font_family: $heading, font_size: 14, font_weight: 800, color: "#D97706", text_align: right } }
+  - { id: t1-rule, type: rect, z: 31, x: 80, y: 514, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 27 — Row 2: BUN
+  - { id: t2-name, type: text, z: 32, x: 100, y: 528, width: 360, height: 0, content: { type: plain, value: "BUN (urea nitrogen)" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t2-val,  type: text, z: 32, x: 480, y: 528, width: 160, height: 0, content: { type: plain, value: "16" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  - { id: t2-u,    type: text, z: 32, x: 660, y: 528, width: 120, height: 0, content: { type: plain, value: "mg/dL" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t2-r,    type: text, z: 32, x: 800, y: 528, width: 240, height: 0, content: { type: plain, value: "7 – 22" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t2-f,    type: text, z: 32, x: 1060, y: 528, width: 80, height: 0, content: { type: plain, value: "N" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "$text_muted", text_align: right } }
+  - { id: t2-rule, type: rect, z: 33, x: 80, y: 554, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 33 — Row 3: Creatinine
+  - { id: t3-name, type: text, z: 34, x: 100, y: 568, width: 360, height: 0, content: { type: plain, value: "Creatinine" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t3-val,  type: text, z: 34, x: 480, y: 568, width: 160, height: 0, content: { type: plain, value: "0.92" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  - { id: t3-u,    type: text, z: 34, x: 660, y: 568, width: 120, height: 0, content: { type: plain, value: "mg/dL" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t3-r,    type: text, z: 34, x: 800, y: 568, width: 240, height: 0, content: { type: plain, value: "0.6 – 1.1" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t3-f,    type: text, z: 34, x: 1060, y: 568, width: 80, height: 0, content: { type: plain, value: "N" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "$text_muted", text_align: right } }
+  - { id: t3-rule, type: rect, z: 35, x: 80, y: 594, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 39 — Row 4: Sodium
+  - { id: t4-name, type: text, z: 36, x: 100, y: 608, width: 360, height: 0, content: { type: plain, value: "Sodium" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t4-val,  type: text, z: 36, x: 480, y: 608, width: 160, height: 0, content: { type: plain, value: "139" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  - { id: t4-u,    type: text, z: 36, x: 660, y: 608, width: 120, height: 0, content: { type: plain, value: "mmol/L" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t4-r,    type: text, z: 36, x: 800, y: 608, width: 240, height: 0, content: { type: plain, value: "135 – 145" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t4-f,    type: text, z: 36, x: 1060, y: 608, width: 80, height: 0, content: { type: plain, value: "N" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "$text_muted", text_align: right } }
+  - { id: t4-rule, type: rect, z: 37, x: 80, y: 634, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 45 — Row 5: Potassium
+  - { id: t5-name, type: text, z: 38, x: 100, y: 648, width: 360, height: 0, content: { type: plain, value: "Potassium" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t5-val,  type: text, z: 38, x: 480, y: 648, width: 160, height: 0, content: { type: plain, value: "3.4" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: "$text" } }
+  - { id: t5-u,    type: text, z: 38, x: 660, y: 648, width: 120, height: 0, content: { type: plain, value: "mmol/L" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t5-r,    type: text, z: 38, x: 800, y: 648, width: 240, height: 0, content: { type: plain, value: "3.5 – 5.1" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t5-f,    type: text, z: 38, x: 1060, y: 648, width: 80, height: 0, content: { type: plain, value: "L" }, style: { font_family: $heading, font_size: 14, font_weight: 800, color: "#2563EB", text_align: right } }
+  - { id: t5-rule, type: rect, z: 39, x: 80, y: 674, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 51 — Row 6: Chloride
+  - { id: t6-name, type: text, z: 40, x: 100, y: 688, width: 360, height: 0, content: { type: plain, value: "Chloride" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t6-val,  type: text, z: 40, x: 480, y: 688, width: 160, height: 0, content: { type: plain, value: "103" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  - { id: t6-u,    type: text, z: 40, x: 660, y: 688, width: 120, height: 0, content: { type: plain, value: "mmol/L" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t6-r,    type: text, z: 40, x: 800, y: 688, width: 240, height: 0, content: { type: plain, value: "98 – 107" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t6-f,    type: text, z: 40, x: 1060, y: 688, width: 80, height: 0, content: { type: plain, value: "N" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "$text_muted", text_align: right } }
+  - { id: t6-rule, type: rect, z: 41, x: 80, y: 714, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 57 — Row 7: Calcium
+  - { id: t7-name, type: text, z: 42, x: 100, y: 728, width: 360, height: 0, content: { type: plain, value: "Calcium, total" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t7-val,  type: text, z: 42, x: 480, y: 728, width: 160, height: 0, content: { type: plain, value: "9.4" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  - { id: t7-u,    type: text, z: 42, x: 660, y: 728, width: 120, height: 0, content: { type: plain, value: "mg/dL" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t7-r,    type: text, z: 42, x: 800, y: 728, width: 240, height: 0, content: { type: plain, value: "8.6 – 10.2" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t7-f,    type: text, z: 42, x: 1060, y: 728, width: 80, height: 0, content: { type: plain, value: "N" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "$text_muted", text_align: right } }
+  - { id: t7-rule, type: rect, z: 43, x: 80, y: 754, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 63 — Row 8: AST
+  - { id: t8-name, type: text, z: 44, x: 100, y: 768, width: 360, height: 0, content: { type: plain, value: "AST (SGOT)" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t8-val,  type: text, z: 44, x: 480, y: 768, width: 160, height: 0, content: { type: plain, value: "28" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  - { id: t8-u,    type: text, z: 44, x: 660, y: 768, width: 120, height: 0, content: { type: plain, value: "U/L" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t8-r,    type: text, z: 44, x: 800, y: 768, width: 240, height: 0, content: { type: plain, value: "10 – 35" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t8-f,    type: text, z: 44, x: 1060, y: 768, width: 80, height: 0, content: { type: plain, value: "N" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "$text_muted", text_align: right } }
+  - { id: t8-rule, type: rect, z: 45, x: 80, y: 794, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 69 — Row 9: ALT
+  - { id: t9-name, type: text, z: 46, x: 100, y: 808, width: 360, height: 0, content: { type: plain, value: "ALT (SGPT)" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t9-val,  type: text, z: 46, x: 480, y: 808, width: 160, height: 0, content: { type: plain, value: "46" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: "$text" } }
+  - { id: t9-u,    type: text, z: 46, x: 660, y: 808, width: 120, height: 0, content: { type: plain, value: "U/L" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t9-r,    type: text, z: 46, x: 800, y: 808, width: 240, height: 0, content: { type: plain, value: "7 – 40" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t9-f,    type: text, z: 46, x: 1060, y: 808, width: 80, height: 0, content: { type: plain, value: "H" }, style: { font_family: $heading, font_size: 14, font_weight: 800, color: "#D97706", text_align: right } }
+  - { id: t9-rule, type: rect, z: 47, x: 80, y: 834, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.5 }
+  # 75 — Row 10: HbA1c
+  - { id: t10-name, type: text, z: 48, x: 100, y: 848, width: 360, height: 0, content: { type: plain, value: "Hemoglobin A1c" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  - { id: t10-val,  type: text, z: 48, x: 480, y: 848, width: 160, height: 0, content: { type: plain, value: "6.4" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: "$text" } }
+  - { id: t10-u,    type: text, z: 48, x: 660, y: 848, width: 120, height: 0, content: { type: plain, value: "%" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t10-r,    type: text, z: 48, x: 800, y: 848, width: 240, height: 0, content: { type: plain, value: "< 5.7" }, style: { font_family: $mono, font_size: 13, color: "$text_muted" } }
+  - { id: t10-f,    type: text, z: 48, x: 1060, y: 848, width: 80, height: 0, content: { type: plain, value: "H" }, style: { font_family: $heading, font_size: 14, font_weight: 800, color: "#D97706", text_align: right } }
+  # 80 — interpretation header
+  - { id: int-h, type: text, z: 60, x: 80, y: 940, width: 1080, height: 0, content: { type: plain, value: "INTERPRETATION" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$primary", letter_spacing: 0.4, text_transform: uppercase } }
+  # 81 — interpretation body
+  - { id: int-body, type: text, z: 61, x: 80, y: 970, width: 1080, height: 0, content: { type: plain, value: "Fasting glucose and HbA1c indicate prediabetes (A1c 6.4%). Mild ALT elevation noted — recommend repeat liver panel in 6 weeks. Potassium slightly below reference; review medications. Discuss results with ordering physician." }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.6 } }
+  # 82 — legend
+  - { id: legend, type: text, z: 62, x: 80, y: 1100, width: 1080, height: 0, content: { type: plain, value: "Flags: H = high  ·  L = low  ·  N = within reference range. Reference ranges apply to adult, non-pregnant patients unless otherwise noted." }, style: { font_family: $body, font_size: 11, font_style: italic, color: "$text_muted", line_height: 1.4 } }
+  # 83 — sig label
+  - { id: rev-label, type: text, z: 70, x: 80, y: 1560, width: 540, height: 0, content: { type: plain, value: "REVIEWED & APPROVED BY" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 84 — sig line
+  - { id: rev-line, type: rect, z: 71, x: 80, y: 1620, width: 540, height: 1, fill: { type: solid, color: "$text" } }
+  # 85 — sig name
+  - { id: rev-name, type: text, z: 72, x: 80, y: 1630, width: 540, height: 0, content: { type: plain, value: "Dr. Priya Ramanathan, MD · Medical Director · NPI 1098774431" }, style: { font_family: $body, font_size: 12, color: "$text_muted", line_height: 1.4 } }
+  # 86 — footer
+  - { id: footer, type: text, z: 80, x: 80, y: 1700, width: 1080, height: 0, content: { type: plain, value: "This report is confidential. Distribution restricted under HIPAA. Page 1 of 1." }, style: { font_family: $mono, font_size: 10, color: "$text_muted", text_align: center } }
+
+slots:
+  - { id: patient_name,      path: "layers[7].content.value",  type: text, hint: "Patient name",          default: "Margaret E. Sullivan" }
+  - { id: dob,               path: "layers[9].content.value",  type: text, hint: "DOB · Sex · MRN line",  default: "04/12/1942 · F · MRN 00478291" }
+  - { id: ordering_physician,path: "layers[11].content.value", type: text, hint: "Ordering physician",    default: "Dr. Aaron Chen, MD" }
+  - { id: collected_date,    path: "layers[13].content.value", type: text, hint: "Collected · Reported",  default: "May 14, 2026 · May 16, 2026" }

@@ -1,0 +1,462 @@
+_protocol: template/v1
+
+# Dog walking schedule — 1080×1500 portrait, pastel-dream theme.
+# Business name + week-of header, 7 daily blocks (Mon-Sun) each with
+# 2-3 time-slot rows (time + dog name + park/location), payment-rate footer.
+meta:
+  id: tmpl-dog-walking-schedule
+  name: Dog Walking Weekly Schedule
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [pet, dog, walking, schedule, weekly, pastel, portrait]
+  description: "Dog walker weekly schedule with 7 daily blocks (Mon-Sun) of time-slot rows (time + dog name + park), payment rate footer."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  - id: deco-blob
+    type: circle
+    z: 1
+    x: 880
+    y: -60
+    width: 280
+    height: 280
+    fill: { type: solid, color: "$primary", opacity: 0.20 }
+
+  # ── Header ────────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 60
+    y: 60
+    width: 960
+    height: 0
+    content: { type: plain, value: "🐕  WEEKLY ROUTE  🐕" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: biz-name
+    type: text
+    z: 11
+    x: 60
+    y: 95
+    width: 960
+    height: 0
+    content: { type: plain, value: "Pawsome Walks Co." }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.02
+
+  - id: week-of
+    type: text
+    z: 12
+    x: 60
+    y: 165
+    width: 960
+    height: 0
+    content: { type: plain, value: "Week of May 18 – May 24, 2026" }
+    style: { font_family: $body, font_size: 18, font_style: italic, color: $text_muted, line_height: 1.4 }
+
+  - id: head-rule
+    type: rect
+    z: 13
+    x: 60
+    y: 215
+    width: 960
+    height: 3
+    fill: { type: solid, color: "$primary" }
+
+  # ── Monday block ──────────────────────────────────────────
+  - id: mon-pill
+    type: rect
+    z: 20
+    x: 60
+    y: 245
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: mon-text
+    type: text
+    z: 21
+    x: 60
+    y: 254
+    width: 140
+    height: 0
+    content: { type: plain, value: "MON · 18" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: mon-rows
+    type: text
+    z: 22
+    x: 220
+    y: 250
+    width: 800
+    height: 0
+    content: { type: plain, value: "7:30 AM  ·  Biscuit (Golden Retriever)  →  Buena Vista Park\n12:00 PM  ·  Pickle (French Bulldog)  →  Alta Plaza Park\n5:00 PM  ·  Mochi & Pumpkin (Corgis)  →  Lafayette Park" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: mon-rule
+    type: rect
+    z: 23
+    x: 60
+    y: 360
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Tuesday block ─────────────────────────────────────────
+  - id: tue-pill
+    type: rect
+    z: 30
+    x: 60
+    y: 380
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: tue-text
+    type: text
+    z: 31
+    x: 60
+    y: 389
+    width: 140
+    height: 0
+    content: { type: plain, value: "TUE · 19" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: tue-rows
+    type: text
+    z: 32
+    x: 220
+    y: 385
+    width: 800
+    height: 0
+    content: { type: plain, value: "8:00 AM  ·  Murphy (Labrador)  →  Crissy Field beach loop\n1:30 PM  ·  Daisy (Beagle)  →  Mission Dolores Park" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: tue-rule
+    type: rect
+    z: 33
+    x: 60
+    y: 460
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Wednesday block ───────────────────────────────────────
+  - id: wed-pill
+    type: rect
+    z: 40
+    x: 60
+    y: 480
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: wed-text
+    type: text
+    z: 41
+    x: 60
+    y: 489
+    width: 140
+    height: 0
+    content: { type: plain, value: "WED · 20" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: wed-rows
+    type: text
+    z: 42
+    x: 220
+    y: 485
+    width: 800
+    height: 0
+    content: { type: plain, value: "7:30 AM  ·  Biscuit (Golden Retriever)  →  Buena Vista Park\n11:00 AM  ·  Rocco (German Shepherd)  →  Fort Funston off-leash\n4:30 PM  ·  Pickle (French Bulldog)  →  Duboce Park" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: wed-rule
+    type: rect
+    z: 43
+    x: 60
+    y: 595
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Thursday block ────────────────────────────────────────
+  - id: thu-pill
+    type: rect
+    z: 50
+    x: 60
+    y: 615
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: thu-text
+    type: text
+    z: 51
+    x: 60
+    y: 624
+    width: 140
+    height: 0
+    content: { type: plain, value: "THU · 21" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: thu-rows
+    type: text
+    z: 52
+    x: 220
+    y: 620
+    width: 800
+    height: 0
+    content: { type: plain, value: "8:00 AM  ·  Murphy (Labrador)  →  Crissy Field beach loop\n12:30 PM  ·  Daisy (Beagle)  →  Mission Dolores Park\n5:30 PM  ·  Mochi & Pumpkin (Corgis)  →  Lafayette Park" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: thu-rule
+    type: rect
+    z: 53
+    x: 60
+    y: 730
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Friday block ──────────────────────────────────────────
+  - id: fri-pill
+    type: rect
+    z: 60
+    x: 60
+    y: 750
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: fri-text
+    type: text
+    z: 61
+    x: 60
+    y: 759
+    width: 140
+    height: 0
+    content: { type: plain, value: "FRI · 22" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: fri-rows
+    type: text
+    z: 62
+    x: 220
+    y: 755
+    width: 800
+    height: 0
+    content: { type: plain, value: "7:30 AM  ·  Biscuit (Golden Retriever)  →  Buena Vista Park\n2:00 PM  ·  Rocco (German Shepherd)  →  Fort Funston off-leash" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: fri-rule
+    type: rect
+    z: 63
+    x: 60
+    y: 830
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Saturday block ────────────────────────────────────────
+  - id: sat-pill
+    type: rect
+    z: 70
+    x: 60
+    y: 850
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$secondary" }
+
+  - id: sat-text
+    type: text
+    z: 71
+    x: 60
+    y: 859
+    width: 140
+    height: 0
+    content: { type: plain, value: "SAT · 23" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: sat-rows
+    type: text
+    z: 72
+    x: 220
+    y: 855
+    width: 800
+    height: 0
+    content: { type: plain, value: "9:00 AM  ·  Pack walk — Biscuit + Murphy + Daisy  →  Ocean Beach\n3:00 PM  ·  Pickle (French Bulldog)  →  Alta Plaza Park" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: sat-rule
+    type: rect
+    z: 73
+    x: 60
+    y: 930
+    width: 960
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Sunday block ──────────────────────────────────────────
+  - id: sun-pill
+    type: rect
+    z: 80
+    x: 60
+    y: 950
+    width: 140
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$secondary" }
+
+  - id: sun-text
+    type: text
+    z: 81
+    x: 60
+    y: 959
+    width: 140
+    height: 0
+    content: { type: plain, value: "SUN · 24" }
+    style: { font_family: $body, font_size: 14, font_weight: 800, color: "#FFFFFF", text_align: center, letter_spacing: 0.3 }
+
+  - id: sun-rows
+    type: text
+    z: 82
+    x: 220
+    y: 955
+    width: 800
+    height: 0
+    content: { type: plain, value: "10:00 AM  ·  Mochi & Pumpkin (Corgis)  →  Lafayette Park\n4:00 PM  ·  Rocco (German Shepherd)  →  Bernal Heights summit" }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.7 }
+
+  - id: sun-rule
+    type: rect
+    z: 83
+    x: 60
+    y: 1030
+    width: 960
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # ── Payment-rate footer card ──────────────────────────────
+  - id: rate-card
+    type: rect
+    z: 90
+    x: 60
+    y: 1080
+    width: 960
+    height: 240
+    radius: 20
+    fill: { type: solid, color: "$primary", opacity: 0.12 }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: rate-title
+    type: text
+    z: 91
+    x: 90
+    y: 1105
+    width: 900
+    height: 0
+    content: { type: plain, value: "RATES & POLICIES" }
+    style: { font_family: $body, font_size: 13, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: rate-line-1
+    type: text
+    z: 92
+    x: 90
+    y: 1140
+    width: 900
+    height: 0
+    content: { type: plain, value: "→  30-min solo walk  ·  $25" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.5 }
+
+  - id: rate-line-2
+    type: text
+    z: 93
+    x: 90
+    y: 1180
+    width: 900
+    height: 0
+    content: { type: plain, value: "→  60-min solo walk  ·  $40" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.5 }
+
+  - id: rate-line-3
+    type: text
+    z: 94
+    x: 90
+    y: 1220
+    width: 900
+    height: 0
+    content: { type: plain, value: "→  Pack walk (3+ dogs, 60 min)  ·  $20 / dog" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.5 }
+
+  - id: rate-line-4
+    type: text
+    z: 95
+    x: 90
+    y: 1260
+    width: 900
+    height: 0
+    content: { type: plain, value: "→  Weekend surcharge  ·  +20%  ·  invoiced weekly via Venmo" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.5 }
+
+  # ── Footer signature line ─────────────────────────────────
+  - id: foot-text
+    type: text
+    z: 100
+    x: 60
+    y: 1370
+    width: 960
+    height: 0
+    content: { type: plain, value: "Pawsome Walks Co.  ·  (415) 555-0190  ·  pawsomewalks.co" }
+    style: { font_family: $body, font_size: 15, font_weight: 700, color: $text, text_align: center, line_height: 1.4 }
+
+  - id: foot-bond
+    type: text
+    z: 101
+    x: 60
+    y: 1410
+    width: 960
+    height: 0
+    content: { type: plain, value: "Licensed · bonded · insured  ·  fully vaccinated handlers" }
+    style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, text_align: center, line_height: 1.4 }
+
+slots:
+  - { id: business_name, path: "layers[3].content.value",  type: text, hint: "Business name",   default: "Pawsome Walks Co." }
+  - { id: week_of,       path: "layers[4].content.value",  type: text, hint: "Week-of label",   default: "Week of May 18 – May 24, 2026" }

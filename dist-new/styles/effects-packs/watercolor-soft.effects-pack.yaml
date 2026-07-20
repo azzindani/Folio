@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: watercolor-soft
+name: Watercolor Soft
+version: "1.0.0"
+tags: [watercolor, painterly, dreamy, soft, pastel]
+description: "Stacked low-alpha colored bleeds — painterly watercolor wash register."
+effects:
+  shadow_card:   "0 12px 28px rgba(255,182,193,0.18), 0 18px 36px rgba(173,216,230,0.14), 0 24px 48px rgba(221,160,221,0.12), 0 32px 64px rgba(255,239,184,0.10)"
+  shadow_glow:   "0 0 32px rgba(255,182,193,0.22), 0 0 40px rgba(173,216,230,0.18), 0 0 56px rgba(221,160,221,0.14)"
+  shadow_inset:  "inset 0 6px 18px rgba(255,255,255,0.30), inset 0 -8px 24px rgba(173,216,230,0.10)"
+  shadow_text:   "0 2px 8px rgba(221,160,221,0.35), 0 4px 16px rgba(173,216,230,0.25)"
+  blur_glass:    14
+  blur_backdrop: 12

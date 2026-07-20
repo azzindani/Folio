@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: rose-quartz
+name: Rose Quartz
+version: "1.0.0"
+tags: [mineral, gemstone, blush, soft, feminine]
+description: "Blush rose quartz with dusty pink and champagne on cream — tender pastel crystal warmth."
+colors:
+  background: "#FBF3EF"
+  surface:    "#F4E6DF"
+  surface_2:  "#E8D2C8"
+  primary:    "#C2748C"
+  secondary:  "#A66070"
+  accent:     "#D8B894"
+  text:       "#3A1F26"
+  text_muted: "#7A5E60"
+  border:     "#DCC4BA"
+  success:    "#6E8A60"
+  warning:    "#C8923A"
+  danger:     "#A8344A"

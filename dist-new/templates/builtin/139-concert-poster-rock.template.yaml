@@ -1,0 +1,289 @@
+_protocol: template/v1
+
+# Rock concert poster (1200×1800 portrait).
+# Grunge mood: huge distorted band name top, torn-paper polygon accents,
+# supporting acts middle, venue + date block, ticket price footer.
+meta:
+  id: tmpl-concert-poster-rock
+  name: Concert Poster — Rock
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, concert, music, rock, gig, grunge]
+  description: "Loud rock concert poster with huge band name, torn-paper accents, supporting acts and venue block."
+
+document:
+  width: 1200
+  height: 1800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#E63946"
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1800
+    fill: { type: solid, color: "#0A0B0F" }
+  - id: noise-rule-top
+    type: rect
+    z: 1
+    x: 60
+    y: 60
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.7
+
+  - id: torn-paper-top
+    type: path
+    z: 2
+    x: 0
+    y: 0
+    d: "M 0 0 L 1200 0 L 1200 90 L 1100 70 L 980 110 L 860 80 L 720 120 L 580 75 L 440 115 L 300 78 L 160 118 L 0 88 Z"
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.95
+
+  - id: torn-paper-shadow
+    type: path
+    z: 3
+    x: 0
+    y: 0
+    d: "M 0 88 L 160 118 L 300 78 L 440 115 L 580 75 L 720 120 L 860 80 L 980 110 L 1100 70 L 1200 90 L 1200 105 L 0 105 Z"
+    fill: { type: solid, color: "#5A0F18" }
+    opacity: 0.7
+
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 160
+    width: 1040
+    height: 0
+    content: { type: plain, value: "GRAVELPIT PRODUCTIONS PRESENTS" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: band-name-line-1
+    type: text
+    z: 11
+    x: 60
+    y: 260
+    width: 1080
+    height: 0
+    content: { type: plain, value: "BLACK" }
+    style:
+      font_family: $heading
+      font_size: 220
+      font_weight: 900
+      color: $text
+      line_height: 0.85
+      letter_spacing: -0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: band-name-line-2
+    type: text
+    z: 12
+    x: 60
+    y: 450
+    width: 1080
+    height: 0
+    content: { type: plain, value: "WIDOW HYMN" }
+    style:
+      font_family: $heading
+      font_size: 160
+      font_weight: 900
+      color: $primary
+      line_height: 0.85
+      letter_spacing: -0.035
+      text_align: center
+      text_transform: uppercase
+
+  - id: torn-paper-mid
+    type: path
+    z: 15
+    x: 0
+    y: 660
+    d: "M 0 0 L 1200 0 L 1180 24 L 1040 8 L 900 28 L 760 6 L 620 30 L 480 8 L 340 28 L 180 10 L 0 24 Z"
+    fill: { type: solid, color: "$text" }
+    opacity: 0.06
+
+  - id: with-label
+    type: text
+    z: 20
+    x: 80
+    y: 740
+    width: 1040
+    height: 0
+    content: { type: plain, value: "— WITH SPECIAL GUESTS —" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: supporting-acts
+    type: text
+    z: 21
+    x: 80
+    y: 800
+    width: 1040
+    height: 0
+    content:
+      type: plain
+      value: "IRON SAINTS\nTHE WOLFTONGUE TRIO\nDEAD CITY RADIO"
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $text
+      line_height: 1.15
+      letter_spacing: -0.005
+      text_align: center
+      text_transform: uppercase
+
+  - id: divider-rule
+    type: rect
+    z: 25
+    x: 300
+    y: 1100
+    width: 600
+    height: 3
+    fill: { type: solid, color: "$primary" }
+
+  - id: venue-eyebrow
+    type: text
+    z: 30
+    x: 80
+    y: 1140
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ONE NIGHT ONLY" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: venue
+    type: text
+    z: 31
+    x: 80
+    y: 1180
+    width: 1040
+    height: 0
+    content: { type: plain, value: "THE IRONWORKS HALL" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 900
+      color: $text
+      letter_spacing: -0.01
+      text_align: center
+      text_transform: uppercase
+
+  - id: date
+    type: text
+    z: 32
+    x: 80
+    y: 1280
+    width: 1040
+    height: 0
+    content: { type: plain, value: "SATURDAY · 14 NOVEMBER 2026" }
+    style:
+      font_family: $body
+      font_size: 32
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.18
+      text_align: center
+      text_transform: uppercase
+
+  - id: doors-time
+    type: text
+    z: 33
+    x: 80
+    y: 1336
+    width: 1040
+    height: 0
+    content: { type: plain, value: "DOORS 19:00 · SHOW 20:30" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: torn-paper-bottom
+    type: path
+    z: 40
+    x: 0
+    y: 1640
+    d: "M 0 0 L 1200 0 L 1200 160 L 0 160 Z M 0 0 L 1200 0 L 1180 20 L 1040 8 L 900 22 L 760 6 L 620 24 L 480 8 L 340 26 L 180 10 L 0 22 Z"
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.9
+
+  - id: ticket-eyebrow
+    type: text
+    z: 50
+    x: 80
+    y: 1690
+    width: 1040
+    height: 0
+    content: { type: plain, value: "TICKETS FROM €34" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 900
+      color: $background
+      letter_spacing: 0.04
+      text_align: center
+      text_transform: uppercase
+
+  - id: ticket-url
+    type: text
+    z: 51
+    x: 80
+    y: 1740
+    width: 1040
+    height: 0
+    content: { type: plain, value: "tickets.ironworkshall.com" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $background
+      letter_spacing: 0.18
+      text_align: center
+
+slots:
+  - { id: band_name,        path: "layers[5].content.value",  type: text, hint: "Band name line 1",        default: "BLACK" }
+  - { id: band_name_line_2, path: "layers[6].content.value",  type: text, hint: "Band name line 2",        default: "WIDOW HYMN" }
+  - { id: supporting_acts,  path: "layers[9].content.value",  type: text, hint: "Supporting acts (\\n separated)", default: "IRON SAINTS\nTHE WOLFTONGUE TRIO\nDEAD CITY RADIO" }
+  - { id: venue,            path: "layers[12].content.value", type: text, hint: "Venue name",              default: "THE IRONWORKS HALL" }
+  - { id: date,             path: "layers[13].content.value", type: text, hint: "Show date",               default: "SATURDAY · 14 NOVEMBER 2026" }
+  - { id: time,             path: "layers[14].content.value", type: text, hint: "Doors + show time",       default: "DOORS 19:00 · SHOW 20:30" }
+  - { id: ticket_url,       path: "layers[17].content.value", type: text, hint: "Ticket URL",              default: "tickets.ironworkshall.com" }

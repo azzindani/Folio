@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: lunar-new-year
+name: Lunar New Year
+version: "1.0.0"
+tags: [holiday, lunar-new-year, festive, vermillion, gold]
+description: "Vermillion and crimson with imperial gold on ivory — Lunar New Year envelope and lantern."
+colors:
+  background: "#FBF1E2"
+  surface:    "#F5E2C2"
+  surface_2:  "#EDCE96"
+  primary:    "#C8141C"
+  secondary:  "#9A1018"
+  accent:     "#D9A12A"
+  text:       "#1A0A08"
+  text_muted: "#6A382E"
+  border:     "#D8B86A"
+  success:    "#5A8A38"
+  warning:    "#D9A12A"
+  danger:     "#C8141C"

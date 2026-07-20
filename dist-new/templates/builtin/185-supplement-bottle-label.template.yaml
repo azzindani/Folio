@@ -1,0 +1,400 @@
+_protocol: template/v1
+
+# Supplement bottle label — 800×1100 portrait, light-clean theme.
+# Minimal pharma aesthetic: brand + supplement name, dosage strength
+# (e.g. "1000 MG") prominent, capsule count, three key benefits with
+# check marks, serving size, directions strip. Clean clinical layout.
+meta:
+  id: tmpl-supplement-bottle-label
+  name: Supplement Bottle Label
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, supplement, health, pharma, minimalist, portrait]
+  description: "Supplement bottle label with brand, dosage, capsule count, key benefits, and directions."
+
+document:
+  width: 800
+  height: 1100
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 800
+    height: 1100
+    fill: { type: solid, color: "$background" }
+
+  # ── Top accent bar ────────────────────────────────────────
+  - id: top-bar
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 800
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  # ── Frame ─────────────────────────────────────────────────
+  - id: frame
+    type: rect
+    z: 2
+    x: 40
+    y: 60
+    width: 720
+    height: 1000
+    fill: { type: none }
+    stroke: { color: "$border", width: 1 }
+
+  # ── Brand ─────────────────────────────────────────────────
+  - id: brand
+    type: text
+    z: 10
+    x: 60
+    y: 110
+    width: 680
+    height: 0
+    content: { type: plain, value: "NORDIC PEAK" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  - id: brand-sub
+    type: text
+    z: 11
+    x: 60
+    y: 146
+    width: 680
+    height: 0
+    content: { type: plain, value: "premium nutraceuticals"
+    }
+    style:
+      font_family: $body
+      font_size: 11
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.18
+
+  # ── Top hairline ──────────────────────────────────────────
+  - id: hairline-top
+    type: rect
+    z: 12
+    x: 80
+    y: 190
+    width: 640
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Supplement name ───────────────────────────────────────
+  - id: supplement-name
+    type: text
+    z: 20
+    x: 60
+    y: 220
+    width: 680
+    height: 0
+    content: { type: plain, value: "OMEGA-3 ULTRA" }
+    style:
+      font_family: $heading
+      font_size: 52
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.02
+      text_transform: uppercase
+
+  - id: supplement-sub
+    type: text
+    z: 21
+    x: 60
+    y: 290
+    width: 680
+    height: 0
+    content: { type: plain, value: "Wild-Caught Fish Oil · EPA + DHA" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.12
+
+  # ── Dosage block ──────────────────────────────────────────
+  - id: dosage-bg
+    type: rect
+    z: 30
+    x: 80
+    y: 340
+    width: 640
+    height: 130
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: dosage-label
+    type: text
+    z: 31
+    x: 80
+    y: 358
+    width: 640
+    height: 0
+    content: { type: plain, value: "POTENCY PER SERVING" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: dosage-value
+    type: text
+    z: 32
+    x: 80
+    y: 388
+    width: 640
+    height: 0
+    content: { type: plain, value: "1000 MG" }
+    style:
+      font_family: $heading
+      font_size: 60
+      font_weight: 900
+      color: $primary
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.02
+
+  # ── Capsule count + serving size strip ────────────────────
+  - id: count-bg
+    type: rect
+    z: 35
+    x: 80
+    y: 500
+    width: 310
+    height: 80
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+
+  - id: count-label
+    type: text
+    z: 36
+    x: 80
+    y: 514
+    width: 310
+    height: 0
+    content: { type: plain, value: "CAPSULES" }
+    style: { font_family: $body, font_size: 10, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.42 }
+
+  - id: count-value
+    type: text
+    z: 37
+    x: 80
+    y: 536
+    width: 310
+    height: 0
+    content: { type: plain, value: "60 softgels" }
+    style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, text_align: center }
+
+  - id: serving-bg
+    type: rect
+    z: 38
+    x: 410
+    y: 500
+    width: 310
+    height: 80
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+
+  - id: serving-label
+    type: text
+    z: 39
+    x: 410
+    y: 514
+    width: 310
+    height: 0
+    content: { type: plain, value: "SERVING SIZE" }
+    style: { font_family: $body, font_size: 10, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.42 }
+
+  - id: serving-value
+    type: text
+    z: 40
+    x: 410
+    y: 536
+    width: 310
+    height: 0
+    content: { type: plain, value: "2 softgels daily" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, text_align: center }
+
+  # ── Key benefits header ───────────────────────────────────
+  - id: benefits-eyebrow
+    type: text
+    z: 45
+    x: 60
+    y: 620
+    width: 680
+    height: 0
+    content: { type: plain, value: "KEY BENEFITS" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      text_align: center
+      letter_spacing: 0.42
+
+  # ── Benefit 1 ─────────────────────────────────────────────
+  - id: ben-1-check
+    type: text
+    z: 46
+    x: 100
+    y: 670
+    width: 40
+    height: 0
+    content: { type: plain, value: "✓" }
+    style: { font_family: $heading, font_size: 22, font_weight: 900, color: $primary, text_align: center }
+
+  - id: ben-1-text
+    type: text
+    z: 47
+    x: 160
+    y: 674
+    width: 540
+    height: 0
+    content: { type: plain, value: "Supports heart and cardiovascular health" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.4 }
+
+  # ── Benefit 2 ─────────────────────────────────────────────
+  - id: ben-2-check
+    type: text
+    z: 48
+    x: 100
+    y: 720
+    width: 40
+    height: 0
+    content: { type: plain, value: "✓" }
+    style: { font_family: $heading, font_size: 22, font_weight: 900, color: $primary, text_align: center }
+
+  - id: ben-2-text
+    type: text
+    z: 49
+    x: 160
+    y: 724
+    width: 540
+    height: 0
+    content: { type: plain, value: "Promotes brain function and cognition" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.4 }
+
+  # ── Benefit 3 ─────────────────────────────────────────────
+  - id: ben-3-check
+    type: text
+    z: 50
+    x: 100
+    y: 770
+    width: 40
+    height: 0
+    content: { type: plain, value: "✓" }
+    style: { font_family: $heading, font_size: 22, font_weight: 900, color: $primary, text_align: center }
+
+  - id: ben-3-text
+    type: text
+    z: 51
+    x: 160
+    y: 774
+    width: 540
+    height: 0
+    content: { type: plain, value: "Reduces inflammation and joint stiffness" }
+    style: { font_family: $body, font_size: 17, color: $text, line_height: 1.4 }
+
+  # ── Mid hairline ──────────────────────────────────────────
+  - id: hairline-mid
+    type: rect
+    z: 55
+    x: 80
+    y: 840
+    width: 640
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Directions ────────────────────────────────────────────
+  - id: dir-eyebrow
+    type: text
+    z: 60
+    x: 60
+    y: 860
+    width: 680
+    height: 0
+    content: { type: plain, value: "DIRECTIONS" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+  - id: dir-text
+    type: text
+    z: 61
+    x: 100
+    y: 890
+    width: 600
+    height: 0
+    content: { type: plain, value: "Take 2 softgels daily with a meal. Do not exceed recommended dose. Consult a physician if pregnant or taking medication." }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text
+      text_align: center
+      line_height: 1.6
+
+  # ── Bottom hairline ───────────────────────────────────────
+  - id: hairline-bot
+    type: rect
+    z: 65
+    x: 80
+    y: 1000
+    width: 640
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: footer
+    type: text
+    z: 66
+    x: 60
+    y: 1020
+    width: 680
+    height: 0
+    content: { type: plain, value: "GMP CERTIFIED  ·  3RD-PARTY TESTED  ·  MADE IN USA"
+    }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.42
+
+slots:
+  - { id: brand,            path: "layers[3].content.value",  type: text, hint: "Brand name",            default: "NORDIC PEAK" }
+  - { id: supplement_name,  path: "layers[6].content.value",  type: text, hint: "Supplement name",       default: "OMEGA-3 ULTRA" }
+  - { id: dosage,           path: "layers[10].content.value", type: text, hint: "Dosage strength",       default: "1000 MG" }
+  - { id: capsule_count,    path: "layers[13].content.value", type: text, hint: "Capsule count",         default: "60 softgels" }
+  - { id: benefit_1,        path: "layers[19].content.value", type: text, hint: "Benefit 1",             default: "Supports heart and cardiovascular health" }
+  - { id: benefit_2,        path: "layers[21].content.value", type: text, hint: "Benefit 2",             default: "Promotes brain function and cognition" }
+  - { id: benefit_3,        path: "layers[23].content.value", type: text, hint: "Benefit 3",             default: "Reduces inflammation and joint stiffness" }

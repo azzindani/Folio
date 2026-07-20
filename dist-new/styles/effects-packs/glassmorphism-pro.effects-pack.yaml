@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: glassmorphism-pro
+name: Glassmorphism Pro
+version: "1.0.0"
+tags: [glass, frosted, translucent, refined, luminous, premium]
+description: "Refined frosted glass with luminous edge highlights and deep ambient diffusion."
+effects:
+  shadow_card:   "0 8px 32px rgba(31,38,135,0.20), inset 0 1px 1px rgba(255,255,255,0.40)"
+  shadow_glow:   "0 0 24px rgba(255,255,255,0.35), 0 0 48px rgba(120,180,255,0.30), inset 0 1px 2px rgba(255,255,255,0.55)"
+  shadow_inset:  "inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 1px rgba(31,38,135,0.15)"
+  shadow_text:   "0 1px 2px rgba(31,38,135,0.25)"
+  blur_glass:    28
+  blur_backdrop: 40

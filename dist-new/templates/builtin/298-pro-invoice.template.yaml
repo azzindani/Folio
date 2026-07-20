@@ -1,0 +1,164 @@
+_protocol: template/v1
+
+# Professional services invoice — 1240×1754 A4 portrait, corporate-slate.
+# Header with logo + meta, bill-to / ship-to columns, 8-row line items
+# (description | hours | rate | subtotal), subtotal + tax + total stack,
+# payment terms + methods.
+meta:
+  id: tmpl-pro-invoice
+  name: Professional Services Invoice
+  type: invoice
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [invoice, professional, services, billing, a4, corporate, finance]
+  description: "Professional services A4 invoice with logo header, bill-to/ship-to columns, 8-row line items, totals, and payment methods."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+  # 1 — top accent band
+  - { id: top-accent, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 12, fill: { type: solid, color: "$primary" } }
+  # 2 — logo box
+  - { id: logo-box, type: rect, z: 2, x: 80, y: 70, width: 64, height: 64, radius: 10, fill: { type: solid, color: "$primary" } }
+  # 3 — logo letter
+  - { id: logo-letter, type: text, z: 3, x: 80, y: 80, width: 64, height: 0, content: { type: plain, value: "F" }, style: { font_family: $heading, font_size: 36, font_weight: 800, color: "#FFFFFF", text_align: center, line_height: 1.2 } }
+  # 4 — company name
+  - { id: company-name, type: text, z: 4, x: 168, y: 78, width: 600, height: 0, content: { type: plain, value: "Folio Strategy Group LLC" }, style: { font_family: $heading, font_size: 26, font_weight: 800, color: "$text", line_height: 1.2 } }
+  # 5 — company tagline
+  - { id: company-tag, type: text, z: 5, x: 168, y: 112, width: 600, height: 0, content: { type: plain, value: "Management consulting · 488 Mission St, San Francisco" }, style: { font_family: $body, font_size: 13, color: "$text_muted", line_height: 1.4 } }
+  # 6 — invoice title
+  - { id: inv-title, type: text, z: 10, x: 760, y: 70, width: 400, height: 0, content: { type: plain, value: "INVOICE" }, style: { font_family: $heading, font_size: 44, font_weight: 800, color: "$primary", letter_spacing: 0.4, text_align: right, text_transform: uppercase, line_height: 1 } }
+  # 7 — invoice number
+  - { id: inv-num, type: text, z: 11, x: 760, y: 130, width: 400, height: 0, content: { type: plain, value: "FSG-2026-1142" }, style: { font_family: $mono, font_size: 18, font_weight: 600, color: "$text", text_align: right, line_height: 1.4 } }
+  # 8 — divider
+  - { id: top-div, type: rect, z: 12, x: 80, y: 200, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+  # 9 — issued label
+  - { id: issued-lab, type: text, z: 20, x: 80, y: 220, width: 200, height: 0, content: { type: plain, value: "ISSUED" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 10 — issued val
+  - { id: issued-val, type: text, z: 21, x: 80, y: 240, width: 200, height: 0, content: { type: plain, value: "May 17, 2026" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  # 11 — due label
+  - { id: due-lab, type: text, z: 22, x: 320, y: 220, width: 200, height: 0, content: { type: plain, value: "DUE" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 12 — due val
+  - { id: due-val, type: text, z: 23, x: 320, y: 240, width: 200, height: 0, content: { type: plain, value: "June 16, 2026" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: "$primary" } }
+  # 13 — po label
+  - { id: po-lab, type: text, z: 24, x: 560, y: 220, width: 200, height: 0, content: { type: plain, value: "PO #" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 14 — po val
+  - { id: po-val, type: text, z: 25, x: 560, y: 240, width: 200, height: 0, content: { type: plain, value: "PO-4427-NW" }, style: { font_family: $mono, font_size: 14, color: "$text" } }
+  # 15 — terms label
+  - { id: term-lab, type: text, z: 26, x: 800, y: 220, width: 360, height: 0, content: { type: plain, value: "TERMS" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_align: right } }
+  # 16 — terms val
+  - { id: term-val, type: text, z: 27, x: 800, y: 240, width: 360, height: 0, content: { type: plain, value: "Net 30 · Wire / ACH" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  # 17 — bill-to label
+  - { id: bt-lab, type: text, z: 30, x: 80, y: 300, width: 500, height: 0, content: { type: plain, value: "BILL TO" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 18 — client name
+  - { id: client-name, type: text, z: 31, x: 80, y: 322, width: 500, height: 0, content: { type: plain, value: "Northwind Retail Group, Inc." }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 19 — client address
+  - { id: client-addr, type: text, z: 32, x: 80, y: 358, width: 500, height: 0, content: { type: plain, value: "Attn: Accounts Payable\n488 Mission St, Floor 12\nSan Francisco, CA 94105\nUnited States" }, style: { font_family: $body, font_size: 13, color: "$text_muted", line_height: 1.6 } }
+  # 20 — ship-to label
+  - { id: st-lab, type: text, z: 33, x: 660, y: 300, width: 500, height: 0, content: { type: plain, value: "SHIP TO" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 21 — ship name
+  - { id: ship-name, type: text, z: 34, x: 660, y: 322, width: 500, height: 0, content: { type: plain, value: "Northwind HQ · Operations" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 22 — ship addr
+  - { id: ship-addr, type: text, z: 35, x: 660, y: 358, width: 500, height: 0, content: { type: plain, value: "1820 Embarcadero Blvd\nSan Francisco, CA 94107\nDelivery: M–F 09:00–17:00 PT" }, style: { font_family: $body, font_size: 13, color: "$text_muted", line_height: 1.6 } }
+  # 23 — table header bg
+  - { id: th-bg, type: rect, z: 40, x: 80, y: 540, width: 1080, height: 44, radius: 6, fill: { type: solid, color: "$surface" } }
+  # 24 — th desc
+  - { id: th-desc, type: text, z: 41, x: 100, y: 554, width: 560, height: 0, content: { type: plain, value: "DESCRIPTION" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 25 — th hrs
+  - { id: th-hrs, type: text, z: 42, x: 680, y: 554, width: 100, height: 0, content: { type: plain, value: "HOURS" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_align: center } }
+  # 26 — th rate
+  - { id: th-rate, type: text, z: 43, x: 800, y: 554, width: 140, height: 0, content: { type: plain, value: "RATE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_align: right } }
+  # 27 — th amt
+  - { id: th-amt, type: text, z: 44, x: 960, y: 554, width: 180, height: 0, content: { type: plain, value: "SUBTOTAL" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_align: right } }
+  # 28 — Row 1
+  - { id: r1d, type: text, z: 50, x: 100, y: 610, width: 560, height: 0, content: { type: plain, value: "Strategy diagnostic — discovery & stakeholder interviews" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r1h, type: text, z: 50, x: 680, y: 610, width: 100, height: 0, content: { type: plain, value: "24" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r1r, type: text, z: 50, x: 800, y: 610, width: 140, height: 0, content: { type: plain, value: "$285.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r1s, type: text, z: 50, x: 960, y: 610, width: 180, height: 0, content: { type: plain, value: "$6,840.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r1u, type: rect, z: 51, x: 80, y: 640, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 33 — Row 2
+  - { id: r2d, type: text, z: 52, x: 100, y: 656, width: 560, height: 0, content: { type: plain, value: "Market sizing & competitive landscape analysis" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r2h, type: text, z: 52, x: 680, y: 656, width: 100, height: 0, content: { type: plain, value: "32" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r2r, type: text, z: 52, x: 800, y: 656, width: 140, height: 0, content: { type: plain, value: "$245.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r2s, type: text, z: 52, x: 960, y: 656, width: 180, height: 0, content: { type: plain, value: "$7,840.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r2u, type: rect, z: 53, x: 80, y: 686, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 38 — Row 3
+  - { id: r3d, type: text, z: 54, x: 100, y: 702, width: 560, height: 0, content: { type: plain, value: "Operating model design — workshop facilitation" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r3h, type: text, z: 54, x: 680, y: 702, width: 100, height: 0, content: { type: plain, value: "16" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r3r, type: text, z: 54, x: 800, y: 702, width: 140, height: 0, content: { type: plain, value: "$325.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r3s, type: text, z: 54, x: 960, y: 702, width: 180, height: 0, content: { type: plain, value: "$5,200.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r3u, type: rect, z: 55, x: 80, y: 732, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 43 — Row 4
+  - { id: r4d, type: text, z: 56, x: 100, y: 748, width: 560, height: 0, content: { type: plain, value: "Financial model build — 5-year P&L + scenario sheets" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r4h, type: text, z: 56, x: 680, y: 748, width: 100, height: 0, content: { type: plain, value: "20" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r4r, type: text, z: 56, x: 800, y: 748, width: 140, height: 0, content: { type: plain, value: "$265.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r4s, type: text, z: 56, x: 960, y: 748, width: 180, height: 0, content: { type: plain, value: "$5,300.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r4u, type: rect, z: 57, x: 80, y: 778, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 48 — Row 5
+  - { id: r5d, type: text, z: 58, x: 100, y: 794, width: 560, height: 0, content: { type: plain, value: "Executive briefing pack — board-ready slides" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r5h, type: text, z: 58, x: 680, y: 794, width: 100, height: 0, content: { type: plain, value: "12" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r5r, type: text, z: 58, x: 800, y: 794, width: 140, height: 0, content: { type: plain, value: "$295.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r5s, type: text, z: 58, x: 960, y: 794, width: 180, height: 0, content: { type: plain, value: "$3,540.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r5u, type: rect, z: 59, x: 80, y: 824, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 53 — Row 6
+  - { id: r6d, type: text, z: 60, x: 100, y: 840, width: 560, height: 0, content: { type: plain, value: "Steering committee meetings (4 × 90 min)" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r6h, type: text, z: 60, x: 680, y: 840, width: 100, height: 0, content: { type: plain, value: "6" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r6r, type: text, z: 60, x: 800, y: 840, width: 140, height: 0, content: { type: plain, value: "$325.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r6s, type: text, z: 60, x: 960, y: 840, width: 180, height: 0, content: { type: plain, value: "$1,950.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r6u, type: rect, z: 61, x: 80, y: 870, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 58 — Row 7
+  - { id: r7d, type: text, z: 62, x: 100, y: 886, width: 560, height: 0, content: { type: plain, value: "Implementation roadmap — 12-month sequenced plan" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r7h, type: text, z: 62, x: 680, y: 886, width: 100, height: 0, content: { type: plain, value: "10" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r7r, type: text, z: 62, x: 800, y: 886, width: 140, height: 0, content: { type: plain, value: "$265.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r7s, type: text, z: 62, x: 960, y: 886, width: 180, height: 0, content: { type: plain, value: "$2,650.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  - { id: r7u, type: rect, z: 63, x: 80, y: 916, width: 1080, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+  # 63 — Row 8
+  - { id: r8d, type: text, z: 64, x: 100, y: 932, width: 560, height: 0, content: { type: plain, value: "Project management & weekly status comms" }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.4 } }
+  - { id: r8h, type: text, z: 64, x: 680, y: 932, width: 100, height: 0, content: { type: plain, value: "14" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: center } }
+  - { id: r8r, type: text, z: 64, x: 800, y: 932, width: 140, height: 0, content: { type: plain, value: "$165.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right } }
+  - { id: r8s, type: text, z: 64, x: 960, y: 932, width: 180, height: 0, content: { type: plain, value: "$2,310.00" }, style: { font_family: $mono, font_size: 14, font_weight: 600, color: "$text", text_align: right } }
+  # 67 — totals: subtotal
+  - { id: sub-lab, type: text, z: 70, x: 700, y: 1000, width: 240, height: 0, content: { type: plain, value: "Subtotal" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: right, line_height: 1.3 } }
+  - { id: sub-val, type: text, z: 71, x: 960, y: 1000, width: 180, height: 0, content: { type: plain, value: "$35,630.00" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right, line_height: 1.3 } }
+  # 69 — discount
+  - { id: disc-lab, type: text, z: 72, x: 700, y: 1030, width: 240, height: 0, content: { type: plain, value: "Volume discount (5%)" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: right, line_height: 1.3 } }
+  - { id: disc-val, type: text, z: 73, x: 960, y: 1030, width: 180, height: 0, content: { type: plain, value: "−$1,781.50" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right, line_height: 1.3 } }
+  # 71 — tax
+  - { id: tax-lab, type: text, z: 74, x: 700, y: 1060, width: 240, height: 0, content: { type: plain, value: "Sales tax (CA 8.5%)" }, style: { font_family: $body, font_size: 14, color: "$text_muted", text_align: right, line_height: 1.3 } }
+  - { id: tax-val, type: text, z: 75, x: 960, y: 1060, width: 180, height: 0, content: { type: plain, value: "$2,877.13" }, style: { font_family: $mono, font_size: 14, color: "$text", text_align: right, line_height: 1.3 } }
+  # 73 — total rule
+  - { id: tot-rule, type: rect, z: 76, x: 700, y: 1100, width: 440, height: 2, fill: { type: solid, color: "$primary" } }
+  # 74 — total label
+  - { id: tot-lab, type: text, z: 77, x: 700, y: 1120, width: 240, height: 0, content: { type: plain, value: "TOTAL DUE" }, style: { font_family: $heading, font_size: 20, font_weight: 800, color: "$text", letter_spacing: 0.3, text_align: right, text_transform: uppercase } }
+  # 75 — total value
+  - { id: tot-val, type: text, z: 78, x: 940, y: 1115, width: 200, height: 0, content: { type: plain, value: "$36,725.63" }, style: { font_family: $heading, font_size: 26, font_weight: 800, color: "$primary", text_align: right, line_height: 1.3 } }
+  # 76 — pay terms heading
+  - { id: pt-h, type: text, z: 80, x: 80, y: 1240, width: 1080, height: 0, content: { type: plain, value: "PAYMENT TERMS" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$primary", letter_spacing: 0.4 } }
+  # 77 — pay terms body
+  - { id: pt-body, type: text, z: 81, x: 80, y: 1262, width: 1080, height: 0, content: { type: plain, value: "Net 30 from invoice date. Late payments accrue interest at 1.5% per month compounded. Reference invoice number on all remittances." }, style: { font_family: $body, font_size: 13, color: "$text", line_height: 1.6 } }
+  # 78 — methods heading
+  - { id: pm-h, type: text, z: 82, x: 80, y: 1340, width: 1080, height: 0, content: { type: plain, value: "PAYMENT METHODS" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$primary", letter_spacing: 0.4 } }
+  # 79 — methods body
+  - { id: pm-body, type: text, z: 83, x: 80, y: 1362, width: 1080, height: 0, content: { type: plain, value: "ACH · Routing 121000248 · Account 4488-2913-770\nWire · SWIFT WFBIUS6S · IBAN US94 1210 0024 8448 8291 3770\nCard · Stripe Checkout: pay.folio.studio/inv/FSG-2026-1142" }, style: { font_family: $mono, font_size: 13, color: "$text", line_height: 1.7 } }
+  # 80 — footer thanks
+  - { id: thanks, type: text, z: 90, x: 80, y: 1620, width: 1080, height: 0, content: { type: plain, value: "Thank you for partnering with us." }, style: { font_family: $heading, font_size: 18, font_style: italic, color: "$text", text_align: center, line_height: 1.3 } }
+  # 81 — footer contact
+  - { id: foot-contact, type: text, z: 91, x: 80, y: 1660, width: 1080, height: 0, content: { type: plain, value: "ar@folio.studio · folio.studio · Questions? Call (415) 555-0188" }, style: { font_family: $mono, font_size: 12, color: "$text_muted", text_align: center } }
+
+slots:
+  - { id: company_name,    path: "layers[4].content.value",  type: text, hint: "Company name",        default: "Folio Strategy Group LLC" }
+  - { id: invoice_number,  path: "layers[7].content.value",  type: text, hint: "Invoice number",      default: "FSG-2026-1142" }
+  - { id: invoice_date,    path: "layers[10].content.value", type: text, hint: "Issue date",          default: "May 17, 2026" }
+  - { id: due_date,        path: "layers[12].content.value", type: text, hint: "Due date",            default: "June 16, 2026" }
+  - { id: client_name,     path: "layers[18].content.value", type: text, hint: "Client name",         default: "Northwind Retail Group, Inc." }
+  - { id: client_address,  path: "layers[19].content.value", type: text, hint: "Client address",      default: "Attn: Accounts Payable\n488 Mission St, Floor 12\nSan Francisco, CA 94105\nUnited States" }

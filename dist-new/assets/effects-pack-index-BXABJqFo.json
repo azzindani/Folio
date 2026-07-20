@@ -1,0 +1,930 @@
+{
+  "_generator": "scripts/gen-effects-pack-index.mjs",
+  "count": 43,
+  "entries": [
+    {
+      "id": "aged-paper",
+      "name": "Aged Paper",
+      "tags": [
+        "paper",
+        "aged",
+        "sepia",
+        "vintage",
+        "parchment",
+        "warm"
+      ],
+      "description": "Yellowed-with-age paper grain — warm sepia inset shadow with subtle parchment weight.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "aged-paper.effects-pack.yaml"
+    },
+    {
+      "id": "bokeh-soft",
+      "name": "Bokeh Soft",
+      "tags": [
+        "bokeh",
+        "soft",
+        "out-of-focus",
+        "dreamy",
+        "pastel",
+        "photographic",
+        "blur"
+      ],
+      "description": "Soft out-of-focus light orbs — pastel multi-hue bloom with dreamy depth-of-field haze.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "bokeh-soft.effects-pack.yaml"
+    },
+    {
+      "id": "brushed-metal",
+      "name": "Brushed Metal",
+      "tags": [
+        "metal",
+        "industrial",
+        "brushed",
+        "steel",
+        "premium"
+      ],
+      "description": "Directional brushed-steel sheen with crisp top highlight and lower bevel shadow.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "brushed-metal.effects-pack.yaml"
+    },
+    {
+      "id": "brutalist-hard",
+      "name": "Brutalist Hard",
+      "tags": [
+        "brutalist",
+        "punk",
+        "zine",
+        "hard",
+        "offset"
+      ],
+      "description": "Solid offset block shadows, zero blur, zero glow — photocopy-zine punk register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "brutalist-hard.effects-pack.yaml"
+    },
+    {
+      "id": "comic-halftone",
+      "name": "Comic Halftone",
+      "tags": [
+        "comic",
+        "pop-art",
+        "lichtenstein",
+        "halftone",
+        "staggered"
+      ],
+      "description": "Two-color staggered offset, zero blur — pop-art comic book register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "comic-halftone.effects-pack.yaml"
+    },
+    {
+      "id": "crystal-clear-glass",
+      "name": "Crystal Clear Glass",
+      "tags": [
+        "glass",
+        "crystal",
+        "transparent",
+        "clean",
+        "modern"
+      ],
+      "description": "Hairline white rims and pale azure halo — ultra-transparent precise glass register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "crystal-clear-glass.effects-pack.yaml"
+    },
+    {
+      "id": "crystal-prism",
+      "name": "Crystal Prism",
+      "tags": [
+        "crystal",
+        "prism",
+        "rainbow",
+        "refraction",
+        "holographic",
+        "chromatic"
+      ],
+      "description": "Rainbow chromatic refraction — layered magenta/cyan/yellow bloom mimicking prism light dispersion.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "crystal-prism.effects-pack.yaml"
+    },
+    {
+      "id": "cyberpunk-glitch",
+      "name": "Cyberpunk Glitch",
+      "tags": [
+        "cyberpunk",
+        "glitch",
+        "chromatic",
+        "aberration",
+        "neon",
+        "dystopia"
+      ],
+      "description": "Offset chromatic aberration — cyan/magenta RGB split with neon haze for glitched-signal aesthetics.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "cyberpunk-glitch.effects-pack.yaml"
+    },
+    {
+      "id": "embossed-metal",
+      "name": "Embossed Metal",
+      "tags": [
+        "metal",
+        "chrome",
+        "gold",
+        "emboss",
+        "premium"
+      ],
+      "description": "Stacked highlight + dark inset bevels with gold-tinted bloom — chrome/gold metallic emboss register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass"
+      ],
+      "file": "embossed-metal.effects-pack.yaml"
+    },
+    {
+      "id": "embossed-paper",
+      "name": "Embossed Paper",
+      "tags": [
+        "emboss",
+        "letterpress",
+        "paper",
+        "tactile",
+        "debossed"
+      ],
+      "description": "Top-highlight + bottom-shadow inset — letterpress embossed paper register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "embossed-paper.effects-pack.yaml"
+    },
+    {
+      "id": "ethereal-glass",
+      "name": "Ethereal Glass",
+      "tags": [
+        "glass",
+        "frosted",
+        "ethereal",
+        "luminous",
+        "glassmorphism"
+      ],
+      "description": "High backdrop blur with luminous low-alpha shadows — frosted glassmorphism register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "ethereal-glass.effects-pack.yaml"
+    },
+    {
+      "id": "fire-glow",
+      "name": "Fire Glow",
+      "tags": [
+        "fire",
+        "ember",
+        "warm",
+        "glow",
+        "flame",
+        "orange"
+      ],
+      "description": "Warm fire and ember radiance — layered orange-red bloom with smoldering core.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "fire-glow.effects-pack.yaml"
+    },
+    {
+      "id": "flat-minimal",
+      "name": "Flat Minimal",
+      "tags": [
+        "flat",
+        "minimal",
+        "hairline",
+        "swiss",
+        "clean"
+      ],
+      "description": "Barely-there hairline shadows, no glow — pure flat editorial register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "flat-minimal.effects-pack.yaml"
+    },
+    {
+      "id": "foil-iridescent",
+      "name": "Foil Iridescent",
+      "tags": [
+        "foil",
+        "iridescent",
+        "shimmer",
+        "pastel",
+        "holographic",
+        "premium"
+      ],
+      "description": "Subtle iridescent foil shimmer — pastel lavender/pink/cyan layering for luxury packaging register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "foil-iridescent.effects-pack.yaml"
+    },
+    {
+      "id": "gel-button",
+      "name": "Gel Button",
+      "tags": [
+        "gel",
+        "glossy",
+        "web2",
+        "aqua",
+        "sheen",
+        "button",
+        "plastic",
+        "retro"
+      ],
+      "description": "Glossy Web-2.0 gel surface — top sheen, base shadow, and rounded plastic depth.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "gel-button.effects-pack.yaml"
+    },
+    {
+      "id": "glassmorphism-pro",
+      "name": "Glassmorphism Pro",
+      "tags": [
+        "glass",
+        "frosted",
+        "translucent",
+        "refined",
+        "luminous",
+        "premium"
+      ],
+      "description": "Refined frosted glass with luminous edge highlights and deep ambient diffusion.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "glassmorphism-pro.effects-pack.yaml"
+    },
+    {
+      "id": "glow-rim",
+      "name": "Glow Rim",
+      "tags": [
+        "glow",
+        "rim",
+        "showcase",
+        "product",
+        "accent"
+      ],
+      "description": "Strong accent-tinted rim glow over a moderate card shadow — product showcase register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "glow-rim.effects-pack.yaml"
+    },
+    {
+      "id": "holographic-shimmer",
+      "name": "Holographic Shimmer",
+      "tags": [
+        "holographic",
+        "iridescent",
+        "y2k",
+        "foil",
+        "shimmer"
+      ],
+      "description": "Layered cyan/magenta/yellow glows — holographic foil Y2K register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "holographic-shimmer.effects-pack.yaml"
+    },
+    {
+      "id": "ice-frost",
+      "name": "Ice Frost",
+      "tags": [
+        "ice",
+        "frost",
+        "crystalline",
+        "cold",
+        "frozen",
+        "blue"
+      ],
+      "description": "Crystalline frost-edged ice — pale blue refractive bloom with frozen highlight.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "ice-frost.effects-pack.yaml"
+    },
+    {
+      "id": "lens-flare-cinema",
+      "name": "Lens Flare Cinema",
+      "tags": [
+        "cinema",
+        "lens-flare",
+        "anamorphic",
+        "bloom",
+        "hollywood",
+        "bright",
+        "sun"
+      ],
+      "description": "Bright cinematic lens flare — radial white-to-amber bloom with warm anamorphic halation.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "lens-flare-cinema.effects-pack.yaml"
+    },
+    {
+      "id": "liquid-ink",
+      "name": "Liquid Ink",
+      "tags": [
+        "ink",
+        "wet",
+        "bleed",
+        "dark",
+        "calligraphy"
+      ],
+      "description": "Wet-ink bleed at edges with deep saturated pool and inner pigment darkening.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "liquid-ink.effects-pack.yaml"
+    },
+    {
+      "id": "liquid-mercury",
+      "name": "Liquid Mercury",
+      "tags": [
+        "mercury",
+        "silver",
+        "liquid",
+        "fluid",
+        "metallic"
+      ],
+      "description": "Layered silver gradients with cool highlight rim — silvery flowing liquid register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass"
+      ],
+      "file": "liquid-mercury.effects-pack.yaml"
+    },
+    {
+      "id": "magnetic-glow",
+      "name": "Magnetic Glow",
+      "tags": [
+        "glow",
+        "electric",
+        "blue",
+        "aura",
+        "sci-fi"
+      ],
+      "description": "Strong attraction/repulsion aura — electric-blue field radiating outward in three falloff bands.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "magnetic-glow.effects-pack.yaml"
+    },
+    {
+      "id": "material-3-elevation",
+      "name": "Material 3 Elevation",
+      "tags": [
+        "material",
+        "google",
+        "elevation",
+        "ui",
+        "modern",
+        "system"
+      ],
+      "description": "Google Material 3 five-level elevation — crisp ambient + key light shadows tuned for product UI.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "material-3-elevation.effects-pack.yaml"
+    },
+    {
+      "id": "neon-glow",
+      "name": "Neon Glow",
+      "tags": [
+        "neon",
+        "synthwave",
+        "glow",
+        "cyber",
+        "dark"
+      ],
+      "description": "Saturated cyan/magenta bloom on every surface — synthwave nightclub register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "neon-glow.effects-pack.yaml"
+    },
+    {
+      "id": "neumorphism-soft",
+      "name": "Neumorphism Soft",
+      "tags": [
+        "neumorphism",
+        "soft-ui",
+        "tactile",
+        "dual-shadow",
+        "minimal",
+        "light"
+      ],
+      "description": "Soft-UI dual-shadow extrusion — raised surfaces from light pastel backgrounds.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "neumorphism-soft.effects-pack.yaml"
+    },
+    {
+      "id": "noir-cinematic",
+      "name": "Noir Cinematic",
+      "tags": [
+        "noir",
+        "cinematic",
+        "dramatic",
+        "dark",
+        "moody",
+        "film"
+      ],
+      "description": "Heavy single-direction shadow with cold rim halo — 1940s film-noir key light register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "noir-cinematic.effects-pack.yaml"
+    },
+    {
+      "id": "pencil-sketch",
+      "name": "Pencil Sketch",
+      "tags": [
+        "sketch",
+        "hand-drawn",
+        "pencil",
+        "paper",
+        "illustrative"
+      ],
+      "description": "Slight smudgy hand-drawn shadow with graphite-on-paper register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "pencil-sketch.effects-pack.yaml"
+    },
+    {
+      "id": "phosphor-afterimage",
+      "name": "Phosphor Afterimage",
+      "tags": [
+        "crt",
+        "retro",
+        "terminal",
+        "phosphor",
+        "green",
+        "glow"
+      ],
+      "description": "CRT-style green phosphor afterimage trails with horizontal scanline ghost.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "phosphor-afterimage.effects-pack.yaml"
+    },
+    {
+      "id": "pixel-crisp",
+      "name": "Pixel Crisp",
+      "tags": [
+        "pixel",
+        "retro",
+        "8bit",
+        "arcade",
+        "stepped"
+      ],
+      "description": "Hard 2px stepped offset, zero blur — 8-bit pixel-art register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "pixel-crisp.effects-pack.yaml"
+    },
+    {
+      "id": "punched-paper",
+      "name": "Punched Paper",
+      "tags": [
+        "paper",
+        "die-cut",
+        "indent",
+        "craft",
+        "debossed",
+        "hole-punch"
+      ],
+      "description": "Die-cut hole-punch indent — recessed paper void with soft inner shadow and rim highlight.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "punched-paper.effects-pack.yaml"
+    },
+    {
+      "id": "rainbow-prism",
+      "name": "Rainbow Prism",
+      "tags": [
+        "rainbow",
+        "prism",
+        "spectrum",
+        "refractive",
+        "multicolor"
+      ],
+      "description": "Rainbow refractive edges across the full visible spectrum — prismatic dispersion bloom.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "rainbow-prism.effects-pack.yaml"
+    },
+    {
+      "id": "sharp-shadow",
+      "name": "Sharp Shadow",
+      "tags": [
+        "sharp",
+        "architectural",
+        "poster",
+        "offset",
+        "high-contrast"
+      ],
+      "description": "High-contrast precise offset shadow with zero blur — architectural poster register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "sharp-shadow.effects-pack.yaml"
+    },
+    {
+      "id": "smoke-haze",
+      "name": "Smoke Haze",
+      "tags": [
+        "smoke",
+        "haze",
+        "diffuse",
+        "atmospheric",
+        "gray"
+      ],
+      "description": "Diffuse smoke-bloom drifting around edges — soft gray atmospheric haze.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "smoke-haze.effects-pack.yaml"
+    },
+    {
+      "id": "soft-clay",
+      "name": "Soft Clay",
+      "tags": [
+        "clay",
+        "claymorphism",
+        "chunky",
+        "3d",
+        "playful",
+        "extruded"
+      ],
+      "description": "Chunky 3D-clay extrusion — hard offset drop plus soft ambient diffusion for tactile playfulness.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "soft-clay.effects-pack.yaml"
+    },
+    {
+      "id": "soft-elevation",
+      "name": "Soft Elevation",
+      "tags": [
+        "material",
+        "soft",
+        "elevation",
+        "layered",
+        "product"
+      ],
+      "description": "Gentle multi-layer Material-style elevation with a moderate accent glow.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "soft-elevation.effects-pack.yaml"
+    },
+    {
+      "id": "soft-paper",
+      "name": "Soft Paper",
+      "tags": [
+        "paper",
+        "newsprint",
+        "book",
+        "sepia",
+        "warm"
+      ],
+      "description": "Warm sepia inset with hair-thin drop — newsprint and book-page texture register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass"
+      ],
+      "file": "soft-paper.effects-pack.yaml"
+    },
+    {
+      "id": "tape-stuck",
+      "name": "Tape Stuck",
+      "tags": [
+        "washi",
+        "tape",
+        "scrapbook",
+        "paper",
+        "craft",
+        "collage",
+        "adhesive"
+      ],
+      "description": "Washi-tape adhered to paper — offset corner shadows mimicking lifted edges and warm undercast.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "tape-stuck.effects-pack.yaml"
+    },
+    {
+      "id": "tv-static-noise",
+      "name": "TV Static Noise",
+      "tags": [
+        "tv",
+        "crt",
+        "static",
+        "noise",
+        "scanline",
+        "analog",
+        "glitch",
+        "vhs",
+        "chromatic"
+      ],
+      "description": "Analog CRT scanline and static noise — cyan rim glow with red/cyan chromatic split text.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "tv-static-noise.effects-pack.yaml"
+    },
+    {
+      "id": "vintage-print",
+      "name": "Vintage Print",
+      "tags": [
+        "vintage",
+        "print",
+        "letterpress",
+        "risograph",
+        "paper"
+      ],
+      "description": "Paper-pressed inset shadows with warm sepia tone — letterpress / risograph register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "vintage-print.effects-pack.yaml"
+    },
+    {
+      "id": "watercolor-bleed",
+      "name": "Watercolor Bleed",
+      "tags": [
+        "watercolor",
+        "bleed",
+        "painterly",
+        "saturated",
+        "soft"
+      ],
+      "description": "Wide tri-color halo of cyan, amber, and violet — heavy bleed-edge watercolor register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass"
+      ],
+      "file": "watercolor-bleed.effects-pack.yaml"
+    },
+    {
+      "id": "watercolor-soft",
+      "name": "Watercolor Soft",
+      "tags": [
+        "watercolor",
+        "painterly",
+        "dreamy",
+        "soft",
+        "pastel"
+      ],
+      "description": "Stacked low-alpha colored bleeds — painterly watercolor wash register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass",
+        "blur_backdrop"
+      ],
+      "file": "watercolor-soft.effects-pack.yaml"
+    },
+    {
+      "id": "wood-grain",
+      "name": "Wood Grain",
+      "tags": [
+        "wood",
+        "grain",
+        "warm",
+        "amber",
+        "organic"
+      ],
+      "description": "Inset umber wash with stacked deep drops — warm pseudo-3D wood register.",
+      "effectKeys": [
+        "shadow_card",
+        "shadow_glow",
+        "shadow_inset",
+        "shadow_text",
+        "blur_glass"
+      ],
+      "file": "wood-grain.effects-pack.yaml"
+    }
+  ]
+}

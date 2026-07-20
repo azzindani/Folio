@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: mandarin-curly
+name: Mandarin Curly
+version: "1.0.0"
+tags: [cjk, chinese, traditional, bilingual, elegant, brush]
+description: "Noto Serif TC display with Yuji Mai brush accents — bilingual Chinese-Latin elegance."
+families:
+  heading: "Noto Serif TC"
+  body:    "Noto Sans"
+  mono:    "Noto Sans Mono"
+  display: "Noto Serif TC"
+  accent:  "Yuji Mai"
+scale:
+  h1:
+    size: 60
+    weight: 700
+    line_height: 1.3

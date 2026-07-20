@@ -1,0 +1,340 @@
+_protocol: template/v1
+
+# 7-slide LinkedIn carousel — Leadership traits.
+# Cover → intro → 5 trait slides with numeric marks alternating $primary / $accent.
+meta:
+  id: tmpl-linkedin-leadership-traits
+  name: LinkedIn · 7 Leadership Traits (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, leadership, management, 4-5]
+  description: "7-slide LinkedIn carousel listing 5 core leadership traits with numbered cards on a corporate slate theme."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+pages:
+  # ── Slide 1 · Cover ──────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "ON LEADERSHIP" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 260
+        width: 920
+        height: 0
+        content: { type: plain, value: "7 Traits Every\nGreat Leader Has" }
+        style: { font_family: $heading, font_size: 88, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: subtitle
+        type: text
+        z: 12
+        x: 80
+        y: 560
+        width: 920
+        height: 0
+        content: { type: plain, value: "The non-negotiables. Swipe →" }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "1/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ──────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 200
+        width: 920
+        height: 0
+        content: { type: plain, value: "WHY THESE FIVE" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: headline
+        type: text
+        z: 11
+        x: 80
+        y: 260
+        width: 920
+        height: 0
+        content: { type: plain, value: "Titles don't make leaders." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 12
+        x: 80
+        y: 460
+        width: 920
+        height: 0
+        content: { type: plain, value: "Behaviors do. After interviewing 200+ managers, the same five traits surfaced again and again. Master these and the team follows on its own." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "2/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · Trait 01 ──────────────────────────────────
+  - id: trait-1
+    label: Trait 01
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: numeric-mark
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $heading, font_size: 220, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: trait-name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Clarity" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: explanation
+        type: text
+        z: 12
+        x: 80
+        y: 680
+        width: 920
+        height: 0
+        content: { type: plain, value: "Great leaders say what they mean and mean what they say. Ambiguity is a tax everyone on the team pays." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.55 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "3/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · Trait 02 ──────────────────────────────────
+  - id: trait-2
+    label: Trait 02
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: numeric-mark
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $heading, font_size: 220, font_weight: 900, color: $accent, line_height: 1, letter_spacing: -0.05 }
+      - id: trait-name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Decisiveness" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: explanation
+        type: text
+        z: 12
+        x: 80
+        y: 680
+        width: 920
+        height: 0
+        content: { type: plain, value: "A bad decision shipped beats a perfect one delayed. Leaders close loops fast and own the call." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.55 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "4/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Trait 03 ──────────────────────────────────
+  - id: trait-3
+    label: Trait 03
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: numeric-mark
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $heading, font_size: 220, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: trait-name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Empathy" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: explanation
+        type: text
+        z: 12
+        x: 80
+        y: 680
+        width: 920
+        height: 0
+        content: { type: plain, value: "You don't lead spreadsheets, you lead humans. Notice what's said and what isn't — then act on both." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.55 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "5/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · Trait 04 ──────────────────────────────────
+  - id: trait-4
+    label: Trait 04
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: numeric-mark
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $heading, font_size: 220, font_weight: 900, color: $accent, line_height: 1, letter_spacing: -0.05 }
+      - id: trait-name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Accountability" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: explanation
+        type: text
+        z: 12
+        x: 80
+        y: 680
+        width: 920
+        height: 0
+        content: { type: plain, value: "Credit goes to the team. Blame stops at you. Reverse this and the trust evaporates within a quarter." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.55 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "6/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 7 · Trait 05 ──────────────────────────────────
+  - id: trait-5
+    label: Trait 05
+    layers:
+      - { id: bg,           type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band,  type: rect, z: 1, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: numeric-mark
+        type: text
+        z: 10
+        x: 80
+        y: 180
+        width: 400
+        height: 0
+        content: { type: plain, value: "05" }
+        style: { font_family: $heading, font_size: 220, font_weight: 900, color: $primary, line_height: 1, letter_spacing: -0.05 }
+      - id: trait-name
+        type: text
+        z: 11
+        x: 80
+        y: 540
+        width: 920
+        height: 0
+        content: { type: plain, value: "Curiosity" }
+        style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 }
+      - id: explanation
+        type: text
+        z: 12
+        x: 80
+        y: 680
+        width: 920
+        height: 0
+        content: { type: plain, value: "Leaders ask more than they answer. Curiosity beats certainty when the ground is shifting underneath you." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.55 }
+      - id: pagination
+        type: text
+        z: 20
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "7/7" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover headline",          default: "7 Traits Every\nGreat Leader Has" }
+  - { id: cover_subtitle, path: "pages[0].layers[4].content.value", type: text, hint: "Cover subtitle",          default: "The non-negotiables. Swipe →" }
+  - { id: intro_headline, path: "pages[1].layers[3].content.value", type: text, hint: "Intro headline",          default: "Titles don't make leaders." }
+  - { id: intro_body,     path: "pages[1].layers[4].content.value", type: text, hint: "Intro body",              default: "Behaviors do. After interviewing 200+ managers, the same five traits surfaced again and again. Master these and the team follows on its own." }
+  - { id: trait_1_name,   path: "pages[2].layers[3].content.value", type: text, hint: "Trait 01 name",           default: "Clarity" }
+  - { id: trait_1_text,   path: "pages[2].layers[4].content.value", type: text, hint: "Trait 01 explanation",    default: "Great leaders say what they mean and mean what they say. Ambiguity is a tax everyone on the team pays." }
+  - { id: trait_2_name,   path: "pages[3].layers[3].content.value", type: text, hint: "Trait 02 name",           default: "Decisiveness" }
+  - { id: trait_2_text,   path: "pages[3].layers[4].content.value", type: text, hint: "Trait 02 explanation",    default: "A bad decision shipped beats a perfect one delayed. Leaders close loops fast and own the call." }
+  - { id: trait_3_name,   path: "pages[4].layers[3].content.value", type: text, hint: "Trait 03 name",           default: "Empathy" }
+  - { id: trait_3_text,   path: "pages[4].layers[4].content.value", type: text, hint: "Trait 03 explanation",    default: "You don't lead spreadsheets, you lead humans. Notice what's said and what isn't — then act on both." }
+  - { id: trait_4_name,   path: "pages[5].layers[3].content.value", type: text, hint: "Trait 04 name",           default: "Accountability" }
+  - { id: trait_4_text,   path: "pages[5].layers[4].content.value", type: text, hint: "Trait 04 explanation",    default: "Credit goes to the team. Blame stops at you. Reverse this and the trust evaporates within a quarter." }
+  - { id: trait_5_name,   path: "pages[6].layers[3].content.value", type: text, hint: "Trait 05 name",           default: "Curiosity" }
+  - { id: trait_5_text,   path: "pages[6].layers[4].content.value", type: text, hint: "Trait 05 explanation",    default: "Leaders ask more than they answer. Curiosity beats certainty when the ground is shifting underneath you." }

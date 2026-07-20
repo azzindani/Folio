@@ -1,0 +1,413 @@
+_protocol: template/v1
+
+# Knitting pattern — 1240×1754 A4 portrait, pastel-dream.
+# Pattern name + difficulty header, measurements box, materials list, abbreviations key,
+# row-by-row instructions, schematic placeholder.
+meta:
+  id: tmpl-knitting-pattern
+  name: Knitting Pattern
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, knitting, craft, pattern, a4, pastel, printable]
+  description: "Knitting pattern instruction sheet with header, finished measurements, materials list, abbreviations key, row-by-row instructions, and schematic placeholder."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # Decorative top stripe
+  - id: top-stripe
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1240
+    height: 12
+    fill: { type: solid, color: $primary }
+  # Header
+  - id: eyebrow
+    type: text
+    z: 2
+    x: 80
+    y: 60
+    width: 1080
+    height: 0
+    content: { type: plain, value: "HAND-KNIT PATTERN  ·  ADULT MEDIUM" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: pattern-name
+    type: text
+    z: 3
+    x: 80
+    y: 96
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Cozy Cable Pullover" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: "$text"
+      letter_spacing: -0.01
+
+  - id: difficulty-pill
+    type: rect
+    z: 4
+    x: 80
+    y: 180
+    width: 200
+    height: 36
+    radius: 18
+    fill: { type: solid, color: "$primary" }
+
+  - id: difficulty-text
+    type: text
+    z: 5
+    x: 80
+    y: 190
+    width: 200
+    height: 0
+    content: { type: plain, value: "INTERMEDIATE" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: header-rule
+    type: rect
+    z: 6
+    x: 80
+    y: 244
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # Measurements box (left) + Materials box (right)
+  - id: meas-box
+    type: rect
+    z: 10
+    x: 80
+    y: 280
+    width: 520
+    height: 280
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: meas-title
+    type: text
+    z: 11
+    x: 110
+    y: 300
+    width: 480
+    height: 0
+    content: { type: plain, value: "FINISHED MEASUREMENTS" }
+    style:
+      font_family: $heading
+      font_size: 16
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: meas-body
+    type: text
+    z: 12
+    x: 110
+    y: 340
+    width: 480
+    height: 0
+    content:
+      type: plain
+      value: "Bust:           38 in / 96.5 cm\nLength:         24 in / 61 cm\nSleeve:         18 in / 45.7 cm\nNeckline:       22 in / 56 cm\nArmhole:        9 in  / 23 cm\nEase:           2–4 in positive\nSize:           Adult Medium (S/M/L/XL)"
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text"
+      line_height: 1.85
+
+  - id: mat-box
+    type: rect
+    z: 13
+    x: 640
+    y: 280
+    width: 520
+    height: 280
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$secondary", width: 2 }
+
+  - id: mat-title
+    type: text
+    z: 14
+    x: 670
+    y: 300
+    width: 480
+    height: 0
+    content: { type: plain, value: "MATERIALS" }
+    style:
+      font_family: $heading
+      font_size: 16
+      font_weight: 800
+      color: "$secondary"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: mat-body
+    type: text
+    z: 15
+    x: 670
+    y: 340
+    width: 480
+    height: 0
+    content:
+      type: plain
+      value: "Yarn:           Worsted weight, wool blend\n                ~1100 yds (1006 m)\nNeedles:        US 8 (5.0 mm), 24\" circular\n                US 7 (4.5 mm) for ribbing\nNotions:        Cable needle, stitch markers,\n                tapestry needle, scissors\nGauge:          18 sts × 24 rows = 4\" / 10 cm\n                in stockinette stitch"
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text"
+      line_height: 1.85
+
+  # Abbreviations key
+  - id: abbr-box
+    type: rect
+    z: 20
+    x: 80
+    y: 600
+    width: 1080
+    height: 180
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$accent", width: 2 }
+
+  - id: abbr-title
+    type: text
+    z: 21
+    x: 110
+    y: 620
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ABBREVIATIONS KEY" }
+    style:
+      font_family: $heading
+      font_size: 16
+      font_weight: 800
+      color: "$accent"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: abbr-col1
+    type: text
+    z: 22
+    x: 110
+    y: 660
+    width: 320
+    height: 0
+    content:
+      type: plain
+      value: "K        knit\nP        purl\nSS       slip stitch\nYO       yarn over\nKFB      knit front+back"
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text"
+      line_height: 1.65
+
+  - id: abbr-col2
+    type: text
+    z: 23
+    x: 470
+    y: 660
+    width: 320
+    height: 0
+    content:
+      type: plain
+      value: "K2tog    knit 2 together\nSSK      slip-slip-knit\nC4B      cable 4 back\nC4F      cable 4 front\nM1       make 1"
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text"
+      line_height: 1.65
+
+  - id: abbr-col3
+    type: text
+    z: 24
+    x: 830
+    y: 660
+    width: 300
+    height: 0
+    content:
+      type: plain
+      value: "RS       right side\nWS       wrong side\nrep      repeat\nrem      remaining\nst(s)    stitch(es)"
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text"
+      line_height: 1.65
+
+  # Pattern instructions
+  - id: instr-title
+    type: text
+    z: 30
+    x: 80
+    y: 820
+    width: 1080
+    height: 0
+    content: { type: plain, value: "PATTERN INSTRUCTIONS — BODY (CABLE PANEL)" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 800
+      color: "$text"
+      letter_spacing: 0.2
+      text_transform: uppercase
+
+  - id: instr-rule
+    type: rect
+    z: 31
+    x: 80
+    y: 854
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: instr-body
+    type: text
+    z: 32
+    x: 80
+    y: 880
+    width: 1080
+    height: 0
+    content:
+      type: plain
+      value: "Row 1 (RS):  K2, P2, K4, P2, K8, P2, K4, P2, K2.\nRow 2 (WS):  P2, K2, P4, K2, P8, K2, P4, K2, P2.\nRow 3 (RS):  K2, P2, C4F, P2, K8, P2, C4B, P2, K2.\nRow 4 (WS):  P2, K2, P4, K2, P8, K2, P4, K2, P2.\nRow 5 (RS):  K2, P2, K4, P2, C4B, C4F, P2, K4, P2, K2.\nRow 6 (WS):  P2, K2, P4, K2, P8, K2, P4, K2, P2.\nRow 7 (RS):  K2, P2, C4F, P2, K8, P2, C4B, P2, K2.\nRow 8 (WS):  P2, K2, P4, K2, P8, K2, P4, K2, P2.\n\nRepeat Rows 1–8 until piece measures 16\" (40.5 cm) from cast-on,\nending after a WS row. Bind off in pattern."
+    style:
+      font_family: $mono
+      font_size: 13
+      color: "$text"
+      line_height: 1.7
+
+  # Schematic placeholder
+  - id: schem-box
+    type: rect
+    z: 40
+    x: 80
+    y: 1280
+    width: 1080
+    height: 360
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 2 }
+
+  - id: schem-shape
+    type: polygon
+    z: 41
+    points: "440,1340 800,1340 820,1420 820,1580 440,1580 440,1420"
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.18
+    stroke: { color: "$primary", width: 2 }
+
+  - id: schem-w-label
+    type: text
+    z: 42
+    x: 540
+    y: 1310
+    width: 160
+    height: 0
+    content: { type: plain, value: "38 in / 96.5 cm" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: "$text"
+      text_align: center
+
+  - id: schem-h-label
+    type: text
+    z: 43
+    x: 830
+    y: 1450
+    width: 100
+    height: 0
+    content: { type: plain, value: "24 in" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 700
+      color: "$text"
+
+  - id: schem-title
+    type: text
+    z: 44
+    x: 110
+    y: 1300
+    width: 1040
+    height: 0
+    content: { type: plain, value: "SCHEMATIC — FRONT PANEL" }
+    style:
+      font_family: $heading
+      font_size: 14
+      font_weight: 800
+      color: "$accent"
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  # Footer
+  - id: footer-rule
+    type: rect
+    z: 50
+    x: 80
+    y: 1680
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: footer
+    type: text
+    z: 51
+    x: 80
+    y: 1700
+    width: 1080
+    height: 0
+    content: { type: plain, value: "© FOLIO MAKER STUDIO  ·  PERSONAL USE ONLY  ·  NOT FOR RESALE" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+slots:
+  - { id: pattern_name,   path: "layers[3].content.value",  type: text, hint: "Pattern name",   default: "Cozy Cable Pullover" }
+  - { id: yarn_weight,    path: "layers[15].content.value", type: text, hint: "Materials body — edit yarn line", default: "Yarn:           Worsted weight, wool blend\n                ~1100 yds (1006 m)\nNeedles:        US 8 (5.0 mm), 24\" circular\n                US 7 (4.5 mm) for ribbing\nNotions:        Cable needle, stitch markers,\n                tapestry needle, scissors\nGauge:          18 sts × 24 rows = 4\" / 10 cm\n                in stockinette stitch" }
+  - { id: needle_size,    path: "layers[5].content.value",  type: text, hint: "Difficulty label", default: "INTERMEDIATE" }
+  - { id: finished_size,  path: "layers[12].content.value", type: text, hint: "Finished measurements body", default: "Bust:           38 in / 96.5 cm\nLength:         24 in / 61 cm\nSleeve:         18 in / 45.7 cm\nNeckline:       22 in / 56 cm\nArmhole:        9 in  / 23 cm\nEase:           2–4 in positive\nSize:           Adult Medium (S/M/L/XL)" }

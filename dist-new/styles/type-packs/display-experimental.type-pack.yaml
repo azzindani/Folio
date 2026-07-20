@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: display-experimental
+name: Display Experimental
+version: "1.0.0"
+tags: [experimental, futurist, tech, display, sci-fi, bold]
+description: "Audiowide display with Inter body — futurist tech-display experimental register."
+families:
+  heading: "Audiowide"
+  body:    "Inter"
+  mono:    "Share Tech Mono"
+  display: "Audiowide"
+  accent:  "Russo One"
+scale:
+  display:
+    size: 100
+    weight: 400
+    line_height: 1.05

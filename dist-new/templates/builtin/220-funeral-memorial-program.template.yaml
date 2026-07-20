@@ -1,0 +1,85 @@
+_protocol: template/v1
+
+# Funeral memorial program — 1240×1754 A4 portrait, mono-print theme.
+# Reverent serif typography, dates, service order, verse, family note.
+meta:
+  id: tmpl-funeral-memorial-program
+  name: Funeral Memorial Program
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, memorial, funeral, program, reverent, a4, portrait]
+  description: "Reverent funeral memorial program with deceased name, life dates, order of service, and family acknowledgment."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: mono-print
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+  # 1 — outer rule
+  - { id: outer-frame, type: rect, z: 1, x: 100, y: 100, width: 1040, height: 1554, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  # 2 — eyebrow header
+  - { id: header, type: text, z: 10, x: 100, y: 220, width: 1040, height: 0, content: { type: plain, value: "IN LOVING MEMORY OF" }, style: { font_family: $body, font_size: 22, font_weight: 600, color: "$text", text_align: center, letter_spacing: 0.6, text_transform: uppercase } }
+  # 3 — divider
+  - { id: divider, type: rect, z: 11, x: 590, y: 280, width: 60, height: 1, fill: { type: solid, color: "$text" } }
+  # 4 — deceased name
+  - { id: name, type: text, z: 12, x: 100, y: 340, width: 1040, height: 0, content: { type: plain, value: "Margaret Eleanor Sullivan" }, style: { font_family: $heading, font_size: 72, font_style: italic, color: "$text", text_align: center, line_height: 1.1, letter_spacing: -0.01 } }
+  # 5 — birth date
+  - { id: birth, type: text, z: 13, x: 100, y: 480, width: 1040, height: 0, content: { type: plain, value: "April 12, 1942" }, style: { font_family: $heading, font_size: 26, color: "$text_muted", text_align: center, letter_spacing: 0.1 } }
+  # 6 — dash
+  - { id: dash, type: text, z: 14, x: 100, y: 525, width: 1040, height: 0, content: { type: plain, value: "—" }, style: { font_family: $heading, font_size: 26, color: "$text_muted", text_align: center } }
+  # 7 — death date
+  - { id: death, type: text, z: 15, x: 100, y: 570, width: 1040, height: 0, content: { type: plain, value: "March 8, 2026" }, style: { font_family: $heading, font_size: 26, color: "$text_muted", text_align: center, letter_spacing: 0.1 } }
+  # 8 — verse
+  - { id: verse, type: text, z: 20, x: 200, y: 680, width: 840, height: 0, content: { type: plain, value: "\"She is clothed with strength and dignity;\nshe can laugh at the days to come.\"\n— Proverbs 31:25" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: center, line_height: 1.7 } }
+  # 9 — service heading
+  - { id: service-h, type: text, z: 30, x: 100, y: 900, width: 1040, height: 0, content: { type: plain, value: "ORDER OF SERVICE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "$text", text_align: center, letter_spacing: 0.6 } }
+  # 10 — service divider
+  - { id: service-div, type: rect, z: 31, x: 590, y: 940, width: 60, height: 1, fill: { type: solid, color: "$text" } }
+
+  # Service items — rows: label + descriptor
+  # 11
+  - { id: s1-label, type: text, z: 32, x: 200, y: 990, width: 420, height: 0, content: { type: plain, value: "Processional" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: right } }
+  # 12
+  - { id: s1-desc,  type: text, z: 33, x: 660, y: 990, width: 420, height: 0, content: { type: plain, value: "\"Be Thou My Vision\"" }, style: { font_family: $body, font_size: 20, color: "$text_muted", line_height: 1.4 } }
+  # 13
+  - { id: s2-label, type: text, z: 32, x: 200, y: 1050, width: 420, height: 0, content: { type: plain, value: "Welcome & Prayer" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: right } }
+  # 14
+  - { id: s2-desc,  type: text, z: 33, x: 660, y: 1050, width: 420, height: 0, content: { type: plain, value: "Rev. Thomas Caldwell" }, style: { font_family: $body, font_size: 20, color: "$text_muted", line_height: 1.4 } }
+  # 15
+  - { id: s3-label, type: text, z: 32, x: 200, y: 1110, width: 420, height: 0, content: { type: plain, value: "Eulogy" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: right } }
+  # 16
+  - { id: s3-desc,  type: text, z: 33, x: 660, y: 1110, width: 420, height: 0, content: { type: plain, value: "Eleanor Sullivan-Hayes, daughter" }, style: { font_family: $body, font_size: 20, color: "$text_muted", line_height: 1.4 } }
+  # 17
+  - { id: s4-label, type: text, z: 32, x: 200, y: 1170, width: 420, height: 0, content: { type: plain, value: "Reflections" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: right } }
+  # 18
+  - { id: s4-desc,  type: text, z: 33, x: 660, y: 1170, width: 420, height: 0, content: { type: plain, value: "Family & friends sharing memories" }, style: { font_family: $body, font_size: 20, color: "$text_muted", line_height: 1.4 } }
+  # 19
+  - { id: s5-label, type: text, z: 32, x: 200, y: 1230, width: 420, height: 0, content: { type: plain, value: "Recessional" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: right } }
+  # 20
+  - { id: s5-desc,  type: text, z: 33, x: 660, y: 1230, width: 420, height: 0, content: { type: plain, value: "\"Amazing Grace\"" }, style: { font_family: $body, font_size: 20, color: "$text_muted", line_height: 1.4 } }
+
+  # 21 — service date / venue
+  - { id: service-when, type: text, z: 40, x: 100, y: 1340, width: 1040, height: 0, content: { type: plain, value: "Saturday, March 14, 2026 · 11:00 AM" }, style: { font_family: $heading, font_size: 24, font_style: italic, color: "$text", text_align: center, line_height: 1.4 } }
+  # 22 — venue
+  - { id: service-where, type: text, z: 41, x: 100, y: 1390, width: 1040, height: 0, content: { type: plain, value: "St. Andrew's Chapel · 218 Linden Crossing · Albany, NY" }, style: { font_family: $body, font_size: 20, color: "$text_muted", text_align: center, line_height: 1.5 } }
+  # 23 — family ack heading
+  - { id: family-h, type: text, z: 50, x: 100, y: 1490, width: 1040, height: 0, content: { type: plain, value: "WITH GRATITUDE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text", text_align: center, letter_spacing: 0.6 } }
+  # 24 — family message
+  - { id: family-msg, type: text, z: 51, x: 180, y: 1530, width: 880, height: 0, content: { type: plain, value: "The Sullivan family extends our heartfelt thanks for your kindness, prayers, and friendship during this difficult time. A reception will follow at the church fellowship hall." }, style: { font_family: $body, font_size: 18, color: "$text", text_align: center, line_height: 1.7 } }
+
+slots:
+  - { id: deceased_name, path: "layers[4].content.value",  type: text, hint: "Deceased full name",       default: "Margaret Eleanor Sullivan" }
+  - { id: birth_date,    path: "layers[5].content.value",  type: text, hint: "Birth date",               default: "April 12, 1942" }
+  - { id: death_date,    path: "layers[7].content.value",  type: text, hint: "Date of passing",          default: "March 8, 2026" }
+  - { id: service_date,  path: "layers[21].content.value", type: text, hint: "Service date / time",     default: "Saturday, March 14, 2026 · 11:00 AM" }
+  - { id: service_venue, path: "layers[22].content.value", type: text, hint: "Service venue / address", default: "St. Andrew's Chapel · 218 Linden Crossing · Albany, NY" }
+  - { id: family_message,path: "layers[24].content.value", type: text, hint: "Family acknowledgment",   default: "The Sullivan family extends our heartfelt thanks for your kindness, prayers, and friendship during this difficult time. A reception will follow at the church fellowship hall." }

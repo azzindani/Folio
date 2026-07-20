@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: forest-canopy
+name: Forest Canopy
+version: "1.0.0"
+tags: [nature, forest, woodland, organic, earthy]
+description: "Moss green and bark brown with sunbeam yellow filtering through — deep-woods canopy."
+colors:
+  background: "#F2EDD8"
+  surface:    "#E5DCBC"
+  surface_2:  "#C9BD90"
+  primary:    "#3F5E2A"
+  secondary:  "#5A3A1E"
+  accent:     "#D9A82A"
+  text:       "#1F1A0E"
+  text_muted: "#5A5232"
+  border:     "#B0A472"
+  success:    "#3F5E2A"
+  warning:    "#D9A82A"
+  danger:     "#A03A1E"

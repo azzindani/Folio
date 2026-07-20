@@ -1,0 +1,86 @@
+_protocol: template/v1
+
+# Prescription label — 800×500 landscape, light-clean theme.
+# Pharmacy header, patient name, drug + strength + count, directions,
+# refill info, expiration date.
+meta:
+  id: tmpl-prescription-label
+  name: Prescription Label
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [label, health, medical, pharmacy, prescription, rx, landscape]
+  description: "Rx pill bottle label with pharmacy header, patient name, drug strength/count, dose directions, refills, and expiration."
+
+document:
+  width: 800
+  height: 500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 800, height: 500, fill: { type: solid, color: "$background" } }
+  # 1 — outer border
+  - { id: outer, type: rect, z: 1, x: 12, y: 12, width: 776, height: 476, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 2 } }
+  # 2 — top band
+  - { id: top-band, type: rect, z: 2, x: 12, y: 12, width: 776, height: 70, fill: { type: solid, color: "$primary" } }
+  # 3 — pharmacy name
+  - { id: pharm-name, type: text, z: 3, x: 30, y: 28, width: 540, height: 0, content: { type: plain, value: "Linden Crossing Pharmacy" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: "#FFFFFF", line_height: 1.2 } }
+  # 4 — pharmacy addr
+  - { id: pharm-addr, type: text, z: 4, x: 30, y: 58, width: 540, height: 0, content: { type: plain, value: "218 Linden Crossing · Albany, NY · (518) 555-0142" }, style: { font_family: $mono, font_size: 11, color: "#DBEAFE" } }
+  # 5 — Rx symbol bg
+  - { id: rx-bg, type: circle, z: 5, x: 720, y: 22, width: 50, height: 50, fill: { type: solid, color: "#FFFFFF" } }
+  # 6 — Rx symbol
+  - { id: rx-sym, type: text, z: 6, x: 720, y: 33, width: 50, height: 0, content: { type: plain, value: "℞" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: "$primary", text_align: center, line_height: 1.2 } }
+  # 7 — Rx number
+  - { id: rx-num-label, type: text, z: 10, x: 30, y: 100, width: 400, height: 0, content: { type: plain, value: "RX #" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 8 — Rx number value
+  - { id: rx-num, type: text, z: 11, x: 30, y: 116, width: 400, height: 0, content: { type: plain, value: "RX-2026-0048217" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: "$text" } }
+  # 9 — date filled
+  - { id: filled-label, type: text, z: 12, x: 460, y: 100, width: 310, height: 0, content: { type: plain, value: "DATE FILLED" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4, text_align: right } }
+  # 10 — date filled value
+  - { id: filled-val, type: text, z: 13, x: 460, y: 116, width: 310, height: 0, content: { type: plain, value: "May 16, 2026" }, style: { font_family: $mono, font_size: 16, color: "$text", text_align: right } }
+  # 11 — divider
+  - { id: div1, type: rect, z: 14, x: 30, y: 150, width: 740, height: 1, fill: { type: solid, color: "$border" } }
+  # 12 — patient label
+  - { id: pat-label, type: text, z: 20, x: 30, y: 162, width: 400, height: 0, content: { type: plain, value: "PATIENT" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 13 — patient name
+  - { id: patient-name, type: text, z: 21, x: 30, y: 180, width: 740, height: 0, content: { type: plain, value: "SULLIVAN, MARGARET E." }, style: { font_family: $heading, font_size: 24, font_weight: 800, color: "$text", letter_spacing: 0.02, line_height: 1.3 } }
+  # 14 — drug name
+  - { id: drug-name, type: text, z: 22, x: 30, y: 230, width: 740, height: 0, content: { type: plain, value: "METFORMIN HCL" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: "$primary", letter_spacing: 0.02, line_height: 1.2 } }
+  # 15 — strength + count
+  - { id: strength, type: text, z: 23, x: 30, y: 270, width: 740, height: 0, content: { type: plain, value: "500 mg tablets · QTY 90" }, style: { font_family: $heading, font_size: 18, font_weight: 600, color: "$text", line_height: 1.3 } }
+  # 16 — directions banner
+  - { id: dir-bg, type: rect, z: 30, x: 30, y: 310, width: 740, height: 60, radius: 6, fill: { type: solid, color: "$surface" } }
+  # 17 — directions label
+  - { id: dir-label, type: text, z: 31, x: 46, y: 318, width: 200, height: 0, content: { type: plain, value: "DIRECTIONS" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$primary", letter_spacing: 0.4 } }
+  # 18 — directions text
+  - { id: directions, type: text, z: 32, x: 46, y: 336, width: 708, height: 0, content: { type: plain, value: "Take one (1) tablet by mouth twice daily with meals. Do not crush or chew." }, style: { font_family: $body, font_size: 16, font_weight: 600, color: "$text", line_height: 1.4 } }
+  # 19 — refills label
+  - { id: refills-label, type: text, z: 40, x: 30, y: 392, width: 240, height: 0, content: { type: plain, value: "REFILLS" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 20 — refills value
+  - { id: refills-val, type: text, z: 41, x: 30, y: 410, width: 240, height: 0, content: { type: plain, value: "5 remaining · expires 05/16/2027" }, style: { font_family: $mono, font_size: 13, color: "$text" } }
+  # 21 — prescriber label
+  - { id: presc-label, type: text, z: 42, x: 290, y: 392, width: 240, height: 0, content: { type: plain, value: "PRESCRIBER" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 22 — prescriber value
+  - { id: presc-val, type: text, z: 43, x: 290, y: 410, width: 240, height: 0, content: { type: plain, value: "Dr. Aaron Chen, MD" }, style: { font_family: $body, font_size: 13, color: "$text" } }
+  # 23 — expiration label
+  - { id: exp-label, type: text, z: 44, x: 550, y: 392, width: 220, height: 0, content: { type: plain, value: "DISCARD AFTER" }, style: { font_family: $body, font_size: 10, font_weight: 700, color: "#B91C1C", letter_spacing: 0.4, text_align: right } }
+  # 24 — expiration value
+  - { id: exp-val, type: text, z: 45, x: 550, y: 410, width: 220, height: 0, content: { type: plain, value: "05/16/2027" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#B91C1C", text_align: right } }
+  # 25 — warning footer
+  - { id: warn, type: text, z: 50, x: 30, y: 458, width: 740, height: 0, content: { type: plain, value: "Federal law prohibits transfer of this medication to any person other than the patient for whom it was prescribed." }, style: { font_family: $body, font_size: 10, font_style: italic, color: "$text_muted", text_align: center, line_height: 1.3 } }
+
+slots:
+  - { id: patient_name, path: "layers[13].content.value", type: text, hint: "Patient name (LAST, FIRST)", default: "SULLIVAN, MARGARET E." }
+  - { id: drug_name,    path: "layers[14].content.value", type: text, hint: "Drug name",                  default: "METFORMIN HCL" }
+  - { id: strength,     path: "layers[15].content.value", type: text, hint: "Strength · QTY",             default: "500 mg tablets · QTY 90" }
+  - { id: count,        path: "layers[15].content.value", type: text, hint: "Strength · QTY (same field)",default: "500 mg tablets · QTY 90" }
+  - { id: directions,   path: "layers[18].content.value", type: text, hint: "Dosing directions",          default: "Take one (1) tablet by mouth twice daily with meals. Do not crush or chew." }
+  - { id: refills,      path: "layers[20].content.value", type: text, hint: "Refills remaining",          default: "5 remaining · expires 05/16/2027" }
+  - { id: expiration,   path: "layers[24].content.value", type: text, hint: "Discard after date",         default: "05/16/2027" }

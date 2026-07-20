@@ -1,0 +1,371 @@
+_protocol: template/v1
+
+# 7-page workout + meal plan — 1080×1920 portrait, forest-deep theme.
+# Cover (week + goal) → Mon-Fri (workout + meals) → weekend rest + grocery list.
+meta:
+  id: tmpl-workout-meal-plan
+  name: Workout & Meal Plan · Week (7 pages)
+  type: carousel
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [carousel, fitness, workout, meal-plan, forest, portrait]
+  description: "Seven-page weekly workout and meal plan with cover, five daily training and meal cards Mon-Fri, and weekend rest with grocery list."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+pages:
+  # ── Page 1 · Cover ──────────────────────────────────────────
+  - id: cover
+    label: Cover · Week 01
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: $background } }
+      - { id: hero-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1100, fill: { type: solid, color: $primary } }
+      - { id: glow, type: circle, z: 2, cx: 920, cy: 280, rx: 280, ry: 280, fill: { type: none }, opacity: 0.25 }
+      - { id: brand-mark, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "◆ FORGE STRENGTH" }, style: { font_family: $heading, font_size: 20, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.4, text_transform: uppercase } }
+      - { id: week-pill, type: rect, z: 11, x: 80, y: 200, width: 200, height: 40, radius: 20, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: week-text, type: text, z: 12, x: 80, y: 212, width: 200, height: 0, content: { type: plain, value: "WEEK 01 OF 12" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, text_align: center } }
+      - { id: goal-kicker, type: text, z: 20, x: 80, y: 360, width: 920, height: 0, content: { type: plain, value: "THIS WEEK'S GOAL" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", opacity: 0.85, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: goal-title, type: text, z: 21, x: 80, y: 420, width: 920, height: 0, content: { type: plain, value: "Build the\nfoundation." }, style: { font_family: $heading, font_size: 120, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: goal-deck, type: text, z: 22, x: 80, y: 720, width: 920, height: 0, content: { type: plain, value: "Five-day push/pull/legs split with high-protein meals. Two rest days for full recovery." }, style: { font_family: $body, font_size: 22, color: "#FFFFFF", opacity: 0.9, line_height: 1.5 } }
+      - { id: target-card, type: rect, z: 30, x: 80, y: 1200, width: 920, height: 240, radius: 20, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: t1-l, type: text, z: 31, x: 120, y: 1240, width: 280, height: 0, content: { type: plain, value: "TRAINING DAYS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: t1-v, type: text, z: 32, x: 120, y: 1280, width: 280, height: 0, content: { type: plain, value: "5" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: t1-s, type: text, z: 33, x: 120, y: 1380, width: 280, height: 0, content: { type: plain, value: "Mon-Fri" }, style: { font_family: $body, font_size: 14, color: $text_muted } }
+      - { id: t2-l, type: text, z: 31, x: 410, y: 1240, width: 280, height: 0, content: { type: plain, value: "PROTEIN/DAY" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: t2-v, type: text, z: 32, x: 410, y: 1280, width: 280, height: 0, content: { type: plain, value: "180g" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: t2-s, type: text, z: 33, x: 410, y: 1380, width: 280, height: 0, content: { type: plain, value: "~1g per lb bodyweight" }, style: { font_family: $body, font_size: 14, color: $text_muted } }
+      - { id: t3-l, type: text, z: 31, x: 700, y: 1240, width: 280, height: 0, content: { type: plain, value: "CALORIES" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: t3-v, type: text, z: 32, x: 700, y: 1280, width: 280, height: 0, content: { type: plain, value: "2,800" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: t3-s, type: text, z: 33, x: 700, y: 1380, width: 280, height: 0, content: { type: plain, value: "+300 surplus" }, style: { font_family: $body, font_size: 14, color: $text_muted } }
+      - { id: ind-eyebrow, type: text, z: 40, x: 80, y: 1520, width: 920, height: 0, content: { type: plain, value: "BUILT FOR" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: ind-div, type: rect, z: 41, x: 80, y: 1560, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: ind-text, type: text, z: 42, x: 80, y: 1600, width: 920, height: 0, content: { type: plain, value: "Alex Park · 165 lbs · intermediate lifter\nProgram designed by FORGE Coaching · forge.fit" }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.6 } }
+      - { id: pn, type: text, z: 50, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "01 / 07  ·  COVER" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 2 · Monday ─────────────────────────────────────────
+  - id: monday
+    label: Monday · Push
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $primary } }
+      - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "MONDAY  ·  DAY 01" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Push Day." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 300, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: focus-text, type: text, z: 13, x: 80, y: 280, width: 300, height: 0, content: { type: plain, value: "CHEST · SHOULDERS · TRICEPS" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: workout-label, type: text, z: 20, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "TRAINING  ·  60 MINUTES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: workout-div, type: rect, z: 21, x: 80, y: 420, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: e1-num, type: text, z: 30, x: 80, y: 460, width: 60, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e1-name, type: text, z: 31, x: 150, y: 458, width: 600, height: 0, content: { type: plain, value: "Barbell Bench Press" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e1-sets, type: text, z: 32, x: 760, y: 462, width: 240, height: 0, content: { type: plain, value: "4 × 6 @ 165 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e2-num, type: text, z: 30, x: 80, y: 520, width: 60, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e2-name, type: text, z: 31, x: 150, y: 518, width: 600, height: 0, content: { type: plain, value: "Incline Dumbbell Press" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e2-sets, type: text, z: 32, x: 760, y: 522, width: 240, height: 0, content: { type: plain, value: "3 × 10 @ 55 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e3-num, type: text, z: 30, x: 80, y: 580, width: 60, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e3-name, type: text, z: 31, x: 150, y: 578, width: 600, height: 0, content: { type: plain, value: "Overhead Press" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e3-sets, type: text, z: 32, x: 760, y: 582, width: 240, height: 0, content: { type: plain, value: "4 × 8 @ 95 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e4-num, type: text, z: 30, x: 80, y: 640, width: 60, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e4-name, type: text, z: 31, x: 150, y: 638, width: 600, height: 0, content: { type: plain, value: "Lateral Raises" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e4-sets, type: text, z: 32, x: 760, y: 642, width: 240, height: 0, content: { type: plain, value: "3 × 12 @ 15 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e5-num, type: text, z: 30, x: 80, y: 700, width: 60, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e5-name, type: text, z: 31, x: 150, y: 698, width: 600, height: 0, content: { type: plain, value: "Cable Tricep Pushdowns" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e5-sets, type: text, z: 32, x: 760, y: 702, width: 240, height: 0, content: { type: plain, value: "3 × 12 @ 50 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e6-num, type: text, z: 30, x: 80, y: 760, width: 60, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e6-name, type: text, z: 31, x: 150, y: 758, width: 600, height: 0, content: { type: plain, value: "Plank · for time" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e6-sets, type: text, z: 32, x: 760, y: 762, width: 240, height: 0, content: { type: plain, value: "3 × 60s" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: meals-label, type: text, z: 40, x: 80, y: 880, width: 920, height: 0, content: { type: plain, value: "MEALS  ·  ~2,800 KCAL  ·  180G PROTEIN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: meals-div, type: rect, z: 41, x: 80, y: 920, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: m1-card, type: rect, z: 50, x: 80, y: 960, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-l, type: text, z: 51, x: 120, y: 990, width: 280, height: 0, content: { type: plain, value: "BREAKFAST · 07:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m1-t, type: text, z: 52, x: 120, y: 1020, width: 700, height: 0, content: { type: plain, value: "4-egg omelette · spinach · feta · sourdough" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m1-m, type: text, z: 53, x: 120, y: 1080, width: 700, height: 0, content: { type: plain, value: "620 kcal · 38g protein · 42g carbs · 30g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m2-card, type: rect, z: 50, x: 80, y: 1160, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m2-l, type: text, z: 51, x: 120, y: 1190, width: 280, height: 0, content: { type: plain, value: "LUNCH · 12:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-t, type: text, z: 52, x: 120, y: 1220, width: 700, height: 0, content: { type: plain, value: "Grilled chicken bowl · rice · avocado · greens" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m2-m, type: text, z: 53, x: 120, y: 1280, width: 700, height: 0, content: { type: plain, value: "780 kcal · 52g protein · 70g carbs · 28g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m3-card, type: rect, z: 50, x: 80, y: 1360, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m3-l, type: text, z: 51, x: 120, y: 1390, width: 280, height: 0, content: { type: plain, value: "POST-TRAIN · 18:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m3-t, type: text, z: 52, x: 120, y: 1420, width: 700, height: 0, content: { type: plain, value: "Whey shake + banana + 2 rice cakes with PB" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m3-m, type: text, z: 53, x: 120, y: 1480, width: 700, height: 0, content: { type: plain, value: "440 kcal · 32g protein · 52g carbs · 10g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m4-card, type: rect, z: 50, x: 80, y: 1560, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m4-l, type: text, z: 51, x: 120, y: 1590, width: 280, height: 0, content: { type: plain, value: "DINNER · 20:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m4-t, type: text, z: 52, x: 120, y: 1620, width: 700, height: 0, content: { type: plain, value: "Salmon · sweet potato · roast broccoli" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m4-m, type: text, z: 53, x: 120, y: 1680, width: 700, height: 0, content: { type: plain, value: "780 kcal · 58g protein · 56g carbs · 32g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "02 / 07  ·  MONDAY · PUSH" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 3 · Tuesday ────────────────────────────────────────
+  - id: tuesday
+    label: Tuesday · Pull
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $secondary } }
+      - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "TUESDAY  ·  DAY 02" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Pull Day." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 280, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: focus-text, type: text, z: 13, x: 80, y: 280, width: 280, height: 0, content: { type: plain, value: "BACK · BICEPS · REAR DELTS" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: workout-label, type: text, z: 20, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "TRAINING  ·  60 MINUTES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: workout-div, type: rect, z: 21, x: 80, y: 420, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: e1-num, type: text, z: 30, x: 80, y: 460, width: 60, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e1-name, type: text, z: 31, x: 150, y: 458, width: 600, height: 0, content: { type: plain, value: "Conventional Deadlift" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e1-sets, type: text, z: 32, x: 760, y: 462, width: 240, height: 0, content: { type: plain, value: "5 × 5 @ 245 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e2-num, type: text, z: 30, x: 80, y: 520, width: 60, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e2-name, type: text, z: 31, x: 150, y: 518, width: 600, height: 0, content: { type: plain, value: "Pull-ups (weighted if able)" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e2-sets, type: text, z: 32, x: 760, y: 522, width: 240, height: 0, content: { type: plain, value: "4 × 8 BW + 25 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e3-num, type: text, z: 30, x: 80, y: 580, width: 60, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e3-name, type: text, z: 31, x: 150, y: 578, width: 600, height: 0, content: { type: plain, value: "Barbell Bent-over Row" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e3-sets, type: text, z: 32, x: 760, y: 582, width: 240, height: 0, content: { type: plain, value: "4 × 8 @ 135 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e4-num, type: text, z: 30, x: 80, y: 640, width: 60, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e4-name, type: text, z: 31, x: 150, y: 638, width: 600, height: 0, content: { type: plain, value: "Face Pulls" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e4-sets, type: text, z: 32, x: 760, y: 642, width: 240, height: 0, content: { type: plain, value: "3 × 15 @ 40 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e5-num, type: text, z: 30, x: 80, y: 700, width: 60, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e5-name, type: text, z: 31, x: 150, y: 698, width: 600, height: 0, content: { type: plain, value: "Hammer Curls" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e5-sets, type: text, z: 32, x: 760, y: 702, width: 240, height: 0, content: { type: plain, value: "3 × 12 @ 30 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e6-num, type: text, z: 30, x: 80, y: 760, width: 60, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e6-name, type: text, z: 31, x: 150, y: 758, width: 600, height: 0, content: { type: plain, value: "Hanging Leg Raises" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e6-sets, type: text, z: 32, x: 760, y: 762, width: 240, height: 0, content: { type: plain, value: "3 × 12" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: meals-label, type: text, z: 40, x: 80, y: 880, width: 920, height: 0, content: { type: plain, value: "MEALS  ·  ~2,800 KCAL  ·  180G PROTEIN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: meals-div, type: rect, z: 41, x: 80, y: 920, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: m1-card, type: rect, z: 50, x: 80, y: 960, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-l, type: text, z: 51, x: 120, y: 990, width: 280, height: 0, content: { type: plain, value: "BREAKFAST · 07:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m1-t, type: text, z: 52, x: 120, y: 1020, width: 700, height: 0, content: { type: plain, value: "Greek yogurt bowl · oats · berries · honey" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m1-m, type: text, z: 53, x: 120, y: 1080, width: 700, height: 0, content: { type: plain, value: "560 kcal · 40g protein · 68g carbs · 12g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m2-card, type: rect, z: 50, x: 80, y: 1160, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m2-l, type: text, z: 51, x: 120, y: 1190, width: 280, height: 0, content: { type: plain, value: "LUNCH · 12:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-t, type: text, z: 52, x: 120, y: 1220, width: 700, height: 0, content: { type: plain, value: "Turkey & quinoa salad · feta · olive oil" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m2-m, type: text, z: 53, x: 120, y: 1280, width: 700, height: 0, content: { type: plain, value: "720 kcal · 48g protein · 62g carbs · 26g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m3-card, type: rect, z: 50, x: 80, y: 1360, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m3-l, type: text, z: 51, x: 120, y: 1390, width: 280, height: 0, content: { type: plain, value: "POST-TRAIN · 18:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m3-t, type: text, z: 52, x: 120, y: 1420, width: 700, height: 0, content: { type: plain, value: "Whey shake + dates + handful of almonds" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m3-m, type: text, z: 53, x: 120, y: 1480, width: 700, height: 0, content: { type: plain, value: "460 kcal · 30g protein · 56g carbs · 14g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m4-card, type: rect, z: 50, x: 80, y: 1560, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m4-l, type: text, z: 51, x: 120, y: 1590, width: 280, height: 0, content: { type: plain, value: "DINNER · 20:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m4-t, type: text, z: 52, x: 120, y: 1620, width: 700, height: 0, content: { type: plain, value: "Lean steak · jasmine rice · greens · garlic" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m4-m, type: text, z: 53, x: 120, y: 1680, width: 700, height: 0, content: { type: plain, value: "820 kcal · 62g protein · 64g carbs · 30g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "03 / 07  ·  TUESDAY · PULL" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 4 · Wednesday ──────────────────────────────────────
+  - id: wednesday
+    label: Wednesday · Legs
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $primary } }
+      - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "WEDNESDAY  ·  DAY 03" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Leg Day." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 280, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: focus-text, type: text, z: 13, x: 80, y: 280, width: 280, height: 0, content: { type: plain, value: "QUADS · GLUTES · HAMSTRINGS" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: workout-label, type: text, z: 20, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "TRAINING  ·  70 MINUTES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: workout-div, type: rect, z: 21, x: 80, y: 420, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: e1-num, type: text, z: 30, x: 80, y: 460, width: 60, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e1-name, type: text, z: 31, x: 150, y: 458, width: 600, height: 0, content: { type: plain, value: "Back Squat" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e1-sets, type: text, z: 32, x: 760, y: 462, width: 240, height: 0, content: { type: plain, value: "5 × 5 @ 205 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e2-num, type: text, z: 30, x: 80, y: 520, width: 60, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e2-name, type: text, z: 31, x: 150, y: 518, width: 600, height: 0, content: { type: plain, value: "Romanian Deadlift" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e2-sets, type: text, z: 32, x: 760, y: 522, width: 240, height: 0, content: { type: plain, value: "4 × 8 @ 155 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e3-num, type: text, z: 30, x: 80, y: 580, width: 60, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e3-name, type: text, z: 31, x: 150, y: 578, width: 600, height: 0, content: { type: plain, value: "Bulgarian Split Squat" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e3-sets, type: text, z: 32, x: 760, y: 582, width: 240, height: 0, content: { type: plain, value: "3 × 10 @ 35 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e4-num, type: text, z: 30, x: 80, y: 640, width: 60, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e4-name, type: text, z: 31, x: 150, y: 638, width: 600, height: 0, content: { type: plain, value: "Walking Lunges" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e4-sets, type: text, z: 32, x: 760, y: 642, width: 240, height: 0, content: { type: plain, value: "3 × 20 steps" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e5-num, type: text, z: 30, x: 80, y: 700, width: 60, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e5-name, type: text, z: 31, x: 150, y: 698, width: 600, height: 0, content: { type: plain, value: "Standing Calf Raises" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e5-sets, type: text, z: 32, x: 760, y: 702, width: 240, height: 0, content: { type: plain, value: "4 × 15 @ 90 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e6-num, type: text, z: 30, x: 80, y: 760, width: 60, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e6-name, type: text, z: 31, x: 150, y: 758, width: 600, height: 0, content: { type: plain, value: "Hanging Knee Raises" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e6-sets, type: text, z: 32, x: 760, y: 762, width: 240, height: 0, content: { type: plain, value: "3 × 15" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: meals-label, type: text, z: 40, x: 80, y: 880, width: 920, height: 0, content: { type: plain, value: "MEALS  ·  ~2,900 KCAL  ·  180G PROTEIN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: meals-div, type: rect, z: 41, x: 80, y: 920, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: m1-card, type: rect, z: 50, x: 80, y: 960, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-l, type: text, z: 51, x: 120, y: 990, width: 280, height: 0, content: { type: plain, value: "BREAKFAST · 07:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m1-t, type: text, z: 52, x: 120, y: 1020, width: 700, height: 0, content: { type: plain, value: "Protein oats · banana · peanut butter · whey" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m1-m, type: text, z: 53, x: 120, y: 1080, width: 700, height: 0, content: { type: plain, value: "680 kcal · 44g protein · 76g carbs · 22g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m2-card, type: rect, z: 50, x: 80, y: 1160, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m2-l, type: text, z: 51, x: 120, y: 1190, width: 280, height: 0, content: { type: plain, value: "LUNCH · 12:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-t, type: text, z: 52, x: 120, y: 1220, width: 700, height: 0, content: { type: plain, value: "Chicken burrito bowl · black beans · pico" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m2-m, type: text, z: 53, x: 120, y: 1280, width: 700, height: 0, content: { type: plain, value: "780 kcal · 52g protein · 78g carbs · 22g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m3-card, type: rect, z: 50, x: 80, y: 1360, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m3-l, type: text, z: 51, x: 120, y: 1390, width: 280, height: 0, content: { type: plain, value: "POST-TRAIN · 18:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m3-t, type: text, z: 52, x: 120, y: 1420, width: 700, height: 0, content: { type: plain, value: "Whey shake + bagel + 2 hard-boiled eggs" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m3-m, type: text, z: 53, x: 120, y: 1480, width: 700, height: 0, content: { type: plain, value: "560 kcal · 42g protein · 56g carbs · 14g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m4-card, type: rect, z: 50, x: 80, y: 1560, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m4-l, type: text, z: 51, x: 120, y: 1590, width: 280, height: 0, content: { type: plain, value: "DINNER · 20:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m4-t, type: text, z: 52, x: 120, y: 1620, width: 700, height: 0, content: { type: plain, value: "Ground turkey chili · cornbread · greek yogurt" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m4-m, type: text, z: 53, x: 120, y: 1680, width: 700, height: 0, content: { type: plain, value: "880 kcal · 60g protein · 80g carbs · 28g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "04 / 07  ·  WEDNESDAY · LEGS" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 5 · Thursday ───────────────────────────────────────
+  - id: thursday
+    label: Thursday · Push 2
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $secondary } }
+      - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "THURSDAY  ·  DAY 04" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Push II." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 240, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: focus-text, type: text, z: 13, x: 80, y: 280, width: 240, height: 0, content: { type: plain, value: "SHOULDER-FOCUSED PUSH" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: workout-label, type: text, z: 20, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "TRAINING  ·  55 MINUTES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: workout-div, type: rect, z: 21, x: 80, y: 420, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: e1-num, type: text, z: 30, x: 80, y: 460, width: 60, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e1-name, type: text, z: 31, x: 150, y: 458, width: 600, height: 0, content: { type: plain, value: "Seated Dumbbell Press" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e1-sets, type: text, z: 32, x: 760, y: 462, width: 240, height: 0, content: { type: plain, value: "4 × 8 @ 50 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e2-num, type: text, z: 30, x: 80, y: 520, width: 60, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e2-name, type: text, z: 31, x: 150, y: 518, width: 600, height: 0, content: { type: plain, value: "Close-grip Bench Press" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e2-sets, type: text, z: 32, x: 760, y: 522, width: 240, height: 0, content: { type: plain, value: "4 × 8 @ 135 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e3-num, type: text, z: 30, x: 80, y: 580, width: 60, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e3-name, type: text, z: 31, x: 150, y: 578, width: 600, height: 0, content: { type: plain, value: "Cable Crossover" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e3-sets, type: text, z: 32, x: 760, y: 582, width: 240, height: 0, content: { type: plain, value: "3 × 12 @ 25 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e4-num, type: text, z: 30, x: 80, y: 640, width: 60, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e4-name, type: text, z: 31, x: 150, y: 638, width: 600, height: 0, content: { type: plain, value: "Front Raises" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e4-sets, type: text, z: 32, x: 760, y: 642, width: 240, height: 0, content: { type: plain, value: "3 × 12 @ 15 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e5-num, type: text, z: 30, x: 80, y: 700, width: 60, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e5-name, type: text, z: 31, x: 150, y: 698, width: 600, height: 0, content: { type: plain, value: "Dips (assisted if needed)" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e5-sets, type: text, z: 32, x: 760, y: 702, width: 240, height: 0, content: { type: plain, value: "3 × 10 BW" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e6-num, type: text, z: 30, x: 80, y: 760, width: 60, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e6-name, type: text, z: 31, x: 150, y: 758, width: 600, height: 0, content: { type: plain, value: "Ab Wheel Rollouts" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e6-sets, type: text, z: 32, x: 760, y: 762, width: 240, height: 0, content: { type: plain, value: "3 × 10" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: meals-label, type: text, z: 40, x: 80, y: 880, width: 920, height: 0, content: { type: plain, value: "MEALS  ·  ~2,800 KCAL  ·  180G PROTEIN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: meals-div, type: rect, z: 41, x: 80, y: 920, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: m1-card, type: rect, z: 50, x: 80, y: 960, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-l, type: text, z: 51, x: 120, y: 990, width: 280, height: 0, content: { type: plain, value: "BREAKFAST · 07:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m1-t, type: text, z: 52, x: 120, y: 1020, width: 700, height: 0, content: { type: plain, value: "Cottage cheese pancakes · syrup · blueberries" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m1-m, type: text, z: 53, x: 120, y: 1080, width: 700, height: 0, content: { type: plain, value: "600 kcal · 40g protein · 70g carbs · 16g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m2-card, type: rect, z: 50, x: 80, y: 1160, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m2-l, type: text, z: 51, x: 120, y: 1190, width: 280, height: 0, content: { type: plain, value: "LUNCH · 12:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-t, type: text, z: 52, x: 120, y: 1220, width: 700, height: 0, content: { type: plain, value: "Tuna pasta · capers · olive oil · cherry tomatoes" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m2-m, type: text, z: 53, x: 120, y: 1280, width: 700, height: 0, content: { type: plain, value: "740 kcal · 48g protein · 80g carbs · 22g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m3-card, type: rect, z: 50, x: 80, y: 1360, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m3-l, type: text, z: 51, x: 120, y: 1390, width: 280, height: 0, content: { type: plain, value: "POST-TRAIN · 18:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m3-t, type: text, z: 52, x: 120, y: 1420, width: 700, height: 0, content: { type: plain, value: "Whey shake + apple + rice cakes" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m3-m, type: text, z: 53, x: 120, y: 1480, width: 700, height: 0, content: { type: plain, value: "420 kcal · 30g protein · 56g carbs · 6g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m4-card, type: rect, z: 50, x: 80, y: 1560, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m4-l, type: text, z: 51, x: 120, y: 1590, width: 280, height: 0, content: { type: plain, value: "DINNER · 20:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m4-t, type: text, z: 52, x: 120, y: 1620, width: 700, height: 0, content: { type: plain, value: "Baked cod · roasted potatoes · asparagus" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m4-m, type: text, z: 53, x: 120, y: 1680, width: 700, height: 0, content: { type: plain, value: "720 kcal · 58g protein · 56g carbs · 24g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "05 / 07  ·  THURSDAY · PUSH II" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 6 · Friday ─────────────────────────────────────────
+  - id: friday
+    label: Friday · Full Body
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $primary } }
+      - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "FRIDAY  ·  DAY 05" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Full Body." }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 240, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: focus-text, type: text, z: 13, x: 80, y: 280, width: 240, height: 0, content: { type: plain, value: "STRENGTH + ACCESSORY" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: workout-label, type: text, z: 20, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "TRAINING  ·  65 MINUTES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: workout-div, type: rect, z: 21, x: 80, y: 420, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: e1-num, type: text, z: 30, x: 80, y: 460, width: 60, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e1-name, type: text, z: 31, x: 150, y: 458, width: 600, height: 0, content: { type: plain, value: "Front Squat" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e1-sets, type: text, z: 32, x: 760, y: 462, width: 240, height: 0, content: { type: plain, value: "4 × 6 @ 165 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e2-num, type: text, z: 30, x: 80, y: 520, width: 60, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e2-name, type: text, z: 31, x: 150, y: 518, width: 600, height: 0, content: { type: plain, value: "Weighted Chin-ups" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e2-sets, type: text, z: 32, x: 760, y: 522, width: 240, height: 0, content: { type: plain, value: "4 × 6 BW + 30 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e3-num, type: text, z: 30, x: 80, y: 580, width: 60, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e3-name, type: text, z: 31, x: 150, y: 578, width: 600, height: 0, content: { type: plain, value: "Single-arm Dumbbell Row" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e3-sets, type: text, z: 32, x: 760, y: 582, width: 240, height: 0, content: { type: plain, value: "3 × 10 @ 65 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e4-num, type: text, z: 30, x: 80, y: 640, width: 60, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e4-name, type: text, z: 31, x: 150, y: 638, width: 600, height: 0, content: { type: plain, value: "Dumbbell Shoulder Press" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e4-sets, type: text, z: 32, x: 760, y: 642, width: 240, height: 0, content: { type: plain, value: "3 × 10 @ 45 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e5-num, type: text, z: 30, x: 80, y: 700, width: 60, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e5-name, type: text, z: 31, x: 150, y: 698, width: 600, height: 0, content: { type: plain, value: "Goblet Squat (finisher)" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e5-sets, type: text, z: 32, x: 760, y: 702, width: 240, height: 0, content: { type: plain, value: "3 × 15 @ 40 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: e6-num, type: text, z: 30, x: 80, y: 760, width: 60, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: e6-name, type: text, z: 31, x: 150, y: 758, width: 600, height: 0, content: { type: plain, value: "Farmer's Carry · 40m loop" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: e6-sets, type: text, z: 32, x: 760, y: 762, width: 240, height: 0, content: { type: plain, value: "3 × 40m @ 70 lb" }, style: { font_family: $mono, font_size: 17, color: $primary, text_align: right, letter_spacing: 0.2 } }
+      - { id: meals-label, type: text, z: 40, x: 80, y: 880, width: 920, height: 0, content: { type: plain, value: "MEALS  ·  ~2,800 KCAL  ·  180G PROTEIN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: meals-div, type: rect, z: 41, x: 80, y: 920, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: m1-card, type: rect, z: 50, x: 80, y: 960, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-l, type: text, z: 51, x: 120, y: 990, width: 280, height: 0, content: { type: plain, value: "BREAKFAST · 07:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m1-t, type: text, z: 52, x: 120, y: 1020, width: 700, height: 0, content: { type: plain, value: "Smoked salmon · bagel · cream cheese · capers" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m1-m, type: text, z: 53, x: 120, y: 1080, width: 700, height: 0, content: { type: plain, value: "640 kcal · 40g protein · 60g carbs · 24g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m2-card, type: rect, z: 50, x: 80, y: 1160, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m2-l, type: text, z: 51, x: 120, y: 1190, width: 280, height: 0, content: { type: plain, value: "LUNCH · 12:30" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-t, type: text, z: 52, x: 120, y: 1220, width: 700, height: 0, content: { type: plain, value: "Chicken stir-fry · brown rice · stir-fried veg" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m2-m, type: text, z: 53, x: 120, y: 1280, width: 700, height: 0, content: { type: plain, value: "760 kcal · 52g protein · 78g carbs · 22g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m3-card, type: rect, z: 50, x: 80, y: 1360, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m3-l, type: text, z: 51, x: 120, y: 1390, width: 280, height: 0, content: { type: plain, value: "POST-TRAIN · 18:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m3-t, type: text, z: 52, x: 120, y: 1420, width: 700, height: 0, content: { type: plain, value: "Whey shake + chocolate milk + protein bar" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m3-m, type: text, z: 53, x: 120, y: 1480, width: 700, height: 0, content: { type: plain, value: "480 kcal · 38g protein · 54g carbs · 8g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: m4-card, type: rect, z: 50, x: 80, y: 1560, width: 920, height: 180, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m4-l, type: text, z: 51, x: 120, y: 1590, width: 280, height: 0, content: { type: plain, value: "DINNER · 20:00" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m4-t, type: text, z: 52, x: 120, y: 1620, width: 700, height: 0, content: { type: plain, value: "Sirloin steak · baked potato · grilled mushrooms" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.4 } }
+      - { id: m4-m, type: text, z: 53, x: 120, y: 1680, width: 700, height: 0, content: { type: plain, value: "880 kcal · 62g protein · 60g carbs · 36g fat" }, style: { font_family: $mono, font_size: 13, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "06 / 07  ·  FRIDAY · FULL BODY" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 7 · Weekend + Grocery ──────────────────────────────
+  - id: weekend
+    label: Weekend & Grocery
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1920, fill: { type: solid, color: "$background" } }
+      - { id: hdr-block, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 320, fill: { type: solid, color: $secondary } }
+      - { id: day-tag, type: text, z: 10, x: 80, y: 120, width: 920, height: 0, content: { type: plain, value: "WEEKEND  ·  DAYS 06-07" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.9 } }
+      - { id: day-title, type: text, z: 11, x: 80, y: 170, width: 920, height: 0, content: { type: plain, value: "Rest & prep." }, style: { font_family: $heading, font_size: 88, font_weight: 800, color: "#FFFFFF", line_height: 1, letter_spacing: -0.03 } }
+      - { id: focus-pill, type: rect, z: 12, x: 80, y: 270, width: 280, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.2)" } }
+      - { id: focus-text, type: text, z: 13, x: 80, y: 280, width: 280, height: 0, content: { type: plain, value: "ACTIVE RECOVERY · MEAL PREP" }, style: { font_family: $mono, font_size: 11, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, text_align: center } }
+      - { id: rest-label, type: text, z: 20, x: 80, y: 380, width: 920, height: 0, content: { type: plain, value: "RECOVERY · KEEP MOVING, KEEP IT LIGHT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: rest-div, type: rect, z: 21, x: 80, y: 420, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r1-card, type: rect, z: 30, x: 80, y: 460, width: 440, height: 200, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: r1-tag, type: text, z: 31, x: 120, y: 490, width: 380, height: 0, content: { type: plain, value: "SATURDAY" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: r1-h, type: text, z: 32, x: 120, y: 520, width: 380, height: 0, content: { type: plain, value: "Long walk · 60min" }, style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: r1-b, type: text, z: 33, x: 120, y: 580, width: 380, height: 0, content: { type: plain, value: "Outdoors if possible. Heart rate around 110-120 bpm. Stretch on return." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: r2-card, type: rect, z: 30, x: 560, y: 460, width: 440, height: 200, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: r2-tag, type: text, z: 31, x: 600, y: 490, width: 380, height: 0, content: { type: plain, value: "SUNDAY" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: r2-h, type: text, z: 32, x: 600, y: 520, width: 380, height: 0, content: { type: plain, value: "Mobility flow · 30min" }, style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: r2-b, type: text, z: 33, x: 600, y: 580, width: 380, height: 0, content: { type: plain, value: "Foam roll, hip openers, t-spine work, light yoga. Prep food for the week." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: grocery-label, type: text, z: 40, x: 80, y: 720, width: 920, height: 0, content: { type: plain, value: "GROCERY LIST · ONE TRIP SUNDAY MORNING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: grocery-div, type: rect, z: 41, x: 80, y: 760, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: col-1-h, type: text, z: 50, x: 80, y: 800, width: 280, height: 0, content: { type: plain, value: "PROTEIN" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: g1-1, type: text, z: 51, x: 80, y: 840, width: 280, height: 0, content: { type: plain, value: "☐  Chicken breast 2 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-2, type: text, z: 51, x: 80, y: 870, width: 280, height: 0, content: { type: plain, value: "☐  Sirloin steak 1 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-3, type: text, z: 51, x: 80, y: 900, width: 280, height: 0, content: { type: plain, value: "☐  Salmon fillet 800g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-4, type: text, z: 51, x: 80, y: 930, width: 280, height: 0, content: { type: plain, value: "☐  Cod fillet 600g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-5, type: text, z: 51, x: 80, y: 960, width: 280, height: 0, content: { type: plain, value: "☐  Ground turkey 1 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-6, type: text, z: 51, x: 80, y: 990, width: 280, height: 0, content: { type: plain, value: "☐  Eggs ×24" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-7, type: text, z: 51, x: 80, y: 1020, width: 280, height: 0, content: { type: plain, value: "☐  Whey isolate 2 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g1-8, type: text, z: 51, x: 80, y: 1050, width: 280, height: 0, content: { type: plain, value: "☐  Greek yogurt 1 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: col-2-h, type: text, z: 60, x: 400, y: 800, width: 280, height: 0, content: { type: plain, value: "CARBS" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: g2-1, type: text, z: 61, x: 400, y: 840, width: 280, height: 0, content: { type: plain, value: "☐  Jasmine rice 2 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-2, type: text, z: 61, x: 400, y: 870, width: 280, height: 0, content: { type: plain, value: "☐  Sweet potatoes 2 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-3, type: text, z: 61, x: 400, y: 900, width: 280, height: 0, content: { type: plain, value: "☐  Rolled oats 1 kg" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-4, type: text, z: 61, x: 400, y: 930, width: 280, height: 0, content: { type: plain, value: "☐  Sourdough loaf" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-5, type: text, z: 61, x: 400, y: 960, width: 280, height: 0, content: { type: plain, value: "☐  Bagels ×6" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-6, type: text, z: 61, x: 400, y: 990, width: 280, height: 0, content: { type: plain, value: "☐  Quinoa 500g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-7, type: text, z: 61, x: 400, y: 1020, width: 280, height: 0, content: { type: plain, value: "☐  Rice cakes ×1 pack" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g2-8, type: text, z: 61, x: 400, y: 1050, width: 280, height: 0, content: { type: plain, value: "☐  Bananas ×8" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: col-3-h, type: text, z: 70, x: 720, y: 800, width: 280, height: 0, content: { type: plain, value: "VEG · FATS · OTHER" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: g3-1, type: text, z: 71, x: 720, y: 840, width: 280, height: 0, content: { type: plain, value: "☐  Broccoli ×2 heads" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-2, type: text, z: 71, x: 720, y: 870, width: 280, height: 0, content: { type: plain, value: "☐  Spinach 400g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-3, type: text, z: 71, x: 720, y: 900, width: 280, height: 0, content: { type: plain, value: "☐  Asparagus 500g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-4, type: text, z: 71, x: 720, y: 930, width: 280, height: 0, content: { type: plain, value: "☐  Avocados ×4" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-5, type: text, z: 71, x: 720, y: 960, width: 280, height: 0, content: { type: plain, value: "☐  Olive oil · large" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-6, type: text, z: 71, x: 720, y: 990, width: 280, height: 0, content: { type: plain, value: "☐  Almonds 400g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-7, type: text, z: 71, x: 720, y: 1020, width: 280, height: 0, content: { type: plain, value: "☐  Peanut butter · jar" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: g3-8, type: text, z: 71, x: 720, y: 1050, width: 280, height: 0, content: { type: plain, value: "☐  Berries 500g" }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.9 } }
+      - { id: budget-card, type: rect, z: 80, x: 80, y: 1140, width: 920, height: 140, radius: 16, fill: { type: solid, color: "$primary" } }
+      - { id: budget-l, type: text, z: 81, x: 120, y: 1170, width: 840, height: 0, content: { type: plain, value: "ESTIMATED WEEKLY GROCERY BUDGET" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.85 } }
+      - { id: budget-v, type: text, z: 82, x: 120, y: 1200, width: 840, height: 0, content: { type: plain, value: "~$140 USD" }, style: { font_family: $heading, font_size: 44, font_weight: 800, color: "#FFFFFF", line_height: 1.1 } }
+      - { id: prep-label, type: text, z: 90, x: 80, y: 1340, width: 920, height: 0, content: { type: plain, value: "SUNDAY MEAL PREP CHECKLIST" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: prep-div, type: rect, z: 91, x: 80, y: 1380, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: p1, type: text, z: 92, x: 80, y: 1420, width: 920, height: 0, content: { type: plain, value: "→ Batch-cook 1.4 kg of chicken breast in oven (sheet-pan, salt + olive oil)" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: p2, type: text, z: 92, x: 80, y: 1470, width: 920, height: 0, content: { type: plain, value: "→ Cook 1.2 kg of jasmine rice (rice cooker, portion to 6 containers)" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: p3, type: text, z: 92, x: 80, y: 1520, width: 920, height: 0, content: { type: plain, value: "→ Roast 1 kg sweet potato cubes + 1 kg broccoli florets" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: p4, type: text, z: 92, x: 80, y: 1570, width: 920, height: 0, content: { type: plain, value: "→ Hard-boil 12 eggs · refrigerate in shell for grab-and-go snacks" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: p5, type: text, z: 92, x: 80, y: 1620, width: 920, height: 0, content: { type: plain, value: "→ Portion almonds and rice cakes into 5 zip bags for post-workout snacks" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.8 } }
+      - { id: motto, type: text, z: 100, x: 80, y: 1760, width: 920, height: 0, content: { type: plain, value: "Consistency beats intensity. Show up, log the lift, eat the food." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $primary, text_align: center, line_height: 1.4 } }
+      - { id: pn, type: text, z: 110, x: 80, y: 1840, width: 920, height: 0, content: { type: plain, value: "07 / 07  ·  REST + GROCERY · END OF WEEK 01" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+slots:
+  - { id: week_number,   path: "pages[0].layers[5].content.value",  type: text, hint: "Week label",    default: "WEEK 01 OF 12" }
+  - { id: goal_title,    path: "pages[0].layers[8].content.value",  type: text, hint: "Goal headline", default: "Build the\nfoundation." }
+  - { id: goal_deck,     path: "pages[0].layers[9].content.value",  type: text, hint: "Goal deck",     default: "Five-day push/pull/legs split with high-protein meals. Two rest days for full recovery." }
+  - { id: athlete_name,  path: "pages[0].layers[21].content.value", type: text, hint: "Athlete info",  default: "Alex Park · 165 lbs · intermediate lifter\nProgram designed by FORGE Coaching · forge.fit" }
+  - { id: protein_target, path: "pages[0].layers[15].content.value", type: text, hint: "Protein target", default: "180g" }
+  - { id: calorie_target, path: "pages[0].layers[18].content.value", type: text, hint: "Calorie target", default: "2,800" }

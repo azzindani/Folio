@@ -1,0 +1,517 @@
+_protocol: template/v1
+
+# Benchmark results poster — single-page LinkedIn-style performance announcement.
+# Hero stat dominates; supporting bar chart shows comparative wins.
+meta:
+  id: tmpl-benchmark-results-poster
+  name: Benchmark Results Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, benchmark, performance, results, data, linkedin]
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: corner-mark
+    type: rect
+    z: 3
+    x: 80
+    y: 80
+    width: 48
+    height: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 120
+    width: 1040
+    height: 0
+    content: { type: plain, value: "BENCHMARK · INTERNAL" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: headline
+    type: text
+    z: 21
+    x: 80
+    y: 170
+    width: 1040
+    height: 0
+    content: { type: plain, value: "3× faster than the old query layer." }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 800
+      color: $text
+      line_height: 1.05
+      letter_spacing: -0.02
+
+  - id: hero-stat
+    type: text
+    z: 30
+    x: 80
+    y: 340
+    width: 1040
+    height: 0
+    content: { type: plain, value: "3.4×" }
+    style:
+      font_family: $heading
+      font_size: 260
+      font_weight: 900
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: hero-caption
+    type: text
+    z: 31
+    x: 80
+    y: 620
+    width: 1040
+    height: 0
+    content: { type: plain, value: "p99 latency improvement on read-heavy workloads" }
+    style:
+      font_family: $body
+      font_size: 24
+      color: $text_muted
+      line_height: 1.4
+
+  - id: chart-title
+    type: text
+    z: 40
+    x: 80
+    y: 740
+    width: 1040
+    height: 0
+    content: { type: plain, value: "RESULTS BY QUERY TYPE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.28
+      text_transform: uppercase
+
+  # Row 1 — point lookup
+  - id: row1-label
+    type: text
+    z: 41
+    x: 80
+    y: 790
+    width: 280
+    height: 0
+    content: { type: plain, value: "Point lookup · 142ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  - id: row1-bar-base
+    type: rect
+    z: 41
+    x: 380
+    y: 794
+    width: 560
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - id: row1-bar-fill
+    type: rect
+    z: 42
+    x: 380
+    y: 794
+    width: 180
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: row1-value
+    type: text
+    z: 43
+    x: 960
+    y: 790
+    width: 160
+    height: 0
+    content: { type: plain, value: "42ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  # Row 2 — range scan
+  - id: row2-label
+    type: text
+    z: 41
+    x: 80
+    y: 850
+    width: 280
+    height: 0
+    content: { type: plain, value: "Range scan · 380ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  - id: row2-bar-base
+    type: rect
+    z: 41
+    x: 380
+    y: 854
+    width: 560
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - id: row2-bar-fill
+    type: rect
+    z: 42
+    x: 380
+    y: 854
+    width: 240
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: row2-value
+    type: text
+    z: 43
+    x: 960
+    y: 850
+    width: 160
+    height: 0
+    content: { type: plain, value: "112ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  # Row 3 — aggregation
+  - id: row3-label
+    type: text
+    z: 41
+    x: 80
+    y: 910
+    width: 280
+    height: 0
+    content: { type: plain, value: "Aggregation · 980ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  - id: row3-bar-base
+    type: rect
+    z: 41
+    x: 380
+    y: 914
+    width: 560
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - id: row3-bar-fill
+    type: rect
+    z: 42
+    x: 380
+    y: 914
+    width: 320
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: row3-value
+    type: text
+    z: 43
+    x: 960
+    y: 910
+    width: 160
+    height: 0
+    content: { type: plain, value: "290ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  # Row 4 — join heavy
+  - id: row4-label
+    type: text
+    z: 41
+    x: 80
+    y: 970
+    width: 280
+    height: 0
+    content: { type: plain, value: "Join heavy · 2.1s" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  - id: row4-bar-base
+    type: rect
+    z: 41
+    x: 380
+    y: 974
+    width: 560
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.25
+
+  - id: row4-bar-fill
+    type: rect
+    z: 42
+    x: 380
+    y: 974
+    width: 440
+    height: 20
+    rx: 4
+    fill: { type: solid, color: "$primary" }
+
+  - id: row4-value
+    type: text
+    z: 43
+    x: 960
+    y: 970
+    width: 160
+    height: 0
+    content: { type: plain, value: "640ms" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  # Test setup card
+  - id: setup-card
+    type: rect
+    z: 50
+    x: 80
+    y: 1060
+    width: 600
+    height: 200
+    rx: 12
+    fill: { type: solid, color: "$surface" }
+
+  - id: setup-title
+    type: text
+    z: 51
+    x: 110
+    y: 1090
+    width: 540
+    height: 0
+    content: { type: plain, value: "TEST SETUP" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.28
+      text_transform: uppercase
+
+  - id: setup-line1
+    type: text
+    z: 52
+    x: 110
+    y: 1130
+    width: 540
+    height: 0
+    content: { type: plain, value: "Dataset: 1M rows · synthetic, indexed" }
+    style:
+      font_family: $mono
+      font_size: 15
+      color: $text
+      line_height: 1.5
+
+  - id: setup-line2
+    type: text
+    z: 52
+    x: 110
+    y: 1162
+    width: 540
+    height: 0
+    content: { type: plain, value: "Hardware: m6i.large · 8GB RAM · NVMe" }
+    style:
+      font_family: $mono
+      font_size: 15
+      color: $text
+      line_height: 1.5
+
+  - id: setup-line3
+    type: text
+    z: 52
+    x: 110
+    y: 1194
+    width: 540
+    height: 0
+    content: { type: plain, value: "Method: wall-clock median, 1000 runs" }
+    style:
+      font_family: $mono
+      font_size: 15
+      color: $text
+      line_height: 1.5
+
+  - id: setup-line4
+    type: text
+    z: 52
+    x: 110
+    y: 1226
+    width: 540
+    height: 0
+    content: { type: plain, value: "Warm cache · single connection · no batching" }
+    style:
+      font_family: $mono
+      font_size: 15
+      color: $text_muted
+      line_height: 1.5
+
+  # Replication URL
+  - id: repl-label
+    type: text
+    z: 60
+    x: 720
+    y: 1090
+    width: 400
+    height: 0
+    content: { type: plain, value: "REPLICATION" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.28
+      text_transform: uppercase
+
+  - id: repl-url
+    type: text
+    z: 61
+    x: 720
+    y: 1130
+    width: 400
+    height: 0
+    content: { type: plain, value: "github.com/acme/bench-q\n→ run: make bench" }
+    style:
+      font_family: $mono
+      font_size: 15
+      color: $text
+      line_height: 1.6
+
+  # Footer
+  - id: footer-divider
+    type: rect
+    z: 70
+    x: 80
+    y: 1380
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.4
+
+  - id: author
+    type: text
+    z: 71
+    x: 80
+    y: 1410
+    width: 600
+    height: 0
+    content: { type: plain, value: "@jane.builds · Platform team" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text
+      line_height: 1.4
+
+  - id: date-stamp
+    type: text
+    z: 71
+    x: 720
+    y: 1410
+    width: 400
+    height: 0
+    content: { type: plain, value: "March 5, 2026" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text_muted
+      line_height: 1.4
+
+animations:
+  headline:
+    enter: { type: fade_up, duration: 700, delay: 100 }
+  hero-stat:
+    enter: { type: scale_in, duration: 900, delay: 400, easing: ease-out }
+    loop: { type: pulse, duration: 2400, scale: 1.03 }
+  hero-caption:
+    enter: { type: fade_up, duration: 600, delay: 700 }
+  row1-bar-fill:
+    enter: { type: slide_right, duration: 600, delay: 800 }
+  row2-bar-fill:
+    enter: { type: slide_right, duration: 600, delay: 920 }
+  row3-bar-fill:
+    enter: { type: slide_right, duration: 600, delay: 1040 }
+  row4-bar-fill:
+    enter: { type: slide_right, duration: 600, delay: 1160 }
+  setup-card:
+    enter: { type: fade_up, duration: 600, delay: 1300 }
+
+slots:
+  - { id: eyebrow,        path: "layers[3].content.value",  type: text, hint: "Eyebrow label",         default: "BENCHMARK · INTERNAL" }
+  - { id: headline,       path: "layers[4].content.value",  type: text, hint: "Main headline",         default: "3× faster than the old query layer." }
+  - { id: hero_stat,      path: "layers[5].content.value",  type: text, hint: "Hero stat (e.g. 3.4×)", default: "3.4×" }
+  - { id: hero_caption,   path: "layers[6].content.value",  type: text, hint: "Stat caption",          default: "p99 latency improvement on read-heavy workloads" }
+  - { id: row1_label,     path: "layers[8].content.value",  type: text, hint: "Row 1 label + baseline", default: "Point lookup · 142ms" }
+  - { id: row1_value,     path: "layers[11].content.value", type: text, hint: "Row 1 new value",       default: "42ms" }
+  - { id: row2_label,     path: "layers[12].content.value", type: text, hint: "Row 2 label + baseline", default: "Range scan · 380ms" }
+  - { id: row2_value,     path: "layers[15].content.value", type: text, hint: "Row 2 new value",       default: "112ms" }
+  - { id: row3_label,     path: "layers[16].content.value", type: text, hint: "Row 3 label + baseline", default: "Aggregation · 980ms" }
+  - { id: row3_value,     path: "layers[19].content.value", type: text, hint: "Row 3 new value",       default: "290ms" }
+  - { id: row4_label,     path: "layers[20].content.value", type: text, hint: "Row 4 label + baseline", default: "Join heavy · 2.1s" }
+  - { id: row4_value,     path: "layers[23].content.value", type: text, hint: "Row 4 new value",       default: "640ms" }
+  - { id: setup_line1,    path: "layers[26].content.value", type: text, hint: "Setup line 1",          default: "Dataset: 1M rows · synthetic, indexed" }
+  - { id: repl_url,       path: "layers[31].content.value", type: text, hint: "Replication URL block", default: "github.com/acme/bench-q\n→ run: make bench" }
+  - { id: author,         path: "layers[33].content.value", type: text, hint: "Author handle",         default: "@jane.builds · Platform team" }
+  - { id: date_stamp,     path: "layers[34].content.value", type: text, hint: "Date",                  default: "March 5, 2026" }

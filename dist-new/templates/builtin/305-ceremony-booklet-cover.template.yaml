@@ -1,0 +1,70 @@
+_protocol: template/v1
+
+# Ceremony booklet cover — 1240×1754 (A4) portrait, editorial-cream theme.
+# Ornate decorative border with corner crests, monogram, large script names,
+# and venue + date footer.
+meta:
+  id: tmpl-ceremony-booklet-cover
+  name: Ceremony Booklet Cover
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, ceremony, booklet, cover, a4, editorial, portrait]
+  description: "Ornate ceremony booklet cover with crest, large couple script, venue and ceremony date."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: frame-outer, type: rect, z: 1, x: 80, y: 80, width: 1080, height: 1594, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1.2 } }
+  # 2 mid frame
+  - { id: frame-mid, type: rect, z: 2, x: 100, y: 100, width: 1040, height: 1554, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 3 inner frame
+  - { id: frame-inner, type: rect, z: 3, x: 120, y: 120, width: 1000, height: 1514, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.25 } }
+  # 4 corner TL diamond (path)
+  - { id: corn-tl, type: path, z: 5, d: "M 140 140 L 170 110 L 200 140 L 170 170 Z", fill: { type: solid, color: "$primary" } }
+  # 5 corner TR diamond
+  - { id: corn-tr, type: path, z: 5, d: "M 1040 140 L 1070 110 L 1100 140 L 1070 170 Z", fill: { type: solid, color: "$primary" } }
+  # 6 corner BL diamond
+  - { id: corn-bl, type: path, z: 5, d: "M 140 1614 L 170 1584 L 200 1614 L 170 1644 Z", fill: { type: solid, color: "$primary" } }
+  # 7 corner BR diamond
+  - { id: corn-br, type: path, z: 5, d: "M 1040 1614 L 1070 1584 L 1100 1614 L 1070 1644 Z", fill: { type: solid, color: "$primary" } }
+  # 8 monogram crest ring
+  - { id: crest-ring, type: circle, z: 10, cx: 620, cy: 380, rx: 90, ry: 90, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+  # 9 monogram crest inner ring
+  - { id: crest-inner, type: circle, z: 11, cx: 620, cy: 380, rx: 78, ry: 78, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.4 } }
+  # 10 monogram crest letters
+  - { id: crest-text, type: text, z: 12, x: 0, y: 350, width: 1240, height: 0, content: { type: plain, value: "A & J" }, style: { font_family: $heading, font_size: 56, font_style: italic, font_weight: 400, color: "$text", text_align: center, letter_spacing: 0.04 } }
+  # 11 small ornament under crest
+  - { id: orn-1, type: text, z: 13, x: 0, y: 510, width: 1240, height: 0, content: { type: plain, value: "❦  ·  ✦  ·  ❦" }, style: { font_family: $heading, font_size: 26, color: "$primary", text_align: center, letter_spacing: 0.4 } }
+  # 12 subtitle line 1
+  - { id: sub-1, type: text, z: 14, x: 0, y: 600, width: 1240, height: 0, content: { type: plain, value: "celebrate the marriage of" }, style: { font_family: $heading, font_size: 32, font_style: italic, color: "$text_muted", text_align: center, line_height: 1.3 } }
+  # 13 couple names (huge script)
+  - { id: couple, type: text, z: 20, x: 0, y: 720, width: 1240, height: 0, content: { type: plain, value: "Amelia Whitfield\n&\nJonathan Beaumont" }, style: { font_family: $heading, font_size: 92, font_style: italic, font_weight: 400, color: "$text", text_align: center, line_height: 1.2, letter_spacing: -0.01 } }
+  # 14 rule between names and date
+  - { id: rule, type: rect, z: 21, x: 570, y: 1140, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 15 eyebrow above date
+  - { id: date-eyebrow, type: text, z: 22, x: 0, y: 1180, width: 1240, height: 0, content: { type: plain, value: "ON THIS DAY" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7 } }
+  # 16 ceremony date
+  - { id: cer-date, type: text, z: 23, x: 0, y: 1220, width: 1240, height: 0, content: { type: plain, value: "Saturday · the twenty-fourth of May · two thousand twenty-six" }, style: { font_family: $heading, font_size: 32, font_style: italic, color: "$text", text_align: center, line_height: 1.4 } }
+  # 17 venue eyebrow
+  - { id: ven-lbl, type: text, z: 24, x: 0, y: 1340, width: 1240, height: 0, content: { type: plain, value: "AT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7 } }
+  # 18 venue name
+  - { id: venue, type: text, z: 25, x: 0, y: 1380, width: 1240, height: 0, content: { type: plain, value: "St. Margaret's Chapel · Cotswolds, England" }, style: { font_family: $heading, font_size: 30, font_style: italic, color: "$primary", text_align: center, line_height: 1.3 } }
+  # 19 bottom ornament
+  - { id: orn-bot, type: text, z: 30, x: 0, y: 1540, width: 1240, height: 0, content: { type: plain, value: "·  ·  ·" }, style: { font_family: $body, font_size: 22, color: "$primary", text_align: center, letter_spacing: 1 } }
+
+slots:
+  - { id: couple_names,    path: "layers[13].content.value", type: text, hint: "Couple names",     default: "Amelia Whitfield\n&\nJonathan Beaumont" }
+  - { id: wedding_date,    path: "layers[16].content.value", type: text, hint: "Ceremony date",    default: "Saturday · the twenty-fourth of May · two thousand twenty-six" }
+  - { id: ceremony_venue,  path: "layers[18].content.value", type: text, hint: "Ceremony venue",   default: "St. Margaret's Chapel · Cotswolds, England" }

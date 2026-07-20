@@ -1,0 +1,125 @@
+_protocol: template/v1
+
+# LinkedIn carousel — 6-slide UX research methods.
+# Forest-deep theme, 1080×1350 portrait.
+meta:
+  id: tmpl-linkedin-user-research-6slide
+  name: LinkedIn User Research (6 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, ux, research, user-research, "4-5"]
+  description: "Cover + why-skip + 4 method deep-dives + CTA — pragmatic UX research."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+pages:
+  # ── Slide 1 · Cover ─────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "1 / 6" }, style: { font_family: $mono, font_size: 18, color: $text_muted } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 520, width: 960, height: 0, content: { type: plain, value: "UX RESEARCH · FIELD GUIDE" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 580, width: 960, height: 0, content: { type: plain, value: "Research that\nships products." }, style: { font_family: $heading, font_size: 100, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.03 } }
+      - { id: tagline, type: text, z: 13, x: 60, y: 920, width: 960, height: 0, content: { type: plain, value: "4 methods. When to use each. Swipe →" }, style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 } }
+      - { id: handle, type: text, z: 14, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 2 · Why teams skip research ───────────────────
+  - id: skip
+    label: Why teams skip
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "2 / 6" }, style: { font_family: $mono, font_size: 18, color: $text_muted } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 180, width: 960, height: 0, content: { type: plain, value: "THE EXCUSES" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32, text_transform: uppercase } }
+      - { id: title, type: text, z: 12, x: 60, y: 240, width: 960, height: 0, content: { type: plain, value: "Why teams skip research" }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: pain-1-dot, type: circle, z: 20, cx: 90, cy: 480, rx: 10, ry: 10, fill: { type: solid, color: "$secondary" } }
+      - { id: pain-1-text, type: text, z: 21, x: 130, y: 460, width: 900, height: 0, content: { type: plain, value: "\"We don't have time.\" → Translation: rework later." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: pain-2-dot, type: circle, z: 20, cx: 90, cy: 620, rx: 10, ry: 10, fill: { type: solid, color: "$secondary" } }
+      - { id: pain-2-text, type: text, z: 21, x: 130, y: 600, width: 900, height: 0, content: { type: plain, value: "\"We already know our users.\" → No, you know 3 of them." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: pain-3-dot, type: circle, z: 20, cx: 90, cy: 760, rx: 10, ry: 10, fill: { type: solid, color: "$secondary" } }
+      - { id: pain-3-text, type: text, z: 21, x: 130, y: 740, width: 900, height: 0, content: { type: plain, value: "\"Research slows us down.\" → Building the wrong thing is slower." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: callout, type: text, z: 30, x: 60, y: 940, width: 960, height: 0, content: { type: plain, value: "→ Pick one method. Run it this week." }, style: { font_family: $body, font_size: 24, font_weight: 600, color: $primary, line_height: 1.4 } }
+      - { id: handle, type: text, z: 31, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 3 · 01 5-user usability test ──────────────────
+  - id: usability
+    label: 01 Usability
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "3 / 6" }, style: { font_family: $mono, font_size: 18, color: $text_muted } }
+      - { id: section-num, type: text, z: 11, x: 60, y: 180, width: 960, height: 0, content: { type: plain, value: "01" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.05 } }
+      - { id: section-title, type: text, z: 12, x: 60, y: 340, width: 960, height: 0, content: { type: plain, value: "5-user usability test" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: when-label, type: text, z: 20, x: 60, y: 540, width: 960, height: 0, content: { type: plain, value: "WHEN TO USE" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: when-body, type: text, z: 21, x: 60, y: 580, width: 960, height: 0, content: { type: plain, value: "Prototype is clickable. You need to find friction before you ship the feature." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 } }
+      - { id: sample-label, type: text, z: 22, x: 60, y: 800, width: 960, height: 0, content: { type: plain, value: "SAMPLE SIZE" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: sample-body, type: text, z: 23, x: 60, y: 840, width: 960, height: 0, content: { type: plain, value: "5 users uncover ~85% of usability issues (Nielsen). More than 8 is diminishing returns." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 30, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 4 · 02 Customer interviews ────────────────────
+  - id: interviews
+    label: 02 Interviews
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "4 / 6" }, style: { font_family: $mono, font_size: 18, color: $text_muted } }
+      - { id: section-num, type: text, z: 11, x: 60, y: 180, width: 960, height: 0, content: { type: plain, value: "02" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.05 } }
+      - { id: section-title, type: text, z: 12, x: 60, y: 340, width: 960, height: 0, content: { type: plain, value: "Customer interviews" }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: when-label, type: text, z: 20, x: 60, y: 540, width: 960, height: 0, content: { type: plain, value: "WHEN TO USE" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: when-body, type: text, z: 21, x: 60, y: 580, width: 960, height: 0, content: { type: plain, value: "You don't know the problem yet. Ask about past behavior, not future intentions." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 } }
+      - { id: sample-label, type: text, z: 22, x: 60, y: 800, width: 960, height: 0, content: { type: plain, value: "SAMPLE SIZE" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: sample-body, type: text, z: 23, x: 60, y: 840, width: 960, height: 0, content: { type: plain, value: "10–15 per segment. Stop when 3 interviews in a row teach you nothing new (saturation)." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 30, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 5 · 03 Surveys ────────────────────────────────
+  - id: surveys
+    label: 03 Surveys
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "5 / 6" }, style: { font_family: $mono, font_size: 18, color: $text_muted } }
+      - { id: section-num, type: text, z: 11, x: 60, y: 180, width: 960, height: 0, content: { type: plain, value: "03" }, style: { font_family: $heading, font_size: 120, font_weight: 900, color: $primary, line_height: 1.0, letter_spacing: -0.05 } }
+      - { id: section-title, type: text, z: 12, x: 60, y: 340, width: 960, height: 0, content: { type: plain, value: "Surveys" }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
+      - { id: when-label, type: text, z: 20, x: 60, y: 540, width: 960, height: 0, content: { type: plain, value: "WHEN TO USE" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: when-body, type: text, z: 21, x: 60, y: 580, width: 960, height: 0, content: { type: plain, value: "You already know the question — you just want to measure it at scale." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 } }
+      - { id: sample-label, type: text, z: 22, x: 60, y: 800, width: 960, height: 0, content: { type: plain, value: "SAMPLE SIZE" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: sample-body, type: text, z: 23, x: 60, y: 840, width: 960, height: 0, content: { type: plain, value: "n ≥ 100 for directional, n ≥ 385 for ±5% margin at 95% confidence." }, style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 } }
+      - { id: handle, type: text, z: 30, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: $text_muted } }
+
+  # ── Slide 6 · 04 Diary studies + CTA ────────────────────
+  - id: diary-cta
+    label: 04 Diary + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(5,30,15,0.55)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 60, width: 200, height: 0, content: { type: plain, value: "6 / 6" }, style: { font_family: $mono, font_size: 18, color: "#FFFFFF" } }
+      - { id: section-num, type: text, z: 11, x: 60, y: 160, width: 960, height: 0, content: { type: plain, value: "04" }, style: { font_family: $heading, font_size: 100, font_weight: 900, color: "$accent", line_height: 1.0, letter_spacing: -0.05 } }
+      - { id: section-title, type: text, z: 12, x: 60, y: 290, width: 960, height: 0, content: { type: plain, value: "Diary studies" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.02 } }
+      - { id: when-body, type: text, z: 20, x: 60, y: 430, width: 960, height: 0, content: { type: plain, value: "When · the experience unfolds over days/weeks (onboarding, habits, longitudinal pain)." }, style: { font_family: $body, font_size: 22, color: "#F0F0FF", line_height: 1.45 } }
+      - { id: sample-body, type: text, z: 21, x: 60, y: 600, width: 960, height: 0, content: { type: plain, value: "Sample · 8–12 participants · 1–2 entries per day for 1–2 weeks." }, style: { font_family: $body, font_size: 22, color: "#F0F0FF", line_height: 1.45 } }
+      - { id: cta-heading, type: text, z: 30, x: 60, y: 820, width: 960, height: 0, content: { type: plain, value: "Save → pick one\nthis sprint." }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.02 } }
+      - { id: cta-btn, type: rect, z: 31, x: 60, y: 1090, width: 320, height: 68, radius: 34, fill: { type: solid, color: "#FFFFFF" } }
+      - { id: cta-text, type: text, z: 32, x: 60, y: 1110, width: 320, height: 0, content: { type: plain, value: "Follow →" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: "$primary", text_align: center } }
+      - { id: handle, type: text, z: 33, x: 60, y: 1260, width: 960, height: 0, content: { type: plain, value: "@yourhandle" }, style: { font_family: $mono, font_size: 16, color: "#FFFFFF" } }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",       default: "Research that\nships products." }
+  - { id: cover_tagline,  path: "pages[0].layers[5].content.value", type: text, hint: "Cover tagline",        default: "4 methods. When to use each. Swipe →" }
+  - { id: skip_title,     path: "pages[1].layers[4].content.value", type: text, hint: "Skip title",           default: "Why teams skip research" }
+  - { id: usability_when, path: "pages[2].layers[6].content.value", type: text, hint: "Usability when-to-use", default: "Prototype is clickable. You need to find friction before you ship the feature." }
+  - { id: interviews_when,path: "pages[3].layers[6].content.value", type: text, hint: "Interviews when",      default: "You don't know the problem yet. Ask about past behavior, not future intentions." }
+  - { id: surveys_sample, path: "pages[4].layers[8].content.value", type: text, hint: "Surveys sample",       default: "n ≥ 100 for directional, n ≥ 385 for ±5% margin at 95% confidence." }
+  - { id: cta_heading,    path: "pages[5].layers[8].content.value", type: text, hint: "CTA heading",          default: "Save → pick one\nthis sprint." }
+  - { id: cta_handle,     path: "pages[5].layers[11].content.value", type: text, hint: "Handle",              default: "@yourhandle" }

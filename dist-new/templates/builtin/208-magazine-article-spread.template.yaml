@@ -1,0 +1,134 @@
+_protocol: template/v1
+
+# 4-page magazine article spread — 2480×1754 A4 landscape, editorial-cream theme.
+# Feature opener → 3-col body spread → image-heavy spread → conclusion spread.
+meta:
+  id: tmpl-magazine-article-spread
+  name: Magazine · Article Spread (4 pages)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [magazine, editorial, feature, spread, landscape, a4]
+  description: "Four-page magazine feature spread with dramatic opener, three-column body, full-bleed image spread, and a closing spread with sidebar. Editorial-cream styling and serif headlines."
+
+document:
+  width: 2480
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+pages:
+  # ── Page 1 · Feature Opener ────────────────────────────────
+  - id: opener
+    label: Feature Opener
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 2480, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: left-panel, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$surface" } }
+      - { id: left-photo, type: rect, z: 2, x: 100, y: 140, width: 1040, height: 1380, fill: { type: solid, color: $primary }, opacity: 0.85, stroke: { color: "$text", width: 1 } }
+      - { id: left-photo-placeholder, type: text, z: 3, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "Portrait of the subject in their studio" }, style: { font_family: $body, font_size: 18, color: "#FFFFFF", text_align: center, font_style: italic, opacity: 0.3, letter_spacing: 0.2 } }
+      - { id: kicker, type: text, z: 10, x: 1340, y: 140, width: 1040, height: 0, content: { type: plain, value: "PROFILE  ·  THE QUIET ISSUE" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: rule-top, type: rect, z: 11, x: 1340, y: 180, width: 120, height: 4, fill: { type: solid, color: "$primary" } }
+      - { id: headline, type: text, z: 12, x: 1340, y: 240, width: 1040, height: 0, content: { type: plain, value: "The slow\ncartographer." }, style: { font_family: $heading, font_size: 156, font_weight: 800, color: $text, line_height: 0.95, letter_spacing: -0.04 } }
+      - { id: deck, type: text, z: 13, x: 1340, y: 660, width: 1040, height: 0, content: { type: plain, value: "For thirty years, Ilse Garrick has been drawing maps no one asked for of places no one quite remembers — and people will not stop buying them." }, style: { font_family: $heading, font_size: 32, font_style: italic, color: $text, line_height: 1.35 } }
+      - { id: byline-block, type: rect, z: 14, x: 1340, y: 980, width: 4, height: 60, fill: { type: solid, color: "$primary" } }
+      - { id: byline, type: text, z: 15, x: 1370, y: 990, width: 1010, height: 0, content: { type: plain, value: "BY ANNIKA REYES" }, style: { font_family: $body, font_size: 18, font_weight: 800, color: $text, letter_spacing: 0.4 } }
+      - { id: byline-photo, type: text, z: 16, x: 1370, y: 1020, width: 1010, height: 0, content: { type: plain, value: "PHOTOGRAPHS BY MILO TARRANT" }, style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: pullquote-mark, type: text, z: 17, x: 1340, y: 1120, width: 1040, height: 0, content: { type: plain, value: "❝" }, style: { font_family: $heading, font_size: 120, color: $primary, line_height: 1 } }
+      - { id: pullquote, type: text, z: 18, x: 1340, y: 1280, width: 1040, height: 0, content: { type: plain, value: "\"Most maps lie about scale. I am only interested in the ones that lie about feeling.\"" }, style: { font_family: $heading, font_size: 36, font_style: italic, color: $text, line_height: 1.35 } }
+      - { id: foot-rule, type: rect, z: 20, x: 1340, y: 1620, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: foot-magazine, type: text, z: 21, x: 1340, y: 1640, width: 520, height: 0, content: { type: plain, value: "MARGINALIA QUARTERLY  ·  ISSUE 47  ·  SPRING 2026" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: foot-page, type: text, z: 22, x: 2240, y: 1640, width: 140, height: 0, content: { type: plain, value: "page 18" }, style: { font_family: $mono, font_size: 12, color: $text_muted, text_align: right, letter_spacing: 0.4 } }
+
+  # ── Page 2 · 3-Column Body Spread ──────────────────────────
+  - id: body-spread
+    label: Body Spread
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 2480, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: top-meta-l, type: text, z: 1, x: 120, y: 100, width: 1100, height: 0, content: { type: plain, value: "20  ·  MARGINALIA QUARTERLY" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: top-meta-r, type: text, z: 2, x: 1260, y: 100, width: 1100, height: 0, content: { type: plain, value: "THE SLOW CARTOGRAPHER  ·  21" }, style: { font_family: $mono, font_size: 12, color: $text_muted, text_align: right, letter_spacing: 0.4 } }
+      - { id: top-rule, type: rect, z: 3, x: 120, y: 130, width: 2240, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: dropcap-block, type: rect, z: 10, x: 120, y: 200, width: 140, height: 140, fill: { type: solid, color: "$primary" } }
+      - { id: dropcap, type: text, z: 11, x: 120, y: 220, width: 140, height: 0, content: { type: plain, value: "S" }, style: { font_family: $heading, font_size: 120, font_weight: 800, color: "$background", text_align: center, line_height: 1 } }
+      - { id: col-1-top, type: text, z: 20, x: 280, y: 200, width: 660, height: 0, content: { type: plain, value: "he keeps the same notebook for years at a time. Cracked spine. Coffee rings on the inside cover. Two ribbons sewn in, one for current work and one for whatever idea has been refusing to leave her alone for the last six months. The first thing Ilse Garrick will show you in her studio is not a finished map but the notebook, and only if you ask twice." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: col-1-body, type: text, z: 21, x: 120, y: 380, width: 660, height: 0, content: { type: plain, value: "The studio itself is in the back of a former dye works on the edge of the old industrial district, a part of the city that hipsters discovered in 2009 and abandoned for somewhere cheaper by 2017. Garrick stayed. Her landlord is sympathetic; her neighbors are a cellist and an upholsterer. \"It's quiet enough to hear yourself stop thinking,\" she says. \"That is the entire job.\"\n\nHer maps are tactile — heavy cream paper, ink the color of wet stones, hand-lettered legends in a serif she designed herself in 2003 and has refined every year since. They take her four to seven months each. She sells them by hand-written invitation only and has, as of this spring, a waiting list that runs to 2031. She does not apologize for this. \"I am as slow as I am,\" she says. \"People who want fast have other options.\"" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: col-2, type: text, z: 30, x: 940, y: 200, width: 600, height: 0, content: { type: plain, value: "She came to the work sideways. A degree in archaeology, two years digging in the chalk hills near Lewes, a winter in Lisbon translating eighteenth-century shipping registers. Cartography was always the lining, never the coat — until one bleak November in her late twenties, when a manuscript came across her desk that was clearly nonsense but beautiful nonsense, and she found she could not stop drawing the place it pretended to describe.\n\n\"There is a particular feeling,\" she says, \"of mapping somewhere you cannot get to. You have to be honest in a different way. You cannot lean on the satellite. You have to ask yourself what the place would feel like if you walked into it on a damp evening — and then you have to draw that feeling without making it twee.\"\n\nWhat she draws, in practice, are real places half-remembered: harbor towns from her grandmother's letters; a stretch of pine forest north of Trondheim where she spent a year as a child; a fictional river she has been refining for two decades, with tributaries named for arguments she has had with her husband. She has never published a key for that one and says she never will." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: pullquote-rule-top, type: rect, z: 40, x: 1620, y: 200, width: 720, height: 4, fill: { type: solid, color: "$primary" } }
+      - { id: pullquote-2, type: text, z: 41, x: 1620, y: 220, width: 720, height: 0, content: { type: plain, value: "\"You cannot lean on the satellite. You have to draw what a place would feel like if you walked into it on a damp evening.\"" }, style: { font_family: $heading, font_size: 32, font_style: italic, color: $text, line_height: 1.35 } }
+      - { id: pullquote-rule-bot, type: rect, z: 42, x: 1620, y: 540, width: 720, height: 4, fill: { type: solid, color: "$primary" } }
+      - { id: col-3, type: text, z: 50, x: 1620, y: 580, width: 720, height: 0, content: { type: plain, value: "Collectors describe her work in language that would embarrass her if she were in the room. A dealer in Brussels keeps a Garrick map in the small back office she does not show to customers, because she does not want anyone to ask its price. A novelist in Vermont commissioned a chart of a coastline that exists only in her latest book and reports that the chart now bullies the novel. A retired oceanographer in Halifax owns eleven, hung in the order he acquired them, and says they are the only thing in his apartment he would carry out of a fire.\n\nWhat does she say to all of that? \"I say thank you. I say I am very lucky. And then I go back to work, because work is the only thing that does not get embarrassed.\"\n\nWhen we leave, the rain has started — a gentle one, the kind she says is best for thinking. She walks us to the door of the dye works, locks it behind her, and we watch her cross the courtyard with the slow, deliberate stride of someone who has somewhere very specific to be. Continued on page 24  ›" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: foot-rule, type: rect, z: 60, x: 120, y: 1690, width: 2240, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: foot, type: text, z: 61, x: 120, y: 1710, width: 2240, height: 0, content: { type: plain, value: "MARGINALIA QUARTERLY  ·  SPRING 2026" }, style: { font_family: $mono, font_size: 12, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+
+  # ── Page 3 · Image-Heavy Spread ────────────────────────────
+  - id: image-spread
+    label: Image Spread
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 2480, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: hero-image, type: rect, z: 10, x: 0, y: 0, width: 1860, height: 1754, fill: { type: solid, color: $secondary }, opacity: 0.92 }
+      - { id: hero-overlay, type: rect, z: 11, x: 0, y: 0, width: 1860, height: 1754, fill: { type: solid, color: $text }, opacity: 0.25 }
+      - { id: hero-placeholder, type: text, z: 12, x: 0, y: 800, width: 1860, height: 0, content: { type: plain, value: "[ full-bleed image — Garrick's drawing table at golden hour ]" }, style: { font_family: $body, font_size: 22, color: "#FFFFFF", text_align: center, font_style: italic, opacity: 0.95, letter_spacing: 0.2 } }
+      - { id: hero-credit, type: text, z: 13, x: 60, y: 1700, width: 1740, height: 0, content: { type: plain, value: "PHOTOGRAPH · MILO TARRANT FOR MARGINALIA" }, style: { font_family: $mono, font_size: 11, color: "#FFFFFF", opacity: 0.85, letter_spacing: 0.5 } }
+      - { id: side-panel, type: rect, z: 20, x: 1860, y: 0, width: 620, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: side-kicker, type: text, z: 21, x: 1920, y: 120, width: 500, height: 0, content: { type: plain, value: "ON THE TABLE" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $primary, letter_spacing: 0.5 } }
+      - { id: side-rule, type: rect, z: 22, x: 1920, y: 160, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: side-title, type: text, z: 23, x: 1920, y: 200, width: 500, height: 0, content: { type: plain, value: "Six things Garrick keeps within arm's reach." }, style: { font_family: $heading, font_size: 36, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.01 } }
+      - { id: side-intro, type: text, z: 24, x: 1920, y: 420, width: 500, height: 0, content: { type: plain, value: "Tools matter. Routines matter more. A tour of the desk in the corner of the dye works." }, style: { font_family: $body, font_size: 16, font_style: italic, color: $text_muted, line_height: 1.5 } }
+      - { id: item-1-num, type: text, z: 30, x: 1920, y: 560, width: 60, height: 0, content: { type: plain, value: "01" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary } }
+      - { id: item-1-title, type: text, z: 31, x: 1990, y: 562, width: 430, height: 0, content: { type: plain, value: "A pelikan dip pen, regrooved in 1998." }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: item-1-body, type: text, z: 32, x: 1990, y: 610, width: 430, height: 0, content: { type: plain, value: "Inherited from her first studio teacher. Refuses to draw without it." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: item-2-num, type: text, z: 30, x: 1920, y: 700, width: 60, height: 0, content: { type: plain, value: "02" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary } }
+      - { id: item-2-title, type: text, z: 31, x: 1990, y: 702, width: 430, height: 0, content: { type: plain, value: "A jar of Sennelier india ink." }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: item-2-body, type: text, z: 32, x: 1990, y: 740, width: 430, height: 0, content: { type: plain, value: "Always the same blue-black. \"A consistency I do not have anywhere else in my life.\"" }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: item-3-num, type: text, z: 30, x: 1920, y: 840, width: 60, height: 0, content: { type: plain, value: "03" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary } }
+      - { id: item-3-title, type: text, z: 31, x: 1990, y: 842, width: 430, height: 0, content: { type: plain, value: "Field notes from the Trondheim winter." }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: item-3-body, type: text, z: 32, x: 1990, y: 890, width: 430, height: 0, content: { type: plain, value: "Forty-one pages, never typed up. She rereads them every January." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: item-4-num, type: text, z: 30, x: 1920, y: 980, width: 60, height: 0, content: { type: plain, value: "04" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary } }
+      - { id: item-4-title, type: text, z: 31, x: 1990, y: 982, width: 430, height: 0, content: { type: plain, value: "A radio that only plays one station." }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: item-4-body, type: text, z: 32, x: 1990, y: 1020, width: 430, height: 0, content: { type: plain, value: "Late-evening classical, low volume. She does not know the call sign." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: item-5-num, type: text, z: 30, x: 1920, y: 1120, width: 60, height: 0, content: { type: plain, value: "05" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary } }
+      - { id: item-5-title, type: text, z: 31, x: 1990, y: 1122, width: 430, height: 0, content: { type: plain, value: "Her grandmother's letters, in a tin." }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: item-5-body, type: text, z: 32, x: 1990, y: 1160, width: 430, height: 0, content: { type: plain, value: "She rarely opens them. \"They are there to be there. That is enough.\"" }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: item-6-num, type: text, z: 30, x: 1920, y: 1260, width: 60, height: 0, content: { type: plain, value: "06" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary } }
+      - { id: item-6-title, type: text, z: 31, x: 1990, y: 1262, width: 430, height: 0, content: { type: plain, value: "One sharp pencil. Just one." }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: item-6-body, type: text, z: 32, x: 1990, y: 1300, width: 430, height: 0, content: { type: plain, value: "Resharpened with a knife. \"A whole jar would be a kind of cowardice.\"" }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: foot-rule, type: rect, z: 60, x: 1920, y: 1640, width: 500, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: foot-page, type: text, z: 61, x: 1920, y: 1660, width: 500, height: 0, content: { type: plain, value: "MARGINALIA  ·  22 / 23" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+
+  # ── Page 4 · Conclusion + Sidebar ──────────────────────────
+  - id: conclusion-spread
+    label: Conclusion Spread
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 2480, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: top-meta-l, type: text, z: 1, x: 120, y: 100, width: 1100, height: 0, content: { type: plain, value: "24  ·  MARGINALIA QUARTERLY" }, style: { font_family: $mono, font_size: 12, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: top-meta-r, type: text, z: 2, x: 1260, y: 100, width: 1100, height: 0, content: { type: plain, value: "THE SLOW CARTOGRAPHER  ·  25" }, style: { font_family: $mono, font_size: 12, color: $text_muted, text_align: right, letter_spacing: 0.4 } }
+      - { id: top-rule, type: rect, z: 3, x: 120, y: 130, width: 2240, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: jump-kicker, type: text, z: 10, x: 120, y: 200, width: 1340, height: 0, content: { type: plain, value: "Continued from page 21" }, style: { font_family: $mono, font_size: 14, color: $primary, font_weight: 700, letter_spacing: 0.4 } }
+      - { id: section-title, type: text, z: 11, x: 120, y: 240, width: 1340, height: 0, content: { type: plain, value: "On finishing — and on not." }, style: { font_family: $heading, font_size: 60, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: section-rule, type: rect, z: 12, x: 120, y: 340, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: col-a, type: text, z: 20, x: 120, y: 380, width: 620, height: 0, content: { type: plain, value: "There is a moment, she says, in every map, when she could finish it and chooses not to. \"You can feel when a piece is ready to be left alone. That is not the same as being done. A map that is done has nothing in it for the second viewing.\"\n\nShe means it literally. A handful of her maps have been bought back, by collectors who wanted to commission a sequel, only to find Garrick had quietly added a detail in the corner — a different lighthouse, a renamed inlet. She never mentions it. She simply waits to see if anyone notices. So far, four people have.\n\nWhat is on the table now? She is reluctant. She is working, she says, on a map of an island that does not exist, for a friend who is dying. \"It is the only commission I have ever taken without a waiting list,\" she says, and changes the subject." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: col-b, type: text, z: 21, x: 820, y: 380, width: 640, height: 0, content: { type: plain, value: "We talk, near the end, about the future. The wait list, the algorithms that have started imitating her work, the requests to license her serif. Each of these she dismisses with the same wave. \"None of that is the work. The work is the work. Everything else is weather.\"\n\nAnd what is the work now, exactly? She thinks for a long moment. The radio in the corner plays something low and old. The rain has started again. \"The work,\" she says, finally, \"is paying attention. It has only ever been paying attention. The drawing is what falls out of the bottom when you have done that for long enough.\"\n\nWe shake hands at the door. She locks it. The dye works swallows her up, and somewhere inside, the radio plays on." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.65, text_align: justify } }
+      - { id: end-mark, type: text, z: 30, x: 120, y: 1340, width: 1340, height: 0, content: { type: plain, value: "■" }, style: { font_family: $heading, font_size: 22, color: $primary } }
+      - { id: contrib-rule, type: rect, z: 31, x: 120, y: 1400, width: 1340, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: contrib, type: text, z: 32, x: 120, y: 1420, width: 1340, height: 0, content: { type: plain, value: "ANNIKA REYES is a contributing editor at Marginalia. She last wrote, for the winter issue, about the slow violin makers of Cremona. MILO TARRANT photographs artists at work for this magazine, The Believer, and Apartamento." }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: side-rule, type: rect, z: 40, x: 1540, y: 200, width: 2, height: 1380, fill: { type: solid, color: "$border" } }
+      - { id: side-kicker, type: text, z: 41, x: 1580, y: 200, width: 780, height: 0, content: { type: plain, value: "FURTHER READING" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $primary, letter_spacing: 0.5 } }
+      - { id: side-title, type: text, z: 42, x: 1580, y: 240, width: 780, height: 0, content: { type: plain, value: "Five books about maps that don't quite exist." }, style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text, line_height: 1.2 } }
+      - { id: side-intro, type: text, z: 43, x: 1580, y: 380, width: 780, height: 0, content: { type: plain, value: "If you find yourself moved by the work of Ilse Garrick, our editors recommend these five companions for a slow afternoon and a long pot of tea." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.55 } }
+      - { id: book-1, type: text, z: 50, x: 1580, y: 520, width: 780, height: 0, content: { type: plain, value: "01.  Invisible Cities  —  Italo Calvino" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: $text } }
+      - { id: book-1-desc, type: text, z: 51, x: 1580, y: 560, width: 780, height: 0, content: { type: plain, value: "Marco Polo describes cities he may never have visited. Indispensable." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: book-2, type: text, z: 50, x: 1580, y: 640, width: 780, height: 0, content: { type: plain, value: "02.  The Phantom Atlas  —  Edward Brooke-Hitching" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: $text } }
+      - { id: book-2-desc, type: text, z: 51, x: 1580, y: 680, width: 780, height: 0, content: { type: plain, value: "A history of mountains, islands, and seas that never were." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: book-3, type: text, z: 50, x: 1580, y: 760, width: 780, height: 0, content: { type: plain, value: "03.  A Field Guide to Getting Lost  —  Rebecca Solnit" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: $text } }
+      - { id: book-3-desc, type: text, z: 51, x: 1580, y: 800, width: 780, height: 0, content: { type: plain, value: "On the uses, and the necessities, of not knowing where you are." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: book-4, type: text, z: 50, x: 1580, y: 880, width: 780, height: 0, content: { type: plain, value: "04.  Maps of the Imagination  —  Peter Turchi" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: $text } }
+      - { id: book-4-desc, type: text, z: 51, x: 1580, y: 920, width: 780, height: 0, content: { type: plain, value: "The writer as cartographer; quietly essential for anyone who builds worlds." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: book-5, type: text, z: 50, x: 1580, y: 1000, width: 780, height: 0, content: { type: plain, value: "05.  How to Lie with Maps  —  Mark Monmonier" }, style: { font_family: $heading, font_size: 20, font_weight: 700, color: $text } }
+      - { id: book-5-desc, type: text, z: 51, x: 1580, y: 1040, width: 780, height: 0, content: { type: plain, value: "All maps lie. The trick is choosing which lies to tell." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: side-foot-rule, type: rect, z: 60, x: 1580, y: 1200, width: 780, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: side-foot, type: text, z: 61, x: 1580, y: 1220, width: 780, height: 0, content: { type: plain, value: "Ilse Garrick's work is available, occasionally, through the Lewes Gallery and at marginaliaquarterly.co/garrick" }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: foot-rule, type: rect, z: 70, x: 120, y: 1690, width: 2240, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: foot, type: text, z: 71, x: 120, y: 1710, width: 2240, height: 0, content: { type: plain, value: "MARGINALIA QUARTERLY  ·  SPRING 2026" }, style: { font_family: $mono, font_size: 12, color: $text_muted, text_align: center, letter_spacing: 0.4 } }

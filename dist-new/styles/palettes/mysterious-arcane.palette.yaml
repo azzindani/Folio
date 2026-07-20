@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: mysterious-arcane
+name: Mysterious Arcane
+version: "1.0.0"
+tags: [mysterious, occult, fantasy, dark, emotional]
+description: "Deep purple-black with violet, emerald and gold — occult-arcane fantasy mystique."
+colors:
+  background: "#15101F"
+  surface:    "#1E1830"
+  surface_2:  "#2A2244"
+  primary:    "#6A3FA8"
+  secondary:  "#1F8A6A"
+  accent:     "#C9A24A"
+  text:       "#EDE4F5"
+  text_muted: "#9890A8"
+  border:     "#3A3050"
+  success:    "#3FAE7E"
+  warning:    "#D8B040"
+  danger:     "#B83A55"

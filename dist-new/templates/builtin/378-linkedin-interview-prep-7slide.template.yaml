@@ -1,0 +1,614 @@
+_protocol: template/v1
+
+# LinkedIn 7-slide carousel — full interview prep checklist with 5 numbered phase slides.
+# Portrait 1080×1350. indigo-pro theme.
+meta:
+  id: tmpl-linkedin-interview-prep-7slide
+  name: LinkedIn Interview Prep Checklist (7 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, career, interview, checklist, 4-5]
+  description: "7-slide LinkedIn checklist for end-to-end interview prep with 5 numbered phase slides."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: cv-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: cv-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: cv-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "CAREER · INTERVIEW PREP" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: cv-title
+        type: text
+        z: 11
+        x: 72
+        y: 300
+        width: 936
+        height: 0
+        content: { type: plain, value: "The Interview\nPrep Checklist" }
+        style: { font_family: $heading, font_size: 96, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: cv-tagline
+        type: text
+        z: 12
+        x: 72
+        y: 620
+        width: 936
+        height: 0
+        content: { type: plain, value: "5 phases. 1 week. A real chance." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.4 }
+      - id: cv-rule
+        type: rect
+        z: 13
+        x: 72
+        y: 760
+        width: 80
+        height: 4
+        fill: { type: solid, color: "$accent" }
+      - id: cv-author
+        type: text
+        z: 14
+        x: 72
+        y: 790
+        width: 936
+        height: 0
+        content: { type: plain, value: "Save this before your next interview." }
+        style: { font_family: $body, font_size: 20, color: $text }
+      - id: cv-page
+        type: text
+        z: 15
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "01 / 07" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: in-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: in-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: in-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 180
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE FRAMEWORK" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: in-title
+        type: text
+        z: 11
+        x: 72
+        y: 240
+        width: 936
+        height: 0
+        content: { type: plain, value: "Preparation beats\ntalent every time." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: in-body
+        type: text
+        z: 12
+        x: 72
+        y: 500
+        width: 936
+        height: 0
+        content: { type: plain, value: "The candidate who lands the offer isn't always the smartest. They're the one who walked in knowing the company, the role, their stories — and the questions that test the interviewer back." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: in-phases-rule
+        type: rect
+        z: 13
+        x: 72
+        y: 860
+        width: 80
+        height: 4
+        fill: { type: solid, color: "$accent" }
+      - id: in-phases-text
+        type: text
+        z: 14
+        x: 72
+        y: 890
+        width: 936
+        height: 0
+        content: { type: plain, value: "5 phases — research, stories, questions, salary, day-of." }
+        style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.35 }
+      - id: in-page
+        type: text
+        z: 15
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "02 / 07" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · Phase 01 · Research ──────────────────────────
+  - id: phase-1
+    label: 01 Research
+    layers:
+      - { id: p1-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: p1-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: p1-number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: p1-title
+        type: text
+        z: 11
+        x: 72
+        y: 210
+        width: 936
+        height: 0
+        content: { type: plain, value: "Research" }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: p1-sub
+        type: text
+        z: 12
+        x: 72
+        y: 320
+        width: 936
+        height: 0
+        content: { type: plain, value: "Know the company better than the candidate next to you." }
+        style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 }
+      - id: p1-c1
+        type: text
+        z: 20
+        x: 72
+        y: 480
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Read the last 3 earnings calls or blog posts." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p1-c2
+        type: text
+        z: 21
+        x: 72
+        y: 560
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Find 3 employees on LinkedIn, study their paths." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p1-c3
+        type: text
+        z: 22
+        x: 72
+        y: 640
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Identify the team's #1 priority this quarter." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p1-c4
+        type: text
+        z: 23
+        x: 72
+        y: 720
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Map 2 competitors and how this company wins." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p1-c5
+        type: text
+        z: 24
+        x: 72
+        y: 800
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Know the interviewer's role before the call." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p1-page
+        type: text
+        z: 30
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "03 / 07" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · Phase 02 · STAR ──────────────────────────────
+  - id: phase-2
+    label: 02 STAR
+    layers:
+      - { id: p2-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: p2-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: p2-number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: p2-title
+        type: text
+        z: 11
+        x: 72
+        y: 210
+        width: 936
+        height: 0
+        content: { type: plain, value: "STAR stories" }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: p2-sub
+        type: text
+        z: 12
+        x: 72
+        y: 320
+        width: 936
+        height: 0
+        content: { type: plain, value: "Situation · Task · Action · Result. 6 stories minimum." }
+        style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 }
+      - id: p2-c1
+        type: text
+        z: 20
+        x: 72
+        y: 480
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  A win you drove end-to-end." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p2-c2
+        type: text
+        z: 21
+        x: 72
+        y: 560
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  A failure with the lesson clearly stated." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p2-c3
+        type: text
+        z: 22
+        x: 72
+        y: 640
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  A conflict you resolved with peers." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p2-c4
+        type: text
+        z: 23
+        x: 72
+        y: 720
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  A time you changed your mind with new data." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p2-c5
+        type: text
+        z: 24
+        x: 72
+        y: 800
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Quantify every result. \"30% faster\", not \"a lot\"." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p2-page
+        type: text
+        z: 30
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "04 / 07" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Phase 03 · Questions ─────────────────────────
+  - id: phase-3
+    label: 03 Questions
+    layers:
+      - { id: p3-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: p3-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: p3-number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: p3-title
+        type: text
+        z: 11
+        x: 72
+        y: 210
+        width: 936
+        height: 0
+        content: { type: plain, value: "Questions to ask" }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: p3-sub
+        type: text
+        z: 12
+        x: 72
+        y: 320
+        width: 936
+        height: 0
+        content: { type: plain, value: "Interviewing is a two-way street. Test the team back." }
+        style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 }
+      - id: p3-c1
+        type: text
+        z: 20
+        x: 72
+        y: 480
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  \"What does success in this role look like at 6 months?\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.6 }
+      - id: p3-c2
+        type: text
+        z: 21
+        x: 72
+        y: 580
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  \"What's the biggest open challenge on the team?\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.6 }
+      - id: p3-c3
+        type: text
+        z: 22
+        x: 72
+        y: 680
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  \"Why did the last person in this role leave?\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.6 }
+      - id: p3-c4
+        type: text
+        z: 23
+        x: 72
+        y: 780
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  \"How are decisions made when the team disagrees?\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.6 }
+      - id: p3-c5
+        type: text
+        z: 24
+        x: 72
+        y: 880
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  \"What's a recent change you'd want feedback on?\"" }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.6 }
+      - id: p3-page
+        type: text
+        z: 30
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "05 / 07" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 6 · Phase 04 · Salary ────────────────────────────
+  - id: phase-4
+    label: 04 Salary
+    layers:
+      - { id: p4-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: p4-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: p4-number
+        type: text
+        z: 10
+        x: 72
+        y: 160
+        width: 936
+        height: 0
+        content: { type: plain, value: "04" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: p4-title
+        type: text
+        z: 11
+        x: 72
+        y: 210
+        width: 936
+        height: 0
+        content: { type: plain, value: "Salary range" }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: p4-sub
+        type: text
+        z: 12
+        x: 72
+        y: 320
+        width: 936
+        height: 0
+        content: { type: plain, value: "Have a number ready before you walk in." }
+        style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 }
+      - id: p4-c1
+        type: text
+        z: 20
+        x: 72
+        y: 480
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Pull 3 data points: Levels.fyi, Glassdoor, network." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p4-c2
+        type: text
+        z: 21
+        x: 72
+        y: 560
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Anchor 10–15% above your target." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p4-c3
+        type: text
+        z: 22
+        x: 72
+        y: 640
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Know your floor — the walk-away number." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p4-c4
+        type: text
+        z: 23
+        x: 72
+        y: 720
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Practice saying the number out loud." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p4-c5
+        type: text
+        z: 24
+        x: 72
+        y: 800
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Wait for the offer. Never give the number first." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.7 }
+      - id: p4-page
+        type: text
+        z: 30
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "06 / 07" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 7 · Phase 05 · Day-of + CTA ──────────────────────
+  - id: phase-5-cta
+    label: 05 Day-of + CTA
+    layers:
+      - { id: p5-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: p5-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: p5-number
+        type: text
+        z: 10
+        x: 72
+        y: 140
+        width: 936
+        height: 0
+        content: { type: plain, value: "05" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36 }
+      - id: p5-title
+        type: text
+        z: 11
+        x: 72
+        y: 190
+        width: 936
+        height: 0
+        content: { type: plain, value: "Day-of" }
+        style: { font_family: $heading, font_size: 80, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.03 }
+      - id: p5-c1
+        type: text
+        z: 20
+        x: 72
+        y: 360
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Sleep 8 hours. No new caffeine." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.6 }
+      - id: p5-c2
+        type: text
+        z: 21
+        x: 72
+        y: 430
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Test camera, audio, lighting 1 hour before." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.6 }
+      - id: p5-c3
+        type: text
+        z: 22
+        x: 72
+        y: 500
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Read your stories list one final time." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.6 }
+      - id: p5-c4
+        type: text
+        z: 23
+        x: 72
+        y: 570
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Send a thank-you note within 24 hours." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.6 }
+      - id: p5-c5
+        type: text
+        z: 24
+        x: 72
+        y: 640
+        width: 936
+        height: 0
+        content: { type: plain, value: "☐  Reflect: what would you do differently next time?" }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.6 }
+      - id: p5-cta-heading
+        type: text
+        z: 30
+        x: 72
+        y: 800
+        width: 936
+        height: 0
+        content: { type: plain, value: "Save this — you'll need it." }
+        style: { font_family: $heading, font_size: 60, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: p5-cta-btn
+        type: rect
+        z: 31
+        x: 72
+        y: 980
+        width: 320
+        height: 64
+        radius: 32
+        fill: { type: solid, color: "#FFFFFF" }
+      - id: p5-cta-text
+        type: text
+        z: 32
+        x: 72
+        y: 998
+        width: 320
+        height: 0
+        content: { type: plain, value: "Follow for more →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: $primary, text_align: center }
+      - id: p5-page
+        type: text
+        z: 33
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "07 / 07" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover title",          default: "The Interview\nPrep Checklist" }
+  - { id: cover_tagline,  path: "pages[0].layers[4].content.value", type: text, hint: "Cover tagline",        default: "5 phases. 1 week. A real chance." }
+  - { id: intro_title,    path: "pages[1].layers[3].content.value", type: text, hint: "Intro title",          default: "Preparation beats\ntalent every time." }
+  - { id: intro_body,     path: "pages[1].layers[4].content.value", type: text, hint: "Intro body",           default: "The candidate who lands the offer..." }
+  - { id: p1_title,       path: "pages[2].layers[3].content.value", type: text, hint: "Phase 1 title",        default: "Research" }
+  - { id: p1_c1,          path: "pages[2].layers[5].content.value", type: text, hint: "Phase 1 check 1",      default: "☐  Read the last 3 earnings calls or blog posts." }
+  - { id: p2_title,       path: "pages[3].layers[3].content.value", type: text, hint: "Phase 2 title",        default: "STAR stories" }
+  - { id: p3_title,       path: "pages[4].layers[3].content.value", type: text, hint: "Phase 3 title",        default: "Questions to ask" }
+  - { id: p4_title,       path: "pages[5].layers[3].content.value", type: text, hint: "Phase 4 title",        default: "Salary range" }
+  - { id: p5_title,       path: "pages[6].layers[3].content.value", type: text, hint: "Phase 5 title",        default: "Day-of" }
+  - { id: cta_heading,    path: "pages[6].layers[9].content.value", type: text, hint: "CTA heading",          default: "Save this — you'll need it." }

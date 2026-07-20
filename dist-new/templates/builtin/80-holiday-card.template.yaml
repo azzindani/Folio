@@ -1,0 +1,230 @@
+_protocol: template/v1
+
+# Winter holiday greeting card — 1080×1350 (4:5 portrait). Forest-deep cozy night.
+# Moon glow at top, pine-tree silhouettes (rotated rects forming triangles),
+# scattered snowflake circles, formal greeting hierarchy, decorative star at bottom.
+meta:
+  id: tmpl-holiday-card
+  name: Holiday Greeting Card
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, holiday, christmas, seasonal, winter, portrait, cozy]
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1350
+    fill: { type: solid, color: $background }
+  # ── Moon glow + moon ──────────────────────────────────────
+  - id: moon-glow
+    type: circle
+    z: 3
+    cx: 540
+    cy: 240
+    rx: 280
+    ry: 280
+    fill: { type: none }
+    opacity: 0.35
+
+  - id: moon
+    type: circle
+    z: 4
+    cx: 540
+    cy: 240
+    rx: 110
+    ry: 110
+    fill: { type: solid, color: "$surface2" }
+    opacity: 0.9
+
+  # ── Snowflakes (scattered low-opacity circles) ────────────
+  - id: snow-1
+    type: circle
+    z: 5
+    cx: 140
+    cy: 180
+    rx: 5
+    ry: 5
+    fill: { type: solid, color: "$text" }
+    opacity: 0.7
+
+  - id: snow-2
+    type: circle
+    z: 5
+    cx: 880
+    cy: 140
+    rx: 7
+    ry: 7
+    fill: { type: solid, color: "$text" }
+    opacity: 0.6
+
+  - id: snow-3
+    type: circle
+    z: 5
+    cx: 240
+    cy: 380
+    rx: 4
+    ry: 4
+    fill: { type: solid, color: "$text" }
+    opacity: 0.5
+
+  - id: snow-4
+    type: circle
+    z: 5
+    cx: 940
+    cy: 460
+    rx: 6
+    ry: 6
+    fill: { type: solid, color: "$text" }
+    opacity: 0.55
+
+  - id: snow-5
+    type: circle
+    z: 5
+    cx: 100
+    cy: 540
+    rx: 5
+    ry: 5
+    fill: { type: solid, color: "$text" }
+    opacity: 0.6
+
+  - id: snow-6
+    type: circle
+    z: 5
+    cx: 980
+    cy: 720
+    rx: 4
+    ry: 4
+    fill: { type: solid, color: "$text" }
+    opacity: 0.5
+
+  # ── Pine trees (rotated rects → triangle silhouettes) ─────
+  - id: tree-left
+    type: rect
+    z: 8
+    x: 130
+    y: 1010
+    width: 110
+    height: 110
+    fill: { type: solid, color: "$primary" }
+    rotation: 45
+
+  - id: tree-mid
+    type: rect
+    z: 9
+    x: 470
+    y: 980
+    width: 140
+    height: 140
+    fill: { type: solid, color: "$primary" }
+    rotation: 45
+
+  - id: tree-right
+    type: rect
+    z: 8
+    x: 830
+    y: 1020
+    width: 100
+    height: 100
+    fill: { type: solid, color: "$primary" }
+    rotation: 45
+
+  # ── Greeting hierarchy ───────────────────────────────────
+  - id: greeting
+    type: text
+    z: 20
+    x: 80
+    y: 600
+    width: 920
+    height: 0
+    content: { type: plain, value: "Season's\nGreetings" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 700
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.05
+      letter_spacing: -0.02
+
+  - id: from-line
+    type: text
+    z: 21
+    x: 80
+    y: 820
+    width: 920
+    height: 0
+    content: { type: plain, value: "With warm wishes from" }
+    style:
+      font_family: $body
+      font_size: 22
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.2
+      line_height: 1.4
+
+  - id: family-name
+    type: text
+    z: 22
+    x: 80
+    y: 870
+    width: 920
+    height: 0
+    content: { type: plain, value: "The Halverson Family" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 600
+      color: $accent
+      text_align: center
+      line_height: 1.2
+
+  - id: year
+    type: text
+    z: 23
+    x: 80
+    y: 1240
+    width: 920
+    height: 0
+    content: { type: plain, value: "2026" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  # ── Decorative star (rotated rect) ───────────────────────
+  - id: deco-star
+    type: rect
+    z: 24
+    x: 525
+    y: 1175
+    width: 30
+    height: 30
+    fill: { type: solid, color: "$accent" }
+    rotation: 45
+
+slots:
+  - { id: greeting_text, path: "layers[12].content.value", type: text, hint: "Holiday greeting (2 lines)",  default: "Season's\nGreetings" }
+  - { id: from_line,     path: "layers[13].content.value", type: text, hint: "Sender prefix line",          default: "With warm wishes from" }
+  - { id: family_name,   path: "layers[14].content.value", type: text, hint: "Family / sender name",        default: "The Halverson Family" }
+  - { id: year,          path: "layers[15].content.value", type: text, hint: "Year",                        default: "2026" }

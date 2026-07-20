@@ -1,0 +1,329 @@
+_protocol: template/v1
+
+# Work anniversary poster — eyebrow, huge year number, gratitude caption, 3 reflection cards.
+# 4:5 LinkedIn portrait, pastel-dream theme.
+meta:
+  id: tmpl-work-anniversary-poster
+  name: Work Anniversary Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, hr, anniversary, milestone, portrait, 4-5]
+  description: "LinkedIn 4:5 anniversary post with display year number and Then/Now/Next reflection cards."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: $background }
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: accent-dot
+    type: circle
+    z: 5
+    cx: 1110
+    cy: 130
+    rx: 10
+    ry: 10
+    fill: { type: solid, color: "$accent" }
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 120
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ANNIVERSARY" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: year-number
+    type: text
+    z: 21
+    x: 80
+    y: 200
+    width: 1040
+    height: 0
+    content: { type: plain, value: "5 YEARS" }
+    style:
+      font_family: $heading
+      font_size: 240
+      font_weight: 900
+      color: "#c45c8a"
+      line_height: 0.95
+      letter_spacing: -0.05
+
+  - id: caption
+    type: text
+    z: 22
+    x: 80
+    y: 540
+    width: 1040
+    height: 0
+    content: { type: plain, value: "...with the most talented team I've ever worked with." }
+    style:
+      font_family: $heading
+      font_size: 38
+      font_weight: 700
+      color: $text
+      line_height: 1.25
+      letter_spacing: -0.01
+
+  - id: divider
+    type: rect
+    z: 10
+    x: 80
+    y: 760
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.3
+
+  - id: card-1-bg
+    type: rect
+    z: 40
+    x: 80
+    y: 820
+    width: 333
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-1-label
+    type: text
+    z: 41
+    x: 110
+    y: 850
+    width: 273
+    height: 0
+    content: { type: plain, value: "THEN" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-1-title
+    type: text
+    z: 42
+    x: 110
+    y: 890
+    width: 273
+    height: 0
+    content: { type: plain, value: "Junior IC" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: $text
+      line_height: 1.1
+
+  - id: card-1-body
+    type: text
+    z: 43
+    x: 110
+    y: 960
+    width: 273
+    height: 0
+    content: { type: plain, value: "Two months in, scared to ask questions in meetings. Took notes on every Slack thread." }
+    style:
+      font_family: $body
+      font_size: 17
+      color: $text
+      line_height: 1.5
+
+  - id: card-2-bg
+    type: rect
+    z: 40
+    x: 433
+    y: 820
+    width: 334
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-2-label
+    type: text
+    z: 41
+    x: 463
+    y: 850
+    width: 274
+    height: 0
+    content: { type: plain, value: "NOW" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-2-title
+    type: text
+    z: 42
+    x: 463
+    y: 890
+    width: 274
+    height: 0
+    content: { type: plain, value: "Tech Lead" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: $text
+      line_height: 1.1
+
+  - id: card-2-body
+    type: text
+    z: 43
+    x: 463
+    y: 960
+    width: 274
+    height: 0
+    content: { type: plain, value: "Leading the team I once joined. Shipped 3 platform launches. Mentor across the org." }
+    style:
+      font_family: $body
+      font_size: 17
+      color: $text
+      line_height: 1.5
+
+  - id: card-3-bg
+    type: rect
+    z: 40
+    x: 787
+    y: 820
+    width: 333
+    height: 360
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+
+  - id: card-3-label
+    type: text
+    z: 41
+    x: 817
+    y: 850
+    width: 273
+    height: 0
+    content: { type: plain, value: "NEXT" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $secondary
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: card-3-title
+    type: text
+    z: 42
+    x: 817
+    y: 890
+    width: 273
+    height: 0
+    content: { type: plain, value: "Staff & beyond" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 800
+      color: $text
+      line_height: 1.1
+
+  - id: card-3-body
+    type: text
+    z: 43
+    x: 817
+    y: 960
+    width: 273
+    height: 0
+    content: { type: plain, value: "Owning architecture across teams. Investing time in the next 5 engineers behind me." }
+    style:
+      font_family: $body
+      font_size: 17
+      color: $text
+      line_height: 1.5
+
+  - id: thanks
+    type: text
+    z: 50
+    x: 80
+    y: 1300
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Grateful for every teammate." }
+    style:
+      font_family: $heading
+      font_size: 40
+      font_weight: 800
+      color: $primary
+      line_height: 1.1
+      letter_spacing: -0.02
+
+  - id: handle
+    type: text
+    z: 51
+    x: 80
+    y: 1410
+    width: 1040
+    height: 0
+    content: { type: plain, value: "@yourhandle · @yourcompany" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      letter_spacing: 0.2
+
+animations:
+  year-number:
+    enter: { type: scale_in, duration: 900, delay: 200, easing: ease-out }
+  caption:
+    enter: { type: fade_up, duration: 500, delay: 600, easing: ease-out }
+  card-1-bg:
+    enter: { type: fade_up, duration: 500, delay: 400, easing: ease-out }
+  card-2-bg:
+    enter: { type: fade_up, duration: 500, delay: 600, easing: ease-out }
+  card-3-bg:
+    enter: { type: fade_up, duration: 500, delay: 800, easing: ease-out }
+  accent-dot:
+    loop: { type: pulse, duration: 2200, scale: 1.25 }
+
+slots:
+  - { id: eyebrow,     path: "layers[3].content.value",  type: text, hint: "Eyebrow",            default: "ANNIVERSARY" }
+  - { id: year,        path: "layers[4].content.value",  type: text, hint: "Year display",       default: "5 YEARS" }
+  - { id: caption,     path: "layers[5].content.value",  type: text, hint: "Gratitude caption",  default: "...with the most talented team I've ever worked with." }
+  - { id: then_title,  path: "layers[9].content.value",  type: text, hint: "Then title",         default: "Junior IC" }
+  - { id: then_body,   path: "layers[10].content.value", type: text, hint: "Then body",          default: "Two months in, scared to ask questions in meetings." }
+  - { id: now_title,   path: "layers[13].content.value", type: text, hint: "Now title",          default: "Tech Lead" }
+  - { id: now_body,    path: "layers[14].content.value", type: text, hint: "Now body",           default: "Leading the team I once joined." }
+  - { id: next_title,  path: "layers[17].content.value", type: text, hint: "Next title",         default: "Staff & beyond" }
+  - { id: next_body,   path: "layers[18].content.value", type: text, hint: "Next body",          default: "Owning architecture across teams." }
+  - { id: thanks,      path: "layers[19].content.value", type: text, hint: "Thanks line",        default: "Grateful for every teammate." }
+  - { id: handle,      path: "layers[20].content.value", type: text, hint: "Footer handle",      default: "@yourhandle · @yourcompany" }

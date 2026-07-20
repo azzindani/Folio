@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: racing-track
+name: Racing Track
+version: "1.0.0"
+tags: [sports, racing, motorsport, checker, speed]
+description: "Asphalt black with checker white, racing red and neon yellow — high-velocity track day."
+colors:
+  background: "#0C0C0C"
+  surface:    "#161616"
+  surface_2:  "#222222"
+  primary:    "#E60012"
+  secondary:  "#F5F5F5"
+  accent:     "#F2EE15"
+  text:       "#FAFAFA"
+  text_muted: "#9A9A9A"
+  border:     "#2E2E2E"
+  success:    "#3FD86A"
+  warning:    "#F2EE15"
+  danger:     "#E60012"

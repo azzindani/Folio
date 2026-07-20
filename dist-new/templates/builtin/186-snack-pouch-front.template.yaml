@@ -1,0 +1,367 @@
+_protocol: template/v1
+
+# Snack pouch front — 1200×1500 portrait, sunset-glow theme.
+# Bold consumer-snack aesthetic: brand top, snack name (e.g. "SEA SALT
+# KETTLE CHIPS") huge, flavor descriptor, "Non-GMO · Gluten-Free" badges
+# row, net weight badge, hero crunch-texture polygon pattern bottom-right.
+meta:
+  id: tmpl-snack-pouch-front
+  name: Snack Pouch Front
+  type: label
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [packaging, label, snack, food, pouch, bold, portrait]
+  description: "Snack pouch front with brand, snack name, flavor descriptor, certification badges, and net weight."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: $background }
+  # ── Top color band ────────────────────────────────────────
+  - id: top-band
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1200
+    height: 200
+    fill: { type: solid, color: "$primary" }
+
+  # ── Crunch texture polygons (decorative, bottom-right) ────
+  - id: crunch-1
+    type: polygon
+    z: 5
+    points: "900,1100 980,1080 1020,1140 990,1200 920,1180"
+    fill: { type: solid, color: "$secondary" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: crunch-2
+    type: polygon
+    z: 6
+    points: "1020,1240 1100,1220 1140,1280 1110,1340 1040,1320"
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: crunch-3
+    type: polygon
+    z: 7
+    points: "820,1280 900,1260 940,1320 910,1380 840,1360"
+    fill: { type: solid, color: "$secondary" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: crunch-4
+    type: polygon
+    z: 8
+    points: "1060,1080 1120,1070 1140,1110 1120,1150 1080,1140"
+    fill: { type: solid, color: "$primary" }
+
+  - id: crunch-5
+    type: polygon
+    z: 9
+    points: "760,1180 820,1170 840,1210 820,1250 780,1240"
+    fill: { type: solid, color: "$primary" }
+
+  # ── Brand top ─────────────────────────────────────────────
+  - id: brand
+    type: text
+    z: 15
+    x: 80
+    y: 70
+    width: 1040
+    height: 0
+    content: { type: plain, value: "PRAIRIE CRUNCH CO." }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: brand-sub
+    type: text
+    z: 16
+    x: 80
+    y: 124
+    width: 1040
+    height: 0
+    content: { type: plain, value: "hand-cooked · small batch · since 2011"
+    }
+    style:
+      font_family: $body
+      font_size: 14
+      font_style: italic
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.18
+
+  # ── Hero burst ribbon ─────────────────────────────────────
+  - id: burst
+    type: polygon
+    z: 20
+    points: "600,240 660,260 720,240 700,300 720,360 660,340 600,360 620,300"
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$text", width: 3 }
+
+  - id: burst-text
+    type: text
+    z: 21
+    x: 540
+    y: 286
+    width: 240
+    height: 0
+    content: { type: plain, value: "NEW!" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.18
+
+  # ── Eyebrow ───────────────────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 25
+    x: 80
+    y: 420
+    width: 1040
+    height: 0
+    content: { type: plain, value: "KETTLE-COOKED POTATO CHIPS" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 800
+      color: $primary
+      text_align: center
+      letter_spacing: 0.42
+
+  # ── Snack name HUGE ───────────────────────────────────────
+  - id: snack-name-line-1
+    type: text
+    z: 30
+    x: 60
+    y: 470
+    width: 1080
+    height: 0
+    content: { type: plain, value: "SEA SALT" }
+    style:
+      font_family: $heading
+      font_size: 144
+      font_weight: 900
+      color: $text
+      text_align: center
+      line_height: 0.95
+      letter_spacing: -0.04
+      text_transform: uppercase
+
+  - id: snack-name-line-2
+    type: text
+    z: 31
+    x: 60
+    y: 620
+    width: 1080
+    height: 0
+    content: { type: plain, value: "KETTLE CHIPS" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 900
+      color: $primary
+      text_align: center
+      line_height: 0.95
+      letter_spacing: -0.03
+      text_transform: uppercase
+
+  # ── Flavor descriptor band ────────────────────────────────
+  - id: flavor-bg
+    type: rect
+    z: 35
+    x: 120
+    y: 770
+    width: 960
+    height: 90
+    radius: 12
+    fill: { type: solid, color: "$text" }
+
+  - id: flavor-text
+    type: text
+    z: 36
+    x: 120
+    y: 798
+    width: 960
+    height: 0
+    content: { type: plain, value: "Flaky Maldon salt · ridged & extra-crunchy · cooked in sunflower oil" }
+    style:
+      font_family: $body
+      font_size: 19
+      font_style: italic
+      color: "$background"
+      text_align: center
+      line_height: 1.4
+
+  # ── Certification badges row ──────────────────────────────
+  - id: badge-1-circle
+    type: circle
+    z: 40
+    cx: 250
+    cy: 950
+    r: 60
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 3 }
+
+  - id: badge-1-text-1
+    type: text
+    z: 41
+    x: 170
+    y: 928
+    width: 160
+    height: 0
+    content: { type: plain, value: "NON" }
+    style: { font_family: $heading, font_size: 22, font_weight: 900, color: $text, text_align: center, letter_spacing: 0.1 }
+
+  - id: badge-1-text-2
+    type: text
+    z: 42
+    x: 170
+    y: 962
+    width: 160
+    height: 0
+    content: { type: plain, value: "GMO" }
+    style: { font_family: $heading, font_size: 22, font_weight: 900, color: $primary, text_align: center, letter_spacing: 0.1 }
+
+  - id: badge-2-circle
+    type: circle
+    z: 43
+    cx: 450
+    cy: 950
+    r: 60
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 3 }
+
+  - id: badge-2-text-1
+    type: text
+    z: 44
+    x: 370
+    y: 928
+    width: 160
+    height: 0
+    content: { type: plain, value: "GLUTEN" }
+    style: { font_family: $heading, font_size: 17, font_weight: 900, color: $text, text_align: center, letter_spacing: 0.08 }
+
+  - id: badge-2-text-2
+    type: text
+    z: 45
+    x: 370
+    y: 956
+    width: 160
+    height: 0
+    content: { type: plain, value: "FREE" }
+    style: { font_family: $heading, font_size: 22, font_weight: 900, color: $primary, text_align: center, letter_spacing: 0.1 }
+
+  - id: badge-3-circle
+    type: circle
+    z: 46
+    cx: 650
+    cy: 950
+    r: 60
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 3 }
+
+  - id: badge-3-text-1
+    type: text
+    z: 47
+    x: 570
+    y: 928
+    width: 160
+    height: 0
+    content: { type: plain, value: "VEGAN" }
+    style: { font_family: $heading, font_size: 18, font_weight: 900, color: $text, text_align: center, letter_spacing: 0.08 }
+
+  - id: badge-3-text-2
+    type: text
+    z: 48
+    x: 570
+    y: 956
+    width: 160
+    height: 0
+    content: { type: plain, value: "FRIENDLY" }
+    style: { font_family: $heading, font_size: 13, font_weight: 900, color: $primary, text_align: center, letter_spacing: 0.08 }
+
+  # ── Net weight badge ──────────────────────────────────────
+  - id: weight-burst
+    type: polygon
+    z: 60
+    points: "900,890 1100,890 1140,950 1100,1010 900,1010 860,950"
+    fill: { type: solid, color: "$primary" }
+    stroke: { color: "$text", width: 3 }
+
+  - id: weight-label
+    type: text
+    z: 61
+    x: 860
+    y: 912
+    width: 280
+    height: 0
+    content: { type: plain, value: "NET WEIGHT" }
+    style: { font_family: $body, font_size: 11, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.36 }
+
+  - id: weight-value
+    type: text
+    z: 62
+    x: 860
+    y: 944
+    width: 280
+    height: 0
+    content: { type: plain, value: "5 OZ / 142 g" }
+    style: { font_family: $heading, font_size: 28, font_weight: 900, color: "#FFFFFF", text_align: center, line_height: 1.2 }
+
+  # ── Footer bar ────────────────────────────────────────────
+  - id: footer-band
+    type: rect
+    z: 70
+    x: 0
+    y: 1440
+    width: 1200
+    height: 60
+    fill: { type: solid, color: "$text" }
+
+  - id: footer
+    type: text
+    z: 71
+    x: 60
+    y: 1456
+    width: 1080
+    height: 0
+    content: { type: plain, value: "KETTLE-COOKED IN OMAHA, NEBRASKA  ·  PRAIRIECRUNCH.CO  ·  STAY CRUNCHY"
+    }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.32
+
+slots:
+  - { id: brand,              path: "layers[7].content.value",  type: text, hint: "Brand name",          default: "PRAIRIE CRUNCH CO." }
+  - { id: snack_name,         path: "layers[12].content.value", type: text, hint: "Snack name line 1",   default: "SEA SALT" }
+  - { id: flavor_description, path: "layers[15].content.value", type: text, hint: "Flavor description",  default: "Flaky Maldon salt · ridged & extra-crunchy · cooked in sunflower oil" }
+  - { id: net_weight_oz,      path: "layers[27].content.value", type: text, hint: "Net weight",          default: "5 OZ / 142 g" }

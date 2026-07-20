@@ -1,0 +1,610 @@
+_protocol: template/v1
+
+# Paint-by-numbers — 1240×1754 A4 portrait, light-clean.
+# Outlined subject (polygons), numbered regions, 10-color legend, tips footer.
+meta:
+  id: tmpl-paint-by-numbers
+  name: Paint by Numbers
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, painting, craft, kids, paint-by-numbers, a4, printable]
+  description: "Paint-by-numbers worksheet with outlined polygonal subject, numbered regions, 10-color legend with paint names, and painting tips."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # Header
+  - id: title
+    type: text
+    z: 1
+    x: 60
+    y: 70
+    width: 1120
+    height: 0
+    content: { type: plain, value: "PAINT BY NUMBERS" }
+    style:
+      font_family: $heading
+      font_size: 40
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.16
+      text_transform: uppercase
+
+  - id: subject-name
+    type: text
+    z: 2
+    x: 60
+    y: 130
+    width: 1120
+    height: 0
+    content: { type: plain, value: "Sunset Mountain Lake" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_style: italic
+      color: "$text"
+      text_align: center
+
+  - id: meta-row
+    type: text
+    z: 3
+    x: 60
+    y: 180
+    width: 1120
+    height: 0
+    content: { type: plain, value: "DIFFICULTY: BEGINNER  ·  10 COLORS  ·  ~2 HOURS" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: header-rule
+    type: rect
+    z: 4
+    x: 60
+    y: 220
+    width: 1120
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # Subject canvas
+  - id: canvas-bg
+    type: rect
+    z: 5
+    x: 60
+    y: 250
+    width: 1120
+    height: 900
+    radius: 8
+    fill: { type: solid, color: "#FFFFFF" }
+    stroke: { color: "$text", width: 2 }
+
+  # Sky region (upper)
+  - id: region-sky
+    type: polygon
+    z: 10
+    points: "80,270 1160,270 1160,560 80,560"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-sky
+    type: text
+    z: 11
+    x: 600
+    y: 400
+    width: 40
+    height: 0
+    content: { type: plain, value: "1" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", text_align: center }
+
+  # Sun
+  - id: region-sun
+    type: circle
+    z: 12
+    cx: 900
+    cy: 460
+    rx: 90
+    ry: 90
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-sun
+    type: text
+    z: 13
+    x: 880
+    y: 446
+    width: 40
+    height: 0
+    content: { type: plain, value: "2" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", text_align: center }
+
+  # Cloud
+  - id: region-cloud
+    type: path
+    z: 12
+    d: "M 200 380 C 180 350, 220 320, 260 340 C 280 310, 340 320, 350 350 C 390 350, 400 390, 370 410 C 360 430, 290 430, 250 420 C 220 430, 180 410, 200 380 Z"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-cloud
+    type: text
+    z: 13
+    x: 275
+    y: 372
+    width: 40
+    height: 0
+    content: { type: plain, value: "3" }
+    style: { font_family: $heading, font_size: 24, font_weight: 700, color: "$text", text_align: center }
+
+  # Mountains (3 polygon peaks)
+  - id: region-mtn-left
+    type: polygon
+    z: 14
+    points: "80,560 80,720 360,440 540,720 540,560"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-mtn-left
+    type: text
+    z: 15
+    x: 280
+    y: 626
+    width: 40
+    height: 0
+    content: { type: plain, value: "4" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", text_align: center }
+
+  - id: region-mtn-mid
+    type: polygon
+    z: 14
+    points: "440,720 660,400 880,720"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-mtn-mid
+    type: text
+    z: 15
+    x: 640
+    y: 606
+    width: 40
+    height: 0
+    content: { type: plain, value: "5" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", text_align: center }
+
+  - id: region-mtn-right
+    type: polygon
+    z: 14
+    points: "780,720 980,500 1160,720 1160,560 1160,560"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-mtn-right
+    type: text
+    z: 15
+    x: 980
+    y: 666
+    width: 40
+    height: 0
+    content: { type: plain, value: "6" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", text_align: center }
+
+  # Mountain snow caps
+  - id: region-snow-mid
+    type: polygon
+    z: 16
+    points: "620,460 660,400 700,460"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-snow
+    type: text
+    z: 17
+    x: 644
+    y: 432
+    width: 40
+    height: 0
+    content: { type: plain, value: "7" }
+    style: { font_family: $heading, font_size: 18, font_weight: 700, color: "$text", text_align: center }
+
+  # Lake (water)
+  - id: region-water
+    type: polygon
+    z: 18
+    points: "80,720 1160,720 1160,1020 80,1020"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-water
+    type: text
+    z: 19
+    x: 600
+    y: 860
+    width: 40
+    height: 0
+    content: { type: plain, value: "8" }
+    style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", text_align: center }
+
+  # Lake reflection ripples (decorative inner regions)
+  - id: ripple-1
+    type: rect
+    z: 20
+    x: 200
+    y: 820
+    width: 240
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 1 }
+
+  - id: ripple-2
+    type: rect
+    z: 20
+    x: 700
+    y: 880
+    width: 320
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 1 }
+
+  - id: ripple-3
+    type: rect
+    z: 20
+    x: 360
+    y: 940
+    width: 280
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 1 }
+
+  # Foreground rocks
+  - id: region-rock-left
+    type: polygon
+    z: 22
+    points: "80,1020 80,1130 280,1130 200,1020"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-rock-left
+    type: text
+    z: 23
+    x: 160
+    y: 1066
+    width: 40
+    height: 0
+    content: { type: plain, value: "9" }
+    style: { font_family: $heading, font_size: 24, font_weight: 700, color: "$text", text_align: center }
+
+  - id: region-rock-right
+    type: polygon
+    z: 22
+    points: "920,1130 1020,1020 1160,1020 1160,1130"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 2 }
+
+  - id: num-rock-right
+    type: text
+    z: 23
+    x: 1040
+    y: 1066
+    width: 40
+    height: 0
+    content: { type: plain, value: "10" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$text", text_align: center }
+
+  # Color legend — title
+  - id: legend-title
+    type: text
+    z: 30
+    x: 60
+    y: 1190
+    width: 1120
+    height: 0
+    content: { type: plain, value: "COLOR LEGEND" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: legend-rule
+    type: rect
+    z: 31
+    x: 60
+    y: 1226
+    width: 1120
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # Legend swatches — 2 rows × 5 columns
+  - id: sw-1
+    type: rect
+    z: 32
+    x: 60
+    y: 1250
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#FFD580" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-1-text
+    type: text
+    z: 33
+    x: 110
+    y: 1262
+    width: 180
+    height: 0
+    content: { type: plain, value: "1  Warm Yellow" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-2
+    type: rect
+    z: 32
+    x: 290
+    y: 1250
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#FF8A3D" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-2-text
+    type: text
+    z: 33
+    x: 340
+    y: 1262
+    width: 180
+    height: 0
+    content: { type: plain, value: "2  Tangerine" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-3
+    type: rect
+    z: 32
+    x: 520
+    y: 1250
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#FFF0F5" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-3-text
+    type: text
+    z: 33
+    x: 570
+    y: 1262
+    width: 180
+    height: 0
+    content: { type: plain, value: "3  Cloud White" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-4
+    type: rect
+    z: 32
+    x: 750
+    y: 1250
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#7B5BA3" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-4-text
+    type: text
+    z: 33
+    x: 800
+    y: 1262
+    width: 180
+    height: 0
+    content: { type: plain, value: "4  Dusty Purple" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-5
+    type: rect
+    z: 32
+    x: 980
+    y: 1250
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#3F4A7A" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-5-text
+    type: text
+    z: 33
+    x: 1030
+    y: 1262
+    width: 180
+    height: 0
+    content: { type: plain, value: "5  Twilight Blue" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  # Row 2
+  - id: sw-6
+    type: rect
+    z: 32
+    x: 60
+    y: 1310
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#5D3F8A" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-6-text
+    type: text
+    z: 33
+    x: 110
+    y: 1322
+    width: 180
+    height: 0
+    content: { type: plain, value: "6  Indigo" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-7
+    type: rect
+    z: 32
+    x: 290
+    y: 1310
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#FAFAFA" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-7-text
+    type: text
+    z: 33
+    x: 340
+    y: 1322
+    width: 180
+    height: 0
+    content: { type: plain, value: "7  Snow White" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-8
+    type: rect
+    z: 32
+    x: 520
+    y: 1310
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#5A8FB8" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-8-text
+    type: text
+    z: 33
+    x: 570
+    y: 1322
+    width: 180
+    height: 0
+    content: { type: plain, value: "8  Lake Blue" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-9
+    type: rect
+    z: 32
+    x: 750
+    y: 1310
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#6B4423" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-9-text
+    type: text
+    z: 33
+    x: 800
+    y: 1322
+    width: 180
+    height: 0
+    content: { type: plain, value: "9  Burnt Umber" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  - id: sw-10
+    type: rect
+    z: 32
+    x: 980
+    y: 1310
+    width: 40
+    height: 40
+    radius: 4
+    fill: { type: solid, color: "#3D2A1A" }
+    stroke: { color: "$text", width: 1 }
+  - id: sw-10-text
+    type: text
+    z: 33
+    x: 1030
+    y: 1322
+    width: 180
+    height: 0
+    content: { type: plain, value: "10  Charcoal" }
+    style: { font_family: $mono, font_size: 13, font_weight: 700, color: "$text" }
+
+  # Tips footer
+  - id: tips-box
+    type: rect
+    z: 40
+    x: 60
+    y: 1430
+    width: 1120
+    height: 220
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$accent", width: 1 }
+
+  - id: tips-title
+    type: text
+    z: 41
+    x: 90
+    y: 1450
+    width: 1080
+    height: 0
+    content: { type: plain, value: "PAINTING TIPS" }
+    style:
+      font_family: $heading
+      font_size: 16
+      font_weight: 800
+      color: "$accent"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: tips-body
+    type: text
+    z: 42
+    x: 90
+    y: 1488
+    width: 1080
+    height: 0
+    content:
+      type: plain
+      value: "1.  Paint light colors first, dark colors last — easier to cover mistakes.\n2.  Use a small brush for tight spots; a wider brush for sky and water.\n3.  Let each region dry before painting an adjacent number — avoid bleed.\n4.  Mix tiny amounts: a drop more white softens any color tastefully."
+    style:
+      font_family: $body
+      font_size: 14
+      color: "$text"
+      line_height: 1.6
+
+  - id: footer
+    type: text
+    z: 50
+    x: 60
+    y: 1700
+    width: 1120
+    height: 0
+    content: { type: plain, value: "© FOLIO PAINT STUDIO  ·  ACRYLIC OR WATERCOLOR  ·  AGES 8+" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+slots:
+  - { id: subject_name, path: "layers[2].content.value", type: text, hint: "Subject name", default: "Sunset Mountain Lake" }
+  - { id: difficulty,   path: "layers[3].content.value", type: text, hint: "Difficulty meta line", default: "DIFFICULTY: BEGINNER  ·  10 COLORS  ·  ~2 HOURS" }

@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: autumn-harvest
+name: Autumn Harvest
+version: "1.0.0"
+tags: [seasonal, autumn, harvest, thanksgiving, warm]
+description: "Burnt orange and brick red with olive on warm cream — fall, harvest and Thanksgiving moods."
+colors:
+  background: "#FAF1E1"
+  surface:    "#F3E6CC"
+  surface_2:  "#E8D3A8"
+  primary:    "#C0531C"
+  secondary:  "#8B2C1F"
+  accent:     "#6B7C2E"
+  text:       "#2A1A0F"
+  text_muted: "#6E5742"
+  border:     "#D9C190"
+  success:    "#5E7E3A"
+  warning:    "#C0791E"
+  danger:     "#8B2C1F"

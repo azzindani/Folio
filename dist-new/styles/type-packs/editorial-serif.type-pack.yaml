@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: editorial-serif
+name: Editorial Serif
+version: "1.0.0"
+tags: [editorial, serif, magazine, longform, classic]
+description: "Playfair Display headlines over Lora body — long-form magazine editorial register."
+families:
+  heading: "Playfair Display"
+  body:    "Lora"
+  mono:    "IBM Plex Mono"
+  display: "Playfair Display"
+  accent:  "Playfair Display"
+scale:
+  h1:
+    size: 80
+    weight: 700
+    line_height: 1.05
