@@ -2,6 +2,66 @@
 
 ## [Unreleased]
 
+Motion you can actually get out, and a print PDF that is the size you asked for.
+
+### Added
+
+- **Binary-free motion export** — `animation(op:export)` gains `type:"svg"` and
+  `type:"html"`, which write a real animated file in-process with no extra
+  software:
+
+  ```
+  animation(op:export, design_path:…, type:"svg")
+  → 686 bytes, vector, animated, no ffmpeg and no Chromium involved
+  ```
+
+  The renderer already tags every layer with `data-layer-id` and the CSS
+  generator already emits `@keyframes` against those selectors, so an animated
+  SVG needs only a `<style>` block inlined into the render — no frame capture
+  and no encoder. `type:"html"` wraps the same SVG in a shareable single file
+  that honors `prefers-reduced-motion`.
+
+- **`generateKeyframeCSS`** (`src/animation/css-generator.ts`) — keyframe
+  timelines now produce motion. `layer.animation.keyframes` had no consumer at
+  all, so every timeline written by `animation(op:keyframe)` rendered
+  completely static. Positions emit as a delta from the first frame (the
+  renderer already places the layer, so absolute values would double the
+  offset), and `transform-box: fill-box` makes rotation and scale turn about
+  the layer's own centre rather than the SVG root origin.
+
+- **`encoder: 'auto' | 'ffmpeg' | 'none'`** on `AnimationExportOptions` — a
+  caller that needs a real video can demand one and get a hard error instead of
+  a silent downgrade, and a caller that only wants frames need not shell out.
+
+### Fixed
+
+- **`animation(op:export)` reported success without producing a file.** It
+  rendered HTML to a temp path, deleted it, and returned `okResult` with an
+  `output_path` that was never written, alongside a hint naming
+  `npx folio export-anim` — a command that does not exist (`package.json`
+  `bin` has only `folio-mcp`). A model calling it received `ok` and a path, and
+  told the user their GIF was ready. Seven tests asserted `success: true` for
+  `gif`/`mp4`/`webm` on a host with neither Puppeteer nor ffmpeg and none
+  checked that a file existed, which is why it survived. `gif`/`mp4`/`webm` now
+  refuse with the reason and point at `svg`/`html`; the tests assert a real file
+  on disk.
+
+- **`document.dpi` ignored by the vector PDF exporter**, which hard-coded 96.
+  A poster authored for print came out physically wrong: an A2 sheet drawn at
+  2480×3508 (150 dpi) produced a 656×928 mm page instead of 420×594 — right
+  proportions, 1.56× too big, and the print shop has to rescale it. Falls back
+  to 96 when the field is absent, so screen designs export byte-identically.
+
+- **`animation(op:export)` always rendered page 1** of a multi-page design.
+  `page_id` now selects the page.
+
+- **Animation export tests were not hermetic** — four asserted the no-ffmpeg
+  fallback while simply trusting the host not to have ffmpeg, so they were
+  green on a bare CI runner and failed the moment ffmpeg appeared on a dev box.
+  Also fixes a real defect they were hiding: in `auto` mode a *failing* ffmpeg
+  discarded the frames the caller had already paid to capture, rather than
+  falling back to the manifest.
+
 ## [0.1.2] - 2026-07-11
 
 Know your version, keep your canvas. A deployed Folio can now tell you when a new
