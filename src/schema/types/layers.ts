@@ -335,6 +335,12 @@ export interface InteractiveTableLayer extends BaseLayer {
 export interface RichTextLayer extends BaseLayer {
   type: 'rich_text';
   content: string;
+  /**
+   * Tolerated alias for `content`. AccordionItem and other prose-bearing
+   * shapes call this field `body`, so authors reasonably reach for `body`
+   * here too — accepting it beats rendering an empty box in silence.
+   */
+  body?: string;
   format?: 'markdown' | 'html';
   font_family?: string;
   font_size?: number;

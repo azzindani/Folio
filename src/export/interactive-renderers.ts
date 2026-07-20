@@ -405,7 +405,11 @@ function renderRichText(layer: RichTextLayer, ctx: InteractiveRenderContext): st
     layer.line_height ? `line-height:${layer.line_height}` : '',
     layer.color ? `color:${layer.color}` : '',
   ].filter(Boolean).join(';');
-  const html = layer.format === 'html' ? layer.content : markdownToHtml(layer.content);
+  // `content` is canonical; `body` is a tolerated alias (AccordionItem uses
+  // `body`, so authors mix them). Without this, a `body`-authored rich_text
+  // rendered as an empty div and the mistake was invisible.
+  const text = layer.content ?? layer.body ?? '';
+  const html = layer.format === 'html' ? text : markdownToHtml(text);
   return `<div class="ic-richtext" data-layer-id="${escAttr(layer.id)}" style="${style}">${html}</div>`;
 }
 
@@ -559,7 +563,9 @@ function renderAccordion(layer: AccordionLayer, ctx: InteractiveRenderContext): 
     const open = it.open ?? false;
     const body = (it.layers && it.layers.length)
       ? `<div class="folio-flow-grid">${it.layers.map(c => renderInteractiveLayer(c, ctx)).join('\n')}</div>`
-      : `<div class="ic-richtext">${markdownToHtml(it.body ?? '')}</div>`;
+      // `body` is canonical here; accept `content` for the same reason
+      // rich_text accepts `body` — the two shapes are easily confused.
+      : `<div class="ic-richtext">${markdownToHtml(it.body ?? (it as { content?: string }).content ?? '')}</div>`;
     const grp = layer.exclusive ? ` data-acc-group="acc-${escAttr(layer.id)}"` : '';
     return `<div class="ic-acc-item${open ? ' open' : ''}" id="${iid}"${grp}>
       <button class="ic-acc-head" data-folio-action="accordion:${iid}"><span>${escHtml(it.title)}</span><span class="ic-acc-chev">▾</span></button>

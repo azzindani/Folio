@@ -26,7 +26,12 @@ export interface EditorState {
   zoom: number;
   panX: number;
   panY: number;
-  mode: 'visual' | 'payload';
+  /**
+   * visual  = SVG canvas (layout editing)
+   * payload = Monaco YAML
+   * preview = the real exported interactive HTML, live in an iframe
+   */
+  mode: 'visual' | 'payload' | 'preview';
   currentPageIndex: number;
   gridVisible: boolean;
   snapEnabled: boolean;

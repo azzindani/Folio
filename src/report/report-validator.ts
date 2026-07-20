@@ -107,6 +107,12 @@ export function validateReport(spec: DesignSpec): ReportDiagnostic[] {
       case 'filter_bar': {
         if (o['options_from'] && !ids.has(refId(o['options_from']))) d.push({ severity: 'warning', code: 'filter-options', message: `filter_bar "${l.id}" options_from "${String(o['options_from'])}" is not a dataset`, layer_id: l.id });
         const field = o['field'];
+        // No field = nothing to filter ON; no options and no options_from =
+        // a bar with only an "All" chip. Both render as a control that looks
+        // functional and does nothing.
+        if (!field) d.push({ severity: 'warning', code: 'filter-no-field', message: `filter_bar "${l.id}" has no field`, layer_id: l.id, fix: 'Set `field` to the dataset key to filter by.' });
+        const hasOpts = (Array.isArray(o['options']) && (o['options'] as unknown[]).length > 0) || !!o['options_from'];
+        if (!hasOpts) d.push({ severity: 'warning', code: 'filter-no-options', message: `filter_bar "${l.id}" has no options — only an "All" chip will render`, layer_id: l.id, fix: 'Set `options:[{label,value}]` on the layer, or `options_from` to derive them from a dataset.' });
         if (field) {
           const inAny = [...cols.values()].some(c => c.includes(String(field)));
           if (cols.size && !inAny) d.push({ severity: 'warning', code: 'filter-field', message: `filter_bar "${l.id}" field "${String(field)}" is not in any dataset`, layer_id: l.id, fix: 'It filters tables/charts by this key; ensure they share it.' });
@@ -125,7 +131,23 @@ export function validateReport(spec: DesignSpec): ReportDiagnostic[] {
         if (body == null || String(body).trim() === '') d.push({ severity: 'warning', code: 'callout-empty', message: `callout "${l.id}" has no content`, layer_id: l.id, fix: 'Set `content` to the callout body text.' });
         break;
       }
-      case 'tabs': if (!Array.isArray(o['tabs']) || !o['tabs'].length) d.push({ severity: 'warning', code: 'tabs-empty', message: `tabs "${l.id}" has no tabs`, layer_id: l.id }); break;
+      case 'rich_text': {
+        // `content` is canonical; `body` is a tolerated alias. Both absent =
+        // an empty div that renders as nothing and looks like a layout bug.
+        const text = o['content'] ?? o['body'];
+        if (text == null || String(text).trim() === '') d.push({ severity: 'warning', code: 'richtext-empty', message: `rich_text "${l.id}" has no text`, layer_id: l.id, fix: 'Set `content` (markdown) to the body text.' });
+        break;
+      }
+      case 'tabs': {
+        const tabs = Array.isArray(o['tabs']) ? o['tabs'] as Record<string, unknown>[] : [];
+        if (!tabs.length) { d.push({ severity: 'warning', code: 'tabs-empty', message: `tabs "${l.id}" has no tabs`, layer_id: l.id }); break; }
+        // A tab panel is built ONLY from `layers`. Prose parked on a stray
+        // `content`/`body` key silently vanishes — the tab strip renders and
+        // switches, but every panel is blank.
+        const hollow = tabs.filter(t => !Array.isArray(t['layers']) || (t['layers'] as unknown[]).length === 0);
+        if (hollow.length === tabs.length) d.push({ severity: 'warning', code: 'tabs-hollow', message: `tabs "${l.id}" has no panel content — every tab is empty`, layer_id: l.id, fix: 'Give each tab a `layers` array; tab bodies are child layers, not a `content` string.' });
+        break;
+      }
       case 'accordion': if (!Array.isArray(o['items']) || !o['items'].length) d.push({ severity: 'warning', code: 'accordion-empty', message: `accordion "${l.id}" has no items`, layer_id: l.id }); break;
       case 'toggle': if (!Array.isArray(o['options']) || !o['options'].length) d.push({ severity: 'warning', code: 'toggle-empty', message: `toggle "${l.id}" has no options`, layer_id: l.id }); break;
       default: break;

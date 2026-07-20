@@ -227,7 +227,7 @@ export class EditorApp extends EditorAppBase {
     });
 
     this.wireStatusBar();
-
+    this.mountLivePreview();
     this.keyboard = new KeyboardManager(this.state, this);
 
     // Command palette

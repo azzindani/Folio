@@ -104,6 +104,41 @@ describe('validateReport', () => {
     expect(codes(validateReport(spec))).toContain('layers-split');
   });
 
+  // These three all shipped as controls that RENDER but do nothing — the class
+  // of bug the live preview surfaced. Silence was the actual defect.
+  it('flags a rich_text with no text under either field name', () => {
+    const d = validateReport(report([
+      L({ id: 'r1', type: 'rich_text' }),
+      L({ id: 'r2', type: 'rich_text', content: '   ' }),
+    ], [stocks]));
+    expect(codes(d).filter(c => c === 'richtext-empty')).toHaveLength(2);
+  });
+
+  it('accepts `body` as an alias for rich_text content', () => {
+    const d = validateReport(report([L({ id: 'r', type: 'rich_text', body: 'real text' })], [stocks]));
+    expect(codes(d)).not.toContain('richtext-empty');
+  });
+
+  it('flags tabs whose panels are all empty', () => {
+    // Tab bodies come from `layers`; prose on `content` silently vanishes.
+    const d = validateReport(report([
+      L({ id: 't', type: 'tabs', tabs: [{ id: 'a', label: 'A', content: 'lost' }, { id: 'b', label: 'B', content: 'lost' }] }),
+    ], [stocks]));
+    expect(codes(d)).toContain('tabs-hollow');
+  });
+
+  it('does not flag tabs that have real panel layers', () => {
+    const d = validateReport(report([
+      L({ id: 't', type: 'tabs', tabs: [{ id: 'a', label: 'A', layers: [L({ id: 'x', type: 'rich_text', content: 'hi' })] }] }),
+    ], [stocks]));
+    expect(codes(d)).not.toContain('tabs-hollow');
+  });
+
+  it('flags a filter_bar with no field or options', () => {
+    const d = validateReport(report([L({ id: 'f', type: 'filter_bar' })], [stocks]));
+    expect(codes(d)).toEqual(expect.arrayContaining(['filter-no-field', 'filter-no-options']));
+  });
+
   it('flags empty tabs/accordion/toggle', () => {
     const d = validateReport(report([
       L({ id: 't', type: 'tabs', tabs: [] }),

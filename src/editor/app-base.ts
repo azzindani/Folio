@@ -6,6 +6,7 @@ import { chromeIcon } from './chrome-icons';
 import { applyPinConstraints } from './pin-constraints';
 import { CanvasManager } from './canvas';
 import { PayloadEditor } from './payload-editor';
+import { LivePreview } from './live-preview';
 import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
@@ -42,6 +43,7 @@ export abstract class EditorAppBase {
   state!: StateManager;
   canvas!: CanvasManager;
   payloadEditor!: PayloadEditor;
+  livePreview?: LivePreview;
   protected toolbar!: ToolbarManager;
   protected toolbox!: ToolboxManager;
   protected alignToolbar!: AlignToolbar;
@@ -395,6 +397,19 @@ export abstract class EditorAppBase {
     });
   }
 
+  /**
+   * Mount the live interactive preview over the canvas section. It sits on the
+   * same stacking context as the canvas and shows itself only in 'preview'
+   * mode, so the visual canvas keeps its own layout untouched.
+   */
+  protected mountLivePreview(): void {
+    const section = this.container.querySelector<HTMLElement>('.canvas-section');
+    if (!section || this.livePreview) return;
+    const theme = document.documentElement.getAttribute('data-theme') ?? 'dark';
+    this.livePreview = new LivePreview(this.state, section);
+    this.livePreview.setTheme(theme);
+  }
+
   protected wireThemeToggle(): void {
     const btn = this.container.querySelector<HTMLElement>('#theme-toggle');
     if (!btn) return;
@@ -414,6 +429,7 @@ export abstract class EditorAppBase {
       btn.title = next === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
       localStorage.setItem('folio:ui-theme', next);
       this.payloadEditor?.setTheme(next);
+      this.livePreview?.setTheme(next);
     });
   }
 
