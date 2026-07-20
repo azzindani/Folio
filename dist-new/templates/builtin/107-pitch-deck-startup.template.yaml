@@ -1,0 +1,331 @@
+_protocol: template/v1
+
+# 10-slide startup pitch deck — 1920×1080 landscape, indigo-pro theme.
+# Story arc: cover → problem → solution → market → product → traction
+# → business-model → competition → team → ask.
+meta:
+  id: tmpl-pitch-deck-startup
+  name: Pitch Deck · Startup (10 slides)
+  type: deck
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [deck, pitch, startup, presentation, indigo, landscape]
+  description: "Ten-slide startup pitch deck spanning cover, problem, solution, market, product, traction, business model, competition, team, and ask."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+pages:
+  # ── Slide 1 · Cover ─────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: rule-top, type: rect, z: 2, x: 120, y: 232, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 3, x: 120, y: 229, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
+      - id: logo-mark
+        type: text
+        z: 10
+        x: 120
+        y: 120
+        width: 600
+        height: 0
+        content: { type: plain, value: "◆ NORTHWIND" }
+        style: { font_family: $mono, font_size: 28, font_weight: 800, color: $primary, letter_spacing: 1, text_transform: uppercase }
+      - id: company-name
+        type: text
+        z: 11
+        x: 120
+        y: 500
+        width: 1680
+        height: 0
+        content: { type: plain, value: "Northwind" }
+        style: { font_family: "Playfair Display", font_size: 224, font_weight: 800, color: $text, line_height: 0.98, letter_spacing: -0.02 }
+      - id: tagline
+        type: text
+        z: 12
+        x: 120
+        y: 800
+        width: 1400
+        height: 0
+        content: { type: plain, value: "Logistics automation for the modern warehouse." }
+        style: { font_family: $body, font_size: 36, color: $text_muted, line_height: 1.3 }
+      - id: deck-label
+        type: text
+        z: 13
+        x: 120
+        y: 960
+        width: 600
+        height: 0
+        content: { type: plain, value: "Series A · May 2026" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted, letter_spacing: 0.2 }
+      - id: counter
+        type: text
+        z: 14
+        x: 1740
+        y: 960
+        width: 100
+        height: 0
+        content: { type: plain, value: "01 / 10" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · Problem ───────────────────────────────────────
+  - id: problem
+    label: Problem
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "01 · THE PROBLEM" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "Warehouses still run on spreadsheets." }, style: { font_family: "Playfair Display", font_size: 104, font_weight: 700, color: $text, line_height: 1.02, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 120, y: 360, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: pain-1-num, type: text, z: 20, x: 120, y: 440, width: 80, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pain-1, type: text, z: 21, x: 200, y: 430, width: 1500, height: 0, content: { type: plain, value: "73% of mid-market warehouses still reconcile inventory by hand each night." }, style: { font_family: $heading, font_size: 32, color: $text, line_height: 1.4 } }
+      - { id: pain-2-num, type: text, z: 22, x: 120, y: 600, width: 80, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pain-2, type: text, z: 23, x: 200, y: 590, width: 1500, height: 0, content: { type: plain, value: "Picker error rates climb to 4.2% during peak season — a $1.4M leak for a 50-person crew." }, style: { font_family: $heading, font_size: 32, color: $text, line_height: 1.4 } }
+      - { id: pain-3-num, type: text, z: 24, x: 120, y: 800, width: 80, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pain-3, type: text, z: 25, x: 200, y: 790, width: 1500, height: 0, content: { type: plain, value: "Existing WMS deployments take 9-14 months and require IT teams these ops shops don't have." }, style: { font_family: $heading, font_size: 32, color: $text, line_height: 1.4 } }
+      - { id: counter, type: text, z: 30, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "02 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 3 · Solution ──────────────────────────────────────
+  - id: solution
+    label: Solution
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "02 · THE SOLUTION" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "Plug-in computer vision. Deploys in 48 hours." }, style: { font_family: "Playfair Display", font_size: 92, font_weight: 700, color: $text, line_height: 1.02, letter_spacing: -0.02 } }
+      - { id: card-1, type: rect, z: 20, x: 120, y: 400, width: 540, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: card-1-icon, type: text, z: 21, x: 160, y: 440, width: 80, height: 0, content: { type: plain, value: "01" }, style: { font_family: "Playfair Display", font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: card-1-title, type: text, z: 22, x: 160, y: 540, width: 460, height: 0, content: { type: plain, value: "Mount any camera" }, style: { font_family: $heading, font_size: 30, font_weight: 700, color: $text, line_height: 1.2 } }
+      - { id: card-1-body, type: text, z: 23, x: 160, y: 600, width: 460, height: 0, content: { type: plain, value: "Off-the-shelf IP cameras. No proprietary hardware, no rewiring, no rip-and-replace." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.6 } }
+      - { id: card-2, type: rect, z: 20, x: 690, y: 400, width: 540, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: card-2-icon, type: text, z: 21, x: 730, y: 440, width: 80, height: 0, content: { type: plain, value: "02" }, style: { font_family: "Playfair Display", font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: card-2-title, type: text, z: 22, x: 730, y: 540, width: 460, height: 0, content: { type: plain, value: "Vision model auto-tracks" }, style: { font_family: $heading, font_size: 30, font_weight: 700, color: $text, line_height: 1.2 } }
+      - { id: card-2-body, type: text, z: 23, x: 730, y: 600, width: 460, height: 0, content: { type: plain, value: "Pre-trained on 8M warehouse hours. Identifies SKUs, pickers, and pallets with 99.1% accuracy." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.6 } }
+      - { id: card-3, type: rect, z: 20, x: 1260, y: 400, width: 540, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: card-3-icon, type: text, z: 21, x: 1300, y: 440, width: 80, height: 0, content: { type: plain, value: "03" }, style: { font_family: "Playfair Display", font_size: 56, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: card-3-title, type: text, z: 22, x: 1300, y: 540, width: 460, height: 0, content: { type: plain, value: "Reconcile in real-time" }, style: { font_family: $heading, font_size: 30, font_weight: 700, color: $text, line_height: 1.2 } }
+      - { id: card-3-body, type: text, z: 23, x: 1300, y: 600, width: 460, height: 0, content: { type: plain, value: "Pushes events to your existing ERP. SAP, NetSuite, Odoo, or webhook. End-of-day count obsolete." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.6 } }
+      - { id: counter, type: text, z: 30, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "03 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 4 · Market Size ───────────────────────────────────
+  - id: market
+    label: Market Size
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "03 · MARKET SIZE" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "A $58B inventory-software market, only 12% modernized." }, style: { font_family: "Playfair Display", font_size: 72, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: metric-1-card, type: rect, z: 20, x: 120, y: 420, width: 540, height: 460, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: metric-1-label, type: text, z: 21, x: 160, y: 460, width: 460, height: 0, content: { type: plain, value: "TAM" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: metric-1-value, type: text, z: 22, x: 160, y: 540, width: 460, height: 0, content: { type: plain, value: "$58B" }, style: { font_family: "Playfair Display", font_size: 128, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.04 } }
+      - { id: metric-1-sub, type: text, z: 23, x: 160, y: 730, width: 460, height: 0, content: { type: plain, value: "Global WMS + inventory software, 2026 (Gartner)." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.5 } }
+      - { id: metric-2-card, type: rect, z: 20, x: 690, y: 420, width: 540, height: 460, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: metric-2-label, type: text, z: 21, x: 730, y: 460, width: 460, height: 0, content: { type: plain, value: "SAM" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: metric-2-value, type: text, z: 22, x: 730, y: 540, width: 460, height: 0, content: { type: plain, value: "$11B" }, style: { font_family: "Playfair Display", font_size: 128, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.04 } }
+      - { id: metric-2-sub, type: text, z: 23, x: 730, y: 730, width: 460, height: 0, content: { type: plain, value: "Mid-market warehouses, 50-500 staff, N. America + EU." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.5 } }
+      - { id: metric-3-card, type: rect, z: 20, x: 1260, y: 420, width: 540, height: 460, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: metric-3-label, type: text, z: 21, x: 1300, y: 460, width: 460, height: 0, content: { type: plain, value: "SOM (3yr)" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: metric-3-value, type: text, z: 22, x: 1300, y: 540, width: 460, height: 0, content: { type: plain, value: "$420M" }, style: { font_family: "Playfair Display", font_size: 128, font_weight: 800, color: $secondary, line_height: 1, letter_spacing: -0.04 } }
+      - { id: metric-3-sub, type: text, z: 23, x: 1300, y: 730, width: 460, height: 0, content: { type: plain, value: "Reachable ARR with current GTM, capturing 3.8% of SAM." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.5 } }
+      - { id: counter, type: text, z: 30, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "04 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 5 · Product ───────────────────────────────────────
+  - id: product
+    label: Product
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "04 · PRODUCT" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1100, height: 0, content: { type: plain, value: "One dashboard. Every pallet, every picker, every minute." }, style: { font_family: "Playfair Display", font_size: 72, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: mockup-frame, type: rect, z: 20, x: 120, y: 400, width: 1080, height: 540, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: mockup-bar, type: rect, z: 21, x: 120, y: 400, width: 1080, height: 48, radius: 0, fill: { type: solid, color: "$surface" } }
+      - { id: mockup-dot-1, type: circle, z: 22, cx: 150, cy: 424, rx: 6, ry: 6, fill: { type: solid, color: "#FF5F57" } }
+      - { id: mockup-dot-2, type: circle, z: 22, cx: 174, cy: 424, rx: 6, ry: 6, fill: { type: solid, color: "#FEBC2E" } }
+      - { id: mockup-dot-3, type: circle, z: 22, cx: 198, cy: 424, rx: 6, ry: 6, fill: { type: solid, color: "#28C840" } }
+      - { id: mockup-tile-1, type: rect, z: 23, x: 160, y: 480, width: 300, height: 200, radius: 0, fill: { type: solid, color: "$primary" }, opacity: 0.85 }
+      - { id: mockup-tile-1-text, type: text, z: 24, x: 180, y: 500, width: 260, height: 0, content: { type: plain, value: "LIVE OCCUPANCY\n\n82%" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF", line_height: 1.3 } }
+      - { id: mockup-tile-2, type: rect, z: 23, x: 480, y: 480, width: 300, height: 200, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: mockup-tile-2-text, type: text, z: 24, x: 500, y: 500, width: 260, height: 0, content: { type: plain, value: "PICKS / HR\n\n1,284" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: $text, line_height: 1.3 } }
+      - { id: mockup-tile-3, type: rect, z: 23, x: 800, y: 480, width: 380, height: 200, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: mockup-tile-3-text, type: text, z: 24, x: 820, y: 500, width: 340, height: 0, content: { type: plain, value: "ERROR RATE\n\n0.4% ↓ from 4.2%" }, style: { font_family: $heading, font_size: 26, font_weight: 800, color: $secondary, line_height: 1.4 } }
+      - { id: mockup-strip, type: rect, z: 23, x: 160, y: 700, width: 1020, height: 200, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: mockup-strip-text, type: text, z: 24, x: 180, y: 720, width: 980, height: 0, content: { type: plain, value: "Aisle heatmap · 14 zones · last 24h" }, style: { font_family: $body, font_size: 16, font_weight: 600, color: $text_muted } }
+      - { id: feature-1, type: text, z: 30, x: 1260, y: 420, width: 540, height: 0, content: { type: plain, value: "→ Real-time tracking under 200ms" }, style: { font_family: $body, font_size: 22, color: $text, line_height: 1.6 } }
+      - { id: feature-2, type: text, z: 30, x: 1260, y: 510, width: 540, height: 0, content: { type: plain, value: "→ Shift-by-shift heatmap replay" }, style: { font_family: $body, font_size: 22, color: $text, line_height: 1.6 } }
+      - { id: feature-3, type: text, z: 30, x: 1260, y: 600, width: 540, height: 0, content: { type: plain, value: "→ Anomaly alerts via Slack + SMS" }, style: { font_family: $body, font_size: 22, color: $text, line_height: 1.6 } }
+      - { id: feature-4, type: text, z: 30, x: 1260, y: 690, width: 540, height: 0, content: { type: plain, value: "→ Pre-built ERP connectors" }, style: { font_family: $body, font_size: 22, color: $text, line_height: 1.6 } }
+      - { id: counter, type: text, z: 40, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "05 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 6 · Traction ──────────────────────────────────────
+  - id: traction
+    label: Traction
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "05 · TRACTION" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "$3.4M ARR · 142% YoY net retention." }, style: { font_family: "Playfair Display", font_size: 84, font_weight: 700, color: $text, line_height: 1.04, letter_spacing: -0.02 } }
+      - { id: chart-card, type: rect, z: 20, x: 120, y: 360, width: 1180, height: 560, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: chart-label, type: text, z: 21, x: 160, y: 400, width: 600, height: 0, content: { type: plain, value: "MRR · Q1-2025 → Q1-2026" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: chart-axis-y, type: rect, z: 22, x: 200, y: 460, width: 1, height: 380, fill: { type: solid, color: "$border" } }
+      - { id: chart-axis-x, type: rect, z: 22, x: 200, y: 840, width: 1060, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: chart-grid-1, type: rect, z: 22, x: 200, y: 560, width: 1060, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: chart-grid-2, type: rect, z: 22, x: 200, y: 660, width: 1060, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: chart-grid-3, type: rect, z: 22, x: 200, y: 760, width: 1060, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: chart-line, type: polyline, z: 30, points: "240,820 360,790 480,750 600,700 720,640 840,580 960,510 1080,440 1200,360", stroke: { color: "$primary", width: 4 }, fill: { type: solid, color: "transparent" } }
+      - { id: chart-dot-1, type: circle, z: 31, cx: 240, cy: 820, rx: 6, ry: 6, fill: { type: solid, color: "$primary" } }
+      - { id: chart-dot-2, type: circle, z: 31, cx: 480, cy: 750, rx: 6, ry: 6, fill: { type: solid, color: "$primary" } }
+      - { id: chart-dot-3, type: circle, z: 31, cx: 720, cy: 640, rx: 6, ry: 6, fill: { type: solid, color: "$primary" } }
+      - { id: chart-dot-4, type: circle, z: 31, cx: 960, cy: 510, rx: 6, ry: 6, fill: { type: solid, color: "$primary" } }
+      - { id: chart-dot-5, type: circle, z: 31, cx: 1200, cy: 360, rx: 8, ry: 8, fill: { type: solid, color: "$secondary" } }
+      - { id: chart-label-end, type: text, z: 32, x: 1140, y: 320, width: 200, height: 0, content: { type: plain, value: "$284K MRR" }, style: { font_family: $heading, font_size: 20, font_weight: 800, color: $secondary } }
+      - { id: stat-1-label, type: text, z: 40, x: 1360, y: 400, width: 460, height: 0, content: { type: plain, value: "PAID CUSTOMERS" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: stat-1-value, type: text, z: 41, x: 1360, y: 430, width: 460, height: 0, content: { type: plain, value: "47" }, style: { font_family: "Playfair Display", font_size: 88, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: stat-2-label, type: text, z: 40, x: 1360, y: 580, width: 460, height: 0, content: { type: plain, value: "NET RETENTION" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: stat-2-value, type: text, z: 41, x: 1360, y: 610, width: 460, height: 0, content: { type: plain, value: "142%" }, style: { font_family: "Playfair Display", font_size: 88, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: stat-3-label, type: text, z: 40, x: 1360, y: 760, width: 460, height: 0, content: { type: plain, value: "GROSS MARGIN" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: stat-3-value, type: text, z: 41, x: 1360, y: 790, width: 460, height: 0, content: { type: plain, value: "78%" }, style: { font_family: "Playfair Display", font_size: 88, font_weight: 800, color: $secondary, line_height: 1 } }
+      - { id: counter, type: text, z: 50, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "06 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 7 · Business Model ────────────────────────────────
+  - id: business-model
+    label: Business Model
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "06 · BUSINESS MODEL" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "Per-camera SaaS · ~$680/mo per warehouse." }, style: { font_family: "Playfair Display", font_size: 72, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: card-a, type: rect, z: 20, x: 120, y: 380, width: 540, height: 540, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: card-a-label, type: text, z: 21, x: 160, y: 420, width: 460, height: 0, content: { type: plain, value: "PRICING" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: card-a-value, type: text, z: 22, x: 160, y: 460, width: 460, height: 0, content: { type: plain, value: "$120/cam/mo" }, style: { font_family: "Playfair Display", font_size: 44, font_weight: 800, color: $primary, line_height: 1.1 } }
+      - { id: card-a-body, type: text, z: 23, x: 160, y: 560, width: 460, height: 0, content: { type: plain, value: "Average warehouse runs 5-7 cameras. 12-month contracts auto-renew." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: card-b, type: rect, z: 20, x: 690, y: 380, width: 540, height: 540, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: card-b-label, type: text, z: 21, x: 730, y: 420, width: 460, height: 0, content: { type: plain, value: "ACV" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 1, text_transform: uppercase } }
+      - { id: card-b-value, type: text, z: 22, x: 730, y: 460, width: 460, height: 0, content: { type: plain, value: "$8,160" }, style: { font_family: "Playfair Display", font_size: 44, font_weight: 800, color: $primary, line_height: 1.1 } }
+      - { id: card-b-body, type: text, z: 23, x: 730, y: 560, width: 460, height: 0, content: { type: plain, value: "Includes onboarding, model fine-tuning, and 24/7 support. Expansion: +$1,200 ACV/year." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: card-c, type: rect, z: 20, x: 1260, y: 380, width: 540, height: 540, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: card-c-label, type: text, z: 21, x: 1300, y: 420, width: 460, height: 0, content: { type: plain, value: "PAYBACK" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: card-c-value, type: text, z: 22, x: 1300, y: 460, width: 460, height: 0, content: { type: plain, value: "8 months" }, style: { font_family: "Playfair Display", font_size: 44, font_weight: 800, color: $text, line_height: 1.1 } }
+      - { id: card-c-body, type: text, z: 23, x: 1300, y: 560, width: 460, height: 0, content: { type: plain, value: "CAC $5,400 → recovered in under a year. LTV/CAC ratio 4.8×, healthy for our segment." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: counter, type: text, z: 30, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "07 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 8 · Competition ───────────────────────────────────
+  - id: competition
+    label: Competition
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "07 · COMPETITION" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "Faster to deploy. Lower-cost. Open API." }, style: { font_family: "Playfair Display", font_size: 72, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: table-bg, type: rect, z: 20, x: 120, y: 360, width: 1680, height: 540, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: th-feature, type: text, z: 30, x: 160, y: 400, width: 400, height: 0, content: { type: plain, value: "" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $text_muted } }
+      - { id: th-us, type: text, z: 30, x: 580, y: 400, width: 240, height: 0, content: { type: plain, value: "Northwind" }, style: { font_family: $heading, font_size: 18, font_weight: 800, color: $primary, text_align: center } }
+      - { id: th-c1, type: text, z: 30, x: 860, y: 400, width: 240, height: 0, content: { type: plain, value: "Legacy WMS" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $text_muted, text_align: center } }
+      - { id: th-c2, type: text, z: 30, x: 1140, y: 400, width: 240, height: 0, content: { type: plain, value: "Lidar Vendor" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $text_muted, text_align: center } }
+      - { id: th-c3, type: text, z: 30, x: 1420, y: 400, width: 240, height: 0, content: { type: plain, value: "DIY Spreadsheet" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $text_muted, text_align: center } }
+      - { id: row-divider-1, type: rect, z: 31, x: 160, y: 450, width: 1600, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r1-l, type: text, z: 32, x: 160, y: 480, width: 400, height: 0, content: { type: plain, value: "Deploy time" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r1-us, type: text, z: 32, x: 580, y: 480, width: 240, height: 0, content: { type: plain, value: "48 hours" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, text_align: center } }
+      - { id: r1-c1, type: text, z: 32, x: 860, y: 480, width: 240, height: 0, content: { type: plain, value: "9-14 months" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r1-c2, type: text, z: 32, x: 1140, y: 480, width: 240, height: 0, content: { type: plain, value: "6-8 months" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r1-c3, type: text, z: 32, x: 1420, y: 480, width: 240, height: 0, content: { type: plain, value: "Already in use" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: row-divider-2, type: rect, z: 31, x: 160, y: 540, width: 1600, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r2-l, type: text, z: 32, x: 160, y: 570, width: 400, height: 0, content: { type: plain, value: "Setup cost" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r2-us, type: text, z: 32, x: 580, y: 570, width: 240, height: 0, content: { type: plain, value: "$3,500" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, text_align: center } }
+      - { id: r2-c1, type: text, z: 32, x: 860, y: 570, width: 240, height: 0, content: { type: plain, value: "$280K+" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r2-c2, type: text, z: 32, x: 1140, y: 570, width: 240, height: 0, content: { type: plain, value: "$180K+" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r2-c3, type: text, z: 32, x: 1420, y: 570, width: 240, height: 0, content: { type: plain, value: "$0" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: row-divider-3, type: rect, z: 31, x: 160, y: 630, width: 1600, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r3-l, type: text, z: 32, x: 160, y: 660, width: 400, height: 0, content: { type: plain, value: "Accuracy" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r3-us, type: text, z: 32, x: 580, y: 660, width: 240, height: 0, content: { type: plain, value: "99.1%" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, text_align: center } }
+      - { id: r3-c1, type: text, z: 32, x: 860, y: 660, width: 240, height: 0, content: { type: plain, value: "—" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r3-c2, type: text, z: 32, x: 1140, y: 660, width: 240, height: 0, content: { type: plain, value: "97.4%" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r3-c3, type: text, z: 32, x: 1420, y: 660, width: 240, height: 0, content: { type: plain, value: "~95%" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: row-divider-4, type: rect, z: 31, x: 160, y: 720, width: 1600, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r4-l, type: text, z: 32, x: 160, y: 750, width: 400, height: 0, content: { type: plain, value: "Open API" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r4-us, type: text, z: 32, x: 580, y: 750, width: 240, height: 0, content: { type: plain, value: "✓" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: $primary, text_align: center } }
+      - { id: r4-c1, type: text, z: 32, x: 860, y: 750, width: 240, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $body, font_size: 22, color: $text_muted, text_align: center } }
+      - { id: r4-c2, type: text, z: 32, x: 1140, y: 750, width: 240, height: 0, content: { type: plain, value: "Partial" }, style: { font_family: $body, font_size: 16, color: $text_muted, text_align: center } }
+      - { id: r4-c3, type: text, z: 32, x: 1420, y: 750, width: 240, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $body, font_size: 22, color: $text_muted, text_align: center } }
+      - { id: row-divider-5, type: rect, z: 31, x: 160, y: 810, width: 1600, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r5-l, type: text, z: 32, x: 160, y: 840, width: 400, height: 0, content: { type: plain, value: "No new hardware" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: r5-us, type: text, z: 32, x: 580, y: 840, width: 240, height: 0, content: { type: plain, value: "✓" }, style: { font_family: $body, font_size: 22, font_weight: 700, color: $primary, text_align: center } }
+      - { id: r5-c1, type: text, z: 32, x: 860, y: 840, width: 240, height: 0, content: { type: plain, value: "✓" }, style: { font_family: $body, font_size: 22, color: $text_muted, text_align: center } }
+      - { id: r5-c2, type: text, z: 32, x: 1140, y: 840, width: 240, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $body, font_size: 22, color: $text_muted, text_align: center } }
+      - { id: r5-c3, type: text, z: 32, x: 1420, y: 840, width: 240, height: 0, content: { type: plain, value: "✓" }, style: { font_family: $body, font_size: 22, color: $text_muted, text_align: center } }
+      - { id: counter, type: text, z: 50, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "08 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 9 · Team ──────────────────────────────────────────
+  - id: team
+    label: Team
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "08 · TEAM" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "Operators from Flexport, Stripe, and Locus Robotics." }, style: { font_family: "Playfair Display", font_size: 68, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: p1-card, type: rect, z: 20, x: 120, y: 380, width: 400, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: p1-avatar, type: circle, z: 21, cx: 320, cy: 480, rx: 70, ry: 70, fill: { type: solid, color: "$primary" } }
+      - { id: p1-initial, type: text, z: 22, x: 240, y: 444, width: 160, height: 0, content: { type: plain, value: "MR" }, style: { font_family: $heading, font_size: 48, font_weight: 800, color: "#FFFFFF", text_align: center } }
+      - { id: p1-name, type: text, z: 23, x: 140, y: 600, width: 360, height: 0, content: { type: plain, value: "Maya Reyes" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center } }
+      - { id: p1-role, type: text, z: 24, x: 140, y: 640, width: 360, height: 0, content: { type: plain, value: "CEO · Co-founder" }, style: { font_family: $body, font_size: 16, color: $primary, text_align: center } }
+      - { id: p1-bio, type: text, z: 25, x: 140, y: 700, width: 360, height: 0, content: { type: plain, value: "Previously Head of Ops at Flexport. MIT Sloan. Shipped logistics products in 19 countries." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.6 } }
+      - { id: p2-card, type: rect, z: 20, x: 540, y: 380, width: 400, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: p2-avatar, type: circle, z: 21, cx: 740, cy: 480, rx: 70, ry: 70, fill: { type: solid, color: "$secondary" } }
+      - { id: p2-initial, type: text, z: 22, x: 660, y: 444, width: 160, height: 0, content: { type: plain, value: "DL" }, style: { font_family: $heading, font_size: 48, font_weight: 800, color: "#FFFFFF", text_align: center } }
+      - { id: p2-name, type: text, z: 23, x: 560, y: 600, width: 360, height: 0, content: { type: plain, value: "David Lin" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center } }
+      - { id: p2-role, type: text, z: 24, x: 560, y: 640, width: 360, height: 0, content: { type: plain, value: "CTO · Co-founder" }, style: { font_family: $body, font_size: 16, color: $primary, text_align: center } }
+      - { id: p2-bio, type: text, z: 25, x: 560, y: 700, width: 360, height: 0, content: { type: plain, value: "Ex-Stripe ML lead. Built fraud-detection systems at $200B+ scale. Stanford PhD, computer vision." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.6 } }
+      - { id: p3-card, type: rect, z: 20, x: 960, y: 380, width: 400, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: p3-avatar, type: circle, z: 21, cx: 1160, cy: 480, rx: 70, ry: 70, fill: { type: solid, color: "$primary" } }
+      - { id: p3-initial, type: text, z: 22, x: 1080, y: 444, width: 160, height: 0, content: { type: plain, value: "PS" }, style: { font_family: $heading, font_size: 48, font_weight: 800, color: "#FFFFFF", text_align: center } }
+      - { id: p3-name, type: text, z: 23, x: 980, y: 600, width: 360, height: 0, content: { type: plain, value: "Priya Sharma" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center } }
+      - { id: p3-role, type: text, z: 24, x: 980, y: 640, width: 360, height: 0, content: { type: plain, value: "VP Engineering" }, style: { font_family: $body, font_size: 16, color: $primary, text_align: center } }
+      - { id: p3-bio, type: text, z: 25, x: 980, y: 700, width: 360, height: 0, content: { type: plain, value: "Locus Robotics, leading the navigation stack. Authored 11 patents on warehouse autonomy." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.6 } }
+      - { id: p4-card, type: rect, z: 20, x: 1380, y: 380, width: 400, height: 520, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: p4-avatar, type: circle, z: 21, cx: 1580, cy: 480, rx: 70, ry: 70, fill: { type: solid, color: "$secondary" } }
+      - { id: p4-initial, type: text, z: 22, x: 1500, y: 444, width: 160, height: 0, content: { type: plain, value: "AJ" }, style: { font_family: $heading, font_size: 48, font_weight: 800, color: "#FFFFFF", text_align: center } }
+      - { id: p4-name, type: text, z: 23, x: 1400, y: 600, width: 360, height: 0, content: { type: plain, value: "Alex Johansson" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, text_align: center } }
+      - { id: p4-role, type: text, z: 24, x: 1400, y: 640, width: 360, height: 0, content: { type: plain, value: "Head of GTM" }, style: { font_family: $body, font_size: 16, color: $primary, text_align: center } }
+      - { id: p4-bio, type: text, z: 25, x: 1400, y: 700, width: 360, height: 0, content: { type: plain, value: "Closed $40M+ in enterprise contracts at Samsara. Loves a good pipeline review." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.6 } }
+      - { id: counter, type: text, z: 50, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "09 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+  # ── Slide 10 · The Ask ──────────────────────────────────────
+  - id: ask
+    label: The Ask
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1920, height: 1080, fill: { type: solid, color: "$background" } }
+      - { id: glow, type: rect, z: 1, x: 120, y: 290, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: eyebrow, type: text, z: 10, x: 120, y: 120, width: 1680, height: 0, content: { type: plain, value: "09 · THE ASK" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 120, y: 170, width: 1680, height: 0, content: { type: plain, value: "Raising $12M Series A." }, style: { font_family: "Playfair Display", font_size: 144, font_weight: 800, color: $text, line_height: 1.0, letter_spacing: -0.02 } }
+      - { id: subtitle, type: text, z: 12, x: 120, y: 320, width: 1100, height: 0, content: { type: plain, value: "18-month runway to $14M ARR and Series B readiness." }, style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.4 } }
+      - { id: use-label, type: text, z: 13, x: 120, y: 480, width: 600, height: 0, content: { type: plain, value: "USE OF FUNDS" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: u1-bar-bg, type: rect, z: 20, x: 120, y: 540, width: 1100, height: 14, radius: 7, fill: { type: solid, color: "$surface" } }
+      - { id: u1-bar, type: rect, z: 21, x: 120, y: 540, width: 506, height: 14, radius: 7, fill: { type: solid, color: "$primary" } }
+      - { id: u1-label, type: text, z: 22, x: 120, y: 568, width: 1100, height: 0, content: { type: plain, value: "Engineering & ML · 46% · $5.5M" }, style: { font_family: $body, font_size: 18, color: $text } }
+      - { id: u2-bar-bg, type: rect, z: 20, x: 120, y: 620, width: 1100, height: 14, radius: 7, fill: { type: solid, color: "$surface" } }
+      - { id: u2-bar, type: rect, z: 21, x: 120, y: 620, width: 330, height: 14, radius: 7, fill: { type: solid, color: "$secondary" } }
+      - { id: u2-label, type: text, z: 22, x: 120, y: 648, width: 1100, height: 0, content: { type: plain, value: "GTM & Sales · 30% · $3.6M" }, style: { font_family: $body, font_size: 18, color: $text } }
+      - { id: u3-bar-bg, type: rect, z: 20, x: 120, y: 700, width: 1100, height: 14, radius: 7, fill: { type: solid, color: "$surface" } }
+      - { id: u3-bar, type: rect, z: 21, x: 120, y: 700, width: 165, height: 14, radius: 7, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+      - { id: u3-label, type: text, z: 22, x: 120, y: 728, width: 1100, height: 0, content: { type: plain, value: "Customer Success · 15% · $1.8M" }, style: { font_family: $body, font_size: 18, color: $text } }
+      - { id: u4-bar-bg, type: rect, z: 20, x: 120, y: 780, width: 1100, height: 14, radius: 7, fill: { type: solid, color: "$surface" } }
+      - { id: u4-bar, type: rect, z: 21, x: 120, y: 780, width: 99, height: 14, radius: 7, fill: { type: solid, color: "$secondary" }, opacity: 0.7 }
+      - { id: u4-label, type: text, z: 22, x: 120, y: 808, width: 1100, height: 0, content: { type: plain, value: "Ops & Reserve · 9% · $1.1M" }, style: { font_family: $body, font_size: 18, color: $text } }
+      - { id: cta-card, type: rect, z: 30, x: 1320, y: 480, width: 500, height: 380, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: cta-label, type: text, z: 31, x: 1360, y: 520, width: 420, height: 0, content: { type: plain, value: "GET IN TOUCH" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 1, text_transform: uppercase } }
+      - { id: cta-name, type: text, z: 32, x: 1360, y: 570, width: 420, height: 0, content: { type: plain, value: "Maya Reyes · CEO" }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text } }
+      - { id: cta-email, type: text, z: 33, x: 1360, y: 620, width: 420, height: 0, content: { type: plain, value: "maya@northwind.co" }, style: { font_family: $mono, font_size: 20, color: $primary, line_height: 1.6 } }
+      - { id: cta-phone, type: text, z: 34, x: 1360, y: 660, width: 420, height: 0, content: { type: plain, value: "+1 415 555 0142" }, style: { font_family: $mono, font_size: 20, color: $text_muted, line_height: 1.6 } }
+      - { id: cta-site, type: text, z: 35, x: 1360, y: 760, width: 420, height: 0, content: { type: plain, value: "northwind.co/investors" }, style: { font_family: $body, font_size: 16, font_weight: 600, color: $text } }
+      - { id: counter, type: text, z: 40, x: 1740, y: 960, width: 100, height: 0, content: { type: plain, value: "10 / 10" }, style: { font_family: $mono, font_size: 16, color: $text_muted, text_align: right } }
+
+slots:
+  - { id: company_name,   path: "pages[0].layers[4].content.value",  type: text, hint: "Company name",                 default: "Northwind" }
+  - { id: tagline,        path: "pages[0].layers[5].content.value",  type: text, hint: "One-line tagline",             default: "Logistics automation for the modern warehouse." }
+  - { id: founder_names,  path: "pages[8].layers[7].content.value",  type: text, hint: "Lead founder name",            default: "Maya Reyes" }
+  - { id: problem_title,  path: "pages[1].layers[2].content.value",  type: text, hint: "Problem headline",             default: "Warehouses still run on spreadsheets." }
+  - { id: solution_title, path: "pages[2].layers[2].content.value",  type: text, hint: "Solution headline",            default: "Plug-in computer vision. Deploys in 48 hours." }
+  - { id: tam,            path: "pages[3].layers[5].content.value",  type: text, hint: "Total addressable market",     default: "$58B" }
+  - { id: sam,            path: "pages[3].layers[9].content.value",  type: text, hint: "Serviceable market",           default: "$11B" }
+  - { id: som,            path: "pages[3].layers[13].content.value", type: text, hint: "Reachable market",             default: "$420M" }
+  - { id: ask_amount,     path: "pages[9].layers[3].content.value",  type: text, hint: "Round size headline",          default: "Raising $12M Series A." }
+  - { id: contact_email,  path: "pages[9].layers[20].content.value", type: text, hint: "Contact email",                default: "maya@northwind.co" }

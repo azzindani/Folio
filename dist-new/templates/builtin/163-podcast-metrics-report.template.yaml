@@ -1,0 +1,286 @@
+_protocol: template/v1
+
+# Podcast channel analytics — show eyebrow, hero, 5 KPIs (downloads, subs,
+# avg listens, completion %, sponsor CPM), weekly downloads trend, top
+# episodes table, listener demographics bars, sponsor performance table.
+meta:
+  id: tmpl-podcast-metrics-report
+  name: Podcast · Channel Analytics
+  type: report
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [report, podcast, audio, analytics, sponsorship, interactive]
+  description: "Podcast channel report: downloads, subscriber base, episode performance, demographics, sponsor CPM."
+
+document:
+  width: 1280
+  height: 2300
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: downloads_trend
+        type: inline
+        rows:
+          - { week: W01, downloads: 184200, unique_listeners: 96400 }
+          - { week: W02, downloads: 198400, unique_listeners: 102800 }
+          - { week: W03, downloads: 212600, unique_listeners: 108200 }
+          - { week: W04, downloads: 224800, unique_listeners: 114600 }
+          - { week: W05, downloads: 238400, unique_listeners: 121400 }
+          - { week: W06, downloads: 256200, unique_listeners: 128600 }
+          - { week: W07, downloads: 268400, unique_listeners: 134200 }
+          - { week: W08, downloads: 284600, unique_listeners: 142800 }
+          - { week: W09, downloads: 296800, unique_listeners: 148600 }
+          - { week: W10, downloads: 312400, unique_listeners: 156200 }
+          - { week: W11, downloads: 328600, unique_listeners: 162800 }
+          - { week: W12, downloads: 346200, unique_listeners: 172400 }
+      - id: top_episodes
+        type: inline
+        rows:
+          - { episode: "Ep 142: The Future of AI Coding Agents",        downloads: 284600, completion_pct: 78, rating: 4.8, release_date: "2026-03-04" }
+          - { episode: "Ep 138: Interview with Patrick Collison",       downloads: 268400, completion_pct: 84, rating: 4.9, release_date: "2026-02-18" }
+          - { episode: "Ep 145: How Notion Scaled to 100M Users",       downloads: 246200, completion_pct: 72, rating: 4.6, release_date: "2026-03-25" }
+          - { episode: "Ep 140: The State of Open Source 2026",         downloads: 234800, completion_pct: 68, rating: 4.5, release_date: "2026-02-25" }
+          - { episode: "Ep 147: Founder Stories — Anthropic",           downloads: 312400, completion_pct: 82, rating: 4.9, release_date: "2026-04-08" }
+          - { episode: "Ep 136: WebAssembly Goes Mainstream",           downloads: 198400, completion_pct: 64, rating: 4.3, release_date: "2026-02-11" }
+          - { episode: "Ep 144: Inside Vercel's Edge Network",          downloads: 224600, completion_pct: 74, rating: 4.7, release_date: "2026-03-18" }
+          - { episode: "Ep 141: Why TypeScript Won",                    downloads: 256800, completion_pct: 76, rating: 4.7, release_date: "2026-03-01" }
+          - { episode: "Ep 143: The Rise of Local-First Apps",          downloads: 218400, completion_pct: 70, rating: 4.5, release_date: "2026-03-11" }
+          - { episode: "Ep 146: Building Linear — A Conversation",      downloads: 278200, completion_pct: 80, rating: 4.8, release_date: "2026-04-01" }
+      - id: demographics
+        type: inline
+        rows:
+          - { segment: "18-24",         share_pct: 14, primary_region: "North America" }
+          - { segment: "25-34",         share_pct: 38, primary_region: "North America" }
+          - { segment: "35-44",         share_pct: 28, primary_region: "Europe"        }
+          - { segment: "45-54",         share_pct: 14, primary_region: "North America" }
+          - { segment: "55+",           share_pct:  6, primary_region: "Europe"        }
+      - id: sponsors
+        type: inline
+        rows:
+          - { sponsor: "Linear",           episodes: 8, cpm: 42, clicks:  8420, conversion_pct: 3.2 }
+          - { sponsor: "Vercel",           episodes: 6, cpm: 48, clicks:  6840, conversion_pct: 4.1 }
+          - { sponsor: "Stripe",           episodes: 4, cpm: 52, clicks:  5260, conversion_pct: 5.6 }
+          - { sponsor: "Raycast",          episodes: 5, cpm: 38, clicks:  4180, conversion_pct: 2.8 }
+          - { sponsor: "Sentry",           episodes: 7, cpm: 36, clicks:  5840, conversion_pct: 3.4 }
+          - { sponsor: "Cloudflare",       episodes: 3, cpm: 44, clicks:  3240, conversion_pct: 3.8 }
+
+pages:
+  - id: analytics
+    label: Analytics
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "THE CHANGELOG · Q1 2026 · CHANNEL ANALYTICS"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 32
+        font_weight: 700
+        line_height: 1.15
+        content: "**Channel Analytics — Q1 2026**\n*Downloads, subscriber growth, episode performance, and listener demographics.*"
+
+      - id: kpi-downloads
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Total Downloads
+        value: 3284600
+        format: number
+        delta: 24.8
+        delta_format: percent
+        sparkline_data: downloads_trend
+        sparkline_field: downloads
+        sparkline_color: "$primary"
+
+      - id: kpi-subs
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Subscribers
+        value: 482400
+        format: number
+        delta: 18.2
+        delta_format: percent
+
+      - id: kpi-listens
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Avg Episode Listens
+        value: 142800
+        format: number
+        delta: 12.6
+        delta_format: percent
+
+      - id: kpi-completion
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: Listen-Through %
+        value: 74.2
+        format: percent
+        delta: 3.8
+        delta_format: percent
+
+      - id: kpi-cpm
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Sponsor CPM
+        value: 42
+        format: currency
+        currency: USD
+        delta: 14.2
+        delta_format: percent
+
+      - id: section-trend
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Weekly Downloads — Last 12 Weeks**"
+
+      - id: chart-trend
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 380
+        chart_type: line
+        data_ref: downloads_trend
+        x_field: week
+        y_field: downloads
+        title: Total Downloads vs Unique Listeners
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-episodes
+        type: rich_text
+        x: 60
+        y: 880
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top 10 Episodes — Quarterly**"
+
+      - id: tbl-episodes
+        type: interactive_table
+        x: 60
+        y: 940
+        width: 1160
+        height: 540
+        data_ref: top_episodes
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: episode,         title: Episode,         width: 460, sortable: true }
+          - { field: downloads,       title: Downloads,       width: 180, sortable: true, formatter: number,  align: right }
+          - { field: completion_pct,  title: Completion %,    width: 180, sortable: true, formatter: percent, align: right }
+          - { field: rating,          title: Rating,          width: 140, sortable: true, formatter: number,  align: right }
+          - { field: release_date,    title: Released,        width: 200, sortable: true }
+
+      - id: section-demographics
+        type: rich_text
+        x: 60
+        y: 1520
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Listener Demographics — Age Group**"
+
+      - id: chart-demographics
+        type: interactive_chart
+        x: 60
+        y: 1580
+        width: 1160
+        height: 320
+        chart_type: bar
+        data_ref: demographics
+        x_field: segment
+        y_field: share_pct
+        title: Audience Share by Age Bracket (%)
+        legend: false
+        grid: true
+        animate: true
+
+      - id: section-sponsors
+        type: rich_text
+        x: 60
+        y: 1940
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Sponsor Performance — Active Partners**"
+
+      - id: tbl-sponsors
+        type: interactive_table
+        x: 60
+        y: 2000
+        width: 1160
+        height: 280
+        data_ref: sponsors
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: sponsor,         title: Sponsor,         width: 280, sortable: true, formatter: badge }
+          - { field: episodes,        title: Episodes,        width: 180, sortable: true, formatter: number,  align: right }
+          - { field: cpm,             title: CPM USD,         width: 180, sortable: true, formatter: currency, align: right }
+          - { field: clicks,          title: Clicks,          width: 200, sortable: true, formatter: number,  align: right }
+          - { field: conversion_pct,  title: Conversion %,    width: 240, sortable: true, formatter: percent, align: right }
+
+slots:
+  - { id: report_title,           path: "pages[0].layers[1].content",  type: text, hint: "Report title",          default: "**Channel Analytics — Q1 2026**\n*Downloads, subscriber growth, episode performance, listener mix, and sponsor results.*" }
+  - { id: report_eyebrow,         path: "pages[0].layers[0].content",  type: text, hint: "Show eyebrow",          default: "THE CHANGELOG · Q1 2026 · CHANNEL ANALYTICS" }
+  - { id: trend_section,          path: "pages[0].layers[7].content",  type: text, hint: "Trend heading",         default: "**Weekly Downloads — Last 12 Weeks**" }
+  - { id: episodes_section,       path: "pages[0].layers[9].content",  type: text, hint: "Episodes heading",      default: "**Top 10 Episodes — Quarterly**" }
+  - { id: demographics_section,   path: "pages[0].layers[11].content", type: text, hint: "Demographics heading",  default: "**Listener Demographics — Age Group**" }
+  - { id: sponsors_section,       path: "pages[0].layers[13].content", type: text, hint: "Sponsors heading",      default: "**Sponsor Performance — Active Partners**" }

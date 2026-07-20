@@ -1,0 +1,348 @@
+_protocol: template/v1
+
+# Modern trading card — 2.5×3.5 ratio portrait (1050×1500).
+# Character name banner, holo image placeholder, HP/ATK/DEF stat row,
+# 2 abilities with descriptions, rarity stars, card number.
+meta:
+  id: tmpl-trading-card-modern
+  name: Trading Card — Modern
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, trading, collectible, gaming, synthwave]
+  description: "Modern collectible trading card with character image, stats row, abilities, rarity and card number."
+
+document:
+  width: 1050
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1050
+    height: 1500
+    radius: 40
+    fill: { type: solid, color: $background }
+  - id: outer-border
+    type: rect
+    z: 1
+    x: 24
+    y: 24
+    width: 1002
+    height: 1452
+    radius: 32
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+
+  - id: name-banner
+    type: rect
+    z: 5
+    x: 60
+    y: 60
+    width: 930
+    height: 90
+    radius: 14
+    fill: { type: solid, color: $primary }
+  - id: name
+    type: text
+    z: 6
+    x: 90
+    y: 86
+    width: 870
+    height: 0
+    content: { type: plain, value: "NEON HUNTER" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 900
+      color: "#FFFFFF"
+      letter_spacing: 0.12
+      text_transform: uppercase
+
+  - id: card-type
+    type: text
+    z: 7
+    x: 90
+    y: 138
+    width: 870
+    height: 0
+    content: { type: plain, value: "CYBER · LEGENDARY" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: "#FFFFFF"
+      letter_spacing: 0.4
+      text_align: right
+      text_transform: uppercase
+
+  - id: image-frame
+    type: rect
+    z: 10
+    x: 60
+    y: 180
+    width: 930
+    height: 680
+    radius: 18
+    fill: { type: solid, color: "#2A0F4E" }
+    stroke: { color: "$secondary", width: 2 }
+
+  - id: image-hint
+    type: text
+    z: 11
+    x: 60
+    y: 500
+    width: 930
+    height: 0
+    opacity: 0.3
+    content: { type: plain, value: "Character art" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-row-bg
+    type: rect
+    z: 15
+    x: 60
+    y: 890
+    width: 930
+    height: 100
+    radius: 14
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: stat-hp-label
+    type: text
+    z: 16
+    x: 60
+    y: 910
+    width: 310
+    height: 0
+    content: { type: plain, value: "HP" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$secondary"
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-hp-value
+    type: text
+    z: 17
+    x: 60
+    y: 935
+    width: 310
+    height: 0
+    content: { type: plain, value: "120" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 900
+      color: "$text"
+      text_align: center
+
+  - id: stat-atk-label
+    type: text
+    z: 18
+    x: 370
+    y: 910
+    width: 310
+    height: 0
+    content: { type: plain, value: "ATK" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-atk-value
+    type: text
+    z: 19
+    x: 370
+    y: 935
+    width: 310
+    height: 0
+    content: { type: plain, value: "85" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 900
+      color: "$text"
+      text_align: center
+
+  - id: stat-def-label
+    type: text
+    z: 20
+    x: 680
+    y: 910
+    width: 310
+    height: 0
+    content: { type: plain, value: "DEF" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$secondary"
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-def-value
+    type: text
+    z: 21
+    x: 680
+    y: 935
+    width: 310
+    height: 0
+    content: { type: plain, value: "70" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 900
+      color: "$text"
+      text_align: center
+
+  - id: ability-1-name
+    type: text
+    z: 25
+    x: 60
+    y: 1020
+    width: 930
+    height: 0
+    content: { type: plain, value: "▸ PULSE BLADE" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.18
+
+  - id: ability-1-desc
+    type: text
+    z: 26
+    x: 60
+    y: 1058
+    width: 930
+    height: 0
+    content: { type: plain, value: "Deal 40 damage. If target is stunned, ignore 50% of their defense." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text"
+      line_height: 1.45
+
+  - id: ability-2-name
+    type: text
+    z: 27
+    x: 60
+    y: 1180
+    width: 930
+    height: 0
+    content: { type: plain, value: "▸ NEURAL OVERRIDE" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$secondary"
+      letter_spacing: 0.18
+
+  - id: ability-2-desc
+    type: text
+    z: 28
+    x: 60
+    y: 1218
+    width: 930
+    height: 0
+    content: { type: plain, value: "Discard one card to take control of an opposing unit until end of turn." }
+    style:
+      font_family: $body
+      font_size: 16
+      color: "$text"
+      line_height: 1.45
+
+  - id: footer-rule
+    type: rect
+    z: 35
+    x: 60
+    y: 1380
+    width: 930
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: rarity
+    type: text
+    z: 36
+    x: 60
+    y: 1400
+    width: 470
+    height: 0
+    content: { type: plain, value: "★ ★ ★ ★ ★" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$primary"
+      letter_spacing: 0.2
+
+  - id: card-number
+    type: text
+    z: 37
+    x: 520
+    y: 1410
+    width: 470
+    height: 0
+    content: { type: plain, value: "047 / 220" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 600
+      color: "$text_muted"
+      letter_spacing: 0.2
+      text_align: right
+
+  - id: set-code
+    type: text
+    z: 38
+    x: 60
+    y: 1445
+    width: 930
+    height: 0
+    content: { type: plain, value: "NEO-RUNNER · CORE SET · ©2026 FOLIO TCG" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 600
+      color: "$text_muted"
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: character_name, path: "layers[3].content.value",  type: text, hint: "Character name",      default: "NEON HUNTER" }
+  - { id: hp,             path: "layers[9].content.value",  type: text, hint: "HP value",            default: "120" }
+  - { id: atk,            path: "layers[11].content.value", type: text, hint: "ATK value",           default: "85" }
+  - { id: def,            path: "layers[13].content.value", type: text, hint: "DEF value",           default: "70" }
+  - { id: ability_1,      path: "layers[14].content.value", type: text, hint: "Ability 1 name",      default: "▸ PULSE BLADE" }
+  - { id: ability_1_desc, path: "layers[15].content.value", type: text, hint: "Ability 1 description", default: "Deal 40 damage. If target is stunned, ignore 50% of their defense." }
+  - { id: ability_2,      path: "layers[16].content.value", type: text, hint: "Ability 2 name",      default: "▸ NEURAL OVERRIDE" }
+  - { id: ability_2_desc, path: "layers[17].content.value", type: text, hint: "Ability 2 description", default: "Discard one card to take control of an opposing unit until end of turn." }
+  - { id: card_number,    path: "layers[20].content.value", type: text, hint: "Card number",         default: "047 / 220" }

@@ -125,7 +125,7 @@ export function generateReport(args: {
   name: string;
   layout?: 'paged' | 'scroll' | 'tabs' | 'sidebar' | 'flow';
   nav_type?: 'sidebar' | 'topbar' | 'tabs' | 'dots';
-  pages: { id?: string; label: string }[];
+  pages?: { id?: string; label: string }[];
   width?: number;
   height?: number;
   data_sources?: { id: string; type: 'inline' | 'json' | 'csv'; path?: string; rows?: Record<string, unknown>[] }[];
@@ -144,9 +144,18 @@ export function generateReport(args: {
   const dPath = path.join(pDir, 'designs', `${args.name.toLowerCase().replace(/\s+/g, '-')}.design.yaml`);
   fs.mkdirSync(path.dirname(dPath), { recursive: true });
 
-  const pages = args.pages.map((p, i) => ({
+  // `pages` is optional in the tool schema, and omitting it used to reach
+  // `args.pages.map` and throw a raw TypeError — a crash for a caller who
+  // followed the schema exactly. One page is also the RIGHT default for the
+  // scrolling layouts: a flow or scroll report is a single continuous
+  // document, so asking for a page list to describe it is noise.
+  const requested = Array.isArray(args.pages) ? args.pages.filter(Boolean) : [];
+  const pages = (requested.length > 0
+    ? requested
+    : [{ id: 'page_1', label: args.name }]
+  ).map((p, i) => ({
     id: p.id ?? `page_${i + 1}`,
-    label: p.label,
+    label: p.label ?? `Page ${i + 1}`,
     layers: [] as unknown[],
   }));
 

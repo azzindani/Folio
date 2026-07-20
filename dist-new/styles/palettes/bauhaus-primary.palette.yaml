@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: bauhaus-primary
+name: Bauhaus Primary
+version: "1.0.0"
+tags: [bauhaus, modernist, geometric, primary, art-movement]
+description: "Pure primaries on white with chrome yellow accent — Mondrian-style modernist geometry."
+colors:
+  background: "#FFFFFF"
+  surface:    "#F5F5F2"
+  surface_2:  "#E8E8E4"
+  primary:    "#D62828"
+  secondary:  "#1D3FA8"
+  accent:     "#F2C200"
+  text:       "#0A0A0A"
+  text_muted: "#5C5C5C"
+  border:     "#1A1A1A"
+  success:    "#1F7A3A"
+  warning:    "#E08A00"
+  danger:     "#C81D1D"

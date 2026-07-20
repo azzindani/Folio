@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: 90s-grunge
+name: 90s Grunge
+version: "1.0.0"
+tags: [retro, 90s, grunge, flannel, alternative]
+description: "Flannel red and denim blue with olive and mocha — Seattle basement and thrift-store vintage."
+colors:
+  background: "#F0EAD8"
+  surface:    "#E2D8BE"
+  surface_2:  "#C9BC9A"
+  primary:    "#8C2A28"
+  secondary:  "#3A5878"
+  accent:     "#6A6A28"
+  text:       "#1F1A14"
+  text_muted: "#5A4A38"
+  border:     "#A89A78"
+  success:    "#5A7A38"
+  warning:    "#B07020"
+  danger:     "#8C2A28"

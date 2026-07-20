@@ -1,0 +1,264 @@
+_protocol: template/v1
+
+# Modern brutalist business card — 1050×600 horizontal, brutalist-mono theme.
+# Heavy oversized name (clipped feel), bold accent slash dividing the card,
+# contact stack in mono, no ornaments — pure typography drama.
+meta:
+  id: tmpl-business-card-modern
+  name: Business Card · Brutalist Modern
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, business, brutalist, modern, contact, print, mono]
+  description: "Brutalist modern business card with oversized name, accent slash, and mono contact stack."
+
+document:
+  width: 1050
+  height: 600
+  unit: px
+  dpi: 300
+
+theme:
+  ref: brutalist-mono
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1050
+    height: 600
+    fill: { type: solid, color: "$background" }
+
+  # ── Accent slash (large diagonal block) ───────────────────
+  - id: accent-slash
+    type: polygon
+    z: 5
+    points: "640,0 1050,0 1050,600 880,600"
+    fill: { type: solid, color: "$primary" }
+
+  # ── Big numeral marker (decoration) ───────────────────────
+  - id: marker-bar
+    type: rect
+    z: 6
+    x: 50
+    y: 50
+    width: 80
+    height: 8
+    fill: { type: solid, color: "$text" }
+
+  - id: marker-num
+    type: text
+    z: 7
+    x: 50
+    y: 70
+    width: 200
+    height: 0
+    content: { type: plain, value: "01 / 24" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.2
+      text_transform: uppercase
+
+  # ── Name (huge type) ──────────────────────────────────────
+  - id: name
+    type: text
+    z: 10
+    x: 50
+    y: 160
+    width: 820
+    height: 0
+    content: { type: plain, value: "REMY KOVÁCS" }
+    style:
+      font_family: $heading
+      font_size: 88
+      font_weight: 900
+      color: $text
+      line_height: 0.95
+      letter_spacing: -0.04
+      text_transform: uppercase
+
+  # ── Role + company ───────────────────────────────────────
+  - id: role-divider
+    type: rect
+    z: 11
+    x: 50
+    y: 310
+    width: 40
+    height: 6
+    fill: { type: solid, color: "$primary" }
+
+  - id: role
+    type: text
+    z: 12
+    x: 50
+    y: 332
+    width: 580
+    height: 0
+    content: { type: plain, value: "Creative Director" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 700
+      color: $text
+      line_height: 1.2
+      letter_spacing: -0.01
+
+  - id: company
+    type: text
+    z: 13
+    x: 50
+    y: 372
+    width: 580
+    height: 0
+    content: { type: plain, value: "STUDIO BLACKBIRD" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      line_height: 1.3
+      text_transform: uppercase
+
+  # ── Contact stack ─────────────────────────────────────────
+  - id: contact-rule
+    type: rect
+    z: 20
+    x: 50
+    y: 460
+    width: 580
+    height: 1
+    fill: { type: solid, color: "$text" }
+
+  - id: email-tag
+    type: text
+    z: 21
+    x: 50
+    y: 480
+    width: 80
+    height: 0
+    content: { type: plain, value: "→" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  - id: email
+    type: text
+    z: 22
+    x: 80
+    y: 480
+    width: 540
+    height: 0
+    content: { type: plain, value: "remy@studioblackbird.co" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  - id: phone-tag
+    type: text
+    z: 23
+    x: 50
+    y: 510
+    width: 80
+    height: 0
+    content: { type: plain, value: "→" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  - id: phone
+    type: text
+    z: 24
+    x: 80
+    y: 510
+    width: 540
+    height: 0
+    content: { type: plain, value: "+44 20 7946 0123" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  - id: website-tag
+    type: text
+    z: 25
+    x: 50
+    y: 540
+    width: 80
+    height: 0
+    content: { type: plain, value: "→" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+
+  - id: website
+    type: text
+    z: 26
+    x: 80
+    y: 540
+    width: 540
+    height: 0
+    content: { type: plain, value: "studioblackbird.co" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      line_height: 1.3
+
+  # ── Accent slash text (vertical mark on slash) ────────────
+  - id: slash-mark
+    type: text
+    z: 30
+    x: 920
+    y: 480
+    width: 80
+    height: 0
+    content: { type: plain, value: "★" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 800
+      color: $background
+      line_height: 1
+      text_align: center
+
+  - id: slash-label
+    type: text
+    z: 31
+    x: 880
+    y: 540
+    width: 160
+    height: 0
+    content: { type: plain, value: "EST. 2018" }
+    style:
+      font_family: $mono
+      font_size: 11
+      font_weight: 700
+      color: $background
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: name,    path: "layers[4].content.value",  type: text, hint: "Full name (display)",   default: "REMY KOVÁCS" }
+  - { id: role,    path: "layers[6].content.value",  type: text, hint: "Role / title",          default: "Creative Director" }
+  - { id: company, path: "layers[7].content.value",  type: text, hint: "Company name",          default: "STUDIO BLACKBIRD" }
+  - { id: email,   path: "layers[10].content.value", type: text, hint: "Email address",         default: "remy@studioblackbird.co" }
+  - { id: phone,   path: "layers[12].content.value", type: text, hint: "Phone number",          default: "+44 20 7946 0123" }
+  - { id: website, path: "layers[14].content.value", type: text, hint: "Website URL",           default: "studioblackbird.co" }

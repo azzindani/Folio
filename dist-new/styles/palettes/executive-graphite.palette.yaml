@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: executive-graphite
+name: Executive Graphite
+version: "1.0.0"
+tags: [formal, premium, executive, dark, graphite]
+description: "Deep graphite paired with warm bronze — confident, premium executive aesthetic."
+colors:
+  background: "#1A1C1F"
+  surface:    "#23262A"
+  surface_2:  "#2D3137"
+  primary:    "#C08A4A"
+  secondary:  "#8D7355"
+  accent:     "#D9C29A"
+  text:       "#ECEAE5"
+  text_muted: "#9B9A96"
+  border:     "#3A3E44"
+  success:    "#7DA87D"
+  warning:    "#D6A85A"
+  danger:     "#C26A6A"

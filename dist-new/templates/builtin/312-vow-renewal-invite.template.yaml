@@ -1,0 +1,80 @@
+_protocol: template/v1
+
+# Vow renewal invitation — 1080×1500 portrait, editorial-cream theme.
+# Two interlocking ring ornament (circles), couple + years-married eyebrow,
+# ceremony date + venue, RSVP info.
+meta:
+  id: tmpl-vow-renewal-invite
+  name: Vow Renewal Invitation
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, vow-renewal, anniversary, invitation, editorial, portrait]
+  description: "Vow renewal invitation with intertwined ring ornament, ceremony date, venue, and RSVP block."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: frame-outer, type: rect, z: 1, x: 60, y: 60, width: 960, height: 1380, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+  # 2 inner frame
+  - { id: frame-inner, type: rect, z: 2, x: 78, y: 78, width: 924, height: 1344, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 3 left ring outer
+  - { id: ring-l, type: circle, z: 10, cx: 500, cy: 280, rx: 56, ry: 56, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 2.5 } }
+  # 4 left ring highlight (subtle inner)
+  - { id: ring-l-in, type: circle, z: 11, cx: 500, cy: 280, rx: 46, ry: 46, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.6 } }
+  # 5 right ring outer (intersecting)
+  - { id: ring-r, type: circle, z: 10, cx: 580, cy: 280, rx: 56, ry: 56, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 2.5 } }
+  # 6 right ring highlight
+  - { id: ring-r-in, type: circle, z: 11, cx: 580, cy: 280, rx: 46, ry: 46, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.6 } }
+  # 7 small ornament under rings
+  - { id: orn-1, type: text, z: 14, x: 0, y: 390, width: 1080, height: 0, content: { type: plain, value: "·  ❦  ·" }, style: { font_family: $heading, font_size: 22, color: "$primary", text_align: center, letter_spacing: 0.6 } }
+  # 8 eyebrow
+  - { id: eyebrow, type: text, z: 15, x: 0, y: 440, width: 1080, height: 0, content: { type: plain, value: "RENEWING OUR VOWS" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "$primary", text_align: center, letter_spacing: 0.9 } }
+  # 9 years-married hint
+  - { id: years-hint, type: text, z: 16, x: 0, y: 490, width: 1080, height: 0, content: { type: plain, value: "twenty-five years and counting" }, style: { font_family: $heading, font_size: 24, font_style: italic, color: "$text_muted", text_align: center } }
+  # 10 short rule
+  - { id: rule-top, type: rect, z: 17, x: 490, y: 560, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 11 couple
+  - { id: couple, type: text, z: 20, x: 0, y: 600, width: 1080, height: 0, content: { type: plain, value: "Eleanor & Henry" }, style: { font_family: $heading, font_size: 84, font_style: italic, color: "$text", text_align: center, line_height: 1.1, letter_spacing: -0.01 } }
+  # 12 subtitle
+  - { id: subtitle, type: text, z: 21, x: 0, y: 730, width: 1080, height: 0, content: { type: plain, value: "warmly invite you to a renewal of vows" }, style: { font_family: $body, font_size: 18, color: "$text_muted", text_align: center, letter_spacing: 0.3, font_style: italic } }
+  # 13 rule
+  - { id: rule-mid, type: rect, z: 22, x: 490, y: 810, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 14 date label
+  - { id: date-lbl, type: text, z: 23, x: 0, y: 850, width: 1080, height: 0, content: { type: plain, value: "ON" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.6 } }
+  # 15 renewal date
+  - { id: ren-date, type: text, z: 24, x: 0, y: 880, width: 1080, height: 0, content: { type: plain, value: "Saturday · the eighteenth of September · 2026" }, style: { font_family: $heading, font_size: 28, font_style: italic, color: "$text", text_align: center, line_height: 1.3 } }
+  # 16 time
+  - { id: time, type: text, z: 25, x: 0, y: 935, width: 1080, height: 0, content: { type: plain, value: "five o'clock in the afternoon" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text_muted", text_align: center } }
+  # 17 venue label
+  - { id: ven-lbl, type: text, z: 26, x: 0, y: 1000, width: 1080, height: 0, content: { type: plain, value: "AT" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.6 } }
+  # 18 venue
+  - { id: venue, type: text, z: 27, x: 0, y: 1030, width: 1080, height: 0, content: { type: plain, value: "Driftwood Inn · Carmel-by-the-Sea, California" }, style: { font_family: $heading, font_size: 26, font_weight: 600, color: "$primary", text_align: center, line_height: 1.3, font_style: italic } }
+  # 19 reception line
+  - { id: reception, type: text, z: 28, x: 0, y: 1090, width: 1080, height: 0, content: { type: plain, value: "dinner & dancing to follow under the pergola" }, style: { font_family: $body, font_size: 16, color: "$text_muted", text_align: center, font_style: italic } }
+  # 20 rule
+  - { id: rule-bot, type: rect, z: 29, x: 490, y: 1170, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 21 rsvp eyebrow
+  - { id: rsvp-lbl, type: text, z: 30, x: 0, y: 1200, width: 1080, height: 0, content: { type: plain, value: "KINDLY REPLY BY THE FIRST OF AUGUST" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "$primary", text_align: center, letter_spacing: 0.6 } }
+  # 22 rsvp contact
+  - { id: rsvp, type: text, z: 31, x: 0, y: 1240, width: 1080, height: 0, content: { type: plain, value: "rsvp@eleanorandhenry.com · (831) 555-0173" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "$text", text_align: center, line_height: 1.4 } }
+  # 23 closing ornament
+  - { id: orn-bot, type: text, z: 32, x: 0, y: 1340, width: 1080, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 22, color: "$primary", text_align: center } }
+
+slots:
+  - { id: couple_names,   path: "layers[11].content.value", type: text, hint: "Couple names",       default: "Eleanor & Henry" }
+  - { id: years_married,  path: "layers[9].content.value",  type: text, hint: "Years married",      default: "twenty-five years and counting" }
+  - { id: renewal_date,   path: "layers[15].content.value", type: text, hint: "Renewal date",       default: "Saturday · the eighteenth of September · 2026" }
+  - { id: ceremony_venue, path: "layers[18].content.value", type: text, hint: "Ceremony venue",     default: "Driftwood Inn · Carmel-by-the-Sea, California" }
+  - { id: rsvp_contact,   path: "layers[22].content.value", type: text, hint: "RSVP contact info",  default: "rsvp@eleanorandhenry.com · (831) 555-0173" }

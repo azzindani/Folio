@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: tiger-stripe
+name: Tiger Stripe
+version: "1.0.0"
+tags: [animal, tiger, wild, bold, predator]
+description: "Burnt orange and black with amber stripes on warm cream — feline jungle intensity."
+colors:
+  background: "#FAEFD9"
+  surface:    "#F0E2C2"
+  surface_2:  "#DFCC9E"
+  primary:    "#C4581C"
+  secondary:  "#1B1410"
+  accent:     "#D89220"
+  text:       "#1B1410"
+  text_muted: "#5A4632"
+  border:     "#C4A878"
+  success:    "#6E7A28"
+  warning:    "#D89220"
+  danger:     "#A0341A"

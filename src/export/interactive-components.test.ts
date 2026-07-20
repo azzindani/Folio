@@ -140,3 +140,43 @@ describe('interactive components — export', () => {
     expect(h).toContain('raw:');
   });
 });
+
+describe('interactive components — degrade instead of crashing the export', () => {
+  it('derives table columns from the data when none are declared', () => {
+    // `layer.columns[0]` threw a raw TypeError, so ONE table without an
+    // explicit column list meant no HTML file at all — for a design
+    // report(op:validate) had just passed as clean.
+    const out = html([{ id: 't', type: 'interactive_table', span: 12, data_ref: 'ds' } as unknown as Layer]);
+    expect(out).toContain('"field":"k"');
+    expect(out).toContain('"field":"sector"');
+    expect(out).toContain('"field":"v"');
+  });
+
+  it('still honours an explicit column list', () => {
+    const out = html([{
+      id: 't', type: 'interactive_table', span: 12, data_ref: 'ds',
+      columns: [{ field: 'k', title: 'Key' }],
+    } as unknown as Layer]);
+    expect(out).toContain('"title":"Key"');
+    expect(out).not.toContain('"field":"sector"');
+  });
+
+  it('renders a chart with no data_ref as empty rather than throwing', () => {
+    expect(() => html([{ id: 'c', type: 'interactive_chart', span: 12, chart_type: 'bar' } as unknown as Layer]))
+      .not.toThrow();
+  });
+
+  it('renders a table with no data_ref as empty rather than throwing', () => {
+    expect(() => html([{ id: 't', type: 'interactive_table', span: 12 } as unknown as Layer]))
+      .not.toThrow();
+  });
+
+  it('produces a usable document even when every binding is missing', () => {
+    const out = html([
+      { id: 'c', type: 'interactive_chart', span: 6 } as unknown as Layer,
+      { id: 't', type: 'interactive_table', span: 6 } as unknown as Layer,
+    ]);
+    expect(out).toContain('<!DOCTYPE html>');
+    expect(out.length).toBeGreaterThan(500);
+  });
+});

@@ -1,0 +1,280 @@
+_protocol: template/v1
+
+# Marketing funnel analytics — 5 KPI funnel stages, descending funnel bar,
+# channel performance table, campaign ROI grouped bar, cohort retention table.
+meta:
+  id: tmpl-marketing-funnel-report
+  name: Marketing Funnel Analytics
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, marketing, funnel, cohort, analytics, interactive]
+  description: "End-to-end funnel review: visitors→wins, channel CAC/LTV, campaign ROI, cohort retention."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: funnel_stages
+        type: inline
+        rows:
+          - { stage: Visitors, count: 842400 }
+          - { stage: MQLs,     count: 124680 }
+          - { stage: SQLs,     count:  38420 }
+          - { stage: Opps,     count:  11240 }
+          - { stage: Wins,     count:   2864 }
+      - id: channels
+        type: inline
+        rows:
+          - { channel: Google Ads,          spend: 184200, cac:  214, ltv: 3840, payback_months:  6.4 }
+          - { channel: LinkedIn Ads,        spend: 142800, cac:  486, ltv: 5240, payback_months:  9.8 }
+          - { channel: Meta Ads,            spend:  98400, cac:  312, ltv: 2680, payback_months:  8.2 }
+          - { channel: Organic Search,      spend:  42600, cac:   42, ltv: 4120, payback_months:  1.2 }
+          - { channel: Content Marketing,   spend:  68200, cac:  118, ltv: 3960, payback_months:  3.4 }
+          - { channel: Email Nurture,       spend:  21400, cac:   38, ltv: 4480, payback_months:  1.0 }
+          - { channel: Partner Referral,    spend:  34800, cac:   92, ltv: 5680, payback_months:  2.1 }
+          - { channel: Events & Webinars,   spend:  86400, cac:  342, ltv: 4280, payback_months:  7.6 }
+      - id: campaigns
+        type: inline
+        rows:
+          - { campaign: Spring Pro Launch,         spend:  62400, revenue: 284600, roi: 3.56 }
+          - { campaign: Brand Refresh Burst,       spend:  48200, revenue: 142800, roi: 1.96 }
+          - { campaign: Webinar Series Q2,         spend:  14600, revenue: 168400, roi: 10.53 }
+          - { campaign: Free Trial Push,           spend:  38400, revenue: 196400, roi: 4.12 }
+          - { campaign: Enterprise ABM,            spend:  86200, revenue: 482600, roi: 4.60 }
+          - { campaign: Black Friday Promo,        spend:  72400, revenue: 412800, roi: 4.70 }
+          - { campaign: Influencer Pilot,          spend:  28600, revenue:  74200, roi: 1.59 }
+          - { campaign: Newsletter Reactivation,   spend:   6200, revenue:  88400, roi: 13.26 }
+      - id: cohorts
+        type: inline
+        rows:
+          - { cohort: 2025-01, m0: 100.0, m1: 84.2, m2: 71.8, m3: 64.4, m4: 59.2, m5: 54.8, m6: 51.6 }
+          - { cohort: 2025-02, m0: 100.0, m1: 86.4, m2: 73.2, m3: 66.8, m4: 61.4, m5: 56.2, m6: 52.8 }
+          - { cohort: 2025-03, m0: 100.0, m1: 87.8, m2: 75.6, m3: 68.2, m4: 62.8, m5: 58.4, m6: 0    }
+          - { cohort: 2025-04, m0: 100.0, m1: 88.4, m2: 76.8, m3: 69.4, m4: 64.2, m5: 0,    m6: 0    }
+          - { cohort: 2025-05, m0: 100.0, m1: 89.2, m2: 78.4, m3: 71.2, m4: 0,    m5: 0,    m6: 0    }
+          - { cohort: 2025-06, m0: 100.0, m1: 90.6, m2: 79.8, m3: 0,    m4: 0,    m5: 0,    m6: 0    }
+          - { cohort: 2025-07, m0: 100.0, m1: 91.4, m2: 0,    m3: 0,    m4: 0,    m5: 0,    m6: 0    }
+          - { cohort: 2025-08, m0: 100.0, m1: 0,    m2: 0,    m3: 0,    m4: 0,    m5: 0,    m6: 0    }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "MARKETING OPS · FY2025 · FULL FUNNEL"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 80
+        format: markdown
+        font_family: Playfair Display
+        font_size: 44
+        font_weight: 700
+        line_height: 1.1
+        content: "**Marketing Funnel Analytics**"
+
+      - id: kpi-visitors
+        type: kpi_card
+        x: 60
+        y: 180
+        width: 224
+        height: 140
+        label: Visitors
+        value: 842400
+        format: number
+        delta: 14.8
+        delta_format: percent
+
+      - id: kpi-mqls
+        type: kpi_card
+        x: 304
+        y: 180
+        width: 224
+        height: 140
+        label: MQLs
+        value: 124680
+        format: number
+        delta: 18.4
+        delta_format: percent
+
+      - id: kpi-sqls
+        type: kpi_card
+        x: 548
+        y: 180
+        width: 224
+        height: 140
+        label: SQLs
+        value: 38420
+        format: number
+        delta: 12.6
+        delta_format: percent
+
+      - id: kpi-opps
+        type: kpi_card
+        x: 792
+        y: 180
+        width: 224
+        height: 140
+        label: Opps
+        value: 11240
+        format: number
+        delta: 21.2
+        delta_format: percent
+
+      - id: kpi-wins
+        type: kpi_card
+        x: 1036
+        y: 180
+        width: 184
+        height: 140
+        label: Wins
+        value: 2864
+        format: number
+        delta: 26.4
+        delta_format: percent
+
+      - id: section-funnel
+        type: rich_text
+        x: 60
+        y: 360
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Funnel Conversion**"
+
+      - id: chart-funnel
+        type: interactive_chart
+        x: 60
+        y: 420
+        width: 1160
+        height: 380
+        chart_type: bar
+        data_ref: funnel_stages
+        x_field: stage
+        y_field: count
+        title: Funnel Stages — Visitors to Wins
+        legend: false
+        grid: true
+        animate: true
+
+      - id: section-channels
+        type: rich_text
+        x: 60
+        y: 840
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Channel Performance**"
+
+      - id: tbl-channels
+        type: interactive_table
+        x: 60
+        y: 900
+        width: 1160
+        height: 440
+        data_ref: channels
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: channel,         title: Channel,            width: 260, sortable: true, formatter: badge }
+          - { field: spend,           title: Spend,              width: 180, sortable: true, formatter: currency, align: right }
+          - { field: cac,             title: CAC,                width: 160, sortable: true, formatter: currency, align: right }
+          - { field: ltv,             title: LTV,                width: 180, sortable: true, formatter: currency, align: right }
+          - { field: payback_months,  title: Payback (months),   width: 200, sortable: true, formatter: number, align: right }
+
+      - id: section-campaigns
+        type: rich_text
+        x: 60
+        y: 1380
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Campaign ROI**"
+
+      - id: chart-campaigns
+        type: interactive_chart
+        x: 60
+        y: 1440
+        width: 1160
+        height: 400
+        chart_type: bar
+        data_ref: campaigns
+        x_field: campaign
+        y_field: roi
+        title: Campaign ROI (Revenue ÷ Spend)
+        legend: false
+        grid: true
+        animate: true
+
+      - id: section-cohorts
+        type: rich_text
+        x: 60
+        y: 1880
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Cohort Retention — % Retained by Month**"
+
+      - id: tbl-cohorts
+        type: interactive_table
+        x: 60
+        y: 1940
+        width: 1160
+        height: 420
+        data_ref: cohorts
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: cohort, title: Cohort,    width: 160, sortable: true }
+          - { field: m0,     title: M0,        width: 140, sortable: true, formatter: percent, align: right }
+          - { field: m1,     title: M1,        width: 140, sortable: true, formatter: percent, align: right }
+          - { field: m2,     title: M2,        width: 140, sortable: true, formatter: percent, align: right }
+          - { field: m3,     title: M3,        width: 140, sortable: true, formatter: percent, align: right }
+          - { field: m4,     title: M4,        width: 140, sortable: true, formatter: percent, align: right }
+          - { field: m5,     title: M5,        width: 140, sortable: true, formatter: percent, align: right }
+          - { field: m6,     title: M6,        width: 140, sortable: true, formatter: percent, align: right }
+
+slots:
+  - { id: report_title,      path: "pages[0].layers[1].content",  type: text, hint: "Report title",        default: "**Marketing Funnel Analytics**" }
+  - { id: report_eyebrow,    path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",        default: "MARKETING OPS · FY2025 · FULL FUNNEL" }
+  - { id: funnel_section,    path: "pages[0].layers[7].content",  type: text, hint: "Funnel heading",      default: "**Funnel Conversion**" }
+  - { id: channels_section,  path: "pages[0].layers[9].content",  type: text, hint: "Channels heading",    default: "**Channel Performance**" }
+  - { id: campaigns_section, path: "pages[0].layers[11].content", type: text, hint: "Campaigns heading",   default: "**Campaign ROI**" }
+  - { id: cohorts_section,   path: "pages[0].layers[13].content", type: text, hint: "Cohorts heading",     default: "**Cohort Retention — % Retained by Month**" }

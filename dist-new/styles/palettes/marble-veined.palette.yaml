@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: marble-veined
+name: Marble Veined
+version: "1.0.0"
+tags: [material, marble, elegant, neutral, classical]
+description: "White marble veined with gray and soft black plus dusty mauve — sculpted carrara polish."
+colors:
+  background: "#F4F2EC"
+  surface:    "#E8E6DE"
+  surface_2:  "#D4D2C8"
+  primary:    "#2E2E32"
+  secondary:  "#8A8884"
+  accent:     "#A48896"
+  text:       "#1A1A1C"
+  text_muted: "#5A5A5E"
+  border:     "#C0BEB6"
+  success:    "#5E7A58"
+  warning:    "#B89856"
+  danger:     "#A24A4C"

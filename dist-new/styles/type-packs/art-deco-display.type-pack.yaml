@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: art-deco-display
+name: Art Deco Display
+version: "1.0.0"
+tags: [art-deco, luxury, vintage, gatsby, display, 1920s]
+description: "Limelight display with Cormorant Garamond body — Gatsby/Chrysler-Building Art Deco luxury."
+families:
+  heading: "Limelight"
+  body:    "Cormorant Garamond"
+  mono:    "Cutive Mono"
+  display: "Limelight"
+  accent:  "Limelight"
+scale:
+  display:
+    size: 96
+    weight: 400
+    line_height: 1.05

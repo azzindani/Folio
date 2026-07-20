@@ -1,0 +1,74 @@
+_protocol: template/v1
+
+# Personal vows insert — 1080×1500 portrait, editorial-cream theme.
+# Header "OUR VOWS" → two divided columns FROM Partner A & FROM Partner B
+# with romantic placeholder text, signature lines, date footer.
+meta:
+  id: tmpl-wedding-vows-insert
+  name: Wedding Vows Insert
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wedding, vows, ceremony, editorial, portrait]
+  description: "Personal vows insert with two partner columns, romantic placeholder vows, and signature lines."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: "$background" } }
+  # 1 outer frame
+  - { id: frame, type: rect, z: 1, x: 60, y: 60, width: 960, height: 1380, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 0.5 } }
+  # 2 top ornament
+  - { id: orn-top, type: text, z: 5, x: 0, y: 140, width: 1080, height: 0, content: { type: plain, value: "❀  ·  ❦  ·  ❀" }, style: { font_family: $heading, font_size: 28, color: "$primary", text_align: center, letter_spacing: 0.4 } }
+  # 3 eyebrow
+  - { id: eyebrow, type: text, z: 10, x: 0, y: 200, width: 1080, height: 0, content: { type: plain, value: "PROMISES WE MAKE" }, style: { font_family: $body, font_size: 15, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.8 } }
+  # 4 title
+  - { id: title, type: text, z: 11, x: 0, y: 250, width: 1080, height: 0, content: { type: plain, value: "Our Vows" }, style: { font_family: $heading, font_size: 78, font_style: italic, color: "$text", text_align: center, line_height: 1 } }
+  # 5 rule under title
+  - { id: rule-top, type: rect, z: 12, x: 490, y: 360, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 6 vertical divider between columns
+  - { id: v-div, type: rect, z: 13, x: 540, y: 420, width: 1, height: 760, fill: { type: solid, color: "$primary" }, opacity: 0.5 }
+  # 7 left column eyebrow
+  - { id: l-eyebrow, type: text, z: 20, x: 80, y: 420, width: 440, height: 0, content: { type: plain, value: "FROM" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7 } }
+  # 8 left partner name
+  - { id: l-name, type: text, z: 21, x: 80, y: 450, width: 440, height: 0, content: { type: plain, value: "Amelia" }, style: { font_family: $heading, font_size: 40, font_style: italic, color: "$primary", text_align: center, line_height: 1 } }
+  # 9 left ornament
+  - { id: l-orn, type: text, z: 22, x: 80, y: 510, width: 440, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 18, color: "$primary", text_align: center } }
+  # 10 left vow body
+  - { id: l-body, type: text, z: 23, x: 100, y: 560, width: 420, height: 0, content: { type: plain, value: "I promise to choose you, every ordinary morning and every difficult one.\n\nTo laugh with you in the kitchen at midnight, to hold your hand through every storm, and to make a home wherever your heart is.\n\nI will love you patiently, fiercely, and always — for the rest of my life." }, style: { font_family: $heading, font_size: 16, font_style: italic, color: "$text", text_align: center, line_height: 1.7 } }
+  # 11 left signature line
+  - { id: l-sig-line, type: rect, z: 24, x: 160, y: 1080, width: 280, height: 1, fill: { type: solid, color: "$text" } }
+  # 12 left signature caption
+  - { id: l-sig-cap, type: text, z: 25, x: 80, y: 1095, width: 440, height: 0, content: { type: plain, value: "signed with love" }, style: { font_family: $body, font_size: 12, color: "$text_muted", text_align: center, letter_spacing: 0.3, font_style: italic } }
+  # 13 right column eyebrow
+  - { id: r-eyebrow, type: text, z: 20, x: 560, y: 420, width: 440, height: 0, content: { type: plain, value: "FROM" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.7 } }
+  # 14 right partner name
+  - { id: r-name, type: text, z: 21, x: 560, y: 450, width: 440, height: 0, content: { type: plain, value: "Jonathan" }, style: { font_family: $heading, font_size: 40, font_style: italic, color: "$primary", text_align: center, line_height: 1 } }
+  # 15 right ornament
+  - { id: r-orn, type: text, z: 22, x: 560, y: 510, width: 440, height: 0, content: { type: plain, value: "❦" }, style: { font_family: $heading, font_size: 18, color: "$primary", text_align: center } }
+  # 16 right vow body
+  - { id: r-body, type: text, z: 23, x: 580, y: 560, width: 420, height: 0, content: { type: plain, value: "I promise to walk beside you through every season we are given.\n\nTo be your steadiest friend and your loudest cheerleader, to keep choosing you when life is easy and to keep choosing you when it isn't.\n\nMy heart is yours · my home is yours · my life is yours." }, style: { font_family: $heading, font_size: 16, font_style: italic, color: "$text", text_align: center, line_height: 1.7 } }
+  # 17 right signature line
+  - { id: r-sig-line, type: rect, z: 24, x: 640, y: 1080, width: 280, height: 1, fill: { type: solid, color: "$text" } }
+  # 18 right signature caption
+  - { id: r-sig-cap, type: text, z: 25, x: 560, y: 1095, width: 440, height: 0, content: { type: plain, value: "signed with love" }, style: { font_family: $body, font_size: 12, color: "$text_muted", text_align: center, letter_spacing: 0.3, font_style: italic } }
+  # 19 footer rule
+  - { id: rule-bot, type: rect, z: 30, x: 490, y: 1220, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+  # 20 date footer
+  - { id: footer, type: text, z: 31, x: 0, y: 1260, width: 1080, height: 0, content: { type: plain, value: "spoken aloud · 24 May 2026" }, style: { font_family: $heading, font_size: 20, font_style: italic, color: "$text_muted", text_align: center } }
+  # 21 bottom ornament
+  - { id: orn-bot, type: text, z: 32, x: 0, y: 1340, width: 1080, height: 0, content: { type: plain, value: "❀" }, style: { font_family: $heading, font_size: 22, color: "$primary", text_align: center } }
+
+slots:
+  - { id: partner_a_name, path: "layers[8].content.value",  type: text, hint: "Partner A first name", default: "Amelia" }
+  - { id: partner_b_name, path: "layers[14].content.value", type: text, hint: "Partner B first name", default: "Jonathan" }
+  - { id: wedding_date,   path: "layers[20].content.value", type: text, hint: "Wedding date",         default: "spoken aloud · 24 May 2026" }

@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: sushi-omakase
+name: Sushi Omakase
+version: "1.0.0"
+tags: [cuisine, japanese, sushi, minimal, refined]
+description: "Soft white rice, nori green and soy black with salmon pink and bamboo — counter omakase calm."
+colors:
+  background: "#F8F6EE"
+  surface:    "#EEEBDC"
+  surface_2:  "#D8D4BE"
+  primary:    "#1C1A18"
+  secondary:  "#1E3A2C"
+  accent:     "#E89A8C"
+  text:       "#14110F"
+  text_muted: "#56524C"
+  border:     "#BFB89C"
+  success:    "#6A8A4A"
+  warning:    "#C49044"
+  danger:     "#C24A40"

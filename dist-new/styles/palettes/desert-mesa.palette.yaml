@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: desert-mesa
+name: Desert Mesa
+version: "1.0.0"
+tags: [nature, desert, southwest, mesa, arid]
+description: "Sandstone and terracotta with cactus green and burnt sienna — high-desert mesa at noon."
+colors:
+  background: "#F2E0C2"
+  surface:    "#E8D0A2"
+  surface_2:  "#D8B880"
+  primary:    "#B85A2C"
+  secondary:  "#5E7048"
+  accent:     "#8B3A1A"
+  text:       "#2A1A0E"
+  text_muted: "#6A523A"
+  border:     "#B89868"
+  success:    "#5E7048"
+  warning:    "#D89238"
+  danger:     "#A02818"

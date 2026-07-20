@@ -1,0 +1,368 @@
+_protocol: template/v1
+
+# LinkedIn 5-slide carousel — first-person career pivot story (finance → tech).
+# Portrait 1080×1350. sunset-glow theme.
+meta:
+  id: tmpl-linkedin-career-pivot-5slide
+  name: LinkedIn Career Pivot (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, career, pivot, story, 4-5]
+  description: "5-slide LinkedIn carousel telling a personal career pivot story with pull-quote and lessons."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: cv-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
+      - { id: cv-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: cv-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 220
+        width: 936
+        height: 0
+        content: { type: plain, value: "CAREER · PERSONAL STORY" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36, text_transform: uppercase }
+      - id: cv-title
+        type: text
+        z: 11
+        x: 72
+        y: 300
+        width: 936
+        height: 0
+        content: { type: plain, value: "I left finance\nfor tech.\nHere's how." }
+        style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.03 }
+      - id: cv-tagline
+        type: text
+        z: 12
+        x: 72
+        y: 760
+        width: 936
+        height: 0
+        content: { type: plain, value: "5 slides. 18 months. One scary leap." }
+        style: { font_family: $body, font_size: 28, color: "#FFFFFF", line_height: 1.4 }
+      - id: cv-rule
+        type: rect
+        z: 13
+        x: 72
+        y: 880
+        width: 80
+        height: 4
+        fill: { type: solid, color: "$accent" }
+      - id: cv-author
+        type: text
+        z: 14
+        x: 72
+        y: 910
+        width: 936
+        height: 0
+        content: { type: plain, value: "— @yourhandle" }
+        style: { font_family: $body, font_size: 20, color: "#FFFFFF" }
+      - id: cv-page
+        type: text
+        z: 15
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "01 / 05" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+  # ── Slide 2 · Before ───────────────────────────────────────
+  - id: before
+    label: Before
+    layers:
+      - { id: bf-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: bf-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: bf-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 180
+        width: 936
+        height: 0
+        content: { type: plain, value: "BEFORE" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase }
+      - id: bf-title
+        type: text
+        z: 11
+        x: 72
+        y: 240
+        width: 936
+        height: 0
+        content: { type: plain, value: "Seven years at a\nbig investment bank." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: bf-body
+        type: text
+        z: 12
+        x: 72
+        y: 540
+        width: 936
+        height: 0
+        content: { type: plain, value: "I'd built a comfortable life as an analyst — solid pay, recognizable employer, predictable promotion path. On paper, nothing was wrong.\n\nBut every Monday I caught myself reading product blogs at lunch and dreading the spreadsheets waiting after. The model said \"stay\". The pattern said \"go\". So I started moonlighting on side projects, six hours every weekend, for a year before I told anyone." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+      - id: bf-page
+        type: text
+        z: 13
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "02 / 05" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · The Leap ─────────────────────────────────────
+  - id: leap
+    label: The Leap
+    layers:
+      - { id: lp-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: lp-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: lp-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 180
+        width: 936
+        height: 0
+        content: { type: plain, value: "THE LEAP" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: lp-title
+        type: text
+        z: 11
+        x: 72
+        y: 240
+        width: 936
+        height: 0
+        content: { type: plain, value: "And then a calendar\ninvite changed it all." }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: lp-quote-mark
+        type: text
+        z: 12
+        x: 72
+        y: 540
+        width: 200
+        height: 0
+        content: { type: plain, value: "❝" }
+        style: { font_family: $heading, font_size: 140, font_weight: 800, color: $primary, line_height: 0.9 }
+      - id: lp-quote
+        type: text
+        z: 13
+        x: 72
+        y: 700
+        width: 936
+        height: 0
+        content: { type: plain, value: "The scariest day was telling my manager. The freest day was three months later, when I realized I'd stopped checking the old Slack at all." }
+        style: { font_family: $heading, font_size: 36, font_weight: 700, color: $text, line_height: 1.35, letter_spacing: -0.01 }
+      - id: lp-attrib
+        type: text
+        z: 14
+        x: 72
+        y: 1100
+        width: 936
+        height: 0
+        content: { type: plain, value: "— me, six months in" }
+        style: { font_family: $body, font_size: 20, color: $text_muted }
+      - id: lp-page
+        type: text
+        z: 15
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "03 / 05" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · What Worked ──────────────────────────────────
+  - id: what-worked
+    label: What Worked
+    layers:
+      - { id: ww-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: ww-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: ww-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 180
+        width: 936
+        height: 0
+        content: { type: plain, value: "WHAT WORKED" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: ww-title
+        type: text
+        z: 11
+        x: 72
+        y: 240
+        width: 936
+        height: 0
+        content: { type: plain, value: "Three things\nworth the bet." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: ww-1-num
+        type: text
+        z: 20
+        x: 72
+        y: 480
+        width: 80
+        height: 0
+        content: { type: plain, value: "1." }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $primary }
+      - id: ww-1-text
+        type: text
+        z: 21
+        x: 140
+        y: 480
+        width: 868
+        height: 0
+        content: { type: plain, value: "Building publicly for a year before applying. Five repos > a polished resume." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - id: ww-2-num
+        type: text
+        z: 22
+        x: 72
+        y: 700
+        width: 80
+        height: 0
+        content: { type: plain, value: "2." }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $primary }
+      - id: ww-2-text
+        type: text
+        z: 23
+        x: 140
+        y: 700
+        width: 868
+        height: 0
+        content: { type: plain, value: "Reaching out to 40 strangers, asking for 20 minutes — not a job. Coffee opens doors interviews don't." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - id: ww-3-num
+        type: text
+        z: 24
+        x: 72
+        y: 940
+        width: 80
+        height: 0
+        content: { type: plain, value: "3." }
+        style: { font_family: $heading, font_size: 36, font_weight: 800, color: $primary }
+      - id: ww-3-text
+        type: text
+        z: 25
+        x: 140
+        y: 940
+        width: 868
+        height: 0
+        content: { type: plain, value: "Taking the salary cut. Year 1 hurt. Year 3 surpassed the old number." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 }
+      - id: ww-page
+        type: text
+        z: 30
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "04 / 05" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · Lessons + CTA ────────────────────────────────
+  - id: lessons-cta
+    label: Lessons + CTA
+    layers:
+      - { id: ls-bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
+      - { id: ls-accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: ls-eyebrow
+        type: text
+        z: 10
+        x: 72
+        y: 180
+        width: 936
+        height: 0
+        content: { type: plain, value: "LESSONS" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36, text_transform: uppercase }
+      - id: ls-title
+        type: text
+        z: 11
+        x: 72
+        y: 240
+        width: 936
+        height: 0
+        content: { type: plain, value: "Two things I wish\nI'd known sooner." }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: ls-1
+        type: text
+        z: 20
+        x: 72
+        y: 520
+        width: 936
+        height: 0
+        content: { type: plain, value: "1.  The first 6 months feel like impostor work. That's normal. It's not a signal to retreat." }
+        style: { font_family: $body, font_size: 26, color: "#FFFFFF", line_height: 1.5 }
+      - id: ls-2
+        type: text
+        z: 21
+        x: 72
+        y: 720
+        width: 936
+        height: 0
+        content: { type: plain, value: "2.  Your old industry is a moat, not a liability. Lean into the rare combination, don't hide it." }
+        style: { font_family: $body, font_size: 26, color: "#FFFFFF", line_height: 1.5 }
+      - id: ls-cta-heading
+        type: text
+        z: 30
+        x: 72
+        y: 940
+        width: 936
+        height: 0
+        content: { type: plain, value: "Thinking of pivoting?\nDM me." }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: ls-cta-btn
+        type: rect
+        z: 31
+        x: 72
+        y: 1140
+        width: 320
+        height: 64
+        radius: 32
+        fill: { type: solid, color: "#FFFFFF" }
+      - id: ls-cta-text
+        type: text
+        z: 32
+        x: 72
+        y: 1158
+        width: 320
+        height: 0
+        content: { type: plain, value: "Follow my journey →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: $primary, text_align: center }
+      - id: ls-page
+        type: text
+        z: 33
+        x: 800
+        y: 1290
+        width: 208
+        height: 0
+        content: { type: plain, value: "05 / 05" }
+        style: { font_family: $mono, font_size: 14, color: "#FFFFFF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value", type: text, hint: "Cover title",          default: "I left finance\nfor tech.\nHere's how." }
+  - { id: cover_tagline,  path: "pages[0].layers[4].content.value", type: text, hint: "Cover tagline",        default: "5 slides. 18 months. One scary leap." }
+  - { id: before_title,   path: "pages[1].layers[3].content.value", type: text, hint: "Before title",         default: "Seven years at a\nbig investment bank." }
+  - { id: before_body,    path: "pages[1].layers[4].content.value", type: text, hint: "Before paragraph",     default: "I'd built a comfortable life..." }
+  - { id: leap_title,     path: "pages[2].layers[3].content.value", type: text, hint: "Leap title",           default: "And then a calendar\ninvite changed it all." }
+  - { id: leap_quote,     path: "pages[2].layers[5].content.value", type: text, hint: "Leap pull-quote",      default: "The scariest day was telling my manager..." }
+  - { id: ww_1,           path: "pages[3].layers[5].content.value", type: text, hint: "What worked 1",        default: "Building publicly for a year..." }
+  - { id: ww_2,           path: "pages[3].layers[7].content.value", type: text, hint: "What worked 2",        default: "Reaching out to 40 strangers..." }
+  - { id: ww_3,           path: "pages[3].layers[9].content.value", type: text, hint: "What worked 3",        default: "Taking the salary cut..." }
+  - { id: lesson_1,       path: "pages[4].layers[4].content.value", type: text, hint: "Lesson 1",             default: "1.  The first 6 months feel like impostor work..." }
+  - { id: lesson_2,       path: "pages[4].layers[5].content.value", type: text, hint: "Lesson 2",             default: "2.  Your old industry is a moat..." }
+  - { id: cta_heading,    path: "pages[4].layers[6].content.value", type: text, hint: "CTA heading",          default: "Thinking of pivoting?\nDM me." }

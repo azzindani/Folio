@@ -1,0 +1,11 @@
+_protocol: type-pack/v1
+id: futurist-grotesque
+name: Futurist Grotesque
+version: "1.0.0"
+tags: [futurist, grotesque, industrial, bold, modern]
+description: "Archivo Black headings over Archivo body — industrial future, heavy and confident."
+families:
+  heading: "Archivo Black"
+  body:    "Archivo"
+  mono:    "Space Mono"
+  display: "Archivo Black"

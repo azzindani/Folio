@@ -1,0 +1,102 @@
+_protocol: template/v1
+
+# Medical chart cover — 1240×1754 A4 portrait, corporate-slate theme.
+# Facility logo, HUGE patient name, MRN, DOB, dx, attending, RED
+# allergy banner, room/bed number.
+meta:
+  id: tmpl-medical-chart-header
+  name: Medical Chart Header
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, medical, hospital, chart, patient, clinical, a4]
+  description: "Hospital chart cover with HUGE patient name, MRN/DOB, admitting diagnosis, attending physician, RED allergy banner, and room/bed number."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+  # 1 — facility band
+  - { id: facility-band, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 130, fill: { type: solid, color: "$primary" } }
+  # 2 — logo placeholder square
+  - { id: logo-box, type: rect, z: 2, x: 80, y: 35, width: 60, height: 60, radius: 8, fill: { type: solid, color: "#FFFFFF" } }
+  # 3 — logo cross
+  - { id: logo-h, type: rect, z: 3, x: 90, y: 60, width: 40, height: 10, fill: { type: solid, color: "$primary" } }
+  # 4 — logo cross v
+  - { id: logo-v, type: rect, z: 4, x: 105, y: 45, width: 10, height: 40, fill: { type: solid, color: "$primary" } }
+  # 5 — facility name
+  - { id: facility, type: text, z: 5, x: 165, y: 42, width: 700, height: 0, content: { type: plain, value: "St. Mary's Regional Medical Center" }, style: { font_family: $heading, font_size: 24, font_weight: 800, color: "#FFFFFF", line_height: 1.2 } }
+  # 6 — facility sub
+  - { id: facility-sub, type: text, z: 6, x: 165, y: 76, width: 700, height: 0, content: { type: plain, value: "Level II Trauma · Albany Metro · NPI 1023889441" }, style: { font_family: $body, font_size: 13, color: "#DBEAFE" } }
+  # 7 — chart label
+  - { id: chart-label, type: text, z: 7, x: 880, y: 56, width: 280, height: 0, content: { type: plain, value: "INPATIENT CHART" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.6, text_align: right, text_transform: uppercase } }
+  # 8 — chart sub
+  - { id: chart-sub, type: text, z: 8, x: 880, y: 80, width: 280, height: 0, content: { type: plain, value: "Encounter 2026-05-17-04812" }, style: { font_family: $mono, font_size: 12, color: "#DBEAFE", text_align: right } }
+  # 9 — RED allergy banner bg
+  - { id: allergy-bg, type: rect, z: 10, x: 0, y: 160, width: 1240, height: 80, fill: { type: solid, color: "#B91C1C" } }
+  # 10 — allergy icon circle
+  - { id: allergy-icon, type: circle, z: 11, x: 90, y: 178, width: 44, height: 44, fill: { type: solid, color: "#FFFFFF" } }
+  # 11 — allergy icon !
+  - { id: allergy-bang, type: text, z: 12, x: 90, y: 186, width: 44, height: 0, content: { type: plain, value: "!" }, style: { font_family: $heading, font_size: 30, font_weight: 900, color: "#B91C1C", text_align: center, line_height: 1.2 } }
+  # 12 — allergy label
+  - { id: allergy-label, type: text, z: 13, x: 160, y: 175, width: 600, height: 0, content: { type: plain, value: "ALLERGIES" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "#FECACA", letter_spacing: 0.6 } }
+  # 13 — allergy list
+  - { id: allergies, type: text, z: 14, x: 160, y: 196, width: 1000, height: 0, content: { type: plain, value: "PENICILLIN (anaphylaxis) · SULFA · LATEX · SHELLFISH" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: "#FFFFFF", letter_spacing: 0.02, line_height: 1.2 } }
+  # 14 — patient name label
+  - { id: pn-label, type: text, z: 20, x: 80, y: 290, width: 800, height: 0, content: { type: plain, value: "PATIENT" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  # 15 — patient name HUGE
+  - { id: patient-name, type: text, z: 21, x: 80, y: 320, width: 1080, height: 0, content: { type: plain, value: "SULLIVAN, MARGARET E." }, style: { font_family: $heading, font_size: 84, font_weight: 900, color: "$text", letter_spacing: 0.02, line_height: 1.05 } }
+  # 16 — divider under name
+  - { id: name-rule, type: rect, z: 22, x: 80, y: 450, width: 1080, height: 2, fill: { type: solid, color: "$text" } }
+  # 17 — mrn label
+  - { id: mrn-label, type: text, z: 30, x: 80, y: 480, width: 500, height: 0, content: { type: plain, value: "MEDICAL RECORD #" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  # 18 — mrn value
+  - { id: mrn-val, type: text, z: 31, x: 80, y: 504, width: 500, height: 0, content: { type: plain, value: "MRN 00478291" }, style: { font_family: $mono, font_size: 40, font_weight: 700, color: "$text", line_height: 1.1 } }
+  # 19 — dob label
+  - { id: dob-label, type: text, z: 32, x: 660, y: 480, width: 500, height: 0, content: { type: plain, value: "DATE OF BIRTH · SEX · AGE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  # 20 — dob value
+  - { id: dob-val, type: text, z: 33, x: 660, y: 504, width: 500, height: 0, content: { type: plain, value: "04/12/1942 · F · 84y" }, style: { font_family: $mono, font_size: 28, font_weight: 700, color: "$text", line_height: 1.1 } }
+  # 21 — admit label
+  - { id: admit-label, type: text, z: 40, x: 80, y: 600, width: 1080, height: 0, content: { type: plain, value: "ADMITTING DIAGNOSIS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  # 22 — admit value
+  - { id: admit-val, type: text, z: 41, x: 80, y: 626, width: 1080, height: 0, content: { type: plain, value: "Community-acquired pneumonia (J18.9), exacerbation of COPD" }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 23 — divider
+  - { id: div-mid, type: rect, z: 42, x: 80, y: 720, width: 1080, height: 1, fill: { type: solid, color: "$border" } }
+  # 24 — attending label
+  - { id: att-label, type: text, z: 50, x: 80, y: 750, width: 600, height: 0, content: { type: plain, value: "ATTENDING PHYSICIAN" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "$text_muted", letter_spacing: 0.6 } }
+  # 25 — attending value
+  - { id: att-val, type: text, z: 51, x: 80, y: 776, width: 600, height: 0, content: { type: plain, value: "Dr. Priya Ramanathan, MD" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: "$text", line_height: 1.3 } }
+  # 26 — attending sub
+  - { id: att-sub, type: text, z: 52, x: 80, y: 812, width: 600, height: 0, content: { type: plain, value: "Internal Medicine · pager 414" }, style: { font_family: $body, font_size: 14, color: "$text_muted" } }
+  # 27 — room banner bg
+  - { id: room-bg, type: rect, z: 60, x: 760, y: 750, width: 400, height: 130, radius: 12, fill: { type: solid, color: "$primary" } }
+  # 28 — room label
+  - { id: room-label, type: text, z: 61, x: 780, y: 766, width: 360, height: 0, content: { type: plain, value: "ROOM / BED" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#DBEAFE", letter_spacing: 0.6 } }
+  # 29 — room value
+  - { id: room-val, type: text, z: 62, x: 780, y: 790, width: 360, height: 0, content: { type: plain, value: "4-North · 4218-B" }, style: { font_family: $heading, font_size: 36, font_weight: 800, color: "#FFFFFF", line_height: 1.2 } }
+  # 30 — admit date
+  - { id: adm-date, type: text, z: 70, x: 80, y: 920, width: 540, height: 0, content: { type: plain, value: "Admitted: May 15, 2026 · 14:32 via ED" }, style: { font_family: $body, font_size: 14, color: "$text", line_height: 1.4 } }
+  # 31 — code status
+  - { id: code-status, type: text, z: 71, x: 80, y: 950, width: 540, height: 0, content: { type: plain, value: "Code Status: FULL CODE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text", line_height: 1.4 } }
+  # 32 — primary contact
+  - { id: nok, type: text, z: 72, x: 80, y: 1010, width: 1080, height: 0, content: { type: plain, value: "Next of kin: Eleanor Sullivan-Hayes (daughter) · (518) 555-0193" }, style: { font_family: $body, font_size: 14, color: "$text_muted", line_height: 1.4 } }
+  # 33 — confidentiality footer
+  - { id: footer, type: text, z: 90, x: 80, y: 1680, width: 1080, height: 0, content: { type: plain, value: "Protected Health Information · HIPAA 45 CFR §164 · Do not photocopy or distribute" }, style: { font_family: $mono, font_size: 11, color: "$text_muted", text_align: center } }
+
+slots:
+  - { id: patient_name,        path: "layers[15].content.value", type: text, hint: "Patient name (LAST, FIRST)",   default: "SULLIVAN, MARGARET E." }
+  - { id: mrn,                 path: "layers[18].content.value", type: text, hint: "Medical record number",        default: "MRN 00478291" }
+  - { id: dob,                 path: "layers[20].content.value", type: text, hint: "DOB · sex · age",              default: "04/12/1942 · F · 84y" }
+  - { id: admitting_diagnosis, path: "layers[22].content.value", type: text, hint: "Admitting diagnosis",          default: "Community-acquired pneumonia (J18.9), exacerbation of COPD" }
+  - { id: attending_physician, path: "layers[25].content.value", type: text, hint: "Attending physician",          default: "Dr. Priya Ramanathan, MD" }
+  - { id: allergies,           path: "layers[13].content.value", type: text, hint: "Allergy list (RED banner)",    default: "PENICILLIN (anaphylaxis) · SULFA · LATEX · SHELLFISH" }
+  - { id: room_bed,            path: "layers[29].content.value", type: text, hint: "Room / bed number",            default: "4-North · 4218-B" }

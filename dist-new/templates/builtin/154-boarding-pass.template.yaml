@@ -1,0 +1,809 @@
+_protocol: template/v1
+
+# Airline boarding pass — 1800×700 landscape, corporate-slate theme.
+# Main body left ~75% with airline name + flight number top, passenger
+# name big, big FROM → TO airport codes with arrow, gate/seat/boarding
+# blocks beneath. Perforated stub right ~25% with rotated label,
+# seat repeat, and barcode placeholder.
+meta:
+  id: tmpl-boarding-pass
+  name: Boarding Pass
+  type: ticket
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [ticket, boarding-pass, airline, travel, landscape]
+  description: "Airline boarding pass with flight, passenger, from/to airport codes, gate, seat, and barcode stub."
+
+document:
+  width: 1800
+  height: 700
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1800
+    height: 700
+    fill: { type: solid, color: "$background" }
+
+  - id: main-card
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1350
+    height: 700
+    fill: { type: solid, color: "$surface" }
+
+  - id: stub-card
+    type: rect
+    z: 2
+    x: 1380
+    y: 0
+    width: 420
+    height: 700
+    fill: { type: solid, color: "$primary" }
+
+  # ── Top accent stripe on main ─────────────────────────────
+  - id: top-stripe
+    type: rect
+    z: 3
+    x: 0
+    y: 0
+    width: 1350
+    height: 10
+    fill: { type: solid, color: "$primary" }
+
+  # ── Perforation dashes (between main and stub at x=1365) ─
+  - id: perf-1
+    type: rect
+    z: 5
+    x: 1363
+    y: 30
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-2
+    type: rect
+    z: 5
+    x: 1363
+    y: 90
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-3
+    type: rect
+    z: 5
+    x: 1363
+    y: 150
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-4
+    type: rect
+    z: 5
+    x: 1363
+    y: 210
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-5
+    type: rect
+    z: 5
+    x: 1363
+    y: 270
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-6
+    type: rect
+    z: 5
+    x: 1363
+    y: 330
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-7
+    type: rect
+    z: 5
+    x: 1363
+    y: 390
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-8
+    type: rect
+    z: 5
+    x: 1363
+    y: 450
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-9
+    type: rect
+    z: 5
+    x: 1363
+    y: 510
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-10
+    type: rect
+    z: 5
+    x: 1363
+    y: 570
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  - id: perf-11
+    type: rect
+    z: 5
+    x: 1363
+    y: 630
+    width: 4
+    height: 30
+    fill: { type: solid, color: "$background" }
+
+  # ── Airline + flight # row ───────────────────────────────
+  - id: airline
+    type: text
+    z: 10
+    x: 60
+    y: 50
+    width: 700
+    height: 0
+    content: { type: plain, value: "SKYBRIDGE AIRWAYS" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.2
+      line_height: 1.2
+
+  - id: flight-num
+    type: text
+    z: 11
+    x: 60
+    y: 50
+    width: 1230
+    height: 0
+    content: { type: plain, value: "FLIGHT  SB 482" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.16
+      text_align: right
+      line_height: 1.2
+
+  # ── Boarding pass label ───────────────────────────────────
+  - id: bp-eyebrow
+    type: text
+    z: 12
+    x: 60
+    y: 96
+    width: 1230
+    height: 0
+    content: { type: plain, value: "BOARDING PASS" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  # ── Passenger name ────────────────────────────────────────
+  - id: passenger-label
+    type: text
+    z: 13
+    x: 60
+    y: 140
+    width: 700
+    height: 0
+    content: { type: plain, value: "PASSENGER" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: passenger-name
+    type: text
+    z: 14
+    x: 60
+    y: 168
+    width: 1230
+    height: 0
+    content: { type: plain, value: "MARIANNE DUBOIS-CHEN" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.04
+      line_height: 1.2
+
+  # ── FROM → TO codes (huge) ────────────────────────────────
+  - id: from-label
+    type: text
+    z: 20
+    x: 60
+    y: 250
+    width: 400
+    height: 0
+    content: { type: plain, value: "FROM" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: from-code
+    type: text
+    z: 21
+    x: 60
+    y: 280
+    width: 400
+    height: 0
+    content: { type: plain, value: "CDG" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.03
+
+  - id: from-city
+    type: text
+    z: 22
+    x: 60
+    y: 440
+    width: 400
+    height: 0
+    content: { type: plain, value: "Paris  ·  Charles de Gaulle" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      line_height: 1.3
+
+  - id: arrow
+    type: text
+    z: 23
+    x: 480
+    y: 290
+    width: 240
+    height: 0
+    content: { type: plain, value: "→" }
+    style:
+      font_family: $heading
+      font_size: 120
+      font_weight: 400
+      color: $primary
+      text_align: center
+      line_height: 1
+
+  - id: to-label
+    type: text
+    z: 24
+    x: 740
+    y: 250
+    width: 400
+    height: 0
+    content: { type: plain, value: "TO" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: to-code
+    type: text
+    z: 25
+    x: 740
+    y: 280
+    width: 400
+    height: 0
+    content: { type: plain, value: "HND" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 800
+      color: $text
+      line_height: 1
+      letter_spacing: -0.03
+
+  - id: to-city
+    type: text
+    z: 26
+    x: 740
+    y: 440
+    width: 400
+    height: 0
+    content: { type: plain, value: "Tokyo  ·  Haneda" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      line_height: 1.3
+
+  # ── Gate / Seat / Boarding blocks ─────────────────────────
+  - id: gate-label
+    type: text
+    z: 30
+    x: 60
+    y: 510
+    width: 220
+    height: 0
+    content: { type: plain, value: "GATE" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+
+  - id: gate-value
+    type: text
+    z: 31
+    x: 60
+    y: 540
+    width: 220
+    height: 0
+    content: { type: plain, value: "K42" }
+    style:
+      font_family: $mono
+      font_size: 48
+      font_weight: 700
+      color: $text
+      line_height: 1.1
+
+  - id: seat-label
+    type: text
+    z: 32
+    x: 310
+    y: 510
+    width: 220
+    height: 0
+    content: { type: plain, value: "SEAT" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+
+  - id: seat-value
+    type: text
+    z: 33
+    x: 310
+    y: 540
+    width: 220
+    height: 0
+    content: { type: plain, value: "18A" }
+    style:
+      font_family: $mono
+      font_size: 48
+      font_weight: 700
+      color: $primary
+      line_height: 1.1
+
+  - id: boarding-label
+    type: text
+    z: 34
+    x: 560
+    y: 510
+    width: 320
+    height: 0
+    content: { type: plain, value: "BOARDING" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+
+  - id: boarding-value
+    type: text
+    z: 35
+    x: 560
+    y: 540
+    width: 320
+    height: 0
+    content: { type: plain, value: "10:35" }
+    style:
+      font_family: $mono
+      font_size: 48
+      font_weight: 700
+      color: $text
+      line_height: 1.1
+
+  - id: class-label
+    type: text
+    z: 36
+    x: 900
+    y: 510
+    width: 380
+    height: 0
+    content: { type: plain, value: "CLASS · DEP · ZONE" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+
+  - id: class-value
+    type: text
+    z: 37
+    x: 900
+    y: 540
+    width: 380
+    height: 0
+    content: { type: plain, value: "ECON  ·  11:05  ·  3" }
+    style:
+      font_family: $mono
+      font_size: 28
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  # ── Stub: rotated label + seat repeat + barcode ───────────
+  - id: stub-label
+    type: text
+    z: 50
+    x: 1410
+    y: 420
+    width: 360
+    height: 0
+    rotation: 90
+    content: { type: plain, value: "BOARDING PASS" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 800
+      color: "#FFFFFF"
+      letter_spacing: 0.4
+      text_transform: uppercase
+      line_height: 1
+
+  - id: stub-seat-label
+    type: text
+    z: 51
+    x: 1400
+    y: 70
+    width: 380
+    height: 0
+    content: { type: plain, value: "SEAT" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: "#FFFFFFAA"
+      letter_spacing: 0.32
+      text_align: center
+
+  - id: stub-seat
+    type: text
+    z: 52
+    x: 1400
+    y: 92
+    width: 380
+    height: 0
+    content: { type: plain, value: "18A" }
+    style:
+      font_family: $heading
+      font_size: 72
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.1
+
+  # ── Stub barcode placeholder bars ─────────────────────────
+  - id: sb-1
+    type: rect
+    z: 60
+    x: 1430
+    y: 470
+    width: 4
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-2
+    type: rect
+    z: 60
+    x: 1440
+    y: 470
+    width: 6
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-3
+    type: rect
+    z: 60
+    x: 1452
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-4
+    type: rect
+    z: 60
+    x: 1462
+    y: 470
+    width: 7
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-5
+    type: rect
+    z: 60
+    x: 1476
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-6
+    type: rect
+    z: 60
+    x: 1485
+    y: 470
+    width: 5
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-7
+    type: rect
+    z: 60
+    x: 1496
+    y: 470
+    width: 4
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-8
+    type: rect
+    z: 60
+    x: 1506
+    y: 470
+    width: 7
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-9
+    type: rect
+    z: 60
+    x: 1519
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-10
+    type: rect
+    z: 60
+    x: 1528
+    y: 470
+    width: 5
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-11
+    type: rect
+    z: 60
+    x: 1539
+    y: 470
+    width: 6
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-12
+    type: rect
+    z: 60
+    x: 1551
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-13
+    type: rect
+    z: 60
+    x: 1560
+    y: 470
+    width: 7
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-14
+    type: rect
+    z: 60
+    x: 1573
+    y: 470
+    width: 4
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-15
+    type: rect
+    z: 60
+    x: 1583
+    y: 470
+    width: 6
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-16
+    type: rect
+    z: 60
+    x: 1595
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-17
+    type: rect
+    z: 60
+    x: 1604
+    y: 470
+    width: 5
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-18
+    type: rect
+    z: 60
+    x: 1615
+    y: 470
+    width: 7
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-19
+    type: rect
+    z: 60
+    x: 1628
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-20
+    type: rect
+    z: 60
+    x: 1637
+    y: 470
+    width: 6
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-21
+    type: rect
+    z: 60
+    x: 1649
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-22
+    type: rect
+    z: 60
+    x: 1658
+    y: 470
+    width: 7
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-23
+    type: rect
+    z: 60
+    x: 1671
+    y: 470
+    width: 4
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-24
+    type: rect
+    z: 60
+    x: 1681
+    y: 470
+    width: 5
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-25
+    type: rect
+    z: 60
+    x: 1692
+    y: 470
+    width: 3
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-26
+    type: rect
+    z: 60
+    x: 1701
+    y: 470
+    width: 7
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-27
+    type: rect
+    z: 60
+    x: 1714
+    y: 470
+    width: 4
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-28
+    type: rect
+    z: 60
+    x: 1724
+    y: 470
+    width: 6
+    height: 130
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: sb-caption
+    type: text
+    z: 70
+    x: 1400
+    y: 620
+    width: 380
+    height: 0
+    content: { type: plain, value: "SB482-CDGHND-18A" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 600
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.2
+      line_height: 1.3
+
+slots:
+  - { id: airline,        path: "layers[15].content.value", type: text, hint: "Airline name",      default: "SKYBRIDGE AIRWAYS" }
+  - { id: flight_number,  path: "layers[16].content.value", type: text, hint: "Flight number",     default: "FLIGHT  SB 482" }
+  - { id: passenger_name, path: "layers[19].content.value", type: text, hint: "Passenger name",    default: "MARIANNE DUBOIS-CHEN" }
+  - { id: from_code,      path: "layers[21].content.value", type: text, hint: "Origin code",       default: "CDG" }
+  - { id: to_code,        path: "layers[25].content.value", type: text, hint: "Destination code",  default: "HND" }
+  - { id: gate,           path: "layers[28].content.value", type: text, hint: "Gate",              default: "K42" }
+  - { id: seat,           path: "layers[30].content.value", type: text, hint: "Seat",              default: "18A" }
+  - { id: boarding_time,  path: "layers[32].content.value", type: text, hint: "Boarding time",     default: "10:35" }

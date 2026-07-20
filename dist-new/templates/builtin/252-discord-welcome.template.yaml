@@ -1,0 +1,246 @@
+_protocol: template/v1
+
+# Discord welcome banner — 1200×600 landscape, dark-tech theme.
+# Gaming-style decorations, "WELCOME TO" eyebrow, server name BIG,
+# member-count badge, and a rules CTA.
+meta:
+  id: tmpl-discord-welcome
+  name: Discord Welcome Banner
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, social, discord, gaming, community, dark, landscape]
+  description: "Discord welcome banner with server name, member count, rules CTA, and gaming-style decoration."
+
+document:
+  width: 1200
+  height: 600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 600
+    fill: { type: solid, color: "#1A1F35" }
+  # ── Big radial halo ───────────────────────────────────────
+  - id: halo
+    type: circle
+    z: 1
+    cx: 980
+    cy: 300
+    rx: 380
+    ry: 380
+    fill: { type: none }
+    opacity: 0.32
+
+  # ── Decorative triangle 1 ─────────────────────────────────
+  - id: tri-1
+    type: rect
+    z: 2
+    x: 60
+    y: 60
+    width: 40
+    height: 40
+    radius: 6
+    rotation: 45
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.55
+
+  # ── Decorative diamond 2 ──────────────────────────────────
+  - id: tri-2
+    type: rect
+    z: 2
+    x: 140
+    y: 500
+    width: 28
+    height: 28
+    radius: 4
+    rotation: 45
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.6
+
+  # ── Decorative circle 3 ───────────────────────────────────
+  - id: dot-3
+    type: circle
+    z: 2
+    cx: 1100
+    cy: 80
+    rx: 14
+    ry: 14
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.7
+
+  # ── Accent stripe ─────────────────────────────────────────
+  - id: stripe
+    type: rect
+    z: 3
+    x: 80
+    y: 130
+    width: 80
+    height: 6
+    radius: 3
+    fill: { type: solid, color: "$accent" }
+
+  # ── Eyebrow "WELCOME TO" ──────────────────────────────────
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 150
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WELCOME TO" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  # ── Server name (BIG) ─────────────────────────────────────
+  - id: server-name
+    type: text
+    z: 11
+    x: 80
+    y: 195
+    width: 1040
+    height: 0
+    content: { type: plain, value: "PIXEL FORGE HQ" }
+    style:
+      font_family: $heading
+      font_size: 110
+      font_weight: 900
+      color: $text
+      line_height: 1
+      letter_spacing: -0.03
+      text_transform: uppercase
+
+  # ── Tagline ───────────────────────────────────────────────
+  - id: tagline
+    type: text
+    z: 12
+    x: 80
+    y: 330
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Indie game devs · pixel artists · chiptune nerds." }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 500
+      color: $text_muted
+      line_height: 1.4
+
+  # ── Member count pill ─────────────────────────────────────
+  - id: member-pill
+    type: rect
+    z: 20
+    x: 80
+    y: 410
+    width: 280
+    height: 60
+    radius: 30
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: member-dot
+    type: circle
+    z: 21
+    cx: 122
+    cy: 440
+    rx: 8
+    ry: 8
+    fill: { type: solid, color: "#43B581" }
+
+  - id: member-count
+    type: text
+    z: 22
+    x: 140
+    y: 426
+    width: 220
+    height: 0
+    content: { type: plain, value: "8,247 members" }
+    style:
+      font_family: $mono
+      font_size: 20
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  # ── Rules CTA ─────────────────────────────────────────────
+  - id: rules-pill
+    type: rect
+    z: 30
+    x: 80
+    y: 500
+    width: 460
+    height: 64
+    radius: 32
+    fill: { type: solid, color: $primary }
+  - id: rules-text
+    type: text
+    z: 31
+    x: 80
+    y: 518
+    width: 460
+    height: 0
+    content: { type: plain, value: "📜  Read the rules in #welcome" }
+    style:
+      font_family: $heading
+      font_size: 24
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.01
+
+  # ── Right side invite URL ─────────────────────────────────
+  - id: invite-label
+    type: text
+    z: 40
+    x: 720
+    y: 425
+    width: 400
+    height: 0
+    content: { type: plain, value: "INVITE" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.32
+      text_transform: uppercase
+      text_align: right
+      line_height: 1.3
+
+  - id: invite-url
+    type: text
+    z: 41
+    x: 720
+    y: 455
+    width: 400
+    height: 0
+    content: { type: plain, value: "discord.gg/pixelforge" }
+    style:
+      font_family: $mono
+      font_size: 26
+      font_weight: 700
+      color: $accent
+      text_align: right
+      line_height: 1.3
+
+slots:
+  - { id: server_name,  path: "layers[7].content.value",  type: text, hint: "Server name",      default: "PIXEL FORGE HQ" }
+  - { id: member_count, path: "layers[11].content.value", type: text, hint: "Member count text", default: "8,247 members" }
+  - { id: rules_url,    path: "layers[13].content.value", type: text, hint: "Rules CTA text",   default: "📜  Read the rules in #welcome" }

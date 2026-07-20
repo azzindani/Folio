@@ -1,0 +1,689 @@
+_protocol: template/v1
+
+# Tournament chess board — 1200×1200 square, editorial-cream.
+# 8×8 alternating squares, file labels A-H, rank labels 1-8, decorative border, tournament header.
+meta:
+  id: tmpl-chess-board
+  name: Chess Board — Tournament
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, chess, board, game, tournament, editorial, square]
+  description: "Tournament chess board diagram with 8x8 alternating squares, file and rank labels, decorative border, and tournament header."
+
+document:
+  width: 1200
+  height: 1200
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1200
+    fill: { type: solid, color: "$background" }
+
+  - id: header-rule-top
+    type: rect
+    z: 1
+    x: 80
+    y: 80
+    width: 1040
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: tournament-eyebrow
+    type: text
+    z: 2
+    x: 80
+    y: 100
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ROUND 7 · CLASSICAL TIME CONTROL" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: tournament-title
+    type: text
+    z: 3
+    x: 80
+    y: 130
+    width: 1040
+    height: 0
+    content: { type: plain, value: "THE LONDON OPEN 2026" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 800
+      color: "$text"
+      text_align: center
+      letter_spacing: 0.06
+
+  - id: header-rule-bottom
+    type: rect
+    z: 4
+    x: 80
+    y: 200
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # Decorative outer border
+  - id: border-outer
+    type: rect
+    z: 5
+    x: 140
+    y: 240
+    width: 920
+    height: 920
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: border-inner
+    type: rect
+    z: 6
+    x: 160
+    y: 260
+    width: 880
+    height: 880
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 1 }
+
+  # 8x8 board — squares 100x100 each, starting at (200, 300)
+  # Row 1 (rank 8, top)
+  - id: sq-a8
+    type: rect
+    z: 10
+    x: 200
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-b8
+    type: rect
+    z: 10
+    x: 300
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-c8
+    type: rect
+    z: 10
+    x: 400
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-d8
+    type: rect
+    z: 10
+    x: 500
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-e8
+    type: rect
+    z: 10
+    x: 600
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-f8
+    type: rect
+    z: 10
+    x: 700
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-g8
+    type: rect
+    z: 10
+    x: 800
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-h8
+    type: rect
+    z: 10
+    x: 900
+    y: 300
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+
+  # Row 2 (rank 7)
+  - id: sq-a7
+    type: rect
+    z: 10
+    x: 200
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-b7
+    type: rect
+    z: 10
+    x: 300
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-c7
+    type: rect
+    z: 10
+    x: 400
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-d7
+    type: rect
+    z: 10
+    x: 500
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-e7
+    type: rect
+    z: 10
+    x: 600
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-f7
+    type: rect
+    z: 10
+    x: 700
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-g7
+    type: rect
+    z: 10
+    x: 800
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-h7
+    type: rect
+    z: 10
+    x: 900
+    y: 400
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+
+  # Row 3 (rank 6)
+  - id: sq-a6
+    type: rect
+    z: 10
+    x: 200
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-b6
+    type: rect
+    z: 10
+    x: 300
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-c6
+    type: rect
+    z: 10
+    x: 400
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-d6
+    type: rect
+    z: 10
+    x: 500
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-e6
+    type: rect
+    z: 10
+    x: 600
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-f6
+    type: rect
+    z: 10
+    x: 700
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-g6
+    type: rect
+    z: 10
+    x: 800
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-h6
+    type: rect
+    z: 10
+    x: 900
+    y: 500
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+
+  # Row 4 (rank 5)
+  - id: sq-a5
+    type: rect
+    z: 10
+    x: 200
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-b5
+    type: rect
+    z: 10
+    x: 300
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-c5
+    type: rect
+    z: 10
+    x: 400
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-d5
+    type: rect
+    z: 10
+    x: 500
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-e5
+    type: rect
+    z: 10
+    x: 600
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-f5
+    type: rect
+    z: 10
+    x: 700
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-g5
+    type: rect
+    z: 10
+    x: 800
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-h5
+    type: rect
+    z: 10
+    x: 900
+    y: 600
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+
+  # Row 5 (rank 4)
+  - id: sq-a4
+    type: rect
+    z: 10
+    x: 200
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-b4
+    type: rect
+    z: 10
+    x: 300
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-c4
+    type: rect
+    z: 10
+    x: 400
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-d4
+    type: rect
+    z: 10
+    x: 500
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-e4
+    type: rect
+    z: 10
+    x: 600
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-f4
+    type: rect
+    z: 10
+    x: 700
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-g4
+    type: rect
+    z: 10
+    x: 800
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-h4
+    type: rect
+    z: 10
+    x: 900
+    y: 700
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+
+  # Row 6 (rank 3)
+  - id: sq-a3
+    type: rect
+    z: 10
+    x: 200
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-b3
+    type: rect
+    z: 10
+    x: 300
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-c3
+    type: rect
+    z: 10
+    x: 400
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-d3
+    type: rect
+    z: 10
+    x: 500
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-e3
+    type: rect
+    z: 10
+    x: 600
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-f3
+    type: rect
+    z: 10
+    x: 700
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-g3
+    type: rect
+    z: 10
+    x: 800
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-h3
+    type: rect
+    z: 10
+    x: 900
+    y: 800
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+
+  # Row 7 (rank 2)
+  - id: sq-a2
+    type: rect
+    z: 10
+    x: 200
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-b2
+    type: rect
+    z: 10
+    x: 300
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-c2
+    type: rect
+    z: 10
+    x: 400
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-d2
+    type: rect
+    z: 10
+    x: 500
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-e2
+    type: rect
+    z: 10
+    x: 600
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-f2
+    type: rect
+    z: 10
+    x: 700
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-g2
+    type: rect
+    z: 10
+    x: 800
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-h2
+    type: rect
+    z: 10
+    x: 900
+    y: 900
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+
+  # Row 8 (rank 1)
+  - id: sq-a1
+    type: rect
+    z: 10
+    x: 200
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-b1
+    type: rect
+    z: 10
+    x: 300
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-c1
+    type: rect
+    z: 10
+    x: 400
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-d1
+    type: rect
+    z: 10
+    x: 500
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-e1
+    type: rect
+    z: 10
+    x: 600
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-f1
+    type: rect
+    z: 10
+    x: 700
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+  - id: sq-g1
+    type: rect
+    z: 10
+    x: 800
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#B58863" }
+  - id: sq-h1
+    type: rect
+    z: 10
+    x: 900
+    y: 1000
+    width: 100
+    height: 100
+    fill: { type: solid, color: "#F0D9B5" }
+
+  # Rank labels (1-8) on left side
+  - id: ranks
+    type: text
+    z: 20
+    x: 170
+    y: 340
+    width: 30
+    height: 0
+    content: { type: plain, value: "8\n\n7\n\n6\n\n5\n\n4\n\n3\n\n2\n\n1" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: center
+      line_height: 1.65
+
+  # File labels (A-H) along bottom
+  - id: files
+    type: text
+    z: 21
+    x: 200
+    y: 1110
+    width: 800
+    height: 0
+    content: { type: plain, value: "A     B     C     D     E     F     G     H" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 700
+      color: "$text"
+      text_align: center
+      letter_spacing: 0.45
+
+  # Footer
+  - id: footer
+    type: text
+    z: 30
+    x: 80
+    y: 1160
+    width: 1040
+    height: 0
+    content: { type: plain, value: "WHITE TO MOVE  ·  ALGEBRAIC NOTATION  ·  FIDE RULES" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+slots:
+  - { id: tournament_name, path: "layers[3].content.value", type: text, hint: "Tournament name", default: "THE LONDON OPEN 2026" }
+  - { id: round_number,    path: "layers[2].content.value", type: text, hint: "Round number / time control eyebrow", default: "ROUND 7 · CLASSICAL TIME CONTROL" }

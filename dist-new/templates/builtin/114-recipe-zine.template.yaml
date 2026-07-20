@@ -1,0 +1,214 @@
+_protocol: template/v1
+
+# 6-page recipe zine — 1080×1350 portrait, editorial-cream theme.
+# Cover → ingredients → prep step 1 → prep step 2 → plating tip → credits.
+meta:
+  id: tmpl-recipe-zine
+  name: Recipe Zine · 6 Pages
+  type: carousel
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [carousel, recipe, zine, food, cookbook, cream]
+  description: "Six-page recipe zine with cover, ingredients list, two prep steps, plating tip, and credits with related recipes."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+pages:
+  # ── Page 1 · Cover ──────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: photo-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 720, radius: 12, fill: { type: solid, color: $primary }, opacity: 0.4 }
+      - { id: photo-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 720, radius: 12, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+      - { id: plate-shadow, type: ellipse, z: 7, cx: 540, cy: 510, rx: 280, ry: 60, fill: { type: solid, color: "#000000" }, opacity: 0.18 }
+      - { id: plate, type: circle, z: 8, cx: 540, cy: 480, rx: 240, ry: 240, fill: { type: solid, color: "#FFFFFF" } }
+      - { id: plate-inner, type: circle, z: 9, cx: 540, cy: 480, rx: 200, ry: 200, fill: { type: solid, color: "#FAF4EA" } }
+      - { id: pasta-mound, type: circle, z: 10, cx: 540, cy: 480, rx: 150, ry: 150, fill: { type: solid, color: "#E8B872" } }
+      - { id: pasta-1, type: ellipse, z: 11, cx: 480, cy: 440, rx: 60, ry: 14, fill: { type: solid, color: "#C29250" } }
+      - { id: pasta-2, type: ellipse, z: 11, cx: 600, cy: 460, rx: 60, ry: 14, fill: { type: solid, color: "#C29250" } }
+      - { id: pasta-3, type: ellipse, z: 11, cx: 520, cy: 510, rx: 70, ry: 14, fill: { type: solid, color: "#C29250" } }
+      - { id: herb-1, type: ellipse, z: 12, cx: 510, cy: 420, rx: 12, ry: 18, fill: { type: solid, color: "#7BAB5B" } }
+      - { id: herb-2, type: ellipse, z: 12, cx: 580, cy: 440, rx: 10, ry: 16, fill: { type: solid, color: "#7BAB5B" } }
+      - { id: herb-3, type: ellipse, z: 12, cx: 540, cy: 490, rx: 14, ry: 20, fill: { type: solid, color: "#5C8A42" } }
+      - { id: kicker-pill, type: rect, z: 20, x: 80, y: 840, width: 280, height: 48, radius: 24, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1.5 } }
+      - { id: kicker, type: text, z: 21, x: 80, y: 854, width: 280, height: 0, content: { type: plain, value: "DINNER · 35 MIN" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center, text_transform: uppercase } }
+      - { id: title, type: text, z: 22, x: 80, y: 920, width: 920, height: 0, content: { type: plain, value: "Brown-Butter\nLemon Pasta" }, style: { font_family: $heading, font_size: 96, font_weight: 700, color: $text, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: sub, type: text, z: 23, x: 80, y: 1130, width: 920, height: 0, content: { type: plain, value: "Five ingredients. Three pans you already own.\nThe kind of pasta you'll memorize." }, style: { font_family: $heading, font_size: 24, font_style: italic, color: $text_muted, line_height: 1.5 } }
+      - { id: foot, type: text, z: 24, x: 80, y: 1280, width: 920, height: 0, content: { type: plain, value: "ISSUE 14 · the small dinners zine" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: page-num, type: text, z: 25, x: 940, y: 1280, width: 80, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 2 · Ingredients ────────────────────────────────────
+  - id: ingredients
+    label: Ingredients
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: page-kicker, type: text, z: 10, x: 80, y: 100, width: 920, height: 0, content: { type: plain, value: "WHAT YOU'LL NEED" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_transform: uppercase } }
+      - { id: page-title, type: text, z: 11, x: 80, y: 150, width: 920, height: 0, content: { type: plain, value: "Ingredients" }, style: { font_family: $heading, font_size: 64, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: serves-card, type: rect, z: 20, x: 80, y: 280, width: 920, height: 100, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: serves-1-lbl, type: text, z: 21, x: 120, y: 310, width: 260, height: 0, content: { type: plain, value: "SERVES" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: serves-1-val, type: text, z: 22, x: 120, y: 336, width: 260, height: 0, content: { type: plain, value: "4" }, style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text } }
+      - { id: serves-2-lbl, type: text, z: 21, x: 400, y: 310, width: 260, height: 0, content: { type: plain, value: "PREP" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: serves-2-val, type: text, z: 22, x: 400, y: 336, width: 260, height: 0, content: { type: plain, value: "10 min" }, style: { font_family: $heading, font_size: 32, font_weight: 700, color: $text } }
+      - { id: serves-3-lbl, type: text, z: 21, x: 680, y: 310, width: 260, height: 0, content: { type: plain, value: "COOK" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: serves-3-val, type: text, z: 22, x: 680, y: 336, width: 260, height: 0, content: { type: plain, value: "25 min" }, style: { font_family: $heading, font_size: 32, font_weight: 700, color: $primary } }
+      - { id: list-header, type: text, z: 30, x: 80, y: 440, width: 920, height: 0, content: { type: plain, value: "FROM THE PANTRY" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: i1-amt, type: text, z: 31, x: 80, y: 490, width: 220, height: 0, content: { type: plain, value: "400 g" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text } }
+      - { id: i1-name, type: text, z: 32, x: 320, y: 490, width: 680, height: 0, content: { type: plain, value: "spaghetti · or linguine, dried" }, style: { font_family: $heading, font_size: 22, color: $text } }
+      - { id: i1-line, type: rect, z: 33, x: 80, y: 538, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: i2-amt, type: text, z: 31, x: 80, y: 568, width: 220, height: 0, content: { type: plain, value: "120 g" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text } }
+      - { id: i2-name, type: text, z: 32, x: 320, y: 568, width: 680, height: 0, content: { type: plain, value: "unsalted butter · the good kind" }, style: { font_family: $heading, font_size: 22, color: $text } }
+      - { id: i2-line, type: rect, z: 33, x: 80, y: 616, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: i3-amt, type: text, z: 31, x: 80, y: 646, width: 220, height: 0, content: { type: plain, value: "2 large" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text } }
+      - { id: i3-name, type: text, z: 32, x: 320, y: 646, width: 680, height: 0, content: { type: plain, value: "lemons · zest of both, juice of one" }, style: { font_family: $heading, font_size: 22, color: $text } }
+      - { id: i3-line, type: rect, z: 33, x: 80, y: 694, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: i4-amt, type: text, z: 31, x: 80, y: 724, width: 220, height: 0, content: { type: plain, value: "60 g" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text } }
+      - { id: i4-name, type: text, z: 32, x: 320, y: 724, width: 680, height: 0, content: { type: plain, value: "parmigiano · finely grated, plus more for serving" }, style: { font_family: $heading, font_size: 22, color: $text } }
+      - { id: i4-line, type: rect, z: 33, x: 80, y: 772, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: i5-amt, type: text, z: 31, x: 80, y: 802, width: 220, height: 0, content: { type: plain, value: "1 small bunch" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text } }
+      - { id: i5-name, type: text, z: 32, x: 320, y: 802, width: 680, height: 0, content: { type: plain, value: "flat-leaf parsley · roughly chopped" }, style: { font_family: $heading, font_size: 22, color: $text } }
+      - { id: i5-line, type: rect, z: 33, x: 80, y: 850, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: list-header-2, type: text, z: 40, x: 80, y: 900, width: 920, height: 0, content: { type: plain, value: "TO TASTE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: i6-amt, type: text, z: 41, x: 80, y: 950, width: 220, height: 0, content: { type: plain, value: "—" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $text_muted } }
+      - { id: i6-name, type: text, z: 42, x: 320, y: 950, width: 680, height: 0, content: { type: plain, value: "flaky sea salt · cracked black pepper · olive oil" }, style: { font_family: $heading, font_size: 22, color: $text } }
+      - { id: tip-card, type: rect, z: 50, x: 80, y: 1060, width: 920, height: 160, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 1 } }
+      - { id: tip-label, type: text, z: 51, x: 120, y: 1090, width: 840, height: 0, content: { type: plain, value: "QUICK NOTE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: tip-body, type: text, z: 52, x: 120, y: 1124, width: 840, height: 0, content: { type: plain, value: "Pull a mug of starchy pasta water before you drain — it's the difference between sauce and oil slick." }, style: { font_family: $heading, font_size: 20, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: page-num, type: text, z: 60, x: 940, y: 1290, width: 80, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 3 · Prep Step 1 ────────────────────────────────────
+  - id: step-1
+    label: Step 1
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: photo-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 540, radius: 12, fill: { type: solid, color: $secondary }, opacity: 0.4 }
+      - { id: photo-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 540, radius: 12, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+      - { id: pan-shadow, type: ellipse, z: 7, cx: 540, cy: 410, rx: 220, ry: 30, fill: { type: solid, color: "#000000" }, opacity: 0.18 }
+      - { id: pan-outer, type: ellipse, z: 8, cx: 540, cy: 360, rx: 220, ry: 90, fill: { type: solid, color: "#3A2418" } }
+      - { id: pan-inner, type: ellipse, z: 9, cx: 540, cy: 360, rx: 200, ry: 80, fill: { type: solid, color: "#5C3924" } }
+      - { id: butter-pool, type: ellipse, z: 10, cx: 540, cy: 360, rx: 170, ry: 60, fill: { type: solid, color: "#D49A4F" } }
+      - { id: butter-foam-1, type: ellipse, z: 11, cx: 480, cy: 340, rx: 30, ry: 10, fill: { type: solid, color: "#F5C972" }, opacity: 0.8 }
+      - { id: butter-foam-2, type: ellipse, z: 11, cx: 580, cy: 360, rx: 40, ry: 12, fill: { type: solid, color: "#F5C972" }, opacity: 0.8 }
+      - { id: butter-foam-3, type: ellipse, z: 11, cx: 520, cy: 380, rx: 25, ry: 8, fill: { type: solid, color: "#F5C972" }, opacity: 0.7 }
+      - { id: pan-handle, type: rect, z: 12, x: 760, y: 350, width: 200, height: 16, radius: 8, fill: { type: solid, color: "#3A2418" } }
+      - { id: photo-label-pill, type: rect, z: 13, x: 100, y: 100, width: 200, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.85)" } }
+      - { id: photo-label, type: text, z: 14, x: 100, y: 110, width: 200, height: 0, content: { type: plain, value: "BROWN-BUTTER PAN" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text, letter_spacing: 0.3, text_align: center, text_transform: uppercase } }
+      - { id: step-pill, type: rect, z: 20, x: 80, y: 660, width: 160, height: 60, radius: 30, fill: { type: solid, color: "$primary" } }
+      - { id: step-label, type: text, z: 21, x: 80, y: 678, width: 160, height: 0, content: { type: plain, value: "STEP 1 OF 2" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3, text_align: center } }
+      - { id: step-title, type: text, z: 22, x: 80, y: 760, width: 920, height: 0, content: { type: plain, value: "Brown the butter." }, style: { font_family: $heading, font_size: 72, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: time-est, type: text, z: 23, x: 80, y: 860, width: 920, height: 0, content: { type: plain, value: "≈ 6 minutes · listen, don't watch the clock." }, style: { font_family: $body, font_size: 18, font_style: italic, color: $primary, letter_spacing: 0.2 } }
+      - { id: divider, type: rect, z: 24, x: 80, y: 920, width: 60, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: body, type: text, z: 25, x: 80, y: 960, width: 920, height: 0, content: { type: plain, value: "Melt the butter in a wide pan over medium heat. Once it foams, swirl gently. After three or four minutes the milk solids will turn the color of toasted almond and the smell will shift from creamy to nutty. Pull it off the heat the second that happens — it goes from brown to burnt fast." }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.7 } }
+      - { id: tip-bullet, type: text, z: 26, x: 80, y: 1220, width: 920, height: 0, content: { type: plain, value: "→ Use a light-bottomed pan — you need to see the color change." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.5, font_style: italic } }
+      - { id: page-num, type: text, z: 30, x: 940, y: 1290, width: 80, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 4 · Prep Step 2 ────────────────────────────────────
+  - id: step-2
+    label: Step 2
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: photo-frame, type: rect, z: 5, x: 80, y: 80, width: 920, height: 540, radius: 12, fill: { type: solid, color: $primary }, opacity: 0.4 }
+      - { id: photo-border, type: rect, z: 6, x: 80, y: 80, width: 920, height: 540, radius: 12, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 1 } }
+      - { id: pan-shadow, type: ellipse, z: 7, cx: 540, cy: 430, rx: 240, ry: 30, fill: { type: solid, color: "#000000" }, opacity: 0.18 }
+      - { id: pan-outer, type: ellipse, z: 8, cx: 540, cy: 380, rx: 240, ry: 100, fill: { type: solid, color: "#3A2418" } }
+      - { id: pan-inner, type: ellipse, z: 9, cx: 540, cy: 380, rx: 220, ry: 88, fill: { type: solid, color: "#D49A4F" } }
+      - { id: pasta-strand-1, type: ellipse, z: 10, cx: 480, cy: 360, rx: 90, ry: 12, fill: { type: solid, color: "#E8B872" } }
+      - { id: pasta-strand-2, type: ellipse, z: 10, cx: 600, cy: 380, rx: 90, ry: 12, fill: { type: solid, color: "#E8B872" } }
+      - { id: pasta-strand-3, type: ellipse, z: 10, cx: 520, cy: 400, rx: 80, ry: 12, fill: { type: solid, color: "#C29250" } }
+      - { id: pasta-strand-4, type: ellipse, z: 10, cx: 570, cy: 350, rx: 80, ry: 12, fill: { type: solid, color: "#C29250" } }
+      - { id: zest-1, type: circle, z: 11, cx: 450, cy: 350, rx: 4, ry: 4, fill: { type: solid, color: "#F5C972" } }
+      - { id: zest-2, type: circle, z: 11, cx: 510, cy: 370, rx: 4, ry: 4, fill: { type: solid, color: "#F5C972" } }
+      - { id: zest-3, type: circle, z: 11, cx: 580, cy: 410, rx: 4, ry: 4, fill: { type: solid, color: "#F5C972" } }
+      - { id: zest-4, type: circle, z: 11, cx: 620, cy: 360, rx: 4, ry: 4, fill: { type: solid, color: "#F5C972" } }
+      - { id: zest-5, type: circle, z: 11, cx: 540, cy: 400, rx: 4, ry: 4, fill: { type: solid, color: "#F5C972" } }
+      - { id: tongs, type: rect, z: 12, x: 720, y: 250, width: 14, height: 200, radius: 4, fill: { type: solid, color: "#7A7A7A" }, transform: { rotate: 25 } }
+      - { id: photo-label-pill, type: rect, z: 13, x: 100, y: 100, width: 220, height: 36, radius: 18, fill: { type: solid, color: "rgba(255,255,255,0.85)" } }
+      - { id: photo-label, type: text, z: 14, x: 100, y: 110, width: 220, height: 0, content: { type: plain, value: "TOSS, DON'T STIR" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $text, letter_spacing: 0.3, text_align: center, text_transform: uppercase } }
+      - { id: step-pill, type: rect, z: 20, x: 80, y: 660, width: 160, height: 60, radius: 30, fill: { type: solid, color: "$primary" } }
+      - { id: step-label, type: text, z: 21, x: 80, y: 678, width: 160, height: 0, content: { type: plain, value: "STEP 2 OF 2" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3, text_align: center } }
+      - { id: step-title, type: text, z: 22, x: 80, y: 760, width: 920, height: 0, content: { type: plain, value: "Toss it all together." }, style: { font_family: $heading, font_size: 72, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: time-est, type: text, z: 23, x: 80, y: 860, width: 920, height: 0, content: { type: plain, value: "≈ 90 seconds · keep it moving." }, style: { font_family: $body, font_size: 18, font_style: italic, color: $primary, letter_spacing: 0.2 } }
+      - { id: divider, type: rect, z: 24, x: 80, y: 920, width: 60, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: body, type: text, z: 25, x: 80, y: 960, width: 920, height: 0, content: { type: plain, value: "Drain the pasta one minute before the box says, holding back a mug of pasta water. Drop the noodles into the brown butter with the lemon zest, juice, and half the parmigiano. Toss vigorously, adding pasta water by the splash until the sauce coats every strand and glosses the pan." }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.7 } }
+      - { id: tip-bullet, type: text, z: 26, x: 80, y: 1220, width: 920, height: 0, content: { type: plain, value: "→ The sauce thickens as it cools — leave it a touch looser than you think." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.5, font_style: italic } }
+      - { id: page-num, type: text, z: 30, x: 940, y: 1290, width: 80, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 5 · Plating Tip ────────────────────────────────────
+  - id: plating
+    label: Plating
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $background } }
+      - { id: glow, type: circle, z: 1, cx: 540, cy: 500, rx: 420, ry: 420, fill: { type: none }, opacity: 0.18 }
+      - { id: page-kicker, type: text, z: 10, x: 80, y: 100, width: 920, height: 0, content: { type: plain, value: "THE FINISH" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center, text_transform: uppercase } }
+      - { id: page-title, type: text, z: 11, x: 80, y: 150, width: 920, height: 0, content: { type: plain, value: "Plate it pretty." }, style: { font_family: $heading, font_size: 76, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02, text_align: center } }
+      - { id: plate-shadow, type: ellipse, z: 20, cx: 540, cy: 660, rx: 280, ry: 50, fill: { type: solid, color: "#000000" }, opacity: 0.18 }
+      - { id: plate, type: circle, z: 21, cx: 540, cy: 600, rx: 240, ry: 240, fill: { type: solid, color: "#FFFFFF" } }
+      - { id: plate-inner, type: circle, z: 22, cx: 540, cy: 600, rx: 200, ry: 200, fill: { type: solid, color: "#FAF4EA" } }
+      - { id: twist, type: circle, z: 23, cx: 540, cy: 600, rx: 120, ry: 120, fill: { type: solid, color: "#E8B872" } }
+      - { id: twist-line-1, type: ellipse, z: 24, cx: 540, cy: 580, rx: 100, ry: 16, fill: { type: solid, color: "#C29250" } }
+      - { id: twist-line-2, type: ellipse, z: 24, cx: 540, cy: 600, rx: 110, ry: 18, fill: { type: solid, color: "#C29250" } }
+      - { id: twist-line-3, type: ellipse, z: 24, cx: 540, cy: 620, rx: 95, ry: 16, fill: { type: solid, color: "#C29250" } }
+      - { id: garnish-1, type: ellipse, z: 25, cx: 510, cy: 560, rx: 10, ry: 14, fill: { type: solid, color: "#5C8A42" } }
+      - { id: garnish-2, type: ellipse, z: 25, cx: 580, cy: 580, rx: 8, ry: 12, fill: { type: solid, color: "#7BAB5B" } }
+      - { id: garnish-3, type: ellipse, z: 25, cx: 540, cy: 640, rx: 9, ry: 13, fill: { type: solid, color: "#5C8A42" } }
+      - { id: zest-strand, type: rect, z: 26, x: 480, y: 600, width: 100, height: 4, fill: { type: solid, color: "#F5C972" }, transform: { rotate: 15 } }
+      - { id: divider, type: rect, z: 30, x: 510, y: 920, width: 60, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: tip-1-num, type: text, z: 31, x: 80, y: 980, width: 80, height: 0, content: { type: plain, value: "1." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.2 } }
+      - { id: tip-1, type: text, z: 32, x: 150, y: 982, width: 850, height: 0, content: { type: plain, value: "Twist a portion in a ladle, then slide it onto a warmed plate. Don't fan it out." }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: tip-2-num, type: text, z: 31, x: 80, y: 1060, width: 80, height: 0, content: { type: plain, value: "2." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.2 } }
+      - { id: tip-2, type: text, z: 32, x: 150, y: 1062, width: 850, height: 0, content: { type: plain, value: "Drag a spoon through any sauce that pools — it should glisten, not puddle." }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: tip-3-num, type: text, z: 31, x: 80, y: 1140, width: 80, height: 0, content: { type: plain, value: "3." }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.2 } }
+      - { id: tip-3, type: text, z: 32, x: 150, y: 1142, width: 850, height: 0, content: { type: plain, value: "More zest on top than you think — a confetti of yellow makes everything else look better." }, style: { font_family: $heading, font_size: 22, color: $text, line_height: 1.5 } }
+      - { id: pull-quote, type: text, z: 40, x: 80, y: 1240, width: 920, height: 0, content: { type: plain, value: "“ A little parmigiano on the rim. Pepper at the table. ”" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $primary, text_align: center, line_height: 1.4 } }
+      - { id: page-num, type: text, z: 50, x: 940, y: 1290, width: 80, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 6 · Credits + Related ──────────────────────────────
+  - id: credits
+    label: Credits
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: page-kicker, type: text, z: 10, x: 80, y: 100, width: 920, height: 0, content: { type: plain, value: "MORE FROM ISSUE 14" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center, text_transform: uppercase } }
+      - { id: page-title, type: text, z: 11, x: 80, y: 150, width: 920, height: 0, content: { type: plain, value: "If you liked this." }, style: { font_family: $heading, font_size: 64, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02, text_align: center } }
+      - { id: r1-card, type: rect, z: 20, x: 80, y: 280, width: 440, height: 320, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: r1-thumb, type: rect, z: 21, x: 80, y: 280, width: 440, height: 180, radius: 12, fill: { type: solid, color: $primary }, opacity: 0.5 }
+      - { id: r1-thumb-icon, type: text, z: 22, x: 80, y: 332, width: 440, height: 0, content: { type: plain, value: "🍋" }, style: { font_family: $heading, font_size: 88, text_align: center, line_height: 1 } }
+      - { id: r1-kicker, type: text, z: 23, x: 110, y: 480, width: 380, height: 0, content: { type: plain, value: "20 MIN · SIDE" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: r1-title, type: text, z: 24, x: 110, y: 510, width: 380, height: 0, content: { type: plain, value: "Lemon-roasted broccoli" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: r1-body, type: text, z: 25, x: 110, y: 562, width: 380, height: 0, content: { type: plain, value: "The pasta's best friend. Crispy edges in 12 minutes." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: r2-card, type: rect, z: 20, x: 560, y: 280, width: 440, height: 320, radius: 12, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: r2-thumb, type: rect, z: 21, x: 560, y: 280, width: 440, height: 180, radius: 12, fill: { type: solid, color: $secondary }, opacity: 0.5 }
+      - { id: r2-thumb-icon, type: text, z: 22, x: 560, y: 332, width: 440, height: 0, content: { type: plain, value: "🍷" }, style: { font_family: $heading, font_size: 88, text_align: center, line_height: 1 } }
+      - { id: r2-kicker, type: text, z: 23, x: 590, y: 480, width: 380, height: 0, content: { type: plain, value: "5 MIN · DRINK" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: r2-title, type: text, z: 24, x: 590, y: 510, width: 380, height: 0, content: { type: plain, value: "Negroni sbagliato" }, style: { font_family: $heading, font_size: 26, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: r2-body, type: text, z: 25, x: 590, y: 562, width: 380, height: 0, content: { type: plain, value: "With prosecco, in it, instead of gin. Eleven words. Big effect." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: divider, type: rect, z: 30, x: 510, y: 680, width: 60, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: credits-title, type: text, z: 31, x: 80, y: 720, width: 920, height: 0, content: { type: plain, value: "CREDITS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.4, text_align: center, text_transform: uppercase } }
+      - { id: c1, type: text, z: 32, x: 80, y: 770, width: 920, height: 0, content: { type: plain, value: "RECIPE · Sofia Marchetti" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, text_align: center, line_height: 1.6 } }
+      - { id: c2, type: text, z: 33, x: 80, y: 810, width: 920, height: 0, content: { type: plain, value: "WORDS · Leo Park" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, text_align: center, line_height: 1.6 } }
+      - { id: c3, type: text, z: 34, x: 80, y: 850, width: 920, height: 0, content: { type: plain, value: "PHOTOS · Tomo Sato" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, text_align: center, line_height: 1.6 } }
+      - { id: c4, type: text, z: 35, x: 80, y: 890, width: 920, height: 0, content: { type: plain, value: "DESIGN · Honeybee Studio" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, text_align: center, line_height: 1.6 } }
+      - { id: foot-divider, type: rect, z: 40, x: 80, y: 1000, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: zine-name, type: text, z: 41, x: 80, y: 1040, width: 920, height: 0, content: { type: plain, value: "THE SMALL DINNERS ZINE" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.5, text_align: center } }
+      - { id: site, type: text, z: 42, x: 80, y: 1080, width: 920, height: 0, content: { type: plain, value: "smalldinners.zine" }, style: { font_family: $mono, font_size: 20, color: $text, text_align: center, letter_spacing: 0.2 } }
+      - { id: copyright, type: text, z: 43, x: 80, y: 1130, width: 920, height: 0, content: { type: plain, value: "© 2026 · Recipes free to share, attribution kind." }, style: { font_family: $body, font_size: 14, color: $text_muted, text_align: center, line_height: 1.5 } }
+      - { id: sign-off, type: text, z: 50, x: 80, y: 1220, width: 920, height: 0, content: { type: plain, value: "buon appetito ✦" }, style: { font_family: $heading, font_size: 28, font_style: italic, color: $primary, text_align: center } }
+      - { id: page-num, type: text, z: 60, x: 940, y: 1290, width: 80, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+slots:
+  - { id: recipe_name,      path: "pages[0].layers[22].content.value", type: text, hint: "Recipe name (cover)",     default: "Brown-Butter\nLemon Pasta" }
+  - { id: subtitle,         path: "pages[0].layers[23].content.value", type: text, hint: "Cover subtitle",          default: "Five ingredients. Three pans you already own.\nThe kind of pasta you'll memorize." }
+  - { id: cook_time,        path: "pages[0].layers[21].content.value", type: text, hint: "Time + meal kicker",      default: "DINNER · 35 MIN" }
+  - { id: serves,           path: "pages[1].layers[6].content.value",  type: text, hint: "Number of servings",      default: "4" }
+  - { id: ingredients_list, path: "pages[1].layers[12].content.value", type: text, hint: "Lead ingredient",         default: "unsalted butter · the good kind" }
+  - { id: step_1_title,     path: "pages[2].layers[18].content.value", type: text, hint: "Step 1 title",            default: "Brown the butter." }
+  - { id: step_1_body,      path: "pages[2].layers[21].content.value", type: text, hint: "Step 1 instructions",     default: "Melt the butter in a wide pan over medium heat. Once it foams, swirl gently. After three or four minutes the milk solids will turn the color of toasted almond and the smell will shift from creamy to nutty. Pull it off the heat the second that happens — it goes from brown to burnt fast." }
+  - { id: step_2_title,     path: "pages[3].layers[24].content.value", type: text, hint: "Step 2 title",            default: "Toss it all together." }
+  - { id: step_2_body,      path: "pages[3].layers[27].content.value", type: text, hint: "Step 2 instructions",     default: "Drain the pasta one minute before the box says, holding back a mug of pasta water. Drop the noodles into the brown butter with the lemon zest, juice, and half the parmigiano. Toss vigorously, adding pasta water by the splash until the sauce coats every strand and glosses the pan." }

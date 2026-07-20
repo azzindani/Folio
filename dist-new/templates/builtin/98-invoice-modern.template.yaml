@@ -1,0 +1,966 @@
+_protocol: template/v1
+
+# Modern invoice — A4 portrait 1240×1754, light-clean theme.
+# Top: logo placeholder left + invoice meta right.
+# Middle: billed-from / billed-to block.
+# Body: 5-row line-items table (description | qty | rate | amount).
+# Footer: subtotal/tax/total stack + payment terms.
+meta:
+  id: tmpl-invoice-modern
+  name: Invoice · Modern
+  type: invoice
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [invoice, billing, finance, a4, professional, clean]
+  description: "Modern A4 invoice with logo, invoice meta, billed-to block, 5-row line-items table, totals stack, and payment terms."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # ── Logo placeholder (top-left) ──────────────────────────
+  - id: logo-mark
+    type: rect
+    z: 5
+    x: 80
+    y: 80
+    width: 60
+    height: 60
+    radius: 10
+    fill: { type: solid, color: "$primary" }
+
+  - id: logo-letter
+    type: text
+    z: 6
+    x: 80
+    y: 92
+    width: 60
+    height: 0
+    content: { type: plain, value: "F" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1.2
+
+  - id: company-name
+    type: text
+    z: 7
+    x: 160
+    y: 90
+    width: 460
+    height: 0
+    content: { type: plain, value: "Folio Studio Ltd." }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: $text
+      line_height: 1.2
+      letter_spacing: -0.01
+
+  - id: company-tag
+    type: text
+    z: 8
+    x: 160
+    y: 122
+    width: 460
+    height: 0
+    content: { type: plain, value: "Design engineering & systems" }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text_muted
+      line_height: 1.3
+
+  # ── Invoice meta (top-right) ──────────────────────────────
+  - id: invoice-title
+    type: text
+    z: 10
+    x: 700
+    y: 80
+    width: 460
+    height: 0
+    content: { type: plain, value: "INVOICE" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.4
+      text_align: right
+      line_height: 1
+      text_transform: uppercase
+
+  - id: invoice-number-label
+    type: text
+    z: 11
+    x: 700
+    y: 140
+    width: 460
+    height: 0
+    content: { type: plain, value: "INVOICE #" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: right
+      text_transform: uppercase
+
+  - id: invoice-number
+    type: text
+    z: 12
+    x: 700
+    y: 160
+    width: 460
+    height: 0
+    content: { type: plain, value: "INV-2026-0427" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $text
+      text_align: right
+      line_height: 1.3
+
+  - id: date-label
+    type: text
+    z: 13
+    x: 700
+    y: 200
+    width: 460
+    height: 0
+    content: { type: plain, value: "ISSUE DATE" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: right
+      text_transform: uppercase
+
+  - id: date-value
+    type: text
+    z: 14
+    x: 700
+    y: 220
+    width: 460
+    height: 0
+    content: { type: plain, value: "May 16, 2026" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text
+      text_align: right
+      line_height: 1.3
+
+  - id: due-label
+    type: text
+    z: 15
+    x: 700
+    y: 260
+    width: 460
+    height: 0
+    content: { type: plain, value: "DUE DATE" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: right
+      text_transform: uppercase
+
+  - id: due-value
+    type: text
+    z: 16
+    x: 700
+    y: 280
+    width: 460
+    height: 0
+    content: { type: plain, value: "Jun 15, 2026" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 600
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  # ── Top divider ──────────────────────────────────────────
+  - id: top-divider
+    type: rect
+    z: 20
+    x: 80
+    y: 340
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Billed from ──────────────────────────────────────────
+  - id: from-label
+    type: text
+    z: 21
+    x: 80
+    y: 380
+    width: 460
+    height: 0
+    content: { type: plain, value: "FROM" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: from-name
+    type: text
+    z: 22
+    x: 80
+    y: 410
+    width: 460
+    height: 0
+    content: { type: plain, value: "Folio Studio Ltd." }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: from-addr
+    type: text
+    z: 23
+    x: 80
+    y: 442
+    width: 460
+    height: 0
+    content: { type: plain, value: "12 Charlotte Mews\nLondon W1T 4DZ\nUnited Kingdom" }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text_muted
+      line_height: 1.6
+
+  - id: from-vat
+    type: text
+    z: 24
+    x: 80
+    y: 530
+    width: 460
+    height: 0
+    content: { type: plain, value: "VAT · GB 384 2901 18" }
+    style:
+      font_family: $mono
+      font_size: 12
+      color: $text_muted
+      line_height: 1.3
+
+  # ── Billed to ────────────────────────────────────────────
+  - id: to-label
+    type: text
+    z: 25
+    x: 700
+    y: 380
+    width: 460
+    height: 0
+    content: { type: plain, value: "BILL TO" }
+    style:
+      font_family: $body
+      font_size: 11
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: to-name
+    type: text
+    z: 26
+    x: 700
+    y: 410
+    width: 460
+    height: 0
+    content: { type: plain, value: "Northwind Retail Group" }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_weight: 700
+      color: $text
+      line_height: 1.3
+
+  - id: to-addr
+    type: text
+    z: 27
+    x: 700
+    y: 442
+    width: 460
+    height: 0
+    content: { type: plain, value: "488 Mission St, Floor 12\nSan Francisco, CA 94105\nUnited States" }
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text_muted
+      line_height: 1.6
+
+  # ── Line-items table header ──────────────────────────────
+  - id: table-header-bg
+    type: rect
+    z: 30
+    x: 80
+    y: 620
+    width: 1080
+    height: 44
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+
+  - id: th-desc
+    type: text
+    z: 31
+    x: 100
+    y: 632
+    width: 540
+    height: 0
+    content: { type: plain, value: "DESCRIPTION" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: th-qty
+    type: text
+    z: 32
+    x: 660
+    y: 632
+    width: 80
+    height: 0
+    content: { type: plain, value: "QTY" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: th-rate
+    type: text
+    z: 33
+    x: 760
+    y: 632
+    width: 180
+    height: 0
+    content: { type: plain, value: "RATE" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: right
+      text_transform: uppercase
+
+  - id: th-amount
+    type: text
+    z: 34
+    x: 960
+    y: 632
+    width: 180
+    height: 0
+    content: { type: plain, value: "AMOUNT" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.4
+      text_align: right
+      text_transform: uppercase
+
+  # ── Row 1 ────────────────────────────────────────────────
+  - id: r1-desc
+    type: text
+    z: 40
+    x: 100
+    y: 690
+    width: 540
+    height: 0
+    content: { type: plain, value: "Design system audit & roadmap" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 500
+      color: $text
+      line_height: 1.4
+
+  - id: r1-qty
+    type: text
+    z: 41
+    x: 660
+    y: 690
+    width: 80
+    height: 0
+    content: { type: plain, value: "1" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: center
+
+  - id: r1-rate
+    type: text
+    z: 42
+    x: 760
+    y: 690
+    width: 180
+    height: 0
+    content: { type: plain, value: "£4,800.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+
+  - id: r1-amt
+    type: text
+    z: 43
+    x: 960
+    y: 690
+    width: 180
+    height: 0
+    content: { type: plain, value: "£4,800.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: right
+
+  - id: r1-rule
+    type: rect
+    z: 44
+    x: 80
+    y: 720
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+    opacity: 0.4
+
+  # ── Row 2 ────────────────────────────────────────────────
+  - id: r2-desc
+    type: text
+    z: 45
+    x: 100
+    y: 740
+    width: 540
+    height: 0
+    content: { type: plain, value: "Component library implementation · sprint 1" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 500
+      color: $text
+      line_height: 1.4
+
+  - id: r2-qty
+    type: text
+    z: 46
+    x: 660
+    y: 740
+    width: 80
+    height: 0
+    content: { type: plain, value: "80" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: center
+
+  - id: r2-rate
+    type: text
+    z: 47
+    x: 760
+    y: 740
+    width: 180
+    height: 0
+    content: { type: plain, value: "£120.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+
+  - id: r2-amt
+    type: text
+    z: 48
+    x: 960
+    y: 740
+    width: 180
+    height: 0
+    content: { type: plain, value: "£9,600.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: right
+
+  - id: r2-rule
+    type: rect
+    z: 49
+    x: 80
+    y: 770
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+    opacity: 0.4
+
+  # ── Row 3 ────────────────────────────────────────────────
+  - id: r3-desc
+    type: text
+    z: 50
+    x: 100
+    y: 790
+    width: 540
+    height: 0
+    content: { type: plain, value: "Brand voice & content guidelines workshop" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 500
+      color: $text
+      line_height: 1.4
+
+  - id: r3-qty
+    type: text
+    z: 51
+    x: 660
+    y: 790
+    width: 80
+    height: 0
+    content: { type: plain, value: "2" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: center
+
+  - id: r3-rate
+    type: text
+    z: 52
+    x: 760
+    y: 790
+    width: 180
+    height: 0
+    content: { type: plain, value: "£1,250.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+
+  - id: r3-amt
+    type: text
+    z: 53
+    x: 960
+    y: 790
+    width: 180
+    height: 0
+    content: { type: plain, value: "£2,500.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: right
+
+  - id: r3-rule
+    type: rect
+    z: 54
+    x: 80
+    y: 820
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+    opacity: 0.4
+
+  # ── Row 4 ────────────────────────────────────────────────
+  - id: r4-desc
+    type: text
+    z: 55
+    x: 100
+    y: 840
+    width: 540
+    height: 0
+    content: { type: plain, value: "Quarterly review session" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 500
+      color: $text
+      line_height: 1.4
+
+  - id: r4-qty
+    type: text
+    z: 56
+    x: 660
+    y: 840
+    width: 80
+    height: 0
+    content: { type: plain, value: "1" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: center
+
+  - id: r4-rate
+    type: text
+    z: 57
+    x: 760
+    y: 840
+    width: 180
+    height: 0
+    content: { type: plain, value: "£950.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+
+  - id: r4-amt
+    type: text
+    z: 58
+    x: 960
+    y: 840
+    width: 180
+    height: 0
+    content: { type: plain, value: "£950.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: right
+
+  - id: r4-rule
+    type: rect
+    z: 59
+    x: 80
+    y: 870
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+    opacity: 0.4
+
+  # ── Row 5 ────────────────────────────────────────────────
+  - id: r5-desc
+    type: text
+    z: 60
+    x: 100
+    y: 890
+    width: 540
+    height: 0
+    content: { type: plain, value: "Project management & comms · April" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 500
+      color: $text
+      line_height: 1.4
+
+  - id: r5-qty
+    type: text
+    z: 61
+    x: 660
+    y: 890
+    width: 80
+    height: 0
+    content: { type: plain, value: "16" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: center
+
+  - id: r5-rate
+    type: text
+    z: 62
+    x: 760
+    y: 890
+    width: 180
+    height: 0
+    content: { type: plain, value: "£95.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+
+  - id: r5-amt
+    type: text
+    z: 63
+    x: 960
+    y: 890
+    width: 180
+    height: 0
+    content: { type: plain, value: "£1,520.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 600
+      color: $text
+      text_align: right
+
+  - id: r5-rule
+    type: rect
+    z: 64
+    x: 80
+    y: 920
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+    opacity: 0.4
+
+  # ── Totals stack ─────────────────────────────────────────
+  - id: subtotal-label
+    type: text
+    z: 70
+    x: 700
+    y: 970
+    width: 240
+    height: 0
+    content: { type: plain, value: "Subtotal" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: right
+      line_height: 1.3
+
+  - id: subtotal-amt
+    type: text
+    z: 71
+    x: 960
+    y: 970
+    width: 180
+    height: 0
+    content: { type: plain, value: "£19,370.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+      line_height: 1.3
+
+  - id: tax-label
+    type: text
+    z: 72
+    x: 700
+    y: 1000
+    width: 240
+    height: 0
+    content: { type: plain, value: "VAT (20%)" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: $text_muted
+      text_align: right
+      line_height: 1.3
+
+  - id: tax-amt
+    type: text
+    z: 73
+    x: 960
+    y: 1000
+    width: 180
+    height: 0
+    content: { type: plain, value: "£3,874.00" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text
+      text_align: right
+      line_height: 1.3
+
+  - id: total-rule
+    type: rect
+    z: 74
+    x: 700
+    y: 1040
+    width: 440
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  - id: total-label
+    type: text
+    z: 75
+    x: 700
+    y: 1060
+    width: 240
+    height: 0
+    content: { type: plain, value: "TOTAL DUE" }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_weight: 800
+      color: $text
+      letter_spacing: 0.3
+      text_align: right
+      line_height: 1.3
+      text_transform: uppercase
+
+  - id: total-amt
+    type: text
+    z: 76
+    x: 940
+    y: 1056
+    width: 200
+    height: 0
+    content: { type: plain, value: "£23,244.00" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      text_align: right
+      line_height: 1.3
+
+  # ── Payment terms ────────────────────────────────────────
+  - id: terms-rule
+    type: rect
+    z: 80
+    x: 80
+    y: 1160
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: terms-heading
+    type: text
+    z: 81
+    x: 80
+    y: 1190
+    width: 1080
+    height: 0
+    content: { type: plain, value: "PAYMENT TERMS" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: terms-body
+    type: text
+    z: 82
+    x: 80
+    y: 1220
+    width: 1080
+    height: 0
+    content:
+      type: plain
+      value: "Payment is due within 30 days of issue. Late payments accrue interest at the Bank of England base rate + 8% under the Late Payment of Commercial Debts Act."
+    style:
+      font_family: $body
+      font_size: 13
+      color: $text
+      line_height: 1.6
+
+  - id: bank-heading
+    type: text
+    z: 83
+    x: 80
+    y: 1310
+    width: 1080
+    height: 0
+    content: { type: plain, value: "BANK · WIRE" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: bank-body
+    type: text
+    z: 84
+    x: 80
+    y: 1340
+    width: 1080
+    height: 0
+    content:
+      type: plain
+      value: "Account: Folio Studio Ltd. · Sort 04-00-04 · 8829 4192\nIBAN: GB29 NWBK 0400 0488 2941 92  ·  SWIFT: NWBKGB2L\nReference: INV-2026-0427"
+    style:
+      font_family: $mono
+      font_size: 13
+      color: $text
+      line_height: 1.6
+
+  # ── Footer ───────────────────────────────────────────────
+  - id: footer-thanks
+    type: text
+    z: 90
+    x: 80
+    y: 1620
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Thank you for your business." }
+    style:
+      font_family: $heading
+      font_size: 18
+      font_style: italic
+      color: $text
+      text_align: center
+      line_height: 1.3
+
+  - id: footer-contact
+    type: text
+    z: 91
+    x: 80
+    y: 1660
+    width: 1080
+    height: 0
+    content: { type: plain, value: "billing@folio.studio · folio.studio" }
+    style:
+      font_family: $mono
+      font_size: 12
+      color: $text_muted
+      text_align: center
+      line_height: 1.3
+
+slots:
+  - { id: company_name,   path: "layers[3].content.value",  type: text, hint: "Issuing company name",     default: "Folio Studio Ltd." }
+  - { id: invoice_number, path: "layers[7].content.value",  type: text, hint: "Invoice number",           default: "INV-2026-0427" }
+  - { id: date,           path: "layers[9].content.value",  type: text, hint: "Issue date",               default: "May 16, 2026" }
+  - { id: client_name,    path: "layers[18].content.value", type: text, hint: "Client / bill-to name",    default: "Northwind Retail Group" }
+  - { id: client_address, path: "layers[19].content.value", type: text, hint: "Client address (multi-line)", default: "488 Mission St, Floor 12\nSan Francisco, CA 94105\nUnited States" }

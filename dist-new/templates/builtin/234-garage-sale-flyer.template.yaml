@@ -1,0 +1,370 @@
+_protocol: template/v1
+
+# Garage sale flyer — 1080×1620 portrait, high-contrast theme.
+# Loud "GARAGE SALE!" headline, date + time, address,
+# what's-for-sale bullet list, RAIN OR SHINE footer.
+meta:
+  id: tmpl-garage-sale-flyer
+  name: Garage Sale Flyer
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [flyer, garage-sale, community, high-contrast, portrait]
+  description: "Bold garage sale flyer with huge headline, date/time/address blocks, items list, and rain-or-shine footer."
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill: { type: solid, color: "$background" }
+
+  # ── Top band ──────────────────────────────────────────────
+  - id: top-band
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 60
+    fill: { type: solid, color: "$primary" }
+
+  - id: top-band-text
+    type: text
+    z: 2
+    x: 0
+    y: 18
+    width: 1080
+    height: 0
+    content: { type: plain, value: "★  THIS WEEKEND ONLY  ★" }
+    style:
+      font_family: $heading
+      font_size: 20
+      font_weight: 800
+      color: "$background"
+      text_align: center
+      letter_spacing: 0.6
+
+  # ── Huge headline ─────────────────────────────────────────
+  - id: headline-1
+    type: text
+    z: 10
+    x: 0
+    y: 130
+    width: 1080
+    height: 0
+    content: { type: plain, value: "GARAGE" }
+    style:
+      font_family: $heading
+      font_size: 200
+      font_weight: 900
+      color: "$text"
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.04
+
+  - id: headline-2
+    type: text
+    z: 11
+    x: 0
+    y: 320
+    width: 1080
+    height: 0
+    content: { type: plain, value: "SALE!" }
+    style:
+      font_family: $heading
+      font_size: 220
+      font_weight: 900
+      color: "$primary"
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.04
+
+  - id: headline-rule
+    type: rect
+    z: 12
+    x: 240
+    y: 540
+    width: 600
+    height: 8
+    fill: { type: solid, color: "$text" }
+
+  # ── Date block ────────────────────────────────────────────
+  - id: date-label
+    type: text
+    z: 20
+    x: 0
+    y: 600
+    width: 1080
+    height: 0
+    content: { type: plain, value: "WHEN" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: date-value
+    type: text
+    z: 21
+    x: 0
+    y: 640
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Saturday, May 23" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: "$text"
+      text_align: center
+      line_height: 1.1
+
+  - id: time-value
+    type: text
+    z: 22
+    x: 0
+    y: 710
+    width: 1080
+    height: 0
+    content: { type: plain, value: "8:00 AM – 3:00 PM" }
+    style:
+      font_family: $heading
+      font_size: 42
+      font_weight: 700
+      color: "$primary"
+      text_align: center
+      line_height: 1.2
+
+  # ── Address block ─────────────────────────────────────────
+  - id: addr-label
+    type: text
+    z: 30
+    x: 0
+    y: 810
+    width: 1080
+    height: 0
+    content: { type: plain, value: "WHERE" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: addr-value
+    type: text
+    z: 31
+    x: 0
+    y: 850
+    width: 1080
+    height: 0
+    content: { type: plain, value: "1428 Maple Street · Riverside" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 800
+      color: "$text"
+      text_align: center
+      line_height: 1.2
+
+  # ── Items section ─────────────────────────────────────────
+  - id: items-bg
+    type: rect
+    z: 40
+    x: 80
+    y: 960
+    width: 920
+    height: 460
+    radius: 16
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: items-label
+    type: text
+    z: 41
+    x: 80
+    y: 990
+    width: 920
+    height: 0
+    content: { type: plain, value: "EVERYTHING MUST GO" }
+    style:
+      font_family: $heading
+      font_size: 28
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.3
+      text_transform: uppercase
+
+  - id: items-rule
+    type: rect
+    z: 42
+    x: 440
+    y: 1035
+    width: 200
+    height: 3
+    fill: { type: solid, color: "$primary" }
+
+  - id: item-1
+    type: text
+    z: 43
+    x: 120
+    y: 1070
+    width: 840
+    height: 0
+    content: { type: plain, value: "→  Furniture · couch, dining set, lamps" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$text"
+      line_height: 1.4
+
+  - id: item-2
+    type: text
+    z: 44
+    x: 120
+    y: 1120
+    width: 840
+    height: 0
+    content: { type: plain, value: "→  Electronics · TV, speakers, cables" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$text"
+      line_height: 1.4
+
+  - id: item-3
+    type: text
+    z: 45
+    x: 120
+    y: 1170
+    width: 840
+    height: 0
+    content: { type: plain, value: "→  Kids toys · games, bikes, puzzles" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$text"
+      line_height: 1.4
+
+  - id: item-4
+    type: text
+    z: 46
+    x: 120
+    y: 1220
+    width: 840
+    height: 0
+    content: { type: plain, value: "→  Clothes · adults + kids, all sizes" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$text"
+      line_height: 1.4
+
+  - id: item-5
+    type: text
+    z: 47
+    x: 120
+    y: 1270
+    width: 840
+    height: 0
+    content: { type: plain, value: "→  Books · paperbacks, cookbooks, kids" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$text"
+      line_height: 1.4
+
+  - id: item-6
+    type: text
+    z: 48
+    x: 120
+    y: 1320
+    width: 840
+    height: 0
+    content: { type: plain, value: "→  Kitchen · dishes, appliances, gadgets" }
+    style:
+      font_family: $body
+      font_size: 24
+      font_weight: 600
+      color: "$text"
+      line_height: 1.4
+
+  - id: cash-only
+    type: text
+    z: 49
+    x: 80
+    y: 1380
+    width: 920
+    height: 0
+    content: { type: plain, value: "★  CASH PREFERRED · EARLY BIRDS WELCOME  ★" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.4
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer-band
+    type: rect
+    z: 60
+    x: 0
+    y: 1500
+    width: 1080
+    height: 120
+    fill: { type: solid, color: "$primary" }
+
+  - id: footer-text
+    type: text
+    z: 61
+    x: 0
+    y: 1530
+    width: 1080
+    height: 0
+    content: { type: plain, value: "RAIN OR SHINE" }
+    style:
+      font_family: $heading
+      font_size: 60
+      font_weight: 900
+      color: "$background"
+      text_align: center
+      line_height: 1.1
+      letter_spacing: 0.05
+
+slots:
+  - { id: date,        path: "layers[8].content.value",  type: text, hint: "Sale date",           default: "Saturday, May 23" }
+  - { id: time,        path: "layers[9].content.value",  type: text, hint: "Sale time",           default: "8:00 AM – 3:00 PM" }
+  - { id: address,     path: "layers[11].content.value", type: text, hint: "Sale address",        default: "1428 Maple Street · Riverside" }
+  - { id: sale_item_1, path: "layers[15].content.value", type: text, hint: "Sale items line 1",   default: "→  Furniture · couch, dining set, lamps" }
+  - { id: sale_item_2, path: "layers[16].content.value", type: text, hint: "Sale items line 2",   default: "→  Electronics · TV, speakers, cables" }
+  - { id: sale_item_3, path: "layers[17].content.value", type: text, hint: "Sale items line 3",   default: "→  Kids toys · games, bikes, puzzles" }
+  - { id: sale_item_4, path: "layers[18].content.value", type: text, hint: "Sale items line 4",   default: "→  Clothes · adults + kids, all sizes" }
+  - { id: sale_item_5, path: "layers[19].content.value", type: text, hint: "Sale items line 5",   default: "→  Books · paperbacks, cookbooks, kids" }
+  - { id: sale_item_6, path: "layers[20].content.value", type: text, hint: "Sale items line 6",   default: "→  Kitchen · dishes, appliances, gadgets" }

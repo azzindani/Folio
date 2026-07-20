@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: winter-frost
+name: Winter Frost
+version: "1.0.0"
+tags: [seasonal, winter, holiday, frost, blue]
+description: "Icy whites and powder blue over deep navy with silver — winter campaigns and holiday décor."
+colors:
+  background: "#F2F7FB"
+  surface:    "#E6EFF7"
+  surface_2:  "#D2E1EF"
+  primary:    "#13315C"
+  secondary:  "#3D6FA6"
+  accent:     "#A9B7C0"
+  text:       "#0B1A30"
+  text_muted: "#56697E"
+  border:     "#BFD2E3"
+  success:    "#3E8E7E"
+  warning:    "#C99846"
+  danger:     "#B0413E"

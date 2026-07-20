@@ -1,0 +1,344 @@
+_protocol: template/v1
+
+# Gym liability waiver — 1240×1754 A4 portrait, corporate-slate theme.
+# Gym name + logo placeholder header, "RELEASE OF LIABILITY" headline,
+# 3-paragraph waiver text (risk, liability, release), member info +
+# signature + date lines, emergency contact field.
+meta:
+  id: tmpl-gym-waiver
+  name: Gym Liability Waiver
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [gym, waiver, liability, legal, fitness, a4, corporate]
+  description: "Gym liability waiver with logo header, RELEASE OF LIABILITY title, three-paragraph waiver text, member + signature + emergency contact fields."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # ── Header bar ────────────────────────────────────────────
+  - id: header-bg
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1240
+    height: 160
+    fill: { type: solid, color: "$primary" }
+
+  - id: logo-box
+    type: rect
+    z: 5
+    x: 80
+    y: 40
+    width: 80
+    height: 80
+    radius: 10
+    fill: { type: solid, color: "#FFFFFF" }
+
+  - id: logo-mark
+    type: text
+    z: 6
+    x: 80
+    y: 60
+    width: 80
+    height: 0
+    content: { type: plain, value: "IF" }
+    style: { font_family: $heading, font_size: 38, font_weight: 900, color: $primary, text_align: center }
+
+  - id: gym-name
+    type: text
+    z: 10
+    x: 180
+    y: 50
+    width: 980
+    height: 0
+    content: { type: plain, value: "IRONFORGE FITNESS" }
+    style:
+      font_family: $heading
+      font_size: 36
+      font_weight: 900
+      color: "#FFFFFF"
+      letter_spacing: 0.05
+
+  - id: gym-addr
+    type: text
+    z: 11
+    x: 180
+    y: 100
+    width: 980
+    height: 0
+    content: { type: plain, value: "2240 Industrial Way · Oakland, CA 94607 · (510) 555-0193" }
+    style:
+      font_family: $body
+      font_size: 14
+      color: "#FFFFFF"
+      opacity: 0.85
+      letter_spacing: 0.05
+
+  # ── Headline ──────────────────────────────────────────────
+  - id: head-eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 220
+    width: 1080
+    height: 0
+    content: { type: plain, value: "WAIVER FORM · DOC-WV-01" }
+    style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: head-title
+    type: text
+    z: 21
+    x: 80
+    y: 255
+    width: 1080
+    height: 0
+    content: { type: plain, value: "RELEASE OF LIABILITY" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 900
+      color: $text
+      line_height: 1.1
+      letter_spacing: -0.01
+
+  - id: head-rule
+    type: rect
+    z: 22
+    x: 80
+    y: 335
+    width: 1080
+    height: 3
+    fill: { type: solid, color: "$primary" }
+
+  - id: head-sub
+    type: text
+    z: 23
+    x: 80
+    y: 355
+    width: 1080
+    height: 0
+    content: { type: plain, value: "Assumption of risk, waiver, and release agreement — please read carefully before signing." }
+    style: { font_family: $body, font_size: 16, font_style: italic, color: $text_muted, line_height: 1.4 }
+
+  # ── Paragraph 1: Acknowledgment of risk ───────────────────
+  - id: p1-label
+    type: text
+    z: 30
+    x: 80
+    y: 420
+    width: 1080
+    height: 0
+    content: { type: plain, value: "1.  ACKNOWLEDGMENT OF RISK" }
+    style: { font_family: $heading, font_size: 18, font_weight: 800, color: $primary, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: p1-body
+    type: text
+    z: 31
+    x: 80
+    y: 455
+    width: 1080
+    height: 0
+    content: { type: plain, value: "I acknowledge that the use of the gym's facilities, equipment, and participation in any fitness program, class, or training session involves an inherent risk of physical injury, illness, or death. These risks include — but are not limited to — strains, sprains, fractures, cardiovascular incidents, and contact with equipment or other members. I represent that I am in good physical health and have no medical condition that would prevent safe participation." }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.55 }
+
+  # ── Paragraph 2: Assumption of liability ──────────────────
+  - id: p2-label
+    type: text
+    z: 40
+    x: 80
+    y: 640
+    width: 1080
+    height: 0
+    content: { type: plain, value: "2.  ASSUMPTION OF LIABILITY" }
+    style: { font_family: $heading, font_size: 18, font_weight: 800, color: $primary, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: p2-body
+    type: text
+    z: 41
+    x: 80
+    y: 675
+    width: 1080
+    height: 0
+    content: { type: plain, value: "I voluntarily assume full responsibility for any and all risk of bodily injury or property damage arising out of my use of the gym facilities, regardless of cause. I agree to inspect all equipment before use, follow all posted rules and staff instructions, and stop any activity if I experience pain, dizziness, or distress. I understand that staff are not licensed medical professionals and cannot give medical advice." }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.55 }
+
+  # ── Paragraph 3: Release ──────────────────────────────────
+  - id: p3-label
+    type: text
+    z: 50
+    x: 80
+    y: 860
+    width: 1080
+    height: 0
+    content: { type: plain, value: "3.  RELEASE AND INDEMNIFICATION" }
+    style: { font_family: $heading, font_size: 18, font_weight: 800, color: $primary, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: p3-body
+    type: text
+    z: 51
+    x: 80
+    y: 895
+    width: 1080
+    height: 0
+    content: { type: plain, value: "In consideration of being permitted to use the facility, I release, waive, and discharge the gym, its owners, employees, contractors, and agents from any and all claims, demands, or causes of action arising from my participation, except in cases of gross negligence or willful misconduct. I agree to indemnify and hold harmless the released parties from any loss or expense, including reasonable attorney's fees, resulting from such claims." }
+    style: { font_family: $body, font_size: 14, color: $text, line_height: 1.55 }
+
+  # ── Signature block ───────────────────────────────────────
+  - id: sig-card
+    type: rect
+    z: 60
+    x: 80
+    y: 1100
+    width: 1080
+    height: 340
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: sig-title
+    type: text
+    z: 61
+    x: 110
+    y: 1125
+    width: 1020
+    height: 0
+    content: { type: plain, value: "MEMBER INFORMATION & SIGNATURE" }
+    style: { font_family: $body, font_size: 13, font_weight: 800, color: $primary, letter_spacing: 0.5, text_transform: uppercase }
+
+  - id: name-label
+    type: text
+    z: 62
+    x: 110
+    y: 1175
+    width: 700
+    height: 0
+    content: { type: plain, value: "FULL NAME" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: name-line
+    type: rect
+    z: 63
+    x: 110
+    y: 1220
+    width: 700
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: dob-label
+    type: text
+    z: 64
+    x: 850
+    y: 1175
+    width: 280
+    height: 0
+    content: { type: plain, value: "DATE OF BIRTH" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: dob-line
+    type: rect
+    z: 65
+    x: 850
+    y: 1220
+    width: 280
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: emerg-label
+    type: text
+    z: 66
+    x: 110
+    y: 1250
+    width: 700
+    height: 0
+    content: { type: plain, value: "EMERGENCY CONTACT (NAME · PHONE · RELATIONSHIP)" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: emerg-line
+    type: rect
+    z: 67
+    x: 110
+    y: 1295
+    width: 1020
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: sig-label
+    type: text
+    z: 68
+    x: 110
+    y: 1330
+    width: 700
+    height: 0
+    content: { type: plain, value: "MEMBER SIGNATURE" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: sig-line
+    type: rect
+    z: 69
+    x: 110
+    y: 1410
+    width: 700
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: date-label
+    type: text
+    z: 70
+    x: 850
+    y: 1330
+    width: 280
+    height: 0
+    content: { type: plain, value: "DATE SIGNED" }
+    style: { font_family: $body, font_size: 11, font_weight: 800, color: $text_muted, letter_spacing: 0.4, text_transform: uppercase }
+
+  - id: date-line
+    type: rect
+    z: 71
+    x: 850
+    y: 1410
+    width: 280
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  # ── Footer ────────────────────────────────────────────────
+  - id: footer-rule
+    type: rect
+    z: 80
+    x: 80
+    y: 1660
+    width: 1080
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: footer-text
+    type: text
+    z: 81
+    x: 80
+    y: 1685
+    width: 1080
+    height: 0
+    content: { type: plain, value: "By signing above, I confirm that I am 18 years of age or older (or have a parent/guardian co-sign), have read and understood this waiver, and execute it voluntarily." }
+    style: { font_family: $body, font_size: 11, font_style: italic, color: $text_muted, text_align: center, line_height: 1.4 }
+
+slots:
+  - { id: gym_name, path: "layers[4].content.value", type: text, hint: "Gym name (header)", default: "IRONFORGE FITNESS" }

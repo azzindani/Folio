@@ -142,7 +142,13 @@ function clampSpan(n: number): number {
   return Math.max(1, Math.min(12, Math.round(n)));
 }
 
-function dataRows(dataRef: string, ctx: InteractiveRenderContext): Record<string, unknown>[] {
+function dataRows(dataRef: string | undefined, ctx: InteractiveRenderContext): Record<string, unknown>[] {
+  // A chart or table with no data_ref is a real authoring mistake, but it must
+  // not take the whole export down: this threw a raw TypeError, so ONE unbound
+  // component meant no HTML file at all — and report(op:validate) had already
+  // named the layer and the fix. Render the component empty and let that
+  // diagnosis stand.
+  if (typeof dataRef !== 'string' || dataRef.length === 0) return [];
   // Accept "ds_id" or "$data.ds_id" forms
   const id = dataRef.startsWith('$data.') ? dataRef.slice(6) : dataRef;
   const ds = ctx.datasets.get(id);
@@ -300,7 +306,17 @@ function renderTable(layer: InteractiveTableLayer, ctx: InteractiveRenderContext
   const rows = dataRows(layer.data_ref, ctx);
   // Column header alias: LLMs author `label`/`header`/`name` instead of `title`;
   // the runtime reads `title`, so without this the headers all read "undefined".
-  const cols = (layer.columns ?? []).map(c => {
+  // Derive columns from the data when the author did not list them. A table
+  // bound to a dataset already says which columns it has, so demanding the list
+  // twice is busywork — and the omission used to be fatal: `layer.columns[0]`
+  // threw a raw TypeError below and took the entire HTML export down, for a
+  // design report(op:validate) had just passed as clean.
+  const declared = layer.columns ?? [];
+  const source = declared.length > 0
+    ? declared
+    : Object.keys(rows[0] ?? {}).map(field => ({ field }));
+
+  const cols: Record<string, unknown>[] = source.map(c => {
     const o = c as unknown as Record<string, unknown>;
     return { ...o, title: o['title'] ?? o['label'] ?? o['header'] ?? o['name'] ?? o['field'] };
   });
@@ -316,7 +332,7 @@ function renderTable(layer: InteractiveTableLayer, ctx: InteractiveRenderContext
     : '';
 
   const rowDetail = !!layer.row_detail;
-  const titleField = layer.row_detail_title ?? (layer.columns[0]?.field ?? '');
+  const titleField = layer.row_detail_title ?? (cols[0]?.['field'] as string | undefined) ?? '';
   ctx.tableInits.push(`window.__folioTables = window.__folioTables || {};
 window.__folioTables[${JSON.stringify(id)}] = { columns: ${colsJson}, rows: ${rowsJson}, pageSize: ${layer.page_size ?? 25}, page: 0, sort: null, rowDetail: ${rowDetail}, titleField: ${JSON.stringify(titleField)} };`);
 

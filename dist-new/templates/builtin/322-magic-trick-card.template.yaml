@@ -1,0 +1,374 @@
+_protocol: template/v1
+
+# Magic trick card — 1080×1500 portrait, high-contrast.
+# Trick name + difficulty stars, props list, effect description, secret method, patter script, tip footer.
+meta:
+  id: tmpl-magic-trick-card
+  name: Magic Trick Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, magic, trick, instruction, high-contrast, portrait, performance]
+  description: "Magic trick instruction card with trick name and difficulty stars, props list, effect description, secret method, patter script, and presentation tip footer."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1500
+    fill: { type: solid, color: "$background" }
+
+  # Decorative top border
+  - id: top-border
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 24
+    fill: { type: solid, color: "$primary" }
+
+  # Decorative bottom border
+  - id: bottom-border
+    type: rect
+    z: 1
+    x: 0
+    y: 1476
+    width: 1080
+    height: 24
+    fill: { type: solid, color: "$primary" }
+
+  # Decorative magic icons — 4 small stars in corners
+  - id: deco-star-tl
+    type: polygon
+    z: 2
+    points: "70,90 78,110 100,110 84,124 90,146 70,134 50,146 56,124 40,110 62,110"
+    fill: { type: solid, color: "$primary" }
+  - id: deco-star-tr
+    type: polygon
+    z: 2
+    points: "1010,90 1018,110 1040,110 1024,124 1030,146 1010,134 990,146 996,124 980,110 1002,110"
+    fill: { type: solid, color: "$primary" }
+  - id: deco-star-bl
+    type: polygon
+    z: 2
+    points: "70,1360 78,1380 100,1380 84,1394 90,1416 70,1404 50,1416 56,1394 40,1380 62,1380"
+    fill: { type: solid, color: "$primary" }
+  - id: deco-star-br
+    type: polygon
+    z: 2
+    points: "1010,1360 1018,1380 1040,1380 1024,1394 1030,1416 1010,1404 990,1416 996,1394 980,1380 1002,1380"
+    fill: { type: solid, color: "$primary" }
+
+  # Eyebrow
+  - id: eyebrow
+    type: text
+    z: 5
+    x: 60
+    y: 80
+    width: 960
+    height: 0
+    content: { type: plain, value: "✦  CLOSE-UP CARD MAGIC  ✦" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.6
+      text_transform: uppercase
+
+  # Trick name
+  - id: trick-name
+    type: text
+    z: 6
+    x: 60
+    y: 170
+    width: 960
+    height: 0
+    content: { type: plain, value: "THE AMBITIOUS CARD" }
+    style:
+      font_family: $heading
+      font_size: 58
+      font_weight: 900
+      color: "$text"
+      text_align: center
+      letter_spacing: -0.01
+
+  # Difficulty stars
+  - id: difficulty
+    type: text
+    z: 7
+    x: 60
+    y: 254
+    width: 960
+    height: 0
+    content: { type: plain, value: "DIFFICULTY  ★ ★ ★ ★ ☆" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 800
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.4
+
+  - id: header-rule
+    type: rect
+    z: 8
+    x: 120
+    y: 300
+    width: 840
+    height: 2
+    fill: { type: solid, color: "$primary" }
+
+  # Props section
+  - id: props-icon
+    type: text
+    z: 10
+    x: 60
+    y: 340
+    width: 50
+    height: 0
+    content: { type: plain, value: "▸" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$primary" }
+
+  - id: props-title
+    type: text
+    z: 11
+    x: 110
+    y: 340
+    width: 880
+    height: 0
+    content: { type: plain, value: "PROPS NEEDED" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: props-body
+    type: text
+    z: 12
+    x: 110
+    y: 380
+    width: 880
+    height: 0
+    content:
+      type: plain
+      value: "•  Standard deck of 52 playing cards (Bicycle preferred)\n•  Sharpie or felt-tip pen (optional, for signature)\n•  A flat surface or close-up mat\n•  Confidence and a steady pair of hands"
+    style:
+      font_family: $body
+      font_size: 15
+      color: "$text"
+      line_height: 1.7
+
+  # Effect section
+  - id: effect-icon
+    type: text
+    z: 13
+    x: 60
+    y: 530
+    width: 50
+    height: 0
+    content: { type: plain, value: "▸" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$primary" }
+
+  - id: effect-title
+    type: text
+    z: 14
+    x: 110
+    y: 530
+    width: 880
+    height: 0
+    content: { type: plain, value: "EFFECT" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: effect-body
+    type: text
+    z: 15
+    x: 110
+    y: 570
+    width: 880
+    height: 0
+    content:
+      type: plain
+      value: "A spectator chooses a card, signs it, and returns it to the middle of the deck. Despite being clearly buried, the chosen card rises to the top of the deck — three times in a row, each more impossible than the last."
+    style:
+      font_family: $body
+      font_size: 15
+      color: "$text"
+      line_height: 1.7
+
+  # Method section (smaller, subdued)
+  - id: method-box
+    type: rect
+    z: 18
+    x: 60
+    y: 720
+    width: 960
+    height: 220
+    radius: 8
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: method-title
+    type: text
+    z: 19
+    x: 90
+    y: 740
+    width: 900
+    height: 0
+    content: { type: plain, value: "✱  SECRET METHOD  (do not reveal)" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: method-body
+    type: text
+    z: 20
+    x: 90
+    y: 770
+    width: 900
+    height: 0
+    content:
+      type: plain
+      value: "1. After the card is returned, secretly maintain a pinky break above it.\n2. Execute a double-undercut to transport the card to the top.\n3. For the second rise, use a tilt or push-through, depending on angle.\n4. For the climax, palm the card and reproduce it in an unexpected location\n   (pocket, under the deck box, or in the spectator's hand)."
+    style:
+      font_family: $mono
+      font_size: 12
+      color: "$text"
+      line_height: 1.7
+
+  # Patter section
+  - id: patter-icon
+    type: text
+    z: 22
+    x: 60
+    y: 980
+    width: 50
+    height: 0
+    content: { type: plain, value: "▸" }
+    style: { font_family: $heading, font_size: 22, font_weight: 700, color: "$primary" }
+
+  - id: patter-title
+    type: text
+    z: 23
+    x: 60
+    y: 980
+    width: 960
+    height: 0
+    content: { type: plain, value: "PATTER SCRIPT" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: patter-body
+    type: text
+    z: 24
+    x: 110
+    y: 1020
+    width: 880
+    height: 0
+    content:
+      type: plain
+      value: "\"Pick a card, any card — go ahead, show it to your friend. Now sign it,\nmake it yours. I'll bury it in the deck...\n\n...but it seems your card has ambitions of its own.\"\n\n— pause for the first reveal —\n\n\"Once is luck. Twice is skill. Three times... is something else entirely.\""
+    style:
+      font_family: $heading
+      font_size: 15
+      font_style: italic
+      color: "$text"
+      line_height: 1.7
+
+  # Tip footer
+  - id: tip-box
+    type: rect
+    z: 30
+    x: 60
+    y: 1290
+    width: 960
+    height: 130
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: tip-title
+    type: text
+    z: 31
+    x: 90
+    y: 1310
+    width: 900
+    height: 0
+    content: { type: plain, value: "★  PRESENTATION TIP" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_weight: 800
+      color: "$background"
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: tip-body
+    type: text
+    z: 32
+    x: 90
+    y: 1338
+    width: 900
+    height: 0
+    content: { type: plain, value: "Slow down. The illusion lives in the rhythm of your hands and the conviction in your eyes. Practice in front of a mirror until the moves disappear into the patter — then perform for one friendly stranger before any crowd." }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: "$background"
+      line_height: 1.55
+
+  # Footer
+  - id: footer
+    type: text
+    z: 40
+    x: 60
+    y: 1438
+    width: 960
+    height: 0
+    content: { type: plain, value: "CARD 014 / 052  ·  FOLIO MAGIC ACADEMY  ·  PRACTICE BEFORE YOU PERFORM" }
+    style:
+      font_family: $body
+      font_size: 10
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+slots:
+  - { id: trick_name, path: "layers[6].content.value",  type: text, hint: "Trick name",       default: "THE AMBITIOUS CARD" }
+  - { id: difficulty, path: "layers[7].content.value",  type: text, hint: "Difficulty stars", default: "DIFFICULTY  ★ ★ ★ ★ ☆" }
+  - { id: props_list, path: "layers[12].content.value", type: text, hint: "Props list",       default: "•  Standard deck of 52 playing cards (Bicycle preferred)\n•  Sharpie or felt-tip pen (optional, for signature)\n•  A flat surface or close-up mat\n•  Confidence and a steady pair of hands" }

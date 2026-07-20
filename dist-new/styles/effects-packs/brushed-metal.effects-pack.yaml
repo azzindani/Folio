@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: brushed-metal
+name: Brushed Metal
+version: "1.0.0"
+tags: [metal, industrial, brushed, steel, premium]
+description: "Directional brushed-steel sheen with crisp top highlight and lower bevel shadow."
+effects:
+  shadow_card:   "inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -1px 1px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.25)"
+  shadow_glow:   "0 0 12px rgba(200,210,220,0.4)"
+  shadow_inset:  "inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.35)"
+  shadow_text:   "0 1px 0 rgba(255,255,255,0.5), 0 -1px 0 rgba(0,0,0,0.4)"
+  blur_glass:    4
+  blur_backdrop: 2

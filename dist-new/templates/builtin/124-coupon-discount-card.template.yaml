@@ -1,0 +1,373 @@
+_protocol: template/v1
+
+# Coupon / discount card — landscape (1500×600).
+# Warm sunset palette, oversized percent-off, dashed code box, expiry,
+# perforated edge (vertical dash stripe), brand top-left, terms micro-print.
+meta:
+  id: tmpl-coupon-discount-card
+  name: Coupon / Discount Card
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, marketing, coupon, discount, promo, voucher]
+  description: "Landscape promo coupon with discount percent, code box, expiry, perforated edge and terms micro-print."
+
+document:
+  width: 1500
+  height: 600
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1500
+    height: 600
+    radius: 24
+    fill: { type: solid, color: $primary }
+  - id: card-inner
+    type: rect
+    z: 1
+    x: 24
+    y: 24
+    width: 1452
+    height: 552
+    radius: 18
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "rgba(255,255,255,0.35)", width: 2, dasharray: "1 5" }
+
+  # Perforated vertical edge near right side — 17 small dashes
+  - id: perf-bg
+    type: rect
+    z: 2
+    x: 1060
+    y: 60
+    width: 4
+    height: 480
+    fill: { type: solid, color: "rgba(255,255,255,0.10)" }
+
+  - id: perf-1
+    type: rect
+    z: 3
+    x: 1056
+    y: 70
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-2
+    type: rect
+    z: 4
+    x: 1056
+    y: 108
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-3
+    type: rect
+    z: 5
+    x: 1056
+    y: 146
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-4
+    type: rect
+    z: 6
+    x: 1056
+    y: 184
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-5
+    type: rect
+    z: 7
+    x: 1056
+    y: 222
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-6
+    type: rect
+    z: 8
+    x: 1056
+    y: 260
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-7
+    type: rect
+    z: 9
+    x: 1056
+    y: 298
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-8
+    type: rect
+    z: 10
+    x: 1056
+    y: 336
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-9
+    type: rect
+    z: 11
+    x: 1056
+    y: 374
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-10
+    type: rect
+    z: 12
+    x: 1056
+    y: 412
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-11
+    type: rect
+    z: 13
+    x: 1056
+    y: 450
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: perf-12
+    type: rect
+    z: 14
+    x: 1056
+    y: 488
+    width: 12
+    height: 16
+    radius: 4
+    fill: { type: solid, color: "rgba(255,255,255,0.55)" }
+
+  - id: brand-name
+    type: text
+    z: 20
+    x: 60
+    y: 60
+    width: 1000
+    height: 0
+    content: { type: plain, value: "FOLIO MARKET" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 800
+      color: "rgba(255,255,255,0.95)"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: voucher-label
+    type: text
+    z: 21
+    x: 60
+    y: 100
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Member discount voucher" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_style: italic
+      color: "rgba(255,255,255,0.75)"
+
+  - id: discount-eyebrow
+    type: text
+    z: 25
+    x: 60
+    y: 200
+    width: 1000
+    height: 0
+    content: { type: plain, value: "SAVE UP TO" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 800
+      color: "rgba(255,255,255,0.85)"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: discount-percent
+    type: text
+    z: 26
+    x: 60
+    y: 230
+    width: 1000
+    height: 0
+    content: { type: plain, value: "35% OFF" }
+    style:
+      font_family: $heading
+      font_size: 220
+      font_weight: 900
+      color: "#FFFFFF"
+      line_height: 1.0
+      letter_spacing: -0.04
+      text_transform: uppercase
+
+  - id: discount-sub
+    type: text
+    z: 27
+    x: 60
+    y: 460
+    width: 1000
+    height: 0
+    content: { type: plain, value: "Your entire next order — online or in store." }
+    style:
+      font_family: $body
+      font_size: 22
+      font_style: italic
+      color: "rgba(255,255,255,0.92)"
+
+  # Right side: code + expiry
+  - id: code-label
+    type: text
+    z: 35
+    x: 1100
+    y: 80
+    width: 360
+    height: 0
+    content: { type: plain, value: "USE CODE" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: "rgba(255,255,255,0.85)"
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: code-box
+    type: rect
+    z: 36
+    x: 1100
+    y: 120
+    width: 360
+    height: 110
+    radius: 12
+    fill: { type: solid, color: "rgba(255,255,255,0.08)" }
+    stroke: { color: "#FFFFFF", width: 2, dasharray: "6 5" }
+
+  - id: code-value
+    type: text
+    z: 37
+    x: 1100
+    y: 152
+    width: 360
+    height: 0
+    content: { type: plain, value: "SUNSET35" }
+    style:
+      font_family: $mono
+      font_size: 42
+      font_weight: 800
+      color: "#FFFFFF"
+      letter_spacing: 0.18
+      text_align: center
+
+  - id: expiry-label
+    type: text
+    z: 40
+    x: 1100
+    y: 280
+    width: 360
+    height: 0
+    content: { type: plain, value: "VALID THROUGH" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: "rgba(255,255,255,0.85)"
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: expiry-date
+    type: text
+    z: 41
+    x: 1100
+    y: 314
+    width: 360
+    height: 0
+    content: { type: plain, value: "Aug 31, 2026" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: redeem-rule
+    type: rect
+    z: 42
+    x: 1180
+    y: 380
+    width: 200
+    height: 1
+    fill: { type: solid, color: "rgba(255,255,255,0.5)" }
+
+  - id: redeem-hint
+    type: text
+    z: 43
+    x: 1100
+    y: 400
+    width: 360
+    height: 0
+    content: { type: plain, value: "Show at checkout · 1 per member" }
+    style:
+      font_family: $body
+      font_size: 13
+      font_style: italic
+      color: "rgba(255,255,255,0.85)"
+      text_align: center
+
+  - id: terms
+    type: text
+    z: 50
+    x: 60
+    y: 540
+    width: 980
+    height: 0
+    content: { type: plain, value: "Terms: Single use per member. Cannot be combined with other promotions. Excludes gift cards, taxes and shipping. No cash value. Folio Market reserves the right to amend or cancel at any time." }
+    style:
+      font_family: $body
+      font_size: 10
+      color: "rgba(255,255,255,0.7)"
+      line_height: 1.4
+
+slots:
+  - { id: brand_name,       path: "layers[15].content.value", type: text, hint: "Brand name",         default: "FOLIO MARKET" }
+  - { id: discount_percent, path: "layers[18].content.value", type: text, hint: "Discount percent",   default: "35% OFF" }
+  - { id: code,             path: "layers[22].content.value", type: text, hint: "Promo code",         default: "SUNSET35" }
+  - { id: expiry_date,      path: "layers[24].content.value", type: text, hint: "Expiry date",        default: "Aug 31, 2026" }
+  - { id: terms,            path: "layers[27].content.value", type: text, hint: "Terms / micro-print", default: "Terms: Single use per member. Cannot be combined with other promotions. Excludes gift cards, taxes and shipping. No cash value. Folio Market reserves the right to amend or cancel at any time." }

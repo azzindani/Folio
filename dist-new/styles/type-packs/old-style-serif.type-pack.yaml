@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: old-style-serif
+name: Old Style Serif
+version: "1.0.0"
+tags: [serif, classic, scholarly, garalde, humanist, historical]
+description: "EB Garamond with Cormorant accents — classic 16th-century scholarly register."
+families:
+  heading: "EB Garamond"
+  body:    "EB Garamond"
+  mono:    "Courier Prime"
+  display: "EB Garamond"
+  accent:  "Cormorant Garamond"
+scale:
+  h1:
+    size: 80
+    weight: 600
+    line_height: 1.1

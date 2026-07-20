@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: hand-drawn-casual
+name: Hand-Drawn Casual
+version: "1.0.0"
+tags: [handwritten, casual, notebook, sketch, playful, informal]
+description: "Schoolbell headlines + Reenie Beanie accents over Quattrocento body — notebook, hand-lettered, casual register."
+families:
+  heading: "Schoolbell"
+  body:    "Quattrocento"
+  mono:    "Reenie Beanie"
+  display: "Schoolbell"
+  accent:  "Reenie Beanie"
+scale:
+  h1:
+    size: 72
+    weight: 400
+    line_height: 1.1

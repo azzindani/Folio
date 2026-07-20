@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: swiss-grid
+name: Swiss Grid
+version: "1.0.0"
+tags: [swiss, international, typographic, minimal, grid]
+description: "Helvetica-red on jet black and pure white with neutral grays — International Typographic Style."
+colors:
+  background: "#FFFFFF"
+  surface:    "#F4F4F4"
+  surface_2:  "#E5E5E5"
+  primary:    "#E30613"
+  secondary:  "#1A1A1A"
+  accent:     "#7A7A7A"
+  text:       "#000000"
+  text_muted: "#595959"
+  border:     "#CFCFCF"
+  success:    "#1F7A3A"
+  warning:    "#B7791F"
+  danger:     "#C81D1D"

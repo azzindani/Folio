@@ -1,0 +1,189 @@
+_protocol: template/v1
+
+# 404 not-found page — 1280×720, high-contrast theme.
+# Huge "404" display, headline, explanation, "Go Home" CTA, glitch lines.
+meta:
+  id: tmpl-404-not-found
+  name: 404 Not Found
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [web, app, screen, "404", error, landscape, high-contrast]
+  description: "404 page with huge display number, glitch decoration, friendly message, and home CTA."
+
+document:
+  width: 1280
+  height: 720
+  unit: px
+  dpi: 96
+
+theme:
+  ref: high-contrast
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1280
+    height: 720
+    fill: { type: solid, color: "$background" }
+
+  # ── Decorative glitch lines ───────────────────────────────
+  - id: glitch-1
+    type: rect
+    z: 1
+    x: 80
+    y: 120
+    width: 240
+    height: 8
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+
+  - id: glitch-2
+    type: rect
+    z: 2
+    x: 940
+    y: 180
+    width: 280
+    height: 4
+    fill: { type: solid, color: "$text" }
+    opacity: 0.4
+
+  - id: glitch-3
+    type: rect
+    z: 3
+    x: 60
+    y: 600
+    width: 360
+    height: 6
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.6
+
+  - id: glitch-4
+    type: rect
+    z: 4
+    x: 880
+    y: 560
+    width: 200
+    height: 10
+    fill: { type: solid, color: "$text" }
+    opacity: 0.5
+
+  # ── Huge 404 display ──────────────────────────────────────
+  - id: display-shadow
+    type: text
+    z: 10
+    x: 60
+    y: 200
+    width: 1160
+    height: 0
+    content: { type: plain, value: "404" }
+    style:
+      font_family: $heading
+      font_size: 320
+      font_weight: 900
+      color: $primary
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.04
+    opacity: 0.18
+
+  - id: display-num
+    type: text
+    z: 11
+    x: 60
+    y: 180
+    width: 1160
+    height: 0
+    content: { type: plain, value: "404" }
+    style:
+      font_family: $heading
+      font_size: 280
+      font_weight: 900
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.04
+
+  # ── Headline ──────────────────────────────────────────────
+  - id: headline
+    type: text
+    z: 20
+    x: 60
+    y: 470
+    width: 1160
+    height: 0
+    content: { type: plain, value: "PAGE NOT FOUND" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 800
+      color: $text
+      text_align: center
+      letter_spacing: 0.06
+
+  # ── Explanation ───────────────────────────────────────────
+  - id: explanation
+    type: text
+    z: 21
+    x: 60
+    y: 530
+    width: 1160
+    height: 0
+    content: { type: plain, value: "The page you're looking for moved, was renamed, or never existed in this timeline." }
+    style:
+      font_family: $body
+      font_size: 20
+      color: $text_muted
+      text_align: center
+      line_height: 1.5
+
+  # ── CTA button ────────────────────────────────────────────
+  - id: cta-bg
+    type: rect
+    z: 30
+    x: 520
+    y: 620
+    width: 240
+    height: 64
+    radius: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: cta-text
+    type: text
+    z: 31
+    x: 520
+    y: 640
+    width: 240
+    height: 0
+    content: { type: plain, value: "← Go Home" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 700
+      color: $background
+      text_align: center
+
+  # ── URL hint ──────────────────────────────────────────────
+  - id: url-hint
+    type: text
+    z: 40
+    x: 60
+    y: 60
+    width: 1160
+    height: 0
+    content: { type: plain, value: "error 404 — resource missing" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      text_align: center
+      letter_spacing: 0.08
+
+slots:
+  - { id: explanation, path: "layers[8].content.value",  type: text, hint: "Friendly explanation",  default: "The page you're looking for moved, was renamed, or never existed in this timeline." }
+  - { id: home_url,    path: "layers[10].content.value", type: text, hint: "Home CTA label",        default: "← Go Home" }

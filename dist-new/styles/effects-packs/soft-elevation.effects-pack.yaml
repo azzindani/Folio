@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: soft-elevation
+name: Soft Elevation
+version: "1.0.0"
+tags: [material, soft, elevation, layered, product]
+description: "Gentle multi-layer Material-style elevation with a moderate accent glow."
+effects:
+  shadow_card:   "0 4px 16px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.06)"
+  shadow_glow:   "0 0 20px rgba(99,102,241,0.22)"
+  shadow_inset:  "inset 0 1px 2px rgba(15,23,42,0.08)"
+  shadow_text:   "0 1px 2px rgba(15,23,42,0.12)"
+  blur_glass:    10
+  blur_backdrop: 6

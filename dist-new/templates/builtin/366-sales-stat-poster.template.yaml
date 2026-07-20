@@ -1,0 +1,202 @@
+_protocol: template/v1
+
+# Single-page LinkedIn poster — big sales stat. 1200×1500 portrait, cyber synthwave.
+meta:
+  id: tmpl-sales-stat-poster
+  name: Sales Stat Poster
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, linkedin, sales, stat, headline, portrait, 4-5]
+  description: "Single-stat sales poster with a huge headline number, caption, and source attribution."
+
+document:
+  width: 1200
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1500
+    fill: { type: solid, color: $background }
+  - id: accent-band
+    type: rect
+    z: 2
+    x: 0
+    y: 0
+    width: 1200
+    height: 12
+    fill: { type: solid, color: "$primary" }
+
+  - id: accent-ring
+    type: circle
+    z: 5
+    cx: 1000
+    cy: 280
+    rx: 220
+    ry: 220
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+    opacity: 0.35
+
+  - id: accent-ring-inner
+    type: circle
+    z: 6
+    cx: 1000
+    cy: 280
+    rx: 140
+    ry: 140
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$accent", width: 2 }
+    opacity: 0.5
+
+  - id: eyebrow
+    type: text
+    z: 20
+    x: 80
+    y: 160
+    width: 1040
+    height: 0
+    content: { type: plain, value: "SALES STAT · 2026" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.32
+      text_transform: uppercase
+
+  - id: stat-number
+    type: text
+    z: 21
+    x: 80
+    y: 460
+    width: 1040
+    height: 0
+    content: { type: plain, value: "73%" }
+    style:
+      font_family: $heading
+      font_size: 260
+      font_weight: 900
+      color: $primary
+      line_height: 1.0
+      letter_spacing: -0.04
+
+  - id: caption
+    type: text
+    z: 22
+    x: 80
+    y: 820
+    width: 1040
+    height: 0
+    content: { type: plain, value: "…of B2B deals are won in the first 5 minutes of a discovery call." }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 700
+      color: $text
+      line_height: 1.25
+      letter_spacing: -0.01
+
+  - id: divider
+    type: rect
+    z: 10
+    x: 80
+    y: 1100
+    width: 1040
+    height: 1
+    fill: { type: solid, color: "$text_muted" }
+    opacity: 0.3
+
+  - id: source-label
+    type: text
+    z: 23
+    x: 80
+    y: 1130
+    width: 1040
+    height: 0
+    content: { type: plain, value: "SOURCE" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $accent
+      letter_spacing: 0.36
+      text_transform: uppercase
+
+  - id: source
+    type: text
+    z: 24
+    x: 80
+    y: 1170
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Gong.io · 2025 Revenue Intelligence Benchmark (N=14,212 calls)" }
+    style:
+      font_family: $mono
+      font_size: 16
+      color: $text_muted
+      line_height: 1.5
+
+  - id: author
+    type: text
+    z: 70
+    x: 80
+    y: 1400
+    width: 700
+    height: 0
+    content: { type: plain, value: "@yourhandle · share if useful" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: $text
+      line_height: 1.4
+
+  - id: page-mark
+    type: text
+    z: 72
+    x: 880
+    y: 1400
+    width: 240
+    height: 0
+    content: { type: plain, value: "01 / FOLIO" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.3
+      text_align: right
+      text_transform: uppercase
+
+animations:
+  accent-ring:
+    loop: { type: pulse, duration: 2400, scale: 1.06 }
+  accent-ring-inner:
+    loop: { type: spin, duration: 12000 }
+  eyebrow:
+    enter: { type: fade_down, duration: 500, delay: 100, easing: ease-out }
+  stat-number:
+    enter: { type: scale_in, duration: 800, delay: 200, easing: ease-out }
+  caption:
+    enter: { type: fade_up, duration: 500, delay: 600, easing: ease-out }
+  source:
+    enter: { type: fade_up, duration: 400, delay: 900, easing: ease-out }
+
+slots:
+  - { id: eyebrow,    path: "layers[4].content.value", type: text, hint: "Eyebrow tag",     default: "SALES STAT · 2026" }
+  - { id: stat,       path: "layers[5].content.value", type: text, hint: "Big stat number", default: "73%" }
+  - { id: caption,    path: "layers[6].content.value", type: text, hint: "Stat caption",    default: "…of B2B deals are won in the first 5 minutes of a discovery call." }
+  - { id: source,     path: "layers[9].content.value", type: text, hint: "Source",          default: "Gong.io · 2025 Revenue Intelligence Benchmark (N=14,212 calls)" }
+  - { id: author,     path: "layers[10].content.value", type: text, hint: "Author handle",  default: "@yourhandle · share if useful" }

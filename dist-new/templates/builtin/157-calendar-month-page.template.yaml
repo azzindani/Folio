@@ -1,0 +1,688 @@
+_protocol: template/v1
+
+# Single-month wall calendar — 1240×1754 (A4), pastel-dream theme.
+# Display-size month name + year, 7-column weekday header (Sun–Sat),
+# 6-row × 7-col date grid using rect cells + text numerals, small
+# notes section bottom-right, decorative botanical corner accent.
+meta:
+  id: tmpl-calendar-month-page
+  name: Calendar Month Page
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [calendar, month, wall-calendar, a4, pastel, portrait]
+  description: "Single-month wall calendar page with month/year header, weekday row, 7×6 date grid, notes, and botanical decoration."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1240
+    height: 1754
+    fill: { type: solid, color: "$background" }
+
+  # ── Decorative botanical corner (top-right) ───────────────
+  - id: deco-leaf-1
+    type: circle
+    z: 2
+    cx: 1100
+    cy: 120
+    rx: 70
+    ry: 70
+    fill: { type: solid, color: "$secondary" }
+    opacity: 0.35
+
+  - id: deco-leaf-2
+    type: circle
+    z: 3
+    cx: 1170
+    cy: 200
+    rx: 40
+    ry: 40
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.45
+
+  - id: deco-stem
+    type: path
+    z: 4
+    d: "M 1080 60 Q 1130 120 1140 230"
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+
+  - id: deco-leaf-3
+    type: path
+    z: 5
+    d: "M 1140 100 Q 1180 110 1190 80 Q 1175 70 1155 80 Z"
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.5
+
+  # ── Month + year header ───────────────────────────────────
+  - id: month-name
+    type: text
+    z: 10
+    x: 80
+    y: 80
+    width: 900
+    height: 0
+    content: { type: plain, value: "May" }
+    style:
+      font_family: $heading
+      font_size: 180
+      font_weight: 700
+      color: $text
+      line_height: 1
+      letter_spacing: -0.04
+      font_style: italic
+
+  - id: year
+    type: text
+    z: 11
+    x: 80
+    y: 250
+    width: 900
+    height: 0
+    content: { type: plain, value: "2026" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 400
+      color: $primary
+      line_height: 1.2
+      letter_spacing: 0.04
+
+  - id: header-rule
+    type: rect
+    z: 12
+    x: 80
+    y: 340
+    width: 1080
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  # ── Weekday header row (Sun-Sat, 7 cols, 154 wide each) ───
+  - id: w1
+    type: text
+    z: 20
+    x: 80
+    y: 360
+    width: 154
+    height: 0
+    content: { type: plain, value: "SUN" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_align: center }
+
+  - id: w2
+    type: text
+    z: 21
+    x: 234
+    y: 360
+    width: 154
+    height: 0
+    content: { type: plain, value: "MON" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $text, letter_spacing: 0.32, text_align: center }
+
+  - id: w3
+    type: text
+    z: 22
+    x: 388
+    y: 360
+    width: 154
+    height: 0
+    content: { type: plain, value: "TUE" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $text, letter_spacing: 0.32, text_align: center }
+
+  - id: w4
+    type: text
+    z: 23
+    x: 542
+    y: 360
+    width: 154
+    height: 0
+    content: { type: plain, value: "WED" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $text, letter_spacing: 0.32, text_align: center }
+
+  - id: w5
+    type: text
+    z: 24
+    x: 696
+    y: 360
+    width: 154
+    height: 0
+    content: { type: plain, value: "THU" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $text, letter_spacing: 0.32, text_align: center }
+
+  - id: w6
+    type: text
+    z: 25
+    x: 850
+    y: 360
+    width: 154
+    height: 0
+    content: { type: plain, value: "FRI" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $text, letter_spacing: 0.32, text_align: center }
+
+  - id: w7
+    type: text
+    z: 26
+    x: 1004
+    y: 360
+    width: 156
+    height: 0
+    content: { type: plain, value: "SAT" }
+    style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_align: center }
+
+  # ── Grid frame (overall border) ───────────────────────────
+  - id: grid-frame
+    type: rect
+    z: 30
+    x: 80
+    y: 410
+    width: 1080
+    height: 1020
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$border", width: 1 }
+
+  # ── Vertical grid lines (6 inner lines between 7 cols) ────
+  - id: vline-1
+    type: line
+    z: 31
+    x1: 234
+    y1: 410
+    x2: 234
+    y2: 1430
+    stroke: { color: "$border", width: 1 }
+
+  - id: vline-2
+    type: line
+    z: 31
+    x1: 388
+    y1: 410
+    x2: 388
+    y2: 1430
+    stroke: { color: "$border", width: 1 }
+
+  - id: vline-3
+    type: line
+    z: 31
+    x1: 542
+    y1: 410
+    x2: 542
+    y2: 1430
+    stroke: { color: "$border", width: 1 }
+
+  - id: vline-4
+    type: line
+    z: 31
+    x1: 696
+    y1: 410
+    x2: 696
+    y2: 1430
+    stroke: { color: "$border", width: 1 }
+
+  - id: vline-5
+    type: line
+    z: 31
+    x1: 850
+    y1: 410
+    x2: 850
+    y2: 1430
+    stroke: { color: "$border", width: 1 }
+
+  - id: vline-6
+    type: line
+    z: 31
+    x1: 1004
+    y1: 410
+    x2: 1004
+    y2: 1430
+    stroke: { color: "$border", width: 1 }
+
+  # ── Horizontal grid lines (5 inner lines between 6 rows) ──
+  - id: hline-1
+    type: line
+    z: 32
+    x1: 80
+    y1: 580
+    x2: 1160
+    y2: 580
+    stroke: { color: "$border", width: 1 }
+
+  - id: hline-2
+    type: line
+    z: 32
+    x1: 80
+    y1: 750
+    x2: 1160
+    y2: 750
+    stroke: { color: "$border", width: 1 }
+
+  - id: hline-3
+    type: line
+    z: 32
+    x1: 80
+    y1: 920
+    x2: 1160
+    y2: 920
+    stroke: { color: "$border", width: 1 }
+
+  - id: hline-4
+    type: line
+    z: 32
+    x1: 80
+    y1: 1090
+    x2: 1160
+    y2: 1090
+    stroke: { color: "$border", width: 1 }
+
+  - id: hline-5
+    type: line
+    z: 32
+    x1: 80
+    y1: 1260
+    x2: 1160
+    y2: 1260
+    stroke: { color: "$border", width: 1 }
+
+  # ── Row 1 (May 1 falls on Friday) ─────────────────────────
+  - id: d-r1-fri
+    type: text
+    z: 40
+    x: 870
+    y: 430
+    width: 100
+    height: 0
+    content: { type: plain, value: "1" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r1-sat
+    type: text
+    z: 41
+    x: 1024
+    y: 430
+    width: 100
+    height: 0
+    content: { type: plain, value: "2" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  # ── Row 2 ────────────────────────────────────────────────
+  - id: d-r2-sun
+    type: text
+    z: 42
+    x: 100
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "3" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  - id: d-r2-mon
+    type: text
+    z: 43
+    x: 254
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "4" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r2-tue
+    type: text
+    z: 44
+    x: 408
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "5" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r2-wed
+    type: text
+    z: 45
+    x: 562
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "6" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r2-thu
+    type: text
+    z: 46
+    x: 716
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "7" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r2-fri
+    type: text
+    z: 47
+    x: 870
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "8" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r2-sat
+    type: text
+    z: 48
+    x: 1024
+    y: 600
+    width: 100
+    height: 0
+    content: { type: plain, value: "9" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  # ── Row 3 ────────────────────────────────────────────────
+  - id: d-r3-sun
+    type: text
+    z: 49
+    x: 100
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "10" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  - id: d-r3-mon
+    type: text
+    z: 50
+    x: 254
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "11" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r3-tue
+    type: text
+    z: 51
+    x: 408
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "12" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r3-wed
+    type: text
+    z: 52
+    x: 562
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "13" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r3-thu
+    type: text
+    z: 53
+    x: 716
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "14" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r3-fri
+    type: text
+    z: 54
+    x: 870
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "15" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r3-sat
+    type: text
+    z: 55
+    x: 1024
+    y: 770
+    width: 100
+    height: 0
+    content: { type: plain, value: "16" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  # ── Row 4 ────────────────────────────────────────────────
+  - id: d-r4-sun
+    type: text
+    z: 56
+    x: 100
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "17" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  - id: d-r4-mon
+    type: text
+    z: 57
+    x: 254
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "18" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r4-tue
+    type: text
+    z: 58
+    x: 408
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "19" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r4-wed
+    type: text
+    z: 59
+    x: 562
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "20" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r4-thu
+    type: text
+    z: 60
+    x: 716
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "21" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r4-fri
+    type: text
+    z: 61
+    x: 870
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "22" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r4-sat
+    type: text
+    z: 62
+    x: 1024
+    y: 940
+    width: 100
+    height: 0
+    content: { type: plain, value: "23" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  # ── Row 5 ────────────────────────────────────────────────
+  - id: d-r5-sun
+    type: text
+    z: 63
+    x: 100
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "24" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  - id: d-r5-mon
+    type: text
+    z: 64
+    x: 254
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "25" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r5-tue
+    type: text
+    z: 65
+    x: 408
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "26" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r5-wed
+    type: text
+    z: 66
+    x: 562
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "27" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r5-thu
+    type: text
+    z: 67
+    x: 716
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "28" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r5-fri
+    type: text
+    z: 68
+    x: 870
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "29" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $text, line_height: 1 }
+
+  - id: d-r5-sat
+    type: text
+    z: 69
+    x: 1024
+    y: 1110
+    width: 100
+    height: 0
+    content: { type: plain, value: "30" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  # ── Row 6 ────────────────────────────────────────────────
+  - id: d-r6-sun
+    type: text
+    z: 70
+    x: 100
+    y: 1280
+    width: 100
+    height: 0
+    content: { type: plain, value: "31" }
+    style: { font_family: $heading, font_size: 28, font_weight: 600, color: $primary, line_height: 1 }
+
+  # ── Notes section bottom-right ────────────────────────────
+  - id: notes-card
+    type: rect
+    z: 80
+    x: 80
+    y: 1490
+    width: 720
+    height: 200
+    radius: 18
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: notes-header
+    type: text
+    z: 81
+    x: 110
+    y: 1520
+    width: 660
+    height: 0
+    content: { type: plain, value: "NOTES" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: notes-line-1
+    type: rect
+    z: 82
+    x: 110
+    y: 1570
+    width: 660
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: notes-line-2
+    type: rect
+    z: 83
+    x: 110
+    y: 1610
+    width: 660
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  - id: notes-line-3
+    type: rect
+    z: 84
+    x: 110
+    y: 1650
+    width: 660
+    height: 1
+    fill: { type: solid, color: "$border" }
+
+  # ── Small caption ────────────────────────────────────────
+  - id: caption
+    type: text
+    z: 90
+    x: 840
+    y: 1620
+    width: 320
+    height: 0
+    content: { type: plain, value: "design · folio.studio" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_style: italic
+      color: $text_muted
+      text_align: right
+      line_height: 1.3
+
+slots:
+  - { id: month_name, path: "layers[5].content.value", type: text, hint: "Month name (display)", default: "May" }
+  - { id: year,       path: "layers[6].content.value", type: text, hint: "Year",                 default: "2026" }

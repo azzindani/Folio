@@ -1,0 +1,442 @@
+_protocol: template/v1
+
+# 12-page corporate annual report — 1240×1754 A4 portrait, corporate-slate theme.
+# Cover → CEO letter → financial highlights → revenue chart → P&L → balance
+# sheet → segments → strategic priorities → sustainability → governance →
+# outlook → contact/colophon.
+meta:
+  id: tmpl-annual-report-corporate
+  name: Annual Report · Corporate (12 pages)
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, annual, corporate, finance, slate, a4]
+  description: "Twelve-page corporate annual report covering CEO letter, financial highlights, P&L, balance sheet, segments, strategy, sustainability, governance, and outlook."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: corporate-slate
+
+pages:
+  # ── Page 1 · Cover ──────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: logo-mark, type: text, z: 10, x: 100, y: 110, width: 800, height: 0, content: { type: plain, value: "◆ MERIDIAN CAPITAL" }, style: { font_family: $heading, font_size: 22, font_weight: 800, color: "$text", letter_spacing: 0.4, text_transform: uppercase } }
+      - { id: year-mark, type: text, z: 11, x: 1020, y: 113, width: 120, height: 0, content: { type: plain, value: "2025" }, style: { font_family: $mono, font_size: 20, font_weight: 600, color: "$text_muted", text_align: right, letter_spacing: 0.2 } }
+      - { id: rule-top, type: rect, z: 12, x: 100, y: 172, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 13, x: 100, y: 169, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
+      - { id: kicker, type: text, z: 14, x: 100, y: 540, width: 1040, height: 0, content: { type: plain, value: "ANNUAL REPORT — FISCAL YEAR 2025" }, style: { font_family: $mono, font_size: 18, font_weight: 600, color: "$primary", letter_spacing: 1 } }
+      - { id: title, type: text, z: 15, x: 94, y: 600, width: 1060, height: 0, content: { type: plain, value: "Building durable\nreturns." }, style: { font_family: "Playfair Display", font_size: 124, font_weight: 800, color: "$text", line_height: 0.96, letter_spacing: -0.02 } }
+      - { id: subtitle, type: text, z: 16, x: 100, y: 902, width: 880, height: 0, content: { type: plain, value: "Fiscal year 2025 results & shareholder review" }, style: { font_family: $body, font_size: 24, color: "$text_muted", line_height: 1.4 } }
+      - { id: lower-kicker, type: text, z: 20, x: 100, y: 1090, width: 1040, height: 0, content: { type: plain, value: "AT A GLANCE" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 1 } }
+      - { id: divider, type: rect, z: 21, x: 100, y: 1130, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: hl-1-label, type: text, z: 22, x: 100, y: 1170, width: 320, height: 0, content: { type: plain, value: "REVENUE" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.6 } }
+      - { id: hl-1-val, type: text, z: 23, x: 100, y: 1200, width: 320, height: 0, content: { type: plain, value: "$4.82B" }, style: { font_family: "Playfair Display", font_size: 56, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.02 } }
+      - { id: hl-1-delta, type: text, z: 24, x: 100, y: 1275, width: 320, height: 0, content: { type: plain, value: "↑ 14.6% YoY" }, style: { font_family: $mono, font_size: 15, font_weight: 600, color: $primary } }
+      - { id: hl-2-label, type: text, z: 22, x: 460, y: 1170, width: 320, height: 0, content: { type: plain, value: "OPERATING INCOME" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.6 } }
+      - { id: hl-2-val, type: text, z: 23, x: 460, y: 1200, width: 320, height: 0, content: { type: plain, value: "$1.14B" }, style: { font_family: "Playfair Display", font_size: 56, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.02 } }
+      - { id: hl-2-delta, type: text, z: 24, x: 460, y: 1275, width: 320, height: 0, content: { type: plain, value: "↑ 22.1% YoY" }, style: { font_family: $mono, font_size: 15, font_weight: 600, color: $primary } }
+      - { id: hl-3-label, type: text, z: 22, x: 820, y: 1170, width: 320, height: 0, content: { type: plain, value: "EPS (diluted)" }, style: { font_family: $mono, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.6 } }
+      - { id: hl-3-val, type: text, z: 23, x: 820, y: 1200, width: 320, height: 0, content: { type: plain, value: "$6.74" }, style: { font_family: "Playfair Display", font_size: 56, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.02 } }
+      - { id: hl-3-delta, type: text, z: 24, x: 820, y: 1275, width: 320, height: 0, content: { type: plain, value: "↑ 18.9% YoY" }, style: { font_family: $mono, font_size: 15, font_weight: 600, color: $primary } }
+      - { id: foot-divider, type: rect, z: 30, x: 100, y: 1600, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: nyse, type: text, z: 31, x: 100, y: 1640, width: 600, height: 0, content: { type: plain, value: "NYSE: MERC · Fiscal year ending December 31, 2025" }, style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 32, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "01 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 2 · CEO Letter ─────────────────────────────────────
+  - id: ceo-letter
+    label: CEO Letter
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "01 · LETTER FROM THE CEO" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "To our shareholders," }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 290, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: para-1, type: text, z: 20, x: 100, y: 340, width: 1040, height: 0, content: { type: plain, value: "Fiscal 2025 was a year of disciplined execution. We grew revenue by 14.6% to $4.82B, expanded operating margin by 160 basis points, and returned $612M to shareholders through dividends and buybacks. Each of our four business segments grew double digits, and our enterprise platform business crossed the $1B ARR milestone for the first time." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: para-2, type: text, z: 21, x: 100, y: 560, width: 1040, height: 0, content: { type: plain, value: "Behind these numbers is a deliberate shift toward recurring, software-led revenue. Five years ago, subscription revenue was 31% of our mix. Today it is 58%, with net retention of 119%. Customers buy more from us each year because the platform delivers measurable, compounding value." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: para-3, type: text, z: 22, x: 100, y: 760, width: 1040, height: 0, content: { type: plain, value: "We invested $784M in research and development this year — our largest annual R&D commitment ever — to ship 47 new product capabilities and to migrate the core platform onto our next-generation infrastructure. We expect the benefits of this work to compound through 2026 and beyond." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: para-4, type: text, z: 23, x: 100, y: 940, width: 1040, height: 0, content: { type: plain, value: "We are equally proud of how we operated. We grew headcount by only 4% while revenue grew 14.6%, a direct result of automation and a more focused operating model. Voluntary attrition fell to 7.8%, the lowest in our history, and our engagement scores reached an all-time high of 84%." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: para-5, type: text, z: 24, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "Looking to 2026, we are guiding to 12-14% revenue growth, 26-28% operating margins, and $1.4-1.5B in free cash flow. We see significant runway in the mid-market, in international expansion, and in our new vertical solutions for healthcare and financial services." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: sign-block, type: rect, z: 30, x: 100, y: 1380, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: sig, type: text, z: 31, x: 100, y: 1420, width: 1040, height: 0, content: { type: plain, value: "Catherine Bauer" }, style: { font_family: $heading, font_size: 32, font_style: italic, color: $text, line_height: 1.1 } }
+      - { id: sig-role, type: text, z: 32, x: 100, y: 1480, width: 1040, height: 0, content: { type: plain, value: "Chair & Chief Executive Officer" }, style: { font_family: $body, font_size: 16, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: sig-date, type: text, z: 33, x: 100, y: 1510, width: 1040, height: 0, content: { type: plain, value: "February 18, 2026" }, style: { font_family: $mono, font_size: 14, color: $text_muted, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 40, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "02 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 3 · Financial Highlights ───────────────────────────
+  - id: highlights
+    label: Financial Highlights
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "02 · FINANCIAL HIGHLIGHTS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "A year of double-digit growth across every line." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: m1-card, type: rect, z: 20, x: 100, y: 380, width: 500, height: 300, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-label, type: text, z: 21, x: 140, y: 420, width: 420, height: 0, content: { type: plain, value: "TOTAL REVENUE" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m1-val, type: text, z: 22, x: 140, y: 460, width: 420, height: 0, content: { type: plain, value: "$4.82B" }, style: { font_family: $heading, font_size: 84, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.03 } }
+      - { id: m1-delta, type: text, z: 23, x: 140, y: 580, width: 420, height: 0, content: { type: plain, value: "↑ 14.6% YoY ($4.21B in 2024)" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.5 } }
+      - { id: m1-sub, type: text, z: 24, x: 140, y: 620, width: 420, height: 0, content: { type: plain, value: "Subscription revenue grew 22% to $2.79B." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: m2-card, type: rect, z: 20, x: 640, y: 380, width: 500, height: 300, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m2-label, type: text, z: 21, x: 680, y: 420, width: 420, height: 0, content: { type: plain, value: "OPERATING MARGIN" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-val, type: text, z: 22, x: 680, y: 460, width: 420, height: 0, content: { type: plain, value: "23.6%" }, style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 } }
+      - { id: m2-delta, type: text, z: 23, x: 680, y: 580, width: 420, height: 0, content: { type: plain, value: "↑ 160 bps YoY (22.0% in 2024)" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.5 } }
+      - { id: m2-sub, type: text, z: 24, x: 680, y: 620, width: 420, height: 0, content: { type: plain, value: "Driven by mix shift and platform leverage." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: m3-card, type: rect, z: 20, x: 100, y: 720, width: 500, height: 300, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m3-label, type: text, z: 21, x: 140, y: 760, width: 420, height: 0, content: { type: plain, value: "FREE CASH FLOW" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m3-val, type: text, z: 22, x: 140, y: 800, width: 420, height: 0, content: { type: plain, value: "$1.21B" }, style: { font_family: $heading, font_size: 84, font_weight: 800, color: $primary, line_height: 1, letter_spacing: -0.03 } }
+      - { id: m3-delta, type: text, z: 23, x: 140, y: 920, width: 420, height: 0, content: { type: plain, value: "↑ 19.4% YoY · 25.1% of revenue" }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.5 } }
+      - { id: m3-sub, type: text, z: 24, x: 140, y: 960, width: 420, height: 0, content: { type: plain, value: "$612M returned to shareholders this year." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: m4-card, type: rect, z: 20, x: 640, y: 720, width: 500, height: 300, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m4-label, type: text, z: 21, x: 680, y: 760, width: 420, height: 0, content: { type: plain, value: "NET RETENTION" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m4-val, type: text, z: 22, x: 680, y: 800, width: 420, height: 0, content: { type: plain, value: "119%" }, style: { font_family: $heading, font_size: 84, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.03 } }
+      - { id: m4-delta, type: text, z: 23, x: 680, y: 920, width: 420, height: 0, content: { type: plain, value: "Best-in-class for enterprise software." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.5 } }
+      - { id: m4-sub, type: text, z: 24, x: 680, y: 960, width: 420, height: 0, content: { type: plain, value: "Gross retention held steady at 96%." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.5 } }
+      - { id: footnote, type: text, z: 30, x: 100, y: 1100, width: 1040, height: 0, content: { type: plain, value: "All figures USD, FY ending Dec 31. Comparable to GAAP unless otherwise noted. See pages 5-6 for full statements." }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.5 } }
+      - { id: pn, type: text, z: 40, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "03 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 4 · Revenue Chart ──────────────────────────────────
+  - id: revenue-chart
+    label: Revenue Trajectory
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "03 · REVENUE TRAJECTORY" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Five years of consistent growth." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: chart-card, type: rect, z: 20, x: 100, y: 360, width: 1040, height: 800, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: chart-label, type: text, z: 21, x: 140, y: 400, width: 600, height: 0, content: { type: plain, value: "REVENUE BY FISCAL YEAR · $ BILLIONS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.3 } }
+      - { id: y-axis, type: rect, z: 22, x: 180, y: 480, width: 1, height: 600, fill: { type: solid, color: "$border" } }
+      - { id: x-axis, type: rect, z: 22, x: 180, y: 1080, width: 920, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: grid-1, type: rect, z: 22, x: 180, y: 600, width: 920, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: grid-2, type: rect, z: 22, x: 180, y: 720, width: 920, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: grid-3, type: rect, z: 22, x: 180, y: 840, width: 920, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: grid-4, type: rect, z: 22, x: 180, y: 960, width: 920, height: 1, fill: { type: solid, color: "$border" }, opacity: 0.4 }
+      - { id: bar-21, type: rect, z: 30, x: 260, y: 920, width: 120, height: 160, fill: { type: solid, color: "$primary" }, opacity: 0.6 }
+      - { id: bar-22, type: rect, z: 30, x: 420, y: 860, width: 120, height: 220, fill: { type: solid, color: "$primary" }, opacity: 0.7 }
+      - { id: bar-23, type: rect, z: 30, x: 580, y: 780, width: 120, height: 300, fill: { type: solid, color: "$primary" }, opacity: 0.8 }
+      - { id: bar-24, type: rect, z: 30, x: 740, y: 680, width: 120, height: 400, fill: { type: solid, color: "$primary" }, opacity: 0.9 }
+      - { id: bar-25, type: rect, z: 30, x: 900, y: 580, width: 120, height: 500, fill: { type: solid, color: "$primary" } }
+      - { id: bar-21-val, type: text, z: 31, x: 260, y: 880, width: 120, height: 0, content: { type: plain, value: "$2.41" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, text_align: center } }
+      - { id: bar-22-val, type: text, z: 31, x: 420, y: 820, width: 120, height: 0, content: { type: plain, value: "$2.94" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, text_align: center } }
+      - { id: bar-23-val, type: text, z: 31, x: 580, y: 740, width: 120, height: 0, content: { type: plain, value: "$3.62" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, text_align: center } }
+      - { id: bar-24-val, type: text, z: 31, x: 740, y: 640, width: 120, height: 0, content: { type: plain, value: "$4.21" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $text, text_align: center } }
+      - { id: bar-25-val, type: text, z: 31, x: 900, y: 540, width: 120, height: 0, content: { type: plain, value: "$4.82" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $primary, text_align: center } }
+      - { id: bar-21-yr, type: text, z: 32, x: 260, y: 1100, width: 120, height: 0, content: { type: plain, value: "FY21" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center } }
+      - { id: bar-22-yr, type: text, z: 32, x: 420, y: 1100, width: 120, height: 0, content: { type: plain, value: "FY22" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center } }
+      - { id: bar-23-yr, type: text, z: 32, x: 580, y: 1100, width: 120, height: 0, content: { type: plain, value: "FY23" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center } }
+      - { id: bar-24-yr, type: text, z: 32, x: 740, y: 1100, width: 120, height: 0, content: { type: plain, value: "FY24" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center } }
+      - { id: bar-25-yr, type: text, z: 32, x: 900, y: 1100, width: 120, height: 0, content: { type: plain, value: "FY25" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, text_align: center } }
+      - { id: cagr-pill, type: rect, z: 40, x: 800, y: 420, width: 300, height: 40, radius: 20, fill: { type: solid, color: "$primary" } }
+      - { id: cagr-text, type: text, z: 41, x: 800, y: 430, width: 300, height: 0, content: { type: plain, value: "5-YEAR CAGR · 18.9%" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.3, text_align: center } }
+      - { id: caption, type: text, z: 50, x: 100, y: 1200, width: 1040, height: 0, content: { type: plain, value: "Each of the past five years has delivered double-digit growth, with subscription revenue compounding at a 28% rate over the same period." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "04 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 5 · P&L Summary ────────────────────────────────────
+  - id: pnl
+    label: P&L Summary
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "04 · INCOME STATEMENT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Consolidated statements of operations." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: table-card, type: rect, z: 20, x: 100, y: 340, width: 1040, height: 1100, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: th-line, type: text, z: 30, x: 140, y: 380, width: 500, height: 0, content: { type: plain, value: "($ MILLIONS)" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: th-25, type: text, z: 30, x: 760, y: 380, width: 160, height: 0, content: { type: plain, value: "FY 2025" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.3, text_align: right } }
+      - { id: th-24, type: text, z: 30, x: 940, y: 380, width: 160, height: 0, content: { type: plain, value: "FY 2024" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $text_muted, letter_spacing: 0.3, text_align: right } }
+      - { id: hdr-div, type: rect, z: 31, x: 140, y: 420, width: 960, height: 2, fill: { type: solid, color: "$border" } }
+      - { id: r1-l, type: text, z: 32, x: 140, y: 450, width: 500, height: 0, content: { type: plain, value: "Subscription revenue" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r1-25, type: text, z: 32, x: 760, y: 450, width: 160, height: 0, content: { type: plain, value: "2,789" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r1-24, type: text, z: 32, x: 940, y: 450, width: 160, height: 0, content: { type: plain, value: "2,286" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: r2-l, type: text, z: 32, x: 140, y: 490, width: 500, height: 0, content: { type: plain, value: "Services & licensing revenue" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r2-25, type: text, z: 32, x: 760, y: 490, width: 160, height: 0, content: { type: plain, value: "2,031" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r2-24, type: text, z: 32, x: 940, y: 490, width: 160, height: 0, content: { type: plain, value: "1,924" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: div-1, type: rect, z: 33, x: 140, y: 530, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r3-l, type: text, z: 32, x: 140, y: 560, width: 500, height: 0, content: { type: plain, value: "Total revenue" }, style: { font_family: $body, font_size: 17, font_weight: 700, color: $text } }
+      - { id: r3-25, type: text, z: 32, x: 760, y: 560, width: 160, height: 0, content: { type: plain, value: "4,820" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $primary, text_align: right } }
+      - { id: r3-24, type: text, z: 32, x: 940, y: 560, width: 160, height: 0, content: { type: plain, value: "4,210" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $text, text_align: right } }
+      - { id: div-2, type: rect, z: 33, x: 140, y: 600, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r4-l, type: text, z: 32, x: 140, y: 630, width: 500, height: 0, content: { type: plain, value: "Cost of revenue" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r4-25, type: text, z: 32, x: 760, y: 630, width: 160, height: 0, content: { type: plain, value: "(1,398)" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r4-24, type: text, z: 32, x: 940, y: 630, width: 160, height: 0, content: { type: plain, value: "(1,263)" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: r5-l, type: text, z: 32, x: 140, y: 670, width: 500, height: 0, content: { type: plain, value: "Gross profit" }, style: { font_family: $body, font_size: 17, font_weight: 700, color: $text } }
+      - { id: r5-25, type: text, z: 32, x: 760, y: 670, width: 160, height: 0, content: { type: plain, value: "3,422" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $text, text_align: right } }
+      - { id: r5-24, type: text, z: 32, x: 940, y: 670, width: 160, height: 0, content: { type: plain, value: "2,947" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $text_muted, text_align: right } }
+      - { id: div-3, type: rect, z: 33, x: 140, y: 710, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r6-l, type: text, z: 32, x: 140, y: 740, width: 500, height: 0, content: { type: plain, value: "Research & development" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r6-25, type: text, z: 32, x: 760, y: 740, width: 160, height: 0, content: { type: plain, value: "(784)" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r6-24, type: text, z: 32, x: 940, y: 740, width: 160, height: 0, content: { type: plain, value: "(681)" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: r7-l, type: text, z: 32, x: 140, y: 780, width: 500, height: 0, content: { type: plain, value: "Sales & marketing" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r7-25, type: text, z: 32, x: 760, y: 780, width: 160, height: 0, content: { type: plain, value: "(1,089)" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r7-24, type: text, z: 32, x: 940, y: 780, width: 160, height: 0, content: { type: plain, value: "(978)" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: r8-l, type: text, z: 32, x: 140, y: 820, width: 500, height: 0, content: { type: plain, value: "General & administrative" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r8-25, type: text, z: 32, x: 760, y: 820, width: 160, height: 0, content: { type: plain, value: "(411)" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r8-24, type: text, z: 32, x: 940, y: 820, width: 160, height: 0, content: { type: plain, value: "(364)" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: div-4, type: rect, z: 33, x: 140, y: 860, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r9-l, type: text, z: 32, x: 140, y: 890, width: 500, height: 0, content: { type: plain, value: "Operating income" }, style: { font_family: $body, font_size: 17, font_weight: 700, color: $text } }
+      - { id: r9-25, type: text, z: 32, x: 760, y: 890, width: 160, height: 0, content: { type: plain, value: "1,138" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $primary, text_align: right } }
+      - { id: r9-24, type: text, z: 32, x: 940, y: 890, width: 160, height: 0, content: { type: plain, value: "924" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $text, text_align: right } }
+      - { id: r10-l, type: text, z: 32, x: 140, y: 930, width: 500, height: 0, content: { type: plain, value: "Operating margin" }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted } }
+      - { id: r10-25, type: text, z: 32, x: 760, y: 930, width: 160, height: 0, content: { type: plain, value: "23.6%" }, style: { font_family: $mono, font_size: 15, font_style: italic, color: $text_muted, text_align: right } }
+      - { id: r10-24, type: text, z: 32, x: 940, y: 930, width: 160, height: 0, content: { type: plain, value: "22.0%" }, style: { font_family: $mono, font_size: 15, font_style: italic, color: $text_muted, text_align: right } }
+      - { id: div-5, type: rect, z: 33, x: 140, y: 970, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: r11-l, type: text, z: 32, x: 140, y: 1000, width: 500, height: 0, content: { type: plain, value: "Interest & other, net" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r11-25, type: text, z: 32, x: 760, y: 1000, width: 160, height: 0, content: { type: plain, value: "(48)" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r11-24, type: text, z: 32, x: 940, y: 1000, width: 160, height: 0, content: { type: plain, value: "(54)" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: r12-l, type: text, z: 32, x: 140, y: 1040, width: 500, height: 0, content: { type: plain, value: "Income taxes" }, style: { font_family: $body, font_size: 17, color: $text } }
+      - { id: r12-25, type: text, z: 32, x: 760, y: 1040, width: 160, height: 0, content: { type: plain, value: "(218)" }, style: { font_family: $mono, font_size: 17, color: $text, text_align: right } }
+      - { id: r12-24, type: text, z: 32, x: 940, y: 1040, width: 160, height: 0, content: { type: plain, value: "(178)" }, style: { font_family: $mono, font_size: 17, color: $text_muted, text_align: right } }
+      - { id: div-6, type: rect, z: 33, x: 140, y: 1080, width: 960, height: 2, fill: { type: solid, color: "$primary" } }
+      - { id: r13-l, type: text, z: 32, x: 140, y: 1110, width: 500, height: 0, content: { type: plain, value: "Net income" }, style: { font_family: $body, font_size: 19, font_weight: 800, color: $text } }
+      - { id: r13-25, type: text, z: 32, x: 760, y: 1110, width: 160, height: 0, content: { type: plain, value: "872" }, style: { font_family: $mono, font_size: 19, font_weight: 800, color: $primary, text_align: right } }
+      - { id: r13-24, type: text, z: 32, x: 940, y: 1110, width: 160, height: 0, content: { type: plain, value: "692" }, style: { font_family: $mono, font_size: 19, font_weight: 800, color: $text, text_align: right } }
+      - { id: r14-l, type: text, z: 32, x: 140, y: 1160, width: 500, height: 0, content: { type: plain, value: "Diluted EPS" }, style: { font_family: $body, font_size: 17, font_weight: 700, color: $text_muted } }
+      - { id: r14-25, type: text, z: 32, x: 760, y: 1160, width: 160, height: 0, content: { type: plain, value: "$6.74" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $primary, text_align: right } }
+      - { id: r14-24, type: text, z: 32, x: 940, y: 1160, width: 160, height: 0, content: { type: plain, value: "$5.67" }, style: { font_family: $mono, font_size: 17, font_weight: 700, color: $text_muted, text_align: right } }
+      - { id: footnote, type: text, z: 40, x: 100, y: 1480, width: 1040, height: 0, content: { type: plain, value: "Audited by Latham Patrick LLP. Full statements and notes available at meridian.com/investors." }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.5 } }
+      - { id: pn, type: text, z: 50, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "05 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 6 · Balance Sheet ──────────────────────────────────
+  - id: balance-sheet
+    label: Balance Sheet
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "05 · BALANCE SHEET" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "A fortress balance sheet." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: assets-card, type: rect, z: 20, x: 100, y: 360, width: 500, height: 720, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: assets-label, type: text, z: 21, x: 140, y: 400, width: 420, height: 0, content: { type: plain, value: "ASSETS · $ MILLIONS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: a1-l, type: text, z: 22, x: 140, y: 450, width: 280, height: 0, content: { type: plain, value: "Cash & equivalents" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: a1-v, type: text, z: 22, x: 420, y: 450, width: 140, height: 0, content: { type: plain, value: "1,842" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: a2-l, type: text, z: 22, x: 140, y: 490, width: 280, height: 0, content: { type: plain, value: "Short-term investments" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: a2-v, type: text, z: 22, x: 420, y: 490, width: 140, height: 0, content: { type: plain, value: "1,256" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: a3-l, type: text, z: 22, x: 140, y: 530, width: 280, height: 0, content: { type: plain, value: "Accounts receivable" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: a3-v, type: text, z: 22, x: 420, y: 530, width: 140, height: 0, content: { type: plain, value: "684" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: a-div-1, type: rect, z: 23, x: 140, y: 570, width: 420, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: a4-l, type: text, z: 22, x: 140, y: 600, width: 280, height: 0, content: { type: plain, value: "Total current assets" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $text } }
+      - { id: a4-v, type: text, z: 22, x: 420, y: 600, width: 140, height: 0, content: { type: plain, value: "3,782" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $text, text_align: right } }
+      - { id: a5-l, type: text, z: 22, x: 140, y: 660, width: 280, height: 0, content: { type: plain, value: "Property & equipment" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: a5-v, type: text, z: 22, x: 420, y: 660, width: 140, height: 0, content: { type: plain, value: "812" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: a6-l, type: text, z: 22, x: 140, y: 700, width: 280, height: 0, content: { type: plain, value: "Goodwill & intangibles" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: a6-v, type: text, z: 22, x: 420, y: 700, width: 140, height: 0, content: { type: plain, value: "1,247" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: a7-l, type: text, z: 22, x: 140, y: 740, width: 280, height: 0, content: { type: plain, value: "Other long-term assets" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: a7-v, type: text, z: 22, x: 420, y: 740, width: 140, height: 0, content: { type: plain, value: "298" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: a-div-2, type: rect, z: 23, x: 140, y: 800, width: 420, height: 2, fill: { type: solid, color: "$primary" } }
+      - { id: a-total-l, type: text, z: 22, x: 140, y: 830, width: 280, height: 0, content: { type: plain, value: "Total assets" }, style: { font_family: $body, font_size: 18, font_weight: 800, color: $text } }
+      - { id: a-total-v, type: text, z: 22, x: 420, y: 830, width: 140, height: 0, content: { type: plain, value: "6,139" }, style: { font_family: $mono, font_size: 18, font_weight: 800, color: $primary, text_align: right } }
+      - { id: liab-card, type: rect, z: 20, x: 640, y: 360, width: 500, height: 720, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: liab-label, type: text, z: 21, x: 680, y: 400, width: 420, height: 0, content: { type: plain, value: "LIABILITIES & EQUITY · $ MILLIONS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: l1-l, type: text, z: 22, x: 680, y: 450, width: 280, height: 0, content: { type: plain, value: "Accounts payable" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: l1-v, type: text, z: 22, x: 960, y: 450, width: 140, height: 0, content: { type: plain, value: "324" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: l2-l, type: text, z: 22, x: 680, y: 490, width: 280, height: 0, content: { type: plain, value: "Deferred revenue" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: l2-v, type: text, z: 22, x: 960, y: 490, width: 140, height: 0, content: { type: plain, value: "1,148" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: l3-l, type: text, z: 22, x: 680, y: 530, width: 280, height: 0, content: { type: plain, value: "Accrued expenses" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: l3-v, type: text, z: 22, x: 960, y: 530, width: 140, height: 0, content: { type: plain, value: "412" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: l-div-1, type: rect, z: 23, x: 680, y: 570, width: 420, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: l4-l, type: text, z: 22, x: 680, y: 600, width: 280, height: 0, content: { type: plain, value: "Total current liabilities" }, style: { font_family: $body, font_size: 16, font_weight: 700, color: $text } }
+      - { id: l4-v, type: text, z: 22, x: 960, y: 600, width: 140, height: 0, content: { type: plain, value: "1,884" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $text, text_align: right } }
+      - { id: l5-l, type: text, z: 22, x: 680, y: 660, width: 280, height: 0, content: { type: plain, value: "Long-term debt" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: l5-v, type: text, z: 22, x: 960, y: 660, width: 140, height: 0, content: { type: plain, value: "892" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: l6-l, type: text, z: 22, x: 680, y: 700, width: 280, height: 0, content: { type: plain, value: "Common stock & APIC" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: l6-v, type: text, z: 22, x: 960, y: 700, width: 140, height: 0, content: { type: plain, value: "1,820" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: l7-l, type: text, z: 22, x: 680, y: 740, width: 280, height: 0, content: { type: plain, value: "Retained earnings" }, style: { font_family: $body, font_size: 16, color: $text } }
+      - { id: l7-v, type: text, z: 22, x: 960, y: 740, width: 140, height: 0, content: { type: plain, value: "1,543" }, style: { font_family: $mono, font_size: 16, color: $text, text_align: right } }
+      - { id: l-div-2, type: rect, z: 23, x: 680, y: 800, width: 420, height: 2, fill: { type: solid, color: "$primary" } }
+      - { id: l-total-l, type: text, z: 22, x: 680, y: 830, width: 280, height: 0, content: { type: plain, value: "Total liab. & equity" }, style: { font_family: $body, font_size: 18, font_weight: 800, color: $text } }
+      - { id: l-total-v, type: text, z: 22, x: 960, y: 830, width: 140, height: 0, content: { type: plain, value: "6,139" }, style: { font_family: $mono, font_size: 18, font_weight: 800, color: $primary, text_align: right } }
+      - { id: key-card, type: rect, z: 30, x: 100, y: 1140, width: 1040, height: 240, radius: 0, fill: { type: solid, color: "$primary" } }
+      - { id: key-label, type: text, z: 31, x: 140, y: 1180, width: 960, height: 0, content: { type: plain, value: "KEY RATIOS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.85 } }
+      - { id: k1-l, type: text, z: 32, x: 140, y: 1230, width: 320, height: 0, content: { type: plain, value: "Current ratio" }, style: { font_family: $body, font_size: 15, color: "#FFFFFF", opacity: 0.85 } }
+      - { id: k1-v, type: text, z: 32, x: 140, y: 1260, width: 320, height: 0, content: { type: plain, value: "2.01×" }, style: { font_family: $heading, font_size: 40, font_weight: 800, color: "#FFFFFF" } }
+      - { id: k2-l, type: text, z: 32, x: 480, y: 1230, width: 320, height: 0, content: { type: plain, value: "Debt-to-equity" }, style: { font_family: $body, font_size: 15, color: "#FFFFFF", opacity: 0.85 } }
+      - { id: k2-v, type: text, z: 32, x: 480, y: 1260, width: 320, height: 0, content: { type: plain, value: "0.27×" }, style: { font_family: $heading, font_size: 40, font_weight: 800, color: "#FFFFFF" } }
+      - { id: k3-l, type: text, z: 32, x: 820, y: 1230, width: 320, height: 0, content: { type: plain, value: "Return on equity" }, style: { font_family: $body, font_size: 15, color: "#FFFFFF", opacity: 0.85 } }
+      - { id: k3-v, type: text, z: 32, x: 820, y: 1260, width: 320, height: 0, content: { type: plain, value: "26.0%" }, style: { font_family: $heading, font_size: 40, font_weight: 800, color: "#FFFFFF" } }
+      - { id: pn, type: text, z: 50, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "06 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 7 · Business Segments ──────────────────────────────
+  - id: segments
+    label: Business Segments
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "06 · SEGMENTS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Four engines firing in unison." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: s1-card, type: rect, z: 20, x: 100, y: 360, width: 500, height: 360, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: s1-label, type: text, z: 21, x: 140, y: 400, width: 420, height: 0, content: { type: plain, value: "ENTERPRISE PLATFORM" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: s1-rev, type: text, z: 22, x: 140, y: 440, width: 420, height: 0, content: { type: plain, value: "$1.94B" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: s1-share, type: text, z: 23, x: 140, y: 530, width: 420, height: 0, content: { type: plain, value: "40% of revenue · ↑ 24% YoY" }, style: { font_family: $body, font_size: 16, color: $primary, line_height: 1.5 } }
+      - { id: s1-bar-bg, type: rect, z: 24, x: 140, y: 580, width: 420, height: 12, radius: 6, fill: { type: solid, color: "$background" } }
+      - { id: s1-bar, type: rect, z: 25, x: 140, y: 580, width: 168, height: 12, radius: 6, fill: { type: solid, color: "$primary" } }
+      - { id: s1-body, type: text, z: 26, x: 140, y: 620, width: 420, height: 0, content: { type: plain, value: "Core SaaS platform serving Fortune 2000 customers across 47 countries. Grew ARR to $1.04B this year." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: s2-card, type: rect, z: 20, x: 640, y: 360, width: 500, height: 360, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: s2-label, type: text, z: 21, x: 680, y: 400, width: 420, height: 0, content: { type: plain, value: "DATA & ANALYTICS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: s2-rev, type: text, z: 22, x: 680, y: 440, width: 420, height: 0, content: { type: plain, value: "$1.31B" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: s2-share, type: text, z: 23, x: 680, y: 530, width: 420, height: 0, content: { type: plain, value: "27% of revenue · ↑ 18% YoY" }, style: { font_family: $body, font_size: 16, color: $primary, line_height: 1.5 } }
+      - { id: s2-bar-bg, type: rect, z: 24, x: 680, y: 580, width: 420, height: 12, radius: 6, fill: { type: solid, color: "$background" } }
+      - { id: s2-bar, type: rect, z: 25, x: 680, y: 580, width: 113, height: 12, radius: 6, fill: { type: solid, color: "$primary" } }
+      - { id: s2-body, type: text, z: 26, x: 680, y: 620, width: 420, height: 0, content: { type: plain, value: "Vertical analytics offerings for retail, healthcare, and financial services. Crossed 800 enterprise customers." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: s3-card, type: rect, z: 20, x: 100, y: 740, width: 500, height: 360, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: s3-label, type: text, z: 21, x: 140, y: 780, width: 420, height: 0, content: { type: plain, value: "PROFESSIONAL SERVICES" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: s3-rev, type: text, z: 22, x: 140, y: 820, width: 420, height: 0, content: { type: plain, value: "$948M" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: s3-share, type: text, z: 23, x: 140, y: 910, width: 420, height: 0, content: { type: plain, value: "20% of revenue · ↑ 8% YoY" }, style: { font_family: $body, font_size: 16, color: $primary, line_height: 1.5 } }
+      - { id: s3-bar-bg, type: rect, z: 24, x: 140, y: 960, width: 420, height: 12, radius: 6, fill: { type: solid, color: "$background" } }
+      - { id: s3-bar, type: rect, z: 25, x: 140, y: 960, width: 84, height: 12, radius: 6, fill: { type: solid, color: "$primary" } }
+      - { id: s3-body, type: text, z: 26, x: 140, y: 1000, width: 420, height: 0, content: { type: plain, value: "Implementation, training, and managed services. A strategic lever for deeper customer relationships." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: s4-card, type: rect, z: 20, x: 640, y: 740, width: 500, height: 360, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: s4-label, type: text, z: 21, x: 680, y: 780, width: 420, height: 0, content: { type: plain, value: "INTERNATIONAL" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: s4-rev, type: text, z: 22, x: 680, y: 820, width: 420, height: 0, content: { type: plain, value: "$623M" }, style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: s4-share, type: text, z: 23, x: 680, y: 910, width: 420, height: 0, content: { type: plain, value: "13% of revenue · ↑ 31% YoY" }, style: { font_family: $body, font_size: 16, color: $primary, line_height: 1.5 } }
+      - { id: s4-bar-bg, type: rect, z: 24, x: 680, y: 960, width: 420, height: 12, radius: 6, fill: { type: solid, color: "$background" } }
+      - { id: s4-bar, type: rect, z: 25, x: 680, y: 960, width: 55, height: 12, radius: 6, fill: { type: solid, color: "$primary" } }
+      - { id: s4-body, type: text, z: 26, x: 680, y: 1000, width: 420, height: 0, content: { type: plain, value: "EMEA and APAC expansion accelerating. Opened five new country offices including Singapore and Madrid." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: caption, type: text, z: 40, x: 100, y: 1160, width: 1040, height: 0, content: { type: plain, value: "Every segment grew double-digits, with International leading on a percentage basis and Enterprise Platform leading on absolute dollars." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: pn, type: text, z: 50, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "07 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 8 · Strategic Priorities ───────────────────────────
+  - id: priorities
+    label: Strategic Priorities
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "07 · STRATEGIC PRIORITIES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Three priorities to compound value." }, style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: p1-num, type: text, z: 20, x: 100, y: 380, width: 100, height: 0, content: { type: plain, value: "01" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: p1-title, type: text, z: 21, x: 240, y: 400, width: 900, height: 0, content: { type: plain, value: "Deepen the platform." }, style: { font_family: $heading, font_size: 40, font_weight: 700, color: $text, line_height: 1.15 } }
+      - { id: p1-body, type: text, z: 22, x: 240, y: 460, width: 900, height: 0, content: { type: plain, value: "We will continue to invest at the highest levels of R&D in our history — $850-900M in 2026 — focused on AI-native workflows, embedded analytics, and our next-generation developer platform. Net-new platform modules contributed 22% of new ACV this year." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.7 } }
+      - { id: p1-div, type: rect, z: 23, x: 100, y: 640, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: p2-num, type: text, z: 20, x: 100, y: 700, width: 100, height: 0, content: { type: plain, value: "02" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: p2-title, type: text, z: 21, x: 240, y: 720, width: 900, height: 0, content: { type: plain, value: "Win mid-market and international." }, style: { font_family: $heading, font_size: 40, font_weight: 700, color: $text, line_height: 1.15 } }
+      - { id: p2-body, type: text, z: 22, x: 240, y: 800, width: 900, height: 0, content: { type: plain, value: "The mid-market segment ($100M-$1B in customer revenue) grew 28% this year and now represents 24% of total ARR. Internationally, EMEA grew 34% and APAC grew 29%. We will add 280 quota-carrying reps in 2026, half outside the US." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.7 } }
+      - { id: p2-div, type: rect, z: 23, x: 100, y: 980, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: p3-num, type: text, z: 20, x: 100, y: 1040, width: 100, height: 0, content: { type: plain, value: "03" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: p3-title, type: text, z: 21, x: 240, y: 1060, width: 900, height: 0, content: { type: plain, value: "Capital discipline & shareholder returns." }, style: { font_family: $heading, font_size: 40, font_weight: 700, color: $text, line_height: 1.15 } }
+      - { id: p3-body, type: text, z: 22, x: 240, y: 1140, width: 900, height: 0, content: { type: plain, value: "We expect to return $700-800M to shareholders in 2026 through dividends and buybacks while preserving balance-sheet flexibility for opportunistic M&A. Our board approved a $1B authorization extension in February." }, style: { font_family: $body, font_size: 18, color: $text_muted, line_height: 1.7 } }
+      - { id: pn, type: text, z: 30, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "08 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 9 · Sustainability ─────────────────────────────────
+  - id: sustainability
+    label: Sustainability
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "08 · SUSTAINABILITY" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Operating responsibly, at scale." }, style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: intro, type: text, z: 12, x: 100, y: 320, width: 1040, height: 0, content: { type: plain, value: "Sustainability is not a side initiative. It is how we hire, build, source, and deploy capital." }, style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.6 } }
+      - { id: m1-card, type: rect, z: 20, x: 100, y: 480, width: 320, height: 260, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m1-l, type: text, z: 21, x: 140, y: 520, width: 240, height: 0, content: { type: plain, value: "OPS CARBON" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m1-v, type: text, z: 22, x: 140, y: 560, width: 240, height: 0, content: { type: plain, value: "−38%" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: m1-s, type: text, z: 23, x: 140, y: 640, width: 240, height: 0, content: { type: plain, value: "vs. 2020 baseline. On track for net-zero ops by 2030." }, style: { font_family: $body, font_size: 13, color: $text_muted, line_height: 1.6 } }
+      - { id: m2-card, type: rect, z: 20, x: 460, y: 480, width: 320, height: 260, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m2-l, type: text, z: 21, x: 500, y: 520, width: 240, height: 0, content: { type: plain, value: "RENEWABLES" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m2-v, type: text, z: 22, x: 500, y: 560, width: 240, height: 0, content: { type: plain, value: "92%" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: m2-s, type: text, z: 23, x: 500, y: 640, width: 240, height: 0, content: { type: plain, value: "of electricity sourced from renewable contracts globally." }, style: { font_family: $body, font_size: 13, color: $text_muted, line_height: 1.6 } }
+      - { id: m3-card, type: rect, z: 20, x: 820, y: 480, width: 320, height: 260, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m3-l, type: text, z: 21, x: 860, y: 520, width: 240, height: 0, content: { type: plain, value: "WOMEN IN TECH" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m3-v, type: text, z: 22, x: 860, y: 560, width: 240, height: 0, content: { type: plain, value: "41%" }, style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1 } }
+      - { id: m3-s, type: text, z: 23, x: 860, y: 640, width: 240, height: 0, content: { type: plain, value: "of technical hires this year, up from 32% three years ago." }, style: { font_family: $body, font_size: 13, color: $text_muted, line_height: 1.6 } }
+      - { id: actions-label, type: text, z: 30, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "WHAT WE DID THIS YEAR" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: a-div, type: rect, z: 31, x: 100, y: 840, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: a1, type: text, z: 32, x: 100, y: 880, width: 1040, height: 0, content: { type: plain, value: "→ Signed three new long-term renewable PPAs covering 280 GWh of annual demand." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: a2, type: text, z: 32, x: 100, y: 940, width: 1040, height: 0, content: { type: plain, value: "→ Invested $42M in workforce development programs for community-college pathways." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: a3, type: text, z: 32, x: 100, y: 1000, width: 1040, height: 0, content: { type: plain, value: "→ Refreshed our supplier code of conduct; 94% of tier-1 suppliers now audited annually." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: a4, type: text, z: 32, x: 100, y: 1060, width: 1040, height: 0, content: { type: plain, value: "→ Increased paid parental leave to 24 weeks for all caregivers globally." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: a5, type: text, z: 32, x: 100, y: 1120, width: 1040, height: 0, content: { type: plain, value: "→ Joined the Science-Based Targets initiative; targets validated in Q3 2025." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: full-report, type: text, z: 40, x: 100, y: 1280, width: 1040, height: 0, content: { type: plain, value: "Full sustainability report at meridian.com/sustainability — 124 pages of disclosures under SASB and TCFD." }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, line_height: 1.5 } }
+      - { id: pn, type: text, z: 50, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "09 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 10 · Governance ────────────────────────────────────
+  - id: governance
+    label: Governance
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "09 · BOARD & GOVERNANCE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Independent oversight, sustained engagement." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: stats-row, type: rect, z: 20, x: 100, y: 380, width: 1040, height: 160, radius: 0, fill: { type: solid, color: "$primary" } }
+      - { id: g1-l, type: text, z: 21, x: 140, y: 410, width: 240, height: 0, content: { type: plain, value: "BOARD SIZE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: g1-v, type: text, z: 22, x: 140, y: 440, width: 240, height: 0, content: { type: plain, value: "11 directors" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF" } }
+      - { id: g2-l, type: text, z: 21, x: 410, y: 410, width: 240, height: 0, content: { type: plain, value: "INDEPENDENT" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: g2-v, type: text, z: 22, x: 410, y: 440, width: 240, height: 0, content: { type: plain, value: "10 of 11" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF" } }
+      - { id: g3-l, type: text, z: 21, x: 680, y: 410, width: 240, height: 0, content: { type: plain, value: "AVG TENURE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: g3-v, type: text, z: 22, x: 680, y: 440, width: 240, height: 0, content: { type: plain, value: "5.4 years" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF" } }
+      - { id: g4-l, type: text, z: 21, x: 950, y: 410, width: 200, height: 0, content: { type: plain, value: "MEETINGS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.4, opacity: 0.85 } }
+      - { id: g4-v, type: text, z: 22, x: 950, y: 440, width: 200, height: 0, content: { type: plain, value: "9 / yr" }, style: { font_family: $heading, font_size: 32, font_weight: 800, color: "#FFFFFF" } }
+      - { id: dir-label, type: text, z: 30, x: 100, y: 620, width: 1040, height: 0, content: { type: plain, value: "BOARD OF DIRECTORS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: dir-div, type: rect, z: 31, x: 100, y: 660, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: d1-n, type: text, z: 32, x: 100, y: 700, width: 460, height: 0, content: { type: plain, value: "Catherine Bauer" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: d1-r, type: text, z: 33, x: 100, y: 740, width: 460, height: 0, content: { type: plain, value: "Chair & CEO" }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: d2-n, type: text, z: 32, x: 620, y: 700, width: 460, height: 0, content: { type: plain, value: "Marcus Yamamoto" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: d2-r, type: text, z: 33, x: 620, y: 740, width: 460, height: 0, content: { type: plain, value: "Lead Independent Director · Audit Chair" }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: d3-n, type: text, z: 32, x: 100, y: 820, width: 460, height: 0, content: { type: plain, value: "Aisha N'Doye" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: d3-r, type: text, z: 33, x: 100, y: 860, width: 460, height: 0, content: { type: plain, value: "Comp Committee Chair · former CFO, Cardinal Health" }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: d4-n, type: text, z: 32, x: 620, y: 820, width: 460, height: 0, content: { type: plain, value: "Dr. Hiroshi Okada" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: d4-r, type: text, z: 33, x: 620, y: 860, width: 460, height: 0, content: { type: plain, value: "Tech Committee Chair · Professor, Stanford" }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: d5-n, type: text, z: 32, x: 100, y: 940, width: 460, height: 0, content: { type: plain, value: "Sarah Whitfield" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: d5-r, type: text, z: 33, x: 100, y: 980, width: 460, height: 0, content: { type: plain, value: "Nom/Gov Chair · former General Counsel, Pfizer" }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: d6-n, type: text, z: 32, x: 620, y: 940, width: 460, height: 0, content: { type: plain, value: "James Eklund" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text } }
+      - { id: d6-r, type: text, z: 33, x: 620, y: 980, width: 460, height: 0, content: { type: plain, value: "Risk Committee Chair · former CRO, JPMorgan" }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: more, type: text, z: 40, x: 100, y: 1080, width: 1040, height: 0, content: { type: plain, value: "+ five additional independent directors. Full biographies in our proxy statement." }, style: { font_family: $body, font_size: 15, font_style: italic, color: $text_muted, line_height: 1.5 } }
+      - { id: comp-note, type: rect, z: 50, x: 100, y: 1180, width: 1040, height: 200, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: comp-l, type: text, z: 51, x: 140, y: 1210, width: 960, height: 0, content: { type: plain, value: "ALIGNMENT WITH SHAREHOLDERS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: comp-b, type: text, z: 52, x: 140, y: 1250, width: 960, height: 0, content: { type: plain, value: "CEO compensation is 92% performance-based, weighted heavily to total shareholder return measured over three- and five-year periods. The CEO holds $84M in company equity and is subject to a 10× base-salary holding requirement." }, style: { font_family: $body, font_size: 16, color: $text, line_height: 1.6 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "10 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 11 · Outlook ───────────────────────────────────────
+  - id: outlook
+    label: Looking Ahead
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "10 · LOOKING AHEAD" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "2026 outlook." }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 } }
+      - { id: sub, type: text, z: 12, x: 100, y: 340, width: 1040, height: 0, content: { type: plain, value: "We are guiding to another year of double-digit growth and expanding margins." }, style: { font_family: $body, font_size: 22, color: $text_muted, line_height: 1.5 } }
+      - { id: g1-card, type: rect, z: 20, x: 100, y: 480, width: 500, height: 260, radius: 0, fill: { type: solid, color: "$background" }, stroke: { color: "$border", width: 1 } }
+      - { id: g1-l, type: text, z: 21, x: 140, y: 520, width: 420, height: 0, content: { type: plain, value: "REVENUE GROWTH" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: g1-v, type: text, z: 22, x: 140, y: 560, width: 420, height: 0, content: { type: plain, value: "12-14%" }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: g1-s, type: text, z: 23, x: 140, y: 660, width: 420, height: 0, content: { type: plain, value: "Implies $5.4-5.5B at the midpoint." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: g2-card, type: rect, z: 20, x: 640, y: 480, width: 500, height: 260, radius: 0, fill: { type: solid, color: "$background" }, stroke: { color: "$border", width: 1 } }
+      - { id: g2-l, type: text, z: 21, x: 680, y: 520, width: 420, height: 0, content: { type: plain, value: "OPERATING MARGIN" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: g2-v, type: text, z: 22, x: 680, y: 560, width: 420, height: 0, content: { type: plain, value: "26-28%" }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: g2-s, type: text, z: 23, x: 680, y: 660, width: 420, height: 0, content: { type: plain, value: "Mix shift + platform leverage drives ~300 bps." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: g3-card, type: rect, z: 20, x: 100, y: 780, width: 500, height: 260, radius: 0, fill: { type: solid, color: "$background" }, stroke: { color: "$border", width: 1 } }
+      - { id: g3-l, type: text, z: 21, x: 140, y: 820, width: 420, height: 0, content: { type: plain, value: "FREE CASH FLOW" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: g3-v, type: text, z: 22, x: 140, y: 860, width: 420, height: 0, content: { type: plain, value: "$1.4-1.5B" }, style: { font_family: $heading, font_size: 72, font_weight: 800, color: $primary, line_height: 1 } }
+      - { id: g3-s, type: text, z: 23, x: 140, y: 960, width: 420, height: 0, content: { type: plain, value: "Conversion of net income remains >100%." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: g4-card, type: rect, z: 20, x: 640, y: 780, width: 500, height: 260, radius: 0, fill: { type: solid, color: "$background" }, stroke: { color: "$primary", width: 2 } }
+      - { id: g4-l, type: text, z: 21, x: 680, y: 820, width: 420, height: 0, content: { type: plain, value: "CAPITAL RETURNS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: g4-v, type: text, z: 22, x: 680, y: 860, width: 420, height: 0, content: { type: plain, value: "$700-800M" }, style: { font_family: $heading, font_size: 60, font_weight: 800, color: $text, line_height: 1, letter_spacing: -0.02 } }
+      - { id: g4-s, type: text, z: 23, x: 680, y: 960, width: 420, height: 0, content: { type: plain, value: "Combined dividends + buybacks." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.5 } }
+      - { id: closing, type: text, z: 30, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "Thank you for your continued partnership and investment in Meridian." }, style: { font_family: $heading, font_size: 28, font_style: italic, color: $primary, line_height: 1.4 } }
+      - { id: closing-2, type: text, z: 31, x: 100, y: 1240, width: 1040, height: 0, content: { type: plain, value: "The next twelve months will see disciplined investment, deepening customer value, and the kind of compounding that has defined our last five years. We feel fortunate to do this work alongside a team and a board that holds itself to the highest standard." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: pn, type: text, z: 40, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "11 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 12 · Contact / Colophon ────────────────────────────
+  - id: colophon
+    label: Contact & Colophon
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "11 · GET IN TOUCH" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "How to reach us." }, style: { font_family: $heading, font_size: 64, font_weight: 700, color: $text, line_height: 1.1, letter_spacing: -0.02 } }
+      - { id: ir-label, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "INVESTOR RELATIONS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: ir-div, type: rect, z: 21, x: 100, y: 420, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: ir-name, type: text, z: 22, x: 100, y: 460, width: 1040, height: 0, content: { type: plain, value: "Daniel Brooks · VP Investor Relations" }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: ir-email, type: text, z: 23, x: 100, y: 510, width: 1040, height: 0, content: { type: plain, value: "investors@meridian.com" }, style: { font_family: $mono, font_size: 22, color: $primary, line_height: 1.5 } }
+      - { id: ir-phone, type: text, z: 24, x: 100, y: 550, width: 1040, height: 0, content: { type: plain, value: "+1 415 555 0188" }, style: { font_family: $mono, font_size: 18, color: $text_muted, line_height: 1.5 } }
+      - { id: media-label, type: text, z: 30, x: 100, y: 660, width: 1040, height: 0, content: { type: plain, value: "MEDIA INQUIRIES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: media-div, type: rect, z: 31, x: 100, y: 700, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: media-name, type: text, z: 32, x: 100, y: 740, width: 1040, height: 0, content: { type: plain, value: "Léa Bertrand · Head of Communications" }, style: { font_family: $heading, font_size: 24, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: media-email, type: text, z: 33, x: 100, y: 790, width: 1040, height: 0, content: { type: plain, value: "press@meridian.com" }, style: { font_family: $mono, font_size: 20, color: $primary, line_height: 1.5 } }
+      - { id: hq-label, type: text, z: 40, x: 100, y: 900, width: 1040, height: 0, content: { type: plain, value: "GLOBAL HEADQUARTERS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: hq-div, type: rect, z: 41, x: 100, y: 940, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: hq-addr, type: text, z: 42, x: 100, y: 980, width: 1040, height: 0, content: { type: plain, value: "Meridian Capital, Inc.\nOne Embarcadero Center, Suite 4200\nSan Francisco, CA 94111 · USA" }, style: { font_family: $body, font_size: 20, color: $text, line_height: 1.8 } }
+      - { id: foot-div, type: rect, z: 50, x: 100, y: 1280, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: cop-label, type: text, z: 51, x: 100, y: 1320, width: 1040, height: 0, content: { type: plain, value: "COLOPHON" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.5 } }
+      - { id: cop-body, type: text, z: 52, x: 100, y: 1360, width: 1040, height: 0, content: { type: plain, value: "Designed in-house by Meridian Brand Studio. Set in Söhne for text and GT Pressura for headings. Printed on 100% recycled, FSC-certified paper at a wind-powered facility in Sacramento, CA." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.7 } }
+      - { id: legal, type: text, z: 53, x: 100, y: 1500, width: 1040, height: 0, content: { type: plain, value: "© 2026 Meridian Capital, Inc. All rights reserved. This report contains forward-looking statements within the meaning of Section 27A of the Securities Act and Section 21E of the Exchange Act." }, style: { font_family: $body, font_size: 12, color: $text_muted, line_height: 1.6, font_style: italic } }
+      - { id: site, type: text, z: 54, x: 100, y: 1620, width: 1040, height: 0, content: { type: plain, value: "meridian.com" }, style: { font_family: $heading, font_size: 24, font_weight: 800, color: $primary, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "12 / 12" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+slots:
+  - { id: company_name,  path: "pages[0].layers[2].content.value",  type: text, hint: "Company name (cover)",      default: "◆ MERIDIAN CAPITAL" }
+  - { id: report_year,   path: "pages[0].layers[3].content.value",  type: text, hint: "Reporting year",            default: "2025" }
+  - { id: cover_title,   path: "pages[0].layers[5].content.value",  type: text, hint: "Cover headline",            default: "Building durable\nreturns." }
+  - { id: ceo_name,      path: "pages[1].layers[10].content.value", type: text, hint: "CEO name (signature)",      default: "Catherine Bauer" }
+  - { id: ir_email,      path: "pages[11].layers[6].content.value", type: text, hint: "IR contact email",          default: "investors@meridian.com" }
+  - { id: site,          path: "pages[11].layers[19].content.value", type: text, hint: "Company website",          default: "meridian.com" }

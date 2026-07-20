@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: galaxy-deep
+name: Galaxy Deep
+version: "1.0.0"
+tags: [cosmic, space, galaxy, nebula, astronomy]
+description: "Deep purple void with nebula pink, stellar gold and cosmic blue — far-field galaxy."
+colors:
+  background: "#0A0820"
+  surface:    "#141038"
+  surface_2:  "#1F1A50"
+  primary:    "#7A3CB8"
+  secondary:  "#E04A9E"
+  accent:     "#F2C84A"
+  text:       "#EDE8FA"
+  text_muted: "#9A92C2"
+  border:     "#2A2466"
+  success:    "#4AE0B0"
+  warning:    "#F2C84A"
+  danger:     "#FF5A7A"

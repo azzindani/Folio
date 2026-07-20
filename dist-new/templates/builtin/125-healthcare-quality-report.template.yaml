@@ -1,0 +1,317 @@
+_protocol: template/v1
+
+# Healthcare quality metrics — hospital eyebrow, hero, 5 KPIs (patient volume,
+# readmission %, HCAHPS score, mortality, ER wait), 12-month readmission line,
+# unit-level performance table, patient-safety incident bar, top diagnoses table.
+meta:
+  id: tmpl-healthcare-quality-report
+  name: Healthcare · Quality Metrics
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, healthcare, hospital, quality, clinical, interactive]
+  description: "Hospital quality scorecard: patient volume, readmission rates, HCAHPS, mortality, unit performance, top diagnoses."
+
+document:
+  width: 1280
+  height: 2300
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: readmission_trend
+        type: inline
+        rows:
+          - { month: Jun, readmit_pct: 12.8, target: 11.0 }
+          - { month: Jul, readmit_pct: 12.4, target: 11.0 }
+          - { month: Aug, readmit_pct: 12.1, target: 11.0 }
+          - { month: Sep, readmit_pct: 11.8, target: 11.0 }
+          - { month: Oct, readmit_pct: 11.6, target: 11.0 }
+          - { month: Nov, readmit_pct: 11.4, target: 11.0 }
+          - { month: Dec, readmit_pct: 11.9, target: 11.0 }
+          - { month: Jan, readmit_pct: 12.2, target: 11.0 }
+          - { month: Feb, readmit_pct: 11.7, target: 11.0 }
+          - { month: Mar, readmit_pct: 11.3, target: 11.0 }
+          - { month: Apr, readmit_pct: 10.8, target: 11.0 }
+          - { month: May, readmit_pct: 10.6, target: 11.0 }
+      - id: units
+        type: inline
+        rows:
+          - { unit: Cardiology,            volume: 1842, readmit_pct: 11.2, csat_pct: 88.4, incidents:  4 }
+          - { unit: Oncology,              volume: 1284, readmit_pct:  9.4, csat_pct: 91.2, incidents:  2 }
+          - { unit: Orthopedics,           volume: 2168, readmit_pct:  8.6, csat_pct: 89.6, incidents:  3 }
+          - { unit: Neurology,             volume:  962, readmit_pct: 12.4, csat_pct: 86.2, incidents:  5 }
+          - { unit: General Surgery,       volume: 1748, readmit_pct: 10.8, csat_pct: 87.4, incidents:  6 }
+          - { unit: Emergency Department,  volume: 4284, readmit_pct: 14.2, csat_pct: 78.6, incidents: 12 }
+          - { unit: Maternity,             volume:  842, readmit_pct:  4.2, csat_pct: 94.8, incidents:  1 }
+          - { unit: ICU,                   volume:  486, readmit_pct: 16.8, csat_pct: 82.4, incidents:  8 }
+      - id: safety_incidents
+        type: inline
+        rows:
+          - { category: Medication Errors,        count: 24 }
+          - { category: Patient Falls,            count: 18 }
+          - { category: Hospital-Acquired Infx,   count: 12 }
+          - { category: Surgical Complications,   count:  8 }
+          - { category: Pressure Ulcers,          count: 14 }
+          - { category: Wrong-Site Procedures,    count:  1 }
+      - id: top_diagnoses
+        type: inline
+        rows:
+          - { diagnosis: Acute Myocardial Infarction,       admissions: 412, los_days: 4.8, outcome: Improved }
+          - { diagnosis: Congestive Heart Failure,          admissions: 386, los_days: 5.6, outcome: Improved }
+          - { diagnosis: Pneumonia,                         admissions: 348, los_days: 4.2, outcome: Improved }
+          - { diagnosis: Sepsis,                            admissions: 284, los_days: 7.4, outcome: Stable }
+          - { diagnosis: COPD Exacerbation,                 admissions: 268, los_days: 4.6, outcome: Improved }
+          - { diagnosis: Stroke (Ischemic),                 admissions: 224, los_days: 6.2, outcome: Stable }
+          - { diagnosis: Diabetic Ketoacidosis,             admissions: 182, los_days: 3.8, outcome: Improved }
+          - { diagnosis: Hip Fracture,                      admissions: 168, los_days: 5.4, outcome: Improved }
+          - { diagnosis: Acute Kidney Injury,               admissions: 142, los_days: 6.8, outcome: Stable }
+          - { diagnosis: GI Hemorrhage,                     admissions: 124, los_days: 4.0, outcome: Improved }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: $mono
+        font_size: 12
+        color: "$text_muted"
+        letter_spacing: 1
+        content: "MERCY GENERAL HOSPITAL · QUALITY & SAFETY · Q2 FY2026"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 130
+        format: markdown
+        font_family: Playfair Display
+        font_size: 64
+        font_weight: 800
+        line_height: 1.02
+        letter_spacing: -0.02
+        content: "**Quality Metrics — Hospital Scorecard**\n*Clinical outcomes, patient safety, and care experience across eight units.*"
+
+      - id: kpi-volume
+        type: kpi_card
+        x: 60
+        y: 210
+        width: 224
+        height: 140
+        label: Patient Volume
+        value: 13616
+        format: number
+        delta: 4.8
+        delta_format: percent
+
+      - id: kpi-readmit
+        type: kpi_card
+        x: 304
+        y: 210
+        width: 224
+        height: 140
+        label: Readmission %
+        value: 10.6
+        format: percent
+        delta: -1.4
+        delta_format: percent
+        sparkline_data: readmission_trend
+        sparkline_field: readmit_pct
+        sparkline_color: "$primary"
+
+      - id: kpi-hcahps
+        type: kpi_card
+        x: 548
+        y: 210
+        width: 224
+        height: 140
+        label: HCAHPS Score
+        value: 86.2
+        format: number
+        decimals: 1
+        delta: 2.4
+        delta_format: number
+
+      - id: kpi-mortality
+        type: kpi_card
+        x: 792
+        y: 210
+        width: 224
+        height: 140
+        label: Mortality Rate %
+        value: 2.4
+        format: percent
+        delta: -0.3
+        delta_format: percent
+
+      - id: kpi-erwait
+        type: kpi_card
+        x: 1036
+        y: 210
+        width: 184
+        height: 140
+        label: ER Wait (min)
+        value: 28.4
+        format: number
+        decimals: 1
+        delta: -6.2
+        delta_format: percent
+
+      - id: section-readmit
+        type: rich_text
+        x: 60
+        y: 390
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
+        content: "**30-Day Readmission Rate — Last 12 Months**"
+
+      - id: chart-readmit
+        type: interactive_chart
+        x: 60
+        y: 450
+        width: 1160
+        height: 360
+        chart_type: line
+        data_ref: readmission_trend
+        x_field: month
+        y_field: readmit_pct
+        title: All-Cause 30-Day Readmission % vs Target (11.0%)
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-units
+        type: rich_text
+        x: 60
+        y: 850
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
+        content: "**Unit-Level Performance**"
+
+      - id: tbl-units
+        type: interactive_table
+        x: 60
+        y: 910
+        width: 1160
+        height: 420
+        data_ref: units
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: unit,         title: Unit,         width: 320, sortable: true, formatter: badge }
+          - { field: volume,       title: Volume,       width: 200, sortable: true, formatter: number,  align: right }
+          - { field: readmit_pct,  title: Readmit %,    width: 200, sortable: true, formatter: percent, align: right }
+          - { field: csat_pct,     title: CSAT %,       width: 220, sortable: true, formatter: percent, align: right }
+          - { field: incidents,    title: Incidents,    width: 220, sortable: true, formatter: number,  align: right }
+
+      - id: section-safety
+        type: rich_text
+        x: 60
+        y: 1370
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
+        content: "**Patient-Safety Incidents — Quarter**"
+
+      - id: chart-safety
+        type: interactive_chart
+        x: 60
+        y: 1430
+        width: 1160
+        height: 320
+        chart_type: bar
+        data_ref: safety_incidents
+        x_field: category
+        y_field: count
+        title: Reported Safety Events by Category
+        legend: false
+        grid: true
+        animate: true
+
+      - id: section-diagnoses
+        type: rich_text
+        x: 60
+        y: 1790
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.04
+        letter_spacing: -0.02
+        content: "**Top 10 Diagnoses — Admissions and Outcomes**"
+
+      - id: tbl-diagnoses
+        type: interactive_table
+        x: 60
+        y: 1850
+        width: 1160
+        height: 420
+        data_ref: top_diagnoses
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: diagnosis,   title: Diagnosis,        width: 460, sortable: true }
+          - { field: admissions,  title: Admissions,       width: 220, sortable: true, formatter: number, align: right }
+          - { field: los_days,    title: LOS (days),       width: 220, sortable: true, formatter: number, align: right }
+          - { field: outcome,     title: Outcome,          width: 260, sortable: true, formatter: badge }
+
+      - id: rule-top
+        type: rect
+        z: 12
+        x: 60
+        y: 26
+        width: 1160
+        height: 1
+        fill: { type: solid, color: "$border" }
+
+      - id: rule-tick
+        type: rect
+        z: 13
+        x: 60
+        y: 23
+        width: 150
+        height: 6
+        fill: { type: solid, color: "$primary" }
+
+slots:
+  - { id: report_title,       path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**Quality Metrics — Hospital Scorecard**\n*Clinical outcomes, patient safety, and care experience across eight units.*" }
+  - { id: report_eyebrow,     path: "pages[0].layers[0].content",  type: text, hint: "Hospital eyebrow",     default: "MERCY GENERAL HOSPITAL · QUALITY & SAFETY · Q2 FY2026" }
+  - { id: readmit_section,    path: "pages[0].layers[7].content",  type: text, hint: "Readmit heading",     default: "**30-Day Readmission Rate — Last 12 Months**" }
+  - { id: units_section,      path: "pages[0].layers[9].content",  type: text, hint: "Units heading",       default: "**Unit-Level Performance**" }
+  - { id: safety_section,     path: "pages[0].layers[11].content", type: text, hint: "Safety heading",      default: "**Patient-Safety Incidents — Quarter**" }
+  - { id: diagnoses_section,  path: "pages[0].layers[13].content", type: text, hint: "Diagnoses heading",   default: "**Top 10 Diagnoses — Admissions and Outcomes**" }

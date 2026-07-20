@@ -1,0 +1,15 @@
+_protocol: type-pack/v1
+id: slab-serif
+name: Slab Serif
+version: "1.0.0"
+tags: [slab, serif, technical, blog, article, sturdy]
+description: "Roboto Slab heading over Merriweather body — sturdy, technical-friendly long-form."
+families:
+  heading: "Roboto Slab"
+  body:    "Merriweather"
+  mono:    "Roboto Mono"
+scale:
+  h1:
+    size: 72
+    weight: 700
+    line_height: 1.15

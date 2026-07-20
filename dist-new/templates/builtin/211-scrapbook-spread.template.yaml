@@ -1,0 +1,182 @@
+_protocol: template/v1
+
+# 6-page scrapbook — 1500×1500 square, editorial-cream theme.
+# Cover → four scrapbook spreads (rotated photo rects + washi tape + handwriting) → back cover.
+meta:
+  id: tmpl-scrapbook-spread
+  name: Scrapbook Spreads (6 pages)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [scrapbook, memory-book, photos, washi-tape, handwriting, square]
+  description: "Six-page memory-book scrapbook: cover, four spreads featuring rotated photo-placeholder rects, washi-tape strips, handwriting-style captions, and a dedication back cover."
+
+document:
+  width: 1500
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+pages:
+  # ── Page 1 · Cover ─────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
+      - { id: paper-texture, type: rect, z: 1, x: 60, y: 60, width: 1380, height: 1380, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: tape-1, type: rect, z: 5, x: 100, y: 100, width: 320, height: 60, fill: { type: solid, color: "$primary" }, opacity: 0.65, rotation: -4 }
+      - { id: tape-2, type: rect, z: 5, x: 1080, y: 100, width: 320, height: 60, fill: { type: solid, color: "$secondary" }, opacity: 0.7, rotation: 6 }
+      - { id: tape-3, type: rect, z: 5, x: 100, y: 1380, width: 360, height: 56, fill: { type: solid, color: "$secondary" }, opacity: 0.6, rotation: 5 }
+      - { id: tape-4, type: rect, z: 5, x: 1060, y: 1370, width: 340, height: 58, fill: { type: solid, color: "$primary" }, opacity: 0.6, rotation: -7 }
+      - { id: ticket-1, type: rect, z: 10, x: 220, y: 320, width: 320, height: 200, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -8 }
+      - { id: ticket-1-text, type: text, z: 11, x: 220, y: 370, width: 320, height: 0, content: { type: plain, value: "ADMIT ONE\n— summer fair —\nROW C · SEAT 14" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $text, text_align: center, line_height: 1.5, letter_spacing: 0.3 }, rotation: -8 }
+      - { id: polaroid-1, type: rect, z: 12, x: 960, y: 300, width: 320, height: 360, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: 6 }
+      - { id: polaroid-1-photo, type: rect, z: 13, x: 980, y: 320, width: 280, height: 280, fill: { type: solid, color: $primary }, opacity: 0.6, rotation: 6 }
+      - { id: polaroid-1-cap, type: text, z: 14, x: 960, y: 615, width: 320, height: 0, content: { type: plain, value: "snapshot" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text_muted, text_align: center, opacity: 0.3 }, rotation: 6 }
+      - { id: title-block, type: rect, z: 20, x: 240, y: 720, width: 1020, height: 360, radius: 8, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 1 } }
+      - { id: title-kicker, type: text, z: 21, x: 240, y: 770, width: 1020, height: 0, content: { type: plain, value: "A MEMORY BOOK · TWENTY TWENTY-SIX" }, style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.5 } }
+      - { id: title, type: text, z: 22, x: 240, y: 820, width: 1020, height: 0, content: { type: plain, value: "All The Small\nThings We Kept." }, style: { font_family: $heading, font_size: 84, font_weight: 700, font_style: italic, color: $text, text_align: center, line_height: 1.05, letter_spacing: -0.02 } }
+      - { id: title-foot, type: text, z: 23, x: 240, y: 1020, width: 1020, height: 0, content: { type: plain, value: "compiled by hand, with sticky fingers" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text_muted, text_align: center } }
+      - { id: doodle-heart, type: text, z: 30, x: 460, y: 1180, width: 140, height: 0, content: { type: plain, value: "♡" }, style: { font_family: $heading, font_size: 56, color: $primary, text_align: center, rotation: -10 } }
+      - { id: doodle-star, type: text, z: 30, x: 700, y: 1170, width: 140, height: 0, content: { type: plain, value: "✦" }, style: { font_family: $heading, font_size: 48, color: $secondary, text_align: center } }
+      - { id: doodle-arrow, type: text, z: 30, x: 940, y: 1180, width: 140, height: 0, content: { type: plain, value: "→" }, style: { font_family: $heading, font_size: 56, color: $primary, text_align: center, rotation: 8 } }
+      - { id: page-num, type: text, z: 40, x: 0, y: 1455, width: 1500, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+
+  # ── Page 2 · Spread 1 (Summer) ─────────────────────────────
+  - id: spread-1
+    label: Summer Days
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
+      - { id: head-tape-1, type: rect, z: 5, x: 80, y: 80, width: 300, height: 50, fill: { type: solid, color: "$primary" }, opacity: 0.65, rotation: -3 }
+      - { id: head-tape-2, type: rect, z: 5, x: 1140, y: 92, width: 280, height: 44, fill: { type: solid, color: "$secondary" }, opacity: 0.7, rotation: 5 }
+      - { id: head-kicker, type: text, z: 10, x: 0, y: 200, width: 1500, height: 0, content: { type: plain, value: "JUNE · JULY · AUGUST" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.6 } }
+      - { id: head-title, type: text, z: 11, x: 0, y: 240, width: 1500, height: 0, content: { type: plain, value: "Summer days." }, style: { font_family: $heading, font_size: 72, font_weight: 700, font_style: italic, color: $text, text_align: center, line_height: 1.1 } }
+      - { id: photo-1, type: rect, z: 20, x: 140, y: 380, width: 420, height: 480, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -5 }
+      - { id: photo-1-fill, type: rect, z: 21, x: 160, y: 400, width: 380, height: 380, fill: { type: solid, color: $primary }, opacity: 0.6, rotation: -5 }
+      - { id: photo-1-ph, type: text, z: 22, x: 140, y: 580, width: 420, height: 0, content: { type: plain, value: "[ the lake · 4th of july ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center, rotation: -5 } }
+      - { id: photo-1-cap, type: text, z: 23, x: 140, y: 800, width: 420, height: 0, content: { type: plain, value: "you said the water was warm." }, style: { font_family: $heading, font_size: 20, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: -5 } }
+      - { id: photo-2, type: rect, z: 20, x: 600, y: 360, width: 420, height: 480, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: 4 }
+      - { id: photo-2-fill, type: rect, z: 21, x: 620, y: 380, width: 380, height: 380, fill: { type: solid, color: $secondary }, opacity: 0.55, rotation: 4 }
+      - { id: photo-2-ph, type: text, z: 22, x: 600, y: 560, width: 420, height: 0, content: { type: plain, value: "[ ice-cream · main street ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center, rotation: 4 } }
+      - { id: photo-2-cap, type: text, z: 23, x: 600, y: 790, width: 420, height: 0, content: { type: plain, value: "two scoops, before it melted" }, style: { font_family: $heading, font_size: 20, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: 4 } }
+      - { id: photo-3, type: rect, z: 20, x: 1040, y: 400, width: 360, height: 420, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -7 }
+      - { id: photo-3-fill, type: rect, z: 21, x: 1060, y: 420, width: 320, height: 320, fill: { type: solid, color: $primary }, opacity: 0.6, rotation: -7 }
+      - { id: photo-3-ph, type: text, z: 22, x: 1040, y: 580, width: 360, height: 0, content: { type: plain, value: "[ sunset · porch ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center, rotation: -7 } }
+      - { id: photo-3-cap, type: text, z: 23, x: 1040, y: 760, width: 360, height: 0, content: { type: plain, value: "the sky went pink" }, style: { font_family: $heading, font_size: 20, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: -7 } }
+      - { id: note-1, type: rect, z: 30, x: 200, y: 1000, width: 540, height: 200, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$primary", width: 2 }, rotation: -2 }
+      - { id: note-1-text, type: text, z: 31, x: 240, y: 1040, width: 460, height: 0, content: { type: plain, value: "summer feels like a long Sunday afternoon — we never want it to be Monday." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.4, rotation: -2 } }
+      - { id: note-1-sig, type: text, z: 32, x: 520, y: 1150, width: 200, height: 0, content: { type: plain, value: "— July, somewhere" }, style: { font_family: $heading, font_size: 16, font_style: italic, color: $primary, text_align: right, rotation: -2 } }
+      - { id: ticket-2, type: rect, z: 30, x: 820, y: 1020, width: 360, height: 180, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 }, rotation: 5 }
+      - { id: ticket-2-text, type: text, z: 31, x: 820, y: 1060, width: 360, height: 0, content: { type: plain, value: "FERRY · ROUTE 22\nOAKMONT  →  ISLAND\nADULT  ·  $9.50" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $text, text_align: center, line_height: 1.55, letter_spacing: 0.3, rotation: 5 } }
+      - { id: tape-bot-1, type: rect, z: 5, x: 320, y: 1370, width: 260, height: 50, fill: { type: solid, color: "$secondary" }, opacity: 0.55, rotation: 7 }
+      - { id: tape-bot-2, type: rect, z: 5, x: 940, y: 1360, width: 280, height: 48, fill: { type: solid, color: "$primary" }, opacity: 0.6, rotation: -5 }
+      - { id: page-num, type: text, z: 40, x: 0, y: 1455, width: 1500, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+
+  # ── Page 3 · Spread 2 (Hometown) ───────────────────────────
+  - id: spread-2
+    label: Hometown
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
+      - { id: head-tape, type: rect, z: 5, x: 540, y: 80, width: 420, height: 60, fill: { type: solid, color: "$primary" }, opacity: 0.65, rotation: -2 }
+      - { id: head-kicker, type: text, z: 10, x: 0, y: 200, width: 1500, height: 0, content: { type: plain, value: "RIVERTON · ELM STREET · THE OLD FIRE STATION" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.5 } }
+      - { id: head-title, type: text, z: 11, x: 0, y: 240, width: 1500, height: 0, content: { type: plain, value: "Hometown things." }, style: { font_family: $heading, font_size: 72, font_weight: 700, font_style: italic, color: $text, text_align: center, line_height: 1.1 } }
+      - { id: photo-big, type: rect, z: 20, x: 180, y: 380, width: 760, height: 540, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -3 }
+      - { id: photo-big-fill, type: rect, z: 21, x: 200, y: 400, width: 720, height: 440, fill: { type: solid, color: $secondary }, opacity: 0.5, rotation: -3 }
+      - { id: photo-big-ph, type: text, z: 22, x: 180, y: 600, width: 760, height: 0, content: { type: plain, value: "[ main street, early autumn ]" }, style: { font_family: $body, font_size: 16, font_style: italic, color: $text_muted, text_align: center, rotation: -3 } }
+      - { id: photo-big-cap, type: text, z: 23, x: 180, y: 860, width: 760, height: 0, content: { type: plain, value: "every tree on this street is older than we are." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: -3 } }
+      - { id: photo-small-1, type: rect, z: 20, x: 1000, y: 380, width: 380, height: 280, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: 6 }
+      - { id: photo-small-1-fill, type: rect, z: 21, x: 1020, y: 400, width: 340, height: 220, fill: { type: solid, color: "$primary" }, opacity: 0.55, rotation: 6 }
+      - { id: photo-small-1-ph, type: text, z: 22, x: 1000, y: 510, width: 380, height: 0, content: { type: plain, value: "[ the diner ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: "#FFFFFF", text_align: center, opacity: 0.95, rotation: 6 } }
+      - { id: photo-small-2, type: rect, z: 20, x: 1000, y: 700, width: 380, height: 280, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -5 }
+      - { id: photo-small-2-fill, type: rect, z: 21, x: 1020, y: 720, width: 340, height: 220, fill: { type: solid, color: "$secondary" }, opacity: 0.7, rotation: -5 }
+      - { id: photo-small-2-ph, type: text, z: 22, x: 1000, y: 830, width: 380, height: 0, content: { type: plain, value: "[ the library steps ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: "#FFFFFF", text_align: center, opacity: 0.95, rotation: -5 } }
+      - { id: list-card, type: rect, z: 30, x: 140, y: 1020, width: 700, height: 320, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: list-title, type: text, z: 31, x: 180, y: 1050, width: 620, height: 0, content: { type: plain, value: "Things that haven't changed:" }, style: { font_family: $heading, font_size: 26, font_style: italic, color: $text, line_height: 1.3 } }
+      - { id: list-body, type: text, z: 32, x: 180, y: 1110, width: 620, height: 0, content: { type: plain, value: "✓  the pancakes at Ruby's\n✓  the bell on the door of Holloway's books\n✓  the smell of leaves in October on Elm\n✓  the train whistle at 9:14, every night, on time" }, style: { font_family: $heading, font_size: 20, font_style: italic, color: $text, line_height: 1.7 } }
+      - { id: stamp, type: rect, z: 40, x: 900, y: 1040, width: 220, height: 220, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$primary", width: 4 }, rotation: 8 }
+      - { id: stamp-glyph, type: text, z: 41, x: 900, y: 1080, width: 220, height: 0, content: { type: plain, value: "★" }, style: { font_family: $heading, font_size: 64, color: $primary, text_align: center, rotation: 8 } }
+      - { id: stamp-text, type: text, z: 42, x: 900, y: 1180, width: 220, height: 0, content: { type: plain, value: "FAVORITE\nPLACES" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $text, text_align: center, line_height: 1.3, letter_spacing: 0.4, rotation: 8 } }
+      - { id: doodle, type: text, z: 50, x: 1180, y: 1080, width: 200, height: 0, content: { type: plain, value: "← still here" }, style: { font_family: $heading, font_size: 24, font_style: italic, color: $primary, rotation: 10 } }
+      - { id: tape-bot, type: rect, z: 5, x: 1180, y: 1380, width: 280, height: 50, fill: { type: solid, color: "$primary" }, opacity: 0.6, rotation: -6 }
+      - { id: page-num, type: text, z: 60, x: 0, y: 1455, width: 1500, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+
+  # ── Page 4 · Spread 3 (Road Trip) ──────────────────────────
+  - id: spread-3
+    label: Road Trip
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
+      - { id: head-tape-1, type: rect, z: 5, x: 100, y: 100, width: 320, height: 56, fill: { type: solid, color: "$secondary" }, opacity: 0.65, rotation: -4 }
+      - { id: head-tape-2, type: rect, z: 5, x: 1080, y: 100, width: 320, height: 56, fill: { type: solid, color: "$primary" }, opacity: 0.65, rotation: 6 }
+      - { id: head-kicker, type: text, z: 10, x: 0, y: 200, width: 1500, height: 0, content: { type: plain, value: "INTERSTATE 90 · MILE BY MILE" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.5 } }
+      - { id: head-title, type: text, z: 11, x: 0, y: 240, width: 1500, height: 0, content: { type: plain, value: "Westbound." }, style: { font_family: $heading, font_size: 72, font_weight: 700, font_style: italic, color: $text, text_align: center, line_height: 1.1 } }
+      - { id: photo-row-1, type: rect, z: 20, x: 120, y: 380, width: 340, height: 300, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -6 }
+      - { id: photo-row-1-fill, type: rect, z: 21, x: 140, y: 400, width: 300, height: 240, fill: { type: solid, color: $primary }, opacity: 0.55, rotation: -6 }
+      - { id: photo-row-1-ph, type: text, z: 22, x: 120, y: 540, width: 340, height: 0, content: { type: plain, value: "[ leaving home, mile 0 ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center, rotation: -6 } }
+      - { id: photo-row-2, type: rect, z: 20, x: 500, y: 360, width: 340, height: 300, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: 4 }
+      - { id: photo-row-2-fill, type: rect, z: 21, x: 520, y: 380, width: 300, height: 240, fill: { type: solid, color: $secondary }, opacity: 0.55, rotation: 4 }
+      - { id: photo-row-2-ph, type: text, z: 22, x: 500, y: 520, width: 340, height: 0, content: { type: plain, value: "[ Badlands, day 3 ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center, rotation: 4 } }
+      - { id: photo-row-3, type: rect, z: 20, x: 880, y: 380, width: 340, height: 300, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -3 }
+      - { id: photo-row-3-fill, type: rect, z: 21, x: 900, y: 400, width: 300, height: 240, fill: { type: solid, color: $primary }, opacity: 0.5, rotation: -3 }
+      - { id: photo-row-3-ph, type: text, z: 22, x: 880, y: 540, width: 340, height: 0, content: { type: plain, value: "[ Tetons, day 5 ]" }, style: { font_family: $body, font_size: 14, font_style: italic, color: $text_muted, text_align: center, rotation: -3 } }
+      - { id: map-card, type: rect, z: 30, x: 1260, y: 360, width: 200, height: 260, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 }, rotation: 8 }
+      - { id: map-glyph, type: text, z: 31, x: 1260, y: 400, width: 200, height: 0, content: { type: plain, value: "MAP" }, style: { font_family: $mono, font_size: 14, font_weight: 800, color: $primary, text_align: center, letter_spacing: 0.6, rotation: 8 } }
+      - { id: map-route, type: text, z: 32, x: 1260, y: 440, width: 200, height: 0, content: { type: plain, value: "MN → SD → WY\n→ MT → ID → WA" }, style: { font_family: $mono, font_size: 14, color: $text, text_align: center, line_height: 1.6, rotation: 8 } }
+      - { id: map-miles, type: text, z: 33, x: 1260, y: 540, width: 200, height: 0, content: { type: plain, value: "2,141 mi · 9 days" }, style: { font_family: $heading, font_size: 16, font_style: italic, color: $primary, text_align: center, rotation: 8 } }
+      - { id: note, type: rect, z: 40, x: 160, y: 760, width: 1180, height: 220, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$primary", width: 2 }, rotation: -1 }
+      - { id: note-text, type: text, z: 41, x: 200, y: 800, width: 1100, height: 0, content: { type: plain, value: "Mile 1,604, somewhere north of Bozeman, you turned to me and said you couldn't remember a day that had ever lasted this long, in the best possible way. I think about that sentence a lot now." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.4, rotation: -1 } }
+      - { id: note-sig, type: text, z: 42, x: 200, y: 920, width: 1100, height: 0, content: { type: plain, value: "— driver's seat, Aug 14" }, style: { font_family: $heading, font_size: 16, font_style: italic, color: $primary, text_align: right, rotation: -1 } }
+      - { id: receipt, type: rect, z: 50, x: 200, y: 1040, width: 320, height: 280, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 2 }, rotation: 5 }
+      - { id: receipt-text, type: text, z: 51, x: 200, y: 1080, width: 320, height: 0, content: { type: plain, value: "FLYING J · COZAD, NE\n\nCOFFEE × 2     $4.20\nGAS · REG     $46.18\nJERKY            $7.95\n──────────────\n           TOTAL  $58.33" }, style: { font_family: $mono, font_size: 13, color: $text, text_align: center, line_height: 1.55, rotation: 5 } }
+      - { id: doodle-1, type: text, z: 60, x: 600, y: 1080, width: 200, height: 0, content: { type: plain, value: "→ best burger of the trip" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $primary, rotation: 3 } }
+      - { id: doodle-2, type: text, z: 60, x: 600, y: 1180, width: 280, height: 0, content: { type: plain, value: "↓ no service for 6 hours" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $secondary, rotation: -3 } }
+      - { id: polaroid-end, type: rect, z: 70, x: 980, y: 1040, width: 360, height: 320, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -6 }
+      - { id: polaroid-end-fill, type: rect, z: 71, x: 1000, y: 1060, width: 320, height: 240, fill: { type: solid, color: "$primary" }, opacity: 0.5, rotation: -6 }
+      - { id: polaroid-end-cap, type: text, z: 72, x: 980, y: 1310, width: 360, height: 0, content: { type: plain, value: "made it · Pacific, Aug 22" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text, text_align: center, rotation: -6 } }
+      - { id: page-num, type: text, z: 80, x: 0, y: 1455, width: 1500, height: 0, content: { type: plain, value: "04" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+
+  # ── Page 5 · Spread 4 (Quiet Moments) ──────────────────────
+  - id: spread-4
+    label: Quiet Moments
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$background" } }
+      - { id: head-tape, type: rect, z: 5, x: 380, y: 80, width: 720, height: 60, fill: { type: solid, color: "$secondary" }, opacity: 0.55, rotation: -1 }
+      - { id: head-kicker, type: text, z: 10, x: 0, y: 200, width: 1500, height: 0, content: { type: plain, value: "TUESDAYS · WEDNESDAYS · ORDINARY THURSDAYS" }, style: { font_family: $mono, font_size: 13, font_weight: 700, color: $primary, text_align: center, letter_spacing: 0.5 } }
+      - { id: head-title, type: text, z: 11, x: 0, y: 240, width: 1500, height: 0, content: { type: plain, value: "Quiet moments." }, style: { font_family: $heading, font_size: 72, font_weight: 700, font_style: italic, color: $text, text_align: center, line_height: 1.1 } }
+      - { id: card-1, type: rect, z: 20, x: 140, y: 380, width: 420, height: 340, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -4 }
+      - { id: card-1-fill, type: rect, z: 21, x: 160, y: 400, width: 380, height: 260, fill: { type: solid, color: $surface }, opacity: 0.45, rotation: -4 }
+      - { id: card-1-cap, type: text, z: 22, x: 140, y: 680, width: 420, height: 0, content: { type: plain, value: "coffee · rain on the kitchen window" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: -4 } }
+      - { id: card-2, type: rect, z: 20, x: 600, y: 400, width: 420, height: 340, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: 5 }
+      - { id: card-2-fill, type: rect, z: 21, x: 620, y: 420, width: 380, height: 260, fill: { type: solid, color: $secondary }, opacity: 0.5, rotation: 5 }
+      - { id: card-2-cap, type: text, z: 22, x: 600, y: 700, width: 420, height: 0, content: { type: plain, value: "the cat finally let me hold her" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: 5 } }
+      - { id: card-3, type: rect, z: 20, x: 1060, y: 380, width: 340, height: 340, fill: { type: solid, color: "#FFFFFF" }, stroke: { color: "$border", width: 2 }, rotation: -3 }
+      - { id: card-3-fill, type: rect, z: 21, x: 1080, y: 400, width: 300, height: 260, fill: { type: solid, color: $primary }, opacity: 0.5, rotation: -3 }
+      - { id: card-3-cap, type: text, z: 22, x: 1060, y: 680, width: 340, height: 0, content: { type: plain, value: "porch · 9:14 pm · still light" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text, text_align: center, line_height: 1.3, rotation: -3 } }
+      - { id: pullnote, type: rect, z: 30, x: 240, y: 800, width: 1020, height: 280, radius: 16, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: pullnote-mark, type: text, z: 31, x: 280, y: 820, width: 100, height: 0, content: { type: plain, value: "❝" }, style: { font_family: $heading, font_size: 80, color: $primary, line_height: 1 } }
+      - { id: pullnote-text, type: text, z: 32, x: 400, y: 860, width: 820, height: 0, content: { type: plain, value: "It is mostly the small ordinary things that I want to remember. The way a room sounds at 6 a.m. before anyone else is up. The exact weight of a sleeping cat. The bell on the kettle." }, style: { font_family: $heading, font_size: 26, font_style: italic, color: $text, line_height: 1.4 } }
+      - { id: pullnote-sig, type: text, z: 33, x: 400, y: 1020, width: 820, height: 0, content: { type: plain, value: "— a Tuesday in November" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $primary, text_align: right } }
+      - { id: small-list, type: text, z: 40, x: 200, y: 1140, width: 540, height: 0, content: { type: plain, value: "things that count as a good day:\n✓  finished a book\n✓  unhurried walk\n✓  someone laughed at something I said" }, style: { font_family: $heading, font_size: 18, font_style: italic, color: $text, line_height: 1.7 } }
+      - { id: arrows, type: text, z: 50, x: 880, y: 1140, width: 480, height: 0, content: { type: plain, value: "↑ keep these days\n↓ ignore the loud ones" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $primary, line_height: 1.5 } }
+      - { id: tape-bot, type: rect, z: 5, x: 580, y: 1380, width: 340, height: 50, fill: { type: solid, color: "$primary" }, opacity: 0.55, rotation: 4 }
+      - { id: page-num, type: text, z: 60, x: 0, y: 1455, width: 1500, height: 0, content: { type: plain, value: "05" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.4 } }
+
+  # ── Page 6 · Back Cover ────────────────────────────────────
+  - id: back-cover
+    label: Back Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1500, height: 1500, fill: { type: solid, color: "$surface" } }
+      - { id: paper, type: rect, z: 1, x: 60, y: 60, width: 1380, height: 1380, fill: { type: solid, color: "$background" }, stroke: { color: "$border", width: 1 } }
+      - { id: tape-1, type: rect, z: 5, x: 360, y: 100, width: 780, height: 60, fill: { type: solid, color: "$primary" }, opacity: 0.6, rotation: -1 }
+      - { id: tape-2, type: rect, z: 5, x: 380, y: 1370, width: 720, height: 56, fill: { type: solid, color: "$secondary" }, opacity: 0.6, rotation: 2 }
+      - { id: kicker, type: text, z: 10, x: 0, y: 280, width: 1500, height: 0, content: { type: plain, value: "DEDICATION" }, style: { font_family: $mono, font_size: 16, font_weight: 800, color: $primary, text_align: center, letter_spacing: 0.6 } }
+      - { id: divider, type: rect, z: 11, x: 700, y: 330, width: 100, height: 2, fill: { type: solid, color: "$primary" } }
+      - { id: title, type: text, z: 12, x: 200, y: 380, width: 1100, height: 0, content: { type: plain, value: "For the days that\nseemed too small to remember,\nand turned out to be everything." }, style: { font_family: $heading, font_size: 48, font_style: italic, color: $text, text_align: center, line_height: 1.3, letter_spacing: -0.01 } }
+      - { id: signature, type: text, z: 20, x: 0, y: 760, width: 1500, height: 0, content: { type: plain, value: "— us, in the kitchen, May 2026" }, style: { font_family: $heading, font_size: 28, font_style: italic, color: $primary, text_align: center } }
+      - { id: stamp-circle, type: circle, z: 30, cx: 750, cy: 980, rx: 140, ry: 140, fill: { type: solid, color: "transparent" }, stroke: { color: "$primary", width: 4 } }
+      - { id: stamp-heart, type: text, z: 31, x: 580, y: 940, width: 340, height: 0, content: { type: plain, value: "♡" }, style: { font_family: $heading, font_size: 80, color: $primary, text_align: center } }
+      - { id: stamp-foot, type: text, z: 32, x: 0, y: 1180, width: 1500, height: 0, content: { type: plain, value: "VOLUME ONE  ·  ALL THE SMALL THINGS WE KEPT  ·  MMXXVI" }, style: { font_family: $mono, font_size: 14, font_weight: 700, color: $text_muted, text_align: center, letter_spacing: 0.5 } }
+      - { id: page-num, type: text, z: 40, x: 0, y: 1455, width: 1500, height: 0, content: { type: plain, value: "06" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: center, letter_spacing: 0.4 } }

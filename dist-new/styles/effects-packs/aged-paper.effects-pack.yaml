@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: aged-paper
+name: Aged Paper
+version: "1.0.0"
+tags: [paper, aged, sepia, vintage, parchment, warm]
+description: "Yellowed-with-age paper grain — warm sepia inset shadow with subtle parchment weight."
+effects:
+  shadow_card:   "inset 0 0 32px rgba(180,140,80,0.18), inset 0 0 8px rgba(120,90,40,0.12), 0 2px 4px rgba(60,40,15,0.15)"
+  shadow_glow:   "0 0 10px rgba(200,160,100,0.25), 0 0 24px rgba(170,130,70,0.18)"
+  shadow_inset:  "inset 0 0 18px rgba(160,120,60,0.22), inset 0 2px 6px rgba(100,70,30,0.16)"
+  shadow_text:   "1px 1px 0 rgba(80,50,20,0.08)"
+  blur_glass:    3
+  blur_backdrop: 2

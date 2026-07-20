@@ -1,0 +1,313 @@
+_protocol: template/v1
+
+# Real estate portfolio overview — 5 KPIs (properties, value, occupancy, cap
+# rate, NOI), property-type donut, geographic breakdown table, cash-flow
+# trend line, top-10 assets table, maintenance spending bar.
+meta:
+  id: tmpl-real-estate-portfolio-report
+  name: Real Estate · Portfolio Overview
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, real-estate, portfolio, finance, occupancy, interactive]
+  description: "Real-estate portfolio review: valuation, occupancy, NOI, geographic mix, top assets, maintenance spend."
+
+document:
+  width: 1280
+  height: 2300
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: property_types
+        type: inline
+        rows:
+          - { type: Office,          value_m: 482.4, share_pct: 32.4 }
+          - { type: Multifamily,     value_m: 386.2, share_pct: 26.0 }
+          - { type: Industrial,      value_m: 284.6, share_pct: 19.1 }
+          - { type: Retail,          value_m: 168.4, share_pct: 11.3 }
+          - { type: Mixed-Use,       value_m: 112.8, share_pct:  7.6 }
+          - { type: Hospitality,     value_m:  54.2, share_pct:  3.6 }
+      - id: markets
+        type: inline
+        rows:
+          - { market: "New York, NY",        properties: 18, valuation_m: 284.6, occupancy_pct: 92.4 }
+          - { market: "San Francisco, CA",   properties: 12, valuation_m: 218.4, occupancy_pct: 88.6 }
+          - { market: "Austin, TX",          properties: 14, valuation_m: 162.8, occupancy_pct: 96.2 }
+          - { market: "Chicago, IL",         properties: 11, valuation_m: 142.4, occupancy_pct: 89.4 }
+          - { market: "Seattle, WA",         properties:  9, valuation_m: 124.6, occupancy_pct: 91.8 }
+          - { market: "Denver, CO",          properties:  8, valuation_m:  98.2, occupancy_pct: 94.2 }
+          - { market: "Miami, FL",           properties:  7, valuation_m:  82.4, occupancy_pct: 90.6 }
+          - { market: "Boston, MA",          properties:  6, valuation_m:  74.8, occupancy_pct: 93.4 }
+          - { market: "Nashville, TN",       properties:  5, valuation_m:  48.2, occupancy_pct: 95.8 }
+          - { market: "Phoenix, AZ",         properties:  4, valuation_m:  42.6, occupancy_pct: 92.2 }
+      - id: cash_flow
+        type: inline
+        rows:
+          - { month: Jun, noi_m:  7.84 }
+          - { month: Jul, noi_m:  8.02 }
+          - { month: Aug, noi_m:  8.18 }
+          - { month: Sep, noi_m:  8.42 }
+          - { month: Oct, noi_m:  8.68 }
+          - { month: Nov, noi_m:  8.94 }
+          - { month: Dec, noi_m:  9.12 }
+          - { month: Jan, noi_m:  9.04 }
+          - { month: Feb, noi_m:  9.28 }
+          - { month: Mar, noi_m:  9.56 }
+          - { month: Apr, noi_m:  9.82 }
+          - { month: May, noi_m: 10.14 }
+      - id: top_assets
+        type: inline
+        rows:
+          - { asset: "One Hudson Yards",            type: Office,       value_m: 84.6, occupancy_pct: 96.4, noi_m: 5.82 }
+          - { asset: "Mission Bay Towers",          type: Multifamily,  value_m: 72.4, occupancy_pct: 94.8, noi_m: 4.68 }
+          - { asset: "South Loop Logistics Park",   type: Industrial,   value_m: 64.8, occupancy_pct: 98.2, noi_m: 5.12 }
+          - { asset: "East Austin Tech Campus",     type: Office,       value_m: 58.4, occupancy_pct: 92.4, noi_m: 3.96 }
+          - { asset: "Bayview Residences",          type: Multifamily,  value_m: 48.6, occupancy_pct: 91.2, noi_m: 3.24 }
+          - { asset: "Lakeside Retail Plaza",       type: Retail,       value_m: 42.4, occupancy_pct: 88.6, noi_m: 2.74 }
+          - { asset: "Capitol Hill Mixed-Use",      type: Mixed-Use,    value_m: 38.2, occupancy_pct: 89.4, noi_m: 2.48 }
+          - { asset: "Phoenix Industrial Park",     type: Industrial,   value_m: 36.4, occupancy_pct: 96.8, noi_m: 2.94 }
+          - { asset: "Downtown Marriott Suites",    type: Hospitality,  value_m: 32.8, occupancy_pct: 84.2, noi_m: 1.82 }
+          - { asset: "Brickell Center Tower",       type: Office,       value_m: 28.6, occupancy_pct: 90.6, noi_m: 1.96 }
+      - id: maintenance
+        type: inline
+        rows:
+          - { category: HVAC & Mechanical,    spend_k: 1842 }
+          - { category: Roofing & Envelope,   spend_k: 1284 }
+          - { category: Electrical Systems,   spend_k:  968 }
+          - { category: Plumbing,             spend_k:  742 }
+          - { category: Common-Area Refresh,  spend_k:  624 }
+          - { category: Landscaping,          spend_k:  486 }
+          - { category: Elevators,            spend_k:  428 }
+          - { category: Pest & Sanitation,    spend_k:  284 }
+
+pages:
+  - id: overview
+    label: Overview
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "MERIDIAN CAPITAL · Q2 FY2026 · US PORTFOLIO"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 80
+        format: markdown
+        font_family: Playfair Display
+        font_size: 44
+        font_weight: 700
+        line_height: 1.1
+        content: "**Portfolio Overview — Quarterly**"
+
+      - id: kpi-properties
+        type: kpi_card
+        x: 60
+        y: 180
+        width: 224
+        height: 140
+        label: Properties
+        value: 94
+        format: number
+        delta: 4
+        delta_format: number
+
+      - id: kpi-value
+        type: kpi_card
+        x: 304
+        y: 180
+        width: 224
+        height: 140
+        label: Total Value ($M)
+        value: 1488.6
+        format: number
+        decimals: 1
+        delta: 6.8
+        delta_format: percent
+
+      - id: kpi-occupancy
+        type: kpi_card
+        x: 548
+        y: 180
+        width: 224
+        height: 140
+        label: Occupancy
+        value: 91.8
+        format: percent
+        delta: 1.4
+        delta_format: percent
+
+      - id: kpi-caprate
+        type: kpi_card
+        x: 792
+        y: 180
+        width: 224
+        height: 140
+        label: Cap Rate
+        value: 6.4
+        format: percent
+        delta: -0.2
+        delta_format: percent
+
+      - id: kpi-noi
+        type: kpi_card
+        x: 1036
+        y: 180
+        width: 184
+        height: 140
+        label: NOI ($M)
+        value: 108.4
+        format: number
+        decimals: 1
+        delta: 12.6
+        delta_format: percent
+
+      - id: section-types
+        type: rich_text
+        x: 60
+        y: 360
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Property Type Distribution**"
+
+      - id: chart-types
+        type: interactive_chart
+        x: 60
+        y: 420
+        width: 560
+        height: 380
+        chart_type: donut
+        data_ref: property_types
+        x_field: type
+        y_field: value_m
+        title: Portfolio Value by Type ($M)
+        legend: true
+        animate: true
+
+      - id: chart-cashflow
+        type: interactive_chart
+        x: 660
+        y: 420
+        width: 560
+        height: 380
+        chart_type: line
+        data_ref: cash_flow
+        x_field: month
+        y_field: noi_m
+        title: Monthly NOI ($M) — Trailing 12 Months
+        legend: false
+        grid: true
+        animate: true
+
+      - id: section-markets
+        type: rich_text
+        x: 60
+        y: 840
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Geographic Breakdown**"
+
+      - id: tbl-markets
+        type: interactive_table
+        x: 60
+        y: 900
+        width: 1160
+        height: 480
+        data_ref: markets
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: market,         title: Market,         width: 360, sortable: true, formatter: badge }
+          - { field: properties,     title: Properties,     width: 240, sortable: true, formatter: number, align: right }
+          - { field: valuation_m,    title: Valuation ($M), width: 280, sortable: true, formatter: number, align: right }
+          - { field: occupancy_pct,  title: Occupancy %,    width: 240, sortable: true, formatter: percent, align: right }
+
+      - id: section-assets
+        type: rich_text
+        x: 60
+        y: 1420
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top 10 Assets**"
+
+      - id: tbl-assets
+        type: interactive_table
+        x: 60
+        y: 1480
+        width: 1160
+        height: 500
+        data_ref: top_assets
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: asset,         title: Asset,        width: 360, sortable: true }
+          - { field: type,          title: Type,         width: 180, sortable: true, formatter: badge }
+          - { field: value_m,       title: Value ($M),   width: 200, sortable: true, formatter: number, align: right }
+          - { field: occupancy_pct, title: Occupancy %,  width: 200, sortable: true, formatter: percent, align: right }
+          - { field: noi_m,         title: NOI ($M),     width: 200, sortable: true, formatter: number, align: right }
+
+      - id: section-maintenance
+        type: rich_text
+        x: 60
+        y: 2020
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Maintenance Spending — YTD ($K)**"
+
+      - id: chart-maintenance
+        type: interactive_chart
+        x: 60
+        y: 2080
+        width: 1160
+        height: 200
+        chart_type: bar
+        data_ref: maintenance
+        x_field: category
+        y_field: spend_k
+        title: Maintenance Spend by Category ($K)
+        legend: false
+        grid: true
+        animate: true
+
+slots:
+  - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**Portfolio Overview — Quarterly**" }
+  - { id: report_eyebrow,      path: "pages[0].layers[0].content",  type: text, hint: "Eyebrow line",         default: "MERIDIAN CAPITAL · Q2 FY2026 · US PORTFOLIO" }
+  - { id: types_section,       path: "pages[0].layers[7].content",  type: text, hint: "Type heading",         default: "**Property Type Distribution**" }
+  - { id: markets_section,     path: "pages[0].layers[10].content", type: text, hint: "Markets heading",      default: "**Geographic Breakdown**" }
+  - { id: assets_section,      path: "pages[0].layers[12].content", type: text, hint: "Assets heading",       default: "**Top 10 Assets**" }
+  - { id: maintenance_section, path: "pages[0].layers[14].content", type: text, hint: "Maintenance heading",  default: "**Maintenance Spending — YTD ($K)**" }

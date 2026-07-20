@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: leather-saddle
+name: Leather Saddle
+version: "1.0.0"
+tags: [material, leather, rustic, equestrian, warm]
+description: "Saddle brown, cognac and burnt orange against cream and black — tanned-hide craftsmanship."
+colors:
+  background: "#F6EFE0"
+  surface:    "#EBE0CB"
+  surface_2:  "#D8C5A4"
+  primary:    "#7A4220"
+  secondary:  "#B0682A"
+  accent:     "#C4521C"
+  text:       "#1E140C"
+  text_muted: "#5E4A36"
+  border:     "#C2A878"
+  success:    "#6A7A38"
+  warning:    "#C4801C"
+  danger:     "#A2331C"

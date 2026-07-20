@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: constructivist-poster
+name: Constructivist Poster
+version: "1.0.0"
+tags: [constructivist, propaganda, poster, soviet, rodchenko, agitprop]
+description: "Anton display slabs with Inter Tight accents — 1920s Russian propaganda poster energy."
+families:
+  heading: "Anton"
+  body:    "Inter"
+  mono:    "Space Mono"
+  display: "Anton"
+  accent:  "Inter Tight"
+scale:
+  display:
+    size: 144
+    weight: 900
+    line_height: 0.9

@@ -1,0 +1,134 @@
+_protocol: template/v1
+
+# W-2 informational form — 1700×1100 landscape, mono-print theme.
+# IRS W-2-style: 15+ numbered boxes, employer/employee blocks, wages
+# and tax fields, "FOR INFORMATIONAL PURPOSES" watermark overlay.
+meta:
+  id: tmpl-w2-form
+  name: W-2 Form (Informational)
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, tax, w2, irs, form, finance, mono, landscape]
+  description: "IRS W-2 style informational form template with numbered boxes, employer/employee info, wages and tax fields, watermark overlay."
+
+document:
+  width: 1700
+  height: 1100
+  unit: px
+  dpi: 96
+
+theme:
+  ref: mono-print
+
+layers:
+  # 0 — bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1700, height: 1100, fill: { type: solid, color: "$background" } }
+  # 1 — outer form border
+  - { id: outer, type: rect, z: 1, x: 40, y: 40, width: 1620, height: 1020, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 2 } }
+  # 2 — form id top-right
+  - { id: form-id, type: text, z: 2, x: 1300, y: 56, width: 340, height: 0, content: { type: plain, value: "Form W-2 · 22222 · OMB No. 1545-0008" }, style: { font_family: $mono, font_size: 12, color: "$text", text_align: right } }
+  # 3 — tax year box bg
+  - { id: ty-box, type: rect, z: 3, x: 1300, y: 80, width: 340, height: 84, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1.5 } }
+  # 4 — tax year label
+  - { id: ty-lab, type: text, z: 4, x: 1316, y: 90, width: 308, height: 0, content: { type: plain, value: "Tax year" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  # 5 — tax year value
+  - { id: ty-val, type: text, z: 5, x: 1316, y: 110, width: 308, height: 0, content: { type: plain, value: "2025" }, style: { font_family: $heading, font_size: 44, font_weight: 800, color: "$text", text_align: center, line_height: 1.1 } }
+  # 6 — box a: ssn
+  - { id: a-box, type: rect, z: 6, x: 60, y: 80, width: 600, height: 64, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1.5 } }
+  - { id: a-lab, type: text, z: 7, x: 72, y: 88, width: 580, height: 0, content: { type: plain, value: "a  Employee's social security number" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: a-val, type: text, z: 8, x: 72, y: 108, width: 580, height: 0, content: { type: plain, value: "XXX-XX-1842" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "$text" } }
+  # 9 — box b: EIN
+  - { id: b-box, type: rect, z: 9, x: 60, y: 160, width: 600, height: 64, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: b-lab, type: text, z: 10, x: 72, y: 168, width: 580, height: 0, content: { type: plain, value: "b  Employer identification number (EIN)" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: b-val, type: text, z: 11, x: 72, y: 188, width: 580, height: 0, content: { type: plain, value: "84-2049371" }, style: { font_family: $mono, font_size: 22, color: "$text" } }
+  # 12 — box c: employer name & addr
+  - { id: c-box, type: rect, z: 12, x: 60, y: 240, width: 600, height: 160, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: c-lab, type: text, z: 13, x: 72, y: 248, width: 580, height: 0, content: { type: plain, value: "c  Employer's name, address, and ZIP code" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: c-val, type: text, z: 14, x: 72, y: 270, width: 580, height: 0, content: { type: plain, value: "Folio Studio Limited\n488 Mission St, Floor 12\nSan Francisco, CA 94105" }, style: { font_family: $mono, font_size: 14, color: "$text", line_height: 1.5 } }
+  # 15 — box d: control
+  - { id: d-box, type: rect, z: 15, x: 60, y: 416, width: 600, height: 56, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: d-lab, type: text, z: 16, x: 72, y: 424, width: 580, height: 0, content: { type: plain, value: "d  Control number" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: d-val, type: text, z: 17, x: 72, y: 442, width: 580, height: 0, content: { type: plain, value: "CTRL-2025-00184217" }, style: { font_family: $mono, font_size: 16, color: "$text" } }
+  # 18 — box e/f: employee name & addr
+  - { id: ef-box, type: rect, z: 18, x: 60, y: 488, width: 600, height: 200, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: ef-lab, type: text, z: 19, x: 72, y: 496, width: 580, height: 0, content: { type: plain, value: "e/f  Employee's name, address, and ZIP code" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: ef-val, type: text, z: 20, x: 72, y: 520, width: 580, height: 0, content: { type: plain, value: "Margaret E. Sullivan\n218 Linden Crossing, Apt 4B\nAlbany, NY 12210" }, style: { font_family: $mono, font_size: 16, color: "$text", line_height: 1.5 } }
+  # 21 — RIGHT side numbered grid: box 1 wages
+  - { id: bx1-box, type: rect, z: 21, x: 700, y: 240, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1.5 } }
+  - { id: bx1-lab, type: text, z: 22, x: 712, y: 248, width: 440, height: 0, content: { type: plain, value: "1  Wages, tips, other compensation" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx1-val, type: text, z: 23, x: 712, y: 268, width: 440, height: 0, content: { type: plain, value: "84,320.00" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "$text", text_align: right } }
+  # 24 — box 2 fed tax
+  - { id: bx2-box, type: rect, z: 24, x: 1180, y: 240, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1.5 } }
+  - { id: bx2-lab, type: text, z: 25, x: 1192, y: 248, width: 440, height: 0, content: { type: plain, value: "2  Federal income tax withheld" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx2-val, type: text, z: 26, x: 1192, y: 268, width: 440, height: 0, content: { type: plain, value: "11,894.20" }, style: { font_family: $mono, font_size: 22, color: "$text", text_align: right } }
+  # 27 — box 3 SS wages
+  - { id: bx3-box, type: rect, z: 27, x: 700, y: 318, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx3-lab, type: text, z: 28, x: 712, y: 326, width: 440, height: 0, content: { type: plain, value: "3  Social security wages" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx3-val, type: text, z: 29, x: 712, y: 346, width: 440, height: 0, content: { type: plain, value: "84,320.00" }, style: { font_family: $mono, font_size: 18, color: "$text", text_align: right } }
+  # 30 — box 4 SS tax
+  - { id: bx4-box, type: rect, z: 30, x: 1180, y: 318, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx4-lab, type: text, z: 31, x: 1192, y: 326, width: 440, height: 0, content: { type: plain, value: "4  Social security tax withheld" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx4-val, type: text, z: 32, x: 1192, y: 346, width: 440, height: 0, content: { type: plain, value: "5,227.84" }, style: { font_family: $mono, font_size: 18, color: "$text", text_align: right } }
+  # 33 — box 5 medicare wages
+  - { id: bx5-box, type: rect, z: 33, x: 700, y: 396, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx5-lab, type: text, z: 34, x: 712, y: 404, width: 440, height: 0, content: { type: plain, value: "5  Medicare wages and tips" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx5-val, type: text, z: 35, x: 712, y: 424, width: 440, height: 0, content: { type: plain, value: "84,320.00" }, style: { font_family: $mono, font_size: 18, color: "$text", text_align: right } }
+  # 36 — box 6 medicare tax
+  - { id: bx6-box, type: rect, z: 36, x: 1180, y: 396, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx6-lab, type: text, z: 37, x: 1192, y: 404, width: 440, height: 0, content: { type: plain, value: "6  Medicare tax withheld" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx6-val, type: text, z: 38, x: 1192, y: 424, width: 440, height: 0, content: { type: plain, value: "1,222.64" }, style: { font_family: $mono, font_size: 18, color: "$text", text_align: right } }
+  # 39 — box 7 SS tips
+  - { id: bx7-box, type: rect, z: 39, x: 700, y: 474, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx7-lab, type: text, z: 40, x: 712, y: 482, width: 440, height: 0, content: { type: plain, value: "7  Social security tips" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx7-val, type: text, z: 41, x: 712, y: 502, width: 440, height: 0, content: { type: plain, value: "0.00" }, style: { font_family: $mono, font_size: 18, color: "$text_muted", text_align: right } }
+  # 42 — box 8 allocated tips
+  - { id: bx8-box, type: rect, z: 42, x: 1180, y: 474, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx8-lab, type: text, z: 43, x: 1192, y: 482, width: 440, height: 0, content: { type: plain, value: "8  Allocated tips" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx8-val, type: text, z: 44, x: 1192, y: 502, width: 440, height: 0, content: { type: plain, value: "0.00" }, style: { font_family: $mono, font_size: 18, color: "$text_muted", text_align: right } }
+  # 45 — box 10 dependent care
+  - { id: bx10-box, type: rect, z: 45, x: 700, y: 552, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx10-lab, type: text, z: 46, x: 712, y: 560, width: 440, height: 0, content: { type: plain, value: "10  Dependent care benefits" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx10-val, type: text, z: 47, x: 712, y: 580, width: 440, height: 0, content: { type: plain, value: "0.00" }, style: { font_family: $mono, font_size: 18, color: "$text_muted", text_align: right } }
+  # 48 — box 11 nonqualified
+  - { id: bx11-box, type: rect, z: 48, x: 1180, y: 552, width: 460, height: 70, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx11-lab, type: text, z: 49, x: 1192, y: 560, width: 440, height: 0, content: { type: plain, value: "11  Nonqualified plans" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx11-val, type: text, z: 50, x: 1192, y: 580, width: 440, height: 0, content: { type: plain, value: "0.00" }, style: { font_family: $mono, font_size: 18, color: "$text_muted", text_align: right } }
+  # 51 — box 12 codes
+  - { id: bx12-box, type: rect, z: 51, x: 700, y: 630, width: 940, height: 86, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx12-lab, type: text, z: 52, x: 712, y: 638, width: 920, height: 0, content: { type: plain, value: "12  See instructions for box 12" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx12-val, type: text, z: 53, x: 712, y: 660, width: 920, height: 0, content: { type: plain, value: "D  4,210.00     DD  6,840.00     W  1,500.00" }, style: { font_family: $mono, font_size: 16, color: "$text" } }
+  # 54 — state row label
+  - { id: state-h, type: text, z: 60, x: 60, y: 760, width: 1580, height: 0, content: { type: plain, value: "STATE & LOCAL TAX INFORMATION" }, style: { font_family: $body, font_size: 11, font_weight: 700, color: "$text_muted", letter_spacing: 0.4 } }
+  # 55 — state grid: 15 state, 16 state wages, 17 state tax
+  - { id: bx15-box, type: rect, z: 61, x: 60, y: 790, width: 300, height: 110, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx15-lab, type: text, z: 62, x: 72, y: 798, width: 280, height: 0, content: { type: plain, value: "15  State · Employer's state ID #" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx15-val, type: text, z: 63, x: 72, y: 820, width: 280, height: 0, content: { type: plain, value: "NY\n38-7741209-NY1" }, style: { font_family: $mono, font_size: 16, color: "$text", line_height: 1.5 } }
+  # 64 — box 16 state wages
+  - { id: bx16-box, type: rect, z: 64, x: 380, y: 790, width: 320, height: 110, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx16-lab, type: text, z: 65, x: 392, y: 798, width: 300, height: 0, content: { type: plain, value: "16  State wages, tips, etc." }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx16-val, type: text, z: 66, x: 392, y: 836, width: 300, height: 0, content: { type: plain, value: "84,320.00" }, style: { font_family: $mono, font_size: 22, color: "$text", text_align: right } }
+  # 67 — box 17 state income tax
+  - { id: bx17-box, type: rect, z: 67, x: 720, y: 790, width: 320, height: 110, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx17-lab, type: text, z: 68, x: 732, y: 798, width: 300, height: 0, content: { type: plain, value: "17  State income tax" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx17-val, type: text, z: 69, x: 732, y: 836, width: 300, height: 0, content: { type: plain, value: "5,402.18" }, style: { font_family: $mono, font_size: 22, color: "$text", text_align: right } }
+  # 70 — box 18 local wages
+  - { id: bx18-box, type: rect, z: 70, x: 1060, y: 790, width: 280, height: 110, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx18-lab, type: text, z: 71, x: 1072, y: 798, width: 260, height: 0, content: { type: plain, value: "18  Local wages" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx18-val, type: text, z: 72, x: 1072, y: 836, width: 260, height: 0, content: { type: plain, value: "84,320.00" }, style: { font_family: $mono, font_size: 18, color: "$text", text_align: right } }
+  # 73 — box 19 local tax
+  - { id: bx19-box, type: rect, z: 73, x: 1360, y: 790, width: 280, height: 110, fill: { type: solid, color: "transparent" }, stroke: { color: "$text", width: 1 } }
+  - { id: bx19-lab, type: text, z: 74, x: 1372, y: 798, width: 260, height: 0, content: { type: plain, value: "19  Local income tax" }, style: { font_family: $body, font_size: 11, color: "$text_muted" } }
+  - { id: bx19-val, type: text, z: 75, x: 1372, y: 836, width: 260, height: 0, content: { type: plain, value: "2,107.50" }, style: { font_family: $mono, font_size: 18, color: "$text", text_align: right } }
+  # 76 — watermark large overlay (diagonal-ish, center)
+  - { id: watermark, type: text, z: 90, x: 0, y: 480, width: 1700, height: 0, content: { type: plain, value: "FOR INFORMATIONAL PURPOSES" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: "$text", text_align: center, letter_spacing: 0.2, line_height: 1 }, opacity: 0.08 }
+  # 77 — footer note
+  - { id: footer, type: text, z: 95, x: 60, y: 980, width: 1580, height: 0, content: { type: plain, value: "Form W-2 Wage and Tax Statement · Department of the Treasury, Internal Revenue Service. Copy B — to be filed with employee's federal tax return." }, style: { font_family: $body, font_size: 11, color: "$text_muted", line_height: 1.4 } }
+  # 78 — copy stamp
+  - { id: copy-stamp, type: text, z: 96, x: 60, y: 1020, width: 1580, height: 0, content: { type: plain, value: "Copy B · This information is being furnished to the IRS." }, style: { font_family: $mono, font_size: 11, color: "$text_muted" } }
+
+slots:
+  - { id: tax_year,      path: "layers[5].content.value",  type: text, hint: "Tax year",       default: "2025" }
+  - { id: employer_name, path: "layers[14].content.value", type: text, hint: "Employer name (multi-line)", default: "Folio Studio Limited\n488 Mission St, Floor 12\nSan Francisco, CA 94105" }
+  - { id: employee_name, path: "layers[20].content.value", type: text, hint: "Employee name (multi-line)", default: "Margaret E. Sullivan\n218 Linden Crossing, Apt 4B\nAlbany, NY 12210" }

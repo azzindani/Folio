@@ -1,0 +1,16 @@
+_protocol: type-pack/v1
+id: subway-vignelli
+name: Subway Vignelli
+version: "1.0.0"
+tags: [transit, signage, modernist, vignelli, wayfinding, sharp]
+description: "Inter Tight headings over Inter body — sharp transit-signage modernism in the Vignelli tradition."
+families:
+  heading: "Inter Tight"
+  body:    "Inter"
+  mono:    "Roboto Mono"
+  display: "Inter Tight"
+scale:
+  h1:
+    size: 64
+    weight: 700
+    line_height: 1.05

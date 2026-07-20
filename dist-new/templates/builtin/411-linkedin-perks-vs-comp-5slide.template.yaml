@@ -1,0 +1,377 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — Perks ≠ Compensation, three myth-busters. Light clean.
+meta:
+  id: tmpl-linkedin-perks-vs-comp-5slide
+  name: LinkedIn Perks vs Comp (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, hr, compensation, perks, 4-5]
+  description: "5-slide LinkedIn carousel busting myths about perks vs compensation."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "1/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 460
+        width: 960
+        height: 0
+        content: { type: plain, value: "TOTAL REWARDS" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 520
+        width: 960
+        height: 0
+        content: { type: plain, value: "Perks ≠\nCompensation" }
+        style: { font_family: $heading, font_size: 120, font_weight: 900, color: $text, line_height: 1, letter_spacing: -0.04 }
+      - id: tagline
+        type: text
+        z: 13
+        x: 60
+        y: 840
+        width: 960
+        height: 0
+        content: { type: plain, value: "Three myths managers still believe. Swipe →" }
+        style: { font_family: $body, font_size: 26, color: $text_muted, line_height: 1.4 }
+      - id: handle
+        type: text
+        z: 14
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+
+  # ── Slide 2 · Intro ────────────────────────────────────────
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "2/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "WHY THIS MATTERS" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "Free snacks don't pay rent." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 60
+        y: 440
+        width: 960
+        height: 0
+        content: { type: plain, value: "Perks decorate the offer. Compensation pays the bills. Conflate the two and you'll lose people to companies who priced the work honestly." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.55 }
+      - id: kicker
+        type: text
+        z: 14
+        x: 60
+        y: 860
+        width: 960
+        height: 0
+        content: { type: plain, value: "Three myths to retire — now." }
+        style: { font_family: $body, font_size: 26, font_weight: 600, color: $primary, line_height: 1.4 }
+
+  # ── Slide 3 · Myth 01 ──────────────────────────────────────
+  - id: myth-1
+    label: Myth 01
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "3/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.32 }
+      - id: myth-label
+        type: text
+        z: 20
+        x: 60
+        y: 260
+        width: 960
+        height: 0
+        content: { type: plain, value: "MYTH:" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32 }
+      - id: myth-text
+        type: text
+        z: 21
+        x: 60
+        y: 300
+        width: 960
+        height: 0
+        content: { type: plain, value: "Great culture means we can pay below market." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.2 }
+      - id: divider
+        type: rect
+        z: 15
+        x: 60
+        y: 620
+        width: 960
+        height: 1
+        fill: { type: solid, color: "$text_muted" }
+        opacity: 0.25
+      - id: reality-label
+        type: text
+        z: 30
+        x: 60
+        y: 660
+        width: 960
+        height: 0
+        content: { type: plain, value: "REALITY:" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32 }
+      - id: reality-text
+        type: text
+        z: 31
+        x: 60
+        y: 700
+        width: 960
+        height: 0
+        content: { type: plain, value: "Culture compounds with pay. People who feel underpaid stop trusting the culture story by month six." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+
+  # ── Slide 4 · Myth 02 ──────────────────────────────────────
+  - id: myth-2
+    label: Myth 02
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "4/5" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.32 }
+      - id: myth-label
+        type: text
+        z: 20
+        x: 60
+        y: 260
+        width: 960
+        height: 0
+        content: { type: plain, value: "MYTH:" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $secondary, letter_spacing: 0.32 }
+      - id: myth-text
+        type: text
+        z: 21
+        x: 60
+        y: 300
+        width: 960
+        height: 0
+        content: { type: plain, value: "Equity makes up for cash gaps." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: $text, line_height: 1.2 }
+      - id: divider
+        type: rect
+        z: 15
+        x: 60
+        y: 620
+        width: 960
+        height: 1
+        fill: { type: solid, color: "$text_muted" }
+        opacity: 0.25
+      - id: reality-label
+        type: text
+        z: 30
+        x: 60
+        y: 660
+        width: 960
+        height: 0
+        content: { type: plain, value: "REALITY:" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32 }
+      - id: reality-text
+        type: text
+        z: 31
+        x: 60
+        y: 700
+        width: 960
+        height: 0
+        content: { type: plain, value: "Equity is a lottery ticket on top of pay — not instead of it. Underprice the cash and you signal the equity is worthless too." }
+        style: { font_family: $body, font_size: 30, color: $text, line_height: 1.5 }
+
+  # ── Slide 5 · Myth 03 + CTA ────────────────────────────────
+  - id: myth-3
+    label: Myth 03 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: $primary } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.30)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "5/5" }
+        style: { font_family: $mono, font_size: 18, color: "#FFFFFF" }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.32 }
+      - id: myth-label
+        type: text
+        z: 20
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "MYTH:" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.32 }
+      - id: myth-text
+        type: text
+        z: 21
+        x: 60
+        y: 260
+        width: 960
+        height: 0
+        content: { type: plain, value: "Unlimited PTO is a benefit." }
+        style: { font_family: $heading, font_size: 52, font_weight: 700, color: "#FFFFFF", line_height: 1.2 }
+      - id: reality-label
+        type: text
+        z: 30
+        x: 60
+        y: 500
+        width: 960
+        height: 0
+        content: { type: plain, value: "REALITY:" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.32 }
+      - id: reality-text
+        type: text
+        z: 31
+        x: 60
+        y: 540
+        width: 960
+        height: 0
+        content: { type: plain, value: "Without a floor, people take less. It's a liability removal for the company dressed up as generosity." }
+        style: { font_family: $body, font_size: 28, color: "#F0F0FF", line_height: 1.5 }
+      - id: cta-heading
+        type: text
+        z: 40
+        x: 60
+        y: 850
+        width: 960
+        height: 0
+        content: { type: plain, value: "Compensate fairly." }
+        style: { font_family: $heading, font_size: 72, font_weight: 800, color: "#FFFFFF", line_height: 1.05, letter_spacing: -0.02 }
+      - id: cta-btn
+        type: rect
+        z: 41
+        x: 60
+        y: 1000
+        width: 280
+        height: 64
+        radius: 32
+        fill: { type: solid, color: "#FFFFFF" }
+      - id: cta-text
+        type: text
+        z: 42
+        x: 60
+        y: 1018
+        width: 280
+        height: 0
+        content: { type: plain, value: "Follow →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: "#0F172A", text_align: center }
+      - id: handle
+        type: text
+        z: 50
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",         default: "Perks ≠\nCompensation" }
+  - { id: cover_tagline,  path: "pages[0].layers[5].content.value", type: text, hint: "Cover tagline",          default: "Three myths managers still believe. Swipe →" }
+  - { id: intro_title,    path: "pages[1].layers[4].content.value", type: text, hint: "Intro title",            default: "Free snacks don't pay rent." }
+  - { id: intro_body,     path: "pages[1].layers[5].content.value", type: text, hint: "Intro body",             default: "Perks decorate the offer. Compensation pays the bills." }
+  - { id: myth_1_myth,    path: "pages[2].layers[5].content.value", type: text, hint: "Myth 1 statement",       default: "Great culture means we can pay below market." }
+  - { id: myth_1_reality, path: "pages[2].layers[8].content.value", type: text, hint: "Myth 1 reality",         default: "Culture compounds with pay. People who feel underpaid stop trusting the culture story by month six." }
+  - { id: myth_2_myth,    path: "pages[3].layers[5].content.value", type: text, hint: "Myth 2 statement",       default: "Equity makes up for cash gaps." }
+  - { id: myth_2_reality, path: "pages[3].layers[8].content.value", type: text, hint: "Myth 2 reality",         default: "Equity is a lottery ticket on top of pay — not instead of it." }
+  - { id: myth_3_myth,    path: "pages[4].layers[5].content.value", type: text, hint: "Myth 3 statement",       default: "Unlimited PTO is a benefit." }
+  - { id: myth_3_reality, path: "pages[4].layers[7].content.value", type: text, hint: "Myth 3 reality",         default: "Without a floor, people take less." }
+  - { id: cta_heading,    path: "pages[4].layers[8].content.value", type: text, hint: "CTA heading",            default: "Compensate fairly." }

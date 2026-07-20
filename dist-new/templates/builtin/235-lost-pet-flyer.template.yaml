@@ -1,0 +1,342 @@
+_protocol: template/v1
+
+# Lost pet flyer — 1080×1620 portrait, light-clean theme.
+# Bold LOST PET header, pet photo placeholder, name + breed +
+# description, last-seen + contact phone HUGE, reward callout.
+meta:
+  id: tmpl-lost-pet-flyer
+  name: Lost Pet Flyer
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [flyer, lost-pet, community, urgent, light, portrait]
+  description: "Lost pet flyer with warning header, photo placeholder, pet name/breed/description, last-seen info, huge contact phone, and reward callout."
+
+document:
+  width: 1080
+  height: 1620
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+layers:
+  # ── Background ────────────────────────────────────────────
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1620
+    fill: { type: solid, color: "$background" }
+
+  # ── Warning header ────────────────────────────────────────
+  - id: warn-band
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1080
+    height: 180
+    fill: { type: solid, color: "#D43F3F" }
+
+  - id: warn-stripe-1
+    type: rect
+    z: 2
+    x: 0
+    y: 180
+    width: 1080
+    height: 8
+    fill: { type: solid, color: "#1A1A1A" }
+
+  - id: warn-stripe-2
+    type: rect
+    z: 3
+    x: 0
+    y: 195
+    width: 1080
+    height: 4
+    fill: { type: solid, color: "#1A1A1A" }
+
+  - id: warn-eyebrow
+    type: text
+    z: 10
+    x: 0
+    y: 50
+    width: 1080
+    height: 0
+    content: { type: plain, value: "★  PLEASE HELP  ★" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.6
+      opacity: 0.9
+
+  - id: warn-headline
+    type: text
+    z: 11
+    x: 0
+    y: 80
+    width: 1080
+    height: 0
+    content: { type: plain, value: "LOST PET" }
+    style:
+      font_family: $heading
+      font_size: 88
+      font_weight: 900
+      color: "#FFFFFF"
+      text_align: center
+      line_height: 1
+      letter_spacing: 0.04
+
+  # ── Photo placeholder ─────────────────────────────────────
+  - id: photo-frame
+    type: rect
+    z: 20
+    x: 140
+    y: 240
+    width: 800
+    height: 600
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: photo-cross-1
+    type: line
+    z: 21
+    x1: 140
+    y1: 240
+    x2: 940
+    y2: 840
+    stroke: { color: "$border", width: 1, dash: [8, 8] }
+
+  - id: photo-cross-2
+    type: line
+    z: 22
+    x1: 940
+    y1: 240
+    x2: 140
+    y2: 840
+    stroke: { color: "$border", width: 1, dash: [8, 8] }
+
+  - id: photo-label
+    type: text
+    z: 23
+    x: 140
+    y: 510
+    width: 800
+    height: 0
+    content: { type: plain, value: "Pet photo here" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.2
+      text_transform: uppercase
+      opacity: 0.3
+
+  # ── Pet name + breed ──────────────────────────────────────
+  - id: pet-name
+    type: text
+    z: 30
+    x: 80
+    y: 880
+    width: 920
+    height: 0
+    content: { type: plain, value: "MOCHI" }
+    style:
+      font_family: $heading
+      font_size: 84
+      font_weight: 900
+      color: "$text"
+      text_align: center
+      line_height: 1
+      letter_spacing: 0.02
+
+  - id: pet-breed
+    type: text
+    z: 31
+    x: 80
+    y: 980
+    width: 920
+    height: 0
+    content: { type: plain, value: "Shiba Inu · Male · 3 years old · 22 lbs" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 500
+      color: "$text"
+      text_align: center
+      line_height: 1.3
+
+  - id: pet-desc
+    type: text
+    z: 32
+    x: 80
+    y: 1020
+    width: 920
+    height: 0
+    content: { type: plain, value: "Tan coat · white chest · blue collar · slight limp on back left leg" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.4
+
+  # ── Last seen block ───────────────────────────────────────
+  - id: seen-bg
+    type: rect
+    z: 40
+    x: 80
+    y: 1080
+    width: 920
+    height: 120
+    radius: 12
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$border", width: 1 }
+
+  - id: seen-label
+    type: text
+    z: 41
+    x: 80
+    y: 1100
+    width: 920
+    height: 0
+    content: { type: plain, value: "LAST SEEN" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 800
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: seen-value
+    type: text
+    z: 42
+    x: 80
+    y: 1130
+    width: 920
+    height: 0
+    content: { type: plain, value: "Elmwood Park · Tuesday, May 13 · 6:30 PM" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 700
+      color: "$text"
+      text_align: center
+      line_height: 1.3
+
+  # ── Reward callout ────────────────────────────────────────
+  - id: reward-bg
+    type: rect
+    z: 50
+    x: 80
+    y: 1230
+    width: 920
+    height: 80
+    radius: 40
+    fill: { type: solid, color: "#F4A742" }
+
+  - id: reward-text
+    type: text
+    z: 51
+    x: 80
+    y: 1252
+    width: 920
+    height: 0
+    content: { type: plain, value: "★  $500 REWARD OFFERED  ★" }
+    style:
+      font_family: $heading
+      font_size: 32
+      font_weight: 800
+      color: "#1A1A1A"
+      text_align: center
+      line_height: 1.3
+      letter_spacing: 0.05
+
+  # ── Contact phone HUGE ────────────────────────────────────
+  - id: contact-label
+    type: text
+    z: 60
+    x: 80
+    y: 1360
+    width: 920
+    height: 0
+    content: { type: plain, value: "IF FOUND, PLEASE CALL" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "$text_muted"
+      text_align: center
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: contact-phone
+    type: text
+    z: 61
+    x: 80
+    y: 1400
+    width: 920
+    height: 0
+    content: { type: plain, value: "(415) 555-0182" }
+    style:
+      font_family: $heading
+      font_size: 80
+      font_weight: 900
+      color: "#D43F3F"
+      text_align: center
+      line_height: 1.1
+      letter_spacing: -0.02
+
+  - id: contact-name
+    type: text
+    z: 62
+    x: 80
+    y: 1500
+    width: 920
+    height: 0
+    content: { type: plain, value: "ask for Daniel · day or night" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_style: italic
+      color: "$text_muted"
+      text_align: center
+      line_height: 1.4
+
+  - id: thanks-text
+    type: text
+    z: 63
+    x: 80
+    y: 1550
+    width: 920
+    height: 0
+    content: { type: plain, value: "thank you for keeping an eye out ♥" }
+    style:
+      font_family: $body
+      font_size: 16
+      font_weight: 600
+      color: "$text"
+      text_align: center
+      line_height: 1.4
+
+slots:
+  - { id: pet_name,      path: "layers[10].content.value", type: text, hint: "Pet name",         default: "MOCHI" }
+  - { id: breed,         path: "layers[11].content.value", type: text, hint: "Breed/age line",   default: "Shiba Inu · Male · 3 years old · 22 lbs" }
+  - { id: description,   path: "layers[12].content.value", type: text, hint: "Description",      default: "Tan coat · white chest · blue collar · slight limp on back left leg" }
+  - { id: last_seen,     path: "layers[15].content.value", type: text, hint: "Last seen",        default: "Elmwood Park · Tuesday, May 13 · 6:30 PM" }
+  - { id: contact_phone, path: "layers[19].content.value", type: text, hint: "Contact phone",    default: "(415) 555-0182" }
+  - { id: reward,        path: "layers[17].content.value", type: text, hint: "Reward line",      default: "★  $500 REWARD OFFERED  ★" }

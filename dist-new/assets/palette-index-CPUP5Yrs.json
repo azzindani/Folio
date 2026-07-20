@@ -1,0 +1,2364 @@
+{
+  "_generator": "scripts/gen-palette-index.mjs",
+  "count": 117,
+  "entries": [
+    {
+      "id": "70s-disco",
+      "name": "70s Disco",
+      "tags": [
+        "retro",
+        "70s",
+        "disco",
+        "groovy",
+        "vintage"
+      ],
+      "description": "Chocolate brown, harvest gold and burnt orange — wood-paneled lounge meets boogie nights.",
+      "swatches": [
+        "#F2E2BD",
+        "#E8D29A",
+        "#D9B978",
+        "#C2541A",
+        "#4A2C12"
+      ],
+      "file": "70s-disco.palette.yaml"
+    },
+    {
+      "id": "80s-pop",
+      "name": "80s Pop",
+      "tags": [
+        "retro",
+        "80s",
+        "pop",
+        "neon",
+        "synthwave"
+      ],
+      "description": "Hot pink, cyan and electric purple on black — MTV-era pop and aerobic-tape vibes.",
+      "swatches": [
+        "#0E0814",
+        "#1A1028",
+        "#26173F",
+        "#FF2A8C",
+        "#2AE0FF"
+      ],
+      "file": "80s-pop.palette.yaml"
+    },
+    {
+      "id": "90s-grunge",
+      "name": "90s Grunge",
+      "tags": [
+        "retro",
+        "90s",
+        "grunge",
+        "flannel",
+        "alternative"
+      ],
+      "description": "Flannel red and denim blue with olive and mocha — Seattle basement and thrift-store vintage.",
+      "swatches": [
+        "#F0EAD8",
+        "#E2D8BE",
+        "#C9BC9A",
+        "#8C2A28",
+        "#3A5878"
+      ],
+      "file": "90s-grunge.palette.yaml"
+    },
+    {
+      "id": "agritech-loam",
+      "name": "Agritech Loam",
+      "tags": [
+        "agriculture",
+        "agritech",
+        "sustainability",
+        "food",
+        "earth"
+      ],
+      "description": "Earth brown, crop green and open sky on warm off-white — agritech, sustainability and food-tech.",
+      "swatches": [
+        "#F7F1E6",
+        "#EFE7D3",
+        "#E1D4B7",
+        "#6B4A2B",
+        "#5C8A3A"
+      ],
+      "file": "agritech-loam.palette.yaml"
+    },
+    {
+      "id": "ai-neural",
+      "name": "AI Neural",
+      "tags": [
+        "tech",
+        "ai",
+        "neural",
+        "futuristic",
+        "glow",
+        "cyber"
+      ],
+      "description": "Deep navy, electric cyan, acid green, violet, white pulse — AI/ML brand glow.",
+      "swatches": [
+        "#070B1A",
+        "#0E1428",
+        "#161E3A",
+        "#00E5FF",
+        "#8B5CF6"
+      ],
+      "file": "ai-neural.palette.yaml"
+    },
+    {
+      "id": "amethyst-crystal",
+      "name": "Amethyst Crystal",
+      "tags": [
+        "mineral",
+        "gemstone",
+        "purple",
+        "mystical",
+        "crystalline"
+      ],
+      "description": "Deep amethyst purple, lavender facets and silver on cream — geode crystal radiance.",
+      "swatches": [
+        "#F6F2F8",
+        "#EBE4F0",
+        "#D7CCE0",
+        "#5A2A82",
+        "#9876B8"
+      ],
+      "file": "amethyst-crystal.palette.yaml"
+    },
+    {
+      "id": "arctic-aurora",
+      "name": "Arctic Aurora",
+      "tags": [
+        "nature",
+        "arctic",
+        "aurora",
+        "polar",
+        "glacial"
+      ],
+      "description": "Deep polar navy with aurora green, violet ribbons and glacial blue — northern-lights night.",
+      "swatches": [
+        "#06122A",
+        "#0E1F3E",
+        "#172E55",
+        "#4AE6A0",
+        "#8C6EE0"
+      ],
+      "file": "arctic-aurora.palette.yaml"
+    },
+    {
+      "id": "art-deco-gilded",
+      "name": "Art Deco Gilded",
+      "tags": [
+        "art-deco",
+        "luxury",
+        "gatsby",
+        "gold",
+        "ornate"
+      ],
+      "description": "Black, ivory and gold with emerald and ruby — Gatsby-era opulence and Chrysler-Building geometry.",
+      "swatches": [
+        "#0E0E10",
+        "#181819",
+        "#232325",
+        "#C9A24A",
+        "#1F6E54"
+      ],
+      "file": "art-deco-gilded.palette.yaml"
+    },
+    {
+      "id": "audit-slate",
+      "name": "Audit Slate",
+      "tags": [
+        "formal",
+        "business",
+        "audit",
+        "neutral",
+        "slate"
+      ],
+      "description": "Neutral slate with amber highlights — clear, professional audit and compliance output.",
+      "swatches": [
+        "#F7F8FA",
+        "#EDF0F3",
+        "#DDE2E8",
+        "#475569",
+        "#64748B"
+      ],
+      "file": "audit-slate.palette.yaml"
+    },
+    {
+      "id": "aurora-spectrum",
+      "name": "Aurora Spectrum",
+      "tags": [
+        "gradient",
+        "aurora",
+        "vibrant",
+        "dark",
+        "ethereal"
+      ],
+      "description": "Deep purple sliding through magenta into emerald and cyan with cream — borealis sky waves.",
+      "swatches": [
+        "#0E0820",
+        "#1A1230",
+        "#2A1E48",
+        "#3CD4A2",
+        "#C84EAE"
+      ],
+      "file": "aurora-spectrum.palette.yaml"
+    },
+    {
+      "id": "autumn-harvest",
+      "name": "Autumn Harvest",
+      "tags": [
+        "seasonal",
+        "autumn",
+        "harvest",
+        "thanksgiving",
+        "warm"
+      ],
+      "description": "Burnt orange and brick red with olive on warm cream — fall, harvest and Thanksgiving moods.",
+      "swatches": [
+        "#FAF1E1",
+        "#F3E6CC",
+        "#E8D3A8",
+        "#C0531C",
+        "#8B2C1F"
+      ],
+      "file": "autumn-harvest.palette.yaml"
+    },
+    {
+      "id": "autumn-leaves",
+      "name": "Autumn Leaves",
+      "tags": [
+        "botanical",
+        "autumn",
+        "foliage",
+        "warm",
+        "seasonal"
+      ],
+      "description": "Burnt orange and maple red with golden yellow and walnut — fallen autumn leaves.",
+      "swatches": [
+        "#F8EBD4",
+        "#EBD4AE",
+        "#D8AE74",
+        "#B0451A",
+        "#7A2818"
+      ],
+      "file": "autumn-leaves.palette.yaml"
+    },
+    {
+      "id": "banking-burgundy",
+      "name": "Banking Burgundy",
+      "tags": [
+        "formal",
+        "finance",
+        "banking",
+        "conservative",
+        "burgundy"
+      ],
+      "description": "Deep burgundy on cream — established, conservative banking and legal documents.",
+      "swatches": [
+        "#FAF6EF",
+        "#F2EBDD",
+        "#E8DEC9",
+        "#6E1E2B",
+        "#3D2A2F"
+      ],
+      "file": "banking-burgundy.palette.yaml"
+    },
+    {
+      "id": "basketball-court",
+      "name": "Basketball Court",
+      "tags": [
+        "sports",
+        "basketball",
+        "nba",
+        "streetball",
+        "hardwood"
+      ],
+      "description": "Burnt orange ball on hardwood maple — NBA-arena energy with chalk-line accents.",
+      "swatches": [
+        "#FBF5E8",
+        "#F2E6CC",
+        "#E5D2A8",
+        "#D2641C",
+        "#7A4A22"
+      ],
+      "file": "basketball-court.palette.yaml"
+    },
+    {
+      "id": "bauhaus-primary",
+      "name": "Bauhaus Primary",
+      "tags": [
+        "bauhaus",
+        "modernist",
+        "geometric",
+        "primary",
+        "art-movement"
+      ],
+      "description": "Pure primaries on white with chrome yellow accent — Mondrian-style modernist geometry.",
+      "swatches": [
+        "#FFFFFF",
+        "#F5F5F2",
+        "#E8E8E4",
+        "#D62828",
+        "#1D3FA8"
+      ],
+      "file": "bauhaus-primary.palette.yaml"
+    },
+    {
+      "id": "blockchain-chrome",
+      "name": "Blockchain Chrome",
+      "tags": [
+        "tech",
+        "blockchain",
+        "crypto",
+        "chrome",
+        "bitcoin",
+        "metallic"
+      ],
+      "description": "Chrome silver, bitcoin gold, crypto green, obsidian, arctic white — blockchain finance.",
+      "swatches": [
+        "#F2F3F5",
+        "#E6E8EC",
+        "#D5D9E0",
+        "#F7931A",
+        "#2A2D33"
+      ],
+      "file": "blockchain-chrome.palette.yaml"
+    },
+    {
+      "id": "brewery-craft",
+      "name": "Brewery Craft",
+      "tags": [
+        "drink",
+        "beer",
+        "brewery",
+        "craft",
+        "taproom"
+      ],
+      "description": "Amber gold and dark malt brown with hops green and roasted black — craft-taproom chalkboard.",
+      "swatches": [
+        "#1A1208",
+        "#241A0E",
+        "#322412",
+        "#E0A330",
+        "#7AA02A"
+      ],
+      "file": "brewery-craft.palette.yaml"
+    },
+    {
+      "id": "brushed-aluminum",
+      "name": "Brushed Aluminum",
+      "tags": [
+        "material",
+        "metal",
+        "aluminum",
+        "industrial",
+        "cool"
+      ],
+      "description": "Cool silver with matte slate, chrome highlights and a black band — machined brushed metal.",
+      "swatches": [
+        "#E6E8EB",
+        "#D2D6DA",
+        "#B4B9BF",
+        "#5A6068",
+        "#8A9098"
+      ],
+      "file": "brushed-aluminum.palette.yaml"
+    },
+    {
+      "id": "candy-bright",
+      "name": "Candy Bright",
+      "tags": [
+        "casual",
+        "playful",
+        "pastel",
+        "light",
+        "candy"
+      ],
+      "description": "Pastel pink, sky blue, mint, and lavender — playful, friendly, kids and lifestyle.",
+      "swatches": [
+        "#FFFBFE",
+        "#FDF0F8",
+        "#F5E4F2",
+        "#F46AAE",
+        "#5CB8F2"
+      ],
+      "file": "candy-bright.palette.yaml"
+    },
+    {
+      "id": "champagne-cream",
+      "name": "Champagne Cream",
+      "tags": [
+        "luxury",
+        "editorial",
+        "magazine",
+        "light",
+        "champagne"
+      ],
+      "description": "Ivory cream with champagne gold and black — magazine luxe and editorial covers.",
+      "swatches": [
+        "#FBF6EC",
+        "#F3EBDA",
+        "#E8DBC2",
+        "#B7945A",
+        "#1A1A1A"
+      ],
+      "file": "champagne-cream.palette.yaml"
+    },
+    {
+      "id": "cherry-blossom-pink",
+      "name": "Cherry Blossom Pink",
+      "tags": [
+        "botanical",
+        "sakura",
+        "spring",
+        "soft",
+        "japanese"
+      ],
+      "description": "Petal pink and warm white with cherry red and leaf green — hanami sakura bloom.",
+      "swatches": [
+        "#FFF4F5",
+        "#FBE4E8",
+        "#F4C9D2",
+        "#D85A78",
+        "#5E8E5A"
+      ],
+      "file": "cherry-blossom-pink.palette.yaml"
+    },
+    {
+      "id": "clinical-mint",
+      "name": "Clinical Mint",
+      "tags": [
+        "health",
+        "medical",
+        "clean",
+        "light",
+        "mint"
+      ],
+      "description": "White and soft mint — calm, clean medical and clinical interfaces.",
+      "swatches": [
+        "#FFFFFF",
+        "#F2FAF7",
+        "#E2F3EC",
+        "#2BA68A",
+        "#4FB3D9"
+      ],
+      "file": "clinical-mint.palette.yaml"
+    },
+    {
+      "id": "cocktail-tropical",
+      "name": "Cocktail Tropical",
+      "tags": [
+        "drink",
+        "tropical",
+        "cocktail",
+        "tiki",
+        "beach"
+      ],
+      "description": "Pineapple yellow, lime and flamingo pink with ocean teal — poolside tiki cocktail menu.",
+      "swatches": [
+        "#FFF8E6",
+        "#FFEDC2",
+        "#FFE090",
+        "#F26FA0",
+        "#1FB89A"
+      ],
+      "file": "cocktail-tropical.palette.yaml"
+    },
+    {
+      "id": "coffee-roast",
+      "name": "Coffee Roast",
+      "tags": [
+        "coffee",
+        "cafe",
+        "warm",
+        "beverage",
+        "hospitality"
+      ],
+      "description": "Espresso, caramel and walnut with warm gold on cream — third-wave café and roastery.",
+      "swatches": [
+        "#F5EBDB",
+        "#EBDDC4",
+        "#D8C19E",
+        "#3A1F12",
+        "#A06A38"
+      ],
+      "file": "coffee-roast.palette.yaml"
+    },
+    {
+      "id": "concrete-raw",
+      "name": "Concrete Raw",
+      "tags": [
+        "material",
+        "concrete",
+        "industrial",
+        "brutalist",
+        "urban"
+      ],
+      "description": "Bare concrete grey with rebar steel, iron rust streaks and chalk white — unfinished brutalist surface.",
+      "swatches": [
+        "#E2DED7",
+        "#CFC9C0",
+        "#B0AAA1",
+        "#5C5953",
+        "#8A857C"
+      ],
+      "file": "concrete-raw.palette.yaml"
+    },
+    {
+      "id": "conversion-coral",
+      "name": "Conversion Coral",
+      "tags": [
+        "marketing",
+        "landing",
+        "cta",
+        "coral",
+        "conversion"
+      ],
+      "description": "Warm coral red with amber CTA on white — high-conversion landing pages and sales offers.",
+      "swatches": [
+        "#FFFFFF",
+        "#FFF6F2",
+        "#FFE7DA",
+        "#E94F37",
+        "#C0392B"
+      ],
+      "file": "conversion-coral.palette.yaml"
+    },
+    {
+      "id": "copper-patina",
+      "name": "Copper Patina",
+      "tags": [
+        "material",
+        "copper",
+        "patina",
+        "oxidized",
+        "warm"
+      ],
+      "description": "Burnished copper meets verdigris green over warm cream — aged architectural metal.",
+      "swatches": [
+        "#F2EAD8",
+        "#E2D6BC",
+        "#C8B894",
+        "#9A4A20",
+        "#3E7A6A"
+      ],
+      "file": "copper-patina.palette.yaml"
+    },
+    {
+      "id": "corporate-navy",
+      "name": "Corporate Navy",
+      "tags": [
+        "formal",
+        "business",
+        "corporate",
+        "navy",
+        "blue"
+      ],
+      "description": "Classic navy and steel on white — trustworthy corporate look for reports and decks.",
+      "swatches": [
+        "#FFFFFF",
+        "#F4F6FA",
+        "#E6EBF2",
+        "#1F4E8C",
+        "#5A7AA1"
+      ],
+      "file": "corporate-navy.palette.yaml"
+    },
+    {
+      "id": "country-prairie",
+      "name": "Country Prairie",
+      "tags": [
+        "music",
+        "country",
+        "prairie",
+        "rustic",
+        "americana",
+        "denim"
+      ],
+      "description": "Sun-bleached cream, denim blue, saddle brown, rust red, sage — country americana.",
+      "swatches": [
+        "#F4ECD8",
+        "#EADFC4",
+        "#DFD2B0",
+        "#4A6A8A",
+        "#8B5A2B"
+      ],
+      "file": "country-prairie.palette.yaml"
+    },
+    {
+      "id": "dawn-pink",
+      "name": "Dawn Pink",
+      "tags": [
+        "time",
+        "dawn",
+        "sunrise",
+        "soft",
+        "romantic"
+      ],
+      "description": "Soft peach and rose with lavender and first-light yellow — early morning glow.",
+      "swatches": [
+        "#FFF3EC",
+        "#FCE4DB",
+        "#F7CFC4",
+        "#C45A6E",
+        "#9A6FB0"
+      ],
+      "file": "dawn-pink.palette.yaml"
+    },
+    {
+      "id": "deep-ocean-fade",
+      "name": "Deep Ocean Fade",
+      "tags": [
+        "gradient",
+        "ocean",
+        "depth",
+        "blue",
+        "immersive"
+      ],
+      "description": "Pale aqua receding through ocean blue and navy into abyssal black — full-water-column descent.",
+      "swatches": [
+        "#06121C",
+        "#0E1F2E",
+        "#173044",
+        "#9CD6E0",
+        "#2674A2"
+      ],
+      "file": "deep-ocean-fade.palette.yaml"
+    },
+    {
+      "id": "denim-faded",
+      "name": "Denim Faded",
+      "tags": [
+        "material",
+        "denim",
+        "casual",
+        "americana",
+        "workwear"
+      ],
+      "description": "Washed indigo and denim blue with bronze rivets on cream — well-worn workwear comfort.",
+      "swatches": [
+        "#F2EEE2",
+        "#E4DECC",
+        "#CDC6B0",
+        "#33567E",
+        "#6E8AAA"
+      ],
+      "file": "denim-faded.palette.yaml"
+    },
+    {
+      "id": "desert-mesa",
+      "name": "Desert Mesa",
+      "tags": [
+        "nature",
+        "desert",
+        "southwest",
+        "mesa",
+        "arid"
+      ],
+      "description": "Sandstone and terracotta with cactus green and burnt sienna — high-desert mesa at noon.",
+      "swatches": [
+        "#F2E0C2",
+        "#E8D0A2",
+        "#D8B880",
+        "#B85A2C",
+        "#5E7048"
+      ],
+      "file": "desert-mesa.palette.yaml"
+    },
+    {
+      "id": "devtools-amber",
+      "name": "Devtools Amber",
+      "tags": [
+        "tech",
+        "devtools",
+        "terminal",
+        "amber",
+        "ide",
+        "cli"
+      ],
+      "description": "Near-black, warm amber, lime accent, chrome, ash — developer tooling and terminals.",
+      "swatches": [
+        "#0E0D0A",
+        "#16140F",
+        "#1F1C15",
+        "#FFB000",
+        "#C8CCD0"
+      ],
+      "file": "devtools-amber.palette.yaml"
+    },
+    {
+      "id": "devtools-mono",
+      "name": "Devtools Mono",
+      "tags": [
+        "tech",
+        "developer",
+        "terminal",
+        "dark",
+        "mono"
+      ],
+      "description": "Near-black with neon green terminal accent — CLI, devtools, and code-first interfaces.",
+      "swatches": [
+        "#0B0D0E",
+        "#131618",
+        "#1B1F22",
+        "#00E676",
+        "#7BFF8A"
+      ],
+      "file": "devtools-mono.palette.yaml"
+    },
+    {
+      "id": "dusk-amber",
+      "name": "Dusk Amber",
+      "tags": [
+        "time",
+        "dusk",
+        "sunset",
+        "warm",
+        "contemplative"
+      ],
+      "description": "Burnt amber and plum purple against warm cream — last light before indigo night.",
+      "swatches": [
+        "#F6E8D2",
+        "#EAD3AE",
+        "#D8B280",
+        "#B45A1A",
+        "#6A3A6E"
+      ],
+      "file": "dusk-amber.palette.yaml"
+    },
+    {
+      "id": "energy-electric",
+      "name": "Energy Electric",
+      "tags": [
+        "energy",
+        "athletic",
+        "performance",
+        "neon",
+        "emotional"
+      ],
+      "description": "Electric yellow, cyan and magenta on jet black — pumped sport-performance intensity.",
+      "swatches": [
+        "#0A0A0A",
+        "#141414",
+        "#1F1F1F",
+        "#F2F200",
+        "#00D8FF"
+      ],
+      "file": "energy-electric.palette.yaml"
+    },
+    {
+      "id": "esports-arena",
+      "name": "Esports Arena",
+      "tags": [
+        "esports",
+        "gaming",
+        "neon",
+        "cyber",
+        "twitch"
+      ],
+      "description": "Neon magenta and cyber-blue on deep purple-black — twitch-stream and tournament stage.",
+      "swatches": [
+        "#0A0418",
+        "#15082E",
+        "#1E0E42",
+        "#FF1A8C",
+        "#1AC8FF"
+      ],
+      "file": "esports-arena.palette.yaml"
+    },
+    {
+      "id": "executive-graphite",
+      "name": "Executive Graphite",
+      "tags": [
+        "formal",
+        "premium",
+        "executive",
+        "dark",
+        "graphite"
+      ],
+      "description": "Deep graphite paired with warm bronze — confident, premium executive aesthetic.",
+      "swatches": [
+        "#1A1C1F",
+        "#23262A",
+        "#2D3137",
+        "#C08A4A",
+        "#8D7355"
+      ],
+      "file": "executive-graphite.palette.yaml"
+    },
+    {
+      "id": "film-kodak",
+      "name": "Film Kodak",
+      "tags": [
+        "photography",
+        "film",
+        "kodak",
+        "analog",
+        "vintage",
+        "gold"
+      ],
+      "description": "Warm cream paper, Kodak gold, brick red, olive, dark brown — classic film stock look.",
+      "swatches": [
+        "#F4E9D2",
+        "#EBDEBE",
+        "#E0D2A6",
+        "#E5A234",
+        "#A8502E"
+      ],
+      "file": "film-kodak.palette.yaml"
+    },
+    {
+      "id": "fintech-violet",
+      "name": "Fintech Violet",
+      "tags": [
+        "finance",
+        "fintech",
+        "modern",
+        "dark",
+        "violet"
+      ],
+      "description": "Deep violet with bright teal — modern fintech apps and crypto dashboards.",
+      "swatches": [
+        "#150F2E",
+        "#1E1640",
+        "#2A1F58",
+        "#7C3AED",
+        "#06D6C4"
+      ],
+      "file": "fintech-violet.palette.yaml"
+    },
+    {
+      "id": "fog-soft",
+      "name": "Fog Soft",
+      "tags": [
+        "weather",
+        "fog",
+        "mist",
+        "soft",
+        "ethereal"
+      ],
+      "description": "Mist white with pale grey, soft sage and dusty pink — diffused foggy morning.",
+      "swatches": [
+        "#F2F2EE",
+        "#E2E3DD",
+        "#CDCEC6",
+        "#788A82",
+        "#9A8C8A"
+      ],
+      "file": "fog-soft.palette.yaml"
+    },
+    {
+      "id": "forest-canopy",
+      "name": "Forest Canopy",
+      "tags": [
+        "nature",
+        "forest",
+        "woodland",
+        "organic",
+        "earthy"
+      ],
+      "description": "Moss green and bark brown with sunbeam yellow filtering through — deep-woods canopy.",
+      "swatches": [
+        "#F2EDD8",
+        "#E5DCBC",
+        "#C9BD90",
+        "#3F5E2A",
+        "#5A3A1E"
+      ],
+      "file": "forest-canopy.palette.yaml"
+    },
+    {
+      "id": "galaxy-deep",
+      "name": "Galaxy Deep",
+      "tags": [
+        "cosmic",
+        "space",
+        "galaxy",
+        "nebula",
+        "astronomy"
+      ],
+      "description": "Deep purple void with nebula pink, stellar gold and cosmic blue — far-field galaxy.",
+      "swatches": [
+        "#0A0820",
+        "#141038",
+        "#1F1A50",
+        "#7A3CB8",
+        "#E04A9E"
+      ],
+      "file": "galaxy-deep.palette.yaml"
+    },
+    {
+      "id": "golden-hour",
+      "name": "Golden Hour",
+      "tags": [
+        "photography",
+        "golden",
+        "magichour",
+        "warm",
+        "peach",
+        "sunset"
+      ],
+      "description": "Warm amber, peach, rose, dusty blue, cream — golden-hour magic-hour light.",
+      "swatches": [
+        "#FBEFD9",
+        "#F5E2BE",
+        "#EED3A0",
+        "#E89545",
+        "#E5A8A0"
+      ],
+      "file": "golden-hour.palette.yaml"
+    },
+    {
+      "id": "halloween-pumpkin",
+      "name": "Halloween Pumpkin",
+      "tags": [
+        "holiday",
+        "halloween",
+        "spooky",
+        "pumpkin",
+        "october"
+      ],
+      "description": "Pumpkin orange and raven purple on black — jack-o'-lantern glow with bone-white type.",
+      "swatches": [
+        "#0E0A12",
+        "#1A1322",
+        "#261B33",
+        "#F26F1A",
+        "#6A2EB0"
+      ],
+      "file": "halloween-pumpkin.palette.yaml"
+    },
+    {
+      "id": "hiphop-street",
+      "name": "Hip-Hop Street",
+      "tags": [
+        "music",
+        "hiphop",
+        "street",
+        "urban",
+        "graffiti",
+        "chrome"
+      ],
+      "description": "Concrete grey, chrome silver, gold chain, black, neon green spray — street rap energy.",
+      "swatches": [
+        "#1A1A1C",
+        "#26262A",
+        "#33333A",
+        "#D4AF37",
+        "#C8CCD0"
+      ],
+      "file": "hiphop-street.palette.yaml"
+    },
+    {
+      "id": "indian-spice",
+      "name": "Indian Spice",
+      "tags": [
+        "cuisine",
+        "indian",
+        "spice",
+        "vibrant",
+        "aromatic"
+      ],
+      "description": "Saffron, turmeric and curry yellow with paprika red and cardamom green — masala bazaar heat.",
+      "swatches": [
+        "#FBF1D8",
+        "#F4E3B8",
+        "#E6CC84",
+        "#C4451C",
+        "#D8941C"
+      ],
+      "file": "indian-spice.palette.yaml"
+    },
+    {
+      "id": "indie-coffeeshop",
+      "name": "Indie Coffeeshop",
+      "tags": [
+        "music",
+        "indie",
+        "coffeeshop",
+        "cozy",
+        "acoustic",
+        "warm"
+      ],
+      "description": "Warm cream, espresso, sage, dusty pink, olive — acoustic indie cafe afternoon.",
+      "swatches": [
+        "#F4ECDD",
+        "#EBE0CC",
+        "#E0D2B8",
+        "#5A3A24",
+        "#8A9A6E"
+      ],
+      "file": "indie-coffeeshop.palette.yaml"
+    },
+    {
+      "id": "italian-trattoria",
+      "name": "Italian Trattoria",
+      "tags": [
+        "cuisine",
+        "italian",
+        "rustic",
+        "hospitality",
+        "herb"
+      ],
+      "description": "Basil green, tomato red and olive with walnut on cream — checkered-cloth trattoria warmth.",
+      "swatches": [
+        "#F8F1DE",
+        "#EEE3C8",
+        "#D8CAA4",
+        "#C03028",
+        "#3E5A2A"
+      ],
+      "file": "italian-trattoria.palette.yaml"
+    },
+    {
+      "id": "jade-stone",
+      "name": "Jade Stone",
+      "tags": [
+        "mineral",
+        "gemstone",
+        "jade",
+        "asian",
+        "prosperity"
+      ],
+      "description": "Polished jade green and dark green with gold inlay on ivory — heirloom carved-stone wealth.",
+      "swatches": [
+        "#F5F1E2",
+        "#EAE5D0",
+        "#D6D2B4",
+        "#2E6A52",
+        "#143A2E"
+      ],
+      "file": "jade-stone.palette.yaml"
+    },
+    {
+      "id": "japanese-zen",
+      "name": "Japanese Zen",
+      "tags": [
+        "japanese",
+        "zen",
+        "wabi-sabi",
+        "minimal",
+        "cultural"
+      ],
+      "description": "Sumi ink black, indigo and vermillion on washi cream — wabi-sabi quietude and tea-ceremony calm.",
+      "swatches": [
+        "#F1EADA",
+        "#E8DFC8",
+        "#D9CDB0",
+        "#1B2A3A",
+        "#2B4C7E"
+      ],
+      "file": "japanese-zen.palette.yaml"
+    },
+    {
+      "id": "jazz-noir",
+      "name": "Jazz Noir",
+      "tags": [
+        "music",
+        "jazz",
+        "noir",
+        "smoky",
+        "lounge",
+        "whiskey"
+      ],
+      "description": "Smoke-filled lounge — black, amber whiskey, cream, cigar brown, deep navy.",
+      "swatches": [
+        "#0B0908",
+        "#15110E",
+        "#1F1814",
+        "#C68B3C",
+        "#F2E4C9"
+      ],
+      "file": "jazz-noir.palette.yaml"
+    },
+    {
+      "id": "kindergarten-rainbow",
+      "name": "Kindergarten Rainbow",
+      "tags": [
+        "education",
+        "kids",
+        "elementary",
+        "playful",
+        "rainbow"
+      ],
+      "description": "Bright primaries on white for kids' classrooms, worksheets and elementary learning materials.",
+      "swatches": [
+        "#FFFFFF",
+        "#FFF8E7",
+        "#FFEFC2",
+        "#E63946",
+        "#1D77C9"
+      ],
+      "file": "kindergarten-rainbow.palette.yaml"
+    },
+    {
+      "id": "koi-pond",
+      "name": "Koi Pond",
+      "tags": [
+        "animal",
+        "koi",
+        "fish",
+        "japanese",
+        "tranquil"
+      ],
+      "description": "Pond green, coral orange and lily pink against cream and ink black — serene garden waters.",
+      "swatches": [
+        "#F4F1E4",
+        "#E8E4D0",
+        "#D2D2B4",
+        "#3E6A4A",
+        "#D86840"
+      ],
+      "file": "koi-pond.palette.yaml"
+    },
+    {
+      "id": "leather-aged",
+      "name": "Leather Aged",
+      "tags": [
+        "material",
+        "leather",
+        "aged",
+        "craft",
+        "warm"
+      ],
+      "description": "Saddle brown with cream stitching, cognac and walnut shadow — well-worn aged hide.",
+      "swatches": [
+        "#F4E9D2",
+        "#E5D4B4",
+        "#C9AC80",
+        "#5C2F18",
+        "#8E4E22"
+      ],
+      "file": "leather-aged.palette.yaml"
+    },
+    {
+      "id": "leather-saddle",
+      "name": "Leather Saddle",
+      "tags": [
+        "material",
+        "leather",
+        "rustic",
+        "equestrian",
+        "warm"
+      ],
+      "description": "Saddle brown, cognac and burnt orange against cream and black — tanned-hide craftsmanship.",
+      "swatches": [
+        "#F6EFE0",
+        "#EBE0CB",
+        "#D8C5A4",
+        "#7A4220",
+        "#B0682A"
+      ],
+      "file": "leather-saddle.palette.yaml"
+    },
+    {
+      "id": "legal-walnut",
+      "name": "Legal Walnut",
+      "tags": [
+        "legal",
+        "law",
+        "conservative",
+        "walnut",
+        "formal"
+      ],
+      "description": "Walnut brown and deep navy with gold on cream — law firms, contracts and conservative briefs.",
+      "swatches": [
+        "#F4ECDC",
+        "#EFE3CB",
+        "#E2D2B0",
+        "#4A2C1A",
+        "#1F2C4A"
+      ],
+      "file": "legal-walnut.palette.yaml"
+    },
+    {
+      "id": "lunar-new-year",
+      "name": "Lunar New Year",
+      "tags": [
+        "holiday",
+        "lunar-new-year",
+        "festive",
+        "vermillion",
+        "gold"
+      ],
+      "description": "Vermillion and crimson with imperial gold on ivory — Lunar New Year envelope and lantern.",
+      "swatches": [
+        "#FBF1E2",
+        "#F5E2C2",
+        "#EDCE96",
+        "#C8141C",
+        "#9A1018"
+      ],
+      "file": "lunar-new-year.palette.yaml"
+    },
+    {
+      "id": "marble-veined",
+      "name": "Marble Veined",
+      "tags": [
+        "material",
+        "marble",
+        "elegant",
+        "neutral",
+        "classical"
+      ],
+      "description": "White marble veined with gray and soft black plus dusty mauve — sculpted carrara polish.",
+      "swatches": [
+        "#F4F2EC",
+        "#E8E6DE",
+        "#D4D2C8",
+        "#2E2E32",
+        "#8A8884"
+      ],
+      "file": "marble-veined.palette.yaml"
+    },
+    {
+      "id": "margarita-lime",
+      "name": "Margarita Lime",
+      "tags": [
+        "beverage",
+        "cocktail",
+        "lime",
+        "fresh",
+        "citrus"
+      ],
+      "description": "Lime green with salt white, agave gold and cyan accent — frosted margarita rim.",
+      "swatches": [
+        "#F4F9E4",
+        "#E2EFC6",
+        "#C4DD96",
+        "#5AA02A",
+        "#2A6E72"
+      ],
+      "file": "margarita-lime.palette.yaml"
+    },
+    {
+      "id": "matcha-green",
+      "name": "Matcha Green",
+      "tags": [
+        "beverage",
+        "matcha",
+        "tea",
+        "japanese",
+        "earthy"
+      ],
+      "description": "Matcha powder green with warm cream, bamboo and cherry-blossom pink accent.",
+      "swatches": [
+        "#F3EFDE",
+        "#E5DEC1",
+        "#CFC892",
+        "#6E8A2E",
+        "#9A8A4A"
+      ],
+      "file": "matcha-green.palette.yaml"
+    },
+    {
+      "id": "mediterranean-azure",
+      "name": "Mediterranean Azure",
+      "tags": [
+        "mediterranean",
+        "coastal",
+        "warm",
+        "sunny",
+        "cultural"
+      ],
+      "description": "Azure sea-blue, terracotta and olive on cream sand — Greek-island coastal warmth.",
+      "swatches": [
+        "#FAF3E3",
+        "#F2E8CE",
+        "#E6D8AE",
+        "#1E78B4",
+        "#C0532C"
+      ],
+      "file": "mediterranean-azure.palette.yaml"
+    },
+    {
+      "id": "melancholy-rain",
+      "name": "Melancholy Rain",
+      "tags": [
+        "melancholy",
+        "moody",
+        "reflective",
+        "cool",
+        "emotional"
+      ],
+      "description": "Slate grey, muted lavender and dark teal with dusty rose — reflective rainy-window mood.",
+      "swatches": [
+        "#E9ECEF",
+        "#DDE2E8",
+        "#C8CFD7",
+        "#4A5266",
+        "#8A82A6"
+      ],
+      "file": "melancholy-rain.palette.yaml"
+    },
+    {
+      "id": "memphis-pattern",
+      "name": "Memphis Pattern",
+      "tags": [
+        "memphis",
+        "80s",
+        "postmodern",
+        "playful",
+        "eclectic"
+      ],
+      "description": "Pastel pink, mint and electric blue with lemon and black squiggles — Sottsass 80s postmodern.",
+      "swatches": [
+        "#FFF6F2",
+        "#FBE9F0",
+        "#D6F0E2",
+        "#E94F8A",
+        "#1E7FD4"
+      ],
+      "file": "memphis-pattern.palette.yaml"
+    },
+    {
+      "id": "mexican-folk",
+      "name": "Mexican Folk",
+      "tags": [
+        "mexican",
+        "folk",
+        "festive",
+        "bright",
+        "cultural"
+      ],
+      "description": "Bright pink, cobalt and sunflower yellow with lime on black — Frida and Day-of-the-Dead joy.",
+      "swatches": [
+        "#FFF6E5",
+        "#FCEACB",
+        "#F6D89E",
+        "#E5197A",
+        "#1B4FA8"
+      ],
+      "file": "mexican-folk.palette.yaml"
+    },
+    {
+      "id": "mid-century-orange",
+      "name": "Mid-Century Orange",
+      "tags": [
+        "mid-century",
+        "retro",
+        "1960s",
+        "warm",
+        "vintage"
+      ],
+      "description": "Burnt orange, olive and teal on cream with walnut — 1950s-60s domestic mid-century modern.",
+      "swatches": [
+        "#F5EBD7",
+        "#EDDFC2",
+        "#E0D0AC",
+        "#C45A1A",
+        "#5E6B2E"
+      ],
+      "file": "mid-century-orange.palette.yaml"
+    },
+    {
+      "id": "midnight-deep",
+      "name": "Midnight Deep",
+      "tags": [
+        "time",
+        "midnight",
+        "dark",
+        "nocturnal",
+        "calm"
+      ],
+      "description": "Deep navy and ink black with moonlight silver and indigo — small-hours of night.",
+      "swatches": [
+        "#0B1024",
+        "#141A36",
+        "#1E264C",
+        "#7A8CD8",
+        "#4A5AA0"
+      ],
+      "file": "midnight-deep.palette.yaml"
+    },
+    {
+      "id": "monastery-stone",
+      "name": "Monastery Stone",
+      "tags": [
+        "religious",
+        "monastery",
+        "contemplative",
+        "stone",
+        "parchment",
+        "quiet"
+      ],
+      "description": "Warm sandstone, ochre, sage, parchment cream, iron grey — contemplative monastery quiet.",
+      "swatches": [
+        "#EDE3CC",
+        "#E2D5B5",
+        "#D4C49A",
+        "#8A6A38",
+        "#7A8A5A"
+      ],
+      "file": "monastery-stone.palette.yaml"
+    },
+    {
+      "id": "moroccan-spice",
+      "name": "Moroccan Spice",
+      "tags": [
+        "moroccan",
+        "spice",
+        "rich",
+        "ornate",
+        "cultural"
+      ],
+      "description": "Saffron, deep teal and crimson with walnut on cream — riad tilework and souk warmth.",
+      "swatches": [
+        "#F6ECD6",
+        "#EDDFBE",
+        "#E1CE9F",
+        "#0F5B5F",
+        "#C2511A"
+      ],
+      "file": "moroccan-spice.palette.yaml"
+    },
+    {
+      "id": "mosque-emerald",
+      "name": "Mosque Emerald",
+      "tags": [
+        "religious",
+        "islamic",
+        "mosque",
+        "emerald",
+        "gold",
+        "sacred"
+      ],
+      "description": "Deep emerald, gold, cream, sapphire, black ink — Islamic mosque calligraphy.",
+      "swatches": [
+        "#F5EFDD",
+        "#ECE2C2",
+        "#E0D2A4",
+        "#0F5A3E",
+        "#C9A04A"
+      ],
+      "file": "mosque-emerald.palette.yaml"
+    },
+    {
+      "id": "mysterious-arcane",
+      "name": "Mysterious Arcane",
+      "tags": [
+        "mysterious",
+        "occult",
+        "fantasy",
+        "dark",
+        "emotional"
+      ],
+      "description": "Deep purple-black with violet, emerald and gold — occult-arcane fantasy mystique.",
+      "swatches": [
+        "#15101F",
+        "#1E1830",
+        "#2A2244",
+        "#6A3FA8",
+        "#1F8A6A"
+      ],
+      "file": "mysterious-arcane.palette.yaml"
+    },
+    {
+      "id": "noir-gold",
+      "name": "Noir Gold",
+      "tags": [
+        "luxury",
+        "editorial",
+        "high-end",
+        "dark",
+        "gold"
+      ],
+      "description": "Pure black with gold and warm white — high-end editorial, fashion, and gala.",
+      "swatches": [
+        "#0A0A0A",
+        "#141414",
+        "#1E1E1E",
+        "#D4A647",
+        "#F5EBD0"
+      ],
+      "file": "noir-gold.palette.yaml"
+    },
+    {
+      "id": "noir-photography",
+      "name": "Noir Photography",
+      "tags": [
+        "photography",
+        "noir",
+        "monochrome",
+        "blackandwhite",
+        "grain",
+        "contrast"
+      ],
+      "description": "True black, bright white, silver gray, soot, grain-tan — high-contrast B&W photo.",
+      "swatches": [
+        "#000000",
+        "#0E0E0E",
+        "#1A1A1A",
+        "#FFFFFF",
+        "#A8A8A8"
+      ],
+      "file": "noir-photography.palette.yaml"
+    },
+    {
+      "id": "noon-bright",
+      "name": "Noon Bright",
+      "tags": [
+        "time",
+        "noon",
+        "bright",
+        "cheerful",
+        "daylight"
+      ],
+      "description": "Pure sky blue with sun yellow, leaf green and cloud cream — high-noon clarity.",
+      "swatches": [
+        "#FBFCFE",
+        "#EAF3FB",
+        "#CCE3F5",
+        "#1E7AC8",
+        "#4FA34A"
+      ],
+      "file": "noon-bright.palette.yaml"
+    },
+    {
+      "id": "obsidian-black",
+      "name": "Obsidian Black",
+      "tags": [
+        "mineral",
+        "dark",
+        "volcanic",
+        "glossy",
+        "monochrome"
+      ],
+      "description": "Pure obsidian black, iron and steel with cream highlight — volcanic glass cut sharp.",
+      "swatches": [
+        "#0B0B0D",
+        "#16161A",
+        "#22232A",
+        "#E4E2D8",
+        "#7E848C"
+      ],
+      "file": "obsidian-black.palette.yaml"
+    },
+    {
+      "id": "old-fashioned-amber",
+      "name": "Old Fashioned Amber",
+      "tags": [
+        "beverage",
+        "whiskey",
+        "bourbon",
+        "vintage",
+        "warm"
+      ],
+      "description": "Bourbon amber and dark walnut with cream and cherry red — speakeasy cocktail.",
+      "swatches": [
+        "#F4E6CC",
+        "#E3CDA0",
+        "#C8A878",
+        "#A55B1C",
+        "#48281A"
+      ],
+      "file": "old-fashioned-amber.palette.yaml"
+    },
+    {
+      "id": "oxidized-iron",
+      "name": "Oxidized Iron",
+      "tags": [
+        "material",
+        "iron",
+        "rust",
+        "industrial",
+        "weathered"
+      ],
+      "description": "Rust orange and dark iron over cream — corroded steel and dried-blood red.",
+      "swatches": [
+        "#F0E6D6",
+        "#DCCEB8",
+        "#B89F80",
+        "#7A3318",
+        "#3A332D"
+      ],
+      "file": "oxidized-iron.palette.yaml"
+    },
+    {
+      "id": "peacock-jewel",
+      "name": "Peacock Jewel",
+      "tags": [
+        "animal",
+        "peacock",
+        "jewel-tone",
+        "regal",
+        "ornate"
+      ],
+      "description": "Teal plumage, emerald, sapphire and gold on cream — opulent peacock-tail luster.",
+      "swatches": [
+        "#FBF4E4",
+        "#F2E8D0",
+        "#E5D6B2",
+        "#0E5C6E",
+        "#127A5A"
+      ],
+      "file": "peacock-jewel.palette.yaml"
+    },
+    {
+      "id": "polaroid-faded",
+      "name": "Polaroid Faded",
+      "tags": [
+        "photography",
+        "polaroid",
+        "faded",
+        "instant",
+        "nostalgia",
+        "pastel"
+      ],
+      "description": "Washed-out cream, dusty pink, faded teal, soft tan, sepia — faded instant photo.",
+      "swatches": [
+        "#F2EAD8",
+        "#E8DEC8",
+        "#DCD0B5",
+        "#C99A9A",
+        "#7AA8A0"
+      ],
+      "file": "polaroid-faded.palette.yaml"
+    },
+    {
+      "id": "quantum-pulse",
+      "name": "Quantum Pulse",
+      "tags": [
+        "tech",
+        "quantum",
+        "futuristic",
+        "vivid",
+        "neon",
+        "science"
+      ],
+      "description": "Deep purple-black, electric pink, cyan, lime, soft white — quantum computing pulse.",
+      "swatches": [
+        "#0A061A",
+        "#140C2A",
+        "#1E133E",
+        "#FF2D95",
+        "#00E5FF"
+      ],
+      "file": "quantum-pulse.palette.yaml"
+    },
+    {
+      "id": "racing-track",
+      "name": "Racing Track",
+      "tags": [
+        "sports",
+        "racing",
+        "motorsport",
+        "checker",
+        "speed"
+      ],
+      "description": "Asphalt black with checker white, racing red and neon yellow — high-velocity track day.",
+      "swatches": [
+        "#0C0C0C",
+        "#161616",
+        "#222222",
+        "#E60012",
+        "#F5F5F5"
+      ],
+      "file": "racing-track.palette.yaml"
+    },
+    {
+      "id": "rainstorm-gray",
+      "name": "Rainstorm Gray",
+      "tags": [
+        "weather",
+        "rain",
+        "moody",
+        "cool",
+        "overcast"
+      ],
+      "description": "Slate grey and cool blue with dark teal and asphalt — steady pouring rain.",
+      "swatches": [
+        "#DDE2E6",
+        "#C5CCD2",
+        "#A6AEB6",
+        "#3A4E60",
+        "#5A7282"
+      ],
+      "file": "rainstorm-gray.palette.yaml"
+    },
+    {
+      "id": "retro-arcade",
+      "name": "Retro Arcade",
+      "tags": [
+        "arcade",
+        "retro",
+        "neon",
+        "crt",
+        "gaming"
+      ],
+      "description": "Neon pink, cyan, lime and yellow on jet black — CRT-arcade Tron-grid synthwave.",
+      "swatches": [
+        "#080814",
+        "#12122A",
+        "#1E1E3F",
+        "#FF2EA0",
+        "#00E6F0"
+      ],
+      "file": "retro-arcade.palette.yaml"
+    },
+    {
+      "id": "romance-dusk",
+      "name": "Romance Dusk",
+      "tags": [
+        "romance",
+        "sunset",
+        "intimate",
+        "warm",
+        "emotional"
+      ],
+      "description": "Deep plum, rose-gold and bronze with warm peach — sunset dinner-date intimacy.",
+      "swatches": [
+        "#FBF1E6",
+        "#F4E1D2",
+        "#E8C8B4",
+        "#4A1F38",
+        "#C58A6A"
+      ],
+      "file": "romance-dusk.palette.yaml"
+    },
+    {
+      "id": "rose-quartz",
+      "name": "Rose Quartz",
+      "tags": [
+        "mineral",
+        "gemstone",
+        "blush",
+        "soft",
+        "feminine"
+      ],
+      "description": "Blush rose quartz with dusty pink and champagne on cream — tender pastel crystal warmth.",
+      "swatches": [
+        "#FBF3EF",
+        "#F4E6DF",
+        "#E8D2C8",
+        "#C2748C",
+        "#A66070"
+      ],
+      "file": "rose-quartz.palette.yaml"
+    },
+    {
+      "id": "rpg-fantasy",
+      "name": "RPG Fantasy",
+      "tags": [
+        "rpg",
+        "fantasy",
+        "tabletop",
+        "parchment",
+        "gaming"
+      ],
+      "description": "Forest green and crimson with gold on parchment cream — D&D tabletop questlog feel.",
+      "swatches": [
+        "#F2E4C4",
+        "#E8D6A8",
+        "#D9C088",
+        "#2E5C2A",
+        "#A82A28"
+      ],
+      "file": "rpg-fantasy.palette.yaml"
+    },
+    {
+      "id": "saas-indigo",
+      "name": "SaaS Indigo",
+      "tags": [
+        "tech",
+        "saas",
+        "dashboard",
+        "dark",
+        "indigo"
+      ],
+      "description": "Dark indigo and violet — modern SaaS dashboards and product UI.",
+      "swatches": [
+        "#0F1226",
+        "#171A33",
+        "#1F2342",
+        "#6366F1",
+        "#A855F7"
+      ],
+      "file": "saas-indigo.palette.yaml"
+    },
+    {
+      "id": "scandi-fjord",
+      "name": "Scandinavian Fjord",
+      "tags": [
+        "scandinavian",
+        "nordic",
+        "minimal",
+        "cool",
+        "cultural"
+      ],
+      "description": "Slate, birch and muted blue with dusty pink on off-white — Nordic hygge minimalism.",
+      "swatches": [
+        "#F4F1EC",
+        "#E9E5DD",
+        "#D9D3C8",
+        "#4A6B82",
+        "#7E8B92"
+      ],
+      "file": "scandi-fjord.palette.yaml"
+    },
+    {
+      "id": "scholar-paper",
+      "name": "Scholar Paper",
+      "tags": [
+        "education",
+        "academic",
+        "paper",
+        "ink",
+        "scholar"
+      ],
+      "description": "Aged cream paper with ink black and a scarlet scholar accent — textbook and academic feel.",
+      "swatches": [
+        "#F6EFDC",
+        "#FBF6E6",
+        "#EDE3C8",
+        "#1A1714",
+        "#4A4036"
+      ],
+      "file": "scholar-paper.palette.yaml"
+    },
+    {
+      "id": "snowy-owl",
+      "name": "Snowy Owl",
+      "tags": [
+        "animal",
+        "owl",
+        "arctic",
+        "soft",
+        "minimal"
+      ],
+      "description": "Soft white plumage with pale yellow eyes, ash gray and charcoal — wintry arctic stillness.",
+      "swatches": [
+        "#FAFAF6",
+        "#EFEEE8",
+        "#DDDCD2",
+        "#2B2C2E",
+        "#7F8388"
+      ],
+      "file": "snowy-owl.palette.yaml"
+    },
+    {
+      "id": "soccer-pitch",
+      "name": "Soccer Pitch",
+      "tags": [
+        "sports",
+        "soccer",
+        "football",
+        "pitch",
+        "matchday"
+      ],
+      "description": "Grass-green pitch with chalk lines, crimson kit and sky-blue accents — matchday energy.",
+      "swatches": [
+        "#1F5A2E",
+        "#26703A",
+        "#2E8048",
+        "#F8F8F2",
+        "#C42129"
+      ],
+      "file": "soccer-pitch.palette.yaml"
+    },
+    {
+      "id": "solarized-warm",
+      "name": "Solarized Warm",
+      "tags": [
+        "tech",
+        "solarized",
+        "ide",
+        "editor",
+        "warm",
+        "classic"
+      ],
+      "description": "Solarized base with warm orange accent, magenta, cyan, olive — editor classic, warm side.",
+      "swatches": [
+        "#FDF6E3",
+        "#EEE8D5",
+        "#E4DCC2",
+        "#CB4B16",
+        "#D33682"
+      ],
+      "file": "solarized-warm.palette.yaml"
+    },
+    {
+      "id": "spring-bloom",
+      "name": "Spring Bloom",
+      "tags": [
+        "seasonal",
+        "spring",
+        "wedding",
+        "garden",
+        "pastel"
+      ],
+      "description": "Blush pink, butter yellow and fresh green on off-white — spring, weddings and garden invites.",
+      "swatches": [
+        "#FBF7F2",
+        "#FBEFEC",
+        "#F3E5D6",
+        "#E89AA9",
+        "#7FB069"
+      ],
+      "file": "spring-bloom.palette.yaml"
+    },
+    {
+      "id": "stained-glass",
+      "name": "Stained Glass",
+      "tags": [
+        "religious",
+        "christian",
+        "cathedral",
+        "stained",
+        "jewel",
+        "sacred"
+      ],
+      "description": "Deep cobalt, ruby red, emerald, amber gold, ivory — cathedral stained-glass window.",
+      "swatches": [
+        "#F5EFE0",
+        "#EBE3CC",
+        "#DDD3B0",
+        "#1F3A8A",
+        "#B0273D"
+      ],
+      "file": "stained-glass.palette.yaml"
+    },
+    {
+      "id": "startup-electric",
+      "name": "Startup Electric",
+      "tags": [
+        "tech",
+        "startup",
+        "bold",
+        "dark",
+        "electric"
+      ],
+      "description": "Black with electric lime and magenta — energetic, bold startup landing pages.",
+      "swatches": [
+        "#0A0A0F",
+        "#14141C",
+        "#1E1E2A",
+        "#C8FF3A",
+        "#FF2EC4"
+      ],
+      "file": "startup-electric.palette.yaml"
+    },
+    {
+      "id": "streaming-magenta",
+      "name": "Streaming Magenta",
+      "tags": [
+        "music",
+        "streaming",
+        "pop",
+        "vivid",
+        "neon",
+        "broadcast"
+      ],
+      "description": "Pure black, hot magenta, cyan, acid yellow, white — streaming platform pop energy.",
+      "swatches": [
+        "#000000",
+        "#0F0F12",
+        "#1A1A20",
+        "#FF1493",
+        "#00E0FF"
+      ],
+      "file": "streaming-magenta.palette.yaml"
+    },
+    {
+      "id": "summer-tropical",
+      "name": "Summer Tropical",
+      "tags": [
+        "seasonal",
+        "summer",
+        "beach",
+        "tropical",
+        "vibrant"
+      ],
+      "description": "Sand cream with coral, turquoise and lime — beach events and breezy summer campaigns.",
+      "swatches": [
+        "#FFF6E5",
+        "#FFEFD2",
+        "#FFE2B3",
+        "#FF6F61",
+        "#1FB6B0"
+      ],
+      "file": "summer-tropical.palette.yaml"
+    },
+    {
+      "id": "sunrise-gradient",
+      "name": "Sunrise Gradient",
+      "tags": [
+        "gradient",
+        "sunrise",
+        "warm",
+        "optimistic",
+        "sky"
+      ],
+      "description": "Peach, coral and gold ascending into indigo dawn on cream — daybreak horizon glow.",
+      "swatches": [
+        "#FCF1E4",
+        "#F8E4CE",
+        "#F2C9A0",
+        "#E26A4A",
+        "#2E2F66"
+      ],
+      "file": "sunrise-gradient.palette.yaml"
+    },
+    {
+      "id": "sunset-pop",
+      "name": "Sunset Pop",
+      "tags": [
+        "casual",
+        "playful",
+        "warm",
+        "vibrant",
+        "sunset"
+      ],
+      "description": "Peach, coral, magenta, and golden yellow — warm, energetic social and lifestyle.",
+      "swatches": [
+        "#FFF4EC",
+        "#FFE5D2",
+        "#FFD1B1",
+        "#FF5E62",
+        "#FF2E93"
+      ],
+      "file": "sunset-pop.palette.yaml"
+    },
+    {
+      "id": "sushi-omakase",
+      "name": "Sushi Omakase",
+      "tags": [
+        "cuisine",
+        "japanese",
+        "sushi",
+        "minimal",
+        "refined"
+      ],
+      "description": "Soft white rice, nori green and soy black with salmon pink and bamboo — counter omakase calm.",
+      "swatches": [
+        "#F8F6EE",
+        "#EEEBDC",
+        "#D8D4BE",
+        "#1C1A18",
+        "#1E3A2C"
+      ],
+      "file": "sushi-omakase.palette.yaml"
+    },
+    {
+      "id": "swiss-grid",
+      "name": "Swiss Grid",
+      "tags": [
+        "swiss",
+        "international",
+        "typographic",
+        "minimal",
+        "grid"
+      ],
+      "description": "Helvetica-red on jet black and pure white with neutral grays — International Typographic Style.",
+      "swatches": [
+        "#FFFFFF",
+        "#F4F4F4",
+        "#E5E5E5",
+        "#E30613",
+        "#1A1A1A"
+      ],
+      "file": "swiss-grid.palette.yaml"
+    },
+    {
+      "id": "tea-zen",
+      "name": "Tea Zen",
+      "tags": [
+        "drink",
+        "tea",
+        "zen",
+        "matcha",
+        "calm"
+      ],
+      "description": "Matcha green and bamboo on warm cream with clay-brown and cherry-blossom — tea-ceremony calm.",
+      "swatches": [
+        "#F5EFE0",
+        "#EDE2C8",
+        "#DFD0A8",
+        "#5A7A3A",
+        "#8C5A38"
+      ],
+      "file": "tea-zen.palette.yaml"
+    },
+    {
+      "id": "temple-saffron",
+      "name": "Temple Saffron",
+      "tags": [
+        "religious",
+        "hindu",
+        "temple",
+        "saffron",
+        "sacred",
+        "festival"
+      ],
+      "description": "Saffron orange, maroon red, cream, turmeric yellow, ochre — Hindu temple devotion.",
+      "swatches": [
+        "#FBF1DC",
+        "#F4E3BE",
+        "#EDD49E",
+        "#E8741A",
+        "#7A1A28"
+      ],
+      "file": "temple-saffron.palette.yaml"
+    },
+    {
+      "id": "thunderstorm-electric",
+      "name": "Thunderstorm Electric",
+      "tags": [
+        "weather",
+        "storm",
+        "lightning",
+        "dramatic",
+        "dark"
+      ],
+      "description": "Stormy purple and slate with lightning yellow — sudden electric flash in dark sky.",
+      "swatches": [
+        "#15131F",
+        "#221E32",
+        "#322B48",
+        "#7A6CC8",
+        "#4A5C82"
+      ],
+      "file": "thunderstorm-electric.palette.yaml"
+    },
+    {
+      "id": "tiger-stripe",
+      "name": "Tiger Stripe",
+      "tags": [
+        "animal",
+        "tiger",
+        "wild",
+        "bold",
+        "predator"
+      ],
+      "description": "Burnt orange and black with amber stripes on warm cream — feline jungle intensity.",
+      "swatches": [
+        "#FAEFD9",
+        "#F0E2C2",
+        "#DFCC9E",
+        "#C4581C",
+        "#1B1410"
+      ],
+      "file": "tiger-stripe.palette.yaml"
+    },
+    {
+      "id": "tropical-jungle",
+      "name": "Tropical Jungle",
+      "tags": [
+        "botanical",
+        "jungle",
+        "tropical",
+        "lush",
+        "vibrant"
+      ],
+      "description": "Deep jungle green and sunlit lime with bird-of-paradise orange and bark brown.",
+      "swatches": [
+        "#F2EBD8",
+        "#E1D8B8",
+        "#BBC68A",
+        "#1F4A2E",
+        "#6FA248"
+      ],
+      "file": "tropical-jungle.palette.yaml"
+    },
+    {
+      "id": "trust-teal",
+      "name": "Trust Teal",
+      "tags": [
+        "marketing",
+        "healthcare",
+        "ngo",
+        "trust",
+        "teal"
+      ],
+      "description": "Deep teal and sage on a soft white for reassuring healthcare-marketing and NGO communication.",
+      "swatches": [
+        "#F6FAF8",
+        "#ECF4F1",
+        "#DCEAE4",
+        "#0F6E6A",
+        "#2F8F8B"
+      ],
+      "file": "trust-teal.palette.yaml"
+    },
+    {
+      "id": "university-crest",
+      "name": "University Crest",
+      "tags": [
+        "education",
+        "collegiate",
+        "ivy",
+        "heritage",
+        "formal"
+      ],
+      "description": "Deep ivy green and crest gold on cream — collegiate, ceremonial, tradition-rich.",
+      "swatches": [
+        "#F5EFD9",
+        "#FBF6E2",
+        "#EBE1BD",
+        "#0F3D2E",
+        "#1F5A41"
+      ],
+      "file": "university-crest.palette.yaml"
+    },
+    {
+      "id": "urgency-amber",
+      "name": "Urgency Amber",
+      "tags": [
+        "marketing",
+        "urgency",
+        "alert",
+        "amber",
+        "offer"
+      ],
+      "description": "Charcoal canvas with hot amber and red accents — limited-time offers, flash sales and alerts.",
+      "swatches": [
+        "#1B1714",
+        "#262019",
+        "#332A20",
+        "#F5A623",
+        "#D08518"
+      ],
+      "file": "urgency-amber.palette.yaml"
+    },
+    {
+      "id": "valentines-rose",
+      "name": "Valentines Rose",
+      "tags": [
+        "holiday",
+        "valentines",
+        "romantic",
+        "rose",
+        "february"
+      ],
+      "description": "Romantic rose-red and blush pink with champagne gold on cream — Valentine's stationery.",
+      "swatches": [
+        "#FBF3EC",
+        "#F5E6DC",
+        "#EDD0C2",
+        "#C2304A",
+        "#F0A8B8"
+      ],
+      "file": "valentines-rose.palette.yaml"
+    },
+    {
+      "id": "velvet-emerald",
+      "name": "Velvet Emerald",
+      "tags": [
+        "material",
+        "velvet",
+        "luxe",
+        "theatrical",
+        "opulent"
+      ],
+      "description": "Deep emerald velvet with gold trim and plum on ivory — plush theater curtain richness.",
+      "swatches": [
+        "#F6F0E0",
+        "#EBE2CA",
+        "#D6CDA8",
+        "#114432",
+        "#5A2A48"
+      ],
+      "file": "velvet-emerald.palette.yaml"
+    },
+    {
+      "id": "wealth-emerald",
+      "name": "Wealth Emerald",
+      "tags": [
+        "finance",
+        "wealth",
+        "premium",
+        "dark",
+        "emerald"
+      ],
+      "description": "Dark forest with gold — premium wealth management and private banking.",
+      "swatches": [
+        "#0E2620",
+        "#143028",
+        "#1C3D33",
+        "#C9A24B",
+        "#3E8C6E"
+      ],
+      "file": "wealth-emerald.palette.yaml"
+    },
+    {
+      "id": "wellness-sage",
+      "name": "Wellness Sage",
+      "tags": [
+        "health",
+        "wellness",
+        "calm",
+        "organic",
+        "sage"
+      ],
+      "description": "Cream with sage green and dusty rose — holistic, calming wellness brands.",
+      "swatches": [
+        "#FAF6F0",
+        "#F1EBE0",
+        "#E5DCCC",
+        "#7E9B7A",
+        "#C9988F"
+      ],
+      "file": "wellness-sage.palette.yaml"
+    },
+    {
+      "id": "wine-cellar",
+      "name": "Wine Cellar",
+      "tags": [
+        "wine",
+        "vineyard",
+        "hospitality",
+        "rich",
+        "beverage"
+      ],
+      "description": "Burgundy, oak and deep purple with dusty rose on cream — vineyard wine-bar refinement.",
+      "swatches": [
+        "#F4ECDF",
+        "#EADFCC",
+        "#D8C8AE",
+        "#5C1A2B",
+        "#6E4A2A"
+      ],
+      "file": "wine-cellar.palette.yaml"
+    },
+    {
+      "id": "winter-frost",
+      "name": "Winter Frost",
+      "tags": [
+        "seasonal",
+        "winter",
+        "holiday",
+        "frost",
+        "blue"
+      ],
+      "description": "Icy whites and powder blue over deep navy with silver — winter campaigns and holiday décor.",
+      "swatches": [
+        "#F2F7FB",
+        "#E6EFF7",
+        "#D2E1EF",
+        "#13315C",
+        "#3D6FA6"
+      ],
+      "file": "winter-frost.palette.yaml"
+    },
+    {
+      "id": "y2k-chrome",
+      "name": "Y2K Chrome",
+      "tags": [
+        "retro",
+        "y2k",
+        "chrome",
+        "holographic",
+        "futurism"
+      ],
+      "description": "Liquid-silver chrome with bubblegum pink, cyan and holographic violet — early-2000s tech-pop.",
+      "swatches": [
+        "#0F0F1A",
+        "#1C1C2E",
+        "#2A2A42",
+        "#C8C8D8",
+        "#FF7AD9"
+      ],
+      "file": "y2k-chrome.palette.yaml"
+    }
+  ]
+}

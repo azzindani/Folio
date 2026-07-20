@@ -1,0 +1,95 @@
+_protocol: template/v1
+
+# 4-slide LinkedIn carousel · 4 mistakes new engineering managers make.
+# Cover → 3 mistake slides with "DO INSTEAD →" callouts → embedded CTA.
+meta:
+  id: tmpl-linkedin-eng-mgr-mistakes-4slide
+  name: LinkedIn New Eng Manager Mistakes (4 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, engineering, management, leadership, brutalist, 4-5]
+  description: "LinkedIn 4:5 carousel · 4 mistakes new eng managers make + how to fix them. Brutalist mono."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+pages:
+  # ── 1 · Cover ─────────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 18, fill: { type: solid, color: "$primary" } }
+      - { id: corner-block, type: rect, z: 3, x: 60, y: 1180, width: 200, height: 110, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 70, width: 200, height: 0, content: { type: plain, value: "01 / 04" }, style: { font_family: $mono, font_size: 16, color: $text, letter_spacing: 0.2 } }
+      - { id: eyebrow, type: text, z: 11, x: 60, y: 360, width: 960, height: 0, content: { type: plain, value: "MANAGEMENT" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: title-num, type: text, z: 12, x: 60, y: 420, width: 960, height: 0, content: { type: plain, value: "4" }, style: { font_family: $heading, font_size: 280, font_weight: 900, color: $text, line_height: 0.85, letter_spacing: -0.05 } }
+      - { id: title-text, type: text, z: 13, x: 60, y: 760, width: 960, height: 0, content: { type: plain, value: "MISTAKES\nNEW ENG MANAGERS\nMAKE." }, style: { font_family: $heading, font_size: 56, font_weight: 900, color: $text, line_height: 1.05, letter_spacing: -0.02, text_transform: uppercase } }
+      - { id: corner-text, type: text, z: 14, x: 60, y: 1212, width: 200, height: 0, content: { type: plain, value: "READ →" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "$background", text_align: center, letter_spacing: 0.2 } }
+
+  # ── 2 · Mistake 01 ────────────────────────────────────────
+  - id: mistake-1
+    label: 01 Still Coding
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 18, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 70, width: 200, height: 0, content: { type: plain, value: "02 / 04" }, style: { font_family: $mono, font_size: 16, color: $text, letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 200, width: 200, height: 0, content: { type: plain, value: "01" }, style: { font_family: $mono, font_size: 24, font_weight: 700, color: $primary, letter_spacing: 0.3 } }
+      - { id: glyph, type: text, z: 12, x: 60, y: 260, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 180, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: behavior, type: text, z: 13, x: 60, y: 480, width: 960, height: 0, content: { type: plain, value: "Still owning\nthe critical path." }, style: { font_family: $heading, font_size: 76, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.02, text_transform: uppercase } }
+      - { id: desc, type: text, z: 14, x: 60, y: 720, width: 960, height: 0, content: { type: plain, value: "You promoted yourself out of the IC seat. Stop shipping the hardest ticket every sprint." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: callout-bar, type: rect, z: 20, x: 60, y: 980, width: 12, height: 220, fill: { type: solid, color: "$primary" } }
+      - { id: callout-tag, type: text, z: 21, x: 100, y: 990, width: 920, height: 0, content: { type: plain, value: "DO INSTEAD →" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: callout-text, type: text, z: 22, x: 100, y: 1040, width: 920, height: 0, content: { type: plain, value: "Pair on the hard ticket. Hand off the keyboard. Ship through your team." }, style: { font_family: $body, font_size: 28, font_weight: 700, color: $text, line_height: 1.4 } }
+
+  # ── 3 · Mistake 02 ────────────────────────────────────────
+  - id: mistake-2
+    label: 02 Avoid Feedback
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 18, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 70, width: 200, height: 0, content: { type: plain, value: "03 / 04" }, style: { font_family: $mono, font_size: 16, color: $text, letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 200, width: 200, height: 0, content: { type: plain, value: "02" }, style: { font_family: $mono, font_size: 24, font_weight: 700, color: $primary, letter_spacing: 0.3 } }
+      - { id: glyph, type: text, z: 12, x: 60, y: 260, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 180, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: behavior, type: text, z: 13, x: 60, y: 480, width: 960, height: 0, content: { type: plain, value: "Saving feedback\nfor the review." }, style: { font_family: $heading, font_size: 76, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.02, text_transform: uppercase } }
+      - { id: desc, type: text, z: 14, x: 60, y: 720, width: 960, height: 0, content: { type: plain, value: "Surprise feedback at perf review is a betrayal. If they're hearing it for the first time in March, you failed in November." }, style: { font_family: $body, font_size: 26, color: $text, line_height: 1.5 } }
+      - { id: callout-bar, type: rect, z: 20, x: 60, y: 980, width: 12, height: 220, fill: { type: solid, color: "$primary" } }
+      - { id: callout-tag, type: text, z: 21, x: 100, y: 990, width: 920, height: 0, content: { type: plain, value: "DO INSTEAD →" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: callout-text, type: text, z: 22, x: 100, y: 1040, width: 920, height: 0, content: { type: plain, value: "Give the feedback inside 48 hours of the event. Every time." }, style: { font_family: $body, font_size: 28, font_weight: 700, color: $text, line_height: 1.4 } }
+
+  # ── 4 · Mistake 03 + CTA ──────────────────────────────────
+  - id: mistake-3
+    label: 03 Be Liked
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$text" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 18, fill: { type: solid, color: "$primary" } }
+      - { id: counter, type: text, z: 10, x: 60, y: 70, width: 200, height: 0, content: { type: plain, value: "04 / 04" }, style: { font_family: $mono, font_size: 16, color: "$background", letter_spacing: 0.2 } }
+      - { id: number, type: text, z: 11, x: 60, y: 200, width: 200, height: 0, content: { type: plain, value: "03" }, style: { font_family: $mono, font_size: 24, font_weight: 700, color: $primary, letter_spacing: 0.3 } }
+      - { id: glyph, type: text, z: 12, x: 60, y: 260, width: 200, height: 0, content: { type: plain, value: "✗" }, style: { font_family: $heading, font_size: 180, font_weight: 900, color: $primary, line_height: 1.0 } }
+      - { id: behavior, type: text, z: 13, x: 60, y: 480, width: 960, height: 0, content: { type: plain, value: "Optimizing\nto be liked." }, style: { font_family: $heading, font_size: 88, font_weight: 900, color: "$background", line_height: 1.0, letter_spacing: -0.02, text_transform: uppercase } }
+      - { id: desc, type: text, z: 14, x: 60, y: 720, width: 960, height: 0, content: { type: plain, value: "Saying yes to everything makes you popular for a month and useless for a year. Trust comes from honesty, not agreement." }, style: { font_family: $body, font_size: 26, color: "$background", line_height: 1.5 } }
+      - { id: callout-bar, type: rect, z: 20, x: 60, y: 980, width: 12, height: 140, fill: { type: solid, color: "$primary" } }
+      - { id: callout-tag, type: text, z: 21, x: 100, y: 990, width: 920, height: 0, content: { type: plain, value: "DO INSTEAD →" }, style: { font_family: $mono, font_size: 18, font_weight: 700, color: $primary, letter_spacing: 0.36, text_transform: uppercase } }
+      - { id: callout-text, type: text, z: 22, x: 100, y: 1040, width: 920, height: 0, content: { type: plain, value: "Be trusted, not liked. Say the uncomfortable thing first." }, style: { font_family: $body, font_size: 26, font_weight: 700, color: "$background", line_height: 1.4 } }
+      - { id: cta-bar, type: rect, z: 30, x: 60, y: 1180, width: 960, height: 80, fill: { type: solid, color: "$primary" } }
+      - { id: cta-text, type: text, z: 31, x: 60, y: 1204, width: 960, height: 0, content: { type: plain, value: "SAVE → SHARE WITH YOUR TECH LEAD" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF", text_align: center, letter_spacing: 0.2 } }
+      - { id: handle, type: text, z: 32, x: 60, y: 1290, width: 960, height: 0, content: { type: plain, value: "@yourhandle · #engmanagement" }, style: { font_family: $mono, font_size: 16, color: "$background", letter_spacing: 0.2 } }
+
+slots:
+  - { id: cover_title,        path: "pages[0].layers[6].content.value", type: text, hint: "Cover headline",     default: "MISTAKES\nNEW ENG MANAGERS\nMAKE." }
+  - { id: m1_behavior,        path: "pages[1].layers[5].content.value", type: text, hint: "01 Behavior",         default: "Still owning\nthe critical path." }
+  - { id: m1_do_instead,      path: "pages[1].layers[9].content.value", type: text, hint: "01 Do instead",       default: "Pair on the hard ticket. Hand off the keyboard. Ship through your team." }
+  - { id: m2_behavior,        path: "pages[2].layers[5].content.value", type: text, hint: "02 Behavior",         default: "Saving feedback\nfor the review." }
+  - { id: m2_do_instead,      path: "pages[2].layers[9].content.value", type: text, hint: "02 Do instead",       default: "Give the feedback inside 48 hours of the event. Every time." }
+  - { id: m3_behavior,        path: "pages[3].layers[5].content.value", type: text, hint: "03 Behavior",         default: "Optimizing\nto be liked." }
+  - { id: m3_do_instead,      path: "pages[3].layers[9].content.value", type: text, hint: "03 Do instead",       default: "Be trusted, not liked. Say the uncomfortable thing first." }
+  - { id: cta_text,           path: "pages[3].layers[11].content.value", type: text, hint: "CTA text",           default: "SAVE → SHARE WITH YOUR TECH LEAD" }
+  - { id: handle,             path: "pages[3].layers[12].content.value", type: text, hint: "Handle / hashtags",  default: "@yourhandle · #engmanagement" }

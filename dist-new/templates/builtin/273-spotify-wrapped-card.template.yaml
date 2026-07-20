@@ -1,0 +1,344 @@
+_protocol: template/v1
+
+# Spotify-Wrapped-style year-in-review (1080×1920 portrait, IG-Story).
+# Forest-deep: YOUR 2025 eyebrow, minutes listened HUGE,
+# top artist / song / genre stat row, share CTA.
+meta:
+  id: tmpl-spotify-wrapped-card
+  name: Spotify Wrapped Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, wrapped, music, year-in-review, story, forest, portrait]
+  description: "Year-in-review music summary with listening minutes and top stats."
+
+document:
+  width: 1080
+  height: 1920
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1920
+    fill:
+      type: linear
+      angle: 165
+      stops:
+        - { color: "$background", position: 0 }
+        - { color: "$primary", position: 100 }
+
+  - id: bg-bloom-tl
+    type: circle
+    z: 1
+    cx: 240
+    cy: 320
+    rx: 460
+    ry: 460
+    fill:
+      type: radial
+      stops:
+        - { color: "$secondary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.55
+
+  - id: bg-bloom-br
+    type: circle
+    z: 2
+    cx: 880
+    cy: 1620
+    rx: 380
+    ry: 380
+    fill:
+      type: radial
+      stops:
+        - { color: "$primary", position: 0 }
+        - { color: "transparent", position: 100 }
+    opacity: 0.6
+
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 200
+    width: 920
+    height: 0
+    content: { type: plain, value: "YOUR 2025" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 800
+      color: $primary
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+  - id: eyebrow-sub
+    type: text
+    z: 11
+    x: 80
+    y: 240
+    width: 920
+    height: 0
+    content: { type: plain, value: "IN MUSIC, WRAPPED" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: minutes-label
+    type: text
+    z: 20
+    x: 80
+    y: 460
+    width: 920
+    height: 0
+    content: { type: plain, value: "MINUTES LISTENED" }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: minutes-value
+    type: text
+    z: 21
+    x: 80
+    y: 540
+    width: 920
+    height: 0
+    content: { type: plain, value: "82,417" }
+    style:
+      font_family: $heading
+      font_size: 280
+      font_weight: 900
+      color: $text
+      line_height: 0.9
+      letter_spacing: -0.04
+      text_align: center
+
+  - id: minutes-sub
+    type: text
+    z: 22
+    x: 80
+    y: 840
+    width: 920
+    height: 0
+    content: { type: plain, value: "TOP 1% OF LISTENERS WORLDWIDE" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: stats-divider-top
+    type: rect
+    z: 25
+    x: 80
+    y: 920
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$text" }
+    opacity: 0.3
+
+  - id: stat-1-eyebrow
+    type: text
+    z: 30
+    x: 80
+    y: 980
+    width: 920
+    height: 0
+    content: { type: plain, value: "TOP ARTIST" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-1-value
+    type: text
+    z: 31
+    x: 80
+    y: 1020
+    width: 920
+    height: 0
+    content: { type: plain, value: "Phoebe Bridgers" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.01
+      text_align: center
+
+  - id: stat-divider-1
+    type: rect
+    z: 35
+    x: 380
+    y: 1130
+    width: 320
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.6
+
+  - id: stat-2-eyebrow
+    type: text
+    z: 40
+    x: 80
+    y: 1170
+    width: 920
+    height: 0
+    content: { type: plain, value: "TOP SONG" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-2-value
+    type: text
+    z: 41
+    x: 80
+    y: 1210
+    width: 920
+    height: 0
+    content: { type: plain, value: "Kyoto" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 900
+      color: $secondary
+      line_height: 1.0
+      letter_spacing: -0.01
+      text_align: center
+
+  - id: stat-divider-2
+    type: rect
+    z: 45
+    x: 380
+    y: 1310
+    width: 320
+    height: 1
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.6
+
+  - id: stat-3-eyebrow
+    type: text
+    z: 50
+    x: 80
+    y: 1350
+    width: 920
+    height: 0
+    content: { type: plain, value: "TOP GENRE" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: stat-3-value
+    type: text
+    z: 51
+    x: 80
+    y: 1390
+    width: 920
+    height: 0
+    content: { type: plain, value: "Indie Folk" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 900
+      color: $text
+      line_height: 1.0
+      letter_spacing: -0.01
+      text_align: center
+
+  - id: stats-divider-bottom
+    type: rect
+    z: 55
+    x: 80
+    y: 1510
+    width: 920
+    height: 1
+    fill: { type: solid, color: "$text" }
+    opacity: 0.3
+
+  - id: share-btn-bg
+    type: rect
+    z: 60
+    x: 240
+    y: 1660
+    width: 600
+    height: 120
+    radius: 60
+    fill: { type: solid, color: "$primary" }
+
+  - id: share-btn-text
+    type: text
+    z: 61
+    x: 240
+    y: 1702
+    width: 600
+    height: 0
+    content: { type: plain, value: "SHARE YOUR WRAPPED →" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 800
+      color: $background
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: footer
+    type: text
+    z: 70
+    x: 80
+    y: 1840
+    width: 920
+    height: 0
+    content: { type: plain, value: "#WRAPPED2025" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: year,             path: "layers[3].content.value",  type: text, hint: "Year label",            default: "YOUR 2025" }
+  - { id: minutes_listened, path: "layers[6].content.value",  type: text, hint: "Total minutes listened", default: "82,417" }
+  - { id: top_artist,       path: "layers[10].content.value", type: text, hint: "Top artist",            default: "Phoebe Bridgers" }
+  - { id: top_song,         path: "layers[13].content.value", type: text, hint: "Top song",              default: "Kyoto" }
+  - { id: top_genre,        path: "layers[16].content.value", type: text, hint: "Top genre",             default: "Indie Folk" }

@@ -1,0 +1,241 @@
+_protocol: template/v1
+
+# 8-page technical white paper — 1240×1754 A4 portrait, light-clean theme.
+# Cover → exec summary → problem → solution overview → technical deep-dive
+# → case study → conclusion → references/about.
+meta:
+  id: tmpl-white-paper
+  name: White Paper · Technical (8 pages)
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, white-paper, technical, research, clean, a4]
+  description: "Eight-page technical white paper with cover, executive summary, problem statement, solution overview, technical deep-dive, case study, conclusion, and references."
+
+document:
+  width: 1240
+  height: 1754
+  unit: px
+  dpi: 96
+
+theme:
+  ref: light-clean
+
+pages:
+  # ── Page 1 · Cover ──────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: top-bar, type: rect, z: 1, x: 0, y: 0, width: 1240, height: 12, fill: { type: solid, color: "$primary" } }
+      - { id: pub-meta, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "WHITE PAPER · TECHNICAL" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.6, text_transform: uppercase } }
+      - { id: version, type: text, z: 11, x: 1040, y: 140, width: 100, height: 0, content: { type: plain, value: "v1.2" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 180, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: title, type: text, z: 13, x: 100, y: 360, width: 1040, height: 0, content: { type: plain, value: "Vector Search at\nQuery-Time Latency:" }, style: { font_family: $heading, font_size: 80, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 } }
+      - { id: subtitle, type: text, z: 14, x: 100, y: 600, width: 1040, height: 0, content: { type: plain, value: "An empirical study of HNSW, IVF-PQ,\nand hybrid retrieval at billion-vector scale." }, style: { font_family: $heading, font_size: 36, font_weight: 400, color: $text_muted, line_height: 1.3, letter_spacing: -0.01 } }
+      - { id: ab-divider, type: rect, z: 20, x: 100, y: 900, width: 80, height: 4, fill: { type: solid, color: "$primary" } }
+      - { id: ab-label, type: text, z: 21, x: 100, y: 940, width: 1040, height: 0, content: { type: plain, value: "ABSTRACT" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: ab-body, type: text, z: 22, x: 100, y: 980, width: 1040, height: 0, content: { type: plain, value: "We benchmark three production-grade approximate nearest-neighbor (ANN) algorithms across corpora of 100M to 2B 768-dimensional vectors, measuring query latency, recall@10, index build time, and memory footprint. We propose a hybrid retrieval architecture that combines a coarse IVF stage with a fine HNSW stage, achieving p99 latency of 18ms with 0.97 recall@10 at 1B-vector scale." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: meta-card, type: rect, z: 30, x: 100, y: 1240, width: 1040, height: 240, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m-authors-l, type: text, z: 31, x: 140, y: 1270, width: 480, height: 0, content: { type: plain, value: "AUTHORS" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m-authors-v, type: text, z: 32, x: 140, y: 1300, width: 480, height: 0, content: { type: plain, value: "Dr. Yuki Tanaka\nMarcus Webber\nDr. Priya Iyer" }, style: { font_family: $heading, font_size: 18, color: $text, line_height: 1.6 } }
+      - { id: m-affil-l, type: text, z: 31, x: 660, y: 1270, width: 480, height: 0, content: { type: plain, value: "AFFILIATION" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m-affil-v, type: text, z: 32, x: 660, y: 1300, width: 480, height: 0, content: { type: plain, value: "Linthorne Labs\nResearch Division\nLondon · Tokyo · Bengaluru" }, style: { font_family: $heading, font_size: 16, color: $text, line_height: 1.6 } }
+      - { id: m-date-l, type: text, z: 31, x: 140, y: 1400, width: 480, height: 0, content: { type: plain, value: "PUBLISHED" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m-date-v, type: text, z: 32, x: 140, y: 1430, width: 480, height: 0, content: { type: plain, value: "May 16, 2026" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 40, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "01 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 2 · Executive Summary ──────────────────────────────
+  - id: exec-summary
+    label: Executive Summary
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§1 · EXECUTIVE SUMMARY" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "The headline." }, style: { font_family: $heading, font_size: 56, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 290, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: p1, type: text, z: 20, x: 100, y: 340, width: 1040, height: 0, content: { type: plain, value: "Vector search underpins modern retrieval-augmented generation, semantic search, and recommendation. As corpora grow past one billion embeddings, the cost-latency tradeoffs of existing approximate nearest-neighbor (ANN) algorithms have become a binding constraint on production deployments." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: p2, type: text, z: 21, x: 100, y: 520, width: 1040, height: 0, content: { type: plain, value: "We report results from a six-month study comparing HNSW, IVF-PQ, and a proposed hybrid index across three corpus scales (100M, 500M, 2B vectors) under representative workloads. Our key findings:" }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: f1-dot, type: circle, z: 30, cx: 120, cy: 720, rx: 5, ry: 5, fill: { type: solid, color: "$primary" } }
+      - { id: f1, type: text, z: 31, x: 150, y: 706, width: 990, height: 0, content: { type: plain, value: "HNSW alone scales poorly past 500M vectors — p99 latency exceeds 80ms at 2B." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: f2-dot, type: circle, z: 30, cx: 120, cy: 780, rx: 5, ry: 5, fill: { type: solid, color: "$primary" } }
+      - { id: f2, type: text, z: 31, x: 150, y: 766, width: 990, height: 0, content: { type: plain, value: "IVF-PQ trades 4 points of recall for 6× lower memory, but suffers tail latency spikes." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: f3-dot, type: circle, z: 30, cx: 120, cy: 840, rx: 5, ry: 5, fill: { type: solid, color: "$primary" } }
+      - { id: f3, type: text, z: 31, x: 150, y: 826, width: 990, height: 0, content: { type: plain, value: "Our hybrid IVF→HNSW yields p99 = 18ms at recall@10 = 0.97, 1B-vector scale." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: f4-dot, type: circle, z: 30, cx: 120, cy: 900, rx: 5, ry: 5, fill: { type: solid, color: "$primary" } }
+      - { id: f4, type: text, z: 31, x: 150, y: 886, width: 990, height: 0, content: { type: plain, value: "Total cost per million queries falls 41% vs. tuned HNSW on identical hardware." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: p3, type: text, z: 40, x: 100, y: 1000, width: 1040, height: 0, content: { type: plain, value: "We have open-sourced the index implementation and benchmark harness. Sections 3 through 6 of this paper detail the algorithmic choices, infrastructure layout, and one production deployment that validated the approach at customer scale." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: tldr-card, type: rect, z: 50, x: 100, y: 1240, width: 1040, height: 280, radius: 0, fill: { type: solid, color: "$primary" } }
+      - { id: tldr-label, type: text, z: 51, x: 140, y: 1280, width: 960, height: 0, content: { type: plain, value: "TL;DR" }, style: { font_family: $body, font_size: 13, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.5, opacity: 0.85 } }
+      - { id: tldr-body, type: text, z: 52, x: 140, y: 1320, width: 960, height: 0, content: { type: plain, value: "Use HNSW alone if your corpus is under 500M and memory is cheap. Use IVF-PQ if you can absorb 3-4 points of recall loss. Otherwise, our hybrid IVF→HNSW gives you the best of both — sub-20ms p99 at billion-vector scale, with 41% cost savings." }, style: { font_family: $heading, font_size: 22, color: "#FFFFFF", line_height: 1.6 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "02 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 3 · Problem Statement ──────────────────────────────
+  - id: problem
+    label: Problem Statement
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§2 · PROBLEM STATEMENT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Why current approaches fall short." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: sect-1, type: text, z: 20, x: 100, y: 360, width: 1040, height: 0, content: { type: plain, value: "2.1 The scale problem" }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.3 } }
+      - { id: p1, type: text, z: 21, x: 100, y: 420, width: 1040, height: 0, content: { type: plain, value: "A single embedding model produces 768-dimensional vectors at roughly 3KB per record. At 1B vectors, the raw index requires 2.9TB of memory before any auxiliary structures. Production systems typically need to serve queries with p99 latencies under 50ms while maintaining recall@10 above 0.95. Current open-source implementations struggle past the 500M mark on commodity 384GB-memory hosts." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: sect-2, type: text, z: 30, x: 100, y: 680, width: 1040, height: 0, content: { type: plain, value: "2.2 The cost problem" }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.3 } }
+      - { id: p2, type: text, z: 31, x: 100, y: 740, width: 1040, height: 0, content: { type: plain, value: "Operating a 2B-vector HNSW index in AWS today requires roughly $14,400/month per replica (m6id.32xlarge with NVMe). With recommended N+2 redundancy in two regions, the bill exceeds $86K/month. For startups, this is often the single largest line item in infrastructure spend after model inference." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: sect-3, type: text, z: 40, x: 100, y: 940, width: 1040, height: 0, content: { type: plain, value: "2.3 The tail-latency problem" }, style: { font_family: $heading, font_size: 28, font_weight: 700, color: $primary, line_height: 1.3 } }
+      - { id: p3, type: text, z: 41, x: 100, y: 1000, width: 1040, height: 0, content: { type: plain, value: "Even when median latency is acceptable, tail latencies (p99, p99.9) determine user experience for downstream applications, particularly LLM-augmented search where each retrieved chunk feeds a chained inference. We have repeatedly observed pathological p99 spikes of 200-500ms in IVF-based systems when query vectors land near cluster boundaries." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: callout, type: rect, z: 50, x: 100, y: 1260, width: 1040, height: 240, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: callout-label, type: text, z: 51, x: 140, y: 1290, width: 960, height: 0, content: { type: plain, value: "RESEARCH QUESTION" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: callout-q, type: text, z: 52, x: 140, y: 1330, width: 960, height: 0, content: { type: plain, value: "Can we achieve p99 < 25ms and recall@10 > 0.95 at billion-vector scale, on commodity hardware, at less than half the cost of single-algorithm baselines?" }, style: { font_family: $heading, font_size: 22, font_style: italic, color: $text, line_height: 1.5 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "03 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 4 · Proposed Solution ──────────────────────────────
+  - id: solution
+    label: Proposed Solution
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§3 · PROPOSED SOLUTION" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Hybrid IVF→HNSW retrieval." }, style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: lead, type: text, z: 20, x: 100, y: 360, width: 1040, height: 0, content: { type: plain, value: "Our approach is a two-stage hybrid that combines the strengths of inverted-file indexing with hierarchical navigable small world graphs. Coarse filtering, then precise traversal." }, style: { font_family: $body, font_size: 20, color: $text_muted, line_height: 1.6 } }
+      - { id: arch-card, type: rect, z: 30, x: 100, y: 540, width: 1040, height: 460, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: arch-label, type: text, z: 31, x: 140, y: 580, width: 960, height: 0, content: { type: plain, value: "FIG 1 · ARCHITECTURE OVERVIEW" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: a-q, type: rect, z: 32, x: 180, y: 700, width: 200, height: 80, radius: 8, fill: { type: solid, color: "$background" }, stroke: { color: "$primary", width: 2 } }
+      - { id: a-q-t, type: text, z: 33, x: 180, y: 728, width: 200, height: 0, content: { type: plain, value: "QUERY" }, style: { font_family: $heading, font_size: 18, font_weight: 700, color: $primary, text_align: center } }
+      - { id: a-arrow-1, type: text, z: 34, x: 380, y: 728, width: 80, height: 0, content: { type: plain, value: "→" }, style: { font_family: $heading, font_size: 32, color: $primary, text_align: center } }
+      - { id: a-ivf, type: rect, z: 32, x: 460, y: 700, width: 240, height: 80, radius: 8, fill: { type: solid, color: "$primary" } }
+      - { id: a-ivf-t, type: text, z: 33, x: 460, y: 720, width: 240, height: 0, content: { type: plain, value: "IVF COARSE\n(k=4096 clusters)" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "#FFFFFF", text_align: center, line_height: 1.4 } }
+      - { id: a-arrow-2, type: text, z: 34, x: 700, y: 728, width: 80, height: 0, content: { type: plain, value: "→" }, style: { font_family: $heading, font_size: 32, color: $primary, text_align: center } }
+      - { id: a-hnsw, type: rect, z: 32, x: 780, y: 700, width: 240, height: 80, radius: 8, fill: { type: solid, color: "$primary" } }
+      - { id: a-hnsw-t, type: text, z: 33, x: 780, y: 720, width: 240, height: 0, content: { type: plain, value: "HNSW FINE\n(per cluster)" }, style: { font_family: $heading, font_size: 14, font_weight: 700, color: "#FFFFFF", text_align: center, line_height: 1.4 } }
+      - { id: a-out, type: rect, z: 32, x: 460, y: 850, width: 240, height: 80, radius: 8, fill: { type: solid, color: "$background" }, stroke: { color: "$primary", width: 2 } }
+      - { id: a-out-t, type: text, z: 33, x: 460, y: 878, width: 240, height: 0, content: { type: plain, value: "TOP-K RESULTS" }, style: { font_family: $heading, font_size: 16, font_weight: 700, color: $primary, text_align: center } }
+      - { id: a-arrow-3, type: text, z: 34, x: 560, y: 800, width: 40, height: 0, content: { type: plain, value: "↓" }, style: { font_family: $heading, font_size: 28, color: $primary, text_align: center } }
+      - { id: note, type: text, z: 40, x: 100, y: 1040, width: 1040, height: 0, content: { type: plain, value: "The IVF stage routes queries to roughly 16 of 4,096 clusters (probing factor 0.39%). Each cluster contains a fully-built HNSW graph of approximately 245K vectors, sized to fit comfortably in L3 cache during traversal." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: bullet-1, type: text, z: 50, x: 100, y: 1240, width: 1040, height: 0, content: { type: plain, value: "→ IVF clusters are trained via k-means once, refreshed weekly." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: bullet-2, type: text, z: 50, x: 100, y: 1290, width: 1040, height: 0, content: { type: plain, value: "→ HNSW shards are built incrementally on streaming inserts." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: bullet-3, type: text, z: 50, x: 100, y: 1340, width: 1040, height: 0, content: { type: plain, value: "→ Hot clusters pin to RAM; cold clusters lazy-load from NVMe in 4-8ms." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: bullet-4, type: text, z: 50, x: 100, y: 1390, width: 1040, height: 0, content: { type: plain, value: "→ Distance computations use AVX-512 vectorization with float16 storage." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "04 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 5 · Technical Deep-Dive ────────────────────────────
+  - id: technical
+    label: Technical Deep-Dive
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§4 · TECHNICAL DEEP-DIVE" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Inside the hybrid query path." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: sect-1, type: text, z: 20, x: 100, y: 360, width: 1040, height: 0, content: { type: plain, value: "4.1 Query routing algorithm" }, style: { font_family: $heading, font_size: 24, font_weight: 700, color: $primary, line_height: 1.3 } }
+      - { id: p1, type: text, z: 21, x: 100, y: 410, width: 1040, height: 0, content: { type: plain, value: "Each incoming query vector q is first scored against the 4,096 cluster centroids. We retain the top-nprobe clusters (default nprobe=16), where the choice of nprobe directly modulates the recall-latency tradeoff. Selected clusters are queried in parallel, and the union of their results is reranked." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: code-card, type: rect, z: 30, x: 100, y: 620, width: 1040, height: 360, radius: 0, fill: { type: solid, color: "$text" } }
+      - { id: code-bar, type: rect, z: 31, x: 100, y: 620, width: 1040, height: 36, radius: 0, fill: { type: solid, color: "$primary" } }
+      - { id: code-lang, type: text, z: 32, x: 130, y: 628, width: 200, height: 0, content: { type: plain, value: "linthorne/search.py" }, style: { font_family: $mono, font_size: 13, font_weight: 600, color: "#FFFFFF", letter_spacing: 0.2 } }
+      - { id: code-body, type: text, z: 33, x: 140, y: 690, width: 960, height: 0, content: { type: plain, value: "def hybrid_search(q, nprobe=16, k=10):\n    centroids = ivf.centroids\n    probe_ids = topk(score(q, centroids), nprobe)\n    candidates = []\n    for cid in probe_ids:\n        shard = hnsw_shards[cid]\n        results = shard.search(q, ef=64, k=k*2)\n        candidates.extend(results)\n    return topk_dedup(candidates, k)" }, style: { font_family: $mono, font_size: 15, color: "#E0F2FE", line_height: 1.7 } }
+      - { id: sect-2, type: text, z: 40, x: 100, y: 1020, width: 1040, height: 0, content: { type: plain, value: "4.2 Recall-latency tuning surface" }, style: { font_family: $heading, font_size: 24, font_weight: 700, color: $primary, line_height: 1.3 } }
+      - { id: p2, type: text, z: 41, x: 100, y: 1070, width: 1040, height: 0, content: { type: plain, value: "Three knobs jointly determine performance: nprobe (number of clusters touched), ef (HNSW search depth), and k_oversample (overrequest factor in each shard). Empirically, nprobe=16, ef=64, oversample=2 produces our headline results at 1B-vector scale on c7a.metal hosts." }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.7 } }
+      - { id: tbl, type: rect, z: 50, x: 100, y: 1280, width: 1040, height: 240, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: t-h-1, type: text, z: 51, x: 140, y: 1310, width: 240, height: 0, content: { type: plain, value: "CONFIG" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: t-h-2, type: text, z: 51, x: 420, y: 1310, width: 200, height: 0, content: { type: plain, value: "RECALL@10" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: t-h-3, type: text, z: 51, x: 660, y: 1310, width: 200, height: 0, content: { type: plain, value: "P50 (ms)" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: t-h-4, type: text, z: 51, x: 900, y: 1310, width: 200, height: 0, content: { type: plain, value: "P99 (ms)" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: t-d-1, type: rect, z: 52, x: 140, y: 1340, width: 960, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: t-r1-1, type: text, z: 53, x: 140, y: 1360, width: 240, height: 0, content: { type: plain, value: "nprobe=8, ef=32" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r1-2, type: text, z: 53, x: 420, y: 1360, width: 200, height: 0, content: { type: plain, value: "0.942" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r1-3, type: text, z: 53, x: 660, y: 1360, width: 200, height: 0, content: { type: plain, value: "6.2" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r1-4, type: text, z: 53, x: 900, y: 1360, width: 200, height: 0, content: { type: plain, value: "11.8" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r2-1, type: text, z: 53, x: 140, y: 1400, width: 240, height: 0, content: { type: plain, value: "nprobe=16, ef=64" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $primary } }
+      - { id: t-r2-2, type: text, z: 53, x: 420, y: 1400, width: 200, height: 0, content: { type: plain, value: "0.971" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $primary } }
+      - { id: t-r2-3, type: text, z: 53, x: 660, y: 1400, width: 200, height: 0, content: { type: plain, value: "9.8" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $primary } }
+      - { id: t-r2-4, type: text, z: 53, x: 900, y: 1400, width: 200, height: 0, content: { type: plain, value: "18.4" }, style: { font_family: $mono, font_size: 15, font_weight: 700, color: $primary } }
+      - { id: t-r3-1, type: text, z: 53, x: 140, y: 1440, width: 240, height: 0, content: { type: plain, value: "nprobe=32, ef=128" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r3-2, type: text, z: 53, x: 420, y: 1440, width: 200, height: 0, content: { type: plain, value: "0.987" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r3-3, type: text, z: 53, x: 660, y: 1440, width: 200, height: 0, content: { type: plain, value: "18.6" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: t-r3-4, type: text, z: 53, x: 900, y: 1440, width: 200, height: 0, content: { type: plain, value: "34.7" }, style: { font_family: $mono, font_size: 15, color: $text } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "05 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 6 · Case Study ─────────────────────────────────────
+  - id: case-study
+    label: Case Study
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§5 · CASE STUDY · BRIGHTPATH AI" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "From 80ms to 18ms in production." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: ctx, type: text, z: 20, x: 100, y: 360, width: 1040, height: 0, content: { type: plain, value: "BrightPath AI is a healthcare RAG provider serving 14M clinician queries per month against a corpus of 1.4B clinical-note embeddings. Their pre-migration system ran on tuned HNSW alone." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: m-card, type: rect, z: 30, x: 100, y: 540, width: 500, height: 240, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$border", width: 1 } }
+      - { id: m-l-1, type: text, z: 31, x: 140, y: 580, width: 420, height: 0, content: { type: plain, value: "BEFORE — TUNED HNSW" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $text_muted, letter_spacing: 0.4 } }
+      - { id: m-v-1, type: text, z: 32, x: 140, y: 620, width: 420, height: 0, content: { type: plain, value: "82ms p99 · $86K/mo" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $text, line_height: 1.3 } }
+      - { id: m-d-1, type: text, z: 33, x: 140, y: 700, width: 420, height: 0, content: { type: plain, value: "32 m6id.32xlarge replicas, two regions, N+2 redundancy." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: m-card-2, type: rect, z: 30, x: 640, y: 540, width: 500, height: 240, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: m-l-2, type: text, z: 31, x: 680, y: 580, width: 420, height: 0, content: { type: plain, value: "AFTER — HYBRID IVF→HNSW" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.4 } }
+      - { id: m-v-2, type: text, z: 32, x: 680, y: 620, width: 420, height: 0, content: { type: plain, value: "18ms p99 · $50K/mo" }, style: { font_family: $heading, font_size: 28, font_weight: 800, color: $primary, line_height: 1.3 } }
+      - { id: m-d-2, type: text, z: 33, x: 680, y: 700, width: 420, height: 0, content: { type: plain, value: "12 c7a.metal replicas, same redundancy, lower spend." }, style: { font_family: $body, font_size: 14, color: $text_muted, line_height: 1.6 } }
+      - { id: outcome-label, type: text, z: 40, x: 100, y: 840, width: 1040, height: 0, content: { type: plain, value: "WHAT CHANGED" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: o-div, type: rect, z: 41, x: 100, y: 880, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: o1, type: text, z: 42, x: 100, y: 920, width: 1040, height: 0, content: { type: plain, value: "→ 78% lower p99 latency translated directly to faster clinical-decision support flows." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: o2, type: text, z: 42, x: 100, y: 980, width: 1040, height: 0, content: { type: plain, value: "→ 42% reduction in monthly infrastructure cost ($36K/mo savings)." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: o3, type: text, z: 42, x: 100, y: 1040, width: 1040, height: 0, content: { type: plain, value: "→ Recall@10 actually improved by 1.4 points (0.957 → 0.971) due to better tail behavior." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: o4, type: text, z: 42, x: 100, y: 1100, width: 1040, height: 0, content: { type: plain, value: "→ Migration completed in seven weeks with zero customer-facing downtime." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: quote-card, type: rect, z: 50, x: 100, y: 1240, width: 1040, height: 280, radius: 0, fill: { type: solid, color: "$primary" } }
+      - { id: q-mark, type: text, z: 51, x: 140, y: 1260, width: 100, height: 0, content: { type: plain, value: "“" }, style: { font_family: $heading, font_size: 96, font_weight: 800, color: "#FFFFFF", opacity: 0.4, line_height: 1 } }
+      - { id: q-body, type: text, z: 52, x: 140, y: 1340, width: 960, height: 0, content: { type: plain, value: "We had spent a year hand-tuning HNSW and were close to giving up on the latency target. The hybrid approach got us under our SLA in one quarter, and saved $36K a month doing it." }, style: { font_family: $heading, font_size: 22, font_style: italic, color: "#FFFFFF", line_height: 1.5 } }
+      - { id: q-attrib, type: text, z: 53, x: 140, y: 1480, width: 960, height: 0, content: { type: plain, value: "— Hannah Cho, VP Infrastructure · BrightPath AI" }, style: { font_family: $body, font_size: 14, font_weight: 600, color: "#FFFFFF", opacity: 0.85, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "06 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 7 · Conclusion ─────────────────────────────────────
+  - id: conclusion
+    label: Conclusion
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§6 · CONCLUSION" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "What we learned." }, style: { font_family: $heading, font_size: 64, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: p1, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "Hybrid retrieval is not a fundamentally new idea, but the engineering details determine whether it works in production. Our contribution is the specific recipe — IVF coarse routing, per-cluster HNSW shards sized to L3 cache, float16 storage, and AVX-512 distance kernels — that holds together at billion-vector scale on commodity hardware." }, style: { font_family: $body, font_size: 19, color: $text, line_height: 1.75 } }
+      - { id: p2, type: text, z: 21, x: 100, y: 580, width: 1040, height: 0, content: { type: plain, value: "Three engineering lessons stood out during the work. First, tail latencies, not medians, dictate user experience; design for p99.9 from day one. Second, cluster boundary effects can dominate behavior if you do not oversample, so probing factors of 0.3-0.5% and 2× oversampling are reasonable defaults. Third, memory pressure is the silent killer — float16 storage and per-cluster sharding gave us roughly 4× more usable index per dollar of RAM." }, style: { font_family: $body, font_size: 19, color: $text, line_height: 1.75 } }
+      - { id: future-label, type: text, z: 30, x: 100, y: 940, width: 1040, height: 0, content: { type: plain, value: "WHAT'S NEXT" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: future-div, type: rect, z: 31, x: 100, y: 980, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: f1, type: text, z: 32, x: 100, y: 1020, width: 1040, height: 0, content: { type: plain, value: "→ Learned cluster routing — replace k-means with a small neural router trained on query traffic." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: f2, type: text, z: 32, x: 100, y: 1080, width: 1040, height: 0, content: { type: plain, value: "→ Cross-cluster pruning via reciprocal rank fusion to further suppress tail spikes." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: f3, type: text, z: 32, x: 100, y: 1140, width: 1040, height: 0, content: { type: plain, value: "→ Disk-resident shards for archival corpora, with predictive prefetch from query embeddings." }, style: { font_family: $body, font_size: 18, color: $text, line_height: 1.7 } }
+      - { id: oss-card, type: rect, z: 50, x: 100, y: 1300, width: 1040, height: 200, radius: 0, fill: { type: solid, color: "$surface" }, stroke: { color: "$primary", width: 2 } }
+      - { id: oss-label, type: text, z: 51, x: 140, y: 1330, width: 960, height: 0, content: { type: plain, value: "OPEN SOURCE" }, style: { font_family: $body, font_size: 12, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: oss-body, type: text, z: 52, x: 140, y: 1370, width: 960, height: 0, content: { type: plain, value: "The hybrid index, benchmark harness, and our anonymized 100M-vector test corpus are available under Apache 2.0:" }, style: { font_family: $body, font_size: 17, color: $text, line_height: 1.6 } }
+      - { id: oss-url, type: text, z: 53, x: 140, y: 1440, width: 960, height: 0, content: { type: plain, value: "github.com/linthorne-labs/hybrid-ann" }, style: { font_family: $mono, font_size: 22, font_weight: 700, color: $primary, letter_spacing: 0.2 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "07 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+  # ── Page 8 · References & About ─────────────────────────────
+  - id: references
+    label: References & About
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1240, height: 1754, fill: { type: solid, color: "$background" } }
+      - { id: eyebrow, type: text, z: 10, x: 100, y: 140, width: 1040, height: 0, content: { type: plain, value: "§7 · REFERENCES" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5, text_transform: uppercase } }
+      - { id: title, type: text, z: 11, x: 100, y: 180, width: 1040, height: 0, content: { type: plain, value: "Further reading." }, style: { font_family: $heading, font_size: 44, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 } }
+      - { id: divider, type: rect, z: 12, x: 100, y: 320, width: 80, height: 3, fill: { type: solid, color: "$primary" } }
+      - { id: r1, type: text, z: 20, x: 100, y: 380, width: 1040, height: 0, content: { type: plain, value: "[1] Malkov, Y. & Yashunin, D. (2018). Efficient and robust approximate nearest neighbor search using HNSW graphs. IEEE TPAMI." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: r2, type: text, z: 20, x: 100, y: 450, width: 1040, height: 0, content: { type: plain, value: "[2] Jegou, H., Douze, M., & Schmid, C. (2011). Product quantization for nearest neighbor search. IEEE TPAMI 33(1)." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: r3, type: text, z: 20, x: 100, y: 520, width: 1040, height: 0, content: { type: plain, value: "[3] Johnson, J., Douze, M., & Jegou, H. (2021). Billion-scale similarity search with GPUs. IEEE TBD 7(3)." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: r4, type: text, z: 20, x: 100, y: 590, width: 1040, height: 0, content: { type: plain, value: "[4] Subramanya, S. et al. (2019). DiskANN: Fast accurate billion-point nearest neighbor search on a single node. NeurIPS." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: r5, type: text, z: 20, x: 100, y: 660, width: 1040, height: 0, content: { type: plain, value: "[5] Lewis, P. et al. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. NeurIPS." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: r6, type: text, z: 20, x: 100, y: 730, width: 1040, height: 0, content: { type: plain, value: "[6] Karpukhin, V. et al. (2020). Dense passage retrieval for open-domain question answering. EMNLP." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: r7, type: text, z: 20, x: 100, y: 800, width: 1040, height: 0, content: { type: plain, value: "[7] Aumüller, M., Bernhardsson, E., & Faithfull, A. (2020). ANN-Benchmarks: A benchmarking tool for approximate nearest neighbor algorithms. Information Systems 87." }, style: { font_family: $body, font_size: 15, color: $text, line_height: 1.7 } }
+      - { id: about-label, type: text, z: 30, x: 100, y: 920, width: 1040, height: 0, content: { type: plain, value: "ABOUT THE AUTHORS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: $primary, letter_spacing: 0.5 } }
+      - { id: about-div, type: rect, z: 31, x: 100, y: 960, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: a1-n, type: text, z: 32, x: 100, y: 1000, width: 1040, height: 0, content: { type: plain, value: "Dr. Yuki Tanaka · Principal Research Engineer" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: a1-b, type: text, z: 33, x: 100, y: 1040, width: 1040, height: 0, content: { type: plain, value: "Leads search infrastructure at Linthorne Labs. PhD in databases from University of Tokyo. Previously at Google Research." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: a2-n, type: text, z: 32, x: 100, y: 1120, width: 1040, height: 0, content: { type: plain, value: "Marcus Webber · Senior Staff Engineer" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: a2-b, type: text, z: 33, x: 100, y: 1160, width: 1040, height: 0, content: { type: plain, value: "Storage and indexing internals. 12 years at hyperscalers; specializes in high-throughput vector systems." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: a3-n, type: text, z: 32, x: 100, y: 1240, width: 1040, height: 0, content: { type: plain, value: "Dr. Priya Iyer · Research Scientist" }, style: { font_family: $heading, font_size: 22, font_weight: 700, color: $text, line_height: 1.3 } }
+      - { id: a3-b, type: text, z: 33, x: 100, y: 1280, width: 1040, height: 0, content: { type: plain, value: "Recall-quality methodology. PhD in information retrieval from IIT Bombay. Author of 23 peer-reviewed papers in retrieval." }, style: { font_family: $body, font_size: 15, color: $text_muted, line_height: 1.6 } }
+      - { id: foot-div, type: rect, z: 40, x: 100, y: 1420, width: 1040, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: contact, type: text, z: 41, x: 100, y: 1460, width: 1040, height: 0, content: { type: plain, value: "Reach the authors at research@linthorne.io · linthorne.io/research" }, style: { font_family: $mono, font_size: 16, color: $primary, letter_spacing: 0.2 } }
+      - { id: cite, type: text, z: 42, x: 100, y: 1510, width: 1040, height: 0, content: { type: plain, value: "Cite as: Tanaka, Webber & Iyer. \"Vector Search at Query-Time Latency.\" Linthorne Labs Tech. Report v1.2, May 2026." }, style: { font_family: $body, font_size: 13, font_style: italic, color: $text_muted, line_height: 1.6 } }
+      - { id: pn, type: text, z: 60, x: 1040, y: 1640, width: 120, height: 0, content: { type: plain, value: "08 / 08" }, style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right, letter_spacing: 0.2 } }
+
+slots:
+  - { id: paper_title,   path: "pages[0].layers[5].content.value",  type: text, hint: "Paper title (cover)",   default: "Vector Search at\nQuery-Time Latency:" }
+  - { id: paper_sub,     path: "pages[0].layers[6].content.value",  type: text, hint: "Paper subtitle",        default: "An empirical study of HNSW, IVF-PQ,\nand hybrid retrieval at billion-vector scale." }
+  - { id: authors,       path: "pages[0].layers[11].content.value", type: text, hint: "Authors",               default: "Dr. Yuki Tanaka\nMarcus Webber\nDr. Priya Iyer" }
+  - { id: affiliation,   path: "pages[0].layers[13].content.value", type: text, hint: "Affiliation",           default: "Linthorne Labs\nResearch Division\nLondon · Tokyo · Bengaluru" }
+  - { id: pub_date,      path: "pages[0].layers[15].content.value", type: text, hint: "Publish date",          default: "May 16, 2026" }
+  - { id: abstract,      path: "pages[0].layers[10].content.value", type: text, hint: "Abstract",              default: "We benchmark three production-grade approximate nearest-neighbor (ANN) algorithms across corpora of 100M to 2B 768-dimensional vectors, measuring query latency, recall@10, index build time, and memory footprint. We propose a hybrid retrieval architecture that combines a coarse IVF stage with a fine HNSW stage, achieving p99 latency of 18ms with 0.97 recall@10 at 1B-vector scale." }

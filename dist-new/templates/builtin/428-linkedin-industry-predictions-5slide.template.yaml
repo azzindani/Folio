@@ -1,0 +1,366 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — 2026 SaaS predictions.
+# 1080×1350 portrait, cyber-synthwave theme.
+meta:
+  id: tmpl-linkedin-industry-predictions-5slide
+  name: LinkedIn Industry Predictions (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [carousel, linkedin, industry, predictions, saas, trends, 4-5]
+  description: "5-slide industry forecast — cover, intro, 3 predictions with confidence + rationale, CTA."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: cyber-synthwave
+
+pages:
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "1 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 380
+        width: 960
+        height: 0
+        content: { type: plain, value: "FORECAST · MAY 2026" }
+        style: { font_family: $mono, font_size: 18, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 440
+        width: 960
+        height: 0
+        content: { type: plain, value: "2026 Predictions:\nSaaS Edition." }
+        style: { font_family: $heading, font_size: 96, font_weight: 900, color: $text, line_height: 1.0, letter_spacing: -0.03 }
+      - id: subline
+        type: text
+        z: 13
+        x: 60
+        y: 860
+        width: 960
+        height: 0
+        content: { type: plain, value: "Three calls. Stake your reputation." }
+        style: { font_family: $body, font_size: 28, color: $text_muted, line_height: 1.4 }
+      - id: swipe
+        type: text
+        z: 14
+        x: 60
+        y: 1240
+        width: 960
+        height: 0
+        content: { type: plain, value: "Swipe →" }
+        style: { font_family: $body, font_size: 22, font_weight: 700, color: $primary }
+
+  - id: intro
+    label: Intro
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "2 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: eyebrow
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "GROUND RULES" }
+        style: { font_family: $mono, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "Three calls. Each one specific enough to be wrong." }
+        style: { font_family: $heading, font_size: 56, font_weight: 800, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: body
+        type: text
+        z: 13
+        x: 60
+        y: 580
+        width: 960
+        height: 0
+        content: { type: plain, value: "Vague predictions are useless. Each call below has a confidence level and a sharp rationale.\n\nBookmark this. Grade me in December 2026." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.55 }
+
+  - id: prediction-1
+    label: Prediction 01
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "3 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "01" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: prediction
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "Per-seat SaaS will lose 20% of the market to usage pricing." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: confidence-card
+        type: rect
+        z: 20
+        x: 60
+        y: 760
+        width: 960
+        height: 100
+        radius: 0
+        fill: { type: solid, color: "$surface" }
+      - id: confidence-label
+        type: text
+        z: 21
+        x: 92
+        y: 780
+        width: 900
+        height: 0
+        content: { type: plain, value: "CONFIDENCE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: confidence-value
+        type: text
+        z: 22
+        x: 92
+        y: 810
+        width: 900
+        height: 0
+        content: { type: plain, value: "HIGH · 80%" }
+        style: { font_family: $mono, font_size: 26, font_weight: 700, color: $primary }
+      - id: rationale-label
+        type: text
+        z: 30
+        x: 60
+        y: 920
+        width: 960
+        height: 0
+        content: { type: plain, value: "RATIONALE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: rationale-body
+        type: text
+        z: 31
+        x: 60
+        y: 960
+        width: 960
+        height: 0
+        content: { type: plain, value: "AI tools that replace user activity break seat pricing. Snowflake, Twilio, OpenAI showed the playbook works at scale." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+
+  - id: prediction-2
+    label: Prediction 02
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$primary" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "4 / 5" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "02" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: $accent, letter_spacing: 0.36 }
+      - id: prediction
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "The first $100M ARR solo founder ships before EOY." }
+        style: { font_family: $heading, font_size: 64, font_weight: 800, color: $text, line_height: 1.1, letter_spacing: -0.02 }
+      - id: confidence-card
+        type: rect
+        z: 20
+        x: 60
+        y: 760
+        width: 960
+        height: 100
+        radius: 0
+        fill: { type: solid, color: "$surface" }
+      - id: confidence-label
+        type: text
+        z: 21
+        x: 92
+        y: 780
+        width: 900
+        height: 0
+        content: { type: plain, value: "CONFIDENCE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: confidence-value
+        type: text
+        z: 22
+        x: 92
+        y: 810
+        width: 900
+        height: 0
+        content: { type: plain, value: "MEDIUM · 55%" }
+        style: { font_family: $mono, font_size: 26, font_weight: 700, color: $primary }
+      - id: rationale-label
+        type: text
+        z: 30
+        x: 60
+        y: 920
+        width: 960
+        height: 0
+        content: { type: plain, value: "RATIONALE" }
+        style: { font_family: $mono, font_size: 13, font_weight: 700, color: $accent, letter_spacing: 0.36, text_transform: uppercase }
+      - id: rationale-body
+        type: text
+        z: 31
+        x: 60
+        y: 960
+        width: 960
+        height: 0
+        content: { type: plain, value: "Agentic engineering removes the 5-eng floor. Multiple AI-native infra/dev tool companies already past $20M ARR with sub-10 headcount." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+
+  - id: prediction-3-cta
+    label: Prediction 03 + CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 10, fill: { type: solid, color: "$accent" } }
+      - id: counter
+        type: text
+        z: 10
+        x: 60
+        y: 60
+        width: 200
+        height: 0
+        content: { type: plain, value: "5 / 5" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+      - id: number
+        type: text
+        z: 11
+        x: 60
+        y: 160
+        width: 960
+        height: 0
+        content: { type: plain, value: "03" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.36 }
+      - id: prediction
+        type: text
+        z: 12
+        x: 60
+        y: 220
+        width: 960
+        height: 0
+        content: { type: plain, value: "Vertical AI eats horizontal SaaS in 3 industries by Q4." }
+        style: { font_family: $heading, font_size: 60, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: confidence-value
+        type: text
+        z: 22
+        x: 60
+        y: 660
+        width: 960
+        height: 0
+        content: { type: plain, value: "CONFIDENCE · MEDIUM-HIGH · 70%" }
+        style: { font_family: $mono, font_size: 22, font_weight: 700, color: "#FFFFFF" }
+      - id: rationale-body
+        type: text
+        z: 31
+        x: 60
+        y: 740
+        width: 960
+        height: 0
+        content: { type: plain, value: "Legal, healthcare, construction are obvious targets — workflow-deep AI now beats horizontal point tools on accuracy." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF", line_height: 1.5 }
+      - id: cta-heading
+        type: text
+        z: 40
+        x: 60
+        y: 940
+        width: 960
+        height: 0
+        content: { type: plain, value: "Which call do you disagree with?" }
+        style: { font_family: $heading, font_size: 48, font_weight: 800, color: "#FFFFFF", line_height: 1.1, letter_spacing: -0.02 }
+      - id: cta-sub
+        type: text
+        z: 41
+        x: 60
+        y: 1100
+        width: 960
+        height: 0
+        content: { type: plain, value: "Comment below + follow for the year-end scorecard." }
+        style: { font_family: $body, font_size: 24, color: "#FFFFFF" }
+      - id: handle
+        type: text
+        z: 42
+        x: 60
+        y: 1260
+        width: 960
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+
+slots:
+  - { id: cover_title,        path: "pages[0].layers[4].content.value", type: text, hint: "Cover headline",     default: "2026 Predictions:\nSaaS Edition." }
+  - { id: cover_subline,      path: "pages[0].layers[5].content.value", type: text, hint: "Cover subline",      default: "Three calls. Stake your reputation." }
+  - { id: intro_title,        path: "pages[1].layers[4].content.value", type: text, hint: "Intro headline",     default: "Three calls. Each one specific enough to be wrong." }
+  - { id: prediction_1,       path: "pages[2].layers[4].content.value", type: text, hint: "Prediction 01",      default: "Per-seat SaaS will lose 20% of the market to usage pricing." }
+  - { id: prediction_1_conf,  path: "pages[2].layers[7].content.value", type: text, hint: "Confidence 01",      default: "HIGH · 80%" }
+  - { id: prediction_1_why,   path: "pages[2].layers[9].content.value", type: text, hint: "Rationale 01",       default: "AI tools that replace user activity break seat pricing. Snowflake, Twilio, OpenAI showed the playbook works at scale." }
+  - { id: prediction_2,       path: "pages[3].layers[4].content.value", type: text, hint: "Prediction 02",      default: "The first $100M ARR solo founder ships before EOY." }
+  - { id: prediction_2_conf,  path: "pages[3].layers[7].content.value", type: text, hint: "Confidence 02",      default: "MEDIUM · 55%" }
+  - { id: prediction_2_why,   path: "pages[3].layers[9].content.value", type: text, hint: "Rationale 02",       default: "Agentic engineering removes the 5-eng floor. Multiple AI-native infra/dev tool companies already past $20M ARR with sub-10 headcount." }
+  - { id: prediction_3,       path: "pages[4].layers[4].content.value", type: text, hint: "Prediction 03",      default: "Vertical AI eats horizontal SaaS in 3 industries by Q4." }
+  - { id: prediction_3_conf,  path: "pages[4].layers[5].content.value", type: text, hint: "Confidence 03",      default: "CONFIDENCE · MEDIUM-HIGH · 70%" }
+  - { id: prediction_3_why,   path: "pages[4].layers[6].content.value", type: text, hint: "Rationale 03",       default: "Legal, healthcare, construction are obvious targets — workflow-deep AI now beats horizontal point tools on accuracy." }
+  - { id: cta_heading,        path: "pages[4].layers[7].content.value", type: text, hint: "CTA heading",        default: "Which call do you disagree with?" }
+  - { id: cta_handle,         path: "pages[4].layers[9].content.value", type: text, hint: "Footer handle",      default: "@yourhandle" }

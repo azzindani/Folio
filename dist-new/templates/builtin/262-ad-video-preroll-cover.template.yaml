@@ -1,0 +1,162 @@
+_protocol: template/v1
+
+# Video pre-roll cover 1920×1080 — full-HD landscape thumbnail.
+# Brand + skip-in badge + hero headline + center play icon. Brutalist-mono theme.
+meta:
+  id: tmpl-ad-video-preroll-cover
+  name: Ad Video Pre-roll Cover
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ad, video, preroll, cover, "1920x1080", landscape, brutalist]
+  description: "Video pre-roll cover 1920×1080 with brand, countdown skip badge, hero headline, and center play arrow."
+
+document:
+  width: 1920
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: brutalist-mono
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1920
+    height: 1080
+    fill: { type: solid, color: "$background" }
+
+  - id: grid-rule-top
+    type: rect
+    z: 1
+    x: 0
+    y: 120
+    width: 1920
+    height: 4
+    fill: { type: solid, color: "$text" }
+
+  - id: grid-rule-bottom
+    type: rect
+    z: 2
+    x: 0
+    y: 956
+    width: 1920
+    height: 4
+    fill: { type: solid, color: "$text" }
+
+  - id: brand-block
+    type: rect
+    z: 3
+    x: 80
+    y: 36
+    width: 280
+    height: 64
+    fill: { type: solid, color: "$text" }
+
+  - id: brand
+    type: text
+    z: 4
+    x: 80
+    y: 52
+    width: 280
+    height: 0
+    content: { type: plain, value: "MONOLITH/TV" }
+    style:
+      font_family: $heading
+      font_size: 26
+      font_weight: 800
+      color: $background
+      text_align: center
+      letter_spacing: 0.06
+
+  - id: skip-badge
+    type: rect
+    z: 5
+    x: 1620
+    y: 36
+    width: 220
+    height: 64
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: skip-text
+    type: text
+    z: 6
+    x: 1620
+    y: 56
+    width: 220
+    height: 0
+    content: { type: plain, value: "SKIP IN 5s" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 800
+      color: $text
+      text_align: center
+      letter_spacing: 0.08
+
+  - id: headline
+    type: text
+    z: 7
+    x: 80
+    y: 220
+    width: 1760
+    height: 0
+    content: { type: plain, value: "EVERY\nFRAME.\nIS A\nSTATEMENT." }
+    style:
+      font_family: $heading
+      font_size: 200
+      font_weight: 900
+      color: $text
+      line_height: 0.96
+      letter_spacing: -0.04
+
+  - id: play-ring
+    type: circle
+    z: 8
+    cx: 1840
+    cy: 880
+    rx: 56
+    ry: 56
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 6 }
+
+  - id: play-arrow
+    type: text
+    z: 9
+    x: 1760
+    y: 850
+    width: 160
+    height: 0
+    content: { type: plain, value: "▶" }
+    style:
+      font_family: $heading
+      font_size: 48
+      font_weight: 800
+      color: $text
+      text_align: center
+
+  - id: footer
+    type: text
+    z: 10
+    x: 80
+    y: 992
+    width: 1760
+    height: 0
+    content: { type: plain, value: "AD · 0:00 / 0:30" }
+    style:
+      font_family: $mono
+      font_size: 22
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.12
+
+slots:
+  - { id: brand,            path: "layers[4].content.value", type: text, hint: "Brand mark",         default: "MONOLITH/TV" }
+  - { id: headline,         path: "layers[7].content.value", type: text, hint: "Hero headline (4 lines)", default: "EVERY\nFRAME.\nIS A\nSTATEMENT." }
+  - { id: duration_seconds, path: "layers[6].content.value", type: text, hint: "Skip-in badge text",  default: "SKIP IN 5s" }

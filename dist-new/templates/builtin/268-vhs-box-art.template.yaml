@@ -1,0 +1,301 @@
+_protocol: template/v1
+
+# VHS box art (1200×1800 portrait).
+# Sunset-glow retro 90s: title in display font, RATED PG badge,
+# hero scene placeholder, runtime + HI-FI STEREO format, studio label.
+meta:
+  id: tmpl-vhs-box-art
+  name: VHS Box Art
+  type: poster
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [poster, vhs, retro, 90s, movie, box-art, portrait]
+  description: "Retro 90s VHS box art with rated badge, hero scene, and HI-FI STEREO label."
+
+document:
+  width: 1200
+  height: 1800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: sunset-glow
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 1800
+    fill: { type: solid, color: $background }
+  - id: top-banner
+    type: rect
+    z: 1
+    x: 0
+    y: 0
+    width: 1200
+    height: 90
+    fill: { type: solid, color: "$text" }
+
+  - id: top-banner-text
+    type: text
+    z: 2
+    x: 60
+    y: 36
+    width: 1080
+    height: 0
+    content: { type: plain, value: "★  COLLECTOR'S EDITION VHS  ★  HI-FI STEREO  ★" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 800
+      color: $background
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: hero-frame
+    type: rect
+    z: 5
+    x: 80
+    y: 140
+    width: 1040
+    height: 900
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$text", width: 4 }
+
+  - id: hero-glow-1
+    type: circle
+    z: 6
+    cx: 600
+    cy: 500
+    rx: 360
+    ry: 360
+    fill: { type: none }
+    opacity: 0.7
+
+  - id: hero-glow-2
+    type: circle
+    z: 7
+    cx: 820
+    cy: 740
+    rx: 240
+    ry: 240
+    fill: { type: none }
+    opacity: 0.6
+
+  - id: hero-horizon
+    type: rect
+    z: 8
+    x: 80
+    y: 700
+    width: 1040
+    height: 2
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.7
+
+  - id: hero-grid-1
+    type: line
+    z: 9
+    x1: 200
+    y1: 1040
+    x2: 540
+    y2: 700
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.6
+
+  - id: hero-grid-2
+    type: line
+    z: 10
+    x1: 480
+    y1: 1040
+    x2: 600
+    y2: 700
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.6
+
+  - id: hero-grid-3
+    type: line
+    z: 11
+    x1: 800
+    y1: 1040
+    x2: 660
+    y2: 700
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.6
+
+  - id: hero-grid-4
+    type: line
+    z: 12
+    x1: 1100
+    y1: 1040
+    x2: 720
+    y2: 700
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.6
+
+  - id: hero-label
+    type: text
+    z: 15
+    x: 80
+    y: 1010
+    width: 1040
+    height: 0
+    opacity: 0.3
+    content: { type: plain, value: "Hero scene" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: rated-badge-bg
+    type: rect
+    z: 20
+    x: 80
+    y: 1100
+    width: 220
+    height: 110
+    radius: 8
+    fill: { type: solid, color: "$background" }
+    stroke: { color: "$text", width: 5 }
+
+  - id: rated-badge-text
+    type: text
+    z: 21
+    x: 80
+    y: 1118
+    width: 220
+    height: 0
+    content: { type: plain, value: "RATED" }
+    style:
+      font_family: $mono
+      font_size: 16
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.32
+      text_align: center
+      text_transform: uppercase
+
+  - id: rated-badge-letter
+    type: text
+    z: 22
+    x: 80
+    y: 1148
+    width: 220
+    height: 0
+    content: { type: plain, value: "PG" }
+    style:
+      font_family: $heading
+      font_size: 60
+      font_weight: 900
+      color: $text
+      letter_spacing: 0.02
+      text_align: center
+
+  - id: title-line-1
+    type: text
+    z: 30
+    x: 80
+    y: 1270
+    width: 1040
+    height: 0
+    content: { type: plain, value: "MIAMI" }
+    style:
+      font_family: $heading
+      font_size: 200
+      font_weight: 900
+      color: $text
+      line_height: 0.88
+      letter_spacing: -0.03
+      text_align: center
+      text_transform: uppercase
+
+  - id: title-line-2
+    type: text
+    z: 31
+    x: 80
+    y: 1420
+    width: 1040
+    height: 0
+    content: { type: plain, value: "VICE NIGHTS" }
+    style:
+      font_family: $heading
+      font_size: 130
+      font_weight: 900
+      color: $primary
+      line_height: 0.88
+      letter_spacing: -0.02
+      text_align: center
+      text_transform: uppercase
+
+  - id: tagline
+    type: text
+    z: 32
+    x: 80
+    y: 1560
+    width: 1040
+    height: 0
+    content: { type: plain, value: "ONE COP. ONE CITY. ONE LONG NIGHT." }
+    style:
+      font_family: $mono
+      font_size: 18
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: bottom-rule
+    type: rect
+    z: 40
+    x: 80
+    y: 1640
+    width: 1040
+    height: 2
+    fill: { type: solid, color: "$text" }
+
+  - id: runtime-format
+    type: text
+    z: 41
+    x: 80
+    y: 1670
+    width: 1040
+    height: 0
+    content: { type: plain, value: "118 MIN · VHS · HI-FI STEREO · NTSC · COLOR" }
+    style:
+      font_family: $mono
+      font_size: 14
+      font_weight: 700
+      color: $text
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: studio
+    type: text
+    z: 42
+    x: 80
+    y: 1710
+    width: 1040
+    height: 0
+    content: { type: plain, value: "MAGNETIC VAULT PICTURES · © 1989" }
+    style:
+      font_family: $mono
+      font_size: 12
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: title,           path: "layers[16].content.value", type: text,   hint: "Title line 1",     default: "MIAMI" }
+  - { id: year,            path: "layers[22].content.value", type: text,   hint: "Studio + year",    default: "MAGNETIC VAULT PICTURES · © 1989" }
+  - { id: runtime_minutes, path: "layers[21].content.value", type: text,   hint: "Runtime + format", default: "118 MIN · VHS · HI-FI STEREO · NTSC · COLOR" }

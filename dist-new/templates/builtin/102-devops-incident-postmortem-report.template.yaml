@@ -1,0 +1,323 @@
+_protocol: template/v1
+
+# DevOps incident postmortem — severity eyebrow, hero, 5 KPIs (MTTR, affected
+# users, revenue impact, pages, rollbacks), timeline markdown, service-impact
+# table, latency line chart, root-cause markdown, action-items table.
+meta:
+  id: tmpl-devops-incident-postmortem-report
+  name: DevOps · Incident Postmortem
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, devops, sre, incident, postmortem, reliability, interactive]
+  description: "Blameless postmortem: incident timeline, service impact, latency, root cause analysis, action items."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: service_impact
+        type: inline
+        rows:
+          - { service: api-gateway,         downtime_min: 42, requests_dropped: 1842600, status: Resolved }
+          - { service: auth-service,        downtime_min: 38, requests_dropped:  624800, status: Resolved }
+          - { service: orders-service,      downtime_min: 36, requests_dropped:  482400, status: Resolved }
+          - { service: payments-service,    downtime_min: 12, requests_dropped:   86200, status: Resolved }
+          - { service: inventory-service,   downtime_min: 28, requests_dropped:  214600, status: Resolved }
+          - { service: notifications-svc,   downtime_min: 44, requests_dropped:  342800, status: Resolved }
+          - { service: search-service,      downtime_min:  8, requests_dropped:   48400, status: Degraded }
+          - { service: analytics-pipeline,  downtime_min: 18, requests_dropped:  124800, status: Resolved }
+          - { service: cdn-edge,            downtime_min:  4, requests_dropped:   18200, status: Resolved }
+          - { service: webhook-dispatcher,  downtime_min: 26, requests_dropped:  186400, status: Backfilled }
+      - id: latency_p99
+        type: inline
+        rows:
+          - { time: "14:00", p99_ms:  142, baseline_ms: 138 }
+          - { time: "14:10", p99_ms:  148, baseline_ms: 138 }
+          - { time: "14:20", p99_ms:  186, baseline_ms: 138 }
+          - { time: "14:30", p99_ms:  428, baseline_ms: 138 }
+          - { time: "14:40", p99_ms: 1842, baseline_ms: 138 }
+          - { time: "14:50", p99_ms: 3284, baseline_ms: 138 }
+          - { time: "15:00", p99_ms: 4128, baseline_ms: 138 }
+          - { time: "15:10", p99_ms: 3964, baseline_ms: 138 }
+          - { time: "15:20", p99_ms: 2842, baseline_ms: 138 }
+          - { time: "15:30", p99_ms: 1248, baseline_ms: 138 }
+          - { time: "15:40", p99_ms:  486, baseline_ms: 138 }
+          - { time: "15:50", p99_ms:  186, baseline_ms: 138 }
+          - { time: "16:00", p99_ms:  148, baseline_ms: 138 }
+      - id: action_items
+        type: inline
+        rows:
+          - { id: AI-01, item: "Add circuit breaker on auth-service Redis client",      owner: A. Rivera,   status: In Progress, due: "2026-05-23" }
+          - { id: AI-02, item: "Backfill webhook dispatcher dead-letter queue",         owner: J. Tanaka,   status: Done,        due: "2026-05-17" }
+          - { id: AI-03, item: "Raise auth-service replica count from 6 → 12",          owner: M. Okafor,   status: Done,        due: "2026-05-16" }
+          - { id: AI-04, item: "Game-day exercise simulating Redis cluster split-brain", owner: SRE Team,    status: Scheduled,   due: "2026-06-10" }
+          - { id: AI-05, item: "Improve runbook for 'auth latency spike' alert",         owner: L. Kowalski, status: In Progress, due: "2026-05-28" }
+          - { id: AI-06, item: "Add synthetic checks against /v2/token endpoint",        owner: P. Singh,    status: To Do,       due: "2026-06-04" }
+          - { id: AI-07, item: "Vendor escalation review with Redis Labs support",       owner: D. Chen,     status: Done,        due: "2026-05-18" }
+          - { id: AI-08, item: "Status-page automation for partial outages",             owner: R. Müller,   status: To Do,       due: "2026-06-20" }
+
+pages:
+  - id: postmortem
+    label: Postmortem
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: $mono
+        font_size: 12
+        font_weight: 600
+        color: "$primary"
+        letter_spacing: 1
+        content: "SEV-1 · 2026-05-14 · DURATION 1H 48M · POSTMORTEM v1.2"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 124
+        format: markdown
+        font_family: Playfair Display
+        font_size: 56
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**INC-2026-0514 — Auth Service Cascade Outage**\n*Redis cluster split-brain caused token validation timeouts across the API surface.*"
+
+      - id: kpi-mttr
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: MTTR (minutes)
+        value: 108
+        format: number
+        delta: 32
+        delta_format: number
+
+      - id: kpi-users
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: Affected Users
+        value: 184200
+        format: number
+
+      - id: kpi-revenue
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Revenue Impact (USD)
+        value: 142800
+        format: currency
+        currency: USD
+
+      - id: kpi-pages
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: PagerDuty Pages
+        value: 38
+        format: number
+
+      - id: kpi-rollbacks
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Rollbacks
+        value: 3
+        format: number
+
+      - id: section-timeline
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**Incident Timeline**"
+
+      - id: timeline-body
+        type: rich_text
+        x: 60
+        y: 460
+        width: 1160
+        height: 380
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 14
+        line_height: 1.7
+        content: |
+          - **14:18 UTC** — Synthetic check `auth.token.validate` exceeds 500ms SLO. PagerDuty fires P2 to on-call SRE (A. Rivera).
+          - **14:24 UTC** — On-call acknowledges. Initial scan shows Redis cluster node `redis-auth-3` reporting OK in cluster view but unreachable from `auth-service` pods in `us-east-2`.
+          - **14:31 UTC** — Customer reports begin. Status page set to *Investigating*. Incident escalated to **SEV-2**.
+          - **14:42 UTC** — p99 latency on `auth-service` crosses 3s. Login success rate drops to 18%. Escalated to **SEV-1**, incident commander assigned (J. Tanaka).
+          - **14:58 UTC** — Hypothesis: Redis cluster split-brain after the 13:50 node-pool autoscale event. Engineering bridge convened (6 responders).
+          - **15:14 UTC** — Manual quorum recovery initiated. First rollback: scale auth-service to 0 replicas for 90 seconds to drain stale connections.
+          - **15:27 UTC** — Redis cluster healthy. Auth latency returns to baseline. Replicas scaled back up to 12 (from 6).
+          - **15:48 UTC** — Webhook dispatcher backlog drained. Search service degradation resolves. Status page set to *Monitoring*.
+          - **16:06 UTC** — All synthetics green for 30 consecutive minutes. Incident closed. Total user impact: **1h 48m**.
+
+      - id: section-services
+        type: rich_text
+        x: 60
+        y: 880
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**Service Impact**"
+
+      - id: tbl-services
+        type: interactive_table
+        x: 60
+        y: 940
+        width: 1160
+        height: 480
+        data_ref: service_impact
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: service,          title: Service,           width: 320, sortable: true }
+          - { field: downtime_min,     title: Downtime (min),    width: 220, sortable: true, formatter: number, align: right }
+          - { field: requests_dropped, title: Requests Dropped,  width: 280, sortable: true, formatter: number, align: right }
+          - { field: status,           title: Status,            width: 280, sortable: true, formatter: badge }
+
+      - id: section-latency
+        type: rich_text
+        x: 60
+        y: 1460
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**p99 Latency — auth-service**"
+
+      - id: chart-latency
+        type: interactive_chart
+        x: 60
+        y: 1520
+        width: 1160
+        height: 360
+        chart_type: line
+        data_ref: latency_p99
+        x_field: time
+        y_field: p99_ms
+        title: p99 Latency (ms) vs Baseline — 14:00 → 16:00 UTC
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-rca
+        type: rich_text
+        x: 60
+        y: 1920
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**Root Cause Analysis**"
+
+      - id: rca-body
+        type: rich_text
+        x: 60
+        y: 1980
+        width: 1160
+        height: 200
+        format: markdown
+        font_family: Inter
+        font_size: 15
+        line_height: 1.7
+        content: |
+          **Trigger.** At 13:50 UTC the Kubernetes node-pool autoscaler evicted three nodes in `us-east-2a` that hosted Redis cluster members. Replacement nodes came up in `us-east-2b`, but a misconfigured `NetworkPolicy` (introduced two weeks earlier by PR #4218) blocked east-west traffic between AZs on port 6379.
+
+          **Contributing factors.** (1) Redis cluster health-check reported nodes as `OK` because the cluster gossip protocol travels on a different port. (2) Auth-service connection pool held stale connections for the full 5-minute idle timeout, causing requests to queue rather than fail-fast. (3) No circuit breaker on the Redis client meant the entire pod hung instead of degrading to a cached-token mode.
+
+          **What went well.** Synthetic checks fired within 24 seconds of customer-visible impact. Incident commander rotation worked as designed — handover at the 1-hour mark was clean. Status page updates were posted within SLO (5 min cadence).
+
+      - id: section-actions
+        type: rich_text
+        x: 60
+        y: 2220
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 800
+        line_height: 1.06
+        letter_spacing: -0.02
+        content: "**Action Items**"
+
+      - id: tbl-actions
+        type: interactive_table
+        x: 60
+        y: 2280
+        width: 1160
+        height: 460
+        data_ref: action_items
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: id,     title: ID,     width: 110, sortable: true }
+          - { field: item,   title: Action, width: 540, sortable: true }
+          - { field: owner,  title: Owner,  width: 200, sortable: true, formatter: badge }
+          - { field: status, title: Status, width: 180, sortable: true, formatter: badge }
+          - { field: due,    title: Due,    width: 130, sortable: true }
+
+      - { id: rule-top,  type: rect, z: 12, x: 60, y: 200, width: 1160, height: 1, fill: { type: solid, color: "$border" } }
+      - { id: rule-tick, type: rect, z: 13, x: 60, y: 197, width: 150, height: 6, fill: { type: solid, color: "$primary" } }
+
+slots:
+  - { id: report_title,       path: "pages[0].layers[1].content",  type: text, hint: "Incident title",       default: "**INC-2026-0514 — Auth Service Cascade Outage**\n*Redis cluster split-brain caused token validation timeouts across the API surface.*" }
+  - { id: report_eyebrow,     path: "pages[0].layers[0].content",  type: text, hint: "Severity / duration",  default: "SEV-1 · 2026-05-14 · DURATION 1H 48M · POSTMORTEM v1.2" }
+  - { id: timeline_section,   path: "pages[0].layers[7].content",  type: text, hint: "Timeline heading",     default: "**Incident Timeline**" }
+  - { id: timeline_body,      path: "pages[0].layers[8].content",  type: text, hint: "Timeline body",        default: "- **14:18 UTC** — Synthetic check ..." }
+  - { id: services_section,   path: "pages[0].layers[9].content",  type: text, hint: "Services heading",     default: "**Service Impact**" }
+  - { id: latency_section,    path: "pages[0].layers[11].content", type: text, hint: "Latency heading",      default: "**p99 Latency — auth-service**" }
+  - { id: rca_section,        path: "pages[0].layers[13].content", type: text, hint: "RCA heading",          default: "**Root Cause Analysis**" }
+  - { id: rca_body,           path: "pages[0].layers[14].content", type: text, hint: "RCA body markdown",    default: "**Trigger.** ..." }
+  - { id: actions_section,    path: "pages[0].layers[15].content", type: text, hint: "Actions heading",      default: "**Action Items**" }

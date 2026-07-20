@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: sharp-shadow
+name: Sharp Shadow
+version: "1.0.0"
+tags: [sharp, architectural, poster, offset, high-contrast]
+description: "High-contrast precise offset shadow with zero blur — architectural poster register."
+effects:
+  shadow_card:   "12px 12px 0 rgba(0,0,0,0.85)"
+  shadow_glow:   "none"
+  shadow_inset:  "inset 6px 6px 0 rgba(0,0,0,0.20)"
+  shadow_text:   "6px 6px 0 rgba(0,0,0,0.85)"
+  blur_glass:    0
+  blur_backdrop: 0

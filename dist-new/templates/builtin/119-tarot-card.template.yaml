@@ -1,0 +1,265 @@
+_protocol: template/v1
+
+# Tarot card — portrait (800×1400).
+# Cream/gold mystical palette: ornate gold border, Roman numeral header,
+# illustration placeholder center, title plate, keyword footer, decorative
+# corner flourishes built from rects, circles and paths.
+meta:
+  id: tmpl-tarot-card
+  name: Tarot Card
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, tarot, mystical, occult, cream, gold]
+  description: "Ornate tarot card with gold border, Roman numeral, central illustration plate and keyword footer."
+
+document:
+  width: 800
+  height: 1400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+  overrides:
+    primary: "#B08948"
+    secondary: "#7A5A22"
+    background: "#F6EBD3"
+    surface: "#EFE0BE"
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 800
+    height: 1400
+    fill: { type: solid, color: "#F8EFD9" }
+  - id: border-outer
+    type: rect
+    z: 1
+    x: 28
+    y: 28
+    width: 744
+    height: 1344
+    radius: 12
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 4 }
+
+  - id: border-inner
+    type: rect
+    z: 2
+    x: 48
+    y: 48
+    width: 704
+    height: 1304
+    radius: 8
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1, dasharray: "1 4" }
+
+  - id: corner-tl
+    type: circle
+    z: 3
+    x: 60
+    y: 60
+    width: 16
+    height: 16
+    fill: { type: solid, color: "$primary" }
+
+  - id: corner-tr
+    type: circle
+    z: 4
+    x: 724
+    y: 60
+    width: 16
+    height: 16
+    fill: { type: solid, color: "$primary" }
+
+  - id: corner-bl
+    type: circle
+    z: 5
+    x: 60
+    y: 1324
+    width: 16
+    height: 16
+    fill: { type: solid, color: "$primary" }
+
+  - id: corner-br
+    type: circle
+    z: 6
+    x: 724
+    y: 1324
+    width: 16
+    height: 16
+    fill: { type: solid, color: "$primary" }
+
+  - id: top-flourish
+    type: text
+    z: 10
+    x: 80
+    y: 90
+    width: 640
+    height: 0
+    content: { type: plain, value: "✦   ✶   ✦" }
+    style:
+      font_family: $heading
+      font_size: 28
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.5
+
+  - id: numeral-frame
+    type: rect
+    z: 11
+    x: 320
+    y: 140
+    width: 160
+    height: 80
+    radius: 6
+    fill: { type: solid, color: "$surface" }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: numeral
+    type: text
+    z: 12
+    x: 320
+    y: 156
+    width: 160
+    height: 0
+    content: { type: plain, value: "XVII" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 700
+      font_style: italic
+      color: "$secondary"
+      letter_spacing: 0.1
+      text_align: center
+
+  - id: illustration-frame
+    type: rect
+    z: 15
+    x: 100
+    y: 280
+    width: 600
+    height: 760
+    radius: 6
+    fill: { type: solid, color: $surface }
+    stroke: { color: "$primary", width: 2 }
+
+  - id: illustration-inner
+    type: rect
+    z: 16
+    x: 120
+    y: 300
+    width: 560
+    height: 720
+    radius: 4
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1, dasharray: "2 6" }
+
+  - id: illustration-symbol
+    type: text
+    z: 17
+    x: 100
+    y: 580
+    width: 600
+    height: 0
+    content: { type: plain, value: "☉" }
+    style:
+      font_family: $heading
+      font_size: 220
+      color: "$primary"
+      text_align: center
+
+  - id: illustration-hint
+    type: text
+    z: 18
+    x: 100
+    y: 870
+    width: 600
+    height: 0
+    opacity: 0.3
+    content: { type: plain, value: "Illustration" }
+    style:
+      font_family: $body
+      font_size: 12
+      font_weight: 600
+      color: "$secondary"
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  - id: title-divider-top
+    type: rect
+    z: 25
+    x: 220
+    y: 1080
+    width: 360
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: title
+    type: text
+    z: 26
+    x: 60
+    y: 1110
+    width: 680
+    height: 0
+    content: { type: plain, value: "The Star" }
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 500
+      font_style: italic
+      color: "$text"
+      text_align: center
+      letter_spacing: 0.02
+
+  - id: title-divider-bottom
+    type: rect
+    z: 27
+    x: 220
+    y: 1205
+    width: 360
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: keywords
+    type: text
+    z: 28
+    x: 60
+    y: 1230
+    width: 680
+    height: 0
+    content: { type: plain, value: "HOPE  ·  RENEWAL  ·  INSPIRATION  ·  SERENITY" }
+    style:
+      font_family: $body
+      font_size: 15
+      font_weight: 700
+      color: "$secondary"
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+  - id: bottom-flourish
+    type: text
+    z: 29
+    x: 80
+    y: 1290
+    width: 640
+    height: 0
+    content: { type: plain, value: "✦   ✶   ✦" }
+    style:
+      font_family: $heading
+      font_size: 28
+      color: "$primary"
+      text_align: center
+      letter_spacing: 0.5
+
+slots:
+  - { id: numeral,  path: "layers[9].content.value",  type: text, hint: "Roman numeral",   default: "XVII" }
+  - { id: title,    path: "layers[15].content.value", type: text, hint: "Card title",      default: "The Star" }
+  - { id: keywords, path: "layers[17].content.value", type: text, hint: "Keywords (dot-separated)", default: "HOPE  ·  RENEWAL  ·  INSPIRATION  ·  SERENITY" }

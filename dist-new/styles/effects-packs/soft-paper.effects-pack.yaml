@@ -1,0 +1,12 @@
+_protocol: effects-pack/v1
+id: soft-paper
+name: Soft Paper
+version: "1.0.0"
+tags: [paper, newsprint, book, sepia, warm]
+description: "Warm sepia inset with hair-thin drop — newsprint and book-page texture register."
+effects:
+  shadow_card:   "inset 0 0 24px rgba(120,90,40,0.08), 0 1px 2px rgba(0,0,0,0.08)"
+  shadow_glow:   "0 0 14px rgba(180,140,80,0.18), 0 0 28px rgba(140,100,50,0.10)"
+  shadow_inset:  "inset 0 0 36px rgba(140,100,50,0.10)"
+  shadow_text:   "1px 1px 0 rgba(0,0,0,0.05)"
+  blur_glass:    4

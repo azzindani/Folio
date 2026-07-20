@@ -198,6 +198,40 @@ describe('renderLayer — report layer types (lines 101-107)', () => {
     expect(svg.querySelector('[data-layer-id="kpi1"]')).not.toBeNull();
   });
 
+  const kpi = (delta: unknown): string => {
+    const layers: Layer[] = [
+      { id: 'k', type: 'kpi_card', z: 0, x: 0, y: 0, width: 200, height: 120,
+        label: 'Tools', value: '21', delta } as unknown as Layer,
+    ];
+    return renderPage(layers, 500, 500).querySelector('[data-layer-id="k"]')?.textContent ?? '';
+  };
+
+  it('shows a WORD delta as written, not as NaN', () => {
+    // "unchanged" / "was 2" / "flat" are ordinary things to put on a KPI card.
+    // Coercing them with Number() printed a literal "▼ NaN" on the canvas while
+    // the interactive HTML export rendered the same field as plain text — the
+    // editor preview and the export disagreed about one design.
+    expect(kpi('unchanged')).toContain('unchanged');
+    expect(kpi('unchanged')).not.toContain('NaN');
+    expect(kpi('was 2')).toContain('was 2');
+  });
+
+  it('gives a non-numeric delta no arrow, since it claims no direction', () => {
+    expect(kpi('unchanged')).not.toContain('▲');
+    expect(kpi('unchanged')).not.toContain('▼');
+  });
+
+  it('still treats a numeric delta as numeric, with its arrow', () => {
+    expect(kpi(12)).toContain('▲');
+    expect(kpi(-3)).toContain('▼');
+    expect(kpi(12)).not.toContain('NaN');
+  });
+
+  it('omits the delta row entirely when there is no delta', () => {
+    expect(kpi(undefined)).not.toContain('▲');
+    expect(kpi(undefined)).not.toContain('NaN');
+  });
+
   it('renders map layer', () => {
     const layers: Layer[] = [
       { id: 'map1', type: 'map', z: 0, x: 0, y: 0, width: 400, height: 300,

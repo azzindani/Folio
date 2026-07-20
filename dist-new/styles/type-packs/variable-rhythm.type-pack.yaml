@@ -1,0 +1,14 @@
+_protocol: type-pack/v1
+id: variable-rhythm
+name: Variable Rhythm
+version: "1.0.0"
+tags: [friendly, accessible, multi-script, humanist, open]
+description: "Open Sans + Source Code Pro — friendly, multi-script, accessibility-first."
+families:
+  heading: "Open Sans"
+  body:    "Open Sans"
+  mono:    "Source Code Pro"
+scale:
+  h1:
+    weight: 700
+    line_height: 1.2

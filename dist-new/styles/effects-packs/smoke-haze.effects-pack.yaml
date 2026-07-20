@@ -1,0 +1,13 @@
+_protocol: effects-pack/v1
+id: smoke-haze
+name: Smoke Haze
+version: "1.0.0"
+tags: [smoke, haze, diffuse, atmospheric, gray]
+description: "Diffuse smoke-bloom drifting around edges — soft gray atmospheric haze."
+effects:
+  shadow_card:   "0 0 40px rgba(140,140,160,0.4), 0 0 80px rgba(180,180,200,0.25)"
+  shadow_glow:   "0 0 32px rgba(170,170,185,0.45), 0 0 72px rgba(200,200,215,0.28)"
+  shadow_inset:  "inset 0 0 24px rgba(150,150,170,0.18)"
+  shadow_text:   "0 0 6px rgba(160,160,180,0.45), 0 0 14px rgba(190,190,210,0.30)"
+  blur_glass:    18
+  blur_backdrop: 14

@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: snowy-owl
+name: Snowy Owl
+version: "1.0.0"
+tags: [animal, owl, arctic, soft, minimal]
+description: "Soft white plumage with pale yellow eyes, ash gray and charcoal — wintry arctic stillness."
+colors:
+  background: "#FAFAF6"
+  surface:    "#EFEEE8"
+  surface_2:  "#DDDCD2"
+  primary:    "#2B2C2E"
+  secondary:  "#7F8388"
+  accent:     "#C9A14A"
+  text:       "#1A1B1D"
+  text_muted: "#5A5E62"
+  border:     "#C7C7BE"
+  success:    "#5A7A4C"
+  warning:    "#C9A14A"
+  danger:     "#A8463C"

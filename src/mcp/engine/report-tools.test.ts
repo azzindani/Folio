@@ -164,3 +164,35 @@ describe('exportReport', () => {
     expect(fs.existsSync(outPath)).toBe(true);
   });
 });
+
+describe('generateReport — pages is optional', () => {
+  let tmp2: string;
+  beforeEach(() => { tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-rep-opt-')); });
+  afterEach(() => { fs.rmSync(tmp2, { recursive: true, force: true }); });
+
+  it('creates a single page when pages is omitted', () => {
+    // `pages` is not in the tool's required list, so omitting it is legal —
+    // and it used to reach args.pages.map and throw a raw TypeError. One page
+    // is also the right default: a flow report is one continuous document.
+    const r = generateReport({ project_path: tmp2, name: 'No Pages', layout: 'flow' });
+    expect(r.success).toBe(true);
+    const spec = fs.readFileSync(r['design_path'] as string, 'utf-8');
+    expect(spec).toContain('page_1');
+  });
+
+  it('creates a single page for an empty pages array', () => {
+    const r = generateReport({ project_path: tmp2, name: 'Empty Pages', layout: 'flow', pages: [] });
+    expect(r.success).toBe(true);
+  });
+
+  it('still honours an explicit page list', () => {
+    const r = generateReport({
+      project_path: tmp2, name: 'Three', layout: 'paged',
+      pages: [{ label: 'One' }, { label: 'Two' }, { id: 'custom', label: 'Three' }],
+    });
+    expect(r.success).toBe(true);
+    const spec = fs.readFileSync(r['design_path'] as string, 'utf-8');
+    expect(spec).toContain('custom');
+    expect(spec).toContain('Two');
+  });
+});

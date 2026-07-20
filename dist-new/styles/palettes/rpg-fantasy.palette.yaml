@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: rpg-fantasy
+name: RPG Fantasy
+version: "1.0.0"
+tags: [rpg, fantasy, tabletop, parchment, gaming]
+description: "Forest green and crimson with gold on parchment cream — D&D tabletop questlog feel."
+colors:
+  background: "#F2E4C4"
+  surface:    "#E8D6A8"
+  surface_2:  "#D9C088"
+  primary:    "#2E5C2A"
+  secondary:  "#A82A28"
+  accent:     "#B8862A"
+  text:       "#2A1A0A"
+  text_muted: "#6B543A"
+  border:     "#7A5A2A"
+  success:    "#3F7A38"
+  warning:    "#C68A20"
+  danger:     "#A82820"

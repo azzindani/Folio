@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: monastery-stone
+name: Monastery Stone
+version: "1.0.0"
+tags: [religious, monastery, contemplative, stone, parchment, quiet]
+description: "Warm sandstone, ochre, sage, parchment cream, iron grey — contemplative monastery quiet."
+colors:
+  background: "#EDE3CC"
+  surface:    "#E2D5B5"
+  surface_2:  "#D4C49A"
+  primary:    "#8A6A38"
+  secondary:  "#7A8A5A"
+  accent:     "#C8A04A"
+  text:       "#2A2218"
+  text_muted: "#6E624A"
+  border:     "#BCAA80"
+  success:    "#7A8A5A"
+  warning:    "#C8A04A"
+  danger:     "#A04838"

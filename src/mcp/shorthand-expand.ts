@@ -13,8 +13,8 @@ import { buildMindmap } from './shorthand-presets-map';
 import { buildDoodles } from './shorthand-doodles';
 import { buildRibbonCards, buildValueList } from './shorthand-presets-cards';
 import { buildNewsletter } from './shorthand-presets-news';
-
 import { motifLayers } from './shorthand-background';
+import { passThroughUnknown, applyFlowGrid } from './shorthand-passthrough';
 
 export function expandShorthand(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
@@ -31,6 +31,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
   if (sh.visible   !== undefined) base['visible']   = sh.visible;
   if (sh.locked    !== undefined) base['locked']    = sh.locked;
   if (sh.link      !== undefined) base['href']       = sh.link;
+  applyFlowGrid(sh, base);
 
   switch (sh.type) {
     case 'rect':
@@ -335,8 +336,7 @@ export function expandShorthand(sh: ShorthandLayer): Layer {
       } as Layer;
 
     default:
-      // Pass through as-is for unknown types
-      return { ...base, type: sh.type } as unknown as Layer;
+      return passThroughUnknown(sh, base);
   }
 }
 

@@ -95,7 +95,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         name:         { type: 'string', description: 'op:generate — report name.' },
         layout:       { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar', 'flow'], default: 'paged', description: 'op:generate — flow = responsive 12-col interactive grid.' },
         nav_type:     { type: 'string', enum: ['sidebar', 'topbar', 'tabs', 'dots'], default: 'sidebar', description: 'op:generate — navigation style.' },
-        pages:        { type: 'array', description: 'op:generate — [{id?, label}] page specs.', items: { type: 'object' } },
+        pages:        { type: 'array', description: 'op:generate — [{id?, label}] page specs. OPTIONAL: omit for a flow/scroll report, which is one continuous scrolling document and gets a single page automatically.', items: { type: 'object' } },
         width:        { type: 'number', default: 1080, description: 'op:generate — canvas width.' },
         height:       { type: 'number', default: 1080, description: 'op:generate — canvas height.' },
         data_sources: { type: 'array', description: 'op:generate — optional inline/json/csv data sources.', items: { type: 'object' } },

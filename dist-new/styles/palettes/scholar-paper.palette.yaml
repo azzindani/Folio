@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: scholar-paper
+name: Scholar Paper
+version: "1.0.0"
+tags: [education, academic, paper, ink, scholar]
+description: "Aged cream paper with ink black and a scarlet scholar accent — textbook and academic feel."
+colors:
+  background: "#F6EFDC"
+  surface:    "#FBF6E6"
+  surface_2:  "#EDE3C8"
+  primary:    "#1A1714"
+  secondary:  "#4A4036"
+  accent:     "#A8201A"
+  text:       "#15110D"
+  text_muted: "#6B5E4C"
+  border:     "#D8CBA6"
+  success:    "#5C7148"
+  warning:    "#B47322"
+  danger:     "#8C1C13"

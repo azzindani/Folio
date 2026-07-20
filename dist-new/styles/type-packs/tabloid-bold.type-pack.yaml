@@ -1,0 +1,17 @@
+_protocol: type-pack/v1
+id: tabloid-bold
+name: Tabloid Bold
+version: "1.0.0"
+tags: [tabloid, bold, newspaper, magazine, all-caps, headline]
+description: "Bebas Neue ALL-CAPS headlines with Oswald accent and Roboto body — tabloid impact."
+families:
+  heading: "Bebas Neue"
+  body:    "Roboto"
+  mono:    "Roboto Mono"
+  display: "Bebas Neue"
+  accent:  "Oswald"
+scale:
+  h1:
+    size: 84
+    weight: 700
+    line_height: 1.0

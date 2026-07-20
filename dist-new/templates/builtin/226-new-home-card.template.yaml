@@ -1,0 +1,81 @@
+_protocol: template/v1
+
+# New home congratulations — 1080×1500 portrait, forest-deep theme.
+# House-with-key geometric icon, "welcome home" headline, new address, housewarming hint.
+meta:
+  id: tmpl-new-home-card
+  name: Welcome Home Card
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [card, greeting, new-home, housewarming, forest, portrait]
+  description: "Warm welcome-home card with house and key iconography, new address block, and housewarming party hint."
+
+document:
+  width: 1080
+  height: 1500
+  unit: px
+  dpi: 96
+
+theme:
+  ref: forest-deep
+
+layers:
+  # 0 bg
+  - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1500, fill: { type: solid, color: $background } }
+
+  # ── House + key icon ────────────────────────────────────
+  # 1 — roof (triangle approximated via rotated rect — use simple rect roof for safety: a wide rect tilted; use chunky house outline instead)
+  # Roof block
+  - { id: roof, type: rect, z: 10, x: 380, y: 240, width: 320, height: 60, fill: { type: solid, color: "$primary" }, radius: 6 }
+  # 2 — house body
+  - { id: house-body, type: rect, z: 10, x: 410, y: 300, width: 260, height: 220, fill: { type: solid, color: "$primary" } }
+  # 3 — door
+  - { id: house-door, type: rect, z: 11, x: 500, y: 380, width: 80, height: 140, fill: { type: solid, color: "$accent" }, radius: 6 }
+  # 4 — door knob
+  - { id: door-knob, type: circle, z: 12, cx: 568, cy: 450, rx: 5, ry: 5, fill: { type: solid, color: "$background" } }
+  # 5 — left window
+  - { id: window-l, type: rect, z: 11, x: 430, y: 340, width: 50, height: 50, fill: { type: solid, color: "$background" }, radius: 4 }
+  # 6 — right window
+  - { id: window-r, type: rect, z: 11, x: 600, y: 340, width: 50, height: 50, fill: { type: solid, color: "$background" }, radius: 4 }
+  # 7 — chimney
+  - { id: chimney, type: rect, z: 9, x: 600, y: 200, width: 30, height: 60, fill: { type: solid, color: "$primary" } }
+  # 8 — key bow (circle)
+  - { id: key-bow, type: circle, z: 13, cx: 740, cy: 460, rx: 28, ry: 28, fill: { type: solid, color: "transparent" }, stroke: { color: "$accent", width: 8 } }
+  # 9 — key shaft
+  - { id: key-shaft, type: rect, z: 13, x: 760, y: 456, width: 80, height: 8, fill: { type: solid, color: "$accent" } }
+  # 10 — key tooth
+  - { id: key-tooth, type: rect, z: 13, x: 820, y: 464, width: 10, height: 14, fill: { type: solid, color: "$accent" } }
+
+  # 11 — eyebrow
+  - { id: eyebrow, type: text, z: 20, x: 80, y: 600, width: 920, height: 0, content: { type: plain, value: "CONGRATULATIONS ON YOUR" }, style: { font_family: $body, font_size: 18, font_weight: 700, color: "$accent", text_align: center, letter_spacing: 0.7, text_transform: uppercase } }
+
+  # 12 — big headline
+  - { id: headline, type: text, z: 21, x: 80, y: 660, width: 920, height: 0, content: { type: plain, value: "Welcome Home" }, style: { font_family: $heading, font_size: 88, font_weight: 700, color: "$text", text_align: center, line_height: 1.1, letter_spacing: -0.02 } }
+
+  # 13 — recipient
+  - { id: recipient, type: text, z: 22, x: 80, y: 820, width: 920, height: 0, content: { type: plain, value: "Mark & Priya" }, style: { font_family: $heading, font_size: 38, font_style: italic, color: "$primary", text_align: center, line_height: 1.3 } }
+
+  # 14 — divider
+  - { id: divider, type: rect, z: 23, x: 490, y: 900, width: 100, height: 2, fill: { type: solid, color: "$accent" } }
+
+  # 15 — new-address label
+  - { id: addr-lbl, type: text, z: 30, x: 80, y: 950, width: 920, height: 0, content: { type: plain, value: "NEW ADDRESS" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$text_muted", text_align: center, letter_spacing: 0.6 } }
+  # 16 — new address
+  - { id: addr, type: text, z: 31, x: 80, y: 990, width: 920, height: 0, content: { type: plain, value: "284 Cedar Ridge Lane\nAsheville, North Carolina 28804" }, style: { font_family: $heading, font_size: 28, color: "$text", text_align: center, line_height: 1.5 } }
+
+  # 17 — divider 2
+  - { id: divider-2, type: rect, z: 32, x: 490, y: 1140, width: 100, height: 1, fill: { type: solid, color: "$primary" } }
+
+  # 18 — housewarming hint
+  - { id: hw-hint, type: text, z: 33, x: 80, y: 1180, width: 920, height: 0, content: { type: plain, value: "HOUSEWARMING" }, style: { font_family: $body, font_size: 14, font_weight: 700, color: "$accent", text_align: center, letter_spacing: 0.6 } }
+  # 19 — hw date
+  - { id: hw-date, type: text, z: 34, x: 80, y: 1220, width: 920, height: 0, content: { type: plain, value: "Saturday, October 11 · 4:00 PM onward" }, style: { font_family: $heading, font_size: 24, font_style: italic, color: "$text", text_align: center, line_height: 1.4 } }
+  # 20 — signature
+  - { id: signed, type: text, z: 35, x: 80, y: 1340, width: 920, height: 0, content: { type: plain, value: "wishing you many happy years · Aunt Janelle" }, style: { font_family: $body, font_size: 18, color: "$text_muted", text_align: center, letter_spacing: 0.2 } }
+
+slots:
+  - { id: recipient,         path: "layers[13].content.value", type: text, hint: "Recipient name(s)",   default: "Mark & Priya" }
+  - { id: new_address,       path: "layers[16].content.value", type: text, hint: "New address block",   default: "284 Cedar Ridge Lane\nAsheville, North Carolina 28804" }
+  - { id: housewarming_date, path: "layers[19].content.value", type: text, hint: "Housewarming date",   default: "Saturday, October 11 · 4:00 PM onward" }

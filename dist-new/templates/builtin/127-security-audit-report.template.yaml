@@ -1,0 +1,285 @@
+_protocol: template/v1
+
+# Quarterly security audit — severity eyebrow, hero, 5 KPIs (critical/high vulns,
+# patched %, MTTR, compliance score), 12-week vulnerability trend, top CVEs table,
+# compliance frameworks table, risk-by-domain bar.
+meta:
+  id: tmpl-security-audit-report
+  name: Security Audit · Quarterly
+  type: report
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [report, security, audit, vulnerability, compliance, ciso, interactive]
+  description: "Quarterly security posture: CVE inventory, patch cadence, compliance frameworks, risk by domain."
+
+document:
+  width: 1280
+  height: 2400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+
+report:
+  layout: scroll
+  data:
+    sources:
+      - id: vuln_trend
+        type: inline
+        rows:
+          - { week: W1,  critical: 12, high: 48, medium: 142 }
+          - { week: W2,  critical: 14, high: 52, medium: 138 }
+          - { week: W3,  critical: 11, high: 46, medium: 132 }
+          - { week: W4,  critical:  9, high: 42, medium: 128 }
+          - { week: W5,  critical:  8, high: 38, medium: 124 }
+          - { week: W6,  critical: 18, high: 62, medium: 148 }
+          - { week: W7,  critical: 16, high: 56, medium: 142 }
+          - { week: W8,  critical: 12, high: 48, medium: 134 }
+          - { week: W9,  critical:  9, high: 42, medium: 128 }
+          - { week: W10, critical:  7, high: 36, medium: 118 }
+          - { week: W11, critical:  6, high: 32, medium: 112 }
+          - { week: W12, critical:  5, high: 28, medium: 104 }
+      - id: top_cves
+        type: inline
+        rows:
+          - { cve: CVE-2025-48201, cvss: 9.8, affected: 142, status: Patched,      patched_date: "2026-04-12" }
+          - { cve: CVE-2025-47832, cvss: 9.6, affected:  86, status: Patched,      patched_date: "2026-04-18" }
+          - { cve: CVE-2026-01184, cvss: 9.4, affected: 218, status: Patched,      patched_date: "2026-04-22" }
+          - { cve: CVE-2026-02246, cvss: 8.8, affected:  64, status: Patched,      patched_date: "2026-05-02" }
+          - { cve: CVE-2026-02418, cvss: 8.6, affected: 124, status: In Progress,  patched_date: "" }
+          - { cve: CVE-2025-49126, cvss: 8.2, affected:  42, status: Patched,      patched_date: "2026-04-08" }
+          - { cve: CVE-2026-00842, cvss: 7.8, affected: 186, status: Patched,      patched_date: "2026-04-16" }
+          - { cve: CVE-2026-03124, cvss: 7.6, affected:  38, status: Mitigated,    patched_date: "2026-05-10" }
+          - { cve: CVE-2026-03482, cvss: 7.4, affected:  92, status: In Progress,  patched_date: "" }
+          - { cve: CVE-2026-04018, cvss: 7.2, affected:  28, status: Accepted,     patched_date: "" }
+      - id: compliance
+        type: inline
+        rows:
+          - { framework: SOC 2 Type II,    score_pct: 96, gaps: 3, auditor: "Deloitte"           }
+          - { framework: ISO 27001:2022,   score_pct: 92, gaps: 6, auditor: "BSI Group"          }
+          - { framework: PCI DSS v4.0,     score_pct: 88, gaps: 8, auditor: "Coalfire"           }
+          - { framework: HIPAA Security,   score_pct: 94, gaps: 4, auditor: "Internal"           }
+          - { framework: GDPR Article 32,  score_pct: 90, gaps: 5, auditor: "Bird & Bird"        }
+          - { framework: NIST CSF 2.0,     score_pct: 86, gaps: 9, auditor: "Internal"           }
+      - id: risk_domains
+        type: inline
+        rows:
+          - { domain: Identity & Access,         score: 28 }
+          - { domain: Network Perimeter,         score: 18 }
+          - { domain: Endpoint Security,         score: 22 }
+          - { domain: Cloud Configuration,       score: 42 }
+          - { domain: Application Security,      score: 36 }
+          - { domain: Data Protection,           score: 24 }
+          - { domain: Third-Party Risk,          score: 48 }
+          - { domain: Incident Response,         score: 14 }
+
+pages:
+  - id: posture
+    label: Posture
+    layers:
+      - id: eyebrow
+        type: rich_text
+        x: 60
+        y: 36
+        width: 1160
+        height: 24
+        format: markdown
+        font_family: IBM Plex Mono
+        font_size: 12
+        color: "$text_muted"
+        content: "Q4 2025 SECURITY POSTURE · CONFIDENTIAL · CISO OFFICE"
+
+      - id: hero
+        type: rich_text
+        x: 60
+        y: 64
+        width: 1160
+        height: 110
+        format: markdown
+        font_family: Playfair Display
+        font_size: 42
+        font_weight: 700
+        line_height: 1.15
+        content: "**Quarterly Security Audit — Q4 2025**\n*Vulnerability inventory, patch cadence, compliance posture, and domain risk.*"
+
+      - id: kpi-critical
+        type: kpi_card
+        x: 60
+        y: 220
+        width: 224
+        height: 140
+        label: Critical Vulns
+        value: 5
+        format: number
+        delta: -7
+        delta_format: number
+
+      - id: kpi-high
+        type: kpi_card
+        x: 304
+        y: 220
+        width: 224
+        height: 140
+        label: High Vulns
+        value: 28
+        format: number
+        delta: -20
+        delta_format: number
+
+      - id: kpi-patched
+        type: kpi_card
+        x: 548
+        y: 220
+        width: 224
+        height: 140
+        label: Patched %
+        value: 92.4
+        format: percent
+        delta: 6.8
+        delta_format: percent
+
+      - id: kpi-mttr
+        type: kpi_card
+        x: 792
+        y: 220
+        width: 224
+        height: 140
+        label: MTTR (days)
+        value: 8.4
+        format: number
+        decimals: 1
+        delta: -2.6
+        delta_format: percent
+
+      - id: kpi-compliance
+        type: kpi_card
+        x: 1036
+        y: 220
+        width: 184
+        height: 140
+        label: Compliance %
+        value: 91.0
+        format: percent
+        delta: 2.4
+        delta_format: percent
+
+      - id: section-vulns
+        type: rich_text
+        x: 60
+        y: 400
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Vulnerability Trend — Last 12 Weeks**"
+
+      - id: chart-vulns
+        type: interactive_chart
+        x: 60
+        y: 460
+        width: 1160
+        height: 380
+        chart_type: bar
+        data_ref: vuln_trend
+        x_field: week
+        y_field: critical
+        title: Open Vulnerabilities by Severity (Critical / High / Medium)
+        legend: true
+        grid: true
+        animate: true
+
+      - id: section-cves
+        type: rich_text
+        x: 60
+        y: 880
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Top CVEs — Critical and High Severity**"
+
+      - id: tbl-cves
+        type: interactive_table
+        x: 60
+        y: 940
+        width: 1160
+        height: 480
+        data_ref: top_cves
+        pagination: false
+        filterable: true
+        exportable: true
+        columns:
+          - { field: cve,            title: CVE,             width: 220, sortable: true, formatter: badge }
+          - { field: cvss,           title: CVSS,            width: 140, sortable: true, formatter: number, align: right }
+          - { field: affected,       title: Systems,         width: 180, sortable: true, formatter: number, align: right }
+          - { field: status,         title: Status,          width: 200, sortable: true, formatter: badge }
+          - { field: patched_date,   title: Patched Date,    width: 220, sortable: true }
+
+      - id: section-compliance
+        type: rich_text
+        x: 60
+        y: 1460
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Compliance Frameworks**"
+
+      - id: tbl-compliance
+        type: interactive_table
+        x: 60
+        y: 1520
+        width: 1160
+        height: 360
+        data_ref: compliance
+        pagination: false
+        filterable: false
+        exportable: true
+        columns:
+          - { field: framework,   title: Framework,    width: 360, sortable: true, formatter: badge }
+          - { field: score_pct,   title: Score %,      width: 220, sortable: true, formatter: percent, align: right }
+          - { field: gaps,        title: Open Gaps,    width: 220, sortable: true, formatter: number,  align: right }
+          - { field: auditor,     title: Auditor,      width: 320, sortable: true }
+
+      - id: section-risk
+        type: rich_text
+        x: 60
+        y: 1920
+        width: 1160
+        height: 40
+        format: markdown
+        font_family: Playfair Display
+        font_size: 24
+        font_weight: 700
+        content: "**Risk Score by Domain — Lower is Better**"
+
+      - id: chart-risk
+        type: interactive_chart
+        x: 60
+        y: 1980
+        width: 1160
+        height: 360
+        chart_type: bar
+        data_ref: risk_domains
+        x_field: domain
+        y_field: score
+        title: Residual Risk Score (0-100) by Control Domain
+        legend: false
+        grid: true
+        animate: true
+
+slots:
+  - { id: report_title,        path: "pages[0].layers[1].content",  type: text, hint: "Report title",         default: "**Quarterly Security Audit — Q4 2025**\n*Vulnerability inventory, patch cadence, compliance posture, and domain risk.*" }
+  - { id: report_eyebrow,      path: "pages[0].layers[0].content",  type: text, hint: "Severity eyebrow",     default: "Q4 2025 SECURITY POSTURE · CONFIDENTIAL · CISO OFFICE" }
+  - { id: vulns_section,       path: "pages[0].layers[7].content",  type: text, hint: "Vulns heading",        default: "**Vulnerability Trend — Last 12 Weeks**" }
+  - { id: cves_section,        path: "pages[0].layers[9].content",  type: text, hint: "CVEs heading",         default: "**Top CVEs — Critical and High Severity**" }
+  - { id: compliance_section,  path: "pages[0].layers[11].content", type: text, hint: "Compliance heading",   default: "**Compliance Frameworks**" }
+  - { id: risk_section,        path: "pages[0].layers[13].content", type: text, hint: "Risk heading",         default: "**Risk Score by Domain — Lower is Better**" }

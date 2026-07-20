@@ -1,0 +1,277 @@
+_protocol: template/v1
+
+# Podcast cover art — square (1400×1400).
+# Bold dark gradient backdrop, microphone glyph from path,
+# show name large, host eyebrow, season indicator, accent stripe.
+meta:
+  id: tmpl-podcast-cover-art
+  name: Podcast Cover Art
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, podcast, audio, cover-art, square, dark]
+  description: "Square podcast cover art with show name, host, season label and microphone glyph."
+
+document:
+  width: 1400
+  height: 1400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: dark-tech
+  overrides:
+    primary: "#FF6A2C"
+    secondary: "#3CC9FF"
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1400
+    height: 1400
+    fill: { type: solid, color: "#0A0F1C" }
+  - id: glow-circle
+    type: circle
+    z: 1
+    x: 200
+    y: 200
+    width: 1000
+    height: 1000
+    fill: { type: solid, color: "" }
+  - id: accent-stripe-tl
+    type: rect
+    z: 2
+    x: 80
+    y: 80
+    width: 220
+    height: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: accent-stripe-br
+    type: rect
+    z: 3
+    x: 1100
+    y: 1312
+    width: 220
+    height: 8
+    fill: { type: solid, color: "$secondary" }
+
+  - id: eyebrow
+    type: text
+    z: 10
+    x: 80
+    y: 110
+    width: 1240
+    height: 0
+    content: { type: plain, value: "FOLIO STUDIOS · ORIGINAL SERIES" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 800
+      color: "$primary"
+      letter_spacing: 0.5
+      text_transform: uppercase
+
+  - id: host-eyebrow
+    type: text
+    z: 11
+    x: 80
+    y: 1240
+    width: 1240
+    height: 0
+    content: { type: plain, value: "HOSTED BY" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: "$text_muted"
+      letter_spacing: 0.42
+      text_transform: uppercase
+
+  - id: host-name
+    type: text
+    z: 12
+    x: 80
+    y: 1270
+    width: 800
+    height: 0
+    content: { type: plain, value: "Theo Kalani" }
+    style:
+      font_family: $heading
+      font_size: 44
+      font_weight: 700
+      color: "$text"
+      letter_spacing: -0.01
+
+  - id: season-pill
+    type: rect
+    z: 15
+    x: 1120
+    y: 1268
+    width: 200
+    height: 56
+    radius: 28
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$secondary", width: 2 }
+
+  - id: season-text
+    type: text
+    z: 16
+    x: 1120
+    y: 1284
+    width: 200
+    height: 0
+    content: { type: plain, value: "SEASON 3" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 800
+      color: "$secondary"
+      letter_spacing: 0.4
+      text_align: center
+      text_transform: uppercase
+
+  # Microphone glyph — built from primitives
+  - id: mic-stand-base
+    type: rect
+    z: 20
+    x: 600
+    y: 900
+    width: 200
+    height: 16
+    radius: 6
+    fill: { type: solid, color: "$text" }
+
+  - id: mic-stand-pole
+    type: rect
+    z: 21
+    x: 690
+    y: 760
+    width: 20
+    height: 150
+    fill: { type: solid, color: "$text" }
+
+  - id: mic-yoke
+    type: rect
+    z: 22
+    x: 560
+    y: 540
+    width: 280
+    height: 240
+    radius: 140
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$text", width: 8 }
+
+  - id: mic-capsule
+    type: rect
+    z: 23
+    x: 600
+    y: 360
+    width: 200
+    height: 380
+    radius: 100
+    fill: { type: solid, color: $primary }
+    stroke: { color: "$text", width: 4 }
+
+  - id: mic-grille-1
+    type: rect
+    z: 24
+    x: 625
+    y: 420
+    width: 150
+    height: 4
+    fill: { type: solid, color: "rgba(0,0,0,0.45)" }
+
+  - id: mic-grille-2
+    type: rect
+    z: 25
+    x: 625
+    y: 460
+    width: 150
+    height: 4
+    fill: { type: solid, color: "rgba(0,0,0,0.45)" }
+
+  - id: mic-grille-3
+    type: rect
+    z: 26
+    x: 625
+    y: 500
+    width: 150
+    height: 4
+    fill: { type: solid, color: "rgba(0,0,0,0.45)" }
+
+  - id: mic-grille-4
+    type: rect
+    z: 27
+    x: 625
+    y: 540
+    width: 150
+    height: 4
+    fill: { type: solid, color: "rgba(0,0,0,0.45)" }
+
+  - id: mic-grille-5
+    type: rect
+    z: 28
+    x: 625
+    y: 580
+    width: 150
+    height: 4
+    fill: { type: solid, color: "rgba(0,0,0,0.45)" }
+
+  - id: mic-grille-6
+    type: rect
+    z: 29
+    x: 625
+    y: 620
+    width: 150
+    height: 4
+    fill: { type: solid, color: "rgba(0,0,0,0.45)" }
+
+  - id: show-name-rule
+    type: rect
+    z: 35
+    x: 80
+    y: 1000
+    width: 80
+    height: 8
+    fill: { type: solid, color: "$primary" }
+
+  - id: show-name
+    type: text
+    z: 36
+    x: 80
+    y: 1040
+    width: 1240
+    height: 0
+    content: { type: plain, value: "Signal & Noise" }
+    style:
+      font_family: $heading
+      font_size: 130
+      font_weight: 900
+      color: "$text"
+      line_height: 1.0
+      letter_spacing: -0.03
+
+  - id: tagline
+    type: text
+    z: 37
+    x: 80
+    y: 1180
+    width: 1240
+    height: 0
+    content: { type: plain, value: "Conversations on tech, taste, and the things in between." }
+    style:
+      font_family: $body
+      font_size: 22
+      font_style: italic
+      color: "$text_muted"
+
+slots:
+  - { id: show_name, path: "layers[20].content.value", type: text, hint: "Show name",       default: "Signal & Noise" }
+  - { id: host_name, path: "layers[6].content.value",  type: text, hint: "Host name",       default: "Theo Kalani" }
+  - { id: season,    path: "layers[8].content.value",  type: text, hint: "Season label",    default: "SEASON 3" }
+  - { id: tagline,   path: "layers[21].content.value", type: text, hint: "Show tagline",    default: "Conversations on tech, taste, and the things in between." }

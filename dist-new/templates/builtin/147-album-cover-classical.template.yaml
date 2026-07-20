@@ -1,0 +1,341 @@
+_protocol: template/v1
+
+# Classical music album cover (1400×1400 square).
+# Editorial cream + ornate gold filigree borders, serif composer name,
+# italic work title, performer + conductor credits.
+meta:
+  id: tmpl-album-cover-classical
+  name: Album Cover — Classical
+  type: poster
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [poster, album, music, classical, ornate, square]
+  description: "Ornate classical album cover with gold filigree, serif composer name and italic work title."
+
+document:
+  width: 1400
+  height: 1400
+  unit: px
+  dpi: 96
+
+theme:
+  ref: editorial-cream
+  overrides:
+    primary: "#B7892C"
+    secondary: "#2A2418"
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1400
+    height: 1400
+    fill: { type: solid, color: "$background" }
+
+  - id: frame-outer
+    type: rect
+    z: 1
+    x: 60
+    y: 60
+    width: 1280
+    height: 1280
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 3 }
+
+  - id: frame-mid
+    type: rect
+    z: 2
+    x: 80
+    y: 80
+    width: 1240
+    height: 1240
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.6
+
+  - id: frame-inner
+    type: rect
+    z: 3
+    x: 100
+    y: 100
+    width: 1200
+    height: 1200
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+    opacity: 0.35
+
+  - id: corner-tl
+    type: rect
+    z: 4
+    x: 138
+    y: 138
+    width: 36
+    height: 36
+    rotation: 45
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: corner-tr
+    type: rect
+    z: 5
+    x: 1226
+    y: 138
+    width: 36
+    height: 36
+    rotation: 45
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: corner-bl
+    type: rect
+    z: 6
+    x: 138
+    y: 1226
+    width: 36
+    height: 36
+    rotation: 45
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: corner-br
+    type: rect
+    z: 7
+    x: 1226
+    y: 1226
+    width: 36
+    height: 36
+    rotation: 45
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: deco-line-top-left
+    type: rect
+    z: 10
+    x: 220
+    y: 280
+    width: 280
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-line-top-right
+    type: rect
+    z: 11
+    x: 900
+    y: 280
+    width: 280
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-diamond-top
+    type: rect
+    z: 12
+    x: 688
+    y: 266
+    width: 24
+    height: 24
+    rotation: 45
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: opus
+    type: text
+    z: 20
+    x: 100
+    y: 320
+    width: 1200
+    height: 0
+    content: { type: plain, value: "OPUS 47 IN D MINOR" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 600
+      color: $primary
+      letter_spacing: 0.5
+      text_align: center
+      text_transform: uppercase
+
+  - id: composer
+    type: text
+    z: 21
+    x: 100
+    y: 420
+    width: 1200
+    height: 0
+    content: { type: plain, value: "Anton Lukasz" }
+    style:
+      font_family: $heading
+      font_size: 96
+      font_weight: 700
+      color: $secondary
+      line_height: 1.05
+      letter_spacing: -0.005
+      text_align: center
+
+  - id: composer-dates
+    type: text
+    z: 22
+    x: 100
+    y: 540
+    width: 1200
+    height: 0
+    content: { type: plain, value: "(1847 — 1916)" }
+    style:
+      font_family: $heading
+      font_size: 22
+      font_weight: 400
+      font_style: italic
+      color: $text_muted
+      letter_spacing: 0.04
+      text_align: center
+
+  - id: divider-rule
+    type: rect
+    z: 30
+    x: 540
+    y: 620
+    width: 320
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: work-title
+    type: text
+    z: 31
+    x: 100
+    y: 660
+    width: 1200
+    height: 0
+    content:
+      type: plain
+      value: "Symphony of the\nNorthern Light"
+    style:
+      font_family: $heading
+      font_size: 64
+      font_weight: 400
+      font_style: italic
+      color: $secondary
+      line_height: 1.15
+      letter_spacing: 0.005
+      text_align: center
+
+  - id: deco-line-bottom-left
+    type: rect
+    z: 40
+    x: 220
+    y: 920
+    width: 280
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-line-bottom-right
+    type: rect
+    z: 41
+    x: 900
+    y: 920
+    width: 280
+    height: 1
+    fill: { type: solid, color: "$primary" }
+
+  - id: deco-diamond-bottom
+    type: rect
+    z: 42
+    x: 688
+    y: 906
+    width: 24
+    height: 24
+    rotation: 45
+    fill: { type: solid, color: "transparent" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: performer-label
+    type: text
+    z: 50
+    x: 100
+    y: 960
+    width: 1200
+    height: 0
+    content: { type: plain, value: "PERFORMED BY" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.46
+      text_align: center
+      text_transform: uppercase
+
+  - id: performer
+    type: text
+    z: 51
+    x: 100
+    y: 1000
+    width: 1200
+    height: 0
+    content: { type: plain, value: "The Vienna Atrium Orchestra" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 500
+      color: $secondary
+      letter_spacing: 0.01
+      text_align: center
+
+  - id: conductor-label
+    type: text
+    z: 52
+    x: 100
+    y: 1070
+    width: 1200
+    height: 0
+    content: { type: plain, value: "CONDUCTED BY" }
+    style:
+      font_family: $body
+      font_size: 14
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.46
+      text_align: center
+      text_transform: uppercase
+
+  - id: conductor
+    type: text
+    z: 53
+    x: 100
+    y: 1110
+    width: 1200
+    height: 0
+    content: { type: plain, value: "Magdalena Voss" }
+    style:
+      font_family: $heading
+      font_size: 30
+      font_weight: 500
+      font_style: italic
+      color: $secondary
+      letter_spacing: 0.01
+      text_align: center
+
+  - id: label
+    type: text
+    z: 60
+    x: 100
+    y: 1240
+    width: 1200
+    height: 0
+    content: { type: plain, value: "ATRIUM CLASSICAL · DDD · LC 12081" }
+    style:
+      font_family: $mono
+      font_size: 13
+      font_weight: 600
+      color: $text_muted
+      letter_spacing: 0.42
+      text_align: center
+      text_transform: uppercase
+
+slots:
+  - { id: composer,        path: "layers[12].content.value", type: text, hint: "Composer name",                default: "Anton Lukasz" }
+  - { id: work_title,      path: "layers[15].content.value", type: text, hint: "Work title (italic, 2 lines)", default: "Symphony of the\nNorthern Light" }
+  - { id: performer,       path: "layers[20].content.value", type: text, hint: "Orchestra / performer",        default: "The Vienna Atrium Orchestra" }
+  - { id: conductor,       path: "layers[22].content.value", type: text, hint: "Conductor name",               default: "Magdalena Voss" }
+  - { id: recording_label, path: "layers[23].content.value", type: text, hint: "Recording label / catalog",    default: "ATRIUM CLASSICAL · DDD · LC 12081" }

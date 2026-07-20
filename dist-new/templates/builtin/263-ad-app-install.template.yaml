@@ -1,0 +1,203 @@
+_protocol: template/v1
+
+# App-install ad 1200×628 — mobile app-store style.
+# App icon + name + star rating + reviewer count + screenshot placeholder + INSTALL CTA. Indigo-pro theme.
+meta:
+  id: tmpl-ad-app-install
+  name: Ad App Install
+  type: card
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [ad, "app-install", mobile, "1200x628", landscape, indigo]
+  description: "App-install ad 1200×628 with app icon, name, star rating, reviewer count, screenshot placeholder, and INSTALL CTA."
+
+document:
+  width: 1200
+  height: 628
+  unit: px
+  dpi: 96
+
+theme:
+  ref: indigo-pro
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 628
+    fill: { type: solid, color: $background }
+  - id: glow
+    type: circle
+    z: 1
+    cx: 1000
+    cy: 100
+    rx: 360
+    ry: 360
+    fill: { type: none }
+    opacity: 0.32
+
+  - id: app-icon
+    type: rect
+    z: 2
+    x: 80
+    y: 80
+    width: 160
+    height: 160
+    radius: 36
+    fill: { type: solid, color: $primary }
+    effects:
+      shadow:
+        - { dx: 0, dy: 12, blur: 32, color: "rgba(99,102,241,0.45)" }
+
+  - id: app-icon-mark
+    type: text
+    z: 3
+    x: 80
+    y: 116
+    width: 160
+    height: 0
+    content: { type: plain, value: "✦" }
+    style:
+      font_family: $heading
+      font_size: 88
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+
+  - id: app-name
+    type: text
+    z: 4
+    x: 280
+    y: 92
+    width: 600
+    height: 0
+    content: { type: plain, value: "Lumen — Habits" }
+    style:
+      font_family: $heading
+      font_size: 56
+      font_weight: 800
+      color: $text
+      letter_spacing: -0.02
+
+  - id: app-category
+    type: text
+    z: 5
+    x: 280
+    y: 168
+    width: 600
+    height: 0
+    content: { type: plain, value: "Health & Fitness · Editor's Choice" }
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+
+  - id: rating-stars
+    type: text
+    z: 6
+    x: 280
+    y: 210
+    width: 200
+    height: 0
+    content: { type: plain, value: "★★★★★" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 700
+      color: "#FACC15"
+      letter_spacing: 0.06
+
+  - id: rating-score
+    type: text
+    z: 7
+    x: 408
+    y: 212
+    width: 80
+    height: 0
+    content: { type: plain, value: "4.8" }
+    style:
+      font_family: $body
+      font_size: 18
+      font_weight: 700
+      color: $text
+
+  - id: review-count
+    type: text
+    z: 8
+    x: 460
+    y: 214
+    width: 420
+    height: 0
+    content: { type: plain, value: "·  128,540 reviews" }
+    style:
+      font_family: $body
+      font_size: 16
+      color: $text_muted
+
+  - id: screenshot-frame
+    type: rect
+    z: 9
+    x: 80
+    y: 300
+    width: 760
+    height: 256
+    radius: 16
+    fill: { type: solid, color: $surface }
+    stroke: { color: "$border", width: 1 }
+    effects:
+      shadow:
+        - { dx: 0, dy: 12, blur: 32, color: "rgba(0,0,0,0.28)" }
+
+  - id: screenshot-label
+    type: text
+    z: 10
+    x: 80
+    y: 412
+    width: 760
+    height: 0
+    content: { type: plain, value: "App screenshot" }
+    opacity: 0.3
+    style:
+      font_family: $body
+      font_size: 18
+      color: $text_muted
+      text_align: center
+
+  - id: cta-bg
+    type: rect
+    z: 11
+    x: 920
+    y: 380
+    width: 200
+    height: 72
+    radius: 36
+    fill: { type: solid, color: "$primary" }
+    effects:
+      shadow:
+        - { dx: 0, dy: 8, blur: 24, color: "rgba(99,102,241,0.5)" }
+
+  - id: cta-text
+    type: text
+    z: 12
+    x: 920
+    y: 400
+    width: 200
+    height: 0
+    content: { type: plain, value: "INSTALL" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 800
+      color: "#FFFFFF"
+      text_align: center
+      letter_spacing: 0.08
+
+slots:
+  - { id: app_name,     path: "layers[4].content.value",  type: text, hint: "App name",        default: "Lumen — Habits" }
+  - { id: rating,       path: "layers[7].content.value",  type: text, hint: "Rating score",    default: "4.8" }
+  - { id: review_count, path: "layers[8].content.value",  type: text, hint: "Reviewer count",  default: "·  128,540 reviews" }
+  - { id: cta_label,    path: "layers[12].content.value", type: text, hint: "CTA label",       default: "INSTALL" }

@@ -1,0 +1,130 @@
+_protocol: template/v1
+
+# Study flashcard front — 1200×800 landscape (3:2), pastel-dream.
+# Subject tag top-left, decorative accent circle top-right, big term
+# centered display, category label below, card number mono bottom-right.
+meta:
+  id: tmpl-flashcard-front
+  name: Flashcard — Front
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, flashcard, study, learning, education, pastel]
+
+document:
+  width: 1200
+  height: 800
+  unit: px
+  dpi: 96
+
+theme:
+  ref: pastel-dream
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1200
+    height: 800
+    fill: { type: solid, color: $background }
+  - id: accent-blob
+    type: circle
+    z: 2
+    cx: 1100
+    cy: 100
+    rx: 180
+    ry: 180
+    fill: { type: none }
+    opacity: 0.4
+
+  - id: subject-tag
+    type: text
+    z: 10
+    x: 80
+    y: 80
+    width: 600
+    height: 0
+    content: { type: plain, value: "BIOLOGY · CHAPTER 4" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 700
+      color: $primary
+      letter_spacing: 0.4
+      text_transform: uppercase
+
+  - id: term
+    type: text
+    z: 20
+    x: 80
+    y: 280
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Mitochondria" }
+    style:
+      font_family: $heading
+      font_size: 140
+      font_weight: 800
+      color: $text
+      text_align: center
+      line_height: 1
+      letter_spacing: -0.03
+
+  - id: term-rule
+    type: rect
+    z: 21
+    x: 540
+    y: 460
+    width: 120
+    height: 4
+    fill: { type: solid, color: "$accent" }
+
+  - id: category
+    type: text
+    z: 22
+    x: 80
+    y: 510
+    width: 1040
+    height: 0
+    content: { type: plain, value: "Cell Organelle · Energy Production" }
+    style:
+      font_family: $body
+      font_size: 28
+      font_weight: 500
+      color: $text_muted
+      text_align: center
+      line_height: 1.3
+
+  - id: card-number
+    type: text
+    z: 30
+    x: 920
+    y: 720
+    width: 200
+    height: 0
+    content: { type: plain, value: "01 / 50" }
+    style:
+      font_family: $mono
+      font_size: 18
+      color: $text_muted
+      text_align: right
+      letter_spacing: 0.1
+
+  - id: corner-dot
+    type: circle
+    z: 4
+    cx: 80
+    cy: 740
+    rx: 10
+    ry: 10
+    fill: { type: solid, color: "$secondary" }
+    opacity: 0.7
+
+slots:
+  - { id: subject,     path: "layers[2].content.value", type: text, hint: "Subject + chapter tag",    default: "BIOLOGY · CHAPTER 4" }
+  - { id: term,        path: "layers[3].content.value", type: text, hint: "Flashcard term / word",    default: "Mitochondria" }
+  - { id: category,    path: "layers[5].content.value", type: text, hint: "Category / type label",    default: "Cell Organelle · Energy Production" }
+  - { id: card_number, path: "layers[6].content.value", type: text, hint: "Card index e.g. 01 / 50",  default: "01 / 50" }

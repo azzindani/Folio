@@ -1,0 +1,19 @@
+_protocol: palette/v1
+id: concrete-raw
+name: Concrete Raw
+version: "1.0.0"
+tags: [material, concrete, industrial, brutalist, urban]
+description: "Bare concrete grey with rebar steel, iron rust streaks and chalk white — unfinished brutalist surface."
+colors:
+  background: "#E2DED7"
+  surface:    "#CFC9C0"
+  surface_2:  "#B0AAA1"
+  primary:    "#5C5953"
+  secondary:  "#8A857C"
+  accent:     "#A65B36"
+  text:       "#1C1A18"
+  text_muted: "#56524C"
+  border:     "#9A938A"
+  success:    "#5E7A4F"
+  warning:    "#B07A33"
+  danger:     "#8E3724"

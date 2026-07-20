@@ -1,0 +1,272 @@
+_protocol: template/v1
+
+# Gauge / meter card — 1080×1080 square, ocean-blue theme.
+# Half-donut illusion: large primary circle, an accent overlay circle
+# offset upward to add a colored arc band, a background-colored
+# "mask" rect that covers the bottom half (turns the full donut into
+# a visible half-arc), and an inner background circle to cut the hole.
+# Three rotated thin rects act as colored arc-segment tick markers
+# (low/med/high zones) at angled positions.
+meta:
+  id: tmpl-gauge-meter
+  name: Gauge Meter Card
+  type: card
+  created: "2026-05-16"
+  modified: "2026-05-16"
+  generator: folio
+  tags: [card, gauge, meter, kpi, chart, square]
+
+document:
+  width: 1080
+  height: 1080
+  unit: px
+  dpi: 96
+
+theme:
+  ref: ocean-blue
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 1080
+    height: 1080
+    fill: { type: solid, color: $background }
+  - id: title
+    type: text
+    z: 5
+    x: 60
+    y: 80
+    width: 960
+    height: 0
+    content: { type: plain, value: "Service Health" }
+    style:
+      font_family: $heading
+      font_size: 52
+      font_weight: 700
+      color: $text
+      line_height: 1.1
+      text_align: center
+
+  # ── gauge: full ring (will be half-masked below) ──────────
+  - id: gauge-outer
+    type: circle
+    z: 10
+    cx: 540
+    cy: 640
+    rx: 320
+    ry: 320
+    fill: { type: solid, color: "$primary" }
+
+  - id: gauge-band
+    type: circle
+    z: 11
+    cx: 540
+    cy: 640
+    rx: 280
+    ry: 280
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.4
+
+  # ── three rotated rects acting as low/med/high tick zones ──
+  - id: arc-low
+    type: rect
+    z: 12
+    x: 240
+    y: 620
+    width: 16
+    height: 60
+    radius: 4
+    rotation: -60
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+
+  - id: arc-med
+    type: rect
+    z: 13
+    x: 532
+    y: 320
+    width: 16
+    height: 60
+    radius: 4
+    rotation: 0
+    fill: { type: solid, color: "$accent" }
+    opacity: 0.95
+
+  - id: arc-high
+    type: rect
+    z: 14
+    x: 824
+    y: 620
+    width: 16
+    height: 60
+    radius: 4
+    rotation: 60
+    fill: { type: solid, color: "$primary" }
+    opacity: 0.85
+
+  # ── mask rect: covers bottom half, turning ring into half-arc ──
+  - id: gauge-mask
+    type: rect
+    z: 20
+    x: 160
+    y: 640
+    width: 760
+    height: 380
+    fill: { type: solid, color: "$background" }
+
+  # ── inner hole (carves donut ring shape from the half) ────
+  - id: gauge-hole
+    type: circle
+    z: 21
+    cx: 540
+    cy: 640
+    rx: 210
+    ry: 210
+    fill: { type: solid, color: "$surface" }
+
+  # ── second mask layer over hole bottom for cleaner half ──
+  - id: gauge-mask2
+    type: rect
+    z: 22
+    x: 280
+    y: 640
+    width: 520
+    height: 240
+    fill: { type: solid, color: "$background" }
+
+  # ── needle / pointer ──────────────────────────────────────
+  - id: needle
+    type: rect
+    z: 25
+    x: 535
+    y: 380
+    width: 10
+    height: 260
+    radius: 5
+    rotation: 25
+    fill: { type: solid, color: "$text" }
+
+  - id: needle-hub
+    type: circle
+    z: 26
+    cx: 540
+    cy: 640
+    rx: 22
+    ry: 22
+    fill: { type: solid, color: "$text" }
+
+  # ── big metric value (above the half-arc center) ─────────
+  - id: metric_value
+    type: text
+    z: 30
+    x: 60
+    y: 500
+    width: 960
+    height: 0
+    content: { type: plain, value: "87%" }
+    style:
+      font_family: $heading
+      font_size: 120
+      font_weight: 700
+      color: $text
+      line_height: 1
+      letter_spacing: -0.03
+      text_align: center
+
+  # ── scale labels: Low / Med / High ────────────────────────
+  - id: label_low
+    type: text
+    z: 35
+    x: 100
+    y: 720
+    width: 200
+    height: 0
+    content: { type: plain, value: "Low" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+
+  - id: label_med
+    type: text
+    z: 36
+    x: 440
+    y: 280
+    width: 200
+    height: 0
+    content: { type: plain, value: "Med" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+
+  - id: label_high
+    type: text
+    z: 37
+    x: 780
+    y: 720
+    width: 200
+    height: 0
+    content: { type: plain, value: "High" }
+    style:
+      font_family: $body
+      font_size: 22
+      font_weight: 600
+      color: $text_muted
+      text_align: center
+
+  # ── caption pill below gauge ──────────────────────────────
+  - id: caption-pill
+    type: rect
+    z: 40
+    x: 340
+    y: 880
+    width: 400
+    height: 56
+    radius: 28
+    fill: { type: solid, color: "$surface2" }
+    stroke: { color: "$primary", width: 1 }
+
+  - id: footer
+    type: text
+    z: 41
+    x: 340
+    y: 896
+    width: 400
+    height: 0
+    content: { type: plain, value: "All systems nominal" }
+    style:
+      font_family: $body
+      font_size: 20
+      font_weight: 600
+      color: $primary
+      text_align: center
+
+  - id: stamp
+    type: text
+    z: 50
+    x: 60
+    y: 1010
+    width: 960
+    height: 0
+    content: { type: plain, value: "last sync 14:02 UTC" }
+    style:
+      font_family: $mono
+      font_size: 14
+      color: $text_muted
+      text_align: center
+
+slots:
+  - { id: title,        path: "layers[1].content.value",  type: text, hint: "Card title",          default: "Service Health" }
+  - { id: metric_value, path: "layers[12].content.value", type: text, hint: "Big gauge value",     default: "87%" }
+  - { id: label_low,    path: "layers[13].content.value", type: text, hint: "Low scale label",     default: "Low" }
+  - { id: label_med,    path: "layers[14].content.value", type: text, hint: "Med scale label",     default: "Med" }
+  - { id: label_high,   path: "layers[15].content.value", type: text, hint: "High scale label",    default: "High" }
+  - { id: footer,       path: "layers[17].content.value", type: text, hint: "Footer caption pill", default: "All systems nominal" }

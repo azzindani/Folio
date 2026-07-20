@@ -1,0 +1,413 @@
+_protocol: template/v1
+
+# 5-slide LinkedIn carousel — Data story / insight from numbers.
+# Portrait 1080×1350 (LinkedIn 4:5), ocean-blue professional palette.
+meta:
+  id: tmpl-linkedin-data-story-5slide
+  name: LinkedIn Data Story (5 slides)
+  type: carousel
+  created: "2026-05-17"
+  modified: "2026-05-17"
+  generator: folio
+  tags: [linkedin, carousel, document, social, portrait, data, story, insight, stats, 4-5]
+  description: "Five-slide LinkedIn carousel turning a research data point into a narrative: cover, big number, context + methodology, implications, CTA."
+
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+
+theme:
+  ref: ocean-blue
+
+pages:
+  # ── Slide 1 · Cover ────────────────────────────────────────
+  - id: cover
+    label: Cover
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 8, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 120
+        width: 920
+        height: 0
+        content: { type: plain, value: "DATA STORY" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "What 1,000 sales calls\ntaught me." }
+        style: { font_family: $heading, font_size: 76, font_weight: 800, color: $text, line_height: 1.05, letter_spacing: -0.03 }
+      - id: caption
+        type: text
+        z: 12
+        x: 80
+        y: 760
+        width: 920
+        height: 0
+        content: { type: plain, value: "based on N=1000" }
+        style: { font_family: $mono, font_size: 18, color: $text_muted }
+      - id: tagline
+        type: text
+        z: 13
+        x: 80
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "Swipe → for the pattern." }
+        style: { font_family: $body, font_size: 24, color: $text_muted }
+      - id: handle
+        type: text
+        z: 14
+        x: 80
+        y: 1170
+        width: 920
+        height: 0
+        content: { type: plain, value: "@yourhandle" }
+        style: { font_family: $mono, font_size: 16, color: $text_muted }
+      - id: counter
+        type: text
+        z: 15
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "1/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 2 · The Big Number ───────────────────────────────
+  - id: big-number
+    label: Big Number
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 8, fill: { type: solid, color: "$primary" } }
+      - { id: stat-bar, type: rect, z: 2, x: 80, y: 720, width: 120, height: 6, radius: 3, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "THE PATTERN" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: stat
+        type: text
+        z: 11
+        x: 80
+        y: 320
+        width: 920
+        height: 0
+        content: { type: plain, value: "73%" }
+        style: { font_family: $heading, font_size: 320, font_weight: 900, color: $primary, line_height: 0.95, letter_spacing: -0.05 }
+      - id: caption
+        type: text
+        z: 12
+        x: 80
+        y: 770
+        width: 920
+        height: 0
+        content: { type: plain, value: "…of deals are decided in the first 5 minutes." }
+        style: { font_family: $heading, font_size: 40, font_weight: 700, color: $text, line_height: 1.2, letter_spacing: -0.02 }
+      - id: source
+        type: text
+        z: 13
+        x: 80
+        y: 1100
+        width: 920
+        height: 0
+        content: { type: plain, value: "Source: 1,000 recorded B2B calls · 2024–2025 · internal review" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted }
+      - id: counter
+        type: text
+        z: 14
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "2/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 3 · Context + Methodology ────────────────────────
+  - id: context
+    label: Context
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 8, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "CONTEXT" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $accent, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 220
+        width: 920
+        height: 0
+        content: { type: plain, value: "Where the number comes from." }
+        style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - id: para-1
+        type: text
+        z: 12
+        x: 80
+        y: 400
+        width: 920
+        height: 0
+        content: { type: plain, value: "Between Jan 2024 and Mar 2025, we reviewed every recorded first-call from our pipeline. Deals were tagged at close as won or lost." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: para-2
+        type: text
+        z: 13
+        x: 80
+        y: 580
+        width: 920
+        height: 0
+        content: { type: plain, value: "We then scored each call's first five minutes against ten behavioural markers and correlated those scores with outcomes." }
+        style: { font_family: $body, font_size: 24, color: $text, line_height: 1.5 }
+      - id: method-eyebrow
+        type: text
+        z: 14
+        x: 80
+        y: 820
+        width: 920
+        height: 0
+        content: { type: plain, value: "METHOD" }
+        style: { font_family: $body, font_size: 14, font_weight: 700, color: $text_muted, letter_spacing: 0.32, text_transform: uppercase }
+      - id: method-1-dot
+        type: circle
+        z: 20
+        cx: 100
+        cy: 900
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: method-1
+        type: text
+        z: 21
+        x: 130
+        y: 886
+        width: 870
+        height: 0
+        content: { type: plain, value: "Sample size: 1,000 calls" }
+        style: { font_family: $body, font_size: 22, color: $text, line_height: 1.4 }
+      - id: method-2-dot
+        type: circle
+        z: 22
+        cx: 100
+        cy: 980
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: method-2
+        type: text
+        z: 23
+        x: 130
+        y: 966
+        width: 870
+        height: 0
+        content: { type: plain, value: "Timeframe: 15 months (Jan 2024 – Mar 2025)" }
+        style: { font_family: $body, font_size: 22, color: $text, line_height: 1.4 }
+      - id: method-3-dot
+        type: circle
+        z: 24
+        cx: 100
+        cy: 1060
+        rx: 8
+        ry: 8
+        fill: { type: solid, color: "$accent" }
+      - id: method-3
+        type: text
+        z: 25
+        x: 130
+        y: 1046
+        width: 870
+        height: 0
+        content: { type: plain, value: "Source: internal CRM + Gong transcripts" }
+        style: { font_family: $body, font_size: 22, color: $text, line_height: 1.4 }
+      - id: counter
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "3/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 4 · What It Means ────────────────────────────────
+  - id: implications
+    label: Implications
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$background" } }
+      - { id: accent-band, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 8, fill: { type: solid, color: "$primary" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "IMPLICATIONS" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: $primary, letter_spacing: 0.32, text_transform: uppercase }
+      - id: title
+        type: text
+        z: 11
+        x: 80
+        y: 220
+        width: 920
+        height: 0
+        content: { type: plain, value: "What to actually do about it." }
+        style: { font_family: $heading, font_size: 48, font_weight: 700, color: $text, line_height: 1.15, letter_spacing: -0.02 }
+      - { id: chip-1, type: rect, z: 20, x: 80, y: 500, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
+      - id: chip-1-num
+        type: text
+        z: 21
+        x: 80
+        y: 514
+        width: 56
+        height: 0
+        content: { type: plain, value: "1" }
+        style: { font_family: $heading, font_size: 28, font_weight: 800, color: "#FFFFFF", text_align: center }
+      - id: imp-1
+        type: text
+        z: 22
+        x: 170
+        y: 508
+        width: 830
+        height: 0
+        content: { type: plain, value: "Open with the buyer's pain — not your product." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
+      - { id: chip-2, type: rect, z: 23, x: 80, y: 680, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
+      - id: chip-2-num
+        type: text
+        z: 24
+        x: 80
+        y: 694
+        width: 56
+        height: 0
+        content: { type: plain, value: "2" }
+        style: { font_family: $heading, font_size: 28, font_weight: 800, color: "#FFFFFF", text_align: center }
+      - id: imp-2
+        type: text
+        z: 25
+        x: 170
+        y: 688
+        width: 830
+        height: 0
+        content: { type: plain, value: "Rehearse the first 5 minutes harder than the demo." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
+      - { id: chip-3, type: rect, z: 26, x: 80, y: 860, width: 56, height: 56, radius: 0, fill: { type: solid, color: "$primary" } }
+      - id: chip-3-num
+        type: text
+        z: 27
+        x: 80
+        y: 874
+        width: 56
+        height: 0
+        content: { type: plain, value: "3" }
+        style: { font_family: $heading, font_size: 28, font_weight: 800, color: "#FFFFFF", text_align: center }
+      - id: imp-3
+        type: text
+        z: 28
+        x: 170
+        y: 868
+        width: 830
+        height: 0
+        content: { type: plain, value: "Score every call's opening — it's your highest-leverage habit." }
+        style: { font_family: $body, font_size: 26, color: $text, line_height: 1.4 }
+      - id: counter
+        type: text
+        z: 30
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "4/5" }
+        style: { font_family: $mono, font_size: 14, color: $text_muted, text_align: right }
+
+  # ── Slide 5 · CTA ──────────────────────────────────────────
+  - id: cta
+    label: CTA
+    layers:
+      - { id: bg, type: rect, z: 0, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "$primary" } }
+      - { id: bg-overlay, type: rect, z: 1, x: 0, y: 0, width: 1080, height: 1350, fill: { type: solid, color: "rgba(0,0,0,0.35)" } }
+      - { id: accent-band, type: rect, z: 2, x: 0, y: 0, width: 1080, height: 8, fill: { type: solid, color: "$accent" } }
+      - id: eyebrow
+        type: text
+        z: 10
+        x: 80
+        y: 140
+        width: 920
+        height: 0
+        content: { type: plain, value: "TAKE IT WITH YOU" }
+        style: { font_family: $body, font_size: 16, font_weight: 700, color: "#FFFFFF", letter_spacing: 0.32, text_transform: uppercase }
+      - id: heading
+        type: text
+        z: 11
+        x: 80
+        y: 440
+        width: 920
+        height: 0
+        content: { type: plain, value: "Use this\nin your next call." }
+        style: { font_family: $heading, font_size: 88, font_weight: 800, color: "#FFFFFF", line_height: 1.0, letter_spacing: -0.03 }
+      - id: sub
+        type: text
+        z: 12
+        x: 80
+        y: 800
+        width: 920
+        height: 0
+        content: { type: plain, value: "Save this — review it before your next discovery." }
+        style: { font_family: $body, font_size: 26, color: "#F0F0FF", line_height: 1.4 }
+      - { id: cta-chip, type: rect, z: 13, x: 80, y: 920, width: 360, height: 64, radius: 32, fill: { type: solid, color: "#FFFFFF" } }
+      - id: cta-text
+        type: text
+        z: 14
+        x: 80
+        y: 938
+        width: 360
+        height: 0
+        content: { type: plain, value: "Follow for more →" }
+        style: { font_family: $body, font_size: 20, font_weight: 700, color: "$primary", text_align: center }
+      - id: handle
+        type: text
+        z: 15
+        x: 80
+        y: 1170
+        width: 920
+        height: 0
+        content: { type: plain, value: "@yourhandle · weekly data-driven playbooks" }
+        style: { font_family: $mono, font_size: 16, color: "#FFFFFF" }
+      - id: counter
+        type: text
+        z: 16
+        x: 880
+        y: 1280
+        width: 140
+        height: 0
+        content: { type: plain, value: "5/5" }
+        style: { font_family: $mono, font_size: 14, color: "#F0F0FF", text_align: right }
+
+slots:
+  - { id: cover_title,    path: "pages[0].layers[3].content.value",  type: text, hint: "Cover headline",        default: "What 1,000 sales calls\ntaught me." }
+  - { id: cover_caption,  path: "pages[0].layers[4].content.value",  type: text, hint: "Sample-size caption",   default: "based on N=1000" }
+  - { id: cover_handle,   path: "pages[0].layers[6].content.value",  type: text, hint: "Author handle",         default: "@yourhandle" }
+  - { id: big_stat,       path: "pages[1].layers[4].content.value",  type: text, hint: "Hero stat",             default: "73%" }
+  - { id: big_caption,    path: "pages[1].layers[5].content.value",  type: text, hint: "Stat caption",          default: "…of deals are decided in the first 5 minutes." }
+  - { id: big_source,     path: "pages[1].layers[6].content.value",  type: text, hint: "Source attribution",    default: "Source: 1,000 recorded B2B calls · 2024–2025 · internal review" }
+  - { id: context_title,  path: "pages[2].layers[3].content.value",  type: text, hint: "Context headline",      default: "Where the number comes from." }
+  - { id: cta_heading,    path: "pages[4].layers[4].content.value",  type: text, hint: "Closing CTA heading",   default: "Use this\nin your next call." }
