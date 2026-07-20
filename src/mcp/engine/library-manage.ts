@@ -43,7 +43,27 @@ export function deleteDesign(args: { design_path: string; project_path?: string 
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const dest = path.join(trashDir, `${stamp}__${path.basename(dPath)}`);
   try { fs.renameSync(dPath, dest); } catch (e) { return errResult(op, `Could not move to trash: ${(e as Error).message}`, 'Check filesystem permissions.'); }
+
+  // Drop the manifest row too. Moving the file alone left project.yaml listing
+  // a design that no longer exists, so manage_design(op:list) — which reads the
+  // manifest — kept reporting it while op:browse, which scans the disk, did
+  // not. A caller then gets a path that resolves to nothing.
   const progress = [pOk(`Moved design to trash`, dest), pInfo('Recoverable', 'rename it back out of .trash/ to restore')];
+  const projFile = path.join(projDir, 'project.yaml');
+  if (fs.existsSync(projFile)) {
+    try {
+      const proj = readYAML<{ designs?: { path?: string }[] }>(projFile);
+      const rel = path.relative(projDir, dPath).split(path.sep).join('/');
+      const before = proj.designs?.length ?? 0;
+      if (Array.isArray(proj.designs)) {
+        proj.designs = proj.designs.filter(d => d?.path !== rel);
+        if (proj.designs.length !== before) {
+          writeYAML(projFile, proj);
+          progress.push(pInfo('Manifest updated', `removed ${rel} from project.yaml`));
+        }
+      }
+    } catch { /* the file move already succeeded; a stale row is not worth failing over */ }
+  }
   const context = buildContext(op, `Deleted (to trash) "${path.basename(dPath)}"`, [{ type: 'design', path: dest, role: 'trashed' }]);
   return okResult(op, { trashed_path: dest, original_path: dPath, progress, context });
 }

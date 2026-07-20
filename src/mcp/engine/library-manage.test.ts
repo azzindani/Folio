@@ -69,3 +69,43 @@ describe('library management', () => {
     expect(fs.existsSync(fp)).toBe(true);                   // source untouched on failure
   });
 });
+
+describe('deleteDesign — manifest consistency', () => {
+  let tmp: string;
+  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-del-')); });
+  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+
+  function projectWithManifest(name: string): string {
+    const dir = path.join(tmp, name);
+    fs.mkdirSync(path.join(dir, 'designs'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'project.yaml'),
+      `_protocol: project/v1\nmeta:\n  name: ${name}\ndesigns:\n` +
+      `  - id: keep\n    path: designs/keep.design.yaml\n    type: poster\n    status: draft\n` +
+      `  - id: gone\n    path: designs/gone.design.yaml\n    type: poster\n    status: draft\n`);
+    return dir;
+  }
+
+  it('removes the deleted design from project.yaml', () => {
+    // Moving the file alone left the manifest listing a design that no longer
+    // exists, so op:list kept reporting it while op:browse (which scans disk)
+    // did not — and the path it handed back resolved to nothing.
+    const proj = projectWithManifest('beta');
+    makeDesign(proj, 'keep.design.yaml', 'Keep');
+    const fp = makeDesign(proj, 'gone.design.yaml', 'Gone');
+
+    deleteDesign({ design_path: fp });
+
+    const manifest = fs.readFileSync(path.join(proj, 'project.yaml'), 'utf-8');
+    expect(manifest).not.toContain('designs/gone.design.yaml');
+    expect(manifest).toContain('designs/keep.design.yaml');
+  });
+
+  it('still trashes the file when there is no manifest row to remove', () => {
+    const proj = makeProject(tmp, 'gamma');
+    const fp = makeDesign(proj, 'solo.design.yaml', 'Solo');
+    const r = deleteDesign({ design_path: fp }) as unknown as { success: boolean; trashed_path: string };
+    expect(r.success).toBe(true);
+    expect(fs.existsSync(r.trashed_path)).toBe(true);
+    expect(fs.existsSync(fp)).toBe(false);
+  });
+});
