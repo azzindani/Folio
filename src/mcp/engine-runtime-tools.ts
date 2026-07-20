@@ -21,6 +21,7 @@ import { tryFfmpeg } from '../export/animation-export';
 import { buildAnimatedSVG, wrapAnimatedHTML } from '../export/svg-animate';
 import { renderToSVGString } from './engine/svg-export';
 import { resvgFontOption } from './engine/fonts';
+import { resolveImageAssets } from './engine/asset-resolve';
 import { encodeGIF, type GifFrame } from '../export/gif-encode';
 import { specAt, frameTimes, animationDuration } from '../export/gif-frames';
 
@@ -339,6 +340,12 @@ export function exportAnimation(args: {
   // folio.casava.space. SVG animates natively, so no encoder is needed.
   if (type === 'svg' || type === 'html') {
     const pageIndex = pageIndexFor(spec, args.page_id);
+    // Inline project assets before rendering. Without this the SVG carries a
+    // relative href like "assets/images/logo.png", which resolves to nothing
+    // once the file leaves the project directory — the export looked fine and
+    // shipped with a missing image. export_design has always done this; these
+    // routes were rendering straight past it.
+    const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
     let built: { svg: string; animatedLayers: string[] };
     try {
       built = buildAnimatedSVG(spec, {
@@ -365,6 +372,7 @@ export function exportAnimation(args: {
       type,
       bytes: Buffer.byteLength(content),
       animated_layers: built.animatedLayers,
+      ...(assetNotes.length ? { notes: assetNotes } : {}),
       ...(still ? {
         warning: 'No layer carries an animation, so this file is a still image.',
         next_action: 'Add motion with animation(op:keyframe) or animation(op:motion), then export again.',
@@ -376,6 +384,9 @@ export function exportAnimation(args: {
   if (type === 'gif') {
     const pageIndex = pageIndexFor(spec, args.page_id);
     const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
+    // Same reason as the SVG route: every frame is a real render, so an
+    // unresolved asset href means a hole in all of them.
+    const gifAssetNotes = resolveImageAssets(spec, dPath, args.project_path);
     const runMs = args.duration ?? animationDuration(layers);
     if (runMs <= 0) {
       return errResult(
@@ -419,6 +430,7 @@ export function exportAnimation(args: {
       fps,
       duration: runMs,
       bytes: gif.length,
+      ...(gifAssetNotes.length ? { notes: gifAssetNotes } : {}),
       note: 'Encoded in-process — no ffmpeg or Puppeteer involved. ' +
         'For anywhere that renders SVG, type:"svg" is smaller and stays sharp at any size.',
     });

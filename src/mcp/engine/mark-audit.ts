@@ -37,11 +37,17 @@ export function looksLikeMark(spec: DesignSpec): boolean {
 
   const ratio = w / h;
   if (ratio < 0.6 || ratio > 1.67) return false;   // roughly square
-  if (Math.max(w, h) > 1200) return false;          // posters are bigger
+
+  // 800px, not 1200: 1080x1080 is this engine's DEFAULT square poster, so a
+  // 1200 ceiling classified every square poster as a mark — paying seconds of
+  // six-size rasterisation to hand back logo advice about a social graphic.
+  // A mark is authored small; a poster is not.
+  if (Math.max(w, h) > 800) return false;
 
   const layers = spec.pages?.[0]?.layers ?? spec.layers ?? [];
   const count = countLayers(layers);
-  return count > 0 && count <= 12;
+  // A mark is a handful of shapes. Ten-plus layers is a composition.
+  return count > 0 && count <= 8;
 }
 
 function countLayers(layers: unknown[]): number {

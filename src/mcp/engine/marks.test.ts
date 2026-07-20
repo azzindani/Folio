@@ -185,6 +185,16 @@ describe('looksLikeMark', () => {
     expect(looksLikeMark(spec({ document: { width: 1440, height: 1440, unit: 'px', dpi: 96 } }))).toBe(false);
   });
 
+  it('rejects the default 1080x1080 square poster', () => {
+    // Live false positive: 1080 is this engine's default square canvas, so a
+    // 1200px ceiling classified every social graphic as a logo.
+    expect(looksLikeMark(spec({ document: { width: 1080, height: 1080, unit: 'px', dpi: 96 } }))).toBe(false);
+  });
+
+  it('rejects a composition of ten layers even at mark size', () => {
+    expect(looksLikeMark(spec({ layers: Array.from({ length: 10 }, (_, i) => ({ id: `l${i}` })) }))).toBe(false);
+  });
+
   it('rejects a strongly non-square canvas', () => {
     expect(looksLikeMark(spec({ document: { width: 1080, height: 400, unit: 'px', dpi: 96 } }))).toBe(false);
   });

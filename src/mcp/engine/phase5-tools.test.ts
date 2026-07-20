@@ -3,6 +3,10 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execSync } from 'child_process';
+import * as yaml from 'js-yaml';
+
+const readDesign = (p: string): unknown => yaml.load(fs.readFileSync(p, 'utf-8'));
+const writeDesign = (p: string, spec: unknown): void => fs.writeFileSync(p, yaml.dump(spec), 'utf-8');
 import { exportAnimation, setupRemotePresenter, setupCollab, createPresentation } from '../engine';
 
 let tmpDir: string;
@@ -66,6 +70,36 @@ describe('exportAnimation', () => {
       const r = exportAnimation({ design_path: dPath, type: 'svg' });
       expect(r['animated_layers']).toEqual([]);
       expect(String(r['warning'])).toContain('still image');
+    });
+
+    it('inlines project assets instead of leaving a relative href', () => {
+      // Live bug: these routes called renderToSVGString directly and skipped
+      // the asset resolution export_design has always done, so the file went
+      // out carrying src="assets/images/logo.png" — which resolves to nothing
+      // once it leaves the project directory. The export looked successful and
+      // the image was simply missing.
+      const dPath = makePresentationDesign();
+      const projDir = path.dirname(path.dirname(dPath));
+      const imgDir = path.join(projDir, 'assets', 'images');
+      fs.mkdirSync(imgDir, { recursive: true });
+      // A 1x1 PNG is enough — what matters is whether the href gets inlined.
+      fs.writeFileSync(path.join(imgDir, 'dot.png'), Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64'));
+
+      const spec = JSON.parse(JSON.stringify(readDesign(dPath))) as Record<string, unknown>;
+      const pages = spec['pages'] as { layers?: unknown[] }[];
+      const target = pages?.[0] ?? (spec as { layers?: unknown[] });
+      target.layers = [...(target.layers ?? []), {
+        id: 'img', type: 'image', z: 5, x: 10, y: 10, width: 40, height: 40,
+        src: 'assets/images/dot.png',
+      }];
+      writeDesign(dPath, spec);
+
+      const r = exportAnimation({ design_path: dPath, type: 'svg' });
+      const svg = fs.readFileSync(r['output_path'] as string, 'utf-8');
+      expect(svg).toContain('data:image');
+      expect(svg).not.toContain('assets/images/dot.png');
     });
 
     it('honors a custom output_path', () => {
