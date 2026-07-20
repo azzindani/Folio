@@ -82,3 +82,10 @@ tools/harness-suite/*
 # but NOT the regenerated run results (results.json, results-old-engine.json,
 # results-prev-<ts>.json, etc. — local run dumps, not source)
 tools/harness-suite/results*.json
+
+# Content plans / spreadsheets — authored source material, NOT code.
+# Book1.xlsx (178 drafted carousels) was force-pushed out of history on
+# 2026-07-20 after landing in this PUBLIC repo. Cache lives outside the
+# repo at /root/folio-content/ so it cannot be committed by accident.
+*.xlsx
+*.xls
