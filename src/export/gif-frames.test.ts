@@ -141,3 +141,51 @@ describe('frameTimes', () => {
     expect(frameTimes(10, 1)).toHaveLength(1);
   });
 });
+
+describe('layersAt — group transforms cascade', () => {
+  const group = (anim: AnimationSpec): Layer => ({
+    id: 'grp', type: 'group', x: 0, y: 0, width: 512, height: 512, locked: true,
+    layers: [layer('child', { x: 136, y: 136, width: 240, height: 240 })],
+    animation: anim,
+  }) as unknown as Layer;
+
+  const pulse: AnimationSpec = {
+    keyframes: [{ t: 0, scale: 1 }, { t: 2000, scale: 1.5 }],
+    playback: { duration: 2000, origin: 'offset' },
+  };
+
+  it('scales a group\'s children, not just the group box', () => {
+    // Live bug: the SVG route gets this free because transform:scale() on the
+    // <g> cascades. A flipbook renders from absolute coordinates, so animating
+    // a group resized only its own width/height and every child stayed put —
+    // the GIF showed no motion at all across 48 frames.
+    const out = layersAt([group(pulse)], 2000) as unknown as { width: number; layers: Record<string, number>[] }[];
+    expect(out[0].width).toBe(768);            // 512 * 1.5
+    expect(out[0].layers[0]['width']).toBe(360); // 240 * 1.5 — the point
+  });
+
+  it('leaves children untouched when the group is not animating', () => {
+    const out = layersAt([group(pulse)], 0) as unknown as { layers: Record<string, number>[] }[];
+    expect(out[0].layers[0]['width']).toBe(240);
+    expect(out[0].layers[0]['x']).toBe(136);
+  });
+
+  it('moves children with a translating group', () => {
+    const slide: AnimationSpec = {
+      keyframes: [{ t: 0, x: 0 }, { t: 100, x: 40 }],
+      playback: { duration: 100, origin: 'offset' },
+    };
+    const out = layersAt([group(slide)], 100) as unknown as { layers: Record<string, number>[] }[];
+    expect(out[0].layers[0]['x']).toBe(176); // 136 + 40
+  });
+
+  it('scales child font size with the box', () => {
+    const g = {
+      id: 'g', type: 'group', x: 0, y: 0, width: 100, height: 100,
+      layers: [{ id: 't', type: 'text', x: 0, y: 0, width: 50, height: 20, size: 40 }],
+      animation: pulse,
+    } as unknown as Layer;
+    const out = layersAt([g], 2000) as unknown as { layers: Record<string, number>[] }[];
+    expect(out[0].layers[0]['size']).toBe(60); // 40 * 1.5
+  });
+});

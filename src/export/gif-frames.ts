@@ -126,15 +126,83 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   return out as unknown as Layer;
 }
 
+/**
+ * A transform inherited from an animated ancestor group.
+ *
+ * The SVG route gets this free: `transform: scale()` on a group's `<g>`
+ * cascades to everything inside it. A flipbook has no cascade — each frame is
+ * rendered from absolute coordinates — so animating a group resized only the
+ * group's own width/height while its children stayed exactly where they were,
+ * and the GIF showed no motion at all. Verified against a live pulse on a
+ * locked group: the ring's width was identical in all 48 frames.
+ *
+ * Since every carousel page and hand-placed composition this engine writes is
+ * a locked group, that covered most of the cases anyone would animate.
+ */
+interface InheritedTransform {
+  scale: number;
+  /** Fixed point the scale expands about, in absolute canvas coordinates. */
+  originX: number;
+  originY: number;
+  dx: number;
+  dy: number;
+}
+
+/** Apply an ancestor's transform to a layer's absolute geometry. */
+function inherit(layer: Layer, tf: InheritedTransform): Layer {
+  const out = { ...layer } as Record<string, unknown>;
+  const x = num(out['x']) ?? 0;
+  const y = num(out['y']) ?? 0;
+  const w = num(out['width']) ?? 0;
+  const h = num(out['height']) ?? 0;
+
+  if (tf.scale !== 1) {
+    out['x'] = tf.originX + (x - tf.originX) * tf.scale;
+    out['y'] = tf.originY + (y - tf.originY) * tf.scale;
+    out['width'] = w * tf.scale;
+    out['height'] = h * tf.scale;
+    // Type scales with the box; leaving it fixed would make a scaling card's
+    // text visibly drift out of its own layout.
+    const size = num(out['size']);
+    if (size !== undefined) out['size'] = size * tf.scale;
+  }
+  out['x'] = (num(out['x']) ?? 0) + tf.dx;
+  out['y'] = (num(out['y']) ?? 0) + tf.dy;
+  return out as unknown as Layer;
+}
+
 /** Recursively resolve every animated layer at time t. */
-export function layersAt(layers: Layer[], t: number): Layer[] {
+export function layersAt(layers: Layer[], t: number, inherited?: InheritedTransform): Layer[] {
   return layers.map(l => {
-    const layer = l as AnimatedLayer;
+    const layer = inherited ? (inherit(l, inherited) as AnimatedLayer) : (l as AnimatedLayer);
+    const before = layer;
     const resolved = applyValues(layer, t) as AnimatedLayer;
-    if (Array.isArray(layer.layers)) {
-      return { ...resolved, layers: layersAt(layer.layers, t) } as Layer;
-    }
-    return resolved;
+
+    if (!Array.isArray(layer.layers)) return resolved;
+
+    // Work out what this group's own animation did to it, and pass that down.
+    const w0 = num(before['width' as keyof Layer]) ?? 0;
+    const rec = resolved as unknown as Record<string, unknown>;
+    const w1 = num(rec['width']) ?? w0;
+    const scale = w0 > 0 ? w1 / w0 : 1;
+    const x0 = num(before['x' as keyof Layer]) ?? 0;
+    const y0 = num(before['y' as keyof Layer]) ?? 0;
+    const x1 = num(rec['x']) ?? x0;
+    const y1 = num(rec['y']) ?? y0;
+
+    const child: InheritedTransform = {
+      scale,
+      // Scale about the group's own top-left in its PRE-animation position, so
+      // the recentring applyValues already did is not counted twice.
+      originX: x0,
+      originY: y0,
+      dx: x1 - x0,
+      dy: y1 - y0,
+    };
+
+    // `layer` already carries the parent's transform (inherit() ran above), so
+    // `child` is expressed in post-parent coordinates and composes by itself.
+    return { ...resolved, layers: layersAt(layer.layers, t, child) } as Layer;
   });
 }
 
