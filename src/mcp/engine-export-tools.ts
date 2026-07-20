@@ -27,6 +27,23 @@ import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
 import { extractPptxTexts } from '../export/pptx-text-extract';
 
+/**
+ * The design's own resolution, for px → PostScript-point conversion in the PDF.
+ *
+ * The schema has carried `document.dpi` all along, but the PDF exporter used to
+ * hard-code 96 — so a poster authored for PRINT came out physically wrong: an A2
+ * sheet drawn at 2480×3508 (150 dpi) produced a 656×928 mm page instead of
+ * 420×594. Correct proportions, 1.56× too big, and the print shop has to rescale
+ * it. Honoring the field puts that same canvas on an exact A2 page.
+ *
+ * Falls back to 96 (the CSS reference dpi) when absent or nonsense, so every
+ * existing screen design exports byte-identically.
+ */
+export function documentDpi(spec: { document?: { dpi?: unknown } }): number {
+  const dpi = Number(spec.document?.dpi);
+  return Number.isFinite(dpi) && dpi > 0 ? dpi : 96;
+}
+
 import { assembleReportHTML } from '../export/html-assembler';
 
 import type { LoadedDataset } from '../report/data-loader';
@@ -191,7 +208,8 @@ export function exportDesign(args: { design_path: string; format: string; output
     try {
       const scale = typeof args.scale === 'number' && args.scale > 0 ? args.scale : 3;
       const missingFonts = new Set<string>();
-      const toPt = (px: number): number => (px * 72) / 96;
+      const dpi = documentDpi(spec);
+      const toPt = (px: number): number => (px * 72) / dpi;
       const dim = (el: SVGSVGElement, attr: 'width' | 'height', fallback: number): number => {
         const v = parseFloat(el.getAttribute(attr) ?? '');
         return Number.isFinite(v) && v > 0 ? v : fallback;
