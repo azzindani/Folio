@@ -15,3 +15,4 @@ export { collectHrefRects, exportDesign, diagnoseDesign, renderPreview, alignLay
 export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from './engine-template-tools';
 export { createPresentation, exportPresentation, generateReport, bindData, exportReport, validateReportDesign } from './engine-report-tools';
 export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';
+export { applyMotion } from './engine/motion';

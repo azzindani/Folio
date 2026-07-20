@@ -103,6 +103,7 @@ export function dispatchAnimation(a: Args): ToolResult {
     case 'timeline': return engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]);
     case 'keyframe': return engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]);
     case 'export':   return engine.exportAnimation(a as Parameters<typeof engine.exportAnimation>[0]);
-    default:         return badOp('animation', a['op'], ['timeline', 'keyframe', 'export']);
+    case 'motion':   return engine.applyMotion(a as Parameters<typeof engine.applyMotion>[0]);
+    default:         return badOp('animation', a['op'], ['timeline', 'keyframe', 'export', 'motion']);
   }
 }

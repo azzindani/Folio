@@ -125,8 +125,12 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
   const duration = playback?.duration ?? (span > 0 ? span : 1000);
   if (duration <= 0) return '';
 
-  const baseX = typeof first.x === 'number' ? first.x : 0;
-  const baseY = typeof first.y === 'number' ? first.y : 0;
+  // With origin:'offset' the values are already deltas from where the renderer
+  // drew the layer, so there is nothing to subtract. Under the default the
+  // first frame defines rest. See KeyframeAnimation.playback.origin.
+  const offsetOrigin = playback?.origin === 'offset';
+  const baseX = offsetOrigin ? 0 : (typeof first.x === 'number' ? first.x : 0);
+  const baseY = offsetOrigin ? 0 : (typeof first.y === 'number' ? first.y : 0);
 
   const steps: string[] = [];
   for (const kf of sorted) {
@@ -156,11 +160,12 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
   const easing = playback?.easing ?? 'ease-in-out';
   const iteration = playback?.loop ? 'infinite' : '1';
   const direction = playback?.direction ?? 'normal';
+  const delay = Math.max(0, playback?.delay ?? 0);
 
   return [
     `@keyframes ${name} { ${steps.join(' ')} }`,
     `[data-layer-id="${layerId}"] { transform-box: fill-box; transform-origin: center; ` +
-      `animation: ${name} ${duration}ms ${easing} 0ms ${iteration} ${direction} both; }`,
+      `animation: ${name} ${duration}ms ${easing} ${delay}ms ${iteration} ${direction} both; }`,
   ].join('\n');
 }
 
