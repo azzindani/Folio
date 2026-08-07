@@ -78,6 +78,13 @@ export class EditorApp extends EditorAppBase {
       ?? this.container.querySelector('.canvas-section')!;
 
     this.canvas = new CanvasManager(primaryPane, this.state);
+    // Pinch/pan/long-press/double-tap. The canvas's own input path is mouse and
+    // wheel only, which on a phone left no way to move the view at all. Loaded
+    // only where there is a touchscreen — it is dead weight in the desktop
+    // bundle, which sits within a KB of its budget.
+    if (window.matchMedia?.('(pointer: coarse)').matches) {
+      void import('./touch-gestures').then(m => m.wireTouchGestures(primaryPane, this.state));
+    }
 
     // Refit the canvas when the viewport changes so design content stays
     // visible after window resize or device-orientation change. Debounced
