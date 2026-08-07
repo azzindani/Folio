@@ -47,20 +47,67 @@ export function projectFontsDir(projectDir?: string): string | null {
 
 export { fontFamilyFromFilename } from '../../utils/font-name';
 import { fontFamilyFromFilename, isFontFile } from '../../utils/font-name';
+import { readFontNames } from '../../utils/font-name-table';
 
-/** Lowercased family guesses for every font file in the project (no cache —
- *  operators upload mid-session and the dir listing is tiny). */
+/**
+ * Every project font file with the family names it answers to.
+ *
+ * The filename guess alone is not enough. A downloaded family often declares
+ * itself something the filename never said — Fontsource ships Space Grotesk's
+ * static weights as "Space Grotesk Light", the variable font's default
+ * instance — and resvg matches on the DECLARED name. So both are registered:
+ * the declared one (which is what actually renders) and the filename guess
+ * (which is what an operator who renamed the file will type).
+ *
+ * Cached on path+mtime+size: reading a 300 KiB TTF per render otherwise.
+ */
+const nameCache = new Map<string, { key: string; families: string[]; weight?: number }>();
+
+export interface ProjectFont { file: string; families: string[]; weight?: number }
+
+export function projectFontEntries(projectDir?: string): ProjectFont[] {
+  const pd = projectFontsDir(projectDir);
+  if (!pd) return [];
+  const out: ProjectFont[] = [];
+  let files: string[];
+  try { files = fs.readdirSync(pd); } catch { return []; }
+  for (const f of files) {
+    if (!isFontFile(f)) continue;
+    const abs = path.join(pd, f);
+    const families = new Set<string>();
+    const guess = fontFamilyFromFilename(f);
+    if (guess) families.add(guess);
+    let weight: number | undefined;
+    try {
+      const st = fs.statSync(abs);
+      const key = `${st.mtimeMs}:${st.size}`;
+      const hit = nameCache.get(abs);
+      const names = hit?.key === key ? hit : null;
+      if (names) {
+        for (const fam of names.families) families.add(fam);
+        weight = names.weight;
+      } else {
+        const parsed = readFontNames(fs.readFileSync(abs));
+        const declared = parsed.family ? [parsed.family.toLowerCase()] : [];
+        for (const fam of declared) families.add(fam);
+        weight = parsed.weightClass;
+        const entry: { key: string; families: string[]; weight?: number } = { key, families: declared };
+        if (weight !== undefined) entry.weight = weight;
+        nameCache.set(abs, entry);
+      }
+    } catch { /* unreadable/malformed → the filename guess stands alone */ }
+    if (!families.size) continue;
+    out.push(weight === undefined
+      ? { file: abs, families: [...families] }
+      : { file: abs, families: [...families], weight });
+  }
+  return out;
+}
+
+/** Lowercased family names every project font answers to. */
 export function projectFontFamilies(projectDir?: string): Set<string> {
   const out = new Set<string>();
-  const pd = projectFontsDir(projectDir);
-  if (!pd) return out;
-  try {
-    for (const f of fs.readdirSync(pd)) {
-      if (!isFontFile(f)) continue;
-      const fam = fontFamilyFromFilename(f);
-      if (fam) out.add(fam);
-    }
-  } catch { /* unreadable dir → none */ }
+  for (const e of projectFontEntries(projectDir)) for (const f of e.families) out.add(f);
   return out;
 }
 

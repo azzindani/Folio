@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { fontsDir, projectFontsDir, fontFamilyFromFilename } from './fonts';
+import { fontsDir, projectFontEntries } from './fonts';
 import { selectFontFile, type FontSelection } from '../../export/pdf-font-select';
 
 export type FontPick = FontSelection;
@@ -28,17 +28,14 @@ function fontFiles(): Record<string, string[]> {
 // <project>/assets/fonts, so an uploaded TTF embeds as selectable vector text
 // exactly like a bundled one. Absolute paths keep fontFileBase64 unambiguous.
 function projectFontFiles(projectDir?: string): Record<string, string[]> {
-  const pd = projectFontsDir(projectDir);
-  if (!pd) return {};
   const out: Record<string, string[]> = {};
-  try {
-    for (const f of fs.readdirSync(pd)) {
-      if (!/\.(ttf|otf)$/i.test(f)) continue;      // jsPDF embeds TTF/OTF only
-      const fam = fontFamilyFromFilename(f);
-      if (!fam) continue;
-      (out[fam] ??= []).push(path.join(pd, f));
-    }
-  } catch { /* unreadable dir → none */ }
+  for (const e of projectFontEntries(projectDir)) {
+    if (!/\.(ttf|otf)$/i.test(e.file)) continue;   // jsPDF embeds TTF/OTF only
+    // A file is registered under every name it answers to — the family the
+    // file DECLARES and the one its filename suggests — so a design written
+    // against either spelling embeds rather than silently staying raster.
+    for (const fam of e.families) (out[fam] ??= []).push(e.file);
+  }
   return out;
 }
 

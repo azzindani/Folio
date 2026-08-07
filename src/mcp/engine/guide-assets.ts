@@ -47,8 +47,18 @@ modification — the search filters for it.
 
   • Search engines index OBJECTS, not themes. "bureaucracy" finds nothing;
     "stack of paper folders" finds the picture that MEANS bureaucracy.
-  • what:"icon" beats drawing a glyph out of rects. what:"logo" gets a real
-    brand mark instead of a coloured square with initials.
+  • ICONS match on ONE word. what:"icon", query:"cloud" works; "weather cloud
+    lightning" returns nothing. Search one concept at a time.
+  • A fetched icon is monochrome and defaults to BLACK — invisible on a dark
+    canvas. Pass icon_color:"#YourAccent" on asset_fetch. (For a common glyph
+    the built-in {type:"icon", name, color} layer needs no fetch at all;
+    reach for the finder when you need a specific set or a brand mark.)
+  • FONTS: use the font_family the reply gives you, VERBATIM. It is read from
+    inside the file and is often not what you searched for — Space Grotesk's
+    static weights declare themselves "Space Grotesk Light". Fetch each weight
+    you need (weight:400, weight:700); they group under that one family name.
+    The file covers the family's default subset, so unusual accented
+    characters may fall back — keep them out of small print.
   • ATTRIBUTION IS PART OF THE DESIGN. If asset_fetch returns
     attribution_required, typeset that line on the canvas — 7–9px, 40–55%
     opacity, along a bottom or side edge. Without it the design is not

@@ -272,7 +272,11 @@ describe('MCP Incremental Carousel Generation', () => {
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
-  });
+    // 20s, not the 5s default: this one test dynamically imports the whole MCP
+    // engine barrel INSIDE its own body, then does real filesystem work for
+    // four pages. Alone it finishes in ~2s; under a full parallel suite the
+    // import alone can eat the default budget.
+  }, 20_000);
 });
 
 describe('Token Resolution Edge Cases', () => {

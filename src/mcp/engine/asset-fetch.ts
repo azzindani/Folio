@@ -14,6 +14,7 @@ import {
   ingestAsset, requireProject, isErr, extForMime, maxAssetBytes, AssetError,
   type AssetProvenance, type IngestArgs,
 } from './assets';
+import { readFontNames } from '../../utils/font-name-table';
 import type { ToolResult, NextAction, ProgressItem } from '../types';
 
 const pathJoin = path.join;
@@ -110,7 +111,18 @@ async function resolveWikimedia(title: string): Promise<ResolvedAsset> {
 
 interface IconifyCollections { [prefix: string]: { name?: string; author?: { name?: string }; license?: { title?: string; spdx?: string } } }
 
-async function resolveIconify(id: string, px: number): Promise<ResolvedAsset> {
+/**
+ * Iconify serves icons as `currentColor`, which resolves to BLACK once the SVG
+ * is a standalone file — invisible on a dark canvas, and there is no tint on
+ * the image layer. So the colour is baked in at fetch time, by the API itself.
+ */
+function iconColorParam(color?: string): string {
+  const c = String(color ?? '').trim();
+  if (!/^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(c)) return '';
+  return `&color=${encodeURIComponent(c.startsWith('#') ? c : `#${c}`)}`;
+}
+
+async function resolveIconify(id: string, px: number, color?: string): Promise<ResolvedAsset> {
   const [prefix, name] = id.split(':');
   if (!prefix || !name) throw new NetError(`Malformed icon ref "${id}"`, 'Use the ref from asset_search, e.g. "iconify:mdi:cloud".');
   let license = 'open source';
@@ -124,9 +136,9 @@ async function resolveIconify(id: string, px: number): Promise<ResolvedAsset> {
     setName = col?.name;
   } catch { /* licence lookup is best-effort; the icon itself is still open */ }
   const r: ResolvedAsset = {
-    url: `https://api.iconify.design/${prefix}/${name}.svg?height=${Math.round(px)}`,
+    url: `https://api.iconify.design/${prefix}/${name}.svg?height=${Math.round(px)}${iconColorParam(color)}`,
     kind: 'icons', ext: 'svg',
-    suggestedName: slugify(`${prefix}-${name}`, 'icon'),
+    suggestedName: slugify(`${prefix}-${name}${color ? `-${String(color).replace('#', '')}` : ''}`, 'icon'),
     license, title: name.replace(/-/g, ' '),
     page: `https://icon-sets.iconify.design/${prefix}/${name}/`,
   };
@@ -137,7 +149,7 @@ async function resolveIconify(id: string, px: number): Promise<ResolvedAsset> {
   return r;
 }
 
-interface FSDetail { id?: string; family?: string; license?: string; weights?: number[]; defSubset?: string; category?: string }
+interface FSDetail { id?: string; family?: string; license?: string; weights?: number[]; subsets?: string[]; defSubset?: string; category?: string }
 
 async function resolveFont(id: string, weight?: number): Promise<ResolvedAsset> {
   const d = await httpJSON<FSDetail>(`https://api.fontsource.org/v1/fonts/${encodeURIComponent(id)}`);
@@ -145,6 +157,11 @@ async function resolveFont(id: string, weight?: number): Promise<ResolvedAsset> 
   const weights = d.weights ?? [400];
   const want = weight && weights.includes(weight) ? weight
     : weights.includes(400) ? 400 : (weights[0] ?? 400);
+  // Subset files are DISJOINT, not cumulative: "latin-ext" holds only the
+  // extended block and no ASCII at all, so taking it renders every ordinary
+  // word in a fallback face. The default subset is the one that covers normal
+  // copy; characters outside it (ł, ř, ő) fall back per-glyph, which is the
+  // cheaper failure by far.
   const subset = d.defSubset ?? 'latin';
   return {
     url: `https://cdn.jsdelivr.net/fontsource/fonts/${encodeURIComponent(id)}@latest/${subset}-${want}-normal.ttf`,
@@ -176,7 +193,7 @@ export function projectAllowHosts(projectDir: string): string[] | null {
  * `url:` is the only form that bypasses a provider, so it is the only one held
  * to the allowlist; the rest were vouched for by an API we chose to trust.
  */
-export async function resolveRef(ref: string, opts: { projectDir: string; icon_px?: number; weight?: number })
+export async function resolveRef(ref: string, opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number })
   : Promise<{ resolved: ResolvedAsset; allow?: string[] }> {
   const raw = String(ref ?? '').trim();
   const cut = raw.indexOf(':');
@@ -186,7 +203,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
   switch (scheme) {
     case 'openverse': return { resolved: await resolveOpenverse(rest) };
     case 'wikimedia': return { resolved: await resolveWikimedia(rest) };
-    case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512) };
+    case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512, opts.icon_color) };
     case 'font':      return { resolved: await resolveFont(rest, opts.weight) };
     case 'https': {
       const allow = projectAllowHosts(opts.projectDir) ?? defaultFetchHosts();
@@ -217,7 +234,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
  */
 export async function assetFetch(args: {
   project_path?: string; ref?: string; url?: string; name?: string;
-  folder?: string; alt?: string; kind?: string; icon_px?: number; weight?: number;
+  folder?: string; alt?: string; kind?: string; icon_px?: number; icon_color?: string; weight?: number;
 }): Promise<ToolResult> {
   const op = 'asset_fetch';
   const proj = requireProject(op, args.project_path);
@@ -227,8 +244,9 @@ export async function assetFetch(args: {
 
   const progress: ProgressItem[] = [];
   try {
-    const opts: { projectDir: string; icon_px?: number; weight?: number } = { projectDir: proj.dir };
+    const opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number } = { projectDir: proj.dir };
     if (args.icon_px !== undefined) opts.icon_px = args.icon_px;
+    if (args.icon_color !== undefined) opts.icon_color = args.icon_color;
     if (args.weight !== undefined) opts.weight = args.weight;
     const { resolved, allow } = await resolveRef(ref, opts);
     progress.push(pInfo('Source resolved', `${resolved.title ?? resolved.suggestedName} — ${resolved.license ?? 'licence unknown'}`));
@@ -242,7 +260,16 @@ export async function assetFetch(args: {
       return errResult(op, `Could not tell what kind of file ${got.finalUrl} is (content-type: ${got.contentType || 'none'})`,
         'Pass name:"something.png" to declare the type, or pick a different result.', progress);
     }
-    const name = args.name ?? `${resolved.suggestedName}.${ext}`;
+    // A font names ITSELF; the catalogue's label is only a search term. Storing
+    // it under the catalogue name would leave the filename (which Folio's font
+    // registry reads) disagreeing with the name table (which resvg reads), and
+    // the design would quietly render in a fallback face.
+    const fontNames = resolved.kind === 'fonts' ? readFontNames(got.buffer) : {};
+    const realFamily = fontNames.family;
+    const stem = realFamily
+      ? slugify(`${realFamily}-${fontNames.weightClass ?? args.weight ?? 400}`, resolved.suggestedName)
+      : resolved.suggestedName;
+    const name = args.name ?? `${stem}.${ext}`;
     const provenance: AssetProvenance = {
       source: ref.split(':')[0] ?? 'url',
       url: got.finalUrl,
@@ -270,7 +297,7 @@ export async function assetFetch(args: {
     const w = entry.width ?? 600, h = entry.height ?? 400;
     const scale = Math.min(1, 600 / Math.max(w, h));
     const stub = entry.kind === 'fonts'
-      ? { note: `Font stored at ${entry.path}. Use it via the design's type settings / font_family.` }
+      ? { note: `Font stored at ${entry.path}. Set font_family:"${realFamily ?? resolved.title ?? entry.id}" on a text layer.` }
       : { id: entry.id, type: 'image', z: 21, pos: [120, 120, Math.round(w * scale), Math.round(h * scale)], src: entry.path, fit: 'cover' };
     const next_action: NextAction = {
       tool: 'add_layers',
@@ -282,6 +309,10 @@ export async function assetFetch(args: {
     const handover = buildHandover('COMPOSE', { project_path: proj.dir });
     return okResult(op, {
       asset: entry, provenance, layer_stub: stub, next_action,
+      ...(realFamily ? {
+        font_family: realFamily,
+        font_note: `Use font_family:"${realFamily}" EXACTLY — that is the name inside the file, and it is often not the name you searched for (variable families ship their static weights under the default instance's name). Fetch the other weights of the same family and they all group under it; then font_weight picks between them.`,
+      } : {}),
       ...(provenance.attribution ? { attribution_required: provenance.attribution } : {}),
       progress, context, handover,
     });

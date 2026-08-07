@@ -4,6 +4,22 @@ import * as os from 'os';
 import * as path from 'path';
 import { bundledFamilies, unbundledFonts, resvgFontOption, fontsDir, projectFontsDir, projectFontFamilies } from './fonts';
 
+/** Minimal sfnt carrying one `name` record — enough for readFontNames. */
+function fontWithFamily(family: string): Buffer {
+  const text = Buffer.from(family.split('').flatMap(c => [0, c.charCodeAt(0)]));
+  const rec = Buffer.alloc(12);
+  rec.writeUInt16BE(3, 0); rec.writeUInt16BE(1, 2); rec.writeUInt16BE(0, 4);
+  rec.writeUInt16BE(1, 6); rec.writeUInt16BE(text.length, 8); rec.writeUInt16BE(0, 10);
+  const head = Buffer.alloc(6);
+  head.writeUInt16BE(0, 0); head.writeUInt16BE(1, 2); head.writeUInt16BE(18, 4);
+  const name = Buffer.concat([head, rec, text]);
+  const dir = Buffer.alloc(28);
+  dir.writeUInt32BE(0x00010000, 0); dir.writeUInt16BE(1, 4);
+  dir.write('name', 12, 4, 'latin1');
+  dir.writeUInt32BE(0, 16); dir.writeUInt32BE(28, 20); dir.writeUInt32BE(name.length, 24);
+  return Buffer.concat([dir, name]);
+}
+
 function tmpProjectWithFonts(files: string[]): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-fonts-'));
   const fdir = path.join(dir, 'assets', 'fonts');
@@ -73,6 +89,27 @@ describe('project fonts (WP-1.6)', () => {
     expect(fams.has('clash display')).toBe(true);
     expect(fams.has('inter')).toBe(true);
     expect(fams.size).toBe(2);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('registers the family a font DECLARES, not only the one its filename implies', () => {
+    // The case this exists for: a downloaded family whose static weights carry
+    // the variable font's default-instance name. resvg matches the declared
+    // name, so a design using it must not be reported as an unbundled font.
+    const dir = tmpProjectWithFonts([]);
+    fs.writeFileSync(path.join(dir, 'assets', 'fonts', 'space-grotesk-700.ttf'),
+      fontWithFamily('Space Grotesk Light'));
+    const fams = projectFontFamilies(dir);
+    expect(fams.has('space grotesk light')).toBe(true);   // what the file says
+    expect(fams.has('space grotesk')).toBe(true);         // what the name says
+    const svg = '<text font-family="Space Grotesk Light">x</text>';
+    expect(unbundledFonts(svg, dir)).toEqual([]);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('falls back to the filename when the file is not a parseable font', () => {
+    const dir = tmpProjectWithFonts(['Clash_Display-Bold.ttf']);   // contents: "x"
+    expect(projectFontFamilies(dir).has('clash display')).toBe(true);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
