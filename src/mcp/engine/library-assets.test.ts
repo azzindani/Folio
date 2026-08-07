@@ -34,8 +34,15 @@ describe('library assets drawer', () => {
     expect(ASSET_SCRIPT.match(/credentials:'include'/g)?.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('routes fonts to assets/fonts and everything else to assets/images', () => {
-    expect(ASSET_SCRIPT).toContain("/\\.(ttf|otf|woff2?)$/i.test(f.name)?'fonts':'images'");
+  it('routes fonts, docs and images to their own kind dirs', () => {
+    expect(ASSET_SCRIPT).toContain("/\\.(ttf|otf|woff2?)$/i.test(f.name)?'fonts'");
+    expect(ASSET_SCRIPT).toContain("/\\.(md|markdown|txt|csv|json|ya?ml)$/i.test(f.name)?'docs':'images'");
+  });
+
+  it('accepts source-material file types, so a brief can be uploaded', () => {
+    expect(markup).toMatch(/accept="[^"]*\.md[^"]*"/);
+    expect(markup).toMatch(/accept="[^"]*text\/markdown[^"]*"/);
+    expect(markup).toMatch(/accept="[^"]*\.csv[^"]*"/);
   });
 
   it('supports the ?assets=<project> deep link', () => {

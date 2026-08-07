@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { sanitizeAssetName, ingestAsset, assetAdd, assetList, assetDelete, assetMove, sanitizeFolder, parseAssetPath, AssetError, readAssetManifest } from './assets';
+import { sanitizeAssetName, ingestAsset, assetAdd, assetList, assetDelete, assetMove, assetRead, sanitizeFolder, parseAssetPath, AssetError, readAssetManifest } from './assets';
 
 // canonical valid 1×1 transparent PNG
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
@@ -219,5 +219,67 @@ describe('assets', () => {
       const bad = assetDelete({ project_path: proj, asset_path: 'assets/images/../../project.yaml' }) as unknown as { success: boolean };
       expect(bad.success).toBe(false);
     });
+  });
+});
+
+describe('docs assets (source material)', () => {
+  let tmp: string;
+  let proj: string;
+  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-docs-')); proj = makeProject(tmp, 'p1'); });
+  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+
+  const BRIEF = '# Automation brief\n\nSee [Power Automate](https://learn.microsoft.com/power-automate/).\n';
+  const briefUri = `data:text/markdown;base64,${Buffer.from(BRIEF).toString('base64')}`;
+
+  it('stores markdown under assets/docs and lists it', () => {
+    const r = assetAdd({ project_path: proj, name: 'brief.md', data: briefUri }) as unknown as { success: boolean; asset: { path: string; kind: string } };
+    expect(r.success).toBe(true);
+    expect(r.asset.path).toBe('assets/docs/brief.md');
+    expect(r.asset.kind).toBe('docs');
+    const list = assetList({ project_path: proj }) as unknown as { assets: { path: string }[] };
+    expect(list.assets.map(a => a.path)).toContain('assets/docs/brief.md');
+  });
+
+    // The mime on a data: URI wins over the filename extension (an existing
+    // rule), so each case has to declare its own type — passing text/markdown
+    // for a .txt would legitimately store it as .md.
+  it('accepts the other text kinds and a folder', () => {
+    for (const [name, mime] of [['links.txt', 'text/plain'], ['rows.csv', 'text/csv'], ['data.json', 'application/json'], ['conf.yaml', 'text/yaml']] as const) {
+      const uri = `data:${mime};base64,${Buffer.from(BRIEF).toString('base64')}`;
+      const r = assetAdd({ project_path: proj, name, data: uri, folder: 'briefs' }) as unknown as { success: boolean; asset: { path: string; kind: string } };
+      expect(r.success, name).toBe(true);
+      expect(r.asset.kind).toBe('docs');
+      expect(r.asset.path).toBe(`assets/docs/briefs/${name}`);
+    }
+  });
+
+  it('reads the content back, hyperlinks intact', () => {
+    assetAdd({ project_path: proj, name: 'brief.md', data: briefUri });
+    const r = assetRead({ project_path: proj, asset_path: 'assets/docs/brief.md' }) as unknown as { success: boolean; content: string; truncated: boolean; bytes: number };
+    expect(r.success).toBe(true);
+    expect(r.content).toContain('https://learn.microsoft.com/power-automate/');
+    expect(r.truncated).toBe(false);
+    expect(r.bytes).toBe(BRIEF.length);
+  });
+
+  it('truncates a long read at the cap and says so', () => {
+    const big = 'x'.repeat(4000);
+    assetAdd({ project_path: proj, name: 'big.txt', data: `data:text/plain;base64,${Buffer.from(big).toString('base64')}` });
+    const r = assetRead({ project_path: proj, asset_path: 'assets/docs/big.txt', max_bytes: 1024 }) as unknown as { content: string; truncated: boolean };
+    expect(r.content).toHaveLength(1024);
+    expect(r.truncated).toBe(true);
+  });
+
+  it('refuses to read a binary asset, a missing one, and a traversal path', () => {
+    assetAdd({ project_path: proj, name: 'dot.png', data: PNG_URI });
+    expect((assetRead({ project_path: proj, asset_path: 'assets/images/dot.png' }) as unknown as { success: boolean }).success).toBe(false);
+    expect((assetRead({ project_path: proj, asset_path: 'assets/docs/ghost.md' }) as unknown as { success: boolean }).success).toBe(false);
+    expect((assetRead({ project_path: proj, asset_path: '../project.yaml' }) as unknown as { success: boolean }).success).toBe(false);
+  });
+
+  it('still refuses executable and unknown types', () => {
+    expect(sanitizeAssetName('payload.exe')).toBeNull();
+    expect(sanitizeAssetName('run.js')).toBeNull();
+    expect(sanitizeAssetName('a.html')).toBeNull();
   });
 });

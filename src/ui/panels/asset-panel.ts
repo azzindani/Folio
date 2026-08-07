@@ -11,7 +11,7 @@ import type { Layer } from '../../schema/types';
 interface AssetRow {
   id: string;
   path: string;
-  kind: 'images' | 'icons' | 'fonts';
+  kind: 'images' | 'icons' | 'fonts' | 'docs';
   folder?: string;
   bytes: number;
   width?: number;
@@ -26,7 +26,7 @@ type FolderFilter = string | null;
 
 let insertCounter = 0;
 
-const KIND_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2';
+const KIND_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json';
 
 export class AssetPanelManager {
   private container: HTMLElement;
@@ -88,7 +88,8 @@ export class AssetPanelManager {
     let ok = 0;
     for (const file of Array.from(files)) {
       const seg = folder ? `${encodeURIComponent(folder)}/` : '';
-      const kind = /\.(ttf|otf|woff2?)$/i.test(file.name) ? 'fonts' : 'images';
+      const kind = /\.(ttf|otf|woff2?)$/i.test(file.name) ? 'fonts'
+        : /\.(md|markdown|txt|csv|json|ya?ml)$/i.test(file.name) ? 'docs' : 'images';
       try {
         const r = await fetch(`${this.base()}/assets/${kind}/${seg}${encodeURIComponent(file.name)}`, {
           method: 'POST', credentials: 'include',
@@ -128,7 +129,7 @@ export class AssetPanelManager {
 
   // ── Placement ─────────────────────────────────────────────────
   private insert(a: AssetRow | undefined): void {
-    if (!a || a.kind === 'fonts') return;
+    if (!a || a.kind === 'fonts' || a.kind === 'docs') return;
     const design = this.state.get().design;
     if (!design) return;
     const docW = design.document.width, docH = design.document.height;
@@ -153,7 +154,7 @@ export class AssetPanelManager {
    *  more often than to check which typeface is loaded. */
   private visible(): AssetRow[] {
     const q = this.query.trim().toLowerCase();
-    const rank = (r: AssetRow): number => (r.kind === 'fonts' ? 1 : 0);
+    const rank = (r: AssetRow): number => (r.kind === 'images' || r.kind === 'icons' ? 0 : 1);
     return this.rows
       .filter(r => this.folder === null || (r.folder ?? '') === this.folder)
       .filter(r => !q || r.path.toLowerCase().includes(q) || (r.alt ?? '').toLowerCase().includes(q))
@@ -206,7 +207,9 @@ export class AssetPanelManager {
     const name = a.path.split('/').pop() ?? a.path;
     const kb = `${Math.max(1, Math.round(a.bytes / 1024))} KB`;
     const meta = [dims, kb, a.folder ?? ''].filter(Boolean).join(' · ');
-    const thumb = a.kind === 'fonts'
+    const thumb = a.kind === 'docs'
+      ? `<div class="asset-lib-thumb asset-lib-font">\u{1F4C4}</div>`
+      : a.kind === 'fonts'
       ? `<div class="asset-lib-thumb asset-lib-font">Aa</div>`
       : `<img class="asset-lib-thumb" src="${this.url(a)}" alt="${esc(a.alt ?? name)}" loading="lazy">`;
     return `
