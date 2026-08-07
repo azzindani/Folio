@@ -18,8 +18,17 @@ function makeDesign(): DesignSpec {
   } as unknown as DesignSpec;
 }
 
-/** Resolve after the panel's fetch → render microtasks have settled. */
+/** Resolve after the panel's fetch → render microtasks have settled.
+ *  One tick is enough locally, but every mutation awaits a dynamic import of
+ *  the toast module, which on a cold CI runner lands a few ticks later — hence
+ *  `until`, not a bare setTimeout, wherever a request is asserted. */
 const settle = (): Promise<void> => new Promise(r => setTimeout(r, 0));
+
+/** Poll until `cond` holds (or give up), so a slow dynamic import cannot flake. */
+async function until(cond: () => boolean, ms = 2000): Promise<void> {
+  const deadline = Date.now() + ms;
+  while (!cond() && Date.now() < deadline) await new Promise(r => setTimeout(r, 10));
+}
 
 describe('AssetPanelManager (file manager)', () => {
   let container: HTMLElement;
@@ -103,7 +112,7 @@ describe('AssetPanelManager (file manager)', () => {
     const file = new File([new Uint8Array([1, 2, 3])], 'shot.png', { type: 'image/png' });
     Object.defineProperty(input, 'files', { value: [file], configurable: true });
     input.dispatchEvent(new Event('change'));
-    await settle();
+    await until(() => calls.some(c => c.init?.method === 'POST' && c.url.includes('/assets/')));
     const upload = calls.find(c => c.init?.method === 'POST' && c.url.includes('/assets/'));
     expect(upload?.url).toBe('/__project_files/my-project/assets/images/power-automate/shot.png');
   });
@@ -115,7 +124,7 @@ describe('AssetPanelManager (file manager)', () => {
     const file = new File([new Uint8Array([1])], 'brand.woff2', { type: 'font/woff2' });
     Object.defineProperty(input, 'files', { value: [file], configurable: true });
     input.dispatchEvent(new Event('change'));
-    await settle();
+    await until(() => calls.some(c => c.url.includes('/assets/fonts/')));
     expect(calls.find(c => c.url.includes('/assets/fonts/'))?.url).toContain('brand.woff2');
   });
 
@@ -123,7 +132,7 @@ describe('AssetPanelManager (file manager)', () => {
     await open();
     vi.stubGlobal('confirm', () => true);
     container.querySelector<HTMLElement>('[data-act="delete"]')?.click();
-    await settle();
+    await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
     const manage = calls.find(c => c.url.endsWith('/__assets/manage'));
     expect(manage).toBeDefined();
     expect(JSON.parse(String(manage?.init?.body))).toMatchObject({ op: 'delete', asset_path: 'assets/images/flat.png' });
@@ -133,7 +142,7 @@ describe('AssetPanelManager (file manager)', () => {
     await open();
     vi.stubGlobal('prompt', () => 'renamed.png');
     container.querySelector<HTMLElement>('[data-act="rename"]')?.click();
-    await settle();
+    await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
     const manage = calls.find(c => c.url.endsWith('/__assets/manage'));
     expect(JSON.parse(String(manage?.init?.body))).toMatchObject({ op: 'move', asset_path: 'assets/images/flat.png', new_name: 'renamed.png' });
   });
@@ -148,7 +157,7 @@ describe('AssetPanelManager (file manager)', () => {
     name.value = 'brief.md';
     text.value = '# Brief\n\nSee [docs](https://learn.microsoft.com/power-automate/).';
     container.querySelector<HTMLElement>('[data-act="dsave"]')?.click();
-    await settle();
+    await until(() => calls.some(c => c.init?.method === 'POST' && c.url.includes('/assets/docs/')));
     const put = calls.find(c => c.init?.method === 'POST' && c.url.includes('/assets/docs/'));
     expect(put?.url).toBe('/__project_files/my-project/assets/docs/power-automate/brief.md');
     expect(String(put?.init?.body)).toContain('learn.microsoft.com');
@@ -189,13 +198,13 @@ describe('AssetPanelManager (file manager)', () => {
     }));
     await open();
     container.querySelector<HTMLElement>('[data-act="editdoc"]')?.click();
-    await settle();
+    await until(() => container.querySelector<HTMLTextAreaElement>('.asset-lib-text')?.value === '# Card 5\n');
     const text = container.querySelector<HTMLTextAreaElement>('.asset-lib-text');
     expect(text?.value).toBe('# Card 5\n');
     expect(container.querySelector<HTMLInputElement>('.asset-lib-fname')?.readOnly).toBe(true);
     if (text) text.value = '# Card 5 revised\n';
     container.querySelector<HTMLElement>('[data-act="dsave"]')?.click();
-    await settle();
+    await until(() => calls.some(c => c.init?.method === 'POST'));
     const put = calls.find(c => c.init?.method === 'POST');
     expect(put?.url).toBe('/__project_files/my-project/assets/docs/briefs/card-5.md');
   });
