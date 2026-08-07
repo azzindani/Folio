@@ -89,6 +89,14 @@ export function wireMobileToolbarOverflow(container: HTMLElement): void {
     } else {
       close();
       for (const m of moved) if (m.el.parentElement !== m.home) m.home.insertBefore(m.el, m.marker);
+      // Anything added NEXT TO a moved control after the fact — the server
+      // build inserts a Library button beside Catalog — landed in the sheet
+      // with it. The sheet is display:none on desktop, so sweep strays back
+      // out rather than leaving them unreachable until a reload.
+      const anchor = moved[moved.length - 1];
+      while (menu?.firstElementChild && anchor) {
+        anchor.home.insertBefore(menu.firstElementChild, anchor.marker);
+      }
     }
   };
   apply();
