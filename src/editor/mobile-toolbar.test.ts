@@ -122,6 +122,22 @@ describe('mobile toolbar overflow', () => {
     expect(inMenu(app)).toEqual([]);
   });
 
+  it('sweeps a stray control back out of the sheet when the viewport grows', () => {
+    const mq = stubMQ(true);
+    wireMobileToolbarOverflow(app);
+    // The server build inserts a Library button beside Catalog — which by then
+    // lives in the sheet, so the newcomer lands there too.
+    const lib = document.createElement('button');
+    lib.className = 'btn btn-sm library-btn';
+    app.querySelector('.toolbar-more-menu [data-action="catalog"]')?.after(lib);
+    expect(app.querySelector('.toolbar-more-menu .library-btn')).not.toBeNull();
+
+    mq.set(false);
+    // The sheet is display:none on desktop — nothing may be left inside it.
+    expect(app.querySelector('.toolbar-more-menu')?.children).toHaveLength(0);
+    expect(app.querySelector('.toolbar .library-btn')).not.toBeNull();
+  });
+
   it('does nothing when the toolbar has not been built yet', () => {
     document.body.innerHTML = '';
     const empty = document.createElement('div');
