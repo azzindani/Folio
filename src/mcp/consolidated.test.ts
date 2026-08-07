@@ -52,32 +52,37 @@ describe('op dispatch', () => {
   });
   afterAll(() => fs.rmSync(projectsDir, { recursive: true, force: true }));
 
-  it('themes op:list routes to the themes engine fn', () => {
-    const r = ALL_HANDLERS['themes']({ op: 'list', project_path: projectPath });
+  // A handler may answer synchronously or with a promise (the asset finder
+  // reaches the network), so every call site awaits — including these.
+  const call = (tool: string, args: Record<string, unknown>): Promise<ToolResult> =>
+    Promise.resolve(ALL_HANDLERS[tool](args));
+
+  it('themes op:list routes to the themes engine fn', async () => {
+    const r = await call('themes', { op: 'list', project_path: projectPath });
     expect(r.success).toBe(true);
   });
 
-  it('manage_design asset ops route end-to-end (add → list → delete)', () => {
+  it('manage_design asset ops route end-to-end (add → list → delete)', async () => {
     const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
-    const add = ALL_HANDLERS['manage_design']({ op: 'asset_add', project_path: projectPath, name: 'dot.png', data: PNG, alt: 'dot' }) as ToolResult & { asset: { path: string } };
+    const add = await call('manage_design', { op: 'asset_add', project_path: projectPath, name: 'dot.png', data: PNG, alt: 'dot' }) as ToolResult & { asset: { path: string } };
     expect(add.success).toBe(true);
     expect(add.asset.path).toBe('assets/images/dot.png');
-    const list = ALL_HANDLERS['manage_design']({ op: 'asset_list', project_path: projectPath }) as ToolResult & { assets: { path: string }[] };
+    const list = await call('manage_design', { op: 'asset_list', project_path: projectPath }) as ToolResult & { assets: { path: string }[] };
     expect(list.success).toBe(true);
     expect(list.assets.map(a => a.path)).toContain('assets/images/dot.png');
-    const del = ALL_HANDLERS['manage_design']({ op: 'asset_delete', project_path: projectPath, asset_path: 'assets/images/dot.png' });
+    const del = await call('manage_design', { op: 'asset_delete', project_path: projectPath, asset_path: 'assets/images/dot.png' });
     expect(del.success).toBe(true);
   });
 
-  it('an unknown op returns a helpful error listing valid ops', () => {
-    const r = ALL_HANDLERS['edit_layer']({ op: 'frobnicate', design_path: 'x' });
+  it('an unknown op returns a helpful error listing valid ops', async () => {
+    const r = await call('edit_layer', { op: 'frobnicate', design_path: 'x' });
     expect(r.success).toBe(false);
     expect(r.error).toContain('Unknown op');
     expect(r.hint).toContain('add');
   });
 
-  it('a missing op is reported, not silently run', () => {
-    const r = ALL_HANDLERS['templates']({});
+  it('a missing op is reported, not silently run', async () => {
+    const r = await call('templates', {});
     expect(r.success).toBe(false);
     expect(r.error).toContain('(missing)');
   });

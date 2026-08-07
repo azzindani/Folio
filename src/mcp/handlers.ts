@@ -14,13 +14,19 @@ import * as d from './dispatch';
 import { remapToolRefs } from './tool-remap';
 import type { ToolResult } from './types';
 
-export type Handler = (args: Record<string, unknown>) => ToolResult;
+// Most ops are pure local filesystem work and answer synchronously. The asset
+// finder talks to the internet, so a handler may also return a promise; every
+// call site awaits, which is a no-op for the sync majority.
+export type Handler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>;
 
 // Every handler's forward hints (next_action / suggested_next) still speak the
 // pre-consolidation tool names; remap them to the consolidated {tool, op} so a
 // model that follows a hint calls a tool that actually exists.
 const remap = (m: Record<string, Handler>): Record<string, Handler> =>
-  Object.fromEntries(Object.entries(m).map(([k, h]) => [k, (a: Record<string, unknown>) => remapToolRefs(h(a))]));
+  Object.fromEntries(Object.entries(m).map(([k, h]) => [k, (a: Record<string, unknown>) => {
+    const r = h(a);
+    return r instanceof Promise ? r.then(remapToolRefs) : remapToolRefs(r);
+  }]));
 
 // Tier 1 — guidance, project, discovery/library, theming, tasks.
 const TIER1_RAW: Record<string, Handler> = {

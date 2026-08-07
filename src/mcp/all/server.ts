@@ -14,7 +14,7 @@ const ALL_TOOLS: ToolDefinition[] = [...TIER1_TOOLS, ...TIER2_TOOLS, ...TIER3_TO
 
 function send(res: MCPResponse): void { process.stdout.write(JSON.stringify(res) + '\n'); }
 
-function handle(req: MCPRequest): void {
+async function handle(req: MCPRequest): Promise<void> {
   const { id, method, params } = req;
   switch (method) {
     case 'initialize':
@@ -28,7 +28,7 @@ function handle(req: MCPRequest): void {
       const fn = HANDLERS[name];
       if (!fn) return send({ jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) });
       try {
-        const result = fn(args);
+        const result = await fn(args);
         appendOpLog({ op: name, success: result.success, file: (args['design_path'] ?? args['project_path'] ?? args['task_path'] ?? args['template_path']) as string | undefined, backup: result['backup'] as string | undefined, token_estimate: result.token_estimate });
         return send({ jsonrpc: '2.0', id, result: toMCPResult(result) });
       } catch (err) {
@@ -44,7 +44,7 @@ function handle(req: MCPRequest): void {
 export function startAll(): void {
   const rl = readline.createInterface({ input: process.stdin, terminal: false });
   rl.on('line', line => {
-    try { handle(JSON.parse(line) as MCPRequest); }
+    try { void handle(JSON.parse(line) as MCPRequest); }
     catch { send({ jsonrpc: '2.0', id: 0, error: { code: -32700, message: 'Parse error' } }); }
   });
   rl.on('close', () => process.exit(0));

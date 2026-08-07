@@ -1,0 +1,206 @@
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+const jsonMock = vi.fn();
+const bytesMock = vi.fn();
+vi.mock('./asset-net', async (orig) => {
+  const actual = await orig<typeof import('./asset-net')>();
+  return {
+    ...actual,
+    httpJSON: (url: string) => jsonMock(url),
+    httpBytes: (url: string, max: number, allow?: string[]) => bytesMock(url, max, allow),
+  };
+});
+
+const { resolveRef, slugify, projectAllowHosts, assetFetch } = await import('./asset-fetch');
+
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', 'base64');
+
+const projectsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-fetch-'));
+process.env['FOLIO_PROJECTS_DIR'] = projectsDir;
+
+function makeProject(name: string, yaml = 'name: x\n'): string {
+  const dir = path.join(projectsDir, name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'project.yaml'), yaml);
+  return dir;
+}
+
+beforeEach(() => { jsonMock.mockReset(); bytesMock.mockReset(); });
+afterAll(() => fs.rmSync(projectsDir, { recursive: true, force: true }));
+
+describe('slugify', () => {
+  it('produces a filename stem, never an empty one', () => {
+    expect(slugify('Morning Desk — 2024!', 'x')).toBe('morning-desk-2024');
+    expect(slugify('  ***  ', 'fallback')).toBe('fallback');
+    expect(slugify('a'.repeat(90), 'x')).toHaveLength(48);
+  });
+});
+
+describe('resolveRef', () => {
+  const projectDir = makeProject('resolve-proj');
+
+  it('asks Openverse where the file really is, and on what terms', async () => {
+    jsonMock.mockResolvedValue({
+      url: 'https://live.staticflickr.com/1/2_b.jpg', title: 'Morning Desk', creator: 'jo',
+      license: 'by', license_version: '4.0', attribution: 'credit line', filetype: 'jpg',
+      foreign_landing_url: 'https://flickr.com/2', width: 1600, height: 1067,
+    });
+    const { resolved } = await resolveRef('openverse:abc-123', { projectDir });
+    expect(resolved.url).toContain('staticflickr');
+    expect(resolved.suggestedName).toBe('morning-desk');
+    expect(resolved.license).toBe('CC BY 4.0');
+    expect(resolved.attribution).toBe('credit line');
+  });
+
+  it('takes the Commons 2000px render when the original is a huge scan', async () => {
+    jsonMock.mockResolvedValue({ query: { pages: { 1: { imageinfo: [{
+      url: 'https://upload.wikimedia.org/original.tif', size: 30 * 1024 * 1024,
+      thumburl: 'https://upload.wikimedia.org/thumb/2000px-Scan.tif.jpg',
+      thumbwidth: 2000, thumbheight: 1400, width: 9000, height: 6300, mime: 'image/tiff',
+      extmetadata: { LicenseShortName: { value: 'CC0' } },
+    }] } } } });
+    const { resolved } = await resolveRef('wikimedia:Scan.tif', { projectDir });
+    expect(resolved.url).toContain('2000px');
+    expect(resolved.ext).toBe('jpg');       // the render, not the TIFF
+    expect(resolved.width).toBe(2000);
+  });
+
+  it('keeps the Commons original when it is a reasonable size', async () => {
+    jsonMock.mockResolvedValue({ query: { pages: { 1: { imageinfo: [{
+      url: 'https://upload.wikimedia.org/Photo.jpg', size: 400_000,
+      thumburl: 'https://upload.wikimedia.org/thumb/2000px-Photo.jpg',
+      width: 2400, height: 1600, mime: 'image/jpeg',
+      extmetadata: { LicenseShortName: { value: 'CC BY 3.0' }, Artist: { value: 'Ada' } },
+    }] } } } });
+    const { resolved } = await resolveRef('wikimedia:File:Photo.jpg', { projectDir });
+    expect(resolved.url).toBe('https://upload.wikimedia.org/Photo.jpg');
+    expect(resolved.width).toBe(2400);
+    expect(resolved.attribution).toContain('Ada');
+  });
+
+  it('resolves an icon to an SVG at the asked-for box, with its set\'s licence', async () => {
+    jsonMock.mockResolvedValue({ mdi: { name: 'MDI', author: { name: 'Pictogrammers' }, license: { spdx: 'Apache-2.0' } } });
+    const { resolved } = await resolveRef('iconify:mdi:cloud', { projectDir, icon_px: 256 });
+    expect(resolved.url).toBe('https://api.iconify.design/mdi/cloud.svg?height=256');
+    expect(resolved.kind).toBe('icons');
+    expect(resolved.license).toBe('Apache-2.0');
+  });
+
+  it('still resolves an icon when the licence lookup itself fails', async () => {
+    jsonMock.mockRejectedValue(new Error('503'));
+    const { resolved } = await resolveRef('iconify:mdi:cloud', { projectDir });
+    expect(resolved.url).toContain('/mdi/cloud.svg');
+    expect(resolved.license).toBe('open source');
+  });
+
+  it('downloads the requested font weight, or the nearest the family ships', async () => {
+    jsonMock.mockResolvedValue({ id: 'manrope', family: 'Manrope', weights: [200, 400, 800], license: 'OFL-1.1', defSubset: 'latin' });
+    const asked = await resolveRef('font:manrope', { projectDir, weight: 800 });
+    expect(asked.resolved.url).toContain('latin-800-normal.ttf');
+    jsonMock.mockResolvedValue({ id: 'manrope', family: 'Manrope', weights: [200, 400, 800], license: 'OFL-1.1', defSubset: 'latin' });
+    const missing = await resolveRef('font:manrope', { projectDir, weight: 950 });
+    expect(missing.resolved.url).toContain('latin-400-normal.ttf');
+  });
+
+  it('holds a hand-written https URL to the allowlist, and marks its licence unverified', async () => {
+    const { resolved, allow } = await resolveRef('https://learn.microsoft.com/img/a.png', { projectDir });
+    expect(resolved.url).toContain('learn.microsoft.com');
+    expect(resolved.license).toContain('unverified');
+    expect(allow).toBeDefined();
+  });
+
+  it('refuses http and unknown schemes with an actionable message', async () => {
+    await expect(resolveRef('http://example.com/a.png', { projectDir })).rejects.toThrow(/Plain http:\/\/ is refused/);
+    await expect(resolveRef('unsplash:123', { projectDir })).rejects.toThrow(/Unknown ref scheme/);
+    await expect(resolveRef('openverse:', { projectDir })).rejects.toThrow(/Malformed ref/);
+  });
+});
+
+describe('projectAllowHosts', () => {
+  it('is null when the project sets no policy — the global default applies', () => {
+    expect(projectAllowHosts(makeProject('nopolicy'))).toBeNull();
+  });
+
+  it('narrows a project to named hosts, which is how "this vendor only" is enforced', async () => {
+    const dir = makeProject('msonly', 'name: x\nasset_sources:\n  allow_hosts:\n    - learn.microsoft.com\n    - microsoft.com\n');
+    expect(projectAllowHosts(dir)).toEqual(['learn.microsoft.com', 'microsoft.com']);
+    const { allow } = await resolveRef('https://cdn.evil.example/x.png', { projectDir: dir });
+    expect(allow).toEqual(['learn.microsoft.com', 'microsoft.com']);
+    // The refusal itself happens in httpBytes, which is handed exactly this list.
+  });
+});
+
+describe('assetFetch', () => {
+  it('stores the file, its dimensions and its provenance in one step', async () => {
+    const dir = makeProject('fetch-ok');
+    jsonMock.mockResolvedValue({
+      url: 'https://live.staticflickr.com/1/2_b.png', title: 'Morning Desk', creator: 'jo',
+      license: 'by-sa', license_version: '2.0', attribution: '"Morning Desk" by jo (CC BY-SA 2.0)',
+      foreign_landing_url: 'https://flickr.com/2', filetype: 'png',
+    });
+    bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/1/2_b.png' });
+
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc', alt: 'a tidy desk from above' }) as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    const asset = r['asset'] as Record<string, unknown>;
+    expect(asset['path']).toBe('assets/images/morning-desk.png');
+    expect(asset['alt']).toBe('a tidy desk from above');
+    expect(fs.existsSync(path.join(dir, 'assets/images/morning-desk.png'))).toBe(true);
+    const prov = r['provenance'] as Record<string, unknown>;
+    expect(prov['source']).toBe('openverse');
+    expect(prov['license']).toBe('CC BY-SA 2.0');
+    expect(r['attribution_required']).toContain('CC BY-SA 2.0');
+    // The manifest, not just the reply, must carry the licence — that is what
+    // asset_list reads back when the credit line has to be typeset.
+    const manifest = fs.readFileSync(path.join(dir, 'project.yaml'), 'utf8');
+    expect(manifest).toContain('CC BY-SA 2.0');
+  });
+
+  it('believes the wire content-type over the provider\'s claimed extension', async () => {
+    const dir = makeProject('fetch-mime');
+    jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/x.jpg', title: 'Mislabelled', license: 'cc0', filetype: 'jpg' });
+    bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/x.jpg' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc', alt: 'x' }) as Record<string, unknown>;
+    expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/images/mislabelled.png');
+  });
+
+  it('files an icon under assets/icons without being told', async () => {
+    const dir = makeProject('fetch-icon');
+    jsonMock.mockResolvedValue({ mdi: { license: { spdx: 'Apache-2.0' } } });
+    bytesMock.mockResolvedValue({
+      buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M0 0h24v24H0z"/></svg>'),
+      contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/cloud.svg',
+    });
+    const r = await assetFetch({ project_path: dir, ref: 'iconify:mdi:cloud', alt: 'cloud icon' }) as Record<string, unknown>;
+    expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/icons/mdi-cloud.svg');
+  });
+
+  it('warns when no alt was given, because the stored one describes the file not the picture', async () => {
+    const dir = makeProject('fetch-noalt');
+    jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/1.png', title: 'DSC_0042', license: 'cc0' });
+    bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/1.png' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc' }) as Record<string, unknown>;
+    const progress = r['progress'] as { status?: string; message?: string }[];
+    expect(progress.some(p => String(p.message).includes('No alt'))).toBe(true);
+  });
+
+  it('reports an unrecognisable payload instead of writing a mystery file', async () => {
+    const dir = makeProject('fetch-unknown');
+    jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/thing', title: 'Thing', license: 'cc0' });
+    bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'application/octet-stream', finalUrl: 'https://live.staticflickr.com/thing' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc' });
+    expect(r.success).toBe(false);
+    expect(r.hint).toContain('name:');
+  });
+
+  it('requires a project and a ref before it does anything', async () => {
+    expect((await assetFetch({ ref: 'openverse:abc' })).success).toBe(false);
+    const dir = makeProject('fetch-noref');
+    const r = await assetFetch({ project_path: dir });
+    expect(r.success).toBe(false);
+    expect(r.error).toContain('ref is required');
+  });
+});
