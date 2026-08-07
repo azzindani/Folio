@@ -39,8 +39,9 @@ export function dispatchManageDesign(a: Args): ToolResult {
     case 'asset_add':    return engine.assetAdd(a as Parameters<typeof engine.assetAdd>[0]);
     case 'asset_list':   return engine.assetList(a as Parameters<typeof engine.assetList>[0]);
     case 'asset_delete': return engine.assetDelete(a as Parameters<typeof engine.assetDelete>[0]);
+    case 'asset_move':   return engine.assetMove(a as Parameters<typeof engine.assetMove>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_list', 'asset_delete']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_list', 'asset_delete', 'asset_move']);
   }
 }
 

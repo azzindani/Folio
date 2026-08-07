@@ -210,14 +210,14 @@ describe('ToolbarManager', () => {
 
   it('export menu is hidden initially', () => {
     const menu = container.querySelector('.export-menu') as HTMLElement;
-    expect(menu.style.display).toBe('none');
+    expect(menu.classList.contains('open')).toBe(false);
   });
 
   it('clicking export button shows .export-menu', () => {
     const exportBtn = container.querySelector('[data-action="export"]') as HTMLElement;
     exportBtn.click();
     const menu = container.querySelector('.export-menu') as HTMLElement;
-    expect(menu.style.display).toBe('block');
+    expect(menu.classList.contains('open')).toBe(true);
   });
 
   it('clicking export button twice hides .export-menu again', () => {
@@ -225,7 +225,7 @@ describe('ToolbarManager', () => {
     exportBtn.click(); // open
     exportBtn.click(); // close
     const menu = container.querySelector('.export-menu') as HTMLElement;
-    expect(menu.style.display).toBe('none');
+    expect(menu.classList.contains('open')).toBe(false);
   });
 
   it('clicking outside .export-group closes the menu', () => {
@@ -233,7 +233,7 @@ describe('ToolbarManager', () => {
     const exportBtn = container.querySelector('[data-action="export"]') as HTMLElement;
     exportBtn.click();
     const menu = container.querySelector('.export-menu') as HTMLElement;
-    expect(menu.style.display).toBe('block');
+    expect(menu.classList.contains('open')).toBe(true);
 
     // Simulate click outside export-group
     const outside = document.createElement('div');
@@ -241,7 +241,7 @@ describe('ToolbarManager', () => {
     outside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     outside.remove();
 
-    expect(menu.style.display).toBe('none');
+    expect(menu.classList.contains('open')).toBe(false);
   });
 
   // ── onStateChange: mode ──────────────────────────────────
@@ -333,13 +333,13 @@ describe('ToolbarManager', () => {
     const exportBtn = container.querySelector('[data-action="export"]') as HTMLElement;
     exportBtn.click();
     const menu = container.querySelector('.export-menu') as HTMLElement;
-    expect(menu.style.display).toBe('block');
+    expect(menu.classList.contains('open')).toBe(true);
 
     // Click an export item
     state.set('design', makeDesign());
     const svgItem = container.querySelector('[data-format="svg"]') as HTMLElement;
     svgItem.click();
-    expect(menu.style.display).toBe('none');
+    expect(menu.classList.contains('open')).toBe(false);
   });
 
   // ── Theme select ─────────────────────────────────────────

@@ -69,6 +69,17 @@ const sseClients = new Set<http.ServerResponse>();
 const editorClients = new Set<http.ServerResponse>();
 
 // §3 — Auth · CORS · reply helpers
+/** Read one cookie out of a raw Cookie header (EventSource can send cookies but
+ *  not an Authorization header, so a cookie is the only credential it has). */
+function cookieValue(header: string | string[] | undefined, name: string): string {
+  const raw = Array.isArray(header) ? header.join('; ') : (header ?? '');
+  for (const pair of raw.split(';')) {
+    const [k, ...rest] = pair.trim().split('=');
+    if (k === name) return decodeURIComponent(rest.join('='));
+  }
+  return '';
+}
+
 function setCORS(res: http.ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -208,7 +219,13 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   if (pathOnly === '/editor/events' && method === 'GET' && !req.headers['authorization']) {
     const qs = url.split('?')[1] ?? '';
     const tok = new URLSearchParams(qs).get('token');
-    if (tok) req.headers['authorization'] = `Bearer ${tok}`;
+    // …and the folio_session cookie. The editor strips ?token= from its address
+    // bar on first load and swaps it for that cookie, so by the time the page
+    // opens its EventSource there is no query token left to send — which is why
+    // live refresh died on any editor session that had been through the strip.
+    const cookieTok = cookieValue(req.headers['cookie'], 'folio_session');
+    const use = tok || cookieTok;
+    if (use) req.headers['authorization'] = `Bearer ${use}`;
   }
 
   const tokenName = authorize(req);

@@ -84,12 +84,9 @@ export class ToolbarManager {
         </select>
         <button class="btn btn-sm" data-action="undo" title="Undo (Ctrl+Z)">&#8617;</button>
         <button class="btn btn-sm" data-action="redo" title="Redo (Ctrl+Shift+Z)">&#8618;</button>
-        <div class="export-group" style="position:relative">
+        <div class="export-group">
           <button class="btn btn-primary btn-sm" data-action="export" title="Export">Export &#x25BE;</button>
-          <div class="export-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);
-            background:var(--color-surface-2);border:1px solid var(--color-border);
-            border-radius:var(--radius-md);box-shadow:var(--shadow-md);
-            min-width:140px;z-index:200;overflow:hidden">
+          <div class="export-menu">
             <button class="export-item" data-format="svg">SVG (vector — unlimited resolution)</button>
             ${EXPORT_SCALE_PRESETS.map(p => `
               <button class="export-item" data-format="png" data-scale-preset="${p.id}" title="${p.description}">
@@ -164,14 +161,15 @@ export class ToolbarManager {
     }
   }
 
+  // Open/closed is a class, not an inline `display` — inline styles cannot be
+  // overridden by a media query, and on a phone this menu has to stop being a
+  // dropdown (it was clipped by the wrapped toolbar) and become a bottom sheet.
   private toggleExportMenu(): void {
-    const menu = this.container.querySelector('.export-menu') as HTMLElement;
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    this.container.querySelector('.export-menu')?.classList.toggle('open');
   }
 
   private closeExportMenu(): void {
-    const menu = this.container.querySelector('.export-menu') as HTMLElement;
-    if (menu) menu.style.display = 'none';
+    this.container.querySelector('.export-menu')?.classList.remove('open');
   }
 
   private triggerTemplateExport(): void {

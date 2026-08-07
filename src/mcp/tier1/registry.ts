@@ -54,10 +54,10 @@ export const TIER1_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        op:            { type: 'string', enum: ['list', 'browse', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'gallery', 'asset_add', 'asset_list', 'asset_delete'], description: 'Which management action to run.' },
+        op:            { type: 'string', enum: ['list', 'browse', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'gallery', 'asset_add', 'asset_list', 'asset_delete', 'asset_move'], description: 'Which management action to run.' },
         project_path:  { type: 'string', description: 'Project dir / bare name. Required for op:list; for others, resolves a relative design_path.' },
         design_path:   { type: 'string', description: 'Path to the .design.yaml (op: inspect/rename/duplicate/move/delete/resume).' },
-        new_name:      { type: 'string', description: 'op:rename/duplicate — the new display name.' },
+        new_name:      { type: 'string', description: 'op:rename/duplicate — the new display name. op:asset_move — the new filename (extension must stay the same).' },
         target_project: { type: 'string', description: 'op:move — destination project (bare name or path; must exist).' },
         page_id:       { type: 'string', description: 'op:inspect — a carousel page id (omit to list pages).' },
         search:        { type: 'string', description: 'op:browse/gallery — substring filter on project OR design name.' },
@@ -75,7 +75,8 @@ export const TIER1_TOOLS: ToolDefinition[] = [
         kind:          { type: 'string', enum: ['images', 'icons', 'fonts'], description: 'op:asset_add/asset_list — folder override/filter (auto-detected from the extension by default).' },
         alt:           { type: 'string', description: 'op:asset_add — short description of what the image shows (a vision-less model\'s only eyes — always provide it).' },
         process:       { type: 'object', description: 'op:asset_add — optional pixel work applied BEFORE the asset is stored, so its dominant_colors describe the processed result. {remove_bg:true} or {remove_bg:{tolerance:30,feather:1}} makes the border-connected backdrop transparent (an enclosed region of the same colour, like the hole in an \"O\", is kept). {fit:{w:800,h:600,mode:"cover"|"contain"}} resamples. PNG only — other formats return an error rather than silently skipping the work.', properties: {} },
-        asset_path:    { type: 'string', description: 'op:asset_delete — project-relative path like "assets/images/team.jpg" (from asset_list).' },
+        asset_path:    { type: 'string', description: 'op:asset_delete/asset_move — project-relative path like "assets/images/team.jpg" or "assets/images/<folder>/team.jpg" (from asset_list).' },
+        folder:        { type: 'string', description: 'op:asset_add/asset_list/asset_move — ONE folder segment inside the kind dir, e.g. "power-automate" → assets/images/power-automate/step-1.png. Keeps a shoot or a tutorial\'s screenshots together. On asset_list, filters to that folder (pass "" for the root); the reply also lists every folder in the project. On asset_move, "" moves the asset back to the root.' },
       },
       required: ['op'],
     },

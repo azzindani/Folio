@@ -325,6 +325,7 @@ export function exportAnimation(args: {
   fps?: number;
   duration?: number;
   page_id?: string;
+  all_pages?: boolean;
   project_path?: string;
 }): ToolResult {
   const op = 'export_animation';
@@ -332,6 +333,41 @@ export function exportAnimation(args: {
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
 
   const spec = readYAML<DesignSpec>(dPath);
+
+  // ── all_pages: one animated file per carousel page ──────────
+  // A PDF carousel cannot animate, so the motion companion to a deck is a file
+  // PER PAGE. Each page is exported through the normal single-page route, which
+  // keeps asset inlining, the still-frame warning and the encoders identical.
+  if (args.all_pages && (spec.pages?.length ?? 0) > 1) {
+    const pages = spec.pages ?? [];
+    const base = path.basename(dPath, '.design.yaml');
+    const kind = args.type === 'html' ? 'html' : args.type === 'svg' ? 'svg' : args.type;
+    const dir = args.output_path ? path.dirname(args.output_path) : path.join(path.dirname(dPath), '..', 'exports');
+    const written: string[] = [];
+    const failures: string[] = [];
+    for (const [i, page] of pages.entries()) {
+      const one = exportAnimation({
+        ...args, all_pages: false,
+        page_id: page.id,
+        output_path: path.join(dir, `${base}-p${i + 1}.${kind}`),
+      });
+      const rec = one as unknown as { success?: boolean; output_path?: string; error?: string };
+      if (rec.success && rec.output_path) written.push(rec.output_path);
+      else failures.push(`${page.id}: ${rec.error ?? 'failed'}`);
+    }
+    if (written.length === 0) {
+      return errResult(op, `No page exported: ${failures.join('; ')}`, 'Add motion with animation(op:motion) first, then export again.');
+    }
+    return okResult(op, {
+      design_path: dPath,
+      output_paths: written,
+      pages: written.length,
+      type: args.type,
+      ...(failures.length ? { warning: `${failures.length} page(s) skipped`, skipped: failures } : {}),
+      note: 'One animated file per page — post them as a motion companion to the PDF carousel (a PDF itself cannot animate).',
+    });
+  }
+
   const type = args.type;
   const baseName = path.basename(dPath, '.design.yaml');
   const ext = type === 'html' ? 'html' : type === 'svg' ? 'svg' : type;
