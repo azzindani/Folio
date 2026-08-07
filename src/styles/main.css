@@ -2460,7 +2460,11 @@ button:focus:not(:focus-visible) { outline: none; }
      it names the selected layer and edits its value, and "which layer am I on"
      is the question a phone user asks most. Compact, one line. */
   .activity-bar, .r-activity-bar { display: none; }
-  .formula-bar { height: 30px; padding: 0 8px; gap: 6px; }
+  /* The canvas handles its own pinch/pan (touch-gestures.ts); letting the
+     browser scroll or zoom on top of that makes both feel broken. */
+  .canvas-area, .canvas-viewport, .viewport-pane { touch-action: none; }
+  .formula-bar { height: 44px; padding: 0 8px; gap: 6px; }
+  .formula-bar .fb-input { min-height: 40px; }
   .formula-bar .fb-prefix { display: none; }
   .formula-bar .fb-input { font-size: 12px; min-width: 0; }
   .formula-bar-resize-handle { display: none; }
@@ -2607,7 +2611,10 @@ button:focus:not(:focus-visible) { outline: none; }
   .mode-btn { min-height: 44px; }
   .align-btn { width: 44px; height: 44px; }
   .layer-collapse-btn { width: 32px; height: 32px; }
-  .sb-btn { min-width: 36px; min-height: 36px; }
+  /* 36px missed the 44px target every other control clears — and these are the
+     zoom/fit/grid controls a thumb reaches for constantly. */
+  .sb-btn { min-width: 44px; min-height: 44px; }
+  .sb-ruler-unit { min-height: 44px; display: inline-flex; align-items: center; }
 
   /* Export as a bottom sheet. As a dropdown it was clipped by the wrapped
      toolbar, which is why tapping Export appeared to do nothing at all. */
