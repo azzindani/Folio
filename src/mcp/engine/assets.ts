@@ -529,6 +529,67 @@ export function assetRead(args: { project_path?: string; asset_path?: string; ma
 }
 
 /**
+ * Write (create or update) a text asset — the other half of assetRead.
+ *
+ * Uploading a brief from a phone is one way in; typing one straight into the
+ * project is the other, and the same for a model asked to leave notes, a copy
+ * deck or a CSV of source numbers beside the design that uses them.
+ *
+ * Text kinds only. Bytes go through ingestAsset, so the size cap, project
+ * quota, replace-snapshot and manifest entry all behave exactly as an upload.
+ */
+export function assetWrite(args: { project_path?: string; name?: string; asset_path?: string; content?: string; folder?: string; mode?: string }): ToolResult {
+  const op = 'asset_write';
+  const proj = requireProject(op, args.project_path);
+  if (isErr(proj)) return proj;
+
+  // Either a bare name (+ folder) or a full asset_path from asset_list.
+  let name = args.name ?? '';
+  let folder = args.folder;
+  if (!name && args.asset_path) {
+    const parts = parseAssetPath(String(args.asset_path).replace(/^\/+/, ''));
+    if (!parts) return errResult(op, `asset_path must look like "assets/docs/<file>" or "assets/docs/<folder>/<file>"`, 'Or pass name:"brief.md" with an optional folder.');
+    name = parts.name;
+    if (folder === undefined) folder = parts.folder;
+  }
+  if (!name) return errResult(op, 'name (or asset_path) is required', 'Pass name:"brief.md" — the extension picks the file type.');
+  if (typeof args.content !== 'string') return errResult(op, 'content is required (a string)', 'Pass the file text in content. An empty file is not allowed.');
+
+  const clean = sanitizeAssetName(name);
+  if (!clean) return errResult(op, `Unsupported name: "${name}"`, `Text assets end in: ${Object.keys(EXT_KIND).filter(e => EXT_KIND[e] === 'docs').join(', ')}.`);
+  if (clean.kind !== 'docs') {
+    return errResult(op, `Not a text file type: .${clean.ext}`, 'asset_write handles docs only (md, markdown, txt, csv, json, yaml, yml). Use asset_add with data: for images and fonts.');
+  }
+
+  const rel = `assets/docs/${sanitizeFolder(folder) ? `${sanitizeFolder(folder)}/` : ''}${clean.name}`;
+  const abs = path.join(proj.dir, rel);
+  const append = String(args.mode ?? '') === 'append';
+  const existed = fs.existsSync(abs);
+  let text = args.content;
+  if (append && existed) {
+    const prev = fs.readFileSync(abs, 'utf8');
+    text = prev.endsWith('\n') || prev === '' ? prev + text : `${prev}\n${text}`;
+  }
+  if (text.length === 0) return errResult(op, 'content is empty', 'Write at least one character, or use op:"asset_delete" to remove the file.');
+
+  try {
+    const { entry, warnings } = ingestAsset({ projectDir: proj.dir, name: clean.name, data: Buffer.from(text, 'utf8'), folder });
+    const progress = [pOk(existed ? 'Asset updated' : 'Asset written', `${entry.path} (${entry.bytes} bytes)`)];
+    for (const w of warnings) progress.push(pWarn('Note', w));
+    const context = buildContext(op, `Wrote ${entry.path}`, [{ type: 'export', path: path.join(proj.dir, entry.path), role: existed ? 'updated' : 'created' }]);
+    const handover = buildHandover('COMPOSE', { project_path: proj.dir });
+    return okResult(op, {
+      asset: entry, asset_path: entry.path, bytes: entry.bytes, replaced: existed, mode: append ? 'append' : 'overwrite',
+      note: 'Read it back with op:"asset_read". Text assets are source material — they are not rendered into a design until you lay them out.',
+      progress, context, handover,
+    });
+  } catch (e) {
+    if (e instanceof AssetError) return errResult(op, e.message, e.hint);
+    return errResult(op, `Write failed: ${(e as Error).message}`, 'Check filesystem permissions on the project dir.');
+  }
+}
+
+/**
  * Rename an asset and/or move it between folders — the file-manager verb.
  *
  * Designs reference assets by `src` path, so a move silently breaks every layer

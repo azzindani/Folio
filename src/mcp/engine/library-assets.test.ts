@@ -45,6 +45,19 @@ describe('library assets drawer', () => {
     expect(markup).toMatch(/accept="[^"]*\.csv[^"]*"/);
   });
 
+  it('carries a text editor so a brief can be typed, not only uploaded', () => {
+    for (const id of ['anote', 'aedit', 'aename', 'aetext', 'aesave', 'aecancel']) {
+      expect(markup, `#${id} present`).toContain(`id="${id}"`);
+    }
+    // Saving goes to the docs upload route — same ingest, same rules as a file.
+    expect(ASSET_SCRIPT).toContain("'/assets/docs/'");
+    expect(ASSET_SCRIPT).toContain('DOC.test(n)');
+  });
+
+  it('offers Edit only on docs rows', () => {
+    expect(ASSET_SCRIPT).toContain("a.kind==='docs'?'<button data-a=\"edt\"");
+  });
+
   it('supports the ?assets=<project> deep link', () => {
     expect(ASSET_SCRIPT).toContain("get('assets')");
   });

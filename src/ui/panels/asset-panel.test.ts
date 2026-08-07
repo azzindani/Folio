@@ -138,6 +138,74 @@ describe('AssetPanelManager (file manager)', () => {
     expect(JSON.parse(String(manage?.init?.body))).toMatchObject({ op: 'move', asset_path: 'assets/images/flat.png', new_name: 'renamed.png' });
   });
 
+  it('writes a new text asset into assets/docs of the active folder', async () => {
+    await open();
+    [...container.querySelectorAll<HTMLElement>('.asset-lib-chip')].find(c => c.textContent === 'power-automate')?.click();
+    container.querySelector<HTMLElement>('[data-act="write"]')?.click();
+    const name = container.querySelector<HTMLInputElement>('.asset-lib-fname');
+    const text = container.querySelector<HTMLTextAreaElement>('.asset-lib-text');
+    if (!name || !text) throw new Error('no editor');
+    name.value = 'brief.md';
+    text.value = '# Brief\n\nSee [docs](https://learn.microsoft.com/power-automate/).';
+    container.querySelector<HTMLElement>('[data-act="dsave"]')?.click();
+    await settle();
+    const put = calls.find(c => c.init?.method === 'POST' && c.url.includes('/assets/docs/'));
+    expect(put?.url).toBe('/__project_files/my-project/assets/docs/power-automate/brief.md');
+    expect(String(put?.init?.body)).toContain('learn.microsoft.com');
+  });
+
+  it('refuses to save a non-text extension or an empty body', async () => {
+    await open();
+    container.querySelector<HTMLElement>('[data-act="write"]')?.click();
+    const name = container.querySelector<HTMLInputElement>('.asset-lib-fname');
+    const text = container.querySelector<HTMLTextAreaElement>('.asset-lib-text');
+    if (!name || !text) throw new Error('no editor');
+    name.value = 'sneaky.html';
+    text.value = '<script>alert(1)</script>';
+    container.querySelector<HTMLElement>('[data-act="dsave"]')?.click();
+    await settle();
+    expect(calls.some(c => c.url.includes('/assets/docs/'))).toBe(false);
+
+    name.value = 'empty.md';
+    text.value = '';
+    container.querySelector<HTMLElement>('[data-act="dsave"]')?.click();
+    await settle();
+    expect(calls.some(c => c.url.includes('/assets/docs/'))).toBe(false);
+  });
+
+  it('loads an existing doc into the editor and saves back to the same path', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string, init?: RequestInit) => {
+      calls.push({ url: String(url), init });
+      if (String(url).endsWith('/__assets')) {
+        return Promise.resolve(new Response(JSON.stringify({
+          ok: true, folders: ['briefs'],
+          assets: [{ id: 'card-5', path: 'assets/docs/briefs/card-5.md', kind: 'docs', folder: 'briefs', bytes: 230 }],
+        }), { status: 200 }));
+      }
+      if (String(url).endsWith('card-5.md') && init?.method !== 'POST') {
+        return Promise.resolve(new Response('# Card 5\n', { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    }));
+    await open();
+    container.querySelector<HTMLElement>('[data-act="editdoc"]')?.click();
+    await settle();
+    const text = container.querySelector<HTMLTextAreaElement>('.asset-lib-text');
+    expect(text?.value).toBe('# Card 5\n');
+    expect(container.querySelector<HTMLInputElement>('.asset-lib-fname')?.readOnly).toBe(true);
+    if (text) text.value = '# Card 5 revised\n';
+    container.querySelector<HTMLElement>('[data-act="dsave"]')?.click();
+    await settle();
+    const put = calls.find(c => c.init?.method === 'POST');
+    expect(put?.url).toBe('/__project_files/my-project/assets/docs/briefs/card-5.md');
+  });
+
+  it('offers Edit on a doc but not on an image', async () => {
+    await open();
+    expect(container.querySelectorAll('[data-act="editdoc"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-act="insert"]')).toHaveLength(3);
+  });
+
   it('shows a message instead of a grid when no project is open', () => {
     const panel = new AssetPanelManager(container, state);
     panel.setProject(null, null);
