@@ -51,7 +51,10 @@ test.describe('Panels — right panel reachable on tablet (overlay)', () => {
   // the grid `rpanel` column is forced to 0, so the desktop `rpanel-collapsed`
   // toggle does nothing. The visible r-activity-bar must drive `.mob-open` or the
   // panel is unreachable ("the rightbar cannot be used, it remains persistent").
-  test.use({ viewport: { width: 900, height: 800 } });
+  // hasTouch is required, not cosmetic: the overlay layout is gated on a COARSE
+  // pointer now, because a mouse window at 900px is a desktop and keeps its
+  // docked panels. Without it this describes a device that does not exist.
+  test.use({ viewport: { width: 900, height: 800 }, hasTouch: true, isMobile: true });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

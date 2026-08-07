@@ -275,28 +275,69 @@ describe('MinimapManager — Image.onload and onDrag', () => {
   });
 });
 
-describe('MinimapManager — clientWidth fallback (line 56)', () => {
-  it('uses 240 as THUMB_W when container.clientWidth is 0', () => {
-    const state = new StateManager();
-    // Container without clientWidth override → 0 in jsdom → || 240
-    const container2 = document.createElement('div');
-    document.body.appendChild(container2);
+describe('MinimapManager — sizing before the panel is laid out', () => {
+  const POSTER = {
+    _protocol: 'design/v1',
+    meta: { id: 'x', name: 'X', type: 'poster', created: '', modified: '' },
+    document: { width: 1080, height: 1350, unit: 'px' },
+    layers: [],
+  } as unknown as DesignSpec;
+
+  function stubObjectURL(): void {
     Object.defineProperty(URL, 'createObjectURL', {
       value: vi.fn().mockReturnValue('blob:test'), writable: true, configurable: true,
     });
     Object.defineProperty(URL, 'revokeObjectURL', {
       value: vi.fn(), writable: true, configurable: true,
     });
+  }
+
+  it('waits for a real width instead of guessing one', () => {
+    // It used to fall back to 240px, then stretch the canvas ELEMENT to the
+    // panel's real ~300px — so a portrait poster rendered nearly square.
+    // Deferring is the fix: draw nothing until the width is known.
+    const state = new StateManager();
+    const container2 = document.createElement('div');
+    document.body.appendChild(container2);
+    stubObjectURL();
     new MinimapManager(container2, state);
-    // clientWidth=0 → THUMB_W=240 via fallback
-    expect(() => state.set('design', {
-      _protocol: 'design/v1',
-      meta: { id: 'x', name: 'X', type: 'poster', created: '', modified: '' },
-      document: { width: 1080, height: 1080, unit: 'px' },
-      layers: [],
-    } as unknown as DesignSpec)).not.toThrow();
+    expect(() => state.set('design', POSTER)).not.toThrow();
     const canvas = container2.querySelector('canvas')!;
-    expect(canvas.width).toBe(240); // || 240 fallback used
+    expect(canvas.width).toBe(300);       // untouched HTML default — nothing drawn
+    expect(container2.style.height).toBe('');
+    container2.remove();
+  });
+
+  it('keeps the design\'s aspect ratio once the width is measurable', () => {
+    const state = new StateManager();
+    const container2 = document.createElement('div');
+    Object.defineProperty(container2, 'clientWidth', { value: 300, configurable: true });
+    document.body.appendChild(container2);
+    stubObjectURL();
+    new MinimapManager(container2, state);
+    state.set('design', POSTER);
+    const canvas = container2.querySelector('canvas')!;
+    // 1080×1350 is 0.8; whichever axis binds, the ratio must survive.
+    expect(canvas.width / canvas.height).toBeCloseTo(1080 / 1350, 2);
+    // …and the drawn pixels must match the element's CSS size, or it stretches.
+    expect(canvas.style.width).toBe(`${canvas.width}px`);
+    expect(canvas.style.height).toBe(`${canvas.height}px`);
+    container2.remove();
+  });
+
+  it('caps a tall design instead of letting it swallow the panel', () => {
+    const state = new StateManager();
+    const container2 = document.createElement('div');
+    Object.defineProperty(container2, 'clientWidth', { value: 300, configurable: true });
+    document.body.appendChild(container2);
+    stubObjectURL();
+    new MinimapManager(container2, state);
+    state.set('design', {
+      ...POSTER, document: { width: 600, height: 3000, unit: 'px' },
+    } as unknown as DesignSpec);
+    const canvas = container2.querySelector('canvas')!;
+    expect(canvas.height).toBeLessThanOrEqual(260);
+    expect(canvas.width / canvas.height).toBeCloseTo(600 / 3000, 2);
     container2.remove();
   });
 });
