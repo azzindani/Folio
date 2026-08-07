@@ -39,7 +39,7 @@
   --right-panel-width:    300px;
   --statusbar-height:     32px;
   --page-strip-height:    120px;
-  --mobile-nav-height:    52px;
+  --mobile-nav-height:    58px;
 }
 
 /* ── LIGHT THEME ──────────────────────────────────────────── */
@@ -2268,9 +2268,16 @@ button:focus:not(:focus-visible) { outline: none; }
 .mobile-nav { display: none; }
 /* Desktop keeps the tool palette in the left panel — the strip is phone-only. */
 .mob-toolstrip { display: none; }
+/* The popovers are built once, for every viewport, and only ever shown on a
+   phone — without this base rule they render as a stray block at the end of
+   the tablet and desktop layouts. */
+.mob-pop { display: none; }
+/* Labelled, because a phone has no hover: an unlabelled icon row is a guessing
+   game, which is exactly how the old nav read. */
 .mob-nav-btn {
   flex: 1;
-  height: 44px;
+  min-width: 0;
+  height: 48px;
   border: none;
   background: transparent;
   color: var(--color-text-muted);
@@ -2278,9 +2285,19 @@ button:focus:not(:focus-visible) { outline: none; }
   cursor: pointer;
   border-radius: var(--radius-sm);
   display: flex;
+  flex-direction: column;
+  gap: 2px;
   align-items: center;
   justify-content: center;
   transition: color 0.1s, background 0.1s;
+}
+.mob-nav-btn > span {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mob-nav-btn.active {
   color: var(--color-primary);
@@ -2312,10 +2329,15 @@ button:focus:not(:focus-visible) { outline: none; }
 /* ── RESPONSIVE — TABLET (768–1023px) ────────────────────── */
 /* Fix #3/#10: panels as slide-in overlays, accessible via activity bar */
 @media (min-width: 768px) and (max-width: 1023px) {
+  /* At 768px the right-hand cluster ran past the edge and Export was sliced in
+     half. Wrapping costs one row and crops nothing. */
+  .toolbar { height: auto; min-height: var(--toolbar-height); flex-wrap: wrap; gap: 4px 6px; padding: 4px 8px; }
+  .toolbar .toolbar-left, .toolbar .toolbar-center, .toolbar .toolbar-right { flex-wrap: wrap; min-width: 0; }
   #app {
     grid-template-columns: var(--activity-bar-width) 0px 1fr 0px var(--activity-bar-width);
-    /* statusbar row auto so its safe-area padding can grow it */
-    grid-template-rows: var(--toolbar-height) var(--formula-bar-height) 1fr auto;
+    /* toolbar row auto so a wrapped second line grows the row instead of
+       spilling over the formula bar; statusbar auto for its safe-area padding */
+    grid-template-rows: auto var(--formula-bar-height) 1fr auto;
     grid-template-areas:
       "toolbar   toolbar  toolbar  toolbar  toolbar"
       "formula   formula  formula  formula  formula"
@@ -2382,9 +2404,10 @@ button:focus:not(:focus-visible) { outline: none; }
     /* toolbar row is `auto` so it can grow to a second line on narrow phones
        instead of clipping its controls. statusbar row is `auto` too so its
        safe-area padding (home indicator) can grow it. */
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto auto 1fr auto;
     grid-template-areas:
       "toolbar"
+      "formula"
       "canvas"
       "statusbar";
     /* Real phones: 100% of <html> tracks the LARGE viewport while browser
@@ -2401,7 +2424,14 @@ button:focus:not(:focus-visible) { outline: none; }
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  .activity-bar, .formula-bar, .r-activity-bar { display: none; }
+  /* The activity bars move into the Panels popover; the formula bar stays —
+     it names the selected layer and edits its value, and "which layer am I on"
+     is the question a phone user asks most. Compact, one line. */
+  .activity-bar, .r-activity-bar { display: none; }
+  .formula-bar { height: 30px; padding: 0 8px; gap: 6px; }
+  .formula-bar .fb-prefix { display: none; }
+  .formula-bar .fb-input { font-size: 12px; min-width: 0; }
+  .formula-bar-resize-handle { display: none; }
 
   /* Compact toolbar on mobile. The New/Add Page buttons used to push the
      Visual/Payload toggle + undo/redo/Export cluster off the clipped right
@@ -2421,7 +2451,9 @@ button:focus:not(:focus-visible) { outline: none; }
   .toolbar .toolbar-project-name { display: none; }
   .toolbar .toolbar-left > span:nth-child(2) { display: none; } /* hide divider */
   .toolbar .toolbar-left strong { display: none; } /* hide "Folio" wordmark, keep icon */
-  .toolbar .toolbar-theme-select { display: none; }
+  /* The theme picker is a real design control, not chrome — keep it, just
+     narrow. Hiding it was the difference between "compact" and "nerfed". */
+  .toolbar .toolbar-theme-select { max-width: 116px; font-size: 12px; }
   .toolbar .mode-toggle button { padding: 5px 8px; font-size: 12px; }
   .toolbar .btn, .toolbar .btn-sm { padding-left: 8px; padding-right: 8px; }
   /* Icon-only: drop the labels on New / Add Page / Catalog to keep the toolbar
@@ -2466,11 +2498,16 @@ button:focus:not(:focus-visible) { outline: none; }
      UI: its thumb labels and "+" button were hidden behind the nav. Clear it. */
   #page-strip-section { margin-bottom: var(--mobile-nav-height); }
 
-  /* Sheets open at the smallest height and the canvas gives up only that much
-     room, so the design — and the layer you just selected — stays on screen.
-     The inset itself is measured in JS (syncCanvasInset): the pane neither
-     starts at the viewport top nor ends at the sheet, so a vh subtraction here
-     collapsed it to a sliver. */
+  /* Sheets FLOAT over the canvas. They used to shrink the canvas pane and
+     trigger a re-fit, which dropped a poster from 29% to 12% zoom the moment
+     you opened Layers. The canvas now keeps its size and its zoom; if the
+     selection ends up behind a sheet the view pans (see revealSelectionAbove).
+     Translucency + blur keep the design readable behind the sheet. */
+  .left-panel, .properties-panel {
+    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
 
   /* Left panel — bottom sheet */
   .left-panel {
@@ -2553,58 +2590,68 @@ button:focus:not(:focus-visible) { outline: none; }
   }
   .export-item { min-height: 48px; padding: 14px 18px; font-size: 14px; }
 
-  /* Persistent tool strip: the palette lives here on phones so drawing tools
-     never hide behind a sheet. Scrolls sideways rather than wrapping. */
-  .mob-toolstrip {
-    display: block;
+  /* Drawing tools live in the Tools popover, not a strip: 13 tools in a
+     777px row inside a 390px screen meant seven of them were reachable only by
+     a horizontal scroll nobody could see, and the strip covered the sheets. */
+  .mob-toolstrip { display: none; }
+  /* The palette also has to go from inside the Layers sheet: a 13-cell grid at
+     the top left roughly four rows for the layer list it shares the sheet with. */
+  .left-panel-view[data-panel="layers"] .tools-panel { display: none; }
+
+  /* All-panels / all-tools popovers — the toggle-popup the phone was missing.
+     Entries are generated from the desktop controls (mobile-panels.ts), so the
+     phone exposes exactly what the desktop does. */
+  .mob-pop {
     position: fixed;
     left: 0; right: 0;
     bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + env(safe-area-inset-bottom, 0px));
-    z-index: 194;
-    background: var(--color-surface-1);
-    border-top: 1px solid var(--color-border);
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-  .mob-toolstrip .tools-panel {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 2px;
-    padding: 4px 6px;
-    width: max-content;
-    border: none;
-    background: none;
-  }
-  .mob-toolstrip .tools-panel > * { flex-shrink: 0; }
-  /* No hover on a phone, so every tool carries its name. The title attribute is
-     already the tool's label — reuse it instead of duplicating it in markup. */
-  .mob-toolstrip .tool-btn {
-    display: flex;
+    max-height: 62vh;
+    display: none;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    width: auto;
-    min-width: 56px;
-    height: 52px;
-    font-size: 16px;
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    z-index: 240;
   }
-  .mob-toolstrip .tool-btn::after {
-    content: attr(title);
-    max-width: 56px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--color-text);
+  .mob-pop.open { display: flex; }
+  .mob-pop-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px 8px;
+    font-size: 13px; font-weight: 700; color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
   }
-  .mob-toolstrip .tool-btn.active::after { color: #fff; }
-  /* The strip takes real estate, so the sheets and canvas sit above it. */
-  .left-panel, .properties-panel { bottom: calc(var(--mobile-nav-height) + var(--statusbar-height) + var(--mob-toolstrip-h, 60px) + env(safe-area-inset-bottom, 0px)); }
-  #page-strip-section { margin-bottom: calc(var(--mobile-nav-height) + var(--mob-toolstrip-h, 60px)); }
+  .mob-pop-close {
+    min-width: 44px; min-height: 44px;
+    background: none; border: none; color: var(--color-text-muted); font-size: 16px;
+  }
+  .mob-pop-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 6px; padding: 10px; overflow-y: auto;
+  }
+  .mob-pop-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; min-height: 72px; padding: 8px 4px;
+    background: var(--color-surface-2); border: 1px solid var(--color-border);
+    border-radius: var(--radius-md); color: var(--color-text);
+    font-size: 11px; font-weight: 600;
+  }
+  .mob-pop-item.active { border-color: var(--color-primary); color: var(--color-primary); }
+  .mob-pop-icon { display: flex; align-items: center; justify-content: center; height: 22px; }
+  .mob-pop-icon svg { width: 20px; height: 20px; }
+  .mob-pop-label { text-align: center; line-height: 1.2; }
+
+  /* The align toolbar is 468px of buttons: at 390px it hung 39px off BOTH
+     edges of the canvas. Pin it to the canvas width and let it scroll. */
+  .align-toolbar {
+    left: 4px; right: 4px;
+    transform: none;
+    max-width: none;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+  .align-toolbar.align-toolbar--hidden { transform: translateY(-4px); }
 }
 
 /* ── TIMELINE PANEL ───────────────────────────────────────── */

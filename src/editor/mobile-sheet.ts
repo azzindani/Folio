@@ -1,10 +1,17 @@
 // Folio editor — mobile bottom sheets.
 //
-// The panels used to open at a fixed 65vh, which on a phone buried the whole
-// design: you tapped a layer and could not see what you had selected. Sheets
-// now have three heights, start at the smallest, and the canvas viewport
-// shrinks to whatever is left — so the selection stays on screen and "fit"
-// means "fit in the part you can actually see".
+// Two rules learned the hard way on a real phone:
+//
+// 1. A sheet NEVER resizes the canvas. The old build shrank the canvas pane by
+//    the sheet's height and re-fit the design, so opening Layers dropped the
+//    poster from 29% to 12% — you got a stamp of your design and a wall of UI.
+//    Sheets now float over the canvas, translucent, and the canvas keeps every
+//    pixel it had.
+// 2. If the layer you just selected ends up behind the sheet, the canvas pans
+//    up to bring it back into the visible band. Moving the view is cheap;
+//    rescaling the design is not.
+import { MobilePopover, collectPanelEntries, collectToolEntries } from './mobile-panels';
+
 export type SheetDetent = 'peek' | 'half' | 'full';
 
 /** Heights per detent. `peek` deliberately leaves most of the canvas visible. */
@@ -18,139 +25,120 @@ export function detentOf(panel: HTMLElement): SheetDetent {
   return ORDER.find(d => panel.classList.contains(DETENT_CLASS(d))) ?? 'peek';
 }
 
-/** Apply a detent to a sheet and publish its height for the canvas to inset by. */
+/** Apply a detent to a sheet and publish its height for the sheet CSS. */
 export function setDetent(container: HTMLElement, panel: HTMLElement, d: SheetDetent): void {
   for (const other of ORDER) panel.classList.remove(DETENT_CLASS(other));
   panel.classList.add(DETENT_CLASS(d));
   container.style.setProperty('--sheet-h', HEIGHT[d]);
   // Only the tallest detent dims the canvas; at peek/half you are meant to see
-  // your design through the gap, which is the entire point of the small sizes.
+  // your design through the sheet, which is the entire point of the small sizes.
   container.classList.toggle('sheet-dim', d === 'full');
 }
 
-/**
- * Keep the drawing tools reachable on a phone.
- *
- * The tool palette lives inside the left panel, which on mobile is a sheet — so
- * reaching Rectangle meant opening the sheet that covers the design you are
- * drawing on. On phones the palette is relocated into a persistent strip above
- * the nav bar, and put back when the viewport grows. A marker node holds its
- * place so the desktop layout is restored exactly, not appended to the end.
- */
-export function wireMobileToolStrip(container: HTMLElement): void {
-  const tools = container.querySelector<HTMLElement>('.tools-panel');
-  const home = tools?.parentElement;
-  if (!tools || !home) return;
-
-  const marker = document.createComment('tools-panel-home');
-  home.insertBefore(marker, tools);
-
-  let strip = container.querySelector<HTMLElement>('.mob-toolstrip');
-  if (!strip) {
-    strip = document.createElement('div');
-    strip.className = 'mob-toolstrip';
-    container.appendChild(strip);
-  }
-
-  const mq = window.matchMedia('(max-width: 767px)');
-  const apply = (): void => {
-    if (mq.matches) {
-      if (tools.parentElement !== strip) strip?.appendChild(tools);
-    } else if (tools.parentElement !== home) {
-      home.insertBefore(tools, marker);
-    }
-  };
-  apply();
-  mq.addEventListener('change', apply);
-}
-
-/** Never shrink the canvas below this — a 2px sliver is not "still visible". */
-const MIN_CANVAS_PX = 140;
-
-/**
- * Shrink the canvas pane by exactly how much the open sheet covers it.
- *
- * Doing this in CSS (`calc(100% - 38vh)`) looked right and was wrong: the pane
- * does not start at the top of the viewport and does not end at the sheet, so a
- * viewport-relative subtraction crushed it to a couple of pixels. Measuring the
- * real overlap is boring and exact.
- */
-export function syncCanvasInset(container: HTMLElement): void {
-  const pane = container.querySelector<HTMLElement>('.viewport-pane');
-  if (!pane) return;
-  pane.style.maxHeight = '';  // release the previous inset so we measure natural size
-  const sheet = container.querySelector<HTMLElement>('.left-panel.mob-open, .properties-panel.mob-open');
-  if (!sheet) return;
-  const p = pane.getBoundingClientRect();
-  const s = sheet.getBoundingClientRect();
-  const overlap = Math.max(0, p.bottom - s.top);
-  if (overlap > 0) pane.style.maxHeight = `${Math.max(MIN_CANVAS_PX, Math.round(p.height - overlap))}px`;
-}
-
 export interface SheetOptions {
-  /** Called after any change that resizes the canvas area (re-fit the design). */
-  onLayoutChange: () => void;
-  /** Command palette opener for the third nav button. */
+  /** Command palette opener. */
   openPalette: () => void;
-  /** Asset library opener — the activity bar that normally reaches it is
-   *  hidden on phones, so the nav button is the only route. */
+  /** Asset library opener — the panel is built lazily, so it needs its own hook
+   *  rather than a plain click on the (not yet wired) activity-bar button. */
   openAssets?: () => void;
+  /** Pan the canvas so the selection sits above `visibleBottom` (viewport px). */
+  revealSelection?: (visibleBottom: number) => void;
 }
 
 /**
- * Wire the mobile nav buttons, the backdrop and both sheet grips.
+ * Wire the mobile nav, the popovers, the backdrop and both sheet grips.
  *
- * Grip gestures: drag up grows a sheet, drag down shrinks it (and closes it
- * from the smallest size), a tap cycles through the heights. All three are
- * reachable one-handed, and none of them require hover.
+ * The nav is five fixed buttons — Layers, Properties, Tools, Panels, Search.
+ * Everything else the desktop offers is behind Tools and Panels, which are
+ * labelled grids generated from the desktop controls themselves (see
+ * mobile-panels.ts), so nothing is reachable on a desktop and missing here.
  */
 export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): void {
-  // Measure now for an instant response, and again once the height transition
-  // has landed — the second pass is the one that gets the final geometry right.
-  const relayout = (): void => {
-    syncCanvasInset(container);
-    window.setTimeout(() => syncCanvasInset(container), 280);
-    opts.onLayoutChange();
-  };
   const backdrop = container.querySelector<HTMLElement>('.mob-backdrop');
   const leftPanel = container.querySelector<HTMLElement>('.left-panel');
   const rightPanel = container.querySelector<HTMLElement>('.properties-panel');
   const navBtns = container.querySelectorAll<HTMLElement>('.mob-nav-btn');
   if (!backdrop || !leftPanel || !rightPanel) return;
 
+  const panelsPop = new MobilePopover(container, 'mob-pop-panels', 'Panels');
+  const toolsPop = new MobilePopover(container, 'mob-pop-tools', 'Tools');
+
+  /** Bring the selection back above an open sheet, without touching the zoom. */
+  const reveal = (): void => {
+    const sheet = container.querySelector<HTMLElement>('.left-panel.mob-open, .properties-panel.mob-open');
+    if (sheet) opts.revealSelection?.(sheet.getBoundingClientRect().top);
+  };
+
   const closeAll = (): void => {
     for (const p of [leftPanel, rightPanel]) p.classList.remove('mob-open');
     backdrop.classList.remove('active');
     container.classList.remove('sheet-open', 'sheet-dim');
     navBtns.forEach(b => b.classList.remove('active'));
-    relayout();
+    panelsPop.close();
+    toolsPop.close();
   };
 
   const open = (panel: HTMLElement, btn?: HTMLElement): void => {
-    closeAll();
+    for (const p of [leftPanel, rightPanel]) p.classList.remove('mob-open');
+    navBtns.forEach(b => b.classList.remove('active'));
     panel.classList.add('mob-open');
     backdrop.classList.add('active');
     container.classList.add('sheet-open');
     setDetent(container, panel, 'peek');
     btn?.classList.add('active');
-    relayout();
+    panelsPop.close();
+    toolsPop.close();
+    // The sheet slides in; measure where it settled, not where it started.
+    window.setTimeout(reveal, 300);
+  };
+
+  /** Show one of the desktop's left-panel views inside the left sheet. */
+  const showLeftView = (panelId: string): void => {
+    if (panelId === 'project-assets' && opts.openAssets) { open(leftPanel, navFor('layers')); opts.openAssets(); return; }
+    open(leftPanel, navFor('layers'));
+    container.querySelector<HTMLElement>(`.activity-bar .act-btn[data-panel="${panelId}"]`)?.click();
+  };
+
+  /** Show one of the desktop's right-panel tabs inside the right sheet. */
+  const showRightTab = (tabId: string): void => {
+    open(rightPanel, navFor('props'));
+    container.querySelector<HTMLElement>(`.r-activity-bar .rpanel-tab[data-tab="${tabId}"]`)?.click();
+  };
+
+  function navFor(name: string): HTMLElement | undefined {
+    return [...navBtns].find(b => b.dataset['mob'] === name);
+  }
+
+  const openPanelsPop = (): void => {
+    if (panelsPop.isOpen) { panelsPop.close(); return; }
+    toolsPop.close();
+    panelsPop.open(collectPanelEntries(container), {
+      isActive: e => e.source.classList.contains('active'),
+      onPick: (e) => {
+        const [kind, id] = e.key.split(':');
+        if (kind === 'panel' && id) showLeftView(id);
+        else if (kind === 'tab' && id) showRightTab(id);
+        else e.source.click();  // theme toggle and anything else picked up later
+      },
+    });
+  };
+
+  const openToolsPop = (): void => {
+    if (toolsPop.isOpen) { toolsPop.close(); return; }
+    panelsPop.close();
+    toolsPop.open(collectToolEntries(container), { isActive: e => e.source.classList.contains('active') });
   };
 
   navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.dataset['mob'];
       if (target === 'cmd') { closeAll(); opts.openPalette(); return; }
-      // Assets rides the LEFT sheet, switching it to the library view.
-      if (target === 'assets') {
-        const already = leftPanel.classList.contains('mob-open') && btn.classList.contains('active');
-        if (already) { closeAll(); return; }
-        open(leftPanel, btn);
-        opts.openAssets?.();
-        return;
-      }
+      if (target === 'panels') { openPanelsPop(); return; }
+      if (target === 'tools') { openToolsPop(); return; }
+      if (target === 'assets') { showLeftView('project-assets'); return; }
       const panel = target === 'layers' ? leftPanel : rightPanel;
       if (panel.classList.contains('mob-open')) { closeAll(); return; }
-      open(panel, btn);
+      if (target === 'layers') showLeftView('layers'); else open(panel, btn);
     });
   });
 
@@ -165,7 +153,7 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
       const next = i + dir;
       if (next < 0) { closeAll(); return; }
       setDetent(container, panel, ORDER[Math.min(next, ORDER.length - 1)] ?? 'full');
-      relayout();
+      window.setTimeout(reveal, 300);
     };
 
     let startY = 0;
@@ -182,7 +170,7 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
         // size without a precise drag.
         const i = ORDER.indexOf(detentOf(panel));
         setDetent(container, panel, ORDER[(i + 1) % ORDER.length] ?? 'peek');
-        relayout();
+        window.setTimeout(reveal, 300);
       }
     });
   }

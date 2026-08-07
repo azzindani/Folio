@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// The default 4173 is also the port the deployed Folio container publishes on a
+// dev box. reuseExistingServer then "finds a server", talks to the AUTHED one,
+// gets a 401 and every spec fails looking for a canvas — an infra collision that
+// reads exactly like a broken editor. Override the port to run beside it:
+//   PLAYWRIGHT_PORT=4399 npx playwright test
+const PORT = Number(process.env['PLAYWRIGHT_PORT'] ?? 4173);
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -12,7 +19,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -38,8 +45,8 @@ export default defineConfig({
 
   // Start the preview server before running E2E tests
   webServer: {
-    command: 'npm run preview',
-    url: 'http://localhost:4173',
+    command: `npm run preview -- --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },
