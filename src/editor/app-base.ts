@@ -36,7 +36,7 @@ import { ImageImportHandler } from './image-import-handler';
 import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
-import { AssetPanelManager } from '../ui/panels/asset-panel';
+import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { wireMobileSheets, wireMobileToolStrip } from './mobile-sheet';
 
 export abstract class EditorAppBase {
@@ -73,7 +73,7 @@ export abstract class EditorAppBase {
   protected imageImport!: ImageImportHandler;
   protected timelinePanel!: TimelinePanelManager;
   protected colorSchemePanel!: ColorSchemePanelManager;
-  protected assetPanel!: AssetPanelManager;
+  protected assetPanel?: AssetPanelManager;
 
   protected buildLayout(): void {
     this.container.innerHTML = `
@@ -457,6 +457,22 @@ export abstract class EditorAppBase {
       openPalette: () => this.commandPalette?.open?.(),
     });
     wireMobileToolStrip(this.container);
+  }
+
+  /** Load the asset library on first use.
+   *
+   *  It is a whole file manager — grid, folders, upload, rename — and it only
+   *  matters once a server-backed design is open. Importing it eagerly put all
+   *  of that in the main entry chunk, which pushed the bundle past its 500KB
+   *  budget; this defers it to the moment a project actually exists. */
+  protected async openAssetPanel(project: string, token: string | null): Promise<void> {
+    const host = this.container.querySelector<HTMLElement>('.project-assets-content');
+    if (!host) return;
+    if (!this.assetPanel) {
+      const { AssetPanelManager } = await import('../ui/panels/asset-panel');
+      this.assetPanel = new AssetPanelManager(host, this.state);
+    }
+    this.assetPanel.setProject(project, token);
   }
 
   protected wireAssetPanel(): void {
