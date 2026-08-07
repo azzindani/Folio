@@ -37,7 +37,7 @@ import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
-import { wireMobileSheets, wireMobileToolStrip } from './mobile-sheet';
+import { wireMobileSheets } from './mobile-sheet';
 
 export abstract class EditorAppBase {
   protected container!: HTMLElement;
@@ -100,10 +100,11 @@ export abstract class EditorAppBase {
       <div class="mob-backdrop"></div>
 
       <nav class="mobile-nav" aria-label="Mobile navigation">
-        <button class="mob-nav-btn" data-mob="layers" title="Layers">${chromeIcon('layers', 18)}</button>
-        <button class="mob-nav-btn" data-mob="props" title="Properties">${chromeIcon('sliders', 18)}</button>
-        <button class="mob-nav-btn" data-mob="assets" title="Assets">${chromeIcon('image', 18)}</button>
-        <button class="mob-nav-btn" data-mob="cmd" title="Command palette">${chromeIcon('search', 18)}</button>
+        <button class="mob-nav-btn" data-mob="layers" title="Layers">${chromeIcon('layers', 18)}<span>Layers</span></button>
+        <button class="mob-nav-btn" data-mob="props" title="Properties">${chromeIcon('sliders', 18)}<span>Props</span></button>
+        <button class="mob-nav-btn" data-mob="tools" title="Drawing tools">${chromeIcon('component', 18)}<span>Tools</span></button>
+        <button class="mob-nav-btn" data-mob="panels" title="All panels">${chromeIcon('frame', 18)}<span>Panels</span></button>
+        <button class="mob-nav-btn" data-mob="cmd" title="Command palette">${chromeIcon('search', 18)}<span>Find</span></button>
       </nav>
 
       <div class="left-panel">
@@ -450,15 +451,38 @@ export abstract class EditorAppBase {
 
   protected wireMobileNav(): void {
     wireMobileSheets(this.container, {
-      // The sheet overlays the canvas, so its height changes how much design is
-      // actually visible — re-fit after the transition, not during it.
-      onLayoutChange: () => {
-        window.setTimeout(() => this.canvas?.fitToScreen?.(), 320);
-      },
+      // Sheets float OVER the canvas now — nothing to re-lay out. Re-fitting
+      // here is what used to drop the design from 29% to 12% the moment you
+      // opened Layers; the zoom you picked is yours to keep.
       openPalette: () => this.commandPalette?.open?.(),
       openAssets: () => { void this.showAssetLibrary(); },
+      revealSelection: (visibleBottom) => this.revealSelectionAbove(visibleBottom),
     });
-    wireMobileToolStrip(this.container);
+  }
+
+  /**
+   * Pan (never zoom) so the selected layer sits above an open sheet.
+   *
+   * The complaint this answers: "if I open the layer structure I can't see which
+   * component I selected". The selection's on-screen box is measured directly
+   * from the rendered SVG, so this works at any zoom and for nested layers.
+   */
+  protected revealSelectionAbove(visibleBottom: number): void {
+    const id = this.state?.get().selectedLayerIds[0];
+    if (!id) return;
+    const pane = this.container.querySelector<HTMLElement>('.viewport-pane.active') ?? this.container;
+    const el = pane.querySelector<SVGGraphicsElement>(`svg [data-layer-id="${CSS.escape(id)}"]`);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const paneTop = pane.getBoundingClientRect().top + 40;   // clear the ruler
+    const margin = 16;
+    const below = r.bottom - (visibleBottom - margin);
+    if (below <= 0) return;
+    // Never push the layer's top off the other edge — a partly visible layer
+    // beats a perfectly framed one that has scrolled under the toolbar.
+    const dy = Math.min(below, Math.max(0, r.top - paneTop));
+    if (dy <= 0) return;
+    this.state.set('panY', (this.state.get().panY ?? 0) - dy);
   }
 
   /** Load the asset library on first use.

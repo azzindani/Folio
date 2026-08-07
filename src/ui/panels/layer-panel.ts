@@ -112,7 +112,7 @@ export class LayerPanelManager {
       </button>
       <span class="layer-icon">${icon}</span>
       <span class="layer-name" title="${layer.id}">${layer.id}</span>
-      <span class="layer-z">${layer.z}</span>
+      <span class="layer-z">${typeof layer.z === 'number' ? layer.z : ''}</span>
       <button class="layer-vis-btn" data-action="toggle-vis" data-layer-id="${layer.id}"
         title="${hidden ? 'Show layer' : 'Hide layer'}" aria-pressed="${hidden}">
         ${hidden ? '🙈' : '👁'}

@@ -47,7 +47,9 @@ async function dumpButtons(page: Page): Promise<unknown> {
       cls: b.className.slice(0, 60),
     })).filter(b => b.text || b.title || b.action);
     const activity = Array.from(document.querySelectorAll('.activity-bar button, .activity-btn, .activity-bar *'))
-      .map((e, i) => ({ i, tag: e.tagName, title: e.getAttribute('title') ?? '', cls: (e as HTMLElement).className.slice(0, 50) }));
+      // `.activity-bar *` reaches the icon <svg>/<path> children, whose
+      // className is an SVGAnimatedString — String() it before slicing.
+      .map((e, i) => ({ i, tag: e.tagName, title: e.getAttribute('title') ?? '', cls: String((e as HTMLElement).className ?? '').slice(0, 50) }));
     return { buttons: btns, activity };
   });
 }
