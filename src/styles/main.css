@@ -158,7 +158,11 @@ html, body {
   gap: 8px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  z-index: 100;
+  /* A grid item's z-index applies without `position`, so this value is also the
+     ceiling for everything inside the toolbar. It has to clear the right
+     activity bar (130) and the mobile tool strip (194) or the export menu —
+     a descendant — renders under them however high its own z-index is. */
+  z-index: 265;
   height: var(--toolbar-height);
   /* clip horizontally to stop child rows wrapping, but allow dropdowns
      (e.g. .export-menu) to extend below the toolbar's height. */
@@ -2520,11 +2524,6 @@ button:focus:not(:focus-visible) { outline: none; }
   .align-btn { width: 44px; height: 44px; }
   .layer-collapse-btn { width: 32px; height: 32px; }
   .sb-btn { min-width: 36px; min-height: 36px; }
-
-  /* The export sheet is a descendant of the toolbar, so it can only rise as
-     high as the toolbar's own stacking context — without this it rendered
-     UNDER the tool strip. */
-  .toolbar { position: relative; z-index: 265; }
 
   /* Export as a bottom sheet. As a dropdown it was clipped by the wrapped
      toolbar, which is why tapping Export appeared to do nothing at all. */
