@@ -21,6 +21,7 @@ export interface AssetEntry {
   id: string;                 // stable slug, unique per project
   path: string;               // project-relative, e.g. "assets/images/team.jpg"
   kind: AssetKind;
+  folder?: string;            // optional one-segment folder inside the kind dir
   bytes: number;
   width?: number;             // raster/svg pixel dims (absent for fonts)
   height?: number;
@@ -68,6 +69,32 @@ export function sanitizeAssetName(name: string): { name: string; ext: string; ki
 function targetKind(fileKind: AssetKind, requested?: string): AssetKind {
   if (requested === 'icons' && fileKind === 'images') return 'icons';
   return fileKind;
+}
+
+/**
+ * A user folder inside a kind dir — ONE segment, no traversal.
+ *
+ * Folders are the file-manager affordance: `assets/images/power-automate/step-1.png`.
+ * They stay one level deep on purpose. A tree of arbitrary depth buys nothing for a
+ * per-project asset drawer and turns every path check into a traversal audit; one
+ * segment is enough to keep a shoot or a tutorial's screenshots together.
+ * Returns '' for "no folder" — never null, so callers can always join it.
+ */
+export function sanitizeFolder(folder?: string): string {
+  const raw = String(folder ?? '').trim().replace(/^\/+|\/+$/g, '');
+  if (!raw || raw === '.' || raw === '..') return '';
+  const seg = raw.split('/')[0] ?? '';
+  const clean = seg.replace(/[^\w\- ]+/g, '').replace(/\s+/g, '-').toLowerCase().slice(0, 40);
+  return clean === '.' || clean === '..' ? '' : clean;
+}
+
+/** Split a project-relative asset path into its parts, or null if malformed. */
+export function parseAssetPath(rel: string): { kind: AssetKind; folder: string; name: string } | null {
+  const m = String(rel ?? '').replace(/^\/+/, '').match(/^assets\/(images|icons|fonts)\/(?:([^/]+)\/)?([^/]+)$/);
+  if (!m) return null;
+  const folder = m[2] ? sanitizeFolder(m[2]) : '';
+  if (m[2] && folder !== m[2]) return null;
+  return { kind: m[1] as AssetKind, folder, name: m[3] ?? '' };
 }
 
 // ── Metadata extraction ───────────────────────────────────────
@@ -200,6 +227,7 @@ export interface IngestArgs {
   dataUri?: string;            // data: URI (MCP op)
   sourcePath?: string;         // in-sandbox file to copy (MCP op)
   kind?: string;               // optional 'icons' override
+  folder?: string;             // optional one-segment folder inside the kind dir
   alt?: string;
   process?: ProcessSpec;       // optional pixel work (background removal, resize)
 }
@@ -281,10 +309,11 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   }
 
   const kind = targetKind(clean.kind, args.kind);
-  const dir = path.join(args.projectDir, 'assets', kind);
+  const folder = sanitizeFolder(args.folder);
+  const dir = path.join(args.projectDir, 'assets', kind, ...(folder ? [folder] : []));
   fs.mkdirSync(dir, { recursive: true });
   const abs = path.join(dir, clean.name);
-  const relPath = `assets/${kind}/${clean.name}`;
+  const relPath = `assets/${kind}/${folder ? `${folder}/` : ''}${clean.name}`;
   const existed = fs.existsSync(abs);
   if (existed) { snapshot(abs); warnings.push(`replaced existing ${relPath}`); }
   fs.writeFileSync(abs, buf);
@@ -292,7 +321,7 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   const meta = extractAssetMeta(buf, clean.ext);
   const entry: AssetEntry = {
     id: clean.name.replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9-]+/g, '-'),
-    path: relPath, kind, bytes: buf.length,
+    path: relPath, kind, ...(folder ? { folder } : {}), bytes: buf.length,
     ...(meta.width ? { width: meta.width, height: meta.height } : {}),
     ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
     ...(meta.luminance ? { luminance: meta.luminance } : {}),
@@ -312,7 +341,7 @@ function requireProject(op: string, projectPath?: string): { dir: string } | Too
 }
 const isErr = (r: { dir: string } | ToolResult): r is ToolResult => 'success' in r;
 
-export function assetAdd(args: { project_path?: string; name?: string; data?: string; source_path?: string; kind?: string; alt?: string; process?: ProcessSpec }): ToolResult {
+export function assetAdd(args: { project_path?: string; name?: string; data?: string; source_path?: string; kind?: string; folder?: string; alt?: string; process?: ProcessSpec }): ToolResult {
   const op = 'asset_add';
   const proj = requireProject(op, args.project_path);
   if (isErr(proj)) return proj;
@@ -321,7 +350,7 @@ export function assetAdd(args: { project_path?: string; name?: string; data?: st
   try {
     const { entry, warnings } = ingestAsset({
       projectDir: proj.dir, name: args.name,
-      dataUri: args.data, sourcePath: args.source_path, kind: args.kind, alt: args.alt, process: args.process,
+      dataUri: args.data, sourcePath: args.source_path, kind: args.kind, folder: args.folder, alt: args.alt, process: args.process,
     });
     progress.push(pOk('Asset saved', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
@@ -352,35 +381,54 @@ export function collectAssets(projectDir: string): AssetEntry[] {
   const manifest = readAssetManifest(projectDir);
   const byPath = new Map<string, AssetEntry>();
   for (const k of KINDS) for (const e of manifest[k] ?? []) byPath.set(e.path, e);
+  // Disk wins over a stale manifest, and a file dropped straight into a folder
+  // (or copied in over SSH) still shows up. One level of nesting only — see
+  // sanitizeFolder for why the tree stops there.
+  const files: { kind: AssetKind; folder: string; name: string }[] = [];
   for (const k of KINDS) {
     const dir = path.join(projectDir, 'assets', k);
     if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir)) {
-      const rel = `assets/${k}/${f}`;
-      const clean = sanitizeAssetName(f);
-      if (!clean || byPath.has(rel)) continue;
-      const abs = path.join(dir, f);
-      if (!fs.statSync(abs).isFile()) continue;
-      const buf = fs.readFileSync(abs);
-      const meta = extractAssetMeta(buf, clean.ext);
-      byPath.set(rel, {
-        id: clean.name.replace(/\.[a-z0-9]+$/, ''), path: rel, kind: k, bytes: buf.length,
-        ...(meta.width ? { width: meta.width, height: meta.height } : {}),
-        ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
-        ...(meta.luminance ? { luminance: meta.luminance } : {}),
-        added: fs.statSync(abs).mtime.toISOString().split('T')[0],
-      });
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.isFile()) { files.push({ kind: k, folder: '', name: e.name }); continue; }
+      if (!e.isDirectory()) continue;
+      const folder = sanitizeFolder(e.name);
+      if (!folder || folder !== e.name) continue;
+      for (const f of fs.readdirSync(path.join(dir, e.name), { withFileTypes: true })) {
+        if (f.isFile()) files.push({ kind: k, folder, name: f.name });
+      }
     }
+  }
+  for (const { kind: k, folder, name: f } of files) {
+    const rel = `assets/${k}/${folder ? `${folder}/` : ''}${f}`;
+    const clean = sanitizeAssetName(f);
+    if (!clean || byPath.has(rel)) continue;
+    const abs = path.join(projectDir, rel);
+    if (!fs.statSync(abs).isFile()) continue;
+    const buf = fs.readFileSync(abs);
+    const meta = extractAssetMeta(buf, clean.ext);
+    byPath.set(rel, {
+      id: clean.name.replace(/\.[a-z0-9]+$/, ''), path: rel, kind: k,
+      ...(folder ? { folder } : {}), bytes: buf.length,
+      ...(meta.width ? { width: meta.width, height: meta.height } : {}),
+      ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
+      ...(meta.luminance ? { luminance: meta.luminance } : {}),
+      added: fs.statSync(abs).mtime.toISOString().split('T')[0],
+    });
   }
   return [...byPath.values()];
 }
 
-export function assetList(args: { project_path?: string; search?: string; kind?: string; limit?: number }): ToolResult {
+export function assetList(args: { project_path?: string; search?: string; kind?: string; folder?: string; limit?: number }): ToolResult {
   const op = 'asset_list';
   const proj = requireProject(op, args.project_path);
   if (isErr(proj)) return proj;
   let rows = collectAssets(proj.dir);
+  const folders = [...new Set(rows.map(r => r.folder ?? '').filter(Boolean))].sort();
   if (args.kind && KINDS.includes(args.kind as AssetKind)) rows = rows.filter(r => r.kind === args.kind);
+  if (args.folder !== undefined) {
+    const want = sanitizeFolder(args.folder);
+    rows = rows.filter(r => (r.folder ?? '') === want);
+  }
   if (args.search) {
     const q = args.search.toLowerCase();
     rows = rows.filter(r => r.path.toLowerCase().includes(q) || (r.alt ?? '').toLowerCase().includes(q));
@@ -396,7 +444,7 @@ export function assetList(args: { project_path?: string; search?: string; kind?:
     : 'No assets yet — add one with manage_design {op:"asset_add", name, data:"data:image/…;base64,…"} or upload via the editor.';
   const context = buildContext(op, `${rows.length} asset(s) in ${path.basename(proj.dir)}`);
   const handover = buildHandover('COMPOSE', { project_path: proj.dir });
-  return okResult(op, { assets: rows, truncated, hint, progress, context, handover });
+  return okResult(op, { assets: rows, folders, truncated, hint, progress, context, handover });
 }
 
 export function assetDelete(args: { project_path?: string; asset_path?: string }): ToolResult {
@@ -404,8 +452,8 @@ export function assetDelete(args: { project_path?: string; asset_path?: string }
   const proj = requireProject(op, args.project_path);
   if (isErr(proj)) return proj;
   const rel = String(args.asset_path ?? '').replace(/^\/+/, '');
-  if (!/^assets\/(images|icons|fonts)\/[^/]+$/.test(rel)) {
-    return errResult(op, `asset_path must look like "assets/images/<file>"`, 'manage_design {op:"asset_list"} shows the exact paths.');
+  if (!parseAssetPath(rel)) {
+    return errResult(op, `asset_path must look like "assets/images/<file>" or "assets/images/<folder>/<file>"`, 'manage_design {op:"asset_list"} shows the exact paths.');
   }
   const abs = path.join(proj.dir, rel);
   if (!fs.existsSync(abs)) return errResult(op, `Asset not found: ${rel}`, 'manage_design {op:"asset_list"} shows what exists.');
@@ -420,4 +468,71 @@ export function assetDelete(args: { project_path?: string; asset_path?: string }
   const context = buildContext(op, `Deleted ${rel} (soft)`);
   const handover = buildHandover('COMPOSE', { project_path: proj.dir });
   return okResult(op, { deleted: rel, trash_path: dest, note: 'Designs referencing this src will show a placeholder frame until you update or restore it.', progress, context, handover });
+}
+
+/**
+ * Rename an asset and/or move it between folders — the file-manager verb.
+ *
+ * Designs reference assets by `src` path, so a move silently breaks every layer
+ * pointing at the old location. Rather than rewrite designs behind the operator's
+ * back, the result reports the old and new path and says so plainly; the caller
+ * decides whether to patch the designs.
+ */
+export function assetMove(args: { project_path?: string; asset_path?: string; folder?: string; new_name?: string }): ToolResult {
+  const op = 'asset_move';
+  const proj = requireProject(op, args.project_path);
+  if (isErr(proj)) return proj;
+
+  const rel = String(args.asset_path ?? '').replace(/^\/+/, '');
+  const parts = parseAssetPath(rel);
+  if (!parts) {
+    return errResult(op, `asset_path must look like "assets/images/<file>" or "assets/images/<folder>/<file>"`, 'manage_design {op:"asset_list"} shows the exact paths.');
+  }
+  const src = path.join(proj.dir, rel);
+  if (!fs.existsSync(src)) return errResult(op, `Asset not found: ${rel}`, 'manage_design {op:"asset_list"} shows what exists.');
+
+  // Renaming may not change the file type — the extension decides the kind, and
+  // an asset that changed kind would need to move dirs and re-extract metadata.
+  let name = parts.name;
+  if (args.new_name) {
+    const clean = sanitizeAssetName(args.new_name);
+    if (!clean) return errResult(op, `Unsupported new_name: "${args.new_name}"`, `Keep the extension: ${Object.keys(EXT_KIND).join(', ')}.`);
+    if (clean.ext !== (parts.name.match(/\.([a-z0-9]+)$/)?.[1] ?? '')) {
+      return errResult(op, 'new_name must keep the original extension', 'Renaming cannot convert a file — re-upload to change format.');
+    }
+    name = clean.name;
+  }
+  const folder = args.folder === undefined ? parts.folder : sanitizeFolder(args.folder);
+  const newRel = `assets/${parts.kind}/${folder ? `${folder}/` : ''}${name}`;
+  if (newRel === rel) return errResult(op, 'Nothing to change', 'Pass folder and/or new_name that differ from the current path.');
+
+  const dest = path.join(proj.dir, newRel);
+  if (fs.existsSync(dest)) return errResult(op, `Target already exists: ${newRel}`, 'Pick another name, or delete the existing asset first.');
+  try {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.renameSync(src, dest);
+  } catch (e) {
+    return errResult(op, `Move failed: ${(e as Error).message}`, 'Check filesystem permissions on the project dir.');
+  }
+
+  const manifest = readAssetManifest(proj.dir);
+  const entry = (manifest[parts.kind] ?? []).find(e => e.path === rel);
+  removeManifestEntry(proj.dir, rel);
+  const moved: AssetEntry = {
+    ...(entry ?? { id: name.replace(/\.[a-z0-9]+$/, ''), kind: parts.kind, bytes: fs.statSync(dest).size, added: new Date().toISOString().split('T')[0] } as AssetEntry),
+    path: newRel, kind: parts.kind,
+    id: name.replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9-]+/g, '-'),
+    ...(folder ? { folder } : {}),
+  };
+  if (!folder) delete moved.folder;
+  writeManifestEntry(proj.dir, moved);
+
+  const progress = [pOk('Asset moved', `${rel} → ${newRel}`)];
+  const context = buildContext(op, `Moved ${rel} → ${newRel}`);
+  const handover = buildHandover('COMPOSE', { project_path: proj.dir });
+  return okResult(op, {
+    moved: newRel, previous: rel, asset: moved,
+    note: `Any layer with src:"${rel}" still points at the old path — update those designs, or the image renders as a placeholder.`,
+    progress, context, handover,
+  });
 }

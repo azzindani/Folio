@@ -51,6 +51,28 @@ describe('exportAnimation', () => {
       });
     }
 
+    it('all_pages writes one file per page, named -p1/-p2', () => {
+      const dPath = makePresentationDesign();
+      const r = exportAnimation({ design_path: dPath, type: 'svg', all_pages: true });
+      expect(r.success).toBe(true);
+      const outs = r['output_paths'] as string[];
+      expect(outs).toHaveLength(2);
+      expect(outs.map(p => path.basename(p))).toEqual(['phase5-test-p1.svg', 'phase5-test-p2.svg']);
+      for (const out of outs) expect(fs.statSync(out).size).toBeGreaterThan(0);
+      expect(r['pages']).toBe(2);
+    });
+
+    it('all_pages on a single-page design falls back to the normal one-file export', () => {
+      const dPath = makePresentationDesign();
+      const spec = readDesign(dPath) as { pages: unknown[] };
+      spec.pages = spec.pages.slice(0, 1);
+      writeDesign(dPath, spec);
+      const r = exportAnimation({ design_path: dPath, type: 'svg', all_pages: true });
+      expect(r.success).toBe(true);
+      expect(r['output_paths']).toBeUndefined();
+      expect(fs.existsSync(r['output_path'] as string)).toBe(true);
+    });
+
     it('writes SVG content for type:"svg"', () => {
       const dPath = makePresentationDesign();
       const r = exportAnimation({ design_path: dPath, type: 'svg' });

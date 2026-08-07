@@ -37,6 +37,7 @@ import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import { AssetPanelManager } from '../ui/panels/asset-panel';
+import { wireMobileSheets, wireMobileToolStrip } from './mobile-sheet';
 
 export abstract class EditorAppBase {
   protected container!: HTMLElement;
@@ -447,54 +448,15 @@ export abstract class EditorAppBase {
   }
 
   protected wireMobileNav(): void {
-    const backdrop = this.container.querySelector<HTMLElement>('.mob-backdrop');
-    const leftPanel = this.container.querySelector<HTMLElement>('.left-panel');
-    const rightPanel = this.container.querySelector<HTMLElement>('.properties-panel');
-    const navBtns = this.container.querySelectorAll<HTMLElement>('.mob-nav-btn');
-    if (!backdrop || !leftPanel || !rightPanel) return;
-
-    const closeAll = (): void => {
-      leftPanel.classList.remove('mob-open');
-      rightPanel.classList.remove('mob-open');
-      backdrop.classList.remove('active');
-      navBtns.forEach(b => b.classList.remove('active'));
-    };
-
-    navBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.mob;
-        if (target === 'cmd') {
-          closeAll();
-          this.commandPalette?.open?.();
-          return;
-        }
-        const isLeft = target === 'layers';
-        const panel = isLeft ? leftPanel : rightPanel;
-        const isOpen = panel.classList.contains('mob-open');
-        closeAll();
-        if (!isOpen) {
-          panel.classList.add('mob-open');
-          backdrop.classList.add('active');
-          btn.classList.add('active');
-        }
-      });
+    wireMobileSheets(this.container, {
+      // The sheet overlays the canvas, so its height changes how much design is
+      // actually visible — re-fit after the transition, not during it.
+      onLayoutChange: () => {
+        window.setTimeout(() => this.canvas?.fitToScreen?.(), 320);
+      },
+      openPalette: () => this.commandPalette?.open?.(),
     });
-
-    backdrop.addEventListener('click', closeAll);
-
-    // Swipe-down-to-close on sheet grip
-    [leftPanel, rightPanel].forEach(panel => {
-      const grip = panel.querySelector<HTMLElement>('.mob-sheet-grip');
-      if (!grip) return;
-      let startY = 0;
-      grip.addEventListener('pointerdown', (e) => {
-        startY = e.clientY;
-        grip.setPointerCapture(e.pointerId);
-      });
-      grip.addEventListener('pointerup', (e) => {
-        if (e.clientY - startY > 60) closeAll();
-      });
-    });
+    wireMobileToolStrip(this.container);
   }
 
   protected wireAssetPanel(): void {

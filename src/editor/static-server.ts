@@ -39,7 +39,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 // (thumbnail render / library scan) so the single-core container can't collapse.
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
-import { ingestAsset, collectAssets, AssetError, maxAssetBytes } from '../mcp/engine/assets';
+import { listAssets, manageAssets, uploadAsset } from './server-assets';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
 
@@ -482,14 +482,7 @@ Bun.serve({
           if (!projectDir || !fs.existsSync(projectDir)) {
             return new Response(JSON.stringify({ ok: false, assets: [] }), { status: 404, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
           }
-          try {
-            const assets = collectAssets(projectDir);
-            return new Response(JSON.stringify({ ok: true, assets }), {
-              status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...(refresh ? { 'Set-Cookie': refresh } : {}) },
-            });
-          } catch (e) {
-            return new Response(JSON.stringify({ ok: false, error: (e as Error).message, assets: [] }), { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
-          }
+          return listAssets(projectDir, refresh);
         }
       }
 
@@ -508,27 +501,26 @@ Bun.serve({
         // Raw bytes in, plain file + manifest entry out (same ingest the MCP
         // op uses: sanitize, type allowlist, per-file + per-project caps,
         // svg script strip, dims + dominant colors).
-        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts)\/([^/]+)$/);
+        // ── Asset manage: POST /__project_files/<project>/__assets/manage ──
+        // {op:"delete"|"move", asset_path, folder?, new_name?} — the file-manager
+        // verbs, sharing the exact engine functions the MCP ops use so the panel
+        // and the model can never drift apart.
+        const manageMatch = relDecoded.match(/^([^/]+)\/__assets\/manage$/);
+        if (manageMatch) {
+          const projectDir = safeJoinProject(manageMatch[1]);
+          if (!projectDir || !fs.existsSync(projectDir)) {
+            return new Response(JSON.stringify({ ok: false, error: `No such project: ${manageMatch[1]}` }), { status: 404, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+          }
+          return manageAssets(req, projectDir, refresh);
+        }
+
+        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts)\/(?:([^/]+)\/)?([^/]+)$/);
         if (assetMatch && target && !relDecoded.includes('..')) {
           const projectDir = safeJoinProject(assetMatch[1]);
           if (!projectDir || !fs.existsSync(projectDir)) {
             return new Response(JSON.stringify({ ok: false, error: `No such project: ${assetMatch[1]}` }), { status: 404, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
           }
-          if (parseInt(req.headers.get('content-length') ?? '0', 10) > maxAssetBytes()) {
-            return new Response(JSON.stringify({ ok: false, error: 'Asset too large' }), { status: 413, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
-          }
-          let buf: Buffer;
-          try { buf = Buffer.from(await req.arrayBuffer()); } catch { return new Response('Bad body', { status: 400 }); }
-          try {
-            const { entry, warnings } = ingestAsset({ projectDir, name: assetMatch[3], data: buf, kind: assetMatch[2] });
-            return new Response(JSON.stringify({ ok: true, asset: entry, warnings }), {
-              status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...(refresh ? { 'Set-Cookie': refresh } : {}) },
-            });
-          } catch (e) {
-            const status = e instanceof AssetError ? e.status : 500;
-            const hint = e instanceof AssetError ? e.hint : '';
-            return new Response(JSON.stringify({ ok: false, error: (e as Error).message, hint }), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
-          }
+          return uploadAsset(req, url, projectDir, assetMatch[2] ?? 'images', assetMatch[3], assetMatch[4] ?? '', refresh);
         }
 
         if (!target || relDecoded.includes('..') || !relDecoded.endsWith('.design.yaml')) {

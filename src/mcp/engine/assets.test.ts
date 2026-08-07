@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { sanitizeAssetName, ingestAsset, assetAdd, assetList, assetDelete, AssetError, readAssetManifest } from './assets';
+import { sanitizeAssetName, ingestAsset, assetAdd, assetList, assetDelete, assetMove, sanitizeFolder, parseAssetPath, AssetError, readAssetManifest } from './assets';
 
 // canonical valid 1×1 transparent PNG
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
@@ -133,6 +133,89 @@ describe('assets', () => {
     it('errors cleanly on a missing project', () => {
       const r = assetAdd({ project_path: path.join(tmp, 'nope'), name: 'a.png', data: PNG_URI }) as unknown as { success: boolean };
       expect(r.success).toBe(false);
+    });
+  });
+
+  describe('folders', () => {
+    it('sanitizeFolder keeps one safe segment and refuses traversal', () => {
+      expect(sanitizeFolder('Power Automate')).toBe('power-automate');
+      expect(sanitizeFolder('a/b/c')).toBe('a');
+      expect(sanitizeFolder('../../etc')).toBe('');
+      expect(sanitizeFolder('..')).toBe('');
+      expect(sanitizeFolder(undefined)).toBe('');
+    });
+
+    it('parseAssetPath reads both flat and foldered paths', () => {
+      expect(parseAssetPath('assets/images/a.png')).toEqual({ kind: 'images', folder: '', name: 'a.png' });
+      expect(parseAssetPath('assets/images/shoot/a.png')).toEqual({ kind: 'images', folder: 'shoot', name: 'a.png' });
+      expect(parseAssetPath('assets/images/a/b/c.png')).toBeNull();
+      expect(parseAssetPath('../project.yaml')).toBeNull();
+    });
+
+    it('assetAdd stores into a folder and records it', () => {
+      const r = assetAdd({ project_path: proj, name: 'step-1.png', data: PNG_URI, folder: 'Power Automate' }) as unknown as { success: boolean; asset: { path: string; folder?: string } };
+      expect(r.success).toBe(true);
+      expect(r.asset.path).toBe('assets/images/power-automate/step-1.png');
+      expect(r.asset.folder).toBe('power-automate');
+      expect(fs.existsSync(path.join(proj, 'assets/images/power-automate/step-1.png'))).toBe(true);
+    });
+
+    it('assetList finds foldered assets, filters by folder and lists folders', () => {
+      assetAdd({ project_path: proj, name: 'flat.png', data: PNG_URI });
+      assetAdd({ project_path: proj, name: 'step-1.png', data: PNG_URI, folder: 'pa' });
+      const all = assetList({ project_path: proj }) as unknown as { assets: { path: string }[]; folders: string[] };
+      expect(all.assets.map(a => a.path).sort()).toEqual(['assets/images/flat.png', 'assets/images/pa/step-1.png']);
+      expect(all.folders).toEqual(['pa']);
+      const inFolder = assetList({ project_path: proj, folder: 'pa' }) as unknown as { assets: { path: string }[] };
+      expect(inFolder.assets.map(a => a.path)).toEqual(['assets/images/pa/step-1.png']);
+      const root = assetList({ project_path: proj, folder: '' }) as unknown as { assets: { path: string }[] };
+      expect(root.assets.map(a => a.path)).toEqual(['assets/images/flat.png']);
+    });
+
+    it('picks up a file hand-copied into a folder without a manifest entry', () => {
+      const dir = path.join(proj, 'assets/images/dropped');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'orphan.png'), Buffer.from(PNG_B64, 'base64'));
+      const r = assetList({ project_path: proj }) as unknown as { assets: { path: string; folder?: string }[] };
+      expect(r.assets).toHaveLength(1);
+      expect(r.assets[0].path).toBe('assets/images/dropped/orphan.png');
+      expect(r.assets[0].folder).toBe('dropped');
+    });
+
+    it('assetMove renames, moves between folders and back to the root', () => {
+      assetAdd({ project_path: proj, name: 'a.png', data: PNG_URI });
+      const moved = assetMove({ project_path: proj, asset_path: 'assets/images/a.png', folder: 'shoot', new_name: 'b.png' }) as unknown as { success: boolean; moved: string; previous: string };
+      expect(moved.success).toBe(true);
+      expect(moved.moved).toBe('assets/images/shoot/b.png');
+      expect(moved.previous).toBe('assets/images/a.png');
+      expect(fs.existsSync(path.join(proj, 'assets/images/shoot/b.png'))).toBe(true);
+      expect(fs.existsSync(path.join(proj, 'assets/images/a.png'))).toBe(false);
+      expect((readAssetManifest(proj).images ?? []).map(e => e.path)).toEqual(['assets/images/shoot/b.png']);
+
+      const back = assetMove({ project_path: proj, asset_path: 'assets/images/shoot/b.png', folder: '' }) as unknown as { success: boolean; moved: string };
+      expect(back.success).toBe(true);
+      expect(back.moved).toBe('assets/images/b.png');
+      expect((readAssetManifest(proj).images ?? [])[0]?.folder).toBeUndefined();
+    });
+
+    it('assetMove refuses an extension change, a missing file and an occupied target', () => {
+      assetAdd({ project_path: proj, name: 'a.png', data: PNG_URI });
+      assetAdd({ project_path: proj, name: 'taken.png', data: PNG_URI });
+      const ext = assetMove({ project_path: proj, asset_path: 'assets/images/a.png', new_name: 'a.jpg' }) as unknown as { success: boolean };
+      expect(ext.success).toBe(false);
+      const missing = assetMove({ project_path: proj, asset_path: 'assets/images/ghost.png', folder: 'x' }) as unknown as { success: boolean };
+      expect(missing.success).toBe(false);
+      const clash = assetMove({ project_path: proj, asset_path: 'assets/images/a.png', new_name: 'taken.png' }) as unknown as { success: boolean };
+      expect(clash.success).toBe(false);
+      expect(fs.existsSync(path.join(proj, 'assets/images/a.png'))).toBe(true);
+    });
+
+    it('assetDelete works on a foldered asset but still refuses traversal', () => {
+      assetAdd({ project_path: proj, name: 'a.png', data: PNG_URI, folder: 'pa' });
+      const ok = assetDelete({ project_path: proj, asset_path: 'assets/images/pa/a.png' }) as unknown as { success: boolean };
+      expect(ok.success).toBe(true);
+      const bad = assetDelete({ project_path: proj, asset_path: 'assets/images/../../project.yaml' }) as unknown as { success: boolean };
+      expect(bad.success).toBe(false);
     });
   });
 });
