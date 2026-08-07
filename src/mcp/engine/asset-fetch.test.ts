@@ -89,6 +89,21 @@ describe('resolveRef', () => {
     expect(resolved.license).toBe('Apache-2.0');
   });
 
+  it('bakes an accent colour into the icon, because a fetched SVG defaults to black', async () => {
+    jsonMock.mockResolvedValue({ mdi: { license: { spdx: 'Apache-2.0' } } });
+    const { resolved } = await resolveRef('iconify:mdi:cloud', { projectDir, icon_color: '#F0A63C' });
+    expect(resolved.url).toContain('color=%23F0A63C');
+    // The colour is part of the file, so it is part of the filename too —
+    // otherwise two tints of one icon would overwrite each other.
+    expect(resolved.suggestedName).toBe('mdi-cloud-f0a63c');
+  });
+
+  it('ignores a colour that is not a hex, rather than passing junk to the API', async () => {
+    jsonMock.mockResolvedValue({ mdi: {} });
+    const { resolved } = await resolveRef('iconify:mdi:cloud', { projectDir, icon_color: 'red; drop table' });
+    expect(resolved.url).not.toContain('color=');
+  });
+
   it('still resolves an icon when the licence lookup itself fails', async () => {
     jsonMock.mockRejectedValue(new Error('503'));
     const { resolved } = await resolveRef('iconify:mdi:cloud', { projectDir });
@@ -103,6 +118,14 @@ describe('resolveRef', () => {
     jsonMock.mockResolvedValue({ id: 'manrope', family: 'Manrope', weights: [200, 400, 800], license: 'OFL-1.1', defSubset: 'latin' });
     const missing = await resolveRef('font:manrope', { projectDir, weight: 950 });
     expect(missing.resolved.url).toContain('latin-400-normal.ttf');
+  });
+
+  it('takes the DEFAULT subset, never latin-ext — subset files are disjoint', async () => {
+    // latin-ext contains only the extended block. Fetching it renders every
+    // ordinary ASCII word in a fallback face, which is how this was found.
+    jsonMock.mockResolvedValue({ id: 'manrope', family: 'Manrope', weights: [400], subsets: ['latin', 'latin-ext', 'greek'], defSubset: 'latin' });
+    const { resolved } = await resolveRef('font:manrope', { projectDir });
+    expect(resolved.url).toContain('/latin-400-normal.ttf');
   });
 
   it('holds a hand-written https URL to the allowlist, and marks its licence unverified', async () => {
