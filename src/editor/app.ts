@@ -17,7 +17,6 @@ import { MinimapManager } from '../ui/panels/minimap';
 import { AccessibilityChecker } from '../ui/panels/accessibility-checker';
 import { openPrintWindow } from '../export/print-mode';
 import { AlignToolbar } from '../ui/tools/align-toolbar';
-import { CanvasContextMenu } from './context-menu';
 import { ToolboxManager } from '../ui/tools/toolbox';
 import { CommandPalette } from '../ui/palette/command-palette';
 import { KeyboardManager } from './keyboard';
@@ -42,6 +41,8 @@ import { wireMobileToolbarOverflow } from './mobile-toolbar';
 import { SAMPLE_DESIGN } from './sample-design';
 import { makeBlankDesign } from './blank-design';
 import { canvasResizeDialog, type CanvasDocSpec } from '../ui/dialogs/canvas-resize';
+import { wireContextMenuLazily } from './context-menu-lazy';
+import { wireRightPanelTabs } from './rpanel-tabs';
 
 export class EditorApp extends EditorAppBase {
   /** Path (relative to the projects dir) of the design when it was opened from
@@ -82,6 +83,8 @@ export class EditorApp extends EditorAppBase {
     // bundle, which sits within a KB of its budget.
     if (window.matchMedia?.('(pointer: coarse)').matches) {
       void import('./touch-gestures').then(m => m.wireTouchGestures(primaryPane, this.state));
+      // One-handed reach layer — same reasoning, same budget: phones only.
+      void import('./one-hand').then(m => m.wireOneHand(this.container));
     }
 
     // Refit the canvas when the viewport changes so design content stays
@@ -101,6 +104,9 @@ export class EditorApp extends EditorAppBase {
     // After the toolbar exists — the overflow sheet MOVES its controls, so it
     // has nothing to collect while buildLayout's .toolbar is still empty.
     wireMobileToolbarOverflow(this.container);
+    // After bindRightPanelTabs (in buildLayout's wiring) — the rail's node is
+    // MOVED here, and every binding on it has to already exist.
+    wireRightPanelTabs(this.container);
 
     this.toolbox = new ToolboxManager(
       this.container.querySelector('.tools-panel')!,
@@ -108,7 +114,11 @@ export class EditorApp extends EditorAppBase {
     );
 
     this.alignToolbar = new AlignToolbar(primaryPane, this.state);
-    new CanvasContextMenu(this.state, primaryPane as HTMLElement);
+    // The context menu is a full command surface now, so it earns its own
+    // chunk: nothing about it is needed until the first right-click (or the
+    // long-press that synthesises one). The pane keeps a one-shot listener
+    // that loads the module and re-dispatches the event it swallowed.
+    wireContextMenuLazily(primaryPane as HTMLElement, this.state);
 
     this.fileTree = new FileTreeManager(
       this.container.querySelector('.file-tree-content')!,
