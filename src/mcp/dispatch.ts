@@ -25,7 +25,9 @@ export function dispatchEditLayer(a: Args): ToolResult {
   }
 }
 
-export function dispatchManageDesign(a: Args): ToolResult {
+// The asset finder reaches the internet, so this multiplexer — alone among the
+// eight — may answer with a promise. Callers await; the sync ops are unchanged.
+export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> {
   switch (a['op']) {
     case 'list':      return engine.listDesigns(a as Parameters<typeof engine.listDesigns>[0]);
     case 'inspect':   return engine.inspectDesign(a as Parameters<typeof engine.inspectDesign>[0]);
@@ -42,8 +44,10 @@ export function dispatchManageDesign(a: Args): ToolResult {
     case 'asset_move':   return engine.assetMove(a as Parameters<typeof engine.assetMove>[0]);
     case 'asset_read':   return engine.assetRead(a as Parameters<typeof engine.assetRead>[0]);
     case 'asset_write':  return engine.assetWrite(a as Parameters<typeof engine.assetWrite>[0]);
+    case 'asset_search': return engine.assetSearch(a as Parameters<typeof engine.assetSearch>[0]);
+    case 'asset_fetch':  return engine.assetFetch(a as Parameters<typeof engine.assetFetch>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch']);
   }
 }
 

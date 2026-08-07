@@ -7,6 +7,8 @@ export { browseLibrary } from './engine/library';
 export { exportLibraryGallery } from './engine/library-gallery';
 export { renameDesign, deleteDesign, moveDesign } from './engine/library-manage';
 export { assetAdd, assetList, assetDelete, assetMove, assetRead, assetWrite } from './engine/assets';
+export { assetSearch } from './engine/asset-search';
+export { assetFetch } from './engine/asset-fetch';
 export { listPacks } from './engine/packs';
 export { createDesign, createProject, listDesigns, listThemes, applyTheme, duplicateDesign, resumeDesign, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign } from './engine-project-tools';
 export { addLayers, appendPage } from './engine-layer-tools';

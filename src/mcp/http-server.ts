@@ -23,7 +23,7 @@ const MAX_BROADCAST_BYTES = Number(process.env['FOLIO_MAX_BROADCAST_BYTES'] ?? 1
 
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition, ContextField } from './types';
 
-type Handler = (args: Record<string, unknown>) => ToolResult;
+type Handler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>;
 
 // §1 — All-tier handler map. Single source of truth = handlers.ALL_HANDLERS
 // (TIER1∪TIER2∪TIER3). Do NOT re-declare the map here — a local copy silently
@@ -96,7 +96,7 @@ function jsonReply(res: http.ServerResponse, status: number, body: unknown): voi
 // so the router can fire an editor file-changed event for mutating tools.
 interface DispatchResult { response: MCPResponse; raw?: ToolResult; toolName?: string }
 
-function handleMCP(req: MCPRequest): DispatchResult {
+async function handleMCP(req: MCPRequest): Promise<DispatchResult> {
   const { id, method, params } = req;
   switch (method) {
     case 'initialize':
@@ -117,7 +117,7 @@ function handleMCP(req: MCPRequest): DispatchResult {
       const fn = HANDLERS[name];
       if (!fn) return { response: { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) }, toolName: name };
       try {
-        const raw = fn(args);
+        const raw = await fn(args);
         return { response: { jsonrpc: '2.0', id, result: toMCPResult(raw) }, raw, toolName: name };
       } catch (err) {
         return { response: { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) }, toolName: name };
@@ -292,7 +292,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     if (typeof parsed.method === 'string' && parsed.method.startsWith('notifications/')) {
       setCORS(res); res.writeHead(202); res.end(); return;
     }
-    const { response, raw, toolName } = handleMCP(parsed);
+    const { response, raw, toolName } = await handleMCP(parsed);
     // Audit: which named token invoked which tool. Token VALUES are never logged.
     if (parsed.method === 'tools/call' && toolName) {
       process.stderr.write(`[mcp] token=${tokenName} tool=${toolName} ok=${raw?.success ?? false}\n`);

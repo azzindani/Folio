@@ -17,6 +17,23 @@ import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-p
 
 export type AssetKind = 'images' | 'icons' | 'fonts' | 'docs';
 
+/**
+ * Where a fetched asset came from and on what terms.
+ *
+ * Recorded from the PROVIDER's API, never from a caller's claim — an image
+ * whose licence needs a credit line is worthless without one, and "I think it
+ * was public domain" is not a licence.
+ */
+export interface AssetProvenance {
+  source: string;             // openverse | wikimedia | iconify | font | url
+  url: string;                // the file URL actually downloaded
+  page?: string;              // human landing page
+  license?: string;           // e.g. "CC BY-SA 2.0", "OFL-1.1", "CC0"
+  attribution?: string;       // ready-to-print credit line
+  creator?: string;
+  fetched: string;            // ISO date
+}
+
 export interface AssetEntry {
   id: string;                 // stable slug, unique per project
   path: string;               // project-relative, e.g. "assets/images/team.jpg"
@@ -29,6 +46,7 @@ export interface AssetEntry {
   luminance?: 'dark' | 'light' | 'busy';
   alt?: string;               // operator/model description — a blind model's eyes
   added: string;              // ISO date
+  provenance?: AssetProvenance;
 }
 
 interface ProjectManifest {
@@ -62,6 +80,11 @@ const MIME_EXT: Record<string, string> = {
   'text/markdown': 'md', 'text/plain': 'txt', 'text/csv': 'csv',
   'application/json': 'json', 'text/yaml': 'yaml', 'application/x-yaml': 'yaml',
 };
+
+/** Content-type → our extension, for bytes arriving off the wire. */
+export function extForMime(mime: string): string | undefined {
+  return MIME_EXT[String(mime ?? '').split(';')[0]?.trim().toLowerCase() ?? ''];
+}
 
 /** Strip directories + dangerous chars; enforce an allowlisted extension. */
 export function sanitizeAssetName(name: string): { name: string; ext: string; kind: AssetKind } | null {
@@ -237,6 +260,7 @@ export interface IngestArgs {
   folder?: string;             // optional one-segment folder inside the kind dir
   alt?: string;
   process?: ProcessSpec;       // optional pixel work (background removal, resize)
+  provenance?: AssetProvenance; // set by the asset finder; absent for uploads
 }
 export class AssetError extends Error {
   constructor(message: string, public status: number, public hint: string) { super(message); }
@@ -334,19 +358,20 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
     ...(meta.luminance ? { luminance: meta.luminance } : {}),
     ...(args.alt ? { alt: String(args.alt).slice(0, 300) } : {}),
     added: new Date().toISOString().split('T')[0],
+    ...(args.provenance ? { provenance: args.provenance } : {}),
   };
   writeManifestEntry(args.projectDir, entry);
   return { entry, warnings };
 }
 
 // ── MCP ToolResult wrappers (manage_design ops) ───────────────
-function requireProject(op: string, projectPath?: string): { dir: string } | ToolResult {
+export function requireProject(op: string, projectPath?: string): { dir: string } | ToolResult {
   if (!projectPath) return errResult(op, 'project_path is required', 'Pass the project bare name or path.');
   const dir = resolveProjectPath(projectPath);
   if (!fs.existsSync(dir)) return errResult(op, `Project not found: ${projectPath}`, 'create_project first, or manage_design {op:"browse"} to find the right name.');
   return { dir };
 }
-const isErr = (r: { dir: string } | ToolResult): r is ToolResult => 'success' in r;
+export const isErr = (r: { dir: string } | ToolResult): r is ToolResult => 'success' in r;
 
 export function assetAdd(args: { project_path?: string; name?: string; data?: string; source_path?: string; kind?: string; folder?: string; alt?: string; process?: ProcessSpec }): ToolResult {
   const op = 'asset_add';
@@ -451,7 +476,17 @@ export function assetList(args: { project_path?: string; search?: string; kind?:
     : 'No assets yet — add one with manage_design {op:"asset_add", name, data:"data:image/…;base64,…"} or upload via the editor.';
   const context = buildContext(op, `${rows.length} asset(s) in ${path.basename(proj.dir)}`);
   const handover = buildHandover('COMPOSE', { project_path: proj.dir });
-  return okResult(op, { assets: rows, folders, truncated, hint, progress, context, handover });
+  // Anything fetched from the internet may carry a credit obligation. Surfacing
+  // the lines here means the model can typeset them without going asset by asset.
+  const credits = rows.map(r => r.provenance?.attribution).filter((s): s is string => Boolean(s));
+  return okResult(op, {
+    assets: rows, folders, truncated, hint,
+    ...(credits.length ? {
+      credits,
+      credits_note: 'These assets are licensed on condition of attribution. Put the lines in a small credit strip on the design (6–9px, low-contrast) or the design is not licensed to publish.',
+    } : {}),
+    progress, context, handover,
+  });
 }
 
 export function assetDelete(args: { project_path?: string; asset_path?: string }): ToolResult {
