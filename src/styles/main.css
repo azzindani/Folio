@@ -87,12 +87,15 @@ html, body {
      ground first — which is the right order, since a panel narrowed by 40px is
      still readable and a canvas narrowed by 40px is where the work happens. */
   --canvas-floor: max(360px, 38vw);
+  /* Set to 0 when the right rail folds into the panel header — see
+     rpanel-tabs.ts. The column stays in the template so nothing reflows. */
+  --ractbar-width: var(--activity-bar-width);
   grid-template-columns:
     var(--activity-bar-width)
-    min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - var(--canvas-floor) - var(--right-panel-width)))
+    min(var(--left-panel-width), calc(100vw - var(--activity-bar-width) - var(--ractbar-width) - var(--canvas-floor) - var(--right-panel-width)))
     1fr
-    min(var(--right-panel-width), calc(100vw - 2 * var(--activity-bar-width) - var(--canvas-floor)))
-    var(--activity-bar-width);
+    min(var(--right-panel-width), calc(100vw - var(--activity-bar-width) - var(--ractbar-width) - var(--canvas-floor)))
+    var(--ractbar-width);
   grid-template-rows:
     var(--toolbar-height)
     var(--formula-bar-height)
@@ -284,6 +287,68 @@ html, body {
   left: auto;
   right: 0;
   border-radius: 2px 0 0 2px;
+}
+
+/* ── RIGHT TABS FOLDED INTO THE PANEL HEADER (desktop) ────── */
+/* Same eight buttons, laid across the panel's own header instead of standing
+   in a 48px column of their own — that column was the cheapest 48px of canvas
+   to buy back. Scrolls horizontally rather than wrapping, so a panel dragged
+   narrow loses reach, never rows. */
+#app.rtabs-folded { --ractbar-width: 0px; }
+
+.r-activity-bar.rpanel-tabstrip {
+  grid-area: auto;
+  flex-direction: row;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  border-left: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 6px;
+  gap: 1px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.r-activity-bar.rpanel-tabstrip::-webkit-scrollbar { display: none; }
+.r-activity-bar.rpanel-tabstrip .act-btn { flex: 0 0 auto; }
+/* Pushed to the far end so it never sits among the tabs it would close. */
+.r-activity-bar.rpanel-tabstrip .rpanel-hide { margin-left: auto; font-size: 15px; }
+/* Only meaningful while folded — the column layout keeps click-to-collapse. */
+.r-activity-bar:not(.rpanel-tabstrip) .rpanel-hide { display: none; }
+/* The active marker moves to the bottom edge — it is a row of tabs now. */
+.r-activity-bar.rpanel-tabstrip .act-btn.active::before {
+  left: 4px; right: 4px; top: auto; bottom: 0;
+  width: auto; height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+#app.rtabs-folded.rpanel-collapsed .r-activity-bar { border-left: none; }
+
+/* Reopen handle — only reachable state for a collapsed panel once the rail is
+   folded inside it. Absolutely positioned, so it costs no layout width. */
+.rpanel-reopen { display: none; }
+#app.rtabs-folded.rpanel-collapsed .rpanel-reopen {
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-right: none;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 131;
+}
+#app.rtabs-folded.rpanel-collapsed .rpanel-reopen:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
 }
 
 /* Chrome icons are inline stroke SVGs on currentColor (src/editor/
@@ -1285,6 +1350,12 @@ button:focus:not(:focus-visible) { outline: none; }
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   font-size: 12px;
+  /* The selection menu runs to ~26 rows with alignment shown, which is taller
+     than a laptop viewport and much taller than a phone's. Scroll rather than
+     let the tail fall off the bottom edge unreachably. */
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .ccm-item {
   display: flex;
@@ -2446,6 +2517,71 @@ button:focus:not(:focus-visible) { outline: none; }
   .toolbar .toolbar-more-menu .toolbar-theme-select { max-width: none; width: 100%; font-size: 14px; padding: 0 10px; }
   .toolbar-more-menu .mode-toggle { display: flex; }
   .toolbar-more-menu .mode-btn { flex: 1; min-height: 48px; }
+}
+
+/* ── ONE-HANDED REACH LAYER (phones) ──────────────────────── */
+/* Floating, so it costs no layout: the design never shrinks to make room.
+   See one-hand.ts for the reach argument behind the geometry. */
+.oh-fab, .oh-arc { display: none; }
+
+@media (max-width: 767px) and (pointer: coarse) {
+  .oh-fab {
+    display: flex;
+    position: fixed;
+    align-items: center;
+    justify-content: center;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-strong);
+    background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
+    backdrop-filter: blur(12px);
+    color: var(--color-text);
+    font-size: 20px;
+    z-index: 240;
+    touch-action: none;          /* it is a drag handle, not a scroll surface */
+    transition: transform 0.16s ease, background 0.16s ease;
+  }
+  .oh-fab.open { transform: rotate(45deg); background: var(--color-primary); color: #fff; }
+
+  .oh-arc { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 239; }
+  .oh-arc.open { pointer-events: none; }
+
+  .oh-item {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    width: 48px; height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-strong);
+    background: color-mix(in srgb, var(--color-surface-2) 92%, transparent);
+    backdrop-filter: blur(12px);
+    color: var(--color-text);
+    /* Closed: collapsed onto the anchor and genuinely not rendered. `opacity:0`
+       alone leaves a 19px hit-tested box behind (scale shrinks the measured
+       rect), which reads as an undersized touch target to anything auditing
+       the page — and it would be one, if it were tappable. */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.4);
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+  }
+  .oh-arc.open .oh-item {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .oh-glyph { font-size: 17px; line-height: 1; }
+  /* Labelled, for the same reason the phone nav is: no hover, no tooltips. */
+  .oh-label { font-size: 8px; line-height: 1; color: var(--color-text-muted); }
+
+  /* Out of the way of anything already open. */
+  .oh-hidden .oh-fab, .oh-hidden .oh-arc { display: none; }
 }
 
 /* ── RESPONSIVE — PHONE (<768px, coarse pointer) ─────────── */

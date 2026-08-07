@@ -35,14 +35,32 @@ test.describe('Panels — right panel reachable on desktop (collapse toggle)', (
     await page.waitForSelector('.canvas-area svg', { timeout: 10_000 });
   });
 
-  test('clicking the active right tab collapses, then re-expands', async ({ page }) => {
+  // The tabs live INSIDE the panel header on desktop now, so a tab cannot be
+  // the thing that collapses it — it would vanish with the panel it closed.
+  // The strip's own button collapses; an edge handle brings it back.
+  test('the strip button collapses the panel and the edge handle restores it', async ({ page }) => {
+    const app = page.locator('#app');
+    await expect(app).toHaveClass(/rtabs-folded/);
+    await expect(app).not.toHaveClass(/rpanel-collapsed/);
+    await page.locator('.r-activity-bar .rpanel-hide').click();
+    await expect(app).toHaveClass(/rpanel-collapsed/);
+    const reopen = page.locator('.rpanel-reopen');
+    await expect(reopen).toBeVisible();
+    await reopen.click();
+    await expect(app).not.toHaveClass(/rpanel-collapsed/);
+  });
+
+  test('clicking the active tab does not collapse the panel out from under itself', async ({ page }) => {
     const app = page.locator('#app');
     const tab = page.locator('.r-activity-bar .rpanel-tab[data-tab="properties"]');
-    await expect(app).not.toHaveClass(/rpanel-collapsed/);
-    await tab.click();
-    await expect(app).toHaveClass(/rpanel-collapsed/);
     await tab.click();
     await expect(app).not.toHaveClass(/rpanel-collapsed/);
+    await expect(tab).toBeVisible();
+  });
+
+  test('switching tabs still swaps panes', async ({ page }) => {
+    await page.locator('.r-activity-bar .rpanel-tab[data-tab="data"]').click();
+    await expect(page.locator('.rpanel-body .tab-pane[data-tab="data"]')).toHaveClass(/active/);
   });
 });
 

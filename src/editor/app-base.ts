@@ -391,7 +391,13 @@ export abstract class EditorAppBase {
         // Desktop: collapse/expand via the grid column. Click already-active tab
         // while expanded → collapse, clearing the active highlight so the bar
         // reads as "closed" rather than "selected but blank".
+        //
+        // …EXCEPT when the tabs are folded into the panel header, where the tab
+        // would collapse the very thing it lives in and disappear with it. A
+        // control that deletes itself is a trapdoor, so there the strip's own
+        // collapse button (and the edge handle) own that job.
         const isCollapsed = app.classList.contains('rpanel-collapsed');
+        if (isActive && !isCollapsed && app.classList.contains('rtabs-folded')) return;
         if (isActive && !isCollapsed) {
           app.classList.add('rpanel-collapsed');
           tabs.forEach(t => t.classList.remove('active'));

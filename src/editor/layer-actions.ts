@@ -107,3 +107,46 @@ export function toggleLockSelected(state: StateManager): void {
   const anyUnlocked = layers.some(l => !(l as { locked?: boolean }).locked);
   for (const l of layers) state.updateLayer(l.id, { locked: anyUnlocked } as Partial<Layer>);
 }
+
+/**
+ * Send to the very front / back, rather than one step at a time.
+ *
+ * `adjustZ` nudges by ±10, which is right for "just above that other thing"
+ * and useless for "put this on top of everything" — with a deep stack you are
+ * pressing a shortcut ten times and counting.
+ */
+export function bringToFront(state: StateManager): void {
+  const ids = state.get().selectedLayerIds;
+  if (!ids.length) return;
+  const top = Math.max(...state.getCurrentLayers().map(l => l.z ?? 0), 0);
+  // Preserve the selection's own front-to-back order as it moves up.
+  const ordered = state.getSelectedLayers().slice().sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+  ordered.forEach((l, i) => state.updateLayer(l.id, { z: top + 1 + i }));
+}
+
+export function sendToBack(state: StateManager): void {
+  const ids = state.get().selectedLayerIds;
+  if (!ids.length) return;
+  const bottom = Math.min(...state.getCurrentLayers().map(l => l.z ?? 0), 0);
+  const ordered = state.getSelectedLayers().slice().sort((a, b) => (b.z ?? 0) - (a.z ?? 0));
+  ordered.forEach((l, i) => state.updateLayer(l.id, { z: bottom - 1 - i }));
+}
+
+/** Copy, then delete — the clipboard half is shared with copySelected. */
+export function cutSelected(state: StateManager): void {
+  if (!state.get().selectedLayerIds.length) return;
+  copySelected(state);
+  deleteSelected(state);
+}
+
+/**
+ * Hide/show every selected layer, driven by the FIRST one's state so a mixed
+ * selection lands somewhere predictable instead of each layer toggling to the
+ * opposite of whatever it happened to be.
+ */
+export function toggleVisibilitySelected(state: StateManager): void {
+  const layers = state.getSelectedLayers();
+  if (!layers.length) return;
+  const hide = (layers[0] as { visible?: boolean }).visible !== false;
+  for (const l of layers) state.updateLayer(l.id, { visible: !hide } as Partial<Layer>);
+}
