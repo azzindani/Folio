@@ -43,6 +43,8 @@ describe('assets', () => {
   });
 
   describe('ingestAsset', () => {
+    // First test in this file to decode a raster, so it pays resvg's native
+    // cold-load — 14s on the Windows CI runner against a 5s default.
     it('writes the file and a manifest entry with dimensions', () => {
       const { entry, warnings } = ingestAsset({ projectDir: proj, name: 'dot.png', dataUri: PNG_URI });
       expect(warnings).toEqual([]);
@@ -52,7 +54,7 @@ describe('assets', () => {
       expect(fs.existsSync(path.join(proj, entry.path))).toBe(true);
       const manifest = readAssetManifest(proj);
       expect(manifest.images?.map(e => e.path)).toContain('assets/images/dot.png');
-    });
+    }, 30_000);
     it('trusts the data: URI mime over a mismatched filename extension', () => {
       const { entry, warnings } = ingestAsset({ projectDir: proj, name: 'photo.jpg', dataUri: PNG_URI });
       expect(entry.path).toBe('assets/images/photo.png');
