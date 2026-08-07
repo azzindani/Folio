@@ -92,6 +92,9 @@ export interface SheetOptions {
   onLayoutChange: () => void;
   /** Command palette opener for the third nav button. */
   openPalette: () => void;
+  /** Asset library opener — the activity bar that normally reaches it is
+   *  hidden on phones, so the nav button is the only route. */
+  openAssets?: () => void;
 }
 
 /**
@@ -137,6 +140,14 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
     btn.addEventListener('click', () => {
       const target = btn.dataset['mob'];
       if (target === 'cmd') { closeAll(); opts.openPalette(); return; }
+      // Assets rides the LEFT sheet, switching it to the library view.
+      if (target === 'assets') {
+        const already = leftPanel.classList.contains('mob-open') && btn.classList.contains('active');
+        if (already) { closeAll(); return; }
+        open(leftPanel, btn);
+        opts.openAssets?.();
+        return;
+      }
       const panel = target === 'layers' ? leftPanel : rightPanel;
       if (panel.classList.contains('mob-open')) { closeAll(); return; }
       open(panel, btn);

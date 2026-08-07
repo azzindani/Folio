@@ -102,6 +102,7 @@ export abstract class EditorAppBase {
       <nav class="mobile-nav" aria-label="Mobile navigation">
         <button class="mob-nav-btn" data-mob="layers" title="Layers">${chromeIcon('layers', 18)}</button>
         <button class="mob-nav-btn" data-mob="props" title="Properties">${chromeIcon('sliders', 18)}</button>
+        <button class="mob-nav-btn" data-mob="assets" title="Assets">${chromeIcon('image', 18)}</button>
         <button class="mob-nav-btn" data-mob="cmd" title="Command palette">${chromeIcon('search', 18)}</button>
       </nav>
 
@@ -455,6 +456,7 @@ export abstract class EditorAppBase {
         window.setTimeout(() => this.canvas?.fitToScreen?.(), 320);
       },
       openPalette: () => this.commandPalette?.open?.(),
+      openAssets: () => { void this.showAssetLibrary(); },
     });
     wireMobileToolStrip(this.container);
   }
@@ -465,7 +467,7 @@ export abstract class EditorAppBase {
    *  matters once a server-backed design is open. Importing it eagerly put all
    *  of that in the main entry chunk, which pushed the bundle past its 500KB
    *  budget; this defers it to the moment a project actually exists. */
-  protected async openAssetPanel(project: string, token: string | null): Promise<void> {
+  protected async openAssetPanel(project: string | null, token: string | null): Promise<void> {
     const host = this.container.querySelector<HTMLElement>('.project-assets-content');
     if (!host) return;
     if (!this.assetPanel) {
@@ -473,6 +475,16 @@ export abstract class EditorAppBase {
       this.assetPanel = new AssetPanelManager(host, this.state);
     }
     this.assetPanel.setProject(project, token);
+  }
+
+  /** Open the asset library view.
+   *
+   *  The activity bar is hidden below 768px, so on a phone this is the ONLY way
+   *  in — the file manager shipped with its door bricked up. Reuses the hidden
+   *  activity button's own handler rather than duplicating the view switch. */
+  protected async showAssetLibrary(): Promise<void> {
+    if (!this.assetPanel) await this.openAssetPanel(null, null);
+    this.container.querySelector<HTMLElement>('.act-btn[data-panel="project-assets"]')?.click();
   }
 
   protected wireAssetPanel(): void {

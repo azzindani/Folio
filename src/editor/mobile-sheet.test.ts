@@ -15,6 +15,7 @@ function makeApp(): HTMLElement {
     <nav class="mobile-nav">
       <button class="mob-nav-btn" data-mob="layers"></button>
       <button class="mob-nav-btn" data-mob="props"></button>
+      <button class="mob-nav-btn" data-mob="assets"></button>
       <button class="mob-nav-btn" data-mob="cmd"></button>
     </nav>`;
   document.body.appendChild(app);
@@ -37,13 +38,15 @@ describe('mobile sheets', () => {
   let app: HTMLElement;
   let onLayoutChange: ReturnType<typeof vi.fn<() => void>>;
   let openPalette: ReturnType<typeof vi.fn<() => void>>;
+  let openAssets: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     document.body.innerHTML = '';
     app = makeApp();
     onLayoutChange = vi.fn();
     openPalette = vi.fn();
-    wireMobileSheets(app, { onLayoutChange, openPalette });
+    openAssets = vi.fn();
+    wireMobileSheets(app, { onLayoutChange, openPalette, openAssets });
   });
 
   const layersBtn = (): HTMLElement => app.querySelector<HTMLElement>('[data-mob="layers"]') as HTMLElement;
@@ -110,6 +113,17 @@ describe('mobile sheets', () => {
     app.querySelector<HTMLElement>('[data-mob="props"]')?.click();
     expect(left().classList.contains('mob-open')).toBe(false);
     expect(app.querySelector('.properties-panel')?.classList.contains('mob-open')).toBe(true);
+  });
+
+  it('opens the asset library in the left sheet — its only door on a phone', () => {
+    app.querySelector<HTMLElement>('[data-mob="assets"]')?.click();
+    expect(left().classList.contains('mob-open')).toBe(true);
+    expect(detentOf(left())).toBe('peek');
+    expect(openAssets).toHaveBeenCalledTimes(1);
+
+    // Tapping it again closes, rather than re-opening the same view.
+    app.querySelector<HTMLElement>('[data-mob="assets"]')?.click();
+    expect(left().classList.contains('mob-open')).toBe(false);
   });
 
   it('routes the third button to the command palette without opening a sheet', () => {
