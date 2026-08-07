@@ -43,6 +43,13 @@ export const ASSET_STYLE = `
 .aacts button:hover{color:var(--fg)}
 .aacts .adel:hover{color:#f87171}
 .aempty{grid-column:1/-1;color:var(--mut);font-size:13px;line-height:1.5;padding:16px}
+.aedit{position:absolute;inset:0;background:var(--panel);z-index:2;display:none;flex-direction:column}
+.aedit.open{display:flex}
+.aedit-head{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.aedit input[type=text]{flex:1;min-width:140px;min-height:44px;padding:0 10px;font:inherit;font-size:13px;
+  background:var(--panel2);color:var(--fg);border:1px solid var(--bd2);border-radius:8px}
+.aedit textarea{flex:1;margin:12px;padding:12px;background:var(--panel2);color:var(--fg);border:1px solid var(--bd2);
+  border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;resize:none}
 .afoot{padding:8px 12px;border-top:1px solid var(--bd);font-size:11px;color:var(--mut)}
 @media(max-width:640px){.adrawer{height:92vh}.adrawer-head{gap:6px}}
 `;
@@ -60,6 +67,7 @@ export function assetDrawerMarkup(projects: { name: string }[]): string {
     <h2>Assets</h2>
     <select id="aproj" aria-label="Project">${opts}</select>
     <button class="abtn abtn-primary" id="aupload" type="button">＋ Upload</button>
+    <button class="abtn" id="anote" type="button" title="Write a markdown or text file here">✎ Write</button>
     <button class="abtn" id="anewfolder" type="button" title="Upload into a new folder">New folder</button>
     <button class="abtn" id="arefresh" type="button" title="Refresh">↻</button>
     <button class="abtn abtn-close" id="aclose" type="button">Close</button>
@@ -72,6 +80,14 @@ export function assetDrawerMarkup(projects: { name: string }[]): string {
   <div class="achips" id="achips"></div>
   <div class="agrid" id="agrid"></div>
   <div class="afoot" id="afoot"></div>
+  <div class="aedit" id="aedit" aria-label="Edit text asset">
+    <div class="aedit-head">
+      <input type="text" id="aename" placeholder="brief.md" aria-label="File name">
+      <button class="abtn abtn-primary" id="aesave" type="button">Save</button>
+      <button class="abtn" id="aecancel" type="button">Cancel</button>
+    </div>
+    <textarea id="aetext" spellcheck="false" placeholder="# Brief&#10;&#10;Paste the copy, links and notes the design should be built from."></textarea>
+  </div>
 </div>`;
 }
 
@@ -86,7 +102,9 @@ export const ASSET_SCRIPT = `(function(){
 var drawer=document.getElementById('adrawer');if(!drawer)return;
 var projSel=document.getElementById('aproj'),grid=document.getElementById('agrid'),chips=document.getElementById('achips'),
     foot=document.getElementById('afoot'),file=document.getElementById('afile'),search=document.getElementById('asearch');
-var rows=[],folders=[],folder=null,pendingFolder=null;
+var ed=document.getElementById('aedit'),edName=document.getElementById('aename'),edText=document.getElementById('aetext');
+var rows=[],folders=[],folder=null,pendingFolder=null,edFolder='';
+var DOC=/\\.(md|markdown|txt|csv|json|ya?ml)$/i;
 function base(){return '/__project_files/'+encodeURIComponent(projSel.value||'');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function open(){drawer.classList.add('open');load();}
@@ -113,7 +131,8 @@ function draw(){
     var thumb=a.kind==='docs'?'<div class="afont">\u{1F4C4}</div>':a.kind==='fonts'?'<div class="afont">Aa</div>'
       :'<img loading="lazy" alt="'+esc(a.alt||name)+'" src="'+base()+'/'+a.path.split('/').map(encodeURIComponent).join('/')+'">';
     return '<div class="acard">'+thumb+'<div class="aname">'+esc(name)+'</div><div class="ameta">'+esc(meta)+'</div>'+
-      '<div class="aacts"><button data-a="ren" data-i="'+i+'">Rename</button>'+
+      '<div class="aacts">'+(a.kind==='docs'?'<button data-a="edt" data-i="'+i+'">Edit</button>':'')+
+      '<button data-a="ren" data-i="'+i+'">Rename</button>'+
       '<button data-a="mov" data-i="'+i+'">Move</button>'+
       '<button class="adel" data-a="del" data-i="'+i+'">Delete</button></div></div>';
   }).join(''):'<div class="aempty">'+(rows.length?'Nothing matches that filter.':'No assets yet. Upload one — it lands in this project and any design in it can use it.')+'</div>';
@@ -125,7 +144,8 @@ function draw(){
     b.onclick=function(){
       var a=list[+b.getAttribute('data-i')];if(!a)return;
       var act=b.getAttribute('data-a'),n=a.path.split('/').pop();
-      if(act==='ren'){var nn=prompt('Rename asset (keep the extension):',n);if(nn&&nn!==n)manage({op:'move',asset_path:a.path,new_name:nn});}
+      if(act==='edt'){edOpen(a);}
+      else if(act==='ren'){var nn=prompt('Rename asset (keep the extension):',n);if(nn&&nn!==n)manage({op:'move',asset_path:a.path,new_name:nn});}
       else if(act==='mov'){var f=prompt('Move to folder (blank = project root):',a.folder||'');if(f!==null)manage({op:'move',asset_path:a.path,folder:f});}
       else if(act==='del'){if(confirm('Delete '+n+'? It moves to .trash and any design using it shows a placeholder.'))manage({op:'delete',asset_path:a.path});}
     };
@@ -155,8 +175,39 @@ function upload(files,into){
       .catch(function(){alert(f.name+': upload failed');next();});
   })();
 }
+// ── Write/edit a text asset ────────────────────────────────────────────────
+// Saving posts plain text to the same upload route an image uses; the server
+// ingests it by filename, so the extension alone decides where it lands.
+function edOpen(a){
+  edFolder=a?(a.folder||''):(folder||'');
+  edName.value=a?a.path.split('/').pop():'';
+  edText.value='';
+  ed.classList.add('open');
+  if(a){
+    edText.value='Loading…';edText.disabled=true;
+    fetch(base()+'/'+a.path.split('/').map(encodeURIComponent).join('/'),{credentials:'include'})
+      .then(function(r){return r.text();}).then(function(t){edText.value=t;edText.disabled=false;})
+      .catch(function(){edText.value='';edText.disabled=false;alert('Could not read that file.');});
+  } else {setTimeout(function(){edName.focus();},0);}
+}
+function edClose(){ed.classList.remove('open');}
+function edSave(){
+  var n=(edName.value||'').trim();
+  if(!n){alert('Give the file a name, ending in .md, .txt, .csv, .json or .yaml.');return;}
+  if(!DOC.test(n)){alert('Text files only here: .md, .markdown, .txt, .csv, .json, .yaml.');return;}
+  if(!edText.value){alert('The file is empty — write something first.');return;}
+  var seg=edFolder?encodeURIComponent(edFolder)+'/':'';
+  fetch(base()+'/assets/docs/'+seg+encodeURIComponent(n),{method:'POST',credentials:'include',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},body:edText.value})
+    .then(function(r){return r.json().catch(function(){return {};});})
+    .then(function(j){if(j.ok){edClose();load();}else alert(j.error||'Save failed');})
+    .catch(function(){alert('Could not reach the server.');});
+}
+document.getElementById('anote').onclick=function(){edOpen(null);};
+document.getElementById('aesave').onclick=edSave;
+document.getElementById('aecancel').onclick=edClose;
 document.getElementById('assetsbtn').onclick=function(){drawer.classList.contains('open')?close():open();};
-document.getElementById('aclose').onclick=close;
+document.getElementById('aclose').onclick=function(){edClose();close();};
 document.getElementById('arefresh').onclick=load;
 document.getElementById('aupload').onclick=function(){pendingFolder=null;file.click();};
 document.getElementById('anewfolder').onclick=function(){

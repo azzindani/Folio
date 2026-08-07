@@ -182,6 +182,7 @@ export class AssetPanelManager {
       <div class="asset-lib">
         <div class="asset-lib-bar">
           <button class="asset-lib-btn asset-lib-primary" data-act="upload">＋ Upload</button>
+          <button class="asset-lib-btn" data-act="write" title="Write a markdown or text file into this project">✎ Write</button>
           <button class="asset-lib-btn" data-act="newfolder" title="Upload into a new folder">New folder</button>
           <button class="asset-lib-btn asset-lib-icon" data-act="view" title="${this.view === 'grid' ? 'List view' : 'Grid view'}">${this.view === 'grid' ? '☰' : '▦'}</button>
           <button class="asset-lib-btn asset-lib-icon" data-act="refresh" title="Refresh">↻</button>
@@ -220,6 +221,7 @@ export class AssetPanelManager {
           <span class="asset-lib-meta">${esc(meta)}</span>
         </button>
         <div class="asset-lib-actions">
+          ${a.kind === 'docs' ? `<button class="asset-lib-act" data-act="editdoc" data-idx="${i}" title="Edit text">Edit</button>` : ''}
           <button class="asset-lib-act" data-act="rename" data-idx="${i}" title="Rename">Rename</button>
           <button class="asset-lib-act" data-act="movefolder" data-idx="${i}" title="Move to folder">Move</button>
           <button class="asset-lib-act danger" data-act="delete" data-idx="${i}" title="Delete">Delete</button>
@@ -248,6 +250,7 @@ export class AssetPanelManager {
       pendingFolder = name;
       fileInput?.click();
     });
+    q('[data-act="write"]')?.addEventListener('click', () => this.openEditor());
     q('[data-act="view"]')?.addEventListener('click', () => { this.view = this.view === 'grid' ? 'list' : 'grid'; this.render(); });
     q('[data-act="refresh"]')?.addEventListener('click', () => void this.refresh());
 
@@ -279,11 +282,74 @@ export class AssetPanelManager {
         if (!a) return;
         const act = el.dataset['act'];
         if (act === 'insert') { this.insert(a); return; }
+        if (act === 'editdoc') { this.openEditor(a); return; }
         if (act === 'rename') { void this.promptRename(a); return; }
         if (act === 'movefolder') { void this.promptMove(a); return; }
         if (act === 'delete') { void this.promptDelete(a); return; }
       });
     });
+  }
+
+  // ── Write / edit a text asset ─────────────────────────────────
+  // A brief does not have to arrive as a file: type it here and it lands in
+  // assets/docs/ exactly as an upload would, ready for an MCP asset_read.
+  // Saving posts plain text to the upload route — the server ingests by
+  // filename, so the extension alone decides where it goes.
+  private openEditor(a?: AssetRow): void {
+    if (!this.project) return;
+    const name = a ? (a.path.split('/').pop() ?? '') : '';
+    const folder = a ? (a.folder ?? '') : (this.folder ?? '');
+    this.container.innerHTML = `
+      <div class="asset-lib asset-lib-editor">
+        <div class="asset-lib-bar">
+          <input class="asset-lib-fname" type="text" placeholder="brief.md" value="${esc(name)}" ${a ? 'readonly' : ''} aria-label="File name">
+          <button class="asset-lib-btn asset-lib-primary" data-act="dsave">Save</button>
+          <button class="asset-lib-btn" data-act="dcancel">Cancel</button>
+        </div>
+        <textarea class="asset-lib-text" spellcheck="false" placeholder="# Brief&#10;&#10;Paste the copy, links and notes the design should be built from."></textarea>
+        <div class="asset-lib-foot">${folder ? `assets/docs/${esc(folder)}/` : 'assets/docs/'} · md, txt, csv, json, yaml</div>
+      </div>`;
+
+    const fname = this.container.querySelector<HTMLInputElement>('.asset-lib-fname');
+    const text = this.container.querySelector<HTMLTextAreaElement>('.asset-lib-text');
+    this.container.querySelector('[data-act="dcancel"]')?.addEventListener('click', () => this.render());
+    this.container.querySelector('[data-act="dsave"]')?.addEventListener('click', () => {
+      void this.saveDoc(fname?.value ?? '', folder, text?.value ?? '');
+    });
+    if (a && text) {
+      text.value = 'Loading…';
+      text.disabled = true;
+      void fetch(this.url(a), { credentials: 'include', headers: this.headers() })
+        .then(r => r.ok ? r.text() : Promise.reject(new Error(String(r.status))))
+        .then(t => { text.value = t; text.disabled = false; })
+        .catch(() => { text.value = ''; text.disabled = false; void import('../../utils/toast').then(({ showToast }) => showToast('Could not read that file.', 'warning')); });
+    } else {
+      fname?.focus();
+    }
+  }
+
+  private async saveDoc(name: string, folder: string, text: string): Promise<void> {
+    const { showToast } = await import('../../utils/toast');
+    const clean = name.trim();
+    if (!/\.(md|markdown|txt|csv|json|ya?ml)$/i.test(clean)) {
+      showToast('Text files only: .md, .markdown, .txt, .csv, .json, .yaml', 'warning');
+      return;
+    }
+    if (!text) { showToast('The file is empty — write something first.', 'warning'); return; }
+    const seg = folder ? `${encodeURIComponent(folder)}/` : '';
+    try {
+      const r = await fetch(`${this.base()}/assets/docs/${seg}${encodeURIComponent(clean)}`, {
+        method: 'POST', credentials: 'include',
+        headers: this.headers({ 'Content-Type': 'text/plain;charset=utf-8' }),
+        body: text,
+      });
+      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) { showToast(j.error ?? `Save failed (${r.status})`, 'warning'); return; }
+      showToast(`Saved ${clean}`, 'success');
+      await this.refresh();
+    } catch {
+      showToast('Could not reach the project server.', 'warning');
+    }
   }
 
   private async promptRename(a: AssetRow): Promise<void> {

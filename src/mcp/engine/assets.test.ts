@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { sanitizeAssetName, ingestAsset, assetAdd, assetList, assetDelete, assetMove, assetRead, sanitizeFolder, parseAssetPath, AssetError, readAssetManifest } from './assets';
+import { sanitizeAssetName, ingestAsset, assetAdd, assetList, assetDelete, assetMove, assetRead, assetWrite, sanitizeFolder, parseAssetPath, AssetError, readAssetManifest } from './assets';
 
 // canonical valid 1×1 transparent PNG
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
@@ -275,6 +275,58 @@ describe('docs assets (source material)', () => {
     expect((assetRead({ project_path: proj, asset_path: 'assets/images/dot.png' }) as unknown as { success: boolean }).success).toBe(false);
     expect((assetRead({ project_path: proj, asset_path: 'assets/docs/ghost.md' }) as unknown as { success: boolean }).success).toBe(false);
     expect((assetRead({ project_path: proj, asset_path: '../project.yaml' }) as unknown as { success: boolean }).success).toBe(false);
+  });
+
+  it('writes a text asset straight from content and reads it back', () => {
+    const w = assetWrite({ project_path: proj, name: 'notes.md', content: BRIEF }) as unknown as { success: boolean; asset_path: string; replaced: boolean; bytes: number };
+    expect(w.success).toBe(true);
+    expect(w.asset_path).toBe('assets/docs/notes.md');
+    expect(w.replaced).toBe(false);
+    expect(w.bytes).toBe(BRIEF.length);
+    const r = assetRead({ project_path: proj, asset_path: 'assets/docs/notes.md' }) as unknown as { content: string };
+    expect(r.content).toBe(BRIEF);
+  });
+
+  it('writes into a folder and targets an existing file by asset_path', () => {
+    assetWrite({ project_path: proj, name: 'card-5.md', content: 'first', folder: 'briefs' });
+    const w = assetWrite({ project_path: proj, asset_path: 'assets/docs/briefs/card-5.md', content: 'second' }) as unknown as { success: boolean; asset_path: string; replaced: boolean };
+    expect(w.success).toBe(true);
+    expect(w.asset_path).toBe('assets/docs/briefs/card-5.md');
+    expect(w.replaced).toBe(true);
+    const r = assetRead({ project_path: proj, asset_path: 'assets/docs/briefs/card-5.md' }) as unknown as { content: string };
+    expect(r.content).toBe('second');
+  });
+
+  it('appends with a newline join rather than overwriting', () => {
+    assetWrite({ project_path: proj, name: 'log.txt', content: 'line one' });
+    assetWrite({ project_path: proj, name: 'log.txt', content: 'line two', mode: 'append' });
+    const r = assetRead({ project_path: proj, asset_path: 'assets/docs/log.txt' }) as unknown as { content: string };
+    expect(r.content).toBe('line one\nline two');
+  });
+
+  it('appends to a file that does not exist yet, creating it', () => {
+    const w = assetWrite({ project_path: proj, name: 'fresh.md', content: 'hello', mode: 'append' }) as unknown as { success: boolean; replaced: boolean };
+    expect(w.success).toBe(true);
+    expect(w.replaced).toBe(false);
+  });
+
+  it('refuses a binary type, an empty body, a missing content and a traversal name', () => {
+    expect((assetWrite({ project_path: proj, name: 'logo.png', content: 'not really a png' }) as unknown as { success: boolean }).success).toBe(false);
+    expect((assetWrite({ project_path: proj, name: 'empty.md', content: '' }) as unknown as { success: boolean }).success).toBe(false);
+    expect((assetWrite({ project_path: proj, name: 'nocontent.md' }) as unknown as { success: boolean }).success).toBe(false);
+    expect((assetWrite({ project_path: proj, name: 'run.js', content: 'alert(1)' }) as unknown as { success: boolean }).success).toBe(false);
+  });
+
+  it('strips a traversal name down to a filename inside assets/docs', () => {
+    const w = assetWrite({ project_path: proj, name: '../../escape.md', content: 'x' }) as unknown as { asset_path: string };
+    expect(w.asset_path).toBe('assets/docs/escape.md');
+    expect(fs.existsSync(path.join(proj, '..', 'escape.md'))).toBe(false);
+  });
+
+  it('flattens a nested folder request to one segment, like every other asset op', () => {
+    const w = assetWrite({ project_path: proj, name: 'deep.md', content: 'x', folder: 'a/../../b' }) as unknown as { asset_path: string };
+    expect(w.asset_path.startsWith('assets/docs/')).toBe(true);
+    expect(w.asset_path.split('/')).toHaveLength(4);
   });
 
   it('still refuses executable and unknown types', () => {

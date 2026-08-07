@@ -540,6 +540,21 @@ html, body {
   padding: 8px; border-top: 1px solid var(--color-border);
   font-size: 11px; color: var(--color-text-muted);
 }
+/* Write/edit a text asset — briefs typed straight into the project. */
+.asset-lib-fname {
+  flex: 1; min-width: 0; min-height: 36px; padding: 0 10px;
+  background: var(--color-surface-2); color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+.asset-lib-fname[readonly] { color: var(--color-text-muted); }
+.asset-lib-text {
+  flex: 1; margin: 8px; padding: 10px; resize: none;
+  background: var(--color-surface-2); color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px; line-height: 1.55;
+}
 .asset-lib-empty {
   padding: 14px; font-size: 12px; line-height: 1.5; color: var(--color-text-muted);
   grid-column: 1 / -1;
