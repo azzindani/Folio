@@ -64,7 +64,7 @@ export function assetDrawerMarkup(projects: { name: string }[]): string {
     <button class="abtn" id="arefresh" type="button" title="Refresh">↻</button>
     <button class="abtn abtn-close" id="aclose" type="button">Close</button>
     <input type="file" id="afile" multiple hidden
-      accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2">
+      accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json">
   </div>
   <div class="adrawer-head" style="border:none;padding-bottom:0">
     <input type="search" id="asearch" placeholder="Search assets…" style="flex:1">
@@ -98,7 +98,7 @@ function visible(){
     if(!q)return true;
     return a.path.toLowerCase().indexOf(q)>=0||String(a.alt||'').toLowerCase().indexOf(q)>=0;
   }).sort(function(x,y){
-    var r=(x.kind==='fonts'?1:0)-(y.kind==='fonts'?1:0);
+    var rk=function(k){return k==='images'||k==='icons'?0:1;};var r=rk(x.kind)-rk(y.kind);
     return r||x.path.localeCompare(y.path);
   });
 }
@@ -110,7 +110,7 @@ function draw(){
   grid.innerHTML=list.length?list.map(function(a,i){
     var name=a.path.split('/').pop(),dims=a.width?a.width+'×'+a.height:'',kb=Math.max(1,Math.round(a.bytes/1024))+' KB';
     var meta=[dims,kb,a.folder||''].filter(Boolean).join(' · ');
-    var thumb=a.kind==='fonts'?'<div class="afont">Aa</div>'
+    var thumb=a.kind==='docs'?'<div class="afont">\u{1F4C4}</div>':a.kind==='fonts'?'<div class="afont">Aa</div>'
       :'<img loading="lazy" alt="'+esc(a.alt||name)+'" src="'+base()+'/'+a.path.split('/').map(encodeURIComponent).join('/')+'">';
     return '<div class="acard">'+thumb+'<div class="aname">'+esc(name)+'</div><div class="ameta">'+esc(meta)+'</div>'+
       '<div class="aacts"><button data-a="ren" data-i="'+i+'">Rename</button>'+
@@ -146,7 +146,7 @@ function upload(files,into){
   var i=0,ok=0;
   (function next(){
     if(i>=files.length){if(ok)foot.textContent='Uploaded '+ok+' asset'+(ok===1?'':'s');load();return;}
-    var f=files[i++],kind=/\\.(ttf|otf|woff2?)$/i.test(f.name)?'fonts':'images',
+    var f=files[i++],kind=/\\.(ttf|otf|woff2?)$/i.test(f.name)?'fonts':(/\\.(md|markdown|txt|csv|json|ya?ml)$/i.test(f.name)?'docs':'images'),
         seg=into?encodeURIComponent(into)+'/':'';
     fetch(base()+'/assets/'+kind+'/'+seg+encodeURIComponent(f.name),{method:'POST',credentials:'include',
       headers:{'Content-Type':f.type||'application/octet-stream'},body:f})

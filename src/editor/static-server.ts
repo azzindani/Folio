@@ -514,7 +514,7 @@ Bun.serve({
           return manageAssets(req, projectDir, refresh);
         }
 
-        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts)\/(?:([^/]+)\/)?([^/]+)$/);
+        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts|docs)\/(?:([^/]+)\/)?([^/]+)$/);
         if (assetMatch && target && !relDecoded.includes('..')) {
           const projectDir = safeJoinProject(assetMatch[1]);
           if (!projectDir || !fs.existsSync(projectDir)) {
