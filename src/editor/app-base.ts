@@ -12,6 +12,7 @@ import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
 import { DataPanelManager } from '../ui/panels/data-panel';
 import { ScriptPanelManager } from '../ui/panels/script-panel';
+import { isTouchLayout, isNarrowDesktop } from './breakpoints';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
 import { FileTreeManager } from '../ui/panels/file-tree';
 import { PageStrip } from '../ui/panels/page-strip';
@@ -38,6 +39,7 @@ import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { wireMobileSheets } from './mobile-sheet';
+import { sc } from '../utils/shortcut';
 
 export abstract class EditorAppBase {
   protected container!: HTMLElement;
@@ -87,12 +89,12 @@ export abstract class EditorAppBase {
       </div>
 
       <div class="activity-bar">
-        <button class="act-btn active" data-panel="layers" title="Layers (⌘⇧L)">${chromeIcon('layers')}</button>
-        <button class="act-btn" data-panel="files" title="Files (⌘⇧E)">${chromeIcon('folder')}</button>
+        <button class="act-btn active" data-panel="layers" title="Layers (${sc('⌘⇧L')})">${chromeIcon('layers')}</button>
+        <button class="act-btn" data-panel="files" title="Files (${sc('⌘⇧E')})">${chromeIcon('folder')}</button>
         <button class="act-btn" data-panel="project-assets" title="Project assets">${chromeIcon('image')}</button>
-        <button class="act-btn" data-panel="components" title="Components (⌘⇧K)">${chromeIcon('component')}</button>
-        <button class="act-btn" data-panel="icons" title="Icons (⌘⇧I)">${chromeIcon('star')}</button>
-        <button class="act-btn" data-panel="find" title="Find &amp; Replace (⌘H)">${chromeIcon('search')}</button>
+        <button class="act-btn" data-panel="components" title="Components (${sc('⌘⇧K')})">${chromeIcon('component')}</button>
+        <button class="act-btn" data-panel="icons" title="Icons (${sc('⌘⇧I')})">${chromeIcon('star')}</button>
+        <button class="act-btn" data-panel="find" title="Find &amp; Replace (${sc('⌘H')})">${chromeIcon('search')}</button>
         <div class="act-spacer"></div>
         <button class="act-btn" id="theme-toggle" title="Toggle light/dark theme">${chromeIcon('moon')}</button>
       </div>
@@ -212,7 +214,7 @@ export abstract class EditorAppBase {
         <button class="sb-btn" id="zoom-out" title="Zoom out (−)">−</button>
         <span class="sb-zoom-val toolbar-zoom">100%</span>
         <button class="sb-btn" id="zoom-in" title="Zoom in (+)">+</button>
-        <button class="sb-btn" id="zoom-fit" title="Fit to screen (⌘0)">&#8862;</button>
+        <button class="sb-btn" id="zoom-fit" title="Fit to screen (${sc('⌘0')})">&#8862;</button>
         <div class="status-sep"></div>
         <button class="sb-btn" id="toggle-grid" title="Grid (G)">&#8862;</button>
         <button class="sb-btn" id="toggle-snap" title="Snap">&#8859;</button>
@@ -319,10 +321,11 @@ export abstract class EditorAppBase {
       });
     };
 
-    // Below desktop the left panel is a slide-in overlay (z-120) — starting
-    // expanded means it covers the canvas on load and the design looks
-    // missing. Start collapsed there; the activity bar re-opens it.
-    if (window.matchMedia('(max-width: 1023px)').matches) setCollapsed(true);
+    // On a touchscreen below desktop width the left panel is a slide-in
+    // overlay (z-120) — starting expanded means it covers the canvas on load
+    // and the design looks missing. Start collapsed there; the activity bar
+    // re-opens it. A narrow MOUSE window keeps its docked panel.
+    if (isTouchLayout() || isNarrowDesktop()) setCollapsed(true);
 
     actBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -360,7 +363,7 @@ export abstract class EditorAppBase {
     // uses. We deliberately do NOT raise `.mob-backdrop` here — on tablet its
     // z-index sits above the panel and would bury it; tablet closes by re-clicking
     // the active tab, mirroring the left panel (which has no backdrop either).
-    const overlay = (): boolean => window.matchMedia('(max-width: 1023px)').matches;
+    const overlay = (): boolean => isTouchLayout();
 
     const showPane = (tabId: string): void => {
       tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));

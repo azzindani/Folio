@@ -79,12 +79,19 @@ html, body {
 #app {
   height: 100%;
   display: grid;
-  /* 5 columns: actbar | lpanel | canvas | rpanel | r-actbar */
+  /* 5 columns: actbar | lpanel | canvas | rpanel | r-actbar
+     The canvas floor is what the panels have to respect. It used to be a flat
+     200px, which is not a workspace: at 900px the design rendered at 15% zoom
+     in a 242px slot while 560px of chrome held four layer names and an empty
+     properties pane. --canvas-floor scales with the window, so the panels give
+     ground first — which is the right order, since a panel narrowed by 40px is
+     still readable and a canvas narrowed by 40px is where the work happens. */
+  --canvas-floor: max(360px, 38vw);
   grid-template-columns:
     var(--activity-bar-width)
-    min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - 200px - var(--right-panel-width)))
+    min(var(--left-panel-width), calc(100vw - 2 * var(--activity-bar-width) - var(--canvas-floor) - var(--right-panel-width)))
     1fr
-    min(var(--right-panel-width), calc(50vw - var(--activity-bar-width)))
+    min(var(--right-panel-width), calc(100vw - 2 * var(--activity-bar-width) - var(--canvas-floor)))
     var(--activity-bar-width);
   grid-template-rows:
     var(--toolbar-height)
@@ -105,7 +112,10 @@ html, body {
    specificity: unscoped, this 5-column desktop template replaced the mobile
    single-column grid and squeezed .canvas-section into the 48px first
    column (canvas overflowed it visually; Monaco collapsed to a sliver). */
-@media (min-width: 1024px) {
+/* Any fine pointer counts as desktop regardless of width — a narrowed mouse
+   window uses the same collapsed templates as a wide one, since it is still
+   running the desktop grid. */
+@media (min-width: 1024px), (pointer: fine) {
   /* Collapsed left panel (activity bars still visible) */
   #app.panel-collapsed {
     grid-template-columns:
@@ -660,7 +670,11 @@ html, body {
 }
 .layer-row:hover .layer-vis-btn,
 .layer-row:hover .layer-lock-btn,
-.layer-lock-btn.active { opacity: 1; }
+.layer-lock-btn.active,
+/* A hidden or locked layer must SAY so without being hovered. Hover-reveal is
+   fine for the affordance; it is wrong for the state, because you then cannot
+   tell why a layer is missing from the canvas without pointing at every row. */
+.layer-vis-btn[aria-pressed="true"] { opacity: 1; }
 .layer-row.selected .layer-vis-btn,
 .layer-row.selected .layer-lock-btn { color: rgba(255,255,255,.8); opacity: 1; }
 
@@ -2328,9 +2342,13 @@ button:focus:not(:focus-visible) { outline: none; }
   border-radius: 2px;
 }
 
-/* ── RESPONSIVE — TABLET (768–1023px) ────────────────────── */
-/* Fix #3/#10: panels as slide-in overlays, accessible via activity bar */
-@media (min-width: 768px) and (max-width: 1023px) {
+/* ── RESPONSIVE — TOUCH TABLET (768–1023px, coarse pointer) ─ */
+/* Panels become slide-in overlays, reached from the activity bar.
+   `pointer: coarse` is load-bearing, not decoration: a DESKTOP window dragged
+   narrow is still a desktop — mouse, hover, keyboard, no thumbs — and handing
+   it thumb-sized chrome and overlay panels is a downgrade, not a rescue. Width
+   alone cannot tell the two apart; the pointer can. */
+@media (min-width: 768px) and (max-width: 1023px) and (pointer: coarse) {
   /* At 768px the right-hand cluster ran past the edge and Export was sliced in
      half. Wrapping costs one row and crops nothing. */
   .toolbar { height: auto; min-height: var(--toolbar-height); flex-wrap: wrap; gap: 4px 6px; padding: 4px 8px; }
@@ -2398,11 +2416,13 @@ button:focus:not(:focus-visible) { outline: none; }
   .properties-panel .minimap-container { display: none; }
 }
 
-/* ── TOOLBAR OVERFLOW (<1024px) ───────────────────────────── */
+/* ── TOOLBAR OVERFLOW (<1024px, touch only) ───────────────── */
 /* One row of what you touch constantly — mode is in the sheet, undo/redo and
    Export stay out. Wrapping is left enabled as a safety net, but with the
-   secondary controls moved out the strip fits on one line at 360px. */
-@media (max-width: 1023px) {
+   secondary controls moved out the strip fits on one line at 360px.
+   Mouse-driven windows keep the full toolbar at any width: hiding controls
+   behind a sheet only pays for itself when every target must be 44px. */
+@media (max-width: 1023px) and (pointer: coarse) {
   .toolbar-more {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 44px; min-height: 44px; font-size: 18px; line-height: 1;
@@ -2428,9 +2448,10 @@ button:focus:not(:focus-visible) { outline: none; }
   .toolbar-more-menu .mode-btn { flex: 1; min-height: 48px; }
 }
 
-/* ── RESPONSIVE — MOBILE (<768px) ────────────────────────── */
-/* Fix #2/#4: canvas fills screen, panels as bottom sheets */
-@media (max-width: 767px) {
+/* ── RESPONSIVE — PHONE (<768px, coarse pointer) ─────────── */
+/* Canvas fills the screen, panels become bottom sheets. Gated on the pointer
+   for the same reason as the tablet block above — see it for the argument. */
+@media (max-width: 767px) and (pointer: coarse) {
   #app {
     grid-template-columns: 1fr;
     /* toolbar row is `auto` so it can grow to a second line on narrow phones

@@ -12,6 +12,7 @@ import {
   alignCenterH, alignCenterV, distributeH, distributeV,
 } from '../../editor/interactions';
 import { groupSelected, ungroupSelected } from '../../editor/layer-actions';
+import { sc, altKey, shiftKey } from '../../utils/shortcut';
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
@@ -146,11 +147,11 @@ export class PropertiesPanelManager extends PropertiesPanelBase {
           <div class="prop-section-header">Quick tips</div>
           <div class="prop-section-body" style="padding:8px;color:var(--color-text-muted);font-size:11px;line-height:1.5">
             <div><kbd>V</kbd> Select &middot; <kbd>R</kbd>/<kbd>C</kbd>/<kbd>T</kbd>/<kbd>L</kbd> Tools</div>
-            <div><kbd>⌘K</kbd> Command palette</div>
-            <div><kbd>⌘0</kbd> Fit canvas &middot; <kbd>⌘1</kbd> 100%</div>
-            <div><kbd>Alt</kbd>+drag handle resizes from center</div>
-            <div><kbd>Alt</kbd>+click cycles stacked layers</div>
-            <div><kbd>Shift</kbd>+<kbd>H</kbd>/<kbd>V</kbd> Flip selection</div>
+            <div><kbd>${sc('⌘K')}</kbd> Command palette</div>
+            <div><kbd>${sc('⌘0')}</kbd> Fit canvas &middot; <kbd>${sc('⌘1')}</kbd> 100%</div>
+            <div><kbd>${altKey()}</kbd>+drag handle resizes from center</div>
+            <div><kbd>${altKey()}</kbd>+click cycles stacked layers</div>
+            <div><kbd>${shiftKey()}</kbd>+<kbd>H</kbd>/<kbd>V</kbd> Flip selection</div>
           </div>
         </div>
       </div>`;

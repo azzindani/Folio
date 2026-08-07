@@ -34,7 +34,9 @@ export class MinimapManager {
       'border-top:1px solid var(--color-border);';
 
     this.canvas = document.createElement('canvas');
-    this.canvas.style.cssText = 'display:block;width:100%;image-rendering:pixelated;cursor:crosshair;';
+    // width is set in px per refresh (see refreshThumbnail); margin:auto keeps a
+    // thumbnail narrower than the panel centred rather than jammed left.
+    this.canvas.style.cssText = 'display:block;margin:0 auto;image-rendering:pixelated;cursor:crosshair;';
     this.container.appendChild(this.canvas);
 
     // Viewport indicator box
@@ -53,14 +55,29 @@ export class MinimapManager {
     if (!design) return;
 
     const { width, height } = design.document;
-    const THUMB_W = this.container.clientWidth || 240;
-    const scale   = THUMB_W / width;
-    const THUMB_H = Math.round(height * scale);
+    // clientWidth is 0 before the panel is laid out. The old `|| 240` fallback
+    // then baked a 240px-wide thumbnail whose height matched a 240px scale,
+    // while the canvas ELEMENT stretched to the panel's real ~300px — so the
+    // minimap showed a portrait design as very nearly square. Wait for a real
+    // measurement instead of guessing one.
+    const avail = this.container.clientWidth;
+    if (!avail) { requestAnimationFrame(() => this.refreshThumbnail()); return; }
+
+    // A tall design would otherwise claim the whole panel: a 1080×1350 poster
+    // at 300px wide wants 375px of height, which is more than the properties
+    // it sits under. Cap it, and scale from whichever axis binds.
+    const maxH = Math.max(120, Math.min(260, Math.round(window.innerHeight * 0.24)));
+    const scale = Math.min(avail / width, maxH / height);
+    const THUMB_W = Math.max(1, Math.round(width * scale));
+    const THUMB_H = Math.max(1, Math.round(height * scale));
 
     this.mapW = THUMB_W;
     this.mapH = THUMB_H;
     this.canvas.width  = THUMB_W;
     this.canvas.height = THUMB_H;
+    // Explicit px, not 100%: the whole bug above was the element being wider
+    // than the pixels drawn into it.
+    this.canvas.style.width  = `${THUMB_W}px`;
     this.canvas.style.height = `${THUMB_H}px`;
     this.container.style.height = `${THUMB_H + 1}px`;
 
@@ -102,9 +119,12 @@ export class MinimapManager {
     const { width } = design.document;
     const scale = this.mapW / width;
 
-    // Canvas area (approximate; no direct access to container size here)
-    const canvasAreaW = window.innerWidth  * 0.55; // rough estimate
-    const canvasAreaH = window.innerHeight * 0.75;
+    // The viewport rect only means anything if it is measured against the REAL
+    // canvas area. This used to assume 55% of the window width and 75% of its
+    // height — wrong at every size, and wronger now that the panels adapt.
+    const area = document.querySelector<HTMLElement>('.canvas-area');
+    const canvasAreaW = area?.clientWidth || window.innerWidth * 0.55;
+    const canvasAreaH = area?.clientHeight || window.innerHeight * 0.75;
 
     // Viewport in design coords
     const vpW = canvasAreaW / zoom;
@@ -112,7 +132,10 @@ export class MinimapManager {
     const vpX = -panX / zoom;
     const vpY = -panY / zoom;
 
-    this.vpBox.style.left   = `${Math.max(0, vpX * scale)}px`;
+    // The thumbnail is centred when it is narrower than the panel, so the box
+    // has to start from the thumbnail's left edge, not the container's.
+    const offsetX = Math.max(0, (this.container.clientWidth - this.mapW) / 2);
+    this.vpBox.style.left   = `${offsetX + Math.max(0, vpX * scale)}px`;
     this.vpBox.style.top    = `${Math.max(0, vpY * scale)}px`;
     this.vpBox.style.width  = `${Math.min(this.mapW, vpW * scale)}px`;
     this.vpBox.style.height = `${Math.min(this.mapH, vpH * scale)}px`;

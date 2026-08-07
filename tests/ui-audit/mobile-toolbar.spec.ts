@@ -6,6 +6,10 @@ import { test, expect } from '@playwright/test';
 // Add Page, Catalog, theme) live in the ⋯ sheet — so they are checked there,
 // fully visible, rather than allowed to vanish.
 
+// A real touchscreen, not just a narrow window: the ⋯ sheet is gated on a
+// coarse pointer, since a narrowed desktop can reach the full toolbar fine.
+test.use({ hasTouch: true, isMobile: true });
+
 const STRIP = ['.export-group', '[data-action="undo"]', '[data-action="redo"]', '.toolbar-more'];
 const SHEET = ['.mode-toggle', '[data-action="new-design"]', '[data-action="add-page"]',
   '.toolbar-catalog-btn', '.toolbar-theme-select'];

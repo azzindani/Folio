@@ -3,6 +3,7 @@
 import { StateManager } from './state';
 import { flipHorizontal, flipVertical } from './interactions';
 import * as actions from './layer-actions';
+import { sc } from '../utils/shortcut';
 
 interface MenuItem {
   label: string;
@@ -43,18 +44,18 @@ export class CanvasContextMenu {
     const anyUnlocked = sel.some(l => !(l as { locked?: boolean }).locked);
     const s = this.state;
     return [
-      { label: 'Duplicate', hint: '⌘D', enabled: n > 0, run: () => actions.duplicateSelected(s) },
-      { label: 'Copy', hint: '⌘C', enabled: n > 0, run: () => actions.copySelected(s) },
-      { label: 'Paste', hint: '⌘V', enabled: true, run: () => actions.pasteFromClipboard(s) },
+      { label: 'Duplicate', hint: sc('⌘D'), enabled: n > 0, run: () => actions.duplicateSelected(s) },
+      { label: 'Copy', hint: sc('⌘C'), enabled: n > 0, run: () => actions.copySelected(s) },
+      { label: 'Paste', hint: sc('⌘V'), enabled: true, run: () => actions.pasteFromClipboard(s) },
       SEP,
-      { label: 'Group', hint: '⌘G', enabled: n >= 2, run: () => actions.groupSelected(s) },
-      { label: 'Ungroup', hint: '⌘⇧G', enabled: hasGroup, run: () => actions.ungroupSelected(s) },
+      { label: 'Group', hint: sc('⌘G'), enabled: n >= 2, run: () => actions.groupSelected(s) },
+      { label: 'Ungroup', hint: sc('⌘⇧G'), enabled: hasGroup, run: () => actions.ungroupSelected(s) },
       SEP,
-      { label: 'Bring forward', hint: '⌘]', enabled: n > 0, run: () => actions.adjustZ(s, 1) },
-      { label: 'Send backward', hint: '⌘[', enabled: n > 0, run: () => actions.adjustZ(s, -1) },
+      { label: 'Bring forward', hint: sc('⌘]'), enabled: n > 0, run: () => actions.adjustZ(s, 1) },
+      { label: 'Send backward', hint: sc('⌘['), enabled: n > 0, run: () => actions.adjustZ(s, -1) },
       SEP,
-      { label: 'Flip horizontal', hint: '⇧H', enabled: n > 0, run: () => flipHorizontal(s) },
-      { label: 'Flip vertical', hint: '⇧V', enabled: n > 0, run: () => flipVertical(s) },
+      { label: 'Flip horizontal', hint: sc('⇧H'), enabled: n > 0, run: () => flipHorizontal(s) },
+      { label: 'Flip vertical', hint: sc('⇧V'), enabled: n > 0, run: () => flipVertical(s) },
       { label: anyUnlocked || n === 0 ? 'Lock' : 'Unlock', enabled: n > 0, run: () => actions.toggleLockSelected(s) },
       SEP,
       { label: 'Delete', hint: 'Del', enabled: n > 0, run: () => actions.deleteSelected(s) },
