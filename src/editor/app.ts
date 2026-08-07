@@ -40,6 +40,7 @@ import { loadFullPalette } from '../styles/palette-loader';
 import { loadFullTypePack } from '../styles/type-pack-loader';
 import { loadFullEffectsPack } from '../styles/effects-pack-loader';
 import { EditorAppBase } from './app-base';
+import { wireMobileToolbarOverflow } from './mobile-toolbar';
 import { SAMPLE_DESIGN } from './sample-design';
 import { makeBlankDesign } from './blank-design';
 import { canvasResizeDialog, type CanvasDocSpec } from '../ui/dialogs/canvas-resize';
@@ -92,6 +93,9 @@ export class EditorApp extends EditorAppBase {
       this.state,
       this,
     );
+    // After the toolbar exists — the overflow sheet MOVES its controls, so it
+    // has nothing to collect while buildLayout's .toolbar is still empty.
+    wireMobileToolbarOverflow(this.container);
 
     this.toolbox = new ToolboxManager(
       this.container.querySelector('.tools-panel')!,
