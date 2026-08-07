@@ -36,9 +36,7 @@ import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
-import { loadFullPalette } from '../styles/palette-loader';
-import { loadFullTypePack } from '../styles/type-pack-loader';
-import { loadFullEffectsPack } from '../styles/effects-pack-loader';
+import { resolveStyleRefs } from './style-refs';
 import { EditorAppBase } from './app-base';
 import { wireMobileToolbarOverflow } from './mobile-toolbar';
 import { SAMPLE_DESIGN } from './sample-design';
@@ -504,7 +502,7 @@ export class EditorApp extends EditorAppBase {
     for (const p of spec.pages ?? []) walkFonts((p.layers ?? []) as unknown as Record<string, unknown>[]);
     ensureDesignFonts([...designFonts]);
 
-    this.resolveStyleRefs(spec);
+    resolveStyleRefs(this.state, spec);
 
     // Auto-fit so layer corners are reachable inside the canvas-area.
     // Without this, a 1080×1080 design at 100% zoom puts the right/bottom
@@ -646,30 +644,6 @@ export class EditorApp extends EditorAppBase {
   applyTheme(themeId: string): void {
     const theme = BUILTIN_THEMES[themeId];
     if (theme) this.state.set('theme', theme);
-  }
-
-  /**
-   * Resolves any palette / type_pack / effects_pack refs declared on the
-   * design spec and sets the matching state slot once loaded. Fire-and-
-   * forget: the renderer falls back to the base theme until each ref
-   * lands, so a slow fetch never blocks the first paint.
-   */
-  private resolveStyleRefs(spec: DesignSpec): void {
-    if (spec.palette?.ref) {
-      void loadFullPalette(spec.palette.ref).then(p => {
-        if (p && this.state.get().design === spec) this.state.set('palette', p);
-      });
-    }
-    if (spec.type_pack?.ref) {
-      void loadFullTypePack(spec.type_pack.ref).then(tp => {
-        if (tp && this.state.get().design === spec) this.state.set('typePack', tp);
-      });
-    }
-    if (spec.effects_pack?.ref) {
-      void loadFullEffectsPack(spec.effects_pack.ref).then(ep => {
-        if (ep && this.state.get().design === spec) this.state.set('effectsPack', ep);
-      });
-    }
   }
 
   /**
