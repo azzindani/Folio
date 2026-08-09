@@ -172,10 +172,14 @@ export class CanvasContextMenu {
       menu.appendChild(btn);
     }
     document.body.appendChild(menu);
-    // Keep the menu on-screen (flip near right/bottom edges)
+    // Keep the menu on-screen (flip near right/bottom edges). On a phone the
+    // floor is the fixed bottom nav, not the viewport: it paints OVER the
+    // canvas, so clamping to innerHeight hides the last rows behind it.
+    const nav = document.querySelector('.mobile-nav')?.getBoundingClientRect();
+    const floor = nav && nav.height > 0 ? nav.top : window.innerHeight;
     const r = menu.getBoundingClientRect();
     menu.style.left = `${Math.max(4, Math.min(x, window.innerWidth - r.width - 4))}px`;
-    menu.style.top = `${Math.max(4, Math.min(y, window.innerHeight - r.height - 4))}px`;
+    menu.style.top = `${Math.max(4, Math.min(y, floor - r.height - 4))}px`;
     this.menu = menu;
   }
 
