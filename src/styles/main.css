@@ -2898,3 +2898,104 @@ button:focus:not(:focus-visible) { outline: none; }
   transform: scale(1.15);
   box-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
+
+/* ── ANCHORED SELECTION SURFACES (touch) ──────────────────── */
+/* Options go where the object is. A bottom sheet is right for a LIST you
+   browse; it is wrong for a COMMAND you fire at something already selected —
+   that is a trip to the bottom of the screen and back for every edit. These
+   two surfaces float beside the selection, which is what a desktop right-click
+   has always done at the cursor. Mounted only on a coarse pointer. */
+.anc-surface {
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 180;
+  display: flex;
+  /* Hidden but LAID OUT: the first placement needs a real measurement, and
+     display:none would report zero. */
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px) scale(0.97);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  /* Opaque, deliberately. Translucency looked better in isolation and read
+     terribly in practice: these float directly over the design, so a headline
+     behind "Delete" made the label unreadable. Legibility beats the effect. */
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+.anc-surface.anc-open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+/* The verb bar. */
+.sel-hud { padding: 5px; gap: 3px; }
+.sel-hud-btn {
+  width: 54px; min-height: 46px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  border: none; background: transparent; color: var(--color-text);
+  border-radius: var(--radius-md); cursor: pointer; padding: 0;
+}
+.sel-hud-btn:active { background: color-mix(in srgb, var(--color-primary) 16%, transparent); }
+.sel-hud-btn[data-key="delete"] { color: var(--color-danger, #e5484d); }
+.sel-hud-glyph { font-size: 17px; line-height: 1; }
+.sel-hud-label { font-size: 9px; font-weight: 600; line-height: 1; color: var(--color-text-muted); }
+
+/* The quick inspector — the four edits you make constantly, in place. */
+.quick-edit {
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  width: min(300px, calc(100vw - 20px));
+}
+.qe-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.qe-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); }
+.qe-close { width: 40px; height: 40px; border: none; background: transparent; color: var(--color-text-muted); font-size: 14px; border-radius: var(--radius-sm); }
+.qe-row { display: flex; align-items: center; gap: 6px; }
+.qe-swatches { flex-wrap: wrap; }
+.qe-swatch {
+  width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%; cursor: pointer; overflow: hidden;
+}
+.qe-swatch.active { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+.qe-custom { display: flex; align-items: center; justify-content: center; background: var(--color-surface-2); }
+/* The native swatch keeps its own square + padding, which showed through the
+   round label as a white rounded square among the circles. */
+.qe-custom input[type="color"] { width: 40px; height: 40px; border: none; background: transparent; padding: 0; cursor: pointer; }
+.qe-custom input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.qe-custom input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+.qe-custom input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+.qe-step {
+  min-width: 44px; height: 44px; border: 1px solid var(--color-border);
+  background: var(--color-surface-2); color: var(--color-text);
+  border-radius: var(--radius-md); font-size: 13px; font-weight: 700;
+}
+.qe-size-val { flex: 1; text-align: center; font-size: 13px; font-weight: 600; font-family: var(--font-mono); }
+.qe-lbl { font-size: 11px; color: var(--color-text-muted); min-width: 48px; }
+.qe-opacity input[type="range"] { flex: 1; height: 40px; min-width: 0; accent-color: var(--color-primary); }
+.qe-opacity-val { font-size: 11px; font-family: var(--font-mono); color: var(--color-text-muted); min-width: 34px; text-align: right; }
+.qe-more {
+  min-height: 44px; border: 1px solid var(--color-border);
+  background: var(--color-surface-2); color: var(--color-text);
+  border-radius: var(--radius-md); font-size: 12px; font-weight: 600;
+}
+
+@media (pointer: coarse) {
+  /* The full menu is the same menu the desktop gets, so it arrives with
+     desktop-sized rows. A finger needs the same 44px everything else here
+     clears, and the shortcut hints mean nothing without a keyboard. */
+  .ccm-item { min-height: 44px; font-size: 14px; padding: 8px 12px; }
+  .ccm-hint { display: none; }
+  /* At 44px a row, the full list is taller than the phone — and a menu that
+     fills the screen is the wall of UI this whole change exists to avoid. Cap
+     it so it stays a popup ANCHORED near the object, and scroll the rest. */
+  .canvas-context-menu {
+    min-width: 216px;
+    max-height: min(56vh, calc(100vh - 16px));
+    border-radius: var(--radius-lg);
+  }
+}

@@ -85,6 +85,10 @@ export class EditorApp extends EditorAppBase {
       void import('./touch-gestures').then(m => m.wireTouchGestures(primaryPane, this.state));
       // One-handed reach layer — same reasoning, same budget: phones only.
       void import('./one-hand').then(m => m.wireOneHand(this.container));
+      // Options belong beside the object they act on. A touch device has no
+      // hover and no right-click, so selecting a layer brings the verbs to it
+      // instead of sending the thumb to the bottom of the screen and back.
+      void import('./selection-hud').then(m => m.wireSelectionHud(this.container, this.state));
     }
 
     // Refit the canvas when the viewport changes so design content stays
