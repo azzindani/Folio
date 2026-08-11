@@ -99,8 +99,11 @@ services:
       - ./tokens.json:/home/folio/tokens.json:ro
     networks:
       - folio_net
+    # Requires EVERY service this mode runs to answer. The old inline check was
+    # an OR across the two ports, so a dead MCP server read as healthy for as
+    # long as the editor kept answering. See scripts/healthcheck.sh.
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${FOLIO_UI_PORT:-4173}/ >/dev/null 2>&1 || curl -fsS http://127.0.0.1:${FOLIO_MCP_PORT:-3333}/health >/dev/null 2>&1 || exit 1"]
+      test: ["CMD", "scripts/healthcheck.sh"]
       interval: 30s
       timeout: 5s
       start_period: 20s
