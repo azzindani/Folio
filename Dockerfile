@@ -129,9 +129,10 @@ USER folio
 EXPOSE 4173 3333
 VOLUME ["/home/folio/projects"]
 
+# Delegated to scripts/healthcheck.sh so the Dockerfile and docker-compose.yml
+# cannot drift apart. It requires EVERY service the mode runs to answer — the
+# old inline OR reported healthy while one half was dead.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -fsS "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 \
-   || curl -fsS "http://127.0.0.1:${FOLIO_PORT}/health" >/dev/null 2>&1 \
-   || exit 1
+  CMD scripts/healthcheck.sh || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--", "scripts/docker-entrypoint.sh"]

@@ -34,10 +34,44 @@ case "${MODE}" in
     exec scripts/serve-mcp.sh
     ;;
   both)
+    # Supervise BOTH children — do not exec into one of them.
+    #
+    # This used to be `serve-mcp.sh &` followed by `exec scripts/serve.sh`, and
+    # exec replaced this shell. Two things followed from that: nothing was left
+    # to reap the MCP process (it died and became a zombie, observed in prod on
+    # 2026-08-11), and the container only ever exited when the EDITOR died, so a
+    # dead MCP server was invisible to Docker's restart policy. The EXIT trap
+    # was discarded by the same exec, so it never fired either.
+    #
+    # Now: both run as children, we block until EITHER exits, then take the
+    # container down with a non-zero status. `restart: unless-stopped` turns
+    # that into an automatic recovery — one dead service restarts the pair.
     scripts/serve-mcp.sh &
     MCP_PID=$!
-    trap 'kill -TERM "${MCP_PID}" 2>/dev/null || true' INT TERM EXIT
-    exec scripts/serve.sh
+    scripts/serve.sh &
+    UI_PID=$!
+
+    shutdown() {
+      trap - INT TERM
+      kill -TERM "${MCP_PID}" "${UI_PID}" 2>/dev/null || true
+      wait "${MCP_PID}" "${UI_PID}" 2>/dev/null || true
+    }
+    trap 'shutdown; exit 0' INT TERM
+
+    # wait -n returns as soon as the first child exits (bash 4.3+).
+    set +e
+    wait -n
+    FIRST_STATUS=$?
+    set -e
+
+    if kill -0 "${MCP_PID}" 2>/dev/null; then
+      DEAD="editor (:${PORT:-4173})"
+    else
+      DEAD="MCP HTTP API (:${FOLIO_PORT:-3333})"
+    fi
+    echo "[entrypoint] ${DEAD} exited (status ${FIRST_STATUS}) — stopping the container so it restarts" >&2
+    shutdown
+    exit 1
     ;;
   *)
     echo "[entrypoint] Unknown FOLIO_MODE='${MODE}' (expected: ui · mcp · both)" >&2
