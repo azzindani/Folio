@@ -12,6 +12,12 @@ import { readBodyCapped, PayloadTooLargeError } from '../utils/http-body';
 import { normalizeProjectPaths } from './normalize-paths';
 import { rateLimiterFromEnv } from './rate-limit';
 import { startUpdateChecks, getUpdateStatus, currentVersion } from './update-check';
+import {
+  MCP_ERROR, FOLIO_ERROR, isSupportedVersion, isModernRequest, requestedVersion,
+  negotiateLegacyVersion, validateModernHeaders, unsupportedVersionError,
+  headerMismatchError, completeResult, withCacheHints, discoverResult,
+  TOOLS_LIST_TTL_MS, type ServerIdentity, type HeaderBag,
+} from './protocol';
 
 // Cap the /mcp request body so a single large POST can't buffer unboundedly
 // into the heap and OOM the memory-capped container. 32 MiB is generous for a
@@ -44,7 +50,18 @@ const FILE_MUTATING_TOOLS = new Set([
   'templates', 'report', 'presentation', 'animation',
 ]);
 
+// Static concat of three static registries, so the order is already stable —
+// which is what the spec's deterministic-ordering SHOULD is asking for, and
+// what lets a client (and the model's prompt cache) hold on to the list.
 const ALL_TOOLS: ToolDefinition[] = [...TIER1_TOOLS, ...TIER2_TOOLS, ...TIER3_TOOLS];
+
+// §1b — Protocol identity. Reported on modern results and from server/discover;
+// self-reported and explicitly not a security signal, per spec.
+function identity(): ServerIdentity {
+  return { name: 'folio-mcp-http', version: currentVersion() };
+}
+const CAPABILITIES: Record<string, unknown> = { tools: {} };
+const INSTRUCTIONS = 'Folio compiles YAML design specs into SVG posters, carousels, decks and interactive reports. Start with create_project, then create_design; call get_engine_guide for authoring rules.';
 
 // §2a — Per-identity rate limiter for POST /mcp (the only event-loop-blocking
 // route). Keyed by token-name + client IP so it isolates clients in both
@@ -82,7 +99,12 @@ function cookieValue(header: string | string[] | undefined, name: string): strin
 
 function setCORS(res: http.ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // The 2026-07-28 metadata headers must survive CORS preflight or a
+  // browser-based modern client is blocked before it ever reaches us.
+  // Mcp-Param-* is the x-mcp-header mirror: we annotate no tool with it today,
+  // but a preflight that omits it would reject such a client outright.
+  res.setHeader('Access-Control-Allow-Headers',
+    'Content-Type, Authorization, MCP-Protocol-Version, Mcp-Method, Mcp-Name, Mcp-Param-*, Last-Event-ID');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
 }
 function jsonReply(res: http.ServerResponse, status: number, body: unknown): void {
@@ -96,15 +118,34 @@ function jsonReply(res: http.ServerResponse, status: number, body: unknown): voi
 // so the router can fire an editor file-changed event for mutating tools.
 interface DispatchResult { response: MCPResponse; raw?: ToolResult; toolName?: string }
 
-async function handleMCP(req: MCPRequest): Promise<DispatchResult> {
+/** @param modern — serve 2026-07-28 semantics (per-request metadata, stamped
+ *  results) rather than the handshake-era shape. Chosen per request by
+ *  isModernRequest, so both eras share this one dispatch. */
+export async function handleMCP(req: MCPRequest, modern = false): Promise<DispatchResult> {
   const { id, method, params } = req;
+  const asRecord = (v: object): Record<string, unknown> => v as unknown as Record<string, unknown>;
+  /** Modern results carry resultType + serverInfo; legacy results must not. */
+  const shape = (result: object): unknown =>
+    modern ? completeResult(asRecord(result), identity()) : result;
   switch (method) {
-    case 'initialize':
-      return { response: { jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'folio-mcp-http', version: currentVersion() } } } };
+    case 'initialize': {
+      const negotiated = negotiateLegacyVersion((params as { protocolVersion?: unknown } | undefined)?.protocolVersion);
+      return { response: { jsonrpc: '2.0', id, result: { protocolVersion: negotiated, capabilities: CAPABILITIES, serverInfo: identity() } } };
+    }
     case 'notifications/initialized':
       return { response: { jsonrpc: '2.0', id, result: null } };
-    case 'tools/list':
-      return { response: { jsonrpc: '2.0', id, result: { tools: ALL_TOOLS } } };
+    // Mandatory for servers in 2026-07-28. Answered in either era: it is also
+    // the probe a dual-era client uses to find out which era we speak.
+    case 'server/discover':
+      return { response: { jsonrpc: '2.0', id, result: discoverResult(identity(), CAPABILITIES, INSTRUCTIONS) } };
+    case 'tools/list': {
+      const base = { tools: ALL_TOOLS };
+      // cacheScope stays private: /mcp is authenticated, so there is nothing to
+      // gain from letting a shared intermediary hold the response.
+      return { response: { jsonrpc: '2.0', id, result: modern
+        ? withCacheHints(completeResult(asRecord(base), identity()), TOOLS_LIST_TTL_MS, 'private')
+        : base } };
+    }
     case 'tools/call': {
       const name = (params as { name?: string } | undefined)?.name ?? '';
       const rawArgs = (params as { arguments?: Record<string, unknown> } | undefined)?.arguments ?? {};
@@ -115,16 +156,16 @@ async function handleMCP(req: MCPRequest): Promise<DispatchResult> {
       // (e.g. /home/folio/AIPosterProject). See normalizeProjectPaths.
       const args = normalizeProjectPaths(rawArgs);
       const fn = HANDLERS[name];
-      if (!fn) return { response: { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 }) }, toolName: name };
+      if (!fn) return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 })) }, toolName: name };
       try {
         const raw = await fn(args);
-        return { response: { jsonrpc: '2.0', id, result: toMCPResult(raw) }, raw, toolName: name };
+        return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult(raw)) }, raw, toolName: name };
       } catch (err) {
-        return { response: { jsonrpc: '2.0', id, result: toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 }) }, toolName: name };
+        return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 })) }, toolName: name };
       }
     }
     default:
-      return { response: { jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } } };
+      return { response: { jsonrpc: '2.0', id, error: { code: MCP_ERROR.MethodNotFound, message: `Method not found: ${method}` } } };
   }
 }
 
@@ -238,7 +279,9 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
 
   if (pathOnly === '/mcp/sse' && method === 'GET') {
     setCORS(res);
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+    // X-Accel-Buffering: no stops a reverse proxy (we sit behind Caddy) from
+    // accumulating events instead of passing them straight through.
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     res.write(`data: {"status":"connected"}\n\n`);
     sseClients.add(res);
     req.on('close', () => sseClients.delete(res));
@@ -250,7 +293,9 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
   // <base>/editor/events and reloads the design when file_changed fires.
   if (pathOnly === '/editor/events' && method === 'GET') {
     setCORS(res);
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+    // X-Accel-Buffering: no stops a reverse proxy (we sit behind Caddy) from
+    // accumulating events instead of passing them straight through.
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     res.write(`event: connected\ndata: {"status":"connected"}\n\n`);
     editorClients.add(res);
     req.on('close', () => editorClients.delete(res));
@@ -269,7 +314,7 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
         const retryS = Math.max(1, Math.ceil(dec.retryAfterMs / 1000));
         res.setHeader('Retry-After', String(retryS));
         process.stderr.write(`[mcp] token=${tokenName} RATE-LIMITED retry=${retryS}s\n`);
-        jsonReply(res, 429, { jsonrpc: '2.0', id: null, error: { code: -32029, message: `Rate limit exceeded — retry after ${retryS}s.` } });
+        jsonReply(res, 429, { jsonrpc: '2.0', id: null, error: { code: FOLIO_ERROR.RateLimited, message: `Rate limit exceeded — retry after ${retryS}s.` } });
         return;
       }
     }
@@ -292,7 +337,32 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     if (typeof parsed.method === 'string' && parsed.method.startsWith('notifications/')) {
       setCORS(res); res.writeHead(202); res.end(); return;
     }
-    const { response, raw, toolName } = await handleMCP(parsed);
+    // §7c — Era selection. A modern request (2026-07-28+, carrying its version
+    // and identity per-request) gets the stateless contract and its header
+    // validation; everything else — which is every client talking to us today —
+    // keeps the handshake-era behaviour byte for byte. See ./protocol.ts.
+    const headers = req.headers as HeaderBag;
+    const modern = isModernRequest(headers, parsed.method, parsed.params);
+    if (modern) {
+      const mismatch = validateModernHeaders(headers, parsed.method, parsed.params);
+      if (mismatch) {
+        jsonReply(res, 400, { jsonrpc: '2.0', id: parsed.id ?? null, error: headerMismatchError(mismatch) });
+        return;
+      }
+      const wanted = requestedVersion(headers, parsed.params);
+      if (!isSupportedVersion(wanted)) {
+        jsonReply(res, 400, { jsonrpc: '2.0', id: parsed.id ?? null, error: unsupportedVersionError(wanted) });
+        return;
+      }
+    }
+    const { response, raw, toolName } = await handleMCP(parsed, modern);
+    // On the modern transport an unimplemented method is 404 + -32601, which is
+    // how a dual-era client tells "method I don't have" from "not an MCP
+    // endpoint at all" — a bare 404 would send it hunting for a legacy server.
+    if (modern && response.error?.code === MCP_ERROR.MethodNotFound) {
+      jsonReply(res, 404, response);
+      return;
+    }
     // Audit: which named token invoked which tool. Token VALUES are never logged.
     if (parsed.method === 'tools/call' && toolName) {
       process.stderr.write(`[mcp] token=${tokenName} tool=${toolName} ok=${raw?.success ?? false}\n`);
@@ -307,14 +377,16 @@ async function router(req: http.IncomingMessage, res: http.ServerResponse): Prom
     return;
   }
 
-  // Streamable-HTTP: this server is stateless and has no server→client stream,
-  // so the optional GET (open SSE stream) and DELETE (end session) on /mcp are
-  // unsupported. Return 405 (not 404) with an Allow header so MCP SDK clients
-  // (LM Studio) treat it as "no stream offered" and proceed instead of erroring.
+  // Streamable-HTTP: 2026-07-28 removed the GET stream endpoint and protocol
+  // sessions outright, and requires exactly this — 405 for GET (open SSE
+  // stream) and DELETE (end session) on the MCP endpoint. It was already the
+  // right answer for LM Studio, which needs "no stream offered" rather than an
+  // error. Mcp-Session-Id and Last-Event-ID are ignored: we mint no sessions
+  // and no stream of ours is resumable.
   if (pathOnly === '/mcp' && (method === 'GET' || method === 'DELETE')) {
     setCORS(res);
     res.writeHead(405, { 'Content-Type': 'application/json', Allow: 'POST, OPTIONS' });
-    res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Method Not Allowed: POST JSON-RPC to /mcp; this endpoint exposes no GET stream.' } }));
+    res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: FOLIO_ERROR.MethodNotAllowed, message: 'Method Not Allowed: POST JSON-RPC to /mcp; this endpoint exposes no GET stream.' } }));
     return;
   }
 
