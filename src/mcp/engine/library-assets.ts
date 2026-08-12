@@ -27,6 +27,10 @@ export const ASSET_STYLE = `
 .abtn:hover{border-color:var(--acc)}
 .abtn-primary{background:var(--acc);border-color:var(--acc);color:#fff}
 .abtn-close{margin-left:auto}
+/* display:contents — the verbs sit in the head flex exactly as if this wrapper
+   were not there. It only becomes a box on a phone (see the media query), where
+   it turns into the one thing that scrolls. */
+.averbs{display:contents}
 .achips{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;border-bottom:1px solid var(--bd)}
 .achip{min-height:36px;padding:0 12px;white-space:nowrap;border-radius:18px;border:1px solid var(--bd2);
   background:var(--panel2);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer}
@@ -56,7 +60,34 @@ export const ASSET_STYLE = `
 .aedit textarea{flex:1;margin:12px;padding:12px;background:var(--panel2);color:var(--fg);border:1px solid var(--bd2);
   border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;resize:none}
 .afoot{padding:8px 12px;border-top:1px solid var(--bd);font-size:11px;color:var(--mut)}
-@media(max-width:640px){.adrawer{height:92vh}.adrawer-head{gap:6px}}
+@media(max-width:640px){
+  .adrawer{height:92vh}
+  .adrawer-head{gap:6px}
+  /* Measured on an iPhone 13: the control block wrapped onto THREE rows and
+     took 219px of a 611px drawer before a single card showed. Keep it to ONE
+     row by scrolling just the VERBS sideways.
+     The scroller has to be its own box: a sticky Close inside the scrolling row
+     reserves no space, so it simply painted on top of ＋ Upload and made it
+     untappable at rest. Project picker and Close stay outside it, always
+     visible — Close is how you dismiss the drawer. */
+  /* Two deliberate lines: [Assets · project picker · Close] then the verbs
+     across the full width. Squeezing all three onto one line left the verb
+     scroller a 78px porthole onto a 507px row. */
+  .adrawer-head:first-child>h2{flex:0 0 auto}
+  .adrawer-head #aproj{flex:0 1 auto;min-width:0;max-width:46vw}
+  .abtn-close{order:0;flex:0 0 auto;margin-left:auto}
+  .averbs{display:flex;gap:6px;order:1;flex:1 1 100%;min-width:0;
+    overflow-x:auto;scrollbar-width:none}
+  .averbs::-webkit-scrollbar{display:none}
+  .averbs>.abtn{flex:0 0 auto}
+}
+/* A finger needs the 44px the drawer's own buttons already clear; the chips
+   (36px) and the per-card Rename/Move/Delete row (40px) did not. Delete sitting
+   a thumb-width from Move is exactly where that matters. */
+@media(pointer:coarse){
+  .achip{min-height:44px}
+  .aacts button{min-height:44px}
+}
 `;
 
 /**
@@ -71,11 +102,13 @@ export function assetDrawerMarkup(projects: { name: string }[]): string {
   <div class="adrawer-head">
     <h2>Assets</h2>
     <select id="aproj" aria-label="Project">${opts}</select>
-    <button class="abtn abtn-primary" id="aupload" type="button">＋ Upload</button>
-    <button class="abtn" id="asharedupload" type="button" title="Upload into the SHARED library — every project can use it">◆ Add to shared</button>
-    <button class="abtn" id="anote" type="button" title="Write a markdown or text file here">✎ Write</button>
-    <button class="abtn" id="anewfolder" type="button" title="Upload into a new folder">New folder</button>
-    <button class="abtn" id="arefresh" type="button" title="Refresh">↻</button>
+    <div class="averbs">
+      <button class="abtn abtn-primary" id="aupload" type="button">＋ Upload</button>
+      <button class="abtn" id="asharedupload" type="button" title="Upload into the SHARED library — every project can use it">◆ Add to shared</button>
+      <button class="abtn" id="anote" type="button" title="Write a markdown or text file here">✎ Write</button>
+      <button class="abtn" id="anewfolder" type="button" title="Upload into a new folder">New folder</button>
+      <button class="abtn" id="arefresh" type="button" title="Refresh">↻</button>
+    </div>
     <button class="abtn abtn-close" id="aclose" type="button">Close</button>
     <input type="file" id="afile" multiple hidden
       accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json">
