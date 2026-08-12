@@ -9,6 +9,7 @@
 // export while rendering fine in the editor.
 import * as fs from 'fs';
 import * as path from 'path';
+import { libraryRoot } from './asset-library';
 
 const FONTS_DIR = path.resolve(process.cwd(), 'src/mcp/fonts');
 
@@ -65,15 +66,10 @@ const nameCache = new Map<string, { key: string; families: string[]; weight?: nu
 
 export interface ProjectFont { file: string; families: string[]; weight?: number }
 
-export function projectFontEntries(projectDir?: string): ProjectFont[] {
-  const pd = projectFontsDir(projectDir);
-  if (!pd) return [];
-  const out: ProjectFont[] = [];
-  let files: string[];
-  try { files = fs.readdirSync(pd); } catch { return []; }
-  for (const f of files) {
-    if (!isFontFile(f)) continue;
-    const abs = path.join(pd, f);
+/** One font file → the families it answers to, or null when it names nothing. */
+function readFontEntry(abs: string, file: string): ProjectFont | null {
+  {
+    const f = file;
     const families = new Set<string>();
     const guess = fontFamilyFromFilename(f);
     if (guess) families.add(guess);
@@ -96,18 +92,55 @@ export function projectFontEntries(projectDir?: string): ProjectFont[] {
         nameCache.set(abs, entry);
       }
     } catch { /* unreadable/malformed → the filename guess stands alone */ }
-    if (!families.size) continue;
-    out.push(weight === undefined
+    if (!families.size) return null;
+    return weight === undefined
       ? { file: abs, families: [...families] }
-      : { file: abs, families: [...families], weight });
+      : { file: abs, families: [...families], weight };
+  }
+}
+
+export function projectFontEntries(projectDir?: string): ProjectFont[] {
+  const pd = projectFontsDir(projectDir);
+  if (!pd) return [];
+  let files: string[];
+  try { files = fs.readdirSync(pd); } catch { return []; }
+  const out: ProjectFont[] = [];
+  for (const f of files) {
+    if (!isFontFile(f)) continue;
+    const entry = readFontEntry(path.join(pd, f), f);
+    if (entry) out.push(entry);
   }
   return out;
 }
 
-/** Lowercased family names every project font answers to. */
+/**
+ * Fonts in the SHARED library. They can sit at any depth in the tree (the
+ * library files by vendor/topic, not by kind), so this walks rather than reads
+ * one directory.
+ */
+export function libraryFontEntries(): ProjectFont[] {
+  const out: ProjectFont[] = [];
+  const walk = (dir: string, depth: number): void => {
+    if (depth > 6) return;
+    let entries: fs.Dirent[];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.isDirectory()) { if (!e.name.startsWith('.')) walk(path.join(dir, e.name), depth + 1); continue; }
+      if (!e.isFile() || !isFontFile(e.name)) continue;
+      const entry = readFontEntry(path.join(dir, e.name), e.name);
+      if (entry) out.push(entry);
+    }
+  };
+  walk(libraryRoot(), 1);
+  return out;
+}
+
+/** Lowercased family names every project AND shared-library font answers to. */
 export function projectFontFamilies(projectDir?: string): Set<string> {
   const out = new Set<string>();
-  for (const e of projectFontEntries(projectDir)) for (const f of e.families) out.add(f);
+  for (const e of [...projectFontEntries(projectDir), ...libraryFontEntries()]) {
+    for (const f of e.families) out.add(f);
+  }
   return out;
 }
 
@@ -121,6 +154,10 @@ export function resvgFontOption(projectDir?: string): {
   const dirs = [FONTS_DIR];
   const pd = projectFontsDir(projectDir);
   if (pd) dirs.push(pd);
+  // Shared-library fonts. resvg's font database walks a font dir recursively,
+  // so pointing at the library root once covers the whole nested tree.
+  const lib = libraryRoot();
+  try { if (fs.statSync(lib).isDirectory()) dirs.push(lib); } catch { /* no library yet */ }
   return { fontDirs: dirs, loadSystemFonts: true, defaultFontFamily: 'DejaVu Sans' };
 }
 
