@@ -12,8 +12,9 @@ import { readYAML, okResult, errResult, buildContext, buildHandover, pOk, pInfo,
 import { ovLicenseLabel, wmText } from './asset-search';
 import {
   ingestAsset, requireProject, isErr, extForMime, maxAssetBytes, AssetError,
-  type AssetProvenance, type IngestArgs,
+  type AssetProvenance, type IngestArgs, type AssetEntry,
 } from './assets';
+import { ingestLibraryAsset, libraryBySource, libraryAbsPath } from './asset-library';
 import { readFontNames } from '../../utils/font-name-table';
 import type { ToolResult, NextAction, ProgressItem } from '../types';
 
@@ -225,6 +226,31 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
 
 // ── MCP op ───────────────────────────────────────────────────
 /**
+ * The key the library caches a fetch under.
+ *
+ * The ref alone is NOT enough: `iconify:mdi:cloud` fetched at icon_color
+ * "#fff" and at "#000" are different bytes from the same ref, and a bare-ref
+ * cache would hand back whichever arrived first — a wrong asset that renders
+ * perfectly and reads as a colour bug days later. Every param that changes the
+ * downloaded file belongs in the key.
+ */
+function fetchSourceKey(ref: string, args: { icon_px?: number; icon_color?: string; weight?: number }): string {
+  const variant = [
+    args.icon_color ? `color=${String(args.icon_color).toLowerCase()}` : '',
+    args.icon_px ? `px=${args.icon_px}` : '',
+    args.weight ? `w=${args.weight}` : '',
+  ].filter(Boolean).join('&');
+  return variant ? `${ref}|${variant}` : ref;
+}
+
+/** A ready-to-place image layer at the asset's native aspect. */
+function libraryLayerStub(entry: AssetEntry): Record<string, unknown> {
+  const w = entry.width ?? 600, h = entry.height ?? 400;
+  const scale = Math.min(1, 600 / Math.max(w, h));
+  return { id: entry.id, type: 'image', z: 21, pos: [120, 120, Math.round(w * scale), Math.round(h * scale)], src: entry.path, fit: 'cover' };
+}
+
+/**
  * manage_design {op:"asset_fetch"} — download a search result into the project.
  *
  * The file lands through the same ingest path as an upload (size cap, quota,
@@ -233,7 +259,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
  * nothing is fetched again at render time.
  */
 export async function assetFetch(args: {
-  project_path?: string; ref?: string; url?: string; name?: string;
+  project_path?: string; ref?: string; url?: string; name?: string; scope?: string;
   folder?: string; alt?: string; kind?: string; icon_px?: number; icon_color?: string; weight?: number;
 }): Promise<ToolResult> {
   const op = 'asset_fetch';
@@ -241,8 +267,36 @@ export async function assetFetch(args: {
   if (isErr(proj)) return proj;
   const ref = String(args.ref ?? args.url ?? '').trim();
   if (!ref) return errResult(op, 'ref is required', 'Run op:"asset_search" first and pass a result\'s ref, or pass a direct https:// URL.');
+  // Internet assets are reusable by nature, so they land in the SHARED library
+  // unless the caller says otherwise — that is what stops the same logo being
+  // downloaded once per project.
+  const toLibrary = String(args.scope ?? 'library') !== 'project';
 
   const progress: ProgressItem[] = [];
+
+  // Already fetched from this exact ref? Then there is nothing to download:
+  // hand back the file that is already on disk.
+  const sourceKey = fetchSourceKey(ref, args);
+  const cached = toLibrary ? libraryBySource(sourceKey) : undefined;
+  if (cached) {
+    progress.push(pOk('Already in the library', `${cached.path} — no download`));
+    const stub = libraryLayerStub(cached);
+    return okResult(op, {
+      asset: cached, deduped: true, scope: 'library',
+      ...(cached.provenance ? { provenance: cached.provenance } : {}),
+      layer_stub: stub,
+      next_action: {
+        tool: 'add_layers',
+        params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] },
+        remaining: 0,
+        hint: `This asset was already fetched into the shared library — reference it as "${cached.path}" from any project.${cached.provenance?.attribution ? ` Credit line REQUIRED: "${cached.provenance.attribution}".` : ''}`,
+      } satisfies NextAction,
+      ...(cached.provenance?.attribution ? { attribution_required: cached.provenance.attribution } : {}),
+      progress,
+      context: buildContext(op, `Reused ${cached.path} from the shared library`),
+      handover: buildHandover('COMPOSE', { project_path: proj.dir }),
+    });
+  }
   try {
     const opts: { projectDir: string; icon_px?: number; icon_color?: string; weight?: number } = { projectDir: proj.dir };
     if (args.icon_px !== undefined) opts.icon_px = args.icon_px;
@@ -280,38 +334,54 @@ export async function assetFetch(args: {
       fetched: new Date().toISOString().split('T')[0] ?? '',
     };
 
-    const ingestArgs: IngestArgs = {
-      projectDir: proj.dir, name, data: got.buffer, provenance,
-      alt: args.alt ?? resolved.title ?? '',
-    };
-    if (args.kind) ingestArgs.kind = args.kind;
-    if (args.folder) ingestArgs.folder = args.folder;
-    if (!args.kind && resolved.kind === 'icons') ingestArgs.kind = 'icons';
-    const { entry, warnings } = ingestAsset(ingestArgs);
+    let entry: AssetEntry;
+    let warnings: string[];
+    if (toLibrary) {
+      // No caller folder → file under the kind, which is at least a tree the
+      // operator can reorganise later (op:"asset_move"), unlike a flat dump.
+      const ingested = ingestLibraryAsset({
+        name, data: got.buffer, provenance, source: sourceKey,
+        folder: args.folder ?? resolved.kind ?? 'images',
+        alt: args.alt ?? resolved.title ?? '',
+      });
+      entry = ingested.entry;
+      warnings = ingested.warnings;
+    } else {
+      const ingestArgs: IngestArgs = {
+        projectDir: proj.dir, name, data: got.buffer, provenance,
+        alt: args.alt ?? resolved.title ?? '',
+      };
+      if (args.kind) ingestArgs.kind = args.kind;
+      if (args.folder) ingestArgs.folder = args.folder;
+      if (!args.kind && resolved.kind === 'icons') ingestArgs.kind = 'icons';
+      const ingested = ingestAsset(ingestArgs);
+      entry = ingested.entry;
+      warnings = ingested.warnings;
+    }
 
     progress.push(pOk('Fetched', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
     if (!args.alt) progress.push(pWarn('No alt given', 'The stored alt is the provider\'s title — replace it with what the image actually shows.'));
     if (provenance.attribution) progress.push(pInfo('Credit required', provenance.attribution));
 
-    const w = entry.width ?? 600, h = entry.height ?? 400;
-    const scale = Math.min(1, 600 / Math.max(w, h));
     const stub = entry.kind === 'fonts'
-      ? { note: `Font stored at ${entry.path}. Set font_family:"${realFamily ?? resolved.title ?? entry.id}" on a text layer.` }
-      : { id: entry.id, type: 'image', z: 21, pos: [120, 120, Math.round(w * scale), Math.round(h * scale)], src: entry.path, fit: 'cover' };
+      ? { note: `Font stored at ${entry.path}. Set font:"${realFamily ?? resolved.title ?? entry.id}" on a text layer.` }
+      : libraryLayerStub(entry);
     const next_action: NextAction = {
       tool: 'add_layers',
       params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] },
       remaining: 0,
-      hint: `Stored locally — the design references "${entry.path}", nothing is fetched at render time.${provenance.attribution ? ` This licence REQUIRES the credit line: "${provenance.attribution}" — typeset it on the design (small, low-contrast, but present).` : ''}`,
+      hint: `Stored ${toLibrary ? 'in the SHARED library' : 'in this project'} — the design references "${entry.path}", nothing is fetched at render time.${toLibrary ? ' Any project can use that same path; it will not be downloaded again.' : ''}${provenance.attribution ? ` This licence REQUIRES the credit line: "${provenance.attribution}" — typeset it on the design (small, low-contrast, but present).` : ''}`,
     };
-    const context = buildContext(op, `Fetched ${entry.path} from ${provenance.source}`, [{ type: 'export', path: pathJoin(proj.dir, entry.path), role: 'created' }]);
+    const absPath = toLibrary ? (libraryAbsPath(entry.path) ?? entry.path) : pathJoin(proj.dir, entry.path);
+    const context = buildContext(op, `Fetched ${entry.path} from ${provenance.source}`, [{ type: 'export', path: absPath, role: 'created' }]);
     const handover = buildHandover('COMPOSE', { project_path: proj.dir });
     return okResult(op, {
       asset: entry, provenance, layer_stub: stub, next_action,
+      scope: toLibrary ? 'library' : 'project',
       ...(realFamily ? {
         font_family: realFamily,
-        font_note: `Use font_family:"${realFamily}" EXACTLY — that is the name inside the file, and it is often not the name you searched for (variable families ship their static weights under the default instance's name). Fetch the other weights of the same family and they all group under it; then font_weight picks between them.`,
+        font_note: `In layers_shorthand write font:"${realFamily}" — EXACTLY that string, and note it is often not the name you searched for (variable families ship their static weights under the default instance's name). The key is font:, not font_family: — font_family is the verbose layer schema and is ignored by shorthand, which silently renders a fallback face. Fetch the other weights of the same family and they all group under it; then weight picks between them.`,
       } : {}),
       ...(provenance.attribution ? { attribution_required: provenance.attribution } : {}),
       progress, context, handover,

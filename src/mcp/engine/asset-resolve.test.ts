@@ -151,3 +151,60 @@ describe('auditImageAssets — text on a BUSY photo without a scrim (WP-1.4)', (
     expect(auditImageAssets(spec2, dPath, proj).find(x => x.code === 'text_on_busy_image')).toBeUndefined();
   });
 });
+
+describe('shared library srcs', () => {
+  let tmp: string, proj: string, dPath: string, prevLib: string | undefined;
+  const libFile = (rel: string, buf: Buffer): void => {
+    const abs = path.join(process.env['FOLIO_LIBRARY_DIR'] ?? '', rel);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, buf);
+  };
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-libsrc-'));
+    prevLib = process.env['FOLIO_LIBRARY_DIR'];
+    process.env['FOLIO_LIBRARY_DIR'] = path.join(tmp, 'lib-root');
+    proj = path.join(tmp, 'proj');
+    fs.mkdirSync(path.join(proj, 'designs'), { recursive: true });
+    dPath = path.join(proj, 'designs/d.design.yaml');
+  });
+  afterEach(() => {
+    if (prevLib === undefined) delete process.env['FOLIO_LIBRARY_DIR'];
+    else process.env['FOLIO_LIBRARY_DIR'] = prevLib;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('embeds an asset that lives in the shared library', () => {
+    libFile('microsoft/logos/pa.png', Buffer.from(PNG_B64, 'base64'));
+    const spec = makeSpec([img('a', 'lib/microsoft/logos/pa.png')]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect(notes).toEqual([]);
+    expect(String((spec.layers[0] as unknown as { src: string }).src)).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('lets the project shadow a library path with its own copy', () => {
+    libFile('microsoft/logos/pa.png', Buffer.from(PNG_B64, 'base64'));
+    const own = path.join(proj, 'lib/microsoft/logos/pa.png');
+    fs.mkdirSync(path.dirname(own), { recursive: true });
+    fs.writeFileSync(own, Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'));
+    const spec = makeSpec([img('a', 'lib/microsoft/logos/pa.png')]);
+    expect(resolveImageAssets(spec, dPath, proj)).toEqual([]);
+    // The project's file won — it is an SVG, the library's is a PNG.
+    expect(String((spec.layers[0] as unknown as { src: string }).src)).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
+  it('names the library in the note when a lib/ path is missing', () => {
+    const spec = makeSpec([img('a', 'lib/nope/missing.png')]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect(notes[0]).toContain('not in the shared library');
+    expect(notes[0]).toContain('scope:"library"');
+  });
+
+  it('builds no library candidate for a lib path that climbs out of the root', () => {
+    // libraryAbsPath refuses it (covered in asset-library.test.ts), so the
+    // library is never consulted for an escaping path — only the ordinary
+    // project-relative search runs, and it finds nothing here.
+    const spec = makeSpec([img('a', 'lib/../../nowhere/outside.png')]);
+    expect(resolveImageAssets(spec, dPath, proj)).toHaveLength(1);
+    expect(String((spec.layers[0] as unknown as { src: string }).src)).toBe('');
+  });
+});

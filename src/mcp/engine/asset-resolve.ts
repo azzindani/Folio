@@ -13,6 +13,7 @@ import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { Fill } from '../../schema/types';
 import { parseDimensions } from './reference';
 import { readAssetManifest } from './assets';
+import { isLibraryPath, libraryAbsPath } from './asset-library';
 
 const EXT_MIME: Record<string, string> = {
   png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
@@ -66,9 +67,14 @@ function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
 
   // Local path (relative, or file:// stripped) — search the base dirs.
   const rel = s.replace(/^file:\/\//i, '');
-  for (const d of dirs) {
+  const candidates = dirs.map(d => path.resolve(d, rel));
+  // A `lib/…` src addresses the SHARED library. It is appended, not prepended:
+  // the project is searched first, so a project can shadow a shared asset with
+  // its own copy at the same path without renaming anything.
+  const shared = isLibraryPath(rel) ? libraryAbsPath(rel) : null;
+  if (shared) candidates.push(shared);
+  for (const abs of candidates) {
     try {
-      const abs = path.resolve(d, rel);
       if (fs.existsSync(abs) && fs.statSync(abs).isFile()) {
         const ext = (abs.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
         const buf = fs.readFileSync(abs);
@@ -78,7 +84,12 @@ function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
       }
     } catch { /* try the next base dir */ }
   }
-  return { kind: 'blank', note: `image "${id}": asset "${s}" not found — exported as a placeholder frame. Upload it first (manage_design {op:"asset_add"}) or check the path with {op:"asset_list"}.` };
+  return {
+    kind: 'blank',
+    note: isLibraryPath(rel)
+      ? `image "${id}": "${s}" is not in the shared library — exported as a placeholder frame. Check the path with manage_design {op:"asset_list", scope:"library"}, or fetch it with {op:"asset_fetch"}.`
+      : `image "${id}": asset "${s}" not found — exported as a placeholder frame. Upload it first (manage_design {op:"asset_add"}) or check the path with {op:"asset_list"}.`,
+  };
 }
 
 function resolveFill(fill: Fill | undefined, id: string, dirs: string[], notes: string[]): Fill | undefined {

@@ -17,6 +17,10 @@ vi.mock('./asset-net', async (orig) => {
 const { resolveRef, slugify, projectAllowHosts, assetFetch } = await import('./asset-fetch');
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=', 'base64');
+// Distinct bytes per test: the library deduplicates on content, so reusing one
+// buffer everywhere would make unrelated tests collapse onto the same file.
+const PNG2 = Buffer.concat([PNG, Buffer.from([0, 1])]);
+const PNG3 = Buffer.concat([PNG, Buffer.from([0, 2])]);
 
 const projectsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-fetch-'));
 process.env['FOLIO_PROJECTS_DIR'] = projectsDir;
@@ -166,27 +170,30 @@ describe('assetFetch', () => {
     });
     bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/1/2_b.png' });
 
-    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc', alt: 'a tidy desk from above' }) as Record<string, unknown>;
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:desk', alt: 'a tidy desk from above' }) as Record<string, unknown>;
     expect(r['success']).toBe(true);
     const asset = r['asset'] as Record<string, unknown>;
-    expect(asset['path']).toBe('assets/images/morning-desk.png');
+    // Fetched assets land in the SHARED library by default — that is what stops
+    // the same file being downloaded again for the next project.
+    expect(asset['path']).toBe('lib/images/morning-desk.png');
     expect(asset['alt']).toBe('a tidy desk from above');
-    expect(fs.existsSync(path.join(dir, 'assets/images/morning-desk.png'))).toBe(true);
+    expect(r['scope']).toBe('library');
+    expect(fs.existsSync(path.join(projectsDir, '.library/assets/images/morning-desk.png'))).toBe(true);
     const prov = r['provenance'] as Record<string, unknown>;
     expect(prov['source']).toBe('openverse');
     expect(prov['license']).toBe('CC BY-SA 2.0');
     expect(r['attribution_required']).toContain('CC BY-SA 2.0');
     // The manifest, not just the reply, must carry the licence — that is what
     // asset_list reads back when the credit line has to be typeset.
-    const manifest = fs.readFileSync(path.join(dir, 'project.yaml'), 'utf8');
-    expect(manifest).toContain('CC BY-SA 2.0');
+    const index = fs.readFileSync(path.join(projectsDir, '.library/assets/index.json'), 'utf8');
+    expect(index).toContain('CC BY-SA 2.0');
   });
 
   it('believes the wire content-type over the provider\'s claimed extension', async () => {
     const dir = makeProject('fetch-mime');
     jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/x.jpg', title: 'Mislabelled', license: 'cc0', filetype: 'jpg' });
-    bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/x.jpg' });
-    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc', alt: 'x' }) as Record<string, unknown>;
+    bytesMock.mockResolvedValue({ buffer: PNG2, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/x.jpg' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:mime', alt: 'x', scope: 'project' }) as Record<string, unknown>;
     expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/images/mislabelled.png');
   });
 
@@ -197,15 +204,15 @@ describe('assetFetch', () => {
       buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M0 0h24v24H0z"/></svg>'),
       contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/cloud.svg',
     });
-    const r = await assetFetch({ project_path: dir, ref: 'iconify:mdi:cloud', alt: 'cloud icon' }) as Record<string, unknown>;
+    const r = await assetFetch({ project_path: dir, ref: 'iconify:mdi:cloud', alt: 'cloud icon', scope: 'project' }) as Record<string, unknown>;
     expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/icons/mdi-cloud.svg');
   });
 
   it('warns when no alt was given, because the stored one describes the file not the picture', async () => {
     const dir = makeProject('fetch-noalt');
     jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/1.png', title: 'DSC_0042', license: 'cc0' });
-    bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/1.png' });
-    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc' }) as Record<string, unknown>;
+    bytesMock.mockResolvedValue({ buffer: PNG3, contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/1.png' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:noalt' }) as Record<string, unknown>;
     const progress = r['progress'] as { status?: string; message?: string }[];
     expect(progress.some(p => String(p.message).includes('No alt'))).toBe(true);
   });
@@ -214,7 +221,7 @@ describe('assetFetch', () => {
     const dir = makeProject('fetch-unknown');
     jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/thing', title: 'Thing', license: 'cc0' });
     bytesMock.mockResolvedValue({ buffer: PNG, contentType: 'application/octet-stream', finalUrl: 'https://live.staticflickr.com/thing' });
-    const r = await assetFetch({ project_path: dir, ref: 'openverse:abc' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:mystery' });
     expect(r.success).toBe(false);
     expect(r.hint).toContain('name:');
   });
@@ -225,5 +232,52 @@ describe('assetFetch', () => {
     const r = await assetFetch({ project_path: dir });
     expect(r.success).toBe(false);
     expect(r.error).toContain('ref is required');
+  });
+});
+
+describe('assetFetch — shared-library reuse', () => {
+  it('serves a repeat fetch from the library without touching the network', async () => {
+    const dir = makeProject('fetch-again');
+    jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/reuse.png', title: 'Reused', license: 'cc0' });
+    bytesMock.mockResolvedValue({ buffer: Buffer.concat([PNG, Buffer.from([9])]), contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/reuse.png' });
+    const first = await assetFetch({ project_path: dir, ref: 'openverse:reuse', alt: 'x' }) as Record<string, unknown>;
+    expect(first['deduped']).toBeUndefined();
+    expect(bytesMock).toHaveBeenCalledTimes(1);
+
+    // A DIFFERENT project asking for the same ref must not download again.
+    const other = makeProject('fetch-again-2');
+    const second = await assetFetch({ project_path: other, ref: 'openverse:reuse', alt: 'x' }) as Record<string, unknown>;
+    expect(second['deduped']).toBe(true);
+    expect(bytesMock).toHaveBeenCalledTimes(1);                       // no second download
+    expect((second['asset'] as Record<string, unknown>)['path'])
+      .toBe((first['asset'] as Record<string, unknown>)['path']);
+  });
+
+  it('treats a different icon colour as a different asset, not a cache hit', async () => {
+    const dir = makeProject('fetch-variant');
+    jsonMock.mockResolvedValue({ mdi: { license: { spdx: 'Apache-2.0' } } });
+    bytesMock.mockResolvedValue({
+      buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M0 0h24v24H0z" fill="#fff"/></svg>'),
+      contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/star.svg',
+    });
+    await assetFetch({ project_path: dir, ref: 'iconify:mdi:star', icon_color: '#ffffff', alt: 'star' });
+    const calls = bytesMock.mock.calls.length;
+    bytesMock.mockResolvedValue({
+      buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M0 0h24v24H0z" fill="#000"/></svg>'),
+      contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/star.svg',
+    });
+    const black = await assetFetch({ project_path: dir, ref: 'iconify:mdi:star', icon_color: '#000000', alt: 'star' }) as Record<string, unknown>;
+    expect(black['deduped']).toBeUndefined();
+    expect(bytesMock.mock.calls.length).toBe(calls + 1);
+  });
+
+  it('still files into the project when asked for scope:"project"', async () => {
+    const dir = makeProject('fetch-scoped');
+    jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/scoped.png', title: 'Scoped', license: 'cc0' });
+    bytesMock.mockResolvedValue({ buffer: Buffer.concat([PNG, Buffer.from([7])]), contentType: 'image/png', finalUrl: 'https://live.staticflickr.com/scoped.png' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse:scoped', alt: 'x', scope: 'project' }) as Record<string, unknown>;
+    expect(r['scope']).toBe('project');
+    expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/images/scoped.png');
+    expect(fs.existsSync(path.join(dir, 'assets/images/scoped.png'))).toBe(true);
   });
 });
