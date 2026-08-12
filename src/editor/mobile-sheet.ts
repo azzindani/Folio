@@ -78,13 +78,13 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
     toolsPop.close();
   };
 
-  const open = (panel: HTMLElement, btn?: HTMLElement): void => {
+  const open = (panel: HTMLElement, btn?: HTMLElement, detent: SheetDetent = 'peek'): void => {
     for (const p of [leftPanel, rightPanel]) p.classList.remove('mob-open');
     navBtns.forEach(b => b.classList.remove('active'));
     panel.classList.add('mob-open');
     backdrop.classList.add('active');
     container.classList.add('sheet-open');
-    setDetent(container, panel, 'peek');
+    setDetent(container, panel, detent);
     btn?.classList.add('active');
     panelsPop.close();
     toolsPop.close();
@@ -94,7 +94,11 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
 
   /** Show one of the desktop's left-panel views inside the left sheet. */
   const showLeftView = (panelId: string): void => {
-    if (panelId === 'project-assets' && opts.openAssets) { open(leftPanel, navFor('layers')); opts.openAssets(); return; }
+    // Assets opens at `full`, not `peek`. It is the one left-panel view that is
+    // a FILE BROWSER: measured on an iPhone 13, peek left the grid 16px and half
+    // left 131px — less than one 180px card. When you are picking an asset you
+    // are looking at the list, not the canvas, and the grip drags it back down.
+    if (panelId === 'project-assets' && opts.openAssets) { open(leftPanel, navFor('layers'), 'full'); opts.openAssets(); return; }
     open(leftPanel, navFor('layers'));
     container.querySelector<HTMLElement>(`.activity-bar .act-btn[data-panel="${panelId}"]`)?.click();
   };

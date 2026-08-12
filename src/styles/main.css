@@ -2732,6 +2732,15 @@ button:focus:not(:focus-visible) { outline: none; }
     border-right: none;
     border-top: 1px solid var(--color-border-strong);
   }
+  /* A sheet is positioned from the BOTTOM, so its top edge is wherever its
+     height puts it — and at the tallest detent (86vh) that slid under the
+     toolbar and clipped the panel's own title. Cap the height at the space
+     actually available between the toolbar and the bottom nav, so no detent
+     can ever reach behind the chrome. */
+  .left-panel, .properties-panel {
+    max-height: calc(100dvh - var(--toolbar-height) - var(--mobile-nav-height)
+                     - var(--statusbar-height) - env(safe-area-inset-bottom, 0px) - 8px);
+  }
   .left-panel.mob-open { transform: translateY(0); }
   /* A closed sheet sits below a tall bottom offset, so translateY(110%) no
      longer clears the screen — its rounded top edge peeked over the tool
@@ -2755,6 +2764,19 @@ button:focus:not(:focus-visible) { outline: none; }
     border-left: none;
     border-top: 1px solid var(--color-border-strong);
   }
+
+  /* The asset panel is a BROWSABLE list inside a short sheet. Its toolbar
+     wrapped onto two rows on a 390px phone and, with the search field and the
+     chip row, left the grid 16px — a sliver of one card. Keep the controls on
+     ONE row that scrolls sideways so the height goes to the cards instead.
+     (The sheet also opens at the tallest detent for this panel — see
+     mobile-sheet.ts — because a list you browse needs more than a peek.) */
+  .asset-lib-bar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .asset-lib-bar::-webkit-scrollbar { display: none; }
+  .asset-lib-bar > .asset-lib-btn { flex: 0 0 auto; }
+  /* Two columns is the readable maximum at this width; the desktop's 140px
+     minimum would try for three and shrink every thumbnail. */
+  .asset-lib-body.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   /* The backdrop stays clickable (tap-away closes) but only tints at the
      tallest detent — at peek/half you are meant to see the design through it. */
@@ -3013,4 +3035,11 @@ button:focus:not(:focus-visible) { outline: none; }
     max-height: min(56vh, calc(100vh - 16px));
     border-radius: var(--radius-lg);
   }
+
+  /* Measured on an iPhone 13: the asset panel's folder chips came out at 36px
+     and its Rename/Move/Delete row at 40px, both under the 44px every other
+     touch control here clears. Delete sitting a thumb-width from Move is
+     exactly where that matters. */
+  .asset-lib-chip { min-height: 44px; }
+  .asset-lib-act { min-height: 44px; }
 }
