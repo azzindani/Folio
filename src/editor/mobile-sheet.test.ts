@@ -175,6 +175,20 @@ describe('mobile sheets', () => {
     expect(left().classList.contains('mob-open')).toBe(true);
   });
 
+  it('opens assets TALL — every other panel peeks', () => {
+    // Measured on an iPhone 13: at peek the asset grid got 16px and at half
+    // 131px, less than one 180px card. It is the one left-panel view that is a
+    // file browser, so it opens at the detent that can actually show the files.
+    btn('panels').click();
+    items('mob-pop-panels').find(i => i.textContent?.includes('Project assets'))?.click();
+    expect(left().classList.contains('mob-h-full')).toBe(true);
+    expect(app.style.getPropertyValue('--sheet-h')).toBe('86vh');
+
+    // Any other panel still peeks — the tall detent is specific to the browser.
+    btn('props').click();
+    expect(app.style.getPropertyValue('--sheet-h')).toBe('38vh');
+  });
+
   it('lists every drawing tool in the Tools popover and marks the active one', () => {
     btn('tools').click();
     const labels = items('mob-pop-tools').map(i => i.textContent?.trim());
