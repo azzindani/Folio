@@ -25,8 +25,20 @@ const URL_NO_ALT = new URL('http://x/upload');
 describe('editor server asset routes', () => {
   let tmp: string;
   let proj: string;
-  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-srv-assets-')); proj = makeProject(tmp, 'p1'); });
-  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+  let prevLib: string | undefined;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-srv-assets-'));
+    proj = makeProject(tmp, 'p1');
+    // The listing unions the SHARED library, so it must not read whatever
+    // library this machine happens to hold — give each test an empty one.
+    prevLib = process.env['FOLIO_LIBRARY_DIR'];
+    process.env['FOLIO_LIBRARY_DIR'] = path.join(tmp, 'lib-root');
+  });
+  afterEach(() => {
+    if (prevLib === undefined) delete process.env['FOLIO_LIBRARY_DIR'];
+    else process.env['FOLIO_LIBRARY_DIR'] = prevLib;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
 
   it('uploads into the project root and lists it', async () => {
     const up = await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', undefined, 'shot.png');
@@ -96,5 +108,50 @@ describe('editor server asset routes', () => {
     const trav = await manageAssets(postJSON({ op: 'delete', asset_path: '../../project.yaml' }), proj);
     expect(trav.status).toBe(400);
     expect(fs.existsSync(path.join(proj, 'project.yaml'))).toBe(true);
+  });
+});
+
+describe('editor server asset routes — the shared library', () => {
+  let tmp: string, proj: string, prevLib: string | undefined;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-srv-lib-'));
+    proj = makeProject(tmp, 'p1');
+    prevLib = process.env['FOLIO_LIBRARY_DIR'];
+    process.env['FOLIO_LIBRARY_DIR'] = path.join(tmp, 'lib-root');
+  });
+  afterEach(() => {
+    if (prevLib === undefined) delete process.env['FOLIO_LIBRARY_DIR'];
+    else process.env['FOLIO_LIBRARY_DIR'] = prevLib;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('files an upload into the library when scope=library, nesting the folder', async () => {
+    const url = new URL('http://x/upload?scope=library&folder=microsoft/logos');
+    const up = await uploadAsset(postBytes(PNG), url, proj, 'images', undefined, 'pa.png');
+    expect(up.status).toBe(200);
+    const body = await up.json() as { ok: boolean; asset: { path: string } };
+    expect(body.asset.path).toBe('lib/microsoft/logos/pa.png');
+  });
+
+  it('lists both stores together, with the library folder tree', async () => {
+    await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', undefined, 'mine.png');
+    await uploadAsset(postBytes(Buffer.concat([PNG, Buffer.from([1])])),
+      new URL('http://x/upload?scope=library&folder=ai/logos'), proj, 'images', undefined, 'shared.png');
+    const listed = await listAssets(proj).json() as { assets: { path: string }[]; folders: string[]; library_folders: string[] };
+    expect(listed.assets.map(a => a.path).sort()).toEqual(['assets/images/mine.png', 'lib/ai/logos/shared.png']);
+    expect(listed.library_folders).toEqual(['ai', 'ai/logos']);
+  });
+
+  it('routes a manage op on a lib/ path to the library, not the project', async () => {
+    await uploadAsset(postBytes(PNG), new URL('http://x/upload?scope=library&folder=inbox'), proj, 'images', undefined, 'x.png');
+    const moved = await manageAssets(postJSON({ op: 'move', asset_path: 'lib/inbox/x.png', folder: 'microsoft' }), proj);
+    const mBody = await moved.json() as { ok: boolean; moved?: { to: string } };
+    expect(mBody.ok).toBe(true);
+    expect(mBody.moved?.to).toBe('lib/microsoft/x.png');
+
+    const del = await manageAssets(postJSON({ op: 'delete', asset_path: 'lib/microsoft/x.png' }), proj);
+    expect((await del.json() as { ok: boolean }).ok).toBe(true);
+    const listed = await listAssets(proj).json() as { assets: { path: string }[] };
+    expect(listed.assets).toEqual([]);
   });
 });

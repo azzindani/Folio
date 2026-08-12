@@ -132,7 +132,10 @@ export function libraryFolders(): string[] {
     let entries: fs.Dirent[];
     try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
     for (const e of entries) {
-      if (!e.isDirectory()) continue;
+      // Dot-dirs are bookkeeping, not filing: .trash showed up as a folder
+      // chip in the editor that selected nothing, because collectLibraryAssets
+      // (rightly) skips it.
+      if (!e.isDirectory() || e.name.startsWith('.')) continue;
       const next = rel ? `${rel}/${e.name}` : e.name;
       out.push(next);
       walk(path.join(dir, e.name), next, depth + 1);
@@ -323,6 +326,27 @@ export function libraryBySource(ref: string): LibraryEntry | undefined {
 
 // ── Mutation ──────────────────────────────────────────────────
 /**
+ * Drop folders left empty by a delete or a move, up to (never including) the
+ * library root.
+ *
+ * Without this, moving the last file out of "scratch/probe" leaves both
+ * "scratch" and "scratch/probe" behind, and they keep showing up as folder
+ * chips that select nothing — the tree slowly fills with places that hold
+ * nothing. Stops at the first non-empty parent.
+ */
+function pruneEmptyFolders(startDir: string): void {
+  const root = libraryRoot();
+  let dir = path.resolve(startDir);
+  while (dir !== root && dir.startsWith(root + path.sep)) {
+    try {
+      if (fs.readdirSync(dir).length > 0) return;
+      fs.rmdirSync(dir);
+    } catch { return; }
+    dir = path.dirname(dir);
+  }
+}
+
+/**
  * Soft-delete: the file moves to <library>/.trash. Deleting from a SHARED store
  * can blank a design in a project nobody is looking at, so nothing here is ever
  * an unrecoverable unlink.
@@ -335,6 +359,7 @@ export function deleteLibraryAsset(libPath: string): { trash: string } {
   const dest = path.join(trashDir, `${Date.now()}_${path.basename(abs)}`);
   fs.renameSync(abs, dest);
   removeLibraryEntry(libraryRoot(), libPath);
+  pruneEmptyFolders(path.dirname(abs));
   return { trash: dest };
 }
 
@@ -360,6 +385,7 @@ export function moveLibraryAsset(libPath: string, opts: { folder?: string; new_n
     if (current) return current;
   }
   fs.renameSync(from, to);
+  pruneEmptyFolders(path.dirname(from));
   const rows = readLibraryIndex(root);
   const prior = rows.find(r => r.path === libPath);
   const newPath = `${LIB_PREFIX}${folder ? `${folder}/` : ''}${name}`;
