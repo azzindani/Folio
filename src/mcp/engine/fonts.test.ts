@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -75,6 +75,21 @@ describe('unbundledFonts', () => {
 });
 
 describe('project fonts (WP-1.6)', () => {
+  // projectFontFamilies unions the SHARED library's fonts (a design using one
+  // must not be reported as unbundled), so these tests must not read whatever
+  // library the machine happens to have — point it at an empty directory.
+  let libTmp: string, prevLib: string | undefined;
+  beforeEach(() => {
+    libTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-fonts-lib-'));
+    prevLib = process.env['FOLIO_LIBRARY_DIR'];
+    process.env['FOLIO_LIBRARY_DIR'] = libTmp;
+  });
+  afterEach(() => {
+    if (prevLib === undefined) delete process.env['FOLIO_LIBRARY_DIR'];
+    else process.env['FOLIO_LIBRARY_DIR'] = prevLib;
+    fs.rmSync(libTmp, { recursive: true, force: true });
+  });
+
   it('projectFontsDir returns the dir when it exists, null otherwise', () => {
     expect(projectFontsDir(undefined)).toBeNull();
     expect(projectFontsDir('/no/such/project')).toBeNull();
@@ -110,6 +125,19 @@ describe('project fonts (WP-1.6)', () => {
   it('falls back to the filename when the file is not a parseable font', () => {
     const dir = tmpProjectWithFonts(['Clash_Display-Bold.ttf']);   // contents: "x"
     expect(projectFontFamilies(dir).has('clash display')).toBe(true);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('counts a SHARED library font as available, at any depth', () => {
+    const dir = tmpProjectWithFonts(['Inter-Regular.ttf']);
+    const deep = path.join(libTmp, 'fonts', 'display');
+    fs.mkdirSync(deep, { recursive: true });
+    fs.writeFileSync(path.join(deep, 'anton-400.ttf'), fontWithFamily('Anton'));
+    const fams = projectFontFamilies(dir);
+    expect(fams.has('anton')).toBe(true);                 // from the library
+    expect(fams.has('inter')).toBe(true);                 // from the project
+    // The whole point: a design using a library font is NOT flagged unbundled.
+    expect(unbundledFonts('<text font-family="Anton">x</text>', dir)).toEqual([]);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 

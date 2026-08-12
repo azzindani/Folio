@@ -129,3 +129,42 @@ describe('asset library', () => {
     });
   });
 });
+
+describe('the folder tree stays honest', () => {
+  let tmp: string, prevLib: string | undefined;
+  const SVG3 = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6"><rect width="6" height="6" fill="#0F6B5C"/></svg>');
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-folders-'));
+    prevLib = process.env['FOLIO_LIBRARY_DIR'];
+    process.env['FOLIO_LIBRARY_DIR'] = path.join(tmp, 'lib-root');
+  });
+  afterEach(() => {
+    if (prevLib === undefined) delete process.env['FOLIO_LIBRARY_DIR'];
+    else process.env['FOLIO_LIBRARY_DIR'] = prevLib;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('never lists .trash as a folder — it selects nothing', () => {
+    ingestLibraryAsset({ name: 'a.svg', data: SVG3, folder: 'scratch' });
+    deleteLibraryAsset('lib/scratch/a.svg');
+    expect(fs.existsSync(path.join(libraryRoot(), '.trash'))).toBe(true);
+    expect(libraryFolders()).not.toContain('.trash');
+  });
+
+  it('prunes folders left empty by a delete', () => {
+    ingestLibraryAsset({ name: 'a.svg', data: SVG3, folder: 'scratch/probe' });
+    expect(libraryFolders()).toEqual(['scratch', 'scratch/probe']);
+    deleteLibraryAsset('lib/scratch/probe/a.svg');
+    expect(libraryFolders()).toEqual([]);
+  });
+
+  it('prunes the folder a move emptied, keeping ones still in use', () => {
+    ingestLibraryAsset({ name: 'a.svg', data: SVG3, folder: 'scratch/probe' });
+    ingestLibraryAsset({ name: 'b.svg', data: Buffer.concat([SVG3, Buffer.from(' ')]), folder: 'scratch/keep' });
+    moveLibraryAsset('lib/scratch/probe/a.svg', { folder: 'microsoft/logos' });
+    const folders = libraryFolders();
+    expect(folders).toContain('microsoft/logos');
+    expect(folders).toContain('scratch/keep');
+    expect(folders).not.toContain('scratch/probe');
+  });
+});
