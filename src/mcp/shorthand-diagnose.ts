@@ -161,8 +161,11 @@ export function diagnoseLayers(layers: Layer[]): string[] {
           // Remote URLs render in the browser editor but CANNOT be fetched by
           // server-side PNG/PDF export — the #1 looks-right-then-blank trap.
           notes.push(`image "${l.id}": remote URL srcs show in the EDITOR only — PNG/PDF exports render a placeholder instead. Store the file first: manage_design {op:"asset_add", project_path, name:"photo.jpg", data:"data:image/…;base64,…"} then use src:"assets/images/photo.jpg".`);
-        } else if (src && !/^(data:|file:)/i.test(src) && !/^assets\//.test(src)) {
-          notes.push(`image "${l.id}": src "${src}" is a local file — it renders only if that file exists in the project. Prefer project assets: manage_design {op:"asset_list"} shows what you can use as src:"assets/images/…"; {op:"asset_add"} stores new ones.`);
+        } else if (src && !/^(data:|file:)/i.test(src) && !/^(assets|lib)\//.test(src)) {
+          // "lib/…" is the SHARED library and is as legitimate a src as the
+          // project's own assets/ — only paths belonging to NEITHER store are
+          // worth a note.
+          notes.push(`image "${l.id}": src "${src}" is a local file — it renders only if that file exists. Use a stored asset: manage_design {op:"asset_list"} shows both this project's ("assets/…") and the shared library's ("lib/…"); {op:"asset_add"} or {op:"asset_fetch"} store new ones.`);
         }
       } else if (l.type === 'text') {
         const v = (l as Layer & { content?: { value?: string } }).content?.value;
