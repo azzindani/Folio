@@ -13,7 +13,7 @@ import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { Fill } from '../../schema/types';
 import { parseDimensions } from './reference';
 import { readAssetManifest } from './assets';
-import { isLibraryPath, libraryAbsPath } from './asset-library';
+import { isLibraryPath, libraryAbsPath, libraryRoot } from './asset-library';
 
 const EXT_MIME: Record<string, string> = {
   png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
@@ -39,12 +39,33 @@ export function assetBaseDirs(designPath: string, projectPath?: string): string[
   return dirs;
 }
 
+/**
+ * The only directories an asset src may resolve INTO: this project, and the
+ * shared library.
+ *
+ * The base-dir search resolves a src relative to four directories, and
+ * path.resolve happily walks `../` back out of all of them — so before this
+ * guard a src of "../../../etc/whatever.png" (or a plain absolute path) read
+ * any file on the box with an image extension and embedded it in the export as
+ * a data: URI. Relative paths that stay INSIDE the project still work, so
+ * "../assets/images/x.png" written from designs/ resolves exactly as it always
+ * did; only leaving the project is refused.
+ */
+export function assetRoots(designPath: string, projectPath?: string): string[] {
+  const proj = projectPath ?? path.dirname(path.dirname(designPath));
+  return [...new Set([path.resolve(proj), path.resolve(path.dirname(designPath)), libraryRoot()])];
+}
+
+function within(abs: string, roots: string[]): boolean {
+  return roots.some(r => abs === r || abs.startsWith(r + path.sep));
+}
+
 type Resolution =
   | { kind: 'keep' }                       // already renderable (valid data: URI)
   | { kind: 'embed'; dataUri: string }     // file found → inline
   | { kind: 'blank'; note: string };       // unrenderable → placeholder + note
 
-function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
+function resolveSrc(src: string, id: string, dirs: string[], roots: string[]): Resolution {
   const s = src.trim();
   if (!s) return { kind: 'keep' };
 
@@ -73,7 +94,11 @@ function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
   // its own copy at the same path without renaming anything.
   const shared = isLibraryPath(rel) ? libraryAbsPath(rel) : null;
   if (shared) candidates.push(shared);
+  let escaped = false;
   for (const abs of candidates) {
+    // Refuse anything that resolved outside the project / library before it is
+    // touched: existsSync on an out-of-bounds path is already a disclosure.
+    if (!within(abs, roots)) { escaped = true; continue; }
     try {
       if (fs.existsSync(abs) && fs.statSync(abs).isFile()) {
         const ext = (abs.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
@@ -84,6 +109,12 @@ function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
       }
     } catch { /* try the next base dir */ }
   }
+  if (escaped) {
+    return {
+      kind: 'blank',
+      note: `image "${id}": src "${s}" points outside the project — an asset src may only reach this project's own files or the shared library, so it was exported as a placeholder frame. Store the file first (manage_design {op:"asset_add"}) and use the "assets/…" or "lib/…" path it gives you.`,
+    };
+  }
   return {
     kind: 'blank',
     note: isLibraryPath(rel)
@@ -92,13 +123,13 @@ function resolveSrc(src: string, id: string, dirs: string[]): Resolution {
   };
 }
 
-function resolveFill(fill: Fill | undefined, id: string, dirs: string[], notes: string[]): Fill | undefined {
+function resolveFill(fill: Fill | undefined, id: string, dirs: string[], roots: string[], notes: string[]): Fill | undefined {
   if (!fill || typeof fill !== 'object') return fill;
   if (fill.type === 'multi' && Array.isArray(fill.layers)) {
-    return { ...fill, layers: fill.layers.map(f => resolveFill(f, id, dirs, notes) ?? f) };
+    return { ...fill, layers: fill.layers.map(f => resolveFill(f, id, dirs, roots, notes) ?? f) };
   }
   if (fill.type !== 'image' || typeof fill.src !== 'string') return fill;
-  const r = resolveSrc(fill.src, id, dirs);
+  const r = resolveSrc(fill.src, id, dirs, roots);
   if (r.kind === 'embed') return { ...fill, src: r.dataUri };
   if (r.kind === 'blank') {
     notes.push(r.note.replace(`image "${id}"`, `image fill on "${id}"`));
@@ -231,6 +262,7 @@ function auditBusyImageText(spec: DesignSpec, designPath: string, projectPath?: 
  */
 export function resolveImageAssets(spec: DesignSpec, designPath: string, projectPath?: string): string[] {
   const dirs = assetBaseDirs(designPath, projectPath).filter(Boolean);
+  const roots = assetRoots(designPath, projectPath);
   const notes: string[] = [];
 
   const visit = (layers: Layer[] | undefined): void => {
@@ -238,13 +270,13 @@ export function resolveImageAssets(spec: DesignSpec, designPath: string, project
       if (l.type === 'image') {
         const img = l as Layer & { src?: string };
         if (typeof img.src === 'string' && img.src.trim()) {
-          const r = resolveSrc(img.src, l.id, dirs);
+          const r = resolveSrc(img.src, l.id, dirs, roots);
           if (r.kind === 'embed') img.src = r.dataUri;
           else if (r.kind === 'blank') { img.src = ''; notes.push(r.note); }
         }
       }
       const withFill = l as Layer & { fill?: Fill };
-      if (withFill.fill) withFill.fill = resolveFill(withFill.fill, l.id, dirs, notes) ?? withFill.fill;
+      if (withFill.fill) withFill.fill = resolveFill(withFill.fill, l.id, dirs, roots, notes) ?? withFill.fill;
       if (l.type === 'group') visit((l as Layer & { layers?: Layer[] }).layers);
     }
   };
