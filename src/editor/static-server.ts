@@ -40,6 +40,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
 import { listAssets, manageAssets, uploadAsset } from './server-assets';
+import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
 
@@ -557,7 +558,18 @@ Bun.serve({
       }
 
       const rel = url.pathname.slice('/__project_files/'.length);
-      const target = safeJoinProject(rel);
+      let target = safeJoinProject(rel);
+      // A "lib/…" src addresses the SHARED library. The project is tried first
+      // — so a project can shadow a shared asset — then the library, which is
+      // exactly the order the server-side render resolver uses. Without this
+      // the canvas and the exported PNG could show different files.
+      if (!target || !fs.existsSync(target)) {
+        let decoded = rel;
+        try { decoded = decodeURIComponent(rel); } catch { /* keep raw */ }
+        const libRel = decoded.replace(/^[^/]+\//, '');
+        const abs = isLibraryPath(libRel) ? libraryAbsPath(libRel) : null;
+        if (abs && fs.existsSync(abs)) target = abs;
+      }
       if (!target || !fs.existsSync(target) || fs.statSync(target).isDirectory()) {
         return new Response('Not found', { status: 404 });
       }

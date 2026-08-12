@@ -29,6 +29,7 @@ import { BUILTIN_THEMES } from '../themes/builtin';
 import { TabBarManager } from '../ui/tabs/tab-bar';
 import { ViewportLayoutManager } from '../ui/viewport/viewport-layout';
 import { AutoSaveManager } from './auto-save';
+import { assetUrl } from './asset-url';
 import { ColorPaletteManager } from '../ui/panels/color-palette';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
@@ -384,8 +385,7 @@ export class EditorApp extends EditorAppBase {
   private wireProjectAssets(designRel: string): void {
     const project = designRel.split('/')[0];
     if (!project) return;
-    const enc = (p: string): string => p.split('/').map(encodeURIComponent).join('/');
-    setAssetUrlResolver((src) => `/__project_files/${encodeURIComponent(project)}/${enc(src)}`);
+    setAssetUrlResolver((src) => assetUrl(project, src));
     void this.openAssetPanel(project, this.readEditorToken() ?? null);
     void this.loadProjectFonts(project);
     this.imageImport.setUploader(async (name, blob) => {
@@ -416,8 +416,7 @@ export class EditorApp extends EditorAppBase {
       const j = await r.json() as { ok?: boolean; assets?: Array<{ path: string; kind: string }> };
       const fonts = (j.assets ?? []).filter(a => a.kind === 'fonts');
       if (fonts.length === 0) return;
-      const enc = (p: string): string => p.split('/').map(encodeURIComponent).join('/');
-      loadProjectFonts(fonts, (p) => `/__project_files/${encodeURIComponent(project)}/${enc(p)}`);
+      loadProjectFonts(fonts, (p) => assetUrl(project, p));
     } catch { /* offline / unauthed — fallback fonts are fine */ }
   }
 

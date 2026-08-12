@@ -67,6 +67,7 @@ export function assetDrawerMarkup(projects: { name: string }[]): string {
     <h2>Assets</h2>
     <select id="aproj" aria-label="Project">${opts}</select>
     <button class="abtn abtn-primary" id="aupload" type="button">＋ Upload</button>
+    <button class="abtn" id="asharedupload" type="button" title="Upload into the SHARED library — every project can use it">◆ Add to shared</button>
     <button class="abtn" id="anote" type="button" title="Write a markdown or text file here">✎ Write</button>
     <button class="abtn" id="anewfolder" type="button" title="Upload into a new folder">New folder</button>
     <button class="abtn" id="arefresh" type="button" title="Refresh">↻</button>
@@ -103,7 +104,8 @@ var drawer=document.getElementById('adrawer');if(!drawer)return;
 var projSel=document.getElementById('aproj'),grid=document.getElementById('agrid'),chips=document.getElementById('achips'),
     foot=document.getElementById('afoot'),file=document.getElementById('afile'),search=document.getElementById('asearch');
 var ed=document.getElementById('aedit'),edName=document.getElementById('aename'),edText=document.getElementById('aetext');
-var rows=[],folders=[],folder=null,pendingFolder=null,edFolder='';
+var rows=[],folders=[],libFolders=[],folder=null,store='all',pendingFolder=null,pendingScope='project',edFolder='';
+function shared(p){return String(p||'').indexOf('lib/')===0;}
 var DOC=/\\.(md|markdown|txt|csv|json|ya?ml)$/i;
 function base(){return '/__project_files/'+encodeURIComponent(projSel.value||'');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -112,6 +114,7 @@ function close(){drawer.classList.remove('open');}
 function visible(){
   var q=(search.value||'').trim().toLowerCase();
   return rows.filter(function(a){
+    if(store!=='all'&&(store==='library')!==shared(a.path))return false;
     if(folder!==null&&(a.folder||'')!==folder)return false;
     if(!q)return true;
     return a.path.toLowerCase().indexOf(q)>=0||String(a.alt||'').toLowerCase().indexOf(q)>=0;
@@ -122,9 +125,11 @@ function visible(){
 }
 function draw(){
   var list=visible();
-  chips.innerHTML=['<button class="achip'+(folder===null?' on':'')+'" data-f="*">All</button>',
+  chips.innerHTML=['<button class="achip'+(folder===null&&store==='all'?' on':'')+'" data-f="*">All</button>',
+    '<button class="achip'+(store==='library'?' on':'')+'" data-f="store:library">\u25C6 Shared</button>',
+    '<button class="achip'+(store==='project'?' on':'')+'" data-f="store:project">This project</button>',
     '<button class="achip'+(folder===''?' on':'')+'" data-f="">Root</button>']
-    .concat(folders.map(function(f){return '<button class="achip'+(folder===f?' on':'')+'" data-f="'+esc(f)+'">'+esc(f)+'</button>';})).join('');
+    .concat((store==='library'?libFolders:folders).map(function(f){return '<button class="achip'+(folder===f?' on':'')+'" data-f="'+esc(f)+'">'+esc(f)+'</button>';})).join('');
   grid.innerHTML=list.length?list.map(function(a,i){
     var name=a.path.split('/').pop(),dims=a.width?a.width+'×'+a.height:'',kb=Math.max(1,Math.round(a.bytes/1024))+' KB';
     var meta=[dims,kb,a.folder||''].filter(Boolean).join(' · ');
@@ -135,10 +140,14 @@ function draw(){
       '<button data-a="ren" data-i="'+i+'">Rename</button>'+
       '<button data-a="mov" data-i="'+i+'">Move</button>'+
       '<button class="adel" data-a="del" data-i="'+i+'">Delete</button></div></div>';
-  }).join(''):'<div class="aempty">'+(rows.length?'Nothing matches that filter.':'No assets yet. Upload one — it lands in this project and any design in it can use it.')+'</div>';
-  foot.textContent=rows.length+' asset'+(rows.length===1?'':'s')+' · '+(projSel.value||'');
+  }).join(''):'<div class="aempty">'+(rows.length?'Nothing matches that filter.':'No assets yet. Upload one — \u201C＋ Upload\u201D keeps it in this project, \u201C\u25C6 Add to shared\u201D puts it in the library every project can use.')+'</div>';
+  var nShared=rows.filter(function(a){return shared(a.path);}).length;
+  foot.textContent=(rows.length-nShared)+' in '+(projSel.value||'')+' \u00B7 '+nShared+' shared';
   [].forEach.call(chips.querySelectorAll('.achip'),function(c){
-    c.onclick=function(){var v=c.getAttribute('data-f');folder=v==='*'?null:v;draw();};
+    c.onclick=function(){var v=c.getAttribute('data-f');
+      if(v.indexOf('store:')===0){var want=v.slice(6);store=store===want?'all':want;folder=null;}
+      else{folder=v==='*'?null:v;if(v==='*')store='all';}
+      draw();};
   });
   [].forEach.call(grid.querySelectorAll('[data-a]'),function(b){
     b.onclick=function(){
@@ -154,7 +163,7 @@ function draw(){
 function load(){
   if(!projSel.value){rows=[];folders=[];draw();return;}
   fetch(base()+'/__assets',{credentials:'include'}).then(function(r){return r.json();}).then(function(j){
-    rows=j.assets||[];folders=j.folders||[];draw();
+    rows=j.assets||[];folders=j.folders||[];libFolders=j.library_folders||[];draw();
   }).catch(function(){grid.innerHTML='<div class="aempty">Could not reach the server.</div>';});
 }
 function manage(body){
@@ -162,13 +171,15 @@ function manage(body){
     .then(function(r){return r.json();}).then(function(j){if(!j.ok)alert(j.error||'Failed');load();})
     .catch(function(){alert('Could not reach the server.');});
 }
-function upload(files,into){
+function upload(files,into,scope){
   var i=0,ok=0;
   (function next(){
     if(i>=files.length){if(ok)foot.textContent='Uploaded '+ok+' asset'+(ok===1?'':'s');load();return;}
     var f=files[i++],kind=/\\.(ttf|otf|woff2?)$/i.test(f.name)?'fonts':(/\\.(md|markdown|txt|csv|json|ya?ml)$/i.test(f.name)?'docs':'images'),
-        seg=into?encodeURIComponent(into)+'/':'';
-    fetch(base()+'/assets/'+kind+'/'+seg+encodeURIComponent(f.name),{method:'POST',credentials:'include',
+        toLib=scope==='library',
+        seg=(toLib||!into)?'':encodeURIComponent(into)+'/',
+        qs=toLib?'?scope=library&folder='+encodeURIComponent(into||kind):'';
+    fetch(base()+'/assets/'+kind+'/'+seg+encodeURIComponent(f.name)+qs,{method:'POST',credentials:'include',
       headers:{'Content-Type':f.type||'application/octet-stream'},body:f})
       .then(function(r){return r.json().catch(function(){return {};});})
       .then(function(j){if(j.ok)ok++;else alert(f.name+': '+(j.error||'upload failed'));next();})
@@ -209,12 +220,15 @@ document.getElementById('aecancel').onclick=edClose;
 document.getElementById('assetsbtn').onclick=function(){drawer.classList.contains('open')?close():open();};
 document.getElementById('aclose').onclick=function(){edClose();close();};
 document.getElementById('arefresh').onclick=load;
-document.getElementById('aupload').onclick=function(){pendingFolder=null;file.click();};
+document.getElementById('aupload').onclick=function(){pendingFolder=null;pendingScope='project';file.click();};
+document.getElementById('asharedupload').onclick=function(){
+  var n=prompt('File it under which shared folder? (e.g. "microsoft/logos")',folder||'');if(n===null)return;
+  pendingFolder=n;pendingScope='library';file.click();};
 document.getElementById('anewfolder').onclick=function(){
   var n=prompt('Upload into which folder?',folder||'screenshots');if(n===null)return;pendingFolder=n;file.click();};
 file.onchange=function(){
-  if(file.files&&file.files.length)upload(file.files,pendingFolder!==null?pendingFolder:(folder||''));
-  pendingFolder=null;file.value='';};
+  if(file.files&&file.files.length)upload(file.files,pendingFolder!==null?pendingFolder:(folder||''),pendingScope);
+  pendingFolder=null;pendingScope='project';file.value='';};
 projSel.onchange=function(){folder=null;load();};
 search.oninput=draw;
 // Deep link: /library?assets=<project> opens straight into that project.

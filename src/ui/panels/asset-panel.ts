@@ -23,6 +23,10 @@ interface AssetRow {
 type View = 'grid' | 'list';
 /** null = every folder; '' = the root (unfoldered) assets. */
 type FolderFilter = string | null;
+/** Which store the grid is showing. Assets from both are listed together. */
+type StoreFilter = 'all' | 'project' | 'library';
+/** Shared-library assets are recognisable by their path alone. */
+const isShared = (p: string): boolean => p.startsWith('lib/');
 
 let insertCounter = 0;
 
@@ -35,8 +39,10 @@ export class AssetPanelManager {
   private token: string | null = null;
   private rows: AssetRow[] = [];
   private folders: string[] = [];
+  private libraryFolders: string[] = [];
   private view: View = 'grid';
   private folder: FolderFilter = null;
+  private store: StoreFilter = 'all';
   private query = '';
   private busy = false;
 
@@ -69,9 +75,10 @@ export class AssetPanelManager {
     try {
       const r = await fetch(`${this.base()}/__assets`, { credentials: 'include', headers: this.headers() });
       if (!r.ok) { this.renderEmpty(`Could not list assets (${r.status}).`); return; }
-      const j = await r.json() as { ok?: boolean; assets?: AssetRow[]; folders?: string[] };
+      const j = await r.json() as { ok?: boolean; assets?: AssetRow[]; folders?: string[]; library_folders?: string[] };
       this.rows = j.assets ?? [];
       this.folders = j.folders ?? [];
+      this.libraryFolders = j.library_folders ?? [];
       this.render();
     } catch {
       this.renderEmpty('Could not reach the project server.');
@@ -81,17 +88,20 @@ export class AssetPanelManager {
   /** Upload one or more files, optionally into a folder. Sequential: the size
    *  cap is per-file and a phone upload over mobile data should fail loudly on
    *  the file that broke, not on the batch. */
-  private async upload(files: FileList | File[], folder: string): Promise<void> {
+  private async upload(files: FileList | File[], folder: string, scope: 'project' | 'library' = 'project'): Promise<void> {
     if (!this.project || this.busy) return;
     this.busy = true;
     const { showToast } = await import('../../utils/toast');
     let ok = 0;
     for (const file of Array.from(files)) {
-      const seg = folder ? `${encodeURIComponent(folder)}/` : '';
       const kind = /\.(ttf|otf|woff2?)$/i.test(file.name) ? 'fonts'
         : /\.(md|markdown|txt|csv|json|ya?ml)$/i.test(file.name) ? 'docs' : 'images';
+      // The library takes its folder as a query param: it nests ("microsoft/
+      // logos") and a URL path segment cannot carry the slash.
+      const seg = scope === 'library' || !folder ? '' : `${encodeURIComponent(folder)}/`;
+      const qs = scope === 'library' ? `?scope=library&folder=${encodeURIComponent(folder || kind)}` : '';
       try {
-        const r = await fetch(`${this.base()}/assets/${kind}/${seg}${encodeURIComponent(file.name)}`, {
+        const r = await fetch(`${this.base()}/assets/${kind}/${seg}${encodeURIComponent(file.name)}${qs}`, {
           method: 'POST', credentials: 'include',
           headers: this.headers({ 'Content-Type': file.type || 'application/octet-stream' }),
           body: file,
@@ -156,6 +166,7 @@ export class AssetPanelManager {
     const q = this.query.trim().toLowerCase();
     const rank = (r: AssetRow): number => (r.kind === 'images' || r.kind === 'icons' ? 0 : 1);
     return this.rows
+      .filter(r => this.store === 'all' || (this.store === 'library') === isShared(r.path))
       .filter(r => this.folder === null || (r.folder ?? '') === this.folder)
       .filter(r => !q || r.path.toLowerCase().includes(q) || (r.alt ?? '').toLowerCase().includes(q))
       .sort((a, b) => rank(a) - rank(b) || a.path.localeCompare(b.path));
@@ -173,15 +184,18 @@ export class AssetPanelManager {
   private render(): void {
     const rows = this.visible();
     const chips = [
-      this.chip('All', this.folder === null, 'all'),
+      this.chip('All', this.folder === null && this.store === 'all', 'all'),
+      this.chip('◆ Shared', this.store === 'library', 'store:library'),
+      this.chip('This project', this.store === 'project', 'store:project'),
       this.chip('Root', this.folder === '', ''),
-      ...this.folders.map(f => this.chip(f, this.folder === f, f)),
+      ...(this.store === 'library' ? this.libraryFolders : this.folders).map(f => this.chip(f, this.folder === f, f)),
     ].join('');
 
     this.container.innerHTML = `
       <div class="asset-lib">
         <div class="asset-lib-bar">
           <button class="asset-lib-btn asset-lib-primary" data-act="upload">＋ Upload</button>
+          <button class="asset-lib-btn" data-act="uploadshared" title="Upload into the SHARED library — every project can use it">◆ Add to shared</button>
           <button class="asset-lib-btn" data-act="write" title="Write a markdown or text file into this project">✎ Write</button>
           <button class="asset-lib-btn" data-act="newfolder" title="Upload into a new folder">New folder</button>
           <button class="asset-lib-btn asset-lib-icon" data-act="view" title="${this.view === 'grid' ? 'List view' : 'Grid view'}">${this.view === 'grid' ? '☰' : '▦'}</button>
@@ -192,7 +206,7 @@ export class AssetPanelManager {
         <div class="asset-lib-body ${this.view}">
           ${rows.length ? rows.map((a, i) => this.cell(a, i)).join('') : `<div class="asset-lib-empty">${this.rows.length ? 'Nothing matches that filter.' : 'No assets yet. Upload one — or drop an image on the canvas.'}</div>`}
         </div>
-        <div class="asset-lib-foot">${this.rows.length} asset${this.rows.length === 1 ? '' : 's'} · ${esc(this.project ?? '')}</div>
+        <div class="asset-lib-foot">${this.rows.filter(r => !isShared(r.path)).length} in ${esc(this.project ?? '')} · ${this.rows.filter(r => isShared(r.path)).length} shared</div>
         <input type="file" multiple accept="${KIND_ACCEPT}" class="asset-lib-file" hidden>
       </div>`;
 
@@ -236,14 +250,25 @@ export class AssetPanelManager {
     // A folder chosen by "New folder" applies to the NEXT upload only — the
     // picker is the moment the operator is thinking about where it goes.
     let pendingFolder: string | null = null;
+    let pendingScope: 'project' | 'library' = 'project';
     fileInput?.addEventListener('change', () => {
       const files = fileInput.files;
-      if (files && files.length) void this.upload(files, pendingFolder ?? (this.folder ?? ''));
+      if (files && files.length) void this.upload(files, pendingFolder ?? (this.folder ?? ''), pendingScope);
       pendingFolder = null;
+      pendingScope = 'project';
       fileInput.value = '';
     });
 
     q('[data-act="upload"]')?.addEventListener('click', () => fileInput?.click());
+    q('[data-act="uploadshared"]')?.addEventListener('click', () => {
+      // The folder IS the filing system in the shared library, so it is asked
+      // for up front rather than dumping everything at the root.
+      const name = window.prompt('File it under which shared folder? (e.g. "microsoft/logos")', this.folder || '');
+      if (name === null) return;
+      pendingFolder = name;
+      pendingScope = 'library';
+      fileInput?.click();
+    });
     q('[data-act="newfolder"]')?.addEventListener('click', () => {
       const name = window.prompt('Upload into which folder?', this.folder || 'screenshots');
       if (name === null) return;
@@ -266,7 +291,15 @@ export class AssetPanelManager {
     this.container.querySelectorAll<HTMLElement>('.asset-lib-chip').forEach(el => {
       el.addEventListener('click', () => {
         const v = el.dataset['folder'] ?? '';
-        this.folder = v === 'all' ? null : v;
+        if (v.startsWith('store:')) {
+          const want = v.slice('store:'.length) === 'library' ? 'library' : 'project';
+          // Tapping the active store chip clears it rather than trapping you.
+          this.store = this.store === want ? 'all' : want;
+          this.folder = null;
+        } else {
+          this.folder = v === 'all' ? null : v;
+          if (v === 'all') this.store = 'all';
+        }
         this.render();
       });
     });

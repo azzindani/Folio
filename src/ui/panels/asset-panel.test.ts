@@ -62,8 +62,8 @@ describe('AssetPanelManager (file manager)', () => {
     await open();
     expect(container.querySelectorAll('.asset-lib-item')).toHaveLength(3);
     const chips = [...container.querySelectorAll('.asset-lib-chip')].map(c => c.textContent);
-    expect(chips).toEqual(['All', 'Root', 'power-automate']);
-    expect(container.querySelector('.asset-lib-foot')?.textContent).toContain('3 assets');
+    expect(chips).toEqual(['All', '◆ Shared', 'This project', 'Root', 'power-automate']);
+    expect(container.querySelector('.asset-lib-foot')?.textContent).toContain('3 in my-project');
   });
 
   it('filters to a folder, and to the root', async () => {
@@ -219,5 +219,60 @@ describe('AssetPanelManager (file manager)', () => {
     const panel = new AssetPanelManager(container, state);
     panel.setProject(null, null);
     expect(container.querySelector('.asset-lib-empty')?.textContent).toContain('Open a design');
+  });
+});
+
+describe('AssetPanelManager — shared library', () => {
+  let container: HTMLElement, state: StateManager;
+  const shared = [
+    { id: 'mine', path: 'assets/images/mine.png', kind: 'images', bytes: 10, width: 4, height: 4 },
+    { id: 'pa', path: 'lib/microsoft/logos/pa.svg', kind: 'images', folder: 'microsoft/logos', bytes: 20, width: 8, height: 8 },
+  ];
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    state = new StateManager();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ ok: true, assets: shared, folders: [], library_folders: ['microsoft', 'microsoft/logos'] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )));
+  });
+  afterEach(() => { container.remove(); vi.unstubAllGlobals(); });
+
+  const open = async (): Promise<AssetPanelManager> => {
+    const panel = new AssetPanelManager(container, state);
+    panel.setProject('my-project', 'tok');
+    await settle();
+    return panel;
+  };
+
+  it('lists project and shared assets together, and counts them apart', async () => {
+    await open();
+    expect(container.querySelectorAll('.asset-lib-item')).toHaveLength(2);
+    expect(container.querySelector('.asset-lib-foot')?.textContent).toContain('1 in my-project');
+    expect(container.querySelector('.asset-lib-foot')?.textContent).toContain('1 shared');
+  });
+
+  it('the Shared chip narrows to library assets and swaps in the library folders', async () => {
+    await open();
+    const chips = [...container.querySelectorAll<HTMLElement>('.asset-lib-chip')];
+    const sharedChip = chips.find(c => c.textContent?.includes('Shared'));
+    sharedChip?.click();
+    await settle();
+    expect(container.querySelectorAll('.asset-lib-item')).toHaveLength(1);
+    const after = [...container.querySelectorAll('.asset-lib-chip')].map(c => c.textContent);
+    expect(after).toContain('microsoft/logos');
+  });
+
+  it('offers a shared upload that files into a nested folder', async () => {
+    await open();
+    const btn = container.querySelector<HTMLElement>('[data-act="uploadshared"]');
+    expect(btn).toBeTruthy();
+    vi.stubGlobal('prompt', vi.fn(() => 'microsoft/logos'));
+    const input = container.querySelector<HTMLInputElement>('.asset-lib-file');
+    const clicked = vi.fn();
+    if (input) input.click = clicked;
+    btn?.click();
+    expect(clicked).toHaveBeenCalled();
   });
 });
