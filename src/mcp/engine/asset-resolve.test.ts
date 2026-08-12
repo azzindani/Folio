@@ -178,7 +178,7 @@ describe('shared library srcs', () => {
     const spec = makeSpec([img('a', 'lib/microsoft/logos/pa.png')]);
     const notes = resolveImageAssets(spec, dPath, proj);
     expect(notes).toEqual([]);
-    expect(String((spec.layers[0] as unknown as { src: string }).src)).toMatch(/^data:image\/png;base64,/);
+    expect(String(((spec.layers ?? [])[0] as unknown as { src: string }).src)).toMatch(/^data:image\/png;base64,/);
   });
 
   it('lets the project shadow a library path with its own copy', () => {
@@ -189,7 +189,7 @@ describe('shared library srcs', () => {
     const spec = makeSpec([img('a', 'lib/microsoft/logos/pa.png')]);
     expect(resolveImageAssets(spec, dPath, proj)).toEqual([]);
     // The project's file won — it is an SVG, the library's is a PNG.
-    expect(String((spec.layers[0] as unknown as { src: string }).src)).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(String(((spec.layers ?? [])[0] as unknown as { src: string }).src)).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
   it('names the library in the note when a lib/ path is missing', () => {
@@ -205,6 +205,6 @@ describe('shared library srcs', () => {
     // project-relative search runs, and it finds nothing here.
     const spec = makeSpec([img('a', 'lib/../../nowhere/outside.png')]);
     expect(resolveImageAssets(spec, dPath, proj)).toHaveLength(1);
-    expect(String((spec.layers[0] as unknown as { src: string }).src)).toBe('');
+    expect(String(((spec.layers ?? [])[0] as unknown as { src: string }).src)).toBe('');
   });
 });
