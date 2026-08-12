@@ -31,7 +31,12 @@ export const ASSET_STYLE = `
 .achip{min-height:36px;padding:0 12px;white-space:nowrap;border-radius:18px;border:1px solid var(--bd2);
   background:var(--panel2);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer}
 .achip.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.agrid{flex:1;overflow-y:auto;padding:12px;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));align-content:start}
+/* grid-auto-rows: .acard sets overflow:hidden → automatic minimum size 0, and
+   this grid has a definite height, so plain auto rows collapse every card to
+   its borders once the list is longer than the drawer. Same fix as
+   .asset-lib-body in main.css. */
+.agrid{flex:1;overflow-y:auto;padding:12px;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  grid-auto-rows:max-content;align-content:start}
 .acard{border:1px solid var(--bd);border-radius:10px;overflow:hidden;background:var(--panel2)}
 .acard img,.acard .afont{width:100%;height:104px;object-fit:cover;display:block;background:var(--bd)}
 .acard .afont{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--mut)}

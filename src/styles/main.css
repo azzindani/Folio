@@ -572,7 +572,22 @@ html, body {
   font-size: 12px; font-weight: 600; cursor: pointer;
 }
 .asset-lib-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-.asset-lib-body { flex: 1; overflow-y: auto; padding: 8px; display: grid; gap: 8px; }
+/* grid-auto-rows is load-bearing, not cosmetic — measured in a real browser
+   against a 51-asset library, where the grid collapsed into a stack of 2px
+   borders.
+     .asset-lib-item sets overflow:hidden, which makes it a scroll container,
+   which makes its automatic minimum size ZERO. The body has a DEFINITE height
+   (flex:1), so its implicit `auto` rows sized themselves to that zero and every
+   card flattened to its borders. Pinning the rows to max-content sizes each
+   track to the card it holds, and the container scrolls — which is what
+   overflow-y is there for. align-items:start does NOT fix this: it frees the
+   card's own height but leaves the 2px track, so the cards then overlap.
+     align-content:start covers the opposite end: with only a few assets the
+   default distribution would stretch those rows to fill the panel. */
+.asset-lib-body {
+  flex: 1; overflow-y: auto; padding: 8px; display: grid; gap: 8px;
+  grid-auto-rows: max-content; align-content: start;
+}
 .asset-lib-body.grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .asset-lib-body.list { grid-template-columns: 1fr; }
 .asset-lib-item {
