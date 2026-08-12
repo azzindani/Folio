@@ -199,12 +199,57 @@ describe('shared library srcs', () => {
     expect(notes[0]).toContain('scope:"library"');
   });
 
-  it('builds no library candidate for a lib path that climbs out of the root', () => {
-    // libraryAbsPath refuses it (covered in asset-library.test.ts), so the
-    // library is never consulted for an escaping path — only the ordinary
-    // project-relative search runs, and it finds nothing here.
-    const spec = makeSpec([img('a', 'lib/../../nowhere/outside.png')]);
-    expect(resolveImageAssets(spec, dPath, proj)).toHaveLength(1);
+  it('refuses a lib path that climbs out of the library root', () => {
+    fs.writeFileSync(path.join(tmp, 'outside.png'), Buffer.from(PNG_B64, 'base64'));
+    const spec = makeSpec([img('a', 'lib/../../outside.png')]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect(notes[0]).toContain('points outside the project');
     expect(String(((spec.layers ?? [])[0] as unknown as { src: string }).src)).toBe('');
+  });
+});
+
+describe('resolveImageAssets — an src may not leave the project', () => {
+  let tmp: string, proj: string, dPath: string;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-escape-'));
+    proj = path.join(tmp, 'proj');
+    fs.mkdirSync(path.join(proj, 'designs'), { recursive: true });
+    fs.mkdirSync(path.join(proj, 'assets/images'), { recursive: true });
+    fs.writeFileSync(path.join(proj, 'assets/images/dot.png'), Buffer.from(PNG_B64, 'base64'));
+    // The file a malicious/careless src would try to reach. It is a real image
+    // so nothing but the containment check can stop it being embedded.
+    fs.writeFileSync(path.join(tmp, 'secret.png'), Buffer.from(PNG_B64, 'base64'));
+    dPath = path.join(proj, 'designs/d.design.yaml');
+  });
+  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  const srcOf = (spec: DesignSpec): string => String(((spec.layers ?? [])[0] as unknown as { src: string }).src);
+
+  it('refuses a relative src that climbs out of the project', () => {
+    const spec = makeSpec([img('a', '../../secret.png')]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect(srcOf(spec)).toBe('');
+    expect(notes[0]).toContain('points outside the project');
+  });
+
+  it('refuses an absolute src, however real the file is', () => {
+    const spec = makeSpec([img('a', path.join(tmp, 'secret.png'))]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect(srcOf(spec)).toBe('');
+    expect(notes[0]).toContain('points outside the project');
+  });
+
+  it('refuses an escaping path in an image FILL too', () => {
+    const rect = { id: 'r', type: 'rect', x: 0, y: 0, width: 10, height: 10, fill: { type: 'image', src: '../../secret.png' } } as unknown as Layer;
+    const spec = makeSpec([rect]);
+    const notes = resolveImageAssets(spec, dPath, proj);
+    expect((spec.layers?.[0] as Layer & { fill: { type: string } }).fill.type).toBe('solid');
+    expect(notes[0]).toContain('points outside the project');
+  });
+
+  it('still allows ../ that stays INSIDE the project', () => {
+    const spec = makeSpec([img('a', '../assets/images/dot.png')]);
+    expect(resolveImageAssets(spec, dPath, proj)).toEqual([]);
+    expect(srcOf(spec)).toMatch(/^data:image\/png;base64,/);
   });
 });
