@@ -3,6 +3,21 @@
   "updated": "2026-08-14",
   "assets": [
     {
+      "id": "shadowed",
+      "path": "lib/brand/shadowed.svg",
+      "kind": "images",
+      "folder": "brand",
+      "bytes": 141,
+      "sha256": "46560814cb79e2f5e5fa61463bf0da8fec2987a80398b91c0342b56b2b76faec",
+      "width": 100,
+      "height": 100,
+      "dominant_colors": [
+        "#2b4af2"
+      ],
+      "luminance": "dark",
+      "added": "2026-08-14"
+    },
+    {
       "id": "shared-mark",
       "path": "lib/brand/shared-mark.svg",
       "kind": "images",

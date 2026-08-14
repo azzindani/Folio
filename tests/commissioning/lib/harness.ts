@@ -37,10 +37,13 @@ export interface Region {
 export interface InkStat {
   id: string;
   kind: string;
-  /** Fraction of sampled pixels differing from the region's modal colour. */
+  /** Fraction of pixels differing from the artifact's background colour. */
   inkRatio: number;
   /** Distinct quantised colours seen. 1 ⇒ a flat, empty region. */
   colours: number;
+  /** The region's dominant non-background colour as #rrggbb ('' if none) —
+   *  enough to tell WHICH file won a lookup, not just that something painted. */
+  dominant: string;
 }
 
 // ── server engine ────────────────────────────────────────────────────────────

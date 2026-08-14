@@ -74,19 +74,29 @@ export async function measureInk(page: Page, src: string, regions: Region[]): Pr
 
       const counts = new Map<number, number>();
       let differing = 0, total = 0;
+      // Track the dominant NON-background colour at full precision, so a check
+      // can say "the orange copy won", not merely "something painted".
+      const inkCounts = new Map<string, number>();
       for (let i = 0; i < data.length; i += 4) {
         const a = data[i + 3] ?? 0;
         // Quantise to 4 bits/channel: anti-aliasing must not read as variety.
         const key = a < 8 ? -1 : (((data[i] ?? 0) >> 4) << 8) | (((data[i + 1] ?? 0) >> 4) << 4) | ((data[i + 2] ?? 0) >> 4);
         counts.set(key, (counts.get(key) ?? 0) + 1);
         total++;
-        if (key !== pageColour) differing++;
+        if (key !== pageColour) {
+          differing++;
+          const hex = `#${[data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]
+            .map(v => (v >> 4 << 4).toString(16).padStart(2, '0')).join('')}`;
+          inkCounts.set(hex, (inkCounts.get(hex) ?? 0) + 1);
+        }
       }
+      let dominant = '', domBest = 0;
+      for (const [hex, n] of inkCounts) if (n > domBest) { domBest = n; dominant = hex; }
       // Ink = "differs from the PAGE background", not "varies internally". A
       // solid-colour logo is perfectly uniform, and a variety-only metric calls
       // it missing — the exact false alarm this comparison removes.
       return {
-        id: r.id, kind: r.kind, colours: counts.size,
+        id: r.id, kind: r.kind, colours: counts.size, dominant,
         inkRatio: total > 0 ? differing / total : 0,
       };
     });
@@ -97,4 +107,14 @@ export async function measureInk(page: Page, src: string, regions: Region[]): Pr
 export async function pageInk(page: Page, src: string): Promise<{ inkRatio: number; colours: number }> {
   const [stat] = await measureInk(page, src, [{ id: 'page', kind: 'image', x: 0, y: 0, w: 1, h: 1 }]);
   return { inkRatio: stat?.inkRatio ?? 0, colours: stat?.colours ?? 0 };
+}
+
+/** Load a standalone artifact (an exported HTML file) and measure what it
+ *  paints on its own — the real question for a "self-contained" export. */
+export async function inkOfStandaloneFile(page: Page, file: string): Promise<{ inkRatio: number; colours: number }> {
+  await page.goto(`file://${file}`, { waitUntil: 'load' });
+  await page.evaluate(() => document.fonts?.ready);
+  await page.waitForTimeout(1500);
+  const shot = await page.screenshot({ fullPage: false });
+  return pageInk(page, `data:image/png;base64,${shot.toString('base64')}`);
 }
