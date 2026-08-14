@@ -90,3 +90,6 @@ tools/harness-suite/results*.json
 *.xlsx
 *.xls
 tests/commissioning/report/
+# Commissioning fixtures are inputs; these are written by the engine at run time.
+tests/commissioning/fixtures/projects/.short-links.json
+tests/commissioning/fixtures/projects/.library/assets/index.json

@@ -1,0 +1,42 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — lookup order. The SAME lib/ path exists in both
+# stores: blue in the shared library, orange in the project. The documented
+# contract is project-first, so the exported square must come out ORANGE.
+# Colour is the only way to tell which file won; "an image rendered" cannot.
+
+meta:
+  id: "commissioning-shadowing"
+  name: "Store Shadowing"
+  type: poster
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+
+document:
+  width: 400
+  height: 400
+  unit: px
+  dpi: 96
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 400
+    height: 400
+    fill:
+      type: solid
+      color: "#FFFFFF"
+
+  - id: shadowed
+    type: image
+    z: 5
+    x: 100
+    y: 100
+    width: 200
+    height: 200
+    src: "lib/brand/shadowed.svg"
