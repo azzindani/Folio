@@ -228,3 +228,55 @@ describe('expandPositionShorthand', () => {
     expect(result.y).toBe(10);
   });
 });
+
+describe('flat text styling', () => {
+  const textLayer = (extra: Record<string, unknown>): Parameters<typeof validateLayer>[0] =>
+    ({ id: 't', type: 'text', z: 1, content: { type: 'plain', value: 'hi' }, ...extra }) as Parameters<typeof validateLayer>[0];
+
+  it('warns for a canonical style key written at layer level', () => {
+    const errors = validateLayer(textLayer({ font_size: 64 }), 'layers[0]');
+    const warn = errors.find(e => e.path === 'layers[0].font_size');
+    expect(warn?.severity).toBe('warning');
+    // The message has to say where it goes, or the reader is no better off.
+    expect(warn?.message).toContain('style.font_size');
+    expect(warn?.message).toContain('size');       // the layer-level alias
+  });
+
+  it('names every ignored key, not just the first', () => {
+    const errors = validateLayer(
+      textLayer({ font_family: 'Anton', font_weight: 700, letter_spacing: 2 }), 'l');
+    expect(errors.filter(e => e.severity === 'warning').map(e => e.path).sort())
+      .toEqual(['l.font_family', 'l.font_weight', 'l.letter_spacing']);
+  });
+
+  it('stays quiet when the styling is nested correctly', () => {
+    const errors = validateLayer(
+      textLayer({ style: { font_size: 64, font_family: 'Anton' } }), 'l');
+    expect(errors.filter(e => e.severity === 'warning')).toEqual([]);
+  });
+
+  it('does not flag keys that DO work at layer level', () => {
+    // normalizeTextLayer lifts these; warning about them would be a false alarm.
+    const errors = validateLayer(
+      textLayer({ color: '#101418', size: 64, font: 'Anton', weight: 700, lh: 1.2, track: 2 }), 'l');
+    expect(errors.filter(e => e.severity === 'warning')).toEqual([]);
+  });
+
+  it('leaves non-text layers alone — font_size on a rect is not text styling', () => {
+    const errors = validateLayer({ id: 'r', type: 'rect', z: 1, font_size: 64 } as unknown as Parameters<typeof validateLayer>[0], 'l');
+    expect(errors.filter(e => e.severity === 'warning')).toEqual([]);
+  });
+
+  it('never blocks an export — the design still renders, just plainly', () => {
+    const errors = validateLayer(textLayer({ font_size: 64 }), 'l');
+    expect(errors.filter(e => e.severity === 'error')).toEqual([]);
+  });
+
+  it('reaches validateDesignSpec, including layers nested in a group', () => {
+    const errors = validateDesignSpec({
+      document: { width: 100, height: 100 },
+      layers: [{ id: 'g', type: 'group', z: 1, layers: [textLayer({ font_size: 40 })] }],
+    } as unknown as Parameters<typeof validateDesignSpec>[0]);
+    expect(errors.some(e => e.severity === 'warning' && e.path.endsWith('.font_size'))).toBe(true);
+  });
+});

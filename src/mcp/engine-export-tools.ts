@@ -18,7 +18,7 @@ import type { TemplateSlot } from '../schema/template';
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 
-import { analyzeLayers, type Finding } from './engine/diagnose';
+import { analyzeLayers, flatTextStyleFindings, type Finding } from './engine/diagnose';
 import { buildEditorLink } from './engine/editor-link';
 import { resolveBuiltinTemplate } from './engine/builtin-templates';
 
@@ -404,6 +404,9 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
 
   // Image audit — unresolvable srcs (would blank in exports) + distortion/upscale.
   findings.push(...auditImageAssets(spec, dPath, args.project_path));
+
+  // Styling written at layer level that the renderer ignores (see diagnose.ts).
+  findings.push(...flatTextStyleFindings(spec));
 
   // Mark geometry — only for designs shaped like an identity mark. Measuring a
   // nine-page carousel at six raster sizes would cost seconds and say nothing.

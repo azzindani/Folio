@@ -33,6 +33,54 @@ const VALID_PATTERN_NAMES = new Set([
   'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
 ]);
 
+/**
+ * Text style keys that do NOTHING when written at layer level.
+ *
+ * renderText reads typography from `layer.style`, and normalizeTextLayer lifts
+ * only the SHORT aliases from the layer itself — font, size, weight, color, lh,
+ * track. So `size: 64` on the layer works while `font_size: 64` on the layer is
+ * dropped, and the design renders at the 16px default with no error anywhere.
+ * The canonical name in the wrong place is the easiest version of this mistake
+ * to make, because it is the name the docs and the type both use.
+ *
+ * `color` and the short aliases are deliberately absent from this list: they
+ * ARE honoured at layer level, so flagging them would be a false alarm.
+ */
+const FLAT_TEXT_STYLE_KEYS = [
+  'font_family', 'font_size', 'font_weight', 'line_height', 'letter_spacing',
+  'word_spacing', 'align', 'text_align', 'vertical_align', 'text_decoration',
+  'text_transform', 'font_style', 'font_variation_settings', 'font_feature_settings',
+  'highlight', 'text_path',
+] as const;
+
+/** Short alias accepted at layer level for the same property, when one exists. */
+const SHORT_ALIAS: Record<string, string> = {
+  font_family: 'font', font_size: 'size', font_weight: 'weight',
+  line_height: 'lh', letter_spacing: 'track',
+};
+
+/**
+ * Warn when a text layer carries styling that will be silently ignored.
+ * Exported so diagnose_design can surface it alongside its own findings.
+ */
+export function findFlatTextStyle(layer: Partial<BaseLayer>, path: string): ValidationError[] {
+  if (layer.type !== 'text') return [];
+  const o = layer as unknown as Record<string, unknown>;
+  const out: ValidationError[] = [];
+  for (const key of FLAT_TEXT_STYLE_KEYS) {
+    if (o[key] === undefined) continue;
+    const alias = SHORT_ALIAS[key];
+    out.push({
+      severity: 'warning',
+      path: `${path}.${key}`,
+      message: `"${key}" sits on the layer, where it is ignored — text styling is read from "style". `
+        + `Move it to style.${key}${alias ? ` (or use the layer-level alias "${alias}")` : ''}, `
+        + `or this text renders with default typography.`,
+    });
+  }
+  return out;
+}
+
 export function validateLayer(layer: Partial<BaseLayer>, path: string): ValidationError[] {
   const errors: ValidationError[] = [];
 
@@ -61,6 +109,7 @@ export function validateLayer(layer: Partial<BaseLayer>, path: string): Validati
     if (!textLayer.content) {
       errors.push({ severity: 'error', path: `${path}.content`, message: 'Text layer requires content' });
     }
+    errors.push(...findFlatTextStyle(layer, path));
   }
 
   // Check component layer has ref

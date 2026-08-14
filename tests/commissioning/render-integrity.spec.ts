@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { designPath, serverExport, openDesign, collectRegions } from './lib/harness';
+import { designPath, serverExport, serverDiagnose, openDesign, collectRegions } from './lib/harness';
 import { measureInk, pageInk, fileToDataUri } from './lib/ink';
 
 /**
@@ -88,4 +88,30 @@ test('a src that climbs out of the project never embeds file bytes', () => {
   // bytes still get inlined into the artifact.
   expect(svg).not.toContain('/etc/');
   expect(svg).not.toMatch(/href="\.\.\//);
+});
+
+test('styling written in the wrong place is REPORTED, not silently ignored', () => {
+  // Typography is read from `style`; the same key at layer level does nothing
+  // (only the short aliases font/size/weight/color/lh/track are lifted). The
+  // design still renders, just with default type — so nothing else notices, and
+  // the author sees a finished-looking poster that is quietly wrong.
+  const res = serverDiagnose(designPath('flat-style'));
+  expect(res.error ?? '', 'diagnose must not error').toBe('');
+
+  const flagged = res.findings.filter(f => f.code === 'text_style_flat');
+  expect(flagged.length, `no text_style_flat finding:\n${
+    res.findings.map(f => `${f.code}: ${f.message}`).join('\n')}`).toBeGreaterThanOrEqual(2);
+
+  // It must name the layer and say where the property belongs.
+  expect(flagged.every(f => f.layer_id === 'title'), 'wrong layer blamed').toBe(true);
+  expect(flagged.map(f => f.message).join(' ')).toContain('style.font_size');
+
+  // …and must NOT flag the layer that nests its styling correctly.
+  expect(flagged.some(f => f.layer_id === 'subtitle'), 'correct styling was flagged').toBe(false);
+});
+
+test('a design with misplaced styling still exports — the warning does not block', () => {
+  const res = serverExport(designPath('flat-style'), 'png', path.join(OUT, 'flat-style.png'));
+  expect(res.ok, 'a warning must never fail an export').toBe(true);
+  expect(res.files.length).toBe(1);
 });

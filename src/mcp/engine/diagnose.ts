@@ -5,6 +5,7 @@
 // structured findings with fixes. Pure — no I/O.
 
 import type { Layer } from '../../schema/types';
+import { findFlatTextStyle } from '../../schema/validator';
 import { lintComposition, reviewComposition } from './design-lint';
 import { lintAiSlop } from './ai-slop-lint';
 import { findTextOverflows } from './text-measure';
@@ -200,5 +201,39 @@ export function analyzeLayers(layers: Layer[], W: number, H: number): Finding[] 
       fix: `Keep one and remove_layer the others: ${ids.slice(0, -1).join(', ')}.`,
     });
   }
+  return out;
+}
+
+/**
+ * Styling written at layer level, where the renderer never looks.
+ *
+ * Typography comes from `layer.style`; normalizeTextLayer lifts only the SHORT
+ * aliases (font, size, weight, color, lh, track) off the layer itself. So
+ * `font_size: 64` on the layer is dropped and the text renders at the 16px
+ * default — a design that looks finished and is quietly wrong, which nothing
+ * else in the diagnosis notices because it renders perfectly well.
+ *
+ * Detection lives in the validator (one definition of the rule); this walks the
+ * tree and shapes the result as diagnose findings.
+ */
+export function flatTextStyleFindings(spec: {
+  layers?: Layer[];
+  pages?: Array<{ id: string; layers?: Layer[] }>;
+}): (Finding & { page?: string })[] {
+  const out: (Finding & { page?: string })[] = [];
+  const walk = (layers: Layer[] | undefined, base: string, pageId?: string): void => {
+    for (const [i, l] of (layers ?? []).entries()) {
+      for (const w of findFlatTextStyle(l, `${base}[${i}]`)) {
+        out.push({
+          code: 'text_style_flat', severity: 'warning', message: w.message,
+          layer_id: l.id, fix: 'Nest the property under the layer\'s "style" object.',
+          ...(pageId ? { page: pageId } : {}),
+        });
+      }
+      if (l.type === 'group') walk((l as Layer & { layers?: Layer[] }).layers, `${base}[${i}].layers`, pageId);
+    }
+  };
+  walk(spec.layers, 'layers');
+  for (const p of spec.pages ?? []) walk(p.layers, `pages.${p.id}.layers`, p.id);
   return out;
 }
