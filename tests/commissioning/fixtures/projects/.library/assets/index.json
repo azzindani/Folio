@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "updated": "2026-08-14",
+  "assets": [
+    {
+      "id": "shared-mark",
+      "path": "lib/brand/shared-mark.svg",
+      "kind": "images",
+      "folder": "brand",
+      "bytes": 188,
+      "sha256": "293f291889ce88eea580fc943b53cf00a0c3e070974d335a76ce355ad0e6e792",
+      "width": 120,
+      "height": 120,
+      "dominant_colors": [
+        "#2b4af2",
+        "#ffffff"
+      ],
+      "luminance": "light",
+      "added": "2026-08-14"
+    },
+    {
+      "id": "swatch",
+      "path": "lib/brand/swatch.png",
+      "kind": "images",
+      "folder": "brand",
+      "bytes": 74,
+      "sha256": "2e1026bef21c54515238f9d56ae56b977f0c9d2e5c8dc96a9426c1e32b0dc3fe",
+      "width": 8,
+      "height": 8,
+      "dominant_colors": [
+        "#2e8b57"
+      ],
+      "luminance": "dark",
+      "added": "2026-08-14"
+    }
+  ]
+}

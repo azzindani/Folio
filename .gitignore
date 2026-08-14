@@ -89,3 +89,4 @@ tools/harness-suite/results*.json
 # repo at /root/folio-content/ so it cannot be committed by accident.
 *.xlsx
 *.xls
+tests/commissioning/report/

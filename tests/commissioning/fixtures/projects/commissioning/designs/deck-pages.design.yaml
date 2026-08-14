@@ -1,0 +1,124 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — multi-page. Each page carries its own asset so a
+# per-page export can be checked page by page: "8 files written" means nothing
+# if page 6 came out empty.
+
+meta:
+  id: "commissioning-deck"
+  name: "Commissioning Deck"
+  type: carousel
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+  generation:
+    status: complete
+    total_pages: 3
+    completed_pages: 3
+
+document:
+  width: 600
+  height: 600
+  unit: px
+  dpi: 96
+
+pages:
+  - id: page_1
+    label: "One"
+    layers:
+      - id: p1-bg
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 600
+        height: 600
+        fill:
+          type: solid
+          color: "#FFFFFF"
+      - id: p1-title
+        type: text
+        z: 5
+        x: 50
+        y: 60
+        width: 500
+        height: 70
+        content: "Page One"
+        font_size: 48
+        font_weight: 700
+        color: "#101418"
+      - id: p1-mark
+        type: image
+        z: 5
+        x: 210
+        y: 240
+        width: 180
+        height: 180
+        src: "assets/images/project-mark.svg"
+
+  - id: page_2
+    label: "Two"
+    layers:
+      - id: p2-bg
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 600
+        height: 600
+        fill:
+          type: solid
+          color: "#FFFFFF"
+      - id: p2-title
+        type: text
+        z: 5
+        x: 50
+        y: 60
+        width: 500
+        height: 70
+        content: "Page Two"
+        font_size: 48
+        font_weight: 700
+        color: "#101418"
+      - id: p2-mark
+        type: image
+        z: 5
+        x: 210
+        y: 240
+        width: 180
+        height: 180
+        src: "lib/brand/shared-mark.svg"
+
+  - id: page_3
+    label: "Three"
+    layers:
+      - id: p3-bg
+        type: rect
+        z: 0
+        x: 0
+        y: 0
+        width: 600
+        height: 600
+        fill:
+          type: solid
+          color: "#FFFFFF"
+      - id: p3-title
+        type: text
+        z: 5
+        x: 50
+        y: 60
+        width: 500
+        height: 70
+        content: "Page Three"
+        font_size: 48
+        font_weight: 700
+        color: "#101418"
+      - id: p3-mark
+        type: image
+        z: 5
+        x: 210
+        y: 240
+        width: 180
+        height: 180
+        src: "lib/brand/swatch.png"

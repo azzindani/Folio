@@ -1,0 +1,52 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — the two srcs that must NOT silently vanish.
+#
+# `escapes` climbs out of the project; `absent` names a file that isn't there.
+# Both must render a visible placeholder AND report a note. A silent blank is
+# the failure mode: the design looks finished and ships with a hole in it.
+
+meta:
+  id: "commissioning-unresolvable"
+  name: "Unresolvable Sources"
+  type: poster
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+
+document:
+  width: 600
+  height: 400
+  unit: px
+  dpi: 96
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 600
+    height: 400
+    fill:
+      type: solid
+      color: "#FFFFFF"
+
+  - id: escapes
+    type: image
+    z: 5
+    x: 60
+    y: 120
+    width: 160
+    height: 160
+    src: "../../../../../../etc/hostname.png"
+
+  - id: absent
+    type: image
+    z: 5
+    x: 380
+    y: 120
+    width: 160
+    height: 160
+    src: "lib/brand/does-not-exist.svg"

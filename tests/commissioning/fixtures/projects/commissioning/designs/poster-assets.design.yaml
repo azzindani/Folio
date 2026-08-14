@@ -1,0 +1,99 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — every asset store and reference style the engine
+# supports, each on a PLAIN background so a missing one leaves a provably
+# uniform region. Do not "tidy" the layout: the gaps between marks are what
+# make per-region ink measurement unambiguous.
+
+meta:
+  id: "commissioning-poster"
+  name: "Commissioning Poster"
+  type: poster
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+
+document:
+  width: 800
+  height: 800
+  unit: px
+  dpi: 96
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 800
+    height: 800
+    fill:
+      type: solid
+      color: "#FFFFFF"
+
+  - id: title
+    type: text
+    z: 5
+    x: 60
+    y: 70
+    width: 680
+    height: 90
+    content: "Commissioning"
+    font_size: 64
+    font_weight: 700
+    color: "#101418"
+
+  # Project store — assets/images/<file>
+  - id: mark-project
+    type: image
+    z: 5
+    x: 60
+    y: 260
+    width: 180
+    height: 180
+    src: "assets/images/project-mark.svg"
+
+  # Shared library — lib/<folders>/<file>
+  - id: mark-shared
+    type: image
+    z: 5
+    x: 310
+    y: 260
+    width: 180
+    height: 180
+    src: "lib/brand/shared-mark.svg"
+
+  # Raster from the shared library (exercises the PNG decode path)
+  - id: mark-raster
+    type: image
+    z: 5
+    x: 560
+    y: 260
+    width: 180
+    height: 180
+    src: "lib/brand/swatch.png"
+
+  # An image FILL renders as <image> inside <pattern> — a different code path
+  # from an image LAYER, and the one that carries xlink:href as well as href.
+  - id: fill-shape
+    type: rect
+    z: 5
+    x: 60
+    y: 520
+    width: 180
+    height: 180
+    fill:
+      type: image
+      src: "lib/brand/shared-mark.svg"
+
+  - id: body
+    type: text
+    z: 5
+    x: 310
+    y: 545
+    width: 430
+    height: 140
+    content: "Each mark above comes from a different store. If one is missing, the export engine dropped it."
+    font_size: 24
+    color: "#3A4149"
