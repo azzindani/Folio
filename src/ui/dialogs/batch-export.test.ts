@@ -284,7 +284,7 @@ describe('BatchExportDialog', () => {
   it('successful multi-page export closes dialog after delay', async () => {
     vi.useFakeTimers();
     const { exportToSVGEmbedded } = await import('../../export/exporter');
-    vi.mocked(exportToSVGEmbedded).mockReturnValue('<svg></svg>');
+    vi.mocked(exportToSVGEmbedded).mockResolvedValue('<svg></svg>');
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(2), 0);
     const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
