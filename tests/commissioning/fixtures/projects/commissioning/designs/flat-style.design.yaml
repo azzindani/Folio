@@ -1,0 +1,62 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — styling in the wrong place.
+#
+# `title` writes font_size/font_family AT LAYER LEVEL, where the renderer does
+# not look: typography is read from `style`, and only the SHORT aliases (font,
+# size, weight, color, lh, track) are lifted from the layer itself. So this
+# renders at the 16px Inter default while claiming 64px Anton — a design that
+# looks finished and is quietly wrong.
+#
+# `subtitle` nests correctly and must NOT be flagged.
+
+meta:
+  id: "commissioning-flat-style"
+  name: "Flat Style"
+  type: poster
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+
+document:
+  width: 600
+  height: 400
+  unit: px
+  dpi: 96
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 600
+    height: 400
+    fill:
+      type: solid
+      color: "#FFFFFF"
+
+  - id: title
+    type: text
+    z: 5
+    x: 40
+    y: 60
+    width: 520
+    height: 90
+    content: "Ignored styling"
+    font_size: 64
+    font_family: "Anton"
+
+  - id: subtitle
+    type: text
+    z: 5
+    x: 40
+    y: 200
+    width: 520
+    height: 60
+    content: "Correctly nested"
+    style:
+      font_size: 28
+      font_family: "Inter"
+      color: "#3A4149"

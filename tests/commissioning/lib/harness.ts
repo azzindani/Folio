@@ -88,6 +88,40 @@ export function serverExport(design: string, format: string, outPath: string): S
   return { ok: res.success === true, files, notes: res.notes ?? [] };
 }
 
+export interface DiagnoseResult {
+  ok: boolean;
+  findings: Array<{ code: string; severity: string; message: string; layer_id?: string }>;
+  error?: string;
+}
+
+/** Run diagnose_design through the real engine — the surface a model reads. */
+export function serverDiagnose(design: string): DiagnoseResult {
+  const script = `
+    import { diagnoseDesign } from ${JSON.stringify(path.join(REPO_ROOT, 'src/mcp/engine-export-tools.ts'))};
+    const res = diagnoseDesign({
+      design_path: ${JSON.stringify(design)},
+      project_path: ${JSON.stringify(FIXTURE_PROJECT)},
+    });
+    process.stdout.write('@@' + JSON.stringify(res) + '@@');
+  `;
+  const run = spawnSync('bun', ['run', '-'], {
+    input: script, cwd: REPO_ROOT, encoding: 'utf8', timeout: 180_000,
+    env: { ...process.env, FOLIO_PROJECTS_DIR: FIXTURE_PROJECTS, FOLIO_LIBRARY_DIR: LIBRARY_DIR },
+  });
+  const raw = run.stdout?.match(/@@([\s\S]*?)@@/)?.[1];
+  if (!raw) return { ok: false, findings: [], error: (run.stderr || 'no output').slice(0, 400) };
+  const res = JSON.parse(raw) as {
+    success?: boolean;
+    findings?: Array<{ code: string; severity: string; message: string; layer_id?: string }>;
+    errors?: Array<{ code: string; severity: string; message: string; layer_id?: string }>;
+    warnings?: Array<{ code: string; severity: string; message: string; layer_id?: string }>;
+    suggestions?: Array<{ code: string; severity: string; message: string; layer_id?: string }>;
+  };
+  const findings = res.findings
+    ?? [...(res.errors ?? []), ...(res.warnings ?? []), ...(res.suggestions ?? [])];
+  return { ok: res.success === true, findings };
+}
+
 // ── editor engine ────────────────────────────────────────────────────────────
 
 /** The editor gates /__project_files/* on a token in every environment, so the
@@ -132,6 +166,7 @@ export async function openDesign(page: Page, name: string): Promise<void> {
 const FIXTURE_NAMES: Record<string, string> = {
   'poster-assets': 'mark-shared',
   'deck-pages': 'p1-mark',
+  'flat-style': 'subtitle',
 };
 
 /**
