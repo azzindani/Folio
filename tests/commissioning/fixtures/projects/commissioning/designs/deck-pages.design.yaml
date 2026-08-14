@@ -45,9 +45,11 @@ pages:
         width: 500
         height: 70
         content: "Page One"
-        font_size: 48
-        font_weight: 700
-        color: "#101418"
+        style:
+          font_family: "Inter"
+          font_size: 48
+          font_weight: 700
+          color: "#101418"
       - id: p1-mark
         type: image
         z: 5
@@ -78,9 +80,11 @@ pages:
         width: 500
         height: 70
         content: "Page Two"
-        font_size: 48
-        font_weight: 700
-        color: "#101418"
+        style:
+          font_family: "Inter"
+          font_size: 48
+          font_weight: 700
+          color: "#101418"
       - id: p2-mark
         type: image
         z: 5
@@ -111,9 +115,11 @@ pages:
         width: 500
         height: 70
         content: "Page Three"
-        font_size: 48
-        font_weight: 700
-        color: "#101418"
+        style:
+          font_family: "Inter"
+          font_size: 48
+          font_weight: 700
+          color: "#101418"
       - id: p3-mark
         type: image
         z: 5

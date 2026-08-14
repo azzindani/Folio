@@ -103,6 +103,65 @@ export async function measureInk(page: Page, src: string, regions: Region[]): Pr
   }, { src, regions } as MeasureArgs) as Promise<InkStat[]>;
 }
 
+/**
+ * A perceptual fingerprint per region (256-bit average hash): the region is
+ * downsampled to 16×16 greyscale and each cell scored against the mean.
+ *
+ * 16×16 is not arbitrary. At 8×8 a line of text is too coarse to separate —
+ * measured across four faces, pairs differed by only 5–11 bits of 64, while the
+ * same pairs differ by 20–41 bits of 256 at 16×16. The finer grid is what makes
+ * the threshold meaningful rather than a coin toss.
+ *
+ * This is what makes font fidelity testable WITHOUT a network or any knowledge
+ * of glyph shapes. Rather than asking "is this Anton?", render the same string
+ * in two families and require the results to LOOK different — if the engine
+ * ignored the family, or silently fell back to the same default face, the two
+ * fingerprints come out identical.
+ */
+export async function fingerprints(page: Page, src: string, regions: Region[]): Promise<Array<{ id: string; hash: string }>> {
+  return page.evaluate(async ({ src, regions }: MeasureArgs) => {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = (): void => resolve(i);
+      i.onerror = (): void => reject(new Error('artifact failed to decode'));
+      i.src = src;
+    });
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const full = document.createElement('canvas');
+    full.width = W; full.height = H;
+    const fctx = full.getContext('2d');
+    if (!fctx) throw new Error('no 2d context');
+    fctx.drawImage(img, 0, 0);
+
+    return regions.map(r => {
+      const sx = Math.max(0, Math.round(r.x * W));
+      const sy = Math.max(0, Math.round(r.y * H));
+      const sw = Math.max(1, Math.min(Math.round(r.w * W), W - sx));
+      const sh = Math.max(1, Math.min(Math.round(r.h * H), H - sy));
+      const N = 16;
+      const small = document.createElement('canvas');
+      small.width = N; small.height = N;
+      const sctx = small.getContext('2d');
+      if (!sctx) throw new Error('no 2d context');
+      sctx.drawImage(full, sx, sy, sw, sh, 0, 0, N, N);
+      const px = sctx.getImageData(0, 0, N, N).data;
+      const grey: number[] = [];
+      for (let i = 0; i < px.length; i += 4) {
+        grey.push(0.299 * (px[i] ?? 0) + 0.587 * (px[i + 1] ?? 0) + 0.114 * (px[i + 2] ?? 0));
+      }
+      const mean = grey.reduce((a, b) => a + b, 0) / (grey.length || 1);
+      return { id: r.id, hash: grey.map(g => (g >= mean ? '1' : '0')).join('') };
+    });
+  }, { src, regions } as MeasureArgs) as Promise<Array<{ id: string; hash: string }>>;
+}
+
+/** How many bits two fingerprints differ by — 0 means visually identical. */
+export function hamming(a: string, b: string): number {
+  let d = 0;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) if (a[i] !== b[i]) d++;
+  return d;
+}
+
 /** Whole-artifact ink — catches the blank-page class of failure outright. */
 export async function pageInk(page: Page, src: string): Promise<{ inkRatio: number; colours: number }> {
   const [stat] = await measureInk(page, src, [{ id: 'page', kind: 'image', x: 0, y: 0, w: 1, h: 1 }]);
