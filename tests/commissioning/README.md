@@ -1,6 +1,6 @@
 # Commissioning suite
 
-Run: `npm run test:commissioning` (~40s, 15 checks). Runs in CI as the
+Run: `npm run test:commissioning` (~60s, 23 checks). Runs in CI as the
 **Commissioning (artifact fidelity)** job, after `build`.
 
 | Spec | Checks | Question it answers |
@@ -8,6 +8,8 @@ Run: `npm run test:commissioning` (~40s, 15 checks). Runs in CI as the
 | `export-fidelity` | 6 | is the design actually in the file? |
 | `render-integrity` | 5 | does any render come out blank, invisible, or unstable? |
 | `artifact-portability` | 4 | does the file still work somewhere else? |
+| `font-fidelity` | 5 | is the text in the face the design asked for? |
+| `capabilities` | 3 | do motion and persistence actually work? |
 
 ## What this suite is for
 
@@ -113,18 +115,42 @@ That is why there is no commissioning check for shorthand expansion, token
 resolution or schema validation: those are pure functions with excellent unit
 coverage, and re-testing them through a browser would only make the suite slow.
 
-Known gaps, left open on purpose:
+### Font fidelity without a network
 
-- **Font fidelity** — that exported text uses the declared family rather than a
-  serif fallback. The honest check needs Google Fonts at export time, and a
-  network dependency would make the suite flaky; flaky checks get ignored, and
-  an ignored check is worse than a missing one. Currently only *presence* of
-  text ink is asserted, not its typeface.
-- **Animation / Lottie / interactive-report exports.** Worth adding on the same
-  pattern (assert a real file with real contents, per `binary-free motion`).
-- **Editor persistence round-trip** — edit, auto-save, reload, still there.
-  This is a state contract rather than an artifact one; it may deserve its own
-  spec rather than being bolted onto these.
+A fallback face is the quietest failure the engine has: the export succeeds,
+the text is readable, every other check passes, and the design is in the wrong
+typeface.
+
+The checks are **differential**. Nothing asks "is this Anton?" — that needs
+glyph knowledge and a golden image. The `typefaces` fixture renders one string
+in four declarations (three shipped faces plus one family that exists nowhere)
+and requires the results to LOOK different. If `font_family` were ignored, or
+every family collapsed onto one fallback, the bands would match.
+
+Comparison is a 16×16 average hash, and the grid size is measured, not chosen:
+
+| pair | 8×8 (of 64) | 16×16 (of 256) |
+|---|---|---|
+| anton vs garamond | 7 | 41 |
+| garamond vs mono | 6 | 20 |
+| mono vs bogus | 5 | 22 |
+
+At 8×8 a line of text is too coarse to separate. The threshold of 15 bits sits
+below the observed floor of 20 with room for antialiasing drift, and far above
+the 0 that identical rendering produces.
+
+This works offline because the server renderer uses the 32 TTFs bundled in
+`src/mcp/fonts/`. Note that the editor CANVAS is different: it pulls design
+faces from Google Fonts at runtime (`styles/font-loader.ts`), as does the
+client-side export embed (`export/font-embed.ts`). So canvas typography depends
+on a third-party CDN even though the same families ship in the repo.
+
+### Still open
+
+- **Lottie and interactive-report exports** — same pattern as `capabilities`,
+  not yet written.
+- **Chart / KPI / mermaid rendering**, which is foreignObject-only and so
+  behaves differently between the browser and resvg.
 
 ## Notes
 

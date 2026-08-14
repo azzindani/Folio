@@ -40,9 +40,11 @@ layers:
     width: 680
     height: 90
     content: "Commissioning"
-    font_size: 64
-    font_weight: 700
-    color: "#101418"
+    style:
+      font_family: "Anton"
+      font_size: 64
+      font_weight: 700
+      color: "#101418"
 
   # Project store — assets/images/<file>
   - id: mark-project
@@ -95,5 +97,7 @@ layers:
     width: 430
     height: 140
     content: "Each mark above comes from a different store. If one is missing, the export engine dropped it."
-    font_size: 24
-    color: "#3A4149"
+    style:
+      font_family: "Inter"
+      font_size: 24
+      color: "#3A4149"

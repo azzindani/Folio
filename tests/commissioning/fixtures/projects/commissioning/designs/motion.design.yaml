@@ -1,0 +1,56 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — motion. Production has no ffmpeg and no headless
+# Chrome, so the exports that must work there are the binary-free ones: SVG
+# and HTML. A "successful" motion export that writes a still frame, or a file
+# with no keyframes in it, is the failure this fixture exists to catch.
+
+meta:
+  id: "commissioning-motion"
+  name: "Motion"
+  type: poster
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+
+document:
+  width: 400
+  height: 400
+  unit: px
+  dpi: 96
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 400
+    height: 400
+    fill:
+      type: solid
+      color: "#FFFFFF"
+
+  - id: pulse
+    type: rect
+    z: 5
+    x: 140
+    y: 140
+    width: 120
+    height: 120
+    fill:
+      type: solid
+      color: "#2B4AF2"
+    animation:
+      keyframes:
+        - t: 0
+          scale: 1
+        - t: 1200
+          scale: 1.4
+      playback:
+        duration: 1200
+        origin: offset
+        loop: true
+        direction: alternate
+        easing: ease-in-out

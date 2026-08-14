@@ -1,0 +1,94 @@
+_protocol: "design/v1"
+_mode: complete
+
+# COMMISSIONING FIXTURE — font fidelity, without a network.
+#
+# The SAME string, at the same size and width, in four declarations:
+#   anton    — a heavy condensed display face that Folio ships
+#   garamond — a light serif that Folio ships
+#   mono     — a fixed-pitch face that Folio ships
+#   bogus    — a family that does not exist anywhere
+#
+# Nothing here asks "is this Anton?" — that needs glyph knowledge. It asks
+# whether DECLARING a family changes what gets drawn. If the engine ignored
+# font_family, or quietly fell back to one default, these four bands would
+# come out looking the same. "Hamburgefonstiv" is the classic type-tester
+# string: it exercises the letterforms that differ most between faces.
+
+meta:
+  id: "commissioning-typefaces"
+  name: "Typefaces"
+  type: poster
+  created: "2026-08-14"
+  modified: "2026-08-14"
+  generator: "test-fixture"
+
+document:
+  width: 900
+  height: 640
+  unit: px
+  dpi: 96
+
+layers:
+  - id: bg
+    type: rect
+    z: 0
+    x: 0
+    y: 0
+    width: 900
+    height: 640
+    fill:
+      type: solid
+      color: "#FFFFFF"
+
+  - id: anton
+    type: text
+    z: 5
+    x: 40
+    y: 40
+    width: 820
+    height: 120
+    content: "Hamburgefonstiv"
+    style:
+      font_family: "Anton"
+      font_size: 64
+      color: "#101418"
+
+  - id: garamond
+    type: text
+    z: 5
+    x: 40
+    y: 190
+    width: 820
+    height: 120
+    content: "Hamburgefonstiv"
+    style:
+      font_family: "EB Garamond"
+      font_size: 64
+      color: "#101418"
+
+  - id: mono
+    type: text
+    z: 5
+    x: 40
+    y: 340
+    width: 820
+    height: 120
+    content: "Hamburgefonstiv"
+    style:
+      font_family: "JetBrains Mono"
+      font_size: 64
+      color: "#101418"
+
+  - id: bogus
+    type: text
+    z: 5
+    x: 40
+    y: 490
+    width: 820
+    height: 120
+    content: "Hamburgefonstiv"
+    style:
+      font_family: "Notarealfaceatall Grotesk"
+      font_size: 64
+      color: "#101418"
