@@ -9,6 +9,7 @@ import { extractVectorTextCandidates } from './pdf-vector-text';
 import { drawVectorRun, PX2PT, type PdfTextDoc } from './pdf-draw';
 import { loadVectorFont, type BrowserFontPick } from './pdf-fonts-browser';
 import { buildEmbeddedFontStyle } from './font-embed';
+import { inlineExternalImages } from './image-embed';
 import { checkCanvasScale } from './canvas-limit';
 
 export interface BrowserPdfDoc extends PdfTextDoc {
@@ -20,6 +21,9 @@ export interface BrowserPdfDoc extends PdfTextDoc {
 async function svgToPngDataURL(svg: SVGSVGElement, width: number, height: number, scale: number): Promise<string> {
   const guard = checkCanvasScale(width, height, scale);
   if (!guard.ok) throw new Error(guard.reason);
+  // Assets first: this raster goes through the same SVG-in-`<img>` restriction
+  // that drops every external href (see image-embed.ts).
+  await inlineExternalImages(svg);
   const style = await buildEmbeddedFontStyle(svg);
   if (style) svg.insertAdjacentHTML('afterbegin', style);
   const svgString = new XMLSerializer().serializeToString(svg);
