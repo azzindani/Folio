@@ -4,7 +4,7 @@ import type { DesignSpec } from '../../schema/types';
 
 // Stub exports so tests don't hit real canvas/PDF
 vi.mock('../../export/exporter', () => ({
-  exportToSVG: vi.fn(() => '<svg></svg>'),
+  exportToSVGEmbedded: vi.fn(() => '<svg></svg>'),
   exportToPNG: vi.fn(() => Promise.resolve(new Blob(['png'], { type: 'image/png' }))),
   exportToHTML: vi.fn(() => '<!DOCTYPE html>'),
 }));
@@ -182,7 +182,7 @@ describe('BatchExportDialog', () => {
   });
 
   it('Export button runs SVG export', async () => {
-    const { exportToSVG } = await import('../../export/exporter');
+    const { exportToSVGEmbedded } = await import('../../export/exporter');
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(), 0);
     // Select SVG format
@@ -193,7 +193,7 @@ describe('BatchExportDialog', () => {
     runBtn.click();
     // Wait for async export to complete
     await new Promise(r => setTimeout(r, 50));
-    expect(exportToSVG).toHaveBeenCalled();
+    expect(exportToSVGEmbedded).toHaveBeenCalled();
     dlg.close();
   });
 
@@ -237,8 +237,8 @@ describe('BatchExportDialog', () => {
   });
 
   it('multi-page: exports all pages for SVG format', async () => {
-    const { exportToSVG } = await import('../../export/exporter');
-    vi.mocked(exportToSVG).mockClear();
+    const { exportToSVGEmbedded } = await import('../../export/exporter');
+    vi.mocked(exportToSVGEmbedded).mockClear();
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(3), 0);
     const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
@@ -246,14 +246,14 @@ describe('BatchExportDialog', () => {
     formatSel.dispatchEvent(new Event('change'));
     document.querySelector<HTMLButtonElement>('#be-run')!.click();
     await new Promise(r => setTimeout(r, 100));
-    expect(exportToSVG).toHaveBeenCalledTimes(3);
+    expect(exportToSVGEmbedded).toHaveBeenCalledTimes(3);
     dlg.close();
   });
 
   it('failed export shows error toast', async () => {
     const { showToast } = await import('../../utils/toast');
-    const { exportToSVG } = await import('../../export/exporter');
-    vi.mocked(exportToSVG).mockImplementationOnce(() => { throw new Error('export failed'); });
+    const { exportToSVGEmbedded } = await import('../../export/exporter');
+    vi.mocked(exportToSVGEmbedded).mockImplementationOnce(() => { throw new Error('export failed'); });
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(), 0);
     const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
@@ -266,8 +266,8 @@ describe('BatchExportDialog', () => {
   });
 
   it('non-Error catch value uses "Unknown error" string (line 161 false branch)', async () => {
-    const { exportToSVG } = await import('../../export/exporter');
-    vi.mocked(exportToSVG).mockImplementationOnce(() => { throw 'plain string error'; });
+    const { exportToSVGEmbedded } = await import('../../export/exporter');
+    vi.mocked(exportToSVGEmbedded).mockImplementationOnce(() => { throw 'plain string error'; });
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(), 0);
     const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;
@@ -283,8 +283,8 @@ describe('BatchExportDialog', () => {
 
   it('successful multi-page export closes dialog after delay', async () => {
     vi.useFakeTimers();
-    const { exportToSVG } = await import('../../export/exporter');
-    vi.mocked(exportToSVG).mockReturnValue('<svg></svg>');
+    const { exportToSVGEmbedded } = await import('../../export/exporter');
+    vi.mocked(exportToSVGEmbedded).mockReturnValue('<svg></svg>');
     const dlg = new BatchExportDialog();
     dlg.open(makeSpec(2), 0);
     const formatSel = document.querySelector<HTMLSelectElement>('#be-format')!;

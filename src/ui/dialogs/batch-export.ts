@@ -1,5 +1,5 @@
 import type { DesignSpec } from '../../schema/types';
-import { exportToSVG, exportToPNG, exportToHTML } from '../../export/exporter';
+import { exportToSVGEmbedded, exportToPNG, exportToHTML } from '../../export/exporter';
 import { EXPORT_SCALE_PRESETS, getScalePreset, defaultScalePreset } from '../../export/scale-presets';
 import { showToast } from '../../utils/toast';
 
@@ -177,7 +177,7 @@ export class BatchExportDialog {
         const pi = pages[0];
         let blob: Blob;
         if (fmt === 'svg') {
-          blob = new Blob([exportToSVG(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
+          blob = new Blob([await exportToSVGEmbedded(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
         } else if (fmt === 'html') {
           blob = new Blob([await exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
         } else {
@@ -211,7 +211,7 @@ export class BatchExportDialog {
       try {
         let blob: Blob;
         if (fmt === 'svg') {
-          blob = new Blob([exportToSVG(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
+          blob = new Blob([await exportToSVGEmbedded(spec, { format: 'svg', pageIndex: pi })], { type: mimeType });
         } else if (fmt === 'html') {
           blob = new Blob([await exportToHTML(spec, { format: 'html', pageIndex: pi })], { type: mimeType });
         } else {

@@ -8,6 +8,7 @@ import { PX2PT } from './pdf-draw';
 import type { LoadedDataset } from '../report/data-loader';
 import { checkCanvasScale } from './canvas-limit';
 import { buildEmbeddedFontStyle } from './font-embed';
+import { inlineExternalImages } from './image-embed';
 // @ts-expect-error — dom-to-image-more ships no types
 import domtoimage from 'dom-to-image-more';
 
@@ -52,11 +53,16 @@ export function exportToSVG(spec: DesignSpec, options: ExportOptions): string {
 
 /**
  * Serialize a rendered SVG with its web fonts inlined as `@font-face` data
- * URIs, so the file (and any `<img>`→canvas raster of it) renders the real
- * fonts instead of a serif fallback. Falls back to plain serialization if
- * font embedding yields nothing (no web fonts / offline).
+ * URIs AND its asset images inlined as data: URIs, so the file (and any
+ * `<img>`→canvas raster of it) renders the real fonts and the real images
+ * instead of a serif fallback and empty gaps. Falls back to plain
+ * serialization if font embedding yields nothing (no web fonts / offline).
+ *
+ * Both steps exist for the SAME reason: a browser rasterizing SVG-in-`<img>`
+ * refuses to load external references of any kind (see image-embed.ts).
  */
-async function serializeWithFonts(svg: SVGSVGElement): Promise<string> {
+async function serializeForExport(svg: SVGSVGElement): Promise<string> {
+  await inlineExternalImages(svg);
   const style = await buildEmbeddedFontStyle(svg);
   if (style) svg.insertAdjacentHTML('afterbegin', style);
   return new XMLSerializer().serializeToString(svg);
@@ -64,7 +70,7 @@ async function serializeWithFonts(svg: SVGSVGElement): Promise<string> {
 
 /** Async SVG export with fonts embedded — used by the download path. */
 export async function exportToSVGEmbedded(spec: DesignSpec, options: ExportOptions): Promise<string> {
-  return serializeWithFonts(renderForExport(spec, options).svg);
+  return serializeForExport(renderForExport(spec, options).svg);
 }
 
 export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Promise<Blob> {
@@ -97,7 +103,7 @@ export async function exportToPNG(spec: DesignSpec, options: ExportOptions): Pro
   const guard = checkCanvasScale(width, height, scale);
   if (!guard.ok) throw new Error(guard.reason);
 
-  const svgString = await serializeWithFonts(svg);
+  const svgString = await serializeForExport(svg);
 
   const canvas = document.createElement('canvas');
   canvas.width  = guard.width;
@@ -352,7 +358,10 @@ export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Pr
     });
   }
 
-  const svgString = exportToSVG(spec, options);
+  // Self-contained HTML: embed fonts AND assets, so the file renders standalone
+  // (a bare exportToSVG leaves /__project_files/ hrefs that only resolve while
+  // the editor is open on the same origin).
+  const svgString = await exportToSVGEmbedded(spec, options);
 
   const animationCSS = options.animations
     ? generateDesignAnimationCSS(options.animations)
