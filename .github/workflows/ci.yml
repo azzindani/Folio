@@ -14,6 +14,7 @@ jobs:
   # ── LINT & TYPE CHECK ─────────────────────────────────────────
   lint:
     name: Lint & Type Check
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +38,7 @@ jobs:
   #   src/editor/inline-text-editor.test.ts  (S6 inline text edit + N12 ruler guides)
   unit-tests:
     name: Unit Tests (${{ matrix.os }})
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -59,6 +61,7 @@ jobs:
   # ── INTEGRATION TESTS ─────────────────────────────────────────
   integration-tests:
     name: Integration Tests
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +75,7 @@ jobs:
   # ── BUILD CHECK ───────────────────────────────────────────────
   build:
     name: Build Check (${{ matrix.os }})
+    timeout-minutes: 25
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -110,6 +114,7 @@ jobs:
   # ── VISUAL REGRESSION ─────────────────────────────────────────
   visual-tests:
     name: Visual Regression Tests
+    timeout-minutes: 25
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -137,6 +142,7 @@ jobs:
   # ── E2E TESTS ─────────────────────────────────────────────────
   e2e-tests:
     name: E2E Tests (chromium)
+    timeout-minutes: 25
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -164,6 +170,7 @@ jobs:
   # ── PERFORMANCE BENCHMARKS ────────────────────────────────────
   performance:
     name: Performance Benchmarks
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,6 +187,7 @@ jobs:
   # this job is the one that looks at pixels.
   commissioning:
     name: Commissioning (artifact fidelity)
+    timeout-minutes: 25
     needs: build
     runs-on: ubuntu-latest
     steps:
