@@ -39,7 +39,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 // (thumbnail render / library scan) so the single-core container can't collapse.
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
-import { listAssets, listProjects, manageAssets, uploadAsset } from './server-assets';
+import { listAssets, listProjects, manageAssets, uploadAsset, createProjectRoute } from './server-assets';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
@@ -509,16 +509,20 @@ Bun.serve({
         // op uses: sanitize, type allowlist, per-file + per-project caps,
         // svg script strip, dims + dominant colors).
         // ── Asset manage: POST /__project_files/<project>/__assets/manage ──
-        // {op:"delete"|"move", asset_path, folder?, new_name?} — the file-manager
-        // verbs, sharing the exact engine functions the MCP ops use so the panel
-        // and the model can never drift apart.
+        // {op:"delete"|"move"|"copy"|…} — the file-manager verbs, on the exact
+        // engine functions the MCP ops use, so panel and model cannot drift.
+        // POST __projects creates a project: a container, not a file.
+        if (url.pathname === '/__project_files/__projects') return createProjectRoute(req);
+
         const manageMatch = relDecoded.match(/^([^/]+)\/__assets\/manage$/);
         if (manageMatch) {
           const projectDir = safeJoinProject(manageMatch[1]);
           if (!projectDir || !fs.existsSync(projectDir)) {
             return new Response(JSON.stringify({ ok: false, error: `No such project: ${manageMatch[1]}` }), { status: 404, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
           }
-          return manageAssets(req, projectDir, refresh);
+          // copy may name a DIFFERENT source project, so the route hands the
+          // resolver in rather than letting the engine guess at paths.
+          return manageAssets(req, projectDir, refresh, (n) => safeJoinProject(n));
         }
 
         // The folder part may nest (assets/images/clients/acme/logo.png) — the

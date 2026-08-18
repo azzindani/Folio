@@ -59,9 +59,18 @@ async function openManager(page: import('@playwright/test').Page): Promise<void>
   await page.waitForSelector('.ax-list, .ax-message', { timeout: 30_000 });
 }
 
-/** Point the manager at the scratch project via its own picker. */
+/**
+ * Point the manager at the scratch project.
+ *
+ * Via Places, not by assuming the tree is on screen: in the sidebar the panel
+ * is too narrow to dock a tree, and a check that only worked at full width
+ * would miss that switching project is impossible there — which is most of what
+ * the panel is for on a phone.
+ */
 async function selectScratch(page: import('@playwright/test').Page): Promise<void> {
-  await page.selectOption('.ax-project', '_scratch-assets');
+  const node = page.locator('.ax-node.project[data-project="_scratch-assets"]');
+  if (!await node.isVisible()) await page.click('[data-cmd="places"]');
+  await node.click();
   await expect(page.locator('.ax-crumb').first()).toContainText('_scratch-assets');
 }
 
@@ -71,12 +80,23 @@ test('the asset manager opens, and offers an upload, with no design loaded', asy
   // Every one of these was missing when the panel failed to initialise — the
   // pane rendered completely empty, which reads as "broken", not as "pick a
   // project first".
-  await expect(page.locator('[data-act="upload"]'), 'no Upload control').toHaveCount(1);
-  await expect(page.locator('.ax-project'), 'no project picker').toHaveCount(1);
+  await expect(page.locator('[data-cmd="upload"]'), 'no Upload control').toHaveCount(1);
   await expect(page.locator('.ax-file'), 'no file input to upload through').toHaveCount(1);
+  // Every verb sits on top, disabled rather than absent — a menu you have no
+  // reason to open may as well not exist.
+  const verbs = await page.locator('.ax-cmd[data-cmd]').evaluateAll(els => els.map(e => (e as HTMLElement).dataset['cmd']));
+  for (const v of ['newfolder', 'upload', 'cut', 'copy', 'paste', 'rename', 'moveto', 'delete']) {
+    expect(verbs, `command bar is missing ${v}`).toContain(v);
+  }
 
-  const projects = await page.locator('.ax-project option').allTextContents();
-  expect(projects.some(p => p.includes('_scratch-assets')), `picker missed a project: ${projects.join(', ')}`).toBe(true);
+  const projects = await page.locator('.ax-node.project').evaluateAll(els => els.map(e => (e as HTMLElement).dataset['project']));
+  expect(projects.includes('_scratch-assets'), `tree missed a project: ${projects.join(', ')}`).toBe(true);
+
+  // Reachable, not merely present: in the sidebar the tree is folded away, so
+  // Places is the only route to another project.
+  await page.click('[data-cmd="places"]');
+  await expect(page.locator('.ax-node.project[data-project="_scratch-assets"]'),
+    'no way to reach another project when the tree is folded').toBeVisible();
 });
 
 test('a file uploaded through the manager is on disk AND paints in an engine export', async ({ page }) => {
@@ -121,7 +141,7 @@ test('a file uploaded through the manager is on disk AND paints in an engine exp
 
 /** Drive the panel's own New-folder dialog (not a browser prompt). */
 async function newFolder(page: import('@playwright/test').Page, name: string): Promise<void> {
-  await page.click('[data-act="newfolder"]');
+  await page.click('[data-cmd="newfolder"]');
   await page.fill('.ax-modal-input', name);
   await page.click('.ax-modal [data-x="ok"]');
   await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: 15_000 });
@@ -201,14 +221,18 @@ test('the shared library is a separate branch, not mixed in with project folders
   await selectScratch(page);
 
   const headings = await page.locator('.ax-tree-h').allTextContents();
-  expect(headings, 'the two stores are not labelled apart').toEqual([
-    'This project', 'Shared with every project',
-  ]);
+  expect(headings.length, 'the two stores are not labelled apart').toBe(2);
+  expect(headings[0]).toContain('Projects');
+  expect(headings[1]).toContain('Shared with every project');
+
   // They are not interchangeable: one travels with the project, the other is
   // visible to every project the account owns. A shared folder that looks like
   // a project folder is how something private ends up in the shared store.
   await expect(page.locator('.ax-node[data-nav="library:"]')).toHaveCount(1);
-  await expect(page.locator('.ax-node[data-nav="project:"]')).toHaveCount(1);
+  // Projects are containers, not folders — each is its own row, and creating
+  // one is a verb on the Projects branch rather than on the file command bar.
+  expect(await page.locator('.ax-node.project').count()).toBeGreaterThan(1);
+  await expect(page.locator('[data-cmd="newproject"]')).toHaveCount(1);
 });
 
 test('files dropped from the desktop upload into the folder in view', async ({ page }) => {
@@ -233,4 +257,57 @@ test('files dropped from the desktop upload into the folder in view', async ({ p
   await expect(page.locator('.ax-row', { hasText: 'dragged.png' })).toHaveCount(1, { timeout: 15_000 });
   expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'dropzone', 'dragged.png')),
     'dropped into the folder in view, but not filed there').toBe(true);
+});
+
+test('every view mode shows the same files — a view is not a filter', async ({ page }) => {
+  await openManager(page);
+  await selectScratch(page);
+  await page.click('[data-cmd="full"]');
+
+  await newFolder(page, 'views');
+  await page.setInputFiles('.ax-file', [
+    { name: 'one.png', mimeType: 'image/png', buffer: PNG_1PX },
+    { name: 'two.png', mimeType: 'image/png', buffer: PNG_1PX },
+  ]);
+  await expect(page.locator('.ax-list > *')).toHaveCount(2, { timeout: 15_000 });
+
+  // Six modes because they answer different questions — artwork, facts, or the
+  // most names in the least space. What they must NOT do is disagree about
+  // what is in the folder.
+  for (const mode of ['xl', 'large', 'medium', 'tiles', 'list', 'details']) {
+    await page.click('[data-cmd="viewmenu"]');
+    await page.click(`[data-view="${mode}"]`);
+    await expect(page.locator('.ax-list'), `${mode} did not apply`).toHaveClass(new RegExp(`\\b${mode}\\b`));
+    const names = await page.locator('.ax-list .ax-nm').allTextContents();
+    expect(names.sort(), `${mode} shows a different set`).toEqual(['one.png', 'two.png']);
+  }
+});
+
+test('copy in one project, paste into another — the file lands and the original stays', async ({ page }) => {
+  await openManager(page);
+  await selectScratch(page);
+  await page.click('[data-cmd="full"]');
+
+  await newFolder(page, 'source');
+  await page.setInputFiles('.ax-file', { name: 'shared-mark.png', mimeType: 'image/png', buffer: PNG_1PX });
+  await expect(page.locator('.ax-row', { hasText: 'shared-mark.png' })).toHaveCount(1, { timeout: 15_000 });
+
+  await page.click('.ax-row:has-text("shared-mark.png")');
+  await expect(page.locator('[data-cmd="copy"]'), 'Copy stayed disabled with a file selected').toBeEnabled();
+  await page.click('[data-cmd="copy"]');
+  await expect(page.locator('.ax-status')).toContainText('1 item copied');
+
+  // Into the SHARED library, which is the cross-store case: a copy there is how
+  // a project's mark gets promoted without the project losing it.
+  await page.click('.ax-node[data-nav="library:"]');
+  await page.click('[data-cmd="paste"]');
+  await expect(page.locator('.ax-row', { hasText: 'shared-mark.png' })).toHaveCount(1, { timeout: 20_000 });
+
+  const libRoot = path.join(FIXTURE_PROJECTS, '.library', 'assets');
+  expect(fs.existsSync(path.join(libRoot, 'shared-mark.png')), 'not written into the library').toBe(true);
+  expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'source', 'shared-mark.png')),
+    'a copy must leave the original where it was').toBe(true);
+
+  // Leave the shared library as it was found — it is committed fixture data.
+  fs.rmSync(path.join(libRoot, 'shared-mark.png'), { force: true });
 });

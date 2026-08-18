@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-  esc, fmtBytes, fmtType, entryKey, crumbs, tree, status, columnHeader, pane, shell,
+  esc, fmtBytes, fmtType, entryKey, navRow, tree, status, columnHeader, pane, shell,
   type Entry, type ViewState,
 } from './asset-explorer-view';
+import { commands } from './asset-explorer-chrome';
 import type { AssetRow } from './asset-explorer-io';
 
 const png = (path: string, extra: Partial<AssetRow> = {}): AssetRow => ({
@@ -15,8 +16,11 @@ const base = (over: Partial<ViewState> = {}): ViewState => ({
   scope: 'project',
   folder: '',
   entries: [],
-  tree: [],
+  folders: [],
+  libraryFolders: [],
   selected: new Set(),
+  selectedFiles: 0,
+  selectedFolders: 0,
   view: 'details',
   sort: 'name',
   desc: false,
@@ -24,6 +28,9 @@ const base = (over: Partial<ViewState> = {}): ViewState => ({
   totalProject: 5,
   totalShared: 2,
   full: false,
+  clip: '',
+  canPaste: false,
+  canBack: false,
   ...over,
 });
 
@@ -55,57 +62,98 @@ describe('formatting', () => {
   });
 });
 
-describe('breadcrumb', () => {
-  it('is just the root at the top of a store', () => {
-    const html = crumbs(base());
+describe('navigation row', () => {
+  it('is just the root at the top of a store, with Up disabled', () => {
+    const html = navRow(base());
     expect(html).toContain('demo');
     expect(html).not.toContain('ax-sep');
+    expect(html).toMatch(/data-cmd="up"[^>]*disabled/);
   });
 
   it('gives every segment its own crumb, each navigating to that depth', () => {
-    const html = crumbs(base({ scope: 'library', folder: 'microsoft/logos' }));
+    const html = navRow(base({ scope: 'library', folder: 'microsoft/logos' }));
     expect(html).toContain('data-nav="library:"');
     expect(html).toContain('data-nav="library:microsoft"');
     expect(html).toContain('data-nav="library:microsoft/logos"');
     expect(html).toContain('Shared library');
   });
+
+  it('Up points at the PARENT, not at the root', () => {
+    expect(navRow(base({ folder: 'clients/acme/logos' })))
+      .toContain('data-nav-up="project:clients/acme"');
+  });
+
+  it('Back is dead until somewhere has been visited', () => {
+    expect(navRow(base())).toMatch(/data-cmd="back"[^>]*disabled/);
+    expect(navRow(base({ canBack: true }))).not.toMatch(/data-cmd="back"[^>]*disabled/);
+  });
+});
+
+describe('command bar', () => {
+  it('offers every verb at all times — disabled, never absent', () => {
+    // The bar must not change shape as you click around: the position of Delete
+    // is something a hand learns.
+    const empty = commands(base()).map(c => c.id);
+    const busy = commands(base({ selectedFiles: 2 })).map(c => c.id);
+    expect(empty).toEqual(busy);
+    expect(empty).toEqual(['newfolder', 'upload', 'write', 'cut', 'copy', 'paste', 'rename', 'moveto', 'delete']);
+  });
+
+  it('lights the verbs the selection actually supports', () => {
+    const off = (s: ViewState, id: string): boolean =>
+      Boolean(commands(s).find(c => c.id === id)?.disabled);
+
+    expect(off(base(), 'cut'), 'cut with nothing selected').toBe(true);
+    expect(off(base({ selectedFiles: 1 }), 'cut')).toBe(false);
+    // Rename takes exactly one thing — "rename these three" has no meaning.
+    expect(off(base({ selectedFiles: 1 }), 'rename')).toBe(false);
+    expect(off(base({ selectedFiles: 2 }), 'rename')).toBe(true);
+    // A folder counts for delete and move, but not for cut: moving a folder
+    // rebuilds a tree, which is drag or Move-to, not the clipboard.
+    expect(off(base({ selectedFolders: 1 }), 'delete')).toBe(false);
+    expect(off(base({ selectedFolders: 1 }), 'cut')).toBe(true);
+    expect(off(base(), 'paste')).toBe(true);
+    expect(off(base({ canPaste: true }), 'paste')).toBe(false);
+  });
 });
 
 describe('tree', () => {
-  it('separates the two stores under their own headings', () => {
-    const html = tree(base({
-      tree: [
-        { heading: 'This project' },
-        { label: 'demo', scope: 'project', folder: '', depth: 0, root: true },
-        { heading: 'Shared with every project' },
-        { label: 'Shared library', scope: 'library', folder: '', depth: 0, root: true },
-      ],
-    }));
+  const twoProjects = [
+    { name: 'demo', designs: 1, assets: 5 },
+    { name: 'other', designs: 0, assets: 2 },
+  ];
+
+  it('separates projects from the shared library, under their own headings', () => {
+    const html = tree(base({ projects: twoProjects }));
     // A shared folder that looks like a project folder is a trap: one travels
     // with the project, the other is visible to every project you own.
     expect(html.match(/ax-tree-h/g)).toHaveLength(2);
+    expect(html).toContain('Projects');
     expect(html).toContain('Shared with every project');
   });
 
-  it('indents by depth and marks the current folder active', () => {
-    const html = tree(base({
-      folder: 'shots',
-      tree: [
-        { label: 'demo', scope: 'project', folder: '', depth: 0, root: true },
-        { label: 'shots', scope: 'project', folder: 'shots', depth: 1 },
-      ],
-    }));
-    expect(html).toContain('style="--d:1"');
-    expect(html.match(/class="ax-node active"/g)).toHaveLength(1);
-    expect(html).toContain('data-nav="project:shots"');
+  it('lists EVERY project, and expands only the open one', () => {
+    // Projects are containers, not folders — you switch between them, so they
+    // all have to be reachable without a dropdown.
+    const html = tree(base({ projects: twoProjects, folders: ['shots'] }));
+    expect(html).toContain('data-project="demo"');
+    expect(html).toContain('data-project="other"');
+    // "shots" belongs to the open project, so it appears once, not per project.
+    expect(html.match(/data-nav="project:shots"/g)).toHaveLength(1);
   });
 
-  it('marks nothing active while a search is running — the results are not one folder', () => {
-    const html = tree(base({
-      query: 'logo',
-      tree: [{ label: 'demo', scope: 'project', folder: '', depth: 0, root: true }],
-    }));
-    expect(html).not.toContain('active');
+  it('offers a create verb for projects, beside the heading', () => {
+    expect(tree(base())).toContain('data-cmd="newproject"');
+  });
+
+  it('indents folders by depth and marks the current one active', () => {
+    const html = tree(base({ folder: 'clients/acme', folders: ['clients', 'clients/acme'] }));
+    expect(html).toContain('style="--d:2"');
+    expect(html.match(/ax-node active/g)).toHaveLength(1);
+  });
+
+  it('marks nothing active while a search is running — results are not one folder', () => {
+    expect(tree(base({ query: 'logo', folders: ['shots'] }))).not.toContain(' active');
   });
 });
 
@@ -133,7 +181,24 @@ describe('the pane', () => {
   it('marks the sorted column and which way it points', () => {
     expect(columnHeader(base({ sort: 'size' }))).toContain('▴');
     expect(columnHeader(base({ sort: 'size', desc: true }))).toContain('▾');
-    expect(columnHeader(base({ view: 'icons' })), 'icons view has no columns').toBe('');
+    expect(columnHeader(base({ view: 'large' })), 'an icon view has no columns').toBe('');
+  });
+
+  it('renders the same items in every view mode', () => {
+    const entries: Entry[] = [
+      { type: 'folder', name: 'shots', folder: 'shots', count: 1 },
+      { type: 'file', asset: png('assets/images/a.png') },
+    ];
+    for (const view of ['xl', 'large', 'medium', 'tiles', 'list', 'details'] as const) {
+      const html = pane(base({ entries, view }), urlOf);
+      expect(html.match(/data-key=/g), `${view} dropped an item`).toHaveLength(2);
+      expect(html, `${view} lost the name`).toContain('a.png');
+    }
+  });
+
+  it('dims a cut item wherever it appears', () => {
+    const entries: Entry[] = [{ type: 'file', asset: png('assets/images/a.png') }];
+    expect(pane(base({ entries }), urlOf)).not.toContain('cut ');
   });
 
   it('says the folder is empty rather than showing nothing at all', () => {
@@ -151,7 +216,7 @@ describe('the pane', () => {
     const entries: Entry[] = [{ type: 'file', asset: png('assets/images/a.png') }];
     const html = pane(base({ entries, selected: new Set(['assets/images/a.png']) }), urlOf);
     expect(html).toContain('aria-selected="true"');
-    expect(html).toContain('class="ax-row selected"');
+    expect(html).toContain('selected ');
   });
 
   it('makes folders draggable too — filing a folder into a folder is the point', () => {
@@ -176,9 +241,12 @@ describe('shell', () => {
     expect(shell(base({ scope: 'library' }), urlOf)).toContain('the shared library');
   });
 
-  it('offers a project picker listing every project', () => {
-    const html = shell(base({ projects: [{ name: 'demo', designs: 1, assets: 5 }, { name: 'other', designs: 0, assets: 0 }] }), urlOf);
-    expect(html).toContain('<option value="demo" selected>');
-    expect(html).toContain('<option value="other">');
+  it('assembles the frame around the pane, in order', () => {
+    const html = shell(base(), urlOf);
+    // Navigation above commands above content: where a file manager puts them,
+    // and what makes the verbs findable without opening anything.
+    expect(html.indexOf('ax-nav')).toBeLessThan(html.indexOf('ax-cmdbar'));
+    expect(html.indexOf('ax-cmdbar')).toBeLessThan(html.indexOf('ax-main'));
+    expect(html.indexOf('ax-main')).toBeLessThan(html.indexOf('ax-status'));
   });
 });

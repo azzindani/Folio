@@ -33,6 +33,24 @@ export interface ProjectRow {
 
 export type Scope = 'project' | 'library';
 
+export interface ManageBody {
+  op: 'move' | 'copy' | 'delete' | 'mkdir' | 'rmdir';
+  asset_path?: string;
+  folder?: string;
+  new_name?: string;
+  scope?: Scope;
+  /** Source project for a cross-project copy. */
+  from_project?: string;
+}
+
+export interface ManageResult {
+  ok: boolean;
+  /** Where a copy landed. */
+  path?: string;
+  error?: string;
+  hint?: string;
+}
+
 /** Shared-library assets are recognisable by their path alone. */
 export function isShared(p: string): boolean {
   return p.startsWith('lib/');
@@ -121,25 +139,46 @@ export class AssetIO {
     }
   }
 
-  /** rename · move · delete · mkdir · rmdir — one shell over the manage route. */
-  async manage(body: {
-    op: 'move' | 'delete' | 'mkdir' | 'rmdir';
-    asset_path?: string;
-    folder?: string;
-    new_name?: string;
-    scope?: Scope;
-  }): Promise<{ ok: boolean; error?: string; hint?: string }> {
-    if (!this.project) return { ok: false, error: 'No project selected.' };
+  /** rename · move · copy · delete · mkdir · rmdir — one shell over the route. */
+  async manage(body: ManageBody): Promise<ManageResult> {
+    return this.manageIn(this.project, body);
+  }
+
+  /**
+   * Run a manage op against a NAMED project rather than the open one.
+   *
+   * Needed by paste: cutting an asset from project A into project B copies it
+   * into B and then deletes the original — and that delete has to be addressed
+   * to A, or the paste removes the file it just created.
+   */
+  async manageIn(project: string | null, body: ManageBody): Promise<ManageResult> {
+    if (!project) return { ok: false, error: 'No project selected.' };
     try {
-      const r = await fetch(`${this.base()}/__assets/manage`, {
+      const r = await fetch(`/__project_files/${encodeURIComponent(project)}/__assets/manage`, {
         method: 'POST',
         credentials: 'include',
         headers: this.headers({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(body),
       });
-      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; hint?: string };
+      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; hint?: string; path?: string };
       if (!r.ok || !j.ok) return { ok: false, error: j.error ?? `Failed (${r.status})`, hint: j.hint ?? '' };
-      return { ok: true };
+      return { ok: true, ...(j.path ? { path: j.path } : {}) };
+    } catch {
+      return { ok: false, error: 'Could not reach the project server.' };
+    }
+  }
+
+  /** Create a project. Projects are containers, not files — their own verb. */
+  async createProject(name: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const r = await fetch('/__project_files/__projects', {
+        method: 'POST',
+        credentials: 'include',
+        headers: this.headers({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ name }),
+      });
+      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      return r.ok && j.ok ? { ok: true } : { ok: false, error: j.error ?? `Failed (${r.status})` };
     } catch {
       return { ok: false, error: 'Could not reach the project server.' };
     }

@@ -43,6 +43,13 @@ const paths: Record<string, string> = {
   shrink: '<path d="M4.5 9H9V4.5M19.5 9H15V4.5M4.5 15H9v4.5M19.5 15H15v4.5"/>',
   refresh: '<path d="M20 11.5a8 8 0 1 0-.7 4.4"/><path d="M20 4.5v6h-6"/>',
   library: '<path d="M4.5 5.5h3v14h-3zM10 5.5h3v14h-3z"/><path d="m16.2 6.3 2.9-.8 3.4 12.5-2.9.8z"/>',
+  // File-manager command bar.
+  scissors: '<circle cx="6.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="17.5" r="2.5"/><path d="M8.7 8.1 19 18.4M19 5.6 8.7 15.9"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 5.5A2 2 0 0 0 13 4H6a2 2 0 0 0-2 2v7a2 2 0 0 0 1.5 1.9"/>',
+  clipboard: '<path d="M9 4.5H7a2 2 0 0 0-2 2v11.5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6.5a2 2 0 0 0-2-2h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1"/>',
+  trash: '<path d="M4.5 6.8h15M9.5 6.8V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.8"/><path d="M6.5 6.8 7.4 19a1.8 1.8 0 0 0 1.8 1.7h5.6a1.8 1.8 0 0 0 1.8-1.7l.9-12.2"/><path d="M10.4 10.4v6.2M13.6 10.4v6.2"/>',
+  'arrow-left': '<path d="M19.5 12h-14M11 5.5 4.5 12l6.5 6.5"/>',
+  'arrow-up': '<path d="M12 19.5v-14M5.5 12 12 5.5l6.5 6.5"/>',
 };
 
 /** Inline monoline SVG for editor chrome. Unknown names return the name so a
