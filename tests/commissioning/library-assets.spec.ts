@@ -4,22 +4,27 @@ import * as path from 'path';
 import { FIXTURE_PROJECTS, TEST_TOKEN } from './lib/harness';
 
 /**
- * THE DESIGN LIBRARY'S ASSET DRAWER — the other front door.
+ * THE OTHER FRONT DOOR — the Design Library at /library.
  *
- * The editor's asset panel is not the only way people manage assets: the
- * Library at /library has its own drawer, with its own markup, its own verbs
- * and its own code (src/mcp/engine/library-assets.ts). It had NO coverage at
- * all, and it showed — "New folder" prompted "Upload into which folder?" and
- * then opened the file picker, so it never created a folder, and there was no
- * way to rename or delete one anywhere in the drawer. Folders were filter chips
- * and nothing more.
+ * Folio shipped two asset managers. The editor's panel and the Library's drawer
+ * shared only the HTTP endpoints, so five rounds of "the file manager is
+ * broken" were fixed in the editor while the person reporting them was standing
+ * in the Library the whole time. Every fix landed. Every check passed. Nothing
+ * changed for them. The Library's own drawer had a "New folder" button that
+ * only primed an upload, and no way to delete a folder at all.
  *
- * Reported as "how can i delete asset folder?" followed by "i used it via
- * library not the editor engine". Every check that had been added for the
- * editor panel passed throughout.
+ * The drawer now HOSTS the editor's explorer rather than reimplementing it, so
+ * these checks are the same work as asset-manager.spec.ts done through the
+ * other door. What they defend is that the door still opens onto the real
+ * thing — the failure mode is not "a verb is broken" but "this surface quietly
+ * went back to being its own app".
  */
 const SCRATCH = path.join(FIXTURE_PROJECTS, '_scratch-libassets');
 const IMAGES = path.join(SCRATCH, 'assets', 'images');
+const PNG_1PX = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 test.beforeAll(() => {
   fs.rmSync(SCRATCH, { recursive: true, force: true });
@@ -30,65 +35,131 @@ test.beforeAll(() => {
 });
 test.afterAll(() => fs.rmSync(SCRATCH, { recursive: true, force: true }));
 
-/** Open the Library, then its asset drawer, pointed at the scratch project. */
+/** Open the Library and its drawer, pointed at the scratch project. */
 async function openDrawer(page: import('@playwright/test').Page): Promise<void> {
-  await page.goto(`/library?token=${TEST_TOKEN}`, { waitUntil: 'domcontentloaded' });
-  await page.click('#assetsbtn');
+  await page.goto(`/library?assets=_scratch-libassets&token=${TEST_TOKEN}`,
+    { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#adrawer')).toHaveClass(/open/);
-  await page.selectOption('#aproj', '_scratch-libassets');
-  await expect(page.locator('#afoot')).toContainText('_scratch-libassets');
+  // Wait on the manager itself. The bundle is deferred, so a check that only
+  // waited for the drawer would race it and report "no controls" for "not here
+  // yet" — the same confusion as an empty pane.
+  await expect(page.locator('.ax'),
+    'the drawer opened but the shared file manager never mounted into it')
+    .toHaveCount(1, { timeout: 30_000 });
+  await page.waitForSelector('.ax-list, .ax-message', { timeout: 30_000 });
+  await expect(page.locator('.ax-crumb').first()).toContainText('_scratch-libassets');
 }
 
-test('the Library drawer creates a real folder, not an upload prompt', async ({ page }) => {
+async function newFolder(page: import('@playwright/test').Page, name: string): Promise<void> {
+  await page.click('[data-cmd="newfolder"]');
+  await page.fill('.ax-modal-input', name);
+  await page.click('.ax-modal [data-x="ok"]');
+  await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: 15_000 });
+}
+
+test('the Library opens the real file manager, not a second one', async ({ page }) => {
   await openDrawer(page);
 
-  page.once('dialog', d => {
-    // The prompt has to be about NAMING a folder. It used to read "Upload into
-    // which folder?" and open the file picker, so cancelling the picker left
-    // nothing behind and an empty folder could not be made at all.
-    expect(d.message(), 'New folder is still asking about an upload').toContain('Name the new folder');
-    void d.accept('shoot-notes');
-  });
-  await page.click('#anewfolder');
+  // The same verbs the editor's panel offers. If this thins out, the Library
+  // has started reimplementing again — which is the actual regression, and it
+  // is invisible from the editor side.
+  const verbs = await page.locator('.ax-cmd[data-cmd]')
+    .evaluateAll(els => els.map(e => (e as HTMLElement).dataset['cmd']));
+  for (const v of ['newfolder', 'upload', 'cut', 'copy', 'paste', 'rename', 'moveto', 'delete']) {
+    expect(verbs, `the Library is missing ${v}`).toContain(v);
+  }
+  await expect(page.locator('.ax-viewseg .ax-seg'),
+    'the six view modes did not come through to the Library').toHaveCount(6);
+  await expect(page.locator('.ax-node.project').first(),
+    'no project tree — the drawer is not hosting the explorer').toBeVisible();
 
-  await expect(page.locator('.achip', { hasText: 'shoot-notes' }),
-    'the new folder never appeared in the drawer').toHaveCount(1, { timeout: 15_000 });
+  // The Library page has its own palette; the shared stylesheet is written in
+  // the editor's tokens. Unmapped, they resolve to nothing and the manager
+  // renders as unstyled text on a transparent ground.
+  const painted = await page.locator('.ax').evaluate(el => {
+    const s = getComputedStyle(el);
+    return { bg: s.backgroundColor, fg: s.color };
+  });
+  expect(painted.bg, 'the palette bridge is not applied').not.toBe('rgba(0, 0, 0, 0)');
+  expect(painted.fg).not.toBe('');
+});
+
+test('a folder can be made and deleted from the Library, and it reaches the disk', async ({ page }) => {
+  await openDrawer(page);
+
+  await newFolder(page, 'shoot-notes');
   expect(fs.existsSync(path.join(IMAGES, 'shoot-notes')),
-    'nothing was created on disk — the button only primed an upload').toBe(true);
+    'New folder in the Library created nothing — it used to only prime an upload').toBe(true);
+
+  await page.setInputFiles('.ax-file', { name: 'inside.png', mimeType: 'image/png', buffer: PNG_1PX });
+  await expect(page.locator('.ax-row', { hasText: 'inside.png' })).toHaveCount(1, { timeout: 15_000 });
+
+  // Delete it from the tree, which is where a file manager expects folders to
+  // be managed and where the Library offered nothing at all.
+  const node = page.locator('.ax-node[data-nav="project:shoot-notes"]');
+  await expect(node, 'the open project does not show its folders in the tree').toHaveCount(1);
+  await node.click({ button: 'right' });
+  const items = await page.locator('.ax-menu button').allTextContents();
+  expect(items.join(' | '), `no way to delete a folder from the Library: ${items.join(' | ')}`)
+    .toMatch(/Delete folder/);
+
+  await page.click('.ax-menu button:has-text("Delete folder")');
+  await expect(page.locator('.ax-modal')).toContainText('shoot-notes');
+  await page.click('.ax-modal [data-x="ok"]');
+
+  await expect(page.locator('.ax-node[data-nav="project:shoot-notes"]'),
+    'the folder survived the delete').toHaveCount(0, { timeout: 15_000 });
+  expect(fs.existsSync(path.join(IMAGES, 'shoot-notes')),
+    'still on disk after being deleted from the Library').toBe(false);
 });
 
-test('a folder can be renamed and deleted from the Library drawer', async ({ page }) => {
-  await openDrawer(page);
+test('the Library opens on the SHARED store, not on someone\'s project', async ({ page }) => {
+  // The Design Library is cross-project. Landing on one project's asset folder
+  // — picked for you out of two hundred — answers a question nobody asked, and
+  // puts the shared store hundreds of tree rows below the fold. Assets here
+  // belong to everything, so that is where it opens.
+  await page.goto(`/library?token=${TEST_TOKEN}`, { waitUntil: 'domcontentloaded' });
+  await page.click('#assetsbtn');
+  await page.waitForSelector('.ax-list, .ax-message', { timeout: 30_000 });
 
-  page.once('dialog', d => void d.accept('raw'));
-  await page.click('#anewfolder');
-  await expect(page.locator('.achip', { hasText: 'raw' })).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.ax-crumb').first(),
+    'the Library opened onto a project instead of the shared store')
+    .toContainText('Shared library');
 
-  // Creating it selects it, which is what arms the folder verbs — they act on
-  // the folder in view and stand down when there isn't one.
-  await expect(page.locator('#arenfolder'), 'Rename folder never became usable').toBeEnabled();
-  await expect(page.locator('#adelfolder'), 'Delete folder never became usable').toBeEnabled();
-
-  page.once('dialog', d => void d.accept('raw-shots'));
-  await page.click('#arenfolder');
-  await expect(page.locator('.achip', { hasText: 'raw-shots' })).toHaveCount(1, { timeout: 15_000 });
-  expect(fs.existsSync(path.join(IMAGES, 'raw-shots')), 'rename did not reach the disk').toBe(true);
-  expect(fs.existsSync(path.join(IMAGES, 'raw')), 'the old folder is still there').toBe(false);
-
-  page.once('dialog', d => {
-    expect(d.message(), 'the confirm does not say where things go').toContain('.trash');
-    void d.accept();
-  });
-  await page.click('#adelfolder');
-  await expect(page.locator('.achip', { hasText: 'raw-shots' }),
-    'the folder survived a delete from the Library').toHaveCount(0, { timeout: 15_000 });
-  expect(fs.existsSync(path.join(IMAGES, 'raw-shots')), 'still on disk after delete').toBe(false);
+  // And the branch you are in is the one at the top, or "opens on shared" is
+  // true in name only — you would still be looking at a list of projects.
+  const firstHeading = await page.locator('.ax-tree-h').first().textContent();
+  expect(firstHeading, 'the shared branch is buried under every project')
+    .toContain('Shared');
 });
 
-test('the folder verbs stand down when no folder is in view', async ({ page }) => {
-  await openDrawer(page);
-  // At the root there is no one folder to rename or delete, and a live button
-  // that silently does nothing is the failure this whole thread is about.
-  await expect(page.locator('#arenfolder')).toBeDisabled();
-  await expect(page.locator('#adelfolder')).toBeDisabled();
+test('a project deep link still wins over the shared default', async ({ page }) => {
+  // ?assets=<project> is someone asking for that project by name.
+  await page.goto(`/library?assets=_scratch-libassets&token=${TEST_TOKEN}`,
+    { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.ax-list, .ax-message', { timeout: 30_000 });
+  await expect(page.locator('.ax-crumb').first()).toContainText('_scratch-libassets');
+});
+
+test('the manager still opens when the URL carries no token', async ({ page }) => {
+  // Deliberately NOT a proof of cookie auth: this harness runs with no auth
+  // configured, so a check here passes even with credentials stripped out of
+  // every request — it was written as one, and rehearsing showed it could not
+  // fail. That concern lives where it can bite: asset-explorer-io.test.ts
+  // asserts credentials:'include' on reads and mutations alike.
+  //
+  // What this DOES defend is the token-free path through the drawer: the
+  // editor always has ?token= in the URL, so a mount that quietly depended on
+  // reading one would break the Library alone.
+  // One visit WITH the token to establish the session, then the real case: the
+  // page reloaded, or opened from a bookmark, with nothing in the URL. Dropping
+  // the first visit does not make the check stricter, it just leaves the page
+  // unauthenticated and times out on a button that was never served.
+  await page.goto(`/library?token=${TEST_TOKEN}`, { waitUntil: 'domcontentloaded' });
+  await page.goto('/library', { waitUntil: 'domcontentloaded' });
+  await page.click('#assetsbtn');
+  await expect(page.locator('.ax'),
+    'the manager did not mount without a token in the URL').toHaveCount(1, { timeout: 30_000 });
+  await page.waitForSelector('.ax-list, .ax-message', { timeout: 30_000 });
+  await expect(page.locator('.ax-node.project').first()).toBeVisible();
 });

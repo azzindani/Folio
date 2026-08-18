@@ -146,11 +146,21 @@ export function tree(s: ViewState): string {
       <span class="ax-node-i">${chromeIcon('library', 13)}</span><span class="ax-node-l">Shared library</span>
     </button>${s.libraryFolders.map(f => folderNode(f, 'library', s)).join('')}`;
 
+  const projectBranch = `<div class="ax-tree-h">Projects<button class="ax-tree-add" data-cmd="newproject" title="New project">${chromeIcon('plus', 12)}</button></div>
+    ${projects}`;
+  const libraryBranch = `<div class="ax-tree-h">Shared with every project</div>
+    ${lib}`;
+
+  // Whichever store you are IN comes first. With two hundred projects the
+  // second branch is hundreds of rows down, so a fixed order means half the
+  // time the tree opens showing a list you are not looking at and the place
+  // you ARE is below the fold. This is also why the Design Library mounts on
+  // the shared store: it belongs to everything, and no one project is the
+  // right answer there.
+  const order = s.scope === 'library' ? [libraryBranch, projectBranch] : [projectBranch, libraryBranch];
+
   return `<nav class="ax-tree" aria-label="Places">
-    <div class="ax-tree-h">Projects<button class="ax-tree-add" data-cmd="newproject" title="New project">${chromeIcon('plus', 12)}</button></div>
-    ${projects}
-    <div class="ax-tree-h">Shared with every project</div>
-    ${lib}
+    ${order.join('\n    ')}
   </nav>`;
 }
 

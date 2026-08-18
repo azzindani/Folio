@@ -12,7 +12,7 @@
 import { type StateManager } from '../../editor/state';
 import { AssetIO, storeOf, type AssetRow, type ManageBody, type ProjectRow, type Scope } from './asset-explorer-io';
 import {
-  shell, entryKey, fmtType, wireDropOverlay,
+  shell, entryKey, wireDropOverlay,
   type Entry, type SortKey, type ViewMode, type ViewState,
 } from './asset-explorer-view';
 import { getClip, setClip, clipSummary, paste } from './asset-explorer-clipboard';
@@ -23,10 +23,11 @@ import { Selection, closeMenu, type MenuItem } from './asset-explorer-menu';
 import { wireCells } from './asset-explorer-cells';
 import { openDocEditor } from './asset-explorer-doc';
 import { placeAsset } from './asset-explorer-place';
+import { entriesFor, countIn, childPath, type EntrySource } from './asset-explorer-entries';
 import { promptDialog, confirmDialog, renameDialog } from './asset-explorer-dialog';
 import { FullWindow } from './asset-explorer-full';
 import {
-  parentOf, createFolder, deleteFolders, renameFolder,
+  createFolder, deleteFolders, renameFolder,
   promptMoveFolder, moveFolderInto, type FolderCtx,
 } from './asset-explorer-folders';
 
@@ -34,7 +35,8 @@ const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+x
 
 export class AssetPanelManager {
   private container: HTMLElement;
-  private state: StateManager;
+  /** Null where the explorer is mounted without a canvas (the Library). */
+  private state: StateManager | null;
   private io = new AssetIO();
 
   private rows: AssetRow[] = [];
@@ -59,7 +61,7 @@ export class AssetPanelManager {
 
   private readonly window: FullWindow;
 
-  constructor(container: HTMLElement, state: StateManager) {
+  constructor(container: HTMLElement, state: StateManager | null = null) {
     this.container = container;
     this.state = state;
     this.window = new FullWindow({
@@ -73,8 +75,8 @@ export class AssetPanelManager {
   }
 
   /** Called when a server-backed design opens, and on first use with nulls. */
-  setProject(project: string | null, token: string | null): void {
-    this.scope = 'project';
+  setProject(project: string | null, token: string | null, scope: Scope = 'project'): void {
+    this.scope = scope;
     this.folder = '';
     this.query = '';
     this.sel.clear();
@@ -128,72 +130,31 @@ export class AssetPanelManager {
   }
 
   // ── Deriving what the pane shows ────────────────────────────────
+  // The rules themselves live in asset-explorer-entries.ts as pure functions,
+  // so both places the explorer is mounted derive their listing identically.
 
-  /** Direct children of the current location: folders first, then files. */
-  private entries(): Entry[] {
-    if (this.query.trim()) return this.searchEntries();
-    const files = this.rows
-      .filter(r => storeOf(r) === this.scope && (r.folder ?? '') === this.folder)
-      .map(a => ({ type: 'file', asset: a } as Entry));
-    return [...this.subfolders(), ...this.sortFiles(files)];
+  /** The state the derivation needs, snapshotted for one pass. */
+  private source(): EntrySource {
+    return {
+      rows: this.rows,
+      scope: this.scope,
+      folder: this.folder,
+      query: this.query,
+      folders: this.scope === 'library' ? this.libraryFolders : this.folders,
+      sort: this.sort,
+      desc: this.desc,
+    };
   }
 
-  /** Search spans BOTH stores and every folder — a file manager's search box
-   *  is how you find something when you have forgotten where you put it. */
-  private searchEntries(): Entry[] {
-    const q = this.query.trim().toLowerCase();
-    return this.sortFiles(this.rows
-      .filter(r => r.path.toLowerCase().includes(q) || (r.alt ?? '').toLowerCase().includes(q))
-      .map(a => ({ type: 'file', asset: a } as Entry)));
-  }
-
-  /** Folder paths in the store we are looking at. Both stores nest now. */
   private allFolders(): string[] {
     return this.scope === 'library' ? this.libraryFolders : this.folders;
   }
 
-  private subfolders(): Entry[] {
-    const here = this.folder;
-    return this.allFolders()
-      .filter(f => parentOf(f) === here)
-      .map(full => ({
-        type: 'folder' as const,
-        name: full.slice(here ? here.length + 1 : 0),
-        folder: full,
-        count: this.countIn(full),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
+  private entries(): Entry[] { return entriesFor(this.source()); }
 
-  /** Direct children — what a file manager shows in the size column of a row. */
-  private countIn(folder: string): number {
-    const files = this.rows.filter(r => storeOf(r) === this.scope && (r.folder ?? '') === folder).length;
-    return files + this.allFolders().filter(f => parentOf(f) === folder).length;
-  }
+  private countIn(folder: string): number { return countIn(this.source(), folder); }
 
-
-  /** Where a new folder or upload goes: inside whatever is open. */
-  private childPath(name: string): string {
-    const clean = name.trim().replace(/^\/+|\/+$/g, '');
-    return this.folder ? `${this.folder}/${clean}` : clean;
-  }
-
-  private sortFiles(entries: Entry[]): Entry[] {
-    const dir = this.desc ? -1 : 1;
-    const val = (e: Entry): string | number => {
-      if (e.type !== 'file') return '';
-      const a = e.asset;
-      if (this.sort === 'size') return a.bytes;
-      if (this.sort === 'type') return fmtType(a);
-      if (this.sort === 'added') return a.added ?? '';
-      return (a.path.split('/').pop() ?? a.path).toLowerCase();
-    };
-    return entries.sort((a, b) => {
-      const x = val(a), y = val(b);
-      if (typeof x === 'number' && typeof y === 'number') return (x - y) * dir;
-      return String(x).localeCompare(String(y)) * dir;
-    });
-  }
+  private childPath(name: string): string { return childPath(this.folder, name); }
 
   private viewState(entries: Entry[]): ViewState {
     const clip = getClip();
@@ -505,6 +466,9 @@ export class AssetPanelManager {
   private open(entry: Entry): void {
     if (entry.type === 'folder') { this.navigate(`${this.scope}:${entry.folder}`); return; }
     if (entry.asset.kind === 'docs') { this.writeDoc(entry.asset); return; }
+    // No canvas to place onto when the explorer is mounted in the Library, so
+    // opening a file shows it rather than doing nothing.
+    if (!this.state) { window.open(this.io.url(entry.asset), '_blank', 'noopener'); return; }
     placeAsset(this.state, entry.asset);
   }
 
@@ -530,6 +494,7 @@ export class AssetPanelManager {
       scope: this.scope,
       selectedFolders: this.selectedFolders(),
       placeable: this.selectedAssets().filter(a => a.kind === 'images' || a.kind === 'icons').length,
+      canPlace: Boolean(this.state),
       selectedFiles: this.selectedAssets().length,
       on: {
         open: (nav) => this.navigate(nav),
@@ -681,7 +646,9 @@ export class AssetPanelManager {
 
 
   private placeSelection(): void {
-    for (const a of this.selectedAssets()) placeAsset(this.state, a, true);
+    const state = this.state;
+    if (!state) return;
+    for (const a of this.selectedAssets()) placeAsset(state, a, true);
   }
 
 

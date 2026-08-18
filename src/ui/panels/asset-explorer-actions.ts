@@ -35,6 +35,9 @@ export interface MenuContext {
   selectedFiles: number;
   /** How many of the selected files can actually go on the canvas. */
   placeable: number;
+  /** False where the explorer is mounted without a canvas — the Library. An
+   *  offer to "Place on canvas" with no canvas is a dead verb. */
+  canPlace: boolean;
   on: MenuHandlers;
 }
 
@@ -65,7 +68,9 @@ export function entryMenu(entry: Entry, ctx: MenuContext): MenuItem[] {
   return [
     // Count what CAN be placed, not what is selected — a font or a brief in the
     // selection is skipped, and "Place 3" that places 2 is a small lie.
-    ...(placeable ? [{ label: ctx.placeable > 1 ? `Place ${ctx.placeable} on canvas` : 'Place on canvas', run: () => on.place() }] : []),
+    ...(placeable && ctx.canPlace
+      ? [{ label: ctx.placeable > 1 ? `Place ${ctx.placeable} on canvas` : 'Place on canvas', run: () => on.place() }]
+      : []),
     ...(a.kind === 'docs' ? [{ label: 'Edit text', run: () => on.editDoc(a) }] : []),
     { label: 'Open in new tab', run: () => on.openTab(a) },
     { separator: true, label: '' },
