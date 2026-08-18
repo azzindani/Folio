@@ -28,6 +28,11 @@ describe('projectFolders', () => {
     expect(projectFolders(proj)).toEqual(['screenshots']);
   });
 
+  it('reports nested folders, at every level', () => {
+    fs.mkdirSync(path.join(proj, 'assets', 'images', 'clients', 'acme', 'logos'), { recursive: true });
+    expect(projectFolders(proj)).toEqual(['clients', 'clients/acme', 'clients/acme/logos']);
+  });
+
   it('merges the same folder name across kinds into one entry', () => {
     fs.mkdirSync(path.join(proj, 'assets', 'images', 'brand'), { recursive: true });
     fs.mkdirSync(path.join(proj, 'assets', 'fonts', 'brand'), { recursive: true });
@@ -64,12 +69,23 @@ describe('createAssetFolder', () => {
     expect(fs.existsSync(path.join(lib, 'microsoft', 'logos'))).toBe(true);
   });
 
-  it('refuses a name that sanitises away, and says what is allowed', () => {
-    const res = createAssetFolder({ projectDir: proj, folder: '../../etc' });
+  it('nests, and neutralises traversal instead of escaping with it', () => {
+    const res = createAssetFolder({ projectDir: proj, folder: 'Clients/Acme Corp' });
+    expect(res).toMatchObject({ success: true, folder: 'clients/acme-corp' });
+    expect(fs.existsSync(path.join(proj, 'assets', 'images', 'clients', 'acme-corp'))).toBe(true);
+
+    // ".." cannot survive a segment clean, so a traversal attempt lands INSIDE
+    // the kind dir under whatever safe parts remain — never outside the project.
+    const trav = createAssetFolder({ projectDir: proj, folder: '../../etc' });
+    expect(trav).toMatchObject({ success: true, folder: 'etc' });
+    expect(fs.existsSync(path.join(root, 'etc')), 'escaped the project').toBe(false);
+    expect(fs.existsSync(path.join(proj, 'assets', 'images', 'etc'))).toBe(true);
+  });
+
+  it('refuses a name with nothing usable left in it', () => {
+    const res = createAssetFolder({ projectDir: proj, folder: '..' });
     expect(res.success).toBe(false);
-    expect(res.hint).toContain('one level deep');
-    // The traversal must not have created anything on the way to failing.
-    expect(fs.existsSync(path.join(root, 'etc'))).toBe(false);
+    expect(res.hint).toContain('4 levels');
   });
 
   it('is idempotent — making a folder that exists is not an error', () => {
@@ -85,21 +101,39 @@ describe('removeAssetFolder', () => {
     expect(projectFolders(proj)).toEqual([]);
   });
 
-  it('refuses a folder that still holds files, and counts them', () => {
+  it('deletes a folder WITH its contents, moving the files to .trash', () => {
     createAssetFolder({ projectDir: proj, folder: 'shots' });
     fs.writeFileSync(path.join(proj, 'assets', 'images', 'shots', 'a.png'), 'x');
+    // A folder you must empty by hand before you may remove it is a folder you
+    // cannot remove. Contents go to .trash, exactly as a per-file delete does.
     const res = removeAssetFolder({ projectDir: proj, folder: 'shots' });
-    // Deleting a folder full of work is the one action with no undo here: the
-    // per-file delete route moves things to .trash, a recursive rmdir would not.
-    expect(res.success).toBe(false);
-    expect(res.error).toContain('1 item');
-    expect(fs.existsSync(path.join(proj, 'assets', 'images', 'shots', 'a.png'))).toBe(true);
+    expect(res).toMatchObject({ success: true, trashed: 1 });
+    expect(fs.existsSync(path.join(proj, 'assets', 'images', 'shots'))).toBe(false);
+    const trashed = fs.readdirSync(path.join(proj, '.trash'));
+    expect(trashed).toHaveLength(1);
+    expect(trashed[0]).toContain('a.png');
   });
 
-  it('counts files in a sibling kind, not just the one that looks empty', () => {
-    createAssetFolder({ projectDir: proj, folder: 'brand' });
+  it('sweeps every kind and every level below the folder', () => {
+    createAssetFolder({ projectDir: proj, folder: 'brand/logos' });
     fs.writeFileSync(path.join(proj, 'assets', 'fonts', 'brand', 'x.ttf'), 'x');
-    expect(removeAssetFolder({ projectDir: proj, folder: 'brand' }).success).toBe(false);
+    fs.writeFileSync(path.join(proj, 'assets', 'images', 'brand', 'logos', 'y.png'), 'y');
+    const res = removeAssetFolder({ projectDir: proj, folder: 'brand' });
+    expect(res).toMatchObject({ success: true, trashed: 2 });
+    expect(projectFolders(proj)).toEqual([]);
+  });
+
+  it('requireEmpty keeps the cautious behaviour for callers that want it', () => {
+    createAssetFolder({ projectDir: proj, folder: 'keep' });
+    fs.writeFileSync(path.join(proj, 'assets', 'images', 'keep', 'a.png'), 'x');
+    const res = removeAssetFolder({ projectDir: proj, folder: 'keep', requireEmpty: true });
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('1 item');
+    expect(fs.existsSync(path.join(proj, 'assets', 'images', 'keep', 'a.png'))).toBe(true);
+  });
+
+  it('says so when the folder is not there at all', () => {
+    expect(removeAssetFolder({ projectDir: proj, folder: 'ghost' }).error).toContain('No such folder');
   });
 
   it('removes an empty library folder', () => {

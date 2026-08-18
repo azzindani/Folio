@@ -182,18 +182,28 @@ describe('editor server asset routes — the shared library', () => {
     expect(listed.folders).toEqual(['empty', 'shots']);
   });
 
-  it('rmdir removes an empty folder and refuses one that still holds work', async () => {
+  it('rmdir removes a folder and sends what was inside it to .trash', async () => {
     await manageAssets(postJSON({ op: 'mkdir', folder: 'keep' }), proj);
     await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', 'keep', 'a.png');
-    const refused = await manageAssets(postJSON({ op: 'rmdir', folder: 'keep' }), proj);
-    expect(refused.status).toBe(400);
-    expect((await refused.json() as { error: string }).error).toContain('1 item');
+    // A folder you must empty by hand before you may remove it is a folder you
+    // cannot remove — which is what "cannot delete folder" meant in practice.
+    const res = await manageAssets(postJSON({ op: 'rmdir', folder: 'keep' }), proj);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, trashed: 1 });
+    expect(fs.readdirSync(path.join(proj, '.trash')).join()).toContain('a.png');
 
-    await manageAssets(postJSON({ op: 'mkdir', folder: 'gone' }), proj);
-    const removed = await manageAssets(postJSON({ op: 'rmdir', folder: 'gone' }), proj);
-    expect((await removed.json() as { ok: boolean }).ok).toBe(true);
     const listed = await listAssets(proj).json() as { folders: string[] };
-    expect(listed.folders).toEqual(['keep']);
+    expect(listed.folders).toEqual([]);
+  });
+
+  it('nests: mkdir and upload both accept a folder path', async () => {
+    await manageAssets(postJSON({ op: 'mkdir', folder: 'clients/acme/logos' }), proj);
+    const up = await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', 'clients/acme', 'mark.png');
+    expect((await up.json() as { asset: { path: string } }).asset.path)
+      .toBe('assets/images/clients/acme/mark.png');
+    const listed = await listAssets(proj).json() as { folders: string[]; assets: { folder?: string }[] };
+    expect(listed.folders).toEqual(['clients', 'clients/acme', 'clients/acme/logos']);
+    expect(listed.assets[0]?.folder).toBe('clients/acme');
   });
 
   it('names the folder ops in the hint when given an unknown one', async () => {

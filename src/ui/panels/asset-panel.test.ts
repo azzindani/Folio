@@ -68,6 +68,20 @@ const click = (el: Element | null | undefined, init: MouseEventInit = {}): void 
   el?.dispatchEvent(new MouseEvent('click', { bubbles: true, ...init }));
 };
 
+/** Answer the panel's own dialog. It no longer uses window.prompt/confirm —
+ *  those are modal to the whole browser and unstyleable — so a test drives the
+ *  real one, which is also the only way to prove it is wired up. */
+async function answerDialog(text?: string): Promise<void> {
+  await until(() => Boolean(document.querySelector('.ax-modal')));
+  const input = document.querySelector<HTMLInputElement>('.ax-modal-input');
+  if (text !== undefined && input) input.value = text;
+  document.querySelector<HTMLButtonElement>('.ax-modal [data-x="ok"]')?.click();
+}
+const dismissDialog = async (): Promise<void> => {
+  await until(() => Boolean(document.querySelector('.ax-modal')));
+  document.querySelector<HTMLButtonElement>('.ax-modal [data-x="cancel"]')?.click();
+};
+
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -255,20 +269,57 @@ describe('AssetPanelManager — file operations', () => {
 
   it('makes a folder through the manage endpoint', async () => {
     await open();
-    vi.stubGlobal('prompt', () => 'Screenshots');
     click(container.querySelector('[data-act="newfolder"]'));
+    await answerDialog('Screenshots');
     await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
     expect(JSON.parse(String(calls.find(c => c.url.endsWith('/__assets/manage'))?.init?.body)))
       .toMatchObject({ op: 'mkdir', folder: 'Screenshots', scope: 'project' });
   });
 
+  it('makes the folder INSIDE the one that is open, not at the root', async () => {
+    await open();
+    click(container.querySelector('.ax-node[data-nav="project:power-automate"]'));
+    click(container.querySelector('[data-act="newfolder"]'));
+    await answerDialog('run-2');
+    await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
+    // Sending the name as an absolute path is what made "New folder" look
+    // intermittent: it worked at the root, and from anywhere deeper it created
+    // the folder somewhere else and showed nothing.
+    expect(JSON.parse(String(calls.find(c => c.url.endsWith('/__assets/manage'))?.init?.body)))
+      .toMatchObject({ op: 'mkdir', folder: 'power-automate/run-2' });
+  });
+
+  it('Delete on a FOLDER deletes it, contents and all', async () => {
+    await open();
+    click(rowFor('power-automate'));
+    container.querySelector('.ax-list')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    await until(() => Boolean(document.querySelector('.ax-modal')));
+    // Folder keys are "folder:<path>" and never resolve through the asset list,
+    // so Delete used to silently do nothing at all when a folder was selected.
+    expect(document.querySelector('.ax-modal-body')?.textContent).toContain('inside');
+    await answerDialog();
+    await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
+    expect(JSON.parse(String(calls.find(c => c.url.endsWith('/__assets/manage'))?.init?.body)))
+      .toMatchObject({ op: 'rmdir', folder: 'power-automate', scope: 'project' });
+  });
+
+  it('the folder delete confirm counts everything below it, not just the top', async () => {
+    await open();
+    click(rowFor('power-automate'));
+    container.querySelector('.ax-list')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    await until(() => Boolean(document.querySelector('.ax-modal')));
+    // Confirming "3 items" and then removing nine is worse than not asking.
+    expect(document.querySelector('.ax-modal-body')?.textContent).toContain('1 item');
+    await dismissDialog();
+  });
+
   it('deletes the whole selection in one action, after confirming', async () => {
     await open();
-    vi.stubGlobal('confirm', () => true);
     click(rowFor('flat.png'));
     click(rowFor('brand.woff2'), { ctrlKey: true });
     const list = container.querySelector('.ax-list');
     list?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    await answerDialog();
     await until(() => calls.filter(c => c.url.endsWith('/__assets/manage')).length >= 2);
     const ops = calls.filter(c => c.url.endsWith('/__assets/manage'))
       .map(c => JSON.parse(String(c.init?.body)) as { op: string; asset_path: string });
@@ -279,18 +330,21 @@ describe('AssetPanelManager — file operations', () => {
 
   it('does not delete when the confirm is declined', async () => {
     await open();
-    vi.stubGlobal('confirm', () => false);
     click(rowFor('flat.png'));
     container.querySelector('.ax-list')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    await dismissDialog();
     await new Promise(r => setTimeout(r, 30));
     expect(calls.some(c => c.url.endsWith('/__assets/manage'))).toBe(false);
   });
 
   it('F2 renames the one selected file', async () => {
     await open();
-    vi.stubGlobal('prompt', () => 'renamed.png');
     click(rowFor('flat.png'));
     container.querySelector('.ax-list')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'F2', bubbles: true }));
+    // The extension is preselected out of the way, so typing replaces the stem.
+    await until(() => Boolean(document.querySelector('.ax-modal-input')));
+    expect(document.querySelector<HTMLInputElement>('.ax-modal-input')?.selectionEnd).toBe('flat'.length);
+    await answerDialog('renamed.png');
     await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
     expect(JSON.parse(String(calls.find(c => c.url.endsWith('/__assets/manage'))?.init?.body)))
       .toMatchObject({ op: 'move', asset_path: 'assets/images/flat.png', new_name: 'renamed.png' });

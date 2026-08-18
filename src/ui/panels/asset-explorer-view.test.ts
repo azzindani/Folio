@@ -72,6 +72,21 @@ describe('breadcrumb', () => {
 });
 
 describe('tree', () => {
+  it('separates the two stores under their own headings', () => {
+    const html = tree(base({
+      tree: [
+        { heading: 'This project' },
+        { label: 'demo', scope: 'project', folder: '', depth: 0, root: true },
+        { heading: 'Shared with every project' },
+        { label: 'Shared library', scope: 'library', folder: '', depth: 0, root: true },
+      ],
+    }));
+    // A shared folder that looks like a project folder is a trap: one travels
+    // with the project, the other is visible to every project you own.
+    expect(html.match(/ax-tree-h/g)).toHaveLength(2);
+    expect(html).toContain('Shared with every project');
+  });
+
   it('indents by depth and marks the current folder active', () => {
     const html = tree(base({
       folder: 'shots',
@@ -139,13 +154,13 @@ describe('the pane', () => {
     expect(html).toContain('class="ax-row selected"');
   });
 
-  it('makes files draggable but not folder rows — dropping a folder on itself has no meaning', () => {
+  it('makes folders draggable too — filing a folder into a folder is the point', () => {
     const entries: Entry[] = [
       { type: 'folder', name: 'shots', folder: 'shots', count: 1 },
       { type: 'file', asset: png('assets/images/a.png') },
     ];
     const html = pane(base({ entries }), urlOf);
-    expect(html.match(/draggable="true"/g)).toHaveLength(1);
+    expect(html.match(/draggable="true"/g)).toHaveLength(2);
   });
 });
 

@@ -18,13 +18,10 @@ export type Entry =
 export type ViewMode = 'details' | 'icons';
 export type SortKey = 'name' | 'size' | 'type' | 'added';
 
-export interface TreeNode {
-  label: string;
-  scope: Scope;
-  folder: string;
-  depth: number;
-  root?: boolean;
-}
+/** A navigable folder, or a heading that separates one store from the other. */
+export type TreeNode =
+  | { heading: string }
+  | { label: string; scope: Scope; folder: string; depth: number; root?: boolean };
 
 export interface ViewState {
   project: string | null;
@@ -108,9 +105,10 @@ export function crumbs(s: ViewState): string {
 
 export function tree(s: ViewState): string {
   const nodes = s.tree.map(n => {
+    if ('heading' in n) return `<div class="ax-tree-h">${esc(n.heading)}</div>`;
     const active = n.scope === s.scope && n.folder === s.folder && !s.query;
     const icon = n.root ? (n.scope === 'library' ? 'library' : 'layers') : 'folder';
-    return `<button class="ax-node${active ? ' active' : ''}" data-nav="${n.scope}:${esc(n.folder)}" style="--d:${n.depth}" title="${esc(n.label)}">
+    return `<button class="ax-node${active ? ' active' : ''}${n.root ? ' root' : ''}" data-nav="${n.scope}:${esc(n.folder)}" style="--d:${n.depth}" title="${esc(n.folder || n.label)}">
       <span class="ax-node-i">${chromeIcon(icon, 13)}</span><span class="ax-node-l">${esc(n.label)}</span></button>`;
   }).join('');
   return `<nav class="ax-tree" aria-label="Folders">${nodes}</nav>`;
@@ -167,7 +165,7 @@ function row(e: Entry, i: number, s: ViewState, urlOf: (a: AssetRow) => string):
   const key = entryKey(e);
   const sel = s.selected.has(key) ? ' selected' : '';
   if (e.type === 'folder') {
-    return `<div class="ax-row folder${sel}" data-idx="${i}" data-key="${esc(key)}" role="option" aria-selected="${sel ? 'true' : 'false'}" tabindex="-1">
+    return `<div class="ax-row folder${sel}" data-idx="${i}" data-key="${esc(key)}" draggable="true" role="option" aria-selected="${sel ? 'true' : 'false'}" tabindex="-1" title="${esc(e.folder)}">
       <span class="c-name"><span class="ax-ic ax-ic-folder">${chromeIcon('folder', 17)}</span><span class="ax-nm">${esc(e.name)}</span></span>
       <span class="c-size"></span><span class="c-type">Folder</span><span class="c-date">${e.count} item${e.count === 1 ? '' : 's'}</span>
     </div>`;
@@ -186,7 +184,7 @@ function tile(e: Entry, i: number, s: ViewState, urlOf: (a: AssetRow) => string)
   const key = entryKey(e);
   const sel = s.selected.has(key) ? ' selected' : '';
   if (e.type === 'folder') {
-    return `<div class="ax-tile folder${sel}" data-idx="${i}" data-key="${esc(key)}" role="option" aria-selected="${sel ? 'true' : 'false'}" tabindex="-1">
+    return `<div class="ax-tile folder${sel}" data-idx="${i}" data-key="${esc(key)}" draggable="true" role="option" aria-selected="${sel ? 'true' : 'false'}" tabindex="-1" title="${esc(e.folder)}">
       <span class="ax-tile-art ax-ic-folder">${chromeIcon('folder', 34)}</span><span class="ax-nm">${esc(e.name)}</span><span class="ax-sub">${e.count} item${e.count === 1 ? '' : 's'}</span>
     </div>`;
   }
@@ -216,4 +214,35 @@ export function shell(s: ViewState, urlOf: (a: AssetRow) => string): string {
       <input type="file" multiple class="ax-file" hidden>
       <div class="ax-drop" hidden><div class="ax-drop-in">Drop to upload into <b>${esc(s.folder || (s.scope === 'library' ? 'the shared library' : 'the project root'))}</b></div></div>
     </div>`;
+}
+
+/**
+ * Drop-to-upload on the whole panel.
+ *
+ * The overlay is driven by a COUNTER, not a boolean: dragenter and dragleave
+ * fire again for every child element the pointer crosses, so a boolean flickers
+ * the overlay off the moment the drag passes over a row.
+ */
+export function wireDropOverlay(
+  root: HTMLElement,
+  overlay: HTMLElement,
+  onFiles: (files: File[]) => void,
+): void {
+  let depth = 0;
+  const show = (on: boolean): void => { overlay.hidden = !on; };
+  root.addEventListener('dragenter', ev => {
+    if (!ev.dataTransfer?.types.includes('Files')) return;
+    depth++;
+    show(true);
+  });
+  root.addEventListener('dragover', ev => { if (ev.dataTransfer?.types.includes('Files')) ev.preventDefault(); });
+  root.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) show(false); });
+  root.addEventListener('drop', ev => {
+    depth = 0;
+    show(false);
+    const files = ev.dataTransfer?.files;
+    if (!files?.length) return;
+    ev.preventDefault();
+    onFiles(Array.from(files));
+  });
 }

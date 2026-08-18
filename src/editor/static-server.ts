@@ -521,7 +521,10 @@ Bun.serve({
           return manageAssets(req, projectDir, refresh);
         }
 
-        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts|docs)\/(?:([^/]+)\/)?([^/]+)$/);
+        // The folder part may nest (assets/images/clients/acme/logo.png) — the
+        // engine's sanitizeFolder caps the depth and strips anything unsafe, so
+        // the route hands it the whole thing rather than allowing one segment.
+        const assetMatch = relDecoded.match(/^([^/]+)\/assets\/(images|icons|fonts|docs)\/(?:(.+)\/)?([^/]+)$/);
         if (assetMatch && target && !relDecoded.includes('..')) {
           const projectDir = safeJoinProject(assetMatch[1]);
           if (!projectDir || !fs.existsSync(projectDir)) {

@@ -38,7 +38,7 @@ export interface AssetEntry {
   id: string;                 // stable slug, unique per project
   path: string;               // project-relative, e.g. "assets/images/team.jpg"
   kind: AssetKind;
-  folder?: string;            // optional one-segment folder inside the kind dir
+  folder?: string;            // optional folder path inside the kind dir, may nest
   bytes: number;
   width?: number;             // raster/svg pixel dims (absent for fonts)
   height?: number;
@@ -101,31 +101,10 @@ function targetKind(fileKind: AssetKind, requested?: string): AssetKind {
   return fileKind;
 }
 
-/**
- * A user folder inside a kind dir — ONE segment, no traversal.
- *
- * Folders are the file-manager affordance: `assets/images/power-automate/step-1.png`.
- * They stay one level deep on purpose. A tree of arbitrary depth buys nothing for a
- * per-project asset drawer and turns every path check into a traversal audit; one
- * segment is enough to keep a shoot or a tutorial's screenshots together.
- * Returns '' for "no folder" — never null, so callers can always join it.
- */
-export function sanitizeFolder(folder?: string): string {
-  const raw = String(folder ?? '').trim().replace(/^\/+|\/+$/g, '');
-  if (!raw || raw === '.' || raw === '..') return '';
-  const seg = raw.split('/')[0] ?? '';
-  const clean = seg.replace(/[^\w\- ]+/g, '').replace(/\s+/g, '-').toLowerCase().slice(0, 40);
-  return clean === '.' || clean === '..' ? '' : clean;
-}
-
-/** Split a project-relative asset path into its parts, or null if malformed. */
-export function parseAssetPath(rel: string): { kind: AssetKind; folder: string; name: string } | null {
-  const m = String(rel ?? '').replace(/^\/+/, '').match(/^assets\/(images|icons|fonts|docs)\/(?:([^/]+)\/)?([^/]+)$/);
-  if (!m) return null;
-  const folder = m[2] ? sanitizeFolder(m[2]) : '';
-  if (m[2] && folder !== m[2]) return null;
-  return { kind: m[1] as AssetKind, folder, name: m[3] ?? '' };
-}
+// Folder + path rules live in their own module (assets.ts is at its line
+// budget) and are re-exported here so every existing importer keeps working.
+export { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asset-paths';
+import { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asset-paths';
 
 // ── Metadata extraction ───────────────────────────────────────
 export interface AssetMeta {
@@ -222,7 +201,7 @@ function writeManifestEntry(projectDir: string, entry: AssetEntry): void {
   writeYAML(file, proj);
 }
 
-function removeManifestEntry(projectDir: string, relPath: string): void {
+export function removeManifestEntry(projectDir: string, relPath: string): void {
   const file = path.join(projectDir, 'project.yaml');
   if (!fs.existsSync(file)) return;
   const proj = readYAML<ProjectManifest>(file);
@@ -414,21 +393,25 @@ export function collectAssets(projectDir: string): AssetEntry[] {
   const byPath = new Map<string, AssetEntry>();
   for (const k of KINDS) for (const e of manifest[k] ?? []) byPath.set(e.path, e);
   // Disk wins over a stale manifest, and a file dropped straight into a folder
-  // (or copied in over SSH) still shows up. One level of nesting only — see
-  // sanitizeFolder for why the tree stops there.
+  // (or copied in over SSH) still shows up. Walks the whole tree to
+  // MAX_PROJECT_FOLDER_DEPTH — see sanitizeFolder.
   const files: { kind: AssetKind; folder: string; name: string }[] = [];
   for (const k of KINDS) {
-    const dir = path.join(projectDir, 'assets', k);
-    if (!fs.existsSync(dir)) continue;
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (e.isFile()) { files.push({ kind: k, folder: '', name: e.name }); continue; }
-      if (!e.isDirectory()) continue;
-      const folder = sanitizeFolder(e.name);
-      if (!folder || folder !== e.name) continue;
-      for (const f of fs.readdirSync(path.join(dir, e.name), { withFileTypes: true })) {
-        if (f.isFile()) files.push({ kind: k, folder, name: f.name });
+    const walk = (dir: string, folder: string, depth: number): void => {
+      let entries: fs.Dirent[];
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        if (e.isFile()) { files.push({ kind: k, folder, name: e.name }); continue; }
+        if (!e.isDirectory() || depth >= MAX_PROJECT_FOLDER_DEPTH) continue;
+        // A directory whose name would be rewritten by sanitising is not
+        // reachable by any path this store generates, so skip it rather than
+        // list files nobody can then resolve.
+        const seg = sanitizeFolder(e.name);
+        if (!seg || seg !== e.name || e.name.startsWith('.')) continue;
+        walk(path.join(dir, e.name), folder ? `${folder}/${seg}` : seg, depth + 1);
       }
-    }
+    };
+    walk(path.join(projectDir, 'assets', k), '', 0);
   }
   for (const { kind: k, folder, name: f } of files) {
     const rel = `assets/${k}/${folder ? `${folder}/` : ''}${f}`;

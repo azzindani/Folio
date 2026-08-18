@@ -139,19 +139,32 @@ describe('assets', () => {
   });
 
   describe('folders', () => {
-    it('sanitizeFolder keeps one safe segment and refuses traversal', () => {
+    it('sanitizeFolder nests, cleans each segment, and cannot express traversal', () => {
       expect(sanitizeFolder('Power Automate')).toBe('power-automate');
-      expect(sanitizeFolder('a/b/c')).toBe('a');
-      expect(sanitizeFolder('../../etc')).toBe('');
+      expect(sanitizeFolder('clients/Acme Corp/logos')).toBe('clients/acme-corp/logos');
+      // Traversal is neutralised by CONSTRUCTION, not by rejection: ".." never
+      // survives a segment clean, so the result is built only from safe parts
+      // and stays inside the kind dir whatever the input claimed.
+      expect(sanitizeFolder('../../etc')).toBe('etc');
+      expect(sanitizeFolder('a/../../b')).toBe('a/b');
       expect(sanitizeFolder('..')).toBe('');
       expect(sanitizeFolder(undefined)).toBe('');
+      // Depth is capped so a pathological path cannot make an unbounded tree.
+      expect(sanitizeFolder('a/b/c/d/e/f')).toBe('a/b/c/d');
     });
 
-    it('parseAssetPath reads both flat and foldered paths', () => {
+    it('parseAssetPath reads flat, foldered and nested paths', () => {
       expect(parseAssetPath('assets/images/a.png')).toEqual({ kind: 'images', folder: '', name: 'a.png' });
       expect(parseAssetPath('assets/images/shoot/a.png')).toEqual({ kind: 'images', folder: 'shoot', name: 'a.png' });
-      expect(parseAssetPath('assets/images/a/b/c.png')).toBeNull();
+      expect(parseAssetPath('assets/images/a/b/c.png')).toEqual({ kind: 'images', folder: 'a/b', name: 'c.png' });
       expect(parseAssetPath('../project.yaml')).toBeNull();
+      // A path whose folder would be REWRITTEN by sanitising is refused rather
+      // than silently redirected somewhere else.
+      expect(parseAssetPath('assets/images/../secrets/a.png')).toBeNull();
+      expect(parseAssetPath('assets/images/Shoot/a.png')).toBeNull();
+      expect(parseAssetPath('assets/images/a/b/c/d/e.png'), 'four folders is the cap, not over it')
+        .toEqual({ kind: 'images', folder: 'a/b/c/d', name: 'e.png' });
+      expect(parseAssetPath('assets/images/a/b/c/d/e/f.png'), 'past the depth cap').toBeNull();
     });
 
     it('assetAdd stores into a folder and records it', () => {
@@ -323,10 +336,12 @@ describe('docs assets (source material)', () => {
     expect(fs.existsSync(path.join(proj, '..', 'escape.md'))).toBe(false);
   });
 
-  it('flattens a nested folder request to one segment, like every other asset op', () => {
+  it('keeps a nested folder, dropping only the parts that cannot be a folder', () => {
     const w = assetWrite({ project_path: proj, name: 'deep.md', content: 'x', folder: 'a/../../b' }) as unknown as { asset_path: string };
-    expect(w.asset_path.startsWith('assets/docs/')).toBe(true);
-    expect(w.asset_path.split('/')).toHaveLength(4);
+    // The ".." segments vanish; "a/b" survives. The file lands inside the docs
+    // kind dir either way — that is the security property, and it holds without
+    // flattening the folder the author asked for.
+    expect(w.asset_path).toBe('assets/docs/a/b/deep.md');
   });
 
   it('still refuses executable and unknown types', () => {
