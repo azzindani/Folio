@@ -17,7 +17,7 @@ import {
 } from './asset-explorer-view';
 import { getClip, setClip, clipSummary, paste } from './asset-explorer-clipboard';
 import { commands, runCommand, wireChrome, trackWidth } from './asset-explorer-chrome';
-import { entryMenu, copyPaths, downloadAsset, uploadFiles, runBatch } from './asset-explorer-actions';
+import { entryMenu, treeNodeMenu, copyPaths, downloadAsset, uploadFiles, runBatch } from './asset-explorer-actions';
 import { wireKeys } from './asset-explorer-keys';
 import { Selection, closeMenu, type MenuItem } from './asset-explorer-menu';
 import { wireCells } from './asset-explorer-cells';
@@ -67,7 +67,6 @@ export class AssetPanelManager {
       render: () => this.render(),
       hasSelection: () => this.sel.size > 0,
       clearSelection: () => { this.sel.clear(); this.paintSelection(); },
-      closeTransient: () => this.closeTransient(),
     });
     this.renderMessage('Loading assets…');
     void this.boot(null, null);
@@ -222,16 +221,6 @@ export class AssetPanelManager {
     };
   }
 
-  /** Close whatever is layered over the file pane. True if there was anything —
-   *  Escape unwinds these before it touches the selection or the window. */
-  private closeTransient(): boolean {
-    const menu = this.container.querySelector<HTMLElement>('.ax-viewmenu');
-    if (menu && !menu.hidden) { menu.hidden = true; return true; }
-    const places = this.container.querySelector('.ax-tree.open');
-    if (places) { places.classList.remove('open'); return true; }
-    return false;
-  }
-
   /** Fill the window instead of the sidebar — see asset-explorer-full.ts. */
   private toggleFull(on = !this.window.active): void {
     this.window.toggle(on);
@@ -283,6 +272,7 @@ export class AssetPanelManager {
         next?.setSelectionRange(next.value.length, next.value.length);
       },
       currentProject: () => this.io.projectName,
+      treeMenu: (ev, nav, project) => this.treeMenu(ev, nav, project),
       openProject: (name) => void this.openProject(name),
       navigate: (nav) => this.navigate(nav),
       dropOn: (ev, nav) => void this.handleDrop(ev, nav),
@@ -518,6 +508,21 @@ export class AssetPanelManager {
     placeAsset(this.state, entry.asset);
   }
 
+
+  /** Right-click on a node in the tree — see asset-explorer-actions.ts. */
+  private treeMenu(ev: MouseEvent, nav: string, project: string | null): void {
+    treeNodeMenu(ev, nav, project, {
+      currentProject: this.io.projectName,
+      openProject: (p) => this.openProject(p),
+      navigate: (n) => this.navigate(n),
+      newFolder: () => void this.newFolder(),
+      uploadInto: (f) => this.pickInto(f),
+      setScope: (sc) => { this.scope = sc; },
+      selectFolder: (f) => { this.sel.selectOnly(`folder:${f}`); this.paintSelection(); },
+      menuFor: (e) => this.menuFor(e),
+      countIn: (f) => this.countIn(f),
+    });
+  }
 
   /** Build the right-click menu for whatever was clicked. */
   private menuFor(entry: Entry): MenuItem[] {

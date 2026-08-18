@@ -124,19 +124,29 @@ export function openMenu(x: number, y: number, items: MenuItem[]): void {
     if (ev.type === 'pointerdown' && menu.contains(ev.target as Node)) return;
     closeMenu();
   };
+  /**
+   * Only the WINDOW losing focus closes the menu.
+   *
+   * This was `blur` registered with capture, which does not mean "the window
+   * blurred" — blur does not bubble, so capture is how you catch it from every
+   * element on the page. Pressing a menu item moves focus to that button, which
+   * blurs whatever held it, which tore the menu down before the click could
+   * land on it: every verb in every right-click menu silently did nothing.
+   */
+  const onBlur = (ev: Event): void => { if (ev.target === window) closeMenu(); };
   const onKey = (ev: KeyboardEvent): void => { if (ev.key === 'Escape') { ev.stopPropagation(); closeMenu(); } };
   // Captured so a panel that stops propagation on its own listeners cannot
   // strand an open menu on screen.
   setTimeout(() => {
     document.addEventListener('pointerdown', dismiss, true);
     document.addEventListener('keydown', onKey, true);
-    window.addEventListener('blur', dismiss, true);
+    window.addEventListener('blur', onBlur);
     window.addEventListener('resize', dismiss, true);
   }, 0);
   cleanup = () => {
     document.removeEventListener('pointerdown', dismiss, true);
     document.removeEventListener('keydown', onKey, true);
-    window.removeEventListener('blur', dismiss, true);
+    window.removeEventListener('blur', onBlur);
     window.removeEventListener('resize', dismiss, true);
   };
 }

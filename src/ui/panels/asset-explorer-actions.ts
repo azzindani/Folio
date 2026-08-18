@@ -6,7 +6,7 @@
 // both; the bar is for discovery, the menu is for reach.
 import type { Entry } from './asset-explorer-view';
 import type { AssetRow, ManageBody, ManageResult, Scope } from './asset-explorer-io';
-import type { MenuItem } from './asset-explorer-menu';
+import { openMenu, type MenuItem } from './asset-explorer-menu';
 import { getClip } from './asset-explorer-clipboard';
 
 export interface MenuHandlers {
@@ -149,4 +149,58 @@ export async function runBatch(
   }
   if (failures.length) await toast(failures.slice(0, 3).join(' · '), 'warning');
   else await toast(okMessage, 'success');
+}
+
+/** What the tree's right-click menu needs from the panel. */
+export interface TreeMenuCtx {
+  currentProject: string | null;
+  openProject(name: string): void;
+  navigate(nav: string): void;
+  newFolder(): void;
+  uploadInto(folder: string): void;
+  setScope(scope: Scope): void;
+  selectFolder(folder: string): void;
+  menuFor(entry: Entry): MenuItem[];
+  countIn(folder: string): number;
+}
+
+/**
+ * Right-click on a node in the folder tree.
+ *
+ * The tree is where a file manager expects folders to be MANAGED, not merely
+ * walked. This used to open nothing at all, so the only route to deleting a
+ * folder was to navigate to its parent and find the row again — which is how
+ * someone ends up asking how folders get deleted in the first place.
+ */
+export function treeNodeMenu(
+  ev: MouseEvent, nav: string, project: string | null, ctx: TreeMenuCtx,
+): void {
+  const [rawScope, ...rest] = nav.split(':');
+  const scope: Scope = rawScope === 'library' ? 'library' : 'project';
+  const folder = rest.join(':');
+
+  // A project or a store root is a container, not a folder: no Rename, no
+  // Delete — only the verbs that make sense on a place.
+  if (!folder) {
+    const other = Boolean(project) && project !== ctx.currentProject;
+    openMenu(ev.clientX, ev.clientY, [
+      { label: 'Open', run: () => (other && project ? ctx.openProject(project) : ctx.navigate(nav)) },
+      ...(other ? [] : [
+        { label: 'New folder', run: () => { ctx.navigate(nav); ctx.newFolder(); } },
+        { label: 'Upload files…', run: () => { ctx.navigate(nav); ctx.uploadInto(''); } },
+      ]),
+    ]);
+    return;
+  }
+
+  // Act on what was pointed at: without selecting it first, "Delete" would
+  // describe whatever happened to be selected over in the file pane.
+  ctx.setScope(scope);
+  ctx.selectFolder(folder);
+  openMenu(ev.clientX, ev.clientY, ctx.menuFor({
+    type: 'folder',
+    name: folder.split('/').pop() ?? folder,
+    folder,
+    count: ctx.countIn(folder),
+  }));
 }
