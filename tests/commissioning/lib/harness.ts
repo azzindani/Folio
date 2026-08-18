@@ -59,14 +59,19 @@ export interface ServerExport {
  * Export through the REAL MCP engine, in a child process, exactly as the
  * deployed server runs it (bun executing TypeScript from src — no build step).
  */
-export function serverExport(design: string, format: string, outPath: string): ServerExport {
+export function serverExport(
+  design: string, format: string, outPath: string,
+  /** Project the design's relative srcs resolve against. Defaults to the main
+   *  fixture project; a spec that writes into its own scratch project passes it. */
+  projectPath: string = FIXTURE_PROJECT,
+): ServerExport {
   const script = `
     import { exportDesign } from ${JSON.stringify(path.join(REPO_ROOT, 'src/mcp/engine-export-tools.ts'))};
     const res = exportDesign({
       design_path: ${JSON.stringify(design)},
       format: ${JSON.stringify(format)},
       output_path: ${JSON.stringify(outPath)},
-      project_path: ${JSON.stringify(FIXTURE_PROJECT)},
+      project_path: ${JSON.stringify(projectPath)},
     });
     process.stdout.write('@@' + JSON.stringify(res) + '@@');
   `;

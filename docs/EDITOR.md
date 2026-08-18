@@ -119,7 +119,7 @@ SVG-in-HTML — vector-native, pixel-perfect at any zoom.
 | **Properties** | Context-aware per layer type: position, size, fill, stroke, radius, effects, transform (z/opacity/rotation/flip), blend mode — live-updates the canvas. Flow-report layers expose **Span + Height** instead of x/y |
 | **Problems** | Validation errors/warnings with layer ID + message; click to select the offender; re-runs on every change |
 | **File tree** | Open `.design.yaml` / `.template.yaml` / `.component.yaml` |
-| **Assets** | Project `assets/` thumbnails (left rail); click inserts the image as a layer at native aspect, centered. Same store the MCP `manage_design {op:asset_*}` tools use |
+| **Assets** | Full file manager over the project store + shared library — folder tree, breadcrumb, sortable columns, details/icons views, multi-select (click · ctrl · shift · Ctrl+A), right-click menu, F2 rename, Del delete, drag files in to upload, drag rows onto a folder to move, ⛶ for a full window. Opens standalone (project picker) — no design needs to be loaded. Double-click places an image as a layer. Same store the MCP `manage_design {op:asset_*}` tools use |
 | **Page strip** | Page thumbnails — click to navigate; **+** adds a page; right-click for duplicate / move left·right / rename / delete. Paging starts from any design: adding a page to a single-page poster converts it to multi-page |
 | **Timeline** | Animation keyframe scrubber + per-layer tracks |
 | **Payload (Monaco)** | VS Code's editor (lazy-loaded) over the raw YAML — inline validation, syntax highlighting, **bidirectional sync** with the canvas (300ms debounce, re-entrancy-guarded) |

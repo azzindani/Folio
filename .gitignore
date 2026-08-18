@@ -94,3 +94,5 @@ tests/commissioning/report/
 tests/commissioning/fixtures/projects/.short-links.json
 tests/commissioning/fixtures/projects/.library/assets/index.json
 tests/commissioning/fixtures/projects/commissioning/designs/_scratch-*.design.yaml
+# Projects the asset-manager spec creates and removes at run time.
+tests/commissioning/fixtures/projects/_scratch-*/

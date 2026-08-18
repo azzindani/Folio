@@ -1,15 +1,16 @@
 # Commissioning suite
 
-Run: `npm run test:commissioning` (~60s, 23 checks). Runs in CI as the
+Run: `npm run test:commissioning` (~75s, 29 checks). Runs in CI as the
 **Commissioning (artifact fidelity)** job, after `build`.
 
 | Spec | Checks | Question it answers |
 |---|---|---|
 | `export-fidelity` | 6 | is the design actually in the file? |
-| `render-integrity` | 5 | does any render come out blank, invisible, or unstable? |
+| `render-integrity` | 7 | does any render come out blank, invisible, or unstable? |
 | `artifact-portability` | 4 | does the file still work somewhere else? |
 | `font-fidelity` | 5 | is the text in the face the design asked for? |
 | `capabilities` | 3 | do motion and persistence actually work? |
+| `asset-manager` | 4 | can a person get a file in, and does the engine see it? |
 
 ## What this suite is for
 

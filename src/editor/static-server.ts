@@ -39,7 +39,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 // (thumbnail render / library scan) so the single-core container can't collapse.
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
-import { listAssets, manageAssets, uploadAsset } from './server-assets';
+import { listAssets, listProjects, manageAssets, uploadAsset } from './server-assets';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
@@ -475,6 +475,12 @@ Bun.serve({
       // editor asset panel. Same manifest+disk merge the MCP asset_list op
       // uses (collectAssets), so panel and model always see the same set.
       if (req.method === 'GET') {
+        // ── GET /__project_files/__projects — the asset panel's project picker.
+        // Checked before the <project>/__assets match below: "__projects" is
+        // not a project name, and the store has no directory by that name.
+        if (url.pathname === '/__project_files/__projects') {
+          return listProjects(PROJECTS_DIR, refresh);
+        }
         const assetsListMatch = url.pathname.slice('/__project_files/'.length).match(/^([^/]+)\/__assets$/);
         if (assetsListMatch) {
           let projName = assetsListMatch[1];

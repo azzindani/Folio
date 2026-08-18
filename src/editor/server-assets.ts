@@ -9,6 +9,11 @@ import { ingestAsset, collectAssets, sanitizeFolder, AssetError, maxAssetBytes }
 // fall back to the project store otherwise — same rules the MCP ops apply.
 import { assetDelete, assetMove } from '../mcp/engine/asset-library-ops';
 import { collectLibraryAssets, libraryFolders, ingestLibraryAsset } from '../mcp/engine/asset-library';
+// Folders as first-class things: a file manager makes the folder first and
+// fills it after, which the file-derived listing alone cannot represent.
+import { projectFolders, createAssetFolder, removeAssetFolder } from '../mcp/engine/asset-folders';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' } as const;
 
@@ -31,7 +36,13 @@ export function listAssets(projectDir: string, refresh?: string | null): Respons
   try {
     const own = collectAssets(projectDir);
     const shared = collectLibraryAssets();
-    const folders = [...new Set(own.map(a => a.folder ?? '').filter(Boolean))].sort();
+    // Union of "folders that contain something" and "folders that exist on
+    // disk" — a folder you just made is empty by definition, and a panel that
+    // dropped it the moment you created it would be unusable.
+    const folders = [...new Set([
+      ...own.map(a => a.folder ?? '').filter(Boolean),
+      ...projectFolders(projectDir),
+    ])].sort();
     return json({ ok: true, assets: [...own, ...shared], folders, library_folders: libraryFolders() }, 200, refresh);
   } catch (e) {
     return json({ ok: false, error: (e as Error).message, assets: [], folders: [], library_folders: [] }, 500);
@@ -39,21 +50,71 @@ export function listAssets(projectDir: string, refresh?: string | null): Respons
 }
 
 /**
- * POST …/<project>/__assets/manage — {op:"delete"|"move", asset_path, folder?, new_name?}.
+ * GET /__project_files/__projects — every project, for the panel's project picker.
+ *
+ * The asset manager used to be reachable only as a side effect of opening a
+ * design from the Library, because that was the only moment anything told it
+ * which project it was looking at. It is a file manager; it should open on its
+ * own and let you pick. This is what it picks from.
+ */
+export function listProjects(projectsDir: string, refresh?: string | null): Response {
+  try {
+    const projects = fs.readdirSync(projectsDir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !e.name.startsWith('.'))
+      .map(e => ({
+        name: e.name,
+        designs: countFiles(path.join(projectsDir, e.name, 'designs'), n => n.endsWith('.design.yaml')),
+        assets: ['images', 'icons', 'fonts', 'docs']
+          .reduce((n, k) => n + countFiles(path.join(projectsDir, e.name, 'assets', k), () => true, true), 0),
+      }))
+      .sort((a, b) => b.assets - a.assets || a.name.localeCompare(b.name));
+    return json({ ok: true, projects }, 200, refresh);
+  } catch (e) {
+    return json({ ok: false, error: (e as Error).message, projects: [] }, 500);
+  }
+}
+
+/** Count matching files in a directory, optionally one level down as well. */
+function countFiles(dir: string, match: (name: string) => boolean, nested = false): number {
+  let entries: fs.Dirent[];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return 0; }
+  let n = 0;
+  for (const e of entries) {
+    if (e.isFile() && match(e.name)) n++;
+    else if (nested && e.isDirectory() && !e.name.startsWith('.')) n += countFiles(path.join(dir, e.name), match);
+  }
+  return n;
+}
+
+/**
+ * POST …/<project>/__assets/manage — {op:"delete"|"move"|"mkdir"|"rmdir", …}.
  *
  * The engine ops already validate paths and refuse traversal, so this is a thin
  * shell: parse, delegate, map the tool result onto an HTTP status.
  */
 export async function manageAssets(req: Request, projectDir: string, refresh?: string | null): Promise<Response> {
-  let body: { op?: string; asset_path?: string; folder?: string; new_name?: string };
+  let body: {
+    op?: string; asset_path?: string; folder?: string; new_name?: string;
+    scope?: 'project' | 'library';
+  };
   try { body = JSON.parse(await req.text()) as typeof body; } catch { return json({ ok: false, error: 'Bad JSON body' }, 400); }
 
   const res = body.op === 'delete'
     ? assetDelete({ project_path: projectDir, asset_path: body.asset_path })
     : body.op === 'move'
       ? assetMove({ project_path: projectDir, asset_path: body.asset_path, folder: body.folder, new_name: body.new_name })
-      : null;
-  if (!res) return json({ ok: false, error: `Unknown op: ${String(body.op)}`, hint: 'Use op:"delete" or op:"move".' }, 400);
+      : body.op === 'mkdir'
+        ? createAssetFolder({ projectDir, folder: body.folder, scope: body.scope })
+        : body.op === 'rmdir'
+          ? removeAssetFolder({ projectDir, folder: body.folder, scope: body.scope })
+          : null;
+  if (!res) {
+    return json({
+      ok: false,
+      error: `Unknown op: ${String(body.op)}`,
+      hint: 'Use op:"delete", "move", "mkdir" or "rmdir".',
+    }, 400);
+  }
 
   const record = res as unknown as Record<string, unknown>;
   const ok = record['success'] === true;
