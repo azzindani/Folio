@@ -167,3 +167,64 @@ export function removeAssetFolder(args: {
     return { success: false, error: (e as Error).message };
   }
 }
+
+/**
+ * Rename a folder in place, keeping everything under it.
+ *
+ * Done on the server because a folder is four directories at once (one per
+ * kind) plus manifest rows that carry the old path. The editor's panel does the
+ * equivalent client-side by moving each file; the Design Library has no such
+ * machinery, and a "Rename folder" button that quietly did nothing is worse
+ * than no button.
+ */
+export function renameAssetFolder(args: {
+  projectDir?: string;
+  folder?: string;
+  newName?: string;
+  scope?: 'project' | 'library';
+}): FolderOpResult {
+  const wantLibrary = args.scope === 'library';
+  const folder = wantLibrary ? sanitizeFolderPath(args.folder) : sanitizeFolder(args.folder);
+  if (!folder) return { success: false, error: 'No folder given' };
+
+  // The new name is one SEGMENT, not a path: renaming is not moving, and a
+  // slash here would silently relocate the folder somewhere else entirely.
+  const leaf = String(args.newName ?? '').trim().replace(/^\/+|\/+$/g, '');
+  if (!leaf || leaf.includes('/')) {
+    return { success: false, error: 'Give a single new folder name', hint: 'Use Move to put it somewhere else.' };
+  }
+  const parent = folder.split('/').slice(0, -1).join('/');
+  const target = parent ? `${parent}/${leaf}` : leaf;
+  if (target === folder) return { success: true, folder };
+
+  const roots = wantLibrary
+    ? [libraryRoot()]
+    : args.projectDir ? KINDS.map(k => path.join(args.projectDir as string, 'assets', k)) : [];
+  if (!roots.length) return { success: false, error: 'No project' };
+
+  const pairs = roots
+    .map(r => ({ from: path.join(r, folder), to: path.join(r, target) }))
+    .filter(p => fs.existsSync(p.from));
+  if (!pairs.length) return { success: false, error: `No such folder: "${folder}"` };
+  for (const p of pairs) {
+    if (fs.existsSync(p.to)) return { success: false, error: `"${target}" already exists` };
+  }
+
+  try {
+    for (const p of pairs) {
+      fs.mkdirSync(path.dirname(p.to), { recursive: true });
+      fs.renameSync(p.from, p.to);
+      // The listing merges the manifest OVER the disk, so a row still pointing
+      // at the old path resurrects the folder that was just renamed.
+      if (!wantLibrary && args.projectDir) {
+        for (const abs of filesUnder(p.to)) {
+          const rel = path.relative(args.projectDir, abs).split(path.sep).join('/');
+          removeManifestEntry(args.projectDir, rel.replace(`/${target}/`, `/${folder}/`));
+        }
+      }
+    }
+    return { success: true, folder: target };
+  } catch (e) {
+    return { success: false, error: (e as Error).message };
+  }
+}

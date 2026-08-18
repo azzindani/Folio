@@ -11,7 +11,7 @@ import { assetDelete, assetMove } from '../mcp/engine/asset-library-ops';
 import { collectLibraryAssets, libraryFolders, ingestLibraryAsset } from '../mcp/engine/asset-library';
 // Folders as first-class things: a file manager makes the folder first and
 // fills it after, which the file-derived listing alone cannot represent.
-import { projectFolders, createAssetFolder, removeAssetFolder } from '../mcp/engine/asset-folders';
+import { projectFolders, createAssetFolder, removeAssetFolder, renameAssetFolder } from '../mcp/engine/asset-folders';
 // Copy is the half of cut/copy/paste that move cannot do, and it crosses both
 // projects and stores — the reason to copy is usually "I want it there TOO".
 import { copyAsset } from '../mcp/engine/asset-copy';
@@ -127,12 +127,14 @@ export async function manageAssets(
         ? createAssetFolder({ projectDir, folder: body.folder, scope: body.scope })
         : body.op === 'rmdir'
           ? removeAssetFolder({ projectDir, folder: body.folder, scope: body.scope })
-          : null;
+          : body.op === 'renamedir'
+            ? renameAssetFolder({ projectDir, folder: body.folder, newName: body.new_name, scope: body.scope })
+            : null;
   if (!res) {
     return json({
       ok: false,
       error: `Unknown op: ${String(body.op)}`,
-      hint: 'Use op:"delete", "move", "copy", "mkdir" or "rmdir".',
+      hint: 'Use op:"delete", "move", "copy", "mkdir", "rmdir" or "renamedir".',
     }, 400);
   }
 

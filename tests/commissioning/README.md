@@ -1,6 +1,6 @@
 # Commissioning suite
 
-Run: `npm run test:commissioning` (~1.5m, 37 checks). Runs in CI as the
+Run: `npm run test:commissioning` (~1.5m, 40 checks). Runs in CI as the
 **Commissioning (artifact fidelity)** job, after `build`.
 
 | Spec | Checks | Question it answers |
@@ -11,6 +11,7 @@ Run: `npm run test:commissioning` (~1.5m, 37 checks). Runs in CI as the
 | `font-fidelity` | 5 | is the text in the face the design asked for? |
 | `capabilities` | 3 | do motion and persistence actually work? |
 | `asset-manager` | 12 | can a person get a file in, file it, and find it again — in the window they actually get? |
+| `library-assets` | 3 | the OTHER front door: can folders be made, renamed and deleted from /library? |
 
 ## What this suite is for
 
