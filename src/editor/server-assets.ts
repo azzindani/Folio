@@ -12,6 +12,10 @@ import { collectLibraryAssets, libraryFolders, ingestLibraryAsset } from '../mcp
 // Folders as first-class things: a file manager makes the folder first and
 // fills it after, which the file-derived listing alone cannot represent.
 import { projectFolders, createAssetFolder, removeAssetFolder } from '../mcp/engine/asset-folders';
+// Copy is the half of cut/copy/paste that move cannot do, and it crosses both
+// projects and stores — the reason to copy is usually "I want it there TOO".
+import { copyAsset } from '../mcp/engine/asset-copy';
+import { createProject } from '../mcp/engine-project-tools';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -92,10 +96,18 @@ function countFiles(dir: string, match: (name: string) => boolean, nested = fals
  * The engine ops already validate paths and refuse traversal, so this is a thin
  * shell: parse, delegate, map the tool result onto an HTTP status.
  */
-export async function manageAssets(req: Request, projectDir: string, refresh?: string | null): Promise<Response> {
+export async function manageAssets(
+  req: Request,
+  projectDir: string,
+  refresh?: string | null,
+  /** Resolves a project NAME to its directory — copy may name a different one. */
+  resolveProject?: (name: string) => string | null,
+): Promise<Response> {
   let body: {
     op?: string; asset_path?: string; folder?: string; new_name?: string;
     scope?: 'project' | 'library';
+    /** Copy source, when it is not the project in the URL. */
+    from_project?: string;
   };
   try { body = JSON.parse(await req.text()) as typeof body; } catch { return json({ ok: false, error: 'Bad JSON body' }, 400); }
 
@@ -103,6 +115,14 @@ export async function manageAssets(req: Request, projectDir: string, refresh?: s
     ? assetDelete({ project_path: projectDir, asset_path: body.asset_path })
     : body.op === 'move'
       ? assetMove({ project_path: projectDir, asset_path: body.asset_path, folder: body.folder, new_name: body.new_name })
+      : body.op === 'copy'
+        ? copyAsset({
+          assetPath: body.asset_path,
+          fromDir: body.from_project ? (resolveProject?.(body.from_project) ?? undefined) : projectDir,
+          toDir: projectDir,
+          folder: body.folder,
+          scope: body.scope,
+        })
       : body.op === 'mkdir'
         ? createAssetFolder({ projectDir, folder: body.folder, scope: body.scope })
         : body.op === 'rmdir'
@@ -112,7 +132,7 @@ export async function manageAssets(req: Request, projectDir: string, refresh?: s
     return json({
       ok: false,
       error: `Unknown op: ${String(body.op)}`,
-      hint: 'Use op:"delete", "move", "mkdir" or "rmdir".',
+      hint: 'Use op:"delete", "move", "copy", "mkdir" or "rmdir".',
     }, 400);
   }
 
@@ -160,4 +180,21 @@ export async function uploadAsset(
     const hint = e instanceof AssetError ? e.hint : '';
     return json({ ok: false, error: (e as Error).message, hint }, status);
   }
+}
+
+/**
+ * POST /__project_files/__projects — create a project.
+ *
+ * A project is a container, not a file: it gets its own verb rather than being
+ * conjured as a side effect of uploading something into a path that does not
+ * exist yet. createProject derives the directory from the name itself and
+ * places it under FOLIO_PROJECTS_DIR, so no path is accepted from the client.
+ */
+export async function createProjectRoute(req: Request): Promise<Response> {
+  let name = '';
+  try { name = (JSON.parse(await req.text()) as { name?: string }).name ?? ''; } catch { /* empty body */ }
+  if (!name.trim()) return json({ ok: false, error: 'A project needs a name' }, 400);
+  const res = createProject({ name }) as unknown as Record<string, unknown>;
+  const made = res['success'] === true;
+  return json({ ok: made, ...res }, made ? 200 : 400);
 }

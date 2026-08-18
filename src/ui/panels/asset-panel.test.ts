@@ -98,8 +98,8 @@ describe('AssetPanelManager — opening', () => {
     // opening a server-backed design, so anyone who came here to upload FIRST
     // met an empty pane with no controls and no way to add a file.
     await open(null);
-    expect(container.querySelector('[data-act="upload"]')).toBeTruthy();
-    expect(container.querySelector<HTMLSelectElement>('.ax-project')?.value).toBe('demo');
+    expect(container.querySelector('[data-cmd="upload"]')).toBeTruthy();
+    expect(container.querySelector('.ax-node.project.open')?.textContent).toContain('demo');
     expect(calls.some(c => c.url.endsWith('/__projects'))).toBe(true);
   });
 
@@ -114,14 +114,23 @@ describe('AssetPanelManager — opening', () => {
     expect(names()).toEqual(['power-automate', 'brand.woff2', 'flat.png']);
   });
 
-  it('switching project in the picker re-lists against that project', async () => {
+  it('every project is in the tree, and clicking one switches to it', async () => {
     await open();
-    const picker = container.querySelector<HTMLSelectElement>('.ax-project');
-    if (!picker) throw new Error('no picker');
-    picker.value = 'demo';
-    picker.dispatchEvent(new Event('change'));
-    await until(() => calls.some(c => c.url.startsWith('/__project_files/demo/__assets')));
+    // Projects are containers you move between, not a filter on a dropdown.
+    const rows = [...container.querySelectorAll<HTMLElement>('.ax-node.project')];
+    expect(rows.map(r => r.dataset['project'])).toContain('demo');
+    click(rows.find(r => r.dataset['project'] === 'demo'));
+    await until(() => calls.some(c => c.url === '/__project_files/demo/__assets'));
     expect(calls.some(c => c.url === '/__project_files/demo/__assets')).toBe(true);
+  });
+
+  it('creates a project through its own verb, beside the Projects heading', async () => {
+    await open();
+    click(container.querySelector('[data-cmd="newproject"]'));
+    await answerDialog('Client Work');
+    await until(() => calls.some(c => c.init?.method === 'POST' && c.url.endsWith('/__projects')));
+    const made = calls.find(c => c.init?.method === 'POST' && c.url.endsWith('/__projects'));
+    expect(JSON.parse(String(made?.init?.body))).toMatchObject({ name: 'Client Work' });
   });
 });
 
@@ -269,7 +278,7 @@ describe('AssetPanelManager — file operations', () => {
 
   it('makes a folder through the manage endpoint', async () => {
     await open();
-    click(container.querySelector('[data-act="newfolder"]'));
+    click(container.querySelector('[data-cmd="newfolder"]'));
     await answerDialog('Screenshots');
     await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
     expect(JSON.parse(String(calls.find(c => c.url.endsWith('/__assets/manage'))?.init?.body)))
@@ -279,7 +288,7 @@ describe('AssetPanelManager — file operations', () => {
   it('makes the folder INSIDE the one that is open, not at the root', async () => {
     await open();
     click(container.querySelector('.ax-node[data-nav="project:power-automate"]'));
-    click(container.querySelector('[data-act="newfolder"]'));
+    click(container.querySelector('[data-cmd="newfolder"]'));
     await answerDialog('run-2');
     await until(() => calls.some(c => c.url.endsWith('/__assets/manage')));
     // Sending the name as an absolute path is what made "New folder" look
@@ -379,7 +388,7 @@ describe('AssetPanelManager — writing a text asset', () => {
   it('saves a new brief into assets/docs of the folder in view', async () => {
     await open();
     click(container.querySelector('.ax-node[data-nav="project:power-automate"]'));
-    click(container.querySelector('[data-act="write"]'));
+    click(container.querySelector('[data-cmd="write"]'));
     const name = container.querySelector<HTMLInputElement>('.ax-fname');
     const text = container.querySelector<HTMLTextAreaElement>('.ax-text');
     if (!name || !text) throw new Error('no editor');
@@ -396,7 +405,7 @@ describe('AssetPanelManager — writing a text asset', () => {
 
   it('refuses a non-text extension and an empty body', async () => {
     await open();
-    click(container.querySelector('[data-act="write"]'));
+    click(container.querySelector('[data-cmd="write"]'));
     const name = container.querySelector<HTMLInputElement>('.ax-fname');
     const text = container.querySelector<HTMLTextAreaElement>('.ax-text');
     if (!name || !text) throw new Error('no editor');
@@ -415,7 +424,7 @@ describe('AssetPanelManager — writing a text asset', () => {
 
   it('Cancel returns to the file list rather than stranding the editor', async () => {
     await open();
-    click(container.querySelector('[data-act="write"]'));
+    click(container.querySelector('[data-cmd="write"]'));
     expect(container.querySelector('.ax-text')).toBeTruthy();
     click(container.querySelector('[data-act="dcancel"]'));
     expect(container.querySelector('.ax-text')).toBeNull();

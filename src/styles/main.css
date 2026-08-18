@@ -556,58 +556,96 @@ html, body {
   /* Shared by the column header and every row so they cannot drift apart. */
   --ax-cols: 1fr 68px 84px 88px;
 }
-.ax-top {
-  display: flex; gap: 6px; padding: 8px; flex-wrap: wrap; align-items: center;
+/* ── Navigation row: back / up / breadcrumb / search ───────── */
+.ax-nav {
+  display: flex; gap: 6px; align-items: center; padding: 6px 8px;
   border-bottom: 1px solid var(--color-border);
 }
-.ax-gap { flex: 1; }
-.ax-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  min-height: 44px; padding: 0 12px;
-  background: var(--color-surface-2); color: var(--color-text);
-  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+.ax-navbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; min-height: 34px; flex: 0 0 auto;
+  background: none; color: var(--color-text);
+  border: 1px solid transparent; border-radius: var(--radius-sm); cursor: pointer;
 }
-.ax-btn svg { flex: 0 0 auto; }
-.ax-btn:active { background: var(--color-surface-3); }
-.ax-primary { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-.ax-sq { min-width: 44px; padding: 0 10px; font-size: 15px; }
-.ax-project, .ax-fname {
-  min-height: 44px; padding: 0 10px; max-width: 40%;
-  background: var(--color-surface-2); color: var(--color-text);
-  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 600;
+.ax-navbtn:hover:not(:disabled) { background: var(--color-surface-2); border-color: var(--color-border); }
+.ax-navbtn:disabled { opacity: .3; cursor: default; }
+.ax-crumb-path {
+  display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0;
+  overflow-x: auto; scrollbar-width: none;
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); padding: 0 4px; min-height: 34px;
 }
-.ax-fname { flex: 1; min-width: 0; max-width: none; font-weight: 400; }
-.ax-fname[readonly] { color: var(--color-text-muted); }
-.ax-project-name { font-size: 13px; font-weight: 600; padding: 0 4px; }
-
-.ax-crumbs {
-  display: flex; gap: 8px; align-items: center; padding: 6px 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-.ax-crumb-path { display: flex; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; }
 .ax-crumb-path::-webkit-scrollbar { display: none; }
 .ax-crumb {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 5px; min-height: 30px;
   background: none; border: none; cursor: pointer; white-space: nowrap;
   color: var(--color-text); font-size: 12px; font-weight: 600;
-  padding: 6px 6px; border-radius: var(--radius-sm);
+  padding: 0 6px; border-radius: 3px;
 }
-.ax-crumb:active { background: var(--color-surface-3); }
+.ax-crumb:hover { background: var(--color-surface-3); }
 .ax-sep { color: var(--color-text-muted); font-size: 12px; }
 .ax-search {
-  width: 44%; min-height: 36px; padding: 0 10px;
+  width: 34%; min-width: 120px; min-height: 34px; padding: 0 10px; flex: 0 1 auto;
   background: var(--color-surface-2); color: var(--color-text);
   border: 1px solid var(--color-border); border-radius: var(--radius-sm);
   font-size: 13px;
 }
 
-.ax-main { flex: 1; display: flex; min-height: 0; }
+/* ── Command bar: the verbs, on top, greyed out until they apply ───
+   Every one of these used to live in a right-click menu, which is a menu you
+   have no reason to open — and barely reachable on a touchscreen. */
+.ax-cmdbar {
+  display: flex; align-items: center; gap: 2px; padding: 5px 8px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.ax-cmdbar::-webkit-scrollbar { display: none; }
+.ax-cmd {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  min-height: 34px; padding: 0 9px;
+  background: none; color: var(--color-text);
+  border: 1px solid transparent; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.ax-cmd:hover:not(:disabled) { background: var(--color-surface-2); border-color: var(--color-border); }
+.ax-cmd:disabled { opacity: .35; cursor: default; }
+.ax-cmd.danger:hover:not(:disabled) { background: var(--color-danger, #e5484d); color: #fff; border-color: transparent; }
+.ax-div { flex: 0 0 auto; width: 1px; height: 20px; margin: 0 5px; background: var(--color-border); }
+.ax-gap { flex: 1 1 auto; min-width: 4px; }
+
+/* The view picker is a menu, not six permanent buttons — Explorer does the
+   same, because you change view rarely and need the room for verbs. */
+.ax-viewpick { position: relative; flex: 0 0 auto; }
+.ax-viewmenu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 40; min-width: 190px;
+  padding: 4px; background: var(--color-surface-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+}
+.ax-vmode {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px;
+  padding: 0 10px; background: none; border: none; border-radius: 3px;
+  color: var(--color-text); font-size: 12px; text-align: left; cursor: pointer;
+}
+.ax-vmode:hover { background: var(--color-surface-3); }
+.ax-vmode.active { background: var(--color-primary); color: #fff; }
+
+
+/* ── Main area: tree + file pane ───────────────────────────── */
+.ax-main { flex: 1; display: flex; min-height: 0; position: relative; }
 .ax-tree { display: none; }
+/* Below the width that fits a tree it becomes a drawer instead of vanishing:
+   without it there is no way to reach another project at all, which is most of
+   what the panel is for on a phone. */
+.ax-tree.open {
+  display: block; position: absolute; inset: 0 auto 0 0; z-index: 30;
+  width: min(260px, 82%); overflow: auto; padding: 4px;
+  background: var(--color-surface); border-right: 1px solid var(--color-border);
+}
+.ax-places { display: inline-flex; }
+.ax.is-wide .ax-places { display: none; }
 .ax.is-wide .ax-tree {
-  display: block; width: 176px; flex: 0 0 176px; overflow: auto;
-  border-right: 1px solid var(--color-border); padding: 6px 4px;
+  display: block; width: 190px; flex: 0 0 190px; overflow: auto;
+  border-right: 1px solid var(--color-border); padding: 4px;
 }
 .ax-node {
   display: flex; align-items: center; gap: 6px; width: 100%;
@@ -615,12 +653,17 @@ html, body {
   background: none; border: none; border-radius: var(--radius-sm);
   color: var(--color-text); font-size: 12px; text-align: left; cursor: pointer;
 }
+.ax-node:hover { background: var(--color-surface-2); }
 .ax-node.active { background: var(--color-primary); color: #fff; }
-.ax-node.drop, .ax-row.drop, .ax-tile.drop {
+.ax-node.root, .ax-node.project { font-weight: 600; }
+.ax-node.project.open { color: var(--color-primary); }
+.ax-node.project.open.active { color: #fff; }
+.ax-node.drop, .ax-row.drop, .ax-li.drop, .ax-icon.drop, .ax-tile.drop {
   outline: 2px dashed var(--color-primary); outline-offset: -2px;
 }
 .ax-node-i { flex: 0 0 auto; display: flex; opacity: .8; }
-.ax-node-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-node-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.ax-node-n { flex: 0 0 auto; font-size: 10px; opacity: .55; }
 
 .ax-files { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .ax-head {
@@ -632,60 +675,100 @@ html, body {
   padding: 7px 4px; font-size: 11px; font-weight: 700; letter-spacing: .02em;
   color: var(--color-text-muted); text-transform: uppercase;
 }
+.ax-h:hover { color: var(--color-text); }
 .ax-h.sorted { color: var(--color-text); }
 .ax-arrow { margin-left: 3px; font-size: 9px; }
 
 .ax-list { flex: 1; overflow: auto; outline: none; }
-.ax-list.details { display: block; padding: 4px 0; }
-.ax-list.icons {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
-  gap: 8px; padding: 8px; grid-auto-rows: max-content; align-content: start;
+.ax-list.details, .ax-list.tiles { display: block; padding: 4px 0; }
+
+.ax-row, .ax-li, .ax-icon, .ax-tile {
+  cursor: pointer; border: 1px solid transparent;
+  color: var(--color-text); user-select: none;
 }
-.ax-row {
-  display: grid; grid-template-columns: var(--ax-cols); align-items: center;
-  padding: 3px 8px; cursor: pointer; border: 1px solid transparent;
-  font-size: 12px; color: var(--color-text);
+.ax-row.selected, .ax-li.selected, .ax-icon.selected, .ax-tile.selected {
+  background: var(--color-primary); color: #fff;
 }
-.ax-row.selected, .ax-tile.selected { background: var(--color-primary); color: #fff; }
-.ax-row.selected .c-size, .ax-row.selected .c-type,
-.ax-row.selected .c-date, .ax-row.selected .ax-dim,
-.ax-row.selected .ax-loc, .ax-tile.selected .ax-sub { color: rgba(255,255,255,.82); }
-.ax-row .c-name { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 38px; }
+/* A cut item stays in place, dimmed, until the paste lands — same as the
+   desktop, and the reason you can still see where it came from. */
+.ax-row.cut, .ax-li.cut, .ax-icon.cut, .ax-tile.cut { opacity: .45; }
 .ax-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-sub { font-size: 10px; color: var(--color-text-muted); }
 .ax-loc {
   flex: 0 0 auto; font-size: 10px; padding: 1px 5px; border-radius: 9px;
   background: var(--color-surface-3); color: var(--color-text-muted);
 }
+.ax-art {
+  object-fit: cover; border-radius: 3px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+  background: repeating-conic-gradient(var(--color-surface-3) 0% 25%, var(--color-surface-2) 0% 50%) 0 0 / 10px 10px;
+}
+.ax-art-folder, .ax-art-doc { background: none; }
+.ax-art-font { background: var(--color-surface-3); font-weight: 700; color: var(--color-text); }
+.selected .ax-art-folder, .selected .ax-art-doc { color: #fff; }
+
+/* Details — sortable columns */
+.ax-row {
+  display: grid; grid-template-columns: var(--ax-cols); align-items: center;
+  padding: 3px 8px; font-size: 12px;
+}
+.ax-row .c-name { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 34px; }
 .ax-row .c-size, .ax-row .c-type, .ax-row .c-date {
   font-size: 11px; color: var(--color-text-muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.ax-row.selected .c-size, .ax-row.selected .c-type,
+.ax-row.selected .c-date, .ax-row.selected .ax-dim,
+.ax-row.selected .ax-loc { color: rgba(255,255,255,.82); }
 .ax-dim { opacity: .75; }
-.ax-ic {
-  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 3px; object-fit: cover;
-  display: flex; align-items: center; justify-content: center; font-size: 12px;
-  background: repeating-conic-gradient(var(--color-surface-3) 0% 25%, var(--color-surface-2) 0% 50%) 0 0 / 10px 10px;
-}
-.ax-ic-folder, .ax-ic-doc { background: none; color: var(--color-text-muted); }
-.ax-row.selected .ax-ic-folder, .ax-row.selected .ax-ic-doc,
-.ax-tile.selected .ax-tile-art { color: #fff; }
-.ax-ic-font { background: var(--color-surface-3); font-weight: 700; }
+.ax-row .ax-art { width: 26px; height: 26px; }
 
+/* List — the most names in the least space, flowing into columns */
+.ax-list.list {
+  display: flex; flex-direction: column; flex-wrap: wrap;
+  align-content: flex-start; gap: 0 18px; padding: 6px 8px;
+}
+.ax-li {
+  display: flex; align-items: center; gap: 7px; width: 210px; max-width: 100%;
+  min-height: 30px; padding: 0 6px; border-radius: 3px; font-size: 12px;
+}
+.ax-li .ax-art { width: 18px; height: 18px; }
+
+/* Icon grids — one shape, three sizes */
+.ax-list.xl, .ax-list.large, .ax-list.medium {
+  display: grid; gap: 10px; padding: 10px;
+  grid-auto-rows: max-content; align-content: start;
+}
+.ax-list.xl { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.ax-list.large { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+.ax-list.medium { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.ax-icon {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 8px 6px; border-radius: var(--radius-sm); font-size: 11px;
+  text-align: center; overflow: hidden;
+}
+.ax-icon .ax-art { width: 100%; }
+.ax-list.xl .ax-icon .ax-art { height: 150px; }
+.ax-list.large .ax-icon .ax-art { height: 92px; }
+.ax-list.medium .ax-icon .ax-art { height: 66px; }
+.ax-icon .ax-nm { max-width: 100%; font-weight: 600; }
+/* Vector art scales WITH the cell — a 40px folder glyph marooned in a 150px
+   tile is what makes an icon view look broken rather than large. */
+.ax-icon .ax-art-folder svg, .ax-icon .ax-art-doc svg { width: 52%; height: 52%; }
+.ax-list.xl .ax-art-font { font-size: 46px; }
+.ax-list.large .ax-art-font { font-size: 30px; }
+.ax-list.medium .ax-art-font { font-size: 22px; }
+
+/* Tiles — artwork plus the facts, for picking between similar files */
 .ax-tile {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 8px 6px; cursor: pointer; border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border); background: var(--color-surface-2);
-  font-size: 11px; color: var(--color-text); overflow: hidden;
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; font-size: 12px;
 }
-.ax-tile .ax-nm { max-width: 100%; font-weight: 600; }
-.ax-tile-art {
-  width: 100%; height: 74px; object-fit: cover; border-radius: 3px;
-  display: flex; align-items: center; justify-content: center; font-size: 24px;
-  color: var(--color-text-muted);
-  background: repeating-conic-gradient(var(--color-surface-3) 0% 25%, var(--color-surface-2) 0% 50%) 0 0 / 12px 12px;
-}
-.ax-tile.folder .ax-tile-art { background: none; }
-.ax-sub { font-size: 10px; color: var(--color-text-muted); }
+.ax-tile .ax-art { width: 40px; height: 40px; }
+.ax-tile-t { display: flex; flex-direction: column; min-width: 0; }
+.ax-tile-t .ax-nm { font-weight: 600; }
+.ax-tile.selected .ax-sub { color: rgba(255,255,255,.82); }
 
 .ax-status {
   display: flex; justify-content: space-between; gap: 8px; padding: 7px 10px;
@@ -713,11 +796,20 @@ html, body {
    interchangeable — one travels with the project, the other is visible to every
    project you own — so they get separate labelled branches. */
 .ax-tree-h {
+  display: flex; align-items: center; justify-content: space-between;
   padding: 12px 6px 4px; font-size: 10px; font-weight: 700;
   letter-spacing: .04em; text-transform: uppercase; color: var(--color-text-muted);
 }
 .ax-tree-h:first-child { padding-top: 4px; }
-.ax-node.root { font-weight: 600; }
+/* Projects get their own create verb here rather than in the file command bar:
+   a project is a container, not a file, and the two should not read as peers. */
+.ax-tree-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; background: none; cursor: pointer;
+  border: 1px solid var(--color-border); border-radius: 4px;
+  color: var(--color-text-muted);
+}
+.ax-tree-add:hover { color: var(--color-text); background: var(--color-surface-2); }
 
 /* Ask-something-first dialogs. These replace window.prompt/confirm, which are
    modal to the whole browser, unstyleable, and on a phone appear as a system

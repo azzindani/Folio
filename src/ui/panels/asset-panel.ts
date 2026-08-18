@@ -10,12 +10,17 @@
 // only as a side effect of opening a design from the Library, which left
 // anyone who came to upload first staring at an empty pane with no controls.
 import { type StateManager } from '../../editor/state';
-import { AssetIO, storeOf, type AssetRow, type ProjectRow, type Scope } from './asset-explorer-io';
+import { AssetIO, storeOf, type AssetRow, type ManageBody, type ProjectRow, type Scope } from './asset-explorer-io';
 import {
   shell, entryKey, fmtType, wireDropOverlay,
-  type Entry, type SortKey, type TreeNode, type ViewMode, type ViewState,
+  type Entry, type SortKey, type ViewMode, type ViewState,
 } from './asset-explorer-view';
-import { Selection, openMenu, closeMenu, type MenuItem } from './asset-explorer-menu';
+import { getClip, setClip, clipSummary, paste } from './asset-explorer-clipboard';
+import { commands, runCommand, wireChrome, trackWidth } from './asset-explorer-chrome';
+import { entryMenu, copyPaths, downloadAsset, uploadFiles, runBatch } from './asset-explorer-actions';
+import { wireKeys } from './asset-explorer-keys';
+import { Selection, closeMenu, type MenuItem } from './asset-explorer-menu';
+import { wireCells } from './asset-explorer-cells';
 import { openDocEditor } from './asset-explorer-doc';
 import { placeAsset } from './asset-explorer-place';
 import { promptDialog, confirmDialog, renameDialog } from './asset-explorer-dialog';
@@ -25,8 +30,6 @@ import {
 } from './asset-explorer-folders';
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json';
-/** Below this the tree pane costs more than it gives — the breadcrumb navigates. */
-const WIDE_PX = 520;
 
 export class AssetPanelManager {
   private container: HTMLElement;
@@ -50,6 +53,8 @@ export class AssetPanelManager {
   private busy = false;
   private full = false;
   private bootId = 0;
+  /** Places visited, for Back. Not the browser's history. */
+  private history: string[] = [];
   private observer: ResizeObserver | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
@@ -182,35 +187,19 @@ export class AssetPanelManager {
     });
   }
 
-  /**
-   * The two stores, as two separate trees under their own headings.
-   *
-   * They used to run together as one flat list, which made a shared folder look
-   * like a project folder — and they are not interchangeable: one travels with
-   * the project, the other is visible to every project you own.
-   */
-  private treeNodes(): TreeNode[] {
-    const branch = (scope: Scope, label: string, folders: string[]): TreeNode[] => [
-      { label, scope, folder: '', depth: 0, root: true },
-      ...folders.map(f => ({ label: f.split('/').pop() ?? f, scope, folder: f, depth: f.split('/').length })),
-    ];
-    return [
-      { heading: 'This project' },
-      ...branch('project', this.io.projectName ?? 'Project', this.folders),
-      { heading: 'Shared with every project' },
-      ...branch('library', 'Shared library', this.libraryFolders),
-    ];
-  }
-
   private viewState(entries: Entry[]): ViewState {
+    const clip = getClip();
     return {
       project: this.io.projectName,
       projects: this.projects,
       scope: this.scope,
       folder: this.folder,
       entries,
-      tree: this.treeNodes(),
+      folders: this.folders,
+      libraryFolders: this.libraryFolders,
       selected: this.sel.keys,
+      selectedFiles: this.selectedAssets().length,
+      selectedFolders: this.selectedFolders().length,
       view: this.view,
       sort: this.sort,
       desc: this.desc,
@@ -218,6 +207,9 @@ export class AssetPanelManager {
       totalProject: this.rows.filter(r => storeOf(r) === 'project').length,
       totalShared: this.rows.filter(r => storeOf(r) === 'library').length,
       full: this.full,
+      clip: clipSummary(),
+      canPaste: Boolean(clip),
+      canBack: this.history.length > 0,
     };
   }
 
@@ -255,115 +247,66 @@ export class AssetPanelManager {
     // A menu left open across a re-render would act on rows that no longer
     // exist — the refresh after a delete is exactly when that happens.
     closeMenu();
+    // Every render replaces the panel's DOM, which drops focus to <body> — and
+    // the keyboard shortcuts are bound to the panel, so after one navigation
+    // Ctrl+V would silently do nothing. Put focus back where it was.
+    const hadFocus = this.container.contains(document.activeElement)
+      && document.activeElement?.tagName !== 'INPUT';
+
     const entries = this.entries();
     this.order = entries.map(entryKey);
     this.sel.retain(this.order);
     this.container.innerHTML = shell(this.viewState(entries), a => this.io.url(a));
     this.wire(entries);
     this.trackWidth();
+    if (hadFocus) this.container.querySelector<HTMLElement>('.ax-list')?.focus();
   }
 
   // ── Wiring ──────────────────────────────────────────────────────
 
   private wire(entries: Entry[]): void {
-    const q = <T extends HTMLElement>(sel: string): T | null => this.container.querySelector<T>(sel);
-    const file = q<HTMLInputElement>('.ax-file');
-    if (file) file.accept = ACCEPT;
-
-    file?.addEventListener('change', () => {
-      const picked = file.files;
-      if (picked?.length) void this.upload(Array.from(picked));
-      file.value = '';
-    });
-
-    q('[data-act="upload"]')?.addEventListener('click', () => file?.click());
-    q('[data-act="newfolder"]')?.addEventListener('click', () => void this.newFolder());
-    q('[data-act="write"]')?.addEventListener('click', () => this.writeDoc());
-    q('[data-act="refresh"]')?.addEventListener('click', () => void this.refresh());
-    q('[data-act="view"]')?.addEventListener('click', () => {
-      this.view = this.view === 'details' ? 'icons' : 'details';
-      this.render();
-    });
-    q('[data-act="full"]')?.addEventListener('click', () => this.toggleFull());
-
-    q<HTMLSelectElement>('.ax-project')?.addEventListener('change', (ev) => {
-      const name = (ev.target as HTMLSelectElement).value;
-      this.io.setContext(name, this.readToken());
-      this.scope = 'project';
-      this.folder = '';
-      this.sel.clear();
-      void this.refresh();
-    });
-
-    const search = q<HTMLInputElement>('.ax-search');
-    search?.addEventListener('input', () => {
-      this.query = search.value;
-      this.render();
-      // Re-focus: the whole panel is re-rendered on every keystroke, so the
-      // caret would otherwise land back in the canvas after one letter.
-      const next = this.container.querySelector<HTMLInputElement>('.ax-search');
-      next?.focus();
-      next?.setSelectionRange(next.value.length, next.value.length);
-    });
-
-    this.container.querySelectorAll<HTMLElement>('[data-nav]').forEach(el => {
-      el.addEventListener('click', () => this.navigate(el.dataset['nav'] ?? 'project:'));
-      // A folder in the tree is a drop target: dragging files onto it moves
-      // them, which is how anyone expects to file things.
-      el.addEventListener('dragover', ev => { ev.preventDefault(); el.classList.add('drop'); });
-      el.addEventListener('dragleave', () => el.classList.remove('drop'));
-      el.addEventListener('drop', ev => {
-        el.classList.remove('drop');
-        ev.preventDefault();
-        void this.handleDrop(ev, el.dataset['nav'] ?? 'project:');
-      });
-    });
-
-    this.container.querySelectorAll<HTMLElement>('[data-sort]').forEach(el => {
-      el.addEventListener('click', () => {
-        const key = el.dataset['sort'] as SortKey;
-        if (this.sort === key) this.desc = !this.desc; else { this.sort = key; this.desc = false; }
+    wireChrome(this.container, {
+      accept: ACCEPT,
+      upload: (files) => void this.upload(files),
+      runCommand: (cmd, el) => this.runCommand(cmd, el),
+      setView: (mode) => { this.view = mode as ViewMode; this.render(); },
+      setQuery: (q) => {
+        this.query = q;
         this.render();
-      });
+        // Re-focus: the whole panel is re-rendered on every keystroke, so the
+        // caret would otherwise land back in the canvas after one letter.
+        const next = this.container.querySelector<HTMLInputElement>('.ax-search');
+        next?.focus();
+        next?.setSelectionRange(next.value.length, next.value.length);
+      },
+      currentProject: () => this.io.projectName,
+      openProject: (name) => void this.openProject(name),
+      navigate: (nav) => this.navigate(nav),
+      dropOn: (ev, nav) => void this.handleDrop(ev, nav),
+      sortBy: (key) => {
+        const k = key as SortKey;
+        if (this.sort === k) this.desc = !this.desc; else { this.sort = k; this.desc = false; }
+        this.render();
+      },
     });
-
     this.wireItems(entries);
     this.wireDropZone();
     this.wireKeys();
   }
 
   private wireItems(entries: Entry[]): void {
-    this.container.querySelectorAll<HTMLElement>('[data-key]').forEach(el => {
-      const key = el.dataset['key'] ?? '';
-      const entry = entries[Number(el.dataset['idx'])];
-      if (!entry) return;
-
-      el.addEventListener('click', ev => {
-        this.sel.click(key, this.order, { ctrl: ev.ctrlKey || ev.metaKey, shift: ev.shiftKey });
-        this.paintSelection();
-      });
-      el.addEventListener('dblclick', () => this.open(entry));
-      el.addEventListener('contextmenu', ev => {
-        ev.preventDefault();
-        if (!this.sel.has(key)) { this.sel.selectOnly(key); this.paintSelection(); }
-        openMenu(ev.clientX, ev.clientY, this.menuFor(entry));
-      });
-      if (entry.type === 'folder') {
-        el.addEventListener('dragover', ev => { ev.preventDefault(); el.classList.add('drop'); });
-        el.addEventListener('dragleave', () => el.classList.remove('drop'));
-        el.addEventListener('drop', ev => {
-          el.classList.remove('drop');
-          ev.preventDefault();
-          ev.stopPropagation();
-          void this.handleDrop(ev, `${this.scope}:${entry.folder}`);
-        });
-      }
-      el.addEventListener('dragstart', ev => {
-        if (!this.sel.has(key)) { this.sel.selectOnly(key); this.paintSelection(); }
-        ev.dataTransfer?.setData('application/x-folio-assets', JSON.stringify(this.selectedPaths()));
-        ev.dataTransfer?.setData('application/x-folio-folders', JSON.stringify(this.selectedFolders()));
-        if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
-      });
+    wireCells(this.container, entries, {
+      order: () => this.order,
+      isSelected: (k) => this.sel.has(k),
+      click: (k, mods) => this.sel.click(k, this.order, mods),
+      selectOnly: (k) => this.sel.selectOnly(k),
+      repaint: () => this.paintSelection(),
+      open: (e) => this.open(e),
+      menuFor: (e) => this.menuFor(e),
+      draggedFiles: () => this.selectedPaths(),
+      draggedFolders: () => this.selectedFolders(),
+      drop: (ev, nav) => void this.handleDrop(ev, nav),
+      scope: () => this.scope,
     });
   }
 
@@ -375,20 +318,125 @@ export class AssetPanelManager {
       el.classList.toggle('selected', on);
       el.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    // The command bar is the point of having one: its enabled states have to
+    // follow the selection, and they cannot wait for a full re-render because
+    // that would restart every thumbnail request on each click.
+    const state = this.viewState(this.entries());
+    for (const c of commands(state)) {
+      const btn = this.container.querySelector<HTMLButtonElement>(`.ax-cmd[data-cmd="${c.id}"]`);
+      if (btn) btn.disabled = Boolean(c.disabled);
+    }
     const bar = this.container.querySelector<HTMLElement>('.ax-status span');
     if (bar) {
       const files = this.order.length;
-      bar.textContent = `${files} item${files === 1 ? '' : 's'}${this.sel.size ? ` · ${this.sel.size} selected` : ''}`;
+      bar.textContent = [
+        `${files} item${files === 1 ? '' : 's'}`,
+        this.sel.size ? `${this.sel.size} selected` : '',
+        clipSummary(),
+      ].filter(Boolean).join(' · ');
     }
   }
 
-  private navigate(nav: string): void {
+  private navigate(nav: string, record = true): void {
     const i = nav.indexOf(':');
+    // Back is a stack of places, not a browser history: it should retrace where
+    // you went in the manager without touching the page's own history.
+    if (record) this.history.push(`${this.scope}:${this.folder}`);
     this.scope = nav.slice(0, i) === 'library' ? 'library' : 'project';
     this.folder = nav.slice(i + 1);
     this.query = '';
     this.sel.clear();
     this.render();
+  }
+
+  private back(): void {
+    const prev = this.history.pop();
+    if (prev !== undefined) this.navigate(prev, false);
+  }
+
+  /** Switch project. Projects are containers, not folders — changing one
+   *  re-lists from scratch rather than navigating within the current tree. */
+  private async openProject(name: string): Promise<void> {
+    this.history.push(`${this.scope}:${this.folder}`);
+    this.io.setContext(name, this.readToken());
+    this.scope = 'project';
+    this.folder = '';
+    this.query = '';
+    this.sel.clear();
+    await this.refresh();
+  }
+
+  private async newProject(): Promise<void> {
+    const name = await promptDialog({
+      title: 'New project',
+      label: 'A project holds its own designs and assets',
+      placeholder: 'client-campaign',
+      confirm: 'Create',
+    });
+    if (!name) return;
+    const res = await this.io.createProject(name);
+    if (!res.ok) { await this.toast(res.error ?? 'Could not create it', 'warning'); return; }
+    this.projects = await this.io.projects();
+    const made = this.projects.find(p => p.name.toLowerCase() === name.trim().toLowerCase().replace(/\s+/g, '-'));
+    await this.openProject(made?.name ?? name);
+    await this.toast(`Created ${made?.name ?? name}`, 'success');
+  }
+
+  /** Every command-bar button lands here. */
+  private runCommand(cmd: string, el: HTMLElement): void {
+    runCommand(cmd, el, {
+      back: () => this.back(),
+      navigate: (nav) => this.navigate(nav),
+      pickFiles: () => this.container.querySelector<HTMLInputElement>('.ax-file')?.click(),
+      newFolder: () => void this.newFolder(),
+      newProject: () => void this.newProject(),
+      write: () => this.writeDoc(),
+      cut: () => this.clip('cut'),
+      copy: () => this.clip('copy'),
+      paste: () => void this.pasteHere(),
+      rename: () => void this.renameSelection(),
+      move: () => void this.moveSelection(),
+      remove: () => void this.deleteSelection(),
+      refresh: () => void this.refresh(),
+      toggleFull: () => this.toggleFull(),
+      toggleViewMenu: () => {
+        const menu = this.container.querySelector<HTMLElement>('.ax-viewmenu');
+        if (menu) menu.hidden = !menu.hidden;
+      },
+      // Below the tree's width the tree is hidden, and without this there
+      // would be no way at all to reach another project — which is most of
+      // what the panel is for on a phone.
+      togglePlaces: () => this.container.querySelector('.ax-tree')?.classList.toggle('open'),
+    });
+  }
+
+  /** Mark the selected FILES for a cut or a copy. Folders are excluded: moving
+   *  a folder rebuilds a tree, which is drag or Move-to, not the clipboard. */
+  private clip(mode: 'cut' | 'copy'): void {
+    const paths = this.selectedPaths();
+    if (!paths.length) return;
+    setClip({ mode, project: this.io.projectName, scope: this.scope, paths });
+    this.render();
+  }
+
+  private async pasteHere(): Promise<void> {
+    const report = await paste({ io: this.io, folder: this.folder, scope: this.scope });
+    if (!report) return;
+    if (report.failures.length) await this.toast(report.failures.slice(0, 3).join(' · '), 'warning');
+    else {
+      const n = report.moved + report.copied;
+      await this.toast(`${report.moved ? 'Moved' : 'Copied'} ${n} item${n === 1 ? '' : 's'} here`, 'success');
+    }
+    this.sel.clear();
+    await this.refresh();
+  }
+
+  /** Rename whichever single thing is selected, folder or file. */
+  private async renameSelection(): Promise<void> {
+    const folders = this.selectedFolders();
+    const files = this.selectedAssets();
+    if (folders.length === 1 && !files.length && folders[0]) { await this.renameFolder(folders[0]); return; }
+    if (files.length === 1 && !folders.length && files[0]) await this.rename(files[0]);
   }
 
   private selectedAssets(): AssetRow[] {
@@ -437,32 +485,26 @@ export class AssetPanelManager {
   }
 
   private wireKeys(): void {
-    const list = this.container.querySelector<HTMLElement>('.ax-list');
-    list?.setAttribute('tabindex', '0');
-    list?.addEventListener('keydown', ev => {
-      if (ev.key === 'a' && (ev.ctrlKey || ev.metaKey)) {
-        ev.preventDefault(); this.sel.all(this.order); this.paintSelection(); return;
-      }
-      if (ev.key === 'Escape') { this.sel.clear(); this.paintSelection(); return; }
-      if (ev.key === 'Delete' || ev.key === 'Backspace') {
-        if (this.sel.size) { ev.preventDefault(); void this.deleteSelection(); }
-        return;
-      }
-      if (ev.key === 'F2') {
-        const folders = this.selectedFolders();
-        const files = this.selectedAssets();
-        if (folders.length === 1 && !files.length && folders[0]) {
-          ev.preventDefault(); void this.renameFolder(folders[0]); return;
-        }
-        if (files.length === 1 && !folders.length && files[0]) { ev.preventDefault(); void this.rename(files[0]); }
-        return;
-      }
-      if (ev.key === 'Enter') {
-        const first = this.sel.values()[0];
-        const entry = this.entries().find(e => entryKey(e) === first);
-        if (entry) { ev.preventDefault(); this.open(entry); }
-      }
-    });
+    wireKeys(
+      this.container.querySelector<HTMLElement>('.ax'),
+      this.container.querySelector<HTMLElement>('.ax-list'),
+      {
+        selectAll: () => { this.sel.all(this.order); this.paintSelection(); },
+        clearSelection: () => { this.sel.clear(); this.paintSelection(); },
+        hasSelection: () => this.sel.size > 0,
+        canPaste: () => Boolean(getClip()),
+        remove: () => void this.deleteSelection(),
+        rename: () => void this.renameSelection(),
+        cut: () => this.clip('cut'),
+        copy: () => this.clip('copy'),
+        paste: () => void this.pasteHere(),
+        openSelected: () => {
+          const first = this.sel.values()[0];
+          const entry = this.entries().find(e => entryKey(e) === first);
+          if (entry) this.open(entry);
+        },
+      },
+    );
   }
 
   // ── Actions ─────────────────────────────────────────────────────
@@ -473,39 +515,34 @@ export class AssetPanelManager {
     placeAsset(this.state, entry.asset);
   }
 
+
+  /** Build the right-click menu for whatever was clicked. */
   private menuFor(entry: Entry): MenuItem[] {
-    if (entry.type === 'folder') {
-      const folders = this.selectedFolders();
-      const many = folders.length > 1;
-      return [
-        { label: 'Open', run: () => this.navigate(`${this.scope}:${entry.folder}`) },
-        { label: 'Upload into this folder', run: () => this.pickInto(entry.folder) },
-        { label: 'New folder inside', run: () => { this.navigate(`${this.scope}:${entry.folder}`); void this.newFolder(); } },
-        { separator: true, label: '' },
-        { label: 'Rename', accel: 'F2', disabled: many, run: () => void this.renameFolder(entry.folder) },
-        { label: 'Move to folder…', disabled: many, run: () => void this.moveFolder(entry.folder) },
-        { label: many ? `Delete ${folders.length} folders` : 'Delete folder', accel: 'Del', danger: true,
-          run: () => void this.removeFolders(many ? folders : [entry.folder]) },
-      ];
-    }
-    const a = entry.asset;
-    const many = this.sel.size > 1;
-    // Count what CAN be placed, not what is selected — a font or a brief in the
-    // selection is skipped, and "Place 3" that places 2 is a small lie.
-    const canPlace = this.selectedAssets().filter(s => s.kind === 'images' || s.kind === 'icons').length;
-    const placeable = a.kind === 'images' || a.kind === 'icons';
-    return [
-      ...(placeable ? [{ label: canPlace > 1 ? `Place ${canPlace} on canvas` : 'Place on canvas', run: () => this.placeSelection() }] : []),
-      ...(a.kind === 'docs' ? [{ label: 'Edit text', run: () => this.writeDoc(a) }] : []),
-      { label: 'Open in new tab', run: () => window.open(this.io.url(a), '_blank', 'noopener') },
-      { separator: true, label: '' },
-      { label: 'Rename', accel: 'F2', disabled: many, run: () => void this.rename(a) },
-      { label: 'Move to folder…', run: () => void this.moveSelection() },
-      { label: 'Copy path', run: () => void this.copyPath() },
-      { label: 'Download', run: () => this.download(a) },
-      { separator: true, label: '' },
-      { label: many ? `Delete ${this.sel.size} items` : 'Delete', accel: 'Del', danger: true, run: () => void this.deleteSelection() },
-    ];
+    return entryMenu(entry, {
+      scope: this.scope,
+      selectedFolders: this.selectedFolders(),
+      placeable: this.selectedAssets().filter(a => a.kind === 'images' || a.kind === 'icons').length,
+      selectedFiles: this.selectedAssets().length,
+      on: {
+        open: (nav) => this.navigate(nav),
+        uploadInto: (f) => this.pickInto(f),
+        newFolderIn: (f) => { this.navigate(`${this.scope}:${f}`); void this.newFolder(); },
+        renameFolder: (f) => void this.renameFolder(f),
+        moveFolder: (f) => void this.moveFolder(f),
+        deleteFolders: (fs) => void this.removeFolders(fs),
+        place: () => this.placeSelection(),
+        editDoc: (a) => this.writeDoc(a),
+        openTab: (a) => window.open(this.io.url(a), '_blank', 'noopener'),
+        cut: () => this.clip('cut'),
+        copy: () => this.clip('copy'),
+        paste: () => void this.pasteHere(),
+        rename: (a) => void this.rename(a),
+        move: () => void this.moveSelection(),
+        copyPath: () => void copyPaths(this.selectedPaths(), (m, k) => this.toast(m, k)),
+        download: (a) => downloadAsset(this.io.url(a), a.path.split('/').pop() ?? 'asset'),
+        remove: () => void this.deleteSelection(),
+      },
+    });
   }
 
   private pickInto(folder: string): void {
@@ -534,14 +571,8 @@ export class AssetPanelManager {
       return;
     }
     this.busy = true;
-    const { showToast } = await import('../../utils/toast');
-    let ok = 0;
-    for (const f of files) {
-      const res = await this.io.upload(f, f.name, folder, scope);
-      if (res.ok) ok++; else showToast(`${f.name}: ${res.error ?? 'failed'}`, 'warning');
-    }
+    await uploadFiles(this.io, files, folder, scope, (m, k) => this.toast(m, k));
     this.busy = false;
-    if (ok) showToast(`Uploaded ${ok} file${ok === 1 ? '' : 's'}`, 'success');
     await this.refresh();
   }
 
@@ -634,41 +665,12 @@ export class AssetPanelManager {
 
   /** Run manage ops in sequence and report once — a per-file toast storm on a
    *  20-file move buries the one line that mattered. */
-  private async runBatch(
-    ops: Array<{ op: 'move' | 'delete'; asset_path: string; folder?: string; new_name?: string }>,
-    okMessage: string,
-  ): Promise<void> {
-    const failures: string[] = [];
-    for (const body of ops) {
-      const res = await this.io.manage(body);
-      if (!res.ok) failures.push(`${body.asset_path.split('/').pop() ?? ''}: ${res.error ?? 'failed'}`);
-    }
-    if (failures.length) await this.toast(failures.slice(0, 3).join(' · '), 'warning');
-    else await this.toast(okMessage, 'success');
+  private async runBatch(ops: ManageBody[], okMessage: string): Promise<void> {
+    await runBatch(this.io, ops, okMessage, (m, k) => this.toast(m, k));
     this.sel.clear();
     await this.refresh();
   }
 
-  private async copyPath(): Promise<void> {
-    const paths = this.selectedPaths();
-    if (!paths.length) return;
-    try {
-      await navigator.clipboard.writeText(paths.join('\n'));
-      await this.toast(paths.length === 1 ? 'Path copied' : `${paths.length} paths copied`, 'success');
-    } catch {
-      await this.toast('Clipboard blocked by the browser', 'warning');
-    }
-  }
-
-  private download(a: AssetRow): void {
-    const link = document.createElement('a');
-    link.href = this.io.url(a);
-    link.download = a.path.split('/').pop() ?? 'asset';
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  }
 
   private placeSelection(): void {
     for (const a of this.selectedAssets()) placeAsset(this.state, a, true);
@@ -680,19 +682,8 @@ export class AssetPanelManager {
     showToast(msg, kind);
   }
 
-  /** The tree needs room; below WIDE_PX the breadcrumb does the navigating. */
   private trackWidth(): void {
-    const root = this.container.querySelector<HTMLElement>('.ax');
-    if (!root) return;
-    const apply = (w: number): void => { root.classList.toggle('is-wide', w >= WIDE_PX); };
-    apply(this.container.clientWidth);
-    // The measurement above is the one that matters; the observer only keeps up
-    // with a panel being dragged wider. Where it does not exist the layout is
-    // still correct for the width it opened at.
-    if (typeof ResizeObserver === 'undefined') return;
-    this.observer?.disconnect();
-    this.observer = new ResizeObserver(es => { for (const e of es) apply(e.contentRect.width); });
-    this.observer.observe(this.container);
+    this.observer = trackWidth(this.container, this.observer);
   }
 }
 
