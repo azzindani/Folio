@@ -9,7 +9,7 @@
 // 700-line ceiling — and because folders are a distinct concern from ingest.
 import * as fs from 'fs';
 import * as path from 'path';
-import { sanitizeFolder, type AssetKind } from './assets';
+import { sanitizeFolder, removeManifestEntry, MAX_PROJECT_FOLDER_DEPTH, type AssetKind } from './assets';
 import { libraryRoot, sanitizeFolderPath } from './asset-library';
 
 const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs'];
@@ -17,30 +17,38 @@ const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs'];
 export interface FolderOpResult {
   success: boolean;
   folder?: string;
+  /** Files moved to .trash by a folder delete. */
+  trashed?: number;
   error?: string;
   hint?: string;
 }
 
 /**
- * Every folder under a project's assets/, INCLUDING the empty ones.
+ * Every folder under a project's assets/, at any depth, INCLUDING empty ones.
  *
- * The project store is one level deep (see sanitizeFolder), so a folder name
- * is unique across kinds — "screenshots" under images and under docs is one
- * chip in the panel, which is what an author means by a folder.
+ * Folder paths are reported relative to the kind dir and merged across kinds:
+ * "brand" under images and under fonts is ONE folder to the person filing
+ * things, and the kinds are an implementation detail of where bytes land.
  */
 export function projectFolders(projectDir: string): string[] {
   const out = new Set<string>();
   for (const kind of KINDS) {
-    const dir = path.join(projectDir, 'assets', kind);
-    let entries: fs.Dirent[];
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
-    for (const e of entries) {
-      // Dot-dirs are bookkeeping (.trash), not filing — the library listing
-      // skips them for the same reason.
-      if (!e.isDirectory() || e.name.startsWith('.')) continue;
-      const clean = sanitizeFolder(e.name);
-      if (clean && clean === e.name) out.add(clean);
-    }
+    const walk = (dir: string, rel: string, depth: number): void => {
+      if (depth > MAX_PROJECT_FOLDER_DEPTH) return;
+      let entries: fs.Dirent[];
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        // Dot-dirs are bookkeeping (.trash), not filing — the library listing
+        // skips them for the same reason.
+        if (!e.isDirectory() || e.name.startsWith('.')) continue;
+        const seg = sanitizeFolder(e.name);
+        if (!seg || seg !== e.name) continue;
+        const next = rel ? `${rel}/${seg}` : seg;
+        out.add(next);
+        walk(path.join(dir, e.name), next, depth + 1);
+      }
+    };
+    walk(path.join(projectDir, 'assets', kind), '', 1);
   }
   return [...out].sort();
 }
@@ -50,7 +58,8 @@ export function projectFolders(projectDir: string): string[] {
  *
  * Project scope creates it under every kind, so dropping a font and a
  * screenshot into "brand" files both without asking which store they belong
- * to — the panel shows one folder, the disk keeps the kinds apart.
+ * to — the panel shows one folder, the disk keeps the kinds apart. Nests, so
+ * "clients/acme/logos" is one call.
  */
 export function createAssetFolder(args: {
   projectDir?: string;
@@ -63,9 +72,7 @@ export function createAssetFolder(args: {
     return {
       success: false,
       error: `Not a usable folder name: "${String(args.folder ?? '')}"`,
-      hint: wantLibrary
-        ? 'Letters, numbers, dashes and up to 4 levels of "/".'
-        : 'Letters, numbers, dashes and spaces. The project store is one level deep.',
+      hint: `Letters, numbers, dashes and spaces, nesting up to ${MAX_PROJECT_FOLDER_DEPTH} levels with "/".`,
     };
   }
   try {
@@ -83,45 +90,79 @@ export function createAssetFolder(args: {
   }
 }
 
+/** Everything inside a directory tree, as absolute paths. */
+function filesUnder(dir: string, out: string[] = []): string[] {
+  let entries: fs.Dirent[];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return out; }
+  for (const e of entries) {
+    const abs = path.join(dir, e.name);
+    if (e.isDirectory()) filesUnder(abs, out);
+    else if (e.isFile()) out.push(abs);
+  }
+  return out;
+}
+
 /**
- * Remove a folder, but only when it holds no files.
+ * Delete a folder and everything in it.
  *
- * Refusing a non-empty folder is deliberate: delete-a-folder-full-of-work is
- * the one file-manager action with no undo here, and the per-file delete route
- * already moves things to .trash where a recursive rmdir would not.
+ * Contents go to .trash, exactly as a per-file delete does, which is what makes
+ * deleting a folder safe enough to just do. An earlier version refused any
+ * folder that was not empty — technically cautious, and useless: a folder you
+ * have to empty by hand before you can remove it is a folder you cannot remove.
+ *
+ * `requireEmpty` keeps the old behaviour for callers that want to be sure.
  */
 export function removeAssetFolder(args: {
   projectDir?: string;
   folder?: string;
   scope?: 'project' | 'library';
+  requireEmpty?: boolean;
 }): FolderOpResult {
   const wantLibrary = args.scope === 'library';
   const folder = wantLibrary ? sanitizeFolderPath(args.folder) : sanitizeFolder(args.folder);
   if (!folder) return { success: false, error: 'No folder given' };
 
+  const trashRoot = wantLibrary
+    ? path.join(libraryRoot(), '.trash')
+    : args.projectDir ? path.join(args.projectDir, '.trash') : '';
   const dirs = wantLibrary
     ? [path.join(libraryRoot(), folder)]
     : args.projectDir
       ? KINDS.map(k => path.join(args.projectDir as string, 'assets', k, folder))
       : [];
-  if (!dirs.length) return { success: false, error: 'No project' };
+  if (!dirs.length || !trashRoot) return { success: false, error: 'No project' };
 
-  const held: string[] = [];
-  for (const dir of dirs) {
-    let entries: fs.Dirent[];
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
-    for (const e of entries) if (!e.name.startsWith('.')) held.push(e.name);
-  }
-  if (held.length) {
+  const held = dirs.flatMap(d => filesUnder(d));
+  if (args.requireEmpty && held.length) {
     return {
       success: false,
       error: `"${folder}" still holds ${held.length} item${held.length === 1 ? '' : 's'}`,
       hint: 'Move or delete what is inside it first.',
     };
   }
+  if (!dirs.some(d => fs.existsSync(d))) {
+    return { success: false, error: `No such folder: "${folder}"` };
+  }
+
   try {
+    if (held.length) {
+      fs.mkdirSync(trashRoot, { recursive: true });
+      // Stamped so two deletes of the same filename cannot collide, and the
+      // folder name is kept so what came from where is still legible in .trash.
+      const stamp = Date.now();
+      const leaf = folder.split('/').pop() ?? folder;
+      for (const abs of held) {
+        fs.renameSync(abs, path.join(trashRoot, `${stamp}_${leaf}_${path.basename(abs)}`));
+        // The manifest is what the listing merges over the disk, so leaving the
+        // entry behind keeps the folder AND its files on screen after the files
+        // are gone — a ghost folder holding files that no longer exist.
+        if (!wantLibrary && args.projectDir) {
+          removeManifestEntry(args.projectDir, path.relative(args.projectDir, abs).split(path.sep).join('/'));
+        }
+      }
+    }
     for (const dir of dirs) fs.rmSync(dir, { recursive: true, force: true });
-    return { success: true, folder };
+    return { success: true, folder, trashed: held.length };
   } catch (e) {
     return { success: false, error: (e as Error).message };
   }

@@ -119,13 +119,20 @@ test('a file uploaded through the manager is on disk AND paints in an engine exp
     .toBeGreaterThan(0.5);
 });
 
+/** Drive the panel's own New-folder dialog (not a browser prompt). */
+async function newFolder(page: import('@playwright/test').Page, name: string): Promise<void> {
+  await page.click('[data-act="newfolder"]');
+  await page.fill('.ax-modal-input', name);
+  await page.click('.ax-modal [data-x="ok"]');
+  await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: 15_000 });
+}
+
 test('a folder made in the manager still exists after a reload', async ({ page }) => {
   await openManager(page);
   await selectScratch(page);
 
-  page.once('dialog', d => void d.accept('shoot-notes'));
-  await page.click('[data-act="newfolder"]');
-  await expect(page.locator('.ax-row.folder', { hasText: 'shoot-notes' })).toHaveCount(1, { timeout: 15_000 });
+  await newFolder(page, 'shoot-notes');
+  await expect(page.locator('.ax-crumb-path')).toContainText('shoot-notes');
 
   // The listing used to derive folders from the files inside them, so a folder
   // you had just made vanished on the next refresh — which is every folder,
@@ -136,13 +143,79 @@ test('a folder made in the manager still exists after a reload', async ({ page }
     'the new folder did not survive a reload').toHaveCount(1);
 });
 
+test('New folder works the same at any depth, not only at the root', async ({ page }) => {
+  await openManager(page);
+  await selectScratch(page);
+
+  // The reported symptom was "sometimes I can create a folder, sometimes not".
+  // The store was one level deep, so from inside a folder the new one was
+  // created somewhere ELSE and nothing appeared — indistinguishable from a
+  // button that intermittently does nothing.
+  await newFolder(page, 'clients');
+  await newFolder(page, 'acme');
+  await newFolder(page, 'logos');
+  await expect(page.locator('.ax-crumb-path')).toContainText('clients');
+  await expect(page.locator('.ax-crumb-path')).toContainText('acme');
+  await expect(page.locator('.ax-crumb-path')).toContainText('logos');
+  expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'clients', 'acme', 'logos')),
+    'the nested folder is not on disk where its path says it is').toBe(true);
+
+  // And each level is reachable again from the tree after a reload.
+  await openManager(page);
+  await selectScratch(page);
+  await expect(page.locator('.ax-node[data-nav="project:clients/acme/logos"]')).toHaveCount(1);
+});
+
+test('a folder with files in it can be deleted, and says what it will take', async ({ page }) => {
+  await openManager(page);
+  await selectScratch(page);
+
+  await newFolder(page, 'binned');
+  await page.setInputFiles('.ax-file', [
+    { name: 'one.png', mimeType: 'image/png', buffer: PNG_1PX },
+    { name: 'two.png', mimeType: 'image/png', buffer: PNG_1PX },
+  ]);
+  await expect(page.locator('.ax-row')).toHaveCount(2, { timeout: 15_000 });
+
+  await page.click('.ax-crumb >> nth=0');
+  await page.click('.ax-row.folder:has-text("binned")');
+  await page.keyboard.press('Delete');
+
+  // Selecting a folder and pressing Delete used to do nothing whatsoever:
+  // folder keys never resolved through the asset list, so the selection came
+  // back empty and the handler returned early, silently.
+  await expect(page.locator('.ax-modal-body'), 'Delete did nothing on a folder')
+    .toContainText('2 items');
+  await page.click('.ax-modal [data-x="ok"]');
+
+  await expect(page.locator('.ax-row.folder', { hasText: 'binned' })).toHaveCount(0, { timeout: 15_000 });
+  expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'binned'))).toBe(false);
+  // Contents go to .trash, exactly as a per-file delete does — that is what
+  // makes deleting a folder safe enough to simply do.
+  const trash = fs.readdirSync(path.join(SCRATCH, '.trash'));
+  expect(trash.filter(f => f.endsWith('.png'))).toHaveLength(2);
+});
+
+test('the shared library is a separate branch, not mixed in with project folders', async ({ page }) => {
+  await openManager(page);
+  await selectScratch(page);
+
+  const headings = await page.locator('.ax-tree-h').allTextContents();
+  expect(headings, 'the two stores are not labelled apart').toEqual([
+    'This project', 'Shared with every project',
+  ]);
+  // They are not interchangeable: one travels with the project, the other is
+  // visible to every project the account owns. A shared folder that looks like
+  // a project folder is how something private ends up in the shared store.
+  await expect(page.locator('.ax-node[data-nav="library:"]')).toHaveCount(1);
+  await expect(page.locator('.ax-node[data-nav="project:"]')).toHaveCount(1);
+});
+
 test('files dropped from the desktop upload into the folder in view', async ({ page }) => {
   await openManager(page);
   await selectScratch(page);
 
-  page.once('dialog', d => void d.accept('dropzone'));
-  await page.click('[data-act="newfolder"]');
-  await page.click('.ax-row.folder:has-text("dropzone")', { clickCount: 2 });
+  await newFolder(page, 'dropzone');
   await expect(page.locator('.ax-crumb-path')).toContainText('dropzone');
 
   // Playwright cannot drive a real OS drag, so the DataTransfer is built in the

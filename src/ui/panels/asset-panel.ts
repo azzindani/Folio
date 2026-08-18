@@ -10,20 +10,23 @@
 // only as a side effect of opening a design from the Library, which left
 // anyone who came to upload first staring at an empty pane with no controls.
 import { type StateManager } from '../../editor/state';
-import type { Layer } from '../../schema/types';
 import { AssetIO, storeOf, type AssetRow, type ProjectRow, type Scope } from './asset-explorer-io';
 import {
-  shell, entryKey, fmtType,
+  shell, entryKey, fmtType, wireDropOverlay,
   type Entry, type SortKey, type TreeNode, type ViewMode, type ViewState,
 } from './asset-explorer-view';
 import { Selection, openMenu, closeMenu, type MenuItem } from './asset-explorer-menu';
 import { openDocEditor } from './asset-explorer-doc';
+import { placeAsset } from './asset-explorer-place';
+import { promptDialog, confirmDialog, renameDialog } from './asset-explorer-dialog';
+import {
+  parentOf, createFolder, deleteFolders, renameFolder,
+  promptMoveFolder, moveFolderInto, type FolderCtx,
+} from './asset-explorer-folders';
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json';
 /** Below this the tree pane costs more than it gives — the breadcrumb navigates. */
 const WIDE_PX = 520;
-
-let insertCounter = 0;
 
 export class AssetPanelManager {
   private container: HTMLElement;
@@ -131,13 +134,15 @@ export class AssetPanelManager {
       .map(a => ({ type: 'file', asset: a } as Entry)));
   }
 
+  /** Folder paths in the store we are looking at. Both stores nest now. */
+  private allFolders(): string[] {
+    return this.scope === 'library' ? this.libraryFolders : this.folders;
+  }
+
   private subfolders(): Entry[] {
     const here = this.folder;
-    const names = this.scope === 'library'
-      ? this.libraryFolders.filter(f => parentOf(f) === here)
-      // The project store is one level deep, so subfolders exist at the root only.
-      : here ? [] : this.folders;
-    return names
+    return this.allFolders()
+      .filter(f => parentOf(f) === here)
       .map(full => ({
         type: 'folder' as const,
         name: full.slice(here ? here.length + 1 : 0),
@@ -147,10 +152,17 @@ export class AssetPanelManager {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  /** Direct children — what a file manager shows in the size column of a row. */
   private countIn(folder: string): number {
     const files = this.rows.filter(r => storeOf(r) === this.scope && (r.folder ?? '') === folder).length;
-    const subs = this.scope === 'library' ? this.libraryFolders.filter(f => parentOf(f) === folder).length : 0;
-    return files + subs;
+    return files + this.allFolders().filter(f => parentOf(f) === folder).length;
+  }
+
+
+  /** Where a new folder or upload goes: inside whatever is open. */
+  private childPath(name: string): string {
+    const clean = name.trim().replace(/^\/+|\/+$/g, '');
+    return this.folder ? `${this.folder}/${clean}` : clean;
   }
 
   private sortFiles(entries: Entry[]): Entry[] {
@@ -170,16 +182,24 @@ export class AssetPanelManager {
     });
   }
 
+  /**
+   * The two stores, as two separate trees under their own headings.
+   *
+   * They used to run together as one flat list, which made a shared folder look
+   * like a project folder — and they are not interchangeable: one travels with
+   * the project, the other is visible to every project you own.
+   */
   private treeNodes(): TreeNode[] {
-    const out: TreeNode[] = [
-      { label: this.io.projectName ?? 'Project', scope: 'project', folder: '', depth: 0, root: true },
-      ...this.folders.map(f => ({ label: f, scope: 'project' as Scope, folder: f, depth: 1 })),
-      { label: 'Shared library', scope: 'library', folder: '', depth: 0, root: true },
+    const branch = (scope: Scope, label: string, folders: string[]): TreeNode[] => [
+      { label, scope, folder: '', depth: 0, root: true },
+      ...folders.map(f => ({ label: f.split('/').pop() ?? f, scope, folder: f, depth: f.split('/').length })),
     ];
-    for (const f of this.libraryFolders) {
-      out.push({ label: f.split('/').pop() ?? f, scope: 'library', folder: f, depth: f.split('/').length });
-    }
-    return out;
+    return [
+      { heading: 'This project' },
+      ...branch('project', this.io.projectName ?? 'Project', this.folders),
+      { heading: 'Shared with every project' },
+      ...branch('library', 'Shared library', this.libraryFolders),
+    ];
   }
 
   private viewState(entries: Entry[]): ViewState {
@@ -328,9 +348,20 @@ export class AssetPanelManager {
         if (!this.sel.has(key)) { this.sel.selectOnly(key); this.paintSelection(); }
         openMenu(ev.clientX, ev.clientY, this.menuFor(entry));
       });
+      if (entry.type === 'folder') {
+        el.addEventListener('dragover', ev => { ev.preventDefault(); el.classList.add('drop'); });
+        el.addEventListener('dragleave', () => el.classList.remove('drop'));
+        el.addEventListener('drop', ev => {
+          el.classList.remove('drop');
+          ev.preventDefault();
+          ev.stopPropagation();
+          void this.handleDrop(ev, `${this.scope}:${entry.folder}`);
+        });
+      }
       el.addEventListener('dragstart', ev => {
         if (!this.sel.has(key)) { this.sel.selectOnly(key); this.paintSelection(); }
         ev.dataTransfer?.setData('application/x-folio-assets', JSON.stringify(this.selectedPaths()));
+        ev.dataTransfer?.setData('application/x-folio-folders', JSON.stringify(this.selectedFolders()));
         if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
       });
     });
@@ -369,29 +400,21 @@ export class AssetPanelManager {
     return this.selectedAssets().map(a => a.path);
   }
 
+  /** Folder paths in the selection. Folder keys are "folder:<path>", so they
+   *  never resolve through the asset list — which is why Delete used to do
+   *  nothing at all when a folder was the thing selected. */
+  private selectedFolders(): string[] {
+    return this.sel.values()
+      .filter(k => k.startsWith('folder:'))
+      .map(k => k.slice('folder:'.length));
+  }
+
   // ── Drag, drop and keys ─────────────────────────────────────────
 
-  /** Files from the OS land in the folder you are looking at. The overlay is
-   *  driven by a counter because dragenter/leave also fire for every child. */
   private wireDropZone(): void {
     const root = this.container.querySelector<HTMLElement>('.ax');
     const overlay = this.container.querySelector<HTMLElement>('.ax-drop');
-    if (!root || !overlay) return;
-    let depth = 0;
-    const show = (on: boolean): void => { overlay.hidden = !on; };
-    root.addEventListener('dragenter', ev => {
-      if (!ev.dataTransfer?.types.includes('Files')) return;
-      depth++; show(true);
-    });
-    root.addEventListener('dragover', ev => { if (ev.dataTransfer?.types.includes('Files')) ev.preventDefault(); });
-    root.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) show(false); });
-    root.addEventListener('drop', ev => {
-      depth = 0; show(false);
-      const files = ev.dataTransfer?.files;
-      if (!files?.length) return;
-      ev.preventDefault();
-      void this.upload(Array.from(files));
-    });
+    if (root && overlay) wireDropOverlay(root, overlay, files => void this.upload(files));
   }
 
   /** A drop onto a tree node or crumb: OS files upload there, dragged rows move. */
@@ -401,9 +424,15 @@ export class AssetPanelManager {
     const folder = nav.slice(i + 1);
     const files = ev.dataTransfer?.files;
     if (files?.length) { await this.upload(Array.from(files), folder, scope); return; }
+    // Folders first: dragging a folder moves the files inside it, so doing the
+    // loose files afterwards cannot collide with paths that just changed.
+    const draggedFolders = ev.dataTransfer?.getData('application/x-folio-folders');
+    for (const f of (draggedFolders ? JSON.parse(draggedFolders) as string[] : [])) {
+      await this.afterRelocate(f, await moveFolderInto(this.folderCtx(), f, folder));
+    }
     const moved = ev.dataTransfer?.getData('application/x-folio-assets');
-    if (!moved) return;
-    const paths = JSON.parse(moved) as string[];
+    const paths = moved ? JSON.parse(moved) as string[] : [];
+    if (!paths.length) { if (draggedFolders) await this.refresh(); return; }
     await this.runBatch(paths.map(p => ({ op: 'move' as const, asset_path: p, folder })), `Moved to ${folder || 'the root'}`);
   }
 
@@ -420,8 +449,12 @@ export class AssetPanelManager {
         return;
       }
       if (ev.key === 'F2') {
-        const one = this.selectedAssets();
-        if (one.length === 1 && one[0]) { ev.preventDefault(); void this.rename(one[0]); }
+        const folders = this.selectedFolders();
+        const files = this.selectedAssets();
+        if (folders.length === 1 && !files.length && folders[0]) {
+          ev.preventDefault(); void this.renameFolder(folders[0]); return;
+        }
+        if (files.length === 1 && !folders.length && files[0]) { ev.preventDefault(); void this.rename(files[0]); }
         return;
       }
       if (ev.key === 'Enter') {
@@ -437,16 +470,22 @@ export class AssetPanelManager {
   private open(entry: Entry): void {
     if (entry.type === 'folder') { this.navigate(`${this.scope}:${entry.folder}`); return; }
     if (entry.asset.kind === 'docs') { this.writeDoc(entry.asset); return; }
-    this.place(entry.asset);
+    placeAsset(this.state, entry.asset);
   }
 
   private menuFor(entry: Entry): MenuItem[] {
     if (entry.type === 'folder') {
+      const folders = this.selectedFolders();
+      const many = folders.length > 1;
       return [
         { label: 'Open', run: () => this.navigate(`${this.scope}:${entry.folder}`) },
         { label: 'Upload into this folder', run: () => this.pickInto(entry.folder) },
+        { label: 'New folder inside', run: () => { this.navigate(`${this.scope}:${entry.folder}`); void this.newFolder(); } },
         { separator: true, label: '' },
-        { label: 'Delete folder', danger: true, run: () => void this.removeFolder(entry.folder) },
+        { label: 'Rename', accel: 'F2', disabled: many, run: () => void this.renameFolder(entry.folder) },
+        { label: 'Move to folder…', disabled: many, run: () => void this.moveFolder(entry.folder) },
+        { label: many ? `Delete ${folders.length} folders` : 'Delete folder', accel: 'Del', danger: true,
+          run: () => void this.removeFolders(many ? folders : [entry.folder]) },
       ];
     }
     const a = entry.asset;
@@ -488,7 +527,12 @@ export class AssetPanelManager {
 
   /** Upload, one file at a time so the failing file is the one named. */
   private async upload(files: File[], folder = this.folder, scope = this.scope): Promise<void> {
-    if (this.busy) return;
+    if (this.busy) {
+      // Silently dropping the second batch is how "I can't upload my files"
+      // happens: nothing moves and nothing says why.
+      await this.toast('Still uploading the last batch — try again in a moment', 'warning');
+      return;
+    }
     this.busy = true;
     const { showToast } = await import('../../utils/toast');
     let ok = 0;
@@ -501,44 +545,90 @@ export class AssetPanelManager {
     await this.refresh();
   }
 
+  /** Context the folder verbs need — they are free functions in their own
+   *  module so menu, keyboard and drag all take the same path. */
+  private folderCtx(): FolderCtx {
+    return {
+      io: this.io,
+      scope: this.scope,
+      folder: this.folder,
+      rows: this.rows,
+      folders: this.allFolders(),
+      toast: (m, k) => this.toast(m, k),
+    };
+  }
+
   private async newFolder(): Promise<void> {
-    const hint = this.scope === 'library' ? 'e.g. "microsoft/logos"' : 'e.g. "screenshots"';
-    const name = window.prompt(`New folder name (${hint}):`, '');
-    if (!name?.trim()) return;
-    const res = await this.io.manage({ op: 'mkdir', folder: name, scope: this.scope });
-    if (!res.ok) { await this.toast(`${res.error ?? 'Could not create it'}${res.hint ? ` — ${res.hint}` : ''}`, 'warning'); return; }
+    const made = await createFolder(this.folderCtx());
+    if (!made) return;
+    await this.refresh();
+    // Land in what you just made — the reason you made it is to put things in it.
+    this.navigate(`${this.scope}:${made}`);
+  }
+
+  private async removeFolders(folders: string[]): Promise<void> {
+    const res = await deleteFolders(this.folderCtx(), folders);
+    if (!res.ok) return;
+    if (res.goTo !== undefined) this.folder = res.goTo;
+    this.sel.clear();
     await this.refresh();
   }
 
-  private async removeFolder(folder: string): Promise<void> {
-    if (!window.confirm(`Delete the folder "${folder}"?`)) return;
-    const res = await this.io.manage({ op: 'rmdir', folder, scope: this.scope });
-    if (!res.ok) { await this.toast(`${res.error ?? 'Could not delete it'}${res.hint ? ` — ${res.hint}` : ''}`, 'warning'); return; }
-    if (this.folder === folder) this.folder = '';
+  /** After a rename or a move, follow the folder if we were standing in it. */
+  private async afterRelocate(from: string, to: string | null): Promise<void> {
+    if (!to) return;
+    if (this.folder === from || this.folder.startsWith(`${from}/`)) {
+      this.folder = to + this.folder.slice(from.length);
+    }
+    this.sel.clear();
     await this.refresh();
   }
 
   private async rename(a: AssetRow): Promise<void> {
     const current = a.path.split('/').pop() ?? a.path;
-    const next = window.prompt('Rename (keep the extension):', current);
+    const next = await renameDialog(current);
     if (!next || next === current) return;
     await this.runBatch([{ op: 'move', asset_path: a.path, new_name: next }], `Renamed to ${next}`);
+  }
+
+  private async renameFolder(folder: string): Promise<void> {
+    await this.afterRelocate(folder, await renameFolder(this.folderCtx(), folder));
+  }
+
+  private async moveFolder(folder: string): Promise<void> {
+    await this.afterRelocate(folder, await promptMoveFolder(this.folderCtx(), folder));
   }
 
   private async moveSelection(): Promise<void> {
     const picked = this.selectedAssets();
     if (!picked.length) return;
-    const to = window.prompt('Move to folder (blank = root):', picked[0]?.folder ?? '');
+    const to = await promptDialog({
+      title: `Move ${picked.length === 1 ? '1 file' : `${picked.length} files`}`,
+      label: 'Folder path — blank is the root',
+      value: picked[0]?.folder ?? '',
+      placeholder: 'clients/acme',
+      confirm: 'Move',
+    });
     if (to === null) return;
     await this.runBatch(picked.map(a => ({ op: 'move' as const, asset_path: a.path, folder: to })),
       `Moved ${picked.length} to ${to || 'the root'}`);
   }
 
   private async deleteSelection(): Promise<void> {
+    const folders = this.selectedFolders();
     const picked = this.selectedAssets();
+    if (!folders.length && !picked.length) return;
+    // Folders first: deleting them may take some of the selected files with
+    // them, and a per-file delete afterwards would then fail on a missing path.
+    if (folders.length) { await this.removeFolders(folders); if (!picked.length) return; }
     if (!picked.length) return;
     const what = picked.length === 1 ? (picked[0]?.path.split('/').pop() ?? '') : `${picked.length} files`;
-    if (!window.confirm(`Delete ${what}? They move to .trash, and any layer using them shows a placeholder.`)) return;
+    const ok = await confirmDialog({
+      title: picked.length === 1 ? 'Delete file' : 'Delete files',
+      body: `Delete ${what}? They move to .trash, and any layer using them shows a placeholder.`,
+      confirm: 'Delete', danger: true,
+    });
+    if (!ok) return;
     await this.runBatch(picked.map(a => ({ op: 'delete' as const, asset_path: a.path })), `Deleted ${what}`);
   }
 
@@ -581,30 +671,9 @@ export class AssetPanelManager {
   }
 
   private placeSelection(): void {
-    for (const a of this.selectedAssets()) this.place(a, true);
+    for (const a of this.selectedAssets()) placeAsset(this.state, a, true);
   }
 
-  /** Drop an asset on the canvas, scaled to fit and centred. */
-  private place(a: AssetRow, quiet = false): void {
-    if (a.kind === 'fonts' || a.kind === 'docs') return;
-    const design = this.state.get().design;
-    if (!design) return;
-    const docW = design.document.width, docH = design.document.height;
-    const w = a.width ?? 600, h = a.height ?? 400;
-    const scale = Math.min(1, (docW * 0.6) / w, (docH * 0.6) / h);
-    const lw = Math.round(w * scale), lh = Math.round(h * scale);
-    const maxZ = Math.max(0, ...this.state.getCurrentLayers().map(l => l.z));
-    const id = `${a.id}-${++insertCounter}`;
-    this.state.addLayer({
-      id, type: 'image', z: maxZ + 1,
-      x: Math.round((docW - lw) / 2), y: Math.round((docH - lh) / 2),
-      width: lw, height: lh,
-      src: a.path, fit: 'cover',
-      ...(a.alt ? { alt: a.alt } : {}),
-    } as unknown as Layer);
-    this.state.set('selectedLayerIds', [id]);
-    if (!quiet) void this.toast(`Placed ${a.path.split('/').pop() ?? a.path}`, 'success');
-  }
 
   private async toast(msg: string, kind: 'success' | 'warning'): Promise<void> {
     const { showToast } = await import('../../utils/toast');
@@ -627,8 +696,3 @@ export class AssetPanelManager {
   }
 }
 
-/** '' for a top-level folder, else everything before the last segment. */
-function parentOf(folder: string): string {
-  const i = folder.lastIndexOf('/');
-  return i < 0 ? '' : folder.slice(0, i);
-}
