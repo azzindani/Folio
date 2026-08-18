@@ -189,6 +189,20 @@ describe('AssetPanelManager — selecting', () => {
     document.querySelectorAll('.ax-menu').forEach(m => m.remove());
   });
 
+  it('the Place verb counts only what can actually be placed', async () => {
+    await open();
+    click(rowFor('flat.png'));
+    click(rowFor('brand.woff2'), { ctrlKey: true });   // a font cannot be placed
+    rowFor('flat.png').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    const items = [...document.querySelectorAll('.ax-menu-item')].map(i => i.textContent);
+    // "Place 2" that places one is a small lie, and the kind of thing that
+    // teaches people not to trust the counts elsewhere in the UI.
+    expect(items.some(t => t?.startsWith('Place on canvas'))).toBe(true);
+    expect(items.some(t => t?.includes('Place 2'))).toBe(false);
+    expect(items.some(t => t?.includes('Delete 2 items'))).toBe(true);
+    document.querySelectorAll('.ax-menu').forEach(m => m.remove());
+  });
+
   it('a folder gets folder verbs, not file ones', async () => {
     await open();
     rows()[0]?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));

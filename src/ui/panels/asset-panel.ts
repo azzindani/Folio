@@ -451,9 +451,12 @@ export class AssetPanelManager {
     }
     const a = entry.asset;
     const many = this.sel.size > 1;
+    // Count what CAN be placed, not what is selected — a font or a brief in the
+    // selection is skipped, and "Place 3" that places 2 is a small lie.
+    const canPlace = this.selectedAssets().filter(s => s.kind === 'images' || s.kind === 'icons').length;
     const placeable = a.kind === 'images' || a.kind === 'icons';
     return [
-      ...(placeable ? [{ label: many ? `Place ${this.sel.size} on canvas` : 'Place on canvas', run: () => this.placeSelection() }] : []),
+      ...(placeable ? [{ label: canPlace > 1 ? `Place ${canPlace} on canvas` : 'Place on canvas', run: () => this.placeSelection() }] : []),
       ...(a.kind === 'docs' ? [{ label: 'Edit text', run: () => this.writeDoc(a) }] : []),
       { label: 'Open in new tab', run: () => window.open(this.io.url(a), '_blank', 'noopener') },
       { separator: true, label: '' },
