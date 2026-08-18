@@ -24,6 +24,7 @@ import { wireCells } from './asset-explorer-cells';
 import { openDocEditor } from './asset-explorer-doc';
 import { placeAsset } from './asset-explorer-place';
 import { promptDialog, confirmDialog, renameDialog } from './asset-explorer-dialog';
+import { FullWindow } from './asset-explorer-full';
 import {
   parentOf, createFolder, deleteFolders, renameFolder,
   promptMoveFolder, moveFolderInto, type FolderCtx,
@@ -51,15 +52,23 @@ export class AssetPanelManager {
   private sel = new Selection();
   private order: string[] = [];
   private busy = false;
-  private full = false;
   private bootId = 0;
   /** Places visited, for Back. Not the browser's history. */
   private history: string[] = [];
   private observer: ResizeObserver | null = null;
 
+  private readonly window: FullWindow;
+
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
     this.state = state;
+    this.window = new FullWindow({
+      container,
+      render: () => this.render(),
+      hasSelection: () => this.sel.size > 0,
+      clearSelection: () => { this.sel.clear(); this.paintSelection(); },
+      closeTransient: () => this.closeTransient(),
+    });
     this.renderMessage('Loading assets…');
     void this.boot(null, null);
   }
@@ -206,38 +215,32 @@ export class AssetPanelManager {
       query: this.query,
       totalProject: this.rows.filter(r => storeOf(r) === 'project').length,
       totalShared: this.rows.filter(r => storeOf(r) === 'library').length,
-      full: this.full,
+      full: this.window.active,
       clip: clipSummary(),
       canPaste: Boolean(clip),
       canBack: this.history.length > 0,
     };
   }
 
-  /**
-   * Fill the window instead of the sidebar.
-   *
-   * The left panel tops out around 600px and sits at ~280 by default, which is
-   * a column, not a file manager — the folder tree has nowhere to go. This
-   * gives the same view a real window, which is what "like Explorer" means in
-   * practice. Escape brings it back.
-   */
-  private toggleFull(on = !this.full): void {
-    this.full = on;
-    this.container.classList.toggle('ax-full', on);
-    document.body.classList.toggle('ax-full-open', on);
-    if (on) document.addEventListener('keydown', this.escapeFull, true);
-    else document.removeEventListener('keydown', this.escapeFull, true);
-    this.render();
+  /** Close whatever is layered over the file pane. True if there was anything —
+   *  Escape unwinds these before it touches the selection or the window. */
+  private closeTransient(): boolean {
+    const menu = this.container.querySelector<HTMLElement>('.ax-viewmenu');
+    if (menu && !menu.hidden) { menu.hidden = true; return true; }
+    const places = this.container.querySelector('.ax-tree.open');
+    if (places) { places.classList.remove('open'); return true; }
+    return false;
   }
 
-  /** Escape clears a selection first, and only then leaves full window — so
-   *  the key never closes the manager out from under an in-progress action. */
-  private escapeFull = (ev: KeyboardEvent): void => {
-    if (ev.key !== 'Escape' || !this.full) return;
-    if (this.sel.size) { this.sel.clear(); this.paintSelection(); return; }
-    ev.stopPropagation();
-    this.toggleFull(false);
-  };
+  /** Fill the window instead of the sidebar — see asset-explorer-full.ts. */
+  private toggleFull(on = !this.window.active): void {
+    this.window.toggle(on);
+  }
+
+  /** Open it as a window, which is what clicking "Project assets" asks for. */
+  openForBrowsing(): void {
+    this.window.openForBrowsing();
+  }
 
   private renderMessage(msg: string): void {
     this.container.innerHTML = `<div class="ax-message">${msg.replace(/[<>&]/g, '')}</div>`;

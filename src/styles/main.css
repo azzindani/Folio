@@ -597,9 +597,20 @@ html, body {
 .ax-cmdbar {
   display: flex; align-items: center; gap: 2px; padding: 5px 8px;
   border-bottom: 1px solid var(--color-border);
-  overflow-x: auto; scrollbar-width: none;
+  /* Wraps rather than scrolling. It used to scroll with the scrollbar hidden,
+     so at panel width nine of the twelve verbs sat past the right edge with
+     nothing on screen to say they were there — a verb you cannot see is a verb
+     that does not exist, and the bar read as three buttons. */
+  flex-wrap: wrap;
 }
-.ax-cmdbar::-webkit-scrollbar { display: none; }
+/* Narrow: the verbs that carry a recognisable icon drop their label instead of
+   dropping off the bar. Marked `compact` in the command list — New folder,
+   Upload and Delete keep their words, since those are the ones worth reading. */
+.ax:not(.is-wide) .ax-cmd.compact .ax-cmd-l { display: none; }
+.ax:not(.is-wide) .ax-cmd.compact { padding: 0 8px; }
+/* The spacer pushes View/Refresh/Expand to the far edge, which on a wrapping
+   bar would strand them on a line of their own. */
+.ax:not(.is-wide) .ax-gap { display: none; }
 .ax-cmd {
   display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
   min-height: 34px; padding: 0 9px;
