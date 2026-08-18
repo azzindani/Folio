@@ -12,6 +12,7 @@ import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
 import { DataPanelManager } from '../ui/panels/data-panel';
 import { wireLocalFolderPanel } from './local-folder-panel';
+import { ViewWidth } from './panel-width';
 import { ScriptPanelManager } from '../ui/panels/script-panel';
 import { isTouchLayout, isNarrowDesktop } from './breakpoints';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
@@ -248,8 +249,11 @@ export abstract class EditorAppBase {
       const leftResizer = new PanelResizer({
         cssVar: '--left-panel-width',
         axis: 'x',
+        // 600 was a layer list's ceiling. The asset manager is a file manager
+        // and wants a tree plus four detail columns; the grid still clamps
+        // against --canvas-floor, so the canvas cannot be crowded out.
+        max: 720,
         min: 160,
-        max: 600,
         target: root,
       });
       const h = leftResizer.getHandle();
@@ -330,6 +334,8 @@ export abstract class EditorAppBase {
     // re-opens it. A narrow MOUSE window keeps its docked panel.
     if (isTouchLayout() || isNarrowDesktop()) setCollapsed(true);
 
+    const viewWidth = new ViewWidth();
+
     actBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const panelId = btn.dataset.panel!;
@@ -344,16 +350,26 @@ export abstract class EditorAppBase {
         actBtns.forEach(b => b.classList.toggle('active', b.dataset.panel === panelId));
         panelViews.forEach(v => v.classList.toggle('active', v.dataset.panel === panelId));
         setCollapsed(false);
+        // The asset manager needs a file manager's width, not a layer list's.
+        // Without this it opened at 260px with its tree folded away and its
+        // verbs scrolled off the edge — indistinguishable from the old panel.
+        viewWidth.apply(panelId);
 
         // The asset manager is lazy AND was only ever constructed as a side
         // effect of opening a server-backed design, so anyone who came here to
         // upload something first met an empty pane with no controls. Opening
         // the view is the moment it should exist; it finds its own project.
-        if (panelId === 'project-assets' && !this.assetPanel) {
+        if (panelId === 'project-assets') {
           // Null project is fine: the manager asks the server which projects
           // exist and picks one. Null token likewise — it reads the editor's
           // own token from the URL or the session.
-          void this.openAssetPanel(this.activeProject, null);
+          const ready = this.assetPanel
+            ? Promise.resolve()
+            : this.openAssetPanel(this.activeProject, null);
+          // Clicking this button IS the request for a file manager, so give it
+          // a window. Only from here — the panel is also constructed when a
+          // design opens, and taking the screen then would bury the canvas.
+          void ready.then(() => this.assetPanel?.openForBrowsing());
         }
       });
     });

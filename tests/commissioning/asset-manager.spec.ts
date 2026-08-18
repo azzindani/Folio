@@ -92,8 +92,15 @@ test('the asset manager opens, and offers an upload, with no design loaded', asy
   const projects = await page.locator('.ax-node.project').evaluateAll(els => els.map(e => (e as HTMLElement).dataset['project']));
   expect(projects.includes('_scratch-assets'), `tree missed a project: ${projects.join(', ')}`).toBe(true);
 
-  // Reachable, not merely present: in the sidebar the tree is folded away, so
-  // Places is the only route to another project.
+  // Reachable, not merely present. Opening as a window, the tree is docked and
+  // the project is simply there to click.
+  await expect(page.locator('.ax-node.project[data-project="_scratch-assets"]'),
+    'the tree lists the project but does not show it').toBeVisible();
+
+  // Docked back in the rail there is no room for a tree, and Places becomes the
+  // only route to another project — the state a phone is always in.
+  await page.click('[data-cmd="full"]');
+  await expect(page.locator('.project-assets-content')).not.toHaveClass(/ax-full/);
   await page.click('[data-cmd="places"]');
   await expect(page.locator('.ax-node.project[data-project="_scratch-assets"]'),
     'no way to reach another project when the tree is folded').toBeVisible();
@@ -262,7 +269,7 @@ test('files dropped from the desktop upload into the folder in view', async ({ p
 test('every view mode shows the same files — a view is not a filter', async ({ page }) => {
   await openManager(page);
   await selectScratch(page);
-  await page.click('[data-cmd="full"]');
+  // No click to go full-window: the manager opens as one now.
 
   await newFolder(page, 'views');
   await page.setInputFiles('.ax-file', [
@@ -286,7 +293,7 @@ test('every view mode shows the same files — a view is not a filter', async ({
 test('copy in one project, paste into another — the file lands and the original stays', async ({ page }) => {
   await openManager(page);
   await selectScratch(page);
-  await page.click('[data-cmd="full"]');
+  // No click to go full-window: the manager opens as one now.
 
   await newFolder(page, 'source');
   await page.setInputFiles('.ax-file', { name: 'shared-mark.png', mimeType: 'image/png', buffer: PNG_1PX });
@@ -310,4 +317,72 @@ test('copy in one project, paste into another — the file lands and the origina
 
   // Leave the shared library as it was found — it is committed fixture data.
   fs.rmSync(path.join(libRoot, 'shared-mark.png'), { force: true });
+});
+
+
+/** Command-bar verbs whose box falls outside the bar's own box — present in
+ *  the DOM, absent to the person looking at the panel. */
+async function clippedVerbs(page: import('@playwright/test').Page): Promise<string[]> {
+  const bar = await page.locator('.ax-cmdbar').boundingBox();
+  if (!bar) return ['<no command bar at all>'];
+  const cmds = page.locator('.ax-cmd[data-cmd]');
+  const out: string[] = [];
+  for (let i = 0; i < await cmds.count(); i++) {
+    const btn = cmds.nth(i);
+    const id = (await btn.getAttribute('data-cmd')) ?? '?';
+    const box = await btn.boundingBox();
+    if (!box || box.x < bar.x - 1 || box.x + box.width > bar.x + bar.width + 1) out.push(id);
+  }
+  return out;
+}
+
+test('the manager opens as a file manager, not as a column', async ({ page }) => {
+  // Every other check here either drove the panel full-window on purpose or
+  // reached its controls by selector, so all of them passed while what a person
+  // actually got was the old panel: docked in the rail at a layer list's width,
+  // tree folded away, filename column squeezed to nothing, and nine of the
+  // twelve verbs past the right edge of a bar that scrolled with its scrollbar
+  // hidden. Nothing on screen said they were there.
+  await openManager(page);
+
+  // A window, because the rail cannot hold a file manager — the editor grid
+  // protects a canvas floor, so the left column lands near 400px however wide
+  // the panel asks to be, under the width at which the tree docks.
+  await expect(page.locator('.project-assets-content'),
+    'the manager opened as a sidebar column, not a window').toHaveClass(/ax-full/);
+
+  await expect(page.locator('.ax-cmd[data-cmd]'),
+    'the command bar lost its verbs').not.toHaveCount(0);
+  expect(await clippedVerbs(page), 'verbs clipped off the command bar').toEqual([]);
+
+  // "List and grid preview" is only delivered if the picker can be reached
+  // without dragging the panel wider first.
+  await page.click('[data-cmd="viewmenu"]');
+  await expect(page.locator('.ax-viewmenu')).toBeVisible();
+  await expect(page.locator('.ax-vmode'), 'the view picker is out of reach').toHaveCount(6);
+
+  // Escape unwinds ONE layer. Dismissing the picker used to tear down the whole
+  // manager and drop you back on the canvas — the key that means "never mind"
+  // doing the most destructive thing on offer.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ax-viewmenu')).toBeHidden();
+  await expect(page.locator('.project-assets-content'),
+    'Escape closed the whole manager instead of just the menu').toHaveClass(/ax-full/);
+
+  // Wide enough to dock the tree, so Projects and the shared library are on
+  // screen rather than behind a drawer nobody knows to open.
+  await expect(page.locator('.ax'), 'too narrow to dock its tree').toHaveClass(/is-wide/);
+  await expect(page.locator('.ax-tree')).toBeVisible();
+
+  // And Escape a second time does leave, or there is no way back to the canvas.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.project-assets-content')).not.toHaveClass(/ax-full/);
+
+  // Docked in the rail is where clipping actually happens — full-window there
+  // is room for all twelve verbs on one line whatever the bar does, so the
+  // check above cannot fail even with the overflow bug back in place. This is
+  // the state the panel used to open in, and the one that hid nine verbs.
+  await expect(page.locator('.ax-cmdbar')).toBeVisible();
+  expect(await clippedVerbs(page),
+    'verbs clipped off the command bar once docked in the rail').toEqual([]);
 });
