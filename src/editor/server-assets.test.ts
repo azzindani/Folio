@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { listAssets, manageAssets, uploadAsset } from './server-assets';
+import { listAssets, listProjects, manageAssets, uploadAsset } from './server-assets';
 
 // canonical valid 1×1 transparent PNG
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
@@ -153,5 +153,89 @@ describe('editor server asset routes — the shared library', () => {
     expect((await del.json() as { ok: boolean }).ok).toBe(true);
     const listed = await listAssets(proj).json() as { assets: { path: string }[] };
     expect(listed.assets).toEqual([]);
+  });
+
+  // ── Folders as first-class things ────────────────────────────────
+  // The listing used to derive folders from the files it found, so a folder
+  // with nothing in it did not exist — which is every folder you have just
+  // made, and made the file manager's "New folder" look broken.
+
+  it('lists a folder created through mkdir, before anything is in it', async () => {
+    const res = await manageAssets(postJSON({ op: 'mkdir', folder: 'Power Automate' }), proj);
+    expect((await res.json() as { ok: boolean; folder: string })).toMatchObject({ ok: true, folder: 'power-automate' });
+    const listed = await listAssets(proj).json() as { folders: string[]; assets: unknown[] };
+    expect(listed.folders).toEqual(['power-automate']);
+    expect(listed.assets).toEqual([]);
+  });
+
+  it('mkdir nests in the library, where the store allows depth', async () => {
+    await manageAssets(postJSON({ op: 'mkdir', folder: 'microsoft/logos', scope: 'library' }), proj);
+    const listed = await listAssets(proj).json() as { library_folders: string[] };
+    expect(listed.library_folders).toEqual(['microsoft', 'microsoft/logos']);
+  });
+
+  it('an uploaded file and an empty folder appear in one list, without duplicates', async () => {
+    await manageAssets(postJSON({ op: 'mkdir', folder: 'shots' }), proj);
+    await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', 'shots', 'a.png');
+    await manageAssets(postJSON({ op: 'mkdir', folder: 'empty' }), proj);
+    const listed = await listAssets(proj).json() as { folders: string[] };
+    expect(listed.folders).toEqual(['empty', 'shots']);
+  });
+
+  it('rmdir removes an empty folder and refuses one that still holds work', async () => {
+    await manageAssets(postJSON({ op: 'mkdir', folder: 'keep' }), proj);
+    await uploadAsset(postBytes(PNG), URL_NO_ALT, proj, 'images', 'keep', 'a.png');
+    const refused = await manageAssets(postJSON({ op: 'rmdir', folder: 'keep' }), proj);
+    expect(refused.status).toBe(400);
+    expect((await refused.json() as { error: string }).error).toContain('1 item');
+
+    await manageAssets(postJSON({ op: 'mkdir', folder: 'gone' }), proj);
+    const removed = await manageAssets(postJSON({ op: 'rmdir', folder: 'gone' }), proj);
+    expect((await removed.json() as { ok: boolean }).ok).toBe(true);
+    const listed = await listAssets(proj).json() as { folders: string[] };
+    expect(listed.folders).toEqual(['keep']);
+  });
+
+  it('names the folder ops in the hint when given an unknown one', async () => {
+    const res = await manageAssets(postJSON({ op: 'chmod' }), proj);
+    expect(res.status).toBe(400);
+    expect((await res.json() as { hint: string }).hint).toContain('mkdir');
+  });
+});
+
+describe('project listing', () => {
+  let tmp: string;
+  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-srv-projects-')); });
+  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+
+  it('lists every project with its design and asset counts, busiest first', async () => {
+    // This is what lets the asset manager open on its own. Without it the panel
+    // had no way to know which project it was looking at unless a design had
+    // already been opened from the Library.
+    const busy = makeProject(tmp, 'busy');
+    makeProject(tmp, 'quiet');
+    fs.writeFileSync(path.join(busy, 'designs', 'a.design.yaml'), 'x');
+    fs.mkdirSync(path.join(busy, 'assets', 'images', 'shots'), { recursive: true });
+    fs.writeFileSync(path.join(busy, 'assets', 'images', 'top.png'), PNG);
+    fs.writeFileSync(path.join(busy, 'assets', 'images', 'shots', 'nested.png'), PNG);
+
+    const body = await listProjects(tmp).json() as { projects: { name: string; designs: number; assets: number }[] };
+    expect(body.projects).toEqual([
+      { name: 'busy', designs: 1, assets: 2 },
+      { name: 'quiet', designs: 0, assets: 0 },
+    ]);
+  });
+
+  it('skips dot-directories — the shared library is not a project', async () => {
+    makeProject(tmp, 'real');
+    fs.mkdirSync(path.join(tmp, '.library', 'assets'), { recursive: true });
+    const body = await listProjects(tmp).json() as { projects: { name: string }[] };
+    expect(body.projects.map(p => p.name)).toEqual(['real']);
+  });
+
+  it('reports an unreadable root as an error rather than throwing', async () => {
+    const res = listProjects(path.join(tmp, 'does-not-exist'));
+    expect(res.status).toBe(500);
+    expect((await res.json() as { ok: boolean; projects: unknown[] })).toMatchObject({ ok: false, projects: [] });
   });
 });

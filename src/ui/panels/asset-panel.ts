@@ -1,145 +1,589 @@
-// Folio editor — Asset library: a file manager over the current project's
-// asset store (the same set the MCP asset_list op sees).
+// Folio editor — Asset manager: a file manager over the project's asset store
+// and the shared library (the same set the MCP asset ops see).
 //
-// Upload from a phone, keep a shoot in a folder, search, rename, move, delete,
-// and tap to place. Everything rides the authed /__project_files mount, and
-// every mutation goes through the same engine ops the model uses — so what you
-// upload here is immediately what an MCP call can pull by path.
+// Tree, breadcrumb, sortable columns, multi-select, right-click menu, drag to
+// upload, drag to move. It behaves like the file manager on the machine you
+// came from, because filing a folder of screenshots is a chore and a chore
+// should not also be a puzzle.
+//
+// It opens on its OWN: pick a project from the toolbar. It used to initialise
+// only as a side effect of opening a design from the Library, which left
+// anyone who came to upload first staring at an empty pane with no controls.
 import { type StateManager } from '../../editor/state';
 import type { Layer } from '../../schema/types';
+import { AssetIO, storeOf, type AssetRow, type ProjectRow, type Scope } from './asset-explorer-io';
+import {
+  shell, entryKey, fmtType,
+  type Entry, type SortKey, type TreeNode, type ViewMode, type ViewState,
+} from './asset-explorer-view';
+import { Selection, openMenu, closeMenu, type MenuItem } from './asset-explorer-menu';
+import { openDocEditor } from './asset-explorer-doc';
 
-interface AssetRow {
-  id: string;
-  path: string;
-  kind: 'images' | 'icons' | 'fonts' | 'docs';
-  folder?: string;
-  bytes: number;
-  width?: number;
-  height?: number;
-  luminance?: string;
-  alt?: string;
-}
-
-type View = 'grid' | 'list';
-/** null = every folder; '' = the root (unfoldered) assets. */
-type FolderFilter = string | null;
-/** Which store the grid is showing. Assets from both are listed together. */
-type StoreFilter = 'all' | 'project' | 'library';
-/** Shared-library assets are recognisable by their path alone. */
-const isShared = (p: string): boolean => p.startsWith('lib/');
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json';
+/** Below this the tree pane costs more than it gives — the breadcrumb navigates. */
+const WIDE_PX = 520;
 
 let insertCounter = 0;
-
-const KIND_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,font/ttf,font/otf,font/woff2,font/woff,.ttf,.otf,.woff,.woff2,.md,.markdown,.txt,.csv,.json,.yaml,.yml,text/markdown,text/plain,text/csv,application/json';
 
 export class AssetPanelManager {
   private container: HTMLElement;
   private state: StateManager;
-  private project: string | null = null;
-  private token: string | null = null;
+  private io = new AssetIO();
+
   private rows: AssetRow[] = [];
   private folders: string[] = [];
   private libraryFolders: string[] = [];
-  private view: View = 'grid';
-  private folder: FolderFilter = null;
-  private store: StoreFilter = 'all';
+  private projects: ProjectRow[] = [];
+
+  private scope: Scope = 'project';
+  private folder = '';
   private query = '';
+  private view: ViewMode = 'details';
+  private sort: SortKey = 'name';
+  private desc = false;
+
+  private sel = new Selection();
+  private order: string[] = [];
   private busy = false;
+  private full = false;
+  private bootId = 0;
+  private observer: ResizeObserver | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     this.container = container;
     this.state = state;
-    this.renderEmpty('Open a design from the Library to browse its project assets.');
+    this.renderMessage('Loading assets…');
+    void this.boot(null, null);
   }
 
+  /** Called when a server-backed design opens, and on first use with nulls. */
   setProject(project: string | null, token: string | null): void {
-    this.project = project;
-    this.token = token;
-    this.folder = null;
+    this.scope = 'project';
+    this.folder = '';
     this.query = '';
-    void this.refresh();
+    this.sel.clear();
+    void this.boot(project, token);
   }
 
-  // ── Server I/O ────────────────────────────────────────────────
-  private base(): string { return `/__project_files/${encodeURIComponent(this.project ?? '')}`; }
-
-  private headers(extra: Record<string, string> = {}): Record<string, string> {
-    return this.token ? { Authorization: `Bearer ${this.token}`, ...extra } : extra;
-  }
-
-  async refresh(): Promise<void> {
-    if (!this.project) {
-      this.renderEmpty('Open a design from the Library to browse its project assets.');
-      return;
-    }
-    try {
-      const r = await fetch(`${this.base()}/__assets`, { credentials: 'include', headers: this.headers() });
-      if (!r.ok) { this.renderEmpty(`Could not list assets (${r.status}).`); return; }
-      const j = await r.json() as { ok?: boolean; assets?: AssetRow[]; folders?: string[]; library_folders?: string[] };
-      this.rows = j.assets ?? [];
-      this.folders = j.folders ?? [];
-      this.libraryFolders = j.library_folders ?? [];
-      this.render();
-    } catch {
-      this.renderEmpty('Could not reach the project server.');
-    }
-  }
-
-  /** Upload one or more files, optionally into a folder. Sequential: the size
-   *  cap is per-file and a phone upload over mobile data should fail loudly on
-   *  the file that broke, not on the batch. */
-  private async upload(files: FileList | File[], folder: string, scope: 'project' | 'library' = 'project'): Promise<void> {
-    if (!this.project || this.busy) return;
-    this.busy = true;
-    const { showToast } = await import('../../utils/toast');
-    let ok = 0;
-    for (const file of Array.from(files)) {
-      const kind = /\.(ttf|otf|woff2?)$/i.test(file.name) ? 'fonts'
-        : /\.(md|markdown|txt|csv|json|ya?ml)$/i.test(file.name) ? 'docs' : 'images';
-      // The library takes its folder as a query param: it nests ("microsoft/
-      // logos") and a URL path segment cannot carry the slash.
-      const seg = scope === 'library' || !folder ? '' : `${encodeURIComponent(folder)}/`;
-      const qs = scope === 'library' ? `?scope=library&folder=${encodeURIComponent(folder || kind)}` : '';
-      try {
-        const r = await fetch(`${this.base()}/assets/${kind}/${seg}${encodeURIComponent(file.name)}${qs}`, {
-          method: 'POST', credentials: 'include',
-          headers: this.headers({ 'Content-Type': file.type || 'application/octet-stream' }),
-          body: file,
-        });
-        const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; hint?: string };
-        if (r.ok && j.ok) { ok++; } else { showToast(`${file.name}: ${j.error ?? r.status}`, 'warning'); }
-      } catch {
-        showToast(`${file.name}: upload failed`, 'warning');
+  /**
+   * Establish which project we are looking at, then list it.
+   *
+   * A null project is the normal case now — the panel is reachable from the
+   * activity bar with nothing open — so it asks the server what projects exist
+   * and takes the one with the most assets rather than giving up.
+   */
+  private async boot(project: string | null, token: string | null): Promise<void> {
+    // Two boots can be in flight at once: the panel opens with no project and
+    // starts looking one up, then a design finishes loading and names the real
+    // one. Without this guard the slower lookup wins and the manager lists
+    // whichever project the server happened to return first.
+    const id = ++this.bootId;
+    this.io.setContext(project, token ?? this.readToken());
+    const projects = await this.io.projects();
+    if (id !== this.bootId) return;
+    this.projects = projects;
+    if (!project) {
+      const first = projects[0]?.name ?? null;
+      if (!first) {
+        this.renderMessage('No projects yet. Create one from the Library, then upload assets here.');
+        return;
       }
+      this.io.setContext(first, token ?? this.readToken());
     }
-    this.busy = false;
-    if (ok) showToast(`Uploaded ${ok} asset${ok === 1 ? '' : 's'}`, 'success');
     await this.refresh();
   }
 
-  /** Rename / move / delete — one shell over the server's manage endpoint. */
-  private async manage(body: { op: 'move' | 'delete'; asset_path: string; folder?: string; new_name?: string }): Promise<boolean> {
-    if (!this.project) return false;
-    const { showToast } = await import('../../utils/toast');
+  /** The editor's own token: the URL carries it once, the session keeps it. */
+  private readToken(): string | null {
     try {
-      const r = await fetch(`${this.base()}/__assets/manage`, {
-        method: 'POST', credentials: 'include',
-        headers: this.headers({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(body),
+      const fromUrl = new URLSearchParams(location.search).get('token');
+      if (fromUrl) return fromUrl;
+      return sessionStorage.getItem('folio_editor_token');
+    } catch { return null; }
+  }
+
+  async refresh(): Promise<void> {
+    const res = await this.io.list();
+    if ('error' in res) { this.renderMessage(res.error); return; }
+    this.rows = res.assets;
+    this.folders = res.folders;
+    this.libraryFolders = res.libraryFolders;
+    this.render();
+  }
+
+  // ── Deriving what the pane shows ────────────────────────────────
+
+  /** Direct children of the current location: folders first, then files. */
+  private entries(): Entry[] {
+    if (this.query.trim()) return this.searchEntries();
+    const files = this.rows
+      .filter(r => storeOf(r) === this.scope && (r.folder ?? '') === this.folder)
+      .map(a => ({ type: 'file', asset: a } as Entry));
+    return [...this.subfolders(), ...this.sortFiles(files)];
+  }
+
+  /** Search spans BOTH stores and every folder — a file manager's search box
+   *  is how you find something when you have forgotten where you put it. */
+  private searchEntries(): Entry[] {
+    const q = this.query.trim().toLowerCase();
+    return this.sortFiles(this.rows
+      .filter(r => r.path.toLowerCase().includes(q) || (r.alt ?? '').toLowerCase().includes(q))
+      .map(a => ({ type: 'file', asset: a } as Entry)));
+  }
+
+  private subfolders(): Entry[] {
+    const here = this.folder;
+    const names = this.scope === 'library'
+      ? this.libraryFolders.filter(f => parentOf(f) === here)
+      // The project store is one level deep, so subfolders exist at the root only.
+      : here ? [] : this.folders;
+    return names
+      .map(full => ({
+        type: 'folder' as const,
+        name: full.slice(here ? here.length + 1 : 0),
+        folder: full,
+        count: this.countIn(full),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private countIn(folder: string): number {
+    const files = this.rows.filter(r => storeOf(r) === this.scope && (r.folder ?? '') === folder).length;
+    const subs = this.scope === 'library' ? this.libraryFolders.filter(f => parentOf(f) === folder).length : 0;
+    return files + subs;
+  }
+
+  private sortFiles(entries: Entry[]): Entry[] {
+    const dir = this.desc ? -1 : 1;
+    const val = (e: Entry): string | number => {
+      if (e.type !== 'file') return '';
+      const a = e.asset;
+      if (this.sort === 'size') return a.bytes;
+      if (this.sort === 'type') return fmtType(a);
+      if (this.sort === 'added') return a.added ?? '';
+      return (a.path.split('/').pop() ?? a.path).toLowerCase();
+    };
+    return entries.sort((a, b) => {
+      const x = val(a), y = val(b);
+      if (typeof x === 'number' && typeof y === 'number') return (x - y) * dir;
+      return String(x).localeCompare(String(y)) * dir;
+    });
+  }
+
+  private treeNodes(): TreeNode[] {
+    const out: TreeNode[] = [
+      { label: this.io.projectName ?? 'Project', scope: 'project', folder: '', depth: 0, root: true },
+      ...this.folders.map(f => ({ label: f, scope: 'project' as Scope, folder: f, depth: 1 })),
+      { label: 'Shared library', scope: 'library', folder: '', depth: 0, root: true },
+    ];
+    for (const f of this.libraryFolders) {
+      out.push({ label: f.split('/').pop() ?? f, scope: 'library', folder: f, depth: f.split('/').length });
+    }
+    return out;
+  }
+
+  private viewState(entries: Entry[]): ViewState {
+    return {
+      project: this.io.projectName,
+      projects: this.projects,
+      scope: this.scope,
+      folder: this.folder,
+      entries,
+      tree: this.treeNodes(),
+      selected: this.sel.keys,
+      view: this.view,
+      sort: this.sort,
+      desc: this.desc,
+      query: this.query,
+      totalProject: this.rows.filter(r => storeOf(r) === 'project').length,
+      totalShared: this.rows.filter(r => storeOf(r) === 'library').length,
+      full: this.full,
+    };
+  }
+
+  /**
+   * Fill the window instead of the sidebar.
+   *
+   * The left panel tops out around 600px and sits at ~280 by default, which is
+   * a column, not a file manager — the folder tree has nowhere to go. This
+   * gives the same view a real window, which is what "like Explorer" means in
+   * practice. Escape brings it back.
+   */
+  private toggleFull(on = !this.full): void {
+    this.full = on;
+    this.container.classList.toggle('ax-full', on);
+    document.body.classList.toggle('ax-full-open', on);
+    if (on) document.addEventListener('keydown', this.escapeFull, true);
+    else document.removeEventListener('keydown', this.escapeFull, true);
+    this.render();
+  }
+
+  /** Escape clears a selection first, and only then leaves full window — so
+   *  the key never closes the manager out from under an in-progress action. */
+  private escapeFull = (ev: KeyboardEvent): void => {
+    if (ev.key !== 'Escape' || !this.full) return;
+    if (this.sel.size) { this.sel.clear(); this.paintSelection(); return; }
+    ev.stopPropagation();
+    this.toggleFull(false);
+  };
+
+  private renderMessage(msg: string): void {
+    this.container.innerHTML = `<div class="ax-message">${msg.replace(/[<>&]/g, '')}</div>`;
+  }
+
+  private render(): void {
+    // A menu left open across a re-render would act on rows that no longer
+    // exist — the refresh after a delete is exactly when that happens.
+    closeMenu();
+    const entries = this.entries();
+    this.order = entries.map(entryKey);
+    this.sel.retain(this.order);
+    this.container.innerHTML = shell(this.viewState(entries), a => this.io.url(a));
+    this.wire(entries);
+    this.trackWidth();
+  }
+
+  // ── Wiring ──────────────────────────────────────────────────────
+
+  private wire(entries: Entry[]): void {
+    const q = <T extends HTMLElement>(sel: string): T | null => this.container.querySelector<T>(sel);
+    const file = q<HTMLInputElement>('.ax-file');
+    if (file) file.accept = ACCEPT;
+
+    file?.addEventListener('change', () => {
+      const picked = file.files;
+      if (picked?.length) void this.upload(Array.from(picked));
+      file.value = '';
+    });
+
+    q('[data-act="upload"]')?.addEventListener('click', () => file?.click());
+    q('[data-act="newfolder"]')?.addEventListener('click', () => void this.newFolder());
+    q('[data-act="write"]')?.addEventListener('click', () => this.writeDoc());
+    q('[data-act="refresh"]')?.addEventListener('click', () => void this.refresh());
+    q('[data-act="view"]')?.addEventListener('click', () => {
+      this.view = this.view === 'details' ? 'icons' : 'details';
+      this.render();
+    });
+    q('[data-act="full"]')?.addEventListener('click', () => this.toggleFull());
+
+    q<HTMLSelectElement>('.ax-project')?.addEventListener('change', (ev) => {
+      const name = (ev.target as HTMLSelectElement).value;
+      this.io.setContext(name, this.readToken());
+      this.scope = 'project';
+      this.folder = '';
+      this.sel.clear();
+      void this.refresh();
+    });
+
+    const search = q<HTMLInputElement>('.ax-search');
+    search?.addEventListener('input', () => {
+      this.query = search.value;
+      this.render();
+      // Re-focus: the whole panel is re-rendered on every keystroke, so the
+      // caret would otherwise land back in the canvas after one letter.
+      const next = this.container.querySelector<HTMLInputElement>('.ax-search');
+      next?.focus();
+      next?.setSelectionRange(next.value.length, next.value.length);
+    });
+
+    this.container.querySelectorAll<HTMLElement>('[data-nav]').forEach(el => {
+      el.addEventListener('click', () => this.navigate(el.dataset['nav'] ?? 'project:'));
+      // A folder in the tree is a drop target: dragging files onto it moves
+      // them, which is how anyone expects to file things.
+      el.addEventListener('dragover', ev => { ev.preventDefault(); el.classList.add('drop'); });
+      el.addEventListener('dragleave', () => el.classList.remove('drop'));
+      el.addEventListener('drop', ev => {
+        el.classList.remove('drop');
+        ev.preventDefault();
+        void this.handleDrop(ev, el.dataset['nav'] ?? 'project:');
       });
-      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; hint?: string };
-      if (!r.ok || !j.ok) { showToast(j.error ?? `Failed (${r.status})`, 'warning'); return false; }
-      await this.refresh();
-      return true;
-    } catch {
-      showToast('Could not reach the project server.', 'warning');
-      return false;
+    });
+
+    this.container.querySelectorAll<HTMLElement>('[data-sort]').forEach(el => {
+      el.addEventListener('click', () => {
+        const key = el.dataset['sort'] as SortKey;
+        if (this.sort === key) this.desc = !this.desc; else { this.sort = key; this.desc = false; }
+        this.render();
+      });
+    });
+
+    this.wireItems(entries);
+    this.wireDropZone();
+    this.wireKeys();
+  }
+
+  private wireItems(entries: Entry[]): void {
+    this.container.querySelectorAll<HTMLElement>('[data-key]').forEach(el => {
+      const key = el.dataset['key'] ?? '';
+      const entry = entries[Number(el.dataset['idx'])];
+      if (!entry) return;
+
+      el.addEventListener('click', ev => {
+        this.sel.click(key, this.order, { ctrl: ev.ctrlKey || ev.metaKey, shift: ev.shiftKey });
+        this.paintSelection();
+      });
+      el.addEventListener('dblclick', () => this.open(entry));
+      el.addEventListener('contextmenu', ev => {
+        ev.preventDefault();
+        if (!this.sel.has(key)) { this.sel.selectOnly(key); this.paintSelection(); }
+        openMenu(ev.clientX, ev.clientY, this.menuFor(entry));
+      });
+      el.addEventListener('dragstart', ev => {
+        if (!this.sel.has(key)) { this.sel.selectOnly(key); this.paintSelection(); }
+        ev.dataTransfer?.setData('application/x-folio-assets', JSON.stringify(this.selectedPaths()));
+        if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
+      });
+    });
+  }
+
+  /** Repaint selection without a full re-render — clicking through a long list
+   *  should not rebuild every thumbnail (and restart every image request). */
+  private paintSelection(): void {
+    this.container.querySelectorAll<HTMLElement>('[data-key]').forEach(el => {
+      const on = this.sel.has(el.dataset['key'] ?? '');
+      el.classList.toggle('selected', on);
+      el.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    const bar = this.container.querySelector<HTMLElement>('.ax-status span');
+    if (bar) {
+      const files = this.order.length;
+      bar.textContent = `${files} item${files === 1 ? '' : 's'}${this.sel.size ? ` · ${this.sel.size} selected` : ''}`;
     }
   }
 
-  // ── Placement ─────────────────────────────────────────────────
-  private insert(a: AssetRow | undefined): void {
-    if (!a || a.kind === 'fonts' || a.kind === 'docs') return;
+  private navigate(nav: string): void {
+    const i = nav.indexOf(':');
+    this.scope = nav.slice(0, i) === 'library' ? 'library' : 'project';
+    this.folder = nav.slice(i + 1);
+    this.query = '';
+    this.sel.clear();
+    this.render();
+  }
+
+  private selectedAssets(): AssetRow[] {
+    const byPath = new Map(this.rows.map(r => [r.path, r]));
+    return this.sel.values().map(k => byPath.get(k)).filter((a): a is AssetRow => Boolean(a));
+  }
+
+  private selectedPaths(): string[] {
+    return this.selectedAssets().map(a => a.path);
+  }
+
+  // ── Drag, drop and keys ─────────────────────────────────────────
+
+  /** Files from the OS land in the folder you are looking at. The overlay is
+   *  driven by a counter because dragenter/leave also fire for every child. */
+  private wireDropZone(): void {
+    const root = this.container.querySelector<HTMLElement>('.ax');
+    const overlay = this.container.querySelector<HTMLElement>('.ax-drop');
+    if (!root || !overlay) return;
+    let depth = 0;
+    const show = (on: boolean): void => { overlay.hidden = !on; };
+    root.addEventListener('dragenter', ev => {
+      if (!ev.dataTransfer?.types.includes('Files')) return;
+      depth++; show(true);
+    });
+    root.addEventListener('dragover', ev => { if (ev.dataTransfer?.types.includes('Files')) ev.preventDefault(); });
+    root.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) show(false); });
+    root.addEventListener('drop', ev => {
+      depth = 0; show(false);
+      const files = ev.dataTransfer?.files;
+      if (!files?.length) return;
+      ev.preventDefault();
+      void this.upload(Array.from(files));
+    });
+  }
+
+  /** A drop onto a tree node or crumb: OS files upload there, dragged rows move. */
+  private async handleDrop(ev: DragEvent, nav: string): Promise<void> {
+    const i = nav.indexOf(':');
+    const scope: Scope = nav.slice(0, i) === 'library' ? 'library' : 'project';
+    const folder = nav.slice(i + 1);
+    const files = ev.dataTransfer?.files;
+    if (files?.length) { await this.upload(Array.from(files), folder, scope); return; }
+    const moved = ev.dataTransfer?.getData('application/x-folio-assets');
+    if (!moved) return;
+    const paths = JSON.parse(moved) as string[];
+    await this.runBatch(paths.map(p => ({ op: 'move' as const, asset_path: p, folder })), `Moved to ${folder || 'the root'}`);
+  }
+
+  private wireKeys(): void {
+    const list = this.container.querySelector<HTMLElement>('.ax-list');
+    list?.setAttribute('tabindex', '0');
+    list?.addEventListener('keydown', ev => {
+      if (ev.key === 'a' && (ev.ctrlKey || ev.metaKey)) {
+        ev.preventDefault(); this.sel.all(this.order); this.paintSelection(); return;
+      }
+      if (ev.key === 'Escape') { this.sel.clear(); this.paintSelection(); return; }
+      if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        if (this.sel.size) { ev.preventDefault(); void this.deleteSelection(); }
+        return;
+      }
+      if (ev.key === 'F2') {
+        const one = this.selectedAssets();
+        if (one.length === 1 && one[0]) { ev.preventDefault(); void this.rename(one[0]); }
+        return;
+      }
+      if (ev.key === 'Enter') {
+        const first = this.sel.values()[0];
+        const entry = this.entries().find(e => entryKey(e) === first);
+        if (entry) { ev.preventDefault(); this.open(entry); }
+      }
+    });
+  }
+
+  // ── Actions ─────────────────────────────────────────────────────
+
+  private open(entry: Entry): void {
+    if (entry.type === 'folder') { this.navigate(`${this.scope}:${entry.folder}`); return; }
+    if (entry.asset.kind === 'docs') { this.writeDoc(entry.asset); return; }
+    this.place(entry.asset);
+  }
+
+  private menuFor(entry: Entry): MenuItem[] {
+    if (entry.type === 'folder') {
+      return [
+        { label: 'Open', run: () => this.navigate(`${this.scope}:${entry.folder}`) },
+        { label: 'Upload into this folder', run: () => this.pickInto(entry.folder) },
+        { separator: true, label: '' },
+        { label: 'Delete folder', danger: true, run: () => void this.removeFolder(entry.folder) },
+      ];
+    }
+    const a = entry.asset;
+    const many = this.sel.size > 1;
+    const placeable = a.kind === 'images' || a.kind === 'icons';
+    return [
+      ...(placeable ? [{ label: many ? `Place ${this.sel.size} on canvas` : 'Place on canvas', run: () => this.placeSelection() }] : []),
+      ...(a.kind === 'docs' ? [{ label: 'Edit text', run: () => this.writeDoc(a) }] : []),
+      { label: 'Open in new tab', run: () => window.open(this.io.url(a), '_blank', 'noopener') },
+      { separator: true, label: '' },
+      { label: 'Rename', accel: 'F2', disabled: many, run: () => void this.rename(a) },
+      { label: 'Move to folder…', run: () => void this.moveSelection() },
+      { label: 'Copy path', run: () => void this.copyPath() },
+      { label: 'Download', run: () => this.download(a) },
+      { separator: true, label: '' },
+      { label: many ? `Delete ${this.sel.size} items` : 'Delete', accel: 'Del', danger: true, run: () => void this.deleteSelection() },
+    ];
+  }
+
+  private pickInto(folder: string): void {
+    this.navigate(`${this.scope}:${folder}`);
+    this.container.querySelector<HTMLInputElement>('.ax-file')?.click();
+  }
+
+  private writeDoc(asset?: AssetRow): void {
+    openDocEditor({
+      io: this.io,
+      host: this.container,
+      folder: asset?.folder ?? this.folder,
+      scope: asset ? storeOf(asset) : this.scope,
+      ...(asset ? { asset } : {}),
+      onClose: () => this.render(),
+      onSaved: () => { void this.refresh(); },
+    });
+  }
+
+  /** Upload, one file at a time so the failing file is the one named. */
+  private async upload(files: File[], folder = this.folder, scope = this.scope): Promise<void> {
+    if (this.busy) return;
+    this.busy = true;
+    const { showToast } = await import('../../utils/toast');
+    let ok = 0;
+    for (const f of files) {
+      const res = await this.io.upload(f, f.name, folder, scope);
+      if (res.ok) ok++; else showToast(`${f.name}: ${res.error ?? 'failed'}`, 'warning');
+    }
+    this.busy = false;
+    if (ok) showToast(`Uploaded ${ok} file${ok === 1 ? '' : 's'}`, 'success');
+    await this.refresh();
+  }
+
+  private async newFolder(): Promise<void> {
+    const hint = this.scope === 'library' ? 'e.g. "microsoft/logos"' : 'e.g. "screenshots"';
+    const name = window.prompt(`New folder name (${hint}):`, '');
+    if (!name?.trim()) return;
+    const res = await this.io.manage({ op: 'mkdir', folder: name, scope: this.scope });
+    if (!res.ok) { await this.toast(`${res.error ?? 'Could not create it'}${res.hint ? ` — ${res.hint}` : ''}`, 'warning'); return; }
+    await this.refresh();
+  }
+
+  private async removeFolder(folder: string): Promise<void> {
+    if (!window.confirm(`Delete the folder "${folder}"?`)) return;
+    const res = await this.io.manage({ op: 'rmdir', folder, scope: this.scope });
+    if (!res.ok) { await this.toast(`${res.error ?? 'Could not delete it'}${res.hint ? ` — ${res.hint}` : ''}`, 'warning'); return; }
+    if (this.folder === folder) this.folder = '';
+    await this.refresh();
+  }
+
+  private async rename(a: AssetRow): Promise<void> {
+    const current = a.path.split('/').pop() ?? a.path;
+    const next = window.prompt('Rename (keep the extension):', current);
+    if (!next || next === current) return;
+    await this.runBatch([{ op: 'move', asset_path: a.path, new_name: next }], `Renamed to ${next}`);
+  }
+
+  private async moveSelection(): Promise<void> {
+    const picked = this.selectedAssets();
+    if (!picked.length) return;
+    const to = window.prompt('Move to folder (blank = root):', picked[0]?.folder ?? '');
+    if (to === null) return;
+    await this.runBatch(picked.map(a => ({ op: 'move' as const, asset_path: a.path, folder: to })),
+      `Moved ${picked.length} to ${to || 'the root'}`);
+  }
+
+  private async deleteSelection(): Promise<void> {
+    const picked = this.selectedAssets();
+    if (!picked.length) return;
+    const what = picked.length === 1 ? (picked[0]?.path.split('/').pop() ?? '') : `${picked.length} files`;
+    if (!window.confirm(`Delete ${what}? They move to .trash, and any layer using them shows a placeholder.`)) return;
+    await this.runBatch(picked.map(a => ({ op: 'delete' as const, asset_path: a.path })), `Deleted ${what}`);
+  }
+
+  /** Run manage ops in sequence and report once — a per-file toast storm on a
+   *  20-file move buries the one line that mattered. */
+  private async runBatch(
+    ops: Array<{ op: 'move' | 'delete'; asset_path: string; folder?: string; new_name?: string }>,
+    okMessage: string,
+  ): Promise<void> {
+    const failures: string[] = [];
+    for (const body of ops) {
+      const res = await this.io.manage(body);
+      if (!res.ok) failures.push(`${body.asset_path.split('/').pop() ?? ''}: ${res.error ?? 'failed'}`);
+    }
+    if (failures.length) await this.toast(failures.slice(0, 3).join(' · '), 'warning');
+    else await this.toast(okMessage, 'success');
+    this.sel.clear();
+    await this.refresh();
+  }
+
+  private async copyPath(): Promise<void> {
+    const paths = this.selectedPaths();
+    if (!paths.length) return;
+    try {
+      await navigator.clipboard.writeText(paths.join('\n'));
+      await this.toast(paths.length === 1 ? 'Path copied' : `${paths.length} paths copied`, 'success');
+    } catch {
+      await this.toast('Clipboard blocked by the browser', 'warning');
+    }
+  }
+
+  private download(a: AssetRow): void {
+    const link = document.createElement('a');
+    link.href = this.io.url(a);
+    link.download = a.path.split('/').pop() ?? 'asset';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  private placeSelection(): void {
+    for (const a of this.selectedAssets()) this.place(a, true);
+  }
+
+  /** Drop an asset on the canvas, scaled to fit and centred. */
+  private place(a: AssetRow, quiet = false): void {
+    if (a.kind === 'fonts' || a.kind === 'docs') return;
     const design = this.state.get().design;
     if (!design) return;
     const docW = design.document.width, docH = design.document.height;
@@ -156,255 +600,32 @@ export class AssetPanelManager {
       ...(a.alt ? { alt: a.alt } : {}),
     } as unknown as Layer);
     this.state.set('selectedLayerIds', [id]);
-    void import('../../utils/toast').then(({ showToast }) => showToast(`Inserted ${a.path}`, 'success'));
+    if (!quiet) void this.toast(`Placed ${a.path.split('/').pop() ?? a.path}`, 'success');
   }
 
-  /** Rows after the folder filter and the search box.
-   *  Placeable art sorts above fonts — you open this panel to drop an image far
-   *  more often than to check which typeface is loaded. */
-  private visible(): AssetRow[] {
-    const q = this.query.trim().toLowerCase();
-    const rank = (r: AssetRow): number => (r.kind === 'images' || r.kind === 'icons' ? 0 : 1);
-    return this.rows
-      .filter(r => this.store === 'all' || (this.store === 'library') === isShared(r.path))
-      .filter(r => this.folder === null || (r.folder ?? '') === this.folder)
-      .filter(r => !q || r.path.toLowerCase().includes(q) || (r.alt ?? '').toLowerCase().includes(q))
-      .sort((a, b) => rank(a) - rank(b) || a.path.localeCompare(b.path));
-  }
-
-  private url(a: AssetRow): string {
-    return `${this.base()}/${a.path.split('/').map(encodeURIComponent).join('/')}`;
-  }
-
-  private renderEmpty(msg: string): void {
-    this.container.innerHTML = `<div class="asset-lib-empty">${msg}</div>`;
-  }
-
-  // ── Render ────────────────────────────────────────────────────
-  private render(): void {
-    const rows = this.visible();
-    const chips = [
-      this.chip('All', this.folder === null && this.store === 'all', 'all'),
-      this.chip('◆ Shared', this.store === 'library', 'store:library'),
-      this.chip('This project', this.store === 'project', 'store:project'),
-      this.chip('Root', this.folder === '', ''),
-      ...(this.store === 'library' ? this.libraryFolders : this.folders).map(f => this.chip(f, this.folder === f, f)),
-    ].join('');
-
-    this.container.innerHTML = `
-      <div class="asset-lib">
-        <div class="asset-lib-bar">
-          <button class="asset-lib-btn asset-lib-primary" data-act="upload">＋ Upload</button>
-          <button class="asset-lib-btn" data-act="uploadshared" title="Upload into the SHARED library — every project can use it">◆ Add to shared</button>
-          <button class="asset-lib-btn" data-act="write" title="Write a markdown or text file into this project">✎ Write</button>
-          <button class="asset-lib-btn" data-act="newfolder" title="Upload into a new folder">New folder</button>
-          <button class="asset-lib-btn asset-lib-icon" data-act="view" title="${this.view === 'grid' ? 'List view' : 'Grid view'}">${this.view === 'grid' ? '☰' : '▦'}</button>
-          <button class="asset-lib-btn asset-lib-icon" data-act="refresh" title="Refresh">↻</button>
-        </div>
-        <input class="asset-lib-search" type="search" placeholder="Search assets…" value="${esc(this.query)}" data-act="search">
-        <div class="asset-lib-chips">${chips}</div>
-        <div class="asset-lib-body ${this.view}">
-          ${rows.length ? rows.map((a, i) => this.cell(a, i)).join('') : `<div class="asset-lib-empty">${this.rows.length ? 'Nothing matches that filter.' : 'No assets yet. Upload one — or drop an image on the canvas.'}</div>`}
-        </div>
-        <div class="asset-lib-foot">${this.rows.filter(r => !isShared(r.path)).length} in ${esc(this.project ?? '')} · ${this.rows.filter(r => isShared(r.path)).length} shared</div>
-        <input type="file" multiple accept="${KIND_ACCEPT}" class="asset-lib-file" hidden>
-      </div>`;
-
-    this.wire(rows);
-  }
-
-  private chip(label: string, active: boolean, value: string): string {
-    return `<button class="asset-lib-chip${active ? ' active' : ''}" data-folder="${esc(value)}">${esc(label)}</button>`;
-  }
-
-  private cell(a: AssetRow, i: number): string {
-    const dims = a.width ? `${a.width}×${a.height}` : '';
-    const name = a.path.split('/').pop() ?? a.path;
-    const kb = `${Math.max(1, Math.round(a.bytes / 1024))} KB`;
-    const meta = [dims, kb, a.folder ?? ''].filter(Boolean).join(' · ');
-    const thumb = a.kind === 'docs'
-      ? `<div class="asset-lib-thumb asset-lib-font">\u{1F4C4}</div>`
-      : a.kind === 'fonts'
-      ? `<div class="asset-lib-thumb asset-lib-font">Aa</div>`
-      : `<img class="asset-lib-thumb" src="${this.url(a)}" alt="${esc(a.alt ?? name)}" loading="lazy">`;
-    return `
-      <div class="asset-lib-item" data-idx="${i}">
-        <button class="asset-lib-place" data-act="insert" data-idx="${i}" title="Place ${esc(name)}">
-          ${thumb}
-          <span class="asset-lib-name">${esc(name)}</span>
-          <span class="asset-lib-meta">${esc(meta)}</span>
-        </button>
-        <div class="asset-lib-actions">
-          ${a.kind === 'docs' ? `<button class="asset-lib-act" data-act="editdoc" data-idx="${i}" title="Edit text">Edit</button>` : ''}
-          <button class="asset-lib-act" data-act="rename" data-idx="${i}" title="Rename">Rename</button>
-          <button class="asset-lib-act" data-act="movefolder" data-idx="${i}" title="Move to folder">Move</button>
-          <button class="asset-lib-act danger" data-act="delete" data-idx="${i}" title="Delete">Delete</button>
-        </div>
-      </div>`;
-  }
-
-  private wire(rows: AssetRow[]): void {
-    const q = <T extends HTMLElement>(sel: string): T | null => this.container.querySelector<T>(sel);
-    const fileInput = q<HTMLInputElement>('.asset-lib-file');
-
-    // A folder chosen by "New folder" applies to the NEXT upload only — the
-    // picker is the moment the operator is thinking about where it goes.
-    let pendingFolder: string | null = null;
-    let pendingScope: 'project' | 'library' = 'project';
-    fileInput?.addEventListener('change', () => {
-      const files = fileInput.files;
-      if (files && files.length) void this.upload(files, pendingFolder ?? (this.folder ?? ''), pendingScope);
-      pendingFolder = null;
-      pendingScope = 'project';
-      fileInput.value = '';
-    });
-
-    q('[data-act="upload"]')?.addEventListener('click', () => fileInput?.click());
-    q('[data-act="uploadshared"]')?.addEventListener('click', () => {
-      // The folder IS the filing system in the shared library, so it is asked
-      // for up front rather than dumping everything at the root.
-      const name = window.prompt('File it under which shared folder? (e.g. "microsoft/logos")', this.folder || '');
-      if (name === null) return;
-      pendingFolder = name;
-      pendingScope = 'library';
-      fileInput?.click();
-    });
-    q('[data-act="newfolder"]')?.addEventListener('click', () => {
-      const name = window.prompt('Upload into which folder?', this.folder || 'screenshots');
-      if (name === null) return;
-      pendingFolder = name;
-      fileInput?.click();
-    });
-    q('[data-act="write"]')?.addEventListener('click', () => this.openEditor());
-    q('[data-act="view"]')?.addEventListener('click', () => { this.view = this.view === 'grid' ? 'list' : 'grid'; this.render(); });
-    q('[data-act="refresh"]')?.addEventListener('click', () => void this.refresh());
-
-    const search = q<HTMLInputElement>('.asset-lib-search');
-    search?.addEventListener('input', () => {
-      this.query = search.value;
-      const body = q('.asset-lib-body');
-      const visible = this.visible();
-      if (body) body.innerHTML = visible.length ? visible.map((a, i) => this.cell(a, i)).join('') : `<div class="asset-lib-empty">Nothing matches that filter.</div>`;
-      this.wireItems(visible);
-    });
-
-    this.container.querySelectorAll<HTMLElement>('.asset-lib-chip').forEach(el => {
-      el.addEventListener('click', () => {
-        const v = el.dataset['folder'] ?? '';
-        if (v.startsWith('store:')) {
-          const want = v.slice('store:'.length) === 'library' ? 'library' : 'project';
-          // Tapping the active store chip clears it rather than trapping you.
-          this.store = this.store === want ? 'all' : want;
-          this.folder = null;
-        } else {
-          this.folder = v === 'all' ? null : v;
-          if (v === 'all') this.store = 'all';
-        }
-        this.render();
-      });
-    });
-
-    this.wireItems(rows);
-  }
-
-  private wireItems(rows: AssetRow[]): void {
-    this.container.querySelectorAll<HTMLElement>('[data-act][data-idx]').forEach(el => {
-      el.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        const a = rows[Number(el.dataset['idx'])];
-        if (!a) return;
-        const act = el.dataset['act'];
-        if (act === 'insert') { this.insert(a); return; }
-        if (act === 'editdoc') { this.openEditor(a); return; }
-        if (act === 'rename') { void this.promptRename(a); return; }
-        if (act === 'movefolder') { void this.promptMove(a); return; }
-        if (act === 'delete') { void this.promptDelete(a); return; }
-      });
-    });
-  }
-
-  // ── Write / edit a text asset ─────────────────────────────────
-  // A brief does not have to arrive as a file: type it here and it lands in
-  // assets/docs/ exactly as an upload would, ready for an MCP asset_read.
-  // Saving posts plain text to the upload route — the server ingests by
-  // filename, so the extension alone decides where it goes.
-  private openEditor(a?: AssetRow): void {
-    if (!this.project) return;
-    const name = a ? (a.path.split('/').pop() ?? '') : '';
-    const folder = a ? (a.folder ?? '') : (this.folder ?? '');
-    this.container.innerHTML = `
-      <div class="asset-lib asset-lib-editor">
-        <div class="asset-lib-bar">
-          <input class="asset-lib-fname" type="text" placeholder="brief.md" value="${esc(name)}" ${a ? 'readonly' : ''} aria-label="File name">
-          <button class="asset-lib-btn asset-lib-primary" data-act="dsave">Save</button>
-          <button class="asset-lib-btn" data-act="dcancel">Cancel</button>
-        </div>
-        <textarea class="asset-lib-text" spellcheck="false" placeholder="# Brief&#10;&#10;Paste the copy, links and notes the design should be built from."></textarea>
-        <div class="asset-lib-foot">${folder ? `assets/docs/${esc(folder)}/` : 'assets/docs/'} · md, txt, csv, json, yaml</div>
-      </div>`;
-
-    const fname = this.container.querySelector<HTMLInputElement>('.asset-lib-fname');
-    const text = this.container.querySelector<HTMLTextAreaElement>('.asset-lib-text');
-    this.container.querySelector('[data-act="dcancel"]')?.addEventListener('click', () => this.render());
-    this.container.querySelector('[data-act="dsave"]')?.addEventListener('click', () => {
-      void this.saveDoc(fname?.value ?? '', folder, text?.value ?? '');
-    });
-    if (a && text) {
-      text.value = 'Loading…';
-      text.disabled = true;
-      void fetch(this.url(a), { credentials: 'include', headers: this.headers() })
-        .then(r => r.ok ? r.text() : Promise.reject(new Error(String(r.status))))
-        .then(t => { text.value = t; text.disabled = false; })
-        .catch(() => { text.value = ''; text.disabled = false; void import('../../utils/toast').then(({ showToast }) => showToast('Could not read that file.', 'warning')); });
-    } else {
-      fname?.focus();
-    }
-  }
-
-  private async saveDoc(name: string, folder: string, text: string): Promise<void> {
+  private async toast(msg: string, kind: 'success' | 'warning'): Promise<void> {
     const { showToast } = await import('../../utils/toast');
-    const clean = name.trim();
-    if (!/\.(md|markdown|txt|csv|json|ya?ml)$/i.test(clean)) {
-      showToast('Text files only: .md, .markdown, .txt, .csv, .json, .yaml', 'warning');
-      return;
-    }
-    if (!text) { showToast('The file is empty — write something first.', 'warning'); return; }
-    const seg = folder ? `${encodeURIComponent(folder)}/` : '';
-    try {
-      const r = await fetch(`${this.base()}/assets/docs/${seg}${encodeURIComponent(clean)}`, {
-        method: 'POST', credentials: 'include',
-        headers: this.headers({ 'Content-Type': 'text/plain;charset=utf-8' }),
-        body: text,
-      });
-      const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string };
-      if (!r.ok || !j.ok) { showToast(j.error ?? `Save failed (${r.status})`, 'warning'); return; }
-      showToast(`Saved ${clean}`, 'success');
-      await this.refresh();
-    } catch {
-      showToast('Could not reach the project server.', 'warning');
-    }
+    showToast(msg, kind);
   }
 
-  private async promptRename(a: AssetRow): Promise<void> {
-    const current = a.path.split('/').pop() ?? a.path;
-    const next = window.prompt('Rename asset (keep the extension):', current);
-    if (!next || next === current) return;
-    await this.manage({ op: 'move', asset_path: a.path, new_name: next });
-  }
-
-  private async promptMove(a: AssetRow): Promise<void> {
-    const next = window.prompt('Move to folder (blank = project root):', a.folder ?? '');
-    if (next === null) return;
-    await this.manage({ op: 'move', asset_path: a.path, folder: next });
-  }
-
-  private async promptDelete(a: AssetRow): Promise<void> {
-    const name = a.path.split('/').pop() ?? a.path;
-    if (!window.confirm(`Delete ${name}? It moves to .trash and any layer using it shows a placeholder.`)) return;
-    await this.manage({ op: 'delete', asset_path: a.path });
+  /** The tree needs room; below WIDE_PX the breadcrumb does the navigating. */
+  private trackWidth(): void {
+    const root = this.container.querySelector<HTMLElement>('.ax');
+    if (!root) return;
+    const apply = (w: number): void => { root.classList.toggle('is-wide', w >= WIDE_PX); };
+    apply(this.container.clientWidth);
+    // The measurement above is the one that matters; the observer only keeps up
+    // with a panel being dragged wider. Where it does not exist the layout is
+    // still correct for the width it opened at.
+    if (typeof ResizeObserver === 'undefined') return;
+    this.observer?.disconnect();
+    this.observer = new ResizeObserver(es => { for (const e of es) apply(e.contentRect.width); });
+    this.observer.observe(this.container);
   }
 }
 
-function esc(s: string): string {
-  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c));
+/** '' for a top-level folder, else everything before the last segment. */
+function parentOf(folder: string): string {
+  const i = folder.lastIndexOf('/');
+  return i < 0 ? '' : folder.slice(0, i);
 }

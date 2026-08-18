@@ -34,6 +34,15 @@ const paths: Record<string, string> = {
   pen: '<path d="m14.4 5.2 4.4 4.4L8.2 20.2H3.8v-4.4L14.4 5.2Z"/><path d="m12.4 7.2 4.4 4.4"/>',
   frame: '<path d="M7.2 3v18M16.8 3v18M3 7.2h18M3 16.8h18"/>',
   eyedropper: '<path d="m12.6 6.6 4.8 4.8M9.2 10 4 15.2a1.9 1.9 0 0 0-.6 1.4v2.6a1.4 1.4 0 0 0 1.4 1.4h2.6a1.9 1.9 0 0 0 1.4-.6l5.2-5.2M17.2 3.6a2.3 2.3 0 0 1 3.2 3.2L18 9.2l.9.9-1.8 1.8-6-6L12.9 4l.9.9 3.4-1.3Z"/>',
+  // Asset manager chrome.
+  upload: '<path d="M12 16.5V4.2M7.5 8.7 12 4.2l4.5 4.5"/><path d="M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/>',
+  download: '<path d="M12 4.2v12.3M7.5 12l4.5 4.5 4.5-4.5"/><path d="M4.5 15.5v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/>',
+  plus: '<path d="M12 5.2v13.6M5.2 12h13.6"/>',
+  list: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
+  expand: '<path d="M9 4.5H4.5V9M15 4.5h4.5V9M9 19.5H4.5V15M15 19.5h4.5V15"/>',
+  shrink: '<path d="M4.5 9H9V4.5M19.5 9H15V4.5M4.5 15H9v4.5M19.5 15H15v4.5"/>',
+  refresh: '<path d="M20 11.5a8 8 0 1 0-.7 4.4"/><path d="M20 4.5v6h-6"/>',
+  library: '<path d="M4.5 5.5h3v14h-3zM10 5.5h3v14h-3z"/><path d="m16.2 6.3 2.9-.8 3.4 12.5-2.9.8z"/>',
 };
 
 /** Inline monoline SVG for editor chrome. Unknown names return the name so a

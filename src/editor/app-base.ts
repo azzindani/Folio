@@ -11,6 +11,7 @@ import { ToolbarManager } from '../ui/toolbar/toolbar';
 import { LayerPanelManager } from '../ui/panels/layer-panel';
 import { PropertiesPanelManager } from '../ui/panels/properties-panel';
 import { DataPanelManager } from '../ui/panels/data-panel';
+import { wireLocalFolderPanel } from './local-folder-panel';
 import { ScriptPanelManager } from '../ui/panels/script-panel';
 import { isTouchLayout, isNarrowDesktop } from './breakpoints';
 import { ProblemsPanelManager } from '../ui/panels/problems-panel';
@@ -34,7 +35,6 @@ import { canvasResizeDialog } from '../ui/dialogs/canvas-resize';
 import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
-import { projectFolder } from '../fs/project-folder';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
@@ -76,6 +76,9 @@ export abstract class EditorAppBase {
   protected timelinePanel!: TimelinePanelManager;
   protected colorSchemePanel!: ColorSchemePanelManager;
   protected assetPanel?: AssetPanelManager;
+  /** Project of the open server-backed design, so the asset manager opens on
+   *  the one you are working in rather than whichever the server lists first. */
+  protected activeProject: string | null = null;
 
   protected buildLayout(): void {
     this.container.innerHTML = `
@@ -134,7 +137,7 @@ export abstract class EditorAppBase {
 
         <div class="left-panel-view" data-panel="project-assets">
           <div class="panel-header">Project assets</div>
-          <div class="project-assets-content" style="flex:1;overflow-y:auto"></div>
+          <div class="project-assets-content" style="flex:1;min-height:0;overflow:hidden"></div>
         </div>
 
         <div class="left-panel-view" data-panel="components">
@@ -341,6 +344,17 @@ export abstract class EditorAppBase {
         actBtns.forEach(b => b.classList.toggle('active', b.dataset.panel === panelId));
         panelViews.forEach(v => v.classList.toggle('active', v.dataset.panel === panelId));
         setCollapsed(false);
+
+        // The asset manager is lazy AND was only ever constructed as a side
+        // effect of opening a server-backed design, so anyone who came here to
+        // upload something first met an empty pane with no controls. Opening
+        // the view is the moment it should exist; it finds its own project.
+        if (panelId === 'project-assets' && !this.assetPanel) {
+          // Null project is fine: the manager asks the server which projects
+          // exist and picks one. Null token likewise — it reads the editor's
+          // own token from the URL or the session.
+          void this.openAssetPanel(this.activeProject, null);
+        }
       });
     });
 
@@ -503,9 +517,14 @@ export abstract class EditorAppBase {
   protected async openAssetPanel(project: string | null, token: string | null): Promise<void> {
     const host = this.container.querySelector<HTMLElement>('.project-assets-content');
     if (!host) return;
+    if (project) this.activeProject = project;
     if (!this.assetPanel) {
       const { AssetPanelManager } = await import('../ui/panels/asset-panel');
       this.assetPanel = new AssetPanelManager(host, this.state);
+      // The constructor already boots with no project; only tell it about a
+      // specific one when we actually have it, or a design opening right after
+      // would make it list twice.
+      if (!project) return;
     }
     this.assetPanel.setProject(project, token);
   }
@@ -520,49 +539,10 @@ export abstract class EditorAppBase {
     this.container.querySelector<HTMLElement>('.act-btn[data-panel="project-assets"]')?.click();
   }
 
+  /** The Files panel's LOCAL folder picker — a directory on this machine, not
+   *  the project's server-side asset store. Lives in its own module. */
   protected wireAssetPanel(): void {
-    const btn   = this.container.querySelector<HTMLElement>('#open-folder-btn');
-    const grid  = this.container.querySelector<HTMLElement>('#asset-grid');
-    if (!btn || !grid) return;
-
-    btn.addEventListener('click', async () => {
-      try {
-        await projectFolder.open();
-        btn.innerHTML = chromeIcon('folder', 13);
-        btn.appendChild(document.createTextNode(` ${projectFolder.rootName}`));
-      } catch (err) {
-        const { showToast } = await import('../utils/toast');
-        showToast((err as Error).message, 'warning');
-      }
-    });
-
-    const renderGrid = async (): Promise<void> => {
-      const assets = projectFolder.getAssets();
-      if (assets.length === 0) {
-        grid.innerHTML = '<span class="asset-empty">No images found</span>';
-        return;
-      }
-      grid.innerHTML = '';
-      for (const entry of assets) {
-        const tile = document.createElement('div');
-        tile.className = 'asset-tile';
-        tile.title = entry.path;
-        const url = await projectFolder.getBlobUrl(entry);
-        tile.style.backgroundImage = `url(${url})`;
-        tile.addEventListener('click', async () => {
-          if (entry.name.endsWith('.svg')) {
-            const file = await entry.handle.getFile();
-            await this.imageImport.fromSVGFile(file);
-          } else {
-            const file = await entry.handle.getFile();
-            await this.imageImport.fromRaster(file);
-          }
-        });
-        grid.appendChild(tile);
-      }
-    };
-
-    projectFolder.onChange(() => { void renderGrid(); });
+    wireLocalFolderPanel(this.container, this.imageImport);
   }
 
   protected wireStatusBar(): void {
