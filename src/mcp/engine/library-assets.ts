@@ -106,7 +106,9 @@ export function assetDrawerMarkup(projects: { name: string }[]): string {
       <button class="abtn abtn-primary" id="aupload" type="button">＋ Upload</button>
       <button class="abtn" id="asharedupload" type="button" title="Upload into the SHARED library — every project can use it">◆ Add to shared</button>
       <button class="abtn" id="anote" type="button" title="Write a markdown or text file here">✎ Write</button>
-      <button class="abtn" id="anewfolder" type="button" title="Upload into a new folder">New folder</button>
+      <button class="abtn" id="anewfolder" type="button" title="Create an empty folder here">New folder</button>
+      <button class="abtn" id="arenfolder" type="button" title="Rename the folder in view" disabled>Rename folder</button>
+      <button class="abtn" id="adelfolder" type="button" title="Delete the folder in view" disabled>Delete folder</button>
       <button class="abtn" id="arefresh" type="button" title="Refresh">↻</button>
     </div>
     <button class="abtn abtn-close" id="aclose" type="button">Close</button>
@@ -181,6 +183,11 @@ function draw(){
   }).join(''):'<div class="aempty">'+(rows.length?'Nothing matches that filter.':'No assets yet. Upload one — \u201C＋ Upload\u201D keeps it in this project, \u201C\u25C6 Add to shared\u201D puts it in the library every project can use.')+'</div>';
   var nShared=rows.filter(function(a){return shared(a.path);}).length;
   foot.textContent=(rows.length-nShared)+' in '+(projSel.value||'')+' \u00B7 '+nShared+' shared';
+  /* The folder verbs act on the folder in view, so they stand down at the root
+     and on the "All"/store chips where there is no one folder to act on. */
+  var onFolder=typeof folder==='string'&&folder!=='';
+  document.getElementById('arenfolder').disabled=!onFolder;
+  document.getElementById('adelfolder').disabled=!onFolder;
   [].forEach.call(chips.querySelectorAll('.achip'),function(c){
     c.onclick=function(){var v=c.getAttribute('data-f');
       if(v.indexOf('store:')===0){var want=v.slice(6);store=store===want?'all':want;folder=null;}
@@ -204,9 +211,12 @@ function load(){
     rows=j.assets||[];folders=j.folders||[];libFolders=j.library_folders||[];draw();
   }).catch(function(){grid.innerHTML='<div class="aempty">Could not reach the server.</div>';});
 }
-function manage(body){
+function manage(body,after){
   fetch(base()+'/__assets/manage',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-    .then(function(r){return r.json();}).then(function(j){if(!j.ok)alert(j.error||'Failed');load();})
+    .then(function(r){return r.json();}).then(function(j){
+      if(!j.ok){alert(j.error||'Failed');return;}
+      if(after)after(j);
+      load();})
     .catch(function(){alert('Could not reach the server.');});
 }
 function upload(files,into,scope){
@@ -262,8 +272,31 @@ document.getElementById('aupload').onclick=function(){pendingFolder=null;pending
 document.getElementById('asharedupload').onclick=function(){
   var n=prompt('File it under which shared folder? (e.g. "microsoft/logos")',folder||'');if(n===null)return;
   pendingFolder=n;pendingScope='library';file.click();};
+/* Make a folder. This button used to prompt "Upload into which folder?" and
+   open the file picker — it never created anything, so cancelling the picker
+   left nothing behind and an empty folder was impossible. The server has had a
+   real mkdir all along; this now calls it. */
 document.getElementById('anewfolder').onclick=function(){
-  var n=prompt('Upload into which folder?',folder||'screenshots');if(n===null)return;pendingFolder=n;file.click();};
+  var n=prompt('Name the new folder'+(folder?' inside "'+folder+'"':'')+':','');
+  if(n===null)return;n=n.replace(/^\\/+|\\/+$/g,'');if(!n)return;
+  var path=folder?folder+'/'+n:n;
+  manage({op:'mkdir',folder:path,scope:store==='library'?'library':'project'},function(){folder=path;});};
+/* Folders were filter chips and nothing else: there was no way to rename or
+   delete one anywhere in this drawer, which is the whole of "how do I delete an
+   asset folder?" — the answer was that you could not. */
+document.getElementById('arenfolder').onclick=function(){
+  if(!folder)return;
+  var leaf=folder.split('/').pop(),parent=folder.split('/').slice(0,-1).join('/');
+  var n=prompt('Rename folder:',leaf);if(n===null)return;n=n.replace(/^\\/+|\\/+$/g,'');
+  if(!n||n===leaf)return;
+  var to=parent?parent+'/'+n:n;
+  manage({op:'renamedir',folder:folder,new_name:n,scope:store==='library'?'library':'project'},
+    function(){folder=to;});};
+document.getElementById('adelfolder').onclick=function(){
+  if(!folder)return;
+  var held=rows.filter(function(r){return (r.folder||'')===folder;}).length;
+  if(!confirm('Delete the folder "'+folder+'"'+(held?' and the '+held+' item'+(held===1?'':'s')+' inside':'')+'? Everything moves to .trash.'))return;
+  manage({op:'rmdir',folder:folder,scope:store==='library'?'library':'project'},function(){folder=null;});};
 file.onchange=function(){
   if(file.files&&file.files.length)upload(file.files,pendingFolder!==null?pendingFolder:(folder||''),pendingScope);
   pendingFolder=null;pendingScope='project';file.value='';};
