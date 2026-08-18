@@ -64,10 +64,20 @@ export function commandBar(s: ViewState): string {
     `<button class="ax-vmode${v.id === s.view ? ' active' : ''}" data-view="${v.id}" title="${esc(v.label)}">
       ${chromeIcon(v.icon, 15)}<span class="ax-cmd-l">${esc(v.label)}</span></button>`).join('');
 
+  // The six modes, visible as a segmented control wherever there is room. They
+  // used to live only in the dropdown below, at the far right of the bar next
+  // to Refresh — so "show me these as a list" meant finding a menu you had no
+  // reason to open, and the answer was that the feature was missing.
+  const segment = VIEW_MODES.map(v =>
+    `<button class="ax-seg${v.id === s.view ? ' active' : ''}" data-view="${v.id}"
+      title="${esc(v.label)}" aria-label="${esc(v.label)}"
+      aria-pressed="${v.id === s.view}">${chromeIcon(v.icon, 15)}</button>`).join('');
+
   return `
     <div class="ax-cmdbar">
       ${buttons}
       <span class="ax-gap"></span>
+      <div class="ax-viewseg" role="group" aria-label="View">${segment}</div>
       <div class="ax-viewpick">
         <button class="ax-cmd compact" data-cmd="viewmenu" title="Change the view">
           ${chromeIcon(VIEW_MODES.find(v => v.id === s.view)?.icon ?? 'list', 15)}<span class="ax-cmd-l">View</span>
@@ -261,6 +271,8 @@ export interface ChromeHost {
   sortBy(key: string): void;
   currentProject(): string | null;
   upload(files: File[]): void;
+  /** Right-click on a tree node — the same verbs the file pane offers. */
+  treeMenu(ev: MouseEvent, nav: string, project: string | null): void;
   accept: string;
 }
 
@@ -300,6 +312,15 @@ export function wireChrome(container: HTMLElement, host: ChromeHost): void {
       if (project && project !== host.currentProject()) { host.openProject(project); return; }
       host.navigate(el.dataset['nav'] ?? 'project:');
     });
+    // The tree is where a file manager expects folders to be MANAGED, not just
+    // walked: right-clicking one used to open an empty menu, so the only route
+    // to deleting a folder was to find it again in the file pane.
+    if (el.classList.contains('ax-node')) {
+      el.addEventListener('contextmenu', ev => {
+        ev.preventDefault();
+        host.treeMenu(ev, el.dataset['nav'] ?? '', el.dataset['project'] ?? null);
+      });
+    }
     // A folder in the tree is a drop target: dragging files onto it moves them,
     // which is how anyone expects to file things.
     el.addEventListener('dragover', ev => { ev.preventDefault(); el.classList.add('drop'); });

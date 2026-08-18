@@ -19,8 +19,15 @@ export interface FullHost {
   /** True when something is selected, so Escape can clear it first. */
   hasSelection(): boolean;
   clearSelection(): void;
-  /** Close any open menu or drawer. True if there was one. */
-  closeTransient(): boolean;
+}
+
+/** Close whatever is layered over the file pane; true if there was anything. */
+function closeLayers(container: HTMLElement): boolean {
+  const menu = container.querySelector<HTMLElement>('.ax-viewmenu');
+  if (menu && !menu.hidden) { menu.hidden = true; return true; }
+  const places = container.querySelector('.ax-tree.open');
+  if (places) { places.classList.remove('open'); return true; }
+  return false;
 }
 
 /** Read the remembered preference. Full window unless explicitly restored. */
@@ -86,7 +93,7 @@ export class FullWindow {
     // working on the canvas would quietly flip the manager back to docked and
     // remember that as a preference the user never expressed.
     if (!this.host.container.getClientRects().length) return;
-    if (this.host.closeTransient()) { ev.stopPropagation(); return; }
+    if (closeLayers(this.host.container)) { ev.stopPropagation(); return; }
     if (this.host.hasSelection()) { this.host.clearSelection(); return; }
     ev.stopPropagation();
     this.toggle(false);

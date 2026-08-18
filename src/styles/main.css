@@ -624,6 +624,23 @@ html, body {
 .ax-div { flex: 0 0 auto; width: 1px; height: 20px; margin: 0 5px; background: var(--color-border); }
 .ax-gap { flex: 1 1 auto; min-width: 4px; }
 
+/* The six modes as a segmented control, shown wherever the bar has room. A
+   dropdown at the far right of the bar is not a feature anyone finds: it reads
+   as absent, which is exactly how it was reported. */
+.ax-viewseg { display: none; flex: 0 0 auto; gap: 1px; padding: 1px; margin-right: 4px;
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); }
+.ax.is-wide .ax-viewseg { display: flex; }
+.ax.is-wide .ax-viewpick { display: none; }
+.ax-seg {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; min-height: 30px;
+  background: none; border: none; border-radius: 3px;
+  color: var(--color-text-muted); cursor: pointer;
+}
+.ax-seg:hover { background: var(--color-surface-3); color: var(--color-text); }
+.ax-seg.active { background: var(--color-primary); color: #fff; }
+
 /* The view picker is a menu, not six permanent buttons — Explorer does the
    same, because you change view rarely and need the room for verbs. */
 .ax-viewpick { position: relative; flex: 0 0 auto; }

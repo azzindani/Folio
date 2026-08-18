@@ -266,6 +266,15 @@ test('files dropped from the desktop upload into the folder in view', async ({ p
     'dropped into the folder in view, but not filed there').toBe(true);
 });
 
+/** Switch view the way the panel currently offers it: the segmented control on
+ *  a bar with room, the dropdown on a narrow one. */
+async function pickView(page: import('@playwright/test').Page, mode: string): Promise<void> {
+  const seg = page.locator(`.ax-viewseg .ax-seg[data-view="${mode}"]`);
+  if (await seg.isVisible()) { await seg.click(); return; }
+  await page.click('[data-cmd="viewmenu"]');
+  await page.click(`.ax-vmode[data-view="${mode}"]`);
+}
+
 test('every view mode shows the same files — a view is not a filter', async ({ page }) => {
   await openManager(page);
   await selectScratch(page);
@@ -282,8 +291,7 @@ test('every view mode shows the same files — a view is not a filter', async ({
   // most names in the least space. What they must NOT do is disagree about
   // what is in the folder.
   for (const mode of ['xl', 'large', 'medium', 'tiles', 'list', 'details']) {
-    await page.click('[data-cmd="viewmenu"]');
-    await page.click(`[data-view="${mode}"]`);
+    await pickView(page, mode);
     await expect(page.locator('.ax-list'), `${mode} did not apply`).toHaveClass(new RegExp(`\\b${mode}\\b`));
     const names = await page.locator('.ax-list .ax-nm').allTextContents();
     expect(names.sort(), `${mode} shows a different set`).toEqual(['one.png', 'two.png']);
@@ -329,9 +337,14 @@ async function clippedVerbs(page: import('@playwright/test').Page): Promise<stri
   const out: string[] = [];
   for (let i = 0; i < await cmds.count(); i++) {
     const btn = cmds.nth(i);
-    const id = (await btn.getAttribute('data-cmd')) ?? '?';
     const box = await btn.boundingBox();
-    if (!box || box.x < bar.x - 1 || box.x + box.width > bar.x + bar.width + 1) out.push(id);
+    // No box at all means deliberately hidden for this layout — the dropdown
+    // stands down when the modes are on the bar. Clipped is different: the
+    // control is laid out, just past the edge of the bar that holds it, which
+    // is how nine verbs went missing while every test still passed.
+    if (!box) continue;
+    const id = (await btn.getAttribute('data-cmd')) ?? '?';
+    if (box.x < bar.x - 1 || box.x + box.width > bar.x + bar.width + 1) out.push(id);
   }
   return out;
 }
@@ -355,19 +368,11 @@ test('the manager opens as a file manager, not as a column', async ({ page }) =>
     'the command bar lost its verbs').not.toHaveCount(0);
   expect(await clippedVerbs(page), 'verbs clipped off the command bar').toEqual([]);
 
-  // "List and grid preview" is only delivered if the picker can be reached
-  // without dragging the panel wider first.
-  await page.click('[data-cmd="viewmenu"]');
-  await expect(page.locator('.ax-viewmenu')).toBeVisible();
-  await expect(page.locator('.ax-vmode'), 'the view picker is out of reach').toHaveCount(6);
-
-  // Escape unwinds ONE layer. Dismissing the picker used to tear down the whole
-  // manager and drop you back on the canvas — the key that means "never mind"
-  // doing the most destructive thing on offer.
-  await page.keyboard.press('Escape');
-  await expect(page.locator('.ax-viewmenu')).toBeHidden();
-  await expect(page.locator('.project-assets-content'),
-    'Escape closed the whole manager instead of just the menu').toHaveClass(/ax-full/);
+  // "List and grid preview" is only delivered if the modes are ON the bar —
+  // behind a dropdown at the far right they read as absent, which is how they
+  // were reported.
+  await expect(page.locator('.ax-viewseg .ax-seg'),
+    'the view modes are not on the command bar').toHaveCount(6);
 
   // Wide enough to dock the tree, so Projects and the shared library are on
   // screen rather than behind a drawer nobody knows to open.
@@ -385,4 +390,83 @@ test('the manager opens as a file manager, not as a column', async ({ page }) =>
   await expect(page.locator('.ax-cmdbar')).toBeVisible();
   expect(await clippedVerbs(page),
     'verbs clipped off the command bar once docked in the rail').toEqual([]);
+});
+
+test('a folder can be deleted from the tree, and the views are on the bar', async ({ page }) => {
+  // Both of these existed and both were reported missing, which is the same
+  // thing as missing. Deleting a folder meant knowing to select its row in the
+  // file pane — right-clicking it in the TREE, where a file manager puts folder
+  // management, opened an empty menu. And the six view modes lived only behind
+  // a dropdown at the far right of the bar, next to Refresh.
+  await openManager(page);
+  await selectScratch(page);
+  await newFolder(page, 'to-remove');
+  await page.setInputFiles('.ax-file', { name: 'inside.png', mimeType: 'image/png', buffer: PNG_1PX });
+  await expect(page.locator('.ax-row', { hasText: 'inside.png' })).toHaveCount(1, { timeout: 15_000 });
+
+  // The modes are on the bar itself, not folded into a menu.
+  const seg = page.locator('.ax-viewseg .ax-seg');
+  await expect(seg, 'the view modes are not on the command bar').toHaveCount(6);
+  await seg.filter({ has: page.locator('[aria-label], svg') }).first().waitFor();
+  await page.click('.ax-viewseg .ax-seg[data-view="list"]');
+  await expect(page.locator('.ax-list'), 'the bar\'s list button did not change the view')
+    .toHaveClass(/\blist\b/);
+  await page.click('.ax-viewseg .ax-seg[data-view="details"]');
+
+  // Right-click the folder in the TREE and delete it from there.
+  const node = page.locator('.ax-node[data-nav="project:to-remove"]');
+  await expect(node, 'the open project does not show its folders in the tree').toHaveCount(1);
+  await node.click({ button: 'right' });
+  const items = await page.locator('.ax-menu button').allTextContents();
+  expect(items.join(' | '), `the tree menu offers no way to delete: ${items.join(' | ')}`)
+    .toMatch(/Delete folder/);
+
+  await page.click('.ax-menu button:has-text("Delete folder")');
+  // Picking a verb has to actually run it. A `blur` listener registered with
+  // capture fires for EVERY element losing focus, not just the window, so
+  // pressing a menu item tore the menu down before the click could land on it —
+  // every verb in every right-click menu silently did nothing.
+  await expect(page.locator('.ax-modal'),
+    'picking Delete folder from the menu did nothing — no confirm ever appeared')
+    .toHaveCount(1, { timeout: 10_000 });
+  // It must say what it is about to take with it — the folder is not empty.
+  await expect(page.locator('.ax-modal')).toContainText('to-remove');
+  await expect(page.locator('.ax-modal'), 'the confirm does not say what goes with it')
+    .toContainText('1 item');
+  await page.click('.ax-modal [data-x="ok"]');
+
+  await expect(page.locator('.ax-node[data-nav="project:to-remove"]'),
+    'the folder survived a delete from the tree').toHaveCount(0, { timeout: 15_000 });
+  expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'to-remove')),
+    'still on disk after being deleted from the tree').toBe(false);
+});
+
+test('Escape unwinds one layer at a time, not the whole manager', async ({ page }) => {
+  await openManager(page);
+  // Narrow the window rather than opening narrow: below 768px the activity bar
+  // is hidden, and this is about the layers, not about getting in. At this
+  // width the view dropdown and the Places drawer are both in play — they are
+  // the layers Escape has to unwind, in order.
+  await page.setViewportSize({ width: 460, height: 820 });
+  await expect(page.locator('.ax')).not.toHaveClass(/is-wide/);
+  await expect(page.locator('.project-assets-content')).toHaveClass(/ax-full/);
+
+  await page.click('[data-cmd="viewmenu"]');
+  await expect(page.locator('.ax-viewmenu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ax-viewmenu'), 'Escape did not close the picker').toBeHidden();
+  await expect(page.locator('.project-assets-content'),
+    'Escape closed the whole manager instead of just the picker').toHaveClass(/ax-full/);
+
+  await page.click('[data-cmd="places"]');
+  await expect(page.locator('.ax-tree')).toHaveClass(/open/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ax-tree'), 'Escape did not close the drawer').not.toHaveClass(/open/);
+  await expect(page.locator('.project-assets-content'),
+    'Escape closed the whole manager instead of just the drawer').toHaveClass(/ax-full/);
+
+  // Only with nothing layered over it does Escape leave, or there is no way
+  // back to the canvas.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.project-assets-content')).not.toHaveClass(/ax-full/);
 });
