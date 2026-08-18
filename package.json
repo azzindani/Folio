@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "vite",
     "gen": "node scripts/gen-catalog-index.mjs && node scripts/gen-palette-index.mjs && node scripts/gen-type-pack-index.mjs && node scripts/gen-effects-pack-index.mjs && node scripts/gen-font-manifest.mjs",
-    "build": "npm run gen && tsc && vite build",
+    "build": "npm run gen && tsc && vite build && npm run build:assets",
+    "build:assets": "vite build --config vite.assets.config.ts",
     "gen:catalog": "node scripts/gen-catalog-index.mjs",
     "gen:palettes": "node scripts/gen-palette-index.mjs",
     "gen:type-packs": "node scripts/gen-type-pack-index.mjs",
