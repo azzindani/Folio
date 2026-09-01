@@ -39,6 +39,7 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'browse':    return engine.browseLibrary(a as Parameters<typeof engine.browseLibrary>[0]);
     case 'gallery':   return engine.exportLibraryGallery(a as Parameters<typeof engine.exportLibraryGallery>[0]);
     case 'asset_add':    return engine.assetAdd(a as Parameters<typeof engine.assetAdd>[0]);
+    case 'asset_process': return engine.assetProcess(a as Parameters<typeof engine.assetProcess>[0]);
     case 'asset_list':   return engine.assetList(a as Parameters<typeof engine.assetList>[0]);
     case 'asset_delete': return engine.assetDelete(a as Parameters<typeof engine.assetDelete>[0]);
     case 'asset_move':   return engine.assetMove(a as Parameters<typeof engine.assetMove>[0]);
@@ -48,7 +49,7 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'asset_fetch':  return engine.assetFetch(a as Parameters<typeof engine.assetFetch>[0]);
     case 'asset_promote': return engine.assetPromote(a as Parameters<typeof engine.assetPromote>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote']);
   }
 }
 
@@ -112,6 +113,11 @@ export function dispatchAnimation(a: Args): ToolResult {
     case 'keyframe': return engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]);
     case 'export':   return engine.exportAnimation(a as Parameters<typeof engine.exportAnimation>[0]);
     case 'motion':   return engine.applyMotion(a as Parameters<typeof engine.applyMotion>[0]);
-    default:         return badOp('animation', a['op'], ['timeline', 'keyframe', 'export', 'motion']);
+    case 'sequence': return engine.sequenceMotion(a as Parameters<typeof engine.sequenceMotion>[0]);
+    case 'track':    return engine.setTrack(a as Parameters<typeof engine.setTrack>[0]);
+    case 'clear':    return engine.clearMotion(a as Parameters<typeof engine.clearMotion>[0]);
+    case 'frame':    return engine.renderFrame(a as Parameters<typeof engine.renderFrame>[0]);
+    case 'presets':  return engine.listMotionPresets();
+    default:         return badOp('animation', a['op'], ['timeline', 'keyframe', 'export', 'motion', 'sequence', 'track', 'clear', 'frame', 'presets']);
   }
 }

@@ -11,6 +11,7 @@ export { assetRead, assetWrite } from './engine/assets';
 // library (by `scope`, or by a "lib/" path prefix) — see asset-library-ops.ts.
 export { assetAdd, assetList, assetDelete, assetMove, assetPromote } from './engine/asset-library-ops';
 export { assetSearch } from './engine/asset-search';
+export { assetProcess } from './engine/asset-process-op';
 export { assetFetch } from './engine/asset-fetch';
 export { listPacks } from './engine/packs';
 export { createDesign, createProject, listDesigns, listThemes, applyTheme, duplicateDesign, resumeDesign, getEngineGuide, listTasks, createTask, resumeTask, inspectDesign } from './engine-project-tools';
@@ -21,3 +22,5 @@ export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from
 export { createPresentation, exportPresentation, generateReport, bindData, exportReport, validateReportDesign } from './engine-report-tools';
 export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';
 export { applyMotion } from './engine/motion';
+export { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './engine/motion-sequence';
+export { renderFrame } from './engine/motion-frame';

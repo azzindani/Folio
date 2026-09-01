@@ -23,6 +23,7 @@ talks JSON-RPC over HTTP with a bearer token.
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Connect claude.ai, Claude Code, LM Studio, Hermes/OpenClaw/any harness; the editor live-refresh wiring | …you're plugging a specific client in |
 | [EDITOR.md](EDITOR.md) | The visual editor: canvas, panels, shortcuts, export, Monaco YAML, live SSE refresh, link/auth mechanics | …you (or your user) edit designs in the browser |
 | [DESIGN.md](DESIGN.md) | The design system + complete `.design.yaml` payload spec, layer schema, tokens | …you're hand-authoring YAML or adding a layer type |
+| [MOTION.md](MOTION.md) | Keyframe engine v2 (channels, easing, anchors), 28 motion presets, `animation(op:sequence/track/frame/timeline)`, the Photoshop-style pixel pipeline + `asset_process` | …you're animating a design or processing images over MCP |
 | [REPORT_ENGINE.md](REPORT_ENGINE.md) | Interactive flow-layout reports: components, datasets, `$data.*`/`$agg.*`, export | …you're building data-driven HTML reports |
 | [UX_ROADMAP.md](UX_ROADMAP.md) | Editor feature matrix vs Figma/Photoshop/Canva; what's shipped/missing | …you're prioritizing editor work |
 | [COMPARISON-OPEN-DESIGN.md](COMPARISON-OPEN-DESIGN.md) | Folio vs Open Design (nexu-io): capability map + ranked list of adaptable features (craft rulebooks, anti-slop linter, brand `DESIGN.md` systems) | …you're scoping what to borrow from the design-agent ecosystem |

@@ -3,8 +3,10 @@
 import { isMinimalGuidance } from '../guidance-mode';
 import { craft, CRAFT_SECTIONS } from './craft';
 import { ASSETS_GUIDE } from './guide-assets';
+import { MOTION_GUIDE } from './guide-motion';
 
 const SECTIONS: Record<string, string> = {
+  motion: MOTION_GUIDE,
 
   quick_ref: `# Folio Quick Ref
 Canvas: 1080x1080 (sq) · 1080x1350 (port) · 1920x1080 (land) · units: px
@@ -239,7 +241,7 @@ Rules:
   - Always pass task_path in append_page — enables auto-handover
   - Call tasks(op:resume, task_path) after any context reset
   - 3–8 layers per page is ideal
-  - Load guide sections on demand: shorthand | layers | workflow | reference
+  - Load guide sections on demand: shorthand | layers | workflow | reference | motion (animation)
   - MATCHING a reference image (Canva/screenshot)? Call extract_reference FIRST
     (colors you see + optional data:/path image) → palette + canvas + brief, then
     create_design + add_layers. Load the \`reference\` guide section for the full loop.

@@ -1,17 +1,21 @@
 import type { Keyframe, KeyframeAnimation, EasingFunction } from './types';
+import { resolveEasing } from './easing';
 
-// ── Easing Functions ────────────────────────────────────────
-const EASING_MAP: Record<string, (t: number) => number> = {
-  linear: (t) => t,
-  ease: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-  'ease-in': (t) => t * t,
-  'ease-out': (t) => t * (2 - t),
-  'ease-in-out': (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-};
-
-function getEasingFn(easing: EasingFunction): (t: number) => number {
-  return EASING_MAP[easing] ?? EASING_MAP['ease'];
+/**
+ * The curve for the segment leaving `from`.
+ *
+ * After Effects semantics: a keyframe's easing shapes the travel to the NEXT
+ * keyframe, and a held keyframe does not travel at all. The timeline-wide
+ * `playback.easing` is only the default for segments that say nothing.
+ */
+function segmentEasing(from: Keyframe, timelineDefault: EasingFunction): (t: number) => number {
+  if (from.hold === true) return (t) => (t >= 1 ? 1 : 0);
+  if (typeof from.easing === 'string') return resolveEasing(from.easing);
+  return resolveEasing(timelineDefault);
 }
+
+/** Keys that are metadata about a keyframe, not animated values. */
+const META_KEYS = new Set(['t', 'easing', 'hold']);
 
 // ── Interpolation ───────────────────────────────────────────
 function lerp(a: number, b: number, t: number): number {
@@ -45,6 +49,14 @@ function isColorProperty(key: string): boolean {
   return key.includes('color') || key === 'fill' || key === 'stroke';
 }
 
+/** The most recent value a property had at or before time `t`, if any frame set it. */
+function lastValueBefore(sorted: Keyframe[], t: number, key: string): unknown {
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (sorted[i].t <= t && sorted[i][key] !== undefined) return sorted[i][key];
+  }
+  return undefined;
+}
+
 // ── Keyframe Engine ─────────────────────────────────────────
 export interface InterpolatedValues {
   [key: string]: number | string;
@@ -60,7 +72,7 @@ export function interpolateKeyframes(
     const kf = keyframes[0];
     const result: InterpolatedValues = {};
     for (const [key, value] of Object.entries(kf)) {
-      if (key === 't') continue;
+      if (META_KEYS.has(key)) continue;
       if (value !== undefined) result[key] = value as number | string;
     }
     return result;
@@ -91,21 +103,27 @@ export function interpolateKeyframes(
   // Calculate progress
   const range = nextKf.t - prevKf.t;
   const rawT = range > 0 ? (currentTime - prevKf.t) / range : 1;
-  const easingFn = getEasingFn(easing);
-  const t = easingFn(rawT);
+  const easingFn = segmentEasing(prevKf, easing);
+  const t = easingFn(Math.max(0, Math.min(1, rawT)));
 
   // Interpolate all properties
   const result: InterpolatedValues = {};
   const allKeys = new Set([...Object.keys(prevKf), ...Object.keys(nextKf)]);
 
   for (const key of allKeys) {
-    if (key === 't') continue;
+    if (META_KEYS.has(key)) continue;
 
     const prevVal = prevKf[key];
     const nextVal = nextKf[key];
 
     if (prevVal === undefined && nextVal !== undefined) {
-      result[key] = nextVal as number | string;
+      // A property that only the LATER frame names holds the earlier frame's
+      // implicit value — but the engine cannot know what that was, so it
+      // searches backwards for the last frame that set it and tweens from there.
+      const from = lastValueBefore(sorted, prevKf.t, key);
+      if (typeof from === 'number' && typeof nextVal === 'number') result[key] = lerp(from, nextVal, t);
+      else if (typeof from === 'string' && typeof nextVal === 'string' && isColorProperty(key)) result[key] = lerpColor(from, nextVal, t);
+      else result[key] = nextVal as number | string;
     } else if (prevVal !== undefined && nextVal === undefined) {
       result[key] = prevVal as number | string;
     } else if (typeof prevVal === 'number' && typeof nextVal === 'number') {

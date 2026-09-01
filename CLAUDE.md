@@ -5,7 +5,8 @@
 > Full docs live in docs/ — see docs/README.md for the index. Key: docs/ARCHITECTURE.md
 > (architecture + full module index), docs/MCP.md + docs/TOOLS.md (MCP engine + tools),
 > docs/DEPLOYMENT.md (deploy + endpoints), docs/INTEGRATIONS.md (claude.ai/Claude
-> Code/LM Studio/harnesses), docs/EDITOR.md (visual editor), docs/DESIGN.md (payload format).
+> Code/LM Studio/harnesses), docs/EDITOR.md (visual editor), docs/DESIGN.md (payload format),
+> docs/MOTION.md (keyframe engine v2, motion presets, scene ops, pixel pipeline).
 
 ---
 
@@ -171,7 +172,10 @@ src/mcp/       MCP surface (21 consolidated tools) — http-server.ts (entry) ·
                engine/guide.ts (model steering) · craft.ts · ai-slop-lint.ts · jwt.ts
 src/ui/        editor panels · command palette · align/toolbox tools
 src/report/    interactive report: data-loader · aggregator · binder · navigation
-src/{animation,scripting,collab,fs,themes,utils}/   as named
+src/animation/ easing (30+ curves) · keyframe-engine · keyframe-css (SVG/CSS player)
+src/mcp/engine/motion-*.ts   presets · sequence/track/clear · merge · frame · timeline-ascii
+src/utils/image-{adjust,geometry,filters}.ts + src/mcp/engine/asset-process*.ts  pixel pipeline
+src/{scripting,collab,fs,themes}/   as named
 ```
 
 RULE: edit the real sibling, NOT the facade. Any file pushing 700 lines → split.

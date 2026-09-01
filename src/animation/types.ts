@@ -1,12 +1,20 @@
 // ── Animation Types (from CLAUDE.md Section 12.2) ──────────
 
+/**
+ * Any curve `resolveEasing()` understands: the CSS five, the Penner family
+ * (ease-out-cubic, ease-out-expo, ease-out-back, ease-out-elastic,
+ * ease-out-bounce, …), friendly aliases (snap, smooth, pop, spring, bounce,
+ * hold), `cubic-bezier(x1,y1,x2,y2)` and `steps(n)`. See easing.ts.
+ */
 export type EasingFunction =
   | 'linear'
   | 'ease'
   | 'ease-in'
   | 'ease-out'
   | 'ease-in-out'
-  | `cubic-bezier(${string})`;
+  | `cubic-bezier(${string})`
+  | `steps(${string})`
+  | (string & {});
 
 // ── Level 1: CSS Enter/Exit Animations ──────────────────────
 export type EnterAnimationType =
@@ -54,10 +62,36 @@ export interface Keyframe {
   rotation?: number;
   opacity?: number;
   scale?: number;
+  /** Non-uniform scale. When set, overrides `scale` on that axis. */
+  scale_x?: number;
+  scale_y?: number;
+  /** Shear in degrees — a lean, a card flick, a "sway" loop. */
+  skew_x?: number;
+  skew_y?: number;
+  /** Gaussian blur radius, px. 20 → 0 is the classic blur-in. */
+  blur?: number;
+  /**
+   * Stroke reveal, 0 → 1: the fraction of the outline drawn so far. The
+   * Illustrator/After Effects "trim paths" — a line draws itself on.
+   */
+  draw?: number;
   'fill.color'?: string;
   'stroke.color'?: string;
+  /**
+   * Curve used to travel FROM this keyframe TO the next one (After Effects
+   * semantics: the easing belongs to the outgoing segment). Overrides the
+   * timeline's `playback.easing` for that one segment.
+   */
+  easing?: EasingFunction;
+  /** Hold this keyframe's values until the next one, then jump — no tween. */
+  hold?: boolean;
   [key: string]: unknown;
 }
+
+/** Where rotate/scale/skew pivot — After Effects' anchor point. */
+export type AnchorPoint =
+  | 'center' | 'top' | 'bottom' | 'left' | 'right'
+  | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 
 export interface KeyframeAnimation {
   keyframes: Keyframe[];
@@ -84,6 +118,13 @@ export interface KeyframeAnimation {
      *            'first', where the opening frame is rest by definition.
      */
     origin?: 'first' | 'offset';
+    /** Pivot for rotate/scale/skew. Default 'center'. */
+    anchor?: AnchorPoint;
+    /**
+     * Repeat count for a loop. Omit (with loop:true) for forever; a number
+     * plays that many cycles then rests on the last frame.
+     */
+    iterations?: number;
   };
 }
 
