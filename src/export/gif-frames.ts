@@ -30,7 +30,8 @@ export function animationDuration(layers: Layer[]): number {
       // one pass and the GIF ends mid-swell, then snaps back to the beginning
       // on repeat — a visible jolt every cycle that the CSS version never has,
       // because the browser plays the return leg the flipbook never captured.
-      const cycles = pb.loop && pb.direction === 'alternate' ? 2 : 1;
+      const finite = pb.loop && pb.iterations && pb.iterations > 0 ? pb.iterations : undefined;
+      const cycles = finite ?? (pb.loop && pb.direction === 'alternate' ? 2 : 1);
       total = Math.max(total, (pb.delay ?? 0) + pb.duration * cycles);
     }
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
@@ -107,20 +108,39 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   // Scale is expressed by resizing about the centre, because the layer schema
   // has width/height rather than a transform — growing from the top-left would
   // read as a slide rather than a swell.
-  const vs = num(v['scale']);
-  if (vs !== undefined && vs !== 1) {
+  // Non-uniform scale wins on its axis; a plain `scale` fills in the rest.
+  const vs = num(v['scale']) ?? 1;
+  const sx = num(v['scale_x']) ?? vs;
+  const sy = num(v['scale_y']) ?? vs;
+  if (sx !== 1 || sy !== 1) {
     const w = num(layer['width' as keyof Layer]) ?? 0;
     const h = num(layer['height' as keyof Layer]) ?? 0;
-    const nw = w * vs;
-    const nh = h * vs;
+    const nw = w * sx;
+    const nh = h * sy;
     out['width'] = nw;
     out['height'] = nh;
     out['x'] = (num(out['x']) ?? 0) - (nw - w) / 2;
     out['y'] = (num(out['y']) ?? 0) - (nh - h) / 2;
   }
 
+  // Blur rides on the layer's effects, which the renderer turns into a filter.
+  const vb = num(v['blur']);
+  if (vb !== undefined && vb > 0) {
+    const fx = (layer['effects' as keyof Layer] as Record<string, unknown> | undefined) ?? {};
+    out['effects'] = { ...fx, blur: vb };
+  }
+
+  // Skew and stroke reveal have no still-frame equivalent in the layer schema
+  // (there is no skew field, and a partial outline needs a live dash), so the
+  // flipbook holds those channels at rest. The animated-SVG route plays them.
+
   const fill = v['fill.color'];
   if (typeof fill === 'string') out['fill'] = fill;
+  const stroke = v['stroke.color'];
+  if (typeof stroke === 'string') {
+    const st = layer['stroke' as keyof Layer];
+    out['stroke'] = st && typeof st === 'object' ? { ...(st as Record<string, unknown>), color: stroke } : stroke;
+  }
 
   delete out['animation']; // the still frame has no timeline of its own
   return out as unknown as Layer;

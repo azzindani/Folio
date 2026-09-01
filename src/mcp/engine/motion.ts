@@ -33,7 +33,7 @@ type MotionArgs = {
 };
 
 /** Accept a string[] or a lone string; ignore anything else. */
-function toIdList(v: unknown): string[] | undefined {
+export function toIdList(v: unknown): string[] | undefined {
   if (typeof v === 'string') return [v];
   if (Array.isArray(v)) {
     const ids = v.filter((x): x is string => typeof x === 'string');
@@ -80,16 +80,41 @@ export function motionTargets(layers: Layer[], explicit?: string[]): Layer[] {
   return out;
 }
 
-/** Replace a layer's animation wherever it sits in the tree. */
-function setAnimation(layers: Layer[], updates: Map<string, unknown>): Layer[] {
+/**
+ * Replace a layer's animation wherever it sits in the tree. An `undefined`
+ * update removes the animation outright.
+ */
+export function setAnimation(layers: Layer[], updates: Map<string, unknown>): Layer[] {
   return layers.map(function apply(l: Layer): Layer {
-    const next = updates.has(l.id) ? { ...l, animation: updates.get(l.id) } : l;
+    let next: Layer = l;
+    if (updates.has(l.id)) {
+      const anim = updates.get(l.id);
+      if (anim === undefined) { const { animation: _drop, ...rest } = l as Layer & { animation?: unknown }; void _drop; next = rest as Layer; }
+      else next = { ...l, animation: anim } as Layer;
+    }
     const kids = (next as Layer & { layers?: Layer[] }).layers;
     if (Array.isArray(kids)) {
       return { ...next, layers: kids.map(apply) } as Layer;
     }
     return next as Layer;
   });
+}
+
+/** The layer list a motion op works on: a named page, else the first page, else the poster root. */
+export function resolveScope(spec: DesignSpec, pageId?: string): { scope: Layer[]; page?: Page } | { error: string } {
+  if (pageId) {
+    const page = (spec.pages ?? []).find((p: Page) => p.id === pageId);
+    if (!page) return { error: `Page not found: ${pageId}` };
+    return { scope: page.layers ?? [], page };
+  }
+  return { scope: spec.pages?.[0]?.layers ?? spec.layers ?? [] };
+}
+
+/** Write an updated scope back where resolveScope took it from. */
+export function commitScope(spec: DesignSpec, page: Page | undefined, layers: Layer[]): void {
+  if (page) page.layers = layers;
+  else if (spec.pages?.[0]) spec.pages[0].layers = layers;
+  else spec.layers = layers;
 }
 
 export function applyMotion(args: MotionArgs): ToolResult {

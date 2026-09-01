@@ -53,6 +53,11 @@ const REMAP: Record<string, Remap> = {
   inspect_timeline: { tool: 'animation', op: 'timeline', tier: 3 },
   add_keyframe:     { tool: 'animation', op: 'keyframe', tier: 3 },
   export_animation: { tool: 'animation', op: 'export',   tier: 3 },
+  sequence_motion:  { tool: 'animation', op: 'sequence', tier: 3 },
+  asset_process:    { tool: 'manage_design', op: 'asset_process', tier: 1 },
+  set_track:        { tool: 'animation', op: 'track',    tier: 3 },
+  clear_motion:     { tool: 'animation', op: 'clear',    tier: 3 },
+  render_frame:     { tool: 'animation', op: 'frame',    tier: 3 },
 };
 
 /** Rewrite any old tool name referenced in the result's forward hints to its

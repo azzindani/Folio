@@ -2,6 +2,42 @@
 
 ## [Unreleased]
 
+Motion you can direct, and pixels you can push — the After Effects and Photoshop layers.
+
+### Added
+
+- **Keyframe engine v2** (`src/animation/easing.ts`, `keyframe-css.ts`) — 30+ easing
+  curves (Penner family, back/elastic/bounce, `cubic-bezier`, `steps`), per-keyframe
+  `easing` and `hold`, new channels `scale_x scale_y skew_x skew_y blur draw`,
+  `playback.anchor` (pivot) and `iterations`. Curves CSS cannot express are baked
+  into sub-steps so the animated SVG and the GIF flipbook agree. A stroke reveal
+  (`draw` 0→1) gets `pathLength="1"` injected at export.
+- **28 motion presets** — entrances `pop drop blur_in draw_on spin_in flip_in grow_up whip`,
+  exits `fade_out sink shrink_out blur_out sweep_out pop_out`, loops `wobble sway
+  heartbeat flicker` join the original ten.
+- **`animation(op:sequence)`** — a whole scene in one call: ordered steps of presets on
+  layers with `at`/`stagger_ms`; entrance + exit on one layer fold into one track.
+  **`op:track`** writes raw validated keyframes; **`op:frame`** renders the pose at time
+  *t* as a PNG attachment with resolved geometry; **`op:timeline`** is now a Gantt with
+  `scene_ms`; **`op:clear`**, **`op:presets`**. Guide section `motion`.
+- **Pixel pipeline** (`src/utils/image-adjust.ts`, `image-geometry.ts`, `image-filters.ts`) —
+  brightness/contrast/exposure/gamma/levels, saturation/hue/invert/sepia/duotone/tint/
+  posterize/threshold, crop (box/aspect)/trim/rotate/flip, gaussian blur/unsharp
+  mask/vignette/grain, rounded corners/pad/flatten. All pure TS over the PNG codec.
+- **`manage_design(op:asset_process)`** — run a recipe on a stored asset (project or
+  `lib/`) into a new asset, non-destructively; `asset_add.process` accepts the same
+  recipe. See `docs/MOTION.md`.
+
+### Changed
+
+- `generateKeyframeCSS` now always emits an explicit 0% frame and per-step
+  `animation-timing-function`; the shorthand runs `linear` and the curve lives on the
+  steps. `transform-origin` follows `playback.anchor` (default `50% 50%`).
+- `interpolateKeyframes` tweens a channel first named in a later frame from its last
+  known value instead of jumping.
+
+## [Unreleased — earlier]
+
 Motion you can actually get out, and a print PDF that is the size you asked for.
 
 ### Added

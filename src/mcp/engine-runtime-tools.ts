@@ -14,7 +14,8 @@ import { assemblePresentationHTML } from '../export/presentation-assembler';
 
 import { evaluateFormula, isFormula } from '../scripting/formula';
 import type { FormulaContext } from '../scripting/formula';
-import { buildTimelineTracks, renderTimelineASCII, addKeyframe } from '../ui/panels/timeline-panel';
+import { addKeyframe } from '../ui/panels/timeline-panel';
+import { sceneTracks, sceneLength, renderSceneASCII } from './engine/timeline-ascii';
 import type { Keyframe } from '../animation/types';
 import { getClientScript } from '../export/remote-server';
 import { tryFfmpeg } from '../export/animation-export';
@@ -229,29 +230,23 @@ export function inspectTimeline(args: {
     if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Check page_id.');
     layers = page.layers ?? [];
   } else {
-    layers = spec.layers ?? [];
+    // A poster keeps layers at the root; a carousel's first page is the
+    // default, the same choice every other motion op makes.
+    layers = spec.pages?.[0]?.layers ?? spec.layers ?? [];
   }
 
-  // Flatten before building tracks: buildTimelineTracks takes a flat array, so
-  // a timeline built from the top level alone would report zero tracks for any
-  // design whose content sits inside a group — which is every carousel page
-  // this engine writes, and now every layer op:keyframe can reach.
-  const flatten = (ls: Layer[]): Layer[] =>
-    ls.flatMap(l => {
-      const children = (l as Layer & { layers?: Layer[] }).layers;
-      return Array.isArray(children) ? [l, ...flatten(children)] : [l];
-    });
+  // Scene view: every track (groups descended) as a bar from its delay to its
+  // end, so a stagger, a late exit and a loop each read as what they are.
+  const tracks = sceneTracks(layers);
+  const ascii = renderSceneASCII(layers, tracks);
 
-  const tracks = buildTimelineTracks(
-    flatten(layers).map(l => ({
-      id: l.id,
-      label: (l as { label?: string }).label,
-      animation: l.animation,
-    })),
-  );
-  const ascii = renderTimelineASCII(tracks);
-
-  return okResult(op, { track_count: tracks.length, tracks, ascii });
+  return okResult(op, {
+    track_count: tracks.length,
+    scene_ms: sceneLength(tracks),
+    tracks,
+    ascii,
+    ...(tracks.length === 0 ? { hint: 'No motion yet — animation(op:sequence) builds a scene in one call; op:presets lists the vocabulary.' } : {}),
+  });
 }
 
 export function addKeyframeToLayer(args: {

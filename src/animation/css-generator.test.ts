@@ -186,8 +186,8 @@ describe('generateKeyframeCSS', () => {
     });
     expect(css).toContain('@keyframes kf-box');
     expect(css).toContain('[data-layer-id="box"]');
-    expect(css).toContain('0% { opacity: 0; }');
-    expect(css).toContain('100% { opacity: 1; }');
+    expect(css).toMatch(/0% \{[^}]*opacity: 0;/);
+    expect(css).toMatch(/100% \{[^}]*opacity: 1;/);
   });
 
   it('emits position as a delta from the first keyframe', () => {
@@ -199,9 +199,9 @@ describe('generateKeyframeCSS', () => {
     });
     expect(css).toContain('translate(60px, 0px)');
     expect(css).not.toContain('translate(160px');
-    // The 0% frame is a no-op here, so it is omitted entirely — CSS interpolates
-    // from the element's own computed transform, which is exactly translate(0,0).
-    expect(css).toContain('{ 100% {');
+    // The 0% frame is rest — v2 writes it explicitly (transform: none) so the
+    // per-segment timing function has a step to sit on.
+    expect(css).toMatch(/0% \{ transform: none;/);
   });
 
   it('rotates about the layer centre, not the SVG origin', () => {
@@ -210,7 +210,7 @@ describe('generateKeyframeCSS', () => {
       playback: { duration: 800 },
     });
     expect(css).toContain('transform-box: fill-box');
-    expect(css).toContain('transform-origin: center');
+    expect(css).toContain('transform-origin: 50% 50%');
     expect(css).toContain('rotate(90deg)');
   });
 

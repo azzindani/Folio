@@ -18,6 +18,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
+import { usesDraw } from '../animation/keyframe-css';
 
 export interface AnimatedSVGOptions {
   /** Which page of a multi-page design to export. Defaults to the first. */
@@ -111,7 +112,58 @@ export function buildAnimatedSVG(spec: DesignSpec, opts: AnimatedSVGOptions): An
   }
 
   const css = anims.size > 0 ? generateDesignAnimationCSS(anims) : '';
-  return { svg: injectStyle(svg, css), animatedLayers: [...anims.keys()] };
+  const drawIds = [...anims.entries()].filter(([, a]) => usesDraw(a)).map(([id]) => id);
+  return { svg: injectStyle(normalisePathLength(svg, drawIds), css), animatedLayers: [...anims.keys()] };
+}
+
+/**
+ * Give every stroked shape inside a "draw" layer `pathLength="1"`.
+ *
+ * A stroke reveal animates `stroke-dashoffset` from 1 to 0 against a dash of
+ * length 1, which only means "the whole outline" when the browser measures
+ * the path as 1 unit long. Without this the offset would be one PIXEL of a
+ * two-thousand-pixel path and nothing visible would happen. Done on the
+ * string after render so the renderer stays ignorant of animation.
+ */
+export function normalisePathLength(svg: string, drawIds: string[]): string {
+  if (drawIds.length === 0) return svg;
+  let out = svg;
+  for (const id of drawIds) {
+    const esc = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // The element carrying the id (a bare shape) …
+    out = out.replace(
+      new RegExp(`<(path|line|polyline|polygon|rect|circle|ellipse)\\b([^>]*\\bdata-layer-id="${esc}"[^>]*?)(/?)>`, 'g'),
+      (_m, tag: string, attrs: string, close: string) => attrs.includes('pathLength=') ? _m : `<${tag}${attrs} pathLength="1"${close}>`,
+    );
+    // … or a group wrapping shapes (a hand-drawn illustration, a connector).
+    const grp = new RegExp(`<g\\b[^>]*\\bdata-layer-id="${esc}"[^>]*>`, 'g');
+    let m: RegExpExecArray | null;
+    while ((m = grp.exec(out)) !== null) {
+      const startIdx = m.index + m[0].length;
+      const endIdx = closingGroup(out, startIdx);
+      if (endIdx < 0) break;
+      const inner = out.slice(startIdx, endIdx).replace(
+        /<(path|line|polyline|polygon|rect|circle|ellipse)\b([^>]*?)(\/?)>/g,
+        (whole, tag: string, attrs: string, close: string) => attrs.includes('pathLength=') ? whole : `<${tag}${attrs} pathLength="1"${close}>`,
+      );
+      out = out.slice(0, startIdx) + inner + out.slice(endIdx);
+      grp.lastIndex = startIdx + inner.length;
+    }
+  }
+  return out;
+}
+
+/** Index of the `</g>` that closes the group whose content starts at `from`. */
+function closingGroup(svg: string, from: number): number {
+  let depth = 1;
+  const re = /<g\b[^>]*?(\/?)>|<\/g>/g;
+  re.lastIndex = from;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(svg)) !== null) {
+    if (m[0] === '</g>') { depth--; if (depth === 0) return m.index; }
+    else if (m[1] !== '/') depth++;
+  }
+  return -1;
 }
 
 /**
