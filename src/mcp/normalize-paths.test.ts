@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
 import { normalizeProjectPaths, bareNameSegment } from './normalize-paths';
+import { createProject, createDesign } from './engine-project-tools';
 
 // Simulate the deployed topology: a projects dir nested under HOME, e.g.
 // HOME=/home/folio, FOLIO_PROJECTS_DIR=/home/folio/projects.
@@ -84,5 +86,44 @@ describe('normalizeProjectPaths', () => {
     const args = { project_path: 'my-project' };
     normalizeProjectPaths(args);
     expect(args.project_path).toBe('my-project');
+  });
+});
+
+// The other half of the same question: normalizeProjectPaths only runs on the
+// HTTP surface, so a tool that joins its raw project_path resolves a bare name
+// against the process CWD instead of the projects dir — writing a real design
+// somewhere nobody is looking, with no error. create_design did exactly that,
+// which is how a project named "rt" from a test run ended up committed to the
+// repo three times.
+describe('create_design resolves its own project_path', () => {
+  let prev: string | undefined;
+  let root = '';
+  beforeEach(() => {
+    prev = process.env['FOLIO_PROJECTS_DIR'];
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-bare-'));
+    process.env['FOLIO_PROJECTS_DIR'] = root;
+  });
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+    if (prev === undefined) delete process.env['FOLIO_PROJECTS_DIR']; else process.env['FOLIO_PROJECTS_DIR'] = prev;
+  });
+
+  it('puts a BARE project name in the projects dir, never in the CWD', () => {
+    createProject({ name: 'bare-proj', canvas: '1080x1350' });
+    const r = createDesign({ project_path: 'bare-proj', name: 'hero', type: 'poster' }) as unknown as Record<string, unknown>;
+    const made = r['path'] as string;
+
+    expect(made).toBe(path.join(root, 'bare-proj', 'designs', 'hero.design.yaml'));
+    expect(fs.existsSync(made)).toBe(true);
+    expect(made.startsWith(path.resolve(process.cwd()) + path.sep)).toBe(false);
+    // …and it registered in the project it actually belongs to.
+    expect(fs.readFileSync(path.join(root, 'bare-proj', 'project.yaml'), 'utf-8')).toContain('hero');
+  });
+
+  it('refuses a project path outside the allowed roots instead of writing there', () => {
+    const r = createDesign({ project_path: '/etc/folio-nope', name: 'hero' }) as unknown as Record<string, unknown>;
+    expect(r['success']).toBe(false);
+    expect(String(r['error'])).toMatch(/outside allowed directories/);
+    expect(fs.existsSync('/etc/folio-nope')).toBe(false);
   });
 });

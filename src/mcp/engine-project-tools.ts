@@ -56,7 +56,19 @@ export function createDesign(args: { project_path: string; name: string; type?: 
   if (!args.name) return errResult(op, 'create_design needs a name', 'Pass name = the design name (e.g. "hero").', progress);
   const type = args.type ?? 'poster';
   const designId = args.name.toLowerCase().replace(/\s+/g, '-');
-  const designPath = path.join(args.project_path, `designs/${designId}.design.yaml`);
+  // Resolve the project the same way create_project does. Joining the raw arg
+  // meant a BARE name — the form the tool description asks for — was resolved
+  // against the process CWD instead of the projects dir, so the design was
+  // created somewhere nobody was looking and no error was raised. It was
+  // masked over HTTP, where normalizeProjectPaths resolves the arg first; every
+  // other caller silently wrote outside the library.
+  let projectDir: string;
+  try {
+    projectDir = resolveProjectPath(args.project_path);
+  } catch (e) {
+    return errResult(op, (e as Error).message, `Pass a bare project name (e.g. "${args.project_path}") — the engine places it in the projects dir. Don't build absolute /home/... paths.`, progress);
+  }
+  const designPath = path.join(projectDir, `designs/${designId}.design.yaml`);
   const today = new Date().toISOString().split('T')[0];
 
   // Physical dimensions (mm / inches) mistaken for px — a "90×38" wine label
@@ -100,7 +112,7 @@ export function createDesign(args: { project_path: string; name: string; type?: 
   const link = buildEditorLink(designPath);
   progress.push(pOk('Editor link', link.short_url ?? link.open_url));
 
-  const projectPath = path.join(args.project_path, 'project.yaml');
+  const projectPath = path.join(projectDir, 'project.yaml');
   const next_action: NextAction = type === 'carousel' ? {
     tool: 'append_page', params: { design_path: designPath, page_id: 'page_1', label: 'Page 1' },
     remaining: 1, hint: 'Add pages with append_page (repeat per page), then seal_design.',
@@ -126,13 +138,13 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     const context = buildContext(op, `Created ${type} design "${args.name}"`, [
       { type: 'design', path: designPath, role: 'created' },
     ]);
-    const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path }, { type: type as 'poster' | 'carousel' });
+    const handover = buildHandover('DESIGN', { design_path: designPath, project_path: projectDir }, { type: type as 'poster' | 'carousel' });
     return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
   }
   const context = buildContext(op, `Created ${type} design "${args.name}"`, [
     { type: 'design', path: designPath, role: 'created' },
   ]);
-  const handover = buildHandover('DESIGN', { design_path: designPath, project_path: args.project_path }, { type: type as 'poster' | 'carousel' });
+  const handover = buildHandover('DESIGN', { design_path: designPath, project_path: projectDir }, { type: type as 'poster' | 'carousel' });
   return okResult(op, { design_id: spec.meta.id, path: designPath, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] });
 }
 
