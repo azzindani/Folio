@@ -11,6 +11,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
+import { samplePath, type SampledPath } from '../animation/motion-path';
 
 type AnimatedLayer = Layer & { animation?: AnimationSpec; layers?: Layer[] };
 
@@ -34,10 +35,54 @@ export function animationDuration(layers: Layer[]): number {
       const cycles = finite ?? (pb.loop && pb.direction === 'alternate' ? 2 : 1);
       total = Math.max(total, (pb.delay ?? 0) + pb.duration * cycles);
     }
+    // A layer travelling a motion_path has no keyframes, so without this a
+    // design animated ONLY by a path reported duration 0 and the flipbook
+    // produced a single frame of it standing still.
+    const mp = (l as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
+    if (mp?.path) total = Math.max(total, mp.duration ?? 2000);
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
   for (const l of layers) visit(l as AnimatedLayer);
   return total;
+}
+
+interface MotionPath { path: string; duration?: number; loop?: boolean; easing?: string; auto_rotate?: boolean }
+
+// Flattening a path costs a parse; the flipbook asks for the same one at every
+// frame, so remember it. Keyed by the `d` string, which is what determines the
+// answer.
+const PATH_CACHE = new Map<string, SampledPath | null>();
+function sampledPath(d: string): SampledPath | null {
+  let hit = PATH_CACHE.get(d);
+  if (hit === undefined) { hit = samplePath(d); PATH_CACHE.set(d, hit); }
+  return hit;
+}
+
+/**
+ * Offset a layer along its motion_path at time t.
+ *
+ * The SVG route hands this to the browser as <animateMotion>; nothing else
+ * could read it, so every exported frame showed the layer parked at its
+ * authored position. Same sampler for the frame op and the GIF, so the still
+ * a model inspects is the still the export produces.
+ */
+export function applyMotionPath(layer: Layer, t: number): Layer {
+  const mp = (layer as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
+  if (!mp?.path) return layer;
+  const sp = sampledPath(mp.path);
+  if (!sp) return layer;                       // unparseable — leave it where it is
+  const dur = mp.duration ?? 2000;
+  if (dur <= 0) return layer;
+  const raw = t / dur;
+  const u = mp.loop ? raw - Math.floor(raw) : Math.min(Math.max(raw, 0), 1);
+  const p = sp.at(u);
+  const out = { ...layer } as Record<string, unknown>;
+  // animateMotion TRANSLATES by the path point — the path is an offset from
+  // where the layer already sits, not an absolute destination.
+  out['x'] = (num(layer['x' as keyof Layer]) ?? 0) + p.x;
+  out['y'] = (num(layer['y' as keyof Layer]) ?? 0) + p.y;
+  if (mp.auto_rotate) out['rotation'] = (num(layer['rotation' as keyof Layer]) ?? 0) + p.angle;
+  return out as unknown as Layer;
 }
 
 /** Resolve a layer's animated values at time t, honouring delay and loop/alternate. */
@@ -196,7 +241,7 @@ export function layersAt(layers: Layer[], t: number, inherited?: InheritedTransf
   return layers.map(l => {
     const layer = inherited ? (inherit(l, inherited) as AnimatedLayer) : (l as AnimatedLayer);
     const before = layer;
-    const resolved = applyValues(layer, t) as AnimatedLayer;
+    const resolved = applyMotionPath(applyValues(layer, t), t) as AnimatedLayer;
 
     if (!Array.isArray(layer.layers)) return resolved;
 

@@ -46,7 +46,7 @@ const VALID_PATTERN_NAMES = new Set([
  * `color` and the short aliases are deliberately absent from this list: they
  * ARE honoured at layer level, so flagging them would be a false alarm.
  */
-const FLAT_TEXT_STYLE_KEYS = [
+export const FLAT_TEXT_STYLE_KEYS = [
   'font_family', 'font_size', 'font_weight', 'line_height', 'letter_spacing',
   'word_spacing', 'align', 'text_align', 'vertical_align', 'text_decoration',
   'text_transform', 'font_style', 'font_variation_settings', 'font_feature_settings',

@@ -3,6 +3,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 
 import { isDeliberateCanvasRatio } from './poster-ratio';
+import { FLAT_TEXT_STYLE_KEYS } from '../schema/validator';
 import { specOf } from './design-spec';
 import { rasterizeNonBarChartLayer } from './engine-finalize-charts';
 
@@ -117,6 +118,13 @@ export function normalizeTextAliases(incoming: Layer[]): number {
         const lift = (from: string, to: string): void => { if (s[to] == null && o[from] != null) s[to] = o[from]; if (o[from] != null) delete o[from]; };
         lift('font', 'font_family'); lift('size', 'font_size'); lift('weight', 'font_weight');
         lift('color', 'color'); lift('lh', 'line_height'); lift('track', 'letter_spacing');
+        // …and the CANONICAL names when they sit at layer level too. diagnose
+        // warns about sixteen such fields; this used to fix six, so a model that
+        // wrote `align:"center"` on a text layer got a warning about something
+        // the engine could simply have put in the right place. Observed four
+        // times in one deck from a real harness run. Same list the warning is
+        // generated from, so the two cannot drift apart.
+        for (const key of FLAT_TEXT_STYLE_KEYS) lift(key, key);
         if (Object.keys(s).length) o['style'] = s;
       }
       if (Array.isArray(o['layers'])) visit(o['layers'] as Layer[]);

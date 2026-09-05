@@ -30,3 +30,4 @@ export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, e
 export { applyMotion } from './engine/motion';
 export { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './engine/motion-sequence';
 export { renderFrame } from './engine/motion-frame';
+export { setMotionPath } from './engine/motion-path-op';
