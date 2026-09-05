@@ -17,6 +17,7 @@ export const TIER2_TOOLS: ToolDefinition[] = [
         width:        { type: 'number', description: 'Canvas width px', default: 1080 },
         height:       { type: 'number', description: 'Canvas height px', default: 1080 },
         theme_ref:    { type: 'string', description: 'Theme reference ID' },
+        style_seed:   { type: 'string', description: 'Optional label recorded ON the design for the departure it was made under — pass the same style_seed you gave manage_design {op:"style_history"}. It changes nothing about how this design renders; it is what later lets style_history check whether designs made under different seeds actually came out different, instead of taking the seed\'s word for it.' },
       },
       required: ['project_path', 'name'],
     },

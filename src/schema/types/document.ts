@@ -216,6 +216,10 @@ export interface DesignMeta {
   modified: string;
   generator?: string;
   generation?: GenerationMeta;
+  /** The style seed this design was authored under, when it was given one.
+   *  Carried so the project's precedent ledger can report whether designs made
+   *  under different seeds actually diverged — see src/mcp/design-precedent.ts. */
+  style_seed?: string;
 }
 
 // ── Report Layout ───────────────────────────────────────────

@@ -19,6 +19,7 @@ import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 
 import { analyzeLayers, flatTextStyleFindings, type Finding } from './engine/diagnose';
+import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { resolveBuiltinTemplate } from './engine/builtin-templates';
 
@@ -443,6 +444,12 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
       for (const note of mark.notes) progress.push(pInfo('Mark', note));
     } catch { /* measurement is best-effort; the rest of the diagnosis still stands */ }
   }
+
+  // Does this design already exist in the project under another name? Always a
+  // SUGGESTION: sameness is only a fault when it was not asked for, and the
+  // engine cannot know the brief (see design-history.ts).
+  const echo = echoFinding(spec, dPath, args.project_path);
+  if (echo) findings.push(echo);
 
   const errors = findings.filter(f => f.severity === 'error');
   const warnings = findings.filter(f => f.severity === 'warning');
