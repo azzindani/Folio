@@ -3,6 +3,7 @@
 import type { DesignSpec, Layer } from '../schema/types';
 
 import { isDeliberateCanvasRatio } from './poster-ratio';
+import { specOf } from './design-spec';
 import { rasterizeNonBarChartLayer } from './engine-finalize-charts';
 
 export function collectLayerIds(spec: DesignSpec): Set<string> {
@@ -270,6 +271,19 @@ export function flattenRelativeGroups(layers: Layer[]): number {
     if (l?.type !== 'group' || !Array.isArray(o['layers']) || (o['layers'] as unknown[]).length === 0) continue;
     const kids = o['layers'] as Layer[];
     moved += flattenRelativeGroups(kids); // innermost-first
+    // A PRESET group needs no guessing: the engine built it, and it always
+    // emits absolute child coordinates. The heuristic below exists for
+    // hand-authored and template groups, where the convention is genuinely
+    // unknown — applied to a preset it is not a guess but a mistake.
+    //
+    // It was latent until something placed a preset off the origin. Several
+    // presets put a decorative element ABOVE their own box (`stat` has a glow at
+    // y=-146), which is exactly the signal the heuristic reads as "these are
+    // relative", so the offset got baked and every coordinate doubled: a preset
+    // at x=990 rendered at 1980, right off a 1920 canvas. At x=0/y=0 the early
+    // return below hid it, and until `columns` nothing put a preset anywhere
+    // else.
+    if (specOf(l)) continue;
     const gx = typeof o['x'] === 'number' ? o['x'] : 0;
     const gy = typeof o['y'] === 'number' ? o['y'] : 0;
     if (gx === 0 && gy === 0) continue;
