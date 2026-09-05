@@ -30,6 +30,7 @@ import type { ToolResult, ProgressItem, NextAction } from './types';
 
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 import { analyzeLayers, type Finding } from './engine/diagnose';
+import { specAncestorOf } from './design-spec';
 import { finalizeSpecPages } from './engine-finalize-pages';
 import { resolveThemeColors } from './engine-layer-predicates';
 import { expandShorthandLayers } from './shorthand-parser';
@@ -182,9 +183,41 @@ function healStrayLayers(design: DesignSpec, fixed: string[]): number {
 
 // ── The loop ────────────────────────────────────────────────
 
-/** Everything the loop deliberately did not touch, phrased for the model. */
-function handOff(findings: (Finding & { page?: string })[]): { code: string; message: string; fix?: string; page?: string }[] {
-  return findings.map(f => ({ code: f.code, message: f.message, ...(f.fix ? { fix: f.fix } : {}), ...(f.page ? { page: f.page } : {}) }));
+/**
+ * Everything the loop deliberately did not touch, phrased for the model —
+ * WITH the place to act on it.
+ *
+ * These findings are the aesthetic ones: palette, hierarchy, density, copy. The
+ * engine must not decide them (§0.4), but handing back a verdict with no
+ * address is not restraint, it is an unfinished sentence — the model then has
+ * to re-inspect the design to find what the diagnosis was even about, which is
+ * the rebuild the review keeps paying for.
+ *
+ * `layer_id` is the layer the problem is ON. `patch_target` is the nearest
+ * ancestor carrying a `_spec`, which is the id patch_spec actually accepts: for
+ * anything a preset generated, the reported layer is a child no tool can edit
+ * on its own. A hand-placed layer has no spec and needs none — it is its own
+ * source, and edit_layer addresses it directly, which `patch_with` then says.
+ */
+function handOff(
+  findings: (Finding & { page?: string })[], design: DesignSpec,
+): { code: string; message: string; fix?: string; page?: string; layer_id?: string; patch_target?: string; patch_with?: string }[] {
+  const roots = (design.pages?.length ? design.pages.flatMap(p => p.layers ?? []) : design.layers ?? []) as Layer[];
+  return findings.map(f => {
+    const target = f.layer_id ? specAncestorOf(roots, f.layer_id) : null;
+    return {
+      code: f.code, message: f.message,
+      ...(f.fix ? { fix: f.fix } : {}),
+      ...(f.page ? { page: f.page } : {}),
+      ...(f.layer_id ? { layer_id: f.layer_id } : {}),
+      ...(target ? {
+        patch_target: target,
+        patch_with: `edit_layer {op:"patch_spec", layer_id:"${target}", changes:{…}} — re-renders the preset from its own spec, so derived tints, rules and spacing recompute instead of going stale.`,
+      } : f.layer_id ? {
+        patch_with: `edit_layer {op:"update", layer_id:"${f.layer_id}", …} — hand-placed, so it is its own source and takes a direct edit.`,
+      } : {}),
+    };
+  });
 }
 
 export function healDesign(args: {
@@ -264,8 +297,8 @@ export function healDesign(args: {
   return okResult(op, {
     fixed: allFixed, rounds: log,
     errors_before: errorsBefore, errors_after: errorsAfter,
-    ...(stuck.length ? { could_not_fix: handOff(stuck) } : {}),
-    ...(forModel.length ? { for_you_to_judge: handOff(forModel) } : {}),
+    ...(stuck.length ? { could_not_fix: handOff(stuck, design) } : {}),
+    ...(forModel.length ? { for_you_to_judge: handOff(forModel, design) } : {}),
     ...(forModel.length ? { note: 'These are design decisions, not correctness bugs — palette, hierarchy, density and copy are yours. The loop only fixes spatial correctness and legibility, so that repeated healing never converges every design on one look.' } : {}),
     ...(Object.keys(tokens).length ? { tokens } : {}),
     next_action, progress,

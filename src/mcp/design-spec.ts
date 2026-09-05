@@ -232,3 +232,29 @@ export function diffSpecKeys(before: Record<string, unknown>, after: Record<stri
   }
   return changed.sort();
 }
+
+/**
+ * The nearest ancestor carrying a `_spec` for a layer somewhere in the tree —
+ * i.e. the id `patch_spec` actually accepts.
+ *
+ * Diagnose reports findings against the layer the problem is ON, which for
+ * anything a preset built is a generated child that no tool can edit
+ * individually. Without this the model is handed "the hierarchy is weak on
+ * sections_1_title_text" and has to work backwards to discover that the thing
+ * it can change is sections_1. Returns the layer's own id when it carries a
+ * spec itself, and null for hand-placed layers — which need no spec, because
+ * they ARE their own source and edit_layer already addresses them directly.
+ */
+export function specAncestorOf(layers: Layer[], layerId: string, ancestor: string | null = null): string | null {
+  for (const l of layers) {
+    const o = l as unknown as Record<string, unknown>;
+    const here = specOf(l) ? String(o['id'] ?? '') : ancestor;
+    if (o['id'] === layerId) return here;
+    const kids = o['layers'];
+    if (Array.isArray(kids)) {
+      const hit = specAncestorOf(kids as Layer[], layerId, here);
+      if (hit !== null) return hit;
+    }
+  }
+  return null;
+}
