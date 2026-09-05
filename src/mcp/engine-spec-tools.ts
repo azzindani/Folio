@@ -18,8 +18,9 @@ import { expandShorthandLayers } from './shorthand-parser';
 import { resetPresetFitReports, drainPresetFitReports } from './preset-fit';
 import {
   SPEC_FIELD, SPEC_ENV_FIELD, collectAuthoredSpecs, findSpecLayer,
-  mergeSpecChanges, toShorthand, replaceLayer, diffSpecKeys, describeDrift, type SpecEntry,
+  mergeSpecChanges, toShorthand, replaceLayer, diffSpecKeys, describeDrift, specOf, type SpecEntry,
 } from './design-spec';
+import { collectTokens, retokenize } from './design-tokens';
 
 /** Every page's layers, tagged with the page they came from. */
 function surfaces(spec: DesignSpec): { pageId?: string; layers: Layer[] }[] {
@@ -72,6 +73,80 @@ export function getDesignSpec(args: { design_path: string; page_id?: string; lay
     next_action, progress,
     context: buildContext(op, `${entries.length} authored spec(s) in ${path.basename(dPath)}`),
   });
+}
+
+// ── tokens ──────────────────────────────────────────────────
+
+/** Read, or set, a design's palette by ROLE rather than by literal. */
+export function designTokens(args: {
+  design_path: string; set?: Record<string, string>; project_path?: string; dry_run?: boolean;
+}): ToolResult {
+  const op = 'tokens';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+  const design = readYAML<DesignSpec>(dPath);
+
+  if (!args.set || Object.keys(args.set).length === 0) {
+    const { table, usage } = collectTokens(design);
+    if (Object.keys(table).length === 0) {
+      return okResult(op, {
+        tokens: {}, usage: [],
+        note: 'No colour roles found. Roles are read from preset specs (bg, accent, text_color, muted), so a design built entirely from hand-placed layers has none — recolor it with patch_design {path:"recolor"} instead.',
+        progress, context: buildContext(op, `No tokens in ${path.basename(dPath)}`),
+      });
+    }
+    progress.push(pOk(`${Object.keys(table).length} colour role(s)`, Object.entries(table).map(([k, v]) => `${k}=${v}`).join(' ')));
+    return okResult(op, {
+      tokens: table, usage,
+      usage_note: 'Set a role and the whole design follows: presets are patched AT THEIR SPEC and rebuilt, so tints, rules and scrims DERIVED from that colour recompute instead of being left stale. Layers with no spec can only have the old value swapped for the new one — `literal_layers` counts those.',
+      next_action: { tool: 'manage_design', params: { op: 'tokens', design_path: dPath, set: { accent: table.accent ?? '#0EA5E9' } }, remaining: -1, hint: 'Change a role; every preset that names it re-renders.' } as NextAction,
+      progress, context: buildContext(op, `${Object.keys(table).length} colour role(s) in ${path.basename(dPath)}`),
+    });
+  }
+
+  const theme = resolveThemeColors(design) ?? undefined;
+  const reexpand = (layer: Layer, patch: Record<string, unknown>): Layer | null => {
+    const s = specOf(layer);
+    if (!s) return null;
+    try {
+      const id = (layer as unknown as Record<string, unknown>)['id'];
+      const built = expandShorthandLayers([toShorthand({ ...s.spec, ...patch, id }, s.env, theme)]);
+      return built.length ? built[0] : null;
+    } catch { return null; }
+  };
+
+  if (args.dry_run) {
+    // Work on a copy so the caller sees the outcome without it happening.
+    const copy = JSON.parse(JSON.stringify(design)) as DesignSpec;
+    const r = retokenize(copy, args.set as Record<string, string>, reexpand);
+    progress.push(pInfo('Dry run — nothing written', r.changed.join(' · ') || 'no change'));
+    return okResult(op, { changed: r.changed, would_respec: r.respecced, would_swap: r.swapped, ...(r.notes.length ? { notes: r.notes } : {}), progress, context: buildContext(op, `Dry run on ${path.basename(dPath)}`) });
+  }
+
+  const bak = snapshot(dPath);
+  progress.push(pInfo('Snapshot created', path.basename(bak)));
+  resetPresetFitReports();
+  const r = retokenize(design, args.set as Record<string, string>, reexpand);
+  const fitNotes = drainPresetFitReports().map(x => x.note);
+  if (r.changed.length === 0) {
+    return okResult(op, { changed: [], tokens: collectTokens(design).table, note: 'Every role already had that value — nothing to change.', ...(r.notes.length ? { notes: r.notes } : {}), progress, context: buildContext(op, 'No-op tokens') }, bak);
+  }
+
+  design.meta.modified = new Date().toISOString().split('T')[0];
+  writeYAML(dPath, design);
+  progress.push(pOk(`Retokenized ${r.changed.length} role(s)`, `${r.respecced} preset(s) rebuilt from their spec, ${r.swapped} hand-placed layer(s) swapped`));
+  for (const n of [...r.notes, ...fitNotes]) progress.push(pWarn('Token note', n));
+
+  return okResult(op, {
+    changed: r.changed, tokens: collectTokens(design).table,
+    respecced: r.respecced, swapped: r.swapped,
+    ...(r.notes.length || fitNotes.length ? { notes: [...r.notes, ...fitNotes] } : {}),
+    next_action: { tool: 'render_preview', params: { design_path: dPath }, remaining: -1, hint: 'Look at the new palette, then seal_design.' } as NextAction,
+    progress,
+    context: buildContext(op, `Retokenized ${path.basename(dPath)}`, [{ type: 'design', path: dPath, role: 'updated' }]),
+    handover: buildHandover('PATCH', { design_path: dPath }),
+  }, bak);
 }
 
 // ── patch_spec ──────────────────────────────────────────────

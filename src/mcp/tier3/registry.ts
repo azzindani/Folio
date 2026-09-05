@@ -65,11 +65,11 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'templates',
-    description: 'Built-in template catalog + reusable components — pick `op`:\n• list — browse the 432 built-in catalog templates (same as the editor Catalog); slim metadata {id,name,type,tags,width,height,slots,themeRef}; filter search/tag/limit. Feed a returned id straight to op:slots / op:inject.\n• slots — list injectable slots (paths/types/hints) of a template (req: template_path = a real .template.yaml path OR a built-in catalog id).\n• inject — fill slot values → a new .design.yaml (req: template_path, slots map; a built-in writes into the projects dir).\n• export — turn a sealed design into a reusable .template.yaml skeleton with named slots (req: design_path).\n• save_component — extract layers into a .component.yaml + replace them with an instance (req: design_path, layer_ids, component_name, project_path).\n• batch — generate N designs from one template + an array of slot objects (req: project_path, template_id = a built-in catalog id OR a project .template.yaml id OR a design name to clone, slots_array).',
+    description: 'Built-in template catalog + reusable components — pick `op`:\n• list — browse the 432 built-in catalog templates (same as the editor Catalog); slim metadata {id,name,type,tags,width,height,slots,themeRef}; filter search/tag/limit. Feed a returned id straight to op:slots / op:inject.\n• slots — list injectable slots (paths/types/hints) of a template (req: template_path = a real .template.yaml path OR a built-in catalog id).\n• inject — fill slot values → a new .design.yaml (req: template_path, slots map; a built-in writes into the projects dir).\n• export — turn a sealed design into a reusable .template.yaml skeleton with named slots (req: design_path).\n• save_component — extract layers into a REUSABLE .component.yaml + replace them with an instance (req: design_path, layer_ids, component_name, project_path). Every text layer becomes a named {{slot}} with its current copy as the default, so the next instance can carry different content — that is what makes it a component rather than a copy-paste. Pass auto_slots:false to freeze the copy instead.\n• components — what this project can compose FROM: each saved component with its id, slots, variants and layer count (req: project_path). Without this the component store is write-only — place one with {type:\"component\", ref, pos, slots:{…}}.\n• batch — generate N designs from one template + an array of slot objects (req: project_path, template_id = a built-in catalog id OR a project .template.yaml id OR a design name to clone, slots_array).',
     inputSchema: {
       type: 'object',
       properties: {
-        op:             { type: 'string', enum: ['list', 'slots', 'inject', 'export', 'save_component', 'batch'], description: 'Which template/component action to run.' },
+        op:             { type: 'string', enum: ['list', 'slots', 'inject', 'export', 'save_component', 'components', 'batch'], description: 'Which template/component action to run.' },
         search:         { type: 'string', description: 'op:list — free-text match over id/name/tags.' },
         tag:            { type: 'string', description: 'op:list — exact tag filter (e.g. "poster", "resume").' },
         limit:          { type: 'number', description: 'op:list — max results (default 60, max 300).' },
@@ -77,7 +77,8 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         slots:          { type: 'object', description: 'op:inject — map of slot_id → value.', properties: {} },
         output_path:    { type: 'string', description: 'op:inject/export — output path (auto if omitted).' },
         design_path:    { type: 'string', description: 'op:export/save_component — source .design.yaml.' },
-        project_path:   { type: 'string', description: 'Project dir (op:export/save_component/batch).' },
+        project_path:   { type: 'string', description: 'Project dir (op:export/save_component/components/batch).' },
+        auto_slots:     { type: 'boolean', description: 'op:save_component — turn each text layer into a named slot (default true). false freezes the copy.', default: true },
         layer_ids:      { type: 'array', description: 'op:save_component — layer IDs to extract.', items: { type: 'string' } },
         component_name: { type: 'string', description: 'op:save_component — name for the new component.' },
         template_id:    { type: 'string', description: 'op:batch — a built-in catalog id, a project .template.yaml id, or a design name in the project to clone.' },
