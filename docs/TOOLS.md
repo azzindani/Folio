@@ -29,10 +29,10 @@ tools stay 1:1; the long tail is folded into **multiplexed tools** that take an
 
 | Tool | ops → former tool |
 |---|---|
-| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) |
+| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) · get_spec→(new) |
 | `themes` | list→list_themes · apply→apply_theme · packs→(new) catalog packs |
 | `tasks` | list→list_tasks · create→create_task · resume→resume_task |
-| `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers |
+| `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers · patch_spec→(new) |
 | `templates` | list→list_templates · slots→list_template_slots · inject→inject_template · export→export_template · save_component→save_as_component · batch→batch_create |
 | `report` | generate→generate_report · bind_data→bind_data · validate→validate_report · export→export_report · formula→set_formula_context · debug→debug_formula |
 | `presentation` | create→create_presentation · export→export_presentation · remote→setup_remote_presenter · collab→setup_collab |
@@ -66,6 +66,7 @@ Find, inspect and manage designs + the whole library. **Req:** `op`.
 - `delete` (req design_path) — move to the project `.trash/` (recoverable).
 - `resume` (req design_path) — read carousel generation state.
 - `gallery` — build `library.html` (thumbnails + search); `output_path`, `max_thumbnails`, `search`, `type`.
+- `get_spec` (req `design_path`; `page_id`, `layer_id`) — read back the SPECS the design was authored from, not its expanded output. A preset stores the intent that built it (`{type:"sections", title, blocks:[…], accent}`) beside the ~30 layers it generated, so a later session evolves the page instead of rebuilding it. The sparse view: read it, then `edit_layer {op:"patch_spec"}`. Hand-placed layers have none and need none.
 - `icon_search` (`query`, `limit`) — look a bundled icon name UP instead of guessing. An unknown name renders as a blank fallback circle you cannot see. No query → the total + a starter set by kind; a query → ranked names, whether the name you hold `resolves_to` a real glyph, and concept bridging (`cargo` → package, truck). Never returns an empty list. Icons take the layer `color` (`currentColor` by default) — set it on a dark canvas.
 
 ### `themes`  ·  *op-multiplexed*
@@ -100,6 +101,7 @@ Single-layer edits (use add_layers for bulk). **Req:** `op`, `design_path`. Pass
 - `update` (req layer_id, props) — merge props.
 - `remove` (req layer_id).
 - `align` (req layer_ids, operation = left|right|top|bottom|center_h|center_v|distribute_h|distribute_v|snap_grid; `grid`) — the fix for diagnose_design misalignment.
+- `patch_spec` (req layer_id, changes; `dry_run`) — **edit a preset's intent and re-render it in place.** A preset group is ~30 generated layers; changing "three blocks not five" or the accent is one call here instead of thirty edits or a rebuild. Objects merge key by key, arrays replace wholesale, `null` deletes. Read the current spec with `manage_design {op:"get_spec"}` first. Regenerating discards direct edits to the generated children — it warns before it does, and `dry_run` shows the diff.
 
 ### `append_page`
 Add ONE page to a carousel (raw `layers_shorthand` or `template_ref`+`slots`). Repeat until `next_action.remaining==0`, then seal_design. Keep ONE palette + heading font across pages. An existing `page_id` + `replace:true` overwrites that page IN PLACE (order + other pages untouched) — the way to fix one deck page; without `replace` it renames to `<id>-2`.

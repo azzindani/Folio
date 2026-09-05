@@ -36,6 +36,12 @@ const FITTABLE = new Set<string>([
   'value_list', 'values', 'tips_list', 'newsletter', 'bulletin', 'digest',
 ]);
 
+/** Is this a layout preset — a type whose builder owns the whole layout, and
+ *  whose authored spec is therefore worth keeping? */
+export function isFittablePreset(type: string): boolean {
+  return FITTABLE.has(type);
+}
+
 /** What happened to one preset that did not fit its declared box. */
 export interface PresetFitReport {
   /** Layer id of the preset group. */

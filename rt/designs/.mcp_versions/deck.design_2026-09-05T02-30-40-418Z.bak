@@ -1,0 +1,190 @@
+_protocol: design/v1
+_mode: in_progress
+meta:
+  id: mtnrmy9p-qn1f41
+  name: deck
+  type: poster
+  created: '2026-09-05'
+  modified: '2026-09-05'
+  generator: mcp
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+theme:
+  ref: editorial-cream
+layers:
+  - id: s1
+    type: group
+    z: 0
+    x: 0
+    'y': 0
+    width: 1080
+    height: 1350
+    layers:
+      - id: s1_bg
+        type: rect
+        z: 0
+        x: 0
+        'y': 0
+        width: 1080
+        height: 1350
+        fill:
+          type: solid
+          color: '#0A0A0A'
+      - id: s1_glow
+        type: ellipse
+        z: 1
+        x: 151
+        'y': -230
+        width: 778
+        height: 778
+        fill:
+          type: radial
+          stops:
+            - color: '#71331c'
+              position: 0
+            - color: '#0A0A0A'
+              position: 100
+        opacity: 0.32
+      - id: s1_grain
+        type: rect
+        z: 2
+        x: 0
+        'y': 0
+        width: 1080
+        height: 1350
+        fill:
+          type: noise
+          frequency: 0.9
+          octaves: 2
+          opacity: 0.06
+      - id: s1_title
+        type: text
+        z: 3
+        x: 81
+        'y': 413
+        width: 918
+        height: 82
+        content:
+          type: plain
+          value: Air Cargo Performance
+        style:
+          font_size: 78
+          font_weight: 800
+          color: '#FAFAFA'
+          line_height: 1.04
+          letter_spacing: -1
+      - id: s1_sub
+        type: text
+        z: 4
+        x: 81
+        'y': 517
+        width: 918
+        height: 44
+        content:
+          type: plain
+          value: Volume, yield and belly capacity.
+        style:
+          font_size: 30
+          font_weight: 400
+          color: '#B8B2A8'
+          line_height: 1.45
+      - id: s1_hr
+        type: rect
+        z: 5
+        x: 81
+        'y': 588
+        width: 918
+        height: 3
+        fill:
+          type: solid
+          color: '#FAFAFA'
+      - id: s1_htick
+        type: rect
+        z: 6
+        x: 81
+        'y': 586
+        width: 140
+        height: 7
+        fill:
+          type: solid
+          color: '#FF6B35'
+      - id: s1_b0_t
+        type: text
+        z: 7
+        x: 81
+        'y': 642
+        width: 918
+        height: 36
+        content:
+          type: plain
+          value: Tonnage rose 8.4% year on year across transpacific lanes.
+        style:
+          font_size: 24
+          font_weight: 400
+          color: '#B8B2A8'
+          line_height: 1.5
+      - id: s1_b1_t
+        type: text
+        z: 9
+        x: 81
+        'y': 713
+        width: 918
+        height: 36
+        content:
+          type: plain
+          value: Average yield fell 3.1% as capacity outpaced demand.
+        style:
+          font_size: 24
+          font_weight: 400
+          color: '#B8B2A8'
+          line_height: 1.5
+      - id: s1_frule
+        type: rect
+        z: 11
+        x: 81
+        'y': 1061
+        width: 918
+        height: 2
+        fill:
+          type: solid
+          color: '#B8B2A8'
+      - id: s1_footer
+        type: text
+        z: 12
+        x: 81
+        'y': 1077
+        width: 918
+        height: 30
+        content:
+          type: plain
+          value: 'Source: Air Traffic Cargo, 2026'
+        style:
+          font_family: IBM Plex Mono
+          font_size: 17
+          font_weight: 500
+          color: '#B8B2A8'
+          letter_spacing: 1
+    _spec:
+      id: s1
+      type: sections
+      z: 0
+      pos:
+        - 0
+        - 0
+        - 1080
+        - 1350
+      bg: '#0A0A0A'
+      accent: '#FF6B35'
+      title: Air Cargo Performance
+      subtitle: Volume, yield and belly capacity.
+      blocks:
+        - kind: text
+          heading: Volume
+          text: Tonnage rose 8.4% year on year across transpacific lanes.
+        - kind: text
+          heading: Yield
+          text: Average yield fell 3.1% as capacity outpaced demand.
+      footer: 'Source: Air Traffic Cargo, 2026'

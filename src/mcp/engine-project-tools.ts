@@ -17,6 +17,7 @@ import { createTaskFile, readTask, buildNextAction } from './engine/task';
 import type { NextAction } from './types';
 
 import { isConstrained } from './engine-runtime-tools';
+import { SPEC_FIELD } from './design-spec';
 
 /** Delete abandoned EMPTY in-progress drafts in a project's designs/ dir. A model
  *  that calls create_design, never fills it, then creates another leaves an orphan
@@ -505,15 +506,22 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
   // Children carry `parent` and inherit `locked` so the model knows why an
   // update may refuse and what to unlock.
   const summarise = (layers: Layer[] = []) => {
-    type Row = { id: string; type: string; z?: number; x: number; y: number; w: unknown; h: unknown; parent?: string; locked?: boolean };
+    type Row = { id: string; type: string; z?: number; x: number; y: number; w: unknown; h: unknown; parent?: string; locked?: boolean; spec?: string };
     const rows: Row[] = [];
     const walk = (ls: Layer[], parent?: string, parentLocked?: boolean): void => {
       for (const l of ls) {
         const locked = Boolean((l as { locked?: unknown }).locked) || Boolean(parentLocked);
+        // A group built from a preset carries the spec that made it, so say so
+        // here: thirty generated child rows are the WRONG thing to edit when
+        // one patch_spec call would change the intent that produced them.
+        const authored = (l as unknown as Record<string, unknown>)[SPEC_FIELD];
+        const specType = authored && typeof authored === 'object'
+          ? String((authored as Record<string, unknown>)['type'] ?? 'preset') : undefined;
         rows.push({
           id: l.id, type: l.type, z: l.z, x: l.x ?? 0, y: l.y ?? 0,
           w: l.width ?? 0, h: (l as unknown as Record<string, unknown>)['height'] ?? 0,
           ...(parent ? { parent } : {}), ...(locked ? { locked: true } : {}),
+          ...(specType ? { spec: specType } : {}),
         });
         const children = (l as Layer & { layers?: Layer[] }).layers;
         if (l.type === 'group' && Array.isArray(children)) walk(children, l.id, locked);
