@@ -155,7 +155,17 @@ export function exportDesign(args: { design_path: string; format: string; output
       });
     }
   }
-  const finish = (out: string, bytes: number): void => { if (singleFile) recordExport(dPath, key, out, bytes); };
+  // Measure the FILE, never a count the caller passes in. Recording doc.length
+  // (UTF-16 code units) against a UTF-8 file meant an 8.8 MB export was logged
+  // 27 bytes short, so the receipt's own size check rejected it on every retry
+  // and the reuse path never once fired. The number that matters is the one on
+  // disk, so read it from disk.
+  const finish = (out: string): number => {
+    let size = 0;
+    try { size = fs.statSync(out).size; } catch { return 0; }
+    if (singleFile) recordExport(dPath, key, out, size);
+    return size;
+  };
 
   const link = buildEditorLink(dPath);
   if (args.format === 'svg') {
@@ -183,7 +193,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       }
       const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.writeFileSync(outPath, svgStr, 'utf-8');
-      finish(outPath, svgStr.length);
+      const svgBytes = finish(outPath);
       progress.push(pOk('SVG written', path.basename(outPath)));
       const context = buildContext(op, `SVG exported for "${spec.meta.name}"`, [
         { type: 'svg', path: outPath, role: 'output' },
@@ -197,7 +207,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/svg+xml', text: path.basename(outPath) } },
         link.attachment,
       ];
-      return okResult(op, { ...collision(), format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+      return okResult(op, { ...collision(), format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgBytes, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
     }
@@ -224,11 +234,11 @@ export function exportDesign(args: { design_path: string; format: string; output
       const doc = embedManifest(html, manifest);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, doc, 'utf-8');
-      finish(outPath, doc.length);
+      const htmlBytes = finish(outPath);
       progress.push(pOk('HTML written', path.basename(outPath)));
       const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { ...collision(), format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: doc.length, embedded_specs: manifest.specs.length, source_hash: manifest.source.hash, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
+      return okResult(op, { ...collision(), format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: htmlBytes, embedded_specs: manifest.specs.length, source_hash: manifest.source.hash, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
     } catch (err) {
       return errResult(op, `HTML export failed: ${(err as Error).message}`, 'Check design spec.', progress);
     }
@@ -299,7 +309,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       const pdfBuf = Buffer.from(doc.output('arraybuffer'));
       fs.writeFileSync(outPath, pdfBuf);
-      finish(outPath, pdfBuf.length);
+      finish(outPath);
       progress.push(pOk('PDF written', `${path.basename(outPath)} (${pdfBuf.length} bytes @ ${scale}× · ${vectorRuns} vector text run(s))`));
       const linkCount = sheetSpecs.reduce((n, s) => n + collectHrefRects(s.layers).length, 0);
       const notes = [
@@ -351,7 +361,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       const pptx = buildPptx(slides, spec.meta.name || 'Folio Deck');
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, pptx);
-      finish(outPath, pptx.length);
+      finish(outPath);
       progress.push(pOk('PPTX written', `${path.basename(outPath)} (${pptx.length} bytes · ${slides.length} slide(s) @ ${scale}× · ${totalTexts} editable text box(es))`));
       const notes = [...assetNotes, ...(missingFonts.size ? [`Fonts not bundled for raster export — slides used a fallback (they render correctly in the editor): ${[...missingFonts].join(', ')}.`] : []),
         `PPTX slides = a pixel-faithful background image + ${totalTexts} NATIVE text box(es) you can select/edit in PowerPoint/Impress (solid-hex text with no rotation/effect is promoted; the rest stays baked in the image).`];
@@ -410,7 +420,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       }
       const png = rasterize(renderToSVGString(spec, undefined, undefined, componentRegistry));
       fs.writeFileSync(outPath, png);
-      finish(outPath, png.length);
+      finish(outPath);
       progress.push(pOk('PNG written', `${path.basename(outPath)} (${png.length} bytes @ ${scale}×)`));
       const context = buildContext(op, `PNG exported for "${spec.meta.name}"`, [
         { type: 'png', path: outPath, role: 'output' },
