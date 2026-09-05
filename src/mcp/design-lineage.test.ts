@@ -163,6 +163,27 @@ describe('lineage — the read op states its scope', () => {
   });
 });
 
+describe('lineage — records the action, not just the tool', () => {
+  it('names the op a multiplexed tool actually ran', async () => {
+    const { handleMCP } = await import('./http-server');
+    const p = build(`t-${Math.random().toString(36).slice(2, 7)}`);
+    await handleMCP({
+      jsonrpc: '2.0', id: 1, method: 'tools/call',
+      params: { name: 'add_layers', arguments: { design_path: p, layers_shorthand: [SECTIONS('s1')] } },
+    }, false);
+    await handleMCP({
+      jsonrpc: '2.0', id: 2, method: 'tools/call',
+      params: { name: 'manage_design', arguments: { op: 'tokens', design_path: p, set: { accent: '#0EA5E9' } } },
+    }, false);
+
+    // Eight tools multiplex on `op`; "manage_design" alone would read the same
+    // for a recolour, a resize and a rename.
+    const ops = readLineage(p).records.map(r => r.op);
+    expect(ops).toContain('manage_design:tokens');
+    expect(ops).toContain('add_layers');
+  });
+});
+
 describe('lineage — concurrency', () => {
   it('attributes each write to its own call when two are in flight', async () => {
     const a = build(`x-${Math.random().toString(36).slice(2, 7)}`);
