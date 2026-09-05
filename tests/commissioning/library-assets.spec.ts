@@ -55,6 +55,20 @@ async function newFolder(page: import('@playwright/test').Page, name: string): P
   await page.fill('.ax-modal-input', name);
   await page.click('.ax-modal [data-x="ok"]');
   await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: UPLOAD_SETTLE });
+  // Wait for the folder to actually SHOW UP, not just for the dialog to shut.
+  // The modal closes when the request is sent; the pane repaints when it comes
+  // back. Returning in between let the next step upload into a listing that was
+  // still being rebuilt, so the row for the uploaded file never appeared —
+  // intermittently, and more often through the Library's deep link, which has
+  // more async ahead of it. Raising the timeout did not help, because nothing
+  // was slow.
+  //
+  // Accept EITHER shape: the manager navigates into the folder it just made, so
+  // the name lands in the breadcrumb; asserting only on a folder row failed 8
+  // tests that were passing before.
+  await expect(page.locator('.ax-crumb', { hasText: name })
+    .or(page.locator('.ax-row.folder', { hasText: name })).first(),
+  `"${name}" was created but the pane never caught up`).toBeVisible({ timeout: UPLOAD_SETTLE });
 }
 
 test('the Library opens the real file manager, not a second one', async ({ page }) => {
