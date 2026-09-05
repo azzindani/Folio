@@ -88,11 +88,11 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'report',
-    description: 'Interactive data-report subsystem (type:report designs) — pick `op`:\n• generate — scaffold a report with pages/nav/optional data; layout:"flow" = responsive 12-col interactive dashboard (set accent + font_heading/font_body) (req: project_path, name, pages).\n• bind_data — attach/update inline datasets for $data.* / $agg.* expressions (req: design_path, datasets:[{id,rows[]}]).\n• validate — lint cross-refs (charts/tables/filters resolve to real datasets+fields, buttons open real modals) BEFORE export; returns {ok,errors,warnings} (req: design_path).\n• export — assemble into a self-contained interactive HTML; returns view_url (the real result to give the user) + edit_url (req: design_path).\n• formula — store state/data context for =expr bindings on a design (req: design_path).\n• debug — evaluate one =formula against a context and return the typed result (req: formula).',
+    description: 'Interactive data-report subsystem (type:report designs) — pick `op`:\n• generate — scaffold a report with pages/nav/optional data; layout:"flow" = responsive 12-col interactive dashboard (set accent + font_heading/font_body) (req: project_path, name, pages).\n• customize — RESTYLE a report in place instead of regenerating it (req: design_path, changes). Merges into the report settings — layout, nav, accent, max_width, font_heading/font_body — and {width,height} re-shapes the canvas, re-laying out every preset from its stored spec rather than stretching it. Regenerating would discard everything composed since; this keeps it. Objects merge key by key, arrays replace, null deletes; dry_run:true shows the diff.\n• bind_data — attach/update inline datasets for $data.* / $agg.* expressions (req: design_path, datasets:[{id,rows[]}]).\n• validate — lint cross-refs (charts/tables/filters resolve to real datasets+fields, buttons open real modals) BEFORE export; returns {ok,errors,warnings} (req: design_path).\n• export — assemble into a self-contained interactive HTML; returns view_url (the real result to give the user) + edit_url (req: design_path).\n• formula — store state/data context for =expr bindings on a design (req: design_path).\n• debug — evaluate one =formula against a context and return the typed result (req: formula).',
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['generate', 'bind_data', 'validate', 'export', 'formula', 'debug'], description: 'Which report action to run.' },
+        op:           { type: 'string', enum: ['generate', 'customize', 'bind_data', 'validate', 'export', 'formula', 'debug'], description: 'Which report action to run.' },
         project_path: { type: 'string', description: 'Project dir (op:generate; resolves relative design_path elsewhere).' },
         name:         { type: 'string', description: 'op:generate — report name.' },
         layout:       { type: 'string', enum: ['paged', 'scroll', 'tabs', 'sidebar', 'flow'], default: 'paged', description: 'op:generate — flow = responsive 12-col interactive grid.' },
@@ -105,7 +105,9 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         accent:       { type: 'string', description: 'op:generate (flow) — accent color seeding charts/links/active states.' },
         font_heading: { type: 'string', description: 'op:generate (flow) — heading font family (Google font name).' },
         font_body:    { type: 'string', description: 'op:generate (flow) — body font family (Google font name).' },
-        design_path:  { type: 'string', description: 'op:bind_data/validate/export/formula/debug — the .design.yaml.' },
+        design_path:  { type: 'string', description: 'op:customize/bind_data/validate/export/formula/debug — the .design.yaml.' },
+        changes:      { type: 'object', description: 'op:customize — report settings to merge (layout, navigation, accent, max_width, font_heading, font_body), plus width/height to re-shape the canvas. Only what you want different.', properties: {} },
+        dry_run:      { type: 'boolean', description: 'op:customize — return the diff without writing.' },
         datasets:     { type: 'array', description: 'op:bind_data — [{id, rows[]}].', items: { type: 'object' } },
         output_path:  { type: 'string', description: 'op:export — output .html path (auto if omitted).' },
         theme:        { type: 'string', enum: ['light', 'dark'], default: 'dark', description: 'op:export — report theme.' },
@@ -118,11 +120,11 @@ export const TIER3_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'presentation',
-    description: 'Slide presentations + live presenting/collab — pick `op`:\n• create — scaffold a presentation design (1920×1080) with slides + transition (req: project_path, name, pages:[{label,notes?}]).\n• export — assemble a presentation/carousel/motion into a self-contained HTML presenter with transitions + keyboard nav (req: design_path).\n• remote — generate a remote-clicker setup: client JS + curl commands to drive slides over HTTP (opt: port, design_path).\n• collab — generate a collaborative-editing SSE file-watch server for multi-user sync (req: design_path).',
+    description: 'Slide presentations + live presenting/collab — pick `op`:\n• create — scaffold a presentation design (1920×1080) with slides + transition (req: project_path, name, pages:[{label,notes?}]).\n• customize — RESTYLE or RE-SHAPE a deck in place instead of recreating it (req: design_path, changes). Merges into the presentation settings — theme, transition, auto_advance, controls, aspect_ratio — and {width,height} re-shapes every slide: presets re-EXPAND into the new page box from their stored spec (a real re-layout, not a stretch), hand-placed layers scale and centre. This is how a 1920×1080 deck becomes a 1080×1350 carousel without rebuilding it. dry_run:true shows the diff.\n• export — assemble a presentation/carousel/motion into a self-contained HTML presenter with transitions + keyboard nav (req: design_path).\n• remote — generate a remote-clicker setup: client JS + curl commands to drive slides over HTTP (opt: port, design_path).\n• collab — generate a collaborative-editing SSE file-watch server for multi-user sync (req: design_path).',
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['create', 'export', 'remote', 'collab'], description: 'Which presentation action to run.' },
+        op:           { type: 'string', enum: ['create', 'customize', 'export', 'remote', 'collab'], description: 'Which presentation action to run.' },
         project_path: { type: 'string', description: 'Project dir (op:create; resolves relative design_path elsewhere).' },
         name:         { type: 'string', description: 'op:create — presentation name.' },
         pages:        { type: 'array', description: 'op:create — [{id?, label, notes?}] slide specs.', items: { type: 'object' } },
@@ -131,7 +133,9 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         width:        { type: 'number', default: 1920, description: 'op:create — slide width.' },
         height:       { type: 'number', default: 1080, description: 'op:create — slide height.' },
         theme:        { type: 'string', enum: ['dark', 'light'], default: 'dark', description: 'op:create/export — presenter theme.' },
-        design_path:  { type: 'string', description: 'op:export/remote/collab — the .design.yaml.' },
+        design_path:  { type: 'string', description: 'op:customize/export/remote/collab — the .design.yaml.' },
+        changes:      { type: 'object', description: 'op:customize — presentation settings to merge (theme, transition, auto_advance, show_controls, aspect_ratio), plus width/height to re-shape every slide.', properties: {} },
+        dry_run:      { type: 'boolean', description: 'op:customize — return the diff without writing.' },
         output_path:  { type: 'string', description: 'op:export — output .html path (auto if omitted).' },
         port:         { type: 'number', description: 'op:remote (default 3737) / op:collab (default 3738) — server port.' },
       },

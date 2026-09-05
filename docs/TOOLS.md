@@ -29,13 +29,13 @@ tools stay 1:1; the long tail is folded into **multiplexed tools** that take an
 
 | Tool | ops → former tool |
 |---|---|
-| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) · get_spec→(new) |
+| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) · get_spec→(new) · resize→(new) |
 | `themes` | list→list_themes · apply→apply_theme · packs→(new) catalog packs |
 | `tasks` | list→list_tasks · create→create_task · resume→resume_task |
 | `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers · patch_spec→(new) |
 | `templates` | list→list_templates · slots→list_template_slots · inject→inject_template · export→export_template · save_component→save_as_component · batch→batch_create |
-| `report` | generate→generate_report · bind_data→bind_data · validate→validate_report · export→export_report · formula→set_formula_context · debug→debug_formula |
-| `presentation` | create→create_presentation · export→export_presentation · remote→setup_remote_presenter · collab→setup_collab |
+| `report` | generate→generate_report · customize→(new) · bind_data→bind_data · validate→validate_report · export→export_report · formula→set_formula_context · debug→debug_formula |
+| `presentation` | create→create_presentation · customize→(new) · export→export_presentation · remote→setup_remote_presenter · collab→setup_collab |
 | `animation` | timeline→inspect_timeline · keyframe→add_keyframe · export→export_animation |
 
 ---
@@ -66,6 +66,7 @@ Find, inspect and manage designs + the whole library. **Req:** `op`.
 - `delete` (req design_path) — move to the project `.trash/` (recoverable).
 - `resume` (req design_path) — read carousel generation state.
 - `gallery` — build `library.html` (thumbnails + search); `output_path`, `max_thumbnails`, `search`, `type`.
+- `resize` (req `design_path`, `width` and/or `height`; `dry_run`) — **the customize twin for `create_design`'s shape.** A preset carrying a spec is REBUILT for the new canvas (a real re-layout at the new proportions); everything else is uniformly scaled and centred, never stretched. Turns a 1080×1080 poster into 1080×1350 without rebuilding it. Says plainly when nothing carried a spec and scaling was all it could do.
 - `get_spec` (req `design_path`; `page_id`, `layer_id`) — read back the SPECS the design was authored from, not its expanded output. A preset stores the intent that built it (`{type:"sections", title, blocks:[…], accent}`) beside the ~30 layers it generated, so a later session evolves the page instead of rebuilding it. The sparse view: read it, then `edit_layer {op:"patch_spec"}`. Hand-placed layers have none and need none.
 - `icon_search` (`query`, `limit`) — look a bundled icon name UP instead of guessing. An unknown name renders as a blank fallback circle you cannot see. No query → the total + a starter set by kind; a query → ranked names, whether the name you hold `resolves_to` a real glyph, and concept bridging (`cargo` → package, truck). Never returns an empty list. Icons take the layer `color` (`currentColor` by default) — set it on a dark canvas.
 
@@ -155,6 +156,7 @@ Built-in template catalog (432 templates) + reusable components. **Req:** `op`.
 ### `report`  ·  *op-multiplexed*
 Interactive data-report subsystem (type:report). **Req:** `op`.
 - `generate` (req project_path, name, pages) — scaffold; `layout:"flow"` = responsive 12-col dashboard (`accent`, `font_heading`, `font_body`).
+- `customize` (req `design_path`, `changes`; `dry_run`) — **restyle in place instead of regenerating.** Merges into the report settings (layout, navigation, accent, max_width, fonts); `{width,height}` re-shapes the canvas and re-lays out every preset from its spec. Regenerating would discard everything composed since.
 - `bind_data` (req design_path, datasets:[{id,rows[]}]) — attach datasets for `$data.*`/`$agg.*`.
 - `validate` (req design_path) — lint chart/table/filter cross-refs before export.
 - `export` (req design_path) — self-contained interactive HTML; returns `view_url` (the deliverable) + `edit_url`.
@@ -164,6 +166,7 @@ Interactive data-report subsystem (type:report). **Req:** `op`.
 ### `presentation`  ·  *op-multiplexed*
 Slide presentations + live presenting/collab. **Req:** `op`.
 - `create` (req project_path, name, pages) — scaffold a 1920×1080 deck; `transition`, `auto_advance`, `theme`.
+- `customize` (req `design_path`, `changes`; `dry_run`) — **restyle or RE-SHAPE in place.** Merges presenter settings (theme, transition, auto_advance, controls, aspect_ratio); `{width,height}` re-shapes every slide — presets re-EXPAND into the new page box from their stored spec (a real re-layout, not a stretch), hand-placed layers scale and centre. How a 1920×1080 deck becomes a 1080×1350 carousel without rebuilding it.
 - `export` (req design_path) — self-contained HTML presenter (transitions, keyboard nav).
 - `remote` (`port`, `design_path`) — remote-clicker client JS + curl commands.
 - `collab` (req design_path; `port`) — SSE file-watch server for multi-user sync.
