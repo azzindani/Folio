@@ -55,18 +55,26 @@ export function normalizeProjectPaths(args: Record<string, unknown>): Record<str
 
   const out: Record<string, unknown> = { ...args };
 
+  // `path` does not always mean a filesystem path. animation {op:"motion_path"}
+  // takes an SVG `d` string, and rewriting it as a project name turned
+  // "M 0 0 A 50 50 0 0 1 100 0" into
+  // "/home/folio/projects/M-0-0-A-50-50-0-0-1-100-0" before the engine ever saw
+  // it. The assumption below — "`path` is a real argument only on
+  // create_project" — was true when it was written and silently stopped being
+  // true when a second op adopted the name.
+  const pathIsNotAPath = out['op'] === 'motion_path';
+
   // Small models frequently reuse create_project's `path` argument when calling
   // design tools that actually expect `project_path` (the param names differ),
   // leaving project_path undefined → a crash on path.join(undefined, …). If
-  // project_path is absent, fall back to a top-level `path`. `path` is a real
-  // argument only on create_project (which ignores project_path), so copying it
-  // is safe for every tool.
-  if ((out['project_path'] === undefined || out['project_path'] === '') &&
+  // project_path is absent, fall back to a top-level `path`.
+  if (!pathIsNotAPath &&
+      (out['project_path'] === undefined || out['project_path'] === '') &&
       typeof out['path'] === 'string' && out['path'].length > 0) {
     out['project_path'] = out['path'];
   }
 
-  for (const f of ['project_path', 'path', 'design_path']) {
+  for (const f of pathIsNotAPath ? ['project_path', 'design_path'] : ['project_path', 'path', 'design_path']) {
     const v = out[f];
     if (typeof v !== 'string' || v.length === 0) continue;
     if (path.isAbsolute(v)) {
