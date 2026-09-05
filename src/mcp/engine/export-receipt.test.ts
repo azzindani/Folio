@@ -101,3 +101,24 @@ describe('recordExport', () => {
     expect(() => recordExport(path.join(root, 'gone', 'x.design.yaml'), 'k', out, 8)).not.toThrow();
   });
 });
+
+describe('the unit the size is measured in', () => {
+  // The live failure: an 8.8 MB HTML export recorded doc.length (UTF-16 code
+  // units) against a file written as UTF-8. Off by 27 bytes, so findReusable's
+  // own size check rejected the receipt on every retry and the reuse path never
+  // fired once. Recording what is actually on disk is the only version of this
+  // that cannot drift.
+  it('a receipt written from the real file size matches on the next look', () => {
+    const text = path.join(path.dirname(out), 'multibyte.html');
+    const body = '<p>café — naïve — 日本語</p>';
+    fs.writeFileSync(text, body, 'utf8');
+    const onDisk = fs.statSync(text).size;
+    expect(onDisk).not.toBe(body.length);          // the trap
+
+    recordExport(designPath, 'k', text, onDisk);
+    expect(findReusable(designPath, 'k')).not.toBeNull();
+
+    recordExport(designPath, 'k2', text, body.length);
+    expect(findReusable(designPath, 'k2')).toBeNull();
+  });
+});
