@@ -5,8 +5,10 @@ import {
   renderTimelineASCII,
   addKeyframe,
   removeKeyframe,
+  poseToLayerUpdate,
 } from './timeline-panel';
 import type { AnimationSpec } from '../../animation/types';
+import type { Layer } from '../../schema/types';
 
 const kfs = [
   { t: 0,    opacity: 0,   x: 0   },
@@ -79,10 +81,23 @@ describe('interpolateAtTime', () => {
     expect(interpolateAtTime(kfs, 250, 1000).t).toBe(250);
   });
 
-  it('skips property when missing from either surrounding keyframe', () => {
+  // Was: "skips a property missing from either surrounding keyframe". That
+  // disagreed with the thing actually playing — the engine carries the last
+  // authored value forward, so a track written as [{t:0,x:0},{t:1000}] really
+  // does hold x at 0 the whole way, and the panel showed nothing while the CSS
+  // player and the exported frames held it. The panel now samples through the
+  // same poseAt the flipbook uses, so all three agree.
+  it('carries a channel forward when a later keyframe omits it, as the player does', () => {
     const partial = [{ t: 0, x: 0 }, { t: 1000 }];
-    const result = interpolateAtTime(partial, 500, 1000);
-    expect(result.x).toBeUndefined();
+    expect(interpolateAtTime(partial, 500, 1000).x).toBe(0);
+  });
+
+  it('honours per-keyframe easing instead of always interpolating linearly', () => {
+    const eased = [{ t: 0, x: 0, easing: 'ease-in' }, { t: 1000, x: 100 }];
+    const linear = [{ t: 0, x: 0, easing: 'linear' }, { t: 1000, x: 100 }];
+    const a = interpolateAtTime(eased as never, 500, 1000).x as number;
+    const b = interpolateAtTime(linear as never, 500, 1000).x as number;
+    expect(a).not.toBeCloseTo(b, 3);
   });
 });
 
@@ -164,5 +179,39 @@ describe('removeKeyframe', () => {
     const anim: AnimationSpec = {};
     const updated = removeKeyframe(anim, 500);
     expect(updated.keyframes).toEqual([]);
+  });
+});
+
+describe('poseToLayerUpdate', () => {
+  const base = { id: 'l', type: 'rect', x: 100, y: 50, width: 200, height: 100, rotation: 10 } as unknown as Layer;
+
+  // x/y are OFFSETS, the same convention the flipbook uses — so a scrub
+  // preview and an exported frame put the layer in the same place.
+  it('adds x/y to the authored position rather than replacing it', () => {
+    const u = poseToLayerUpdate(base, { x: 40, y: -10 } as never) as Record<string, unknown>;
+    expect(u['x']).toBe(140);
+    expect(u['y']).toBe(40);
+  });
+
+  it('adds rotation but sets opacity outright', () => {
+    const u = poseToLayerUpdate(base, { rotation: 5, opacity: 0.5 } as never) as Record<string, unknown>;
+    expect(u['rotation']).toBe(15);
+    expect(u['opacity']).toBe(0.5);
+  });
+
+  it('skews about the layer centre, matching the exporter', () => {
+    const t = String((poseToLayerUpdate(base, { skew_x: 20 } as never) as Record<string, unknown>)['transform']);
+    expect(t).toContain('skewX(20.000)');
+    expect(t).toContain('translate(200.00 100.00)');
+  });
+
+  it('merges blur into existing effects instead of replacing them', () => {
+    const withFx = { ...(base as unknown as Record<string, unknown>), effects: { shadow: 'x' } } as unknown as Layer;
+    const fx = (poseToLayerUpdate(withFx, { blur: 4 } as never) as Record<string, unknown>)['effects'] as Record<string, unknown>;
+    expect(fx).toEqual({ shadow: 'x', blur: 4 });
+  });
+
+  it('writes nothing for a pose that moves nothing', () => {
+    expect(poseToLayerUpdate(base, {} as never)).toEqual({});
   });
 });
