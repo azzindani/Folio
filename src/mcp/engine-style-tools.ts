@@ -19,7 +19,7 @@ import * as path from 'path';
 
 import type { ToolResult, ProgressItem } from './types';
 import { resolveProjectPath, errResult, okResult, pOk, pInfo, pWarn, buildContext } from './engine/utils';
-import { readStyleHistory, saturatedAxes, traitCounts, seedCheck, AXES, TRAITS, type Trait, type PriorDesign } from './design-history';
+import { readStyleHistory, saturatedAxes, traitCounts, seedCheck, notEvidence, AXES, TRAITS, type Trait, type PriorDesign } from './design-history';
 
 /** How far to move from what is already there. */
 export type Novelty = 0 | 1 | 2;
@@ -111,6 +111,7 @@ export function styleHistory(args: {
 
   const clones = designs.filter(d => d.cloned_by).length;
   const seeds = seedCheck(designs);
+  const blind = notEvidence(designs);
   if (seeds?.ineffective.length) progress.push(pWarn('Seeds that changed nothing', `${seeds.ineffective.length} pair(s) under different seeds still sign as one design`));
 
   return okResult(op, {
@@ -130,6 +131,10 @@ export function styleHistory(args: {
     // every settled trait triples this reply for nothing — and an expensive
     // read is what sent the review's author back to 20 full-size previews.
     saturated: saturated.map(({ unused: _unused, ...row }) => row),
+    // A trait missing from `saturated` because nobody could have chosen it is
+    // said out loud. Silence would read as "that one varies", which is the
+    // opposite of the truth.
+    ...(blind ? { not_evidence: blind } : {}),
     direction,
     ...(seeds ? { seed_check: seeds } : {}),
     ...(clones ? { deliberate_copies: clones } : {}),

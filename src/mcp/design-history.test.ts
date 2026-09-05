@@ -191,3 +191,79 @@ describe('style_history — the tool', () => {
     expect(new Set([...Array(settled.length).keys()].map(at).map(v => v[0])).size).toBe(settled.length);
   });
 });
+
+describe('style history — a trait is only evidence when it was a choice', () => {
+  const versus = (over: Record<string, unknown> = {}): ShorthandLayer => ({
+    id: 'vs1', type: 'versus', z: 0, pos: [0, 0, 1080, 1350], bg: '#101010', accent: '#F43F5E',
+    title: 'Rail against air', a: { label: 'Rail' }, b: { label: 'Air' },
+    rows: [{ label: 'Cost', a: 'low', b: 'high' }, { label: 'Speed', a: 'slow', b: 'fast' }],
+    ...over,
+  } as unknown as ShorthandLayer);
+
+  /** Three designs built to differ as much as the tool surface allows. */
+  function variedProject(name: string): string {
+    const dir = project(name);
+    make(dir, 'v0', sections({ bg: '#0A0A0A', accent: '#FF5C8A' }));
+    make(dir, 'v1', event({ bg: '#FAF5EC', accent: '#0EA5E9' }));
+    make(dir, 'v2', versus({ bg: '#0B1B2B', accent: '#F97316' }));
+    return dir;
+  }
+
+  it('says nothing settled when the designs genuinely differ', () => {
+    // measure reads 111 for all three and cannot read anything else — a
+    // preset's text fills the measure. Counting it made a maximally-varied
+    // project look as settled as an identical one.
+    const { designs } = readStyleHistory(variedProject('p-varied'));
+    expect(designs).toHaveLength(3);
+    expect(new Set(designs.map(d => d.signature.composition.split('/')[0])).size).toBe(1);
+    expect(saturatedAxes(designs)).toEqual([]);
+  });
+
+  it('and every seed says so, instead of inventing a direction', () => {
+    const dir = variedProject('p-varied-seeds');
+    for (const style_seed of [0, 1, 2, 3, 7, 42]) {
+      const r = styleHistory({ project_path: dir, style_seed, novelty: 1 }) as unknown as Record<string, unknown>;
+      const d = r['direction'] as { vary: string[]; note: string };
+      expect(d.vary).toEqual([]);
+      expect(d.note).toMatch(/already differ from each other/);
+    }
+  });
+
+  it('still catches four designs that differ only in their copy', () => {
+    const dir = project('p-copy-only');
+    for (const [i, title] of ['Tonnage rose', 'Rates held', 'Volumes fell', 'Fuel eased'].entries()) {
+      make(dir, `c${i}`, sections({ title }));
+    }
+    const settled = saturatedAxes(readStyleHistory(dir).designs).map(s => s.trait);
+    // Every trait the model actually chose is still reported…
+    expect(settled).toEqual(expect.arrayContaining(['structure', 'ground', 'accent']));
+    // …and the two the engine chose are not.
+    expect(settled).not.toContain('measure');
+    expect(settled).not.toContain('anchor');
+  });
+
+  it('states which traits were withheld and why', () => {
+    const dir = project('p-withheld');
+    for (const [i, title] of ['A', 'B', 'C'].entries()) make(dir, `w${i}`, sections({ title }));
+    const r = styleHistory({ project_path: dir }) as unknown as Record<string, unknown>;
+    const blind = r['not_evidence'] as { traits: string[]; because: string };
+    expect(blind.traits).toEqual(['measure', 'anchor']);
+    expect(blind.because).toMatch(/ONE preset filling the page/);
+  });
+
+  it('gives a hand-composed design its vote back', () => {
+    const dir = project('p-handmade');
+    // A narrow column in the left third — a measure the design chose for itself.
+    const hand = (y: number): ShorthandLayer[] => ([
+      { id: 'bg', type: 'rect', z: 0, pos: [0, 0, 1080, 1350], fill: '#0A0A0A', locked: true },
+      { id: 't1', type: 'text', z: 1, pos: [80, y, 280, 200], text: 'Night Market', size: 64, color: '#FFFFFF', locked: true },
+    ] as unknown as ShorthandLayer[]);
+    for (const [i, y] of [300, 320, 340].entries()) {
+      const d = createDesign({ project_path: dir, name: `h${i}`, type: 'poster', width: 1080, height: 1350 }) as unknown as Record<string, unknown>;
+      addLayers({ design_path: d['path'] as string, layers_shorthand: hand(y) });
+    }
+    const { designs } = readStyleHistory(dir);
+    expect(designs.every(d => !d.single_preset)).toBe(true);
+    expect(saturatedAxes(designs).map(s => s.trait)).toContain('measure');
+  });
+});

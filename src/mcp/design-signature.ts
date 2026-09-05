@@ -78,8 +78,29 @@ function walk(layers: Layer[], out: L[] = [], depth = 0): L[] {
   return out;
 }
 
+/** The layers a MODEL placed — everything outside a preset group.
+ *
+ *  A preset's own children are not evidence of anything the model decided: the
+ *  engine picks their alignment from a hash of the title (mood-bank's
+ *  pickGridLayout / pickEventLayout, so that two events don't share a shape).
+ *  Reading style off them would make this measure move with the COPY, which is
+ *  the one thing a style signature may never do. */
+function walkHandPlaced(layers: Layer[], out: L[] = [], depth = 0): L[] {
+  if (depth > 8) return out;
+  for (const l of layers) {
+    if (specOf(l)) continue;                        // a preset group and all it built
+    out.push(l as L);
+    const kids = (l as L).layers;
+    if (Array.isArray(kids)) walkHandPlaced(kids, out, depth + 1);
+  }
+  return out;
+}
+
 /** The layers a viewer reads as content — not the backdrop, not a spacer. */
 const INK = new Set(['text', 'rich_text', 'image', 'icon', 'chart', 'kpi_card', 'code', 'math', 'qrcode', 'table', 'mermaid', 'map', 'interactive_chart', 'interactive_table']);
+
+/** The ink that carries an alignment decision. */
+const TEXT = new Set(['text', 'rich_text']);
 
 // ── Structure ───────────────────────────────────────────────
 
@@ -141,8 +162,44 @@ export function compositionOf(layers: Layer[], W: number, H: number): string {
   const span = (bot - top) / Math.max(1, H);
   const vspan = span > 0.7 ? 'full' : bot < H * 0.6 ? 'top' : top > H * 0.4 ? 'low' : 'mid';
 
-  // Ink-weighted centroid decides the anchor — a centred stack and a
-  // left-anchored one can share a column mask but never read the same.
+  return `${cols}/${vspan}/${anchorOf(content, walkHandPlaced(layers), W)}${bleed ? '/bleed' : ''}`;
+}
+
+/** What the composition hangs off.
+ *
+ *  The centroid of the layer BOXES cannot answer this for a full-measure stack:
+ *  a 918px-wide text box on a 1080 canvas is centred whatever the type inside
+ *  it does, so a hand-composed centred stack and a left-set one scored
+ *  identically. When the ink spans the measure, what a reader sees is the type
+ *  ALIGNMENT — `style.align`, which the renderer defaults to left (no align →
+ *  no text-anchor → SVG `start`).
+ *
+ *  Only for layers the MODEL placed. Inside a preset the alignment is hashed
+ *  from the title, so reading it there would make this trait swing on the copy:
+ *  four designs identical but for their headline measured left / center / left
+ *  / center. A preset's anchor stays the centroid — which is stable, reads
+ *  "center" for every full-bleed preset, and is reported as engine-decided
+ *  rather than as a choice (see design-history's ENGINE_SET).
+ *
+ *  Narrow boxes keep the centroid too: there the placement IS the decision — a
+ *  hand-placed column on the right reads right-anchored however its text is
+ *  set. */
+function anchorOf(content: L[], handPlaced: L[], W: number): string {
+  // Alignment only speaks for type the model set, in a box that fills the measure.
+  const wide = handPlaced.filter(l => TEXT.has(String(l.type)) && num(l.width) >= W * 0.7);
+  if (wide.length) {
+    // Weighted by type size: the headline sets how a design reads, and a 17px
+    // footer set differently should not outvote a 151px title.
+    const byAlign = new Map<string, number>();
+    for (const l of wide) {
+      const weight = Math.max(1, fontSizeOf(l));
+      const a = l.style?.align ?? 'left';
+      byAlign.set(a, (byAlign.get(a) ?? 0) + weight);
+    }
+    const top = [...byAlign.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+    if (top) return top[0] === 'right' ? 'right' : top[0] === 'center' ? 'center' : 'left';
+  }
+
   let sum = 0, wsum = 0;
   for (const l of content) {
     const b = boxOf(l);
@@ -151,8 +208,7 @@ export function compositionOf(layers: Layer[], W: number, H: number): string {
     wsum += a;
   }
   const cx = wsum ? sum / wsum / W : 0.5;
-  const anchor = cx < 0.42 ? 'left' : cx > 0.58 ? 'right' : 'center';
-  return `${cols}/${vspan}/${anchor}${bleed ? '/bleed' : ''}`;
+  return cx < 0.42 ? 'left' : cx > 0.58 ? 'right' : 'center';
 }
 
 // ── Palette ─────────────────────────────────────────────────
