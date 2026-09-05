@@ -6,7 +6,7 @@ import type { DesignSpec } from '../schema/types';
 import type { ToolResult, ProgressItem, NextAction } from './types';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
-import { resolveDesignPath, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover } from './engine/utils';
+import { resolveDesignPath, readYAML, writeYAML, errResult, okResult, pOk, pWarn, buildContext, buildHandover } from './engine/utils';
 import { resolveBuiltinTemplate, builtinInjectOutputDir, listBuiltinTemplates, probedCatalogPaths } from './engine/builtin-templates';
 
 export function exportTemplate(args: { design_path: string; output_path?: string; project_path?: string }): ToolResult {

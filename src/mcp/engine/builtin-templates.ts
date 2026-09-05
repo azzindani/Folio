@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { fileURLToPath } from 'url';
 
 /**
  * Bridge the EDITOR's built-in template catalog (the 432 `.template.yaml` files
@@ -44,7 +45,12 @@ const probed: string[] = [];
 export function installRoots(): string[] {
   const roots = [process.cwd()];
   try {
-    let dir = path.dirname(new URL(import.meta.url).pathname);
+    // fileURLToPath, not `new URL(…).pathname`: on Windows the raw pathname is
+    // "/C:/Users/…", with a leading slash the drive letter cannot survive, so
+    // every root derived from it failed to exist and the walk silently did
+    // nothing — leaving exactly the "0 templates" dead op it was added to fix,
+    // for anyone running the server from anywhere but the install root.
+    let dir = path.dirname(fileURLToPath(import.meta.url));
     for (let i = 0; i < 5; i++) { dir = path.dirname(dir); roots.push(dir); }
   } catch { /* no import.meta in this host — cwd only */ }
   return [...new Set(roots)];
