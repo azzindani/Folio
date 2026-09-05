@@ -43,7 +43,12 @@ function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
     o.forEach((ol, i) => {
       const rl = r[i] as (Layer & Record<string, unknown>) | undefined;
       if (!rl) return;
-      if ((ol as Layer & { animation?: AnimationSpec }).animation?.keyframes?.length) {
+      // A layer travelling a motion_path is animated too. Reporting only
+      // keyframed layers left the numbers empty for a design whose whole motion
+      // was a path — the render moved, the readout said nothing moved, and the
+      // readout is the half a blind caller can actually read.
+      const hasPath = Boolean((ol as unknown as Record<string, unknown>)['motion_path']);
+      if (hasPath || (ol as Layer & { animation?: AnimationSpec }).animation?.keyframes?.length) {
         out.push({
           id: ol.id,
           x: num(rl['x']), y: num(rl['y']), width: num(rl['width']), height: num(rl['height']),
