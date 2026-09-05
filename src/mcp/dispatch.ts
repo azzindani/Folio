@@ -15,14 +15,18 @@ function badOp(tool: string, op: unknown, ops: string[]): ToolResult {
     `Set op to one of: ${ops.join(', ')}.`);
 }
 
-export function dispatchEditLayer(a: Args): ToolResult {
+// `shape` reaches for polygon-clipping, which is lazy-imported, so this
+// multiplexer may answer with a promise — same arrangement as manage_design.
+// The sync ops are unchanged.
+export function dispatchEditLayer(a: Args): ToolResult | Promise<ToolResult> {
   switch (a['op']) {
     case 'add':    return engine.addLayer(a as Parameters<typeof engine.addLayer>[0]);
     case 'update': return engine.updateLayer(a as Parameters<typeof engine.updateLayer>[0]);
     case 'remove': return engine.removeLayer(a as Parameters<typeof engine.removeLayer>[0]);
     case 'align':  return engine.alignLayers(a as Parameters<typeof engine.alignLayers>[0]);
     case 'patch_spec': return engine.patchDesignSpec(a as Parameters<typeof engine.patchDesignSpec>[0]);
-    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align', 'patch_spec']);
+    case 'shape':  return engine.shapeOp(a as unknown as Parameters<typeof engine.shapeOp>[0]);
+    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align', 'patch_spec', 'shape']);
   }
 }
 
