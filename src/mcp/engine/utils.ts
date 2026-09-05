@@ -159,6 +159,21 @@ export function writeYAML(filePath: string, data: unknown): void {
   fs.renameSync(tmp, resolved);
 }
 
+/** Write bytes back VERBATIM — the restore path.
+ *
+ *  A restore must reproduce the exact content a snapshot holds: re-dumping it
+ *  through yaml.dump would re-order and re-wrap it, changing the hash, so the
+ *  restored file could no longer be checked against the hash the log recorded.
+ *  Same lineage hook as writeYAML, so a restore is itself history. */
+export function writeRaw(filePath: string, content: string): void {
+  const resolved = resolvePath(filePath);
+  noteDesignWrite(resolved, content);
+  fs.mkdirSync(path.dirname(resolved), { recursive: true });
+  const tmp = resolved + '.tmp';
+  fs.writeFileSync(tmp, content, 'utf-8');
+  fs.renameSync(tmp, resolved);
+}
+
 export function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }

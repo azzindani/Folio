@@ -62,7 +62,11 @@ interface OpScope {
 // op" would attribute one call's writes to the other.
 const store = new AsyncLocalStorage<OpScope>();
 
-const sha = (s: string): string => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
+/** The content hash every record is written with. Exported because restore has
+ *  to ask the same question of a snapshot file: "are these the bytes seq N
+ *  ended at?" — a comparison only meaningful if both sides hash identically. */
+export const contentHash = (s: string): string => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
+const sha = contentHash;
 
 /** Stable JSON — key order must not change a hash. */
 function canonical(v: unknown): string {
