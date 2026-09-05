@@ -48,8 +48,9 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'asset_search': return engine.assetSearch(a as Parameters<typeof engine.assetSearch>[0]);
     case 'asset_fetch':  return engine.assetFetch(a as Parameters<typeof engine.assetFetch>[0]);
     case 'asset_promote': return engine.assetPromote(a as Parameters<typeof engine.assetPromote>[0]);
+    case 'icon_search':  return engine.iconSearch(a as Parameters<typeof engine.iconSearch>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search']);
   }
 }
 

@@ -225,22 +225,40 @@ export function exportDesign(args: { design_path: string; format: string; output
       const registered = new Set<string>();
       let vectorRuns = 0;
       let pdf: jsPDF | null = null;
-      sheetSpecs.forEach(s => {
-        // Render to a LIVE element (not a string) so the vector-PDF builder can
-        // walk <text> nodes directly — re-parsing the string would throw on
-        // markdown foreignObject HTML (not valid XML).
-        const el = renderToSVGElement(s.spec, undefined, undefined, componentRegistry);
-        const w = dim(el, 'width', spec.document.width);
-        const h = dim(el, 'height', spec.document.height);
-        for (const f of unbundledFonts(serializeSVGElement(el), projDir)) missingFonts.add(f);
-        const orient = w >= h ? 'landscape' : 'portrait';
-        if (!pdf) pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(w), toPt(h)], compress: true });
-        else pdf.addPage([toPt(w), toPt(h)], orient);
-        vectorRuns += addVectorPdfPage(pdf as unknown as PdfDoc, { svg: el, width: w, height: h }, scale, registered, projDir);
-        for (const r of collectHrefRects(s.layers)) {
-          pdf.link(toPt(r.x), toPt(r.y), toPt(r.w), toPt(r.h), { url: r.href });
+      // Per-PAGE isolation: one slide that fails to render used to throw out of
+      // the whole forEach, so an 8-slide deck returned an error and NO file —
+      // the model lost seven good pages to one bad one. Now a failed page
+      // becomes a blank sheet (page numbering stays true to the design) and the
+      // response names it, so the fix is one patch_design away instead of a
+      // full re-export.
+      const failedPages: { page: number; error: string }[] = [];
+      sheetSpecs.forEach((s, i) => {
+        const W = spec.document.width, H = spec.document.height;
+        try {
+          // Render to a LIVE element (not a string) so the vector-PDF builder can
+          // walk <text> nodes directly — re-parsing the string would throw on
+          // markdown foreignObject HTML (not valid XML).
+          const el = renderToSVGElement(s.spec, undefined, undefined, componentRegistry);
+          const w = dim(el, 'width', W);
+          const h = dim(el, 'height', H);
+          for (const f of unbundledFonts(serializeSVGElement(el), projDir)) missingFonts.add(f);
+          const orient = w >= h ? 'landscape' : 'portrait';
+          if (!pdf) pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(w), toPt(h)], compress: true });
+          else pdf.addPage([toPt(w), toPt(h)], orient);
+          vectorRuns += addVectorPdfPage(pdf as unknown as PdfDoc, { svg: el, width: w, height: h }, scale, registered, projDir);
+          for (const r of collectHrefRects(s.layers)) {
+            pdf.link(toPt(r.x), toPt(r.y), toPt(r.w), toPt(r.h), { url: r.href });
+          }
+        } catch (pageErr) {
+          failedPages.push({ page: i + 1, error: (pageErr as Error).message });
+          const orient = W >= H ? 'landscape' : 'portrait';
+          if (!pdf) pdf = new jsPDF({ orientation: orient, unit: 'pt', format: [toPt(W), toPt(H)], compress: true });
+          else pdf.addPage([toPt(W), toPt(H)], orient);
         }
       });
+      if (failedPages.length === sheetSpecs.length) {
+        return errResult(op, `PDF render failed on every page — first error: ${failedPages[0].error}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF vector text.', progress);
+      }
       const doc = pdf as unknown as jsPDF;
 
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -251,10 +269,11 @@ export function exportDesign(args: { design_path: string; format: string; output
       const notes = [
         `Vector PDF — ${vectorRuns} text run(s) embedded as selectable, zoom-crisp glyphs over a ${scale}× raster (backgrounds/gradients/effects). Copy-paste works; text stays sharp at any zoom.`,
         ...(missingFonts.size ? [`Some text stayed in the raster (font not bundled, so it can't be embedded as vector): ${[...missingFonts].join(', ')}. Use a bundled family (Inter, Space Grotesk, Playfair Display, IBM Plex Mono…) for fully-vector text.`] : []),
+        ...(failedPages.length ? [`${failedPages.length} of ${sheetSpecs.length} page(s) failed to render and are BLANK in this PDF: ${failedPages.map(f => `p${f.page} (${f.error})`).join('; ')}. The rest exported normally — fix those pages and re-export.`] : []),
       ];
       const context = buildContext(op, `PDF exported for "${spec.meta.name}"`, [{ type: 'pdf', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, links: linkCount, vector_runs: vectorRuns, notes, progress, context, handover });
+      return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: failedPages.length ? 'partial' : 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, ...(failedPages.length ? { failed_pages: failedPages } : {}), links: linkCount, vector_runs: vectorRuns, notes, progress, context, handover });
     } catch (err) {
       return errResult(op, `PDF render failed: ${(err as Error).message}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF vector text.', progress);
     }
@@ -447,14 +466,33 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
 // model can actually SEE what it produced (no file written). Closes the
 // "MCP is blind" gap — pair with diagnose_design to verify a fix visually.
 
-export function renderPreview(args: { design_path: string; project_path?: string; page_id?: string; scale?: number }): ToolResult {
+// A preview is the QA gate, so it gets called ~20× in a real session — at full
+// canvas resolution that single tool dominates the cost of the whole job. A
+// 960px longest edge is enough to judge layout, hierarchy, overlap and colour
+// (what previews are FOR) at roughly a quarter of the image tokens; reading fine
+// copy is what `full` and an explicit `scale` are for.
+const PREVIEW_MAX_EDGE = 960;
+
+/** Claude bills an image at about (w × h) / 750 tokens — quoted back on every
+ *  preview so an agent can budget its verification loop instead of guessing. */
+function estImageTokens(w: number, h: number): number {
+  return Math.round((w * h) / 750);
+}
+
+export function renderPreview(args: { design_path: string; project_path?: string; page_id?: string; scale?: number; max_edge?: number; full?: boolean }): ToolResult {
   const op = 'render_preview';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   const spec = readYAML<DesignSpec>(dPath);
   const componentRegistry = loadComponentRegistry(args.project_path ?? path.dirname(path.dirname(dPath)));
-  const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
+  // An explicit scale or full:true is the opt-in to full resolution; otherwise
+  // fit the longest edge to max_edge so the default preview stays cheap.
+  const asked = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
+  const longest = Math.max(spec.document?.width ?? 0, spec.document?.height ?? 0);
+  const maxEdge = typeof args.max_edge === 'number' && args.max_edge > 0 ? Math.min(4096, args.max_edge) : PREVIEW_MAX_EDGE;
+  const capped = longest > 0 && !args.full && !(typeof args.scale === 'number' && args.scale > 0);
+  const scale = capped ? Math.min(asked, maxEdge / longest) : asked;
   try {
     // Same asset resolution as export_design — preview must show the truth.
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
@@ -467,14 +505,18 @@ export function renderPreview(args: { design_path: string; project_path?: string
     const png = Buffer.from(new Resvg(svgStr, {
       fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(previewProjDir),
     }).render().asPng());
-    progress.push(pOk('Rendered preview', `${png.length} bytes @ ${scale}×`));
+    const outW = Math.round((spec.document?.width ?? 0) * scale);
+    const outH = Math.round((spec.document?.height ?? 0) * scale);
+    const tokens = estImageTokens(outW, outH);
+    progress.push(pOk('Rendered preview', `${outW}×${outH}, ${png.length} bytes @ ${scale.toFixed(2)}× (~${tokens} image tokens)`));
     const notes = [
       ...assetNotes,
       ...(missing.length ? [`Fonts not bundled for raster (fell back; render correctly in the editor): ${missing.join(', ')}`] : []),
+      ...(capped && scale < 1 ? [`Preview downscaled to ${outW}×${outH} (longest edge ${maxEdge}px, ~${tokens} image tokens) — enough to judge layout, overlap, hierarchy and colour. To read fine copy pass full:true or scale:1, which costs ~${estImageTokens(spec.document.width, spec.document.height)} tokens.`] : []),
     ];
     const context = buildContext(op, `Preview of "${spec.meta.name}"`);
     const _attachments = [{ type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' }];
-    return okResult(op, { status: 'ok', bytes: png.length, scale, ...(notes.length ? { notes } : {}), progress, context, _attachments });
+    return okResult(op, { status: 'ok', bytes: png.length, scale, pixels: `${outW}×${outH}`, est_image_tokens: tokens, ...(notes.length ? { notes } : {}), progress, context, _attachments });
   } catch (err) {
     return errResult(op, `Preview render failed: ${(err as Error).message}`, 'Try export_design format="svg" to verify the design renders.', progress);
   }

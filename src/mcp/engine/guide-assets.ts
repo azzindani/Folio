@@ -65,6 +65,11 @@ modification — the search filters for it.
     canvas. Pass icon_color:"#YourAccent" on asset_fetch. (For a common glyph
     the built-in {type:"icon", name, color} layer needs no fetch at all;
     reach for the finder when you need a specific set or a brand mark.)
+  • DON'T GUESS a built-in icon name — an unknown name renders as a blank
+    fallback circle you cannot see. manage_design {op:"icon_search", query:"…"}
+    returns ranked real names, says whether the name you have resolves, and
+    bridges concepts to objects ("cargo" → package, truck). The built-in
+    {type:"icon"} layer inherits currentColor, so set color: on a dark canvas.
   • FONTS: in layers_shorthand the key is font: — font_family: is the verbose
     schema and shorthand IGNORES it, rendering a silent fallback face. Use the
     family string the reply gives you, VERBATIM. It is read from

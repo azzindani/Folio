@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { builtinTemplatesDir, loadBuiltinIndex, resolveBuiltinTemplate, listBuiltinTemplates } from './builtin-templates';
+import { builtinTemplatesDir, loadBuiltinIndex, resolveBuiltinTemplate, listBuiltinTemplates, installRoots } from './builtin-templates';
 import { listTemplates, listTemplateSlots, injectTemplate } from '../engine';
 
 // Point the resolver at the real shipped catalog assets (source tree).
@@ -21,6 +21,22 @@ beforeAll(() => {
 
 afterAll(() => {
   fs.rmSync(projectsDir, { recursive: true, force: true });
+});
+
+describe('catalog lookup is anchored to the install, not to process.cwd()', () => {
+  // The live server answered "0 templates" forever because both the asset dir
+  // and the index were probed relative to cwd. A server started from anywhere
+  // but the install root found neither, and list_templates became a dead op.
+  it('resolves the install root from the module path, whatever the cwd', () => {
+    const here = process.cwd();
+    try {
+      process.chdir(os.tmpdir());
+      const roots = installRoots();
+      expect(roots.some(r => fs.existsSync(path.join(r, 'package.json')) && r !== os.tmpdir())).toBe(true);
+    } finally {
+      process.chdir(here);
+    }
+  });
 });
 
 describe.runIf(haveAssets)('built-in template catalog → MCP bridge', () => {

@@ -69,4 +69,22 @@ describe('listPacks (WP-2.2)', () => {
     expect(r.success).toBe(false);
     expect(String(r.hint)).toContain('effects');
   });
+
+  // A model holding a pack id has no reason to know which kind it belongs to;
+  // answering an id-only call with kind COUNTS read as "your pack isn't there".
+  it('accepts an id ALONE and finds the pack across kinds', () => {
+    const list = payload(listPacks({ kind: 'palette', limit: 1 }));
+    const id = (list.packs as Array<{ id: string }>)[0].id;
+    const r = payload(listPacks({ id }));
+    expect(r.success).not.toBe(false);
+    expect(r.id).toBe(id);
+    expect(r.kind).toBe('palette');
+    expect(Array.isArray(r.swatches)).toBe(true);
+  });
+
+  it('an id alone that matches nothing says so, instead of listing kind counts', () => {
+    const r = payload(listPacks({ id: 'no-such-pack-anywhere' }));
+    expect(r.success).toBe(false);
+    expect(String(r.error ?? r.message)).toMatch(/any kind/);
+  });
 });

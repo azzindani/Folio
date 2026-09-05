@@ -154,7 +154,7 @@ export function diagnoseLayers(layers: Layer[]): string[] {
       if (l.type === 'icon') {
         const name = (l as Layer & { name?: string }).name ?? '';
         const hit = resolveIconName(name);
-        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a blank fallback circle. Use a real name, e.g.: ${SUGGESTED_ICONS}.`);
+        if (!hit) notes.push(`icon "${l.id}": "${name}" is not a known icon → renders as a blank fallback circle. Look one up instead of guessing again: manage_design {op:"icon_search", query:"${name}"}. Common names: ${SUGGESTED_ICONS}.`);
       } else if (l.type === 'image') {
         const src = (l as Layer & { src?: string }).src ?? '';
         if (src && /^(https?:|\/\/)/i.test(src)) {

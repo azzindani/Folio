@@ -7,14 +7,16 @@ import type { ToolDefinition } from '../types';
 export const TIER3_TOOLS: ToolDefinition[] = [
   {
     name: 'render_preview',
-    description: 'Render the design to a PNG and return it INLINE as an image so you can SEE what you produced (no file written). Use it to visually verify a composition or confirm a fix — pair with diagnose_design. Foreground charts/KPIs that need a browser still only appear in the editor; everything else (shapes, patterns, text, fills) rasterizes here.',
+    description: 'Render the design to a PNG and return it INLINE as an image so you can SEE what you produced (no file written). Use it to visually verify a composition or confirm a fix — pair with diagnose_design. Foreground charts/KPIs that need a browser still only appear in the editor; everything else (shapes, patterns, text, fills) rasterizes here. COST: the preview is downscaled to a 960px longest edge by default (~a quarter of the image tokens of a full-size render) — enough to judge layout, overlap, hierarchy and colour. The response quotes `est_image_tokens` so you can budget a verification loop; pass full:true (or an explicit scale) only when you need to read fine copy.',
     inputSchema: {
       type: 'object',
       properties: {
         design_path:  { type: 'string', description: 'Path to .design.yaml' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
         page_id:      { type: 'string', description: 'Carousel: preview one page (omit = first page)' },
-        scale:        { type: 'number', description: 'Raster scale 0.5–2 (default 1)', default: 1 },
+        scale:        { type: 'number', description: 'Raster scale 0.5–2 — setting it opts out of the cheap default and renders at that scale' },
+        max_edge:     { type: 'number', description: 'Longest edge in px for the cheap default (default 960)', default: 960 },
+        full:         { type: 'boolean', description: 'Full canvas resolution — costs ~4× the tokens of the default', default: false },
       },
       required: ['design_path'],
     },

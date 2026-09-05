@@ -11,6 +11,7 @@ export { assetRead, assetWrite } from './engine/assets';
 // library (by `scope`, or by a "lib/" path prefix) — see asset-library-ops.ts.
 export { assetAdd, assetList, assetDelete, assetMove, assetPromote } from './engine/asset-library-ops';
 export { assetSearch } from './engine/asset-search';
+export { iconSearch } from './engine/icon-search';
 export { assetProcess } from './engine/asset-process-op';
 export { assetFetch } from './engine/asset-fetch';
 export { listPacks } from './engine/packs';

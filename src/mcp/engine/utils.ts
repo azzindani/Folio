@@ -5,16 +5,30 @@ import yaml from 'js-yaml';
 import type { ToolResult, ProgressItem, ContextField, Handover, SuggestedNext } from '../types';
 import { builtinTemplatesDir } from './builtin-templates';
 
-// §18 — reject paths outside the allowed roots. Three roots accepted:
+// §18 — reject paths outside the allowed roots. Four roots accepted:
 //   1. user home dir
 //   2. OS temp dir
 //   3. FOLIO_PROJECTS_DIR (set when running in docker where projects/ is
 //      bind-mounted to /home/folio/projects but also so LLMs guessing
 //      "/var/folio/projects/<x>" / similar paths get a useful error).
+//   4. FOLIO_SHARED_DIRS — comma-separated roots shared with SIBLING services
+//      (a data/ML server's /workspace/data, say). Without it an agent that
+//      generated a chart with one server literally cannot hand the file to
+//      this one: asset_add is refused reading it, export_design is refused
+//      writing beside it, and the failures only surface late, one error at a
+//      time. Opt-in, so the sandbox stays closed unless a deployment says
+//      otherwise.
 //
 // Bare names like "my-project" or "designs/foo.design.yaml" are not absolute
 // and the caller is expected to resolve them against a project_path first;
 // resolveDesignPath() and resolveProjectPath() do this lookup.
+
+/** Extra roots this deployment shares with sibling MCP servers. */
+export function sharedDirs(): string[] {
+  return String(process.env['FOLIO_SHARED_DIRS'] ?? '')
+    .split(',').map(s => s.trim()).filter(Boolean).map(p => path.resolve(p));
+}
+
 export function resolvePath(filePath: string): string {
   const resolved = path.resolve(filePath);
   const home = os.homedir();
@@ -24,11 +38,21 @@ export function resolvePath(filePath: string): string {
     resolved === root || resolved.startsWith(root + path.sep);
   if (under(home) || under(tmp)) return resolved;
   if (projects && under(path.resolve(projects))) return resolved;
+  const shared = sharedDirs();
+  if (shared.some(under)) return resolved;
   // The app's own built-in template catalog (dist/public assets) is a
   // legitimate read root so MCP can inject the templates the editor browses.
   const builtin = builtinTemplatesDir();
   if (builtin && under(path.resolve(builtin))) return resolved;
-  throw new Error(`Path outside allowed directories: ${filePath}`);
+  // Name the roots that DO work — the boundary stated once, here, instead of
+  // being discovered one refused call at a time.
+  const roots = [home, tmp, ...(projects ? [path.resolve(projects)] : []), ...shared];
+  throw new Error(
+    `Path outside allowed directories: ${filePath}. This server can read and write under: ${roots.join(', ')}. `
+    + `To bring in a file from another service, either copy it under one of those roots, pass it inline `
+    + `(manage_design {op:"asset_add", data:"data:image/png;base64,…"}), or have the deployment add its `
+    + `directory to FOLIO_SHARED_DIRS.`,
+  );
 }
 
 // Resolve a project path. Bare names like "my-project" are treated as

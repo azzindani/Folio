@@ -317,6 +317,44 @@ repeat:[{...},{...}] → one copy per row; {{key}} tokens fill from the row.
      width:280, height:360, layers:[{type:"text", width:240, height:50, text:"{{name}} {{price}}", size:30}]}
 Combine with a row/grid container to lay out the copies automatically.
 
+## Presets — how much canvas each one needs
+A preset sizes its type from the box WIDTH and grows DOWNWARD to fit its content.
+So a WIDE box is an expensive box: at width 1920 the type, margins and gaps all
+scale up, and the content gets TALLER, not shorter. This is the single most common
+way a landscape slide goes wrong.
+
+Minimum height, as a multiple of the box WIDTH (typical content load):
+  sections/infographic/document/report_poster  1.05× W   ← the tallest
+  newsletter/bulletin/digest                   1.10× W
+  editorial/poster                             1.00× W
+  event/flyer/hero                             0.95× W
+  feature_grid                                 0.90× W
+  pricing/plans/tiers · ribbon_cards           0.85× W
+  list/steps/checklist · timeline/roadmap      0.82× W
+  versus/compare · mindmap · value_list        0.80× W
+  split                                        0.75× W
+  stat/metric/big_number                       0.60× W   ← the only safe 16:9 one
+
+Read that as: on a 1920×1080 slide, sections wants ~2016px of height and has
+1080. On a 1080×1350 portrait poster it wants ~1134px and has 1350 — comfortable.
+
+What the engine does about it:
+• POSTER (single page): the canvas is elastic. The preset content-sizes and the
+  document resizes to match, so an over-tall preset is auto-fit, not a clip.
+• SLIDE/PAGE (carousel, presentation): the canvas is FIXED. The preset is
+  compressed into the box you declared — type, spacing and geometry shrink
+  together — and the response tells you the scale it needed. Below 0.55× it stops
+  compressing, reports the remaining overflow, and diagnose_design raises an
+  off_canvas ERROR. Compression is a rescue, not a plan: at 0.7× the type is 70%
+  of its intended size, and the deck reads visibly squeezed.
+
+For a 16:9 slide, prefer in this order:
+  1. LESS per slide — 2-3 blocks, one idea. Split across pages (append_page).
+  2. split or stat — the two presets whose natural shape is already wide.
+  3. Hand-place into halves: two groups side by side, each ~900px wide, so each
+     column's preset sees a PORTRAIT box and sizes itself sanely.
+  4. Let it compress — acceptable down to ~0.85×, visibly squeezed below that.
+
 ## Presets (engine owns the layout — you supply only content)
 feature_grid: a complete feature poster in ONE layer — title, subtitle, and a
 row of cards. You give content + colors; the engine positions everything (no
