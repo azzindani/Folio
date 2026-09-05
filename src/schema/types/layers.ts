@@ -80,6 +80,19 @@ export interface BaseLayer {
   animation?: AnimationSpec;
   /** PowerApps-style formula bindings: { fill: "=state.active ? '#f00' : '#ccc'" } */
   formulas?: Record<string, string>;
+  /**
+   * A raw SVG transform appended to whatever the layer already has.
+   *
+   * Written by the frame sampler to materialise the skew_x/skew_y channels,
+   * which the CSS route plays but a sampled still could not show. Authorable
+   * by hand too, but presets and layout own placement — reach for x/y first.
+   */
+  transform?: string;
+  /** Stroke dash pattern + offset — how the `draw` channel is materialised in a
+   *  sampled frame: dasharray = the path's own length, offset = the part not
+   *  yet drawn. */
+  stroke_dasharray?: string | number;
+  stroke_dashoffset?: number;
   /** SVG animateMotion path for kinetic animation */
   motion_path?: {
     path: string;        // SVG path d attribute (e.g. "M 0 0 Q 200 100 400 0")

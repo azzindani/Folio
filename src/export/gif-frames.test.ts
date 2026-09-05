@@ -189,3 +189,42 @@ describe('layersAt — group transforms cascade', () => {
     expect(out[0].layers[0]['size']).toBe(60); // 40 * 1.5
   });
 });
+
+describe('skew and draw reach a sampled frame', () => {
+  const anim = (kf: Record<string, unknown>[]): AnimationSpec =>
+    ({ keyframes: kf, playback: { duration: 1000 } } as unknown as AnimationSpec);
+
+  // Both channels were held at rest in the flipbook: the CSS route played them
+  // and every exported still showed the layer upright and fully drawn.
+  it('skews about the layer CENTRE, so it leans without sliding', () => {
+    const l = layer('box', { x: 100, y: 100, width: 200, height: 100, animation: anim([{ t: 0, skew_x: 0 }, { t: 1000, skew_x: 30 }]) });
+    const out = layersAt([l], 1000)[0] as unknown as Record<string, unknown>;
+    const t = String(out['transform']);
+    expect(t).toContain('skewX(30.000)');
+    // centre of the box, then back again — otherwise the skew drags it sideways
+    expect(t).toContain('translate(200.00 150.00)');
+    expect(t).toContain('translate(-200.00 -150.00)');
+  });
+
+  it('leaves transform alone when neither skew channel moves', () => {
+    const l = layer('box', { x: 0, y: 0, width: 10, height: 10, animation: anim([{ t: 0, opacity: 0 }, { t: 1000, opacity: 1 }]) });
+    expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['transform']).toBeUndefined();
+  });
+
+  it('reveals a stroke by dashing it with the path\'s own length', () => {
+    const l = layer('line', { type: 'path', d: 'M 0 0 L 100 0', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
+    const half = layersAt([l], 500)[0] as unknown as Record<string, unknown>;
+    expect(half['stroke_dasharray']).toBe(100);
+    expect(half['stroke_dashoffset']).toBe(50);        // half still hidden
+  });
+
+  it('stops dashing once the line is fully drawn', () => {
+    const l = layer('line', { type: 'path', d: 'M 0 0 L 100 0', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
+    expect((layersAt([l], 1000)[0] as unknown as Record<string, unknown>)['stroke_dashoffset']).toBeUndefined();
+  });
+
+  it('ignores draw on a layer with no path to measure', () => {
+    const l = layer('box', { animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
+    expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();
+  });
+});

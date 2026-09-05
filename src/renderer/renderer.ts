@@ -250,6 +250,25 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     el.setAttribute('clip-path', `url(#cp-${layer.clip_path_ref})`);
   }
 
+  // ── Static transform + draw-on ────────────────────────────
+  // The keyframe engine animates skew_x/skew_y/draw and the CSS route plays
+  // them, but a SAMPLED frame could not: nothing carried them onto the element,
+  // so an exported still of a skewed or half-drawn layer showed it upright and
+  // complete. These two fields are what the flipbook writes to materialise
+  // them, and because the SVG export runs this same renderer through JSDOM,
+  // the editor and every export agree.
+  const lo = layer as unknown as Record<string, unknown>;
+  if (typeof lo['transform'] === 'string' && lo['transform'].trim()) {
+    const prior = el.getAttribute('transform');
+    el.setAttribute('transform', prior ? `${prior} ${lo['transform']}` : lo['transform']);
+  }
+  if (typeof lo['stroke_dasharray'] === 'string' || typeof lo['stroke_dasharray'] === 'number') {
+    el.setAttribute('stroke-dasharray', String(lo['stroke_dasharray']));
+  }
+  if (typeof lo['stroke_dashoffset'] === 'number') {
+    el.setAttribute('stroke-dashoffset', String(lo['stroke_dashoffset']));
+  }
+
   // ── Motion path animation ─────────────────────────────────
   if ('motion_path' in layer && layer.motion_path !== undefined) {
     const mp = layer.motion_path;
