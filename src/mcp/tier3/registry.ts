@@ -154,10 +154,13 @@ export const TIER3_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['presets', 'sequence', 'track', 'motion', 'keyframe', 'frame', 'timeline', 'clear', 'export'], description: 'Which animation action to run.' },
+        op:           { type: 'string', enum: ['presets', 'sequence', 'track', 'motion', 'motion_path', 'keyframe', 'frame', 'timeline', 'clear', 'export'], description: 'Which animation action to run.' },
         design_path:  { type: 'string', description: 'Path to .design.yaml (every op except presets).' },
         page_id:      { type: 'string', description: 'Which page of a carousel/deck to act on (default: first).' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path.' },
+        path:         { type: 'string', description: 'op:motion_path — the SVG path the layer travels, as a `d` string. It OFFSETS the layer from where it already sits, so it normally starts at "M 0 0" (e.g. "M 0 0 Q 200 -120 400 0" arcs right and back down). M L H V C S Q T Z, absolute or relative; elliptical arcs (A) are refused because the exporter would have to approximate them and the frames would then disagree with the browser.' },
+        auto_rotate:  { type: 'boolean', description: 'op:motion_path — turn the layer to face along the curve as it travels.' },
+        clear:        { type: 'boolean', description: 'op:motion_path — remove the path from the named layers instead of setting one.' },
         steps:        { type: 'array', items: { type: 'object', properties: {} }, description: 'op:sequence — ordered steps [{preset, layer_ids?, at?, duration?, stagger_ms?, easing?, distance?}]. Omit `at` to start when the previous step ends; omit layer_ids to target the whole page.' },
         layer_id:     { type: 'string', description: 'op:keyframe/track — target layer id.' },
         layer_ids:    { type: 'array', items: { type: 'string' }, description: 'op:motion/track/clear — layers to act on, IN THE ORDER they should fire. Omit to target every layer on the page (a LOCKED group counts as one unit).' },
