@@ -916,6 +916,32 @@ Never pruned. Snapshots are capped at 20 per design because they are bulk;
 lineage is not, because a capped audit log is the partial-receipt bug wearing a
 different hat.
 
+### 11.0.3 Restore — the other half of the history
+
+Every mutating tool already calls `snapshot()` before it writes, so a design has
+up to 20 previous states in `.mcp_versions/`. Nothing could read one back. That
+left an agent able to *prove* a change went wrong and unable to take it back —
+the gap that makes an unattended loop unsafe, since `heal`, `tokens`,
+`patch_spec` and `resize` all rewrite a design in place.
+
+`manage_design {op:"restore", to:<seq>}` closes it. Addressing is by **content**,
+never by filename or position: a snapshot is the state seq N ended at if and only
+if its bytes hash to what seq N recorded as its `after`, using the same hash
+lineage writes with. So a restore is checkable (`verified:true`) rather than
+hopeful, and a pruned state fails loudly — naming the seqs that survive — instead
+of quietly restoring a neighbour. `lineage` marks every record `restorable`, so
+the choice is visible before the rollback is attempted, not after.
+
+Two consequences worth stating:
+
+- **The rollback is appended, not applied backwards.** A restore is a write like
+  any other, so it gets its own lineage record and the chain stays intact. The
+  history never loses the fact that a change happened and was undone, and
+  restoring *forward* again works for as long as that snapshot survives.
+- **Bytes are written verbatim** (`writeRaw`, not `writeYAML`). Re-dumping the
+  parsed YAML would re-order and re-wrap it, changing the hash — the restored
+  file could then no longer be checked against the state it claims to be.
+
 ### 11.0.1 Design tokens — colour by role
 
 A design may declare its palette of record:

@@ -12,7 +12,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer } from '../schema/types';
 import type { ToolResult, ProgressItem, NextAction } from './types';
 
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, writeRaw, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 import { resolveThemeColors } from './engine-layer-predicates';
 import { expandShorthandLayers } from './shorthand-parser';
 import { resetPresetFitReports, drainPresetFitReports } from './preset-fit';
@@ -21,7 +21,8 @@ import {
   mergeSpecChanges, toShorthand, replaceLayer, diffSpecKeys, describeDrift, specOf, type SpecEntry,
 } from './design-spec';
 import { collectTokens, retokenize } from './design-tokens';
-import { readLineage, chainGaps } from './design-lineage';
+import { readLineage, chainGaps, contentHash } from './design-lineage';
+import { snapshotIndex, restorePoints, resolveRestoreTarget, keepCap } from './design-restore';
 
 /** Every page's layers, tagged with the page they came from. */
 function surfaces(spec: DesignSpec): { pageId?: string; layers: Layer[] }[] {
@@ -243,6 +244,115 @@ export function patchDesignSpec(args: {
   }, bak);
 }
 
+// ── restore ─────────────────────────────────────────────────
+
+/** How big a design is, in the terms a restore changes. */
+function shapeOf(spec: DesignSpec): { pages: number; layers: number } {
+  const s = surfaces(spec);
+  return { pages: spec.pages?.length ?? 0, layers: s.reduce((n, x) => n + x.layers.length, 0) };
+}
+
+/** Put a design back to a state its history recorded.
+ *
+ *  Not a rewrite of the past: the restore is itself a change, so it appends to
+ *  the lineage like any other write. The history stays append-only and shows
+ *  the rollback happening, which is what makes it auditable. */
+export function restoreDesign(args: {
+  design_path: string; to?: number | string; dry_run?: boolean; project_path?: string;
+}): ToolResult {
+  const op = 'restore';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  const { records } = readLineage(dPath);
+  const index = snapshotIndex(dPath);
+  const points = restorePoints(records, index);
+  const open = points.filter(p => p.available && !p.current);
+
+  if (records.length === 0) {
+    return errResult(op, 'This design has no recorded history, so there is no state to go back to.',
+      'Lineage records from the first write onward — a design last touched before it shipped has none. Everything from the next change on is restorable.');
+  }
+
+  // No target → say what the choices are, rather than guessing one.
+  if (args.to === undefined || args.to === null || args.to === '') {
+    progress.push(pInfo(`${open.length} state(s) you can go back to`, `of ${records.length} recorded`));
+    return okResult(op, {
+      restore_points: points.map(p => ({ seq: p.seq, op: p.op, ts: p.ts, bytes: p.bytes, available: p.available, ...(p.current ? { current: true } : {}) })),
+      count: points.length, available: open.map(p => p.seq),
+      note: `Pass to:<seq> to go back to the state that change ended at. Snapshots are capped at ${keepCap()} per design, so entries marked available:false are readable history whose content has been pruned.`,
+      progress, context: buildContext(op, `${open.length} restore point(s) for ${path.basename(dPath)}`),
+    });
+  }
+
+  const resolved = resolveRestoreTarget(records, index, args.to);
+  if (!resolved.ok) return errResult(op, resolved.message, resolved.hint, progress);
+  const { point, entry } = resolved;
+
+  const current = readYAML<DesignSpec>(dPath);
+  const beforeShape = shapeOf(current);
+  let target: DesignSpec;
+  try {
+    target = readYAML<DesignSpec>(entry.path);
+  } catch (err) {
+    return errResult(op, `The snapshot for #${point.seq} is on disk but will not parse: ${err instanceof Error ? err.message : String(err)}`,
+      'Pick another restore point — manage_design {op:"restore"} with no `to` lists them.');
+  }
+  const afterShape = shapeOf(target);
+  const delta = {
+    layers: `${beforeShape.layers} → ${afterShape.layers}`,
+    ...(beforeShape.pages || afterShape.pages ? { pages: `${beforeShape.pages} → ${afterShape.pages}` } : {}),
+    bytes: `${Buffer.byteLength(fs.readFileSync(dPath, 'utf-8'))} → ${entry.bytes}`,
+  };
+
+  if (point.current) {
+    progress.push(pInfo('Already in that state', `nothing to undo — the design already matches #${point.seq}`));
+    return okResult(op, {
+      restored: false, to: point.seq, unchanged: true,
+      note: `The design's current content is exactly what change #${point.seq} (${point.op}) produced, so a restore would write the same bytes back.`,
+      progress, context: buildContext(op, `No change needed for ${path.basename(dPath)}`),
+    });
+  }
+
+  const discarded = records.filter(r => r.seq > point.seq).map(r => `#${r.seq} ${r.op}`);
+  if (args.dry_run) {
+    progress.push(pInfo(`Would restore to #${point.seq} (${point.op})`, delta.layers));
+    return okResult(op, {
+      dry_run: true, to: point.seq, target_op: point.op, target_ts: point.ts, delta,
+      would_undo: discarded,
+      note: discarded.length
+        ? `${discarded.length} later change(s) would be undone in the file. They stay in the history — a restore appends, it never rewrites what came before.`
+        : 'No later changes to undo.',
+      progress, context: buildContext(op, `Dry run: restore ${path.basename(dPath)} to #${point.seq}`),
+    });
+  }
+
+  // Snapshot the state we are leaving, so the restore is itself undoable.
+  const bak = snapshot(dPath);
+  const raw = fs.readFileSync(entry.path, 'utf-8');
+  writeRaw(dPath, raw);
+
+  // Verify against the FILE, not the log — the log entry for this very call is
+  // not written until the op scope closes, and the question is anyway whether
+  // the bytes on disk are the ones the target state recorded.
+  const exact = contentHash(fs.readFileSync(dPath, 'utf-8')) === point.hash;
+  progress.push(pOk(`Restored to #${point.seq} (${point.op})`, `${delta.layers} layer(s) · ${entry.bytes}B`));
+  if (!exact) progress.push(pWarn('Restored content does not hash to the recorded state', 'the bytes were written, but they are not the ones #' + point.seq + ' recorded'));
+  for (const d of discarded) progress.push(pInfo('Undone in the file', d));
+
+  const next_action: NextAction = { tool: 'render_preview', params: { design_path: dPath }, remaining: -1, hint: 'Confirm the restored state looks right before building on it.' };
+  return okResult(op, {
+    restored: true, to: point.seq, target_op: point.op, target_ts: point.ts,
+    from: entry.label, hash: point.hash, verified: exact, delta,
+    undone: discarded,
+    note: 'The rollback is appended to the history as its own change — the record it went back to is untouched, so restoring again is always possible while its snapshot survives.',
+    next_action, progress,
+    context: buildContext(op, `Restored ${path.basename(dPath)} to #${point.seq}`, [{ type: 'design', path: dPath, role: 'updated' }]),
+    handover: buildHandover('PATCH', { design_path: dPath }),
+  }, bak);
+}
+
 // ── lineage ─────────────────────────────────────────────────
 
 /** A design's append-only history: what changed it, when, and what it hashed to.
@@ -271,6 +381,13 @@ export function designLineage(args: {
   const limit = Math.max(1, Math.min(args.limit ?? 20, 200));
   const shown = records.slice(-limit);
   const gaps = chainGaps(records);
+  // Which of these can still be UNDONE. Lineage is unbounded, snapshots are
+  // capped, so the two diverge — and the agent has to know which entries are
+  // merely readable before it plans a rollback, not after it tries one.
+  const points = restorePoints(records, snapshotIndex(dPath));
+  const byId = new Map(points.map(p => [p.seq, p]));
+  const restorable = points.filter(p => p.available && !p.current).map(p => p.seq);
+  const rows = shown.map(r => ({ ...r, restorable: byId.get(r.seq)?.available === true }));
   const total = records[records.length - 1].after.bytes;
   const ops = new Map<string, number>();
   for (const r of records) ops.set(r.op, (ops.get(r.op) ?? 0) + 1);
@@ -279,9 +396,12 @@ export function designLineage(args: {
   for (const g of gaps) progress.push(pWarn(`Chain break at #${g.seq}`, `expected ${g.expected}, found ${g.found} — the file was changed outside the tool surface`));
 
   return okResult(op, {
-    records: shown, count: records.length, showing: shown.length, scope,
+    records: rows, count: records.length, showing: shown.length, scope,
     by_op: Object.fromEntries(ops),
     current_bytes: total,
+    restorable: restorable.length
+      ? { seqs: restorable, how: 'manage_design {op:"restore", to:<seq>} puts the design back to the state that change ended at — byte for byte, checked against the hash recorded here.' }
+      : { seqs: [], how: `Nothing to roll back to: states are kept as snapshots, capped at ${keepCap()} per design, and none of this design's earlier ones survive.` },
     ...(gaps.length ? {
       chain_breaks: gaps,
       chain_note: `${gaps.length} record(s) do not follow on from the previous one — the design was edited outside the tool surface (hand-edited, restored from a snapshot, or synced). The history is complete for tool writes; it is not intact as a chain.`,
