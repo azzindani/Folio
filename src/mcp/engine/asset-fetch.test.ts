@@ -215,6 +215,42 @@ describe('assetFetch', () => {
     expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/icons/mdi-cloud.svg');
   });
 
+  const iconSvg = (n: number): Buffer =>
+    Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M0 0h24v${n}H0z"/></svg>`);
+
+  it('warns that an untinted icon is black, because that is only visible in a paid preview', async () => {
+    const dir = makeProject('fetch-icon-black');
+    jsonMock.mockResolvedValue({ mdi: { license: { spdx: 'Apache-2.0' } } });
+    bytesMock.mockResolvedValue({
+      buffer: iconSvg(21), contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/bell.svg',
+    });
+    const r = await assetFetch({ project_path: dir, ref: 'iconify:mdi:bell', alt: 'bell', scope: 'project' }) as Record<string, unknown>;
+    const progress = r['progress'] as { message?: string; detail?: string }[];
+    expect(progress.some(p => String(p.message).includes('BLACK'))).toBe(true);
+  });
+
+  it('says so when icon_color was dropped for not being a hex, instead of silently going black', async () => {
+    const dir = makeProject('fetch-icon-badhex');
+    jsonMock.mockResolvedValue({ mdi: { license: { spdx: 'Apache-2.0' } } });
+    bytesMock.mockResolvedValue({
+      buffer: iconSvg(22), contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/star.svg',
+    });
+    const r = await assetFetch({ project_path: dir, ref: 'iconify:mdi:star', alt: 'star', scope: 'project', icon_color: 'red' }) as Record<string, unknown>;
+    const progress = r['progress'] as { message?: string }[];
+    expect(progress.some(p => String(p.message).includes('"red" ignored'))).toBe(true);
+  });
+
+  it('stays quiet about colour when the icon was tinted properly', async () => {
+    const dir = makeProject('fetch-icon-tinted');
+    jsonMock.mockResolvedValue({ mdi: { license: { spdx: 'Apache-2.0' } } });
+    bytesMock.mockResolvedValue({
+      buffer: iconSvg(23), contentType: 'image/svg+xml', finalUrl: 'https://api.iconify.design/mdi/heart.svg',
+    });
+    const r = await assetFetch({ project_path: dir, ref: 'iconify:mdi:heart', alt: 'heart', scope: 'project', icon_color: '#F0A63C' }) as Record<string, unknown>;
+    const progress = r['progress'] as { message?: string }[];
+    expect(progress.some(p => String(p.message).includes('BLACK'))).toBe(false);
+  });
+
   it('warns when no alt was given, because the stored one describes the file not the picture', async () => {
     const dir = makeProject('fetch-noalt');
     jsonMock.mockResolvedValue({ url: 'https://live.staticflickr.com/1.png', title: 'DSC_0042', license: 'cc0' });
