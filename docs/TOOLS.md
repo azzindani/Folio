@@ -134,7 +134,10 @@ Render to a PNG returned INLINE so you can SEE the design (no file). Pair with d
 
 ### `diagnose_design`
 Troubleshooter — off-canvas, collisions, misalignment, tiny/low-contrast text, missing background, weak hierarchy. Run before seal_design.
-- **Req:** `design_path`. **Opt:** `page_id`.
+- **Req:** `design_path`. **Opt:** `page_id`, `heal`, `max_rounds`, `dry_run`.
+- **`heal:true` makes it a LOOP** — diagnose → fix → re-diagnose, until clean or until a pass fixes nothing (progress is the stop condition, not a round count). Repairs **spatial correctness and legibility only**: a preset whose content left the canvas is re-laid out *from its stored spec* at the size it actually has, stranded layers come back on-canvas, sub-14px text is raised, a missing ground is filled, invisible text re-lit, positionless layers flowed.
+- It **never** touches palette, hierarchy, composition or copy — those return as `for_you_to_judge`, because a loop that re-made aesthetic calls would converge every design on one look (CLAUDE.md §0.4). The reply keeps three lists apart: `fixed`, `could_not_fix` (allowed but impossible — usually too much content), and `for_you_to_judge`.
+- The **visual half is the model's**: heal fixes what geometry can prove, then `render_preview` and look. Full loop: compose → heal → preview → look → `patch_spec` → repeat.
 
 ### `export_design`
 Export to SVG, PNG, PDF (true vector, selectable text), HTML or PPTX. A carousel exports one file per page. For an interactive report use `report {op:export}`; for a presentation/video use `presentation {op:export}` / `animation {op:export}`.
