@@ -146,7 +146,7 @@ PNG only (pure-TS codec; no sharp/canvas in the `bun --smol` container). Non-PNG
 ## 5. What is still open (for the next session)
 
 * **Editor**: the timeline panel (`src/ui/panels/timeline-panel.ts`) still shows diamonds only — no per-frame easing picker, no scrubber preview of skew/blur/draw, no `op:sequence` equivalent. Client changes need a dist rebuild.
-* **JPEG/WebP decode** for the pixel pipeline.
+* ~~**JPEG/WebP decode**~~ — DONE. `src/utils/raster-decode.ts` reads PNG/JPEG/WebP/GIF into RGBA and asset_process always writes PNG. No new dependency: resvg is already here for every raster export and decodes embedded images, so the bytes are wrapped in a one-element SVG at NATIVE size and rendered — one code path, no per-format decoders, and the same library that will rasterise the design later.
 * **Flipbook skew/draw**: materialise via a transform field on the layer schema, or rasterise the SVG route's CSS per frame with a browser.
 * ~~**Motion paths**~~ — DONE. `animation {op:"motion_path", layer_ids, path}` sets it; `src/animation/motion-path.ts` walks it; `gif-frames.ts` samples it, so `op:"frame"` and the GIF agree with the browser instead of showing the layer parked where it was authored. Progress is by ARC LENGTH (cumulative-length table over a flattened polyline), so the pace stays constant across segments of different lengths. Elliptical arcs (`A`) are REFUSED, not approximated — the browser draws the real arc and an approximation would disagree with it frame for frame. The path OFFSETS the layer from where it sits, so it normally starts `M 0 0`.
 * **Illustrator-side**: boolean ops and shape paths exist in the renderer; offset path, outline stroke, blend/morph between shapes are not exposed.

@@ -122,10 +122,14 @@ describe('resize', () => {
 });
 
 describe('refusals', () => {
-  it('refuses a non-PNG instead of returning it untouched', () => {
+  // JPEG used to be refused outright — honest while there was no decoder, but a
+  // tax on the most ordinary request, since photos ARE JPEGs. What must still
+  // be refused is bytes that are not an image, and a TRUNCATED jpeg header is
+  // exactly that: sniffing says "jpeg", decoding cannot produce pixels.
+  it('refuses a truncated image rather than returning it untouched', () => {
     // Silently skipping would leave the caller believing the background was gone.
     expect(() => processAsset(Buffer.from('\xff\xd8\xff JPEG'), 'jpg', { remove_bg: true }))
-      .toThrow(/needs a PNG/);
+      .toThrow();
   });
 
   it('carries a hint explaining what to do instead', () => {
@@ -133,7 +137,9 @@ describe('refusals', () => {
       processAsset(Buffer.from('nope'), 'jpg', { remove_bg: true });
       expect.unreachable('should have thrown');
     } catch (e) {
-      expect((e as ProcessError).hint).toContain('Re-save');
+      // Bytes that are not an image at all get the diagnosis that actually
+      // helps — the usual cause is an error page saved with an image name.
+      expect((e as ProcessError).hint).toContain('actually contains an image');
     }
   });
 
