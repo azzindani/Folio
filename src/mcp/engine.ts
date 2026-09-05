@@ -31,3 +31,4 @@ export { applyMotion } from './engine/motion';
 export { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './engine/motion-sequence';
 export { renderFrame } from './engine/motion-frame';
 export { setMotionPath } from './engine/motion-path-op';
+export { shapeOp } from './engine/shape-ops-op';
