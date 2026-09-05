@@ -50,6 +50,59 @@ describe('signature — content is not style', () => {
     expect(compareSignatures(a, b).verdict).toBe('duplicate');
   });
 
+  it('how much content there is does not move the band; where it sits does', () => {
+    // The vertical measure is read at the band's CENTRE, not its bottom edge.
+    // Off the bottom edge, growing a block downward eventually crossed 0.6H and
+    // flipped the reading; off the top edge it fails the same way, because a
+    // centred block grows in both directions at once. The centre is the layout
+    // decision — the extent is just how much content there is.
+    //
+    // Hand-placed layers, deliberately: a PRESET re-rolls its whole layout from
+    // the copy (mood-bank hashes align/columns/header off the title, Folio's own
+    // anti-sameness mechanism), so a preset's geometry is copy-derived by design
+    // and no measure can or should hold it still. This pins the part that is
+    // mine — the classifier — with nothing else moving.
+    const stack = (h: number): ShorthandLayer => ({
+      id: 'g', type: 'group', x: 0, y: 0, width: 1080, height: 1350, locked: true,
+      layers: [{
+        id: 't1', type: 'text', x: 80, y: 675 - h / 2, width: 920, height: h,
+        content: { type: 'plain', value: 'Same place, more of it' },
+        style: { font_size: 48, color: '#ffffff' },
+      }],
+    } as unknown as ShorthandLayer);
+
+    // Three blocks centred on the canvas, 200px tall to 900px tall.
+    const bands = [200, 500, 900].map(h => sign([stack(h)]).composition.split('/')[1]);
+    expect(new Set(bands).size).toBe(1);
+    expect(bands[0]).toBe('mid');
+
+    // The consequence that reaches a model: composition stays in `shared`, so
+    // the echo finding cannot tell it to vary the one thing that is identical.
+    const cmp = compareSignatures(sign([stack(200)]), sign([stack(500)]));
+    expect(cmp.shared).toContain('composition');
+
+    // And the measure still moves when the block genuinely sits elsewhere.
+    const high = sign([{
+      id: 'g', type: 'group', x: 0, y: 0, width: 1080, height: 1350, locked: true,
+      layers: [{ id: 't1', type: 'text', x: 80, y: 60, width: 920, height: 200, content: { type: 'plain', value: 'Up top' }, style: { font_size: 48, color: '#ffffff' } }],
+    } as unknown as ShorthandLayer]);
+    expect(high.composition.split('/')[1]).toBe('top');
+  });
+
+  it('still separates a page-spanning composition from a centred one', () => {
+    // `full` has to keep meaning something after the gate moved to 0.8, or the
+    // reading is dead and `unused` advertises a departure nobody can take.
+    const edgeToEdge = sign([{
+      id: 'g', type: 'group', x: 0, y: 0, width: 1080, height: 1350, locked: true,
+      layers: [
+        { id: 't1', type: 'text', x: 80, y: 40, width: 920, height: 100, content: { type: 'plain', value: 'TOP' }, style: { font_size: 72, color: '#ffffff' } },
+        { id: 't2', type: 'text', x: 80, y: 1220, width: 920, height: 100, content: { type: 'plain', value: 'BOTTOM' }, style: { font_size: 72, color: '#ffffff' } },
+      ],
+    } as unknown as ShorthandLayer]);
+    expect(edgeToEdge.composition.split('/')[1]).toBe('full');
+    expect(sign([sections()]).composition.split('/')[1]).not.toBe('full');
+  });
+
   it('a different preset is a different design', () => {
     const a = sign([sections()]);
     const b = sign([{
