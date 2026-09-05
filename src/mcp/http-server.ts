@@ -160,7 +160,12 @@ export async function handleMCP(req: MCPRequest, modern = false): Promise<Dispat
       if (!fn) return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 })) }, toolName: name };
       try {
         // Every write this call makes is attributed to it — see design-lineage.
-        const raw = await withOpScope(name, args, () => fn(args));
+        // Eight of the tools are multiplexed on an `op`, so the tool name alone
+        // would record "manage_design" for a recolour, a resize and a rename
+        // alike — a history that cannot answer what actually happened. Record
+        // the action, not just the door it came through.
+        const subOp = typeof args['op'] === 'string' ? `:${args['op']}` : '';
+        const raw = await withOpScope(`${name}${subOp}`, args, () => fn(args));
         return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult(raw)) }, raw, toolName: name };
       } catch (err) {
         return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 })) }, toolName: name };
