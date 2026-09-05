@@ -19,6 +19,7 @@ import { analyzeLayers, flatTextStyleFindings, type Finding } from './engine/dia
 import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
+import { readBaseline, writeBaseline, diffPages } from './engine/preview-diff';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
 import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
@@ -484,6 +485,10 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
 // (what previews are FOR) at roughly a quarter of the image tokens; reading fine
 // copy is what `full` and an explicit `scale` are for.
 const PREVIEW_MAX_EDGE = 960;
+// How many changed pages one changed_only reply will rasterise. A deck where
+// everything moved would otherwise hand back 20 images in a single response —
+// the exact cost §3.1 is about.
+const PREVIEW_DIFF_MAX = 6;
 
 /** Claude bills an image at about (w × h) / 750 tokens — quoted back on every
  *  preview so an agent can budget its verification loop instead of guessing. */
@@ -491,7 +496,7 @@ function estImageTokens(w: number, h: number): number {
   return Math.round((w * h) / 750);
 }
 
-export function renderPreview(args: { design_path: string; project_path?: string; page_id?: string; scale?: number; max_edge?: number; full?: boolean }): ToolResult {
+export function renderPreview(args: { design_path: string; project_path?: string; page_id?: string; scale?: number; max_edge?: number; full?: boolean; changed_only?: boolean }): ToolResult {
   const op = 'render_preview';
   const progress: ProgressItem[] = [];
   const dPath = resolveDesignPath(args.design_path, args.project_path);
@@ -508,6 +513,48 @@ export function renderPreview(args: { design_path: string; project_path?: string
   try {
     // Same asset resolution as export_design — preview must show the truth.
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
+    const rasterise = (svg: string, dir: string): Buffer => Buffer.from(new Resvg(svg, {
+      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(dir),
+    }).render().asPng());
+
+    const allPages = spec.pages ?? [];
+    if (args.changed_only && allPages.length > 1 && !args.page_id) {
+      const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
+      // Render every page's SVG — vectors are cheap; the raster is the bill.
+      const rendered = allPages.map(p => ({
+        id: p.id,
+        svg: renderToSVGString({ ...spec, layers: p.layers ?? [], pages: undefined } as DesignSpec, undefined, undefined, componentRegistry),
+      }));
+      const { diffs, next } = diffPages(readBaseline(dPath), rendered);
+      const stored = writeBaseline(dPath, next);
+      const show = diffs.filter(d => d.changed || d.first_look);
+      const shown = show.slice(0, PREVIEW_DIFF_MAX);
+      const _attachments = shown.map(d => ({
+        type: 'image' as const,
+        data: rasterise(rendered[d.index]?.svg ?? '', projDir).toString('base64'),
+        mimeType: 'image/png',
+      }));
+      const firstLook = diffs.filter(d => d.first_look).map(d => d.id);
+      const changed = diffs.filter(d => d.changed).map(d => d.id);
+      const unchanged = diffs.filter(d => !d.changed && !d.first_look).map(d => d.id);
+      const outW = Math.round((spec.document?.width ?? 0) * scale);
+      const outH = Math.round((spec.document?.height ?? 0) * scale);
+      progress.push(pOk(`${shown.length} of ${allPages.length} page(s) rendered`,
+        `${changed.length} changed · ${firstLook.length} never seen · ${unchanged.length} unchanged and skipped`));
+      return okResult(op, {
+        status: 'ok', mode: 'changed_only', pages_total: allPages.length,
+        pages_changed: changed, pages_first_look: firstLook, pages_unchanged: unchanged,
+        rendered: shown.map(d => d.id), scale, pixels: `${outW}×${outH}`,
+        est_image_tokens: estImageTokens(outW, outH) * shown.length,
+        ...(show.length > shown.length ? { capped: `${show.length} pages needed a look; showing the first ${PREVIEW_DIFF_MAX}. Call again to advance, or pass page_id for a specific one.` } : {}),
+        ...(unchanged.length ? { skipped_note: `${unchanged.length} page(s) render byte-identically to the last preview — nothing to see, and nothing charged for them.` } : {}),
+        ...(firstLook.length && !changed.length && !unchanged.length ? { baseline_note: 'First changed_only call on this design: there was nothing to compare against, so every page counts as a first look. The next call will skip whatever has not moved.' } : {}),
+        ...(stored ? {} : { baseline_warning: 'Could not write the preview baseline, so the next changed_only call will again treat every page as new.' }),
+        ...(assetNotes.length ? { notes: assetNotes } : {}),
+        progress, context: buildContext(op, `Preview of "${spec.meta.name}" — ${shown.length}/${allPages.length} page(s)`), _attachments,
+      });
+    }
+
     const renderSpec = (spec.pages?.length)
       ? ({ ...spec, layers: (args.page_id ? spec.pages.find(p => p.id === args.page_id) : spec.pages[0])?.layers ?? [], pages: undefined } as DesignSpec)
       : spec;

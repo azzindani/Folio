@@ -17,6 +17,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         scale:        { type: 'number', description: 'Raster scale 0.5–2 — setting it opts out of the cheap default and renders at that scale' },
         max_edge:     { type: 'number', description: 'Longest edge in px for the cheap default (default 960)', default: 960 },
         full:         { type: 'boolean', description: 'Full canvas resolution — costs ~4× the tokens of the default', default: false },
+        changed_only: { type: 'boolean', description: 'MULTI-PAGE RE-CHECK: render only the pages whose rendered output actually moved since the last preview, in ONE call. Without it, verifying an 8-page deck after a one-page edit costs 8 calls and 8 images. Pages that render byte-identically are named and skipped, not charged for. The first call on a design has no baseline, so every page counts as a first look; the next one skips whatever has not moved. Ignored with page_id or on a single-page design.', default: false },
       },
       required: ['design_path'],
     },
