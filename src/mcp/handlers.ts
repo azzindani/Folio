@@ -53,7 +53,11 @@ const TIER2_RAW: Record<string, Handler> = {
 // presentations, animation), each folded into one multiplexed tool.
 const TIER3_RAW: Record<string, Handler> = {
   render_preview:  (a) => engine.renderPreview(a as Parameters<typeof engine.renderPreview>[0]),
-  diagnose_design: (a) => engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0]),
+  // heal:true turns the gate into a LOOP — diagnose, fix what is mechanically
+  // fixable, re-diagnose, repeat until clean or until a pass changes nothing.
+  diagnose_design: (a) => (a['heal'] === true
+    ? engine.healDesign(a as Parameters<typeof engine.healDesign>[0])
+    : engine.diagnoseDesign(a as Parameters<typeof engine.diagnoseDesign>[0])),
   export_design:   (a) => engine.exportDesign(a as Parameters<typeof engine.exportDesign>[0]),
   open_in_editor:  (a) => engine.openInEditor(a as Parameters<typeof engine.openInEditor>[0]),
   templates:       (a) => d.dispatchTemplates(a),

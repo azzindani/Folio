@@ -616,6 +616,25 @@ Spec round-trip (editing a PRESET — prefer this over the two above):
   Hand-placed layers have no spec and need none — they ARE their own source; use
   edit_layer(op:"update") / patch_design for those.
 
+Self-heal (close the loop yourself instead of hand-fixing findings):
+  diagnose_design(design_path, heal:true)     diagnose → fix → re-diagnose → …
+  It loops until clean or until a pass fixes nothing (progress is the stop
+  condition, not a round count), then reports three separate things:
+    fixed[]              what it repaired
+    could_not_fix[]      what it is ALLOWED to fix but couldn't — almost always
+                         too much content for the canvas, so CUT content
+    for_you_to_judge[]   palette, hierarchy, density, copy — YOURS
+  It repairs spatial correctness + legibility only: a preset whose content left
+  the canvas is RE-LAID OUT from its stored spec at the size it actually has
+  (not shoved inside, which would wreck the layout), stranded layers come back,
+  sub-14px text is raised, a missing ground is filled, invisible text re-lit,
+  positionless layers flowed. It never touches colour or composition — a loop
+  that re-made those would converge every design on one look.
+  THE VISUAL HALF IS YOURS: heal fixes what geometry can prove. Then
+  render_preview and LOOK — "the eyebrow crowds the headline", "that column is
+  doing nothing", "this reads flat" is judgement no measurement returns. The
+  full loop is: compose → heal → render_preview → look → patch_spec → repeat.
+
 Tokens + components (the system layer — reach for these before hand-placing):
   TOKENS — colour by ROLE, not by literal.
     manage_design(op:"tokens", design_path)                    read the palette

@@ -22,6 +22,7 @@ export { addLayers, appendPage } from './engine-layer-tools';
 export { patchDesign, sealDesign, addLayer, updateLayer, removeLayer } from './engine-edit-tools';
 export { collectHrefRects, exportDesign, diagnoseDesign, renderPreview, alignLayers, batchCreate } from './engine-export-tools';
 export { saveAsComponent, listComponents } from './engine-component-tools';
+export { healDesign } from './engine-heal-tools';
 export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from './engine-template-tools';
 export { createPresentation, exportPresentation, generateReport, bindData, exportReport, validateReportDesign } from './engine-report-tools';
 export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';
