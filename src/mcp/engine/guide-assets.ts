@@ -97,8 +97,9 @@ modification — the search filters for it.
 
 ## The pixel recipe (\`process\`) — Photoshop in one object
 Accepted by asset_add (during ingest) and asset_process (on a stored file, which
-writes a NEW png and never touches the original). PNG only: another format
-returns an error rather than silently skipping the work.
+writes a NEW png and never touches the original). Reads PNG, JPEG, WebP and
+GIF; always WRITES PNG, because the pipeline works in RGBA and re-encoding a
+photo as JPEG on every edit would compound its artefacts.
 
 Applied in THIS order regardless of the order you write the keys:
   crop → remove_bg → trim → rotate/flip → fit → adjust →

@@ -13,7 +13,8 @@
  * nothing that needs a native build in a `bun --smol` container.
  */
 
-import { decodePNG, encodePNG, isPNG, PngError, type RasterImage } from '../../utils/png-codec';
+import { encodePNG, isPNG, PngError, type RasterImage } from '../../utils/png-codec';
+import { decodeRaster, DecodeError } from '../../utils/raster-decode';
 import { removeBackgroundPixels, type BgRemoveStats } from '../../utils/bg-remove-core';
 import { adjust, hasAdjust, hexToRgb, type AdjustSpec } from '../../utils/image-adjust';
 import { crop, cropToAspect, parseAspect, flip, rotate90, trim, pad, roundCorners, flatten, type CropSpec } from '../../utils/image-geometry';
@@ -206,29 +207,25 @@ export function processImage(img: RasterImage, spec: ProcessSpec): { img: Raster
 /**
  * Apply a ProcessSpec to raw asset bytes, returning new bytes.
  *
- * PNG only, and it says so rather than guessing: JPEG and WebP decoding are a
- * different order of work, and quietly returning the original file would leave
- * the caller believing a background had been removed when it had not.
+ * Reads PNG, JPEG, WebP and GIF; always WRITES PNG, because the pipeline works
+ * in RGBA and re-encoding a photo as JPEG on every edit would compound its
+ * artefacts. Refusing a JPEG used to be the honest answer while there was no
+ * decoder — but photos ARE JPEGs, so "re-save it as PNG first" was a tax on
+ * the most ordinary thing a caller could ask for. See utils/raster-decode.ts.
  */
 export function processAsset(buf: Buffer, ext: string, spec: ProcessSpec): ProcessResult {
   if (!hasWork(spec)) return { buffer: buf, notes: [] };
 
-  if (!isPNG(buf)) {
-    throw new ProcessError(
-      `Image processing needs a PNG; this asset is .${ext}.`,
-      'Re-save the source as PNG and upload again. JPEG/WebP processing is not supported yet, ' +
-      'and returning the file untouched would look like it had worked.',
-    );
-  }
-
   let img: RasterImage;
   try {
-    img = decodePNG(buf);
+    img = decodeRaster(buf);
   } catch (e) {
+    if (e instanceof DecodeError) throw new ProcessError(e.message, e.hint);
     if (e instanceof PngError) throw new ProcessError(e.message, 'Re-save the image as an 8-bit non-interlaced PNG.');
     throw e;
   }
 
   const r = processImage(img, spec);
-  return { buffer: encodePNG(r.img), notes: r.notes, bgStats: r.bgStats };
+  const notes = isPNG(buf) ? r.notes : [...r.notes, `decoded from ${ext || 'source'} and stored as PNG`];
+  return { buffer: encodePNG(r.img), notes, bgStats: r.bgStats };
 }
