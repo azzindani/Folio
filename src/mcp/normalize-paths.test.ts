@@ -127,3 +127,24 @@ describe('create_design resolves its own project_path', () => {
     expect(fs.existsSync('/etc/folio-nope')).toBe(false);
   });
 });
+
+describe('`path` is not always a filesystem path', () => {
+  let prev: string | undefined;
+  beforeEach(() => { prev = process.env['FOLIO_PROJECTS_DIR']; process.env['FOLIO_PROJECTS_DIR'] = PROJECTS; });
+  afterEach(() => { if (prev === undefined) delete process.env['FOLIO_PROJECTS_DIR']; else process.env['FOLIO_PROJECTS_DIR'] = prev; });
+
+  // Live failure: the SVG `d` for animation{op:"motion_path"} was rewritten as a
+  // project name, so the engine was handed
+  // "/home/folio/projects/M-0-0-A-50-50-0-0-1-100-0" and reported it could not
+  // walk a path the caller never sent.
+  it('leaves an SVG path alone for op:motion_path', () => {
+    const out = normalizeProjectPaths({ op: 'motion_path', design_path: 'p/designs/d.design.yaml', path: 'M 0 0 Q 250 -200 500 0' });
+    expect(out['path']).toBe('M 0 0 Q 250 -200 500 0');
+    expect(out['project_path']).toBeUndefined();
+  });
+
+  it('still treats `path` as a project path for every other op', () => {
+    const out = normalizeProjectPaths({ op: 'create', path: 'rainforest' });
+    expect(String(out['project_path'])).toContain('rainforest');
+  });
+});
