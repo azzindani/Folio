@@ -3,6 +3,7 @@
 import { isMinimalGuidance } from '../guidance-mode';
 import { craft, CRAFT_SECTIONS } from './craft';
 import { ASSETS_GUIDE } from './guide-assets';
+import { STYLE_GUIDE } from './guide-style';
 import { MOTION_GUIDE } from './guide-motion';
 import { WORKFLOW_GUIDE } from './guide-workflow';
 
@@ -607,6 +608,7 @@ Rebuild as layers (editable), NOT as a single image layer of the screenshot — 
 editable Folio design that matches the reference, not a pasted picture.`,
 
   assets: ASSETS_GUIDE,
+  style: STYLE_GUIDE,
 };
 
 // Frontier (minimal) instances: prepend a note that reframes the aesthetic
