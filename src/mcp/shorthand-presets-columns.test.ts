@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { columnWidths } from './shorthand-presets-columns';
 import { expandShorthandLayers } from './shorthand-expand';
+import { flattenRelativeGroups } from './engine-finalize-geom';
 
 interface Box { id?: string; type?: string; x?: number; y?: number; width?: number; height?: number; layers?: Box[] }
 
@@ -109,5 +110,34 @@ describe('columns container', () => {
     expect(kids).toHaveLength(2);
     // Each preset expanded into real content inside its own column.
     for (const k of kids) expect((k.layers?.length ?? 0)).toBeGreaterThan(0);
+  });
+});
+
+describe('a preset placed off the origin keeps its coordinates', () => {
+  // The live failure `columns` exposed. flattenRelativeGroups guesses whether a
+  // group's children are relative by asking if any sits ABOVE the group origin.
+  // Several presets put a decorative element there on purpose (`stat` has a glow
+  // at y=-146), so the guess fired, the offset was baked, and every coordinate
+  // doubled — a preset at x=990 rendered at 1980, off a 1920 canvas entirely.
+  // Latent for as long as presets only ever sat at x=0/y=0, where the pass
+  // returns early.
+  it('does not double a preset offset by flattenRelativeGroups', () => {
+    const g = expand({
+      type: 'columns', pos: [0, 0, 1920, 1080], gap: 60, pad: 80,
+      cols: [{ type: 'stat', value: '7.97M', label: 'tons' }, { type: 'list', items: ['a', 'b', 'c'] }],
+    });
+    const before = (g.layers ?? []).map(k => k.x);
+    flattenRelativeGroups([g as never]);
+    expect((g.layers ?? []).map(k => k.x)).toEqual(before);
+    expect(before).toEqual([80, 990]);
+  });
+
+  it('still flattens a HAND-AUTHORED group whose children are relative', () => {
+    const hand = {
+      id: 'g', type: 'group', x: 100, y: 100, width: 200, height: 200,
+      layers: [{ id: 'a', type: 'rect', x: 0, y: 0, width: 50, height: 50 }],
+    } as never;
+    flattenRelativeGroups([hand]);
+    expect((hand as unknown as { layers: Box[] }).layers[0]?.x).toBe(100);
   });
 });
