@@ -148,6 +148,6 @@ PNG only (pure-TS codec; no sharp/canvas in the `bun --smol` container). Non-PNG
 * **Editor**: the timeline panel (`src/ui/panels/timeline-panel.ts`) still shows diamonds only — no per-frame easing picker, no scrubber preview of skew/blur/draw, no `op:sequence` equivalent. Client changes need a dist rebuild.
 * **JPEG/WebP decode** for the pixel pipeline.
 * **Flipbook skew/draw**: materialise via a transform field on the layer schema, or rasterise the SVG route's CSS per frame with a browser.
-* **Motion paths** (`layer.motion_path`, SMIL `animateMotion`) are rendered but not surfaced as an MCP op or sampled by the flipbook.
+* ~~**Motion paths**~~ — DONE. `animation {op:"motion_path", layer_ids, path}` sets it; `src/animation/motion-path.ts` walks it; `gif-frames.ts` samples it, so `op:"frame"` and the GIF agree with the browser instead of showing the layer parked where it was authored. Progress is by ARC LENGTH (cumulative-length table over a flattened polyline), so the pace stays constant across segments of different lengths. Elliptical arcs (`A`) are REFUSED, not approximated — the browser draws the real arc and an approximation would disagree with it frame for frame. The path OFFSETS the layer from where it sits, so it normally starts `M 0 0`.
 * **Illustrator-side**: boolean ops and shape paths exist in the renderer; offset path, outline stroke, blend/morph between shapes are not exposed.
 * **Text animation**: per-character/word reveal needs the text layer split into spans.
