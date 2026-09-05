@@ -44,6 +44,24 @@ function flatten(layers: Layer[], out: Layer[] = []): Layer[] {
   return out;
 }
 
+/** Flatten, remembering each layer's immediate container. Accent counting needs
+ *  it: N bars of one series share a parent and are ONE accent decision, not N. */
+function flattenWithParent(layers: Layer[], parent: string, out: { l: Layer; parent: string }[] = []): { l: Layer; parent: string }[] {
+  for (const l of layers) {
+    out.push({ l, parent });
+    const kids = (l as { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) flattenWithParent(kids, l.id, out);
+  }
+  return out;
+}
+
+/** Is this design citing a dataset? A figure on a sourced page is evidence, not
+ *  invention — the rule must not call a real number made up because it looks
+ *  round. (Review: "invented metric" fired on data-backed board-deck figures.) */
+function isSourced(all: Layer[]): boolean {
+  return all.some(l => l.type === 'text' && /\b(source|sources|data|dataset|per|according to|n\s*=)\s*[:=]/i.test(textValue(l)));
+}
+
 /** First hex of a solid/pattern/first-stop fill, or a top-level shape `color`. */
 function solidHex(l: Layer): string | null {
   const f = (l as { fill?: unknown }).fill;
@@ -144,15 +162,16 @@ export function lintAiSlop(layers: Layer[]): string[] {
     notes.push(`icon "${brokenLook[0].id}" uses name:"image" — that glyph reads as a BROKEN image placeholder, not decoration. Pick a semantic icon per item (coffee, package, truck, star, check, zap, …)${brokenLook.length > 1 ? ` — ${brokenLook.length} layers affected` : ''}.`);
   }
 
-  // 4. Invented metrics + 5. Filler copy.
+  // 4. Unlabelled metrics + 5. Filler copy.
+  const sourced = isSourced(all);
   for (const l of all) {
     if (l.type !== 'text') continue;
     const v = textValue(l).trim();
     if (!v) continue;
     if (FILLER_COPY.test(v)) {
       notes.push(`text "${l.id}" is filler copy ("${v.slice(0, 32)}…") — write real content from the brief; an empty slot is a composition problem, not a place for lorem (anti_slop rule 7).`);
-    } else if (INVENTED_METRIC.some(re => re.test(v))) {
-      notes.push(`text "${l.id}" looks like an invented metric ("${v.slice(0, 32)}") — use a real figure from the brief/research or a labelled placeholder (anti_slop rule 6).`);
+    } else if (!sourced && INVENTED_METRIC.some(re => re.test(v))) {
+      notes.push(`text "${l.id}" is an UNLABELLED metric ("${v.slice(0, 32)}") — nothing on the page says where it came from. Cite it (a "Source: …" line, or the dataset name) or drop it (anti_slop rule 6).`);
     }
     if (notes.length >= 6) break;
   }
@@ -171,15 +190,24 @@ export function lintAiSlop(layers: Layer[]): string[] {
     notes.push(`text "${capsNoTrack.id}" is ALL-CAPS with little/no letter_spacing — caps always needs ≥0.06em tracking (set letter_spacing) or it reads cramped + generic (type rule).`);
   }
 
-  // 7. Accent overuse — one vivid hue spread across many layers.
-  const counts = new Map<number, number>();
-  for (const l of all) {
+  // 7. Accent overuse — one vivid hue spread across many SURFACES. Counted per
+  // container, not per layer: a bar chart's twelve bars in one accent are a
+  // single, correct decision (a series wants one colour), and counting them as
+  // twelve uses fired this rule on every chart ever drawn. One container
+  // contributes at most one use per hue.
+  const surfaces = new Map<number, Set<string>>();
+  for (const { l, parent } of flattenWithParent(layers, '')) {
     for (const hex of [solidHex(l), textColor(l)]) {
       const b = hex ? vividBucket(hex) : null;
-      if (b !== null) counts.set(b, (counts.get(b) ?? 0) + 1);
+      if (b === null) continue;
+      const seen = surfaces.get(b) ?? new Set<string>();
+      // A top-level layer IS its own surface; nested siblings collapse onto the
+      // container they belong to.
+      seen.add(parent === '' ? l.id : parent);
+      surfaces.set(b, seen);
     }
   }
-  const worst = [...counts.values()].sort((a, b) => b - a)[0] ?? 0;
+  const worst = [...surfaces.values()].map(s => s.size).sort((a, b) => b - a)[0] ?? 0;
   if (worst > 5 && notes.length < 8) {
     notes.push(`one accent hue appears on ${worst} layers — cap visible accent uses at ~2 per surface (one eyebrow/chip + one CTA); let neutrals carry 70–90% (color rule).`);
   }

@@ -38,9 +38,14 @@ describe('lintAiSlop', () => {
     expect(notes.join(' ')).not.toMatch(/emoji/i);
   });
 
-  it('flags invented metrics', () => {
-    expect(lintAiSlop([txt('m', '10× faster')]).join(' ')).toMatch(/invented metric/i);
-    expect(lintAiSlop([txt('m', '99.9% uptime')]).join(' ')).toMatch(/invented metric/i);
+  it('flags an unlabelled metric with nothing on the page to back it', () => {
+    expect(lintAiSlop([txt('m', '10× faster')]).join(' ')).toMatch(/unlabelled metric/i);
+    expect(lintAiSlop([txt('m', '99.9% uptime')]).join(' ')).toMatch(/unlabelled metric/i);
+  });
+
+  it('does NOT flag a figure on a SOURCED page — a cited number is evidence', () => {
+    const notes = lintAiSlop([txt('m', '10× faster'), txt('s', 'Source: Air Traffic Cargo, 2026')]);
+    expect(notes.join(' ')).not.toMatch(/metric/i);
   });
 
   it('flags filler copy', () => {
@@ -56,6 +61,12 @@ describe('lintAiSlop', () => {
   it('flags accent overuse across many layers', () => {
     const layers = Array.from({ length: 7 }, (_, i) => L({ id: `r${i}`, type: 'rect', fill: '#E11D48' }));
     expect(lintAiSlop(layers).join(' ')).toMatch(/accent hue appears/i);
+  });
+
+  it('counts a chart series as ONE accent use, not one per bar', () => {
+    const bars = Array.from({ length: 12 }, (_, i) => L({ id: `bar${i}`, type: 'rect', fill: '#E11D48' }));
+    const chart = L({ id: 'chart', type: 'group', layers: bars });
+    expect(lintAiSlop([chart]).join(' ')).not.toMatch(/accent hue appears/i);
   });
 
   it('recurses into groups', () => {

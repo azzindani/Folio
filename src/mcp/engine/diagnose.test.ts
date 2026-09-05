@@ -45,6 +45,45 @@ describe('analyzeLayers — geometry', () => {
   });
 });
 
+describe('analyzeLayers — off-canvas content nested inside a preset group', () => {
+  // The review's "0 errors, 0 warnings" deck: the GROUP box claims it fits the
+  // canvas while its children — which carry absolute coordinates, since a group
+  // renders as a bare <g> — draw well past the bottom edge.
+  const lying = (childY: number): Layer => ({
+    id: 'sections', type: 'group', z: 1, x: 0, y: 0, width: W, height: H,
+    layers: [
+      { id: 's_bg', type: 'rect', z: 0, x: 0, y: 0, width: W, height: H, fill: { type: 'solid', color: '#101010' } },
+      text('s_body', 80, childY, 900, 120, 28),
+    ],
+  } as unknown as Layer);
+
+  it('is an ERROR even though the group box itself fits', () => {
+    const f = analyzeLayers([lying(2066)], W, H);
+    const off = f.filter(x => x.code === 'off_canvas');
+    expect(off).toHaveLength(1);
+    expect(off[0].severity).toBe('error');
+    expect(off[0].layer_id).toBe('s_body');
+    expect(off[0].message).toMatch(/clipped/);
+  });
+
+  it('says how far out it is, so the model can size the fix', () => {
+    const [off] = analyzeLayers([lying(2066)], W, H).filter(x => x.code === 'off_canvas');
+    expect(off.message).toContain('1106px outside');
+  });
+
+  it('leaves content that fits alone', () => {
+    expect(codes([lying(400)])).not.toContain('off_canvas');
+  });
+
+  it('does not flag DECORATION that bleeds off the edge — that is a design move', () => {
+    const decor = {
+      id: 'g', type: 'group', z: 1, x: 0, y: 0, width: W, height: H,
+      layers: [{ id: 'blob', type: 'ellipse', z: 0, x: W - 60, y: 200, width: 400, height: 400, fill: { type: 'solid', color: '#B8543C' } }],
+    } as unknown as Layer;
+    expect(codes([bg, decor])).not.toContain('off_canvas');
+  });
+});
+
 describe('analyzeLayers — composition fold-in + clean baseline', () => {
   it('flags a missing background', () => {
     expect(codes([text('h', 96, 100, 400, 60, 96)])).toContain('composition');

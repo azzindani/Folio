@@ -6,7 +6,7 @@ import { ShorthandLayer, Box } from './shorthand-helpers';
 
 export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   // engine-internal markers (set by the engine, not the model — never flagged)
-  '__fillPage', '__variant', '__deckseed', '__theme',
+  '__fillPage', '__variant', '__deckseed', '__theme', '__fixedCanvas',
   // canonical
   'id', 'type', 'z', 'pos', 'x', 'y', 'width', 'height', 'opacity', 'rotation',
   'rotate', 'angle', // CSS-style aliases for rotation

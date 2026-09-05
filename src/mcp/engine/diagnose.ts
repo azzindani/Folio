@@ -29,10 +29,35 @@ function box(l: Layer): Box | null {
   return { id: l.id, type: l.type, z: typeof l.z === 'number' ? l.z : 0, x: x as number, y: y as number, w: w as number, h: h as number };
 }
 
-// Top-level layers only (group children are positioned relative to their parent
-// in some layouts; collision/alignment is judged at the canvas level).
+// Top-level layers only (collision/alignment is judged at the canvas level).
 function boxes(layers: Layer[]): Box[] {
   return layers.map(box).filter((b): b is Box => b !== null);
+}
+
+// Content-bearing types: what a reader LOSES when it falls off the canvas. A
+// decorative rect/path/ellipse bleeding past the edge is a legitimate design
+// move; a heading or a chart doing it is lost information.
+const CONTENT_TYPES = new Set(['text', 'chart', 'kpi_card', 'image', 'icon', 'code', 'math', 'qrcode', 'table']);
+
+// A group renders as a bare <g> with NO transform — its children carry absolute
+// document coordinates — so a group whose declared height is 1080 can still draw
+// content at y=2066. Judging off-canvas by the group BOX therefore passes decks
+// with half their content clipped ("0 errors" on a visibly broken slide). Walk
+// the whole tree and judge every content layer where it actually renders.
+function contentDescendants(layers: Layer[], out: Box[] = [], depth = 0): Box[] {
+  if (depth > 8) return out;
+  for (const l of layers) {
+    const kids = (l as { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) {
+      contentDescendants(kids, out, depth + 1);
+      continue;
+    }
+    if (depth === 0) continue;                     // top level is checked by its own pass
+    if (!CONTENT_TYPES.has(l.type)) continue;
+    const b = box(l);
+    if (b && b.w > 0 && b.h > 0) out.push(b);
+  }
+  return out;
 }
 
 function overlapArea(a: Box, b: Box): number {
@@ -58,6 +83,19 @@ function geometryFindings(layers: Layer[], W: number, H: number): Finding[] {
         fix: `Move/resize it inside [0,0,${W},${H}].`,
       });
     }
+  }
+
+  // Off-canvas CONTENT nested inside a group — the case a box-level check misses
+  // entirely. Always an error: clipped content is lost, never a style choice.
+  for (const b of contentDescendants(layers)) {
+    const over = Math.max(-b.x, -b.y, b.x + b.w - W, b.y + b.h - H);
+    if (over <= 8) continue;
+    const lost = Math.round(Math.min(100, (over / Math.max(1, Math.min(b.w, b.h))) * 100));
+    out.push({
+      code: 'off_canvas', severity: 'error', layer_id: b.id,
+      message: `"${b.id}" renders ${Math.round(over)}px outside the ${W}×${H} canvas (x:${Math.round(b.x)} y:${Math.round(b.y)} w:${Math.round(b.w)} h:${Math.round(b.h)}) — ~${lost}% of it is clipped and the reader never sees it.`,
+      fix: `It sits inside a group, and a group applies no transform — its children carry absolute coordinates. Move it inside [0,0,${W},${H}], or cut content so the preset fits the canvas.`,
+    });
   }
 
   // Tiny text.
