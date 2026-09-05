@@ -150,6 +150,28 @@ describe('self-heal — the line it does not cross (CLAUDE.md §0.4)', () => {
     }
   });
 
+  it('actually delivers the aesthetic critique it promises', () => {
+    // The test above is guarded by `if (judge.length)`, so it passed while the
+    // list was ALWAYS empty: the critique arrives at severity `suggestion` and
+    // the hand-off was built from errors+warnings only. diagnose reported weak
+    // hierarchy and accent sprawl on this exact shape; heal answered with
+    // nothing to judge. Found on a live call, not by this suite.
+    const p = poster('critique');
+    addLayers({ design_path: p, layers_shorthand: [
+      { id: 'bg', type: 'rect', pos: [0, 0, 1080, 1350], fill: '#F4F1EA' },
+      { id: 'a', type: 'text', pos: [60, 100, 960, 60], text: 'A headline about something', size: 42, color: '#C1121F' },
+      { id: 'b', type: 'text', pos: [60, 200, 960, 60], text: 'Another line the same size', size: 40, color: '#2A9D8F' },
+      { id: 'c', type: 'text', pos: [60, 300, 960, 60], text: 'And a third at that weight', size: 41, color: '#E76F51' },
+      { id: 'd', type: 'text', pos: [60, 400, 960, 60], text: 'Plus a fourth competing line', size: 40, color: '#7209B7' },
+    ] as unknown as ShorthandLayer[] });
+    const r = healDesign({ design_path: p }) as unknown as Rec;
+    const judge = (r['for_you_to_judge'] ?? []) as { code: string; message?: string }[];
+    expect(judge.length, JSON.stringify(r['for_you_to_judge'])).toBeGreaterThan(0);
+    expect(judge.map(f => f.code)).toContain('quality');
+    // Still handed back, never acted on — §0.4.
+    expect((r['fixed'] as string[]).join(' ')).not.toMatch(/accent|hierarchy|palette/i);
+  });
+
   it('does not touch the palette while healing geometry', () => {
     const p = poster('palette');
     addLayers({ design_path: p, layers_shorthand: [{

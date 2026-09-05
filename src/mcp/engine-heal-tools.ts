@@ -39,6 +39,13 @@ import { specOf, toShorthand } from './design-spec';
 import { collectTokens } from './design-tokens';
 
 /** Findings this loop is allowed to act on — correctness and legibility only. */
+// Codes the loop is allowed to keep working on. `invisible_text`, `low_contrast`
+// and `missing_background` are listed for completeness but no diagnose pass
+// emits them: relighting and ground-filling happen in the finalize rescue pass
+// on the way IN (engine-finalize-legibility.ts), so by the time anything is
+// diagnosed there is nothing left to find. Kept as documentation of what the
+// loop would own if those ever became findings — not dead weight to trim
+// silently, since removing them would read as narrowing what heal repairs.
 const HEALABLE = new Set(['off_canvas', 'tiny_text', 'invisible_text', 'low_contrast', 'text_overflow', 'missing_background']);
 
 /** Smallest comfortable body size; below this diagnose calls it tiny_text. */
@@ -262,8 +269,18 @@ export function healDesign(args: {
   const after = diagnoseAll(design);
   const errorsAfter = after.filter(f => f.severity === 'error').length;
   const remaining = after.filter(f => f.severity === 'error' || f.severity === 'warning');
-  const forModel = remaining.filter(f => !HEALABLE.has(f.code));
   const stuck = remaining.filter(f => HEALABLE.has(f.code));
+  // The aesthetic critique — weak hierarchy, accent sprawl, crowded margins —
+  // arrives at severity `suggestion`, precisely because the loop is not allowed
+  // to act on it. Building the hand-off from errors+warnings alone therefore
+  // dropped the exact findings for_you_to_judge exists to deliver: diagnose
+  // reported "weak hierarchy" and "accent sprawl" on a design where heal then
+  // answered with nothing to judge. The note below promises palette and
+  // hierarchy; this is where they come from.
+  const forModel = [
+    ...remaining.filter(f => !HEALABLE.has(f.code)),
+    ...after.filter(f => f.severity === 'suggestion'),
+  ];
 
   if (args.dry_run) {
     progress.push(pInfo('Dry run — nothing written', `${allFixed.length} fix(es) would apply`));
