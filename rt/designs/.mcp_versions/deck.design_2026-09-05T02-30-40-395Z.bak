@@ -1,0 +1,17 @@
+_protocol: design/v1
+_mode: in_progress
+meta:
+  id: mtnrmy9p-qn1f41
+  name: deck
+  type: poster
+  created: '2026-09-05'
+  modified: '2026-09-05'
+  generator: mcp
+document:
+  width: 1080
+  height: 1350
+  unit: px
+  dpi: 96
+theme:
+  ref: editorial-cream
+layers: []

@@ -15,14 +15,21 @@ import { buildRibbonCards, buildValueList } from './shorthand-presets-cards';
 import { buildNewsletter } from './shorthand-presets-news';
 import { motifLayers } from './shorthand-background';
 import { passThroughUnknown, applyFlowGrid } from './shorthand-passthrough';
-import { fitPresetToBox } from './preset-fit';
+import { fitPresetToBox, isFittablePreset } from './preset-fit';
+import { attachAuthoredSpec } from './design-spec';
 
-// A layout preset sizes itself from the box WIDTH and grows down to whatever
-// height its content needs — correct for a poster, a silent clipping bug on a
-// fixed slide. When the model declared an explicit height, hold the preset to
-// it: compress to fit and report, rather than render past the canvas edge.
+// Two things happen to every expanded layer here, and only to presets:
+//
+// 1. FIT — a preset sizes itself from the box WIDTH and grows down to whatever
+//    height its content needs: correct for a poster, a silent clipping bug on a
+//    fixed slide. When the model declared an explicit height, hold it to that.
+// 2. REMEMBER — keep the spec that produced the group ON the group, so a later
+//    session can patch the INTENT instead of hand-editing thirty generated
+//    layers or rebuilding the page (see ./design-spec).
 export function expandShorthand(sh: ShorthandLayer): Layer {
-  return fitPresetToBox(sh, expandShorthandLayer(sh), String(sh.type ?? ''));
+  const type = String(sh.type ?? '');
+  const built = fitPresetToBox(sh, expandShorthandLayer(sh), type);
+  return attachAuthoredSpec(sh, built, isFittablePreset(type));
 }
 
 function expandShorthandLayer(sh: ShorthandLayer): Layer {

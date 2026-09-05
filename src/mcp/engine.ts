@@ -12,6 +12,7 @@ export { assetRead, assetWrite } from './engine/assets';
 export { assetAdd, assetList, assetDelete, assetMove, assetPromote } from './engine/asset-library-ops';
 export { assetSearch } from './engine/asset-search';
 export { iconSearch } from './engine/icon-search';
+export { getDesignSpec, patchDesignSpec } from './engine-spec-tools';
 export { assetProcess } from './engine/asset-process-op';
 export { assetFetch } from './engine/asset-fetch';
 export { listPacks } from './engine/packs';

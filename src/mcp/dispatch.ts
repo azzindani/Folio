@@ -21,7 +21,8 @@ export function dispatchEditLayer(a: Args): ToolResult {
     case 'update': return engine.updateLayer(a as Parameters<typeof engine.updateLayer>[0]);
     case 'remove': return engine.removeLayer(a as Parameters<typeof engine.removeLayer>[0]);
     case 'align':  return engine.alignLayers(a as Parameters<typeof engine.alignLayers>[0]);
-    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align']);
+    case 'patch_spec': return engine.patchDesignSpec(a as Parameters<typeof engine.patchDesignSpec>[0]);
+    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align', 'patch_spec']);
   }
 }
 
@@ -49,8 +50,9 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'asset_fetch':  return engine.assetFetch(a as Parameters<typeof engine.assetFetch>[0]);
     case 'asset_promote': return engine.assetPromote(a as Parameters<typeof engine.assetPromote>[0]);
     case 'icon_search':  return engine.iconSearch(a as Parameters<typeof engine.iconSearch>[0]);
+    case 'get_spec':     return engine.getDesignSpec(a as Parameters<typeof engine.getDesignSpec>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec']);
   }
 }
 

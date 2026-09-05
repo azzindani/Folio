@@ -597,6 +597,25 @@ Patch workflow (editing sealed designs):
   2. patch_design(design_path, selectors=[{path,value}])                ← apply
   3. seal_design(design_path)
 
+Spec round-trip (editing a PRESET — prefer this over the two above):
+  A preset group is ~30 GENERATED layers, and the spec that produced them is
+  stored on the group. Edit the intent, not the output:
+  1. manage_design(op:"get_spec", design_path)         ← what the page is MADE OF
+  2. edit_layer(op:"patch_spec", layer_id, changes)    ← merge + re-render in place
+  3. render_preview → seal_design
+  changes merges: an object merges KEY BY KEY (so {accent:"#0EA5E9"} leaves the
+  other twelve fields alone), an ARRAY replaces wholesale (blocks is one ordered
+  thing), and null DELETES a field (back to the engine default). dry_run:true
+  returns the changed keys without writing.
+  Reach for it whenever the ask is about CONTENT or LOOK — "three blocks not
+  five", "warmer accent", "retitle it", "drop the footer", "make it a mega
+  headline". Hand-editing the generated children instead works once and then
+  DRIFTS: the next patch_spec regenerates from the spec and discards those
+  edits (it warns you first). manage_design(op:"inspect") marks which groups
+  carry a spec.
+  Hand-placed layers have no spec and need none — they ARE their own source; use
+  edit_layer(op:"update") / patch_design for those.
+
 Interactive HTML reports (dashboards, EDA, financial decks):
   USE layout:"flow" — a responsive editorial document (12-col grid, NO fixed canvas).
   Layers are placed by a span field (1–12), NOT x/y/width/height — they reflow on any screen.

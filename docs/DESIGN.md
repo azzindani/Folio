@@ -837,6 +837,50 @@ layers:
 
 Four operations for incremental LLM generation without token exhaustion.
 
+### 11.0 Authored spec — the round-trip
+
+A preset is written as INTENT and stored as RESULT. Expansion turns
+`{type:"sections", title, blocks:[…]}` into a group of ~30 positioned layers, so
+the file used to hold the output with no record of what asked for it — the
+design and its source drifted apart in one direction, with no way back. Every
+expanded preset group now carries that source:
+
+```yaml
+- id: sections_1
+  type: group
+  x: 0 ; y: 0 ; width: 1080 ; height: 1350
+  _spec:                      # what the MODEL wrote — the only thing get_spec returns
+    type: sections
+    title: Air Cargo Performance
+    accent: '#FF6B35'
+    blocks: [{kind: text, heading: Volume, text: '…'}]
+  _spec_env:                  # what the ENGINE stamped — context, not intent
+    __fixedCanvas: true
+  layers: [ … 30 generated layers … ]
+```
+
+Two fields, deliberately separate: `_spec` round-trips by itself, `_spec_env`
+re-applies the world the preset was expanded in (page-fill, fixed canvas, deck
+seed). The theme is **not** stored — it is re-resolved from the design, so a
+deck does not duplicate its palette on every slide.
+
+**Fidelity rule:** re-expanding an unchanged `_spec` reproduces the identical
+tree. Expansion is deterministic (no `Math.random` / `Date.now` in the render
+path — CLAUDE.md §0.3; preset variants seed from content), and a test enforces
+it. Without that guarantee a patch would silently redesign a page instead of
+editing it.
+
+**Drift:** patching REGENERATES the group, discarding anything done to the
+generated children since. That is correct — the spec is the source — but never
+silent: `patch_spec` compares layer count and text content first and warns.
+Colour and position are excluded from the comparison, because the engine's own
+rescue passes re-light and reflow layers after expansion and flagging that would
+make the warning fire on every patch.
+
+Read with `manage_design {op:"get_spec"}`, write with
+`edit_layer {op:"patch_spec"}`. Hand-placed layers carry no spec and need none —
+a rect IS its own source.
+
 ### 11.1 Operations
 
 ```yaml
