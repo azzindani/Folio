@@ -351,11 +351,25 @@ What the engine does about it:
   of its intended size, and the deck reads visibly squeezed.
 
 For a 16:9 slide, prefer in this order:
-  1. LESS per slide — 2-3 blocks, one idea. Split across pages (append_page).
-  2. split or stat — the two presets whose natural shape is already wide.
-  3. Hand-place into halves: two groups side by side, each ~900px wide, so each
-     column's preset sees a PORTRAIT box and sizes itself sanely.
+  1. columns — put the presets side by side. Each child gets a FULL-HEIGHT
+     column, so on 1920×1080 two columns hand each preset ~930×1080: portrait,
+     which is the shape every preset was built for. The overflow problem stops
+     being a problem instead of being compressed away.
+       {type:"columns", pos:[0,0,1920,1080], gap:60, cols:[
+         {type:"stat", value:"7.97M", label:"tons", bg:"#0A0A0A", accent:"#FF3D00"},
+         {type:"list", items:["Belly capacity recovered", "Freighter share fell",
+                              "Yields normalised"], bg:"#0A0A0A"}]}
+     gap (default 56) · pad (default 0) · weights:[2,1] for an uneven split.
+     Children go through the normal pipeline, so a column takes ANY layer — a
+     preset, a group, a bare rect — and columns nest inside columns. A child
+     that sets its own pos keeps it.
+  2. LESS per slide — 2-3 blocks, one idea. Split across pages (append_page).
+  3. split or stat — the two presets whose natural shape is already wide.
   4. Let it compress — acceptable down to ~0.85×, visibly squeezed below that.
+
+columns is GEOMETRY, not a look: it decides where the boxes are and nothing
+about what goes in them. Two decks built with it should not resemble each other
+unless you made them resemble each other.
 
 ## Presets (engine owns the layout — you supply only content)
 feature_grid: a complete feature poster in ONE layer — title, subtitle, and a
