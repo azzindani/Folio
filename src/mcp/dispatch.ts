@@ -55,8 +55,9 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'tokens':       return engine.designTokens(a as Parameters<typeof engine.designTokens>[0]);
     case 'lineage':      return engine.designLineage(a as Parameters<typeof engine.designLineage>[0]);
     case 'restore':      return engine.restoreDesign(a as Parameters<typeof engine.restoreDesign>[0]);
+    case 'style_history': return engine.styleHistory(a as Parameters<typeof engine.styleHistory>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'tokens', 'lineage', 'restore']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'tokens', 'lineage', 'restore', 'style_history']);
   }
 }
 

@@ -46,7 +46,7 @@ export function pruneEmptyDrafts(projectPath: string, keepPath: string): string[
   return pruned;
 }
 
-export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string }): ToolResult {
+export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string; style_seed?: string | number }): ToolResult {
   const op = 'create_design';
   const progress: ProgressItem[] = [];
   // Guard the required args with actionable messages — a small model that omits
@@ -83,6 +83,10 @@ export function createDesign(args: { project_path: string; name: string; type?: 
       id: generateId(), name: args.name, type: type as 'poster' | 'carousel',
       created: today, modified: today, generator: 'mcp',
       generation: type === 'carousel' ? { status: 'in_progress', total_pages: 0, completed_pages: 0 } : undefined,
+      // Kept on the design, not just in the call that made it: a seed asks for
+      // a departure, and the only way to tell whether one was taken is to
+      // compare designs made under different seeds later (see design-history).
+      ...(args.style_seed !== undefined && args.style_seed !== '' ? { style_seed: String(args.style_seed) } : {}),
     },
     document: { width: w, height: h, unit: 'px', dpi: 96 },
     theme: { ref: args.theme_ref ?? 'editorial-cream' },
@@ -110,6 +114,12 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     progress.push(pInfo('Snapshot created', path.basename(bak)));
     const project = readYAML<{ designs: unknown[] }>(projectPath);
     project.designs = project.designs ?? [];
+    // Design number two is where convergence starts, and the model cannot see
+    // the ones already here. Said at the moment it is about to compose, from a
+    // count that was being read anyway — no scan, no cost.
+    if (project.designs.length >= 2) {
+      progress.push(pInfo(`This project already holds ${project.designs.length} design(s)`, 'manage_design {op:"style_history"} reports what they already look like — structure, composition, palette, type scale — and which of those has stopped varying. Worth a call before composing, or number five repeats number one.'));
+    }
     project.designs.push({ id: designId, path: `designs/${designId}.design.yaml`, type, status: 'draft' });
     writeYAML(projectPath, project);
     progress.push(pOk('Registered in project.yaml'));
