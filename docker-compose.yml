@@ -60,6 +60,16 @@ services:
       FOLIO_PORT: ${FOLIO_MCP_PORT:-3333}
       FOLIO_PROJECTS_DIR: /home/folio/projects
       FOLIO_OUTPUT_BUDGET: ${FOLIO_OUTPUT_BUDGET:-1000}
+      # Roots this engine shares with SIBLING MCP services (a data/ML server's
+      # /workspace/data). Without it an agent that made a chart with one server
+      # cannot hand the file to this one — asset_add is refused reading it and
+      # export_design is refused writing beside it, each discovered late as its
+      # own error. The mount below puts the folder in place; this opens the
+      # sandbox to it. Set empty to keep the sandbox closed to projects only.
+      FOLIO_SHARED_DIRS: ${FOLIO_SHARED_DIRS:-/workspace/data}
+      # Extra hosts a direct `asset_fetch` URL may target, on top of the search
+      # providers' own CDNs — e.g. the file host a sibling service publishes to.
+      FOLIO_ASSET_FETCH_HOSTS: ${FOLIO_ASSET_FETCH_HOSTS:-}
       # Auth — pick ONE strategy. tokens.json (file) wins if multiple are set.
       FOLIO_TOKENS_FILE: ${FOLIO_TOKENS_FILE:-}
       FOLIO_TOKENS:      ${FOLIO_TOKENS:-}
@@ -93,6 +103,12 @@ services:
       - "${FOLIO_MCP_PORT:-3333}:3333"
     volumes:
       - ./folio-projects:/home/folio/projects
+      # The folder shared with sibling MCP services, mounted at the same path
+      # they use (/workspace/data) so a path handed over between servers means
+      # the same file on both sides. Point FOLIO_SHARED_DIR at the host folder
+      # those services already mount; the default is a local drop folder, which
+      # docker creates empty on first `up` if it isn't there.
+      - ${FOLIO_SHARED_DIR:-./folio-shared}:/workspace/data
       # Mount tokens.json read-only when FOLIO_TOKENS_FILE is set. The file
       # at ./tokens.json is optional — comment out if you use FOLIO_TOKENS
       # (inline) or FOLIO_API_KEY (single key) instead.
