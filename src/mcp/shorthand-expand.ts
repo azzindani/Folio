@@ -15,8 +15,17 @@ import { buildRibbonCards, buildValueList } from './shorthand-presets-cards';
 import { buildNewsletter } from './shorthand-presets-news';
 import { motifLayers } from './shorthand-background';
 import { passThroughUnknown, applyFlowGrid } from './shorthand-passthrough';
+import { fitPresetToBox } from './preset-fit';
 
+// A layout preset sizes itself from the box WIDTH and grows down to whatever
+// height its content needs — correct for a poster, a silent clipping bug on a
+// fixed slide. When the model declared an explicit height, hold the preset to
+// it: compress to fit and report, rather than render past the canvas edge.
 export function expandShorthand(sh: ShorthandLayer): Layer {
+  return fitPresetToBox(sh, expandShorthandLayer(sh), String(sh.type ?? ''));
+}
+
+function expandShorthandLayer(sh: ShorthandLayer): Layer {
   const pos = expandPosition(sh);
   const base: Record<string, unknown> = {
     id: sh.id,

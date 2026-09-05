@@ -17,6 +17,7 @@ import { buildEditorLink } from './engine/editor-link';
 
 import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, snapWrongFlowPresets, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
+import { resetPresetFitReports, drainPresetFitReports, stampFixedCanvas } from './preset-fit';
 import { readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import { honorPosterRatio } from './poster-ratio';
 import type { NextAction } from './types';
@@ -113,6 +114,9 @@ export function addLayers(args: {
   if (shorthand.length && spec.pages && spec.pages.length) {
     const flowFilled = fillFlowPresetsToPage(shorthand, spec.document.width, spec.document.height);
     if (flowFilled) progress.push(pInfo(`Filled ${flowFilled} content preset(s) to the slide`, `${spec.document.width}×${spec.document.height}`));
+    // A deck's canvas cannot grow, so a preset that measures taller than the box
+    // it was handed clips instead of auto-fitting. Bind it to the declared box.
+    stampFixedCanvas(shorthand);
     const deckSeed = (spec.meta?.name && String(spec.meta.name).trim()) || spec.meta?.id || '';
     const seeded = stampDeckSeed(shorthand, deckSeed);
     if (seeded) progress.push(pInfo(`Locked deck mood on ${seeded} slide(s)`, 'shared palette+font from the deck identity'));
@@ -153,9 +157,14 @@ export function addLayers(args: {
     }
   }
 
+  resetPresetFitReports();
   const incoming: Layer[] = shorthand.length
     ? expandShorthandLayers(shorthand)
     : (args.layers ?? []);
+  // A preset compressed into a box shorter than its content is a spatial fact
+  // the model cannot see — surface it in the same breath as the expansion.
+  const fitNotes = drainPresetFitReports().map(r => r.note);
+  for (const n of fitNotes) progress.push(pWarn('Preset compressed to fit its box', n));
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
 
   // Canonicalize verbose text layers FIRST: fold a bare `text:"…"` alias + flat
@@ -472,7 +481,7 @@ export function addLayers(args: {
   // Heal touched hand-placed layers → lead with the locked-group opt-out (lets a
   // strong model keep deliberate art-direction; surfaces only when heal fired).
   const heal = lockedHealNote([[relit, 're-lit'], [recollided, 'reflowed'], [snappedOff, 'snapped-in'], [recentered, 're-centered'], [spread, 'un-stacked'], [droppedMotifs, 'dropped-motif']], spec.document.width, spec.document.height);
-  const notes = [...(heal ? [heal] : []), ...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint, ...review];
+  const notes = [...fitNotes, ...(heal ? [heal] : []), ...(shorthand.length ? diagnoseShorthandKeys(shorthand) : []), ...diagnoseLayers(incoming), ...lint, ...review];
   for (const n of notes) progress.push(pInfo('Layer note', n));
   // Report cross-reference diagnostics (charts→datasets, buttons→modals, …) so
   // the LLM building the report sees broken refs immediately, not at export.
@@ -529,6 +538,9 @@ export function appendPage(args: {
     // list still auto-fits its canvas to the content).
     const flowFilled = fillFlowPresetsToPage(pageShorthand, spec.document.width, spec.document.height);
     if (flowFilled) progress.push(pInfo(`Filled ${flowFilled} flow preset(s) to the page`, 'centered content, no dead band'));
+    // A page's canvas is fixed — hold a preset to the box it was handed instead
+    // of letting it grow off the bottom edge (see stampFixedCanvas).
+    stampFixedCanvas(pageShorthand);
     // Cohesion at the SOURCE: a model that appends bare `{type:"sections"}` slides
     // (no bg/font) would otherwise get a per-slide mood seeded from each slide's
     // content. Stamp the deck identity so every bg-less slide seeds ONE shared
@@ -553,9 +565,12 @@ export function appendPage(args: {
       if (rr['__theme'] === undefined) rr['__theme'] = pageThemeColors;
     }
   }
+  resetPresetFitReports();
   const layers: Layer[] = pageShorthand.length
     ? expandShorthandLayers(pageShorthand)
     : (args.layers ?? []);
+  const pageFitNotes = drainPresetFitReports().map(r => r.note);
+  for (const n of pageFitNotes) progress.push(pWarn('Preset compressed to fit its box', n));
   normalizeTextAliases(layers); // canonicalize verbose text:/size:/color: → content+style
   // Rescue chain on the page layers (recover JSON-in-text → strip null → flow
   // positionless → fill bg → de-collide → re-light); pages historically only
@@ -617,7 +632,7 @@ export function appendPage(args: {
   if (replacedAt < 0) progress.push(pOk(`Appended page "${pageId}"`, `total: ${spec.pages.length} page(s)`));
 
   const pageHealNote = lockedHealNote([[pf.relit, 're-lit'], [pf.reflowed, 'reflowed']], spec.document.width, spec.document.height);
-  const notes = [...(pageHealNote ? [pageHealNote] : []), ...(pageShorthand.length ? diagnoseShorthandKeys(pageShorthand) : []), ...diagnoseLayers(layers)];
+  const notes = [...pageFitNotes, ...(pageHealNote ? [pageHealNote] : []), ...(pageShorthand.length ? diagnoseShorthandKeys(pageShorthand) : []), ...diagnoseLayers(layers)];
   for (const n of notes) progress.push(pInfo('Layer note', n));
 
   let next_action: NextAction | undefined;
