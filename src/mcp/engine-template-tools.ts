@@ -6,8 +6,8 @@ import type { DesignSpec } from '../schema/types';
 import type { ToolResult, ProgressItem, NextAction } from './types';
 import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/template';
 import type { TemplateSpec } from '../schema/template';
-import { resolveDesignPath, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './engine/utils';
-import { resolveBuiltinTemplate, builtinInjectOutputDir, listBuiltinTemplates } from './engine/builtin-templates';
+import { resolveDesignPath, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover } from './engine/utils';
+import { resolveBuiltinTemplate, builtinInjectOutputDir, listBuiltinTemplates, probedCatalogPaths } from './engine/builtin-templates';
 
 export function exportTemplate(args: { design_path: string; output_path?: string; project_path?: string }): ToolResult {
   const op = 'export_template';
@@ -92,7 +92,10 @@ export function listTemplates(args: { search?: string; tag?: string; limit?: num
   const progress: ProgressItem[] = [];
   const { templates, count, total } = listBuiltinTemplates(args);
   if (total === 0 && count === 0) {
-    progress.push(pInfo('No built-in templates found', 'The catalog asset dir/index was not located on the server.'));
+    // A silent "0 templates" is indistinguishable from "no match" and sends the
+    // agent round the loop again. Say which paths were tried and what fixes it.
+    const tried = probedCatalogPaths();
+    progress.push(pWarn('No built-in templates found', `The catalog is not installed on this server. Tried: ${tried.slice(0, 6).join(', ')}${tried.length > 6 ? `, +${tried.length - 6} more` : ''}. Set FOLIO_BUILTIN_TEMPLATES_DIR + FOLIO_BUILTIN_INDEX, or compose from presets instead — get_engine_guide {section:"shorthand"}.`));
   } else {
     progress.push(pOk(`Matched ${total} template(s)`, count < total ? `showing ${count}` : undefined));
   }

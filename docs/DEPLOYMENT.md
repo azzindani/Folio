@@ -387,6 +387,10 @@ Tail it: `docker compose logs -f folio`.
 | `FOLIO_PORT` | `3333` | MCP HTTP port (in-container) |
 | `PORT` | `4173` | Editor port (in-container) |
 | `FOLIO_PROJECTS_DIR` | `/home/folio/projects` | Where designs live in the container |
+| `FOLIO_SHARED_DIRS` | unset | Comma-separated extra roots shared with **sibling MCP servers** (e.g. `/workspace/data`). See [Filesystem boundary](#filesystem-boundary) |
+| `FOLIO_BUILTIN_TEMPLATES_DIR` | auto (install-relative) | Built-in `.template.yaml` catalog dir — set only if it lives outside the install |
+| `FOLIO_BUILTIN_INDEX` | auto (install-relative) | Catalog metadata index (`catalog-index.json`) |
+| `FOLIO_ASSET_FETCH_HOSTS` | unset | Comma-separated extra hosts `asset_fetch` may download from |
 | `FOLIO_OUTPUT_BUDGET` | `1000` | Max tokens per MCP tool response |
 | `FOLIO_MCP_TIER` | `1` | **stdio only:** `1` · `2` · `3` · `all` |
 | `MCP_CONSTRAINED_MODE` | `false` | Halve list/layer/search limits for low-RAM |
@@ -409,6 +413,35 @@ Tail it: `docker compose logs -f folio`.
 | `FOLIO_MAX_BROADCAST_BYTES` | `16777216` | Max file size read for editor SSE fan-out |
 | `FOLIO_SKIP_TESTS` | `0` | `1` skips the test suite during `docker build` |
 | `FOLIO_UI_PORT` / `FOLIO_MCP_PORT` | `4173` / `3333` | Compose: host port mappings |
+
+### Filesystem boundary
+
+Stated once, here, so it isn't discovered one refused call at a time. Folio reads
+and writes under exactly these roots:
+
+```
+$HOME · $TMPDIR · FOLIO_PROJECTS_DIR · FOLIO_SHARED_DIRS · the built-in catalog (read-only)
+```
+
+Anything else is refused by `resolvePath()`, and the error names the roots that
+do work. This matters when Folio runs **beside other MCP servers** (a data/ML
+server, a document server): they do NOT share a filesystem by default, so
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `asset_add source_path:"/workspace/data/chart.png"` → *Path outside allowed directories* | that dir is not a Folio root | add it to `FOLIO_SHARED_DIRS`, or pass the file inline as a `data:` URI |
+| `export_design output_path:"/workspace/data/deck.pdf"` → *Permission denied* | same | same, or export to the project and copy it out |
+| `asset_fetch ref:"https://files.example.com/…"` → *Host not allowed* | fetch allowlist | add the host to `FOLIO_ASSET_FETCH_HOSTS` |
+
+```yaml
+# docker-compose.yml — sharing one folder with a sibling data server
+environment:
+  FOLIO_SHARED_DIRS: /workspace/data
+volumes:
+  - ./workspace/data:/workspace/data
+```
+
+Opt-in on purpose: the sandbox stays closed unless a deployment opens it.
 
 ---
 

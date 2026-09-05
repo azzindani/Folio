@@ -29,7 +29,7 @@ tools stay 1:1; the long tail is folded into **multiplexed tools** that take an
 
 | Tool | ops → former tool |
 |---|---|
-| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery |
+| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) |
 | `themes` | list→list_themes · apply→apply_theme · packs→(new) catalog packs |
 | `tasks` | list→list_tasks · create→create_task · resume→resume_task |
 | `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers |
@@ -66,12 +66,13 @@ Find, inspect and manage designs + the whole library. **Req:** `op`.
 - `delete` (req design_path) — move to the project `.trash/` (recoverable).
 - `resume` (req design_path) — read carousel generation state.
 - `gallery` — build `library.html` (thumbnails + search); `output_path`, `max_thumbnails`, `search`, `type`.
+- `icon_search` (`query`, `limit`) — look a bundled icon name UP instead of guessing. An unknown name renders as a blank fallback circle you cannot see. No query → the total + a starter set by kind; a query → ranked names, whether the name you hold `resolves_to` a real glyph, and concept bridging (`cargo` → package, truck). Never returns an empty list. Icons take the layer `color` (`currentColor` by default) — set it on a dark canvas.
 
 ### `themes`  ·  *op-multiplexed*
 **Req:** `op` (`project_path` req for list/apply, NOT packs).
 - `list` — themes in project.yaml + available builtins.
 - `apply` (req theme_id) — set the project default theme (lazily seeds a builtin). Does **not** recolor a design — use `patch_design {path:"recolor"}` for that.
-- `packs` — read-only editor catalog packs. Omit `kind` → the three kinds + counts. `kind:"palette|type|effects"` (+ `search`) → filtered listing with values inline. `+id` → one pack's full values: palette→hexes, type→heading/body/mono families, effects→effect keys. Needs no project.
+- `packs` — read-only editor catalog packs. `id` ALONE looks the pack up across all three kinds (you rarely know which kind an id belongs to). Omit both → the three kinds + counts. `kind:"palette|type|effects"` (+ `search`) → filtered listing with values inline. `+id` → one pack's full values: palette→hexes, type→heading/body/mono families, effects→effect keys. Needs no project.
 
 ### `tasks`  ·  *op-multiplexed*
 Multi-page carousel/deck planning. **Req:** `op`.
@@ -124,7 +125,8 @@ Inspect/preview, export, editor link, and the four advanced subsystems folded on
 
 ### `render_preview`
 Render to a PNG returned INLINE so you can SEE the design (no file). Pair with diagnose_design.
-- **Req:** `design_path`. **Opt:** `page_id`, `scale`.
+- **Req:** `design_path`. **Opt:** `page_id`, `scale`, `max_edge`, `full`.
+- **Cost:** downscaled to a **960px longest edge by default** (~¼ the image tokens of a full render) — enough to judge layout, overlap, hierarchy and colour. The response quotes `pixels` + `est_image_tokens` so a verification loop can be budgeted. `full:true` (or an explicit `scale`) opts into full resolution; use it to read fine copy.
 
 ### `diagnose_design`
 Troubleshooter — off-canvas, collisions, misalignment, tiny/low-contrast text, missing background, weak hierarchy. Run before seal_design.
@@ -133,6 +135,7 @@ Troubleshooter — off-canvas, collisions, misalignment, tiny/low-contrast text,
 ### `export_design`
 Export to SVG, PNG, PDF (true vector, selectable text), HTML or PPTX. A carousel exports one file per page. For an interactive report use `report {op:export}`; for a presentation/video use `presentation {op:export}` / `animation {op:export}`.
 - **Req:** `design_path`, `format`. **Opt:** `output_path`, `scale`.
+- **PDF is per-page:** one slide that fails to render becomes a blank sheet and the response returns `status:"partial"` + `failed_pages` — a deck no longer loses seven good pages to one bad one. Only an all-page failure errors.
 
 ### `open_in_editor`
 Tokenized editor URL (live-refreshes). create_design/append_page/seal_design/export_design already return this as `open_url`.

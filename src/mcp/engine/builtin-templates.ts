@@ -34,15 +34,40 @@ interface CatalogIndexFile { entries?: BuiltinTemplateEntry[] }
 
 let dirCache: string | null | undefined;
 let indexCache: BuiltinTemplateEntry[] | undefined;
+const probed: string[] = [];
+
+// The catalog ships next to the CODE, so locate it relative to this module and
+// not to process.cwd(): a server started from anywhere but the install root
+// found neither the asset dir nor the index and `list_templates` answered "0
+// templates" forever — a dead op that burns a loop iteration every time an
+// agent reasonably tries it. Walk up from src/mcp/engine/ to the install root.
+export function installRoots(): string[] {
+  const roots = [process.cwd()];
+  try {
+    let dir = path.dirname(new URL(import.meta.url).pathname);
+    for (let i = 0; i < 5; i++) { dir = path.dirname(dir); roots.push(dir); }
+  } catch { /* no import.meta in this host — cwd only */ }
+  return [...new Set(roots)];
+}
+
+/** Every path a catalog asset could live at, in priority order. */
+function candidatePaths(env: string, ...rel: string[][]): string[] {
+  const out = process.env[env] ? [process.env[env] as string] : [];
+  for (const root of installRoots()) for (const r of rel) out.push(path.join(root, ...r));
+  return out;
+}
+
+/** Which paths the last lookup tried — so an empty catalog can say WHY. */
+export function probedCatalogPaths(): string[] {
+  return probed.slice();
+}
 
 /** First existing candidate for the built-in `.template.yaml` asset dir. */
 export function builtinTemplatesDir(): string | null {
   if (dirCache !== undefined) return dirCache;
-  const candidates = [
-    process.env['FOLIO_BUILTIN_TEMPLATES_DIR'],
-    path.join(process.cwd(), 'dist', 'templates', 'builtin'),
-    path.join(process.cwd(), 'public', 'templates', 'builtin'),
-  ].filter((c): c is string => !!c);
+  const candidates = candidatePaths('FOLIO_BUILTIN_TEMPLATES_DIR',
+    ['dist', 'templates', 'builtin'], ['public', 'templates', 'builtin']);
+  probed.push(...candidates);
   dirCache = candidates.find(c => { try { return fs.statSync(c).isDirectory(); } catch { return false; } }) ?? null;
   return dirCache;
 }
@@ -50,11 +75,11 @@ export function builtinTemplatesDir(): string | null {
 /** Metadata index (id → name/tags/file). Empty array if it can't be read. */
 export function loadBuiltinIndex(): BuiltinTemplateEntry[] {
   if (indexCache !== undefined) return indexCache;
-  const candidates = [
-    process.env['FOLIO_BUILTIN_INDEX'],
-    path.join(process.cwd(), 'src', 'templates', 'catalog-index.json'),
-    path.join(process.cwd(), 'dist', 'templates', 'catalog-index.json'),
-  ].filter((c): c is string => !!c);
+  const candidates = candidatePaths('FOLIO_BUILTIN_INDEX',
+    ['src', 'templates', 'catalog-index.json'],
+    ['dist', 'templates', 'catalog-index.json'],
+    ['public', 'templates', 'catalog-index.json']);
+  probed.push(...candidates);
   for (const c of candidates) {
     try {
       const parsed = JSON.parse(fs.readFileSync(c, 'utf8')) as CatalogIndexFile;

@@ -93,6 +93,15 @@ function err(msg: string, hint: string): ToolResult {
   return errResult(OP, msg, hint);
 }
 
+/** What to DO with a pack once you have its values. */
+function applyHintFor(kind: PackKind): string {
+  return kind === 'palette'
+    ? 'Use these hexes directly as layer fills/colors, or as a theme palette.'
+    : kind === 'type'
+      ? 'Set these as heading/body/mono font families (or the theme typography).'
+      : 'Apply these effect keys via a layer\'s effect field.';
+}
+
 /**
  * `themes {op:"packs"}` — read-only catalog packs.
  *  - no `kind`        → the three kinds + their counts (discovery).
@@ -103,6 +112,18 @@ export function listPacks(a: {
   kind?: string; id?: string; search?: string; limit?: number;
 }): ToolResult {
   const kind = a.kind as PackKind | undefined;
+
+  // `id` alone is the natural way to ask for a pack — a model that has an id
+  // has no reason to know which of the three kinds it belongs to, and answering
+  // an id-only call with the kind COUNTS (the discovery payload) reads as "your
+  // pack doesn't exist". Ids are unique across kinds, so just look it up.
+  if (!kind && a.id) {
+    for (const k of KINDS) {
+      const hit = loadPacks(k).find(e => e.id === a.id);
+      if (hit) return ok({ ...usable(k, hit), kind: k }, applyHintFor(k));
+    }
+    return err(`no pack "${a.id}" in any kind`, `themes {op:"packs", kind:"palette|type|effects"} lists what exists; add search:"…" to filter.`);
+  }
 
   if (!kind) {
     const counts = KINDS.map(k => ({ kind: k, count: loadPacks(k).length }));
@@ -121,12 +142,7 @@ export function listPacks(a: {
   if (a.id) {
     const hit = rows.find(e => e.id === a.id);
     if (!hit) return err(`no ${kind} pack "${a.id}"`, `omit id to list ${kind} packs.`);
-    const applyHint = kind === 'palette'
-      ? 'Use these hexes directly as layer fills/colors, or as a theme palette.'
-      : kind === 'type'
-        ? 'Set these as heading/body/mono font families (or the theme typography).'
-        : 'Apply these effect keys via a layer\'s effect field.';
-    return ok(usable(kind, hit), applyHint);
+    return ok(usable(kind, hit), applyHintFor(kind));
   }
 
   const q = (a.search ?? '').trim().toLowerCase();
