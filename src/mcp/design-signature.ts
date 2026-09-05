@@ -107,8 +107,20 @@ const TEXT = new Set(['text', 'rich_text']);
 /** What the design is BUILT FROM. The strongest signal of sameness: two posters
  *  built from one `sections` preset with the same block kinds are the same
  *  poster, whatever the copy says. */
-export function structureOf(layers: Layer[]): string {
-  const parts: string[] = [];
+/**
+ * The parts a design is built from, flattened.
+ *
+ * A spec-less GROUP is packaging, not structure. Counting it as the layer type
+ * "group" made every hand-composed design in the library sign as
+ * structure="group" — 25 of 25 on one real project, 3 of 3 on another — so the
+ * heaviest axis (0.40) carried no information at all for the shape most real
+ * designs actually take. The editor and several tools wrap a whole composition
+ * in one locked group, and what the design is BUILT FROM is inside it.
+ *
+ * A PRESET group is the opposite case and still terminates the walk: its spec
+ * IS the structure, and its children are output.
+ */
+function structureParts(layers: Layer[], out: string[] = [], depth = 0): string[] {
   for (const l of layers) {
     const spec = specOf(l)?.spec as Record<string, unknown> | undefined;
     if (spec && typeof spec['type'] === 'string') {
@@ -117,11 +129,22 @@ export function structureOf(layers: Layer[]): string {
         : [];
       const items = Array.isArray(spec['items']) ? `×${(spec['items'] as unknown[]).length}` : '';
       const inner = blocks.length ? `[${[...new Set(blocks)].sort().join(',')}]` : items;
-      parts.push(`${String(spec['type'])}${inner}`);
+      out.push(`${String(spec['type'])}${inner}`);
       continue;
     }
-    parts.push(String((l as L).type));
+    const kids = (l as L).layers;
+    if (Array.isArray(kids) && kids.length && depth < 4) {
+      const before = out.length;
+      structureParts(kids as Layer[], out, depth + 1);
+      if (out.length > before) continue;         // the group spoke for itself
+    }
+    out.push(String((l as L).type));
   }
+  return out;
+}
+
+export function structureOf(layers: Layer[]): string {
+  const parts = structureParts(layers);
   const counts = new Map<string, number>();
   for (const p of parts) counts.set(p, (counts.get(p) ?? 0) + 1);
   return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))

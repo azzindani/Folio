@@ -219,3 +219,52 @@ describe('signature — the anchor is a decision, not a box', () => {
     expect(compositionOf(layersOf(narrow), 1080, 1350)).toContain('/right');
   });
 });
+
+describe('signature — a wrapper group is packaging, not structure', () => {
+  const L = (o: Record<string, unknown>): Layer => o as unknown as Layer;
+
+  // Measured on the live library: every hand-composed design there is wrapped
+  // in one locked group, so reading the wrapper as the layer type "group" made
+  // 25 of 25 designs on one project sign identically on the axis that carries
+  // 0.40 of the weight.
+  it('describes what is INSIDE a spec-less wrapper, not the wrapper', () => {
+    const wrapped = structureOf([L({
+      id: 'g', type: 'group',
+      layers: [L({ id: 'r', type: 'rect' }), L({ id: 't', type: 'text' }), L({ id: 't2', type: 'text' })],
+    })]);
+    expect(wrapped).not.toBe('group');
+    expect(wrapped).toBe('rect+text×2');
+  });
+
+  it('signs two differently-built compositions differently through their wrappers', () => {
+    const a = structureOf([L({ id: 'g', type: 'group', layers: [L({ type: 'rect' }), L({ type: 'text' })] })]);
+    const b = structureOf([L({ id: 'g', type: 'group', layers: [L({ type: 'image' }), L({ type: 'text' }), L({ type: 'text' })] })]);
+    expect(a).not.toBe(b);
+  });
+
+  it('still stops at a PRESET group — its spec IS the structure, its children are output', () => {
+    const preset = L({
+      id: 'p', type: 'group', _spec: { type: 'stat' },
+      layers: [L({ type: 'rect' }), L({ type: 'text' })],
+    });
+    expect(structureOf([preset])).toBe('stat');
+  });
+
+  it('keeps calling an empty group a group — there is nothing inside to describe', () => {
+    expect(structureOf([L({ id: 'g', type: 'group', layers: [] })])).toBe('group');
+  });
+
+  it('flattens nested wrappers instead of nesting the description', () => {
+    const s = structureOf([L({
+      id: 'outer', type: 'group',
+      layers: [L({ id: 'inner', type: 'group', layers: [L({ type: 'rect' }), L({ type: 'rect' })] })],
+    })]);
+    expect(s).toBe('rect×2');
+  });
+
+  it('stops descending before a pathological tree costs anything', () => {
+    let deep: Layer = L({ type: 'rect' });
+    for (let i = 0; i < 12; i++) deep = L({ id: `g${i}`, type: 'group', layers: [deep] });
+    expect(() => structureOf([deep])).not.toThrow();
+  });
+});
