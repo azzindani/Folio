@@ -93,4 +93,34 @@ modification — the search filters for it.
   • asset_move works on lib/ paths (folders nest there); asset_delete on a lib/
     path removes it for EVERY project, so check asset_list first.
   • A project file at the same path as a shared one WINS — that is how a project
-    overrides a shared asset without renaming anything.`;
+    overrides a shared asset without renaming anything.
+
+## The pixel recipe (\`process\`) — Photoshop in one object
+Accepted by asset_add (during ingest) and asset_process (on a stored file, which
+writes a NEW png and never touches the original). PNG only: another format
+returns an error rather than silently skipping the work.
+
+Applied in THIS order regardless of the order you write the keys:
+  crop → remove_bg → trim → rotate/flip → fit → adjust →
+  blur/sharpen/vignette/grain → round → pad → flatten
+
+  crop      {x,y,w,h} or {aspect:"1:1"|"16:9"|…, anchor}
+  remove_bg true, or {tolerance:30, feather:1} — makes the border-connected
+            backdrop transparent, so a flat-backed logo sits on any canvas
+  trim      true (all uniform edges) or a px inset
+  rotate    90 | 180 | 270          flip  "h" | "v" | "hv"
+  fit       {w, h, mode:"cover"|"contain"} — resamples to a target box
+  adjust    the Adjustments menu, all optional:
+              brightness -100..100 · contrast -100..100 · exposure (stops)
+              gamma · levels:{black,white} · saturation (×) · hue (°)
+              invert · sepia 0..1 · duotone:{shadow,highlight}
+              tint:{color,strength} · posterize n · threshold 0..255 · opacity
+  blur      px                      sharpen  0..5
+  vignette  0..1                    grain    0..1
+  round     px                      pad      px or {top,right,bottom,left,color}
+  flatten   "#hex" — composite onto a solid ground, dropping transparency
+
+Typical: a photo going BEHIND a headline needs to lose contrast and colour so
+the type wins — {adjust:{brightness:-30, saturation:0.4}, vignette:0.3}.
+On asset_add the reported dominant_colors describe the PROCESSED result, so
+they are the colours you actually have to design against.`;
