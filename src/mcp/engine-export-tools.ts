@@ -20,7 +20,8 @@ import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
 import { readBaseline, writeBaseline, diffPages } from './engine/preview-diff';
-import { buildManifest, embedManifest } from './engine/export-manifest';
+import { buildManifest, embedManifest, sourceHash } from './engine/export-manifest';
+import { exportKey, findReusable, recordExport } from './engine/export-receipt';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
 import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
@@ -94,7 +95,7 @@ export function collectHrefRects(layers: Layer[]): { x: number; y: number; w: nu
   return out;
 }
 
-export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number; project_path?: string }): ToolResult {
+export function exportDesign(args: { design_path: string; format: string; output_path?: string; scale?: number; project_path?: string; force?: boolean }): ToolResult {
   // Project dir for project-scoped fonts (WP-1.6) — resolvable even when only
   // design_path was passed (designs live at <project>/designs/<file>).
   const op = 'export_design';
@@ -135,6 +136,27 @@ export function exportDesign(args: { design_path: string; format: string; output
   const existedBefore = willOverwrite(firstTarget);
   const collision = (): ReturnType<typeof collisionReport> =>
     collisionReport(outPath, multiPage && args.format === 'svg' ? pages.length : 0, existedBefore);
+  // Idempotency — see engine/export-receipt.ts. Scoped to SINGLE-FILE outputs:
+  // a multi-page SVG or PNG writes N files, and proving all N intact is more
+  // machinery than the retry it would save. `scale` is folded in raw because each branch
+  // resolves its own default from the same argument.
+  const singleFile = !(multiPage && (args.format === 'svg' || args.format === 'png'));
+  const key = exportKey(sourceHash(dPath), args.format, Number(args.scale) || 0, outPath);
+  if (singleFile && !args.force) {
+    const done = findReusable(dPath, key);
+    if (done) {
+      progress.push(pOk('Already exported', `${path.basename(done.output)} (${done.bytes} bytes) — same design, format, scale and destination`));
+      return okResult(op, {
+        format: args.format, output_file: path.basename(done.output), output_path: done.output,
+        status: 'ok', bytes: done.bytes, reused: true, exported_at: done.at,
+        note: 'Nothing was re-rendered: this design has not changed since it was last exported to this path at this scale, so the file on disk is already the answer. Pass force:true to render it again.',
+        progress, context: buildContext(op, `Reused existing ${args.format.toUpperCase()} for "${spec.meta.name}"`, [{ type: args.format, path: done.output, role: 'output' }]),
+        handover: buildHandover('EXPORT', { design_path: dPath }),
+      });
+    }
+  }
+  const finish = (out: string, bytes: number): void => { if (singleFile) recordExport(dPath, key, out, bytes); };
+
   const link = buildEditorLink(dPath);
   if (args.format === 'svg') {
     try {
@@ -161,6 +183,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       }
       const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.writeFileSync(outPath, svgStr, 'utf-8');
+      finish(outPath, svgStr.length);
       progress.push(pOk('SVG written', path.basename(outPath)));
       const context = buildContext(op, `SVG exported for "${spec.meta.name}"`, [
         { type: 'svg', path: outPath, role: 'output' },
@@ -201,6 +224,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       const doc = embedManifest(html, manifest);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, doc, 'utf-8');
+      finish(outPath, doc.length);
       progress.push(pOk('HTML written', path.basename(outPath)));
       const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
@@ -275,6 +299,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       const pdfBuf = Buffer.from(doc.output('arraybuffer'));
       fs.writeFileSync(outPath, pdfBuf);
+      finish(outPath, pdfBuf.length);
       progress.push(pOk('PDF written', `${path.basename(outPath)} (${pdfBuf.length} bytes @ ${scale}× · ${vectorRuns} vector text run(s))`));
       const linkCount = sheetSpecs.reduce((n, s) => n + collectHrefRects(s.layers).length, 0);
       const notes = [
@@ -326,6 +351,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       const pptx = buildPptx(slides, spec.meta.name || 'Folio Deck');
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, pptx);
+      finish(outPath, pptx.length);
       progress.push(pOk('PPTX written', `${path.basename(outPath)} (${pptx.length} bytes · ${slides.length} slide(s) @ ${scale}× · ${totalTexts} editable text box(es))`));
       const notes = [...assetNotes, ...(missingFonts.size ? [`Fonts not bundled for raster export — slides used a fallback (they render correctly in the editor): ${[...missingFonts].join(', ')}.`] : []),
         `PPTX slides = a pixel-faithful background image + ${totalTexts} NATIVE text box(es) you can select/edit in PowerPoint/Impress (solid-hex text with no rotation/effect is promoted; the rest stays baked in the image).`];
@@ -384,6 +410,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       }
       const png = rasterize(renderToSVGString(spec, undefined, undefined, componentRegistry));
       fs.writeFileSync(outPath, png);
+      finish(outPath, png.length);
       progress.push(pOk('PNG written', `${path.basename(outPath)} (${png.length} bytes @ ${scale}×)`));
       const context = buildContext(op, `PNG exported for "${spec.meta.name}"`, [
         { type: 'png', path: outPath, role: 'output' },
