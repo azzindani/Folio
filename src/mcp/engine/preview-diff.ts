@@ -27,8 +27,36 @@ export function baselinePath(designPath: string): string {
   return path.join(dir, `${name}.preview.json`);
 }
 
+/**
+ * Renumber generated element ids in first-appearance order.
+ *
+ * The renderer mints ids for gradients, clips, patterns and filters from a
+ * module-level counter, so the SAME design renders as `lg-1` on one call and
+ * `lg-4` on the next — different bytes, identical pixels. Hashing the raw text
+ * therefore reported every page as changed on every call, which makes
+ * changed_only do nothing at all while looking like it works. Caught only by
+ * calling it twice against a real deck; the unit tests used fixed strings and
+ * could never have seen it.
+ *
+ * Renumbering rather than deleting keeps the fingerprint honest: adding or
+ * removing a gradient still moves the sequence, so a real change to what is
+ * painted still registers.
+ */
+export function canonicalSVG(svg: string): string {
+  const seen = new Map<string, string>();
+  for (const m of svg.matchAll(/\sid="([^"]+)"/g)) {
+    const id = m[1];
+    if (id && !seen.has(id)) seen.set(id, `_i${seen.size}`);
+  }
+  let out = svg;
+  for (const [from, to] of seen) {
+    out = out.split(`id="${from}"`).join(`id="${to}"`).split(`url(#${from})`).join(`url(#${to})`);
+  }
+  return out;
+}
+
 export function hashSVG(svg: string): string {
-  return crypto.createHash('sha1').update(svg).digest('hex').slice(0, 16);
+  return crypto.createHash('sha1').update(canonicalSVG(svg)).digest('hex').slice(0, 16);
 }
 
 /** Missing or unreadable baseline is not an error — it means "never looked". */
