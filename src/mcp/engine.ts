@@ -32,3 +32,4 @@ export { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './engi
 export { renderFrame } from './engine/motion-frame';
 export { setMotionPath } from './engine/motion-path-op';
 export { shapeOp } from './engine/shape-ops-op';
+export { splitText } from './engine/split-text-op';
