@@ -1,7 +1,7 @@
 import type { StateManager, EditorState } from '../../editor/state';
+import { poseAt } from '../../animation/keyframe-css';
 import type { Layer } from '../../schema/types';
 import type { AnimationSpec, Keyframe } from '../../animation/types';
-import { PlaybackController } from '../../animation/keyframe-engine';
 
 // ── Pure-function API (used by MCP engine + tests) ───────────
 
@@ -34,6 +34,19 @@ export function buildTimelineTracks(
 }
 
 /** Get interpolated layer values at a given time. */
+/**
+ * The pose at time t — delegated to the ENGINE's sampler, not re-implemented.
+ *
+ * This used to lerp x/y/scale/rotation/opacity by hand and ignore `easing`
+ * entirely, so the panel's scrubber disagreed with both the CSS player and the
+ * exported frames: a keyframe eased "bounce" moved linearly here, and
+ * skew/blur/draw/scale_x/scale_y did not move at all because the function had
+ * no branch for them. poseAt is what the flipbook and the CSS route already
+ * use, so using it is what makes the three agree.
+ *
+ * Signature kept: callers pass keyframes and a duration, and get the subset of
+ * channels that actually differ from rest, which is what the panel displays.
+ */
 export function interpolateAtTime(
   keyframes: Keyframe[],
   t: number,
@@ -41,37 +54,50 @@ export function interpolateAtTime(
 ): Partial<Keyframe> {
   if (keyframes.length === 0) return {};
   const clampedT = Math.max(0, Math.min(duration, t));
-
-  const first = keyframes[0];
-  const last  = keyframes[keyframes.length - 1];
-
-  if (clampedT <= (first.t ?? 0)) return { ...first };
-  if (clampedT >= (last.t ?? 0))  return { ...last };
-
-  let lo = first;
-  let hi = last;
-  for (let i = 0; i < keyframes.length - 1; i++) {
-    const a = keyframes[i];
-    const b = keyframes[i + 1];
-    if ((a.t ?? 0) <= clampedT && (b.t ?? 0) >= clampedT) {
-      lo = a;
-      hi = b;
-      break;
-    }
+  const pose = poseAt({ keyframes, playback: { duration } } as unknown as AnimationSpec, clampedT);
+  // Report the channels the keyframes actually USE. Filtering by "differs from
+  // rest" instead would drop a deliberate opacity of 1 at the end of a fade,
+  // which is exactly the value a caller asks for when it asks for the pose.
+  const used = new Set<string>();
+  for (const kf of keyframes) {
+    for (const [k, v] of Object.entries(kf)) if (k !== 't' && typeof v === 'number') used.add(k);
   }
+  const out: Partial<Keyframe> = { t: clampedT };
+  for (const [k, v] of Object.entries(pose)) {
+    if (used.has(k) && typeof v === 'number') (out as Record<string, number>)[k] = v;
+  }
+  return out;
+}
 
-  const loT = lo.t ?? 0;
-  const hiT = hi.t ?? 0;
-  const progress = hiT === loT ? 0 : (clampedT - loT) / (hiT - loT);
-  const lerp = (a: number, b: number): number => a + (b - a) * progress;
 
-  const result: Partial<Keyframe> = { t: clampedT };
-  if (lo.opacity   !== undefined && hi.opacity   !== undefined) result.opacity   = lerp(lo.opacity,   hi.opacity);
-  if (lo.x         !== undefined && hi.x         !== undefined) result.x         = lerp(lo.x,         hi.x);
-  if (lo.y         !== undefined && hi.y         !== undefined) result.y         = lerp(lo.y,         hi.y);
-  if (lo.scale     !== undefined && hi.scale     !== undefined) result.scale     = lerp(lo.scale,     hi.scale);
-  if (lo.rotation  !== undefined && hi.rotation  !== undefined) result.rotation  = lerp(lo.rotation,  hi.rotation);
-  return result;
+/**
+ * The layer fields a pose maps onto, for a live scrub preview.
+ *
+ * Kept pure and exported so the mapping is testable without a DOM: the panel
+ * only decides WHEN to apply it. x/y are offsets from the authored position —
+ * the same convention the flipbook uses — so a preview and an exported frame
+ * put the layer in the same place.
+ */
+export function poseToLayerUpdate(base: Layer, pose: Partial<Keyframe>): Partial<Layer> {
+  const b = base as unknown as Record<string, unknown>;
+  const n = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);
+  const p = pose as unknown as Record<string, number | undefined>;
+  const out: Record<string, unknown> = {};
+  if (p['x'] !== undefined) out['x'] = (n(b['x']) ?? 0) + p['x'];
+  if (p['y'] !== undefined) out['y'] = (n(b['y']) ?? 0) + p['y'];
+  if (p['opacity'] !== undefined) out['opacity'] = p['opacity'];
+  if (p['rotation'] !== undefined) out['rotation'] = (n(b['rotation']) ?? 0) + p['rotation'];
+  const sx = p['skew_x'] ?? 0, sy = p['skew_y'] ?? 0;
+  if (sx !== 0 || sy !== 0) {
+    const cx = (n(b['x']) ?? 0) + (n(b['width']) ?? 0) / 2;
+    const cy = (n(b['y']) ?? 0) + (n(b['height']) ?? 0) / 2;
+    out['transform'] = `translate(${cx.toFixed(2)} ${cy.toFixed(2)}) skewX(${sx.toFixed(3)}) skewY(${sy.toFixed(3)}) translate(${(-cx).toFixed(2)} ${(-cy).toFixed(2)})`;
+  }
+  if (p['blur'] !== undefined && p['blur'] > 0) {
+    const fx = (b['effects'] ?? {}) as Record<string, unknown>;
+    out['effects'] = { ...fx, blur: p['blur'] };
+  }
+  return out as Partial<Layer>;
 }
 
 /** Render ASCII timeline preview (for MCP output). */
@@ -112,7 +138,8 @@ const KF_RADIUS = 5;      // keyframe diamond half-size
 export class TimelinePanelManager {
   private container: HTMLElement;
   private state: StateManager;
-  private ctrl: PlaybackController | null = null;
+  /** Authored values captured before a scrub, restored when it stops. */
+  private preScrub: Map<string, Partial<Layer>> | null = null;
   private duration = 2000;
   private scrubMs = 0;
   private playing = false;
@@ -302,6 +329,49 @@ export class TimelinePanelManager {
     if (timecode) timecode.textContent = fmtMs(this.scrubMs);
     const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
     if (thumb) thumb.style.left = `${(this.scrubMs / this.duration) * 100}%`;
+    this.previewAt(this.scrubMs);
+  }
+
+  /**
+   * Show the pose on the CANVAS, not just on the ruler.
+   *
+   * The scrubber used to move a thumb and a timecode and change nothing else,
+   * so dragging it looked like a preview and was not one. Poses are applied
+   * with recordUndo:false — the same channel a drag uses mid-gesture — and the
+   * authored values are captured once, on the first scrub, so stopping puts
+   * the design back exactly as authored rather than baking a frame into it.
+   */
+  private previewAt(ms: number): void {
+    const layers = this.state.getCurrentLayers() as Layer[];
+    const animated = layers.filter(l => (l.animation?.keyframes ?? []).length > 0);
+    if (animated.length === 0) return;
+
+    if (!this.preScrub) {
+      this.preScrub = new Map();
+      for (const l of animated) {
+        const o = l as unknown as Record<string, unknown>;
+        this.preScrub.set(l.id, {
+          x: o['x'], y: o['y'], opacity: o['opacity'], rotation: o['rotation'],
+          transform: o['transform'], effects: o['effects'],
+        } as unknown as Partial<Layer>);
+      }
+    }
+
+    for (const l of animated) {
+      const base = this.preScrub.get(l.id);
+      if (!base) continue;
+      const authored = { ...(l as unknown as Record<string, unknown>), ...(base as unknown as Record<string, unknown>) } as unknown as Layer;
+      const pose = interpolateAtTime((l.animation?.keyframes ?? []) as Keyframe[], ms, this.duration);
+      const update = { ...(base as unknown as Record<string, unknown>), ...(poseToLayerUpdate(authored, pose) as unknown as Record<string, unknown>) };
+      this.state.updateLayer(l.id, update as unknown as Partial<Layer>, false);
+    }
+  }
+
+  /** Put every previewed layer back the way it was authored. */
+  private clearPreview(): void {
+    if (!this.preScrub) return;
+    for (const [id, base] of this.preScrub) this.state.updateLayer(id, base, false);
+    this.preScrub = null;
   }
 
   private play(): void {
@@ -324,7 +394,13 @@ export class TimelinePanelManager {
 
   private stop(): void {
     this.pause();
-    this.scrubTo(0);
+    this.scrubMs = 0;
+    const timecode = this.container.querySelector<HTMLElement>('#tl-timecode');
+    if (timecode) timecode.textContent = fmtMs(0);
+    const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
+    if (thumb) thumb.style.left = '0%';
+    // Stop means "back to the design", not "back to frame 0 of the preview".
+    this.clearPreview();
   }
 }
 
