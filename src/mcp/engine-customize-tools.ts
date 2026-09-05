@@ -24,6 +24,7 @@ import type { ToolResult, ProgressItem, NextAction } from './types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 import { resolveThemeColors } from './engine-layer-predicates';
 import { expandShorthandLayers } from './shorthand-parser';
+import { FLOW_PAGE_PRESETS } from './shorthand-recover';
 import { resetPresetFitReports, drainPresetFitReports, scaleSubtree } from './preset-fit';
 import { SPEC_FIELD, SPEC_ENV_FIELD, mergeSpecChanges, diffSpecKeys, toShorthand } from './design-spec';
 
@@ -84,8 +85,15 @@ export function reflowToCanvas(design: DesignSpec, W: number, H: number): Reflow
         resetPresetFitReports();
         try {
           const env = o[SPEC_ENV_FIELD] as Record<string, unknown> | undefined;
+          // It covered the OLD canvas, so it must cover the new one. A flow
+          // preset content-SIZES by default: re-expanded into a taller box it
+          // would stop at the height its content needs and leave an unpainted
+          // strip below (a 1080x1350 slide painted only to y=972). __fillPage is
+          // the engine's own "span this page and centre in it" marker — the same
+          // one fillFlowPresetsToPage stamps when a slide is composed.
+          const fills = FLOW_PAGE_PRESETS.has(String(spec['type'] ?? '').toLowerCase());
           const next = { ...spec, pos: [0, 0, W, H] };
-          const built = expandShorthandLayers([toShorthand({ ...next, id: o['id'] }, env, theme)]);
+          const built = expandShorthandLayers([toShorthand({ ...next, id: o['id'] }, { ...env, ...(fills ? { __fillPage: true } : {}) }, theme)]);
           if (built.length) {
             s.layers[i] = built[0];
             out.reexpanded++;
