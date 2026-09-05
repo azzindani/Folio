@@ -96,6 +96,20 @@ Self-heal (close the loop yourself instead of hand-fixing findings):
   doing nothing", "this reads flat" is judgement no measurement returns. The
   full loop is: compose → heal → render_preview → look → patch_spec → repeat.
 
+  Every could_not_fix / for_you_to_judge entry carries WHERE to act:
+    layer_id      the layer the finding is about
+    patch_target  the id patch_spec accepts — the preset that OWNS that layer,
+                  since a generated child cannot be edited on its own
+    patch_with    the exact call to make
+  So a verdict you reach by looking becomes one call, not a re-inspection.
+
+  KEEP THE LOOP HEADLESS BY DEFAULT. Geometry, legibility and overflow are
+  settled by measurement — heal and diagnose cost no image tokens and never
+  flake. Spend a preview only on what genuinely needs eyes, and on a multi-page
+  design re-check with render_preview{changed_only:true}, which renders only the
+  pages that actually moved. A preview per edit is how a verification loop ends
+  up costing more than the work.
+
 Tokens + components (the system layer — reach for these before hand-placing):
   TOKENS — colour by ROLE, not by literal.
     manage_design(op:"tokens", design_path)                    read the palette

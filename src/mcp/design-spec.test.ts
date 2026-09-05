@@ -5,7 +5,8 @@ import * as os from 'os';
 
 import { expandShorthand } from './shorthand-expand';
 import type { ShorthandLayer } from './shorthand-helpers';
-import { SPEC_FIELD, SPEC_ENV_FIELD, collectAuthoredSpecs, findSpecLayer, mergeSpecChanges, replaceLayer, diffSpecKeys } from './design-spec';
+import type { Layer } from '../schema/types';
+import { SPEC_FIELD, SPEC_ENV_FIELD, collectAuthoredSpecs, findSpecLayer, mergeSpecChanges, replaceLayer, diffSpecKeys, specAncestorOf } from './design-spec';
 import { getDesignSpec, patchDesignSpec } from './engine-spec-tools';
 import { createProject, createDesign } from './engine-project-tools';
 import { addLayers } from './engine-layer-tools';
@@ -172,5 +173,46 @@ describe('get_spec / patch_spec — the round-trip through a real design', () =>
     const r = patchDesignSpec({ design_path: designPath, layer_id: 'not-there', changes: { title: 'x' } }) as unknown as Rec;
     expect(r['success']).toBe(false);
     expect(String(r['hint'])).toMatch(/get_spec/);
+  });
+});
+
+describe('specAncestorOf — the id patch_spec actually accepts', () => {
+  const tree = (): Layer[] => ([
+    {
+      id: 'sections_1', type: 'group', _spec: { type: 'sections' },
+      layers: [
+        { id: 'sections_1_title', type: 'text' },
+        { id: 'sections_1_block', type: 'group', layers: [{ id: 'sections_1_block_body', type: 'text' }] },
+      ],
+    },
+    { id: 'loose_rect', type: 'rect' },
+    {
+      id: 'plain_group', type: 'group',
+      layers: [{ id: 'nested_stat', type: 'group', _spec: { type: 'stat' }, layers: [{ id: 'nested_stat_value', type: 'text' }] }],
+    },
+  ] as unknown as Layer[]);
+
+  it('walks up from a generated child to the preset that owns it', () => {
+    expect(specAncestorOf(tree(), 'sections_1_title')).toBe('sections_1');
+  });
+
+  it('finds it from any depth, not just the first level', () => {
+    expect(specAncestorOf(tree(), 'sections_1_block_body')).toBe('sections_1');
+  });
+
+  it('returns the layer itself when it carries the spec', () => {
+    expect(specAncestorOf(tree(), 'sections_1')).toBe('sections_1');
+  });
+
+  it('is null for a hand-placed layer — it is its own source and needs no spec', () => {
+    expect(specAncestorOf(tree(), 'loose_rect')).toBeNull();
+  });
+
+  it('reports the NEAREST spec, not an outer group that has none', () => {
+    expect(specAncestorOf(tree(), 'nested_stat_value')).toBe('nested_stat');
+  });
+
+  it('is null for an id that is not in the tree at all', () => {
+    expect(specAncestorOf(tree(), 'no-such-layer')).toBeNull();
   });
 });
