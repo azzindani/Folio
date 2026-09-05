@@ -87,8 +87,14 @@ export function styleHistory(args: {
   } catch (err) {
     return errResult(op, `Could not resolve project: ${err instanceof Error ? err.message : String(err)}`, 'Pass the project name, e.g. project_path:"air-cargo".');
   }
-  if (!fs.existsSync(path.join(projectDir, 'project.yaml'))) {
-    return errResult(op, `Project not found: ${projectDir}`, 'Run create_project first, or check the name.');
+  // What this op needs is DESIGNS, and `project.yaml` is only a proxy for having
+  // them — one that does not hold: 186 of the 203 project dirs on the live
+  // server carry a designs/ folder and no project.yaml (they predate it, or were
+  // written by a tool that never made one). Guarding on the manifest made the
+  // op refuse 92% of the real library while reporting "Project not found" about
+  // a directory holding 25 designs. Guard on the thing actually read.
+  if (!fs.existsSync(path.join(projectDir, 'designs')) && !fs.existsSync(path.join(projectDir, 'project.yaml'))) {
+    return errResult(op, `No project at: ${projectDir}`, 'Pass the project name (e.g. project_path:"air-cargo"). manage_design {op:"browse"} lists what exists.');
   }
 
   const { designs, scanned, unreadable } = readStyleHistory(projectDir, { limit: args.limit, exclude: args.design_path });

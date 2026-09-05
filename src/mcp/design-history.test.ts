@@ -150,6 +150,28 @@ describe('style history — checking the seed instead of believing it', () => {
 });
 
 describe('style_history — the tool', () => {
+  it('reads a project that has designs but no project.yaml', () => {
+    // 186 of the 203 project dirs on the live server are this shape — a
+    // designs/ folder and no manifest. Guarding on project.yaml made the op
+    // refuse them with "Project not found" about a dir holding 25 designs.
+    const dir = project('p-nomanifest');
+    make(dir, 'a', sections());
+    make(dir, 'b', sections({ title: 'Rates held flat' }));
+    fs.rmSync(path.join(dir, 'project.yaml'), { force: true });
+
+    const r = styleHistory({ project_path: dir }) as unknown as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    expect(r['count']).toBe(2);
+  });
+
+  it('still refuses a directory that is not a project at all', () => {
+    const bare = path.join(root, 'not-a-project');
+    fs.mkdirSync(bare, { recursive: true });
+    const r = styleHistory({ project_path: bare }) as unknown as Record<string, unknown>;
+    expect(r['success']).toBe(false);
+    expect(String(r['error'])).toMatch(/No project at/);
+  });
+
   it('an empty project has no house style and nothing to avoid', () => {
     const dir = project('p-empty');
     const r = styleHistory({ project_path: dir }) as unknown as Record<string, unknown>;
