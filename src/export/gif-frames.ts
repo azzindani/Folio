@@ -175,9 +175,33 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
     out['effects'] = { ...fx, blur: vb };
   }
 
-  // Skew and stroke reveal have no still-frame equivalent in the layer schema
-  // (there is no skew field, and a partial outline needs a live dash), so the
-  // flipbook holds those channels at rest. The animated-SVG route plays them.
+  // Skew: SVG skews about the ORIGIN, so a layer skewed in place has to be
+  // translated to its own centre and back — otherwise it slides across the
+  // canvas as it leans. Appended to any transform already there.
+  const skX = num(v['skew_x']) ?? 0;
+  const skY = num(v['skew_y']) ?? 0;
+  if (skX !== 0 || skY !== 0) {
+    const bx = num(layer['x' as keyof Layer]) ?? 0, by = num(layer['y' as keyof Layer]) ?? 0;
+    const bw = num(layer['width' as keyof Layer]) ?? 0, bh = num(layer['height' as keyof Layer]) ?? 0;
+    const cx = bx + bw / 2, cy = by + bh / 2;
+    const t = `translate(${cx.toFixed(2)} ${cy.toFixed(2)}) skewX(${skX.toFixed(3)}) skewY(${skY.toFixed(3)}) translate(${(-cx).toFixed(2)} ${(-cy).toFixed(2)})`;
+    const prior = typeof out['transform'] === 'string' ? out['transform'] : '';
+    out['transform'] = prior ? `${prior} ${t}` : t;
+  }
+
+  // Draw: reveal a stroke by dashing it with its own length and pulling the
+  // offset back. Needs the path's real length, which is what the motion-path
+  // sampler already measures — the same flattener, so a drawn line and a
+  // travelled line agree about where "halfway" is.
+  const vd = num(v['draw']);
+  if (vd !== undefined && vd < 1) {
+    const d = (layer as unknown as Record<string, unknown>)['d'];
+    const sp = typeof d === 'string' ? sampledPath(d) : null;
+    if (sp && sp.length > 0) {
+      out['stroke_dasharray'] = Math.ceil(sp.length);
+      out['stroke_dashoffset'] = Math.round(sp.length * (1 - Math.max(0, vd)));
+    }
+  }
 
   const fill = v['fill.color'];
   if (typeof fill === 'string') out['fill'] = fill;
