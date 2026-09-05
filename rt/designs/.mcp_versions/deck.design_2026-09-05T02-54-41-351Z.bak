@@ -1,7 +1,7 @@
 _protocol: design/v1
 _mode: in_progress
 meta:
-  id: mtnreyu2-s3ngqj
+  id: mtnshu3w-4clvkn
   name: deck
   type: poster
   created: '2026-09-05'
@@ -21,7 +21,7 @@ layers:
     x: 0
     'y': 0
     width: 1080
-    height: 972
+    height: 1350
     layers:
       - id: s1_bg
         type: rect
@@ -29,7 +29,7 @@ layers:
         x: 0
         'y': 0
         width: 1080
-        height: 972
+        height: 1350
         fill:
           type: solid
           color: '#0A0A0A'
@@ -37,13 +37,13 @@ layers:
         type: ellipse
         z: 1
         x: 151
-        'y': -389
+        'y': -230
         width: 778
         height: 778
         fill:
           type: radial
           stops:
-            - color: '#0c4b68'
+            - color: '#71331c'
               position: 0
             - color: '#0A0A0A'
               position: 100
@@ -54,7 +54,7 @@ layers:
         x: 0
         'y': 0
         width: 1080
-        height: 972
+        height: 1350
         fill:
           type: noise
           frequency: 0.9
@@ -64,7 +64,7 @@ layers:
         type: text
         z: 3
         x: 81
-        'y': 254
+        'y': 413
         width: 918
         height: 82
         content:
@@ -80,7 +80,7 @@ layers:
         type: text
         z: 4
         x: 81
-        'y': 358
+        'y': 517
         width: 918
         height: 44
         content:
@@ -95,7 +95,7 @@ layers:
         type: rect
         z: 5
         x: 81
-        'y': 429
+        'y': 588
         width: 918
         height: 3
         fill:
@@ -105,17 +105,17 @@ layers:
         type: rect
         z: 6
         x: 81
-        'y': 427
+        'y': 586
         width: 140
         height: 7
         fill:
           type: solid
-          color: '#0EA5E9'
+          color: '#FF6B35'
       - id: s1_b0_t
         type: text
         z: 7
         x: 81
-        'y': 483
+        'y': 642
         width: 918
         height: 36
         content:
@@ -130,7 +130,7 @@ layers:
         type: text
         z: 9
         x: 81
-        'y': 554
+        'y': 713
         width: 918
         height: 36
         content:
@@ -145,7 +145,7 @@ layers:
         type: rect
         z: 11
         x: 81
-        'y': 902
+        'y': 1061
         width: 918
         height: 2
         fill:
@@ -155,7 +155,7 @@ layers:
         type: text
         z: 12
         x: 81
-        'y': 918
+        'y': 1077
         width: 918
         height: 30
         content:
@@ -177,7 +177,7 @@ layers:
         - 1080
         - 1350
       bg: '#0A0A0A'
-      accent: '#0EA5E9'
+      accent: '#FF6B35'
       title: Air Cargo Performance
       subtitle: Volume, yield and belly capacity.
       blocks:

@@ -114,6 +114,20 @@ describe('presentation {op:"customize"} — re-shape a deck without rebuilding i
     expect(doc['height']).toBe(1350);
   });
 
+  // A flow preset content-SIZES by default, so re-expanding it into a TALLER
+  // box stopped at the height its content needed and left an unpainted strip
+  // (a 1080×1350 slide painted only to y=972, which diagnose then reported as
+  // "no full-canvas background" — correctly).
+  it('the re-laid-out slide PAINTS the whole new canvas — no dead strip', () => {
+    customizePresentation({ design_path: deckPath, changes: { width: 1080, height: 1350 } });
+    const page = (read(deckPath)['pages'] as Rec[])[0];
+    const group = (page['layers'] as Rec[])[0];
+    expect(Number(group['height'])).toBe(1350);
+    const bg = (group['layers'] as Rec[]).find(l => l['type'] === 'rect' && Number(l['width']) >= 1080 * 0.95);
+    expect(bg).toBeDefined();
+    expect(Number(bg!['height'])).toBeGreaterThanOrEqual(1350 * 0.95);
+  });
+
   it('the re-laid-out slide fits the new canvas — nothing renders off the edge', () => {
     customizePresentation({ design_path: deckPath, changes: { width: 1080, height: 1350 } });
     const after = read(deckPath);
