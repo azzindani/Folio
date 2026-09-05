@@ -44,12 +44,13 @@ export const TIER2_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['add', 'update', 'remove', 'align', 'patch_spec', 'shape'], description: 'Which layer edit to run.' },
+        op:           { type: 'string', enum: ['add', 'update', 'remove', 'align', 'patch_spec', 'shape', 'split_text'], description: 'Which layer edit to run.' },
         design_path:  { type: 'string', description: 'Path to .design.yaml.' },
         page_id:      { type: 'string', description: 'Carousel: scope the edit to one page (IDs repeat across pages).' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path.' },
         layer:        { type: 'object', description: 'op:add — the layer specification.', properties: {} },
         layer_id:     { type: 'string', description: 'op:update/remove/patch_spec — the layer ID.' },
+        by:           { type: 'string', enum: ['char', 'word'], description: 'op:split_text — split a text layer into one layer PER CHARACTER (default) or per word, each placed at its measured advance, so animation {op:"sequence", stagger_ms} can reveal them one at a time. Single-line layers only. Pieces are placed from the real font metrics when the family is bundled; the reply says which, because a drifting run and an unbundled font look the same.' },
         shape_op:     { type: 'string', enum: ['offset', 'outline_stroke', 'blend'], description: 'op:shape — which path operation. offset grows (+delta) or shrinks (−delta) a closed shape. outline_stroke turns a stroke into a filled shape covering the same ink, so it scales as artwork instead of as a line. blend makes the in-between shapes between TWO paths (Illustrator\'s Blend). All three take `path` layers and produce new `path` layers, which render identically in the editor, resvg exports and PDF.' },
         delta:        { type: 'number', description: 'op:shape/offset — px to grow (positive) or shrink (negative).' },
         steps:        { type: 'number', description: 'op:shape/blend — how many in-between shapes (1-24, default 3). The two originals are left as they are; a blend is the shapes BETWEEN them.' },

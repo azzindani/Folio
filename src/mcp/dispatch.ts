@@ -26,7 +26,8 @@ export function dispatchEditLayer(a: Args): ToolResult | Promise<ToolResult> {
     case 'align':  return engine.alignLayers(a as Parameters<typeof engine.alignLayers>[0]);
     case 'patch_spec': return engine.patchDesignSpec(a as Parameters<typeof engine.patchDesignSpec>[0]);
     case 'shape':  return engine.shapeOp(a as unknown as Parameters<typeof engine.shapeOp>[0]);
-    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align', 'patch_spec', 'shape']);
+    case 'split_text': return engine.splitText(a as unknown as Parameters<typeof engine.splitText>[0]);
+    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align', 'patch_spec', 'shape', 'split_text']);
   }
 }
 
