@@ -1,5 +1,6 @@
 import type { StateManager, EditorState } from '../../editor/state';
 import { poseAt } from '../../animation/keyframe-css';
+import { EASING_NAMES } from '../../animation/easing';
 import type { Layer } from '../../schema/types';
 import type { AnimationSpec, Keyframe } from '../../animation/types';
 
@@ -131,6 +132,43 @@ export function removeKeyframe(anim: AnimationSpec, t: number): AnimationSpec {
   return { ...anim, keyframes: (anim.keyframes ?? []).filter(k => k.t !== t) };
 }
 
+/**
+ * Set the easing ON ONE keyframe — the curve from THAT keyframe to the next.
+ *
+ * Per-keyframe, not per-track: the engine reads `easing` off the keyframe a
+ * segment starts at, so setting it on the last one changes nothing and setting
+ * it on the track would flatten a sequence that deliberately eases differently
+ * on the way in and on the way out. `''` clears it back to the track default.
+ */
+export function setKeyframeEasing(anim: AnimationSpec, t: number, easing: string): AnimationSpec {
+  return {
+    ...anim,
+    keyframes: (anim.keyframes ?? []).map(k => {
+      if (k.t !== t) return k;
+      const next = { ...k } as Record<string, unknown>;
+      if (easing) next['easing'] = easing; else delete next['easing'];
+      return next as Keyframe;
+    }),
+  };
+}
+
+/**
+ * Shift every keyframe later by `delayMs` — the panel's `op:sequence`.
+ *
+ * A sequence is layers doing the same thing at staggered starts, so applied
+ * across a selection with an increasing delay per layer it IS the stagger.
+ * Negative delays clamp at zero rather than running before the scene starts,
+ * which would silently drop the head of the animation.
+ */
+export function shiftKeyframes(anim: AnimationSpec, delayMs: number): AnimationSpec {
+  return {
+    ...anim,
+    keyframes: (anim.keyframes ?? [])
+      .map(k => ({ ...k, t: Math.max(0, k.t + delayMs) }))
+      .sort((a, b) => a.t - b.t),
+  };
+}
+
 const TRACK_H = 32;       // px per track row
 const HEADER_W = 120;     // px left-side label area
 const KF_RADIUS = 5;      // keyframe diamond half-size
@@ -172,6 +210,15 @@ export class TimelinePanelManager {
                      border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
             ms
           </label>
+          <label style="font-size:11px;color:var(--color-text-muted);margin-left:8px"
+                 title="Offset each SELECTED layer's keyframes by this much more than the one before — the panel's op:sequence.">
+            Stagger
+            <input id="tl-stagger" type="number" min="0" max="5000" step="10" value="80"
+              style="width:60px;margin-left:4px;background:var(--color-bg);border:1px solid var(--color-border);
+                     border-radius:3px;padding:2px 4px;color:var(--color-text);font-size:11px">
+            ms
+          </label>
+          <button class="btn btn-sm" id="tl-stagger-apply" style="margin-left:4px">Stagger</button>
           <span id="tl-timecode" style="font-size:11px;font-family:var(--font-mono);
                 color:var(--color-text-muted);margin-left:auto">${fmtMs(this.scrubMs)}</span>
         </div>
@@ -236,11 +283,12 @@ export class TimelinePanelManager {
     const keyframes = (layer.animation?.keyframes ?? []) as Keyframe[];
     const diamonds = keyframes.map(kf => {
       const pct = Math.min(1, kf.t / this.duration) * trackAreaW;
-      return `<div class="tl-keyframe" data-layer-id="${layer.id}" data-t="${kf.t}"
-        title="${fmtMs(kf.t)}"
+      const ease = String((kf as unknown as Record<string, unknown>)['easing'] ?? '');
+      return `<div class="tl-keyframe" data-layer-id="${layer.id}" data-t="${kf.t}" data-easing="${ease}"
+        title="${fmtMs(kf.t)}${ease ? ` · ${ease}` : ''} — click to set easing, right-click to delete"
         style="position:absolute;left:${pct - KF_RADIUS}px;top:${TRACK_H / 2 - KF_RADIUS}px;
                width:${KF_RADIUS * 2}px;height:${KF_RADIUS * 2}px;
-               background:var(--color-accent);border-radius:2px;transform:rotate(45deg);
+               background:${ease ? 'var(--color-text)' : 'var(--color-accent)'};border-radius:2px;transform:rotate(45deg);
                cursor:pointer"></div>`;
     }).join('');
 
@@ -269,6 +317,17 @@ export class TimelinePanelManager {
       });
     });
 
+    // Left-click a diamond opens the easing picker for THAT keyframe. The
+    // click must not reach the track area underneath, which would read it as
+    // "add a keyframe here" and drop a second one on top of this one.
+    body.querySelectorAll<HTMLElement>('.tl-keyframe').forEach(kfEl => {
+      kfEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openEasingPicker(kfEl, layers);
+      });
+    });
+
     // Right-click keyframe diamond to delete
     body.querySelectorAll<HTMLElement>('.tl-keyframe').forEach(kfEl => {
       kfEl.addEventListener('contextmenu', (e) => {
@@ -279,6 +338,9 @@ export class TimelinePanelManager {
         this.removeKeyframe(layerId, t, layers);
       });
     });
+
+    const stagger = this.container.querySelector<HTMLElement>('#tl-stagger-apply');
+    if (stagger) stagger.addEventListener('click', () => this.applyStagger());
 
     // Scrubber click
     const scrub = body.querySelector<HTMLElement>('.tl-scrub-area');
@@ -291,6 +353,76 @@ export class TimelinePanelManager {
     }
 
     void trackAreaW;
+  }
+
+  /**
+   * A `<select>` of every easing the engine knows, on the keyframe clicked.
+   *
+   * A select rather than a custom menu: thirty curves is too many to lay out
+   * by hand, and the native control already scrolls, keyboard-navigates and
+   * closes itself. Removed as soon as it commits so the track does not collect
+   * dead controls.
+   */
+  private openEasingPicker(kfEl: HTMLElement, layers: Layer[]): void {
+    this.container.querySelectorAll('.tl-ease-picker').forEach(n => n.remove());
+    const layerId = kfEl.dataset['layerId'] ?? '';
+    const t = parseInt(kfEl.dataset['t'] ?? '0', 10);
+    const current = kfEl.dataset['easing'] ?? '';
+
+    const sel = document.createElement('select');
+    sel.className = 'tl-ease-picker';
+    sel.setAttribute('data-layer-id', layerId);
+    sel.style.cssText = 'position:absolute;z-index:20;font-size:11px;background:var(--color-bg);'
+      + 'color:var(--color-text);border:1px solid var(--color-border);border-radius:3px;'
+      + `left:${kfEl.offsetLeft}px;top:${kfEl.offsetTop + KF_RADIUS * 2 + 2}px`;
+    const opts = ['', ...EASING_NAMES];
+    sel.innerHTML = opts.map(n =>
+      `<option value="${n}"${n === current ? ' selected' : ''}>${n || '(track default)'}</option>`).join('');
+
+    // WRITE FIRST, tear down second. Blur can fire before change (it does in a
+    // scripted selection), which detached the node, and removing it again threw
+    // NotFoundError from inside commit — before the state update ran. The
+    // picker looked like it worked and the easing never left the DOM.
+    let done = false;
+    const close = (): void => { if (sel.parentNode) sel.parentNode.removeChild(sel); };
+    const commit = (): void => {
+      if (done) return;
+      done = true;
+      const value = sel.value;
+      const layer = layers.find(l => l.id === layerId);
+      if (layer?.animation) {
+        this.state.updateLayer(layerId, { animation: setKeyframeEasing(layer.animation, t, value) } as Partial<Layer>);
+      }
+      close();
+    };
+    sel.addEventListener('change', commit);
+    // A blur with no choice made is a cancel, not a commit.
+    sel.addEventListener('blur', () => { if (!done) close(); });
+    (kfEl.parentElement ?? this.container).appendChild(sel);
+    sel.focus();
+  }
+
+  /**
+   * Stagger the SELECTED layers — the panel's op:sequence.
+   *
+   * Each selected layer is shifted by one more step than the one before, in
+   * the order they are selected, so a row of items animates in sequence rather
+   * than all at once. Layers with no keyframes are skipped: shifting nothing
+   * is not an error, but silently counting them would put a gap in the run.
+   */
+  private applyStagger(): void {
+    const step = parseInt(
+      this.container.querySelector<HTMLInputElement>('#tl-stagger')?.value ?? '0', 10);
+    if (!Number.isFinite(step) || step === 0) return;
+    const { selectedLayerIds } = this.state.get();
+    const layers = this.state.getCurrentLayers() as Layer[];
+    let i = 0;
+    for (const id of selectedLayerIds) {
+      const layer = layers.find(l => l.id === id);
+      if (!layer?.animation?.keyframes?.length) continue;
+      this.state.updateLayer(id, { animation: shiftKeyframes(layer.animation, step * i) } as Partial<Layer>);
+      i++;
+    }
   }
 
   private addKeyframe(layerId: string, t: number, layers: Layer[]): void {

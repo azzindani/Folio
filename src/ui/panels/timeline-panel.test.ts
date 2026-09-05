@@ -6,6 +6,8 @@ import {
   addKeyframe,
   removeKeyframe,
   poseToLayerUpdate,
+  setKeyframeEasing,
+  shiftKeyframes,
 } from './timeline-panel';
 import type { AnimationSpec } from '../../animation/types';
 import type { Layer } from '../../schema/types';
@@ -213,5 +215,56 @@ describe('poseToLayerUpdate', () => {
 
   it('writes nothing for a pose that moves nothing', () => {
     expect(poseToLayerUpdate(base, {} as never)).toEqual({});
+  });
+});
+
+describe('setKeyframeEasing', () => {
+  const anim = { keyframes: [{ t: 0, x: 0 }, { t: 500, x: 50 }, { t: 1000, x: 100 }] } as unknown as AnimationSpec;
+
+  it('sets easing on ONE keyframe, leaving the others alone', () => {
+    const out = setKeyframeEasing(anim, 500, 'bounce');
+    const kfs = out.keyframes as unknown as Record<string, unknown>[];
+    expect(kfs[1]?.['easing']).toBe('bounce');
+    expect(kfs[0]?.['easing']).toBeUndefined();
+    expect(kfs[2]?.['easing']).toBeUndefined();
+  });
+
+  it('clears the easing back to the track default with an empty string', () => {
+    const eased = setKeyframeEasing(anim, 0, 'pop');
+    const cleared = setKeyframeEasing(eased, 0, '');
+    expect((cleared.keyframes as unknown as Record<string, unknown>[])[0]?.['easing']).toBeUndefined();
+  });
+
+  it('does not mutate the input', () => {
+    setKeyframeEasing(anim, 0, 'spring');
+    expect((anim.keyframes as unknown as Record<string, unknown>[])[0]?.['easing']).toBeUndefined();
+  });
+
+  it('is a no-op for a time with no keyframe', () => {
+    expect(setKeyframeEasing(anim, 777, 'pop').keyframes).toEqual(anim.keyframes);
+  });
+});
+
+describe('shiftKeyframes', () => {
+  const anim = { keyframes: [{ t: 0, x: 0 }, { t: 400, x: 50 }] } as unknown as AnimationSpec;
+
+  it('moves every keyframe later by the same amount', () => {
+    expect(shiftKeyframes(anim, 100).keyframes?.map(k => k.t)).toEqual([100, 500]);
+  });
+
+  // Running before the scene starts would silently drop the head of the
+  // animation, which looks like the first keyframe was never authored.
+  it('clamps at zero rather than scheduling before the scene starts', () => {
+    expect(shiftKeyframes(anim, -1000).keyframes?.map(k => k.t)).toEqual([0, 0]);
+  });
+
+  it('keeps the result sorted by time', () => {
+    const out = shiftKeyframes({ keyframes: [{ t: 900 }, { t: 100 }] } as unknown as AnimationSpec, 50);
+    expect(out.keyframes?.map(k => k.t)).toEqual([150, 950]);
+  });
+
+  it('does not mutate the input', () => {
+    shiftKeyframes(anim, 250);
+    expect(anim.keyframes?.[0]?.t).toBe(0);
   });
 });
