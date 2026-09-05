@@ -154,6 +154,18 @@ export function toShorthand(spec: Record<string, unknown>, env: Record<string, u
   return sh as unknown as ShorthandLayer;
 }
 
+/** The spec + env a preset group was built from, ready to re-expand. */
+export function specOf(layer: Layer): { spec: Record<string, unknown>; env?: Record<string, unknown> } | null {
+  const o = layer as unknown as Record<string, unknown>;
+  const spec = o[SPEC_FIELD];
+  if (!spec || typeof spec !== 'object' || Array.isArray(spec)) return null;
+  const env = o[SPEC_ENV_FIELD];
+  return {
+    spec: spec as Record<string, unknown>,
+    env: env && typeof env === 'object' && !Array.isArray(env) ? env as Record<string, unknown> : undefined,
+  };
+}
+
 /** Replace a layer in a tree, in place, keeping its position in z-order.
  *  Returns false when the id isn't there. */
 export function replaceLayer(layers: Layer[], layerId: string, next: Layer): boolean {

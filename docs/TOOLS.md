@@ -29,11 +29,11 @@ tools stay 1:1; the long tail is folded into **multiplexed tools** that take an
 
 | Tool | ops → former tool |
 |---|---|
-| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) · get_spec→(new) · resize→(new) |
+| `manage_design` | list→list_designs · browse→browse_library · inspect→inspect_design · rename→rename_design · duplicate→duplicate_design · move→move_design · delete→delete_design · resume→resume_design · gallery→export_library_gallery · icon_search→(new) · get_spec→(new) · resize→(new) · tokens→(new) |
 | `themes` | list→list_themes · apply→apply_theme · packs→(new) catalog packs |
 | `tasks` | list→list_tasks · create→create_task · resume→resume_task |
 | `edit_layer` | add→add_layer · update→update_layer · remove→remove_layer · align→align_layers · patch_spec→(new) |
-| `templates` | list→list_templates · slots→list_template_slots · inject→inject_template · export→export_template · save_component→save_as_component · batch→batch_create |
+| `templates` | list→list_templates · slots→list_template_slots · inject→inject_template · export→export_template · save_component→save_as_component · components→(new) · batch→batch_create |
 | `report` | generate→generate_report · customize→(new) · bind_data→bind_data · validate→validate_report · export→export_report · formula→set_formula_context · debug→debug_formula |
 | `presentation` | create→create_presentation · customize→(new) · export→export_presentation · remote→setup_remote_presenter · collab→setup_collab |
 | `animation` | timeline→inspect_timeline · keyframe→add_keyframe · export→export_animation |
@@ -66,6 +66,7 @@ Find, inspect and manage designs + the whole library. **Req:** `op`.
 - `delete` (req design_path) — move to the project `.trash/` (recoverable).
 - `resume` (req design_path) — read carousel generation state.
 - `gallery` — build `library.html` (thumbnails + search); `output_path`, `max_thumbnails`, `search`, `type`.
+- `tokens` (req `design_path`; `set`, `dry_run`) — **a design's palette by ROLE, not by literal.** Read it for bg/accent/text/muted/card_fill/panel plus how many layers depend on each. `set:{accent:"#0EA5E9"}` and the whole design follows: every preset naming that role is patched at its SPEC and rebuilt, so tints, rules and scrims **derived** from the colour recompute — the thing a hex find-and-replace cannot do. Layers with no spec can only have the old value swapped; the reply counts them. This is what makes recolouring mean something (`themes {op:"apply"}` sets the project default and never touches a design's baked colours).
 - `resize` (req `design_path`, `width` and/or `height`; `dry_run`) — **the customize twin for `create_design`'s shape.** A preset carrying a spec is REBUILT for the new canvas (a real re-layout at the new proportions); everything else is uniformly scaled and centred, never stretched. Turns a 1080×1080 poster into 1080×1350 without rebuilding it. Says plainly when nothing carried a spec and scaling was all it could do.
 - `get_spec` (req `design_path`; `page_id`, `layer_id`) — read back the SPECS the design was authored from, not its expanded output. A preset stores the intent that built it (`{type:"sections", title, blocks:[…], accent}`) beside the ~30 layers it generated, so a later session evolves the page instead of rebuilding it. The sparse view: read it, then `edit_layer {op:"patch_spec"}`. Hand-placed layers have none and need none.
 - `icon_search` (`query`, `limit`) — look a bundled icon name UP instead of guessing. An unknown name renders as a blank fallback circle you cannot see. No query → the total + a starter set by kind; a query → ranked names, whether the name you hold `resolves_to` a real glyph, and concept bridging (`cargo` → package, truck). Never returns an empty list. Icons take the layer `color` (`currentColor` by default) — set it on a dark canvas.
@@ -150,7 +151,8 @@ Built-in template catalog (432 templates) + reusable components. **Req:** `op`.
 - `slots` (req template_path = path OR built-in id) — list injectable slots.
 - `inject` (req template_path, slots) — fill slots → a new .design.yaml.
 - `export` (req design_path) — turn a design into a `.template.yaml` skeleton.
-- `save_component` (req design_path, layer_ids, component_name, project_path) — extract a `.component.yaml`.
+- `save_component` (req design_path, layer_ids, component_name, project_path; `auto_slots`) — extract a **reusable** `.component.yaml` + replace with an instance. Every text layer becomes a named `{{slot}}` with its current copy as the default, so one saved part gives N instances with different content — that is what makes it a component rather than a copy-paste. `auto_slots:false` freezes the copy.
+- `components` (req project_path) — **what the project can compose from**: each saved component with its id, slots, variants and layer count. Without it the store was write-only, which is why 0 of 267 designs ever used one.
 - `batch` (req project_path, template_id, slots_array) — N designs from one template. `template_id` accepts a **built-in catalog id** (same as `inject`), a project `.template.yaml` id, or a design name to clone.
 
 ### `report`  ·  *op-multiplexed*

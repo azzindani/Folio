@@ -52,8 +52,9 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'icon_search':  return engine.iconSearch(a as Parameters<typeof engine.iconSearch>[0]);
     case 'get_spec':     return engine.getDesignSpec(a as Parameters<typeof engine.getDesignSpec>[0]);
     case 'resize':       return engine.resizeDesign(a as Parameters<typeof engine.resizeDesign>[0]);
+    case 'tokens':       return engine.designTokens(a as Parameters<typeof engine.designTokens>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'tokens']);
   }
 }
 
@@ -82,9 +83,10 @@ export function dispatchTemplates(a: Args): ToolResult {
     case 'inject':         return engine.injectTemplate(a as Parameters<typeof engine.injectTemplate>[0]);
     case 'export':         return engine.exportTemplate(a as Parameters<typeof engine.exportTemplate>[0]);
     case 'save_component': return engine.saveAsComponent(a as Parameters<typeof engine.saveAsComponent>[0]);
+    case 'components':     return engine.listComponents(a as Parameters<typeof engine.listComponents>[0]);
     case 'batch':          return engine.batchCreate(a as Parameters<typeof engine.batchCreate>[0]);
     default:               return badOp('templates', a['op'],
-      ['list', 'slots', 'inject', 'export', 'save_component', 'batch']);
+      ['list', 'slots', 'inject', 'export', 'save_component', 'components', 'batch']);
   }
 }
 

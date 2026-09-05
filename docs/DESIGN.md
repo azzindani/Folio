@@ -881,6 +881,39 @@ Read with `manage_design {op:"get_spec"}`, write with
 `edit_layer {op:"patch_spec"}`. Hand-placed layers carry no spec and need none —
 a rect IS its own source.
 
+### 11.0.1 Design tokens — colour by role
+
+A design may declare its palette of record:
+
+```yaml
+tokens:
+  bg: '#0a0a0a'
+  accent: '#ff5c8a'
+  text: '#fafafa'
+  muted: '#8a8a8a'
+```
+
+The roles were always recoverable — a preset's `_spec` names colour as `bg`,
+`accent`, `text_color`, `muted` — so `manage_design {op:"tokens"}` reads them off
+the specs even on a design that declares no block, and writes the table when one
+is set.
+
+Why a table instead of `$token` references in every layer: the expanded output is
+not where colour lives. A builder DERIVES tints, rules and scrims from the role
+colours, and those derivations exist only in the builder. Baking `$accent` into
+thirty layers would still freeze the derived shades. Re-expanding from the spec
+recomputes them, which is why setting a role rewrites specs and rebuilds their
+groups rather than swapping literals.
+
+Measured before this existed: across 267 stored designs, **zero** used a token,
+and one deck baked the same accent sixty times alongside three shades derived
+from it and frozen. That is what "design from rects" costs — a recolour that
+leaves three wrong colours behind, with nothing left to say they were related.
+
+Layers with no spec have no derivation to re-run, so their literal use of the old
+value is swapped. The reply counts them rather than implying the whole document
+was rebuilt.
+
 ### 11.1 Operations
 
 ```yaml

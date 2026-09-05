@@ -616,6 +616,30 @@ Spec round-trip (editing a PRESET — prefer this over the two above):
   Hand-placed layers have no spec and need none — they ARE their own source; use
   edit_layer(op:"update") / patch_design for those.
 
+Tokens + components (the system layer — reach for these before hand-placing):
+  TOKENS — colour by ROLE, not by literal.
+    manage_design(op:"tokens", design_path)                    read the palette
+    manage_design(op:"tokens", design_path, set:{accent:"…"})  change it
+  Read it and you get bg / accent / text / muted / card_fill / panel, and how
+  many layers depend on each. Set one and the WHOLE design follows: every preset
+  naming that role is patched at its SPEC and rebuilt, so the tints, rules and
+  scrims DERIVED from that colour recompute. A hex find-and-replace cannot do
+  that — it leaves the derived shades behind at their old values, which is why a
+  recoloured design used to look subtly wrong. Layers with no spec can only have
+  the old value swapped; the reply counts them so you know what was approximate.
+  (themes(op:"apply") sets the PROJECT default and does not touch a design's
+  colours. This is the op that restyles a design.)
+
+  COMPONENTS — a named part with holes, reused across designs.
+    templates(op:"components", project_path)                   what exists
+    templates(op:"save_component", design_path, layer_ids, component_name)
+    then place it: {type:"component", ref:"<id>", pos:[x,y,w,h], slots:{…}}
+  save_component turns every text layer into a named {{slot}} with its current
+  copy as the default, so one saved "stat card" gives ten instances with ten
+  different numbers. Omitted slots fall back to the defaults. Reach for a
+  component when the SAME part appears more than twice — a set of N cards, a
+  repeated header, a KPI tile. auto_slots:false freezes the copy instead.
+
 Customize twins (changing a DOCUMENT, not one preset):
   Every generator has one, so you restyle in place instead of regenerating —
   regenerating discards everything composed since.
