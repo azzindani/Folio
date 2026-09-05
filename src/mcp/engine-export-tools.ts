@@ -20,6 +20,7 @@ import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
 import { readBaseline, writeBaseline, diffPages } from './engine/preview-diff';
+import { buildManifest, embedManifest } from './engine/export-manifest';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
 import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
@@ -195,12 +196,15 @@ export function exportDesign(args: { design_path: string; format: string; output
       const html: string = spec.meta.type === 'report'
         ? assembleReportHTML(spec, datasets, {})
         : `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${spec.meta.name}</title>${FAVICON_LINK}<style>body{margin:0}.folio-page{display:block;margin:0 auto}.folio-page+.folio-page{margin-top:16px}</style></head><body>${body}</body></html>`;
+      // Provenance rides in the file itself — see engine/export-manifest.ts.
+      const manifest = buildManifest(spec, dPath);
+      const doc = embedManifest(html, manifest);
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
-      fs.writeFileSync(outPath, html, 'utf-8');
+      fs.writeFileSync(outPath, doc, 'utf-8');
       progress.push(pOk('HTML written', path.basename(outPath)));
       const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { ...collision(), format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
+      return okResult(op, { ...collision(), format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: doc.length, embedded_specs: manifest.specs.length, source_hash: manifest.source.hash, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
     } catch (err) {
       return errResult(op, `HTML export failed: ${(err as Error).message}`, 'Check design spec.', progress);
     }
