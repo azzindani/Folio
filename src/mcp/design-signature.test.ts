@@ -7,7 +7,7 @@ import { designSignature, compareSignatures, nearest, structureOf, compositionOf
 import { createProject, createDesign } from './engine-project-tools';
 import { addLayers } from './engine-layer-tools';
 import { readYAML } from './engine/utils';
-import type { DesignSpec } from '../schema/types';
+import type { DesignSpec, Layer } from '../schema/types';
 import type { ShorthandLayer } from './shorthand-helpers';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-sig-'));
@@ -127,5 +127,42 @@ describe('signature — finding the nearest prior design', () => {
     const hit = nearest(a, [{ name: 'twin', signature: twin }, { name: 'other', signature: other }]);
     expect(hit?.match.name).toBe('twin');
     expect(nearest(other, [{ name: 'a', signature: a }])).toBeNull();
+  });
+});
+
+describe('signature — the anchor is a decision, not a box', () => {
+  /** The expanded layers of a design, for measuring composition directly. */
+  function layersOf(layers: ShorthandLayer[], w = 1080, h = 1350): Layer[] {
+    if (!fs.existsSync(projectDir)) createProject({ name: 'sg', canvas: '1080x1350' });
+    const d = createDesign({ project_path: projectDir, name: `a${n++}`, type: 'poster', width: w, height: h }) as unknown as Record<string, unknown>;
+    const p = d['path'] as string;
+    addLayers({ design_path: p, layers_shorthand: layers });
+    return readYAML<DesignSpec>(p).layers ?? [];
+  }
+
+  /** Two full-measure text stacks, identical but for how the type is set. */
+  const stack = (align: string): ShorthandLayer[] => ([
+    { id: 'bg', type: 'rect', z: 0, pos: [0, 0, 1080, 1350], fill: '#0A0A0A', locked: true },
+    { id: 't1', type: 'text', z: 1, pos: [81, 200, 918, 200], text: 'Tonnage rose', size: 150, color: '#FFFFFF', align, locked: true },
+    { id: 't2', type: 'text', z: 2, pos: [81, 440, 918, 120], text: 'Transpacific lanes carried the gain.', size: 24, color: '#CCCCCC', align, locked: true },
+  ] as unknown as ShorthandLayer[]);
+
+  // The boxes are identical in all three, so a centroid of BOXES cannot tell
+  // them apart — and a preset lays its text out in exactly this shape, which is
+  // why every preset design used to report "center" whatever it looked like.
+  it('reads the type alignment when the ink spans the measure', () => {
+    expect(compositionOf(layersOf(stack('left')), 1080, 1350)).toContain('/left');
+    expect(compositionOf(layersOf(stack('center')), 1080, 1350)).toContain('/center');
+    expect(compositionOf(layersOf(stack('right')), 1080, 1350)).toContain('/right');
+  });
+
+  it('falls back to position when the ink does NOT span the measure', () => {
+    // A left-set column parked on the right reads right-anchored, whatever the
+    // text does inside it — there, placement IS the decision.
+    const narrow = [
+      { id: 'bg', type: 'rect', z: 0, pos: [0, 0, 1080, 1350], fill: '#0A0A0A', locked: true },
+      { id: 't1', type: 'text', z: 1, pos: [700, 300, 300, 200], text: 'Night Market', size: 90, color: '#FFFFFF', align: 'left', locked: true },
+    ] as unknown as ShorthandLayer[];
+    expect(compositionOf(layersOf(narrow), 1080, 1350)).toContain('/right');
   });
 });

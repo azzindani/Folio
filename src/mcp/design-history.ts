@@ -24,6 +24,7 @@ import type { DesignSpec } from '../schema/types';
 import type { Finding } from './engine/diagnose';
 import { readYAML, resolveProjectPath } from './engine/utils';
 import { readLineage } from './design-lineage';
+import { specOf } from './design-spec';
 import { designSignature, compareSignatures, type Signature, type Similarity } from './design-signature';
 
 export interface PriorDesign {
@@ -37,6 +38,10 @@ export interface PriorDesign {
    *  a seed can be CHECKED rather than believed: two designs made under
    *  different seeds that still sign identically prove the seed did nothing. */
   seed?: string;
+  /** ONE preset filling the page. The engine then decides the column measure
+   *  and the type alignment, so for this design neither is a choice — see
+   *  ENGINE_SET. */
+  single_preset?: boolean;
 }
 
 /** Ops whose whole purpose is to produce something that looks the same. */
@@ -48,6 +53,13 @@ export function cloneOriginOf(designPath: string): string | undefined {
   const first = records[0];
   if (!first) return undefined;
   return CLONE_OPS.some(re => re.test(first.op)) ? first.op : undefined;
+}
+
+/** One preset filling the page — the shape almost every Folio poster has.
+ *  Read from the same surface designSignature reads structure from. */
+function isSinglePreset(spec: DesignSpec): boolean {
+  const top = spec.pages?.length ? (spec.pages[0].layers ?? []) : (spec.layers ?? []);
+  return top.length === 1 && Boolean(specOf(top[0]));
 }
 
 /** Every design in a project, signed. Reads files, so it is capped and the
@@ -86,6 +98,7 @@ export function readStyleHistory(
         signature: designSignature(spec),
         cloned_by: cloneOriginOf(p),
         ...(spec.meta?.style_seed ? { seed: String(spec.meta.style_seed) } : {}),
+        ...(isSinglePreset(spec) ? { single_preset: true } : {}),
       });
     } catch { unreadable++; }
   }
@@ -155,6 +168,33 @@ export interface SettledTrait {
   unused: string[];
 }
 
+/** Traits the ENGINE decides for a one-preset page, so a run of them is not
+ *  evidence of anything the model chose.
+ *
+ *  Measured across eight preset x canvas combinations, not assumed. `measure`
+ *  read 111 in all eight: a preset's text sits in a full-measure box, so the
+ *  column mask cannot report anything else. `anchor` is the centroid of those
+ *  same full-measure boxes, which is centre by construction — the alignment
+ *  that would distinguish them is hashed from the title (mood-bank), so it is
+ *  neither the model's choice nor stable against a copy edit, and the signature
+ *  deliberately does not read it inside a preset.
+ *
+ *  `scale` and `ratio` stay in — the same eight read mega, xl, m and l — and
+ *  picking another preset is an action a model can actually take.
+ *
+ *  The failure this fixes: three designs built to differ as much as the tool
+ *  surface allows — different preset, ground tone AND temperature, accent, and
+ *  canvas aspect — reported the same settled list as four designs differing
+ *  only in their copy. The settled list on a well-varied project then contained
+ *  NOTHING BUT these two, so every seed told the model to vary something a
+ *  preset cannot vary. A tool that answers when it has nothing to say is the
+ *  diagnose-that-lies failure wearing a different hat, and this one pushed
+ *  toward churn — the opposite of what the feature guards against.
+ *
+ *  A hand-composed design decides its own measure and sets its own type, so it
+ *  keeps its vote in both. */
+const ENGINE_SET: Trait[] = ['measure', 'anchor'];
+
 /** Traits where this project has stopped varying.
  *
  *  Phrased as an observation with its evidence, never as an instruction: the
@@ -162,18 +202,32 @@ export interface SettledTrait {
  *  whether that is a house style or a rut. */
 export function saturatedAxes(designs: PriorDesign[], minRun = 3): SettledTrait[] {
   if (designs.length < minRun) return [];
-  const counts = traitCounts(designs);
   const out: SettledTrait[] = [];
   for (const t of TRAITS) {
-    for (const [value, count] of Object.entries(counts[t.key])) {
-      if (count < minRun || count < designs.length * 0.8) continue;
+    // Only designs that could have DECIDED this trait get a vote in it.
+    const voters = ENGINE_SET.includes(t.key) ? designs.filter(d => !d.single_preset) : designs;
+    if (voters.length < minRun) continue;
+    const counts = traitCounts(voters)[t.key];
+    for (const [value, count] of Object.entries(counts)) {
+      if (count < minRun || count < voters.length * 0.8) continue;
       out.push({
-        trait: t.key, means: t.means, value, count, of: designs.length,
-        unused: t.readings.filter(r => !(r in counts[t.key])),
+        trait: t.key, means: t.means, value, count, of: voters.length,
+        unused: t.readings.filter(r => !(r in counts)),
       });
     }
   }
   return out.sort((x, y) => y.count - x.count || x.trait.localeCompare(y.trait));
+}
+
+/** Traits this project's designs could not have chosen, and why — so a trait
+ *  going unmentioned is a stated fact rather than a silent omission. */
+export function notEvidence(designs: PriorDesign[]): { traits: Trait[]; because: string } | null {
+  const presets = designs.filter(d => d.single_preset).length;
+  if (!presets || presets < designs.length) return null;
+  return {
+    traits: ENGINE_SET,
+    because: `All ${designs.length} designs are ONE preset filling the page. A preset's text sits in a full-measure box, so the column mask reads 111 and the ink centroid reads centre whatever the design looks like — and the alignment that would tell them apart is hashed from the title, not chosen. Neither is reported as settled here, because neither was a decision. Hand-place your own layers (or wrap them in a group) to make both yours to vary.`,
+  };
 }
 
 export interface SeedCheck {
