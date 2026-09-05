@@ -156,11 +156,33 @@ export function compositionOf(layers: Layer[], W: number, H: number): string {
     return covered ? '1' : '0';
   }).join('');
 
-  // Where the ink BAND sits, read coarsely so a longer paragraph cannot move it.
+  // Where the ink band sits, measured at its CENTRE.
+  //
+  // Coarse buckets reduced the content leak here; they did not close it. Read
+  // off the band's bottom edge, four copy-variants of one design split 2 top /
+  // 2 mid, because a title wrapping to a second line pushes the bottom past
+  // 0.6H. Measuring the top instead fails the same way and for a better reason:
+  // presets VERTICALLY CENTRE their block, so a longer title grows it in both
+  // directions at once (top 0.30 → 0.22 as bottom goes 0.59 → 0.70).
+  //
+  // The centre is the quantity that survives, and it is the principled one:
+  // where a block is centred is a layout decision, how far it extends is a
+  // function of how much content there is. Across timeline/editorial/event/stat
+  // it spans 0.255 → 0.475, so it still discriminates.
+  //
+  // What this does NOT fix, because it is not a fault: a PRESET re-rolls its
+  // whole layout from the copy — mood-bank hashes align, stat columns and header
+  // treatment off the title as Folio's own anti-sameness mechanism — so two
+  // copy-variants of one preset can be genuinely different layouts (centre 0.447
+  // vs 0.364 when the hash flips align left → center). The signature is right to
+  // report those as different. Only the growth component was ever noise.
   const top = Math.min(...content.map(l => boxOf(l).y));
   const bot = Math.max(...content.map(l => boxOf(l).y + boxOf(l).h));
   const span = (bot - top) / Math.max(1, H);
-  const vspan = span > 0.7 ? 'full' : bot < H * 0.6 ? 'top' : top > H * 0.4 ? 'low' : 'mid';
+  const centre = (top + bot) / 2 / Math.max(1, H);
+  // `full` keeps its own gate, raised to 0.8: span IS content-driven, so a
+  // design sitting near the old 0.7 flipped on a copy edit like everything else.
+  const vspan = span > 0.8 ? 'full' : centre < 0.4 ? 'top' : centre > 0.6 ? 'low' : 'mid';
 
   return `${cols}/${vspan}/${anchorOf(content, walkHandPlaced(layers), W)}${bleed ? '/bleed' : ''}`;
 }
