@@ -15,6 +15,7 @@ import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
 import { blendPaths, outlineStroke, offsetPath } from '../../engine/path-ops';
+import { flattenPath } from '../../animation/motion-path';
 import { resolveScope, commitScope } from './motion';
 
 export type ShapeOp = 'offset' | 'outline_stroke' | 'blend';
@@ -66,6 +67,47 @@ function styleOf(l: Layer): Record<string, unknown> {
   return out;
 }
 
+/** A layer's stroke as {color,width}. The schema stores a Stroke OBJECT; reading
+ *  a flat `stroke_width` found nothing on a correctly-authored layer, so
+ *  outline_stroke refused every real input, and assigning `stroke` straight to
+ *  `fill` handed the renderer {color,width} where a Fill belongs — which draws
+ *  nothing at all. Both were invisible to the unit tests, which build layers by
+ *  hand in the shape the code expected rather than the shape the schema uses. */
+function strokeOf(l: Layer): { color?: string; width?: number } {
+  const s = (l as unknown as Record<string, unknown>)['stroke'];
+  if (typeof s === 'string') return { color: s };
+  if (s && typeof s === 'object' && !Array.isArray(s)) {
+    const o = s as Record<string, unknown>;
+    return {
+      color: typeof o['color'] === 'string' ? o['color'] : undefined,
+      width: typeof o['width'] === 'number' ? o['width'] : undefined,
+    };
+  }
+  return {};
+}
+
+/** The bounding box of a `d`, so a generated path is not "positionless".
+ *  Without it heal counts these layers as strays and flows them, reporting a
+ *  repair on a shape that was already exactly where its geometry put it. */
+function boxOf(d: string): { x: number; y: number; width: number; height: number } | null {
+  const pts = flattenPath(d);
+  if (!pts || pts.length === 0) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(minY)) return null;
+  return { x: Math.round(minX), y: Math.round(minY), width: Math.max(1, Math.round(maxX - minX)), height: Math.max(1, Math.round(maxY - minY)) };
+}
+
+/** A generated path layer, carrying its own box. */
+function pathLayer(base: Record<string, unknown>, id: string, d: string): Layer {
+  return { ...base, ...(boxOf(d) ?? {}), id, type: 'path', d } as unknown as Layer;
+}
+
 export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
   const op = 'shape';
   const progress: ProgressItem[] = [];
@@ -109,17 +151,25 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
         + 'supported — rebuild the curve with C or Q.');
     }
     const base = styleOf(targets[0] as Layer);
-    shapes.forEach((d, i) => made.push({ ...base, id: `${ids[0]}_blend_${i + 1}`, type: 'path', d } as unknown as Layer));
+    shapes.forEach((d, i) => made.push(pathLayer(base, `${ids[0]}_blend_${i + 1}`, d)));
     note = `${steps} in-between shape(s). The two originals are untouched — a blend is the shapes BETWEEN them.`;
   } else if (args.shape_op === 'outline_stroke') {
     const src = targets[0] as Layer;
-    const w = num(args.width) ?? num((src as unknown as Record<string, unknown>)['stroke_width']) ?? 0;
+    const sk = strokeOf(src);
+    const w = num(args.width) ?? num(sk.width) ?? num((src as unknown as Record<string, unknown>)['stroke_width']) ?? 0;
     if (w <= 0) {
-      return errResult(op, 'No stroke width to outline', 'Pass width, or give the layer a stroke_width first.');
+      return errResult(op, 'No stroke width to outline',
+        'Pass width, or give the layer a stroke first — strokes are {color, width}, e.g. stroke:{color:"#FF3D00", width:14}.');
     }
     const d = await outlineStroke(ds[0] as string, w);
     if (!d) return errResult(op, 'Could not outline that stroke', 'The path may be unwalkable or degenerate.');
-    made.push({ ...styleOf(src), id: `${ids[0]}_outlined`, type: 'path', d, stroke: undefined, stroke_width: undefined, fill: (src as unknown as Record<string, unknown>)['stroke'] ?? '#000000' } as unknown as Layer);
+    // The outline is FILLED artwork, so the stroke's COLOUR becomes the fill and
+    // the stroke itself goes away. Handing the whole Stroke object to `fill` is
+    // what made this render as nothing.
+    made.push(pathLayer(
+      { ...styleOf(src), stroke: undefined, stroke_width: undefined, fill: sk.color ?? '#000000' },
+      `${ids[0]}_outlined`, d,
+    ));
     note = `The ${w}px stroke is now a filled shape covering the same ink, so it scales as artwork rather than as a stroke.`;
   } else {
     const delta = num(args.delta) ?? 0;
@@ -129,7 +179,7 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
       return errResult(op, `Could not offset that path by ${delta}`,
         'Shrinking can consume a shape entirely, and an unwalkable path (elliptical arcs) cannot be offset at all.');
     }
-    made.push({ ...styleOf(targets[0] as Layer), id: `${ids[0]}_offset`, type: 'path', d } as unknown as Layer);
+    made.push(pathLayer(styleOf(targets[0] as Layer), `${ids[0]}_offset`, d));
     note = `${delta > 0 ? 'Grown' : 'Shrunk'} by ${Math.abs(delta)}px, as a new layer — the original is untouched.`;
   }
 

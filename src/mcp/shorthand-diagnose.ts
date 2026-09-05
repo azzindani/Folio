@@ -18,8 +18,16 @@ export const KNOWN_SHORTHAND_KEYS = new Set<string>([
   'from', 'to', 'curve', 'bend', 'arrow', 'arrow_size', 'dashed',
   // typography craft
   'line_height', 'letter_spacing', 'lh', 'leading', 'track', 'tracking',
+  // stroke width, in both spellings — folded into `stroke` by
+  // normalizeShorthandAliases, so flagging them told the model a field it had
+  // authored correctly went nowhere.
+  'stroke_width', 'strokeWidth',
   // auto_layout / container
   'direction', 'gap', 'padding', 'justify', 'wrap', 'repeat', 'children', 'valign',
+  // `columns` landscape container — cols/weights/pad are read by buildColumns.
+  // Flagging them was a lie that pushed the model back to hand-placing, the one
+  // thing the preset exists to prevent.
+  'cols', 'weights', 'pad',
   'corner_radius', 'cornerRadius', 'borderRadius',
   // chart / kpi_card / component
   'chart', 'data', 'spec', 'value', 'label', 'delta', 'format', 'ref', 'slots', 'variant', 'overrides',

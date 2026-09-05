@@ -420,6 +420,21 @@ export function normalizeShorthandAliases(sh: ShorthandLayer): ShorthandLayer {
   alias('height', 'h');
   alias('color', 'col');
   alias('radius', 'corner_radius', 'cornerRadius', 'borderRadius');
+  // `stroke_width` — the CSS spelling every model reaches for, and the one the
+  // schema does NOT use: a Stroke is {color, width}. Unfolded it was dropped and
+  // `stroke:"#FF3D00"` quietly took the 2px default, so an authored 14px rule
+  // rendered as a hairline with no error anywhere (found on a live call). A
+  // width with no colour is left alone — that is not a stroke, and inventing a
+  // black line would be worse than the note saying the field went nowhere.
+  const sw = r['stroke_width'] ?? r['strokeWidth'];
+  if (typeof sw === 'number' && Number.isFinite(sw) && sw > 0) {
+    const s = r['stroke'];
+    if (typeof s === 'string') r['stroke'] = { color: s, width: sw };
+    else if (s && typeof s === 'object' && !Array.isArray(s)) {
+      const o = s as Record<string, unknown>;
+      if (o['width'] === undefined) r['stroke'] = { ...o, width: sw };
+    }
+  }
   // `children` → `layers` — the UI-tree word strong models reach for. Without
   // this, nested container content is silently dropped and the model concludes
   // "nesting isn't supported". Runs at every level (expansion recurses).
