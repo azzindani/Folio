@@ -117,9 +117,13 @@ interface IconifyCollections { [prefix: string]: { name?: string; author?: { nam
  * is a standalone file — invisible on a dark canvas, and there is no tint on
  * the image layer. So the colour is baked in at fetch time, by the API itself.
  */
+function iconColorBaked(color?: string): boolean {
+  return /^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(String(color ?? '').trim());
+}
+
 function iconColorParam(color?: string): string {
   const c = String(color ?? '').trim();
-  if (!/^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(c)) return '';
+  if (!iconColorBaked(c)) return '';
   return `&color=${encodeURIComponent(c.startsWith('#') ? c : `#${c}`)}`;
 }
 
@@ -362,6 +366,18 @@ export async function assetFetch(args: {
     progress.push(pOk('Fetched', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
     if (!args.alt) progress.push(pWarn('No alt given', 'The stored alt is the provider\'s title — replace it with what the image actually shows.'));
+    // The colour is baked at FETCH time (see iconColorParam): a standalone SVG
+    // has nothing to inherit from, so an untinted icon is black, and on a dark
+    // canvas it is invisible — a failure the reviewer could only find by paying
+    // for a preview. Say it at the moment it becomes true, and say it again for
+    // a colour that was silently dropped for not being a hex.
+    if (entry.kind === 'icons' && !iconColorBaked(args.icon_color)) {
+      progress.push(pWarn(
+        args.icon_color ? `icon_color "${args.icon_color}" ignored — not a hex` : 'Icon is BLACK',
+        `${entry.path} is monochrome black. On a dark canvas it renders invisible, and the colour cannot be `
+        + `changed after the fact — there is no tint on an image layer. Re-fetch with icon_color:"#RRGGBB" `
+        + `(your accent or text colour) if the canvas is not light.`));
+    }
     if (provenance.attribution) progress.push(pInfo('Credit required', provenance.attribution));
 
     const stub = entry.kind === 'fonts'
