@@ -224,3 +224,20 @@ export async function collectRegions(page: Page): Promise<Region[]> {
     return out;
   }) as Promise<Region[]>;
 }
+
+/**
+ * How long to wait for a file-manager row to appear after an UPLOAD.
+ *
+ * These waits were written as `{ timeout: 15_000 }`, which reads generous and
+ * is not: the suite's own default is 20s (playwright.commissioning.config.ts),
+ * so every upload — the slowest thing any of these tests do, a real multipart
+ * round-trip through the server plus a disk write plus a panel refresh — was
+ * given LESS time than the assertions around it that only read the DOM.
+ *
+ * Measured locally the whole folder-create-upload-delete test takes 3.4s, so
+ * there is no performance problem to hide; a loaded CI runner just occasionally
+ * needs more than 15s of it, and did twice in three runs while the code under
+ * test had not been touched. A number nobody chose for the work it guards is a
+ * flake generator, so choose one.
+ */
+export const UPLOAD_SETTLE = 45_000;

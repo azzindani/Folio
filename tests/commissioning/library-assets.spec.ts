@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { FIXTURE_PROJECTS, TEST_TOKEN } from './lib/harness';
+import { FIXTURE_PROJECTS, TEST_TOKEN, UPLOAD_SETTLE } from './lib/harness';
 
 /**
  * THE OTHER FRONT DOOR — the Design Library at /library.
@@ -54,7 +54,7 @@ async function newFolder(page: import('@playwright/test').Page, name: string): P
   await page.click('[data-cmd="newfolder"]');
   await page.fill('.ax-modal-input', name);
   await page.click('.ax-modal [data-x="ok"]');
-  await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: UPLOAD_SETTLE });
 }
 
 test('the Library opens the real file manager, not a second one', async ({ page }) => {
@@ -92,7 +92,7 @@ test('a folder can be made and deleted from the Library, and it reaches the disk
     'New folder in the Library created nothing — it used to only prime an upload').toBe(true);
 
   await page.setInputFiles('.ax-file', { name: 'inside.png', mimeType: 'image/png', buffer: PNG_1PX });
-  await expect(page.locator('.ax-row', { hasText: 'inside.png' })).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.ax-row', { hasText: 'inside.png' })).toHaveCount(1, { timeout: UPLOAD_SETTLE });
 
   // Delete it from the tree, which is where a file manager expects folders to
   // be managed and where the Library offered nothing at all.
@@ -108,7 +108,7 @@ test('a folder can be made and deleted from the Library, and it reaches the disk
   await page.click('.ax-modal [data-x="ok"]');
 
   await expect(page.locator('.ax-node[data-nav="project:shoot-notes"]'),
-    'the folder survived the delete').toHaveCount(0, { timeout: 15_000 });
+    'the folder survived the delete').toHaveCount(0, { timeout: UPLOAD_SETTLE });
   expect(fs.existsSync(path.join(IMAGES, 'shoot-notes')),
     'still on disk after being deleted from the Library').toBe(false);
 });

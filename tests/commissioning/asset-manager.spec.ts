@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { FIXTURE_PROJECTS, TEST_TOKEN, serverExport } from './lib/harness';
+import { FIXTURE_PROJECTS, TEST_TOKEN, serverExport, UPLOAD_SETTLE } from './lib/harness';
 import { measureInk, fileToDataUri } from './lib/ink';
 
 /**
@@ -113,7 +113,7 @@ test('a file uploaded through the manager is on disk AND paints in an engine exp
   await page.setInputFiles('.ax-file', {
     name: 'uploaded-mark.png', mimeType: 'image/png', buffer: PNG_1PX,
   });
-  await expect(page.locator('.ax-row', { hasText: 'uploaded-mark.png' })).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.ax-row', { hasText: 'uploaded-mark.png' })).toHaveCount(1, { timeout: UPLOAD_SETTLE });
 
   // Landed where the store says it did — an upload the engine cannot resolve
   // by path is no upload at all.
@@ -151,7 +151,7 @@ async function newFolder(page: import('@playwright/test').Page, name: string): P
   await page.click('[data-cmd="newfolder"]');
   await page.fill('.ax-modal-input', name);
   await page.click('.ax-modal [data-x="ok"]');
-  await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.locator('.ax-modal')).toHaveCount(0, { timeout: UPLOAD_SETTLE });
 }
 
 test('a folder made in the manager still exists after a reload', async ({ page }) => {
@@ -202,7 +202,7 @@ test('a folder with files in it can be deleted, and says what it will take', asy
     { name: 'one.png', mimeType: 'image/png', buffer: PNG_1PX },
     { name: 'two.png', mimeType: 'image/png', buffer: PNG_1PX },
   ]);
-  await expect(page.locator('.ax-row')).toHaveCount(2, { timeout: 15_000 });
+  await expect(page.locator('.ax-row')).toHaveCount(2, { timeout: UPLOAD_SETTLE });
 
   await page.click('.ax-crumb >> nth=0');
   await page.click('.ax-row.folder:has-text("binned")');
@@ -215,7 +215,7 @@ test('a folder with files in it can be deleted, and says what it will take', asy
     .toContainText('2 items');
   await page.click('.ax-modal [data-x="ok"]');
 
-  await expect(page.locator('.ax-row.folder', { hasText: 'binned' })).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.locator('.ax-row.folder', { hasText: 'binned' })).toHaveCount(0, { timeout: UPLOAD_SETTLE });
   expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'binned'))).toBe(false);
   // Contents go to .trash, exactly as a per-file delete does — that is what
   // makes deleting a folder safe enough to simply do.
@@ -261,7 +261,7 @@ test('files dropped from the desktop upload into the folder in view', async ({ p
     root?.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
   });
 
-  await expect(page.locator('.ax-row', { hasText: 'dragged.png' })).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.ax-row', { hasText: 'dragged.png' })).toHaveCount(1, { timeout: UPLOAD_SETTLE });
   expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'dropzone', 'dragged.png')),
     'dropped into the folder in view, but not filed there').toBe(true);
 });
@@ -285,7 +285,7 @@ test('every view mode shows the same files — a view is not a filter', async ({
     { name: 'one.png', mimeType: 'image/png', buffer: PNG_1PX },
     { name: 'two.png', mimeType: 'image/png', buffer: PNG_1PX },
   ]);
-  await expect(page.locator('.ax-list > *')).toHaveCount(2, { timeout: 15_000 });
+  await expect(page.locator('.ax-list > *')).toHaveCount(2, { timeout: UPLOAD_SETTLE });
 
   // Six modes because they answer different questions — artwork, facts, or the
   // most names in the least space. What they must NOT do is disagree about
@@ -305,7 +305,7 @@ test('copy in one project, paste into another — the file lands and the origina
 
   await newFolder(page, 'source');
   await page.setInputFiles('.ax-file', { name: 'shared-mark.png', mimeType: 'image/png', buffer: PNG_1PX });
-  await expect(page.locator('.ax-row', { hasText: 'shared-mark.png' })).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.ax-row', { hasText: 'shared-mark.png' })).toHaveCount(1, { timeout: UPLOAD_SETTLE });
 
   await page.click('.ax-row:has-text("shared-mark.png")');
   await expect(page.locator('[data-cmd="copy"]'), 'Copy stayed disabled with a file selected').toBeEnabled();
@@ -402,7 +402,7 @@ test('a folder can be deleted from the tree, and the views are on the bar', asyn
   await selectScratch(page);
   await newFolder(page, 'to-remove');
   await page.setInputFiles('.ax-file', { name: 'inside.png', mimeType: 'image/png', buffer: PNG_1PX });
-  await expect(page.locator('.ax-row', { hasText: 'inside.png' })).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('.ax-row', { hasText: 'inside.png' })).toHaveCount(1, { timeout: UPLOAD_SETTLE });
 
   // The modes are on the bar itself, not folded into a menu.
   const seg = page.locator('.ax-viewseg .ax-seg');
@@ -436,7 +436,7 @@ test('a folder can be deleted from the tree, and the views are on the bar', asyn
   await page.click('.ax-modal [data-x="ok"]');
 
   await expect(page.locator('.ax-node[data-nav="project:to-remove"]'),
-    'the folder survived a delete from the tree').toHaveCount(0, { timeout: 15_000 });
+    'the folder survived a delete from the tree').toHaveCount(0, { timeout: UPLOAD_SETTLE });
   expect(fs.existsSync(path.join(SCRATCH, 'assets', 'images', 'to-remove')),
     'still on disk after being deleted from the tree').toBe(false);
 });
