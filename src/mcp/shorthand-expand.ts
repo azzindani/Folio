@@ -12,6 +12,7 @@ import { buildMindmap } from './shorthand-presets-map';
 import { buildDoodles } from './shorthand-doodles';
 import { buildRibbonCards, buildValueList } from './shorthand-presets-cards';
 import { buildNewsletter } from './shorthand-presets-news';
+import { buildColumns } from './shorthand-presets-columns';
 import { motifLayers } from './shorthand-background';
 import { passThroughUnknown, applyFlowGrid } from './shorthand-passthrough';
 import { fitPresetToBox, isFittablePreset } from './preset-fit';
@@ -232,6 +233,16 @@ function expandShorthandLayer(sh: ShorthandLayer): Layer {
         // small-model robustness as top-level ones.
         layers: expandShorthandLayers(coerceShorthandLayers(sh.layers)),
       } as Layer;
+
+    // Landscape container — see shorthand-presets-columns.ts. Children go
+    // through the SAME pipeline as any other nested layer, so a column can hold
+    // a preset, a group or a bare shape without special-casing any of them.
+    // NOT aliased to `row`/`column` — those already normalise to auto_layout
+    // (see the container rewrite below), and stealing them would change what
+    // existing designs mean.
+    case 'columns':
+      return buildColumns(sh, String(sh.id ?? 'columns'), typeof sh.z === 'number' ? sh.z : 0,
+        (kids) => expandShorthandLayers(coerceShorthandLayers(kids)));
 
     case 'feature_grid':
       return buildFeatureGrid(sh, String(sh.id ?? 'feature_grid'), typeof sh.z === 'number' ? sh.z : 0);

@@ -18,7 +18,7 @@ import { type ShorthandLayer } from './shorthand-helpers';
 export const KNOWN_SHORTHAND_TYPES = new Set([
   'rect', 'circle', 'ellipse', 'text', 'line', 'icon', 'path', 'polygon', 'image', 'mermaid', 'code', 'math', 'group',
   'auto_layout', 'row', 'column', 'stack', 'grid', 'chart', 'kpi_card', 'component',
-  'feature_grid', 'cards', 'card_grid', 'features', 'decor', 'marble_bg', 'backdrop',
+  'feature_grid', 'cards', 'card_grid', 'features', 'decor', 'marble_bg', 'backdrop', 'columns',
 ]);
 
 // Parse a compact layer string a small model tends to emit, e.g.
