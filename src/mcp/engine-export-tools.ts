@@ -10,10 +10,7 @@ import { FAVICON_LINK } from '../utils/favicon';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 
-import { exportAsTemplate, injectIntoTemplate } from '../schema/template';
-import type { TemplateSpec } from '../schema/template';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover, generateId } from './engine/utils';
-import type { TemplateSlot } from '../schema/template';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './engine/utils';
 
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
@@ -21,7 +18,7 @@ import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 import { analyzeLayers, flatTextStyleFindings, type Finding } from './engine/diagnose';
 import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
-import { resolveBuiltinTemplate } from './engine/builtin-templates';
+import { willOverwrite, collisionReport } from './engine/export-collisions';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
 import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
@@ -128,6 +125,14 @@ export function exportDesign(args: { design_path: string; format: string; output
     );
 
   const outPath = args.output_path ?? dPath.replace('.design.yaml', `.${args.format}`);
+  // Read the disk BEFORE writing: after the write every target exists, so the
+  // question "did this replace something?" can only be asked now. `collision`
+  // is spread into each format's reply — see engine/export-collisions.ts for
+  // why orphaned `-pN` files are reported rather than deleted.
+  const firstTarget = multiPage && args.format === 'svg' ? outPath.replace(/\.svg$/i, '-p1.svg') : outPath;
+  const existedBefore = willOverwrite(firstTarget);
+  const collision = (): ReturnType<typeof collisionReport> =>
+    collisionReport(outPath, multiPage && args.format === 'svg' ? pages.length : 0, existedBefore);
   const link = buildEditorLink(dPath);
   if (args.format === 'svg') {
     try {
@@ -150,7 +155,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         _attachments.push(link.attachment);
         const context = buildContext(op, `SVG exported for "${spec.meta.name}" — ${outPaths.length} page(s)`, outPaths.map(p => ({ type: 'svg', path: p, role: 'output' })));
         const handover = buildHandover('EXPORT', { design_path: dPath });
-        return okResult(op, { format: 'svg', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+        return okResult(op, { ...collision(), format: 'svg', pages: outPaths.length, output_files: outPaths.map(p => path.basename(p)), output_paths: outPaths, output_path: outPaths[0], status: 'ok', bytes: totalBytes, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
       }
       const svgStr = renderToSVGString(spec, undefined, undefined, componentRegistry);
       fs.writeFileSync(outPath, svgStr, 'utf-8');
@@ -167,7 +172,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/svg+xml', text: path.basename(outPath) } },
         link.attachment,
       ];
-      return okResult(op, { format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
+      return okResult(op, { ...collision(), format: 'svg', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: svgStr.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, ...(assetNotes.length ? { notes: assetNotes } : {}), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `SVG render failed: ${(err as Error).message}`, 'Check design spec validity.', progress);
     }
@@ -194,7 +199,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       progress.push(pOk('HTML written', path.basename(outPath)));
       const context = buildContext(op, `HTML exported for "${spec.meta.name}"`, [{ type: 'html', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
+      return okResult(op, { ...collision(), format: 'html', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: html.length, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, handover, _attachments: [link.attachment] });
     } catch (err) {
       return errResult(op, `HTML export failed: ${(err as Error).message}`, 'Check design spec.', progress);
     }
@@ -274,7 +279,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       ];
       const context = buildContext(op, `PDF exported for "${spec.meta.name}"`, [{ type: 'pdf', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: failedPages.length ? 'partial' : 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, ...(failedPages.length ? { failed_pages: failedPages } : {}), links: linkCount, vector_runs: vectorRuns, notes, progress, context, handover });
+      return okResult(op, { ...collision(), format: 'pdf', output_file: path.basename(outPath), output_path: outPath, status: failedPages.length ? 'partial' : 'ok', bytes: pdfBuf.length, scale, pages: multiPage ? pages.length : 1, ...(failedPages.length ? { failed_pages: failedPages } : {}), links: linkCount, vector_runs: vectorRuns, notes, progress, context, handover });
     } catch (err) {
       return errResult(op, `PDF render failed: ${(err as Error).message}`, 'Try format="png" or "svg" to isolate; PDF = resvg raster + jsPDF vector text.', progress);
     }
@@ -321,7 +326,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         `PPTX slides = a pixel-faithful background image + ${totalTexts} NATIVE text box(es) you can select/edit in PowerPoint/Impress (solid-hex text with no rotation/effect is promoted; the rest stays baked in the image).`];
       const context = buildContext(op, `PPTX exported for "${spec.meta.name}" — ${slides.length} slide(s)`, [{ type: 'pptx', path: outPath, role: 'output' }]);
       const handover = buildHandover('EXPORT', { design_path: dPath });
-      return okResult(op, { format: 'pptx', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pptx.length, slides: slides.length, scale, notes, progress, context, handover });
+      return okResult(op, { ...collision(), format: 'pptx', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: pptx.length, slides: slides.length, scale, notes, progress, context, handover });
     } catch (err) {
       return errResult(op, `PPTX render failed: ${(err as Error).message}`, 'Try format="png" or "pdf" to isolate; PPTX = resvg raster slides in an OOXML zip.', progress);
     }
@@ -383,7 +388,7 @@ export function exportDesign(args: { design_path: string; format: string; output
         { type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' },
         { type: 'resource' as const, resource: { uri: `file://${outPath}`, mimeType: 'image/png', text: path.basename(outPath) } },
       ];
-      return okResult(op, { format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, ...((): Record<string, unknown> => { const n = [...assetNotes, ...fontNote()]; return n.length ? { notes: n } : {}; })(), progress, context, handover, _attachments });
+      return okResult(op, { ...collision(), format: 'png', output_file: path.basename(outPath), output_path: outPath, status: 'ok', bytes: png.length, scale, ...((): Record<string, unknown> => { const n = [...assetNotes, ...fontNote()]; return n.length ? { notes: n } : {}; })(), progress, context, handover, _attachments });
     } catch (err) {
       return errResult(op, `PNG render failed: ${(err as Error).message}`, 'Try format="svg" to verify the design renders; PNG layer = SVG layer + resvg rasterizer.', progress);
     }
@@ -587,111 +592,8 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
   return okResult(op, { status: 'ok', operation: o, aligned: boxed.map(t => t.l.id), backup, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment] });
 }
 
-// Friendly slot keys a model naturally sends (title/kicker/…) → substrings of
-// the auto-derived slot ids (`<layerId>_text`, e.g. `sections_1_title_text`).
-// Lets batch_create fill content without the model knowing the exact slot ids.
-const SLOT_KEY_ALIASES: Record<string, string[]> = {
-  title: ['title', 'headline', 'head', 'hero'],
-  kicker: ['kick', 'eyebrow', 'overline', 'tag', 'label'],
-  subtitle: ['sub', 'deck', 'standfirst', 'intro', 'tagline'],
-  body: ['body', 'desc', 'paragraph', 'copy'],
-  footer: ['footer', 'foot', 'caption', 'credit'],
-};
 
-/** Best-effort map a friendly slot key to a real template slot (by exact id/path,
- *  then id-substring, then alias family), skipping slots already claimed. */
-function matchSlot(key: string, slots: TemplateSlot[], used: Set<string>): TemplateSlot | null {
-  const k = key.toLowerCase();
-  const free = (s: TemplateSlot): boolean => !used.has(s.id);
-  return slots.find(s => free(s) && (s.id === key || s.path === key))
-    ?? slots.find(s => free(s) && s.id.toLowerCase().includes(k))
-    ?? (SLOT_KEY_ALIASES[k] ?? []).reduce<TemplateSlot | undefined>(
-      (hit, a) => hit ?? slots.find(s => free(s) && s.id.toLowerCase().includes(a)), undefined)
-    ?? null;
-}
-
-/** Resolve a batch template_id to a TemplateSpec, in precedence order:
- *  1. an explicit project `.template.yaml`,
- *  2. a project design (exported to a template so its dimensions, theme and
- *     layout carry into every variant),
- *  3. a built-in catalog id (the SAME assets `templates {op:inject}` / `{op:slots}`
- *     resolve) — so a catalog id usable for inject also works for batch. */
-function resolveBatchTemplate(projectPath: string, templateId: string): TemplateSpec | null {
-  const tpl = resolveDesignPath(`templates/${templateId}.template.yaml`, projectPath);
-  if (fs.existsSync(tpl)) {
-    const t = readYAML<TemplateSpec>(tpl);
-    if (t._protocol === 'template/v1') return t;
-  }
-  const slug = templateId.toLowerCase().replace(/\s+/g, '-');
-  for (const id of [templateId, slug]) {
-    const dp = resolveDesignPath(`designs/${id}.design.yaml`, projectPath);
-    if (fs.existsSync(dp)) return exportAsTemplate(readYAML<DesignSpec>(dp));
-  }
-  const builtin = resolveBuiltinTemplate(templateId);
-  if (builtin && fs.existsSync(builtin)) {
-    const t = readYAML<TemplateSpec>(builtin);
-    if (t._protocol === 'template/v1') return t;
-  }
-  return null;
-}
-
-/** Register a batch-created design in project.yaml so list_designs (which reads
- *  project.yaml, not the filesystem) shows it. No-op when there's no project.yaml. */
-function registerInProject(projectPath: string, designId: string): void {
-  const pPath = resolveDesignPath('project.yaml', projectPath);
-  if (!fs.existsSync(pPath)) return;
-  const project = readYAML<{ designs?: { id: string }[] }>(pPath);
-  project.designs = project.designs ?? [];
-  if (!project.designs.some(d => d.id === designId)) {
-    project.designs.push({ id: designId, path: `designs/${designId}.design.yaml`, type: 'poster', status: 'draft' } as { id: string });
-  }
-  writeYAML(pPath, project);
-}
-
-export function batchCreate(args: { project_path: string; template_id: string; slots_array: Record<string, unknown>[] }): ToolResult {
-  const op = 'batch_create';
-  const progress: ProgressItem[] = [];
-  const created: { design_id: string; path: string }[] = [];
-
-  // Resolve the template FIRST so every variant inherits its dimensions, theme
-  // and layout. The old code ignored template_id and created blank default-size
-  // (1080×1080 square) posters, then patched non-resolving paths — so a 1080×2000
-  // template produced empty squares ("can't generate a proper custom-dimension
-  // poster"). Now we clone the real template per row.
-  const template = resolveBatchTemplate(args.project_path, args.template_id);
-  if (!template) {
-    return errResult(op, `Template not found: ${args.template_id}`,
-      'template_id must be a built-in catalog id (see templates {op:list}), a project .template.yaml id (see templates {op:export}), OR a design name in this project to clone.', progress);
-  }
-  const slots = template.slots ?? [];
-
-  for (let i = 0; i < args.slots_array.length; i++) {
-    const row = { ...args.slots_array[i] };
-    const name = (row['name'] as string | undefined) ?? `${args.template_id}-${i + 1}`;
-    delete row['name'];
-
-    // Translate the row's friendly keys → the template's actual slot paths.
-    const used = new Set<string>();
-    const slotValues: Record<string, unknown> = {};
-    let matched = 0;
-    for (const [key, value] of Object.entries(row)) {
-      const slot = matchSlot(key, slots, used);
-      if (slot) { slotValues[slot.path] = value; used.add(slot.id); matched++; }
-    }
-
-    const design = injectIntoTemplate(template, slotValues);
-    design.meta = { ...design.meta, id: generateId(), name, generator: 'mcp', modified: new Date().toISOString().split('T')[0] };
-    const designId = name.toLowerCase().replace(/\s+/g, '-');
-    const designPath = resolveDesignPath(`designs/${designId}.design.yaml`, args.project_path);
-    writeYAML(designPath, design);
-    registerInProject(args.project_path, designId);
-    created.push({ design_id: design.meta.id, path: designPath });
-    progress.push(pOk(`Created design ${i + 1}/${args.slots_array.length}`,
-      `${name} — ${design.document.width}×${design.document.height}, ${matched}/${Object.keys(row).length} slot(s) filled`));
-  }
-
-  const context = buildContext(op, `Batch created ${created.length} design(s) from "${args.template_id}"`,
-    created.map(c => ({ type: 'design', path: c.path, role: 'created' })));
-  const handover = buildHandover('EXPORT', { project_path: args.project_path });
-  return okResult(op, { created, count: created.length, progress, context, handover });
-}
+// batch_create and its template/slot helpers live in engine-batch-tools.ts —
+// this file was at the 700-line ceiling and they share nothing with export.
+// Re-exported here so existing importers keep working (facade, §0.3).
+export { batchCreate } from './engine-batch-tools';
