@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import { baselinePath, hashSVG, readBaseline, writeBaseline, diffPages } from './preview-diff';
+import { baselinePath, hashSVG, canonicalSVG, readBaseline, writeBaseline, diffPages } from './preview-diff';
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-pdiff-'));
 let designPath = '';
@@ -32,6 +32,46 @@ describe('hashSVG', () => {
   it('is stable for identical output and moves for any difference', () => {
     expect(hashSVG('<svg>a</svg>')).toBe(hashSVG('<svg>a</svg>'));
     expect(hashSVG('<svg>a</svg>')).not.toBe(hashSVG('<svg>b</svg>'));
+  });
+
+  // The live failure: the renderer mints gradient/clip ids from a module-level
+  // counter, so the SAME page came back as `lg-1` then `lg-4`. Hashing raw text
+  // reported all 7 pages of a deck as changed on every call — changed_only did
+  // nothing while looking like it worked. Fixtures with fixed strings could
+  // never have caught it.
+  it('ignores generated element ids, which change per render and paint nothing', () => {
+    const a = '<svg><defs><linearGradient id="lg-1"/></defs><rect fill="url(#lg-1)"/></svg>';
+    const b = '<svg><defs><linearGradient id="lg-4"/></defs><rect fill="url(#lg-4)"/></svg>';
+    expect(hashSVG(a)).toBe(hashSVG(b));
+  });
+
+  it('still moves when the number of generated elements changes', () => {
+    const one = '<svg><defs><linearGradient id="lg-1"/></defs><rect fill="url(#lg-1)"/></svg>';
+    const two = '<svg><defs><linearGradient id="lg-1"/><linearGradient id="lg-2"/></defs><rect fill="url(#lg-1)"/></svg>';
+    expect(hashSVG(one)).not.toBe(hashSVG(two));
+  });
+
+  it('still moves when the copy changes, ids or no ids', () => {
+    const a = '<svg><defs><clipPath id="c-9"/></defs><text clip-path="url(#c-9)">Before</text></svg>';
+    const b = '<svg><defs><clipPath id="c-2"/></defs><text clip-path="url(#c-2)">After</text></svg>';
+    expect(hashSVG(a)).not.toBe(hashSVG(b));
+  });
+});
+
+describe('canonicalSVG', () => {
+  it('renumbers in first-appearance order so two renders converge', () => {
+    expect(canonicalSVG('<svg id="z"><g id="a"/><g id="b"/></svg>'))
+      .toBe('<svg id="_i0"><g id="_i1"/><g id="_i2"/></svg>');
+  });
+
+  it('rewrites url(#id) references alongside the definitions', () => {
+    expect(canonicalSVG('<defs><filter id="f-7"/></defs><rect filter="url(#f-7)"/>'))
+      .toBe('<defs><filter id="_i0"/></defs><rect filter="url(#_i0)"/>');
+  });
+
+  it('leaves an SVG with no ids untouched', () => {
+    const raw = '<svg><rect fill="#fff"/></svg>';
+    expect(canonicalSVG(raw)).toBe(raw);
   });
 });
 
