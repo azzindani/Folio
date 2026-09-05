@@ -21,6 +21,7 @@ import {
   mergeSpecChanges, toShorthand, replaceLayer, diffSpecKeys, describeDrift, specOf, type SpecEntry,
 } from './design-spec';
 import { collectTokens, retokenize } from './design-tokens';
+import { readLineage, chainGaps } from './design-lineage';
 
 /** Every page's layers, tagged with the page they came from. */
 function surfaces(spec: DesignSpec): { pageId?: string; layers: Layer[] }[] {
@@ -240,4 +241,52 @@ export function patchDesignSpec(args: {
     context: buildContext(op, `Patched "${args.layer_id}" in ${path.basename(dPath)}`, [{ type: 'design', path: dPath, role: 'updated' }]),
     handover: buildHandover('PATCH', { design_path: dPath }),
   }, bak);
+}
+
+// ── lineage ─────────────────────────────────────────────────
+
+/** A design's append-only history: what changed it, when, and what it hashed to.
+ *
+ *  The review's complaint about receipts was not the missing rows — it was that
+ *  nothing said they were missing, so a partial log got believed. This one
+ *  states its scope in the reply, every time. */
+export function designLineage(args: {
+  design_path: string; limit?: number; project_path?: string;
+}): ToolResult {
+  const op = 'lineage';
+  const progress: ProgressItem[] = [];
+  const dPath = resolveDesignPath(args.design_path, args.project_path);
+  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
+
+  const { records, skipped } = readLineage(dPath);
+  const scope = 'Every write to this .design.yaml through the MCP tool surface, recorded at the single point all of them pass through. Edits made outside it (by hand, or by restoring a snapshot) are NOT entries — they show up as a break in the hash chain instead.';
+  if (records.length === 0) {
+    return okResult(op, {
+      records: [], count: 0, scope,
+      note: 'No history yet. Lineage records from the first write onward, so a design created before it shipped has none until the next change.',
+      progress, context: buildContext(op, `No lineage for ${path.basename(dPath)}`),
+    });
+  }
+
+  const limit = Math.max(1, Math.min(args.limit ?? 20, 200));
+  const shown = records.slice(-limit);
+  const gaps = chainGaps(records);
+  const total = records[records.length - 1].after.bytes;
+  const ops = new Map<string, number>();
+  for (const r of records) ops.set(r.op, (ops.get(r.op) ?? 0) + 1);
+
+  progress.push(pOk(`${records.length} change(s)`, [...ops.entries()].map(([o, n]) => `${o}×${n}`).join(' · ')));
+  for (const g of gaps) progress.push(pWarn(`Chain break at #${g.seq}`, `expected ${g.expected}, found ${g.found} — the file was changed outside the tool surface`));
+
+  return okResult(op, {
+    records: shown, count: records.length, showing: shown.length, scope,
+    by_op: Object.fromEntries(ops),
+    current_bytes: total,
+    ...(gaps.length ? {
+      chain_breaks: gaps,
+      chain_note: `${gaps.length} record(s) do not follow on from the previous one — the design was edited outside the tool surface (hand-edited, restored from a snapshot, or synced). The history is complete for tool writes; it is not intact as a chain.`,
+    } : { chain: 'intact — every record follows on from the one before it' }),
+    ...(skipped ? { unreadable_lines: skipped } : {}),
+    progress, context: buildContext(op, `${records.length} change(s) to ${path.basename(dPath)}`),
+  });
 }

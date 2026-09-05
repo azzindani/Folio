@@ -28,6 +28,7 @@ const MAX_BODY_BYTES = Number(process.env['FOLIO_MAX_BODY_BYTES'] ?? 32 * 1024 *
 const MAX_BROADCAST_BYTES = Number(process.env['FOLIO_MAX_BROADCAST_BYTES'] ?? 16 * 1024 * 1024);
 
 import type { MCPRequest, MCPResponse, ToolResult, ToolDefinition, ContextField } from './types';
+import { withOpScope } from './design-lineage';
 
 type Handler = (args: Record<string, unknown>) => ToolResult | Promise<ToolResult>;
 
@@ -158,7 +159,8 @@ export async function handleMCP(req: MCPRequest, modern = false): Promise<Dispat
       const fn = HANDLERS[name];
       if (!fn) return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult({ success: false, op: name, error: `Unknown tool: ${name}`, hint: `Available: ${Object.keys(HANDLERS).join(', ')}`, progress: [], token_estimate: 0 })) }, toolName: name };
       try {
-        const raw = await fn(args);
+        // Every write this call makes is attributed to it — see design-lineage.
+        const raw = await withOpScope(name, args, () => fn(args));
         return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult(raw)) }, raw, toolName: name };
       } catch (err) {
         return { response: { jsonrpc: '2.0', id, result: shape(toMCPResult({ success: false, op: name, error: (err as Error).message, hint: 'Unexpected engine error.', progress: [], token_estimate: 0 })) }, toolName: name };

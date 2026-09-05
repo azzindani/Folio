@@ -616,6 +616,18 @@ Spec round-trip (editing a PRESET — prefer this over the two above):
   Hand-placed layers have no spec and need none — they ARE their own source; use
   edit_layer(op:"update") / patch_design for those.
 
+Lineage (what happened to this design, and can you trust the answer):
+  manage_design(op:"lineage", design_path)    every change, oldest → newest
+  Each record: the tool, a hash of its arguments, before/after content hashes,
+  byte sizes, duration. Recorded at the ONE point every design write passes
+  through, so no tool can forget to log — the reply states that scope every time
+  rather than leaving you to assume it.
+  CHAIN BREAKS are the useful part: a record whose "before" doesn't match the
+  previous "after" proves the file changed outside the tool surface — someone
+  edited it in the visual editor, restored a snapshot, or synced over it. The
+  log is complete for tool writes either way; the chain tells you whether it is
+  the WHOLE story. Check it before trusting a design you did not just build.
+
 Self-heal (close the loop yourself instead of hand-fixing findings):
   diagnose_design(design_path, heal:true)     diagnose → fix → re-diagnose → …
   It loops until clean or until a pass fixes nothing (progress is the stop

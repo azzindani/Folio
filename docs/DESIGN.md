@@ -881,6 +881,41 @@ Read with `manage_design {op:"get_spec"}`, write with
 `edit_layer {op:"patch_spec"}`. Hand-placed layers carry no spec and need none —
 a rect IS its own source.
 
+### 11.0.2 Lineage — the append-only history
+
+Beside a design's snapshots, `.mcp_versions/<name>.design.lineage.jsonl` holds
+one JSON object per change, appended and never rewritten:
+
+```json
+{"seq":3,"ts":"2026-09-05T…","op":"tokens","args_hash":"7b1c…",
+ "args":{"design_path":"…","set":"<object:1 keys>"},
+ "before":{"hash":"a41f…","bytes":8213},
+ "after":{"hash":"9c02…","bytes":8240},"ms":34,"writes":1}
+```
+
+Recorded in `writeYAML` — the single point every design write passes through —
+so coverage is a property of the architecture, not of each tool remembering.
+The scope is exactly "every write to a `.design.yaml` through the tool surface",
+which the read op states in every reply rather than leaving a caller to assume
+it. That is the whole lesson of the receipt the review found holding 2 entries
+after ~20 calls: the damage was not the missing rows, it was that nothing said
+they were missing, so a partial log got believed.
+
+One record per (tool call, design): a call that writes the file twice still
+describes one change, so the first `before` and the last `after` are kept, with
+`writes` recording how many passes ran. A write that changed nothing is not
+history and is not recorded. A call that threw after writing **is**.
+
+**Chain breaks.** A record whose `before` does not match the previous record's
+`after` proves the file changed outside the tool surface — edited in the visual
+editor, restored from a snapshot, synced over. The log is complete for tool
+writes either way; the chain is what tells you whether it is the whole story.
+`manage_design {op:"lineage"}` reports them explicitly.
+
+Never pruned. Snapshots are capped at 20 per design because they are bulk;
+lineage is not, because a capped audit log is the partial-receipt bug wearing a
+different hat.
+
 ### 11.0.1 Design tokens — colour by role
 
 A design may declare its palette of record:
