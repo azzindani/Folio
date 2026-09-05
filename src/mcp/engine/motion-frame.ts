@@ -32,9 +32,17 @@ type FrameArgs = {
   project_path?: string;
 };
 
-interface Pose { id: string; x?: number; y?: number; width?: number; height?: number; opacity?: number; rotation?: number }
+interface Pose {
+  id: string; x?: number; y?: number; width?: number; height?: number; opacity?: number; rotation?: number;
+  /** How skew/scale actually materialise — a transform the renderer applies. */
+  transform?: string;
+  /** How `draw` materialises: the dash pattern that hides the untraced part. */
+  stroke_dasharray?: string | number;
+  stroke_dashoffset?: number;
+}
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);
+const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined);
 
 /** Geometry of every layer that carries a track, after sampling. */
 function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
@@ -49,10 +57,19 @@ function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
       // readout is the half a blind caller can actually read.
       const hasPath = Boolean((ol as unknown as Record<string, unknown>)['motion_path']);
       if (hasPath || (ol as Layer & { animation?: AnimationSpec }).animation?.keyframes?.length) {
+        // skew, scale and draw do not move x/y — they land on `transform` and on
+        // the dash pair. Reporting only the box said "nothing changed" about a
+        // frame that visibly had, and the readout is the half a blind caller can
+        // actually read. Same bug as the motion_path omission just above, one
+        // set of channels later.
+        const dash = rl['stroke_dasharray'];
         out.push({
           id: ol.id,
           x: num(rl['x']), y: num(rl['y']), width: num(rl['width']), height: num(rl['height']),
           opacity: num(rl['opacity']), rotation: num(rl['rotation']),
+          transform: str(rl['transform']),
+          stroke_dasharray: typeof dash === 'number' ? dash : str(dash),
+          stroke_dashoffset: num(rl['stroke_dashoffset']),
         });
       }
       const ok = (ol as Layer & { layers?: Layer[] }).layers;

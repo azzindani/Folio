@@ -17,7 +17,7 @@ import { okResult, errResult, pOk, pWarn, buildContext } from './utils';
 import { ingestAsset, requireProject, isErr, AssetError, type AssetEntry } from './assets';
 import { ingestLibraryAsset, isLibraryPath, libraryAbsPath } from './asset-library';
 import { processAsset, hasWork, ProcessError, PROCESS_KEYS, type ProcessSpec } from './asset-process';
-import { isPNG } from '../../utils/png-codec';
+import { sniffRaster } from '../../utils/raster-decode';
 
 type Args = {
   project_path?: string;
@@ -67,15 +67,21 @@ export function assetProcess(args: Args): ToolResult {
   const abs = sourceAbs(proj.dir, args.asset_path);
   if (!abs || !fs.existsSync(abs)) return errResult(op, `Asset not found: ${args.asset_path}`, 'Run manage_design(op:asset_list) to see real paths.');
   const src = fs.readFileSync(abs);
-  if (!isPNG(src)) {
-    return errResult(op, `Pixel processing needs a PNG; "${args.asset_path}" is not one.`,
-      'Re-add the source as PNG (asset_add) — JPEG/WebP decoding is not available in-process yet.');
+  // The pipeline reads PNG, JPEG, WebP and GIF (utils/raster-decode.ts). This
+  // gate still demanded a PNG long after that landed, so the decoder shipped
+  // behind a door that refused every photo — and photos are JPEGs. Sniff the
+  // BYTES rather than trust the extension: a .png that is really a JPEG is
+  // common, and the decoder handles it either way.
+  const fmt = sniffRaster(src);
+  if (!fmt) {
+    return errResult(op, `Pixel processing needs a raster image; "${args.asset_path}" is not one.`,
+      'PNG, JPEG, WebP and GIF are read. An SVG has no pixels to work on — edit it as vector, or rasterize it first.');
   }
 
   const progress: ProgressItem[] = [];
   let processed: { buffer: Buffer; notes: string[] };
   try {
-    processed = processAsset(src, 'png', args.process);
+    processed = processAsset(src, fmt, args.process);
   } catch (e) {
     if (e instanceof ProcessError) return errResult(op, e.message, e.hint, progress);
     return errResult(op, `Processing failed: ${(e as Error).message}`, 'Check the recipe values.', progress);

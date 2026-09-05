@@ -24,6 +24,10 @@ beforeEach(() => {
       { id: 'sq', type: 'path', d: SQ, fill: '#111' },
       { id: 'tri', type: 'path', d: TRI, fill: '#222' },
       { id: 'line', type: 'path', d: 'M 0 50 L 200 50', stroke: '#f00', stroke_width: 20 },
+      // The shape the SCHEMA uses — a Stroke is {color, width}. Every fixture
+      // here used the flat `stroke_width` the code happened to read, which is
+      // why outline_stroke passed its tests while refusing every real layer.
+      { id: 'rule', type: 'path', d: 'M 0 50 L 200 50', stroke: { color: '#f00', width: 14 } },
       { id: 'box', type: 'rect', x: 0, y: 0, width: 10, height: 10 },
     ],
   }));
@@ -79,5 +83,33 @@ describe('edit_layer op:shape', () => {
     const r = await shapeOp({ design_path: dPath, shape_op: 'outline_stroke', layer_ids: ['sq'] });
     expect(r.success).toBe(false);
     expect(String(r.error)).toContain('No stroke width');
+  });
+
+  // ── The three faults a live call found, that passing tests did not ──
+  // All of them the same mistake: asserting against the shape the code wanted
+  // rather than the shape a real design has.
+
+  it('takes the width from the schema stroke object, not a flat field', async () => {
+    const r = await shapeOp({ design_path: dPath, shape_op: 'outline_stroke', layer_ids: ['rule'] });
+    expect(r.success).toBe(true);
+    expect(r['created']).toEqual(['rule_outlined']);
+  });
+
+  it('fills the outline with the stroke COLOUR, never the stroke object', async () => {
+    await shapeOp({ design_path: dPath, shape_op: 'outline_stroke', layer_ids: ['rule'] });
+    const made = byId('rule_outlined');
+    // `fill: {color,width}` is not a Fill — it renders as nothing at all, which
+    // is how this shipped: the op reported success and drew an invisible layer.
+    expect(made?.['fill']).toBe('#f00');
+    expect(made?.['stroke']).toBeUndefined();
+  });
+
+  it('gives every generated path a box, so heal does not treat it as a stray', async () => {
+    await shapeOp({ design_path: dPath, shape_op: 'offset', layer_ids: ['sq'], delta: 10 });
+    const made = byId('sq_offset');
+    for (const k of ['x', 'y', 'width', 'height']) expect(typeof made?.[k]).toBe('number');
+    // Grown by 10 from a 100×100 square at the origin.
+    expect(made?.['x']).toBe(-10);
+    expect(made?.['width']).toBe(120);
   });
 });

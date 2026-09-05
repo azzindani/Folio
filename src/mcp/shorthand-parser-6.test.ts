@@ -200,3 +200,42 @@ describe('repeat (one template × N, with optional data binding)', () => {
     expect(out.map(l => l.content?.value)).toEqual(['Step 1', 'Step 2', 'Step 3']);
   });
 });
+
+describe('stroke_width — the CSS spelling, folded into the schema Stroke', () => {
+  // Found on a live call: a path authored with stroke:"#FF3D00" + stroke_width:14
+  // rendered as a hairline. The schema stores a Stroke as {color, width}, the
+  // expander read only `stroke`, and the width silently became the 2px default.
+  const one = (sh: Record<string, unknown>): Record<string, unknown> =>
+    (expandShorthandLayers([sh] as unknown as ShorthandLayer[])[0]) as unknown as Record<string, unknown>;
+
+  it('folds stroke_width into a string stroke', () => {
+    const l = one({ id: 'p', type: 'path', d: 'M 0 0 L 10 10', stroke: '#f00', stroke_width: 14 });
+    expect(l['stroke']).toEqual({ color: '#f00', width: 14 });
+  });
+
+  it('accepts the camelCase spelling too', () => {
+    const l = one({ id: 'p', type: 'path', d: 'M 0 0 L 10 10', stroke: '#f00', strokeWidth: 9 });
+    expect(l['stroke']).toEqual({ color: '#f00', width: 9 });
+  });
+
+  it('an explicit stroke.width still wins', () => {
+    const l = one({ id: 'p', type: 'path', d: 'M 0 0 L 10 10', stroke: { color: '#f00', width: 3 }, stroke_width: 14 });
+    expect(l['stroke']).toEqual({ color: '#f00', width: 3 });
+  });
+
+  it('a width with no colour invents no stroke', () => {
+    const l = one({ id: 'p', type: 'path', d: 'M 0 0 L 10 10', stroke_width: 14 });
+    expect(l['stroke']).toBeUndefined();
+  });
+
+  it('stops flagging fields it actually reads', () => {
+    // A note saying "your field was ignored" about a field that WAS honoured
+    // pushes the model to rewrite working input — the columns preset's own keys
+    // were being reported that way while the preset laid out correctly.
+    const notes = diagnoseShorthandKeys([
+      { id: 'p', type: 'path', d: 'M 0 0 L 1 1', stroke: '#f00', stroke_width: 14 },
+      { id: 'c', type: 'columns', pos: [0, 0, 1920, 1080], gap: 72, pad: 24, weights: [5, 7], cols: [] },
+    ] as unknown as ShorthandLayer[]);
+    expect(notes).toEqual([]);
+  });
+});
