@@ -55,7 +55,13 @@ COPY package.json package-lock.json bunfig.toml ./
 RUN bun install --frozen-lockfile
 
 # Project sources + scripts + test fixtures/configs.
-COPY tsconfig.json vite.config.ts eslint.config.js index.html ./
+# vite.assets.config.ts is NOT optional: `npm run build` ends with
+# `npm run build:assets`, which loads it. Leaving it out failed the image build
+# at the very last step with "Cannot resolve entry module
+# vite.assets.config.ts" — so the published image could not be rebuilt from
+# source at all, and every deployment fell back to `docker cp` into a running
+# container. That is why the live image was three months behind HEAD.
+COPY tsconfig.json vite.config.ts vite.assets.config.ts eslint.config.js index.html ./
 COPY vitest.config.ts vitest.integration.config.ts ./
 COPY src ./src
 COPY public ./public
@@ -119,7 +125,13 @@ COPY --from=builder --chown=folio:folio /app/src           ./src
 COPY --chown=folio:folio scripts/serve.sh             ./scripts/serve.sh
 COPY --chown=folio:folio scripts/serve-mcp.sh         ./scripts/serve-mcp.sh
 COPY --chown=folio:folio scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
-RUN sed -i 's/\r$//' scripts/serve.sh scripts/serve-mcp.sh scripts/docker-entrypoint.sh \
+# The compose healthcheck runs `scripts/healthcheck.sh`, which was never copied
+# into the runtime stage — so on a BUILT image the check failed with "no such
+# file or directory" and the container reported unhealthy while both services
+# answered normally. A health signal that is wrong in the safe direction still
+# trains people to ignore it.
+COPY --chown=folio:folio scripts/healthcheck.sh       ./scripts/healthcheck.sh
+RUN sed -i 's/\r$//' scripts/serve.sh scripts/serve-mcp.sh scripts/docker-entrypoint.sh scripts/healthcheck.sh \
  && chmod +x scripts/*.sh
 
 # Pre-create + own the projects mount point so an unmounted run still works.
