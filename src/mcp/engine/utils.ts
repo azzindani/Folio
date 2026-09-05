@@ -4,6 +4,7 @@ import * as os from 'os';
 import yaml from 'js-yaml';
 import type { ToolResult, ProgressItem, ContextField, Handover, SuggestedNext } from '../types';
 import { builtinTemplatesDir } from './builtin-templates';
+import { noteDesignWrite } from '../design-lineage';
 
 // §18 — reject paths outside the allowed roots. Four roots accepted:
 //   1. user home dir
@@ -147,6 +148,11 @@ export function readYAML<T>(filePath: string): T {
 export function writeYAML(filePath: string, data: unknown): void {
   const resolved = resolvePath(filePath);
   const content = yaml.dump(data, { indent: 2, lineWidth: 120, noRefs: true, sortKeys: false });
+  // Lineage is recorded HERE, at the one place every design write passes
+  // through, so coverage is a property of the architecture rather than of each
+  // tool remembering to log. (The review's complaint was a receipt that
+  // silently covered only some operations — see design-lineage.ts.)
+  noteDesignWrite(resolved, content);
   fs.mkdirSync(path.dirname(resolved), { recursive: true });
   const tmp = resolved + '.tmp';
   fs.writeFileSync(tmp, content, 'utf-8');

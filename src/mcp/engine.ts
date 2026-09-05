@@ -12,7 +12,7 @@ export { assetRead, assetWrite } from './engine/assets';
 export { assetAdd, assetList, assetDelete, assetMove, assetPromote } from './engine/asset-library-ops';
 export { assetSearch } from './engine/asset-search';
 export { iconSearch } from './engine/icon-search';
-export { getDesignSpec, patchDesignSpec, designTokens } from './engine-spec-tools';
+export { getDesignSpec, patchDesignSpec, designTokens, designLineage } from './engine-spec-tools';
 export { customizeReport, customizePresentation, resizeDesign, reflowToCanvas } from './engine-customize-tools';
 export { assetProcess } from './engine/asset-process-op';
 export { assetFetch } from './engine/asset-fetch';
