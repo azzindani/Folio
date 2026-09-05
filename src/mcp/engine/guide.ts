@@ -616,6 +616,23 @@ Spec round-trip (editing a PRESET — prefer this over the two above):
   Hand-placed layers have no spec and need none — they ARE their own source; use
   edit_layer(op:"update") / patch_design for those.
 
+Customize twins (changing a DOCUMENT, not one preset):
+  Every generator has one, so you restyle in place instead of regenerating —
+  regenerating discards everything composed since.
+    report(op:"customize", design_path, changes)        layout, nav, accent,
+                                                        max_width, fonts
+    presentation(op:"customize", design_path, changes)  theme, transition,
+                                                        auto_advance, controls
+    manage_design(op:"resize", design_path, width, height)   any design's shape
+  Same merge rules as patch_spec (objects merge, arrays replace, null deletes),
+  and all three take dry_run:true.
+  RE-SHAPING is the one worth knowing: pass {width,height} (or use resize) and
+  every preset carrying a spec is REBUILT for the new page box — a real
+  re-layout at the new proportions, not a stretch — while hand-placed layers are
+  uniformly scaled and centred. That is how a 1920×1080 deck becomes a 1080×1350
+  carousel, or a square poster becomes portrait, without rebuilding it. Layers
+  composed before spec round-trip shipped can only be scaled; the reply says so.
+
 Interactive HTML reports (dashboards, EDA, financial decks):
   USE layout:"flow" — a responsive editorial document (12-col grid, NO fixed canvas).
   Layers are placed by a span field (1–12), NOT x/y/width/height — they reflow on any screen.

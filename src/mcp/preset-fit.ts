@@ -174,8 +174,12 @@ function scaleLengths(node: unknown, k: number, depth = 0): void {
 
 /** Scale one layer subtree about (ox,oy) by k, shifting x by dx. Children carry
  *  ABSOLUTE document coordinates (a group renders as a bare <g> with no
- *  transform), so every node is rewritten rather than the group box alone. */
-function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx: number): void {
+ *  transform), so every node is rewritten rather than the group box alone.
+ *
+ *  Shared with the canvas-reflow pass (see engine-customize-tools): resizing a
+ *  deck and compressing a preset are the same spatial problem, so they use the
+ *  same arithmetic rather than two subtly different copies of it. */
+export function scaleSubtree(layer: Layer, k: number, ox: number, oy: number, dx: number): void {
   const o = layer as unknown as Record<string, unknown>;
   const num = (key: string): number | undefined => (typeof o[key] === 'number' ? o[key] as number : undefined);
   const px = (v: number): number => Math.round(ox + dx + (v - ox) * k);

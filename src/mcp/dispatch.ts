@@ -51,8 +51,9 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'asset_promote': return engine.assetPromote(a as Parameters<typeof engine.assetPromote>[0]);
     case 'icon_search':  return engine.iconSearch(a as Parameters<typeof engine.iconSearch>[0]);
     case 'get_spec':     return engine.getDesignSpec(a as Parameters<typeof engine.getDesignSpec>[0]);
+    case 'resize':       return engine.resizeDesign(a as Parameters<typeof engine.resizeDesign>[0]);
     default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec']);
+      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize']);
   }
 }
 
@@ -95,8 +96,9 @@ export function dispatchReport(a: Args): ToolResult {
     case 'export':    return engine.exportReport(a as Parameters<typeof engine.exportReport>[0]);
     case 'formula':   return engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]);
     case 'debug':     return engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]);
+    case 'customize': return engine.customizeReport(a as Parameters<typeof engine.customizeReport>[0]);
     default:          return badOp('report', a['op'],
-      ['generate', 'bind_data', 'validate', 'export', 'formula', 'debug']);
+      ['generate', 'customize', 'bind_data', 'validate', 'export', 'formula', 'debug']);
   }
 }
 
@@ -106,7 +108,8 @@ export function dispatchPresentation(a: Args): ToolResult {
     case 'export': return engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]);
     case 'remote': return engine.setupRemotePresenter(a as Parameters<typeof engine.setupRemotePresenter>[0]);
     case 'collab': return engine.setupCollab(a as Parameters<typeof engine.setupCollab>[0]);
-    default:       return badOp('presentation', a['op'], ['create', 'export', 'remote', 'collab']);
+    case 'customize': return engine.customizePresentation(a as Parameters<typeof engine.customizePresentation>[0]);
+    default:       return badOp('presentation', a['op'], ['create', 'customize', 'export', 'remote', 'collab']);
   }
 }
 
