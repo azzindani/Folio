@@ -161,6 +161,13 @@ describe('projectAllowHosts', () => {
 });
 
 describe('assetFetch', () => {
+  // Timed out at vitest's default 5s on a loaded windows-latest runner while
+  // 4012 other tests passed. The network is mocked, so the cost is real disk
+  // work: this is the first test to scaffold the shared library (create
+  // .library/assets, write the file, build index.json), measured at 291ms
+  // locally against 1–4ms for its mocked-only siblings. 5s is vitest's generic
+  // default rather than a budget anyone set for first-run filesystem
+  // scaffolding on the slowest runner, so state one.
   it('stores the file, its dimensions and its provenance in one step', async () => {
     const dir = makeProject('fetch-ok');
     jsonMock.mockResolvedValue({
@@ -187,7 +194,7 @@ describe('assetFetch', () => {
     // asset_list reads back when the credit line has to be typeset.
     const index = fs.readFileSync(path.join(projectsDir, '.library/assets/index.json'), 'utf8');
     expect(index).toContain('CC BY-SA 2.0');
-  });
+  }, 20000);
 
   it('believes the wire content-type over the provider\'s claimed extension', async () => {
     const dir = makeProject('fetch-mime');
