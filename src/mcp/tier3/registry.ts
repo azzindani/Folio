@@ -49,6 +49,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         output_path:  { type: 'string', description: 'Output path (auto-derived if omitted)' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path' },
         scale:        { type: 'number', description: 'Scale factor 1–3', default: 2 },
+        force:        { type: 'boolean', description: 'Re-render even if this exact export was already produced. A repeat with the same design, format, scale and destination is answered from disk instead of rendered again (single-file formats), so a retry after a timeout does not redo finished work. An export killed mid-render records nothing and is always redone.', default: false },
       },
       required: ['design_path', 'format'],
     },
