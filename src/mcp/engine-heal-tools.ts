@@ -33,7 +33,7 @@ import { analyzeLayers, type Finding } from './engine/diagnose';
 import { finalizeSpecPages } from './engine-finalize-pages';
 import { resolveThemeColors } from './engine-layer-predicates';
 import { expandShorthandLayers } from './shorthand-parser';
-import { resetPresetFitReports, drainPresetFitReports, PRESET_FIT_MIN_SCALE } from './preset-fit';
+import { resetPresetFitReports, drainPresetFitReports } from './preset-fit';
 import { specOf, toShorthand } from './design-spec';
 import { collectTokens } from './design-tokens';
 
