@@ -130,11 +130,11 @@ async function buildShapes(args: ShapeOpArgs, ids: string[], ds: string[], targe
     if (!shapes) {
       return { error: 'Could not blend those two paths',
         hint: 'Both must be walkable: M L H V C S Q T Z, absolute or relative. Elliptical arcs (A) are not '
-          + 'supported \u2014 rebuild the curve with C or Q.' };
+          + 'supported — rebuild the curve with C or Q.' };
     }
     return {
       ds: shapes,
-      note: `${steps} in-between shape(s). The two originals are untouched \u2014 a blend is the shapes BETWEEN them.`,
+      note: `${steps} in-between shape(s). The two originals are untouched — a blend is the shapes BETWEEN them.`,
       name: i => `${ids[0]}_blend_${i + 1}`,
       style: fresh => styleOf(fresh[0] as Layer),
     };
@@ -145,7 +145,7 @@ async function buildShapes(args: ShapeOpArgs, ids: string[], ds: string[], targe
     const w = num(args.width) ?? num(sk.width) ?? num((src as unknown as Record<string, unknown>)['stroke_width']) ?? 0;
     if (w <= 0) {
       return { error: 'No stroke width to outline',
-        hint: 'Pass width, or give the layer a stroke first \u2014 strokes are {color, width}, e.g. stroke:{color:"#FF3D00", width:14}.' };
+        hint: 'Pass width, or give the layer a stroke first — strokes are {color, width}, e.g. stroke:{color:"#FF3D00", width:14}.' };
     }
     const d = await outlineStroke(ds[0] as string, w);
     if (!d) return { error: 'Could not outline that stroke', hint: 'The path may be unwalkable or degenerate.' };
@@ -171,7 +171,7 @@ async function buildShapes(args: ShapeOpArgs, ids: string[], ds: string[], targe
   }
   return {
     ds: [d],
-    note: `${delta > 0 ? 'Grown' : 'Shrunk'} by ${Math.abs(delta)}px, as a new layer \u2014 the original is untouched.`,
+    note: `${delta > 0 ? 'Grown' : 'Shrunk'} by ${Math.abs(delta)}px, as a new layer — the original is untouched.`,
     name: () => `${ids[0]}_offset`,
     style: fresh => styleOf(fresh[0] as Layer),
   };
@@ -219,24 +219,24 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
       + 'shapes in the editor first — the result of that is a path layer.');
   }
 
-  // \u2500\u2500 The ONLY async work in this op \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── The ONLY async work in this op ────────────────────────────
   // It runs BEFORE the document is read for writing. Holding a spec across this
   // await is what silently reverted concurrent edits: writeYAML put back a whole
-  // document captured before them. Measured live \u2014 20 updates fired during a
+  // document captured before them. Measured live — 20 updates fired during a
   // cold `await import(\'polygon-clipping\')` all reported success and 2 were
   // undone. Every OTHER design-writing op is atomic only because it never
   // yields; this one is the single exception, so it has to be made so on purpose.
   const built = await buildShapes(args, ids, ds as string[], targets);
   if ('error' in built) return errResult(op, built.error, built.hint);
 
-  // \u2500\u2500 read \u2192 mutate \u2192 write, with NO await between them \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── read → mutate → write, with NO await between them ─────────────────
   const bak = snapshot(dPath);
   const fresh = readYAML<DesignSpec>(dPath);
   const freshScope = resolveScope(fresh, args.page_id);
   if ('error' in freshScope) return errResult(op, freshScope.error, 'Check page_id.');
   const freshTargets = find(freshScope.scope, ids);
   if (freshTargets.length < need) {
-    return errResult(op, 'The design changed while this shape was being computed \u2014 its target layers are no longer there.',
+    return errResult(op, 'The design changed while this shape was being computed — its target layers are no longer there.',
       'Nothing was written. Re-read the design with manage_design {op:"inspect"} and retry.');
   }
   // Names are claimed against what the page already holds, so running the same

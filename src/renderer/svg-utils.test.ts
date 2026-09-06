@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createSVGElement, createSVGRoot, getOrCreateDefs, uniqueDefId, resetDefIdCounter } from './svg-utils';
+import { createSVGElement, createSVGRoot, getOrCreateDefs, defIdFor, appendDefOnce } from './svg-utils';
 
 beforeEach(() => {
-  resetDefIdCounter();
 });
 
 describe('createSVGElement', () => {
@@ -64,16 +63,57 @@ describe('getOrCreateDefs', () => {
   });
 });
 
-describe('uniqueDefId', () => {
-  it('increments counter on each call', () => {
-    const id1 = uniqueDefId('grad');
-    const id2 = uniqueDefId('grad');
-    expect(id1).toBe('grad-1');
-    expect(id2).toBe('grad-2');
+describe('defIdFor', () => {
+  // The test this replaces asserted `grad-1` then `grad-2` — "increments
+  // counter on each call". It pinned the non-determinism as intended
+  // behaviour, which is why nine test files could reset the counter in
+  // beforeEach and none of them ever noticed production never did.
+  it('the same content always gives the same id', () => {
+    const fill = { type: 'linear', angle: 135, stops: [{ color: '#101820', position: 0 }] };
+    expect(defIdFor('lg', fill)).toBe(defIdFor('lg', { ...fill }));
   });
 
-  it('uses prefix in returned id', () => {
-    const id = uniqueDefId('clip');
-    expect(id).toContain('clip');
+  it('different content gives different ids', () => {
+    expect(defIdFor('lg', { angle: 135 })).not.toBe(defIdFor('lg', { angle: 90 }));
+  });
+
+  it('does not depend on how many ids were minted before it', () => {
+    const first = defIdFor('noise', { frequency: 0.9 });
+    for (let i = 0; i < 50; i++) defIdFor('noise', { frequency: i });
+    expect(defIdFor('noise', { frequency: 0.9 })).toBe(first);
+  });
+
+  it('keeps the prefix, so url(#…) references stay readable', () => {
+    expect(defIdFor('clip', 'M0,0')).toMatch(/^clip-[0-9a-z]+$/);
+  });
+
+  it('separates prefixes even for identical content', () => {
+    expect(defIdFor('lg', 'x')).not.toBe(defIdFor('rg', 'x'));
+  });
+});
+
+describe('appendDefOnce', () => {
+  it('adds the def', () => {
+    const svg = createSVGRoot(10, 10);
+    const defs = getOrCreateDefs(svg);
+    appendDefOnce(defs, createSVGElement('filter', { id: 'f-1' }));
+    expect(defs.children.length).toBe(1);
+  });
+
+  it('does not add a second element under the same id', () => {
+    // Content-derived ids mean two layers sharing a gradient build the SAME id.
+    const svg = createSVGRoot(10, 10);
+    const defs = getOrCreateDefs(svg);
+    appendDefOnce(defs, createSVGElement('filter', { id: 'f-1' }));
+    appendDefOnce(defs, createSVGElement('filter', { id: 'f-1' }));
+    expect(defs.children.length).toBe(1);
+  });
+
+  it('still adds defs with different ids', () => {
+    const svg = createSVGRoot(10, 10);
+    const defs = getOrCreateDefs(svg);
+    appendDefOnce(defs, createSVGElement('filter', { id: 'f-1' }));
+    appendDefOnce(defs, createSVGElement('filter', { id: 'f-2' }));
+    expect(defs.children.length).toBe(2);
   });
 });

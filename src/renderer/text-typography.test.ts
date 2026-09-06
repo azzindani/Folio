@@ -1,10 +1,8 @@
 /** WS3 typography: transform, variable fonts, OpenType, outline, text-on-path, highlight. */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderText } from './layer-renderers';
-import { createSVGRoot, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot } from './svg-utils';
 import type { TextLayer, TextStyle } from '../schema/types';
-
-beforeEach(() => resetDefIdCounter());
 
 function render(value: string, style: TextStyle, extra: Partial<TextLayer> = {}) {
   const svg = createSVGRoot(400, 200);

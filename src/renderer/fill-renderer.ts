@@ -1,5 +1,5 @@
 import type { Fill, LinearGradientFill, RadialGradientFill, ConicGradientFill, NoiseFill, ImageFill, ColorOrGradient } from '../schema/types';
-import { createSVGElement, uniqueDefId, getOrCreateDefs } from './svg-utils';
+import { createSVGElement, defIdFor, appendDefOnce, getOrCreateDefs } from './svg-utils';
 import { renderPattern } from './pattern-renderer';
 import { resolveAssetUrl } from './render-context';
 
@@ -19,7 +19,7 @@ function renderLinearGradient(
   fill: LinearGradientFill,
   defs: SVGDefsElement,
 ): string {
-  const id = uniqueDefId('lg');
+  const id = defIdFor('lg', fill);
   const radians = ((fill.angle - 90) * Math.PI) / 180;
   const x1 = 50 - Math.cos(radians) * 50;
   const y1 = 50 - Math.sin(radians) * 50;
@@ -43,7 +43,7 @@ function renderLinearGradient(
     );
   }
 
-  defs.appendChild(gradient);
+  appendDefOnce(defs, gradient);
   return `url(#${id})`;
 }
 
@@ -51,7 +51,7 @@ function renderRadialGradient(
   fill: RadialGradientFill,
   defs: SVGDefsElement,
 ): string {
-  const id = uniqueDefId('rg');
+  const id = defIdFor('rg', fill);
   // cx/cy/radius default to 50% (centered, full bounds) when omitted —
   // makes hand-written YAML templates terser without crashing the SVG
   // with `"undefined%"`.
@@ -74,7 +74,7 @@ function renderRadialGradient(
     );
   }
 
-  defs.appendChild(gradient);
+  appendDefOnce(defs, gradient);
   return `url(#${id})`;
 }
 
@@ -84,7 +84,7 @@ function renderConicGradient(
   defs: SVGDefsElement,
   _bounds: { width: number; height: number },
 ): string {
-  const id = uniqueDefId('cg');
+  const id = defIdFor('cg', [fill, _bounds]);
   const sorted = fill.stops.slice().sort((a, b) => a.position - b.position);
 
   const cx = fill.cx ?? 50;
@@ -107,7 +107,7 @@ function renderConicGradient(
     gradient.appendChild(s);
   }
 
-  defs.appendChild(gradient);
+  appendDefOnce(defs, gradient);
   return `url(#${id})`;
 }
 
@@ -125,7 +125,7 @@ function renderNoiseFilter(
   originX = 0,
   originY = 0,
 ): SVGElement {
-  const filterId = uniqueDefId('noise');
+  const filterId = defIdFor('noise', fill);
   const filter = createSVGElement('filter', {
     id: filterId,
     x: '0',
@@ -143,7 +143,7 @@ function renderNoiseFilter(
     }),
   );
 
-  defs.appendChild(filter);
+  appendDefOnce(defs, filter);
 
   const noiseRect = createSVGElement('rect', {
     x: String(originX),
@@ -165,7 +165,7 @@ function renderImageFill(
   defs: SVGDefsElement,
   bounds: { width: number; height: number },
 ): string {
-  const id = uniqueDefId('img');
+  const id = defIdFor('img', [fill, bounds]);
   const mode = fill.mode ?? 'cover';
   const tile = mode === 'tile' ? Math.max(4, fill.tile_size ?? 96) : 0;
   const w = mode === 'tile' ? tile : Math.max(1, bounds.width);
@@ -184,7 +184,7 @@ function renderImageFill(
   image.setAttribute('href', fillHref);
   image.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', fillHref);
   pattern.appendChild(image);
-  defs.appendChild(pattern);
+  appendDefOnce(defs, pattern);
   return `url(#${id})`;
 }
 

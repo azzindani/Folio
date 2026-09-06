@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderIcon, renderRect, renderAutoLayout, renderInteractiveChart, renderInteractiveTable, renderRichText, renderKpiCard, buildChartPreviewSpec } from './layer-renderers';
 
 // Simple render fn for group tests (avoids circular import with renderer.ts)
-import { createSVGRoot, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot } from './svg-utils';
 import type { Layer, IconLayer, RectLayer, AutoLayoutLayer, InteractiveChartLayer, InteractiveTableLayer, RichTextLayer, KpiCardLayer } from '../schema/types';
 
 import { renderText } from './layer-renderers';
@@ -30,14 +30,12 @@ function makeSVG() {
 }
 
 beforeEach(() => {
-  resetDefIdCounter();
 });
 
 // ── Path ────────────────────────────────────────────────────
 
 describe('renderAutoLayout', () => {
   function makeSVG() { return createSVGRoot(800, 800); }
-  beforeEach(() => { resetDefIdCounter(); });
 
   it('returns a <g> with data-layer-id', () => {
     const layer: AutoLayoutLayer = {

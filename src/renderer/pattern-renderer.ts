@@ -1,5 +1,5 @@
 import type { PatternFill, PatternName } from '../schema/types';
-import { createSVGElement, uniqueDefId } from './svg-utils';
+import { createSVGElement, defIdFor, appendDefOnce } from './svg-utils';
 
 // Generative tiled patterns. Each builder appends its tile content (in fg) to a
 // <g>; the dispatcher wraps it in a seamless <pattern> (userSpaceOnUse) so the
@@ -180,7 +180,7 @@ export function renderPattern(fill: PatternFill, defs: SVGDefsElement): string {
   const scale = fill.scale && fill.scale > 0 ? fill.scale : 1;
   const weight = fill.weight && fill.weight > 0 ? fill.weight : 1;
   const t = Math.max(2, Math.round((BASE_TILE[name] ?? 24) * scale));
-  const id = uniqueDefId('pat');
+  const id = defIdFor('pat', fill);
   const pattern = createSVGElement('pattern', {
     id, patternUnits: 'userSpaceOnUse', width: t, height: t,
     patternTransform: fill.angle ? `rotate(${fill.angle})` : undefined,
@@ -191,6 +191,6 @@ export function renderPattern(fill: PatternFill, defs: SVGDefsElement): string {
   });
   (BUILDERS[name] ?? BUILDERS.dots)(g, { t, fg: fill.fg, w: weight });
   pattern.appendChild(g);
-  defs.appendChild(pattern);
+  appendDefOnce(defs, pattern);
   return `url(#${id})`;
 }

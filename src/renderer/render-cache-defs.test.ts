@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderPage } from './renderer';
-import { resetDefIdCounter } from './svg-utils';
 import type { Layer } from '../schema/types';
 
 // Regression for the multi-page preview bug: the per-layer render cache cloned a
@@ -15,7 +14,6 @@ const gradRect = (id: string): Layer => ({
 } as unknown as Layer);
 
 describe('render cache keeps every SVG self-contained (no dangling def refs)', () => {
-  beforeEach(() => resetDefIdCounter());
 
   it('a gradient fill resolves to a LOCAL def on every render of the same layer', () => {
     const layers = [gradRect('mesh')];
@@ -29,10 +27,43 @@ describe('render cache keeps every SVG self-contained (no dangling def refs)', (
     }
   });
 
-  it('two coexisting SVGs never share a def id (no cross-svg collision)', () => {
+  // This asserted that two coexisting SVGs NEVER share a def id, and its comment
+  // named the mechanism it depended on: "monotonic counter, no per-render
+  // reset". That counter was the reason the same design exported to different
+  // bytes on every call. Ids are now content-derived, so two SVGs CAN share one
+  // — and the guarantee that matters is sharper than non-collision:
+  //
+  //   a shared id always means an identical definition.
+  //
+  // That is what makes it safe for presentation-assembler and html-assembler,
+  // which join many pages into ONE document where url(#x) resolves to the first
+  // match. Resolving to either copy paints the same thing.
+  const idOf = (svg: SVGSVGElement): string =>
+    /url\(#(.+?)\)/.exec(svg.querySelector('rect')?.getAttribute('fill') ?? '')?.[1] ?? '';
+  const defOf = (svg: SVGSVGElement, id: string): string =>
+    svg.querySelector(`#${id}`)?.innerHTML ?? '';
+
+  it('two SVGs sharing a def id have byte-identical definitions', () => {
     const a = renderPage([gradRect('m1')], 200, 200);
     const b = renderPage([gradRect('m2')], 200, 200);
-    const idOf = (svg: SVGSVGElement): string => /url\(#(.+?)\)/.exec(svg.querySelector('rect')?.getAttribute('fill') ?? '')?.[1] ?? '';
-    expect(idOf(a)).not.toBe(idOf(b));   // monotonic counter, no per-render reset
+    expect(idOf(a)).toBe(idOf(b));
+    expect(defOf(a, idOf(a))).toBe(defOf(b, idOf(b)));
+    expect(defOf(a, idOf(a)), 'the def should have real content').not.toBe('');
+  });
+
+  it('two SVGs with DIFFERENT fills never share an id', () => {
+    // The only collision that could paint the wrong thing.
+    const a = renderPage([gradRect('m1')], 200, 200);
+    const other = { ...gradRect('m2') } as unknown as Record<string, unknown>;
+    other['fill'] = { type: 'radial', stops: [{ color: '#123456', position: 0 }, { color: '#654321', position: 100 }] };
+    const b = renderPage([other as unknown as Layer], 200, 200);
+    expect(idOf(a)).not.toBe(idOf(b));
+  });
+
+  it('the same design renders to the same ids every time', () => {
+    // The whole point: three exports of one unchanged design were three
+    // different files (lg-1/noise-2/noise-3, then lg-4/noise-5/noise-6).
+    const layers = [gradRect('m1')];
+    expect(idOf(renderPage(layers, 200, 200))).toBe(idOf(renderPage(layers, 200, 200)));
   });
 });

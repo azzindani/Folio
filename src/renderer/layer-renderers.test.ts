@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderPath, renderPolygon, renderLine, renderImage, renderIcon, renderMermaid, renderChart, renderCode, renderMath, renderGroup, renderRect, renderQRCode } from './layer-renderers';
 
 // Simple render fn for group tests (avoids circular import with renderer.ts)
-import { createSVGRoot, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot } from './svg-utils';
 import type { Layer, PathLayer, PolygonLayer, LineLayer, ImageLayer, IconLayer, MermaidLayer, ChartLayer, CodeLayer, MathLayer, GroupLayer, RectLayer, QRCodeLayer } from '../schema/types';
 
 const simpleRenderFn = (layer: Layer, svg: SVGSVGElement): SVGElement => {
@@ -24,7 +24,6 @@ function makeSVG() {
 }
 
 beforeEach(() => {
-  resetDefIdCounter();
 });
 
 // ── Rect color fallback ─────────────────────────────────────
