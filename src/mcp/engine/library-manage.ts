@@ -14,6 +14,50 @@ import { buildEditorLink } from './editor-link';
 
 const SUFFIX = '.design.yaml';
 
+/** A row in a project.yaml `designs:` list — what op:list reads. */
+type ManifestRow = { id?: string; path?: string; type?: string; status?: string };
+type Manifest = { designs?: ManifestRow[] };
+
+const manifestPath = (projDir: string): string => path.join(projDir, 'project.yaml');
+const relRow = (projDir: string, designPath: string): string =>
+  path.relative(projDir, designPath).split(path.sep).join('/');
+
+/** Remove a design's row, returning it so a caller that is MOVING the file can
+ *  carry its type/status across instead of inventing new ones. */
+function dropManifestRow(projDir: string, designPath: string): ManifestRow | null {
+  const mPath = manifestPath(projDir);
+  if (!fs.existsSync(mPath)) return null;
+  try {
+    const proj = readYAML<Manifest>(mPath);
+    if (!Array.isArray(proj.designs)) return null;
+    const rel = relRow(projDir, designPath);
+    const row = proj.designs.find(d => d?.path === rel) ?? null;
+    if (!row) return null;
+    proj.designs = proj.designs.filter(d => d?.path !== rel);
+    writeYAML(mPath, proj);
+    return row;
+  } catch { return null; }          // a stale row is not worth failing the move over
+}
+
+/** Add a design's row, carrying `from` across when the design already had one. */
+function addManifestRow(projDir: string, designPath: string, from: ManifestRow | null): boolean {
+  const mPath = manifestPath(projDir);
+  if (!fs.existsSync(mPath)) return false;
+  try {
+    const proj = readYAML<Manifest>(mPath);
+    const rel = relRow(projDir, designPath);
+    if (!Array.isArray(proj.designs)) proj.designs = [];
+    if (proj.designs.some(d => d?.path === rel)) return false;
+    let type = from?.type;
+    if (type === undefined) {
+      try { type = (readYAML<{ type?: string }>(designPath)).type ?? 'poster'; } catch { type = 'poster'; }
+    }
+    proj.designs.push({ id: path.basename(designPath, SUFFIX), path: rel, type, status: from?.status ?? 'draft' });
+    writeYAML(mPath, proj);
+    return true;
+  } catch { return false; }
+}
+
 /** Rename a design's DISPLAY name (meta.name). The file path is left stable on
  *  purpose so existing editor links / references never break. */
 export function renameDesign(args: { design_path: string; new_name: string; project_path?: string }): ToolResult {
@@ -49,20 +93,8 @@ export function deleteDesign(args: { design_path: string; project_path?: string 
   // manifest — kept reporting it while op:browse, which scans the disk, did
   // not. A caller then gets a path that resolves to nothing.
   const progress = [pOk(`Moved design to trash`, dest), pInfo('Recoverable', 'rename it back out of .trash/ to restore')];
-  const projFile = path.join(projDir, 'project.yaml');
-  if (fs.existsSync(projFile)) {
-    try {
-      const proj = readYAML<{ designs?: { path?: string }[] }>(projFile);
-      const rel = path.relative(projDir, dPath).split(path.sep).join('/');
-      const before = proj.designs?.length ?? 0;
-      if (Array.isArray(proj.designs)) {
-        proj.designs = proj.designs.filter(d => d?.path !== rel);
-        if (proj.designs.length !== before) {
-          writeYAML(projFile, proj);
-          progress.push(pInfo('Manifest updated', `removed ${rel} from project.yaml`));
-        }
-      }
-    } catch { /* the file move already succeeded; a stale row is not worth failing over */ }
+  if (dropManifestRow(projDir, dPath)) {
+    progress.push(pInfo('Manifest updated', `removed ${relRow(projDir, dPath)} from project.yaml`));
   }
   const context = buildContext(op, `Deleted (to trash) "${path.basename(dPath)}"`, [{ type: 'design', path: dest, role: 'trashed' }]);
   return okResult(op, { trashed_path: dest, original_path: dPath, progress, context });
@@ -86,6 +118,17 @@ export function moveDesign(args: { design_path: string; target_project: string; 
   try { fs.renameSync(dPath, dest); } catch (e) { return errResult(op, `Could not move design: ${(e as Error).message}`, 'Moving across filesystems may need a copy; check permissions.'); }
   const link = buildEditorLink(dest);
   const progress = [pOk(`Moved design to ${path.basename(targetDir)}`, dest)];
+  // Only once the file has actually moved — a failed rename must not leave the
+  // source manifest claiming the design has gone. The row is matched by its
+  // recorded path, so it is still findable after the file itself is elsewhere,
+  // and carrying it across keeps the design's type and status.
+  const row = dropManifestRow(path.dirname(path.dirname(dPath)), dPath);
+  // Both manifests, or op:list (which reads them) disagrees with op:browse
+  // (which scans the disk) — the target listing the design nowhere, the source
+  // still listing a path that resolves to nothing.
+  if (addManifestRow(targetDir, dest, row)) {
+    progress.push(pInfo('Manifest updated', `registered ${relRow(targetDir, dest)} in ${path.basename(targetDir)}`));
+  }
   const context = buildContext(op, `Moved "${path.basename(dPath)}" → ${path.basename(targetDir)}`, [{ type: 'design', path: dest, role: 'moved' }]);
   return okResult(op, { design_path: dest, original_path: dPath, target_project: targetDir, open_url: link.open_url, progress, context });
 }
