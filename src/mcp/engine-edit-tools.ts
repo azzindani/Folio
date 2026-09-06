@@ -381,6 +381,71 @@ export function pagesWithLayer(spec: DesignSpec, layerId: string): string[] {
  * An endpoint named in the SAME patch wins — the caller said where it goes, so
  * that value is used as given rather than shifted on top.
  */
+/** Flat authoring alias → the canonical `style` key it belongs in. */
+const TYPO_ALIASES: readonly (readonly [string, readonly string[]])[] = [
+  ['font_size', ['font_size', 'size', 'fontSize']],
+  ['font_family', ['font_family', 'font', 'fontFamily']],
+  ['font_weight', ['font_weight', 'weight', 'fontWeight']],
+  ['color', ['color']],
+  ['text_align', ['text_align', 'align', 'textAlign']],
+  ['line_height', ['line_height', 'lineHeight', 'leading']],
+  ['letter_spacing', ['letter_spacing', 'letterSpacing', 'tracking', 'track']],
+];
+
+/**
+ * Route a flat authoring alias into the canonical field that would SHADOW it.
+ *
+ * A stored text layer keeps its words in `content:{type,value}` and its
+ * typography in `style:{}`. `update` merged props in shallow, so the natural
+ * way to ask for a change wrote a sibling the renderer never reads:
+ *
+ *     props {text:"NEW"}       → text: NEW      beside content.value: OLD
+ *     props {font_size: 90}    → font_size: 90  beside style.font_size: 40
+ *     props {color:"#EE0000"}  → color: #EE0000 beside style.color: #111111
+ *
+ * In all three the renderer keeps the canonical value, `update` reports
+ * success, and nothing changes. Verified by rendering a layer holding both.
+ *
+ * Only applied where a canonical field EXISTS to do the shadowing — a layer
+ * with no `style` reads a flat size correctly, so there is nothing to fix and
+ * nothing is touched. An explicit `style` in the same patch keeps its own keys;
+ * the alias only fills what that patch left unsaid.
+ */
+export function canonicalizeProps(layer: Layer, props: Record<string, unknown>): Record<string, unknown> {
+  const l = layer as unknown as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...props };
+
+  const content = l['content'];
+  if (out['text'] !== undefined && out['content'] === undefined && content !== undefined) {
+    const value = out['text'];
+    out['content'] = (content && typeof content === 'object' && !Array.isArray(content))
+      ? { ...(content as Record<string, unknown>), value }
+      : { type: 'plain', value };
+    delete out['text'];
+  }
+
+  const style = l['style'];
+  if (style && typeof style === 'object' && !Array.isArray(style)) {
+    let alias: Record<string, unknown> | undefined;
+    for (const [canonical, keys] of TYPO_ALIASES) {
+      for (const k of keys) {
+        if (out[k] === undefined) continue;
+        alias = alias ?? {};
+        if (alias[canonical] === undefined) alias[canonical] = out[k];
+        delete out[k];
+      }
+    }
+    if (alias) {
+      const patched = out['style'];
+      const explicit = (patched && typeof patched === 'object' && !Array.isArray(patched))
+        ? patched as Record<string, unknown> : undefined;
+      const base = explicit ?? (style as Record<string, unknown>);
+      out['style'] = { ...base, ...alias, ...(explicit ?? {}) };
+    }
+  }
+  return out;
+}
+
 export function dragEndpoints(before: Layer, after: Layer, props: Record<string, unknown>): Layer {
   const b = before as unknown as Record<string, unknown>;
   const a = after as unknown as Record<string, unknown>;
@@ -421,7 +486,8 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
       if (l.id === args.layer_id) {
         found = true;
         if (lockedAncestor) { lockedBy = lockedAncestor; return l; }
-        return dragEndpoints(l, { ...l, ...args.props } as Layer, args.props as Record<string, unknown>);
+        const props = canonicalizeProps(l, args.props as Record<string, unknown>);
+        return dragEndpoints(l, { ...l, ...props } as Layer, props);
       }
       const children = (l as Layer & { layers?: Layer[] }).layers;
       if (l.type === 'group' && Array.isArray(children)) {
