@@ -49,7 +49,13 @@ interface Piece { text: string; start: number }
 
 /** Split into characters or words, remembering where each piece starts. */
 function pieces(text: string, by: 'char' | 'word'): Piece[] {
-  if (by === 'char') return [...text].map((c, i) => ({ text: c, start: i }));
+  // Spaces are dropped: a blank text layer draws nothing, but it is still a
+  // real layer, and the point of a char split is a staggered reveal — so nine
+  // spaces in a sentence became nine stagger slots that revealed nothing, a
+  // visible stutter in the rhythm. `start` stays the index into the ORIGINAL
+  // string, so every surviving glyph keeps its measured position and the run
+  // still reads as the sentence it was.
+  if (by === 'char') return [...text].map((c, i) => ({ text: c, start: i })).filter(p => p.text.trim() !== '');
   const out: Piece[] = [];
   const re = /\S+/g;
   let m: RegExpExecArray | null;

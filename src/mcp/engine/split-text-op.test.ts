@@ -39,12 +39,15 @@ const write = (ls: Record<string, unknown>[]): void => {
 };
 
 describe('edit_layer op:split_text', () => {
-  it('makes one layer per character, in reading order', () => {
+  it('makes one layer per VISIBLE character, in reading order', () => {
     const r = splitText({ design_path: dPath, layer_id: 'head' }) as Record<string, unknown>;
     expect(r['success']).toBe(true);
-    expect(r['count']).toBe(8);                       // "Hi there"
+    // 7, not 8: the space in "Hi there" gets no layer of its own. A blank text
+    // layer draws nothing yet still takes a slot in the staggered reveal these
+    // pieces exist for. The gap survives as POSITION — see the x assertions.
+    expect(r['count']).toBe(7);
     const made = layers().filter(l => String(l['id']).startsWith('head_c'));
-    expect(made.map(l => (l['content'] as { value: string }).value).join('')).toBe('Hi there');
+    expect(made.map(l => (l['content'] as { value: string }).value).join('')).toBe('Hithere');
     // Monotonically increasing x — the run reads left to right.
     const xs = made.map(l => l['x'] as number);
     expect([...xs].sort((a, b) => a - b)).toEqual(xs);
@@ -153,5 +156,25 @@ describe('splitting the same layer twice', () => {
     expect(new Set(ids).size, ids.join(',')).toBe(ids.length);
     expect(ids).toContain('head_c1');
     expect(ids).toContain('head_c1_2');
+  });
+});
+
+describe('a char split is a reveal, so it emits no blank layers', () => {
+  it('skips spaces but keeps every glyph where it was measured', () => {
+    // 9 spaces in a sentence became 9 empty text layers — each one a stagger
+    // slot that revealed nothing. Found by splitting a full sentence live.
+    const ls = layers();
+    const head = ls.find(l => l['id'] === 'head') as Record<string, unknown>;
+    head['content'] = { type: 'plain', value: 'ab cd' };
+    write(ls);
+    const r = splitText({ design_path: dPath, layer_id: 'head' }) as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    expect(r['count']).toBe(4);
+    const made = layers().filter(l => String(l['id']).startsWith('head_c'));
+    expect(made.map(l => (l['content'] as { value?: string }).value)).toEqual(['a', 'b', 'c', 'd']);
+    // 'c' must still sit where the space put it, not shifted left onto 'b'.
+    const xs = made.map(l => l['x'] as number);
+    expect(xs[2]).toBeGreaterThan(xs[1] as number);
+    expect((xs[2] as number) - (xs[1] as number)).toBeGreaterThan((xs[1] as number) - (xs[0] as number));
   });
 });
