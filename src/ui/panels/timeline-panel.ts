@@ -584,8 +584,17 @@ export class TimelinePanelManager {
 
 }
 
-function fmtMs(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  const m = ms % 1000;
-  return `${s}.${String(m).padStart(3, '0')}s`;
+/**
+ * A timecode, always `s.mmm`.
+ *
+ * Round FIRST. This only ever saw whole milliseconds from the scrub slider
+ * until the player started driving it from requestAnimationFrame, which hands
+ * over fractional times: 163.799999976 % 1000 padded to three characters is
+ * already three, so it printed verbatim and the readout became
+ * "0.163.799999976s" — two decimal points, thirteen digits, and wide enough to
+ * shove the rest of the toolbar out of the panel.
+ */
+export function fmtMs(ms: number): string {
+  const total = Math.max(0, Math.round(Number.isFinite(ms) ? ms : 0));
+  return `${Math.floor(total / 1000)}.${String(total % 1000).padStart(3, '0')}s`;
 }
