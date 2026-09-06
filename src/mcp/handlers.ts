@@ -13,6 +13,7 @@ import * as engine from './engine';
 import * as d from './dispatch';
 import { remapToolRefs } from './tool-remap';
 import type { ToolResult } from './types';
+import { missingArgs } from './required-args';
 
 // Most ops are pure local filesystem work and answer synchronously. The asset
 // finder talks to the internet, so a handler may also return a promise; every
@@ -24,6 +25,13 @@ export type Handler = (args: Record<string, unknown>) => ToolResult | Promise<To
 // model that follows a hint calls a tool that actually exists.
 const remap = (m: Record<string, Handler>): Record<string, Handler> =>
   Object.fromEntries(Object.entries(m).map(([k, h]) => [k, (a: Record<string, unknown>) => {
+    // Every tool passes through here, so this is where the arguments a tool
+    // PROMISES to need are checked. Without it a missing argument reached the
+    // handler and crashed inside whatever touched it first, and the crash was
+    // the reply — 'The "path" property must be of type string, got undefined'
+    // names nothing the caller can act on. See required-args.ts.
+    const missing = missingArgs(k, a);
+    if (missing) return missing;
     const r = h(a);
     return r instanceof Promise ? r.then(remapToolRefs) : remapToolRefs(r);
   }]));
