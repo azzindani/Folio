@@ -3,6 +3,7 @@ import type { Layer, TextLayer, AutoLayoutLayer, ColorOrGradient, TextContent, T
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 
 import { resolveColorOrGradient } from './fill-renderer';
+import { wrapToWidth } from '../utils/text-width';
 
 // Word-wrap plain text into lines that fit within maxWidth.
 // Default char-width is ~0.52× font-size (accurate for Inter/sans-serif). Pass
@@ -10,21 +11,20 @@ import { resolveColorOrGradient } from './fill-renderer';
 // letter-spaced text are meaningfully wider, and the 0.52 estimate packs too
 // many chars per line so the rendered line OVERFLOWS its box (e.g. a stat
 // label "RENEWABLE CAPACITY ADDED…" bleeding into the next column).
+//
+// Two things this has to handle beyond splitting on spaces:
+//   • FULL-WIDTH glyphs. Measuring by string.length treated a Han character as
+//     0.52 em when it renders at 1 em, so a CJK paragraph was measured at about
+//     half its true width.
+//   • A token that cannot fit on any line. CJK has no spaces at all, so the
+//     whole paragraph arrived as ONE "word" and was pushed out as a single
+//     line — rendered off the box and clipped at the canvas edge, while
+//     diagnose_design reported no problems. A long URL does the same thing.
+// Breaking mid-token is a last resort, only when the token alone overflows.
 export function wrapPlainText(text: string, maxWidth: number | undefined, fontSize: number, perCharPx?: number): string[] {
-  const lines: string[] = [];
   const cw = perCharPx && perCharPx > 0 ? perCharPx : fontSize * 0.52;
-  for (const para of text.split('\n')) {
-    if (!maxWidth || maxWidth <= 0) { lines.push(para); continue; }
-    const maxChars = Math.max(1, Math.floor(maxWidth / cw));
-    const words = para.split(' ');
-    let cur = '';
-    for (const word of words) {
-      if (!cur) { cur = word; }
-      else if ((cur + ' ' + word).length <= maxChars) { cur += ' ' + word; }
-      else { lines.push(cur); cur = word; }
-    }
-    lines.push(cur);
-  }
+  if (!maxWidth || maxWidth <= 0) return text.split('\n');
+  const lines = wrapToWidth(text, maxWidth, fontSize, cw / fontSize);
   return lines.length ? lines : [''];
 }
 

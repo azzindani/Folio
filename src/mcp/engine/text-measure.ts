@@ -8,6 +8,7 @@
 // flag "this box is way too short", not pixel-perfect metrics. Pure — no I/O.
 
 import type { Layer } from '../../schema/types';
+import { wrapToWidth } from '../../utils/text-width';
 
 /** Average glyph advance as a fraction of font size, by font family category. */
 function advanceRatio(font?: string): number {
@@ -23,9 +24,16 @@ function advanceRatio(font?: string): number {
  * cpl = chars that fit per line; lines respects explicit "\n"; height = lines·fontSize·lh.
  */
 export function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, font?: string): number {
-  const cpl = Math.max(1, Math.floor(widthPx / (fontSize * advanceRatio(font))));
-  const lines = text.split('\n').reduce((a, seg) => a + Math.max(1, Math.ceil(seg.length / cpl)), 0);
-  return Math.ceil(lines * fontSize * lh);
+  // Counts the lines the RENDERER will actually produce, by calling the same
+  // wrapper it does. This used to be its own arithmetic — `seg.length` charged
+  // at a flat advance, divided by chars-per-line — which was wrong twice over:
+  // it treated a full-width CJK glyph as half a character, and it assumed
+  // perfect packing, so it under-counted whenever a token could not break where
+  // the division wanted. An estimator that disagrees with the renderer is how
+  // diagnose_design came to report "No problems" about text rendering off the
+  // canvas.
+  const lines = wrapToWidth(text, Math.max(1, widthPx), fontSize, advanceRatio(font)).length;
+  return Math.ceil(Math.max(1, lines) * fontSize * lh);
 }
 
 interface TextMetrics { estH: number; declaredH: number; lines: number; fontSize: number; }
