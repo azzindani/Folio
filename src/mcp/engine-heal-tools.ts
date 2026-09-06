@@ -250,7 +250,7 @@ export function healDesign(args: {
     // The rescue chain that only ever ran at compose time: null layers,
     // positionless layers, a missing ground, collisions, invisible text.
     const t = finalizeSpecPages(design);
-    for (const [n, what] of [[t.nulls, 'null layer(s) dropped'], [t.recovered, 'JSON-in-text layer(s) recovered'], [t.placed, 'positionless layer(s) flowed'], [t.bgFilled, 'background filled'], [t.reflowed, 'overlapping layer(s) reflowed'], [t.relit, 'invisible text re-lit']] as [number, string][]) {
+    for (const [n, what] of [[t.nulls, 'null layer(s) dropped'], [t.recovered, 'JSON-in-text layer(s) recovered'], [t.placed, 'positionless layer(s) flowed'], [t.bgFilled, 'background filled'], [t.reflowed, 'overlapping layer(s) reflowed'], [t.snapped, 'layer(s) pulled back onto the canvas'], [t.relit, 'invisible text re-lit']] as [number, string][]) {
       if (n) fixed.push(`${n} ${what}`);
     }
     healPresetOverflow(design, fixed);
