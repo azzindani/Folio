@@ -122,6 +122,49 @@ export function snapshot(filePath: string): string {
   return backupPath;
 }
 
+/**
+ * Fold a layer's `pos: [x, y, w, h]` shorthand into the expanded fields.
+ *
+ * `pos` is meant to be shorthand PENDING EXPANSION — the finalize pass already
+ * deletes it once it has expanded one. But a plain primitive authored with `pos`
+ * is persisted with it intact, and every MUTATION reads x/y/width/height. So an
+ * edit wrote a sibling next to the shorthand instead of moving anything:
+ *
+ *     pos: [80, 540, 400, 220]   +   y: 800    ← the edit
+ *     inspect reports y=800 · renderer draws y=540 · both claim success
+ *
+ * and resize scaled a layer's font, stroke and radius while leaving its box
+ * exactly where it was, on a canvas that had doubled.
+ *
+ * Normalising HERE rather than at each mutation site is deliberate: this file
+ * already self-heals a malformed `layers` container on read, several call sites
+ * already branch on both forms, and the alternative — teaching every mover about
+ * `pos` — is how the second form got missed in the first place.
+ *
+ * An expanded field that is already present WINS: it was written later and more
+ * specifically than the shorthand it sits beside, so the edit that silently did
+ * nothing now takes effect.
+ */
+function foldPosShorthand(node: { layers?: unknown }): void {
+  const kids = node.layers;
+  if (!Array.isArray(kids)) return;
+  for (const k of kids) {
+    if (!k || typeof k !== 'object') continue;
+    const o = k as Record<string, unknown>;
+    const p = o['pos'];
+    if (Array.isArray(p) && p.length >= 4 && p.slice(0, 4).every(v => typeof v === 'number' && Number.isFinite(v))) {
+      const box = p as number[];
+      const [x, y, w, h] = box;
+      if (o['x'] === undefined && x !== undefined) o['x'] = x;
+      if (o['y'] === undefined && y !== undefined) o['y'] = y;
+      if (o['width'] === undefined && w !== undefined) o['width'] = w;
+      if (o['height'] === undefined && h !== undefined) o['height'] = h;
+      delete o['pos'];
+    }
+    foldPosShorthand(o as { layers?: unknown });
+  }
+}
+
 export function readYAML<T>(filePath: string): T {
   const content = fs.readFileSync(resolvePath(filePath), 'utf-8');
   const data = yaml.load(content) as T;
@@ -141,6 +184,8 @@ export function readYAML<T>(filePath: string): T {
     const pages = (data as { pages?: unknown }).pages;
     if (Array.isArray(pages)) for (const p of pages) fix(p as { layers?: unknown });
     assertAcyclic(data as { layers?: unknown; pages?: { layers?: unknown }[] });
+    foldPosShorthand(data as { layers?: unknown });
+    if (Array.isArray(pages)) for (const p of pages) foldPosShorthand(p as { layers?: unknown });
   }
   return data;
 }
