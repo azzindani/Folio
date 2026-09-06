@@ -105,7 +105,9 @@ export function renderAutoLayout(
       bg.setAttribute('rx', String(layer.radius));
       bg.setAttribute('ry', String(layer.radius));
     }
-    const fillResult = applyFill(layer.fill, svg, { width: w, height: h });
+    // x/y so a noise fill's sibling rect lands on THIS container — without an
+    // origin it was built at 0,0 and grained the top-left of the canvas.
+    const fillResult = applyFill(layer.fill, svg, { width: w, height: h, x, y });
     bg.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) bg.setAttribute('opacity', String(fillResult.opacity));
     fillResult.extraElements?.forEach(el => g.appendChild(el));

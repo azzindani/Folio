@@ -20,7 +20,7 @@ import { wrapPlainText, applyCommonAttributes, applyStroke, normalizeStroke, rou
 function shapeFill(
   layer: { fill?: unknown; color?: unknown },
   svg: SVGSVGElement,
-  box: { width: number; height: number },
+  box: { width: number; height: number; x?: number; y?: number },
 ): FillResult | null {
   if (layer.fill !== undefined && layer.fill !== null) {
     return applyFill(layer.fill as Parameters<typeof applyFill>[0], svg, box);
@@ -28,6 +28,28 @@ function shapeFill(
   const c = layer.color;
   if (typeof c === 'string' && c.trim()) return applyFill({ type: 'solid', color: c }, svg, box);
   return null;
+}
+
+/**
+ * A `noise` fill paints nothing on the shape itself: applyFill returns
+ * `fill:'none'` plus a SIBLING rect carrying the turbulence filter, which the
+ * caller has to place. Only the LAYOUT renderer ever did — these four read
+ * `.fill` and dropped `.extraElements`, so `fill:{type:"noise"}` rendered an
+ * invisible layer and left an orphaned <filter> in every SVG export. The
+ * engine's own background composer emits exactly that shape for a grain sweep,
+ * so 22 of 276 library designs carry a grain nobody has ever seen.
+ *
+ * Wraps only when there is something to add, so every other shape's output is
+ * byte-identical to before. Extras go AFTER the shape — grain is an overlay.
+ */
+function withFillExtras(el: SVGElement, fillResult: FillResult | null, layerId: string): SVGElement {
+  const extras = fillResult?.extraElements;
+  if (!extras || extras.length === 0) return el;
+  const g = createSVGElement('g');
+  g.setAttribute('data-layer-id', layerId);
+  g.appendChild(el);
+  for (const extra of extras) g.appendChild(extra);
+  return g;
 }
 
 export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
@@ -49,7 +71,7 @@ export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
     }
   }
 
-  const fillResult = shapeFill(layer, svg, { width: w, height: h });
+  const fillResult = shapeFill(layer, svg, { width: w, height: h, x, y });
   if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) el.setAttribute('fill-opacity', String(fillResult.opacity));
@@ -64,7 +86,7 @@ export function renderRect(layer: RectLayer, svg: SVGSVGElement): SVGElement {
 
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
-  return el;
+  return withFillExtras(el, fillResult, layer.id);
 }
 
 // ── Circle ──────────────────────────────────────────────────
@@ -77,7 +99,7 @@ export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement
 
   const el = createSVGElement('ellipse', { cx, cy, rx, ry });
 
-  const fillResult = shapeFill(layer, svg, { width: rx * 2, height: ry * 2 });
+  const fillResult = shapeFill(layer, svg, { width: rx * 2, height: ry * 2, x: cx - rx, y: cy - ry });
   if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
     if (fillResult.opacity !== undefined) {
@@ -92,7 +114,7 @@ export function renderCircle(layer: CircleLayer, svg: SVGSVGElement): SVGElement
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
-  return el;
+  return withFillExtras(el, fillResult, layer.id);
 }
 
 // ── Path ────────────────────────────────────────────────────
@@ -104,6 +126,7 @@ export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
   const fillResult = shapeFill(layer, svg, {
     width: typeof layer.width === 'number' ? layer.width : 100,
     height: typeof layer.height === 'number' ? layer.height : 100,
+    x: layer.x ?? 0, y: layer.y ?? 0,
   });
   if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
@@ -117,7 +140,7 @@ export function renderPath(layer: PathLayer, svg: SVGSVGElement): SVGElement {
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
-  return el;
+  return withFillExtras(el, fillResult, layer.id);
 }
 
 // ── Polygon ─────────────────────────────────────────────────
@@ -145,6 +168,7 @@ export function renderPolygon(layer: PolygonLayer, svg: SVGSVGElement): SVGEleme
   const fillResult = shapeFill(layer, svg, {
     width: typeof layer.width === 'number' ? layer.width : 0,
     height: typeof layer.height === 'number' ? layer.height : 0,
+    x: layer.x ?? 0, y: layer.y ?? 0,
   });
   if (fillResult) {
     el.setAttribute('fill', fillResult.fill);
@@ -158,7 +182,7 @@ export function renderPolygon(layer: PolygonLayer, svg: SVGSVGElement): SVGEleme
   applyCommonAttributes(el, layer);
   if (layer.effects) applyEffects(el, layer.effects, svg);
 
-  return el;
+  return withFillExtras(el, fillResult, layer.id);
 }
 
 // ── Line ────────────────────────────────────────────────────

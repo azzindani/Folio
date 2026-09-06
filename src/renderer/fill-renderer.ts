@@ -111,11 +111,19 @@ function renderConicGradient(
   return `url(#${id})`;
 }
 
+/**
+ * A noise fill paints nothing itself — it returns a SIBLING rect carrying the
+ * turbulence filter, which the caller must append. That rect has to sit on the
+ * layer's box, so the origin is passed in: built at 0,0 it painted the grain
+ * over the top-left of the canvas instead of over the layer that asked for it.
+ */
 function renderNoiseFilter(
   fill: NoiseFill,
   defs: SVGDefsElement,
   width: number,
   height: number,
+  originX = 0,
+  originY = 0,
 ): SVGElement {
   const filterId = uniqueDefId('noise');
   const filter = createSVGElement('filter', {
@@ -138,8 +146,8 @@ function renderNoiseFilter(
   defs.appendChild(filter);
 
   const noiseRect = createSVGElement('rect', {
-    x: '0',
-    y: '0',
+    x: String(originX),
+    y: String(originY),
     width: String(width),
     height: String(height),
     filter: `url(#${filterId})`,
@@ -183,7 +191,7 @@ function renderImageFill(
 export function applyFill(
   fill: Fill,
   svg: SVGSVGElement,
-  bounds: { width: number; height: number },
+  bounds: { width: number; height: number; x?: number; y?: number },
 ): FillResult {
   // Robustness: a bare color string (e.g. `fill: '#0A0A0A'` or `fill: '$accent'`)
   // is a common shorthand a model emits on a complete-mode layer. Without this
@@ -221,7 +229,7 @@ export function applyFill(
     case 'noise':
       return {
         fill: 'none',
-        extraElements: [renderNoiseFilter(fill, defs, bounds.width, bounds.height)],
+        extraElements: [renderNoiseFilter(fill, defs, bounds.width, bounds.height, bounds.x ?? 0, bounds.y ?? 0)],
       };
 
     case 'multi': {
