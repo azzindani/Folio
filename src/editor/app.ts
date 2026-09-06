@@ -1,4 +1,5 @@
 import { StateManager } from './state';
+import { MotionPlayer } from './motion-player';
 import { CanvasManager } from './canvas';
 import { setAssetUrlResolver } from '../renderer/render-context';
 import { PayloadEditor } from './payload-editor';
@@ -55,6 +56,7 @@ export class EditorApp extends EditorAppBase {
     super();
     this.container = container;
     this.state = new StateManager();
+    this.motionPlayer = new MotionPlayer(this.state);
   }
   async init(): Promise<void> {
     this.buildLayout();
