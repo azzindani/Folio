@@ -215,6 +215,9 @@ export class EditorApp extends EditorAppBase {
     if (timelineContainer) {
       this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state, this.motionPlayer);
       this.timelinePanel.onTrailsToggle = (on: boolean) => this.canvas.setMotionTrails(on);
+      // Freeze the trail whenever the design on screen is a POSE rather than the
+      // authored artwork, so the path stays put while the scene plays.
+      this.motionPlayer.subscribe(p => this.canvas.freezeMotionTrails(p.playing || p.time > 0));
     }
 
     // Color scheme panel (inside colors tab)

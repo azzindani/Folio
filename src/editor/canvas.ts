@@ -13,6 +13,7 @@ import { CanvasInteractions } from './canvas-interactions';
 
 export class CanvasManager extends CanvasInteractions {
   private motionTrailsOn = false;
+  private trailsFrozen = false;
 
   constructor(container: HTMLElement, state: StateManager) {
     super();
@@ -194,11 +195,23 @@ export class CanvasManager extends CanvasInteractions {
 
   motionTrailsEnabled(): boolean { return this.motionTrailsOn; }
 
+  /** Hold the current trail while the player poses the design. */
+  freezeMotionTrails(frozen: boolean): void {
+    const wasFrozen = this.trailsFrozen;
+    this.trailsFrozen = frozen;
+    if (wasFrozen && !frozen) this.paintMotionTrails();
+  }
+
   /** Draw every animated layer's path in design coordinates, scaled with the
    *  artwork by the overlay's own 100%×100% box. */
   paintMotionTrails(): void {
     if (!this.motionOverlay) return;
     if (!this.motionTrailsOn) { this.motionOverlay.innerHTML = ''; return; }
+    // While the player is posing, the layers ARE the animation — deriving the
+    // path from them would re-base the trail on every frame and it would crawl
+    // across the canvas. The authored path has not changed, so keep the one
+    // already drawn and repaint when playback puts the design back.
+    if (this.trailsFrozen) return;
     const { design } = this.state.get();
     if (!design) { this.motionOverlay.innerHTML = ''; return; }
     const layers = this.state.getCurrentLayers() as Layer[];
