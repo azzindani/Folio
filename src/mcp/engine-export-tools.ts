@@ -16,6 +16,7 @@ import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 
 import { analyzeLayers, flatTextStyleFindings, type Finding } from './engine/diagnose';
+import { renderFailureFindings } from './engine/diagnose-render';
 import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
@@ -474,6 +475,12 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
 
   // Styling written at layer level that the renderer ignores (see diagnose.ts).
   findings.push(...flatTextStyleFindings(spec));
+
+  // Ask the RENDERER whether every layer draws. Each check above reasons about
+  // the spec and can pass while a layer throws on the way to the canvas — which
+  // is how a group holding two text layers under the wrong key was reported as
+  // "No problems" while rendering as an empty ⚠ box.
+  if (!args.page_id) findings.push(...renderFailureFindings(spec));
 
   // Mark geometry — only for designs shaped like an identity mark. Measuring a
   // nine-page carousel at six raster sizes would cost seconds and say nothing.

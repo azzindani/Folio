@@ -574,7 +574,16 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
     progress.push(pOk(`Inspected carousel: ${spec.pages.length} page(s)`));
     const context = buildContext(op, `Carousel "${spec.meta.name}" — ${spec.pages.length} page(s)`);
     const handover = buildHandover('COMPOSE', { design_path: dPath });
-    return okResult(op, { type: 'carousel', page_count: spec.pages.length, pages, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: spec.pages.length > pageLimit, progress, context, handover });
+    // This view names no layer ids — every page of an MCP deck is ONE group, so
+    // `layer_count` reads 1 and the model has nothing to edit and nothing to go
+    // on. The per-page view flattens the group and sets `parent`; say so, or the
+    // only advice on a failed edit ("use inspect to find layer IDs") is a loop.
+    const first = spec.pages[0];
+    const next_action = first
+      ? { tool: 'manage_design', params: { op: 'inspect', design_path: dPath, page_id: first.id },
+          hint: `Each page is ONE group, so layer_count is 1 — inspect a page (page_id) to list the layers inside it, each with its parent.` }
+      : undefined;
+    return okResult(op, { type: 'carousel', page_count: spec.pages.length, pages, mode: spec._mode, theme: spec.theme?.ref, document: spec.document, truncated: spec.pages.length > pageLimit, ...(next_action ? { next_action } : {}), progress, context, handover });
   }
 
   const layers = summarise(spec.layers);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
 import { ALL_HANDLERS } from './handlers';
 import { PER_OP } from './required-args';
+import { TOOL_OPS, knownOp } from './tool-ops';
 
 // Found by calling every tool and every op with the arguments left out. The
 // reply used to be a runtime crash — 'The "path" property must be of type
@@ -101,20 +101,20 @@ const EXEMPT: Record<string, string[]> = {
 const HAND_CHECKED = /^asset_/;
 
 describe('every advertised op has had its requirements decided', () => {
-  const src = readFileSync('src/mcp/dispatch.ts', 'utf8');
-  // Each multiplexer ends in badOp('<tool>', a['op'], [ ...every op... ]).
-  const found = [...src.matchAll(/badOp\('(\w+)',\s*a\['op'\],\s*\n?\s*\[([^\]]*)\]/g)];
+  // Reads the op table itself. It used to recover these lists with a regex over
+  // the SOURCE of dispatch.ts, which meant reformatting a `default:` branch
+  // could quietly empty the audit.
+  const tools = Object.keys(TOOL_OPS).sort();
 
-  it('finds all eight multiplexers in dispatch.ts', () => {
-    expect(found.map(m => m[1]).sort()).toEqual([
+  it('finds all eight multiplexers', () => {
+    expect(tools).toEqual([
       'animation', 'edit_layer', 'manage_design', 'presentation',
       'report', 'tasks', 'templates', 'themes',
     ]);
   });
 
-  for (const m of found) {
-    const tool = m[1] ?? '';
-    const ops = [...(m[2] ?? '').matchAll(/'([\w]+)'/g)].map(x => x[1] ?? '');
+  for (const tool of tools) {
+    const ops = TOOL_OPS[tool] ?? [];
     it(`${tool} — all ${ops.length} ops`, () => {
       const undecided = ops.filter(op =>
         !HAND_CHECKED.test(op) &&
@@ -126,11 +126,19 @@ describe('every advertised op has had its requirements decided', () => {
 
   it('does not claim requirements for ops that no longer exist', () => {
     const stale: string[] = [];
-    for (const m of found) {
-      const tool = m[1] ?? '';
-      const ops = new Set([...(m[2] ?? '').matchAll(/'([\w]+)'/g)].map(x => x[1] ?? ''));
+    for (const tool of tools) {
+      const ops = new Set(TOOL_OPS[tool] ?? []);
       for (const op of Object.keys(PER_OP[tool] ?? {})) if (!ops.has(op)) stale.push(`${tool}.${op}`);
     }
     expect(stale).toEqual([]);
+  });
+
+  it('every op the table names is really dispatched', () => {
+    for (const tool of tools) {
+      for (const op of TOOL_OPS[tool] ?? []) expect(knownOp(tool, op), `${tool}.${op}`).toBe(true);
+    }
+    expect(knownOp('edit_layer', 'definitely_not_an_op')).toBe(false);
+    // A tool that does not multiplex answers yes, so a caller need not know which is which.
+    expect(knownOp('add_layers', undefined)).toBe(true);
   });
 });

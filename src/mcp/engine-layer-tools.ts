@@ -22,7 +22,7 @@ import { readTask, writeTask, markPageDone, buildNextAction } from './engine/tas
 import { honorPosterRatio } from './poster-ratio';
 import type { NextAction } from './types';
 
-import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
+import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, normalizeGroupChildren, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
 import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-presets';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
@@ -166,6 +166,12 @@ export function addLayers(args: {
   const fitNotes = drainPresetFitReports().map(r => r.note);
   for (const n of fitNotes) progress.push(pWarn('Preset compressed to fit its box', n));
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
+
+  // Fold a group's `children:[…]` alias to `layers:[…]` before ANY pass that
+  // recurses — all of them descend `layers`, so an aliased group reads as empty
+  // the whole way down and renders as a ⚠ placeholder.
+  const regrouped = normalizeGroupChildren(incoming);
+  if (regrouped) progress.push(pInfo(`Folded ${regrouped} group children: alias(es)`, 'children: → layers: (the schema key every pass reads)'));
 
   // Canonicalize verbose text layers FIRST: fold a bare `text:"…"` alias + flat
   // font/size/color shorthand into { content, style } before any pass that reads
@@ -571,6 +577,7 @@ export function appendPage(args: {
     : (args.layers ?? []);
   const pageFitNotes = drainPresetFitReports().map(r => r.note);
   for (const n of pageFitNotes) progress.push(pWarn('Preset compressed to fit its box', n));
+  normalizeGroupChildren(layers); // group children: alias → layers: (every recursing pass reads `layers`)
   normalizeTextAliases(layers); // canonicalize verbose text:/size:/color: → content+style
   // Rescue chain on the page layers (recover JSON-in-text → strip null → flow
   // positionless → fill bg → de-collide → re-light); pages historically only

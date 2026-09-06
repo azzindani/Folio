@@ -29,6 +29,7 @@ import { TIER1_TOOLS } from './tier1/registry';
 import { TIER2_TOOLS } from './tier2/registry';
 import { TIER3_TOOLS } from './tier3/registry';
 import { errResult } from './engine/utils';
+import { knownOp } from './tool-ops';
 import type { ToolResult } from './types';
 
 type Args = Record<string, unknown>;
@@ -136,6 +137,11 @@ const absent = (v: unknown): boolean =>
 /** An actionable error when a required argument is missing, else null. */
 export function missingArgs(tool: string, a: Args): ToolResult | null {
   const op = typeof a['op'] === 'string' ? a['op'] : undefined;
+  // An op the multiplexer does not have is the FIRST thing wrong, so let it say
+  // so — it can list the real ones. Naming a missing argument here instead sends
+  // the model to fix something that will not help: supply design_path and the
+  // very next reply is "Unknown op" anyway.
+  if (op !== undefined && !knownOp(tool, op)) return null;
   const need = [
     ...(SCHEMA_REQUIRED[tool] ?? []),
     ...(op ? PER_OP[tool]?.[op] ?? [] : []),
