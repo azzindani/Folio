@@ -1,6 +1,7 @@
 import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { addBlankPage, duplicatePage, deletePage, movePage as movePageOp } from './state-pages';
+import { debug } from '../utils/debug';
 
 export type ToolId =
   | 'select' | 'text' | 'rect' | 'circle' | 'line'
@@ -119,9 +120,22 @@ export class StateManager {
     };
   }
 
+  /**
+   * Every subscriber hears about the change, even if one of them is broken.
+   *
+   * Unisolated, this loop made any panel a single point of failure for the
+   * whole editor: a listener that threw stopped the loop, so every listener
+   * registered AFTER it — the canvas among them — never heard the change and
+   * the design never appeared. One toolbar bug blanked the artwork, which
+   * reads as "the editor is down" rather than "the play button is broken".
+   */
   private notify(keys: (keyof EditorState)[]): void {
     for (const listener of this.listeners) {
-      listener(this.state, keys);
+      try {
+        listener(this.state, keys);
+      } catch (err) {
+        debug.error('state', 'a subscriber threw; the others still ran', err);
+      }
     }
   }
 

@@ -76,8 +76,11 @@ export abstract class EditorAppBase {
   protected animationPanel!: AnimationPanel;
   protected imageImport!: ImageImportHandler;
   protected timelinePanel!: TimelinePanelManager;
-  /** Playback shared by the timeline panel and the canvas toolbar's play button. */
-  readonly motionPlayer: MotionPlayer = new MotionPlayer(this.state);
+  /** Playback shared by the timeline panel and the canvas toolbar's play button.
+   *  Assigned by the subclass constructor, NOT initialised here: a field
+   *  initializer runs before the subclass builds `state`, so it would capture
+   *  `undefined` and every hasMotion() call would throw. */
+  motionPlayer!: MotionPlayer;
   protected colorSchemePanel!: ColorSchemePanelManager;
   protected assetPanel?: AssetPanelManager;
   /** Project of the open server-backed design, so the asset manager opens on
