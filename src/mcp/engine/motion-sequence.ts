@@ -54,9 +54,16 @@ function parseSteps(v: unknown): SequenceStep[] | string {
     const st = s as Record<string, unknown>;
     if (!isMotionPreset(st['preset'])) return `steps[${i}].preset "${String(st['preset'])}" is unknown. Presets: ${PRESET_NAMES.join(', ')}.`;
     if (st['easing'] !== undefined && !isKnownEasing(st['easing'])) return `steps[${i}].easing "${String(st['easing'])}" is unknown — run animation(op:presets) for the list.`;
+    // `layer_id` (singular) is what the sibling op:track takes, so a model that
+    // learned the shape there writes it here too. An unrecognised key meant "no
+    // ids", and no ids means THE WHOLE PAGE — so one step aimed at a single
+    // headline silently animated all seven layers of the preset and reported
+    // success, and a second step then collided with it and blamed a layer the
+    // caller had never named. (Omitting ids DELIBERATELY is still a real move —
+    // a closing fade_out over everything — so only the alias is added here.)
     out.push({
       preset: st['preset'] as string,
-      layer_ids: st['layer_ids'],
+      layer_ids: st['layer_ids'] ?? st['layer_id'],
       at: typeof st['at'] === 'number' ? st['at'] : undefined,
       duration: typeof st['duration'] === 'number' ? st['duration'] : undefined,
       stagger_ms: typeof st['stagger_ms'] === 'number' ? st['stagger_ms'] : undefined,

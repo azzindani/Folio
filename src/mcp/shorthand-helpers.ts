@@ -74,8 +74,24 @@ export function seededDefaults(r: Record<string, unknown>, seedParts: unknown[])
   // pixel-identical. No deck seed (a normal poster) → byte-identical to before.
   const deck = typeof r['__deckseed'] === 'string' && (r['__deckseed'] as string).trim() !== ''
     ? (r['__deckseed'] as string) : '';
-  const mood = deck
-    ? pickMoodVariant(deck, deck, variant)
+  // FROZEN ART DIRECTION. Everything below is seeded from the design's own
+  // COPY, which is right the first time and wrong every time after: editing any
+  // text field re-rolls the palette, so patching a kicker five times flipped the
+  // background light/dark/light/dark and never converged. The model asks for one
+  // word to change and the whole design changes.
+  //
+  // The seed cannot simply be replaced with something stable — that would give
+  // every new design a different look than it has today, and losing "two topics
+  // render differently" is the opposite of the point. So freeze the DECISION
+  // rather than the inputs: pick from the content exactly as before on the first
+  // expansion, remember what was picked, and reuse it on every later one.
+  //
+  // Stored under `__art` in `_spec_env` (never `_spec` — it is engine-derived,
+  // not authored), which is what `__variant`/`__deckseed` already do. Two short
+  // fields, not the seed text, so nothing duplicates the copy onto disk.
+  const frozen = readFrozenArt(r['__art']);
+  const mood = frozen ? frozen.mood
+    : deck ? pickMoodVariant(deck, deck, variant)
     : pickMoodVariant(topic || all, all, variant);
   // Reconcile the content-seeded mood with the design's THEME (stamped by
   // addLayers as `__theme`). The lane is picked from the topic words, so an
@@ -93,7 +109,27 @@ export function seededDefaults(r: Record<string, unknown>, seedParts: unknown[])
   const rgb = hexToRgb(reconciled.bg);
   const dark = rgb ? luminance(rgb) < 0.5 : true;
   const geoSeed = deck ? `${deck}#${all}` : (variant ? `${all}#v${variant}` : all);
-  return { ...reconciled, bg_style: proceduralBgStyle(geoSeed, dark) };
+  const bgStyle = frozen ? frozen.bg_style : proceduralBgStyle(geoSeed, dark);
+  // Remember the raw pick (pre-reconciliation) so a later THEME change still
+  // applies — only the content-seeded roll is frozen, not the theme's authority
+  // over polarity.
+  if (!frozen) r['__art'] = { mood, bg_style: bgStyle };
+  return { ...reconciled, bg_style: bgStyle };
+}
+
+/** A previously frozen art direction, or null if absent/malformed. Read back
+ *  from YAML, so nothing about its shape can be assumed. */
+function readFrozenArt(raw: unknown): { mood: Mood; bg_style: string } | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const m = o['mood'];
+  const bg = o['bg_style'];
+  if (!m || typeof m !== 'object' || Array.isArray(m) || typeof bg !== 'string') return null;
+  const mm = m as Record<string, unknown>;
+  // The three fields every consumer reads. A partial mood is worse than none:
+  // re-deriving gives a coherent design, a half-empty one gives a broken canvas.
+  if (typeof mm['bg'] !== 'string' || typeof mm['accent'] !== 'string' || typeof mm['text_color'] !== 'string') return null;
+  return { mood: m as unknown as Mood, bg_style: bg };
 }
 
 /**

@@ -38,7 +38,7 @@ export const SPEC_FIELD = '_spec';
 export const SPEC_ENV_FIELD = '_spec_env';
 
 /** Engine markers: stamped by the engine, never authored by the model. */
-const ENV_KEYS = ['__fillPage', '__fixedCanvas', '__variant', '__deckseed'] as const;
+const ENV_KEYS = ['__fillPage', '__fixedCanvas', '__variant', '__deckseed', '__art'] as const;
 
 /** One preset's authored spec, as get_spec returns it. */
 export interface SpecEntry {

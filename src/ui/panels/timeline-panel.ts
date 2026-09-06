@@ -20,6 +20,57 @@ export interface TimelineState {
   tracks: TimelineTrack[];
 }
 
+/**
+ * Every layer in the tree, depth first — with the layers that CARRY motion
+ * first, and their nesting depth alongside.
+ *
+ * The timeline panel used to read `state.getCurrentLayers()`, which is
+ * top-level only. Every MCP-authored design is ONE group (state.ts says so
+ * itself, in the comment above `findLayer`), and `animation(op:sequence)` writes
+ * its keyframes onto that group's CHILDREN — so the studio timeline was empty
+ * for every design the engine produces, and exporting an HTML file was the only
+ * way to watch a scene play. The write path (`state.updateLayer`) already
+ * recursed; only the read path did not.
+ */
+export function flattenForTimeline(layers: Layer[], depth = 0): Array<{ layer: Layer; depth: number }> {
+  const out: Array<{ layer: Layer; depth: number }> = [];
+  for (const l of layers ?? []) {
+    if (!l || typeof l !== 'object') continue;
+    out.push({ layer: l, depth });
+    const kids = (l as Layer & { layers?: Layer[] }).layers;
+    if (Array.isArray(kids)) out.push(...flattenForTimeline(kids, depth + 1));
+  }
+  return out;
+}
+
+const hasMotion = (l: Layer): boolean => ((l.animation?.keyframes ?? []).length > 0);
+
+/**
+ * What the timeline should show, given the current selection.
+ *
+ * No selection → the animated layers, wherever they live. That is the case the
+ * panel got wrong: a design with a full scene on it showed nothing at all.
+ * Nothing animated yet → the top level, so a layer can still be picked up and
+ * given its first keyframe. A selection always wins, at any depth.
+ */
+export function timelineRows(layers: Layer[], selectedIds: string[]): Array<{ layer: Layer; depth: number }> {
+  const all = flattenForTimeline(layers ?? []);
+  if (selectedIds.length) return all.filter(r => selectedIds.includes(r.layer.id));
+  const animated = all.filter(r => hasMotion(r.layer));
+  return animated.length ? animated : all.filter(r => r.depth === 0);
+}
+
+/** The scene's own length: the last keyframe of any animated layer. */
+export function sceneDuration(layers: Layer[], fallback = 2000): number {
+  let end = 0;
+  for (const { layer } of flattenForTimeline(layers ?? [])) {
+    const kfs = layer.animation?.keyframes ?? [];
+    const delay = Number(layer.animation?.playback?.delay ?? 0) || 0;
+    for (const kf of kfs) end = Math.max(end, delay + (Number(kf.t) || 0));
+  }
+  return end > 0 ? Math.ceil(end) : fallback;
+}
+
 /** Build timeline tracks from layer list. */
 export function buildTimelineTracks(
   layers: { id: string; label?: string; animation?: AnimationSpec }[],
@@ -179,6 +230,8 @@ export class TimelinePanelManager {
   /** Authored values captured before a scrub, restored when it stops. */
   private preScrub: Map<string, Partial<Layer>> | null = null;
   private duration = 2000;
+  /** The user typed a duration — stop fitting the ruler to the scene. */
+  private durationPinned = false;
   private scrubMs = 0;
   private playing = false;
   private raf = 0;
@@ -243,6 +296,7 @@ export class TimelinePanelManager {
     });
     durInput.addEventListener('change', () => {
       this.duration = Math.max(100, parseFloat(durInput.value) || 2000);
+      this.durationPinned = true;
       this.render();
     });
   }
@@ -252,8 +306,8 @@ export class TimelinePanelManager {
     if (!body) return;
 
     const { selectedLayerIds } = this.state.get();
-    const layers = this.state.getCurrentLayers()
-      .filter(l => selectedLayerIds.length === 0 || selectedLayerIds.includes(l.id));
+    const rows = timelineRows(this.state.getCurrentLayers(), selectedLayerIds);
+    const layers = rows.map(r => r.layer);
 
     if (layers.length === 0) {
       body.innerHTML = `<div style="padding:12px;font-size:11px;color:var(--color-text-muted)">
@@ -261,9 +315,21 @@ export class TimelinePanelManager {
       return;
     }
 
+    // Fit the ruler to the scene unless the user has typed a duration. A scene
+    // written by animation(op:sequence) is routinely longer than the old 2000ms
+    // default, so play stopped a third of the way through it.
+    if (!this.durationPinned) {
+      const scene = sceneDuration(this.state.getCurrentLayers(), this.duration);
+      if (scene !== this.duration) {
+        this.duration = scene;
+        const durInput = this.container.querySelector<HTMLInputElement>('#tl-duration');
+        if (durInput) durInput.value = String(scene);
+      }
+    }
+
     const trackAreaW = body.clientWidth - HEADER_W || 400;
 
-    body.innerHTML = layers.map(l => this.renderTrack(l, trackAreaW)).join('');
+    body.innerHTML = rows.map(r => this.renderTrack(r.layer, trackAreaW, r.depth)).join('');
 
     // Scrubber
     body.insertAdjacentHTML('beforeend', `
@@ -279,7 +345,7 @@ export class TimelinePanelManager {
     this.bindTracks(body, layers, trackAreaW);
   }
 
-  private renderTrack(layer: Layer, trackAreaW: number): string {
+  private renderTrack(layer: Layer, trackAreaW: number, depth = 0): string {
     const keyframes = (layer.animation?.keyframes ?? []) as Keyframe[];
     const diamonds = keyframes.map(kf => {
       const pct = Math.min(1, kf.t / this.duration) * trackAreaW;
@@ -295,8 +361,9 @@ export class TimelinePanelManager {
     return `
       <div class="tl-track" style="display:flex;height:${TRACK_H}px;border-bottom:1px solid var(--color-border)">
         <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;
-                    padding:0 8px;font-size:11px;color:var(--color-text);overflow:hidden;white-space:nowrap">
-          ${layer.id}
+                    padding:0 8px 0 ${8 + depth * 12}px;font-size:11px;color:var(--color-text);overflow:hidden;white-space:nowrap"
+             title="${layer.id}">
+          ${depth ? '<span style="opacity:.45">└ </span>' : ''}${layer.id}
         </div>
         <div class="tl-track-area" data-layer-id="${layer.id}"
           style="flex:1;position:relative;cursor:crosshair;background:var(--color-surface-2)">
