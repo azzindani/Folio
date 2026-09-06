@@ -102,3 +102,43 @@ describe('edit_layer op:split_text', () => {
     expect(String(r.hint)).toContain('own text layer');
   });
 });
+
+describe('split_text on a carousel — the ambiguity `update` already refuses', () => {
+  /** A deck whose pages share the layer id, the way preset groups do. */
+  function deck(): string {
+    const dir = path.join(root, `deck-${n++}`, 'designs');
+    fs.mkdirSync(dir, { recursive: true });
+    const p = path.join(dir, 'deck.design.yaml');
+    const page = (id: string): Record<string, unknown> => ({ id, layers: [text()] });
+    fs.writeFileSync(p, yaml.dump({
+      meta: { id: 'k', name: 'K', type: 'carousel' },
+      document: { width: 800, height: 400 },
+      pages: [page('page_1'), page('page_2'), page('page_3')],
+    }));
+    return p;
+  }
+
+  it('refuses to guess a page when the id is on several, and names them', () => {
+    // Silently taking the FIRST page meant splitting a headline across a 7-page
+    // deck did one page and reported success — found on a live carousel.
+    const p = deck();
+    const r = splitText({ design_path: p, layer_id: 'head' });
+    expect(r.success).toBe(false);
+    expect(String(r.error)).toContain('3 pages');
+    expect(String(r.error)).toContain('page_2');
+    expect(String(r.hint)).toContain('page_id');
+  });
+
+  it('splits exactly the page it was given, leaving the others alone', () => {
+    const p = deck();
+    const r = splitText({ design_path: p, layer_id: 'head', page_id: 'page_2', by: 'word' });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    const spec = yaml.load(fs.readFileSync(p, 'utf8')) as DesignSpec & { pages: { id: string; layers: Layer[] }[] };
+    const ids = (pg: string): string[] =>
+      (spec.pages.find(x => x.id === pg)?.layers ?? []).map(l => String((l as { id?: unknown }).id));
+    expect(ids('page_1')).toEqual(['head']);
+    expect(ids('page_3')).toEqual(['head']);
+    expect(ids('page_2')).toContain('head_w1');
+    expect(ids('page_2')).not.toContain('head');
+  });
+});
