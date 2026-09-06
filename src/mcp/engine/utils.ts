@@ -82,20 +82,42 @@ export function resolveDesignPath(designPath: string, projectPath?: string): str
 // Override the per-file retention via FOLIO_SNAPSHOT_KEEP (default 20).
 const SNAPSHOT_KEEP_DEFAULT = 20;
 
+/** Existing snapshots for one design, newest first. */
+function snapshotsNewestFirst(versionsDir: string, stem: string): string[] {
+  try {
+    return fs.readdirSync(versionsDir)
+      .filter(n => n.startsWith(`${stem}_`) && n.endsWith('.bak'))
+      .map(n => ({ name: n, mtime: fs.statSync(path.join(versionsDir, n)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime)
+      .map(e => path.join(versionsDir, e.name));
+  } catch { return []; }
+}
+
 function pruneSnapshots(versionsDir: string, stem: string): void {
   let keep = parseInt(process.env['FOLIO_SNAPSHOT_KEEP'] ?? '', 10);
   if (!Number.isFinite(keep) || keep < 1) keep = SNAPSHOT_KEEP_DEFAULT;
   try {
-    const entries = fs.readdirSync(versionsDir)
-      .filter(n => n.startsWith(`${stem}_`) && n.endsWith('.bak'))
-      .map(n => ({ name: n, mtime: fs.statSync(path.join(versionsDir, n)).mtimeMs }))
-      .sort((a, b) => b.mtime - a.mtime); // newest first
-    for (const e of entries.slice(keep)) {
-      try { fs.unlinkSync(path.join(versionsDir, e.name)); } catch { /* best-effort */ }
+    for (const p of snapshotsNewestFirst(versionsDir, stem).slice(keep)) {
+      try { fs.unlinkSync(p); } catch { /* best-effort */ }
     }
   } catch { /* never fail the write on a prune error */ }
 }
 
+/**
+ * Copy a design aside as a restore point, before a tool writes to it.
+ *
+ * Most mutating ops snapshot FIRST and validate after, so a call that fails
+ * validation — `update` on a layer id that does not exist, the commonest slip a
+ * model makes — still left a .bak that is a byte-for-byte copy of the previous
+ * one. With retention capped at 20, twelve fumbled layer ids evicted the three
+ * oldest REAL restore points: history destroyed by operations that changed
+ * nothing. Measured live, 19 snapshots → the oldest three gone.
+ *
+ * A restore point that is identical to the newest one carries no information,
+ * so hand that one back instead of making a duplicate. Fixing it here rather
+ * than moving the snapshot call after validation in every op is deliberate: the
+ * ops that would need it are exactly the ones nobody would remember to change.
+ */
 export function snapshot(filePath: string): string {
   const p = resolvePath(filePath);
   const versionsDir = path.join(path.dirname(p), '.mcp_versions');
@@ -103,6 +125,12 @@ export function snapshot(filePath: string): string {
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 23) + 'Z';
   const stem = path.basename(p, path.extname(p));
+  const [newest] = snapshotsNewestFirst(versionsDir, stem);
+  if (newest !== undefined) {
+    try {
+      if (fs.readFileSync(p).equals(fs.readFileSync(newest))) return newest;
+    } catch { /* unreadable snapshot → fall through and make a fresh one */ }
+  }
   let backupPath = path.join(versionsDir, `${stem}_${ts}.bak`);
   let counter = 1;
   while (fs.existsSync(backupPath)) {

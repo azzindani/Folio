@@ -10,7 +10,7 @@ import { FAVICON_LINK } from '../utils/favicon';
 import type { ProgressItem } from './types';
 import { validateDesignSpec } from '../schema/validator';
 
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './engine/utils';
+import { resolveDesignPath, readYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './engine/utils';
 
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
@@ -622,79 +622,12 @@ export function renderPreview(args: { design_path: string; project_path?: string
   }
 }
 
-// ── align_layers ────────────────────────────────────────────
-// Auto-align / distribute / snap-to-grid a set of layers (the fix for the
-// misalignment findings). Mutates positions in place and writes the YAML.
-
-export function alignLayers(args: { design_path: string; layer_ids: string[]; operation: string; project_path?: string; page_id?: string; grid?: number }): ToolResult {
-  const op = 'align_layers';
-  const progress: ProgressItem[] = [];
-  const dPath = resolveDesignPath(args.design_path, args.project_path);
-  if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
-  const spec = readYAML<DesignSpec>(dPath);
-  const arr: Layer[] = (args.page_id && spec.pages) ? (spec.pages.find(p => p.id === args.page_id)?.layers ?? []) : (spec.pages ? spec.pages[0]?.layers ?? [] : spec.layers ?? []);
-  const getXY = (l: Layer): { x: number; y: number; w: number; h: number } | null => {
-    const p = (l as { pos?: unknown }).pos;
-    if (Array.isArray(p) && p.length >= 4 && p.every(n => typeof n === 'number')) return { x: p[0] as number, y: p[1] as number, w: p[2] as number, h: p[3] as number };
-    if ([l.x, l.y, l.width, (l as { height?: unknown }).height].every(v => typeof v === 'number')) return { x: l.x as number, y: l.y as number, w: l.width as number, h: (l as { height: number }).height };
-    return null;
-  };
-  const setXY = (l: Layer, x: number, y: number): void => {
-    const o = l as unknown as Record<string, unknown>;
-    const nx = Math.round(x), ny = Math.round(y);
-    const was = getXY(l);
-    const p = (l as { pos?: number[] }).pos;
-    if (Array.isArray(p)) { p[0] = nx; p[1] = ny; }
-    else { (l as { x: number }).x = nx; (l as { y: number }).y = ny; }
-    // A line/connector draws from ABSOLUTE endpoints; moving only the box
-    // leaves the ink behind, so the layer reports where it was aligned to and
-    // renders where it used to be. Same disagreement update_layer had.
-    const dx = was ? nx - was.x : 0;
-    const dy = was ? ny - was.y : 0;
-    if (dx || dy) {
-      for (const [k, d] of [['x1', dx], ['x2', dx], ['y1', dy], ['y2', dy]] as const) {
-        if (typeof o[k] === 'number') o[k] = (o[k] as number) + d;
-      }
-    }
-  };
-  const targets = args.layer_ids.map(id => arr.find(l => l.id === id)).filter((l): l is Layer => !!l);
-  const boxed = targets.map(l => ({ l, b: getXY(l) })).filter((t): t is { l: Layer; b: { x: number; y: number; w: number; h: number } } => !!t.b);
-  if (boxed.length < 1) return errResult(op, 'No positioned target layers found.', 'Pass layer_ids that exist on the page and have numeric positions.', progress);
-
-  const o = args.operation;
-  const grid = typeof args.grid === 'number' && args.grid > 0 ? args.grid : 8;
-  const minX = Math.min(...boxed.map(t => t.b.x)), maxR = Math.max(...boxed.map(t => t.b.x + t.b.w));
-  const minY = Math.min(...boxed.map(t => t.b.y)), maxB = Math.max(...boxed.map(t => t.b.y + t.b.h));
-  for (const { l, b } of boxed) {
-    if (o === 'left') setXY(l, minX, b.y);
-    else if (o === 'right') setXY(l, maxR - b.w, b.y);
-    else if (o === 'top') setXY(l, b.x, minY);
-    else if (o === 'bottom') setXY(l, b.x, maxB - b.h);
-    else if (o === 'center_h') setXY(l, (minX + maxR) / 2 - b.w / 2, b.y);
-    else if (o === 'center_v') setXY(l, b.x, (minY + maxB) / 2 - b.h / 2);
-    else if (o === 'snap_grid') setXY(l, Math.round(b.x / grid) * grid, Math.round(b.y / grid) * grid);
-  }
-  if ((o === 'distribute_h' || o === 'distribute_v') && boxed.length >= 3) {
-    const horiz = o === 'distribute_h';
-    const sorted = [...boxed].sort((a, c) => horiz ? a.b.x - c.b.x : a.b.y - c.b.y);
-    const first = sorted[0].b, last = sorted[sorted.length - 1].b;
-    const span = horiz ? (last.x + last.w) - first.x : (last.y + last.h) - first.y;
-    const totalSize = sorted.reduce((s, t) => s + (horiz ? t.b.w : t.b.h), 0);
-    const gap = (span - totalSize) / (sorted.length - 1);
-    let cursor = horiz ? first.x : first.y;
-    for (const t of sorted) { if (horiz) { setXY(t.l, cursor, t.b.y); cursor += t.b.w + gap; } else { setXY(t.l, t.b.x, cursor); cursor += t.b.h + gap; } }
-  }
-
-  const backup = snapshot(dPath);
-  writeYAML(dPath, spec);
-  progress.push(pOk(`Aligned ${boxed.length} layer(s)`, o));
-  const context = buildContext(op, `Aligned ${boxed.length} layer(s) (${o}) in "${spec.meta.name}"`);
-  const link = buildEditorLink(dPath);
-  return okResult(op, { status: 'ok', operation: o, aligned: boxed.map(t => t.l.id), backup, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, progress, context, _attachments: [link.attachment] });
-}
 
 
 // batch_create and its template/slot helpers live in engine-batch-tools.ts —
 // this file was at the 700-line ceiling and they share nothing with export.
 // Re-exported here so existing importers keep working (facade, §0.3).
 export { batchCreate } from './engine-batch-tools';
+
+// align_layers moved to engine-align-tools.ts for the same reason.
+export { alignLayers } from './engine-align-tools';
