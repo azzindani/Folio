@@ -92,9 +92,13 @@ export function normalizeGroupChildren(incoming: Layer[]): number {
   let n = 0;
   const visit = (ls?: Layer[]): void => {
     for (const l of ls ?? []) {
+      // A stray `- null` in the array is stripped earlier in every ingest chain,
+      // but not every future caller will run that first — and reading a key off
+      // null is a raw engine error, not an answer.
+      if (!l || typeof l !== 'object') continue;
       const o = l as unknown as Record<string, unknown>;
       const alias = o['children'];
-      if ((l?.type === 'group' || l?.type === 'auto_layout') && Array.isArray(alias) && alias.length) {
+      if ((l.type === 'group' || l.type === 'auto_layout') && Array.isArray(alias) && alias.length) {
         const own = Array.isArray(o['layers']) ? (o['layers'] as Layer[]) : [];
         o['layers'] = own.length ? [...own, ...(alias as Layer[])] : (alias as Layer[]);
         delete o['children'];
@@ -104,6 +108,98 @@ export function normalizeGroupChildren(incoming: Layer[]): number {
     }
   };
   visit(incoming);
+  return n;
+}
+
+/**
+ * Give every layer a numeric `z`.
+ *
+ * The schema requires it and `validateDesignSpec` reports "Layer z-index is
+ * required" — but only export_design runs that validator. So two ordinary
+ * verbose layers with no `z` were accepted by add_layers, drawn correctly by
+ * render_preview, sealed clean by seal_design (share link and all), and then
+ * refused outright by export_design. The model has no way to see that coming.
+ *
+ * Missing becomes 0, NOT the array index: the renderer sorts by `(a.z ?? 0)`
+ * with a stable sort, so 0 reproduces today's stacking exactly, while an index
+ * would lift an unzoned layer above an explicit `z: 5`. A numeric STRING keeps
+ * its value for the same reason (`"3" - 0` sorts as 3 today); anything else
+ * (`z: "top"`) makes the comparator NaN, which is not an order at all — those
+ * become 0. Recurses into groups. Returns the count assigned.
+ */
+export function ensureLayerZ(layers: Layer[] | undefined): number {
+  let n = 0;
+  const visit = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      if (!l || typeof l !== 'object') continue;
+      const o = l as unknown as Record<string, unknown>;
+      const z = o['z'];
+      if (typeof z !== 'number' || !Number.isFinite(z)) {
+        const asNum = typeof z === 'string' ? Number(z.trim()) : NaN;
+        o['z'] = Number.isFinite(asNum) ? asNum : 0;
+        n++;
+      }
+      if (Array.isArray(o['layers'])) visit(o['layers'] as Layer[]);
+    }
+  };
+  visit(layers);
+  return n;
+}
+
+/**
+ * Coerce the two scalar fields a model gets wrong that nothing else catches.
+ *
+ * `id` — sent as a NUMBER (`id: 99`) it is written to disk as a number, and
+ * every lookup compares with `===` against a string, so `99 !== "99"` and the
+ * layer is permanently unreachable: `edit_layer` answers "Layer not found: 99"
+ * about a layer plainly present in the file.
+ *
+ * `content` on a text layer — sent as a bare number (`content: 7`) the renderer
+ * throws `undefined is not an object (evaluating 'value.length')` and draws a
+ * ⚠ placeholder, while add_layers reports success. A scalar is obviously the
+ * text the model meant, so use it rather than discarding it.
+ *
+ * Recurses into groups. Returns the count of layers changed.
+ */
+export function coerceLayerScalars(layers: Layer[] | undefined): number {
+  let n = 0;
+  // Assigning a MISSING id needs to know what is already taken, so gather first.
+  const taken = new Set<string>();
+  const gather = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      if (!l || typeof l !== 'object') continue;
+      const o = l as unknown as Record<string, unknown>;
+      if (typeof o['id'] === 'string' && o['id']) taken.add(o['id'] as string);
+      if (Array.isArray(o['layers'])) gather(o['layers'] as Layer[]);
+    }
+  };
+  gather(layers);
+  const freeId = (type: unknown): string => {
+    const base = typeof type === 'string' && type ? type : 'layer';
+    for (let i = 1; ; i++) { const c = `${base}_${i}`; if (!taken.has(c)) { taken.add(c); return c; } }
+  };
+  const visit = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      if (!l || typeof l !== 'object') continue;
+      const o = l as unknown as Record<string, unknown>;
+      let touched = false;
+      const id = o['id'];
+      // No id at all is the same fault one step further along: unreachable by
+      // every op, AND "Layer id is required" refuses the whole export.
+      if (id == null || id === '') { o['id'] = freeId(o['type']); touched = true; }
+      else if (typeof id !== 'string') { o['id'] = String(id); touched = true; }
+      if (l.type === 'text' || l.type === 'rich_text') {
+        const c = o['content'];
+        if (c != null && typeof c !== 'object' && typeof c !== 'string') {
+          o['content'] = { type: 'plain', value: String(c) };
+          touched = true;
+        }
+      }
+      if (touched) n++;
+      if (Array.isArray(o['layers'])) visit(o['layers'] as Layer[]);
+    }
+  };
+  visit(layers);
   return n;
 }
 

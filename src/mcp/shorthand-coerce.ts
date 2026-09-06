@@ -149,3 +149,33 @@ export function coerceShorthandLayers(input: unknown): ShorthandLayer[] {
   }
   return [];
 }
+
+/**
+ * Make an array out of whatever arrived as the VERBOSE `layers` argument.
+ *
+ * `layers` is typed `Layer[]`, so nothing checked it. A model that sent a
+ * string got past the emptiness guard (`"nope".length === 4`) and the string
+ * itself became the layer array — every downstream pass then failed on it, and
+ * the model was answered `layers.filter is not a function. (In
+ * 'layers.filter((l) => l?.type === "text" && !isLocked(l))' …)`. A raw engine
+ * error where an actionable one belongs.
+ *
+ * Leniently, in the same spirit as coerceShorthandLayers: a JSON/YAML-encoded
+ * array is the commonest way a model gets this wrong, and it is recoverable.
+ * A single layer object is wrapped. Returns null when the value cannot be an
+ * array of layers at all, so the caller can say so plainly.
+ */
+export function coerceLayerArray(input: unknown): unknown[] | null {
+  if (input == null) return [];
+  if (Array.isArray(input)) return input;
+  if (typeof input === 'string') {
+    const s = input.trim();
+    if (!s) return [];
+    const parsed = lenientParseLayers(s);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && typeof parsed === 'object') return [parsed];
+    return null;
+  }
+  if (typeof input === 'object') return [input];
+  return null;                                  // a number, a boolean — not layers
+}

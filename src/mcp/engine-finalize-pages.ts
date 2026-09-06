@@ -10,7 +10,7 @@ import type { DesignSpec, Layer, ThemeSpec } from '../schema/types';
 import { ALL_THEMES } from '../themes/all-themes';
 import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers, dropPlaceholderText } from './engine-finalize-autoplace';
 import { decollideHandPlaced } from './engine-finalize-text';
-import { snapOffCanvasContent } from './engine-finalize-geom';
+import { snapOffCanvasContent, ensureLayerZ, coerceLayerScalars } from './engine-finalize-geom';
 import { fixInvisibleText } from './engine-finalize-legibility';
 
 export interface PageFinalizeTotals { nulls: number; recovered: number; placed: number; bgFilled: number; reflowed: number; relit: number; snapped: number; }
@@ -28,6 +28,11 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
   const t: PageFinalizeTotals = { nulls: 0, recovered: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0, snapped: 0 };
   if (!Array.isArray(layers) || !layers.length) return t;
   t.nulls = stripNullLayers(layers);
+  // A layer with no numeric z passes every other check and then fails
+  // export_design's validator ("Layer z-index is required"). Repair here so a
+  // re-seal fixes a file already on disk, not just newly added layers.
+  ensureLayerZ(layers);
+  coerceLayerScalars(layers);
   const rec = recoverEmbeddedLayers(layers);
   t.recovered = rec.recovered + rec.dropped + dropPlaceholderText(layers);
   t.placed = placePositionlessLayers(layers, w, h);
