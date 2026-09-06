@@ -640,9 +640,22 @@ export function alignLayers(args: { design_path: string; layer_ids: string[]; op
     return null;
   };
   const setXY = (l: Layer, x: number, y: number): void => {
+    const o = l as unknown as Record<string, unknown>;
+    const nx = Math.round(x), ny = Math.round(y);
+    const was = getXY(l);
     const p = (l as { pos?: number[] }).pos;
-    if (Array.isArray(p)) { p[0] = Math.round(x); p[1] = Math.round(y); }
-    else { (l as { x: number }).x = Math.round(x); (l as { y: number }).y = Math.round(y); }
+    if (Array.isArray(p)) { p[0] = nx; p[1] = ny; }
+    else { (l as { x: number }).x = nx; (l as { y: number }).y = ny; }
+    // A line/connector draws from ABSOLUTE endpoints; moving only the box
+    // leaves the ink behind, so the layer reports where it was aligned to and
+    // renders where it used to be. Same disagreement update_layer had.
+    const dx = was ? nx - was.x : 0;
+    const dy = was ? ny - was.y : 0;
+    if (dx || dy) {
+      for (const [k, d] of [['x1', dx], ['x2', dx], ['y1', dy], ['y2', dy]] as const) {
+        if (typeof o[k] === 'number') o[k] = (o[k] as number) + d;
+      }
+    }
   };
   const targets = args.layer_ids.map(id => arr.find(l => l.id === id)).filter((l): l is Layer => !!l);
   const boxed = targets.map(l => ({ l, b: getXY(l) })).filter((t): t is { l: Layer; b: { x: number; y: number; w: number; h: number } } => !!t.b);

@@ -368,6 +368,38 @@ export function pagesWithLayer(spec: DesignSpec, layerId: string): string[] {
   return hits;
 }
 
+/**
+ * Carry a line's endpoints along when its BOX moves.
+ *
+ * `line` and `connector` keep x1/y1/x2/y2 in ABSOLUTE document coordinates, and
+ * the renderer draws from those — the box is only what every other subsystem
+ * measures. So `update {y: 800}` on a line at y=200 moved the box 600px and
+ * left the ink where it was: inspect, diagnose, align and collision detection
+ * all reported the new place, and the picture showed the old one. Same
+ * disagreement pass 10 found in the expander, reached here by mutation instead.
+ *
+ * An endpoint named in the SAME patch wins — the caller said where it goes, so
+ * that value is used as given rather than shifted on top.
+ */
+export function dragEndpoints(before: Layer, after: Layer, props: Record<string, unknown>): Layer {
+  const b = before as unknown as Record<string, unknown>;
+  const a = after as unknown as Record<string, unknown>;
+  const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+  if (num(a['x1']) === undefined && num(a['y1']) === undefined) return after;
+
+  const dx = (num(a['x']) ?? 0) - (num(b['x']) ?? 0);
+  const dy = (num(a['y']) ?? 0) - (num(b['y']) ?? 0);
+  if (dx === 0 && dy === 0) return after;
+
+  const out: Record<string, unknown> = { ...a };
+  for (const [k, d] of [['x1', dx], ['x2', dx], ['y1', dy], ['y2', dy]] as const) {
+    if (props[k] !== undefined) continue;             // explicitly set by this patch
+    const v = num(out[k]);
+    if (v !== undefined) out[k] = v + d;
+  }
+  return out as unknown as Layer;
+}
+
 export function updateLayer(args: { design_path: string; layer_id: string; props: Partial<Layer>; page_id?: string; project_path?: string }): ToolResult {
   const op = 'update_layer';
   const progress: ProgressItem[] = [];
@@ -389,7 +421,7 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
       if (l.id === args.layer_id) {
         found = true;
         if (lockedAncestor) { lockedBy = lockedAncestor; return l; }
-        return { ...l, ...args.props } as Layer;
+        return dragEndpoints(l, { ...l, ...args.props } as Layer, args.props as Record<string, unknown>);
       }
       const children = (l as Layer & { layers?: Layer[] }).layers;
       if (l.type === 'group' && Array.isArray(children)) {
