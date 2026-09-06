@@ -93,16 +93,31 @@ function expandShorthandLayer(sh: ShorthandLayer): Layer {
     case 'connector':  // renderer-side type (outside LayerType) → endpoints/arrow + bbox, cast via unknown
       return { ...base, type: 'connector', ...connectorFields(sh) } as unknown as Layer;
 
-    case 'line':
+    case 'line': {
+      // Read the EXPANDED position, not the raw shorthand fields. `pos:[x,y,w,h]`
+      // never sets sh.x/sh.width, so a line authored the documented way fell all
+      // the way through to the defaults and rendered at the ORIGIN, 100px long —
+      // while base still carried the correct box. Everything that reasons about
+      // geometry (inspect, diagnose, heal, align) reads that box, so nothing
+      // could see the disagreement: the tools reported (100,800,750,0) and the
+      // SVG drew (0,0)→(100,0). Found by comparing a rendered export against
+      // what inspect claimed, which nine earlier sweeps had taken on trust.
+      const lx = typeof pos.x === 'number' ? pos.x : 0;
+      const ly = typeof pos.y === 'number' ? pos.y : 0;
+      const lw = typeof pos.width === 'number' ? pos.width : 100;
       return {
         ...base,
         type: 'line',
-        x1: sh.x1 ?? sh.x ?? 0,
-        y1: sh.y1 ?? sh.y ?? 0,
-        x2: sh.x2 ?? (sh.x ?? 0) + (typeof sh.width === 'number' ? sh.width : 100),
-        y2: sh.y2 ?? sh.y ?? 0,
+        x1: sh.x1 ?? lx,
+        y1: sh.y1 ?? ly,
+        x2: sh.x2 ?? lx + lw,
+        // Horizontal unless the caller names an explicit y2. A rule's box height
+        // is its thickness, not a slope — sloping it would silently tilt every
+        // existing rule authored as pos:[x, y, w, 2].
+        y2: sh.y2 ?? ly,
         stroke: sh.stroke ? expandStroke(sh.stroke) : { color: sh.color ?? '#000', width: 2 },
       } as Layer;
+    }
 
     case 'icon': {
       // Size to the box when the model gave one but no explicit size — a 24px
