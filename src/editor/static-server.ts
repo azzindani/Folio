@@ -32,7 +32,8 @@ import { createFolder, renameFolder, deleteFolder, type FolderResult } from '../
 // current) + render/cache thumbnails on demand. The page builder is shared with
 // the export_library_gallery snapshot; here we serve it live at /library.
 import { collectLibrary } from '../mcp/engine/library';
-import { buildLibraryPage, renderThumb, thumbFileName, renderCardForDesign } from '../mcp/engine/library-gallery';
+import { buildLibraryPage, renderCardForDesign } from '../mcp/engine/library-gallery';
+import { serveLibraryThumb } from './server-thumb';
 import { loadCollections, allCollections } from '../mcp/engine/library-collections';
 // Front-door guards: IP allow-list ("only me, even if the link leaks, no login"),
 // per-IP rate limit (flood shield), and a concurrency cap on expensive ops
@@ -357,42 +358,13 @@ Bun.serve({
     }
 
     // ── GET /__library/thumb?d=<relKey> — render+cache a design thumbnail ──
-    // Live preview for the /library gallery: rasterize the design's first page
-    // to a small PNG on demand, cache under <projects>/.library/thumbs/ keyed by
-    // the design's mtime, and 304 when the browser already holds the current
-    // one. 404 when the design can't render (the card shows "no preview"). Same
-    // cookie/bearer/token auth as the rest of /__library/*.
+    // Live preview for the /library gallery. Same cookie/bearer/token auth as
+    // the rest of /__library/*; the resolve/cache/render half lives in
+    // server-thumb.ts (this file was at the 700-line ceiling).
     if (url.pathname === '/__library/thumb' && req.method === 'GET') {
-      const auth = req.headers.get('authorization') ?? '';
-      const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-      const qtoken = url.searchParams.get('token') ?? '';
-      const cookie = parseCookies(req.headers.get('cookie') ?? undefined)['folio_session'] ?? '';
-      const presented = bearer || qtoken || cookie;
+      const presented = presentedToken(req, url);
       if (authConfigured() && (!presented || !isValidToken(presented))) return new Response('Unauthorized', { status: 401 });
-      const d = url.searchParams.get('d') ?? '';
-      if (!d || d.includes('..') || path.isAbsolute(d)) return new Response('Bad design key', { status: 400 });
-      const abs = safeJoinProject(d);
-      if (!abs || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) return new Response('Not found', { status: 404 });
-      const mtime = Math.floor(fs.statSync(abs).mtimeMs);
-      const etag = `"t${mtime}"`;
-      if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers: { ETag: etag, 'Cache-Control': 'no-cache' } });
-      const thumbsDir = path.join(PROJECTS_DIR, '.library', 'thumbs');
-      const cachePath = path.join(thumbsDir, thumbFileName(abs));
-      let png: Buffer | null = null;
-      try { if (fs.existsSync(cachePath) && fs.statSync(cachePath).mtimeMs >= mtime) png = fs.readFileSync(cachePath); } catch { /* re-render below */ }
-      if (!png) {
-        // Rasterizing blocks the single event loop; cap concurrent renders so a
-        // burst of cache-misses can't pile up. Cache hits above skip the gate.
-        if (!GUARDS.heavy.tryAcquire()) return new Response('Server busy — retry shortly', { status: 503, headers: { 'Retry-After': '1', 'Cache-Control': 'no-store' } });
-        try { png = renderThumb(abs); }
-        finally { GUARDS.heavy.release(); }
-        if (png) { try { fs.mkdirSync(thumbsDir, { recursive: true }); fs.writeFileSync(cachePath, png); } catch { /* serve uncached */ } }
-      }
-      if (!png) return new Response('No preview', { status: 404 });
-      // Wrap in a fresh ArrayBuffer-backed view: renderThumb's Buffer is typed
-      // Buffer<ArrayBufferLike>, which a SharedArrayBuffer could back and so is
-      // not a valid BodyInit; a copied Uint8Array always is.
-      return new Response(new Uint8Array(png), { status: 200, headers: { 'Content-Type': 'image/png', ETag: etag, 'Cache-Control': 'no-cache' } });
+      return serveLibraryThumb(req, url, { projectsDir: PROJECTS_DIR, resolveDesign: safeJoinProject, heavy: GUARDS.heavy });
     }
 
     // ── GET /__library/stat — cheap {count,newest} signature for live refresh ──

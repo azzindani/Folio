@@ -13,7 +13,10 @@
 //
 // Thumbnails reuse the same SVG→PNG path as render_preview (renderToSVGString +
 // resvg), but skip component resolution (fine at thumbnail size) so this module
-// never imports engine.ts — no import cycle. Thumbs are CACHED by mtime.
+// never imports engine.ts — no import cycle. Thumbs are CACHED by the design's
+// mtime AND the renderer fingerprint: mtime alone answers "has the design
+// changed?", which leaves "has the code that draws it changed?" unasked, and a
+// renderer fix then never reaches a thumbnail already on disk.
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -27,6 +30,7 @@ import { resvgFontOption } from './fonts';
 import { collectLibrary, readDesignHeader, type LibraryDesign, type LibraryProject } from './library';
 import { loadCollections, allCollections, effectiveCollection, relKey, type CollectionsState } from './library-collections';
 import { buildEditorLink } from './editor-link';
+import { renderFingerprint } from './render-fingerprint';
 import { ASSET_STYLE, ASSET_SCRIPT, ASSET_ASSETS, assetDrawerMarkup } from './library-assets';
 
 const esc = (s: string): string => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -44,9 +48,36 @@ export function renderThumb(designPath: string): Buffer | null {
   } catch { return null; }
 }
 
-/** Stable cache filename for a design's thumbnail (project__file.png). */
+const thumbPrefix = (designPath: string): string =>
+  `${slug(path.basename(path.dirname(path.dirname(designPath))))}__${slug(path.basename(designPath))}.`;
+
+/**
+ * Cache filename for a design's thumbnail: `project__file.<renderer>.png`.
+ *
+ * The renderer fingerprint is IN THE NAME because a thumbnail is rendered
+ * output, and both caches that hold one — the gallery export's directory and
+ * the live /__library/thumb endpoint — validate it against the DESIGN's mtime.
+ * Neither mtime moves when the rendering CODE changes, so a renderer fix would
+ * never reach a thumbnail already on disk. Keying by name makes the miss
+ * automatic and per-file, which a directory-wide stale flag could not do: the
+ * export caps how many it renders per call, so a flag cleared mid-build would
+ * strand the rest at the old renderer for good.
+ */
 export function thumbFileName(designPath: string): string {
-  return `${slug(path.basename(path.dirname(path.dirname(designPath))))}__${slug(path.basename(designPath))}.png`;
+  return `${thumbPrefix(designPath)}${renderFingerprint()}.png`;
+}
+
+/** Drop this design's thumbnails from earlier renderer generations. Best
+ *  effort: a leftover thumb costs disk, never correctness — it can no longer
+ *  be served, because nothing asks for that name any more. */
+export function pruneStaleThumbs(thumbsDir: string, designPath: string): void {
+  const keep = thumbFileName(designPath);
+  const pre = thumbPrefix(designPath);
+  try {
+    for (const f of fs.readdirSync(thumbsDir)) {
+      if (f !== keep && f.startsWith(pre) && f.endsWith('.png')) fs.rmSync(path.join(thumbsDir, f), { force: true });
+    }
+  } catch { /* nothing to prune, or an unreadable dir — the render still stands */ }
 }
 
 /** Ensure a cached thumbnail file exists for a design; return its relative href or null. */
@@ -63,6 +94,7 @@ function thumbForFile(d: LibraryDesign, thumbsDir: string, relBase: string, budg
   budget.left--;
   if (!png) return null;
   try { fs.mkdirSync(thumbsDir, { recursive: true }); fs.writeFileSync(abs, png); } catch { return null; }
+  pruneStaleThumbs(thumbsDir, d.design_path);
   return rel;
 }
 
@@ -338,7 +370,7 @@ export function exportLibraryGallery(args: { output_path?: string; max_thumbnail
   const rendered = (args.max_thumbnails ?? 120) - budget.left;
   const progress = [
     pOk(`Wrote gallery for ${totalProjects} project(s) · ${totalDesigns} design(s)`, outPath),
-    pInfo(`Rendered ${rendered} new thumbnail(s)`, budget.left <= 0 ? 'thumbnail cap reached — re-run to fill the rest (cached)' : 'cached by mtime'),
+    pInfo(`Rendered ${rendered} new thumbnail(s)`, budget.left <= 0 ? 'thumbnail cap reached — re-run to fill the rest (cached)' : 'cached by design mtime + renderer'),
   ];
   const context = buildContext(op, `Design Library gallery → ${outPath}`, [{ type: 'gallery', path: outPath, role: 'created' }]);
   return okResult(op, { gallery_path: outPath, total_projects: totalProjects, total_designs: totalDesigns, thumbnails_rendered: rendered, progress, context });
