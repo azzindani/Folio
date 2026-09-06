@@ -31,10 +31,10 @@ import { collectLibrary, readDesignHeader, type LibraryDesign, type LibraryProje
 import { loadCollections, allCollections, effectiveCollection, relKey, type CollectionsState } from './library-collections';
 import { buildEditorLink } from './editor-link';
 import { renderFingerprint } from './render-fingerprint';
+import { thumbPrefix } from './thumb-names';
 import { ASSET_STYLE, ASSET_SCRIPT, ASSET_ASSETS, assetDrawerMarkup } from './library-assets';
 
 const esc = (s: string): string => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
-const slug = (s: string): string => s.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 120);
 
 /** Render a design's first page to a small PNG, or null if it can't render. */
 export function renderThumb(designPath: string): Buffer | null {
@@ -47,9 +47,6 @@ export function renderThumb(designPath: string): Buffer | null {
     return Buffer.from(new Resvg(svg, { fitTo: { mode: 'width', value: 360 }, background: '#ffffff', font: resvgFontOption() }).render().asPng());
   } catch { return null; }
 }
-
-const thumbPrefix = (designPath: string): string =>
-  `${slug(path.basename(path.dirname(path.dirname(designPath))))}__${slug(path.basename(designPath))}.`;
 
 /**
  * Cache filename for a design's thumbnail: `project__file.<renderer>.png`.

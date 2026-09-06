@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { readYAML, writeYAML } from './utils';
+import { pruneProjectThumbs, renameProjectThumbs } from './thumb-names';
 
 export interface FolderResult { success: boolean; error?: string; project?: string; path?: string; trashed_path?: string }
 
@@ -65,6 +66,10 @@ export function renameFolder(root: string, name: string, newName: string): Folde
         writeYAML(py, spec);
       } catch { /* leave meta.name stale rather than fail the rename */ }
     }
+    // Thumbnails carry the project name in their FILEname, so they do not move
+    // with the directory. Carry them across: the designs are unchanged, so every
+    // cached thumb is still correct — only its name is wrong.
+    renameProjectThumbs(root, o, n);
     return { success: true, project: n, path: dst };
   } catch (e) { return { success: false, error: (e as Error).message }; }
 }
@@ -81,6 +86,13 @@ export function deleteFolder(root: string, name: string): FolderResult {
   try { fs.mkdirSync(trash, { recursive: true }); } catch (e) { return { success: false, error: (e as Error).message }; }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const dest = path.join(trash, `${stamp}__${n}`);
-  try { fs.renameSync(src, dest); return { success: true, project: n, trashed_path: dest }; }
-  catch (e) { return { success: false, error: (e as Error).message }; }
+  try {
+    fs.renameSync(src, dest);
+    // The project is gone from the library, so nothing will ever ask for its
+    // thumbnails again — drop them rather than leave them on disk forever. (The
+    // designs themselves stay recoverable in .trash; a thumbnail is derived, and
+    // re-renders on demand if the folder is restored.)
+    pruneProjectThumbs(root, n);
+    return { success: true, project: n, trashed_path: dest };
+  } catch (e) { return { success: false, error: (e as Error).message }; }
 }
