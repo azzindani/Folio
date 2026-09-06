@@ -18,7 +18,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover, collectLayerIds, freeLayerId } from './utils';
-import { metricsForFamily, charOffsets } from '../../utils/font-metrics';
+import { metricsForFamily, charOffsets, letterSpacingPx } from '../../utils/font-metrics';
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope } from './motion';
 import { pagesWithLayer } from '../engine-edit-tools';
@@ -123,7 +123,11 @@ export function splitText(args: SplitTextArgs): ToolResult {
   const dirs = [fontsDir(), projectFontsDir(args.project_path ?? path.dirname(path.dirname(dPath))) ?? ''].filter(Boolean);
   const metrics = family ? metricsForFamily(family, dirs) : null;
 
-  const { offsets, total, exact, units } = charOffsets(text, fontSize, metrics);
+  // The renderer tracks the run; measuring without it puts every piece left of
+  // where the text was actually drawn, and the engine adds tracking to ALL-CAPS
+  // text on its own — so the default headline is the case that drifts.
+  const tracking = letterSpacingPx(style['letter_spacing'] ?? style['letterSpacing'], fontSize);
+  const { offsets, total, exact, units } = charOffsets(text, fontSize, metrics, 0.54, tracking);
   const parts = pieces(units, args.by === 'word' ? 'word' : 'char');
   if (parts.length === 0) return errResult(op, 'Nothing to split', 'The layer holds only whitespace.');
 
