@@ -17,7 +17,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover, collectLayerIds, freeLayerId } from './utils';
 import { metricsForFamily, charOffsets } from '../../utils/font-metrics';
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope } from './motion';
@@ -113,13 +113,17 @@ export function splitText(args: SplitTextArgs): ToolResult {
   const align = String(style['align'] ?? style['text_align'] ?? 'left');
   const shift = align === 'center' ? (boxW - total) / 2 : align === 'right' ? boxW - total : 0;
 
+  // Claimed against what the page already holds: with keep_source the same
+  // layer can be split twice, and reusing `word_c1` gave the design two layers
+  // with one id — after which `remove word_c1` deleted both.
+  const taken = collectLayerIds(scoped.scope);
   const made: Layer[] = parts.map((p, i) => {
     const startX = x0 + shift + (offsets[p.start] ?? 0);
     const endIdx = p.start + [...p.text].length;
     const w = (endIdx < offsets.length ? (offsets[endIdx] as number) : total) - (offsets[p.start] ?? 0);
     return {
       ...o,
-      id: `${id}_${args.by === 'word' ? 'w' : 'c'}${i + 1}`,
+      id: freeLayerId(taken, `${id}_${args.by === 'word' ? 'w' : 'c'}${i + 1}`),
       x: Math.round(startX), y: y0, width: Math.max(1, Math.round(w)),
       content: { type: 'plain', value: p.text },
       // Each piece is measured and placed; letting it re-align inside its own

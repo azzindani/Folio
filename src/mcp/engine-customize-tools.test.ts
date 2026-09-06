@@ -215,3 +215,31 @@ describe('manage_design {op:"resize"} — the twin for create_design\'s shape', 
     expect(String(r['note'])).toMatch(/SCALED rather than re-laid out/);
   });
 });
+
+describe('resize then patch_spec — the stored spec must follow the canvas', () => {
+  it('does not resurrect the pre-resize box when a preset is patched', () => {
+    // A preset that does NOT cover the canvas is SCALED, not rebuilt, and its
+    // spec kept describing the box it was authored at. patch_spec rebuilds from
+    // the spec, so editing a preset after a resize put it back at yesterday's
+    // coordinates: a 1520-wide stat returning to a 1080 canvas, 640px off the
+    // edge, reported as success. Found by resizing then patching on a live design.
+    if (!fs.existsSync(projectDir)) createProject({ name: 'cz', canvas: '1080x1080' });
+    const d = createDesign({ project_path: projectDir, name: `rp-${Math.random().toString(36).slice(2, 7)}`, type: 'poster', width: 1920, height: 1080 }) as unknown as Rec;
+    const p = d['path'] as string;
+    addLayers({ design_path: p, layers_shorthand: [
+      { id: 'bg', type: 'rect', pos: [0, 0, 1920, 1080], fill: '#FFFFFF' },
+      { id: 's', type: 'stat', pos: [200, 200, 1520, 680], value: 'X', label: 'top level', accent: '#111111', bg: '#FFFFFF' },
+    ] as unknown as ShorthandLayer[] });
+
+    resizeDesign({ design_path: p, width: 1080, height: 1350 });
+    const scaled = (read(p)['layers'] as Rec[]).find(l => l['id'] === 's') as Rec;
+    const w = scaled['width'] as number;
+    expect(w).toBeLessThanOrEqual(1080);
+
+    // The spec now has to agree with where the layer actually sits.
+    const spec = scaled['_spec'] as Rec | undefined;
+    expect(spec, 'the stat should carry a spec').toBeDefined();
+    expect((spec?.['pos'] as number[])?.[2]).toBe(w);
+    expect((spec?.['pos'] as number[])?.[0]).toBe(scaled['x']);
+  });
+});
