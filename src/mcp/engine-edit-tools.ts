@@ -9,6 +9,7 @@ import type { ProgressItem } from './types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 
 import { buildEditorLink } from './engine/editor-link';
+import { scopesWithLayer, lockedAncestorOf, lockedError, removeDeep } from './engine/layer-lookup';
 
 import type { NextAction } from './types';
 
@@ -357,15 +358,19 @@ export function addLayer(args: { design_path: string; page_id?: string; layer: L
   return okResult(op, { layer_id: args.layer.id, next_action, progress, context, handover }, bak);
 }
 
-// Which scopes (root + page ids) carry a top-level layer with this id. >1 means
-// an unscoped remove/update would hit multiple pages — carousel preset groups
-// share ids (sections_1 / editorial_1), so this guards the silent-nuke footgun.
-
+// Which scopes (root + page ids) carry this id. >1 means an unscoped
+// remove/update would hit multiple pages — carousel preset groups share ids
+// (sections_1 / editorial_1), so this guards the silent-nuke footgun.
+//
+// It used to ask only about TOP-LEVEL layers, and the ops it guards recurse into
+// groups. Carousel pages are built from the same presets, so their group
+// CHILDREN share ids exactly as their groups do — and for every one of those
+// this answered "nowhere", the >1 check never fired, and an unscoped update
+// patched all three pages while reporting one layer. Measured: opacity 0.123 on
+// a group child, 3 pages changed, reply `updated: st_grain`. The guard now looks
+// where the ops it guards actually look.
 export function pagesWithLayer(spec: DesignSpec, layerId: string): string[] {
-  const hits: string[] = [];
-  if (spec.layers?.some(l => l.id === layerId)) hits.push('(root)');
-  for (const p of spec.pages ?? []) if (p.layers?.some(l => l.id === layerId)) hits.push(p.id);
-  return hits;
+  return scopesWithLayer(spec, layerId);
 }
 
 /**
@@ -535,7 +540,14 @@ export function removeLayer(args: { design_path: string; layer_id: string; page_
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const spec = readYAML<DesignSpec>(dPath);
   let removed = 0;
-  const drop = (layers: Layer[]): Layer[] => { const k = layers.filter(l => l.id !== args.layer_id); removed += layers.length - k.length; return k; };
+  // Flat once — so `remove` answered "Layer not found" for a group child that
+  // `update` had always been able to edit and `inspect` lists by name. A locked
+  // group protects its children here as it does everywhere else; without that
+  // check, teaching remove to descend would have made `locked` weaker than it
+  // was before.
+  const locked = lockedAncestorOf(spec, args.layer_id, args.page_id);
+  if (locked) { const e = lockedError(args.layer_id, locked); return errResult(op, e.error, e.hint, progress); }
+  const drop = (layers: Layer[]): Layer[] => { const r = removeDeep(layers, args.layer_id); removed += r.removed; return r.layers; };
   // page_id scopes removal to ONE carousel page. WITHOUT it the same id on
   // sibling pages is removed too (carousel groups share ids) — the footgun that
   // silently emptied 3 pages when one page's group was deleted by id.

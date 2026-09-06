@@ -23,7 +23,8 @@ import * as path from 'path';
 import type { DesignSpec, Layer, ComponentSpec } from '../schema/types';
 import type { ToolResult, ProgressItem, NextAction } from './types';
 
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './engine/utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover } from './engine/utils';
+import { findAllDeep, parentIdOf, removeDeep, groupById } from './engine/layer-lookup';
 
 interface IndexEntry { id: string; path: string; name: string }
 interface ComponentIndex { components?: IndexEntry[] }
@@ -86,8 +87,15 @@ export function saveAsComponent(args: {
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check the design_path value.');
 
   const spec = readYAML<DesignSpec>(dPath);
-  const extracted = (spec.layers ?? []).filter(l => args.layer_ids.includes(l.id));
+  // Flat once, so extracting anything from inside a group — which is where 267
+  // of 279 real designs keep their layers — answered "No matching layers for
+  // IDs" for layers `update` edits by name. The instance goes back into the
+  // group the originals came from, not up to the top level: hoisting it would
+  // change its z-order and its place in the composition.
+  const { found, missing } = findAllDeep(spec.layers, args.layer_ids);
+  const extracted = found.map(f => f.layer);
   if (extracted.length === 0) return errResult(op, `No matching layers for IDs: ${args.layer_ids.join(', ')}`, 'Use manage_design {op:"inspect"} to get layer IDs.', progress);
+  const parentId = parentIdOf(spec.layers, extracted[0].id);
 
   const componentId = args.component_name.toLowerCase().replace(/\s+/g, '-');
   const componentPath = path.join(args.project_path, `components/${componentId}.component.yaml`);
@@ -109,10 +117,19 @@ export function saveAsComponent(args: {
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const firstLayer = extracted[0];
   const instance = { id: `${componentId}-instance`, type: 'component', z: firstLayer.z, x: firstLayer.x ?? 0, y: firstLayer.y ?? 0, width: firstLayer.width ?? 0, height: firstLayer.height ?? 0, ref: componentId, slots: {} } as unknown as Layer;
-  spec.layers = [...(spec.layers ?? []).filter(l => !args.layer_ids.includes(l.id)), instance].sort((a, b) => a.z - b.z);
+  let tree = spec.layers ?? [];
+  for (const id of extracted.map(l => l.id)) tree = removeDeep(tree, id).layers;
+  // removeDeep rebuilds the nodes it walks, so the parent has to be found again
+  // by id rather than held across the removal.
+  const parent = parentId ? groupById(tree, parentId) : null;
+  const siblings = parent ? ((parent as Layer & { layers?: Layer[] }).layers ?? []) : tree;
+  siblings.push(instance);
+  siblings.sort((a, b) => a.z - b.z);
+  spec.layers = tree;
   spec.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, spec);
-  progress.push(pOk(`Replaced ${extracted.length} layer(s) with component instance`));
+  progress.push(pOk(`Replaced ${extracted.length} layer(s) with component instance`, parentId ? `inside group "${parentId}"` : undefined));
+  if (missing.length) progress.push(pWarn('Not found — not extracted', missing.join(', ')));
 
   const context = buildContext(op, `Extracted ${extracted.length} layer(s) into component "${args.component_name}"`, [
     { type: 'component', path: componentPath, role: 'created' },
