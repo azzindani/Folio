@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
 import { ALL_HANDLERS } from './handlers';
+import { PER_OP } from './required-args';
 
 // Found by calling every tool and every op with the arguments left out. The
 // reply used to be a runtime crash — 'The "path" property must be of type
@@ -31,6 +33,24 @@ const cases: [string, Record<string, unknown>, string][] = [
   ['edit_layer', { op: 'add' }, 'design_path'],
   ['edit_layer', { op: 'split_text' }, 'design_path'],
   ['animation', { op: 'track' }, 'design_path'],
+  // Found later, by sweeping every op of all eight multiplexers rather than a
+  // hand-picked sample: manage_design was missing from the table wholesale, and
+  // two `list` ops were assumed to be argument-free menus. They are not.
+  ['themes', { op: 'list' }, 'project_path'],
+  ['tasks', { op: 'list' }, 'project_path'],
+  ['manage_design', { op: 'list' }, 'project_path'],
+  ['manage_design', { op: 'inspect' }, 'design_path'],
+  ['manage_design', { op: 'rename' }, 'new_name'],
+  ['manage_design', { op: 'duplicate' }, 'new_name'],
+  ['manage_design', { op: 'move' }, 'target_project'],
+  ['manage_design', { op: 'delete' }, 'design_path'],
+  ['manage_design', { op: 'resume' }, 'design_path'],
+  ['manage_design', { op: 'get_spec' }, 'design_path'],
+  ['manage_design', { op: 'resize' }, 'design_path'],
+  ['manage_design', { op: 'tokens' }, 'design_path'],
+  ['manage_design', { op: 'lineage' }, 'design_path'],
+  ['manage_design', { op: 'restore' }, 'design_path'],
+  ['manage_design', { op: 'style_history' }, 'project_path'],
 ];
 
 describe('a tool enforces the arguments it promises', () => {
@@ -56,5 +76,61 @@ describe('a tool enforces the arguments it promises', () => {
   it('reports a missing op as a bad op, not a missing argument', () => {
     const r = call('templates', {});
     expect(String(r['error'])).toContain('Unknown op');
+  });
+});
+
+// The list above is a sample, and a sample is how manage_design stayed missing
+// through a dozen sweeps: nobody wrote the case, so nobody saw the crash. This
+// closes that door — every op a multiplexer advertises must have had its
+// requirements DECIDED, either as a row in PER_OP or as a deliberate exemption
+// named here with a reason. Adding an op and forgetting fails the suite.
+const EXEMPT: Record<string, string[]> = {
+  // no-argument scans and menus
+  manage_design: ['browse', 'gallery', 'icon_search'],
+  themes: ['packs'],
+  templates: ['list'],
+  presentation: ['remote'],
+  animation: ['presets'],
+  tasks: [],
+  report: [],
+  edit_layer: [],
+};
+// The asset ops hand-check their own arguments and name the missing one; three
+// of them publish an either/or requirement (`data` OR `source_path`) that a
+// plain conjunction cannot express without rejecting valid calls.
+const HAND_CHECKED = /^asset_/;
+
+describe('every advertised op has had its requirements decided', () => {
+  const src = readFileSync('src/mcp/dispatch.ts', 'utf8');
+  // Each multiplexer ends in badOp('<tool>', a['op'], [ ...every op... ]).
+  const found = [...src.matchAll(/badOp\('(\w+)',\s*a\['op'\],\s*\n?\s*\[([^\]]*)\]/g)];
+
+  it('finds all eight multiplexers in dispatch.ts', () => {
+    expect(found.map(m => m[1]).sort()).toEqual([
+      'animation', 'edit_layer', 'manage_design', 'presentation',
+      'report', 'tasks', 'templates', 'themes',
+    ]);
+  });
+
+  for (const m of found) {
+    const tool = m[1] ?? '';
+    const ops = [...(m[2] ?? '').matchAll(/'([\w]+)'/g)].map(x => x[1] ?? '');
+    it(`${tool} — all ${ops.length} ops`, () => {
+      const undecided = ops.filter(op =>
+        !HAND_CHECKED.test(op) &&
+        PER_OP[tool]?.[op] === undefined &&
+        !(EXEMPT[tool] ?? []).includes(op));
+      expect(undecided).toEqual([]);
+    });
+  }
+
+  it('does not claim requirements for ops that no longer exist', () => {
+    const stale: string[] = [];
+    for (const m of found) {
+      const tool = m[1] ?? '';
+      const ops = new Set([...(m[2] ?? '').matchAll(/'([\w]+)'/g)].map(x => x[1] ?? ''));
+      for (const op of Object.keys(PER_OP[tool] ?? {})) if (!ops.has(op)) stale.push(`${tool}.${op}`);
+    }
+    expect(stale).toEqual([]);
   });
 });
