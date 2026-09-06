@@ -36,7 +36,7 @@ const progressText = (r: unknown): string =>
   JSON.stringify((r as { progress?: unknown[] }).progress ?? []);
 
 describe('create_design does not drop layers in silence', () => {
-  beforeEach(() => { createProject({ name: 'p', description: 'test' }); });
+  beforeEach(() => { createProject({ name: 'p' }); });
 
   it('says how many layers it did NOT add', () => {
     const r = createDesign({ project_path: 'p', name: 'hero', layers }) as Record<string, unknown>;

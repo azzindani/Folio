@@ -133,6 +133,34 @@ export class MotionPlayer {
     this.emit();
   }
 
+  /**
+   * The current surface with any live pose undone — the design as AUTHORED.
+   *
+   * Anything that reasons about the animation rather than displaying it needs
+   * this. A motion trail derived from the on-screen layers re-bases itself on
+   * every frame, because a pose has already moved the layer the trail is
+   * measured from; the path would crawl across the canvas while it played.
+   *
+   * Returns the layers untouched when nothing is posed, so a caller never has
+   * to ask whether playback is running.
+   */
+  authoredLayers(): Layer[] {
+    const layers = this.state.getCurrentLayers() as Layer[];
+    if (!this.baseline) return layers;
+    const base = this.baseline;
+    // Spread through a plain record: Layer is a large discriminated union and
+    // spreading it directly makes the checker enumerate every combination.
+    const unpose = (ls: Layer[]): Layer[] => ls.map(l => {
+      const b = base.get(l.id) as Record<string, unknown> | undefined;
+      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      const o = l as unknown as Record<string, unknown>;
+      const restored: Record<string, unknown> = b ? { ...o, ...b } : { ...o };
+      if (Array.isArray(kids)) restored['layers'] = unpose(kids);
+      return restored as unknown as Layer;
+    });
+    return unpose(layers);
+  }
+
   /** Put every posed layer back the way it was authored. */
   restore(): void {
     if (!this.baseline) return;

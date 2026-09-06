@@ -13,7 +13,9 @@ import { CanvasInteractions } from './canvas-interactions';
 
 export class CanvasManager extends CanvasInteractions {
   private motionTrailsOn = false;
-  private trailsFrozen = false;
+  /** Where to get the layers as AUTHORED, when something is posing them.
+   *  Without it the trail is measured from a moving layer and crawls. */
+  private authoredLayers: (() => Layer[]) | null = null;
 
   constructor(container: HTMLElement, state: StateManager) {
     super();
@@ -195,11 +197,11 @@ export class CanvasManager extends CanvasInteractions {
 
   motionTrailsEnabled(): boolean { return this.motionTrailsOn; }
 
-  /** Hold the current trail while the player poses the design. */
-  freezeMotionTrails(frozen: boolean): void {
-    const wasFrozen = this.trailsFrozen;
-    this.trailsFrozen = frozen;
-    if (wasFrozen && !frozen) this.paintMotionTrails();
+  /** Tell the canvas where to read the design as authored, so a trail drawn
+   *  during playback measures the animation and not the current pose. */
+  setAuthoredLayerSource(fn: (() => Layer[]) | null): void {
+    this.authoredLayers = fn;
+    this.paintMotionTrails();
   }
 
   /** Draw every animated layer's path in design coordinates, scaled with the
@@ -207,14 +209,15 @@ export class CanvasManager extends CanvasInteractions {
   paintMotionTrails(): void {
     if (!this.motionOverlay) return;
     if (!this.motionTrailsOn) { this.motionOverlay.innerHTML = ''; return; }
-    // While the player is posing, the layers ARE the animation — deriving the
-    // path from them would re-base the trail on every frame and it would crawl
-    // across the canvas. The authored path has not changed, so keep the one
-    // already drawn and repaint when playback puts the design back.
-    if (this.trailsFrozen) return;
     const { design } = this.state.get();
     if (!design) { this.motionOverlay.innerHTML = ''; return; }
-    const layers = this.state.getCurrentLayers() as Layer[];
+    // Always the AUTHORED layers. While the player is posing, the on-screen
+    // layers ARE the animation, so a path measured from them re-bases on every
+    // frame and crawls across the canvas. An earlier attempt froze the repaint
+    // instead, which held a trail that was already drawn — and drew nothing at
+    // all if you switched Trails on mid-playback, which is exactly when you
+    // want it.
+    const layers = this.authoredLayers?.() ?? (this.state.getCurrentLayers() as Layer[]);
     const dur = sceneDuration(layers);
     const trails = surfaceTrails(layers, dur);
     this.motionOverlay.innerHTML = trails.length
