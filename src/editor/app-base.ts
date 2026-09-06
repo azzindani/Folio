@@ -37,6 +37,7 @@ import { ComponentLibraryManager } from '../ui/panels/component-library';
 import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
+import { MotionPlayer } from './motion-player';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { wireMobileSheets } from './mobile-sheet';
@@ -75,6 +76,8 @@ export abstract class EditorAppBase {
   protected animationPanel!: AnimationPanel;
   protected imageImport!: ImageImportHandler;
   protected timelinePanel!: TimelinePanelManager;
+  /** Playback shared by the timeline panel and the canvas toolbar's play button. */
+  readonly motionPlayer: MotionPlayer = new MotionPlayer(this.state);
   protected colorSchemePanel!: ColorSchemePanelManager;
   protected assetPanel?: AssetPanelManager;
   /** Project of the open server-backed design, so the asset manager opens on

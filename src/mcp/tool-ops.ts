@@ -21,7 +21,7 @@ export const TOOL_OPS: Record<string, readonly string[]> = {
   templates: ['list', 'slots', 'inject', 'export', 'save_component', 'components', 'batch'],
   report: ['generate', 'customize', 'bind_data', 'validate', 'export', 'formula', 'debug'],
   presentation: ['create', 'customize', 'export', 'remote', 'collab'],
-  animation: ['timeline', 'keyframe', 'export', 'motion', 'motion_path', 'sequence', 'track', 'clear', 'frame', 'presets'],
+  animation: ['timeline', 'keyframe', 'export', 'motion', 'motion_path', 'sequence', 'track', 'clear', 'frame', 'presets', 'preview'],
 };
 
 /** Does this tool multiplex, and does it know this op? True for a tool that does

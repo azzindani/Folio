@@ -1,7 +1,9 @@
 import type { StateManager, EditorState } from '../../editor/state';
 import { poseAt } from '../../animation/keyframe-css';
 import { EASING_NAMES } from '../../animation/easing';
+import { easingCurveSVG } from './easing-curve';
 import type { Layer } from '../../schema/types';
+import { MotionPlayer } from '../../editor/motion-player';
 import type { AnimationSpec, Keyframe } from '../../animation/types';
 
 // ── Pure-function API (used by MCP engine + tests) ───────────
@@ -228,19 +230,32 @@ export class TimelinePanelManager {
   private container: HTMLElement;
   private state: StateManager;
   /** Authored values captured before a scrub, restored when it stops. */
-  private preScrub: Map<string, Partial<Layer>> | null = null;
   private duration = 2000;
   /** The user typed a duration — stop fitting the ruler to the scene. */
   private durationPinned = false;
   private scrubMs = 0;
-  private playing = false;
-  private raf = 0;
+  private player: MotionPlayer;
+  /** Set by the app so the checkbox can reach the canvas. */
+  onTrailsToggle?: (on: boolean) => void;
 
-  constructor(container: HTMLElement, state: StateManager) {
+  constructor(container: HTMLElement, state: StateManager, player?: MotionPlayer) {
     this.container = container;
     this.state = state;
+    // The panel no longer owns playback — the canvas toolbar drives the same
+    // player, and two implementations of "play" is the failure this codebase
+    // keeps rediscovering.
+    this.player = player ?? new MotionPlayer(state);
     this.build();
     state.subscribe(this.onStateChange.bind(this));
+    this.player.subscribe(s => {
+      this.scrubMs = s.time;
+      const tc = this.container.querySelector<HTMLElement>('#tl-timecode');
+      if (tc) tc.textContent = fmtMs(s.time);
+      const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
+      if (thumb) thumb.style.left = `${(s.time / Math.max(1, s.duration)) * 100}%`;
+      const pb = this.container.querySelector<HTMLButtonElement>('#tl-play');
+      if (pb) pb.textContent = s.playing ? '⏸' : '▶';
+    });
   }
 
   private onStateChange(_s: EditorState, keys: (keyof EditorState)[]): void {
@@ -272,6 +287,10 @@ export class TimelinePanelManager {
             ms
           </label>
           <button class="btn btn-sm" id="tl-stagger-apply" style="margin-left:4px">Stagger</button>
+          <label style="font-size:11px;color:var(--color-text-muted);margin-left:10px;display:flex;align-items:center;gap:4px;cursor:pointer"
+                 title="Draw each animated layer's path on the canvas — spacing shows the easing.">
+            <input id="tl-trails" type="checkbox"> Trails
+          </label>
           <span id="tl-timecode" style="font-size:11px;font-family:var(--font-mono);
                 color:var(--color-text-muted);margin-left:auto">${fmtMs(this.scrubMs)}</span>
         </div>
@@ -287,16 +306,22 @@ export class TimelinePanelManager {
     const durInput = this.container.querySelector<HTMLInputElement>('#tl-duration')!;
 
     playBtn.addEventListener('click', () => {
-      if (this.playing) { this.pause(); playBtn.textContent = '▶'; }
-      else              { this.play();  playBtn.textContent = '⏸'; }
+      this.player.toggle();
+      playBtn.textContent = this.player.playing ? '⏸' : '▶';
     });
     stopBtn.addEventListener('click', () => {
-      this.stop();
+      this.player.stop();
       playBtn.textContent = '▶';
     });
+    const trails = this.container.querySelector<HTMLInputElement>('#tl-trails');
+    trails?.addEventListener('change', () => {
+      this.onTrailsToggle?.(trails.checked);
+    });
+
     durInput.addEventListener('change', () => {
       this.duration = Math.max(100, parseFloat(durInput.value) || 2000);
       this.durationPinned = true;
+      this.player.pinDuration(this.duration);
       this.render();
     });
   }
@@ -462,10 +487,25 @@ export class TimelinePanelManager {
       }
       close();
     };
-    sel.addEventListener('change', commit);
+    // Show the curve for whatever is highlighted. Thirty names in a dropdown
+    // cannot distinguish "ease-out-back" from "ease-out-expo"; the shape can,
+    // and the shape is the reason to pick one.
+    const preview = document.createElement('div');
+    preview.className = 'tl-ease-curve';
+    preview.style.cssText = 'position:absolute;z-index:21;pointer-events:none;'
+      + `left:${kfEl.offsetLeft}px;top:${kfEl.offsetTop + KF_RADIUS * 2 + 26}px`;
+    const paint = (): void => { preview.innerHTML = easingCurveSVG(sel.value); };
+    paint();
+    sel.addEventListener('input', paint);
+    sel.addEventListener('keyup', paint);
+
+    const teardown = (): void => { if (preview.parentNode) preview.parentNode.removeChild(preview); close(); };
+    sel.addEventListener('change', () => { commit(); if (preview.parentNode) preview.parentNode.removeChild(preview); });
     // A blur with no choice made is a cancel, not a commit.
-    sel.addEventListener('blur', () => { if (!done) close(); });
-    (kfEl.parentElement ?? this.container).appendChild(sel);
+    sel.addEventListener('blur', () => { if (!done) teardown(); });
+    const host = kfEl.parentElement ?? this.container;
+    host.appendChild(sel);
+    host.appendChild(preview);
     sel.focus();
   }
 
@@ -528,7 +568,7 @@ export class TimelinePanelManager {
     if (timecode) timecode.textContent = fmtMs(this.scrubMs);
     const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
     if (thumb) thumb.style.left = `${(this.scrubMs / this.duration) * 100}%`;
-    this.previewAt(this.scrubMs);
+    this.player.seek(this.scrubMs);
   }
 
   /**
@@ -540,67 +580,8 @@ export class TimelinePanelManager {
    * authored values are captured once, on the first scrub, so stopping puts
    * the design back exactly as authored rather than baking a frame into it.
    */
-  private previewAt(ms: number): void {
-    const layers = this.state.getCurrentLayers() as Layer[];
-    const animated = layers.filter(l => (l.animation?.keyframes ?? []).length > 0);
-    if (animated.length === 0) return;
 
-    if (!this.preScrub) {
-      this.preScrub = new Map();
-      for (const l of animated) {
-        const o = l as unknown as Record<string, unknown>;
-        this.preScrub.set(l.id, {
-          x: o['x'], y: o['y'], opacity: o['opacity'], rotation: o['rotation'],
-          transform: o['transform'], effects: o['effects'],
-        } as unknown as Partial<Layer>);
-      }
-    }
 
-    for (const l of animated) {
-      const base = this.preScrub.get(l.id);
-      if (!base) continue;
-      const authored = { ...(l as unknown as Record<string, unknown>), ...(base as unknown as Record<string, unknown>) } as unknown as Layer;
-      const pose = interpolateAtTime((l.animation?.keyframes ?? []) as Keyframe[], ms, this.duration);
-      const update = { ...(base as unknown as Record<string, unknown>), ...(poseToLayerUpdate(authored, pose) as unknown as Record<string, unknown>) };
-      this.state.updateLayer(l.id, update as unknown as Partial<Layer>, false);
-    }
-  }
-
-  /** Put every previewed layer back the way it was authored. */
-  private clearPreview(): void {
-    if (!this.preScrub) return;
-    for (const [id, base] of this.preScrub) this.state.updateLayer(id, base, false);
-    this.preScrub = null;
-  }
-
-  private play(): void {
-    this.playing = true;
-    const start = performance.now() - this.scrubMs;
-    const tick = (now: number) => {
-      if (!this.playing) return;
-      const elapsed = now - start;
-      const t = elapsed % this.duration;
-      this.scrubTo(t);
-      this.raf = requestAnimationFrame(tick);
-    };
-    this.raf = requestAnimationFrame(tick);
-  }
-
-  private pause(): void {
-    this.playing = false;
-    cancelAnimationFrame(this.raf);
-  }
-
-  private stop(): void {
-    this.pause();
-    this.scrubMs = 0;
-    const timecode = this.container.querySelector<HTMLElement>('#tl-timecode');
-    if (timecode) timecode.textContent = fmtMs(0);
-    const thumb = this.container.querySelector<HTMLElement>('.tl-scrub-thumb');
-    if (thumb) thumb.style.left = '0%';
-    // Stop means "back to the design", not "back to frame 0 of the preview".
-    this.clearPreview();
-  }
 }
 
 function fmtMs(ms: number): string {

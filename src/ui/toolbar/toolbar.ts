@@ -19,6 +19,21 @@ export class ToolbarManager {
     this.app = app;
     this.build();
     this.state.subscribe(this.onStateChange.bind(this));
+    // Motion is invisible in the chrome until a design HAS some — a play button
+    // that does nothing on most designs is worse than no button.
+    this.app.motionPlayer?.subscribe(p => {
+      const btn = this.container.querySelector<HTMLButtonElement>('.toolbar-play');
+      if (!btn) return;
+      btn.hidden = !p.hasMotion;
+      btn.innerHTML = p.playing ? '&#10073;&#10073; Pause' : '&#9654; Play';
+      btn.title = p.playing
+        ? 'Pause (Space)'
+        : `Play the ${Math.round(p.duration)}ms animation on the canvas (Space)`;
+    });
+    this.state.subscribe(() => {
+      const btn = this.container.querySelector<HTMLButtonElement>('.toolbar-play');
+      if (btn) btn.hidden = !this.app.motionPlayer?.hasMotion();
+    });
   }
 
   private build(): void {
@@ -82,6 +97,8 @@ export class ToolbarManager {
             `<option value="${id}">${spec.name ?? id}</option>`
           ).join('')}
         </select>
+        <button class="btn btn-sm toolbar-play" data-action="play-motion" hidden
+          title="Play the animation on the canvas (Space)">&#9654; Play</button>
         <button class="btn btn-sm" data-action="undo" title="Undo (Ctrl+Z)">&#8617;</button>
         <button class="btn btn-sm" data-action="redo" title="Redo (Ctrl+Shift+Z)">&#8618;</button>
         <div class="export-group">
@@ -129,6 +146,7 @@ export class ToolbarManager {
     }
 
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
+    if (action === 'play-motion') { this.app.motionPlayer?.toggle(); return; }
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
     if (action === 'catalog') { this.app.openCatalog(); return; }

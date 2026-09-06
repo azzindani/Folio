@@ -131,6 +131,7 @@ export function dispatchAnimation(a: Args): ToolResult {
     case 'track':    return engine.setTrack(a as Parameters<typeof engine.setTrack>[0]);
     case 'clear':    return engine.clearMotion(a as Parameters<typeof engine.clearMotion>[0]);
     case 'frame':    return engine.renderFrame(a as Parameters<typeof engine.renderFrame>[0]);
+    case 'preview':  return engine.previewMotion(a as unknown as Parameters<typeof engine.previewMotion>[0]);
     case 'motion_path': return engine.setMotionPath(a as unknown as Parameters<typeof engine.setMotionPath>[0]);
     case 'presets':  return engine.listMotionPresets();
     default:         return badOp('animation', a['op']);
