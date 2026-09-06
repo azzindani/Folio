@@ -11,6 +11,12 @@
 //                               (evaluating 'idOrFile.replace')
 //   themes {op:"apply"}         The "paths[0]" property must be of type string
 //   tasks {op:"resume"}         Task not found: undefined
+//   manage_design {op:"delete"} The "path" property must be of type string
+//
+// That last one is a later find: the per-op half below was written by hand from
+// the descriptions, and manage_design — 26 ops, the largest tool — was skipped
+// wholesale. A sweep of every op of all eight multiplexers found 15 still
+// answering with V8 internals; they are covered now, and the sweep is a test.
 //
 // None of those names the argument that is missing, which is the only thing the
 // caller needs. A conforming MCP client validates `required` for us, which is
@@ -61,11 +67,36 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     collab: ['design_path'],
   },
   themes: {
+    list: ['project_path'],
     apply: ['project_path'],
   },
   tasks: {
+    list: ['project_path'],
     create: ['project_path', 'task_name'],
     resume: ['task_path'],
+  },
+  // The largest multiplexer, and the one this table first missed entirely. Its
+  // ASSET ops each hand-check their own arguments and name the missing one, so
+  // they are left to do that; every DESIGN op went straight to a path resolver
+  // and answered with V8 internals instead. Each entry below is the plain
+  // conjunction from that op's own `req:` list in the tool description — where
+  // the published requirement is an either/or (`resize` wants width AND/OR
+  // height) only the unconditional part is listed, because a false rejection
+  // would be worse than the crash it replaces.
+  manage_design: {
+    list: ['project_path'],
+    inspect: ['design_path'],
+    rename: ['design_path', 'new_name'],
+    duplicate: ['design_path', 'new_name'],
+    move: ['design_path', 'target_project'],
+    delete: ['design_path'],
+    resume: ['design_path'],
+    get_spec: ['design_path'],
+    resize: ['design_path'],
+    tokens: ['design_path'],
+    lineage: ['design_path'],
+    restore: ['design_path'],
+    style_history: ['project_path'],
   },
   edit_layer: {
     add: ['design_path', 'layer'],
