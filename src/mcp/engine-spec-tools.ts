@@ -222,6 +222,20 @@ export function patchDesignSpec(args: {
   const bak = snapshot(dPath);
   progress.push(pInfo('Snapshot created', path.basename(bak)));
   const before_layers = ((target as unknown as { layers?: unknown[] }).layers ?? []).length;
+  // Re-expansion replaces the WHOLE layer, so properties authored on the
+  // container — ones the spec never described — went with it. Discarding what
+  // was done to the generated CHILDREN is deliberate (that is what `drift`
+  // reports); discarding the container's own flags is not.
+  //
+  // `locked` is the one that matters. The model sets it to tell the auto-rescue
+  // passes to leave a hand-placed composition alone — the guide teaches exactly
+  // that, and 248 of 276 library designs do it. Patching one spec field silently
+  // un-locked the group, after which the next rescue pass was free to reflow the
+  // composition it had been told not to touch. Measured: locked before 1, after 0.
+  for (const k of ['locked', 'href'] as const) {
+    const v = (target as unknown as Record<string, unknown>)[k];
+    if (v !== undefined) (rebuilt as unknown as Record<string, unknown>)[k] = v;
+  }
   if (!replaceLayer(surface.layers, args.layer_id, rebuilt)) {
     return errResult(op, `Could not replace layer "${args.layer_id}" after re-expansion.`, 'Re-read the design with manage_design {op:"get_spec"} and retry.', progress);
   }

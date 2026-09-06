@@ -82,14 +82,23 @@ export function resolveDesignPath(designPath: string, projectPath?: string): str
 // Override the per-file retention via FOLIO_SNAPSHOT_KEEP (default 20).
 const SNAPSHOT_KEEP_DEFAULT = 20;
 
-/** Existing snapshots for one design, newest first. */
+/**
+ * Existing snapshots for one design, newest first.
+ *
+ * Ordered by NAME, not mtime. The name carries an ISO timestamp and a collision
+ * counter, so it sorts chronologically and is unique; mtime is milliseconds, and
+ * several snapshots of a small design land inside the same one. That tie made
+ * the order arbitrary — enough for "newest" to be the wrong file, so the
+ * unchanged-file check compared against the wrong content and wrote a duplicate
+ * anyway. Caught by the dedupe test failing only in a full run, where three
+ * writes shared a millisecond.
+ */
 function snapshotsNewestFirst(versionsDir: string, stem: string): string[] {
   try {
     return fs.readdirSync(versionsDir)
       .filter(n => n.startsWith(`${stem}_`) && n.endsWith('.bak'))
-      .map(n => ({ name: n, mtime: fs.statSync(path.join(versionsDir, n)).mtimeMs }))
-      .sort((a, b) => b.mtime - a.mtime)
-      .map(e => path.join(versionsDir, e.name));
+      .sort((a, b) => (a < b ? 1 : a > b ? -1 : 0))
+      .map(n => path.join(versionsDir, n));
   } catch { return []; }
 }
 
