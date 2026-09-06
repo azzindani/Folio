@@ -8,6 +8,7 @@ import { exportAsTemplate, injectIntoTemplate, listSlots } from '../schema/templ
 import type { TemplateSpec } from '../schema/template';
 import { resolveDesignPath, readYAML, writeYAML, errResult, okResult, pOk, pWarn, buildContext, buildHandover } from './engine/utils';
 import { resolveBuiltinTemplate, builtinInjectOutputDir, listBuiltinTemplates, probedCatalogPaths } from './engine/builtin-templates';
+import { requireProject, isErr } from './engine/assets';
 
 export function exportTemplate(args: { design_path: string; output_path?: string; project_path?: string }): ToolResult {
   const op = 'export_template';
@@ -31,7 +32,7 @@ export function exportTemplate(args: { design_path: string; output_path?: string
   return okResult(op, { template_path: outPath, template_file: path.basename(outPath), slot_count: slots.length, slots, next_action, progress, context, handover });
 }
 
-export function injectTemplate(args: { template_path: string; slots: Record<string, unknown>; output_path?: string }): ToolResult {
+export function injectTemplate(args: { template_path: string; slots: Record<string, unknown>; output_path?: string; project_path?: string }): ToolResult {
   const op = 'inject_template';
   const progress: ProgressItem[] = [];
   // A built-in catalog id ("tmpl-…") / filename reads from the read-only asset
@@ -48,9 +49,19 @@ export function injectTemplate(args: { template_path: string; slots: Record<stri
   design.meta.modified = new Date().toISOString().split('T')[0];
   // A built-in source is read-only, so a design can't be written beside it —
   // default its output into the projects dir (sandbox-allowed) instead.
-  const defaultOut = builtin
-    ? path.join(builtinInjectOutputDir(), `${path.basename(tPath).replace(/\.template\.yaml$/, '')}-${Date.now().toString(36)}.design.yaml`)
-    : tPath.replace(/\.template\.yaml$/, `.${Date.now().toString(36)}.design.yaml`);
+  // `project_path` is advertised on the tool and was accepted and ignored, so
+  // every injected design landed loose in the projects ROOT — beside the project
+  // DIRECTORIES, inside none of them. Six were sitting there from earlier
+  // sessions, invisible to manage_design {op:"list"} and to style_history, which
+  // both read a project's designs/ dir. Told which project, put it in it.
+  const stem = `${path.basename(tPath).replace(/\.template\.yaml$/, '')}-${Date.now().toString(36)}.design.yaml`;
+  const proj = args.project_path ? requireProject(op, args.project_path) : undefined;
+  if (proj && isErr(proj)) return proj;
+  const defaultOut = proj
+    ? path.join(proj.dir, 'designs', stem)
+    : builtin
+      ? path.join(builtinInjectOutputDir(), stem)
+      : tPath.replace(/\.template\.yaml$/, `.${Date.now().toString(36)}.design.yaml`);
   const outPath = args.output_path ?? defaultOut;
   writeYAML(outPath, design);
   progress.push(pOk(`Injected ${Object.keys(args.slots).length} slot(s)`, path.basename(outPath)));

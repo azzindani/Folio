@@ -15,6 +15,60 @@ function badOp(tool: string, op: unknown, ops: string[]): ToolResult {
     `Set op to one of: ${ops.join(', ')}.`);
 }
 
+/**
+ * Arguments an op cannot run without, taken from each tool description's own
+ * `req:` list — so the contract the model is shown is the contract enforced.
+ *
+ * Without this, a missing argument reached the handler and crashed inside
+ * whatever touched it first, and the CRASH became the reply: `templates
+ * {op:"slots"}` answered "undefined is not an object (evaluating
+ * 'idOrFile.replace')", `report {op:"generate"}` answered 'The "paths[0]"
+ * property must be of type string, got undefined', and `templates {op:"batch"}`
+ * leaked a half-built path with the word undefined inside it. Sixteen of the
+ * nineteen ops across these three tools did this. None of those sentences names
+ * the argument that is missing, which is the only thing a caller needs, and a
+ * model reading V8 internals has no way back to a working call.
+ */
+const REQUIRED: Record<string, Record<string, string[]>> = {
+  templates: {
+    slots: ['template_path'],
+    inject: ['template_path'],
+    export: ['design_path'],
+    save_component: ['design_path', 'layer_ids', 'component_name', 'project_path'],
+    components: ['project_path'],
+    batch: ['project_path', 'template_id', 'slots_array'],
+  },
+  report: {
+    generate: ['project_path', 'name'],
+    customize: ['design_path', 'changes'],
+    bind_data: ['design_path', 'datasets'],
+    validate: ['design_path'],
+    export: ['design_path'],
+    formula: ['design_path'],
+    debug: ['formula'],
+  },
+  presentation: {
+    create: ['project_path', 'name'],
+    customize: ['design_path', 'changes'],
+    export: ['design_path'],
+    collab: ['design_path'],
+  },
+};
+
+/** Null when the call is well-formed; an actionable error when it is not. */
+function missingArgs(tool: string, a: Args): ToolResult | null {
+  const need = REQUIRED[tool]?.[String(a['op'] ?? '')];
+  if (!need) return null;
+  const absent = need.filter(k => {
+    const v = a[k];
+    return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+  });
+  if (absent.length === 0) return null;
+  return errResult(tool,
+    `${tool} {op:"${String(a['op'])}"} needs ${absent.map(k => `\`${k}\``).join(' + ')}`,
+    `Pass ${absent.join(', ')}. The tool description lists what each op requires.`);
+}
+
 // `shape` reaches for polygon-clipping, which is lazy-imported, so this
 // multiplexer may answer with a promise — same arrangement as manage_design.
 // The sync ops are unchanged.
@@ -85,6 +139,8 @@ export function dispatchTasks(a: Args): ToolResult {
 }
 
 export function dispatchTemplates(a: Args): ToolResult {
+  const missing = missingArgs('templates', a);
+  if (missing) return missing;
   switch (a['op']) {
     case 'list':           return engine.listTemplates(a as Parameters<typeof engine.listTemplates>[0]);
     case 'slots':          return engine.listTemplateSlots(a as Parameters<typeof engine.listTemplateSlots>[0]);
@@ -99,6 +155,8 @@ export function dispatchTemplates(a: Args): ToolResult {
 }
 
 export function dispatchReport(a: Args): ToolResult {
+  const missing = missingArgs('report', a);
+  if (missing) return missing;
   switch (a['op']) {
     case 'generate':  return engine.generateReport(a as Parameters<typeof engine.generateReport>[0]);
     case 'bind_data': return engine.bindData(a as Parameters<typeof engine.bindData>[0]);
@@ -113,6 +171,8 @@ export function dispatchReport(a: Args): ToolResult {
 }
 
 export function dispatchPresentation(a: Args): ToolResult {
+  const missing = missingArgs('presentation', a);
+  if (missing) return missing;
   switch (a['op']) {
     case 'create': return engine.createPresentation(a as Parameters<typeof engine.createPresentation>[0]);
     case 'export': return engine.exportPresentation(a as Parameters<typeof engine.exportPresentation>[0]);
