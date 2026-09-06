@@ -15,8 +15,8 @@ import { resolveDesignPath, readYAML, errResult, okResult, pOk, pInfo, buildCont
 import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 
-import { analyzeLayers, flatTextStyleFindings, type Finding } from './engine/diagnose';
-import { renderFailureFindings } from './engine/diagnose-render';
+import { type Finding } from './engine/diagnose';
+import { collectFindings } from './engine/diagnose-collect';
 import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
@@ -25,7 +25,7 @@ import { buildManifest, embedManifest, sourceHash } from './engine/export-manife
 import { exportKey, findReusable, recordExport } from './engine/export-receipt';
 
 import { renderToSVGString, renderToSVGElement, serializeSVGElement } from './engine/svg-export';
-import { resolveImageAssets, auditImageAssets } from './engine/asset-resolve';
+import { resolveImageAssets } from './engine/asset-resolve';
 import { addVectorPdfPage, type PdfDoc } from './engine/pdf-build';
 import { buildPptx, type PptxSlide } from '../export/pptx-export';
 import { extractPptxTexts } from '../export/pptx-text-extract';
@@ -454,33 +454,14 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   const spec = readYAML<DesignSpec>(dPath);
   progress.push(pOk('Loaded design', path.basename(dPath)));
-  const W = spec.document?.width ?? 1080, H = spec.document?.height ?? 1080;
-
-  const run = (layers: Layer[], pageId?: string): (Finding & { page?: string })[] =>
-    analyzeLayers(layers ?? [], W, H).map(f => (pageId ? { ...f, page: pageId } : f));
-
-  let findings: (Finding & { page?: string })[] = [];
-  if (args.page_id && spec.pages) {
-    const page = spec.pages.find(p => p.id === args.page_id);
-    if (!page) return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`, progress);
-    findings = run(page.layers ?? [], page.id);
-  } else if (spec.pages) {
-    for (const page of spec.pages) findings.push(...run(page.layers ?? [], page.id));
-  } else {
-    findings = run(spec.layers ?? []);
+  if (args.page_id && spec.pages && !spec.pages.some(p => p.id === args.page_id)) {
+    return errResult(op, `Page not found: ${args.page_id}`, `Pages: ${spec.pages.map(p => p.id).join(', ')}`, progress);
   }
 
-  // Image audit — unresolvable srcs (would blank in exports) + distortion/upscale.
-  findings.push(...auditImageAssets(spec, dPath, args.project_path));
-
-  // Styling written at layer level that the renderer ignores (see diagnose.ts).
-  findings.push(...flatTextStyleFindings(spec));
-
-  // Ask the RENDERER whether every layer draws. Each check above reasons about
-  // the spec and can pass while a layer throws on the way to the canvas — which
-  // is how a group holding two text layers under the wrong key was reported as
-  // "No problems" while rendering as an empty ⚠ box.
-  if (!args.page_id) findings.push(...renderFailureFindings(spec));
+  // One composition of the checks, shared with seal_design — see
+  // engine/diagnose-collect.ts for why the gate needs the same answer.
+  const findings: (Finding & { page?: string })[] =
+    collectFindings(spec, dPath, args.project_path, args.page_id);
 
   // Mark geometry — only for designs shaped like an identity mark. Measuring a
   // nine-page carousel at six raster sizes would cost seconds and say nothing.
@@ -516,7 +497,11 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   return okResult(op, {
     ok: errors.length === 0, summary,
     counts: { errors: errors.length, warnings: warnings.length, suggestions: suggestions.length },
+    // `counts` is the truth; this list is capped to keep the reply small. Say so
+    // when it is — reading the array and believing it complete under-counted a
+    // 109-error design as 40, which is exactly the mistake to make it impossible.
     findings: findings.slice(0, 40),
+    ...(findings.length > 40 ? { findings_truncated: findings.length - 40 } : {}),
     ...(mark ? { mark } : {}),
     progress, context,
   });

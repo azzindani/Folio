@@ -9,6 +9,7 @@ import type { ProgressItem } from './types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 
 import { buildEditorLink } from './engine/editor-link';
+import { errorFindings } from './engine/diagnose-collect';
 import { scopesWithLayer, lockedAncestorOf, lockedError, removeDeep } from './engine/layer-lookup';
 
 import type { NextAction } from './types';
@@ -241,7 +242,22 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   if (swept.placed) progress.push(pInfo(`Placed ${swept.placed} positionless layer(s)`, 'flowed into a centered column'));
   if (swept.bgFilled) progress.push(pInfo(`Filled ${swept.bgFilled} empty background(s)`, 'transparent bg → solid from text polarity'));
   if (swept.reflowed) progress.push(pInfo(`Reflowed ${swept.reflowed} overlapping layer(s)`, 'measured text → no overprint'));
+  if (swept.snapped) progress.push(pInfo(`Snapped ${swept.snapped} layer(s) back inside the canvas`, 'the reflow had pushed them past the edge'));
   if (swept.relit) progress.push(pInfo(`Re-lit ${swept.relit} low-contrast layer(s)`, 'dark-on-dark / pale-on-pale → legible'));
+  // Ask the diagnosis what is still wrong, AFTER the rescue sweep has had its
+  // go. Sealing does not depend on the answer: `off_canvas` is often something a
+  // blind model cannot fix, and refusing would strand it holding a design it
+  // cannot finish — pass 17's rule about not "fixing" a load-bearing
+  // inconsistency blind. What must change is the CLAIM. Until now seal answered
+  // `status: sealed, remaining: 0` and "give the user this link EXACTLY as
+  // written" about a design its own diagnose_design had just called broken, and
+  // 7 of the 276 designs on the server are sealed that way — one with 38 clipped
+  // layers.
+  const unresolved = errorFindings(spec, dPath, args.project_path);
+  if (unresolved.length) {
+    progress.push(pWarn(`Sealed with ${unresolved.length} unresolved error(s)`,
+      unresolved.slice(0, 3).map(f => f.message).join(' · ')));
+  }
   spec._mode = 'complete';
   if (spec.meta.generation) spec.meta.generation.status = 'complete';
   spec.meta.modified = new Date().toISOString().split('T')[0];
@@ -271,12 +287,26 @@ export function sealDesign(args: { design_path: string; project_path?: string })
   progress.push(pOk('Editor link', link.short_url ?? link.open_url));
   // Hand the SHORT link to the user — a small model mangles the long tokenized
   // URL (truncates / re-encodes it). share_url is ~40 chars and copy-safe.
-  const next_action: NextAction = { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: `Export with export_design. To open or share the design, give the user this link EXACTLY as written (do not retype or re-encode it): ${link.short_url ?? link.open_url}` };
+  // A design with unresolved errors must not be handed on as if it were clean —
+  // the harm is the SHARE, so point at the fix instead of at the link.
+  const next_action: NextAction = unresolved.length
+    ? { tool: 'diagnose_design', params: { design_path: dPath }, remaining: unresolved.length,
+        hint: `Sealed, but ${unresolved.length} error(s) remain and the design will render with them — do NOT share the link yet. diagnose_design lists each with its fix; edit_layer, then seal again. First: ${unresolved[0]?.message ?? ''}` }
+    : { tool: 'export_design', params: { design_path: dPath, format: 'svg' }, remaining: 0, hint: `Export with export_design. To open or share the design, give the user this link EXACTLY as written (do not retype or re-encode it): ${link.short_url ?? link.open_url}` };
   const context = buildContext(op, `Sealed design "${spec.meta.name}"`, [
     { type: 'design', path: dPath, role: 'sealed' },
   ]);
   const handover = buildHandover('SEAL', { design_path: dPath }, { type: spec.meta.type });
-  return okResult(op, { status: 'sealed', pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0, open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url, next_action, progress, context, handover, _attachments: [link.attachment] }, bak);
+  return okResult(op, {
+    status: unresolved.length ? 'sealed_with_errors' : 'sealed',
+    pages: spec.pages?.length ?? 0, layers: spec.layers?.length ?? 0,
+    ...(unresolved.length ? {
+      unresolved: unresolved.slice(0, 20).map(f => ({ code: f.code, layer_id: f.layer_id, page: f.page, message: f.message, fix: f.fix })),
+      unresolved_count: unresolved.length,
+    } : {}),
+    open_url: link.open_url, share_url: link.short_url, editor_url: link.editor_url,
+    next_action, progress, context, handover, _attachments: [link.attachment],
+  }, bak);
 }
 
 // Known layer types — kept in sync with LayerType in src/schema/types.ts.

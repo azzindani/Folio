@@ -45,7 +45,13 @@ describe('self-heal — spatial correctness', () => {
 
     const r = healDesign({ design_path: p }) as unknown as Rec;
     expect(r['errors_after']).toBe(0);
-    expect((r['fixed'] as string[]).join(' ')).toMatch(/pulled "lost" back onto the canvas/);
+    // Asserts the OUTCOME, not which internal pass got there first. The rescue
+    // chain gained an off-canvas snap-back (seal's reflow could push a layer
+    // clean off the page and nothing pulled it in), so it now usually lands
+    // before healStrayLayers — same repair, and heal still reports it.
+    expect((r['fixed'] as string[]).join(' ')).toMatch(/onto the canvas/);
+    const after = (read(p).layers ?? []).find(l => l.id === 'lost') as unknown as Rec;
+    expect(Number(after['y'])).toBeLessThan(1350);
   });
 
   it('raises sub-legible text to the 14px floor', () => {
