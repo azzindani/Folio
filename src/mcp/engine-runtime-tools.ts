@@ -120,18 +120,45 @@ export type PathTok =
 // silently resolved to nothing — and patch_design still reported success. Both
 // forms are now first-class.
 
+/**
+ * Keys that reach OUT of the document and into the JavaScript object graph.
+ *
+ * `patch_design` takes a dot path straight from the model, and the walker
+ * followed `__proto__` like any other key: the selector
+ * `layers[0].__proto__.polluted` descended to Object.prototype and assigned
+ * there, so a single tool call set a property on EVERY object in the running
+ * server — proven by a probe watching `({}).polluted` flip from undefined to
+ * the supplied value. Nothing appeared in the design file, because nothing was
+ * written to it, and the call reported one field successfully patched.
+ *
+ * Rejected at the tokenizer so both the setter and every reader built on it are
+ * covered by one guard, and so the whole path fails rather than silently
+ * resolving to something the caller did not name.
+ */
+const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
 export function tokenizePath(dotPath: string): PathTok[] {
   const toks: PathTok[] = [];
   for (const seg of dotPath.split('.')) {
     const m = seg.match(/^([^[\]]*)((?:\[[^\]]+\])*)$/);
     if (!m) return [];
-    if (m[1]) toks.push({ kind: 'key', key: m[1] });
+    if (m[1]) {
+      if (UNSAFE_KEYS.has(m[1])) return [];
+      toks.push({ kind: 'key', key: m[1] });
+    }
     for (const acc of m[2].match(/\[[^\]]+\]/g) ?? []) {
       const inner = acc.slice(1, -1);
       const eq = inner.indexOf('=');
-      if (eq >= 0) toks.push({ kind: 'filter', k: inner.slice(0, eq), v: inner.slice(eq + 1) });
-      else if (/^\d+$/.test(inner)) toks.push({ kind: 'index', i: Number(inner) });
-      else toks.push({ kind: 'key', key: inner });
+      if (eq >= 0) {
+        // A filter key is compared, never followed — but it is still read off
+        // every element, so it gets the same guard rather than an exception.
+        if (UNSAFE_KEYS.has(inner.slice(0, eq))) return [];
+        toks.push({ kind: 'filter', k: inner.slice(0, eq), v: inner.slice(eq + 1) });
+      } else if (/^\d+$/.test(inner)) toks.push({ kind: 'index', i: Number(inner) });
+      else {
+        if (UNSAFE_KEYS.has(inner)) return [];
+        toks.push({ kind: 'key', key: inner });
+      }
     }
   }
   return toks;
