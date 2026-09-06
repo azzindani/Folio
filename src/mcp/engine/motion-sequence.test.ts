@@ -231,3 +231,28 @@ describe('animation(op:frame)', () => {
     expect(typeof pose?.['stroke_dashoffset']).toBe('number');
   });
 });
+
+describe('a step written with layer_id (singular)', () => {
+  // op:track takes `layer_id`; op:sequence took only `layer_ids`, and an
+  // unrecognised key meant "no ids", which means the WHOLE PAGE. Live: one step
+  // aimed at "editorial_1_title" animated all seven layers of the preset and
+  // reported success.
+  it('targets that layer, not every layer on the page', () => {
+    const p = flat();
+    const r = sequenceMotion({ design_path: p, steps: [
+      { preset: 'rise', layer_id: 'title' },
+    ] } as never) as Record<string, unknown>;
+    expect(r['success'], JSON.stringify(r)).toBe(true);
+    const steps = r['steps'] as Array<{ layers: string[] }>;
+    expect(steps[0]?.layers).toEqual(['title']);
+  });
+
+  it('still lets a step omit ids on purpose — that means everything', () => {
+    const p = flat();
+    const r = sequenceMotion({ design_path: p, steps: [
+      { preset: 'fade_out' },
+    ] } as never) as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    expect((r['steps'] as Array<{ layers: string[] }>)[0]?.layers.length).toBeGreaterThan(1);
+  });
+});
