@@ -15,6 +15,10 @@ import type { ToolResult, ProgressItem, NextAction } from './types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, writeRaw, errResult, okResult, pOk, pWarn, pInfo, buildContext, buildHandover } from './engine/utils';
 import { resolveThemeColors } from './engine-layer-predicates';
 import { expandShorthandLayers } from './shorthand-parser';
+import { honorPosterRatio } from './poster-ratio';
+import { isFullBleedContentPreset } from './engine-finalize-presets';
+import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
+import { themeSpecOf as resolveThemeSpec } from './engine-finalize-pages';
 import { resetPresetFitReports, drainPresetFitReports } from './preset-fit';
 import {
   SPEC_FIELD, SPEC_ENV_FIELD, collectAuthoredSpecs, findSpecLayer,
@@ -33,6 +37,46 @@ function surfaces(spec: DesignSpec): { pageId?: string; layers: Layer[] }[] {
 // ── get_spec ────────────────────────────────────────────────
 
 /** Read back the specs the design was authored from — the sparse view. */
+
+/**
+ * Re-expansion has to land in the same PAGE CONTEXT as the original.
+ *
+ * add_layers expands a preset and THEN fits it to the page (honorPosterRatio,
+ * for a poster on a deliberate standard ratio) and re-lights its text
+ * (fixInvisibleText, fixCapsTracking). patch_spec re-expanded through the same
+ * expander and skipped all of it, so a preset authored WITHOUT an explicit box
+ * — which is how the guide teaches it — came back wrong in two ways.
+ *
+ * Measured live on a 1080x1350 poster, editing ONE field of a `sections`
+ * preset: the container and its backgrounds rebuilt at 972px, so the bottom 378
+ * rows (28% of the page) rendered BLACK where they had been #FAF5EC; and the
+ * accent came back raw at #F28C28 (orange on cream) where the engine had
+ * already darkened it to #613810 for contrast, with the ALL-CAPS tracking gone.
+ *
+ * Runs over the WHOLE surface, not the rebuilt layer alone — that distinction
+ * matters: given only the group, fixInvisibleText cannot see what is behind the
+ * text and re-lit it WHITE on a cream page.
+ */
+function finalizeAfterRespec(layers: Layer[], design: DesignSpec): void {
+  const doc = design.document;
+  for (const l of layers) {
+    if (!isFullBleedContentPreset(l, doc.width, doc.height)) continue;
+    let clone: Layer | null = null;
+    try { clone = JSON.parse(JSON.stringify(l)) as Layer; } catch { clone = null; }
+    if (!clone) continue;
+    const fit = honorPosterRatio(clone, [], doc.width, doc.height);
+    // Keep the fit only when it lands on the canvas the design ALREADY has.
+    // add_layers would additionally grow the document to contain overflow; an
+    // edit to one field must not silently resize the user's page, so an
+    // overflowing rebuild is left alone for diagnose to report.
+    if (fit && fit.width === doc.width && fit.height === doc.height) {
+      Object.assign(l as unknown as Record<string, unknown>, clone as unknown as Record<string, unknown>);
+    }
+  }
+  fixInvisibleText(layers, doc.width, doc.height, resolveThemeSpec(design));
+  fixCapsTracking(layers);
+}
+
 export function getDesignSpec(args: { design_path: string; page_id?: string; layer_id?: string; project_path?: string }): ToolResult {
   const op = 'get_spec';
   const progress: ProgressItem[] = [];
@@ -239,6 +283,7 @@ export function patchDesignSpec(args: {
   if (!replaceLayer(surface.layers, args.layer_id, rebuilt)) {
     return errResult(op, `Could not replace layer "${args.layer_id}" after re-expansion.`, 'Re-read the design with manage_design {op:"get_spec"} and retry.', progress);
   }
+  if (!design.pages) finalizeAfterRespec(surface.layers, design);
   design.meta.modified = new Date().toISOString().split('T')[0];
   writeYAML(dPath, design);
 
