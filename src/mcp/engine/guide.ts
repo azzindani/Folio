@@ -486,6 +486,29 @@ a:{label}, b:{label}, rows:[{label,a,b}]  (or a:{label,points:[…]}, b:{label,p
       {label:"Updates", a:"Day-one, 5+ yrs", b:"Varies by maker"},
       {label:"Customization", a:"Limited", b:"Deep"}]}
 
+The four presets recommended above that DON'T take blocks — they take \`items\`,
+and sending \`blocks\` to them renders the masthead and drops every section:
+  {type:"newsletter", pos:[0,0,1080,1350], title:"The Cargo Brief",
+    subtitle:"Volume, yield and capacity", byline:"Staff writer", date:"March 2026",
+    intro:"The lead paragraph, set in the full-width panel under the masthead.",
+    items:[{title:"Volume", desc:"Tonnage rose 8.4%…", bullets:["Transpacific led"]},
+           {title:"Yield",  desc:"Average yield fell 3.1%…", wide:true}],
+    footer:"Subscribe at the desk"}
+  {type:"mindmap",      center:"Remote work", items:[{title:"Async", desc:"…"}, …],
+                        layout:"spokes"|"chain"}
+  {type:"value_list",   title:"How we work", items:[{title:"Ship small", desc:"…"}, …]}
+  {type:"ribbon_cards", title:"7 habits",    items:[{title:"Sleep", desc:"…"}, …]}
+
+Alias → the preset whose fields it uses (same engine, same field names):
+  bulletin · digest              → newsletter   (items)
+  infographic · document · report_poster → sections (blocks)
+  flyer · hero                   → event        (details)
+  metric · big_number            → stat         (stat, caption)
+  plans · tiers                  → pricing      (plans)
+  compare · comparison · vs      → versus       (a, b, rows)
+  steps · checklist              → list         (items)
+  roadmap · history · milestones → timeline     (items)
+
 RICH BACKGROUNDS — bg_style (works on sections/editorial/stat/event/feature_grid/split/timeline/pricing/versus): the engine composes a
 layered, collision-proof background BEHIND the content so you never hand-place decor. Combine
 tokens with "+". Pass palette:[…] to color mesh/marble AND to make a gradient multi-hue. Keep
