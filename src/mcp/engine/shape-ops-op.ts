@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, buildContext, buildHandover, collectLayerIds, freeLayerId } from './utils';
 import { blendPaths, outlineStroke, offsetPath } from '../../engine/path-ops';
 import { flattenPath } from '../../animation/motion-path';
 import { resolveScope, commitScope } from './motion';
@@ -153,6 +153,9 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
   }
 
   const made: Layer[] = [];
+  // Names are claimed against what the page already holds, so running the same
+  // op twice appends `_2` instead of a second layer with the same id.
+  const taken = collectLayerIds(scoped.scope);
   let note = '';
   if (args.shape_op === 'blend') {
     const steps = Math.max(1, Math.min(Math.trunc(args.steps ?? 3), 24));
@@ -163,7 +166,7 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
         + 'supported — rebuild the curve with C or Q.');
     }
     const base = styleOf(targets[0] as Layer);
-    shapes.forEach((d, i) => made.push(pathLayer(base, `${ids[0]}_blend_${i + 1}`, d)));
+    shapes.forEach((d, i) => made.push(pathLayer(base, freeLayerId(taken, `${ids[0]}_blend_${i + 1}`), d)));
     note = `${steps} in-between shape(s). The two originals are untouched — a blend is the shapes BETWEEN them.`;
   } else if (args.shape_op === 'outline_stroke') {
     const src = targets[0] as Layer;
@@ -180,7 +183,7 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
     // what made this render as nothing.
     made.push(pathLayer(
       { ...styleOf(src), stroke: undefined, stroke_width: undefined, fill: sk.color ?? '#000000' },
-      `${ids[0]}_outlined`, d,
+      freeLayerId(taken, `${ids[0]}_outlined`), d,
     ));
     note = `The ${w}px stroke is now a filled shape covering the same ink, so it scales as artwork rather than as a stroke.`;
   } else {
@@ -191,7 +194,7 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
       return errResult(op, `Could not offset that path by ${delta}`,
         'Shrinking can consume a shape entirely, and an unwalkable path (elliptical arcs) cannot be offset at all.');
     }
-    made.push(pathLayer(styleOf(targets[0] as Layer), `${ids[0]}_offset`, d));
+    made.push(pathLayer(styleOf(targets[0] as Layer), freeLayerId(taken, `${ids[0]}_offset`), d));
     note = `${delta > 0 ? 'Grown' : 'Shrunk'} by ${Math.abs(delta)}px, as a new layer — the original is untouched.`;
   }
 

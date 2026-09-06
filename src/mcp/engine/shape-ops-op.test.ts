@@ -135,3 +135,27 @@ describe('op:shape on a carousel — same refusal as split_text and update', () 
     expect(ok.success, JSON.stringify(ok)).toBe(true);
   });
 });
+
+describe('repeat invocations must not collide', () => {
+  // Running an op twice named both results `sq_offset`. Duplicate ids are not
+  // cosmetic: on the live server `update sq_offset` then patched BOTH layers
+  // and `remove word_c1` deleted BOTH. Found by calling the same op twice.
+  const idsOf = (): string[] => (read().layers as Layer[]).map(l => String((l as { id?: unknown }).id));
+
+  it('appends a suffix instead of reusing a taken id', async () => {
+    await shapeOp({ design_path: dPath, shape_op: 'offset', layer_ids: ['sq'], delta: 20 });
+    await shapeOp({ design_path: dPath, shape_op: 'offset', layer_ids: ['sq'], delta: 20 });
+    const ids = idsOf();
+    expect(ids).toContain('sq_offset');
+    expect(ids).toContain('sq_offset_2');
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('keeps the whole batch of a repeated blend unique', async () => {
+    await shapeOp({ design_path: dPath, shape_op: 'blend', layer_ids: ['sq', 'tri'], steps: 2 });
+    await shapeOp({ design_path: dPath, shape_op: 'blend', layer_ids: ['sq', 'tri'], steps: 2 });
+    const ids = idsOf();
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.filter(i => i.startsWith('sq_blend')).length).toBe(4);
+  });
+});

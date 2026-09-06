@@ -110,6 +110,12 @@ export function reflowToCanvas(design: DesignSpec, W: number, H: number): Reflow
       // horizontally); a canvas whose ASPECT changed also needs the vertical
       // offset, or the content sits against the top edge.
       if (dy) shiftY(l, dy);
+      // A SCALED preset keeps its spec, and the spec still described the box it
+      // was authored at. patch_spec rebuilds from the spec, so editing a preset
+      // after a resize resurrected yesterday's coordinates — a 1520-wide stat
+      // reappearing on a 1080 canvas, 640px off the edge, reported as success.
+      // The spec has to describe the design as it now IS, not as it was typed.
+      syncSpecPos(l);
       out.scaled++;
     }
   }
@@ -117,6 +123,24 @@ export function reflowToCanvas(design: DesignSpec, W: number, H: number): Reflow
   design.document.width = W;
   design.document.height = H;
   return out;
+}
+
+/**
+ * Point a scaled layer's stored spec at the box it now occupies.
+ *
+ * Only `pos` is touched: everything else in the spec is authored intent, which
+ * a resize does not change. Nested specs are synced too, so a preset inside a
+ * `columns` container is corrected along with its parent.
+ */
+function syncSpecPos(layer: Layer): void {
+  const o = layer as unknown as Record<string, unknown>;
+  const spec = o[SPEC_FIELD] as Record<string, unknown> | undefined;
+  if (spec) {
+    const box = ['x', 'y', 'width', 'height'].map(k => o[k]);
+    if (box.every(v => typeof v === 'number')) spec['pos'] = box as number[];
+  }
+  const kids = o['layers'];
+  if (Array.isArray(kids)) for (const c of kids as Layer[]) syncSpecPos(c);
 }
 
 /** Move a subtree down by dy (absolute child coordinates, as everywhere here). */

@@ -419,3 +419,37 @@ export function okResult(
 
   return r;
 }
+
+// ── Generated layer ids ─────────────────────────────────────
+//
+// Ops that CREATE layers (shape, split_text) named their output from the source
+// — `sq_offset`, `word_c1` — and never checked whether that name was taken. Run
+// the same op twice and the design carried two layers with one id, which is not
+// a cosmetic problem: `update` then patches BOTH and `remove` deletes BOTH, so a
+// model asking to change one layer silently changes two. Verified on a live
+// design — one offset repeated, then `remove word_c1` took away two layers.
+
+/** Every layer id in a tree, group children included. */
+export function collectLayerIds(layers: unknown[], into = new Set<string>()): Set<string> {
+  for (const l of layers) {
+    if (!l || typeof l !== 'object') continue;
+    const o = l as Record<string, unknown>;
+    if (typeof o['id'] === 'string' && o['id']) into.add(o['id']);
+    const kids = o['layers'];
+    if (Array.isArray(kids)) collectLayerIds(kids, into);
+  }
+  return into;
+}
+
+/**
+ * `base` if it is free, else `base_2`, `base_3`, … — and the chosen name is
+ * added to `taken`, so a batch of new layers cannot collide with each other
+ * either.
+ */
+export function freeLayerId(taken: Set<string>, base: string): string {
+  let id = base;
+  let n = 2;
+  while (taken.has(id)) id = `${base}_${n++}`;
+  taken.add(id);
+  return id;
+}

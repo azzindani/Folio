@@ -142,3 +142,16 @@ describe('split_text on a carousel — the ambiguity `update` already refuses', 
     expect(ids('page_2')).not.toContain('head');
   });
 });
+
+describe('splitting the same layer twice', () => {
+  it('does not mint a second layer with an id already in use', () => {
+    // keep_source leaves the source in place, so a second split is reachable —
+    // and reusing head_c1 meant a later `remove head_c1` deleted two layers.
+    splitText({ design_path: dPath, layer_id: 'head', keep_source: true });
+    splitText({ design_path: dPath, layer_id: 'head', keep_source: true });
+    const ids = layers().map(l => String(l['id']));
+    expect(new Set(ids).size, ids.join(',')).toBe(ids.length);
+    expect(ids).toContain('head_c1');
+    expect(ids).toContain('head_c1_2');
+  });
+});
