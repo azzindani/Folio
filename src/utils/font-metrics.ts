@@ -137,8 +137,35 @@ export function metricsForFamily(family: string, dirs: string[]): FontMetrics | 
   return found;
 }
 
+interface SegmenterLike { segment(s: string): Iterable<{ segment: string }> }
+
 /**
- * Cumulative x offsets for each character, in px, plus the total width.
+ * Split into GRAPHEME CLUSTERS — what a reader calls a character.
+ *
+ * `[...text]` iterates code points, which is not the same thing and breaks on
+ * everything interesting: a decomposed "é" is e + a combining acute, so the
+ * accent became a layer of its own with nothing to sit on; the family emoji
+ * 👨‍👩‍👧 is three people joined by two zero-width joiners, so it shattered into
+ * three separate figures plus two invisible layers; a 🇬🇧 flag is two regional
+ * indicators, so it came out as two letter-blocks. Intl.Segmenter knows the
+ * real rules; the code-point fallback only runs where it is unavailable.
+ */
+export function graphemes(text: string): string[] {
+  const S = (Intl as unknown as { Segmenter?: new (l?: string, o?: { granularity: string }) => SegmenterLike }).Segmenter;
+  if (S) {
+    try {
+      return [...new S(undefined, { granularity: 'grapheme' }).segment(text)].map(s => s.segment);
+    } catch { /* fall through to code points */ }
+  }
+  return [...text];
+}
+
+/**
+ * Cumulative x offsets for each grapheme, in px, plus the total width.
+ *
+ * A cluster's advance is the sum of its code points' advances — exact for the
+ * ordinary one-code-point case, and the right approximation for a cluster the
+ * font draws as one glyph.
  *
  * Falls back to a uniform ratio when the family has no readable metrics — the
  * caller is told which happened, because "the reveal drifts" and "the font is
@@ -146,16 +173,19 @@ export function metricsForFamily(family: string, dirs: string[]): FontMetrics | 
  */
 export function charOffsets(
   text: string, fontSize: number, m: FontMetrics | null, fallbackRatio = 0.54,
-): { offsets: number[]; total: number; exact: boolean } {
+): { offsets: number[]; total: number; exact: boolean; units: string[] } {
+  const units = graphemes(text);
   const offsets: number[] = [];
   let x = 0;
   let exact = m !== null;
-  for (const ch of text) {
+  for (const g of units) {
     offsets.push(x);
-    const cp = ch.codePointAt(0);
-    const adv = m && cp !== undefined ? m.advance(cp) : undefined;
-    if (adv === undefined) { exact = false; x += fontSize * fallbackRatio; }
-    else x += (adv / (m as FontMetrics).unitsPerEm) * fontSize;
+    for (const ch of g) {
+      const cp = ch.codePointAt(0);
+      const adv = m && cp !== undefined ? m.advance(cp) : undefined;
+      if (adv === undefined) { exact = false; x += fontSize * fallbackRatio; }
+      else x += (adv / (m as FontMetrics).unitsPerEm) * fontSize;
+    }
   }
-  return { offsets, total: x, exact };
+  return { offsets, total: x, exact, units };
 }

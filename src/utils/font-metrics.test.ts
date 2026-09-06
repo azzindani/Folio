@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseFontMetrics, metricsForFamily, charOffsets } from './font-metrics';
+import { parseFontMetrics, metricsForFamily, charOffsets, graphemes } from './font-metrics';
 
 const FONTS = ['dist/fonts', 'public/fonts'].map(d => path.resolve(d)).filter(d => fs.existsSync(d));
 
@@ -60,6 +60,37 @@ describe('charOffsets', () => {
   });
 
   it('is empty for empty text', () => {
-    expect(charOffsets('', 20, null)).toEqual({ offsets: [], total: 0, exact: false });
+    expect(charOffsets('', 20, null)).toEqual({ offsets: [], total: 0, exact: false, units: [] });
+  });
+});
+
+describe('graphemes — clusters, not code points', () => {
+  it('keeps a decomposed accent attached to its letter', () => {
+    // "café" is 5 code points but 4 characters; splitting by code point
+    // gave the combining acute a layer of its own with nothing to sit on.
+    expect(graphemes('café')).toEqual(['c', 'a', 'f', 'é']);
+  });
+
+  it('keeps a ZWJ emoji sequence in one piece', () => {
+    // 👨‍👩‍👧 is three people joined by two zero-width joiners — 5 code points
+    // that shattered into 3 figures plus 2 invisible layers.
+    expect(graphemes('x\u{1F468}‍\u{1F469}‍\u{1F467}y')).toHaveLength(3);
+  });
+
+  it('keeps a regional-indicator flag in one piece', () => {
+    expect(graphemes('\u{1F1EC}\u{1F1E7}')).toEqual(['\u{1F1EC}\u{1F1E7}']);
+  });
+
+  it('is unchanged for plain ASCII', () => {
+    expect(graphemes('Hi there')).toEqual(['H', 'i', ' ', 't', 'h', 'e', 'r', 'e']);
+  });
+
+  it('offsets are keyed by grapheme, and a cluster sums its parts', () => {
+    const r = charOffsets('café', 40, null);
+    expect(r.units).toEqual(['c', 'a', 'f', 'é']);
+    expect(r.offsets).toHaveLength(4);
+    // The last cluster is two code points, so it is twice a plain one's width
+    // under the fallback ratio — the run stays as wide as the text really is.
+    expect(r.total - (r.offsets[3] as number)).toBeCloseTo(40 * 0.54 * 2, 5);
   });
 });

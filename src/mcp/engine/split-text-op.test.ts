@@ -178,3 +178,45 @@ describe('a char split is a reveal, so it emits no blank layers', () => {
     expect((xs[2] as number) - (xs[1] as number)).toBeGreaterThan((xs[1] as number) - (xs[0] as number));
   });
 });
+
+describe('splitting text that is not plain ASCII', () => {
+  const setText = (v: string): void => {
+    const ls = layers();
+    (ls.find(l => l['id'] === 'head') as Record<string, unknown>)['content'] = { type: 'plain', value: v };
+    write(ls);
+  };
+
+  it('does not tear a ZWJ emoji into its parts', () => {
+    setText('a\u{1F468}‍\u{1F469}‍\u{1F467}b');
+    const r = splitText({ design_path: dPath, layer_id: 'head' }) as Record<string, unknown>;
+    // 3 pieces, not 7: the family stays one figure and the joiners get no
+    // layers of their own.
+    expect(r['count']).toBe(3);
+    const vals = layers().filter(l => String(l['id']).startsWith('head_c'))
+      .map(l => (l['content'] as { value: string }).value);
+    expect(vals[1]).toBe('\u{1F468}‍\u{1F469}‍\u{1F467}');
+  });
+
+  it('keeps a combining accent on its letter', () => {
+    setText('café');
+    const r = splitText({ design_path: dPath, layer_id: 'head' }) as Record<string, unknown>;
+    expect(r['count']).toBe(4);
+    const vals = layers().filter(l => String(l['id']).startsWith('head_c'))
+      .map(l => (l['content'] as { value: string }).value);
+    expect(vals[3]).toBe('é');
+  });
+
+  it('splits CJK one character per layer', () => {
+    setText('設計エンジン');
+    expect((splitText({ design_path: dPath, layer_id: 'head' }) as Record<string, unknown>)['count']).toBe(6);
+  });
+
+  it('word mode groups clusters without re-scanning the raw string', () => {
+    setText('áb cd');
+    const r = splitText({ design_path: dPath, layer_id: 'head', by: 'word' }) as Record<string, unknown>;
+    expect(r['count']).toBe(2);
+    const vals = layers().filter(l => String(l['id']).startsWith('head_w'))
+      .map(l => (l['content'] as { value: string }).value);
+    expect(vals).toEqual(['áb', 'cd']);
+  });
+});

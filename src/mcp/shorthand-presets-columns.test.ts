@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { columnWidths } from './shorthand-presets-columns';
+import { columnWidths, buildColumns } from './shorthand-presets-columns';
 import { expandShorthandLayers } from './shorthand-expand';
 import { flattenRelativeGroups } from './engine-finalize-geom';
 
@@ -139,5 +139,41 @@ describe('a preset placed off the origin keeps its coordinates', () => {
     } as never;
     flattenRelativeGroups([hand]);
     expect((hand as unknown as { layers: Box[] }).layers[0]?.x).toBe(100);
+  });
+});
+
+describe('degenerate gap and pad stay inside the box', () => {
+  // The real expander, so children come back with resolved x/y/width/height.
+  const build = (sh: Record<string, unknown>): Record<string, unknown> =>
+    buildColumns(sh as never, 'c', 0,
+      kids => expandShorthandLayers(kids.map(k => ({ ...(k as object), type: 'rect', fill: '#111' }) as never)),
+    ) as unknown as Record<string, unknown>;
+
+  const kidsOf = (g: Record<string, unknown>): Record<string, unknown>[] =>
+    (g['layers'] as Record<string, unknown>[]) ?? [];
+
+  it('clamps a gap wider than the box instead of exiling a column', () => {
+    // gap 9999 in a 400px box gave column one width 0 and put column two at
+    // x=10099 — outside its own parent, on a 1080 canvas, silently.
+    const g = build({ pos: [100, 500, 400, 200], gap: 9999, cols: [{}, {}] });
+    const kids = kidsOf(g);
+    for (const k of kids) {
+      expect(k['width'] as number).toBeGreaterThan(0);
+      expect(k['x'] as number).toBeGreaterThanOrEqual(100);
+      expect((k['x'] as number) + (k['width'] as number)).toBeLessThanOrEqual(500);
+    }
+  });
+
+  it('clamps a pad that would swallow the box', () => {
+    const g = build({ pos: [100, 980, 300, 80], pad: 500, cols: [{}] });
+    const k = kidsOf(g)[0] as Record<string, unknown>;
+    expect(k['y'] as number).toBeGreaterThanOrEqual(980);
+    expect((k['y'] as number) + (k['height'] as number)).toBeLessThanOrEqual(1060);
+    expect(k['height'] as number).toBeGreaterThan(1);
+  });
+
+  it('leaves an ordinary gap alone', () => {
+    const g = build({ pos: [0, 0, 1000, 400], gap: 60, cols: [{}, {}] });
+    expect(kidsOf(g).map(k => k['width'])).toEqual([470, 470]);
   });
 });

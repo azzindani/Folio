@@ -45,21 +45,37 @@ function findLayer(scope: Layer[], id: string): Layer | null {
   return null;
 }
 
-interface Piece { text: string; start: number }
+/** `start`/`end` index the GRAPHEME array, which is what `offsets` is keyed by. */
+interface Piece { text: string; start: number; end: number }
 
-/** Split into characters or words, remembering where each piece starts. */
-function pieces(text: string, by: 'char' | 'word'): Piece[] {
-  // Spaces are dropped: a blank text layer draws nothing, but it is still a
-  // real layer, and the point of a char split is a staggered reveal — so nine
-  // spaces in a sentence became nine stagger slots that revealed nothing, a
-  // visible stutter in the rhythm. `start` stays the index into the ORIGINAL
-  // string, so every surviving glyph keeps its measured position and the run
-  // still reads as the sentence it was.
-  if (by === 'char') return [...text].map((c, i) => ({ text: c, start: i })).filter(p => p.text.trim() !== '');
+/**
+ * Group graphemes into the pieces to be animated.
+ *
+ * Works over clusters, never the raw string: splitting by code point put the
+ * combining accent of a decomposed "é" on its own layer and tore 👨‍👩‍👧 into
+ * three people and two invisible joiners.
+ *
+ * Spaces are dropped in char mode: a blank text layer draws nothing, but it is
+ * still a real layer, and the point of a char split is a staggered reveal — so
+ * nine spaces in a sentence became nine slots that revealed nothing. The gap
+ * survives as POSITION, since offsets are measured across the whole run.
+ */
+function pieces(units: string[], by: 'char' | 'word'): Piece[] {
+  if (by === 'char') {
+    return units.map((c, i) => ({ text: c, start: i, end: i + 1 })).filter(p => p.text.trim() !== '');
+  }
   const out: Piece[] = [];
-  const re = /\S+/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) out.push({ text: m[0], start: m.index });
+  let cur = '';
+  let start = 0;
+  units.forEach((u, i) => {
+    if (u.trim() === '') {
+      if (cur) { out.push({ text: cur, start, end: i }); cur = ''; }
+    } else {
+      if (!cur) start = i;
+      cur += u;
+    }
+  });
+  if (cur) out.push({ text: cur, start, end: units.length });
   return out;
 }
 
@@ -107,8 +123,8 @@ export function splitText(args: SplitTextArgs): ToolResult {
   const dirs = [fontsDir(), projectFontsDir(args.project_path ?? path.dirname(path.dirname(dPath))) ?? ''].filter(Boolean);
   const metrics = family ? metricsForFamily(family, dirs) : null;
 
-  const { offsets, total, exact } = charOffsets(text, fontSize, metrics);
-  const parts = pieces(text, args.by === 'word' ? 'word' : 'char');
+  const { offsets, total, exact, units } = charOffsets(text, fontSize, metrics);
+  const parts = pieces(units, args.by === 'word' ? 'word' : 'char');
   if (parts.length === 0) return errResult(op, 'Nothing to split', 'The layer holds only whitespace.');
 
   const x0 = num(o['x']) ?? 0;
@@ -125,8 +141,7 @@ export function splitText(args: SplitTextArgs): ToolResult {
   const taken = collectLayerIds(scoped.scope);
   const made: Layer[] = parts.map((p, i) => {
     const startX = x0 + shift + (offsets[p.start] ?? 0);
-    const endIdx = p.start + [...p.text].length;
-    const w = (endIdx < offsets.length ? (offsets[endIdx] as number) : total) - (offsets[p.start] ?? 0);
+    const w = (p.end < offsets.length ? (offsets[p.end] as number) : total) - (offsets[p.start] ?? 0);
     return {
       ...o,
       id: freeLayerId(taken, `${id}_${args.by === 'word' ? 'w' : 'c'}${i + 1}`),
