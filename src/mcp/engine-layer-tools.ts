@@ -15,14 +15,14 @@ import { lintAiSlop } from './engine/ai-slop-lint';
 
 import { buildEditorLink } from './engine/editor-link';
 
-import { expandShorthandLayers, coerceShorthandLayers, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, snapWrongFlowPresets, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
+import { expandShorthandLayers, coerceShorthandLayers, coerceLayerArray, recoverStringifiedPreset, unwrapBareContainers, fillBleedPresetDims, fillFlowPresetsToPage, snapWrongFlowPresets, demoteCoveringBackdrops, lockCarouselCanvas, stampDeckSeed, hasPresetType, diagnoseLayers, diagnoseShorthandKeys } from './shorthand-parser';
 import type { ShorthandLayer } from './shorthand-parser';
 import { resetPresetFitReports, drainPresetFitReports, stampFixedCanvas } from './preset-fit';
 import { readTask, writeTask, markPageDone, buildNextAction } from './engine/task';
 import { honorPosterRatio } from './poster-ratio';
 import type { NextAction } from './types';
 
-import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, normalizeGroupChildren, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
+import { collectLayerIds, dedupeIncomingIds, normalizeReportAliases, normalizeTextAliases, normalizeGroupChildren, ensureLayerZ, coerceLayerScalars, flattenRelativeGroups, snapOffCanvasContent, ensureTopMargin, dropCollidingMotifs, rasterizeChartsDeep, trimTrailingDeadBand } from './engine-finalize-geom';
 import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackDistinctFullBleedPresets, dropThrashDuplicates, dedupOverlappingDuplicates } from './engine-finalize-presets';
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
@@ -67,6 +67,17 @@ export function addLayers(args: {
       'layers_shorthand looks like a preset but is MALFORMED JSON (it parsed into no valid preset layer — likely a stray brace or a truncation).',
       'Resend it as a clean JSON array — one preset object, e.g. layers_shorthand=[{type:"sections", title:"…", subtitle:"…", bg_style:"…", blocks:[{type:"stats", items:[{value:"30%", label:"…"}]}, {type:"heading_text", heading:"…", text:"…"}, {type:"callout", label:"Key Takeaway", text:"…"}]}]. Do NOT double-nest blocks ([[…]]) and close every brace.');
   }
+  // `layers` is TYPED Layer[], so nothing ever checked it. A string slipped
+  // through the emptiness guard below ("nope".length === 4) and became the
+  // layer array itself, and the model was answered `layers.filter is not a
+  // function`. Coerce leniently (a JSON/YAML-encoded array is the common
+  // miss) or say plainly that it cannot be layers.
+  const coercedLayers = coerceLayerArray(args.layers as unknown);
+  if (coercedLayers === null) {
+    return errResult(op, `layers must be an ARRAY of layer objects — got ${typeof args.layers}.`,
+      'Send layers as a JSON array, e.g. layers=[{"id":"bg","type":"rect","x":0,"y":0,"width":1080,"height":1080,"fill":"#FAF5EC","z":0}]. For preset shorthand use layers_shorthand instead.', progress);
+  }
+  args.layers = coercedLayers as Layer[];
   if (!args.layers?.length && !shorthand.length) return errResult(op, 'No layers provided', 'Pass layers or a layers_shorthand array/object.');
   // A weak model sometimes packs the ENTIRE preset as a STRINGIFIED JSON blob
   // inside a verbose text layer (`content.value`) instead of passing it as
@@ -167,6 +178,15 @@ export function addLayers(args: {
   for (const n of fitNotes) progress.push(pWarn('Preset compressed to fit its box', n));
   progress.push(pInfo(`Expanding ${incoming.length} layer(s)`, shorthand.length ? 'via shorthand' : 'verbose'));
 
+  // Strip a stray `- null` FIRST. Its own comment has always said "before any
+  // pass reads `.id` off it", but it sat third in this chain, so every pass
+  // added above it inherited the hazard: `layers:[null]` came back as
+  // "null is not an object (evaluating 'o.children')" — a raw engine error
+  // where an actionable one belongs. Order the guard ahead of the passes it
+  // guards, so the next one added is safe without knowing to be.
+  const nulled = stripNullLayers(incoming);
+  if (nulled) progress.push(pInfo(`Dropped ${nulled} null layer(s)`, 'editor-crash guard — a null layer breaks loadDesign'));
+
   // Fold a group's `children:[…]` alias to `layers:[…]` before ANY pass that
   // recurses — all of them descend `layers`, so an aliased group reads as empty
   // the whole way down and renders as a ⚠ placeholder.
@@ -181,10 +201,17 @@ export function addLayers(args: {
   const textAliased = normalizeTextAliases(incoming);
   if (textAliased) progress.push(pInfo(`Normalized ${textAliased} verbose text alias(es)`, 'text:/size:/color: → canonical content + style'));
 
-  // Strip a stray `- null` before any pass reads `.id` off it (crashes loadDesign
-  // + poisons the file — suite-030); then flow positionless poster layers.
-  const nulled = stripNullLayers(incoming);
-  if (nulled) progress.push(pInfo(`Dropped ${nulled} null layer(s)`, 'editor-crash guard — a null layer breaks loadDesign'));
+  // Every layer needs a numeric z: the schema requires it, export_design's
+  // validator enforces it, and NOTHING else did — so a verbose layer without
+  // one previewed and sealed happily and then could not be exported at all.
+  const zoned = ensureLayerZ(incoming);
+  if (zoned) progress.push(pInfo(`Assigned z to ${zoned} layer(s)`, 'missing/!numeric z → 0 (what the renderer already assumed)'));
+
+  // id sent as a number is written as a number and then unreachable (every
+  // lookup compares === against a string); text content sent as a bare scalar
+  // makes the renderer throw and draw a ⚠ placeholder.
+  const coerced = coerceLayerScalars(incoming);
+  if (coerced) progress.push(pInfo(`Coerced scalars on ${coerced} layer(s)`, 'numeric id → string, scalar text content → {type,value}'));
   // Recover a layer-array serialized into ONE text layer (else it renders as a raw JSON blob — suite-033/084).
   const rec = recoverEmbeddedLayers(incoming);
   if (rec.recovered || rec.dropped) progress.push(pInfo(`Recovered ${rec.recovered}, dropped ${rec.dropped} JSON-in-text layer(s)`, 'a stringified layer array was rendering as literal text'));
@@ -572,9 +599,15 @@ export function appendPage(args: {
     }
   }
   resetPresetFitReports();
+  // Same door as add_layers — `layers` is typed but never checked (see there).
+  const pageLayerArg = coerceLayerArray(args.layers as unknown);
+  if (pageLayerArg === null) {
+    return errResult(op, `layers must be an ARRAY of layer objects — got ${typeof args.layers}.`,
+      'Send layers as a JSON array, or use layers_shorthand for preset shorthand.', progress);
+  }
   const layers: Layer[] = pageShorthand.length
     ? expandShorthandLayers(pageShorthand)
-    : (args.layers ?? []);
+    : (pageLayerArg as Layer[]);
   const pageFitNotes = drainPresetFitReports().map(r => r.note);
   for (const n of pageFitNotes) progress.push(pWarn('Preset compressed to fit its box', n));
   normalizeGroupChildren(layers); // group children: alias → layers: (every recursing pass reads `layers`)
