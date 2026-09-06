@@ -3,6 +3,7 @@ import type { Layer, Fill } from '../schema/types';
 
 import { hexToRgb, luminance } from './engine/reference';
 import { pickMoodVariant, proceduralBgStyle, type Mood } from './engine/mood-bank';
+import { wrapToWidth } from '../utils/text-width';
 
 export function asHex(v: unknown): string | null {
   return typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : null;
@@ -520,30 +521,19 @@ export function textTypography(sh: ShorthandLayer): Record<string, unknown> {
   return out;
 }
 
-// Estimate wrapped-text height (matches the renderer's ~0.54×fontSize char width).
-
+// Estimate wrapped-text height by asking the SAME wrapper the renderer uses.
+//
+// This is the estimator the presets and finalize passes reach for (10 modules);
+// engine/text-measure.ts has another for diagnose, and the renderer has the
+// wrapping itself. Three copies of one rule. This one had already been taught
+// half the lesson — its comment explained that a char-count estimate
+// under-counts lines "so greedily pack words exactly as the renderer does" —
+// but re-implementing the renderer is how copies drift. It still charged every
+// UTF-16 code unit the same advance, so a 66-glyph CJK paragraph counted as 2
+// lines instead of 5, and the finalize pass SHRANK the model's box to match.
 export function estTextHeight(text: string, fontSize: number, widthPx: number, lh = 1.3, charFactor = 0.54): number {
-  const cpl = Math.max(1, Math.floor(widthPx / (fontSize * charFactor)));
-  // WORD-AWARE greedy wrap — the renderer breaks at word boundaries, so a
-  // char-count estimate (ceil(len/cpl)) under-counts lines whenever words don't
-  // pack evenly (e.g. a 4-word ALL-CAPS title at 1 word/line). Under-counting a
-  // title's lines pushes whatever sits below INTO it — a collision diagnose
-  // can't see (it's inside the preset group). Greedily pack words exactly as the
-  // renderer does so the reserved height matches what's actually drawn.
-  let lines = 0;
-  for (const seg of text.split('\n')) {
-    const words = seg.split(/\s+/).filter(Boolean);
-    if (!words.length) { lines += 1; continue; }
-    let cur = 0, segLines = 1;
-    for (const w of words) {
-      if (cur === 0) cur = w.length;
-      else if (cur + 1 + w.length <= cpl) { cur += 1 + w.length; continue; }
-      else { segLines += 1; cur = w.length; }
-      if (w.length > cpl) { segLines += Math.ceil(w.length / cpl) - 1; cur = w.length % cpl || cpl; }
-    }
-    lines += segLines;
-  }
-  return Math.ceil(lines * fontSize * lh);
+  const lines = wrapToWidth(text, Math.max(1, widthPx), fontSize, charFactor).length;
+  return Math.ceil(Math.max(1, lines) * fontSize * lh);
 }
 // Per-font average glyph advance (÷ fontSize). Condensed display faces (Anton,
 // Bebas) pack tight; monospace runs wide; serif/sans sit in the middle.

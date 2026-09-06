@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { wrapPlainText } from './layer-renderers-shared';
 import { estTextHeight } from '../mcp/engine/text-measure';
+import { estTextHeight as estTextHeightPresets } from '../mcp/shorthand-helpers';
 import { textEms, isWideChar } from '../utils/text-width';
 
 // The engine's stated job is spatial correctness, and every layout decision
@@ -111,4 +112,28 @@ describe('the estimator agrees with the renderer', () => {
     const rendered = wrapPlainText(CJK, 700, 32).length;
     expect(estTextHeight(CJK, 32, 700, 1.3)).toBeGreaterThanOrEqual(rendered * 32 * 1.3 - 1);
   });
+});
+
+describe('all THREE copies of the rule agree', () => {
+  // There were three: the renderer wraps, engine/text-measure estimates for
+  // diagnose, and shorthand-helpers estimates for the presets and finalize
+  // passes (10 modules). Fixing the first two left the third untouched — the
+  // live CJK box still came back 84px after deploying, because the pass that
+  // sets the height imports estTextHeight from shorthand-parser, not from
+  // engine/text-measure. Same name, same job, different file.
+  const cases: Array<[string, string, number, number]> = [
+    ['latin', LATIN, 700, 32],
+    ['cjk', CJK, 700, 32],
+    ['cjk narrow', CJK, 300, 24],
+    ['long url', 'https://example.com/a/very/long/path/without/any/spaces/in/it', 280, 18],
+  ];
+  for (const [name, text, width, size] of cases) {
+    it(`${name}: renderer, diagnose and presets report the same lines`, () => {
+      const rendered = wrapPlainText(text, width, size).length;
+      const viaDiagnose = Math.round(estTextHeight(text, size, width, 1.3) / (size * 1.3));
+      const viaPresets = Math.round(estTextHeightPresets(text, size, width, 1.3, 0.52) / (size * 1.3));
+      expect(viaDiagnose, 'diagnose disagrees with the renderer').toBe(rendered);
+      expect(viaPresets, 'the preset estimator disagrees with the renderer').toBe(rendered);
+    });
+  }
 });
