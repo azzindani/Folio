@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseFontMetrics, metricsForFamily, charOffsets, graphemes } from './font-metrics';
+import { parseFontMetrics, metricsForFamily, charOffsets, graphemes, letterSpacingPx } from './font-metrics';
 
 const FONTS = ['dist/fonts', 'public/fonts'].map(d => path.resolve(d)).filter(d => fs.existsSync(d));
 
@@ -92,5 +92,34 @@ describe('graphemes — clusters, not code points', () => {
     // The last cluster is two code points, so it is twice a plain one's width
     // under the fallback ratio — the run stays as wide as the text really is.
     expect(r.total - (r.offsets[3] as number)).toBeCloseTo(40 * 0.54 * 2, 5);
+  });
+});
+
+describe('tracking is part of the measurement', () => {
+  // A split headline landed progressively LEFT of where the unsplit one drew:
+  // the renderer tracks the run, charOffsets did not. The engine adds ~0.06em
+  // to every ALL-CAPS text by itself, so the drift hit the commonest thing
+  // anyone splits. Found by pixel-diffing the two renders — 71px short over a
+  // 634px run, which is exactly 12 gaps of the 6px tracking that was applied.
+  it('advances the pen after every glyph', () => {
+    const plain = charOffsets('ABC', 100, null);
+    const tracked = charOffsets('ABC', 100, null, 0.54, 10);
+    expect(tracked.offsets[1]).toBe((plain.offsets[1] as number) + 10);
+    expect(tracked.offsets[2]).toBe((plain.offsets[2] as number) + 20);
+    expect(tracked.total).toBe(plain.total + 30);
+  });
+
+  it('defaults to no tracking, so untracked text is unchanged', () => {
+    expect(charOffsets('ABC', 100, null).offsets)
+      .toEqual(charOffsets('ABC', 100, null, 0.54, 0).offsets);
+  });
+
+  it('reads the units a model actually writes', () => {
+    expect(letterSpacingPx(6, 96)).toBe(6);
+    expect(letterSpacingPx('0.06em', 100)).toBeCloseTo(6, 6);
+    expect(letterSpacingPx('4px', 100)).toBe(4);
+    expect(letterSpacingPx('5%', 100)).toBeCloseTo(5, 6);
+    expect(letterSpacingPx(undefined, 100)).toBe(0);
+    expect(letterSpacingPx('wide', 100)).toBe(0);
   });
 });

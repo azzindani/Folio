@@ -173,6 +173,7 @@ export function graphemes(text: string): string[] {
  */
 export function charOffsets(
   text: string, fontSize: number, m: FontMetrics | null, fallbackRatio = 0.54,
+  letterSpacing = 0,
 ): { offsets: number[]; total: number; exact: boolean; units: string[] } {
   const units = graphemes(text);
   const offsets: number[] = [];
@@ -186,6 +187,27 @@ export function charOffsets(
       if (adv === undefined) { exact = false; x += fontSize * fallbackRatio; }
       else x += (adv / (m as FontMetrics).unitsPerEm) * fontSize;
     }
+    // Tracking advances the pen after every glyph, exactly as the renderer does.
+    // Leaving it out made a split headline land progressively LEFT of where the
+    // unsplit one drew — and the engine adds ~0.06em to every ALL-CAPS text by
+    // itself, so the drift hit the commonest thing anyone splits. Measured on a
+    // 96px "MEASURE TWICE": the run came out 71px short over 634px.
+    x += letterSpacing;
   }
   return { offsets, total: x, exact, units };
+}
+
+/**
+ * Tracking in px. Accepts the number the schema stores, and the `em`/`px`
+ * strings a model reaches for.
+ */
+export function letterSpacingPx(v: unknown, fontSize: number): number {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  if (typeof v !== 'string') return 0;
+  const s = v.trim();
+  const n = parseFloat(s);
+  if (!Number.isFinite(n)) return 0;
+  if (s.endsWith('em')) return n * fontSize;
+  if (s.endsWith('%')) return (n / 100) * fontSize;
+  return n;                                     // bare number or "…px"
 }
