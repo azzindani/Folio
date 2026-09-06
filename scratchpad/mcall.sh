@@ -25,6 +25,14 @@ if "error" in d:
 t = json.loads(d["result"]["content"][0]["text"])
 drop = {"context", "handover", "progress", "token_estimate", "backup", "next_action"}
 kept = {k: v for k, v in t.items() if k not in drop}
+# Progress carries the WARNINGS — "N layer(s) were NOT added", "sealed with
+# unresolved errors". Dropping the whole array hid a real fault behind a
+# cheerful success line and cost a round of "the engine ignored my warning".
+# Keep anything that is not a plain ok.
+warns = [p for p in (t.get("progress") or []) if p.get("status") != "ok"]
+for p in warns:
+    print("  %-6s %s%s" % (p.get("status", "?"), p.get("message", ""),
+                           " — " + p["detail"] if p.get("detail") else ""))
 # Findings are the point of diagnose/heal — never let them fall off the end.
 fs = kept.pop("findings", None)
 if fs is not None:
