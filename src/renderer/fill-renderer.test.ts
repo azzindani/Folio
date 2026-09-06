@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { applyFill, resolveColorOrGradient } from './fill-renderer';
-import { createSVGRoot, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot } from './svg-utils';
 import type {
   SolidFill, LinearGradientFill, RadialGradientFill, ConicGradientFill,
   NoiseFill, MultiFill, Fill,
@@ -19,7 +19,6 @@ function getDefs(svg: SVGSVGElement) {
 }
 
 beforeEach(() => {
-  resetDefIdCounter();
 });
 
 describe('applyFill — solid', () => {
@@ -58,7 +57,7 @@ describe('applyFill — linear gradient', () => {
       ],
     };
     const result = applyFill(fill, svg, { width: 200, height: 200 });
-    expect(result.fill).toMatch(/^url\(#lg-\d+\)$/);
+    expect(result.fill).toMatch(/^url\(#lg-[0-9a-z]+\)$/);
 
     const defs = getDefs(svg);
     expect(defs).toBeTruthy();
@@ -105,7 +104,7 @@ describe('applyFill — radial gradient', () => {
       ],
     };
     const result = applyFill(fill, svg, { width: 200, height: 200 });
-    expect(result.fill).toMatch(/^url\(#rg-\d+\)$/);
+    expect(result.fill).toMatch(/^url\(#rg-[0-9a-z]+\)$/);
 
     const defs = getDefs(svg);
     const gradient = defs!.querySelector('radialGradient');
@@ -132,7 +131,7 @@ describe('applyFill — conic gradient', () => {
       ],
     };
     const result = applyFill(fill, svg, { width: 200, height: 200 });
-    expect(result.fill).toMatch(/^url\(#cg-\d+\)$/);
+    expect(result.fill).toMatch(/^url\(#cg-[0-9a-z]+\)$/);
 
     const defs = getDefs(svg);
     // Conic is approximated as radialGradient
@@ -180,7 +179,7 @@ describe('applyFill — pattern', () => {
       { type: 'pattern', pattern: 'halftone', fg: '#1A1A1A', bg: '#FAF5EC' } as Fill,
       svg, { width: 200, height: 200 },
     );
-    expect(result.fill).toMatch(/^url\(#pat-\d+\)$/);
+    expect(result.fill).toMatch(/^url\(#pat-[0-9a-z]+\)$/);
     const pat = getDefs(svg)!.querySelector('pattern');
     expect(pat).toBeTruthy();
     expect(pat!.querySelector('rect')!.getAttribute('fill')).toBe('#FAF5EC');
@@ -195,7 +194,7 @@ describe('applyFill — image', () => {
       { type: 'image', src: 'https://x/t.png', mode: 'tile', tile_size: 64 } as Fill,
       svg, { width: 200, height: 200 },
     );
-    expect(result.fill).toMatch(/^url\(#img-\d+\)$/);
+    expect(result.fill).toMatch(/^url\(#img-[0-9a-z]+\)$/);
     const pat = getDefs(svg)!.querySelector('pattern')!;
     expect(pat.getAttribute('width')).toBe('64');
     const img = pat.querySelector('image')!;
@@ -223,7 +222,7 @@ describe('applyFill — multi', () => {
       ],
     };
     const result = applyFill(fill, svg, { width: 200, height: 200 });
-    expect(result.fill).toMatch(/^url\(#lg-\d+\)$/);
+    expect(result.fill).toMatch(/^url\(#lg-[0-9a-z]+\)$/);
     // Noise rect should be included as extra element
     expect(result.extraElements).toBeTruthy();
     expect(result.extraElements!.length).toBeGreaterThanOrEqual(1);
@@ -261,7 +260,10 @@ describe('applyFill — none', () => {
 });
 
 describe('applyFill — def ID uniqueness', () => {
-  it('each fill call produces a unique ID', () => {
+  it('the same fill resolves to the same def, written once', () => {
+    // Was: "each fill call produces a unique ID", asserting a counter. Two
+    // cards sharing an accent gradient defined it twice and, worse, made the
+    // whole document's bytes depend on render order.
     const svg = makeSVG();
     const fill: LinearGradientFill = {
       type: 'linear',
@@ -270,7 +272,20 @@ describe('applyFill — def ID uniqueness', () => {
     };
     const r1 = applyFill(fill, svg, { width: 200, height: 200 });
     const r2 = applyFill(fill, svg, { width: 200, height: 200 });
+    expect(r1.fill).toBe(r2.fill);
+    expect(svg.querySelectorAll('linearGradient').length).toBe(1);
+  });
+
+  it('a different fill still gets its own def', () => {
+    const svg = makeSVG();
+    const base: LinearGradientFill = {
+      type: 'linear', angle: 45,
+      stops: [{ color: '#F00', position: 0 }, { color: '#00F', position: 100 }],
+    };
+    const r1 = applyFill(base, svg, { width: 200, height: 200 });
+    const r2 = applyFill({ ...base, angle: 90 }, svg, { width: 200, height: 200 });
     expect(r1.fill).not.toBe(r2.fill);
+    expect(svg.querySelectorAll('linearGradient').length).toBe(2);
   });
 });
 

@@ -1,9 +1,9 @@
 /**
  * Unit tests for pattern-renderer.ts — generative SVG <pattern> fills.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderPattern } from './pattern-renderer';
-import { createSVGRoot, getOrCreateDefs, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot, getOrCreateDefs } from './svg-utils';
 import type { PatternName } from '../schema/types';
 
 const ALL: PatternName[] = [
@@ -13,8 +13,6 @@ const ALL: PatternName[] = [
   'halftone', 'blueprint', 'carbon', 'houndstooth', 'brick',
   'newsprint', 'riso', 'engraving', 'mezzotint',
 ];
-
-beforeEach(() => resetDefIdCounter());
 
 function setup() {
   const svg = createSVGRoot(200, 200);
@@ -26,7 +24,7 @@ describe('renderPattern — every preset', () => {
     for (const pattern of ALL) {
       const { svg, defs } = setup();
       const ref = renderPattern({ type: 'pattern', pattern, fg: '#222222' }, defs);
-      expect(ref).toMatch(/^url\(#pat-\d+\)$/);
+      expect(ref).toMatch(/^url\(#pat-[0-9a-z]+\)$/);
       const pat = svg.querySelector('pattern');
       expect(pat, `pattern ${pattern}`).toBeTruthy();
       expect(pat!.getAttribute('patternUnits')).toBe('userSpaceOnUse');
@@ -58,7 +56,6 @@ describe('renderPattern — options', () => {
     const { svg: a, defs: da } = setup();
     renderPattern({ type: 'pattern', pattern: 'grid', fg: '#111', scale: 1 }, da);
     const base = Number(a.querySelector('pattern')!.getAttribute('width'));
-    resetDefIdCounter();
     const { svg: b, defs: db } = setup();
     renderPattern({ type: 'pattern', pattern: 'grid', fg: '#111', scale: 2 }, db);
     const scaled = Number(b.querySelector('pattern')!.getAttribute('width'));
@@ -83,10 +80,22 @@ describe('renderPattern — options', () => {
     expect(svg.querySelector('pattern > g')!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('produces unique ids across calls', () => {
+  // This used to assert the two references DIFFERED — a counter incrementing.
+  // That is non-determinism stated as a contract: the same design exported to
+  // three different files. Ids now come from the pattern's content.
+  it('two identical patterns share one def', () => {
     const { defs } = setup();
     const r1 = renderPattern({ type: 'pattern', pattern: 'dots', fg: '#111' }, defs);
     const r2 = renderPattern({ type: 'pattern', pattern: 'dots', fg: '#111' }, defs);
+    expect(r1).toBe(r2);
+    expect(defs.querySelectorAll('pattern').length, 'the duplicate def should not be written').toBe(1);
+  });
+
+  it('two DIFFERENT patterns still get their own defs', () => {
+    const { defs } = setup();
+    const r1 = renderPattern({ type: 'pattern', pattern: 'dots', fg: '#111' }, defs);
+    const r2 = renderPattern({ type: 'pattern', pattern: 'dots', fg: '#EEE' }, defs);
     expect(r1).not.toBe(r2);
+    expect(defs.querySelectorAll('pattern').length).toBe(2);
   });
 });

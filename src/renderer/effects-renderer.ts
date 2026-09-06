@@ -1,5 +1,5 @@
 import type { Effects, Duotone } from '../schema/types';
-import { createSVGElement, uniqueDefId, getOrCreateDefs } from './svg-utils';
+import { createSVGElement, defIdFor, appendDefOnce, getOrCreateDefs } from './svg-utils';
 
 // sRGB luminance weights — route color → grayscale for duotone/grain.
 const LUMA = '0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0';
@@ -112,13 +112,13 @@ export function applyEffects(
   }
 
   if (prims.length > 0) {
-    const filterId = uniqueDefId('fx');
+    const filterId = defIdFor('fx', effects);
     const filter = createSVGElement('filter', {
       id: filterId, x: '-40%', y: '-40%', width: '180%', height: '180%',
       'color-interpolation-filters': 'sRGB',
     });
     for (const prim of prims) filter.appendChild(prim);
-    defs.appendChild(filter);
+    appendDefOnce(defs, filter);
     element.setAttribute('filter', `url(#${filterId})`);
   }
 

@@ -1,6 +1,6 @@
 // Folio renderer — SVG-native shape/text/image/icon renderers (verbatim).
 import type { RectLayer, CircleLayer, PathLayer, PolygonLayer, LineLayer, TextLayer, ImageLayer, IconLayer } from '../schema/types';
-import { createSVGElement, getOrCreateDefs, uniqueDefId } from './svg-utils';
+import { createSVGElement, getOrCreateDefs, defIdFor, appendDefOnce } from './svg-utils';
 import { resolveAssetUrl } from './render-context';
 
 import { applyFill, resolveColorOrGradient, type FillResult } from './fill-renderer';
@@ -307,8 +307,8 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
 
     if (style.text_path?.d) {
       // Curve a single line of text along an arbitrary SVG path.
-      const pathId = uniqueDefId('textpath');
-      getOrCreateDefs(svg).appendChild(createSVGElement('path', { id: pathId, d: style.text_path.d, fill: 'none' }));
+      const pathId = defIdFor('textpath', style.text_path.d);
+      appendDefOnce(getOrCreateDefs(svg), createSVGElement('path', { id: pathId, d: style.text_path.d, fill: 'none' }));
       const textEl = createSVGElement('text');
       textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
       textEl.setAttribute('font-size', String(fontSize));
@@ -453,10 +453,11 @@ export function renderImage(layer: ImageLayer, svg: SVGSVGElement): SVGElement {
   const g = createSVGElement('g', {});
   let clipRef: string | undefined;
   if (layer.mask) {
-    const cid = uniqueDefId('imgclip');
+    const maskD = imageMaskPath(layer.mask, x, y, w, h, layer.id);
+    const cid = defIdFor('imgclip', maskD);
     const clip = createSVGElement('clipPath', { id: cid });
-    clip.appendChild(createSVGElement('path', { d: imageMaskPath(layer.mask, x, y, w, h, layer.id) }));
-    getOrCreateDefs(svg).appendChild(clip);
+    clip.appendChild(createSVGElement('path', { d: maskD }));
+    appendDefOnce(getOrCreateDefs(svg), clip);
     clipRef = `url(#${cid})`;
   }
   const inner = createSVGElement('g', clipRef ? { 'clip-path': clipRef } : {});

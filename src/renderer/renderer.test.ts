@@ -112,7 +112,7 @@ describe('renderLayer — rect', () => {
         stops: [{ color: '#000', position: 0 }, { color: '#FFF', position: 100 }],
       },
     } as RectLayer, svg);
-    expect(el.getAttribute('fill')).toMatch(/^url\(#lg-\d+\)$/);
+    expect(el.getAttribute('fill')).toMatch(/^url\(#lg-[0-9a-z]+\)$/);
     const defs = svg.querySelector('defs');
     expect(defs?.querySelector('linearGradient')).toBeTruthy();
     expect(defs?.querySelectorAll('stop').length).toBe(2);
@@ -126,7 +126,7 @@ describe('renderLayer — rect', () => {
         stops: [{ color: '#000', position: 0 }, { color: '#FFF', position: 100 }],
       },
     } as RectLayer, svg);
-    expect(el.getAttribute('fill')).toMatch(/^url\(#rg-\d+\)$/);
+    expect(el.getAttribute('fill')).toMatch(/^url\(#rg-[0-9a-z]+\)$/);
     expect(svg.querySelector('radialGradient')).toBeTruthy();
   });
 
@@ -153,7 +153,7 @@ describe('renderLayer — rect', () => {
       id: 'r', type: 'rect', z: 0, x: 0, y: 0, width: 100, height: 100,
       effects: { shadows: [{ x: 0, y: 4, blur: 24, color: 'rgba(0,0,0,0.4)' }] },
     } as RectLayer, svg);
-    expect(el.getAttribute('filter')).toMatch(/^url\(#fx-\d+\)$/);
+    expect(el.getAttribute('filter')).toMatch(/^url\(#fx-[0-9a-z]+\)$/);
     expect(svg.querySelector('feDropShadow')).toBeTruthy();
   });
 

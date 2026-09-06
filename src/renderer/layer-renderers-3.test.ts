@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderRect, renderMap, renderEmbedCode, renderPopup } from './layer-renderers';
 
 // Simple render fn for group tests (avoids circular import with renderer.ts)
-import { createSVGRoot, resetDefIdCounter } from './svg-utils';
+import { createSVGRoot } from './svg-utils';
 import type { RectLayer, MapLayer, EmbedCodeLayer, PopupLayer } from '../schema/types';
 
 import { renderText } from './layer-renderers';
@@ -16,7 +16,6 @@ function makeSVG() {
 }
 
 beforeEach(() => {
-  resetDefIdCounter();
 });
 
 // ── Path ────────────────────────────────────────────────────
