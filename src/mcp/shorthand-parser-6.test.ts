@@ -239,3 +239,43 @@ describe('stroke_width — the CSS spelling, folded into the schema Stroke', () 
     expect(notes).toEqual([]);
   });
 });
+
+describe('a line drawn where the tools say it is', () => {
+  // The line case read raw sh.x/sh.width, which `pos:[x,y,w,h]` never sets — so
+  // a line authored the documented way rendered at the ORIGIN, 100px long,
+  // while `base` still carried the right box. inspect/diagnose/heal/align all
+  // read that box, so nothing could see the disagreement. Found by diffing an
+  // exported SVG against what inspect reported.
+  const one = (sh: Record<string, unknown>): Record<string, unknown> =>
+    (expandShorthandLayers([sh] as unknown as ShorthandLayer[])[0]) as unknown as Record<string, unknown>;
+
+  it('takes its endpoints from pos', () => {
+    const l = one({ id: 'ln', type: 'line', pos: [100, 800, 750, 0], stroke: '#111' });
+    expect([l['x1'], l['y1'], l['x2'], l['y2']]).toEqual([100, 800, 850, 800]);
+  });
+
+  it('agrees with the box it reports', () => {
+    const l = one({ id: 'ln', type: 'line', pos: [100, 800, 750, 0], stroke: '#111' });
+    expect(l['x1']).toBe(l['x']);
+    expect(l['y1']).toBe(l['y']);
+    expect((l['x2'] as number) - (l['x1'] as number)).toBe(l['width']);
+  });
+
+  it('still honours explicit endpoints, including a diagonal', () => {
+    const l = one({ id: 'ln', type: 'line', pos: [0, 0, 10, 10], x1: 5, y1: 6, x2: 70, y2: 80 });
+    expect([l['x1'], l['y1'], l['x2'], l['y2']]).toEqual([5, 6, 70, 80]);
+  });
+
+  it('does not tilt a rule authored as a thin box', () => {
+    // pos height is thickness, not slope — sloping it would tilt every existing
+    // rule written as pos:[x, y, w, 2].
+    const l = one({ id: 'rule', type: 'line', pos: [40, 300, 600, 2], stroke: '#111' });
+    expect(l['y1']).toBe(300);
+    expect(l['y2']).toBe(300);
+  });
+
+  it('still works from x/y/width when pos is absent', () => {
+    const l = one({ id: 'ln', type: 'line', x: 20, y: 30, width: 200, stroke: '#111' });
+    expect([l['x1'], l['y1'], l['x2'], l['y2']]).toEqual([20, 30, 220, 30]);
+  });
+});
