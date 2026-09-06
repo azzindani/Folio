@@ -7,12 +7,13 @@
 import * as engine from './engine';
 import { errResult } from './engine/utils';
 import type { ToolResult } from './types';
+import { TOOL_OPS } from './tool-ops';
 
 type Args = Record<string, unknown>;
 
-function badOp(tool: string, op: unknown, ops: string[]): ToolResult {
+function badOp(tool: string, op: unknown): ToolResult {
   return errResult(tool, `Unknown op: ${op === undefined ? '(missing)' : String(op)}`,
-    `Set op to one of: ${ops.join(', ')}.`);
+    `Set op to one of: ${(TOOL_OPS[tool] ?? []).join(', ')}.`);
 }
 
 // `shape` reaches for polygon-clipping, which is lazy-imported, so this
@@ -27,7 +28,7 @@ export function dispatchEditLayer(a: Args): ToolResult | Promise<ToolResult> {
     case 'patch_spec': return engine.patchDesignSpec(a as Parameters<typeof engine.patchDesignSpec>[0]);
     case 'shape':  return engine.shapeOp(a as unknown as Parameters<typeof engine.shapeOp>[0]);
     case 'split_text': return engine.splitText(a as unknown as Parameters<typeof engine.splitText>[0]);
-    default:       return badOp('edit_layer', a['op'], ['add', 'update', 'remove', 'align', 'patch_spec', 'shape', 'split_text']);
+    default:       return badOp('edit_layer', a['op']);
   }
 }
 
@@ -61,8 +62,7 @@ export function dispatchManageDesign(a: Args): ToolResult | Promise<ToolResult> 
     case 'lineage':      return engine.designLineage(a as Parameters<typeof engine.designLineage>[0]);
     case 'restore':      return engine.restoreDesign(a as Parameters<typeof engine.restoreDesign>[0]);
     case 'style_history': return engine.styleHistory(a as Parameters<typeof engine.styleHistory>[0]);
-    default:          return badOp('manage_design', a['op'],
-      ['list', 'inspect', 'rename', 'duplicate', 'move', 'delete', 'resume', 'browse', 'gallery', 'asset_add', 'asset_process', 'asset_list', 'asset_delete', 'asset_move', 'asset_read', 'asset_write', 'asset_search', 'asset_fetch', 'asset_promote', 'icon_search', 'get_spec', 'resize', 'tokens', 'lineage', 'restore', 'style_history']);
+    default:          return badOp('manage_design', a['op']);
   }
 }
 
@@ -71,7 +71,7 @@ export function dispatchThemes(a: Args): ToolResult {
     case 'list':  return engine.listThemes(a as Parameters<typeof engine.listThemes>[0]);
     case 'apply': return engine.applyTheme(a as Parameters<typeof engine.applyTheme>[0]);
     case 'packs': return engine.listPacks(a as Parameters<typeof engine.listPacks>[0]);
-    default:      return badOp('themes', a['op'], ['list', 'apply', 'packs']);
+    default:      return badOp('themes', a['op']);
   }
 }
 
@@ -80,7 +80,7 @@ export function dispatchTasks(a: Args): ToolResult {
     case 'list':   return engine.listTasks(a as Parameters<typeof engine.listTasks>[0]);
     case 'create': return engine.createTask(a as Parameters<typeof engine.createTask>[0]);
     case 'resume': return engine.resumeTask(a as Parameters<typeof engine.resumeTask>[0]);
-    default:       return badOp('tasks', a['op'], ['list', 'create', 'resume']);
+    default:       return badOp('tasks', a['op']);
   }
 }
 
@@ -93,8 +93,7 @@ export function dispatchTemplates(a: Args): ToolResult {
     case 'save_component': return engine.saveAsComponent(a as Parameters<typeof engine.saveAsComponent>[0]);
     case 'components':     return engine.listComponents(a as Parameters<typeof engine.listComponents>[0]);
     case 'batch':          return engine.batchCreate(a as Parameters<typeof engine.batchCreate>[0]);
-    default:               return badOp('templates', a['op'],
-      ['list', 'slots', 'inject', 'export', 'save_component', 'components', 'batch']);
+    default:               return badOp('templates', a['op']);
   }
 }
 
@@ -107,8 +106,7 @@ export function dispatchReport(a: Args): ToolResult {
     case 'formula':   return engine.setFormulaContext(a as Parameters<typeof engine.setFormulaContext>[0]);
     case 'debug':     return engine.debugFormula(a as Parameters<typeof engine.debugFormula>[0]);
     case 'customize': return engine.customizeReport(a as Parameters<typeof engine.customizeReport>[0]);
-    default:          return badOp('report', a['op'],
-      ['generate', 'customize', 'bind_data', 'validate', 'export', 'formula', 'debug']);
+    default:          return badOp('report', a['op']);
   }
 }
 
@@ -119,7 +117,7 @@ export function dispatchPresentation(a: Args): ToolResult {
     case 'remote': return engine.setupRemotePresenter(a as Parameters<typeof engine.setupRemotePresenter>[0]);
     case 'collab': return engine.setupCollab(a as Parameters<typeof engine.setupCollab>[0]);
     case 'customize': return engine.customizePresentation(a as Parameters<typeof engine.customizePresentation>[0]);
-    default:       return badOp('presentation', a['op'], ['create', 'customize', 'export', 'remote', 'collab']);
+    default:       return badOp('presentation', a['op']);
   }
 }
 
@@ -135,6 +133,6 @@ export function dispatchAnimation(a: Args): ToolResult {
     case 'frame':    return engine.renderFrame(a as Parameters<typeof engine.renderFrame>[0]);
     case 'motion_path': return engine.setMotionPath(a as unknown as Parameters<typeof engine.setMotionPath>[0]);
     case 'presets':  return engine.listMotionPresets();
-    default:         return badOp('animation', a['op'], ['timeline', 'keyframe', 'export', 'motion', 'motion_path', 'sequence', 'track', 'clear', 'frame', 'presets']);
+    default:         return badOp('animation', a['op']);
   }
 }

@@ -72,6 +72,41 @@ export function normalizeReportAliases(incoming: Layer[]): void {
   }
 }
 
+/** Fold a group's `children:[…]` alias into the canonical `layers:[…]`.
+ *
+ *  `children` is the word almost every scene graph uses, so a model hand-authoring
+ *  a group reaches for it — and the schema's key is `layers`. Nothing read the
+ *  alias: add_layers wrote it to disk verbatim and answered `success: true,
+ *  added: 1`, findDeep (layer-lookup) descends `layers` only so every child was
+ *  "Layer not found", inspect listed the group with no children, diagnose_design
+ *  reported zero errors, and the renderer drew a dashed `⚠ group#id` placeholder
+ *  where the content should have been. Measured live: a 2-layer group came back
+ *  as an empty box, and the reply's next_action advised calling seal_design.
+ *
+ *  Folding beats rejecting (§0.4 — support the model's own authoring), and it
+ *  must run BEFORE flattenRelativeGroups and every other pass that recurses, all
+ *  of which look for `layers`. Both keys populated is not a shape a model
+ *  actually sends; if it happens the alias is appended rather than dropped,
+ *  because losing content is the failure being fixed. Returns the count folded. */
+export function normalizeGroupChildren(incoming: Layer[]): number {
+  let n = 0;
+  const visit = (ls?: Layer[]): void => {
+    for (const l of ls ?? []) {
+      const o = l as unknown as Record<string, unknown>;
+      const alias = o['children'];
+      if ((l?.type === 'group' || l?.type === 'auto_layout') && Array.isArray(alias) && alias.length) {
+        const own = Array.isArray(o['layers']) ? (o['layers'] as Layer[]) : [];
+        o['layers'] = own.length ? [...own, ...(alias as Layer[])] : (alias as Layer[]);
+        delete o['children'];
+        n++;
+      }
+      if (Array.isArray(o['layers'])) visit(o['layers'] as Layer[]);
+    }
+  };
+  visit(incoming);
+  return n;
+}
+
 /** Fold a VERBOSE text layer's `text:"…"` alias + flat style shorthand
  *  (font/size/weight/color/lh/track) into the canonical { content:{type,value},
  *  style:{…} } the schema requires. The lenient editor renderer tolerates a bare
