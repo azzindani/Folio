@@ -57,6 +57,11 @@ const esc = (s: string): string => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<
  * WHEN as well as what — a strip of six near-identical stills is only useful
  * if you can see that five of them are after the motion has finished.
  */
+/** Mono where the renderer has one, and a family that is definitely PRESENT
+ *  last — `monospace` alone is a generic, and resvg drops text it cannot
+ *  resolve rather than substituting. DejaVu Sans ships with the image. */
+const STRIP_FONT = 'ui-monospace, monospace, DejaVu Sans';
+
 export function filmstripSVG(
   cells: Array<{ png: Buffer; t: number }>,
   cellW: number,
@@ -78,11 +83,11 @@ export function filmstripSVG(
     parts.push(
       `<rect x="${cx - 1}" y="${cy - 1}" width="${cellW + 2}" height="${cellH + 2}" fill="none" stroke="#2A2F37"/>`,
       `<image x="${cx}" y="${cy}" width="${cellW}" height="${cellH}" preserveAspectRatio="xMidYMid meet" xlink:href="data:image/png;base64,${c.png.toString('base64')}"/>`,
-      `<text x="${cx}" y="${cy + cellH + 14}" font-family="ui-monospace, monospace" font-size="11" fill="#8892A4">${esc(`${c.t}ms`)}</text>`,
+      `<text x="${cx}" y="${cy + cellH + 14}" font-family="${STRIP_FONT}" font-size="11" fill="#8892A4">${esc(`${c.t}ms`)}</text>`,
     );
   });
   parts.push(
-    `<text x="${PAD}" y="${h - 4}" font-family="ui-monospace, monospace" font-size="11" fill="#5A6270">scene ${Math.round(sceneMs)}ms · ${cells.length} poses</text>`,
+    `<text x="${PAD}" y="${h - 4}" font-family="${STRIP_FONT}" font-size="11" fill="#5A6270">scene ${Math.round(sceneMs)}ms · ${cells.length} poses</text>`,
     '</svg>',
   );
   return parts.join('');
@@ -146,7 +151,16 @@ export function previewMotion(args: PreviewArgs): ToolResult {
   }
   progress.push(pOk(`Sampled ${cells.length} poses`, `${times[0]}–${times[times.length - 1]}ms of a ${Math.round(sceneMs)}ms scene`));
 
-  const stripPng = new Resvg(filmstripSVG(cells, cellW, cellH, sceneMs), { background: '#14161A' }).render().asPng();
+  // The strip draws its OWN text — a timecode under each cell and the scene
+  // summary — so it needs a font database exactly as much as the cells above
+  // do. Without one, resvg finds no match for the generic `monospace` family
+  // and silently drops every label: the poses looked right on a developer
+  // machine and arrived unlabelled from the container, where the font set is
+  // different. A filmstrip with no timecodes is a contact sheet with no
+  // contact sheet.
+  const stripPng = new Resvg(filmstripSVG(cells, cellW, cellH, sceneMs), {
+    background: '#14161A', font: resvgFontOption(projDir),
+  }).render().asPng();
 
   const out: Record<string, unknown> = {
     design_path: dPath, scene_ms: Math.round(sceneMs), poses: cells.length,

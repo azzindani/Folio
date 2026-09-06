@@ -10,6 +10,7 @@
 // nagging a legitimately bold design (CLAUDE.md §0.4 — the look is the model's).
 
 import type { Layer } from '../../schema/types';
+import { layerText } from '../../schema/layer-text';
 import { hexToRgb, hue, saturation, type RGB } from './reference';
 
 // The Tailwind indigo/violet family — the single most common AI accent tell.
@@ -95,10 +96,9 @@ function textColor(l: Layer): string | null {
   const c = (l as { style?: { color?: unknown } }).style?.color;
   return typeof c === 'string' && c.startsWith('#') ? c : null;
 }
-function textValue(l: Layer): string {
-  const v = (l as { content?: { value?: unknown } }).content?.value;
-  return typeof v === 'string' ? v : '';
-}
+/** Every content shape — a scalar or rich-text layer is still copy, and the
+ *  slop checks below (uppercase shouting, em-dash tells) must see it. */
+const textValue = (l: Layer): string => layerText(l);
 function isUpper(l: Layer, v: string): boolean {
   if ((l as { style?: { text_transform?: string } }).style?.text_transform === 'uppercase') return true;
   const letters = v.replace(/[^A-Za-z]/g, '');

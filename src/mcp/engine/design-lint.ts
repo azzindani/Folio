@@ -7,6 +7,7 @@
 // Pure — no I/O. Reuses the color math from ./reference.
 
 import type { Layer } from '../../schema/types';
+import { layerText } from '../../schema/layer-text';
 import { hexToRgb, luminance, saturation, hue, type RGB } from './reference';
 import { findTextOverflows } from './text-measure';
 
@@ -52,10 +53,10 @@ function textColor(l: Layer): string | null {
   return typeof c === 'string' && c.startsWith('#') ? c : null;
 }
 
-function textValue(l: Layer): string {
-  const v = (l as { content?: { value?: unknown } }).content?.value;
-  return typeof v === 'string' ? v : '';
-}
+/** Every content shape, not just `{value}` — see schema/layer-text.ts. Reading
+ *  only the canonical object made this pass call a filled scalar-content layer
+ *  EMPTY, and made the contrast check below skip it entirely. */
+const textValue = (l: Layer): string => layerText(l);
 
 function fontSize(l: Layer): number | null {
   const s = (l as { style?: { font_size?: unknown } }).style?.font_size;
