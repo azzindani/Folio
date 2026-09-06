@@ -109,3 +109,81 @@ describe('deleteDesign — manifest consistency', () => {
     expect(fs.existsSync(fp)).toBe(false);
   });
 });
+
+// delete was taught to maintain the manifest; move never was. It renamed the
+// file and touched neither project.yaml, so op:list (which reads the manifest)
+// and op:browse (which scans the disk) disagreed in BOTH directions at once —
+// the source still advertising a path that resolves to nothing, the target
+// holding a design it does not list. Found by moving five real designs into a
+// new project and watching list say 0 while browse said 5.
+describe('moveDesign — manifest consistency', () => {
+  let tmp: string;
+  beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-mv-')); });
+  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
+
+  const manifestOf = (dir: string): string => fs.readFileSync(path.join(dir, 'project.yaml'), 'utf-8');
+
+  function projectWithRow(name: string, file: string, status: string): string {
+    const dir = path.join(tmp, name);
+    fs.mkdirSync(path.join(dir, 'designs'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'project.yaml'),
+      `_protocol: project/v1\nmeta:\n  name: ${name}\ndesigns:\n` +
+      `  - id: m\n    path: designs/${file}\n    type: carousel\n    status: ${status}\n`);
+    return dir;
+  }
+
+  it('deregisters at the source and registers at the target', () => {
+    const src = projectWithRow('src', 'm.design.yaml', 'draft');
+    const dst = makeProject(tmp, 'dst');
+    fs.writeFileSync(path.join(dst, 'project.yaml'), `_protocol: project/v1\nmeta:\n  name: dst\ndesigns: []\n`);
+    const fp = makeDesign(src, 'm.design.yaml', 'Mover');
+
+    const r = moveDesign({ design_path: fp, target_project: dst }) as unknown as { success: boolean; design_path: string };
+    expect(r.success).toBe(true);
+
+    expect(manifestOf(src)).not.toContain('designs/m.design.yaml');
+    expect(manifestOf(dst)).toContain('designs/m.design.yaml');
+    expect(fs.existsSync(r.design_path)).toBe(true);
+  });
+
+  it('carries the design type and status across rather than resetting them', () => {
+    const src = projectWithRow('src', 'm.design.yaml', 'final');
+    const dst = makeProject(tmp, 'dst');
+    fs.writeFileSync(path.join(dst, 'project.yaml'), `_protocol: project/v1\nmeta:\n  name: dst\ndesigns: []\n`);
+    const fp = makeDesign(src, 'm.design.yaml', 'Mover');
+
+    moveDesign({ design_path: fp, target_project: dst });
+
+    const m = manifestOf(dst);
+    expect(m).toContain('type: carousel');     // not re-registered as a fresh poster
+    expect(m).toContain('status: final');      // not reset to draft
+  });
+
+  it('registers a design that had no row at the source', () => {
+    // The five loose files this was found with were in no manifest at all.
+    const src = makeProject(tmp, 'src');
+    const dst = makeProject(tmp, 'dst');
+    const fp = makeDesign(src, 'orphan.design.yaml', 'Orphan');
+
+    moveDesign({ design_path: fp, target_project: dst });
+
+    const m = manifestOf(dst);
+    expect(m).toContain('designs/orphan.design.yaml');
+    expect(m).toContain('status: draft');      // no prior row → a sane default
+  });
+
+  it('does not add a second row when one already names that path', () => {
+    const src = makeProject(tmp, 'src');
+    const dst = projectWithRow('dst', 'm.design.yaml', 'draft');
+    makeDesign(dst, 'm.design.yaml', 'Already here');
+    const fp = makeDesign(src, 'm.design.yaml', 'Mover');
+
+    // The target already holds m.design.yaml, so the move suffixes the name;
+    // the pre-existing row must survive untouched beside the new one.
+    const r = moveDesign({ design_path: fp, target_project: dst }) as unknown as { design_path: string };
+    const m = manifestOf(dst);
+    expect(m).toContain('designs/m.design.yaml');
+    expect(m).toContain(path.basename(r.design_path));
+    expect(m.match(/- id:/g)?.length).toBe(2);
+  });
+});
