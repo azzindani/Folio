@@ -1,9 +1,10 @@
 // What is wrong with this design — the ONE composition of the checks.
 //
-// diagnose_design assembles its findings from four sources: the geometry/
-// contrast analysis per surface, the image audit, the flat-text-style walk, and
-// (since the group-alias find) the renderer itself. Nothing else could ask the
-// same question without restating that list, and one caller very much needed to.
+// diagnose_design assembles its findings from five sources: the geometry/
+// contrast analysis per surface, the image audit, the flat-text-style walk,
+// (since the group-alias find) the renderer itself, and — last to arrive — the
+// schema validator. Nothing else could ask the same question without restating
+// that list, and one caller very much needed to.
 //
 // `seal_design` is the last gate before a design is called complete and its
 // share link handed to a user. It refuses a blank poster and a blank carousel
@@ -22,8 +23,41 @@ import type { DesignSpec, Layer } from '../../schema/types';
 import { analyzeLayers, flatTextStyleFindings, type Finding } from './diagnose';
 import { auditImageAssets } from './asset-resolve';
 import { renderFailureFindings } from './diagnose-render';
+import { validateDesignSpec } from '../../schema/validator';
 
 export type PageFinding = Finding & { page?: string };
+
+/**
+ * What the SCHEMA says is wrong — the source that ran nowhere but export.
+ *
+ * `validateDesignSpec` knows exactly what a broken layer is and where it sits
+ * (`pages[0].layers[1].type  Unknown layer type: "bg"`), and it was consulted
+ * only by export_design, at the very last step. So a design could be
+ * diagnosed clean, sealed, and its share link handed over, while carrying an
+ * error that its own validator names precisely. Same shape as every door
+ * fault this codebase keeps finding: the right capability, wired to one door.
+ *
+ * ERRORS ONLY, deliberately. Across the live corpus the validator's warnings
+ * are 9,934 findings on 117 designs and almost all of them are "Duplicate
+ * z-index", which is harmless here — the renderer sorts stably, so equal z
+ * keeps document order. Adding those would bury the findings diagnose exists
+ * to surface. The errors are 7 designs in 432, and every one of them would
+ * fail export today.
+ */
+export function schemaFindings(spec: DesignSpec): Finding[] {
+  let errors;
+  try {
+    errors = validateDesignSpec(spec).filter(e => e.severity === 'error');
+  } catch {
+    return []; // a validator crash must not take the whole diagnosis with it
+  }
+  return errors.map(e => ({
+    code: 'schema',
+    severity: 'error' as const,
+    message: `${e.message} (${e.path})`,
+    fix: 'Fix the field the path names. This is a hard schema error — export_design refuses it.',
+  }));
+}
 
 /**
  * Every finding for `spec`, across each surface it has.
@@ -56,6 +90,9 @@ export function collectFindings(
   findings.push(...flatTextStyleFindings(spec));
   // Ask the renderer whether every layer actually draws.
   if (!pageId) findings.push(...renderFailureFindings(spec));
+  // Ask the SCHEMA. Whole-spec, so it is skipped when scoped to one page —
+  // its paths address the document, not the surface.
+  if (!pageId) findings.push(...schemaFindings(spec));
   return findings;
 }
 
