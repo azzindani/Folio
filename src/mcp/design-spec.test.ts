@@ -145,6 +145,27 @@ describe('get_spec / patch_spec — the round-trip through a real design', () =>
     expect(r['layers_after'] as number).toBeLessThan(r['layers_before'] as number);
   });
 
+  it('keeps a lock the model authored on the container', () => {
+    // Re-expansion replaces the WHOLE layer, so `locked` — which is not part of
+    // any spec — went with it. Measured live: locked before 1, after 0. The
+    // model sets that flag to tell the auto-rescue passes to leave a hand-placed
+    // composition alone (248 of 276 library designs do), so patching one field
+    // silently handed the composition back to the reflow it had opted out of.
+    const specLayer = (): Rec => {
+      const design = (require('js-yaml') as { load: (s: string) => { layers: Rec[] } }).load(fs.readFileSync(designPath, 'utf8'));
+      return design.layers.find(l => l['id'] === 's1') as Rec;
+    };
+    const yaml = require('js-yaml') as { load: (s: string) => Rec; dump: (o: unknown) => string };
+    const doc = yaml.load(fs.readFileSync(designPath, 'utf8')) as { layers: Rec[] };
+    (doc.layers.find(l => l['id'] === 's1') as Rec)['locked'] = true;
+    fs.writeFileSync(designPath, yaml.dump(doc));
+    expect(specLayer()['locked']).toBe(true);
+
+    patchDesignSpec({ design_path: designPath, layer_id: 's1', changes: { accent: '#123456' } });
+
+    expect(specLayer()['locked']).toBe(true);   // survived the rebuild
+  });
+
   it('dry_run reports the diff without writing', () => {
     const r = patchDesignSpec({ design_path: designPath, layer_id: 's1', changes: { title: 'Draft only' }, dry_run: true }) as unknown as Rec;
     expect(r['changed']).toEqual(['~title']);

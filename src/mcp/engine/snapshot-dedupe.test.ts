@@ -45,6 +45,20 @@ describe('a snapshot is a restore point, not a receipt', () => {
     expect(fs.readFileSync(first, 'utf8')).toBe('a: 1\n');   // the older state is still recoverable
   });
 
+  it('picks the right newest when several share a millisecond', () => {
+    // mtime is milliseconds and a small design snapshots faster than that, so
+    // ordering by it made "newest" arbitrary — and the unchanged check then
+    // compared against the wrong content and duplicated anyway. The NAME carries
+    // an ISO timestamp plus a collision counter, so it orders reliably.
+    for (const v of ['1', '2', '3', '4', '5']) {
+      fs.writeFileSync(fp, `a: ${v}\n`);
+      snapshot(fp);
+    }
+    const before = count();
+    for (let i = 0; i < 20; i++) snapshot(fp);      // file unchanged throughout
+    expect(count()).toBe(before);
+  });
+
   it('keeps real history through a burst of no-op calls', () => {
     // The live failure, in miniature: three real edits, then a dozen calls that
     // change nothing. All three restore points must survive.
