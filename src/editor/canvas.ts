@@ -4,12 +4,16 @@ import { StateManager, type EditorState } from './state';
 import { renderEntry } from '../renderer/render-entry';
 import { flowGridMetrics } from '../renderer/flow-layout';
 import { setPreviewContext } from '../renderer/render-context';
-import type { TextLayer } from '../schema/types';
+import type { TextLayer, Layer } from '../schema/types';
+import { surfaceTrails, trailsSVG } from './motion-trails';
+import { sceneDuration } from '../ui/panels/timeline-panel';
 import { composeTheme } from '../styles/compose';
 import { RULER_SIZE, measureGaps, drawArrowLine, drawLabel } from './canvas-draw';
 import { CanvasInteractions } from './canvas-interactions';
 
 export class CanvasManager extends CanvasInteractions {
+  private motionTrailsOn = false;
+
   constructor(container: HTMLElement, state: StateManager) {
     super();
     this.container = container;
@@ -181,6 +185,30 @@ export class CanvasManager extends CanvasInteractions {
     }
   }
 
+  /** Show or hide the motion trails. Off by default — a trail on a design you
+   *  are not animating is clutter. */
+  setMotionTrails(on: boolean): void {
+    this.motionTrailsOn = on;
+    this.paintMotionTrails();
+  }
+
+  motionTrailsEnabled(): boolean { return this.motionTrailsOn; }
+
+  /** Draw every animated layer's path in design coordinates, scaled with the
+   *  artwork by the overlay's own 100%×100% box. */
+  paintMotionTrails(): void {
+    if (!this.motionOverlay) return;
+    if (!this.motionTrailsOn) { this.motionOverlay.innerHTML = ''; return; }
+    const { design } = this.state.get();
+    if (!design) { this.motionOverlay.innerHTML = ''; return; }
+    const layers = this.state.getCurrentLayers() as Layer[];
+    const dur = sceneDuration(layers);
+    const trails = surfaceTrails(layers, dur);
+    this.motionOverlay.innerHTML = trails.length
+      ? trailsSVG(trails, design.document?.width ?? 1080, design.document?.height ?? 1080)
+      : '';
+  }
+
   render(): void {
     const { design, theme, palette, typePack, effectsPack } = this.state.get();
     if (!design) return;
@@ -242,6 +270,7 @@ export class CanvasManager extends CanvasInteractions {
       this.svgContainer.appendChild(svg);
     }
     this.currentSVG = svg;
+    this.paintMotionTrails();
 
     // Size viewport (flow reports grow the artboard to the computed grid height)
     this.viewport.style.width = `${renderW}px`;

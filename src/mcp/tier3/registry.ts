@@ -154,7 +154,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        op:           { type: 'string', enum: ['presets', 'sequence', 'track', 'motion', 'motion_path', 'keyframe', 'frame', 'timeline', 'clear', 'export'], description: 'Which animation action to run.' },
+        op:           { type: 'string', enum: ['presets', 'sequence', 'track', 'motion', 'motion_path', 'keyframe', 'frame', 'preview', 'timeline', 'clear', 'export'], description: 'Which animation action to run.' },
         design_path:  { type: 'string', description: 'Path to .design.yaml (every op except presets).' },
         page_id:      { type: 'string', description: 'Which page of a carousel/deck to act on (default: first).' },
         project_path: { type: 'string', description: 'Project dir — enables relative design_path.' },
@@ -173,6 +173,9 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         distance:     { type: 'number', description: 'op:motion — travel distance in px for travelling presets. Per-preset default if omitted.' },
         duration:     { type: 'number', description: 'op:motion — run length ms. op:export — total clip length ms (default: the scene length).' },
         t:            { type: 'number', description: 'op:frame — time to render, ms from scene start (default 0).' },
+        frames:       { type: 'number', description: 'op:preview — how many poses to sample across the scene (2-24, default 6).' },
+        cell:         { type: 'number', description: 'op:preview — longest edge of each filmstrip cell in px (80-480, default 260).' },
+        strip_only:   { type: 'boolean', description: 'op:preview — return only the inline filmstrip, skipping the .preview.gif file.' },
         scale:        { type: 'number', description: 'op:frame — raster scale 0.25–2 (default 1).' },
         type:         { type: 'string', enum: ['svg', 'html', 'gif', 'mp4', 'webm'], description: 'op:export — output format. svg = self-contained animated SVG. html = the same in a shareable page honoring prefers-reduced-motion. gif = in-process raster flipbook. mp4/webm need Puppeteer + ffmpeg.' },
         all_pages:    { type: 'boolean', description: 'op:export — one animated file per carousel page (`<name>-p1.gif`, …).' },

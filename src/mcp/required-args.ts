@@ -115,6 +115,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     motion_path: ['design_path'],
     keyframe: ['design_path', 'layer_id', 'keyframe'],
     frame: ['design_path'],
+    preview: ['design_path'],
     timeline: ['design_path'],
     clear: ['design_path'],
     export: ['design_path'],

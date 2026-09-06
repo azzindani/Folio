@@ -104,6 +104,9 @@ export class KeyboardManager {
       // e.key is uppercase when Shift is held without Ctrl, hence 'H' / 'V'.
       { key: 'H', shift: true, action: () => this.flipSelectedH(), description: 'Flip selection horizontally' },
       { key: 'V', shift: true, action: () => this.flipSelectedV(), description: 'Flip selection vertically' },
+      // Motion — Space plays the scene on the canvas, the way every editor does
+      // it. No-op on a design with no animation, so it never steals the key.
+      { key: ' ', action: () => this.app.motionPlayer?.toggle(), description: 'Play / pause the animation' },
       // Presentation
       { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },
       // Print

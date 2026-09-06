@@ -213,7 +213,8 @@ export class EditorApp extends EditorAppBase {
     // Timeline panel
     const timelineContainer = this.container.querySelector<HTMLElement>('.timeline-content');
     if (timelineContainer) {
-      this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state);
+      this.timelinePanel = new TimelinePanelManager(timelineContainer, this.state, this.motionPlayer);
+      this.timelinePanel.onTrailsToggle = (on: boolean) => this.canvas.setMotionTrails(on);
     }
 
     // Color scheme panel (inside colors tab)

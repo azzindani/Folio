@@ -21,6 +21,8 @@ export abstract class CanvasBase {
   protected marqueeEl: HTMLDivElement | null = null;
   // Flow-report direct-manipulation state (drag-to-reorder + span/height resize).
   protected flowOverlay!: HTMLDivElement;
+  /** Motion trails / onion skin, drawn in design coordinates. */
+  protected motionOverlay!: HTMLDivElement;
   protected flowActive = false;
   protected flowMetrics: FlowGridMetrics | null = null;
   protected flowContentHeight = 0;
@@ -46,6 +48,16 @@ export abstract class CanvasBase {
     this.flowOverlay.style.pointerEvents = 'none';
     this.flowOverlay.style.zIndex = '88';
 
+    // Motion trails sit BELOW the selection handles and above the artwork, and
+    // are never cleared by updateSelectionOverlay() — a trail that vanished on
+    // every re-render would flicker through a scrub.
+    this.motionOverlay = document.createElement('div');
+    this.motionOverlay.className = 'canvas-motion-overlay';
+    this.motionOverlay.style.position = 'absolute';
+    this.motionOverlay.style.inset = '0';
+    this.motionOverlay.style.pointerEvents = 'none';
+    this.motionOverlay.style.zIndex = '89';
+
     this.selectionOverlay = document.createElement('div');
     this.selectionOverlay.className = 'canvas-selection-overlay';
     this.selectionOverlay.style.position = 'absolute';
@@ -55,6 +67,7 @@ export abstract class CanvasBase {
 
     this.viewport.appendChild(this.svgContainer);
     this.viewport.appendChild(this.flowOverlay);
+    this.viewport.appendChild(this.motionOverlay);
     this.viewport.appendChild(this.selectionOverlay);
     this.container.appendChild(this.viewport);
     this.buildRulers();

@@ -30,6 +30,7 @@ export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, e
 export { applyMotion } from './engine/motion';
 export { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './engine/motion-sequence';
 export { renderFrame } from './engine/motion-frame';
+export { previewMotion } from './engine/motion-preview';
 export { setMotionPath } from './engine/motion-path-op';
 export { shapeOp } from './engine/shape-ops-op';
 export { splitText } from './engine/split-text-op';
