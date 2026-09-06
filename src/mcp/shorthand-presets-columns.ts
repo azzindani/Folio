@@ -63,10 +63,21 @@ export function buildColumns(
   const { X, Y, W, H } = shBox(sh, 1920, 1080);
   const raw = sh as unknown as Record<string, unknown>;
   const kids = childrenOf(sh);
-  const gap = typeof raw['gap'] === 'number' ? Math.max(0, raw['gap']) : 56;
-  const pad = typeof raw['pad'] === 'number' ? Math.max(0, raw['pad']) : 0;
+  const askedGap = typeof raw['gap'] === 'number' ? Math.max(0, raw['gap']) : 56;
+  const askedPad = typeof raw['pad'] === 'number' ? Math.max(0, raw['pad']) : 0;
 
   if (kids.length === 0) return { id, type: 'group', z, x: X, y: Y, width: W, height: H, layers: [] } as unknown as Layer;
+
+  // Clamp both against the box they divide. Unclamped, a gap or pad larger than
+  // the space available produced geometry that was not merely ugly but wrong:
+  // gap 9999 in a 400px box gave the first column width 0 and put the second at
+  // x=10099, thousands of pixels outside its own parent, with nothing reported.
+  // A container's one job is that its children land inside it.
+  const pad = Math.min(askedPad, Math.floor(Math.min(W, H) / 4));
+  const maxGap = kids.length > 1
+    ? Math.max(0, Math.floor((W - pad * 2 - kids.length) / (kids.length - 1)))
+    : 0;
+  const gap = Math.min(askedGap, maxGap);
 
   const innerW = Math.max(1, W - pad * 2 - gap * (kids.length - 1));
   const innerH = Math.max(1, H - pad * 2);
