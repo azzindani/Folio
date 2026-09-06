@@ -8,6 +8,7 @@
 // flag "this box is way too short", not pixel-perfect metrics. Pure — no I/O.
 
 import type { Layer } from '../../schema/types';
+import { layerText } from '../../schema/layer-text';
 import { wrapToWidth } from '../../utils/text-width';
 
 /** Average glyph advance as a fraction of font size, by font family category. */
@@ -41,8 +42,7 @@ interface TextMetrics { estH: number; declaredH: number; lines: number; fontSize
 /** Per-layer wrapper: reads a text layer's content + style and returns metrics, or null. */
 export function measureTextLayer(l: Layer): TextMetrics | null {
   if (l.type !== 'text') return null;
-  const value = (l as { content?: { value?: unknown } }).content?.value;
-  const text = typeof value === 'string' ? value.trim() : '';
+  const text = layerText(l).trim();
   if (!text) return null;
 
   const style = (l as { style?: { font_size?: unknown; line_height?: unknown; font_family?: unknown; text_transform?: unknown } }).style ?? {};

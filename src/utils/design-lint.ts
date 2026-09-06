@@ -1,4 +1,5 @@
 import type { Layer } from '../schema/types';
+import { hasLayerText } from '../schema/layer-text';
 
 export interface LintIssue {
   layerId: string;
@@ -29,8 +30,7 @@ export function lintDesign(layers: Layer[]): LintIssue[] {
 
     // Text with no content
     if (layer.type === 'text') {
-      const content = (layer as unknown as { content?: { value?: string } }).content;
-      if (!content?.value?.trim()) {
+      if (!hasLayerText(layer)) {
         issues.push({ layerId: id, severity: 'warning', message: 'Empty text layer' });
       }
     }

@@ -46,7 +46,7 @@ export function pruneEmptyDrafts(projectPath: string, keepPath: string): string[
   return pruned;
 }
 
-export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string; style_seed?: string | number }): ToolResult {
+export function createDesign(args: { project_path: string; name: string; type?: string; width?: number; height?: number; theme_ref?: string; style_seed?: string | number; layers?: unknown }): ToolResult {
   const op = 'create_design';
   const progress: ProgressItem[] = [];
   // Guard the required args with actionable messages — a small model that omits
@@ -107,6 +107,18 @@ export function createDesign(args: { project_path: string; name: string; type?: 
 
   writeYAML(designPath, spec);
   progress.push(pOk(`Created ${type} scaffold`, path.basename(designPath)));
+
+  // create_design makes a SCAFFOLD; content arrives via add_layers. But most
+  // design APIs take layers at create time, so a model passes them here — and
+  // the argument was dropped without a word, returning success and an editor
+  // link to an empty canvas. The composition was gone and nothing said so.
+  // Say so. Honouring it here instead would fork the finalize chain that
+  // add_layers owns; the fix is that the drop is no longer silent.
+  const dropped = Array.isArray(args.layers) ? args.layers.length : 0;
+  if (dropped > 0) {
+    progress.push(pWarn(`${dropped} layer(s) were NOT added`,
+      'create_design only makes the scaffold — pass them to add_layers, next, or the design stays empty'));
+  }
 
   // Self-contained editor link (fresh token) — design is openable immediately.
   const link = buildEditorLink(designPath);
