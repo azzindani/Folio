@@ -109,6 +109,74 @@ function pathLayer(base: Record<string, unknown>, id: string, d: string): Layer 
   return { ...base, ...(boxOf(d) ?? {}), id, type: 'path', d } as unknown as Layer;
 }
 
+/** What the async path math produced, plus how to name and style the layers it
+ *  becomes. Kept separate from the document ON PURPOSE: this is the only async
+ *  step, so it can run BEFORE the design is read for writing, which is what
+ *  keeps the read -> mutate -> write window free of any await. */
+interface BuiltShapes {
+  ds: string[];
+  note: string;
+  /** Name for the i-th produced layer. */
+  name: (i: number) => string;
+  /** Style, read from the FRESH targets so a concurrent restyle is respected. */
+  style: (fresh: Layer[]) => Record<string, unknown>;
+}
+interface BuildFailure { error: string; hint: string }
+
+async function buildShapes(args: ShapeOpArgs, ids: string[], ds: string[], targets: Layer[]): Promise<BuiltShapes | BuildFailure> {
+  if (args.shape_op === 'blend') {
+    const steps = Math.max(1, Math.min(Math.trunc(args.steps ?? 3), 24));
+    const shapes = blendPaths(ds[0] as string, ds[1] as string, steps);
+    if (!shapes) {
+      return { error: 'Could not blend those two paths',
+        hint: 'Both must be walkable: M L H V C S Q T Z, absolute or relative. Elliptical arcs (A) are not '
+          + 'supported \u2014 rebuild the curve with C or Q.' };
+    }
+    return {
+      ds: shapes,
+      note: `${steps} in-between shape(s). The two originals are untouched \u2014 a blend is the shapes BETWEEN them.`,
+      name: i => `${ids[0]}_blend_${i + 1}`,
+      style: fresh => styleOf(fresh[0] as Layer),
+    };
+  }
+  if (args.shape_op === 'outline_stroke') {
+    const src = targets[0] as Layer;
+    const sk = strokeOf(src);
+    const w = num(args.width) ?? num(sk.width) ?? num((src as unknown as Record<string, unknown>)['stroke_width']) ?? 0;
+    if (w <= 0) {
+      return { error: 'No stroke width to outline',
+        hint: 'Pass width, or give the layer a stroke first \u2014 strokes are {color, width}, e.g. stroke:{color:"#FF3D00", width:14}.' };
+    }
+    const d = await outlineStroke(ds[0] as string, w);
+    if (!d) return { error: 'Could not outline that stroke', hint: 'The path may be unwalkable or degenerate.' };
+    return {
+      ds: [d],
+      note: `The ${w}px stroke is now a filled shape covering the same ink, so it scales as artwork rather than as a stroke.`,
+      name: () => `${ids[0]}_outlined`,
+      // The outline is FILLED artwork, so the stroke's COLOUR becomes the fill
+      // and the stroke itself goes away. Handing the whole Stroke object to
+      // `fill` is what made this render as nothing.
+      style: fresh => ({
+        ...styleOf(fresh[0] as Layer), stroke: undefined, stroke_width: undefined,
+        fill: strokeOf(fresh[0] as Layer).color ?? sk.color ?? '#000000',
+      }),
+    };
+  }
+  const delta = num(args.delta) ?? 0;
+  if (delta === 0) return { error: 'offset needs a non-zero delta', hint: 'Pass delta:8 to grow or delta:-8 to shrink.' };
+  const d = await offsetPath(ds[0] as string, delta);
+  if (!d) {
+    return { error: `Could not offset that path by ${delta}`,
+      hint: 'Shrinking can consume a shape entirely, and an unwalkable path (elliptical arcs) cannot be offset at all.' };
+  }
+  return {
+    ds: [d],
+    note: `${delta > 0 ? 'Grown' : 'Shrunk'} by ${Math.abs(delta)}px, as a new layer \u2014 the original is untouched.`,
+    name: () => `${ids[0]}_offset`,
+    style: fresh => styleOf(fresh[0] as Layer),
+  };
+}
+
 export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
   const op = 'shape';
   const progress: ProgressItem[] = [];
@@ -124,7 +192,6 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
         : 'Pass the path layer to operate on, e.g. layer_ids:["outline"].');
   }
 
-  const bak = snapshot(dPath);
   const spec = readYAML<DesignSpec>(dPath);
   // Same ambiguity guard `update` uses: carousel pages share ids, and picking
   // the first page silently is how a deck ends up with one page operated on.
@@ -152,60 +219,41 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
       + 'shapes in the editor first — the result of that is a path layer.');
   }
 
-  const made: Layer[] = [];
+  // \u2500\u2500 The ONLY async work in this op \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // It runs BEFORE the document is read for writing. Holding a spec across this
+  // await is what silently reverted concurrent edits: writeYAML put back a whole
+  // document captured before them. Measured live \u2014 20 updates fired during a
+  // cold `await import(\'polygon-clipping\')` all reported success and 2 were
+  // undone. Every OTHER design-writing op is atomic only because it never
+  // yields; this one is the single exception, so it has to be made so on purpose.
+  const built = await buildShapes(args, ids, ds as string[], targets);
+  if ('error' in built) return errResult(op, built.error, built.hint);
+
+  // \u2500\u2500 read \u2192 mutate \u2192 write, with NO await between them \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const bak = snapshot(dPath);
+  const fresh = readYAML<DesignSpec>(dPath);
+  const freshScope = resolveScope(fresh, args.page_id);
+  if ('error' in freshScope) return errResult(op, freshScope.error, 'Check page_id.');
+  const freshTargets = find(freshScope.scope, ids);
+  if (freshTargets.length < need) {
+    return errResult(op, 'The design changed while this shape was being computed \u2014 its target layers are no longer there.',
+      'Nothing was written. Re-read the design with manage_design {op:"inspect"} and retry.');
+  }
   // Names are claimed against what the page already holds, so running the same
   // op twice appends `_2` instead of a second layer with the same id.
-  const taken = collectLayerIds(scoped.scope);
-  let note = '';
-  if (args.shape_op === 'blend') {
-    const steps = Math.max(1, Math.min(Math.trunc(args.steps ?? 3), 24));
-    const shapes = blendPaths(ds[0] as string, ds[1] as string, steps);
-    if (!shapes) {
-      return errResult(op, 'Could not blend those two paths',
-        'Both must be walkable: M L H V C S Q T Z, absolute or relative. Elliptical arcs (A) are not '
-        + 'supported — rebuild the curve with C or Q.');
-    }
-    const base = styleOf(targets[0] as Layer);
-    shapes.forEach((d, i) => made.push(pathLayer(base, freeLayerId(taken, `${ids[0]}_blend_${i + 1}`), d)));
-    note = `${steps} in-between shape(s). The two originals are untouched — a blend is the shapes BETWEEN them.`;
-  } else if (args.shape_op === 'outline_stroke') {
-    const src = targets[0] as Layer;
-    const sk = strokeOf(src);
-    const w = num(args.width) ?? num(sk.width) ?? num((src as unknown as Record<string, unknown>)['stroke_width']) ?? 0;
-    if (w <= 0) {
-      return errResult(op, 'No stroke width to outline',
-        'Pass width, or give the layer a stroke first — strokes are {color, width}, e.g. stroke:{color:"#FF3D00", width:14}.');
-    }
-    const d = await outlineStroke(ds[0] as string, w);
-    if (!d) return errResult(op, 'Could not outline that stroke', 'The path may be unwalkable or degenerate.');
-    // The outline is FILLED artwork, so the stroke's COLOUR becomes the fill and
-    // the stroke itself goes away. Handing the whole Stroke object to `fill` is
-    // what made this render as nothing.
-    made.push(pathLayer(
-      { ...styleOf(src), stroke: undefined, stroke_width: undefined, fill: sk.color ?? '#000000' },
-      freeLayerId(taken, `${ids[0]}_outlined`), d,
-    ));
-    note = `The ${w}px stroke is now a filled shape covering the same ink, so it scales as artwork rather than as a stroke.`;
-  } else {
-    const delta = num(args.delta) ?? 0;
-    if (delta === 0) return errResult(op, 'offset needs a non-zero delta', 'Pass delta:8 to grow or delta:-8 to shrink.');
-    const d = await offsetPath(ds[0] as string, delta);
-    if (!d) {
-      return errResult(op, `Could not offset that path by ${delta}`,
-        'Shrinking can consume a shape entirely, and an unwalkable path (elliptical arcs) cannot be offset at all.');
-    }
-    made.push(pathLayer(styleOf(targets[0] as Layer), freeLayerId(taken, `${ids[0]}_offset`), d));
-    note = `${delta > 0 ? 'Grown' : 'Shrunk'} by ${Math.abs(delta)}px, as a new layer — the original is untouched.`;
-  }
+  const taken = collectLayerIds(freshScope.scope);
+  const base = built.style(freshTargets);
+  const made: Layer[] = built.ds.map((d, i) => pathLayer(base, freeLayerId(taken, built.name(i)), d));
+  const note = built.note;
 
   const keep = args.keep_source ?? true;
   if (!keep && args.shape_op !== 'blend') {
     const drop = new Set(ids.slice(0, 1));
-    scoped.scope.splice(0, scoped.scope.length, ...scoped.scope.filter(l => !drop.has(String((l as { id?: unknown }).id ?? ''))));
+    freshScope.scope.splice(0, freshScope.scope.length, ...freshScope.scope.filter(l => !drop.has(String((l as { id?: unknown }).id ?? ''))));
   }
-  scoped.scope.push(...made);
-  commitScope(spec, scoped.page, scoped.scope);
-  writeYAML(dPath, spec);
+  freshScope.scope.push(...made);
+  commitScope(fresh, freshScope.page, freshScope.scope);
+  writeYAML(dPath, fresh);
 
   progress.push(pOk(`${args.shape_op} applied`, made.map(l => String((l as { id?: unknown }).id)).join(', ')));
   progress.push(pInfo('Result', note));
