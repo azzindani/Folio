@@ -145,11 +145,11 @@ export function exportDesign(args: { design_path: string; format: string; output
   if (singleFile && !args.force) {
     const done = findReusable(dPath, key);
     if (done) {
-      progress.push(pOk('Already exported', `${path.basename(done.output)} (${done.bytes} bytes) — same design, format, scale and destination`));
+      progress.push(pOk('Already exported', `${path.basename(done.output)} (${done.bytes} bytes) — same design, format, scale, destination and renderer`));
       return okResult(op, {
         format: args.format, output_file: path.basename(done.output), output_path: done.output,
         status: 'ok', bytes: done.bytes, reused: true, exported_at: done.at,
-        note: 'Nothing was re-rendered: this design has not changed since it was last exported to this path at this scale, so the file on disk is already the answer. Pass force:true to render it again.',
+        note: 'Nothing was re-rendered: neither this design NOR the rendering engine has changed since it was last exported to this path at this scale, so the file on disk is already the answer. Pass force:true to render it again.',
         progress, context: buildContext(op, `Reused existing ${args.format.toUpperCase()} for "${spec.meta.name}"`, [{ type: args.format, path: done.output, role: 'output' }]),
         handover: buildHandover('EXPORT', { design_path: dPath }),
       });
