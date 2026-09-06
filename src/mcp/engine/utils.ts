@@ -140,8 +140,49 @@ export function readYAML<T>(filePath: string): T {
     fix(data as { layers?: unknown });
     const pages = (data as { pages?: unknown }).pages;
     if (Array.isArray(pages)) for (const p of pages) fix(p as { layers?: unknown });
+    assertAcyclic(data as { layers?: unknown; pages?: { layers?: unknown }[] });
   }
   return data;
+}
+
+/**
+ * Refuse a layer tree that contains itself.
+ *
+ * YAML anchors are ordinary YAML — `- &g {…, layers: [*g]}` loads as a REAL
+ * cyclic object graph, and every walker in the engine is a plain recursion over
+ * `layers`. Reading one blew the stack: `manage_design {op:"inspect"}` answered
+ * "Maximum call stack size exceeded", which names nothing and suggests nothing.
+ * It fails fast rather than hanging, but it is still a crash reported as prose.
+ *
+ * Checked once, here, because every design load passes through this function —
+ * so the guard covers every walker downstream instead of each growing its own.
+ * The engine never WRITES a cycle (writeYAML dumps with noRefs), so this only
+ * ever fires on a hand-edited file, which is exactly the case worth naming.
+ *
+ * Ancestors-on-the-current-path, not a global visited set: the same layer
+ * object appearing twice as siblings is unusual but terminates fine, and only a
+ * node that is its own ancestor can loop forever.
+ */
+function assertAcyclic(doc: { layers?: unknown; pages?: { layers?: unknown }[] }): void {
+  const path = new Set<object>();
+  const walk = (layers: unknown): void => {
+    if (!Array.isArray(layers)) return;
+    for (const l of layers) {
+      if (!l || typeof l !== 'object') continue;
+      const node = l as object & { id?: unknown; layers?: unknown };
+      if (path.has(node)) {
+        throw new Error(
+          `Design contains a reference cycle: layer "${String(node.id ?? '(unnamed)')}" contains itself. `
+          + 'A YAML anchor (&name / *name) was used to nest a group inside itself — give the inner layer its own definition.',
+        );
+      }
+      path.add(node);
+      walk(node.layers);
+      path.delete(node);
+    }
+  };
+  walk(doc.layers);
+  for (const p of doc.pages ?? []) walk(p?.layers);
 }
 
 // Atomic write: temp file → rename, prevents partial writes
