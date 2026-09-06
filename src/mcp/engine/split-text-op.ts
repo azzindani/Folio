@@ -21,6 +21,7 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import { metricsForFamily, charOffsets } from '../../utils/font-metrics';
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope } from './motion';
+import { pagesWithLayer } from '../engine-edit-tools';
 
 export interface SplitTextArgs {
   design_path: string;
@@ -66,6 +67,17 @@ export function splitText(args: SplitTextArgs): ToolResult {
 
   const bak = snapshot(dPath);
   const spec = readYAML<DesignSpec>(dPath);
+  // Carousel pages share layer ids, and an unscoped split silently took the
+  // FIRST page — so splitting a headline across a 7-page deck did one page and
+  // said nothing. `update` already refuses this ambiguity rather than guessing;
+  // matching it is what makes the tool predictable across its own ops.
+  if (!args.page_id) {
+    const hits = pagesWithLayer(spec, id);
+    if (hits.length > 1) {
+      return errResult(op, `Layer id "${id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to guess which one.`,
+        'Pass page_id to split ONE page (carousel pages share layer IDs).');
+    }
+  }
   const scoped = resolveScope(spec, args.page_id);
   if ('error' in scoped) return errResult(op, scoped.error, 'Check page_id.');
 

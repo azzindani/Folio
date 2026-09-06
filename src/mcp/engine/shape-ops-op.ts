@@ -17,6 +17,7 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, 
 import { blendPaths, outlineStroke, offsetPath } from '../../engine/path-ops';
 import { flattenPath } from '../../animation/motion-path';
 import { resolveScope, commitScope } from './motion';
+import { pagesWithLayer } from '../engine-edit-tools';
 
 export type ShapeOp = 'offset' | 'outline_stroke' | 'blend';
 
@@ -125,6 +126,17 @@ export async function shapeOp(args: ShapeOpArgs): Promise<ToolResult> {
 
   const bak = snapshot(dPath);
   const spec = readYAML<DesignSpec>(dPath);
+  // Same ambiguity guard `update` uses: carousel pages share ids, and picking
+  // the first page silently is how a deck ends up with one page operated on.
+  if (!args.page_id) {
+    for (const want of ids) {
+      const hits = pagesWithLayer(spec, want);
+      if (hits.length > 1) {
+        return errResult(op, `Layer id "${want}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to guess which one.`,
+          'Pass page_id to operate on ONE page (carousel pages share layer IDs).');
+      }
+    }
+  }
   const scoped = resolveScope(spec, args.page_id);
   if ('error' in scoped) return errResult(op, scoped.error, 'Check page_id.');
 

@@ -113,3 +113,25 @@ describe('edit_layer op:shape', () => {
     expect(made?.['width']).toBe(120);
   });
 });
+
+describe('op:shape on a carousel — same refusal as split_text and update', () => {
+  it('refuses to guess which page, and names them', async () => {
+    const dir = path.join(root, `deck-${n++}`, 'designs');
+    fs.mkdirSync(dir, { recursive: true });
+    const p = path.join(dir, 'deck.design.yaml');
+    const page = (id: string): Record<string, unknown> => ({
+      id, layers: [{ id: 'sq', type: 'path', d: SQ, fill: '#111' }],
+    });
+    fs.writeFileSync(p, yaml.dump({
+      meta: { id: 'k', name: 'K', type: 'carousel' },
+      document: { width: 400, height: 400 },
+      pages: [page('page_1'), page('page_2')],
+    }));
+    const r = await shapeOp({ design_path: p, shape_op: 'offset', layer_ids: ['sq'], delta: 5 });
+    expect(r.success).toBe(false);
+    expect(String(r.error)).toContain('2 pages');
+    // ...and works when told which one.
+    const ok = await shapeOp({ design_path: p, shape_op: 'offset', layer_ids: ['sq'], delta: 5, page_id: 'page_2' });
+    expect(ok.success, JSON.stringify(ok)).toBe(true);
+  });
+});
