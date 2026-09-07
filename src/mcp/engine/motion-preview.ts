@@ -197,7 +197,13 @@ function framedSpec(spec: DesignSpec, pageIndex: number, t: number): DesignSpec 
   const at = specAt(spec, pageIndex, t);
   const pages = at.pages ?? [];
   if (!pages.length) return at;
-  return { ...at, layers: pages[pageIndex]?.layers ?? at.layers ?? [], pages: undefined } as DesignSpec;
+  // INDEX 0, not pageIndex. specAt has already narrowed `pages` to the single
+  // page it posed, so the original index points past the end of what it
+  // returned — every page after the first previewed as a blank white cell,
+  // while the timecodes and scene length underneath were all correct. Page 1
+  // worked, which is why nothing caught it: op:frame and render_preview both
+  // read [0] here, and only this one asked for the old index.
+  return { ...at, layers: pages[0]?.layers ?? at.layers ?? [], pages: undefined } as DesignSpec;
 }
 
 /** A small looping GIF beside the design — the half a person can actually watch. */
