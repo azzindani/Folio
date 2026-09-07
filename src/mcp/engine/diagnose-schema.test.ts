@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { collectFindings, errorFindings, schemaFindings } from './diagnose-collect';
+import { collectFindings, errorFindings, schemaFindings, rankForDisplay } from './diagnose-collect';
 import type { DesignSpec } from '../../schema/types';
 
 /**
@@ -80,5 +80,37 @@ describe('diagnose consults the schema', () => {
   it('is skipped when scoped to one page — its paths address the document', () => {
     const scoped = collectFindings(withBadType(), '/tmp/x.design.yaml', undefined, 'p1');
     expect(scoped.some(f => f.code === 'schema')).toBe(false);
+  });
+});
+
+describe('rankForDisplay — what survives the cap', () => {
+  const f = (severity: string, code: string, n: number): Array<{ severity: string; code: string; message: string }> =>
+    Array.from({ length: n }, (_, i) => ({ severity, code, message: `${code}#${i}` }));
+
+  it('shows one of every kind before a second of any', () => {
+    const all = [...f('error', 'off_canvas', 60), ...f('error', 'schema', 1)];
+    const shown = rankForDisplay(all, 40);
+    expect(shown.length).toBe(40);
+    expect(shown.some(x => x.code === 'schema'),
+      'a lone finding was buried under 60 copies of another').toBe(true);
+    expect(shown[0]?.code).toBe('off_canvas');
+    expect(shown[1]?.code).toBe('schema');
+  });
+
+  it('puts every error ahead of every warning', () => {
+    const shown = rankForDisplay([...f('warning', 'w', 30), ...f('error', 'e', 5)], 10);
+    expect(shown.slice(0, 5).every(x => x.severity === 'error')).toBe(true);
+    expect(shown.slice(5).every(x => x.severity === 'warning')).toBe(true);
+  });
+
+  it('returns everything when it already fits, in severity order', () => {
+    const shown = rankForDisplay([...f('suggestion', 's', 2), ...f('error', 'e', 2)], 40);
+    expect(shown.length).toBe(4);
+    expect(shown.map(x => x.severity)).toEqual(['error', 'error', 'suggestion', 'suggestion']);
+  });
+
+  it('handles an empty list and a zero limit', () => {
+    expect(rankForDisplay([], 40)).toEqual([]);
+    expect(rankForDisplay(f('error', 'e', 5), 0)).toEqual([]);
   });
 });

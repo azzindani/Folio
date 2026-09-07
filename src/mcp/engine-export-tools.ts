@@ -16,7 +16,7 @@ import { resvgFontOption, unbundledFonts } from './engine/fonts';
 import { looksLikeMark, auditMark, type MarkAudit } from './engine/mark-audit';
 
 import { type Finding } from './engine/diagnose';
-import { collectFindings } from './engine/diagnose-collect';
+import { collectFindings, rankForDisplay } from './engine/diagnose-collect';
 import { echoFinding } from './design-history';
 import { buildEditorLink } from './engine/editor-link';
 import { willOverwrite, collisionReport } from './engine/export-collisions';
@@ -500,7 +500,11 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
     // `counts` is the truth; this list is capped to keep the reply small. Say so
     // when it is — reading the array and believing it complete under-counted a
     // 109-error design as 40, which is exactly the mistake to make it impossible.
-    findings: findings.slice(0, 40),
+    //
+    // Ranked, not collection order — see rankForDisplay. The cap used to take
+    // whichever 40 were gathered first, so late passes were cut wholesale and
+    // forty copies of one problem hid every other kind.
+    findings: rankForDisplay(findings, 40),
     ...(findings.length > 40 ? { findings_truncated: findings.length - 40 } : {}),
     ...(mark ? { mark } : {}),
     progress, context,
