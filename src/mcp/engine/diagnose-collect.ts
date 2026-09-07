@@ -96,6 +96,49 @@ export function collectFindings(
   return findings;
 }
 
+/**
+ * The `limit` findings most worth showing, when there are more than fit.
+ *
+ * The reply caps its findings list to stay small, and it used to keep whichever
+ * ones were gathered FIRST. Two things went wrong with that. Late passes were
+ * cut wholesale on a busy design — the schema validator among them, so a hard
+ * "Unknown layer type" was collected and never shown. And forty copies of one
+ * problem crowded out every other KIND of problem, so a model fixed the
+ * off-canvas layers, re-diagnosed, and only then discovered the next thing.
+ *
+ * So: errors before warnings before suggestions, and within each severity, one
+ * of each code before a second of any. A model reading the visible list now
+ * sees every kind of problem its design has, not one kind forty times.
+ */
+export function rankForDisplay<T extends { severity: string; code: string }>(
+  findings: T[],
+  limit: number,
+): T[] {
+  const out: T[] = [];
+  for (const sev of ['error', 'warning', 'suggestion']) {
+    const byCode = new Map<string, T[]>();
+    for (const f of findings) {
+      if (f.severity !== sev) continue;
+      const bucket = byCode.get(f.code);
+      if (bucket) bucket.push(f); else byCode.set(f.code, [f]);
+    }
+    // Round-robin the buckets: one of each code, then a second of each, …
+    for (let round = 0; out.length < limit; round++) {
+      let placed = false;
+      for (const bucket of byCode.values()) {
+        const f = bucket[round];
+        if (!f) continue;
+        out.push(f);
+        placed = true;
+        if (out.length >= limit) break;
+      }
+      if (!placed) break;
+    }
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 /** Just the errors — what a gate needs to decide whether a design is finished. */
 export function errorFindings(
   spec: DesignSpec,
