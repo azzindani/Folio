@@ -367,25 +367,52 @@ export function exportAnimation(args: {
     const dir = args.output_path ? path.dirname(args.output_path) : path.join(path.dirname(dPath), '..', 'exports');
     const written: string[] = [];
     const failures: string[] = [];
+    const pageNotes: string[] = [];
+    const rates: Array<{ page: string; fps: number }> = [];
     for (const [i, page] of pages.entries()) {
       const one = exportAnimation({
         ...args, all_pages: false,
         page_id: page.id,
         output_path: path.join(dir, `${base}-p${i + 1}.${kind}`),
       });
-      const rec = one as unknown as { success?: boolean; output_path?: string; error?: string };
-      if (rec.success && rec.output_path) written.push(rec.output_path);
-      else failures.push(`${page.id}: ${rec.error ?? 'failed'}`);
+      const rec = one as unknown as {
+        success?: boolean; output_path?: string; error?: string;
+        notes?: string[]; fps?: number; frames?: number;
+      };
+      if (rec.success && rec.output_path) {
+        written.push(rec.output_path);
+        // Carry each page's NOTES up. The single-page route degrades the frame
+        // rate when a long scene will not fit the frame-memory budget, and says
+        // so — "Sampled at 2fps instead of 20". Keeping only output_path threw
+        // that away, so a batch of eight reported unqualified success while one
+        // of them was a 2fps flipbook. A quality warning that reaches nobody is
+        // the same as no warning.
+        for (const n of rec.notes ?? []) pageNotes.push(`${page.id}: ${n}`);
+        if (typeof rec.fps === 'number') rates.push({ page: page.id, fps: rec.fps });
+      } else {
+        failures.push(`${page.id}: ${rec.error ?? 'failed'}`);
+      }
     }
     if (written.length === 0) {
       return errResult(op, `No page exported: ${failures.join('; ')}`, 'Add motion with animation(op:motion) first, then export again.');
     }
+    // Name the worst page rather than only the best: a caller scanning one
+    // number should see the one that will look wrong.
+    const worst = rates.slice().sort((a, b) => a.fps - b.fps)[0];
+    const choppy = rates.filter(r => r.fps < 8).map(r => `${r.page} (${r.fps}fps)`);
     return okResult(op, {
       design_path: dPath,
       output_paths: written,
       pages: written.length,
       type: args.type,
-      ...(failures.length ? { warning: `${failures.length} page(s) skipped`, skipped: failures } : {}),
+      ...(rates.length ? { fps_per_page: Object.fromEntries(rates.map(r => [r.page, r.fps])) } : {}),
+      ...(worst ? { slowest_page: `${worst.page} at ${worst.fps}fps` } : {}),
+      ...(choppy.length ? {
+        warning: `${choppy.length} page(s) sampled below 8fps and will look choppy: ${choppy.join(', ')}`,
+        hint: 'A loop stretches the scene, and a big canvas caps the frame count. Pass `duration` to export just the entrance, or type:"svg" for full smoothness at any length.',
+      } : {}),
+      ...(pageNotes.length ? { page_notes: pageNotes } : {}),
+      ...(failures.length ? { skipped: failures } : {}),
       note: 'One animated file per page — post them as a motion companion to the PDF carousel (a PDF itself cannot animate).',
     });
   }
