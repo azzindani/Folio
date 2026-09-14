@@ -15,6 +15,7 @@ import { samplePath, type SampledPath } from '../animation/motion-path';
 import { roundedRectPath } from '../renderer/layer-renderers-shared';
 import { clipRectFor, intersectRect } from '../renderer/clip-rect';
 import { revealRect } from '../animation/reveal';
+import { countText } from '../animation/count';
 import { drawnBox } from './frame-geometry';
 import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-pose';
 
@@ -274,6 +275,13 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   const box = vr !== undefined && vr < 1 ? drawnBox(layer) : null;
   const wipe = box && vr !== undefined ? revealRect(box, vr, anim.playback?.reveal_from) : null;
   if (wipe) out['clip_rect'] = intersectRect(clipRectFor(layer), wipe);
+
+  // Count: the figure in the text at this fraction, in its own written format.
+  const vc = num(v['count']);
+  const words = layer['content' as keyof Layer] as { type?: string; value?: unknown } | undefined;
+  if (vc !== undefined && vc < 1 && typeof words?.value === 'string' && (words.type ?? 'plain') === 'plain') {
+    out['content'] = { ...words, value: countText(words.value, vc) };
+  }
 
   // Tracking: spacing added at draw time only, so the lines keep their wrap.
   const vt = num(v['tracking']);

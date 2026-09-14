@@ -284,6 +284,15 @@ describe('skew and draw reach a sampled frame', () => {
     expect(lines(svgAt(0))).toBe(lines(svgAt(1000)));
   });
 
+  it('counts a figure up in its own format, frame by frame', () => {
+    const stat = layer('stat', { type: 'text', content: { type: 'plain', value: '1,250+' },
+      animation: { keyframes: [{ t: 0, count: 0 }, { t: 1000, count: 1 }], playback: { duration: 1000, easing: 'linear' } } });
+    const at = (t: number): string => (layersAt([stat], t)[0] as unknown as { content: { value: string } }).content.value;
+    expect(at(0)).toBe('0+');
+    expect(at(500)).toBe('625+');
+    expect(at(1000)).toBe('1,250+');
+  });
+
   it('ignores draw on a layer with no outline to measure', () => {
     const l = layer('words', { type: 'text', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
     expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();

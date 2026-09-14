@@ -41,7 +41,7 @@ export interface MotionTimeline {
 export type MotionPreset =
   // entrances
   | 'fade_in' | 'rise' | 'settle' | 'scale_in' | 'sweep_in'
-  | 'pop' | 'drop' | 'blur_in' | 'draw_on' | 'spin_in' | 'flip_in' | 'grow_up' | 'whip' | 'wipe_in' | 'track_in'
+  | 'pop' | 'drop' | 'blur_in' | 'draw_on' | 'spin_in' | 'flip_in' | 'grow_up' | 'whip' | 'wipe_in' | 'track_in' | 'count_up'
   // exits
   | 'fade_out' | 'sink' | 'shrink_out' | 'blur_out' | 'sweep_out' | 'pop_out' | 'wipe_out'
   // loops
@@ -66,6 +66,7 @@ export const PRESET_NOTES: Record<MotionPreset, string> = {
   grow_up: 'grows upward from its base like a bar chart column (scale_y, anchored bottom)',
   whip: 'whips in from the left with a lean that straightens (skew + travel, ease-out-expo)',
   track_in: 'letters close up from wide tracking while fading in — the cinematic title (tracking 24 → 0)',
+  count_up: 'the number written in the text counts up from zero to itself, format kept — a stat, a price, a KPI (count 0 → 1)',
   wipe_in: 'wipes into view from the left edge (reveal 0 → 1; set playback.reveal_from via op:track for another side or an iris)',
   fade_out: 'opacity 1 → 0 — plain exit',
   sink: 'drops below while fading out',
@@ -88,7 +89,7 @@ export const PRESET_NOTES: Record<MotionPreset, string> = {
 export const PRESET_KIND: Record<MotionPreset, PresetKind> = {
   fade_in: 'entrance', rise: 'entrance', settle: 'entrance', scale_in: 'entrance', sweep_in: 'entrance',
   pop: 'entrance', drop: 'entrance', blur_in: 'entrance', draw_on: 'entrance', spin_in: 'entrance',
-  flip_in: 'entrance', grow_up: 'entrance', whip: 'entrance', wipe_in: 'entrance', track_in: 'entrance',
+  flip_in: 'entrance', grow_up: 'entrance', whip: 'entrance', wipe_in: 'entrance', track_in: 'entrance', count_up: 'entrance',
   fade_out: 'exit', sink: 'exit', shrink_out: 'exit', blur_out: 'exit', sweep_out: 'exit', pop_out: 'exit', wipe_out: 'exit',
   pulse: 'loop', float: 'loop', spin: 'loop', drift: 'loop', breathe: 'loop',
   wobble: 'loop', sway: 'loop', heartbeat: 'loop', flicker: 'loop',
@@ -206,6 +207,13 @@ export function buildTimeline(preset: MotionPreset, opts: MotionOptions = {}): M
       return {
         keyframes: [{ t: 0, x: -(d ?? 80), skew_x: 20, opacity: 0 }, { t: 1, x: 0, skew_x: 0, opacity: 1 }],
         loop: false, defaultDuration: 600, defaultEasing: 'ease-out-expo',
+      };
+
+    // Counting runs the figure written in the text up from zero, in its own format.
+    case 'count_up':
+      return {
+        keyframes: [{ t: 0, count: 0 }, { t: 1, count: 1 }],
+        loop: false, defaultDuration: 1200, defaultEasing: 'ease-out-cubic',
       };
 
     // Tracking closes a title up from wide letter-spacing; `distance` sets the px.

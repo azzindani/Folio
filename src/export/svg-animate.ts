@@ -19,6 +19,7 @@ import type { DesignSpec, Layer } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { generateDesignAnimationCSS } from '../animation/css-generator';
 import { usesDraw } from '../animation/keyframe-css';
+import { expandCounts } from './count-expand';
 
 export interface AnimatedSVGOptions {
   /** Which page of a multi-page design to export. Defaults to the first. */
@@ -80,8 +81,10 @@ export function injectStyle(svg: string, css: string): string {
 }
 
 /** Render one page of a design as a self-contained animated SVG. */
-export function buildAnimatedSVG(spec: DesignSpec, opts: AnimatedSVGOptions): AnimatedSVGResult {
+export function buildAnimatedSVG(authored: DesignSpec, opts: AnimatedSVGOptions): AnimatedSVGResult {
   const pageIndex = opts.pageIndex ?? 0;
+  // A counting text becomes stepped variants first — CSS cannot change what a <text> says.
+  const spec = expandCounts(authored);
   const svg = opts.renderSVG(spec, pageIndex);
 
   const layers = pageLayers(spec, pageIndex);
