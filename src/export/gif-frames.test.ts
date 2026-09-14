@@ -263,6 +263,14 @@ describe('skew and draw reach a sampled frame', () => {
     expect([blue(25), blue(100), blue(175)]).toEqual([false, true, false]); // visible 50 → 150 only
   });
 
+  it('wipes a layer in with a clip on its drawn box, from the left by default', () => {
+    const l = layer('card', { x: 100, y: 100, width: 200, height: 100, animation: anim([{ t: 0, reveal: 0 }, { t: 1000, reveal: 1 }]) });
+    const clip = (layersAt([l], 500)[0] as unknown as Record<string, unknown>)['clip_rect'] as { x: number; width: number };
+    expect(clip.x + clip.width).toBe(200);  // the wiping edge at the middle of the box
+    expect(clip.x).toBeLessThan(100);       // the side that is not wiping stays open
+    expect((layersAt([l], 1000)[0] as unknown as Record<string, unknown>)['clip_rect']).toBeUndefined();
+  });
+
   it('ignores draw on a layer with no outline to measure', () => {
     const l = layer('words', { type: 'text', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
     expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();

@@ -13,6 +13,8 @@ import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
 import { samplePath, type SampledPath } from '../animation/motion-path';
 import { roundedRectPath } from '../renderer/layer-renderers-shared';
+import { clipRectFor, intersectRect } from '../renderer/clip-rect';
+import { revealRect } from '../animation/reveal';
 import { drawnBox } from './frame-geometry';
 import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-pose';
 
@@ -265,6 +267,13 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
       }
     }
   }
+
+  // Reveal: a wipe as a clip on the layer's own element, so it travels with the
+  // pose above — the same rectangle keyframe-css draws as clip-path: inset().
+  const vr = num(v['reveal']);
+  const box = vr !== undefined && vr < 1 ? drawnBox(layer) : null;
+  const wipe = box && vr !== undefined ? revealRect(box, vr, anim.playback?.reveal_from) : null;
+  if (wipe) out['clip_rect'] = intersectRect(clipRectFor(layer), wipe);
 
   const fill = v['fill.color'];
   if (typeof fill === 'string') out['fill'] = fill;

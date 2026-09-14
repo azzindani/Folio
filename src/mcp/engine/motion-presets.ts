@@ -15,6 +15,7 @@
  */
 
 import type { Keyframe, EasingFunction, AnchorPoint } from '../../animation/types';
+import type { RevealFrom } from '../../animation/reveal';
 
 export interface MotionOptions {
   /** Total length of one run, ms. */
@@ -33,14 +34,16 @@ export interface MotionTimeline {
   defaultEasing: EasingFunction;
   /** Pivot for rotate/scale/skew, when not the centre. */
   anchor?: AnchorPoint;
+  /** Side a `reveal` wipe uncovers from, when the preset wipes. */
+  reveal_from?: RevealFrom;
 }
 
 export type MotionPreset =
   // entrances
   | 'fade_in' | 'rise' | 'settle' | 'scale_in' | 'sweep_in'
-  | 'pop' | 'drop' | 'blur_in' | 'draw_on' | 'spin_in' | 'flip_in' | 'grow_up' | 'whip'
+  | 'pop' | 'drop' | 'blur_in' | 'draw_on' | 'spin_in' | 'flip_in' | 'grow_up' | 'whip' | 'wipe_in'
   // exits
-  | 'fade_out' | 'sink' | 'shrink_out' | 'blur_out' | 'sweep_out' | 'pop_out'
+  | 'fade_out' | 'sink' | 'shrink_out' | 'blur_out' | 'sweep_out' | 'pop_out' | 'wipe_out'
   // loops
   | 'pulse' | 'float' | 'spin' | 'drift' | 'breathe'
   | 'wobble' | 'sway' | 'heartbeat' | 'flicker';
@@ -62,12 +65,14 @@ export const PRESET_NOTES: Record<MotionPreset, string> = {
   flip_in: 'flips open horizontally from a zero-width edge (scale_x 0 → 1)',
   grow_up: 'grows upward from its base like a bar chart column (scale_y, anchored bottom)',
   whip: 'whips in from the left with a lean that straightens (skew + travel, ease-out-expo)',
+  wipe_in: 'wipes into view from the left edge (reveal 0 → 1; set playback.reveal_from via op:track for another side or an iris)',
   fade_out: 'opacity 1 → 0 — plain exit',
   sink: 'drops below while fading out',
   shrink_out: 'shrinks to 80% while fading out',
   blur_out: 'blurs to 16px while fading out',
   sweep_out: 'travels off to the right while fading out',
   pop_out: 'pulls back then vanishes (ease-in-back)',
+  wipe_out: 'wipes out of view toward the right edge (reveal 1 → 0, uncovering side from playback.reveal_from)',
   pulse: 'loops a gentle scale swell — draws the eye without motion sickness',
   float: 'loops a slow vertical drift — good for a hero mark',
   spin: 'loops a full rotation about the layer centre',
@@ -82,8 +87,8 @@ export const PRESET_NOTES: Record<MotionPreset, string> = {
 export const PRESET_KIND: Record<MotionPreset, PresetKind> = {
   fade_in: 'entrance', rise: 'entrance', settle: 'entrance', scale_in: 'entrance', sweep_in: 'entrance',
   pop: 'entrance', drop: 'entrance', blur_in: 'entrance', draw_on: 'entrance', spin_in: 'entrance',
-  flip_in: 'entrance', grow_up: 'entrance', whip: 'entrance',
-  fade_out: 'exit', sink: 'exit', shrink_out: 'exit', blur_out: 'exit', sweep_out: 'exit', pop_out: 'exit',
+  flip_in: 'entrance', grow_up: 'entrance', whip: 'entrance', wipe_in: 'entrance',
+  fade_out: 'exit', sink: 'exit', shrink_out: 'exit', blur_out: 'exit', sweep_out: 'exit', pop_out: 'exit', wipe_out: 'exit',
   pulse: 'loop', float: 'loop', spin: 'loop', drift: 'loop', breathe: 'loop',
   wobble: 'loop', sway: 'loop', heartbeat: 'loop', flicker: 'loop',
 };
@@ -202,6 +207,19 @@ export function buildTimeline(preset: MotionPreset, opts: MotionOptions = {}): M
         loop: false, defaultDuration: 600, defaultEasing: 'ease-out-expo',
       };
 
+    // Wipes uncover by `reveal`, a clip on the layer's own box — no mask layer.
+    case 'wipe_in':
+      return {
+        keyframes: [{ t: 0, reveal: 0 }, { t: 1, reveal: 1 }],
+        loop: false, defaultDuration: 700, defaultEasing: 'ease-out-cubic', reveal_from: 'left',
+      };
+
+    case 'wipe_out':
+      return {
+        keyframes: [{ t: 0, reveal: 1 }, { t: 1, reveal: 0 }],
+        loop: false, defaultDuration: 500, defaultEasing: 'ease-in-cubic', reveal_from: 'right',
+      };
+
     // ── exits — start at rest, end gone. Pair with `at`/delay so they fire late.
     case 'fade_out':
       return { keyframes: [{ t: 0, opacity: 1 }, { t: 1, opacity: 0 }], loop: false, defaultDuration: 400, defaultEasing: 'ease-in' };
@@ -317,7 +335,7 @@ export function buildTimeline(preset: MotionPreset, opts: MotionOptions = {}): M
 export function expandPreset(
   preset: MotionPreset,
   opts: MotionOptions & { delay?: number } = {},
-): { keyframes: Keyframe[]; playback: { duration: number; loop?: boolean; easing?: EasingFunction; direction?: 'normal' | 'alternate'; delay?: number; origin: 'offset'; anchor?: AnchorPoint } } {
+): { keyframes: Keyframe[]; playback: { duration: number; loop?: boolean; easing?: EasingFunction; direction?: 'normal' | 'alternate'; delay?: number; origin: 'offset'; anchor?: AnchorPoint; reveal_from?: RevealFrom } } {
   const tl = buildTimeline(preset, opts);
   const duration = opts.duration && opts.duration > 0 ? opts.duration : tl.defaultDuration;
   const easing = opts.easing ?? tl.defaultEasing;
@@ -335,6 +353,7 @@ export function expandPreset(
       ...(tl.direction && tl.direction !== 'normal' ? { direction: tl.direction } : {}),
       easing,
       ...(tl.anchor ? { anchor: tl.anchor } : {}),
+      ...(tl.reveal_from ? { reveal_from: tl.reveal_from } : {}),
       ...(opts.delay ? { delay: Math.round(opts.delay) } : {}),
     },
   };

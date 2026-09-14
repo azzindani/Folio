@@ -36,7 +36,9 @@ layers:
 ```
 
 * **One track per layer.** `t` is ms from the track's first frame; `playback.delay` places the track in the scene.
-* **Channels:** `x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw fill.color stroke.color`.
+* **Channels:** `x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw draw_start reveal fill.color stroke.color`.
+* **`draw_start`** is the other end of `draw` (After Effects' Trim Paths start): the visible run is `draw_start → draw`, so trailing it behind `draw` makes a segment travel along a path. CSS writes a dash pair per step against `pathLength 1`; the flipbook writes the same pair against the measured length.
+* **`reveal`** 0→1 wipes a layer into view from `playback.reveal_from` (`left right top bottom center`; center is an iris). One helper (`src/animation/reveal.ts`) gives both players the same numbers: CSS `clip-path: inset(…) fill-box` and a flipbook `clip_rect` over the drawn box. `fill-box` is named because an SVG element's default reference box is the stroke box — Chromium put the edge 5px off the flipbook on a 20px stroke. The wiping edge overshoots the box by 16px at each end, so an outside stroke is hidden at 0 and whole at rest; sides that are not wiping never clip.
   A channel a later frame omits carries its last value forward (no snap-back).
 * **`easing` on a keyframe** shapes the segment *leaving* it (After Effects semantics). `hold: true` freezes until the next frame.
 * **`draw`** 0→1 reveals a stroke along its own length. The SVG export sets `pathLength="1"` on the shapes in that layer so `stroke-dashoffset` means "fraction of the outline".
@@ -69,8 +71,8 @@ layers:
 
 | Kind | Presets |
 |---|---|
-| Entrances | `fade_in rise settle scale_in sweep_in pop drop blur_in draw_on spin_in flip_in grow_up whip` |
-| Exits | `fade_out sink shrink_out blur_out sweep_out pop_out` |
+| Entrances | `fade_in rise settle scale_in sweep_in pop drop blur_in draw_on spin_in flip_in grow_up whip wipe_in` |
+| Exits | `fade_out sink shrink_out blur_out sweep_out pop_out wipe_out` |
 | Loops | `pulse float spin drift breathe wobble sway heartbeat flicker` |
 
 `grow_up` and `sway` pivot on the bottom edge (`anchor: bottom`); `drop` uses `ease-out-bounce`, `pop` uses `ease-out-back`, `flicker` is built from held keyframes. `animation(op:presets)` returns all of them with one-line notes plus the easing list, channels and anchors.
