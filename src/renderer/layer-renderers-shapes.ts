@@ -8,7 +8,7 @@ import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 import { shapePath } from '../engine/shape-paths';
 
-import { wrapPlainText, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
+import { plainTextLayout, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
 
 // Resolve a shape's fill, tolerating a bare `color` string. Small models very
 // often emit `{type:'rect', color:'#0A0A0A'}` (color is the universal "make it
@@ -327,31 +327,9 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       textEl.appendChild(tp);
       g.appendChild(textEl);
     } else {
-      // Widen the char estimate for wider glyph runs so the line actually fits
-      // its box: monospace (~0.60), ALL-CAPS (+0.06), plus literal letter-spacing.
-      // Plain sans mixed-case keeps the original 0.52 → no change to those lines.
-      const fam = (style.font_family ?? '').toLowerCase();
-      const isMono = /\bmono\b|monospace|courier|consolas|menlo/.test(fam);
-      // ALL-CAPS runs wider — whether forced via text_transform OR the string is
-      // already literally uppercase (a model very often types a CAPS headline). Both
-      // need the wider factor or the line under-wraps and bleeds off the right edge.
-      const isUpper = style.text_transform === 'uppercase'
-        || (value.length > 2 && value === value.toUpperCase() && /[A-Z]/.test(value));
-      let factor = isMono ? 0.60 : 0.52;
-      if (isUpper) factor += 0.06;
-      const perChar = factor === 0.52 ? undefined
-        : fontSize * factor + (typeof style.letter_spacing === 'number' ? Math.max(0, style.letter_spacing) : 0);
-      const lines = wrapPlainText(value, typeof layer.width === 'number' ? layer.width : undefined, fontSize, perChar);
-      let textX = layer.x ?? 0;
-      if (alignVal === 'center' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width / 2;
-      else if (alignVal === 'right' && typeof layer.width === 'number') textX = (layer.x ?? 0) + layer.width;
-
-      let textY = (layer.y ?? 0) + fontSize;
-      if (typeof layer.height === 'number' && style.vertical_align) {
-        const totalH = lines.length * lineH;
-        if (style.vertical_align === 'middle') textY = (layer.y ?? 0) + (layer.height - totalH) / 2 + fontSize;
-        else if (style.vertical_align === 'bottom') textY = (layer.y ?? 0) + layer.height - totalH + fontSize;
-      }
+      // Wrap, anchor and first baseline come from THE shared layout rule, so a
+      // measurement of this drawing (frame-geometry's pivot box) cannot drift.
+      const { lines, textX, textY } = plainTextLayout(content.value, style, layer);
 
       // Marker/highlight band behind the text (estimated width — matches wrap heuristic).
       if (style.highlight) {

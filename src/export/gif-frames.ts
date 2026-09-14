@@ -13,6 +13,10 @@ import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
 import { samplePath, type SampledPath } from '../animation/motion-path';
 import { roundedRectPath } from '../renderer/layer-renderers-shared';
+import { drawnBox } from './frame-geometry';
+import { poseTransform, FRAME_POSE, REST_POSE, type FramePose } from './frame-pose';
+
+const fmt = (n: number): string => String(Number(n.toFixed(3)));
 
 type AnimatedLayer = Layer & { animation?: AnimationSpec; layers?: Layer[] };
 
@@ -138,10 +142,15 @@ export function applyMotionPath(layer: Layer, t: number): Layer {
   const p = sp.at(u);
   const out = { ...layer } as Record<string, unknown>;
   // animateMotion TRANSLATES by the path point — the path is an offset from
-  // where the layer already sits, not an absolute destination.
-  out['x'] = (num(layer['x' as keyof Layer]) ?? 0) + p.x;
-  out['y'] = (num(layer['y' as keyof Layer]) ?? 0) + p.y;
-  if (mp.auto_rotate) out['rotation'] = (num(layer['rotation' as keyof Layer]) ?? 0) + p.angle;
+  // where the layer already sits, not an absolute destination. It lands as the
+  // OUTERMOST transform, so a line or a path travels too (they have no x/y).
+  const parts = [`translate(${fmt(p.x)} ${fmt(p.y)})`];
+  const box = mp.auto_rotate ? drawnBox(layer) : null;
+  if (box) parts.push(`rotate(${fmt(p.angle)} ${fmt(box.x + box.width / 2)} ${fmt(box.y + box.height / 2)})`);
+  const prior = typeof out['transform'] === 'string' ? out['transform'] : '';
+  out['transform'] = prior ? `${parts.join(' ')} ${prior}` : parts.join(' ');
+  const pose = (out[FRAME_POSE] as FramePose | undefined) ?? REST_POSE;
+  out[FRAME_POSE] = { ...pose, dx: pose.dx + p.x, dy: pose.dy + p.y, rotation: pose.rotation + (box ? p.angle : 0) };
   return out as unknown as Layer;
 }
 
@@ -196,10 +205,27 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
 
   const out = { ...layer } as Record<string, unknown>;
 
+  // Offset, rotate, skew and scale land as ONE transform about the anchor of
+  // what the layer draws — see frame-pose.ts for why not x/y/width/height.
   const vx = num(v['x']);
   const vy = num(v['y']);
-  if (vx !== undefined) out['x'] = (num(layer['x' as keyof Layer]) ?? 0) + (vx - baseX);
-  if (vy !== undefined) out['y'] = (num(layer['y' as keyof Layer]) ?? 0) + (vy - baseY);
+  const vs = num(v['scale']) ?? 1;
+  const pose: FramePose = {
+    dx: vx !== undefined ? vx - baseX : 0,
+    dy: vy !== undefined ? vy - baseY : 0,
+    rotation: num(v['rotation']) ?? 0,
+    // Non-uniform scale wins on its axis; a plain `scale` fills in the rest.
+    scale_x: num(v['scale_x']) ?? vs,
+    scale_y: num(v['scale_y']) ?? vs,
+    skew_x: num(v['skew_x']) ?? 0,
+    skew_y: num(v['skew_y']) ?? 0,
+  };
+  const tf = poseTransform(layer, pose, anim.playback?.anchor);
+  if (tf) {
+    const prior = typeof out['transform'] === 'string' ? out['transform'] : '';
+    out['transform'] = prior ? `${prior} ${tf}` : tf;
+  }
+  out[FRAME_POSE] = pose;
 
   const vo = num(v['opacity']);
   if (vo !== undefined) {
@@ -209,46 +235,11 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
     out['opacity'] = Math.min(1, Math.max(0, (existing ?? 1) * vo));
   }
 
-  const vr = num(v['rotation']);
-  if (vr !== undefined) out['rotation'] = (num(layer['rotation' as keyof Layer]) ?? 0) + vr;
-
-  // Scale is expressed by resizing about the centre, because the layer schema
-  // has width/height rather than a transform — growing from the top-left would
-  // read as a slide rather than a swell.
-  // Non-uniform scale wins on its axis; a plain `scale` fills in the rest.
-  const vs = num(v['scale']) ?? 1;
-  const sx = num(v['scale_x']) ?? vs;
-  const sy = num(v['scale_y']) ?? vs;
-  if (sx !== 1 || sy !== 1) {
-    const w = num(layer['width' as keyof Layer]) ?? 0;
-    const h = num(layer['height' as keyof Layer]) ?? 0;
-    const nw = w * sx;
-    const nh = h * sy;
-    out['width'] = nw;
-    out['height'] = nh;
-    out['x'] = (num(out['x']) ?? 0) - (nw - w) / 2;
-    out['y'] = (num(out['y']) ?? 0) - (nh - h) / 2;
-  }
-
   // Blur rides on the layer's effects, which the renderer turns into a filter.
   const vb = num(v['blur']);
   if (vb !== undefined && vb > 0) {
     const fx = (layer['effects' as keyof Layer] as Record<string, unknown> | undefined) ?? {};
     out['effects'] = { ...fx, blur: vb };
-  }
-
-  // Skew: SVG skews about the ORIGIN, so a layer skewed in place has to be
-  // translated to its own centre and back — otherwise it slides across the
-  // canvas as it leans. Appended to any transform already there.
-  const skX = num(v['skew_x']) ?? 0;
-  const skY = num(v['skew_y']) ?? 0;
-  if (skX !== 0 || skY !== 0) {
-    const bx = num(layer['x' as keyof Layer]) ?? 0, by = num(layer['y' as keyof Layer]) ?? 0;
-    const bw = num(layer['width' as keyof Layer]) ?? 0, bh = num(layer['height' as keyof Layer]) ?? 0;
-    const cx = bx + bw / 2, cy = by + bh / 2;
-    const t = `translate(${cx.toFixed(2)} ${cy.toFixed(2)}) skewX(${skX.toFixed(3)}) skewY(${skY.toFixed(3)}) translate(${(-cx).toFixed(2)} ${(-cy).toFixed(2)})`;
-    const prior = typeof out['transform'] === 'string' ? out['transform'] : '';
-    out['transform'] = prior ? `${prior} ${t}` : t;
   }
 
   // Draw: reveal a stroke by dashing it with its own length and pulling the
@@ -280,82 +271,20 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
 }
 
 /**
- * A transform inherited from an animated ancestor group.
+ * Recursively resolve every animated layer at time t.
  *
- * The SVG route gets this free: `transform: scale()` on a group's `<g>`
- * cascades to everything inside it. A flipbook has no cascade — each frame is
- * rendered from absolute coordinates — so animating a group resized only the
- * group's own width/height while its children stayed exactly where they were,
- * and the GIF showed no motion at all. Verified against a live pulse on a
- * locked group: the ring's width was identical in all 48 frames.
- *
- * Since every carousel page and hand-placed composition this engine writes is
- * a locked group, that covered most of the cases anyone would animate.
+ * A group's pose is a transform on its own `<g>`, so its children follow it in
+ * the render exactly as they do in the browser. This used to push a group's
+ * scale and offset down into each child's x/y/width/height — which moved only
+ * children that HAVE x/y, and scaled no text — so a card with a connector and
+ * a caption fell apart in every GIF.
  */
-interface InheritedTransform {
-  scale: number;
-  /** Fixed point the scale expands about, in absolute canvas coordinates. */
-  originX: number;
-  originY: number;
-  dx: number;
-  dy: number;
-}
-
-/** Apply an ancestor's transform to a layer's absolute geometry. */
-function inherit(layer: Layer, tf: InheritedTransform): Layer {
-  const out = { ...layer } as Record<string, unknown>;
-  const x = num(out['x']) ?? 0;
-  const y = num(out['y']) ?? 0;
-  const w = num(out['width']) ?? 0;
-  const h = num(out['height']) ?? 0;
-
-  if (tf.scale !== 1) {
-    out['x'] = tf.originX + (x - tf.originX) * tf.scale;
-    out['y'] = tf.originY + (y - tf.originY) * tf.scale;
-    out['width'] = w * tf.scale;
-    out['height'] = h * tf.scale;
-    // Type scales with the box; leaving it fixed would make a scaling card's
-    // text visibly drift out of its own layout.
-    const size = num(out['size']);
-    if (size !== undefined) out['size'] = size * tf.scale;
-  }
-  out['x'] = (num(out['x']) ?? 0) + tf.dx;
-  out['y'] = (num(out['y']) ?? 0) + tf.dy;
-  return out as unknown as Layer;
-}
-
-/** Recursively resolve every animated layer at time t. */
-export function layersAt(layers: Layer[], t: number, inherited?: InheritedTransform): Layer[] {
+export function layersAt(layers: Layer[], t: number): Layer[] {
   return layers.map(l => {
-    const layer = inherited ? (inherit(l, inherited) as AnimatedLayer) : (l as AnimatedLayer);
-    const before = layer;
+    const layer = l as AnimatedLayer;
     const resolved = applyMotionPath(applyValues(layer, t), t) as AnimatedLayer;
-
     if (!Array.isArray(layer.layers)) return resolved;
-
-    // Work out what this group's own animation did to it, and pass that down.
-    const w0 = num(before['width' as keyof Layer]) ?? 0;
-    const rec = resolved as unknown as Record<string, unknown>;
-    const w1 = num(rec['width']) ?? w0;
-    const scale = w0 > 0 ? w1 / w0 : 1;
-    const x0 = num(before['x' as keyof Layer]) ?? 0;
-    const y0 = num(before['y' as keyof Layer]) ?? 0;
-    const x1 = num(rec['x']) ?? x0;
-    const y1 = num(rec['y']) ?? y0;
-
-    const child: InheritedTransform = {
-      scale,
-      // Scale about the group's own top-left in its PRE-animation position, so
-      // the recentring applyValues already did is not counted twice.
-      originX: x0,
-      originY: y0,
-      dx: x1 - x0,
-      dy: y1 - y0,
-    };
-
-    // `layer` already carries the parent's transform (inherit() ran above), so
-    // `child` is expressed in post-parent coordinates and composes by itself.
-    return { ...resolved, layers: layersAt(layer.layers, t, child) } as Layer;
+    return { ...resolved, layers: layersAt(layer.layers, t) } as Layer;
   });
 }
 

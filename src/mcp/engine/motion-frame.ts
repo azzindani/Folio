@@ -21,6 +21,7 @@ import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { specAt, animationDuration } from '../../export/gif-frames';
 import { planScenes, sceneAt } from '../../export/scene-plan';
+import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
 import { composeSceneFrame } from '../../export/scene-compose';
 
 type FrameArgs = {
@@ -39,7 +40,11 @@ type FrameArgs = {
 
 interface Pose {
   id: string; x?: number; y?: number; width?: number; height?: number; opacity?: number; rotation?: number;
-  /** How skew/scale actually materialise — a transform the renderer applies. */
+  /** Offset from the authored position — the only position a line or a path reports. */
+  offset?: [number, number];
+  scale?: [number, number];
+  skew?: [number, number];
+  /** The transform the renderer applies — offset, rotate, skew and scale in one. */
   transform?: string;
   /** How `draw` materialises: the dash pattern that hides the untraced part. */
   stroke_dasharray?: string | number;
@@ -68,10 +73,21 @@ function animatedPoses(original: Layer[], resolved: Layer[]): Pose[] {
         // actually read. Same bug as the motion_path omission just above, one
         // set of channels later.
         const dash = rl['stroke_dasharray'];
+        // The sampler moves, turns and scales by TRANSFORM, not by editing the
+        // box, so the readout adds the sampled pose back onto the authored box.
+        const pose = rl[FRAME_POSE] as FramePose | undefined;
+        const r2 = (v: number): number => Math.round(v * 100) / 100;
+        const plus = (a: number | undefined, b: number | undefined): number | undefined =>
+          (a === undefined ? undefined : r2(a + (b ?? 0)));
+        const turned = pose?.rotation ? r2((num(rl['rotation']) ?? 0) + pose.rotation) : num(rl['rotation']);
         out.push({
           id: ol.id,
-          x: num(rl['x']), y: num(rl['y']), width: num(rl['width']), height: num(rl['height']),
-          opacity: num(rl['opacity']), rotation: num(rl['rotation']),
+          x: plus(num(rl['x']), pose?.dx), y: plus(num(rl['y']), pose?.dy),
+          width: num(rl['width']), height: num(rl['height']),
+          opacity: num(rl['opacity']), rotation: turned,
+          ...(pose && (pose.dx !== 0 || pose.dy !== 0) ? { offset: [r2(pose.dx), r2(pose.dy)] as [number, number] } : {}),
+          ...(pose && (pose.scale_x !== 1 || pose.scale_y !== 1) ? { scale: [r2(pose.scale_x), r2(pose.scale_y)] as [number, number] } : {}),
+          ...(pose && (pose.skew_x !== 0 || pose.skew_y !== 0) ? { skew: [r2(pose.skew_x), r2(pose.skew_y)] as [number, number] } : {}),
           transform: str(rl['transform']),
           stroke_dasharray: typeof dash === 'number' ? dash : str(dash),
           stroke_dashoffset: num(rl['stroke_dashoffset']),
