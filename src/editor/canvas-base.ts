@@ -157,13 +157,15 @@ export abstract class CanvasBase {
   }
 
   protected injectAnimationCSS(svg: SVGSVGElement): void {
-    const { animations } = this.state.get();
+    const { animations, design } = this.state.get();
     const entries = Object.entries(animations);
     if (entries.length === 0) return;
     // Build a Map so the generator's signature matches; keep insertion
     // order so stagger sequences fire in the order the YAML declared.
     const map = new Map<string, import('../animation/types').AnimationSpec>(entries);
-    const css = generateDesignAnimationCSS(map);
+    // Layers ride along so a `tracking` track adds to each text's authored spacing.
+    const layers = [...(design?.layers ?? []), ...(design?.pages ?? []).flatMap(p => p.layers ?? [])];
+    const css = generateDesignAnimationCSS(map, layers);
     if (!css) return;
     const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.setAttribute('data-folio-animations', '');

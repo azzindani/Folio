@@ -36,7 +36,8 @@ layers:
 ```
 
 * **One track per layer.** `t` is ms from the track's first frame; `playback.delay` places the track in the scene.
-* **Channels:** `x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw draw_start reveal fill.color stroke.color`.
+* **Channels:** `x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw draw_start reveal tracking fill.color stroke.color`.
+* **`tracking`** is px added to a text layer's letter-spacing (After Effects' Tracking; 0 = as authored). It never re-wraps: the flipbook writes it as `tracking_offset`, which the renderer adds to the `letter-spacing` attribute while wrapping reads `style.letter_spacing` alone; CSS animates `letter-spacing` on the layer's `<g>` from the authored base (callers pass their layers so `generateDesignAnimationCSS` knows it) with `[data-layer-id] text { letter-spacing: inherit }` — without that rule Chromium kept the `<text>`'s own attribute and the glyphs never moved.
 * **`draw_start`** is the other end of `draw` (After Effects' Trim Paths start): the visible run is `draw_start → draw`, so trailing it behind `draw` makes a segment travel along a path. CSS writes a dash pair per step against `pathLength 1`; the flipbook writes the same pair against the measured length.
 * **`reveal`** 0→1 wipes a layer into view from `playback.reveal_from` (`left right top bottom center`; center is an iris). One helper (`src/animation/reveal.ts`) gives both players the same numbers: CSS `clip-path: inset(…) fill-box` and a flipbook `clip_rect` over the drawn box. `fill-box` is named because an SVG element's default reference box is the stroke box — Chromium put the edge 5px off the flipbook on a 20px stroke. The wiping edge overshoots the box by 16px at each end, so an outside stroke is hidden at 0 and whole at rest; sides that are not wiping never clip.
   A channel a later frame omits carries its last value forward (no snap-back).
@@ -71,7 +72,7 @@ layers:
 
 | Kind | Presets |
 |---|---|
-| Entrances | `fade_in rise settle scale_in sweep_in pop drop blur_in draw_on spin_in flip_in grow_up whip wipe_in` |
+| Entrances | `fade_in rise settle scale_in sweep_in pop drop blur_in draw_on spin_in flip_in grow_up whip wipe_in track_in` |
 | Exits | `fade_out sink shrink_out blur_out sweep_out pop_out wipe_out` |
 | Loops | `pulse float spin drift breathe wobble sway heartbeat flicker` |
 

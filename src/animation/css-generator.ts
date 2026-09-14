@@ -3,6 +3,7 @@ import type {
   EnterAnimationType, ExitAnimationType,
 } from './types';
 import { generateKeyframeCSS } from './keyframe-css';
+import type { Layer } from '../schema/types';
 
 // ── Enter Animation CSS Keyframes ───────────────────────────
 const ENTER_KEYFRAMES: Record<EnterAnimationType, string> = {
@@ -120,17 +121,40 @@ export function generateStaggerCSS(sequence: AnimationSpec['sequence']): string 
   return rules.join('\n');
 }
 
+// ── Authored letter-spacing per layer ───────────────────────
+/**
+ * The letter-spacing each text layer is authored with, by id — what a
+ * `tracking` track adds to. CSS cannot read the <text>'s own attribute into a
+ * calc, so the base travels with the layers every caller already holds.
+ */
+export function letterSpacingBases(layers: Layer[] | undefined): Map<string, number> {
+  const out = new Map<string, number>();
+  const visit = (ls: Layer[]): void => {
+    for (const l of ls) {
+      const o = l as unknown as { id?: unknown; style?: { letter_spacing?: unknown }; track?: unknown; layers?: unknown };
+      // `track` is the layer-level alias the renderer lifts into style.letter_spacing.
+      const s = o.style?.letter_spacing ?? o.track;
+      if (typeof o.id === 'string' && typeof s === 'number' && s !== 0) out.set(o.id, s);
+      if (Array.isArray(o.layers)) visit(o.layers as Layer[]);
+    }
+  };
+  if (layers) visit(layers);
+  return out;
+}
+
 // ── Generate all animation CSS for a design ─────────────────
 export function generateDesignAnimationCSS(
   layerAnimations: Map<string, AnimationSpec>,
+  layers?: Layer[],
 ): string {
   const parts: string[] = [];
+  const spacing = letterSpacingBases(layers);
 
   for (const [layerId, anim] of layerAnimations) {
     const css = generateLayerCSS(layerId, anim);
     if (css) parts.push(css);
 
-    const kf = generateKeyframeCSS(layerId, anim);
+    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0);
     if (kf) parts.push(kf);
 
     if (anim.sequence) {

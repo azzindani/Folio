@@ -100,6 +100,17 @@ describe('generateKeyframeCSS v2', () => {
     expect(generateKeyframeCSS('plain', { keyframes: [{ t: 0, opacity: 0 }, { t: 1, opacity: 1 }] })).not.toContain('clip-path');
   });
 
+  it('tracks letter-spacing from the authored base on the layer, and lets its text inherit it', () => {
+    const anim: AnimationSpec = { keyframes: [{ t: 0, tracking: 30 }, { t: 600, tracking: 0 }], playback: { duration: 600 } };
+    const css = generateKeyframeCSS('title', anim, 4);
+    expect(css).toMatch(/0% \{[^}]*letter-spacing: 34px;/);
+    expect(css).toMatch(/100% \{[^}]*letter-spacing: 4px;/);
+    // The <text> carries its own letter-spacing attribute, which beats an
+    // inherited value — Chromium held the glyphs still without this rule.
+    expect(css).toContain('[data-layer-id="title"] text { letter-spacing: inherit; }');
+    expect(generateKeyframeCSS('plain', { keyframes: [{ t: 0, opacity: 0 }, { t: 1, opacity: 1 }] })).not.toContain('letter-spacing');
+  });
+
   it('finite iterations and delay reach the animation shorthand', () => {
     const css = generateKeyframeCSS('l', {
       keyframes: [{ t: 0, scale: 1 }, { t: 600, scale: 1.1 }],

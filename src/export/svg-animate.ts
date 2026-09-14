@@ -111,7 +111,7 @@ export function buildAnimatedSVG(spec: DesignSpec, opts: AnimatedSVGOptions): An
     }
   }
 
-  const css = anims.size > 0 ? generateDesignAnimationCSS(anims) : '';
+  const css = anims.size > 0 ? generateDesignAnimationCSS(anims, layers) : '';
   const drawIds = [...anims.entries()].filter(([, a]) => usesDraw(a)).map(([id]) => id);
   return { svg: injectStyle(normalisePathLength(svg, drawIds), css), animatedLayers: [...anims.keys()] };
 }

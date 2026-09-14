@@ -16,12 +16,14 @@ MODEL
   lands exactly where the renderer drew it.
 
 CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
-          draw_start fill.color stroke.color
+          draw_start reveal tracking fill.color stroke.color
   draw  0→1 reveals a stroke along its length (lines, connectors, hand-drawn marks).
   draw_start  0→1 trims where the stroke BEGINS; trail it behind draw and a
         segment travels along the path (a signal on a wire, a comet on an orbit).
   reveal  0→1 wipes the layer into view; playback.reveal_from = left | right | top |
         bottom | center (an iris). Type, a photo, a chart bar — no mask layer needed.
+  tracking  px added to a text layer's letter-spacing (0 = as authored); 24→0 closes a
+        title up. Lines never re-wrap while it plays.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).

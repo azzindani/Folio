@@ -271,6 +271,19 @@ describe('skew and draw reach a sampled frame', () => {
     expect((layersAt([l], 1000)[0] as unknown as Record<string, unknown>)['clip_rect']).toBeUndefined();
   });
 
+  it('tracks text at draw time without re-wrapping its lines', () => {
+    const words = layer('words', { type: 'text', z: 1, x: 20, y: 20, width: 300, content: { type: 'plain', value: 'Two short lines of words here' },
+      style: { font_size: 40, letter_spacing: 4 }, animation: anim([{ t: 0, tracking: 20 }, { t: 1000, tracking: 0 }]) });
+    expect(layersAt([words], 0)[0]).toMatchObject({ tracking_offset: 20 });
+    const svgAt = (t: number): string => renderToSVGString(specAt({ _protocol: 'design/v1', meta: { id: 'd', name: 'd', type: 'poster', created: '', modified: '' },
+      document: { width: 400, height: 300, unit: 'px', dpi: 96 }, layers: [words] } as unknown as DesignSpec, 0, t));
+    expect(svgAt(0)).toContain('letter-spacing="24px"');
+    expect(svgAt(1000)).toContain('letter-spacing="4px"');
+    const lines = (s: string): number => (s.match(/<tspan/g) ?? []).length;
+    expect(lines(svgAt(0))).toBeGreaterThan(1);
+    expect(lines(svgAt(0))).toBe(lines(svgAt(1000)));
+  });
+
   it('ignores draw on a layer with no outline to measure', () => {
     const l = layer('words', { type: 'text', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
     expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();
