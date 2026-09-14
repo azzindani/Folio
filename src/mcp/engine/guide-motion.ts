@@ -27,6 +27,12 @@ CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
   order (with stagger_ms) — who starts first: forward | reverse | center | edges | random |
         left_to_right | right_to_left | top_to_bottom | bottom_to_top. After split_text,
         left_to_right sweeps the letters by where they sit; random is the same every call.
+
+TEXT ANIMATOR (one call)
+  animation(op:text, layer_id, by:"char"|"word"|"line", preset | keyframes, stagger_ms?, order?, mask?)
+  Splits the layer into measured units — a wrapped paragraph along its drawn lines — and
+  animates them. mask:true holds a clip still over each unit so it rises from under an edge.
+  Each unit is an ordinary text layer with an ordinary track: op:frame, op:timeline, op:track work.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).

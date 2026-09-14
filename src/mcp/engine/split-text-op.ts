@@ -36,7 +36,7 @@ export interface SplitTextArgs {
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
-function findLayer(scope: Layer[], id: string): Layer | null {
+export function findLayer(scope: Layer[], id: string): Layer | null {
   for (const l of scope) {
     if (String((l as { id?: unknown }).id ?? '') === id) return l;
     const kids = (l as { layers?: Layer[] }).layers;
@@ -60,7 +60,7 @@ interface Piece { text: string; start: number; end: number }
  * nine spaces in a sentence became nine slots that revealed nothing. The gap
  * survives as POSITION, since offsets are measured across the whole run.
  */
-function pieces(units: string[], by: 'char' | 'word'): Piece[] {
+export function pieces(units: string[], by: 'char' | 'word'): Piece[] {
   if (by === 'char') {
     return units.map((c, i) => ({ text: c, start: i, end: i + 1 })).filter(p => p.text.trim() !== '');
   }
