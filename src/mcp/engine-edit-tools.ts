@@ -339,6 +339,12 @@ export function dimError(l: Layer): string | null {
   // Flow-report layers are positioned by `span` (responsive grid), not px dimensions.
   const span = (l as Layer & { span?: number }).span;
   if (typeof span === 'number' && span > 0) return null;
+  // A circle/ellipse drawn from its centre and radii is sized — the renderer
+  // lets cx/cy/rx/ry win over the box, so demanding width refused a real shape.
+  if (l.type === 'circle' || l.type === 'ellipse') {
+    const { cx, cy, rx, ry } = l as unknown as Record<string, unknown>;
+    if (typeof cx === 'number' && typeof cy === 'number' && typeof rx === 'number' && rx > 0 && typeof ry === 'number' && ry > 0) return null;
+  }
   const w = (l as Layer & { width?: number }).width;
   const h = (l as Layer & { height?: number }).height;
   // pos:[x,y,w,h] shorthand still pending expansion — accept it.
