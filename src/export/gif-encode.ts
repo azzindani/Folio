@@ -28,7 +28,7 @@ export interface GifOptions {
 }
 
 /** Growable byte sink — a GIF is written as one contiguous stream. */
-class ByteWriter {
+export class ByteWriter {
   private buf: Buffer;
   private len = 0;
 
@@ -47,10 +47,13 @@ class ByteWriter {
   short(v: number): void { this.byte(v); this.byte(v >> 8); } // GIF is little-endian
   bytes(src: Uint8Array | Buffer): void {
     this.ensure(src.length);
-    for (let i = 0; i < src.length; i++) this.buf[this.len++] = src[i];
+    this.buf.set(src, this.len);
+    this.len += src.length;
   }
   ascii(s: string): void { for (let i = 0; i < s.length; i++) this.byte(s.charCodeAt(i)); }
   toBuffer(): Buffer { return Buffer.from(this.buf.subarray(0, this.len)); }
+  /** Hand over everything written so far and start empty — how a stream flushes to disk. */
+  drain(): Buffer { const out = this.toBuffer(); this.len = 0; return out; }
 }
 
 /** Smallest power-of-two palette size GIF allows, and its log2 (the "colour resolution"). */
@@ -171,15 +174,14 @@ export function lzwCompress(indices: Uint8Array, minCodeSize: number): Buffer {
   return out.toBuffer();
 }
 
-/** Encode frames as an animated GIF89a. */
-export function encodeGIF(frames: GifFrame[], opts: GifOptions): Buffer {
-  if (frames.length === 0) throw new Error('encodeGIF: no frames given.');
-  const { width, height } = opts;
-  const w = new ByteWriter();
+/** Where an image sits on the logical screen — the whole canvas, or only the part that changed. */
+export interface FrameRect { x: number; y: number; width: number; height: number }
 
+/** Header, logical screen descriptor and loop extension — everything before the first image. */
+export function writeGifHeader(w: ByteWriter, opts: GifOptions): void {
   w.ascii('GIF89a');
-  w.short(width);
-  w.short(height);
+  w.short(opts.width);
+  w.short(opts.height);
   // No global colour table: each frame carries its own, so a palette chosen for
   // one moment of the animation cannot wreck another. Costs a few hundred bytes
   // per frame and removes a whole class of colour-shift artefact.
@@ -193,35 +195,52 @@ export function encodeGIF(frames: GifFrame[], opts: GifOptions): Buffer {
   w.byte(3); w.byte(1);
   w.short(opts.loopCount ?? 0);
   w.byte(0);
+}
 
-  for (const frame of frames) {
-    const palette = buildPalette(frame.pixels);
-    const indices = mapToPalette(frame.pixels, palette);
-    const tableSize = palette.transparentIndex >= 0 ? palette.size + 1 : palette.size;
-    const bits = paletteBits(tableSize);
+/**
+ * One image: graphic control extension, descriptor, local palette, LZW data.
+ *
+ * `pixels` covers `rect` only. Returns whether the image carried transparency:
+ * such an image is disposed to background after it shows, so whatever follows
+ * it has to repaint the whole canvas rather than patch a rectangle.
+ */
+export function writeGifImage(w: ByteWriter, pixels: Uint8ClampedArray, rect: FrameRect, delayCs: number): boolean {
+  const palette = buildPalette(pixels);
+  const indices = mapToPalette(pixels, palette);
+  const hasAlpha = palette.transparentIndex >= 0;
+  const bits = paletteBits(hasAlpha ? palette.size + 1 : palette.size);
 
-    // Graphic control extension: delay, and the transparent index if any.
-    w.byte(0x21); w.byte(0xf9); w.byte(4);
-    const hasAlpha = palette.transparentIndex >= 0;
-    // Disposal method 2 (restore to background) when transparent, so a moving
-    // shape does not smear its previous position across the next frame.
-    w.byte((hasAlpha ? 0x08 : 0x04) | (hasAlpha ? 0x01 : 0x00));
-    w.short(Math.max(1, Math.round(frame.delayMs / 10))); // GIF counts in centiseconds
-    w.byte(hasAlpha ? palette.transparentIndex : 0);
-    w.byte(0);
+  // Graphic control extension: delay, and the transparent index if any.
+  w.byte(0x21); w.byte(0xf9); w.byte(4);
+  // Disposal method 2 (restore to background) when transparent, so a moving
+  // shape does not smear its previous position across the next frame. Method 1
+  // (leave in place) otherwise — which is what lets a later image patch only
+  // the rectangle that changed.
+  w.byte((hasAlpha ? 0x08 : 0x04) | (hasAlpha ? 0x01 : 0x00));
+  w.short(Math.max(1, delayCs)); // GIF counts in centiseconds
+  w.byte(hasAlpha ? palette.transparentIndex : 0);
+  w.byte(0);
 
-    // Image descriptor — full-frame, with a local colour table.
-    w.byte(0x2c);
-    w.short(0); w.short(0);
-    w.short(width); w.short(height);
-    w.byte(0x80 | (bits - 1)); // local colour table present, size = 2^bits
-    writeColorTable(w, palette, bits);
+  // Image descriptor with a local colour table.
+  w.byte(0x2c);
+  w.short(rect.x); w.short(rect.y);
+  w.short(rect.width); w.short(rect.height);
+  w.byte(0x80 | (bits - 1)); // local colour table present, size = 2^bits
+  writeColorTable(w, palette, bits);
 
-    const minCodeSize = Math.max(2, bits);
-    w.byte(minCodeSize);
-    w.bytes(lzwCompress(indices, minCodeSize));
-  }
+  const minCodeSize = Math.max(2, bits);
+  w.byte(minCodeSize);
+  w.bytes(lzwCompress(indices, minCodeSize));
+  return hasAlpha;
+}
 
+/** Encode frames as an animated GIF89a — every frame whole, all held in memory. */
+export function encodeGIF(frames: GifFrame[], opts: GifOptions): Buffer {
+  if (frames.length === 0) throw new Error('encodeGIF: no frames given.');
+  const w = new ByteWriter();
+  writeGifHeader(w, opts);
+  const full: FrameRect = { x: 0, y: 0, width: opts.width, height: opts.height };
+  for (const frame of frames) writeGifImage(w, frame.pixels, full, Math.round(frame.delayMs / 10));
   w.byte(0x3b); // trailer
   return w.toBuffer();
 }

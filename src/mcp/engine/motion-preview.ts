@@ -211,8 +211,8 @@ function writeLoopGif(
   spec: DesignSpec, dPath: string, pageIndex: number, sceneMs: number,
   projDir: string, cellW: number, cellH: number,
 ): { path: string; frames: number; bytes: number } | null {
-  // 12fps, capped so a long scene cannot blow the frame budget the exporter
-  // documents — this is a preview, not the deliverable.
+  // 12fps, capped at 48 frames so a long scene previews in a moment — this is
+  // a preview, not the deliverable (animation op:export streams the real one).
   const fps = 12;
   const wanted = Math.max(2, Math.round((sceneMs / 1000) * fps));
   const n = Math.min(48, wanted);

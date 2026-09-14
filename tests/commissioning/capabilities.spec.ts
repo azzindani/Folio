@@ -8,9 +8,9 @@ import { designPath, serverExport, FIXTURE_PROJECT, TEST_TOKEN } from './lib/har
 /**
  * CAPABILITIES — the promises beyond a still poster.
  *
- * Motion: production has no ffmpeg and no headless Chrome, so the exports that
- * have to work there are the binary-free ones. An export that "succeeds" while
- * writing a still frame is the failure to catch.
+ * Motion: production has no headless Chrome, so every motion export has to
+ * work without a browser. An export that "succeeds" while writing a still
+ * frame is the failure to catch.
  *
  * Persistence: an edit that reaches the screen but not the disk is invisible
  * until the tab is closed, and then the work is simply gone.
@@ -27,7 +27,7 @@ function exportMotion(type: 'svg' | 'html', out: string): AnimResult {
   // so it needs its own invocation rather than serverExport's.
   const script = `
     import { exportAnimation } from ${JSON.stringify(path.join(process.cwd(), 'src/mcp/engine-runtime-tools.ts'))};
-    const res = exportAnimation({
+    const res = await exportAnimation({
       design_path: ${JSON.stringify(designPath('motion'))},
       type: ${JSON.stringify(type)},
       output_path: ${JSON.stringify(out)},

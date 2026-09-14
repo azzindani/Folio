@@ -184,7 +184,7 @@ Slide presentations + live presenting/collab. **Req:** `op`.
 Animation timeline + motion export. **Req:** `op`, `design_path`.
 - `timeline` — keyframe tracks as an ASCII timeline (`page_id` to filter).
 - `keyframe` (req layer_id, keyframe:{t,x?,y?,opacity?,scale?,rotation?}) — add/replace a keyframe.
-- `export` (req type = gif|mp4|webm; `fps`, `duration`) — render to GIF/MP4/WebM (Puppeteer + ffmpeg).
+- `export` (req type = svg|html|gif|mp4|webm; `fps`, `duration` ≤60s, `page_id`, `all_pages`) — SVG/HTML written in-process; GIF streamed in-process; MP4 (H.264) / WebM (VP9) piped into ffmpeg.
 
 ---
 

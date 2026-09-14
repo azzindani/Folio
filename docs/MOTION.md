@@ -59,7 +59,7 @@ layers:
 | Route | Consumer | Plays |
 |---|---|---|
 | `animation(op:export, type:svg\|html)` | `keyframe-css.ts` → `@keyframes` inlined into the render | every channel |
-| `animation(op:export, type:gif)` and `op:frame` | `gif-frames.ts` samples `interpolateKeyframes()` per frame and re-renders | all but `skew_*` and `draw` (no still-frame equivalent in the layer schema — they hold at rest) |
+| `animation(op:export, type:gif\|mp4\|webm)` and `op:frame` | `gif-frames.ts` samples `interpolateKeyframes()` per frame, resvg rasterises, frames stream to `gif-stream.ts` or ffmpeg (`video-encode.ts`) | every channel — `draw` is measured on path, line, rect, ellipse and polygon |
 
 `poseAt()` in `keyframe-css.ts` is the reference sampler tests use to check the two agree.
 
@@ -144,6 +144,8 @@ PNG only (pure-TS codec; no sharp/canvas in the `bun --smol` container). Non-PNG
 ---
 
 ## 5. What is still open (for the next session)
+
+* ~~**Long raster motion**~~ — DONE. The GIF route held every frame in memory under a 180 MB budget, so a 30s scene at 1080×1350 shipped at 1fps. `gif-stream.ts` now writes each frame as it renders, merges identical frames and stores only the changed rectangle of an opaque frame; `gif-quantize.ts` cuts over a colour histogram (555ms → ~40ms per frame). `video-encode.ts` pipes the same frames into ffmpeg for mp4 (H.264, yuv420p, faststart) and webm (VP9) — no Puppeteer. `draw` on a `line` now reveals in stills too (only `d` paths were measured). Limits: clips ≤60s, gif ≤50fps, video ≤60fps.
 
 * ~~**Editor timeline panel**~~ — DONE. The scrubber PREVIEWS (applies the pose with recordUndo:false, restores the authored values on stop; it previously moved a thumb and changed nothing). `interpolateAtTime` delegates to `poseAt`, the sampler the CSS route and the flipbook already use, so all three agree and per-keyframe `easing` is honoured. Clicking a keyframe opens an easing picker (`setKeyframeEasing`); a toolbar Stagger offsets each SELECTED layer by one more step than the last (`shiftKeyframes`) — the panel'''s op:sequence. Covered by `tests/commissioning/timeline-panel.spec.ts` in a real browser, which is the only thing that catches a picker whose teardown throws before it writes. NOTE: that suite cannot assert on the .design.yaml — the editor'''s autosave never flushes under the commissioning server, so a file assertion there tests autosave, not the panel.
 * ~~**JPEG/WebP decode**~~ — DONE. `src/utils/raster-decode.ts` reads PNG/JPEG/WebP/GIF into RGBA and asset_process always writes PNG. No new dependency: resvg is already here for every raster export and decodes embedded images, so the bytes are wrapped in a one-element SVG at NATIVE size and rendered — one code path, no per-format decoders, and the same library that will rasterise the design later.

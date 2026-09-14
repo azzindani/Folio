@@ -101,10 +101,12 @@ ENV FOLIO_PORT=3333
 # /home/folio/projects is the canonical persistence point.
 ENV FOLIO_PROJECTS_DIR=/home/folio/projects
 
-# bash for entrypoint scripts, curl for HEALTHCHECK, tini for proper PID 1.
+# bash for entrypoint scripts, curl for HEALTHCHECK, tini for proper PID 1,
+# ffmpeg for animation(op:export) type mp4/webm — rendered frames are piped
+# straight into it (src/export/video-encode.ts).
 # Bun serves the editor (src/editor/static-server.ts) and the MCP HTTP API
 # (src/mcp/http-server.ts) — no node/npm needed at runtime.
-RUN apk add --no-cache bash curl tini
+RUN apk add --no-cache bash curl tini ffmpeg
 
 # Unprivileged user. The oven/bun image ships a `bun` user/group at uid 1000;
 # we add a parallel `folio` user with its own home so paths in docs are stable.
