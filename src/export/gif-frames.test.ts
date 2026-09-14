@@ -223,8 +223,41 @@ describe('skew and draw reach a sampled frame', () => {
     expect((layersAt([l], 1000)[0] as unknown as Record<string, unknown>)['stroke_dashoffset']).toBeUndefined();
   });
 
-  it('ignores draw on a layer with no path to measure', () => {
-    const l = layer('box', { animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
+  it('ignores draw on a layer with no outline to measure', () => {
+    const l = layer('words', { type: 'text', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
     expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();
+  });
+
+  // Only layers carrying `d` were measured, so a plain `line` — the connector in
+  // a flow diagram — stood fully drawn from frame 0 of every GIF.
+  const drawnAt = (extra: Record<string, unknown>, t: number): Record<string, unknown> =>
+    layersAt([layer('s', { ...extra, animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) })], t)[0] as unknown as Record<string, unknown>;
+
+  it('measures a line from its end points, and hides it completely at draw 0', () => {
+    const line = { type: 'line', x1: 540, y1: 640, x2: 540, y2: 720 };
+    expect(drawnAt(line, 0)).toMatchObject({ stroke_dasharray: 80, stroke_dashoffset: 80 });
+    expect(drawnAt(line, 500)).toMatchObject({ stroke_dasharray: 80, stroke_dashoffset: 40 });
+  });
+
+  it('measures rects, including rounded corners', () => {
+    expect(drawnAt({ width: 100, height: 50 }, 0)['stroke_dasharray']).toBe(300);
+    // four quarter circles of r=10 replace 80px of straight edge with 62.83px of arc
+    expect(drawnAt({ width: 100, height: 50, radius: 10 }, 0)['stroke_dasharray']).toBe(Math.ceil(300 - 80 + 20 * Math.PI));
+    const perCorner = drawnAt({ width: 100, height: 50, radius: { tl: 10, tr: 0, br: 0, bl: 0 } }, 0)['stroke_dasharray'] as number;
+    expect(perCorner).toBeGreaterThan(283);
+    expect(perCorner).toBeLessThan(300);
+  });
+
+  it('measures ellipses and polygons', () => {
+    expect(drawnAt({ type: 'ellipse', width: 100, height: 100 }, 0)['stroke_dasharray']).toBe(Math.ceil(100 * Math.PI));
+    expect(drawnAt({ type: 'polygon', points: '0,0 100,0 100,100' }, 0)['stroke_dasharray']).toBe(Math.ceil(200 + Math.SQRT2 * 100));
+    expect(drawnAt({ type: 'polygon', sides: 4, width: 100, height: 100 }, 0)['stroke_dasharray']).toBe(Math.ceil(200 * Math.SQRT2));
+  });
+
+  it('never reports an opacity above 1, even when the curve overshoots', () => {
+    const l = layer('pop', { animation: { keyframes: [{ t: 0, opacity: 0, easing: 'ease-out-back' }, { t: 1000, opacity: 1 }], playback: { duration: 1000 } } });
+    for (const t of [300, 500, 700, 900]) {
+      expect((layersAt([l], t)[0] as unknown as Record<string, unknown>)['opacity']).toBeLessThanOrEqual(1);
+    }
   });
 });

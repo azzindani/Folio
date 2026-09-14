@@ -37,7 +37,7 @@ WORKFLOW (3 calls)
        {preset:"pulse",    layer_ids:["cta"]},                  ← loop: own layer
        {preset:"fade_out", at:5000} ])                          ← exit, whole page
   3. animation(op:frame, t:600) to check a pose · op:timeline for the Gantt ·
-     animation(op:export, type:"svg") for the file (gif for feeds).
+     animation(op:export, type:"svg") for the file (gif or mp4 for feeds).
 
 RULES OF THUMB
   • Entrances 400–800ms, exits 300–500ms, loops 1.2–6s. Stagger 60–120ms.
@@ -51,5 +51,6 @@ RULES OF THUMB
     a list you want to stagger: name the children in layer_ids.
   • op:track when a preset is not it: any channels, per-frame easing, holds.
     keyframes:[{t:0,opacity:0,y:30,easing:"ease-out-expo"},{t:500,opacity:1,y:0,hold:true},{t:2500,y:0},{t:2900,opacity:0,y:-20}]
-  • GIF cannot show skew or draw (no still-frame equivalent); SVG/HTML play everything.
+  • Every format plays every channel. gif/mp4/webm stream frame by frame, so a
+    30s scene keeps its fps (clips up to 60s; gif ≤50fps, video ≤60fps).
 `;

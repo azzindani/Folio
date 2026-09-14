@@ -1,0 +1,142 @@
+/**
+ * GIF / MP4 / WebM export — sample the scene, rasterise each moment with
+ * resvg, stream it straight into an encoder.
+ *
+ * The first GIF route held every frame in memory and capped the count against
+ * a 180 MB budget, so a 30s scene at 1080×1350 got 32 frames: 1fps. Frames now
+ * leave as soon as they are rendered (GifStream to disk, VideoPipe to ffmpeg),
+ * so length costs time, not memory — and the only limits left are ones a
+ * person would choose: clip length and a frame rate the format can play.
+ */
+
+import * as path from 'path';
+import { Resvg } from '@resvg/resvg-js';
+import type { DesignSpec } from '../../schema/types';
+import type { ToolResult } from '../types';
+import { errResult, okResult } from './utils';
+import { renderToSVGString } from './svg-export';
+import { resvgFontOption } from './fonts';
+import { resolveImageAssets } from './asset-resolve';
+import { specAt, frameTimes, animationDuration } from '../../export/gif-frames';
+import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-stream';
+import { VideoPipe, type VideoType } from '../../export/video-encode';
+import { tryFfmpeg } from '../../export/animation-export';
+
+export interface RasterMotionArgs {
+  type: 'gif' | VideoType;
+  fps?: number;
+  duration?: number;
+  project_path?: string;
+}
+
+/** Longest clip. A bound on CPU time — frames stream, so memory is flat at any length. */
+export const MAX_CLIP_MS = 60_000;
+
+/** GIF delays under 2cs are slowed down by browsers, so 50fps is the fastest a GIF plays. */
+const FPS_LIMITS = { gif: { def: 12, max: 50 }, video: { def: 30, max: 60 } } as const;
+
+const OP = 'export_animation';
+
+const yieldToServer = (): Promise<void> => new Promise(resolve => { setImmediate(resolve); });
+
+export async function exportRasterMotion(
+  spec: DesignSpec, dPath: string, pageIndex: number, outputPath: string, args: RasterMotionArgs,
+): Promise<ToolResult> {
+  const { type } = args;
+  const video = type !== 'gif';
+  const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
+  // Every frame is a real render, so an unresolved asset href is a hole in all of them.
+  const notes = resolveImageAssets(spec, dPath, args.project_path);
+
+  const runMs = args.duration ?? animationDuration(layers);
+  if (runMs <= 0) {
+    return errResult(OP, `Nothing in this design is animated, so a ${type} would be a single still frame.`,
+      'Add motion with animation(op:motion) or animation(op:keyframe) first, ' +
+      'or use export_design(format:"png") if a still is what you want.');
+  }
+  if (runMs > MAX_CLIP_MS) {
+    return errResult(OP, `The clip is ${(runMs / 1000).toFixed(1)}s; ${type} export stops at ${MAX_CLIP_MS / 1000}s.`,
+      'Pass `duration` (ms) to export the first part, or split the scene across pages and export each.');
+  }
+  if (video && !tryFfmpeg()) {
+    return errResult(OP, `${type} export needs ffmpeg, which this host does not have.`,
+      'Install ffmpeg on the host (the Docker image ships it), or export type:"gif" — encoded in-process — ' +
+      'or type:"svg" for vector motion at any size.');
+  }
+
+  const limits = video ? FPS_LIMITS.video : FPS_LIMITS.gif;
+  const asked = args.fps ?? limits.def;
+  const fps = Math.min(limits.max, Math.max(1, Math.round(asked)));
+  if (fps !== asked) notes.push(`fps ${asked} is outside what a ${type} plays (1–${limits.max}); exported at ${fps}fps.`);
+
+  const times = frameTimes(runMs, fps);
+  const frameMs = runMs / times.length;
+  const font = resvgFontOption(path.dirname(path.dirname(dPath)));
+  // Video has no alpha: anything the design leaves transparent would encode as black.
+  const renderAt = (t: number): { pixels: Buffer; width: number; height: number } => {
+    const svg = renderToSVGString(specAt(spec, pageIndex, t));
+    const img = new Resvg(svg, video ? { font, background: '#FFFFFF' } : { font }).render();
+    return { pixels: img.pixels, width: img.width, height: img.height };
+  };
+
+  const started = performance.now();
+  let width = 0, height = 0, bytes = 0;
+  let gifStats: GifStreamStats | null = null;
+
+  if (video) {
+    let pipe: VideoPipe | null = null;
+    try {
+      for (const t of times) {
+        const img = renderAt(t);
+        if (!pipe) {
+          ({ width, height } = img);
+          pipe = new VideoPipe({ type, width, height, fps, outputPath });
+        }
+        await pipe.write(img.pixels);
+        await yieldToServer();
+      }
+      if (pipe) bytes = (await pipe.finish()).bytes;
+    } catch (e) {
+      await pipe?.abort();
+      return errResult(OP, `${type} export failed: ${(e as Error).message}`,
+        'A render error names the layer — run diagnose_design. An ffmpeg error names the encoder.');
+    }
+  } else {
+    const sink = fileSink(outputPath);
+    try {
+      let gif: GifStream | null = null;
+      for (const t of times) {
+        const img = renderAt(t);
+        if (!gif) {
+          ({ width, height } = img);
+          gif = new GifStream(sink, { width, height, loopCount: 0 });
+        }
+        gif.add(new Uint8ClampedArray(img.pixels.buffer, img.pixels.byteOffset, img.pixels.byteLength), frameMs);
+        await yieldToServer();
+      }
+      if (gif) gifStats = gif.finish();
+      bytes = gifStats?.bytes ?? 0;
+    } catch (e) {
+      sink.abort();
+      return errResult(OP, `Frame rendering failed: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.');
+    }
+  }
+
+  return okResult(OP, {
+    design_path: dPath,
+    output_path: outputPath,
+    type,
+    frames: times.length,
+    fps,
+    duration: runMs,
+    width,
+    height,
+    bytes,
+    ...(gifStats ? { images_written: gifStats.images_written } : {}),
+    render_ms: Math.round(performance.now() - started),
+    ...(notes.length ? { notes } : {}),
+    note: video
+      ? `Encoded by ffmpeg as the frames rendered (${type === 'mp4' ? 'H.264, yuv420p, faststart' : 'VP9'}).`
+      : 'Encoded in-process as the frames rendered: identical frames merged, later frames store only what changed.',
+  });
+}

@@ -22,8 +22,8 @@ function makePresentationDesign(): string {
 }
 
 describe('exportAnimation', () => {
-  it('fails when design does not exist', () => {
-    const r = exportAnimation({
+  it('fails when design does not exist', async () => {
+    const r = await exportAnimation({
       design_path: path.join(tmpDir, 'missing.design.yaml'),
       type: 'gif',
     });
@@ -40,9 +40,9 @@ describe('exportAnimation', () => {
 
   describe('binary-free routes', () => {
     for (const type of ['svg', 'html'] as const) {
-      it(`type:"${type}" writes a real file`, () => {
+      it(`type:"${type}" writes a real file`, async () => {
         const dPath = makePresentationDesign();
-        const r = exportAnimation({ design_path: dPath, type });
+        const r = await exportAnimation({ design_path: dPath, type });
         expect(r.success).toBe(true);
         const out = r['output_path'] as string;
         expect(fs.existsSync(out)).toBe(true);
@@ -51,9 +51,9 @@ describe('exportAnimation', () => {
       });
     }
 
-    it('all_pages writes one file per page, named -p1/-p2', () => {
+    it('all_pages writes one file per page, named -p1/-p2', async () => {
       const dPath = makePresentationDesign();
-      const r = exportAnimation({ design_path: dPath, type: 'svg', all_pages: true });
+      const r = await exportAnimation({ design_path: dPath, type: 'svg', all_pages: true });
       expect(r.success).toBe(true);
       const outs = r['output_paths'] as string[];
       expect(outs).toHaveLength(2);
@@ -62,39 +62,39 @@ describe('exportAnimation', () => {
       expect(r['pages']).toBe(2);
     });
 
-    it('all_pages on a single-page design falls back to the normal one-file export', () => {
+    it('all_pages on a single-page design falls back to the normal one-file export', async () => {
       const dPath = makePresentationDesign();
       const spec = readDesign(dPath) as { pages: unknown[] };
       spec.pages = spec.pages.slice(0, 1);
       writeDesign(dPath, spec);
-      const r = exportAnimation({ design_path: dPath, type: 'svg', all_pages: true });
+      const r = await exportAnimation({ design_path: dPath, type: 'svg', all_pages: true });
       expect(r.success).toBe(true);
       expect(r['output_paths']).toBeUndefined();
       expect(fs.existsSync(r['output_path'] as string)).toBe(true);
     });
 
-    it('writes SVG content for type:"svg"', () => {
+    it('writes SVG content for type:"svg"', async () => {
       const dPath = makePresentationDesign();
-      const r = exportAnimation({ design_path: dPath, type: 'svg' });
+      const r = await exportAnimation({ design_path: dPath, type: 'svg' });
       expect(fs.readFileSync(r['output_path'] as string, 'utf-8')).toContain('<svg');
     });
 
-    it('wraps the SVG in a document for type:"html"', () => {
+    it('wraps the SVG in a document for type:"html"', async () => {
       const dPath = makePresentationDesign();
-      const r = exportAnimation({ design_path: dPath, type: 'html' });
+      const r = await exportAnimation({ design_path: dPath, type: 'html' });
       const html = fs.readFileSync(r['output_path'] as string, 'utf-8');
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('<svg');
     });
 
-    it('warns when the design has no animation rather than implying motion', () => {
+    it('warns when the design has no animation rather than implying motion', async () => {
       const dPath = makePresentationDesign();
-      const r = exportAnimation({ design_path: dPath, type: 'svg' });
+      const r = await exportAnimation({ design_path: dPath, type: 'svg' });
       expect(r['animated_layers']).toEqual([]);
       expect(String(r['warning'])).toContain('still image');
     });
 
-    it('inlines project assets instead of leaving a relative href', () => {
+    it('inlines project assets instead of leaving a relative href', async () => {
       // Live bug: these routes called renderToSVGString directly and skipped
       // the asset resolution export_design has always done, so the file went
       // out carrying src="assets/images/logo.png" — which resolves to nothing
@@ -118,52 +118,97 @@ describe('exportAnimation', () => {
       }];
       writeDesign(dPath, spec);
 
-      const r = exportAnimation({ design_path: dPath, type: 'svg' });
+      const r = await exportAnimation({ design_path: dPath, type: 'svg' });
       const svg = fs.readFileSync(r['output_path'] as string, 'utf-8');
       expect(svg).toContain('data:image');
       expect(svg).not.toContain('assets/images/dot.png');
     });
 
-    it('honors a custom output_path', () => {
+    it('honors a custom output_path', async () => {
       const dPath = makePresentationDesign();
       const outPath = path.join(tmpDir, 'exports', 'custom.svg');
-      const r = exportAnimation({ design_path: dPath, type: 'svg', output_path: outPath });
+      const r = await exportAnimation({ design_path: dPath, type: 'svg', output_path: outPath });
       expect(r['output_path']).toBe(outPath);
       expect(fs.existsSync(outPath)).toBe(true);
     });
   });
 
   describe('raster routes', () => {
-    const hasDeps = ((): boolean => {
-      try { require.resolve('puppeteer'); } catch { return false; }
-      try { execSync('ffmpeg -version', { stdio: 'ignore' }); } catch { return false; }
-      return true;
+    const hasFfmpeg = ((): boolean => {
+      try { execSync('ffmpeg -version', { stdio: 'ignore' }); return true; } catch { return false; }
     })();
 
-    // gif is no longer in this group: it is rendered and LZW-encoded in-process,
-    // so it works on a host with neither binary. Only the video formats still
-    // need Puppeteer to capture frames and ffmpeg to encode them.
-    for (const type of ['mp4', 'webm'] as const) {
-      it(`type:"${type}" refuses clearly when the host lacks the binaries`, () => {
-        if (hasDeps) return; // the refusal path is unreachable here
-        const dPath = makePresentationDesign();
-        const r = exportAnimation({ design_path: dPath, type });
-        expect(r.success).toBe(false);
-        // The refusal has to name the way forward, not just the problem.
-        expect(String(r['hint'] ?? r['error'])).toContain('svg');
+    /** A size×¾size poster whose one layer rises for 600ms and then holds for `holdMs`. */
+    function makeAnimatedDesign(holdMs = 0, size = 64): string {
+      const dir = path.join(tmpDir, 'anim', 'designs');
+      fs.mkdirSync(dir, { recursive: true });
+      const p = path.join(dir, 'clip.design.yaml');
+      writeDesign(p, {
+        _protocol: 'design/v1',
+        meta: { id: 'c', name: 'clip', type: 'poster', created: '2026-01-01', modified: '2026-01-01' },
+        document: { width: size, height: Math.round(size * 0.75), unit: 'px', dpi: 96 },
+        layers: [
+          { id: 'bg', type: 'rect', x: 0, y: 0, width: size, height: Math.round(size * 0.75), z: 0, fill: '#F4EFE6' },
+          { id: 'dot', type: 'rect', x: 20, y: 16, width: 16, height: 16, z: 1, fill: '#2F5BEA',
+            animation: { keyframes: [{ t: 0, opacity: 0, y: 12 }, { t: 600, opacity: 1, y: 0 }], playback: { duration: 600 + holdMs } } },
+        ],
       });
+      return p;
     }
 
-    it('reports fps defaults when the host can encode', () => {
-      if (!hasDeps) return;
-      const dPath = makePresentationDesign();
-      expect(exportAnimation({ design_path: dPath, type: 'mp4' })['fps']).toBe(30);
+    // The first GIF route capped frames against a memory budget, so a long
+    // scene silently lost its frame rate — 30s at 1080×1350 shipped at 1fps.
+    // At 2400×1800 that budget held 10 frames, so this request came back at 5fps.
+    it('gif keeps the requested frame rate over a long scene, and merges the hold', async () => {
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(1400, 2400), type: 'gif', fps: 6 });
+      expect(r.success).toBe(true);
+      expect(r).toMatchObject({ fps: 6, frames: 12, duration: 2000, width: 2400, height: 1800 });
+      // 600ms of motion is a few distinct frames; the 1.4s hold is ONE image, not eight.
+      expect(r['images_written'] as number).toBeLessThan(12);
+      const out = r['output_path'] as string;
+      expect(fs.readFileSync(out).subarray(0, 6).toString('ascii')).toBe('GIF89a');
+      expect(fs.existsSync(`${out}.partial`)).toBe(false);
+    }, 60_000);
+
+    it('clamps an fps a GIF cannot play, and says so', async () => {
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(), type: 'gif', fps: 120, duration: 100 });
+      expect(r['fps']).toBe(50);
+      expect(((r['notes'] as string[] | undefined) ?? []).join(' ')).toMatch(/fps 120 .*exported at 50fps/);
+    }, 60_000);
+
+    it('refuses a clip longer than the export limit and names the way out', async () => {
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(), type: 'gif', duration: 90_000 });
+      expect(r.success).toBe(false);
+      expect(String(r['hint'])).toContain('duration');
+    });
+
+    it('refuses an unknown type instead of guessing an encoder', async () => {
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(), type: 'avi' as never });
+      expect(r.success).toBe(false);
+      expect(String(r['hint'])).toContain('mp4');
+    });
+
+    it.skipIf(!hasFfmpeg)('mp4 writes an H.264 file with one frame per sample', async () => {
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(400), type: 'mp4', fps: 5 });
+      expect(r.success).toBe(true);
+      expect(r).toMatchObject({ fps: 5, frames: 5 });
+      const probe = execSync(
+        `ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=codec_name,nb_read_frames -of csv=p=0 "${String(r['output_path'])}"`,
+      ).toString().trim();
+      expect(probe).toBe('h264,5');
+    }, 60_000);
+
+    it.skipIf(hasFfmpeg)('mp4 refuses clearly on a host without ffmpeg', async () => {
+      const r = await exportAnimation({ design_path: makeAnimatedDesign(), type: 'mp4' });
+      expect(r.success).toBe(false);
+      expect(String(r['error'])).toContain('ffmpeg');
+      expect(String(r['hint'])).toContain('gif');
     });
   });
 
   describe('gif', () => {
-    it('says a still design has nothing to animate rather than writing one frame', () => {
-      const r = exportAnimation({ design_path: makePresentationDesign(), type: 'gif' });
+    it('says a still design has nothing to animate rather than writing one frame', async () => {
+      const r = await exportAnimation({ design_path: makePresentationDesign(), type: 'gif' });
       expect(r.success).toBe(false);
       expect(String(r['error'])).toMatch(/nothing is animated|Nothing in this design is animated/i);
       expect(String(r['hint'])).toContain('animation(op:motion)');

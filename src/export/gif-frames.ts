@@ -12,6 +12,7 @@ import type { DesignSpec, Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
 import { samplePath, type SampledPath } from '../animation/motion-path';
+import { roundedRectPath } from '../renderer/layer-renderers-shared';
 
 type AnimatedLayer = Layer & { animation?: AnimationSpec; layers?: Layer[] };
 
@@ -56,6 +57,65 @@ function sampledPath(d: string): SampledPath | null {
   let hit = PATH_CACHE.get(d);
   if (hit === undefined) { hit = samplePath(d); PATH_CACHE.set(d, hit); }
   return hit;
+}
+
+/** Ramanujan's second approximation — within a few ppm for any ellipse a design uses. */
+function ellipsePerimeter(a: number, b: number): number {
+  if (a + b <= 0) return 0;
+  const h = ((a - b) / (a + b)) ** 2;
+  return Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+}
+
+function polygonPerimeter(points: string): number {
+  const n = (points.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi) ?? []).map(Number);
+  let total = 0;
+  for (let i = 0; i + 1 < n.length; i += 2) {
+    const j = (i + 2) % (n.length - (n.length % 2));
+    total += Math.hypot(n[j] - n[i], n[j + 1] - n[i + 1]);
+  }
+  return total;
+}
+
+/**
+ * Length of the outline `draw` reveals, measured the way the renderer draws it.
+ *
+ * The SVG route never needed a number: it stamps pathLength="1" on whatever
+ * element the layer becomes (path, line, rect, ellipse, polygon) and lets the
+ * browser measure. A still frame has to give the dash in pixels, and only
+ * layers carrying a `d` were measured — so a `line`, the commonest thing anyone
+ * draws on, stood complete from the first frame while the SVG drew it in.
+ */
+function strokeLength(layer: Layer): number | null {
+  const r = layer as unknown as Record<string, unknown>;
+  if (typeof r['d'] === 'string') return sampledPath(r['d'])?.length ?? null;
+  const n = (k: string): number => num(r[k]) ?? 0;
+  const w = n('width'), h = n('height');
+  switch (r['type']) {
+    case 'line':
+      return Math.hypot(n('x2') - n('x1'), n('y2') - n('y1'));
+    case 'rect': {
+      const rad = r['radius'];
+      if (rad && typeof rad === 'object') {
+        // Per-corner radii render as the renderer's own quadratic path — measure that path.
+        const c = rad as { tl: number; tr: number; br: number; bl: number };
+        return sampledPath(roundedRectPath(0, 0, w, h, c))?.length ?? null;
+      }
+      // <rect rx> clamps each axis to half the side, then draws quarter-ellipse corners.
+      const rx = Math.min(Math.max(num(rad) ?? 0, 0), w / 2);
+      const ry = Math.min(Math.max(num(rad) ?? 0, 0), h / 2);
+      return 2 * (w - 2 * rx) + 2 * (h - 2 * ry) + ellipsePerimeter(rx, ry);
+    }
+    case 'circle':
+    case 'ellipse':
+      return ellipsePerimeter(num(r['rx']) ?? w / 2, num(r['ry']) ?? h / 2);
+    case 'polygon': {
+      if (typeof r['points'] === 'string' && r['points'].trim()) return polygonPerimeter(r['points']);
+      const sides = n('sides');
+      return sides >= 3 ? sides * 2 * (Math.min(w, h) / 2) * Math.sin(Math.PI / sides) : null;
+    }
+    default:
+      return null;
+  }
 }
 
 /**
@@ -144,7 +204,9 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   const vo = num(v['opacity']);
   if (vo !== undefined) {
     const existing = num(layer['opacity' as keyof Layer]);
-    out['opacity'] = (existing ?? 1) * vo;
+    // An overshooting curve (pop = ease-out-back) swings past 1. The renderer
+    // clamps it anyway, but op:frame reports this number as the pose.
+    out['opacity'] = Math.min(1, Math.max(0, (existing ?? 1) * vo));
   }
 
   const vr = num(v['rotation']);
@@ -195,11 +257,13 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   // travelled line agree about where "halfway" is.
   const vd = num(v['draw']);
   if (vd !== undefined && vd < 1) {
-    const d = (layer as unknown as Record<string, unknown>)['d'];
-    const sp = typeof d === 'string' ? sampledPath(d) : null;
-    if (sp && sp.length > 0) {
-      out['stroke_dasharray'] = Math.ceil(sp.length);
-      out['stroke_dashoffset'] = Math.round(sp.length * (1 - Math.max(0, vd)));
+    const len = strokeLength(layer);
+    if (len !== null && len > 0) {
+      // Offset against the SAME rounded dash, so draw:0 hides the stroke
+      // entirely instead of leaving the sub-pixel remainder showing.
+      const dash = Math.ceil(len);
+      out['stroke_dasharray'] = dash;
+      out['stroke_dashoffset'] = Math.round(dash * (1 - Math.max(0, vd)));
     }
   }
 
