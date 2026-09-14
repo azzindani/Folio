@@ -213,8 +213,7 @@ describe('animation(op:frame)', () => {
     // skew and draw render correctly but land on `transform` and the dash pair,
     // not on x/y. Reporting only the box told a blind caller nothing had changed
     // about a frame that visibly had — the same omission motion_path had.
-    // `draw` is a dash trick, so it needs a path whose length can be measured —
-    // a `line` layer has no `d` and would silently skip the channel.
+    // Skew renders as CSS's own skew MATRIX, so the readout names it as numbers.
     const p = writeDesign('draw.design.yaml', [
       '  - { id: stroke_path, type: path, x: 20, y: 20, width: 200, height: 100, d: "M 20 20 L 220 20 L 220 120", stroke: { color: "#111111", width: 4 } }',
     ]);
@@ -226,7 +225,10 @@ describe('animation(op:frame)', () => {
     expect(r.success, JSON.stringify(r)).toBe(true);
     const pose = (r['poses'] as Array<Record<string, unknown>>).find(x => x['id'] === 'stroke_path');
     expect(pose).toBeDefined();
-    expect(String(pose?.['transform'])).toContain('skew');
+    expect(String(pose?.['transform'])).toContain('matrix(');
+    const skew = pose?.['skew'] as [number, number] | undefined;
+    expect(skew?.[0]).toBeLessThan(0);
+    expect(skew?.[1]).toBe(0);
     expect(pose?.['stroke_dasharray']).toBeDefined();
     expect(typeof pose?.['stroke_dashoffset']).toBe('number');
   });

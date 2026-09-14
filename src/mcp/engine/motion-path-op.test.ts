@@ -40,10 +40,15 @@ describe('animation op:motion_path', () => {
   it('actually MOVES the layer in the shared frame sampler', () => {
     setMotionPath({ design_path: dPath, layer_ids: ['dot'], path: 'M 0 0 L 400 0', duration: 1000 });
     const layers = read().layers as Layer[];
+    // The travel is a translate on top of the authored position, so a line or a
+    // path (no x/y) travels the same way a box does.
     const at = (t: number): Record<string, unknown> => layersAt(layers, t)[0] as unknown as Record<string, unknown>;
-    expect(at(0)['x']).toBeCloseTo(100, 0);          // authored position
-    expect(at(500)['x']).toBeCloseTo(300, 0);        // halfway along, offset from it
-    expect(at(1000)['x']).toBeCloseTo(500, 0);
+    const dx = (t: number): number => (at(t)['_frame_pose'] as { dx: number }).dx;
+    expect(dx(0)).toBeCloseTo(0, 0);                 // at its authored position
+    expect(dx(500)).toBeCloseTo(200, 0);             // halfway along, offset from it
+    expect(dx(1000)).toBeCloseTo(400, 0);
+    expect(String(at(500)['transform'])).toMatch(/^translate\(200 0\)/);
+    expect(at(500)['x']).toBe(100);
   });
 
   it('gives a path-only design a real duration, so the flipbook makes frames', () => {
@@ -53,8 +58,9 @@ describe('animation op:motion_path', () => {
 
   it('turns the layer along the curve only when asked', () => {
     setMotionPath({ design_path: dPath, layer_ids: ['dot'], path: 'M 0 0 L 0 200', duration: 1000, auto_rotate: true });
-    const rot = (layersAt(read().layers as Layer[], 500)[0] as unknown as Record<string, unknown>)['rotation'];
-    expect(rot).toBeCloseTo(90, 0);
+    const frame = layersAt(read().layers as Layer[], 500)[0] as unknown as Record<string, unknown>;
+    expect((frame['_frame_pose'] as { rotation: number }).rotation).toBeCloseTo(90, 0);
+    expect(String(frame['transform'])).toContain('rotate(90');
   });
 
   it('refuses an arc rather than exporting a different curve than the browser draws', () => {

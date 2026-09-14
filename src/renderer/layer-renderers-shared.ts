@@ -3,7 +3,7 @@ import type { Layer, TextLayer, AutoLayoutLayer, ColorOrGradient, TextContent, T
 import { createSVGElement, getOrCreateDefs } from './svg-utils';
 
 import { resolveColorOrGradient } from './fill-renderer';
-import { wrapToWidth } from '../utils/text-width';
+import { wrapToWidth, textWidthPx } from '../utils/text-width';
 
 // Word-wrap plain text into lines that fit within maxWidth.
 // Default char-width is ~0.52× font-size (accurate for Inter/sans-serif). Pass
@@ -26,6 +26,67 @@ export function wrapPlainText(text: string, maxWidth: number | undefined, fontSi
   if (!maxWidth || maxWidth <= 0) return text.split('\n');
   const lines = wrapToWidth(text, maxWidth, fontSize, cw / fontSize);
   return lines.length ? lines : [''];
+}
+
+/** How a plain-text layer lays out — see plainTextLayout. */
+export interface PlainTextLayout {
+  /** The text after text_transform — what is actually drawn. */
+  value: string;
+  lines: string[];
+  /** Estimated drawn width of each line, px. */
+  lineWidths: number[];
+  fontSize: number;
+  lineH: number;
+  anchor: 'start' | 'middle' | 'end';
+  /** x of the text anchor, y of the first baseline. */
+  textX: number;
+  textY: number;
+}
+
+/**
+ * The lines a plain-text layer wraps to and where they sit — THE rule
+ * renderText draws with, exported so anything measuring the drawing (the pivot
+ * box frame-geometry gives rotate/scale) uses this wrap and anchor, not a copy.
+ */
+export function plainTextLayout(
+  raw: string,
+  style: NonNullable<TextLayer['style']>,
+  box: { x?: number; y?: number; width?: number | 'auto'; height?: number | 'auto' },
+): PlainTextLayout {
+  const fontSize = style.font_size ?? 16;
+  const lineH = fontSize * (style.line_height ?? 1.4);
+  const value = transformText(raw, style.text_transform);
+  const alignVal = style.text_align ?? style.align;
+  const anchor = alignVal === 'center' ? 'middle' : alignVal === 'right' ? 'end' : 'start';
+  // Widen the char estimate for wider glyph runs so the line actually fits
+  // its box: monospace (~0.60), ALL-CAPS (+0.06), plus literal letter-spacing.
+  // Plain sans mixed-case keeps the original 0.52 → no change to those lines.
+  const fam = (style.font_family ?? '').toLowerCase();
+  const isMono = /\bmono\b|monospace|courier|consolas|menlo/.test(fam);
+  // ALL-CAPS runs wider — whether forced via text_transform OR the string is
+  // already literally uppercase (a model very often types a CAPS headline). Both
+  // need the wider factor or the line under-wraps and bleeds off the right edge.
+  const isUpper = style.text_transform === 'uppercase'
+    || (value.length > 2 && value === value.toUpperCase() && /[A-Z]/.test(value));
+  let factor = isMono ? 0.60 : 0.52;
+  if (isUpper) factor += 0.06;
+  const tracking = typeof style.letter_spacing === 'number' ? style.letter_spacing : 0;
+  const perChar = factor === 0.52 ? undefined : fontSize * factor + Math.max(0, tracking);
+  const width = typeof box.width === 'number' ? box.width : undefined;
+  const lines = wrapPlainText(value, width, fontSize, perChar);
+
+  const x = box.x ?? 0, y = box.y ?? 0;
+  const textX = alignVal === 'center' && width !== undefined ? x + width / 2
+    : alignVal === 'right' && width !== undefined ? x + width : x;
+  let textY = y + fontSize;
+  if (typeof box.height === 'number' && style.vertical_align) {
+    const totalH = lines.length * lineH;
+    if (style.vertical_align === 'middle') textY = y + (box.height - totalH) / 2 + fontSize;
+    else if (style.vertical_align === 'bottom') textY = y + box.height - totalH + fontSize;
+  }
+  const narrowEm = (perChar ?? fontSize * 0.52) / fontSize;
+  const lineWidths = lines.map(l => textWidthPx(l, fontSize, narrowEm) + tracking * Math.max(0, [...l].length - 1));
+  return { value, lines, lineWidths, fontSize, lineH, anchor, textX, textY };
 }
 
 export function applyCommonAttributes(

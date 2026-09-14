@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { Resvg } from '@resvg/resvg-js';
+import { renderToSVGString } from '../mcp/engine/svg-export';
 import { animationDuration, valuesAt, layersAt, specAt, frameTimes } from './gif-frames';
 import type { Layer, DesignSpec } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
@@ -74,26 +76,40 @@ describe('valuesAt', () => {
   });
 });
 
-describe('layersAt', () => {
-  it('offsets position by the animated delta', () => {
-    const [out] = layersAt([layer('a', { animation: rise })], 0) as unknown as Record<string, number>[];
-    expect(out['y']).toBe(124); // authored 100 + 24 offset at t=0
-  });
+// Sampled motion lands as a transform plus the pose it was built from.
+const sampled = (l: Layer, t: number): Record<string, unknown> => layersAt([l], t)[0] as unknown as Record<string, unknown>;
+const poseOf = (r: Record<string, unknown>): Record<string, number> => r['_frame_pose'] as Record<string, number>;
 
-  it('lands exactly at the authored position when the entrance finishes', () => {
-    const [out] = layersAt([layer('a', { animation: rise })], 700) as unknown as Record<string, number>[];
+describe('layersAt', () => {
+  it('offsets position by the animated delta — as a translate, leaving the box authored', () => {
+    const out = sampled(layer('a', { animation: rise }), 0);
+    expect(out['transform']).toBe('translate(0 24)');
+    expect(poseOf(out)['dy']).toBe(24);
     expect(out['y']).toBe(100);
   });
 
-  it('scales about the centre, not the top-left', () => {
+  it('lands exactly at the authored position when the entrance finishes', () => {
+    const out = sampled(layer('a', { animation: rise }), 700);
+    expect(poseOf(out)['dy']).toBe(0);
+    expect(out['transform']).toBeUndefined();
+  });
+
+  it('scales about the centre of the drawn box, not the top-left', () => {
     const anim: AnimationSpec = {
       keyframes: [{ t: 0, scale: 1 }, { t: 100, scale: 2 }],
       playback: { duration: 100 },
     };
-    const [out] = layersAt([layer('s', { animation: anim })], 100) as unknown as Record<string, number>[];
-    expect(out['width']).toBe(100);
-    // 50px wide grew to 100px, so the left edge moves back by half the growth.
-    expect(out['x']).toBe(75);
+    const out = sampled(layer('s', { animation: anim }), 100);
+    expect(out['transform']).toBe('translate(125 125) scale(2 2) translate(-125 -125)');
+    expect(out['width']).toBe(50);
+  });
+
+  it('scales about the anchor — grow_up keeps its base on the floor', () => {
+    const grow: AnimationSpec = {
+      keyframes: [{ t: 0, scale_y: 0 }, { t: 100, scale_y: 1 }],
+      playback: { duration: 100, anchor: 'bottom', easing: 'linear' },
+    };
+    expect(sampled(layer('bar', { animation: grow }), 50)['transform']).toBe('translate(125 150) scale(1 0.5) translate(-125 -150)');
   });
 
   it('strips the timeline from the resolved still frame', () => {
@@ -103,8 +119,8 @@ describe('layersAt', () => {
 
   it('resolves layers nested in groups', () => {
     const layers = [layer('g', { type: 'group', layers: [layer('kid', { animation: rise })] })];
-    const out = layersAt(layers, 700) as unknown as { layers: Record<string, number>[] }[];
-    expect(out[0].layers[0]['y']).toBe(100);
+    const out = layersAt(layers, 0) as unknown as { layers: Record<string, unknown>[] }[];
+    expect(out[0].layers[0]['transform']).toBe('translate(0 24)');
   });
 
   it('leaves unanimated layers alone', () => {
@@ -154,39 +170,51 @@ describe('layersAt — group transforms cascade', () => {
     playback: { duration: 2000, origin: 'offset' },
   };
 
-  it('scales a group\'s children, not just the group box', () => {
-    // Live bug: the SVG route gets this free because transform:scale() on the
-    // <g> cascades. A flipbook renders from absolute coordinates, so animating
-    // a group resized only its own width/height and every child stayed put —
-    // the GIF showed no motion at all across 48 frames.
-    const out = layersAt([group(pulse)], 2000) as unknown as { width: number; layers: Record<string, number>[] }[];
-    expect(out[0].width).toBe(768);            // 512 * 1.5
-    expect(out[0].layers[0]['width']).toBe(360); // 240 * 1.5 — the point
-  });
+  // What a viewer sees: render the sampled frame and read pixels. The pose
+  // used to be pushed into each child's x/y/width/height, which scaled no text
+  // and moved nothing without x/y — a line, a path.
+  const px = (layers: Layer[], t: number): (x: number, y: number) => number[] => {
+    const spec = { _protocol: 'design/v1', meta: { id: 'g', name: 'g', type: 'poster', created: '', modified: '' },
+      document: { width: 512, height: 512, unit: 'px', dpi: 96 }, layers } as unknown as DesignSpec;
+    const img = new Resvg(renderToSVGString(specAt(spec, 0, t)), { background: '#FFFFFF' }).render();
+    // `pixels` is a native getter that copies the whole buffer on every read —
+    // read it once, or a column scan allocates a megabyte per pixel.
+    const pixels = img.pixels, w = img.width;
+    return (x, y) => Array.from(pixels.subarray((y * w + x) * 4, (y * w + x) * 4 + 3));
+  };
 
-  it('leaves children untouched when the group is not animating', () => {
-    const out = layersAt([group(pulse)], 0) as unknown as { layers: Record<string, number>[] }[];
+  it('puts the pose on the group itself and leaves the children authored', () => {
+    const out = layersAt([group(pulse)], 2000) as unknown as { transform: string; layers: Record<string, number>[] }[];
+    expect(out[0].transform).toBe('translate(256 256) scale(1.5 1.5) translate(-256 -256)');
     expect(out[0].layers[0]['width']).toBe(240);
-    expect(out[0].layers[0]['x']).toBe(136);
   });
 
-  it('moves children with a translating group', () => {
-    const slide: AnimationSpec = {
-      keyframes: [{ t: 0, x: 0 }, { t: 100, x: 40 }],
-      playback: { duration: 100, origin: 'offset' },
+  it('scales a group\'s children in the rendered frame', () => {
+    const red = [layer('kid', { x: 136, y: 136, width: 240, height: 240, fill: '#FF0000' })];
+    const g = (): Layer => ({ id: 'grp', type: 'group', z: 1, x: 0, y: 0, width: 512, height: 512, layers: red, animation: pulse }) as unknown as Layer;
+    // 240px about 256 grows to 360px: its left edge moves from 136 to 76.
+    expect(px([g()], 0)(100, 256)).toEqual([255, 255, 255]);
+    expect(px([g()], 2000)(100, 256)).toEqual([255, 0, 0]);
+  });
+
+  it('carries a line child with a sliding group — a line has no x/y to move', () => {
+    const slide: AnimationSpec = { keyframes: [{ t: 0, x: 0 }, { t: 100, x: 200 }], playback: { duration: 100, origin: 'offset' } };
+    const line = { id: 'ln', type: 'line', z: 1, x1: 20, y1: 100, x2: 60, y2: 100, stroke: { color: '#0000FF', width: 8 } };
+    const g = { id: 'grp', type: 'group', z: 1, x: 0, y: 0, width: 512, height: 512, layers: [line], animation: slide } as unknown as Layer;
+    expect(px([g], 100)(40, 100)).toEqual([255, 255, 255]);
+    expect(px([g], 100)(240, 100)).toEqual([0, 0, 255]);
+  });
+
+  it('scales a text child\'s glyphs, not just its box', () => {
+    // ~167px of ink centred on the pivot (256), so the 1.5× swell stays on the canvas.
+    const text = { id: 't', type: 'text', z: 1, x: 106, y: 200, width: 300, content: { type: 'plain', value: 'WWW' }, style: { font_size: 60, color: '#000000', align: 'center' } };
+    const g = (anim?: AnimationSpec): Layer => ({ id: 'grp', type: 'group', z: 1, x: 0, y: 0, width: 512, height: 512, layers: [text], ...(anim ? { animation: anim } : {}) }) as unknown as Layer;
+    const ink = (read: (x: number, y: number) => number[]): number => {
+      let cols = 0;
+      for (let x = 0; x < 512; x++) for (let y = 120; y < 380; y++) if (read(x, y)[0] < 128) { cols++; break; }
+      return cols;
     };
-    const out = layersAt([group(slide)], 100) as unknown as { layers: Record<string, number>[] }[];
-    expect(out[0].layers[0]['x']).toBe(176); // 136 + 40
-  });
-
-  it('scales child font size with the box', () => {
-    const g = {
-      id: 'g', type: 'group', x: 0, y: 0, width: 100, height: 100,
-      layers: [{ id: 't', type: 'text', x: 0, y: 0, width: 50, height: 20, size: 40 }],
-      animation: pulse,
-    } as unknown as Layer;
-    const out = layersAt([g], 2000) as unknown as { layers: Record<string, number>[] }[];
-    expect(out[0].layers[0]['size']).toBe(60); // 40 * 1.5
+    expect(ink(px([g(pulse)], 2000))).toBeGreaterThan(ink(px([g()], 0)) * 1.3);
   });
 });
 
@@ -196,14 +224,11 @@ describe('skew and draw reach a sampled frame', () => {
 
   // Both channels were held at rest in the flipbook: the CSS route played them
   // and every exported still showed the layer upright and fully drawn.
-  it('skews about the layer CENTRE, so it leans without sliding', () => {
+  it('skews about the layer CENTRE with CSS\'s own skew matrix, so it leans without sliding', () => {
     const l = layer('box', { x: 100, y: 100, width: 200, height: 100, animation: anim([{ t: 0, skew_x: 0 }, { t: 1000, skew_x: 30 }]) });
     const out = layersAt([l], 1000)[0] as unknown as Record<string, unknown>;
-    const t = String(out['transform']);
-    expect(t).toContain('skewX(30.000)');
     // centre of the box, then back again — otherwise the skew drags it sideways
-    expect(t).toContain('translate(200.00 150.00)');
-    expect(t).toContain('translate(-200.00 -150.00)');
+    expect(out['transform']).toBe('translate(200 150) matrix(1 0 0.577 1 0 0) translate(-200 -150)');
   });
 
   it('leaves transform alone when neither skew channel moves', () => {
