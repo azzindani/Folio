@@ -4,6 +4,7 @@ import { resolveComponent } from '../engine/component-resolver';
 import { expandPositionShorthand } from '../schema/validator';
 import { resolveAllFormulas, type FormulaContext } from '../scripting/formula';
 import { createSVGRoot, createSVGElement } from './svg-utils';
+import { clipRectFor, applyClipRect } from './clip-rect';
 import {
   renderRect, renderCircle, renderPath, renderPolygon,
   renderLine, renderText, renderImage, renderIcon, renderConnector,
@@ -284,6 +285,10 @@ function renderLayerUncached(layer: Layer, svg: SVGSVGElement): SVGElement {
     }
     el.appendChild(animMotion);
   }
+
+  // ── Clip rectangle (track matte, wipe) — see clip-rect.ts ──
+  const clip = clipRectFor(layer);
+  if (clip) el = applyClipRect(el, clip, svg);
 
   return el;
 }

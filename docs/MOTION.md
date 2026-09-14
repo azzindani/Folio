@@ -88,7 +88,8 @@ animation(op:keyframe, design_path, layer_id, keyframe) one frame
 animation(op:frame,    design_path, t, page_id?, scale?, output_path?)   PNG + resolved poses at t
 animation(op:timeline, design_path, page_id?)           Gantt: tracks, start/end, channels, scene_ms
 animation(op:clear,    design_path, layer_ids?)         remove motion
-animation(op:export,   design_path, type:svg|html|gif|mp4|webm, all_pages?)
+animation(op:export,   design_path, type:svg|html|gif|mp4|webm, all_pages?, scenes?, hold_ms?)
+animation(op:scene,    design_path, page_id, transition?, length_ms?)   how a page enters + its time on screen
 ```
 
 ### `op:sequence`
@@ -111,6 +112,20 @@ animation(op:export,   design_path, type:svg|html|gif|mp4|webm, all_pages?)
 ### `op:frame`
 
 Samples every track at `t` through the same code path the GIF uses, renders the still via resvg, and returns it as an image attachment plus `poses[{id,x,y,width,height,opacity,rotation}]` — so a vision model sees the pose and a blind one reads the numbers.
+
+### Multi-scene pieces
+
+A deck's pages play one after another as ONE gif/mp4/webm with `scenes:true` — each page a scene with its own timeline.
+
+| Piece | Where | Rule |
+|---|---|---|
+| Timing | `src/export/scene-plan.ts` | A scene lasts its motion + `hold_ms` (default 1500), or exactly `page.auto_advance` (`op:scene length_ms`). Scenes run end to end; a page's `transition` plays as it ENTERS, overlapping the start of its own scene, while the outgoing scene rests on its final pose. |
+| Transitions | `src/export/scene-transition.ts` | Each `PageTransitionType` is a pose for each scene's full-canvas group — transform, opacity or `clip_rect` — so a frame renders once, as vectors. cube-left/right play as slides, flip-h/v as a squash through the centre, dissolve as a fade; the export reply names them. |
+| Frames | `src/export/scene-compose.ts` | The piece at time t as a single page. Transitions that uncover canvas (zoom-out, flip) paint the outgoing page's own ground underneath. |
+| Clipping | `src/renderer/clip-rect.ts` | `clip_rect` on any layer and `clip: true` on a group (a track matte) — one `<clipPath>` for the editor, the SVG export and every raster. |
+
+The engine does not decide pacing. It counts words per scene and warns when a scene is on screen for less than they take to read at 240 wpm.
+`op:timeline` and `op:frame` take `scenes:true` too, so a transition can be checked without exporting.
 
 ---
 

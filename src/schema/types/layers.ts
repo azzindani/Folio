@@ -66,7 +66,12 @@ export interface BaseLayer {
   /** Hyperlink — wraps the rendered layer in an <a href>. Becomes a clickable
    *  link in the editor/HTML and a PDF link annotation in browser-printed PDFs. */
   href?: string;
+  /** Group only: clip the children to the group's own box — a track matte that
+   *  lets a child rise from behind a fixed edge. */
   clip?: boolean;
+  /** Clip this layer to a rectangle in canvas coordinates. How a wipe (scene
+   *  transition, reveal channel) is materialised in a sampled frame. */
+  clip_rect?: { x: number; y: number; width: number; height: number };
   effects?: Effects;
   interaction?: Interaction;
   meta?: Record<string, unknown>;

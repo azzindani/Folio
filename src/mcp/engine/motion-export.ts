@@ -16,6 +16,10 @@ import { buildAnimatedSVG, wrapAnimatedHTML } from '../../export/svg-animate';
 import { renderToSVGString } from './svg-export';
 import { resolveImageAssets } from './asset-resolve';
 import { exportRasterMotion } from './motion-export-raster';
+import { specAt, animationDuration } from '../../export/gif-frames';
+import { planScenes } from '../../export/scene-plan';
+import { composeSceneFrame } from '../../export/scene-compose';
+import { APPROXIMATED } from '../../export/scene-transition';
 
 const TYPES = ['svg', 'html', 'gif', 'mp4', 'webm'] as const;
 export type MotionExportType = typeof TYPES[number];
@@ -28,6 +32,10 @@ export interface ExportAnimationArgs {
   duration?: number;
   page_id?: string;
   all_pages?: boolean;
+  /** Play every page, in order, as one piece — each page a scene. gif/mp4/webm. */
+  scenes?: boolean;
+  /** How long each scene rests after its motion ends, ms (a page's auto_advance wins). */
+  hold_ms?: number;
   project_path?: string;
 }
 
@@ -61,15 +69,52 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
   }
 
   const spec = readYAML<DesignSpec>(dPath);
+  if (args.scenes && args.all_pages) {
+    return errResult(OP, 'scenes and all_pages ask for opposite things.',
+      'scenes:true plays every page as ONE file; all_pages:true writes one file PER page. Pass one of them.');
+  }
   if (args.all_pages && (spec.pages?.length ?? 0) > 1) return exportAllPages(args, spec, dPath);
 
   const pageIndex = pageIndexFor(spec, args.page_id);
   const baseName = path.basename(dPath, '.design.yaml');
   const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', `${baseName}.${args.type}`);
+  const pageCount = spec.pages?.length ?? 0;
 
-  if (args.type === 'svg' || args.type === 'html') return exportVectorMotion(spec, dPath, pageIndex, outputPath, args);
-  return exportRasterMotion(spec, dPath, pageIndex, outputPath, {
-    type: args.type, fps: args.fps, duration: args.duration, project_path: args.project_path,
+  if (args.type === 'svg' || args.type === 'html') {
+    if (args.scenes) {
+      return errResult(OP, `scenes play as one file in gif, mp4 or webm — not ${args.type}.`,
+        'Export type:"mp4" or "gif" with scenes:true, or presentation(op:export) for an HTML slideshow of the pages.');
+    }
+    return exportVectorMotion(spec, dPath, pageIndex, outputPath, args);
+  }
+  const base = { type: args.type, fps: args.fps, duration: args.duration, project_path: args.project_path };
+
+  if (args.scenes) {
+    if (pageCount === 0) {
+      return errResult(OP, 'scenes:true plays pages in order, and this design has none.',
+        'Build the piece as pages (append_page), one scene each, and give each its motion with animation(op:sequence, page_id).');
+    }
+    const plan = planScenes(spec, { hold_ms: args.hold_ms });
+    const approximated = [...new Set(plan.scenes.map(s => s.transition?.type))]
+      .flatMap(t => (t && APPROXIMATED[t] ? [`${t} ${APPROXIMATED[t]}.`] : []));
+    return exportRasterMotion(spec, dPath, { durationMs: plan.total_ms, at: t => composeSceneFrame(spec, plan, t) }, outputPath, {
+      ...base,
+      notes: [...plan.warnings, ...approximated],
+      extra: {
+        scenes: plan.scenes.map(s => ({
+          page_id: s.page_id, start_ms: s.start_ms, length_ms: s.length_ms,
+          transition: s.transition ? `${s.transition.type} ${s.transition.duration_ms}ms` : 'cut',
+        })),
+      },
+    });
+  }
+
+  const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
+  const pageNotes = pageCount > 1 && !args.page_id
+    ? [`This design has ${pageCount} pages and only the first was exported. Pass scenes:true to play every page as one piece, or page_id for another page.`]
+    : [];
+  return exportRasterMotion(spec, dPath, { durationMs: animationDuration(layers), at: t => specAt(spec, pageIndex, t) }, outputPath, {
+    ...base, notes: pageNotes,
   });
 }
 
