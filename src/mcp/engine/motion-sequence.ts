@@ -23,6 +23,7 @@ import { motionTargets, setAnimation, toIdList, resolveScope, commitScope } from
 import { mergeFragment, MergeError, trackEnd } from './motion-merge';
 import { isKnownEasing, describeEasings } from '../../animation/easing';
 import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
+import { staggerRanks, isStaggerOrder, STAGGER_ORDERS, type StaggerOrder } from './motion-order';
 
 // ── op:sequence ──────────────────────────────────────────────
 
@@ -33,6 +34,8 @@ export interface SequenceStep {
   at?: number;
   duration?: number;
   stagger_ms?: number;
+  /** Which layer the stagger starts from — see motion-order.ts. */
+  order?: StaggerOrder;
   easing?: string;
   distance?: number;
 }
@@ -55,6 +58,7 @@ function parseSteps(v: unknown): SequenceStep[] | string {
     const st = s as Record<string, unknown>;
     if (!isMotionPreset(st['preset'])) return `steps[${i}].preset "${String(st['preset'])}" is unknown. Presets: ${PRESET_NAMES.join(', ')}.`;
     if (st['easing'] !== undefined && !isKnownEasing(st['easing'])) return `steps[${i}].easing "${String(st['easing'])}" is unknown — run animation(op:presets) for the list.`;
+    if (st['order'] !== undefined && !isStaggerOrder(st['order'])) return `steps[${i}].order "${String(st['order'])}" is unknown. Orders: ${STAGGER_ORDERS.join(', ')}.`;
     // `layer_id` (singular) is what the sibling op:track takes, so a model that
     // learned the shape there writes it here too. An unrecognised key meant "no
     // ids", and no ids means THE WHOLE PAGE — so one step aimed at a single
@@ -68,6 +72,7 @@ function parseSteps(v: unknown): SequenceStep[] | string {
       at: typeof st['at'] === 'number' ? st['at'] : undefined,
       duration: typeof st['duration'] === 'number' ? st['duration'] : undefined,
       stagger_ms: typeof st['stagger_ms'] === 'number' ? st['stagger_ms'] : undefined,
+      order: isStaggerOrder(st['order']) ? st['order'] : undefined,
       easing: typeof st['easing'] === 'string' ? st['easing'] : undefined,
       distance: typeof st['distance'] === 'number' ? st['distance'] : undefined,
     });
@@ -99,13 +104,14 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
       return errResult(op, `steps[${i}] matched no layers.`, 'Pass real layer ids from manage_design(op:inspect), or omit layer_ids to target the whole page.', progress);
     }
     const stagger = Math.max(0, step.stagger_ms ?? 0);
+    const ranks = staggerRanks(targets, step.order ?? 'forward');
     const at = Math.max(0, step.at ?? cursor);
     const updates = new Map<string, unknown>();
     let stepEnd = at;
 
     for (const [j, layer] of targets.entries()) {
       const frag = expandPreset(preset, {
-        duration: step.duration, easing: step.easing, distance: step.distance, delay: at + stagger * j,
+        duration: step.duration, easing: step.easing, distance: step.distance, delay: at + stagger * (ranks[j] ?? j),
       });
       const existing = (layer as Layer & { animation?: AnimationSpec }).animation;
       try {
@@ -149,6 +155,8 @@ type TrackArgs = {
   keyframes: unknown;
   playback?: unknown;
   stagger_ms?: number;
+  /** Which layer the stagger starts from — see motion-order.ts. Default 'forward'. */
+  order?: string;
   page_id?: string;
   project_path?: string;
 };
@@ -206,6 +214,7 @@ export function setTrack(args: TrackArgs): ToolResult {
   if (typeof frames === 'string') return errResult(op, frames, 'Example: keyframes:[{t:0,opacity:0,y:24,easing:"ease-out-expo"},{t:600,opacity:1,y:0}]');
   const playback = validatePlayback(args.playback, frames);
   if (typeof playback === 'string') return errResult(op, playback, 'Run animation(op:presets) for the easing and anchor lists.');
+  if (args.order !== undefined && !isStaggerOrder(args.order)) return errResult(op, `order "${String(args.order)}" is unknown.`, `Use one of: ${STAGGER_ORDERS.join(', ')}.`);
 
   const bak = snapshot(dPath);
   const spec = readYAML<DesignSpec>(dPath);
@@ -215,9 +224,10 @@ export function setTrack(args: TrackArgs): ToolResult {
   if (targets.length === 0) return errResult(op, `No layer matched: ${ids.join(', ')}`, 'Ids are case-sensitive; inspect the design to see the real ones.');
 
   const stagger = Math.max(0, args.stagger_ms ?? 0);
+  const ranks = staggerRanks(targets, isStaggerOrder(args.order) ? args.order : 'forward');
   const updates = new Map<string, unknown>();
   targets.forEach((l, i) => {
-    const delay = (playback.delay ?? 0) + stagger * i;
+    const delay = (playback.delay ?? 0) + stagger * (ranks[i] ?? i);
     updates.set(l.id, { keyframes: frames, playback: { ...playback, ...(delay > 0 ? { delay } : {}) } });
   });
   commitScope(spec, scoped.page, setAnimation(scoped.scope, updates));

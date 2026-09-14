@@ -14,6 +14,7 @@ import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo } from './utils';
 import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, type MotionPreset } from './motion-presets';
 import { syncAnimationsToSpec } from './animation-sync';
+import { staggerRanks, isStaggerOrder, STAGGER_ORDERS } from './motion-order';
 
 // A `type` alias, not an `interface`: dispatch.ts casts its Record<string,
 // unknown> arg bag to Parameters<typeof applyMotion>[0], and an interface has
@@ -26,6 +27,8 @@ type MotionArgs = {
    *  passing a single id as a bare string should not be a type error. */
   layer_ids?: unknown;
   stagger_ms?: number;
+  /** Which layer the stagger starts from — see motion-order.ts. Default 'forward'. */
+  order?: string;
   duration?: number;
   easing?: string;
   distance?: number;
@@ -157,7 +160,12 @@ export function applyMotion(args: MotionArgs): ToolResult {
     );
   }
 
+  if (args.order !== undefined && !isStaggerOrder(args.order)) {
+    return errResult(op, `order "${String(args.order)}" is unknown.`, `Use one of: ${STAGGER_ORDERS.join(', ')}.`);
+  }
   const stagger = Math.max(0, args.stagger_ms ?? 0);
+  // A rank per target, so `order` changes who starts first without reordering the targets.
+  const ranks = staggerRanks(targets, isStaggerOrder(args.order) ? args.order : 'forward');
   const updates = new Map<string, unknown>();
   const progress: ProgressItem[] = [];
 
@@ -166,7 +174,7 @@ export function applyMotion(args: MotionArgs): ToolResult {
       duration: args.duration,
       easing: args.easing as never,
       distance: args.distance,
-      delay: stagger * i,
+      delay: stagger * (ranks[i] ?? i),
     });
     updates.set(layer.id, expanded);
   });
@@ -181,15 +189,18 @@ export function applyMotion(args: MotionArgs): ToolResult {
   syncAnimationsToSpec(spec);
   writeYAML(dPath, spec);
 
-  const totalMs = (args.duration ?? 0) + stagger * (targets.length - 1);
+  // The last layer to start is the highest rank, not the last one listed.
+  const lastStart = stagger * Math.max(0, ...ranks);
+  const totalMs = (args.duration ?? 0) + lastStart;
   progress.push(pOk(`Applied ${preset} to ${targets.length} layer${targets.length === 1 ? '' : 's'}`, PRESET_NOTES[preset]));
-  if (stagger > 0) progress.push(pInfo('Staggered', `${stagger}ms between layers${totalMs ? ` — last one starts at ${stagger * (targets.length - 1)}ms` : ''}`));
+  if (stagger > 0) progress.push(pInfo('Staggered', `${stagger}ms between layers${args.order ? `, order ${args.order}` : ''}${totalMs ? ` — last one starts at ${lastStart}ms` : ''}`));
 
   return okResult(op, {
     design_path: dPath,
     preset,
     layers: targets.map(l => l.id),
     stagger_ms: stagger,
+    ...(args.order ? { order: args.order } : {}),
     progress,
     next_action: {
       tool: 'animation',

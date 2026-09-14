@@ -24,6 +24,9 @@ CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
         bottom | center (an iris). Type, a photo, a chart bar — no mask layer needed.
   tracking  px added to a text layer's letter-spacing (0 = as authored); 24→0 closes a
         title up. Lines never re-wrap while it plays.
+  order (with stagger_ms) — who starts first: forward | reverse | center | edges | random |
+        left_to_right | right_to_left | top_to_bottom | bottom_to_top. After split_text,
+        left_to_right sweeps the letters by where they sit; random is the same every call.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).

@@ -243,6 +243,23 @@ describe('animation(op:frame)', () => {
     expect(bad.success).toBe(false);
     expect(JSON.stringify(bad)).toContain('reveal_from must be one of');
   });
+
+  it('staggers a step from the centre, and a track by where the layers sit', () => {
+    const p = writeDesign('order.design.yaml', [
+      '  - { id: l, type: rect, x: 0, y: 0, width: 20, height: 20 }',
+      '  - { id: m, type: rect, x: 100, y: 0, width: 20, height: 20 }',
+      '  - { id: r, type: rect, x: 200, y: 0, width: 20, height: 20 }',
+    ]);
+    const delay = (id: string): number => animOf(read(p), id)?.playback?.delay ?? 0;
+    const seq = sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['l', 'm', 'r'], stagger_ms: 100, order: 'center' }] });
+    expect(seq.success, JSON.stringify(seq)).toBe(true);
+    expect([delay('l'), delay('m'), delay('r')]).toEqual([100, 0, 100]);
+    // Listed out of order on purpose: the position order ignores the list.
+    const tr = setTrack({ design_path: p, layer_ids: ['r', 'l', 'm'], keyframes: [{ t: 0, opacity: 0 }, { t: 300, opacity: 1 }], stagger_ms: 50, order: 'left_to_right' });
+    expect(tr.success, JSON.stringify(tr)).toBe(true);
+    expect([delay('l'), delay('m'), delay('r')]).toEqual([0, 50, 100]);
+    expect(sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', order: 'diagonal' }] }).success).toBe(false);
+  });
 });
 
 describe('a step written with layer_id (singular)', () => {
