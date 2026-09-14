@@ -47,7 +47,7 @@ type SequenceArgs = {
   project_path?: string;
 };
 
-const ANIM_CHANNELS = new Set(['x', 'y', 'width', 'height', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal', 'tracking', 'fill.color', 'stroke.color']);
+const ANIM_CHANNELS = new Set(['x', 'y', 'width', 'height', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal', 'tracking', 'count', 'fill.color', 'stroke.color']);
 const ANCHORS = new Set<string>(['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right']);
 
 function parseSteps(v: unknown): SequenceStep[] | string {

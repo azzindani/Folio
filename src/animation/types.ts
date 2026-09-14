@@ -88,6 +88,11 @@ export interface Keyframe {
    * Spreads the glyphs without re-wrapping the lines; 0 is the authored spacing.
    */
   tracking?: number;
+  /**
+   * Counter, 0 → 1: the fraction of the number written in the text that shows.
+   * 0 counts from zero, 1 is the text as authored, format kept ("$4.2M", "1,250+").
+   */
+  count?: number;
   'fill.color'?: string;
   'stroke.color'?: string;
   /**
