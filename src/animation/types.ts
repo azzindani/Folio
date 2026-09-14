@@ -81,6 +81,8 @@ export interface Keyframe {
    * travel along its path instead of only drawing on.
    */
   draw_start?: number;
+  /** Wipe, 0 → 1: how much of the layer is uncovered, from `playback.reveal_from`. */
+  reveal?: number;
   'fill.color'?: string;
   'stroke.color'?: string;
   /**
@@ -126,6 +128,8 @@ export interface KeyframeAnimation {
     origin?: 'first' | 'offset';
     /** Pivot for rotate/scale/skew. Default 'center'. */
     anchor?: AnchorPoint;
+    /** Where a `reveal` wipe starts: the side it uncovers from, or an iris from the centre. Default 'left'. */
+    reveal_from?: 'left' | 'right' | 'top' | 'bottom' | 'center';
     /**
      * Repeat count for a loop. Omit (with loop:true) for forever; a number
      * plays that many cycles then rests on the last frame.

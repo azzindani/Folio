@@ -20,6 +20,8 @@ CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
   draw  0→1 reveals a stroke along its length (lines, connectors, hand-drawn marks).
   draw_start  0→1 trims where the stroke BEGINS; trail it behind draw and a
         segment travels along the path (a signal on a wire, a comet on an orbit).
+  reveal  0→1 wipes the layer into view; playback.reveal_from = left | right | top |
+        bottom | center (an iris). Type, a photo, a chart bar — no mask layer needed.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).

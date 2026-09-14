@@ -32,6 +32,14 @@ export function clipRectFor(layer: Layer): ClipRect | null {
   return null;
 }
 
+/** The overlap of an existing clip (if any) and another rectangle — both masks apply. */
+export function intersectRect(a: ClipRect | null, b: ClipRect): ClipRect {
+  if (!a) return b;
+  const x = Math.max(a.x, b.x), y = Math.max(a.y, b.y);
+  const r = Math.min(a.x + a.width, b.x + b.width), btm = Math.min(a.y + a.height, b.y + b.height);
+  return { x, y, width: Math.max(0, r - x), height: Math.max(0, btm - y) };
+}
+
 /**
  * Clip an element to a rectangle. An element that already has a clip-path (a
  * `clip_path_ref` shape mask) is wrapped instead, so both masks apply.

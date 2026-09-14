@@ -15,14 +15,15 @@
 
 import type { AnimationSpec, Keyframe, AnchorPoint } from './types';
 import { easingToCSS, bakeEasing, resolveEasing } from './easing';
+import { revealInsetCSS, type RevealFrom } from './reveal';
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
 /** Animated numeric channels, and what they lerp from when a frame omits them. */
-const CHANNELS = ['x', 'y', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start'] as const;
+const CHANNELS = ['x', 'y', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal'] as const;
 type Channel = typeof CHANNELS[number];
 const REST: Record<Channel, number> = {
-  x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, scale_x: 1, scale_y: 1, skew_x: 0, skew_y: 0, blur: 0, draw: 1, draw_start: 0,
+  x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, scale_x: 1, scale_y: 1, skew_x: 0, skew_y: 0, blur: 0, draw: 1, draw_start: 0, reveal: 1,
 };
 
 /** A fully resolved pose: every channel has a number, colours may be absent. */
@@ -66,7 +67,7 @@ type DrawMode = 'none' | 'dash' | 'trim';
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 
 /** The CSS declarations for one pose. */
-function poseDecls(p: Pose, draw: DrawMode): string[] {
+function poseDecls(p: Pose, draw: DrawMode, reveal?: RevealFrom): string[] {
   const decls: string[] = [];
   const parts: string[] = [];
   const { n } = p;
@@ -81,6 +82,8 @@ function poseDecls(p: Pose, draw: DrawMode): string[] {
   decls.push(`transform: ${parts.length ? parts.join(' ') : 'none'};`);
   decls.push(`opacity: ${fmt(n.opacity)};`);
   decls.push(`filter: ${n.blur > 0 ? `blur(${fmt(n.blur)}px)` : 'none'};`);
+  // Reveal: percentages of the fill-box, the same box the transforms pivot on.
+  if (reveal) decls.push(`clip-path: ${revealInsetCSS(n.reveal, reveal)};`);
   if (draw === 'dash') decls.push(`stroke-dashoffset: ${fmt(1 - clamp01(n.draw))};`);
   // Trimmed: a dash as long as the run and a gap as long as the whole path
   // (pathLength 1), pulled forward to where the run starts. Both interpolate.
@@ -142,6 +145,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
   const baseY = offsetOrigin ? 0 : (num(first.y) ?? 0);
   const poses = resolvePoses(sorted, baseX, baseY);
   const hasDraw = drawMode(anim);
+  const wipe: RevealFrom | undefined = sorted.some(k => num(k.reveal) !== undefined) ? (playback?.reveal_from ?? 'left') : undefined;
   const defaultEasing = playback?.easing ?? 'ease-in-out';
 
   const steps: Step[] = [];
@@ -155,7 +159,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
     const css = easingToCSS(name);
 
     if (isLast || css !== null) {
-      steps.push({ pct: pctOf(kf.t), decls: poseDecls(pose, hasDraw), timing: css ?? 'linear' });
+      steps.push({ pct: pctOf(kf.t), decls: poseDecls(pose, hasDraw, wipe), timing: css ?? 'linear' });
       continue;
     }
 
@@ -168,7 +172,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
     const baked = bakeEasing(name, 16);
     for (let k = 0; k < baked.length - 1; k++) {
       const [frac, eased] = baked[k];
-      steps.push({ pct: p0 + (p1 - p0) * frac, decls: poseDecls(lerpPose(pose, nextPose, eased), hasDraw), timing: 'linear' });
+      steps.push({ pct: p0 + (p1 - p0) * frac, decls: poseDecls(lerpPose(pose, nextPose, eased), hasDraw, wipe), timing: 'linear' });
     }
   }
 

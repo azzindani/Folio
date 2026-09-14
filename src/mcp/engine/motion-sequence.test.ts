@@ -232,6 +232,17 @@ describe('animation(op:frame)', () => {
     expect(pose?.['stroke_dasharray']).toBeDefined();
     expect(typeof pose?.['stroke_dashoffset']).toBe('number');
   });
+
+  it('admits a reveal wipe with its reveal_from, and names the choices when it is wrong', () => {
+    const p = writeDesign('wipe.design.yaml', ['  - { id: title, type: rect, x: 20, y: 20, width: 200, height: 100 }']);
+    const frames = [{ t: 0, reveal: 0 }, { t: 600, reveal: 1 }];
+    const ok = setTrack({ design_path: p, layer_id: 'title', keyframes: frames, playback: { reveal_from: 'center' } });
+    expect(ok.success, JSON.stringify(ok)).toBe(true);
+    expect((ok as unknown as Record<string, unknown>)['playback']).toMatchObject({ reveal_from: 'center' });
+    const bad = setTrack({ design_path: p, layer_id: 'title', keyframes: frames, playback: { reveal_from: 'diagonal' } });
+    expect(bad.success).toBe(false);
+    expect(JSON.stringify(bad)).toContain('reveal_from must be one of');
+  });
 });
 
 describe('a step written with layer_id (singular)', () => {

@@ -165,6 +165,16 @@ describe('presets', () => {
     expect(Math.max(...scales)).toBeLessThanOrEqual(1.1);
   });
 
+  it('wipes carry the side they uncover from into playback, so op:motion needs no second call', () => {
+    const inn = expandPreset('wipe_in');
+    expect(inn.keyframes.map(k => k.reveal)).toEqual([0, 1]);
+    expect(inn.playback.reveal_from).toBe('left');
+    const out = expandPreset('wipe_out');
+    expect(out.keyframes.map(k => k.reveal)).toEqual([1, 0]);
+    expect(out.playback.reveal_from).toBe('right');
+    expect(expandPreset('rise').playback.reveal_from).toBeUndefined();
+  });
+
   it('emits travel as an offset from zero, not an absolute position', () => {
     // generateKeyframeCSS reads position as a delta from the first frame; the
     // renderer has already placed the layer, so absolutes would move it twice.

@@ -91,6 +91,15 @@ describe('generateKeyframeCSS v2', () => {
     expect(poseAt(anim, 500).draw_start).toBeCloseTo(0.4, 5);
   });
 
+  it('wipes with clip-path: inset() on the fill-box, from the side playback names', () => {
+    const anim: AnimationSpec = { keyframes: [{ t: 0, reveal: 0 }, { t: 800, reveal: 1 }], playback: { duration: 800, reveal_from: 'left' } };
+    const css = generateKeyframeCSS('title', anim);
+    // Hidden with the stroke overhang at 0%, past the box by the same bleed at rest.
+    expect(css).toMatch(/0% \{[^}]*clip-path: inset\(-10000px calc\(100% \+ 16px\) -10000px -10000px\) fill-box;/);
+    expect(css).toMatch(/100% \{[^}]*clip-path: inset\(-10000px -16px -10000px -10000px\) fill-box;/);
+    expect(generateKeyframeCSS('plain', { keyframes: [{ t: 0, opacity: 0 }, { t: 1, opacity: 1 }] })).not.toContain('clip-path');
+  });
+
   it('finite iterations and delay reach the animation shorthand', () => {
     const css = generateKeyframeCSS('l', {
       keyframes: [{ t: 0, scale: 1 }, { t: 600, scale: 1.1 }],

@@ -22,6 +22,7 @@ import { syncAnimationsToSpec } from './animation-sync';
 import { motionTargets, setAnimation, toIdList, resolveScope, commitScope } from './motion';
 import { mergeFragment, MergeError, trackEnd } from './motion-merge';
 import { isKnownEasing, describeEasings } from '../../animation/easing';
+import { REVEAL_FROMS, type RevealFrom } from '../../animation/reveal';
 
 // ── op:sequence ──────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ type SequenceArgs = {
   project_path?: string;
 };
 
-const ANIM_CHANNELS = new Set(['x', 'y', 'width', 'height', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'fill.color', 'stroke.color']);
+const ANIM_CHANNELS = new Set(['x', 'y', 'width', 'height', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal', 'fill.color', 'stroke.color']);
 const ANCHORS = new Set<string>(['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right']);
 
 function parseSteps(v: unknown): SequenceStep[] | string {
@@ -178,6 +179,7 @@ function validatePlayback(v: unknown, frames: Keyframe[]): NonNullable<Animation
   const duration = typeof pb['duration'] === 'number' && pb['duration'] > 0 ? pb['duration'] : (span > 0 ? span : 1000);
   if (pb['easing'] !== undefined && !isKnownEasing(pb['easing'])) return `playback.easing "${String(pb['easing'])}" is unknown.`;
   if (pb['anchor'] !== undefined && !ANCHORS.has(String(pb['anchor']))) return `playback.anchor must be one of: ${[...ANCHORS].join(', ')}.`;
+  if (pb['reveal_from'] !== undefined && !(REVEAL_FROMS as readonly string[]).includes(String(pb['reveal_from']))) return `playback.reveal_from must be one of: ${REVEAL_FROMS.join(', ')}.`;
   if (pb['origin'] !== undefined && pb['origin'] !== 'first' && pb['origin'] !== 'offset') return 'playback.origin must be "first" or "offset".';
   return {
     duration,
@@ -190,6 +192,7 @@ function validatePlayback(v: unknown, frames: Keyframe[]): NonNullable<Animation
     ...(typeof pb['easing'] === 'string' ? { easing: pb['easing'] } : {}),
     ...(typeof pb['delay'] === 'number' ? { delay: Math.max(0, pb['delay']) } : {}),
     ...(pb['anchor'] ? { anchor: pb['anchor'] as AnchorPoint } : {}),
+    ...(pb['reveal_from'] ? { reveal_from: pb['reveal_from'] as RevealFrom } : {}),
   };
 }
 

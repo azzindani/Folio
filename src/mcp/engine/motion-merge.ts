@@ -89,6 +89,8 @@ export function mergeFragment(existing: AnimationSpec | undefined, add: Fragment
   }
 
   const anchor: AnchorPoint | undefined = add.playback.anchor ?? exPb.anchor;
+  // A wipe keeps the side it uncovers from through a merge, as the pivot does.
+  const revealFrom = add.playback.reveal_from ?? exPb.reveal_from;
   return {
     ...ex,
     keyframes,
@@ -96,6 +98,7 @@ export function mergeFragment(existing: AnimationSpec | undefined, add: Fragment
       duration: Math.max(1, end - start),
       origin,
       ...(anchor ? { anchor } : {}),
+      ...(revealFrom ? { reveal_from: revealFrom } : {}),
       ...(start > 0 ? { delay: start } : {}),
       // Segment curves now live on the frames; the track default is irrelevant
       // but linear is the honest value for "no curve of its own".
