@@ -83,6 +83,11 @@ export interface Keyframe {
   draw_start?: number;
   /** Wipe, 0 → 1: how much of the layer is uncovered, from `playback.reveal_from`. */
   reveal?: number;
+  /**
+   * Tracking, px added to the text's letter-spacing (After Effects' Tracking).
+   * Spreads the glyphs without re-wrapping the lines; 0 is the authored spacing.
+   */
+  tracking?: number;
   'fill.color'?: string;
   'stroke.color'?: string;
   /**

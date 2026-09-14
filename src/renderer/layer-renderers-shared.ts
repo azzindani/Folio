@@ -28,6 +28,15 @@ export function wrapPlainText(text: string, maxWidth: number | undefined, fontSi
   return lines.length ? lines : [''];
 }
 
+/**
+ * The letter-spacing a text layer DRAWS with: its style plus a sampled
+ * `tracking_offset`. Wrapping reads style.letter_spacing alone, so animated
+ * tracking spreads the glyphs without re-wrapping the lines — as CSS does.
+ */
+export function drawnLetterSpacing(style: TextStyle, layer: { tracking_offset?: number }): number {
+  return (style.letter_spacing ?? 0) + (typeof layer.tracking_offset === 'number' ? layer.tracking_offset : 0);
+}
+
 /** How a plain-text layer lays out — see plainTextLayout. */
 export interface PlainTextLayout {
   /** The text after text_transform — what is actually drawn. */

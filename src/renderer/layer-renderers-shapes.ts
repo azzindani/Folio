@@ -8,7 +8,7 @@ import { applyEffects } from './effects-renderer';
 import { LUCIDE_ICONS, resolveIconName } from './lucide-icons';
 import { shapePath } from '../engine/shape-paths';
 
-import { plainTextLayout, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
+import { plainTextLayout, drawnLetterSpacing, applyCommonAttributes, applyStroke, normalizeStroke, roundedRectPath, normalizeTextLayer, transformText, applyTypography } from './layer-renderers-shared';
 
 // Resolve a shape's fill, tolerating a bare `color` string. Small models very
 // often emit `{type:'rect', color:'#0A0A0A'}` (color is the universal "make it
@@ -313,7 +313,8 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       textEl.setAttribute('font-family', style.font_family ?? 'Inter, sans-serif');
       textEl.setAttribute('font-size', String(fontSize));
       textEl.setAttribute('font-weight', String(style.font_weight ?? 400));
-      if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+      const spacing = drawnLetterSpacing(style, layer);
+      if (spacing) textEl.setAttribute('letter-spacing', `${spacing}px`);
       if (alignVal) textEl.setAttribute('text-anchor', anchor);
       textEl.setAttribute('fill', textColor);
       applyTypography(textEl, style);
@@ -356,7 +357,8 @@ export function renderText(layer: TextLayer, svg: SVGSVGElement): SVGElement {
       if (style.text_decoration && style.text_decoration !== 'none') {
         textEl.setAttribute('text-decoration', style.text_decoration);
       }
-      if (style.letter_spacing) textEl.setAttribute('letter-spacing', `${style.letter_spacing}px`);
+      const spacing = drawnLetterSpacing(style, layer);
+      if (spacing) textEl.setAttribute('letter-spacing', `${spacing}px`);
       if (alignVal) textEl.setAttribute('text-anchor', anchor);
       textEl.setAttribute('fill', textColor);
       applyTypography(textEl, style);

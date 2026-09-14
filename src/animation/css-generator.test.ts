@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { generateLayerCSS, generateStaggerCSS, generateDesignAnimationCSS, generateKeyframeCSS } from './css-generator';
+import { generateLayerCSS, generateStaggerCSS, generateDesignAnimationCSS, generateKeyframeCSS, letterSpacingBases } from './css-generator';
 import type { AnimationSpec } from './types';
+import type { Layer } from '../schema/types';
 
 describe('generateLayerCSS', () => {
   it('generates enter animation CSS', () => {
@@ -257,5 +258,23 @@ describe('generateKeyframeCSS — origin', () => {
     });
     expect(css).toContain('translate(60px, 0px)');
     expect(css).not.toContain('translate(100px');
+  });
+});
+
+describe('letterSpacingBases — what a tracking track adds to', () => {
+  it('reads authored spacing by id, including the layer-level track alias and nested groups', () => {
+    const layers = [
+      { id: 'title', type: 'text', style: { letter_spacing: 4 } },
+      { id: 'grp', type: 'group', layers: [{ id: 'kicker', type: 'text', track: 2 }] },
+      { id: 'plain', type: 'text', style: {} },
+    ] as unknown as Layer[];
+    expect([...letterSpacingBases(layers).entries()]).toEqual([['title', 4], ['kicker', 2]]);
+  });
+
+  it('adds a tracking track to the authored spacing in the design CSS', () => {
+    const anims = new Map<string, AnimationSpec>([['title', { keyframes: [{ t: 0, tracking: 20 }, { t: 500, tracking: 0 }], playback: { duration: 500 } }]]);
+    const layers = [{ id: 'title', type: 'text', style: { letter_spacing: 4 } }] as unknown as Layer[];
+    expect(generateDesignAnimationCSS(anims, layers)).toMatch(/0% \{[^}]*letter-spacing: 24px;/);
+    expect(generateDesignAnimationCSS(anims)).toMatch(/0% \{[^}]*letter-spacing: 20px;/);
   });
 });

@@ -275,6 +275,10 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   const wipe = box && vr !== undefined ? revealRect(box, vr, anim.playback?.reveal_from) : null;
   if (wipe) out['clip_rect'] = intersectRect(clipRectFor(layer), wipe);
 
+  // Tracking: spacing added at draw time only, so the lines keep their wrap.
+  const vt = num(v['tracking']);
+  if (vt !== undefined && vt !== 0) out['tracking_offset'] = vt;
+
   const fill = v['fill.color'];
   if (typeof fill === 'string') out['fill'] = fill;
   const stroke = v['stroke.color'];

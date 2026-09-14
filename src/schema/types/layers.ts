@@ -98,6 +98,10 @@ export interface BaseLayer {
    *  yet drawn. */
   stroke_dasharray?: string | number;
   stroke_dashoffset?: number;
+  /** px added to a text layer's letter-spacing at draw time — how the `tracking`
+   *  channel is materialised in a sampled frame. Wrapping ignores it, so the
+   *  glyphs spread without the lines re-wrapping, as they do in CSS. */
+  tracking_offset?: number;
   /** SVG animateMotion path for kinetic animation */
   motion_path?: {
     path: string;        // SVG path d attribute (e.g. "M 0 0 Q 200 100 400 0")

@@ -363,8 +363,9 @@ export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Pr
   // the editor is open on the same origin).
   const svgString = await exportToSVGEmbedded(spec, options);
 
+  // Layers ride along so a `tracking` track adds to each text's authored spacing.
   const animationCSS = options.animations
-    ? generateDesignAnimationCSS(options.animations)
+    ? generateDesignAnimationCSS(options.animations, [...(spec.layers ?? []), ...(spec.pages ?? []).flatMap(p => p.layers ?? [])])
     : '';
 
   return `<!DOCTYPE html>
