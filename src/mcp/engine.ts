@@ -35,3 +35,4 @@ export { previewMotion } from './engine/motion-preview';
 export { setMotionPath } from './engine/motion-path-op';
 export { shapeOp } from './engine/shape-ops-op';
 export { splitText } from './engine/split-text-op';
+export { animateText } from './engine/text-animate-op';
