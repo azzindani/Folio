@@ -20,12 +20,17 @@ import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { specAt, animationDuration } from '../../export/gif-frames';
+import { planScenes, sceneAt } from '../../export/scene-plan';
+import { composeSceneFrame } from '../../export/scene-compose';
 
 type FrameArgs = {
   design_path: string;
-  /** Time to render, ms from scene start. */
+  /** Time to render, ms from scene start — or from the start of the piece with `scenes`. */
   t?: number;
   page_id?: string;
+  /** Render a moment of every page played in order, transitions included. */
+  scenes?: boolean;
+  hold_ms?: number;
   scale?: number;
   /** Write the PNG here as well as returning it inline. */
   output_path?: string;
@@ -86,6 +91,7 @@ export function renderFrame(args: FrameArgs): ToolResult {
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   const spec = readYAML<DesignSpec>(dPath);
+  if (args.scenes) return renderSceneFrame(spec, dPath, args);
 
   const pageIndex = args.page_id ? Math.max(0, (spec.pages ?? []).findIndex((p: Page) => p.id === args.page_id)) : 0;
   const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
@@ -128,5 +134,43 @@ export function renderFrame(args: FrameArgs): ToolResult {
     });
   } catch (err) {
     return errResult(op, `Frame render failed: ${(err as Error).message}`, 'Run diagnose_design to find the bad layer.', progress);
+  }
+}
+
+/** A moment of the multi-scene piece — the way to check a transition without exporting. */
+function renderSceneFrame(spec: DesignSpec, dPath: string, args: FrameArgs): ToolResult {
+  const op = 'frame';
+  if (!spec.pages?.length) {
+    return errResult(op, 'scenes:true plays pages in order, and this design has none.', 'Leave scenes off to sample a poster.');
+  }
+  const plan = planScenes(spec, { hold_ms: args.hold_ms });
+  const t = Math.min(Math.max(0, args.t ?? 0), plan.total_ms);
+  const m = sceneAt(plan, t);
+  const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
+  try {
+    const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
+    const svg = renderToSVGString(composeSceneFrame(spec, plan, t));
+    const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
+    const png = Buffer.from(new Resvg(svg, {
+      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir),
+    }).render().asPng());
+    if (args.output_path) {
+      fs.mkdirSync(path.dirname(args.output_path), { recursive: true });
+      fs.writeFileSync(args.output_path, png);
+    }
+    const notes = [...plan.warnings, ...assetNotes];
+    return okResult(op, {
+      design_path: dPath, t, total_ms: plan.total_ms, scale, bytes: png.length,
+      scene: { page_id: m.scene.page_id, local_ms: Math.round(m.local_ms) },
+      ...(m.from && m.scene.transition ? {
+        transition: { type: m.scene.transition.type, from: m.from.scene.page_id, progress: Number(m.from.progress.toFixed(3)) },
+      } : {}),
+      ...(args.output_path ? { output_path: args.output_path } : {}),
+      ...(notes.length ? { notes } : {}),
+      progress: [pOk(`Rendered t=${t}ms of ${plan.total_ms}ms`, `scene ${m.scene.page_id} at ${Math.round(m.local_ms)}ms`)],
+      _attachments: [{ type: 'image' as const, data: png.toString('base64'), mimeType: 'image/png' }],
+    });
+  } catch (err) {
+    return errResult(op, `Frame render failed: ${(err as Error).message}`, 'Run diagnose_design to find the bad layer.');
   }
 }

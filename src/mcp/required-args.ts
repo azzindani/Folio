@@ -119,6 +119,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     timeline: ['design_path'],
     clear: ['design_path'],
     export: ['design_path'],
+    scene: ['design_path', 'page_id'],
   },
 };
 

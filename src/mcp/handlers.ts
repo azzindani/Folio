@@ -14,6 +14,7 @@ import * as d from './dispatch';
 import { remapToolRefs } from './tool-remap';
 import type { ToolResult } from './types';
 import { missingArgs } from './required-args';
+import { decodeJsonStringArgs } from './json-string-args';
 
 // Most ops are pure local filesystem work and answer synchronously. The asset
 // finder talks to the internet, so a handler may also return a promise; every
@@ -24,7 +25,11 @@ export type Handler = (args: Record<string, unknown>) => ToolResult | Promise<To
 // pre-consolidation tool names; remap them to the consolidated {tool, op} so a
 // model that follows a hint calls a tool that actually exists.
 const remap = (m: Record<string, Handler>): Record<string, Handler> =>
-  Object.fromEntries(Object.entries(m).map(([k, h]) => [k, (a: Record<string, unknown>) => {
+  Object.fromEntries(Object.entries(m).map(([k, h]) => [k, (raw: Record<string, unknown>) => {
+    // Structured arguments sent as JSON strings are decoded first, so the
+    // requirement check and the op both see the shape the schema promises.
+    // See json-string-args.ts.
+    const a = decodeJsonStringArgs(k, raw);
     // Every tool passes through here, so this is where the arguments a tool
     // PROMISES to need are checked. Without it a missing argument reached the
     // handler and crashed inside whatever touched it first, and the crash was

@@ -123,7 +123,10 @@ export function dispatchPresentation(a: Args): ToolResult {
 
 export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
   switch (a['op']) {
-    case 'timeline': return engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]);
+    case 'timeline': return a['scenes'] === true
+      ? engine.sceneTimeline(a as unknown as Parameters<typeof engine.sceneTimeline>[0])
+      : engine.inspectTimeline(a as Parameters<typeof engine.inspectTimeline>[0]);
+    case 'scene':    return engine.setScene(a as unknown as Parameters<typeof engine.setScene>[0]);
     case 'keyframe': return engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]);
     case 'export':   return engine.exportAnimation(a as unknown as Parameters<typeof engine.exportAnimation>[0]);
     case 'motion':   return engine.applyMotion(a as Parameters<typeof engine.applyMotion>[0]);

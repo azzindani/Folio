@@ -53,4 +53,21 @@ RULES OF THUMB
     keyframes:[{t:0,opacity:0,y:30,easing:"ease-out-expo"},{t:500,opacity:1,y:0,hold:true},{t:2500,y:0},{t:2900,opacity:0,y:-20}]
   • Every format plays every channel. gif/mp4/webm stream frame by frame, so a
     30s scene keeps its fps (clips up to 60s; gif ≤50fps, video ≤60fps).
+
+MULTI-SCENE PIECES — one video, many pages
+  Each PAGE is a scene with its own timeline: author it with page_id on
+  sequence / track / motion. Then join the scenes:
+    animation(op:scene, page_id:"p2", transition:{type:"slide-left", duration:450}, length_ms?)
+                                                  ← how p2 ENTERS, and its exact time on screen
+    animation(op:timeline, scenes:true)           → every scene's start and length
+    animation(op:frame, scenes:true, t:4200)      → any moment, mid-transition included
+    animation(op:export, type:"mp4", scenes:true, hold_ms?)  → ONE file
+  • A scene lasts its motion + hold_ms (default 1500) unless length_ms is set.
+  • A scene's entrances play DURING its incoming transition: tracks starting at 0
+    arrive with the slide; delay them past the transition to land on a settled page.
+  • Transitions: fade · slide-left/right/up/down · wipe-left/right · reveal ·
+    zoom-in/out · morph · none (a cut). flip-h/v and cube-left/right are flat
+    approximations, and the reply says so.
+  • The reply warns when a scene is on screen for less time than its words take
+    to read at 240 wpm. Whether to cut copy or hold longer is your call.
 `;

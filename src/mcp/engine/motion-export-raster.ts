@@ -17,7 +17,7 @@ import { errResult, okResult } from './utils';
 import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
-import { specAt, frameTimes, animationDuration } from '../../export/gif-frames';
+import { frameTimes } from '../../export/gif-frames';
 import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-stream';
 import { VideoPipe, type VideoType } from '../../export/video-encode';
 import { tryFfmpeg } from '../../export/animation-export';
@@ -27,6 +27,18 @@ export interface RasterMotionArgs {
   fps?: number;
   duration?: number;
   project_path?: string;
+  /** Qualifications the caller already knows about (scene warnings, approximations). */
+  notes?: string[];
+  /** Extra fields for the reply (the scene list of a multi-scene export). */
+  extra?: Record<string, unknown>;
+}
+
+/** What gets rendered: one page's timeline, or every page played as scenes. */
+export interface FrameSource {
+  /** Natural length of the piece, ms. */
+  durationMs: number;
+  /** The design at time t, as the single page to render. */
+  at(t: number): DesignSpec;
 }
 
 /** Longest clip. A bound on CPU time — frames stream, so memory is flat at any length. */
@@ -40,15 +52,14 @@ const OP = 'export_animation';
 const yieldToServer = (): Promise<void> => new Promise(resolve => { setImmediate(resolve); });
 
 export async function exportRasterMotion(
-  spec: DesignSpec, dPath: string, pageIndex: number, outputPath: string, args: RasterMotionArgs,
+  spec: DesignSpec, dPath: string, source: FrameSource, outputPath: string, args: RasterMotionArgs,
 ): Promise<ToolResult> {
   const { type } = args;
   const video = type !== 'gif';
-  const layers = spec.pages?.[pageIndex]?.layers ?? spec.layers ?? [];
   // Every frame is a real render, so an unresolved asset href is a hole in all of them.
-  const notes = resolveImageAssets(spec, dPath, args.project_path);
+  const notes = [...(args.notes ?? []), ...resolveImageAssets(spec, dPath, args.project_path)];
 
-  const runMs = args.duration ?? animationDuration(layers);
+  const runMs = args.duration ?? source.durationMs;
   if (runMs <= 0) {
     return errResult(OP, `Nothing in this design is animated, so a ${type} would be a single still frame.`,
       'Add motion with animation(op:motion) or animation(op:keyframe) first, ' +
@@ -74,7 +85,7 @@ export async function exportRasterMotion(
   const font = resvgFontOption(path.dirname(path.dirname(dPath)));
   // Video has no alpha: anything the design leaves transparent would encode as black.
   const renderAt = (t: number): { pixels: Buffer; width: number; height: number } => {
-    const svg = renderToSVGString(specAt(spec, pageIndex, t));
+    const svg = renderToSVGString(source.at(t));
     const img = new Resvg(svg, video ? { font, background: '#FFFFFF' } : { font }).render();
     return { pixels: img.pixels, width: img.width, height: img.height };
   };
@@ -134,6 +145,7 @@ export async function exportRasterMotion(
     bytes,
     ...(gifStats ? { images_written: gifStats.images_written } : {}),
     render_ms: Math.round(performance.now() - started),
+    ...(args.extra ?? {}),
     ...(notes.length ? { notes } : {}),
     note: video
       ? `Encoded by ffmpeg as the frames rendered (${type === 'mp4' ? 'H.264, yuv420p, faststart' : 'VP9'}).`
