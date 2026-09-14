@@ -121,6 +121,12 @@ export function recoverEmbeddedLayers(layers: Layer[]): { recovered: number; dro
 function isPositionless(o: Rec): boolean {
   const pos = o['pos'];
   if (Array.isArray(pos) && pos.length >= 2 && typeof pos[0] === 'number' && typeof pos[1] === 'number') return false;
+  // A line draws from its end points and a circle/ellipse from cx/cy — both win
+  // over x/y in the renderer, so neither is positionless. Flowing a locked
+  // connector wrote x:86 y:1261 width:908 onto it; the line never moved, but
+  // everything that reads x/y (motion readouts, bbox checks) saw a bar at the foot.
+  if (['x1', 'y1', 'x2', 'y2'].every(k => num(o[k]) !== undefined)) return false;
+  if (num(o['cx']) !== undefined && num(o['cy']) !== undefined) return false;
   return num(o['x']) === undefined || num(o['y']) === undefined;
 }
 

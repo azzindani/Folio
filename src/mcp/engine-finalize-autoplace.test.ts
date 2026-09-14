@@ -125,6 +125,20 @@ describe('placePositionlessLayers', () => {
     expect(loose['y']).toBeGreaterThanOrEqual(160);                  // below the placed header
   });
 
+  it('never flows a line or a circle — they carry their own position', () => {
+    const layers = [
+      { id: 'conn', type: 'line', locked: true, x1: 540, y1: 420, x2: 540, y2: 860, stroke: { color: '#E4572E', width: 12 } },
+      { id: 'dot', type: 'ellipse', cx: 200, cy: 300, rx: 20, ry: 20 },
+    ] as unknown as Layer[];
+    expect(placePositionlessLayers(layers, 1080, 1350)).toBe(0);
+    for (const l of layers) {
+      const o = l as unknown as Record<string, unknown>;
+      expect(o['x']).toBeUndefined();
+      expect(o['y']).toBeUndefined();
+      expect(o['width']).toBeUndefined();
+    }
+  });
+
   it('never flows a data-bound layer (string x/y field-alias or chart type)', () => {
     const layers = [
       { id: 'ch', type: 'interactive_chart', width: 600, height: 360, chart: 'bar', x: 'ticker', y: 'ytd' },
