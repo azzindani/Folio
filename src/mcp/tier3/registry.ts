@@ -169,6 +169,7 @@ export const TIER3_TOOLS: ToolDefinition[] = [
         playback:     { type: 'object', description: 'op:track — {duration?, loop?, iterations?, direction?:"normal"|"alternate", easing?, delay?, anchor?, origin?:"offset"|"first"}.', properties: {} },
         keyframe:     { type: 'object', description: 'op:keyframe — {t:ms, x?, y?, opacity?, scale?, rotation?, blur?, draw?, easing?, hold?}.', properties: {} },
         stagger_ms:   { type: 'number', description: 'op:motion/track — delay between consecutive layers, ms. 60–120 reads well for a list.' },
+        order:        { type: 'string', enum: ['forward', 'reverse', 'center', 'edges', 'random', 'left_to_right', 'right_to_left', 'top_to_bottom', 'bottom_to_top'], description: 'op:motion/track (and each op:sequence step) — which layer the stagger starts from. forward = the order listed; center opens from the middle with mirrored pairs together; edges closes in; random is seeded by the ids (same every call); the *_to_* orders follow where layers sit, so split_text letters sweep by position.' },
         easing:       { type: 'string', description: 'op:motion — curve name (see the vocabulary above) or cubic-bezier(...). Per-preset default if omitted.' },
         distance:     { type: 'number', description: 'op:motion — travel distance in px for travelling presets. Per-preset default if omitted.' },
         duration:     { type: 'number', description: 'op:motion — run length ms. op:export — total clip length ms (default: the scene length; raster formats max 60000).' },

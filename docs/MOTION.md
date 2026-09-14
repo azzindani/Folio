@@ -111,6 +111,7 @@ animation(op:scene,    design_path, page_id, transition?, length_ms?)   how a pa
 * Omit `layer_ids` to target the whole page (a **locked group counts as one unit**).
 * Entrances, holds and exits on the same layer **fold into one track** (`motion-merge.ts`): times re-based on the earliest frame, each preset's easing moved onto its own keyframes, the rest-to-rest hop between them linear. Overlaps and loop-on-one-shot are refused with a hint (a loop needs its own layer, or `op:clear` first).
 * Returns `steps[{from,to,layers}]` and `scene_ms`.
+* `order` on a step (and on `op:motion` / `op:track`) picks which layer the stagger starts from: `forward reverse center edges random left_to_right right_to_left top_to_bottom bottom_to_top`. `src/mcp/engine/motion-order.ts` returns a RANK per layer instead of reordering them, so the delay is `stagger_ms × rank`: mirrored pairs from the centre start together, a column at one x sweeps in as one, and `random` is seeded by the ids — the same every call, never `Math.random`. The position orders use the drawn box, so split_text letters sweep by where they actually sit.
 
 ### `op:frame`
 

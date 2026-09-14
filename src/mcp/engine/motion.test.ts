@@ -91,6 +91,15 @@ describe('applyMotion', () => {
     expect(yaml).not.toContain('delay: 0');
   });
 
+  it('starts the stagger wherever order says — reverse puts the last layer first', () => {
+    const p = flat();
+    const r = applyMotion({ design_path: p, preset: 'rise', stagger_ms: 100, order: 'reverse' });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    const tracks = inspectTimeline({ design_path: p })['tracks'] as Array<{ layer_id: string; start_ms: number }>;
+    expect(Object.fromEntries(tracks.map(t => [t.layer_id, t.start_ms]))).toEqual({ a: 200, b: 100, c: 0 });
+    expect(applyMotion({ design_path: p, preset: 'rise', order: 'diagonal' }).success).toBe(false);
+  });
+
   it('targets only the layers named, in the order named', () => {
     const p = flat();
     const r = applyMotion({ design_path: p, preset: 'fade_in', layer_ids: ['c', 'a'] });
