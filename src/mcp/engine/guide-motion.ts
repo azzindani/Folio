@@ -35,6 +35,11 @@ TEXT ANIMATOR (one call)
   Splits the layer into measured units — a wrapped paragraph along its drawn lines — and
   animates them. mask:true holds a clip still over each unit so it rises from under an edge.
   Each unit is an ordinary text layer with an ordinary track: op:frame, op:timeline, op:track work.
+
+WIGGLE (a parent that never sits still)
+  animation(op:wiggle, layer_id, amplitude:{x?, y?, rotation?, scale?}, frequency?=2, duration?=4000, seed?)
+  Wraps the layer in <id>_wiggle, a group looping seeded noise — the layer's own motion keeps
+  playing underneath. The same wiggle every export; seed re-rolls it. A hand-held feel, a live badge.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).
