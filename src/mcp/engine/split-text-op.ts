@@ -22,6 +22,7 @@ import { metricsForFamily, charOffsets, letterSpacingPx } from '../../utils/font
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope } from './motion';
 import { pagesWithLayer } from '../engine-edit-tools';
+import { unitWidth } from './text-unit-width';
 
 export interface SplitTextArgs {
   design_path: string;
@@ -149,7 +150,8 @@ export function splitText(args: SplitTextArgs): ToolResult {
     return {
       ...o,
       id: freeLayerId(taken, `${id}_${args.by === 'word' ? 'w' : 'c'}${i + 1}`),
-      x: Math.round(startX), y: y0, width: Math.max(1, Math.round(w)),
+      // Sized so the renderer's own wrap rule never breaks the piece again — see text-unit-width.ts.
+      x: Math.round(startX), y: y0, width: unitWidth(p.text, style, w),
       content: { type: 'plain', value: p.text },
       // Each piece is measured and placed; letting it re-align inside its own
       // narrow box would move it off the run.

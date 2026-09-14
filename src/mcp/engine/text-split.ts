@@ -13,6 +13,7 @@ import type { Layer } from '../../schema/types';
 import { plainTextLayout } from '../../renderer/layer-renderers-shared';
 import { charOffsets, letterSpacingPx, type FontMetrics } from '../../utils/font-metrics';
 import { pieces } from './split-text-op';
+import { unitWidth } from './text-unit-width';
 
 export type SplitBy = 'char' | 'word' | 'line';
 
@@ -47,7 +48,8 @@ export function splitLayer(src: Layer, by: SplitBy, metrics: FontMetrics | null)
     for (const p of pieces(run.units, by)) {
       const from = run.offsets[p.start] ?? 0;
       const to = p.end < run.offsets.length ? (run.offsets[p.end] ?? run.total) : run.total;
-      units.push({ text: p.text, x: Math.round(start + from), y: top, width: Math.max(1, Math.round(to - from)), height: lineH, line: i });
+      // Placed by measurement, sized so the renderer's own wrap rule never breaks the unit again.
+      units.push({ text: p.text, x: Math.round(start + from), y: top, width: unitWidth(p.text, style, to - from), height: lineH, line: i });
     }
   });
   return { units, exact: by === 'line' ? true : exact };
