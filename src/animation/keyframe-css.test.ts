@@ -78,6 +78,19 @@ describe('generateKeyframeCSS v2', () => {
     expect(css).toContain('[data-layer-id="line"], [data-layer-id="line"] *');
   });
 
+  it('trims the start with a dash pair per step — the stroke travels', () => {
+    const anim: AnimationSpec = {
+      keyframes: [{ t: 0, draw_start: 0, draw: 0.2 }, { t: 1000, draw_start: 0.8, draw: 1 }],
+      playback: { duration: 1000 },
+    };
+    expect(usesDraw(anim)).toBe(true); // pathLength="1" still has to be stamped
+    const css = generateKeyframeCSS('trim', anim);
+    expect(css).not.toContain('stroke-dasharray: 1;');
+    expect(css).toMatch(/0% \{[^}]*stroke-dasharray: 0\.2 1; stroke-dashoffset: 0;/);
+    expect(css).toMatch(/100% \{[^}]*stroke-dasharray: 0\.2 1; stroke-dashoffset: -0\.8;/);
+    expect(poseAt(anim, 500).draw_start).toBeCloseTo(0.4, 5);
+  });
+
   it('finite iterations and delay reach the animation shorthand', () => {
     const css = generateKeyframeCSS('l', {
       keyframes: [{ t: 0, scale: 1 }, { t: 600, scale: 1.1 }],

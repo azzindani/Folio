@@ -19,10 +19,10 @@ import { easingToCSS, bakeEasing, resolveEasing } from './easing';
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
 /** Animated numeric channels, and what they lerp from when a frame omits them. */
-const CHANNELS = ['x', 'y', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw'] as const;
+const CHANNELS = ['x', 'y', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start'] as const;
 type Channel = typeof CHANNELS[number];
 const REST: Record<Channel, number> = {
-  x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, scale_x: 1, scale_y: 1, skew_x: 0, skew_y: 0, blur: 0, draw: 1,
+  x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, scale_x: 1, scale_y: 1, skew_x: 0, skew_y: 0, blur: 0, draw: 1, draw_start: 0,
 };
 
 /** A fully resolved pose: every channel has a number, colours may be absent. */
@@ -61,8 +61,12 @@ function lerpPose(a: Pose, b: Pose, t: number): Pose {
 
 const fmt = (v: number): string => String(Number(v.toFixed(3)));
 
+/** How a track reveals its stroke: not at all, from the start (`draw`), or trimmed at both ends. */
+type DrawMode = 'none' | 'dash' | 'trim';
+const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
+
 /** The CSS declarations for one pose. */
-function poseDecls(p: Pose, hasDraw: boolean): string[] {
+function poseDecls(p: Pose, draw: DrawMode): string[] {
   const decls: string[] = [];
   const parts: string[] = [];
   const { n } = p;
@@ -77,7 +81,12 @@ function poseDecls(p: Pose, hasDraw: boolean): string[] {
   decls.push(`transform: ${parts.length ? parts.join(' ') : 'none'};`);
   decls.push(`opacity: ${fmt(n.opacity)};`);
   decls.push(`filter: ${n.blur > 0 ? `blur(${fmt(n.blur)}px)` : 'none'};`);
-  if (hasDraw) decls.push(`stroke-dashoffset: ${fmt(1 - Math.max(0, Math.min(1, n.draw)))};`);
+  if (draw === 'dash') decls.push(`stroke-dashoffset: ${fmt(1 - clamp01(n.draw))};`);
+  // Trimmed: a dash as long as the run and a gap as long as the whole path
+  // (pathLength 1), pulled forward to where the run starts. Both interpolate.
+  else if (draw === 'trim') {
+    decls.push(`stroke-dasharray: ${fmt(Math.max(0, clamp01(n.draw) - clamp01(n.draw_start)))} 1;`, `stroke-dashoffset: ${fmt(-clamp01(n.draw_start))};`);
+  }
   if (p.fill) decls.push(`fill: ${p.fill};`);
   if (p.stroke) decls.push(`stroke: ${p.stroke};`);
   return decls;
@@ -98,9 +107,16 @@ export function anchorToOrigin(anchor: AnchorPoint | undefined): string {
   }
 }
 
+/** How a timeline reveals its stroke — a trimmed start needs a dash pair per step. */
+function drawMode(anim: AnimationSpec): DrawMode {
+  const frames = anim.keyframes ?? [];
+  if (frames.some(k => num(k.draw_start) !== undefined)) return 'trim';
+  return frames.some(k => num(k.draw) !== undefined) ? 'dash' : 'none';
+}
+
 /** True when any frame animates the stroke reveal — the export must add pathLength. */
 export function usesDraw(anim: AnimationSpec): boolean {
-  return (anim.keyframes ?? []).some(k => num(k.draw) !== undefined);
+  return drawMode(anim) !== 'none';
 }
 
 interface Step { pct: number; decls: string[]; timing: string }
@@ -125,7 +141,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
   const baseX = offsetOrigin ? 0 : (num(first.x) ?? 0);
   const baseY = offsetOrigin ? 0 : (num(first.y) ?? 0);
   const poses = resolvePoses(sorted, baseX, baseY);
-  const hasDraw = usesDraw(anim);
+  const hasDraw = drawMode(anim);
   const defaultEasing = playback?.easing ?? 'ease-in-out';
 
   const steps: Step[] = [];
@@ -162,9 +178,10 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec): strin
   const direction = playback?.direction ?? 'normal';
   const delay = Math.max(0, playback?.delay ?? 0);
   const origin = anchorToOrigin(playback?.anchor);
-  const drawDecl = hasDraw ? ' stroke-dasharray: 1;' : '';
+  // A trimmed track writes its dash pair per step; only a plain reveal needs the static dash.
+  const drawDecl = hasDraw === 'dash' ? ' stroke-dasharray: 1;' : '';
 
-  const selector = hasDraw
+  const selector = hasDraw !== 'none'
     ? `[data-layer-id="${layerId}"], [data-layer-id="${layerId}"] *`
     : `[data-layer-id="${layerId}"]`;
 

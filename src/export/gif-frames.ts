@@ -246,15 +246,23 @@ function applyValues(layer: AnimatedLayer, t: number): Layer {
   // offset back. Needs the path's real length, which is what the motion-path
   // sampler already measures — the same flattener, so a drawn line and a
   // travelled line agree about where "halfway" is.
-  const vd = num(v['draw']);
-  if (vd !== undefined && vd < 1) {
+  // draw_start trims the other end, so the visible run is draw_start → draw.
+  const end = Math.min(1, Math.max(0, num(v['draw']) ?? 1));
+  const start = Math.min(1, Math.max(0, num(v['draw_start']) ?? 0));
+  if (end < 1 || start > 0) {
     const len = strokeLength(layer);
     if (len !== null && len > 0) {
       // Offset against the SAME rounded dash, so draw:0 hides the stroke
       // entirely instead of leaving the sub-pixel remainder showing.
       const dash = Math.ceil(len);
-      out['stroke_dasharray'] = dash;
-      out['stroke_dashoffset'] = Math.round(dash * (1 - Math.max(0, vd)));
+      if (start > 0) {
+        // A dash as long as the run, a gap as long as the path, pulled forward to start.
+        out['stroke_dasharray'] = `${Math.round(dash * Math.max(0, end - start))} ${dash}`;
+        out['stroke_dashoffset'] = -Math.round(dash * start);
+      } else {
+        out['stroke_dasharray'] = dash;
+        out['stroke_dashoffset'] = Math.round(dash * (1 - end));
+      }
     }
   }
 

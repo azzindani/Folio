@@ -248,6 +248,21 @@ describe('skew and draw reach a sampled frame', () => {
     expect((layersAt([l], 1000)[0] as unknown as Record<string, unknown>)['stroke_dashoffset']).toBeUndefined();
   });
 
+  // After Effects' Trim Paths start: the run is draw_start → draw, so a segment
+  // travels instead of only drawing on. Checked in pixels, since a string dash
+  // and a negative offset both have to survive the renderer and resvg.
+  it('trims the start of a stroke, so a segment travels along it', () => {
+    const seg = (): Layer => layer('seg', { type: 'line', z: 1, x1: 0, y1: 50, x2: 200, y2: 50, stroke: { color: '#0000FF', width: 10 },
+      animation: anim([{ t: 0, draw_start: 0, draw: 0.5 }, { t: 1000, draw_start: 0.5, draw: 1 }]) });
+    expect(layersAt([seg()], 500)[0]).toMatchObject({ stroke_dasharray: '100 200', stroke_dashoffset: -50 });
+    const spec = { _protocol: 'design/v1', meta: { id: 'd', name: 'd', type: 'poster', created: '', modified: '' },
+      document: { width: 200, height: 100, unit: 'px', dpi: 96 }, layers: [seg()] } as unknown as DesignSpec;
+    const img = new Resvg(renderToSVGString(specAt(spec, 0, 500)), { background: '#FFFFFF' }).render();
+    const pixels = img.pixels;
+    const blue = (x: number): boolean => pixels[(50 * img.width + x) * 4 + 2] > 200 && pixels[(50 * img.width + x) * 4] < 60;
+    expect([blue(25), blue(100), blue(175)]).toEqual([false, true, false]); // visible 50 → 150 only
+  });
+
   it('ignores draw on a layer with no outline to measure', () => {
     const l = layer('words', { type: 'text', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
     expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();

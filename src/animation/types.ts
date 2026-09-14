@@ -75,6 +75,12 @@ export interface Keyframe {
    * Illustrator/After Effects "trim paths" — a line draws itself on.
    */
   draw?: number;
+  /**
+   * Trim start, 0 → 1: where the visible run BEGINS (After Effects' Trim Paths
+   * start; `draw` is the end). Trailing draw_start behind draw makes a stroke
+   * travel along its path instead of only drawing on.
+   */
+  draw_start?: number;
   'fill.color'?: string;
   'stroke.color'?: string;
   /**
