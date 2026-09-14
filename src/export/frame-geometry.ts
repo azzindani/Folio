@@ -14,6 +14,8 @@ import type { Layer } from '../schema/types';
 import type { AnchorPoint } from '../animation/types';
 import { plainTextLayout } from '../renderer/layer-renderers-shared';
 import { flattenPath } from '../animation/motion-path';
+import { metricsForFamily, charOffsets } from '../utils/font-metrics';
+import { fontsDir } from '../mcp/engine/fonts';
 
 export interface Box { x: number; y: number; width: number; height: number }
 
@@ -34,12 +36,31 @@ function union(boxes: Array<Box | null>): Box | null {
   return boundsOf(real.flatMap(b => [{ x: b.x, y: b.y }, { x: b.x + b.width, y: b.y + b.height }]));
 }
 
+/**
+ * Width of one drawn line: real advances from the bundled font when there is
+ * one, the layout estimate otherwise. The flat estimate put "Wipe it in."
+ * (Archivo 800, 120px) at 686px against ~530px of ink, so a wipe had uncovered
+ * the whole word by its halfway frame. A variable font answers with its default
+ * instance's advances, so heavy weights still measure a little narrow.
+ */
+function lineInk(line: string, estimate: number, style: Record<string, unknown>, fontSize: number): number {
+  const family = String(style['font_family'] ?? 'Inter').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+  const m = metricsForFamily(family, [fontsDir()]);
+  if (!m) return estimate;
+  const spacing = typeof style['letter_spacing'] === 'number' ? style['letter_spacing'] : 0;
+  const run = charOffsets(line, fontSize, m, 0.54, spacing);
+  // Spacing follows the last glyph too, but that gap draws no ink.
+  return run.exact ? Math.max(0, run.total - spacing) : estimate;
+}
+
 /** The box of what a text layer draws: widest wrapped line × its lines. */
 function textBox(o: Record<string, unknown>): Box | null {
   const content = o['content'] as { type?: unknown; value?: unknown } | undefined;
   if (!content || (content.type !== undefined && content.type !== 'plain') || typeof content.value !== 'string') return null;
-  const layout = plainTextLayout(content.value, (o['style'] ?? {}) as never, o as never);
-  const widest = Math.max(0, ...layout.lineWidths);
+  const style = (o['style'] ?? {}) as Record<string, unknown>;
+  const layout = plainTextLayout(content.value, style as never, o as never);
+  // The wrap is the renderer's own; only each line's width is measured.
+  const widest = Math.max(0, ...layout.lines.map((l, i) => lineInk(l, layout.lineWidths[i] ?? 0, style, layout.fontSize)));
   const left = layout.anchor === 'middle' ? layout.textX - widest / 2 : layout.anchor === 'end' ? layout.textX - widest : layout.textX;
   // First baseline sits at textY; glyphs rise ~0.8em above it and fall ~0.2em below the last.
   const top = layout.textY - layout.fontSize * 0.8;
