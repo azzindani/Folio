@@ -101,6 +101,7 @@ animation(op:wiggle,   design_path, layer_id|layer_ids, amplitude{x,y,rotation,s
 animation(op:camera,   design_path, shots:[{t, target:"all"|id|ids, padding?, easing?, hold?}], exclude?, padding?)   2D camera: each shot frames its target
 animation(op:morph,    design_path, layer_id, to | to_layer, keep_target?, duration?, delay?, easing?)   one path becomes another shape
 animation(op:audio,    design_path, src?, page_id?, audio_id?, volume?, fade_in?, fade_out?, start_ms?, offset_ms?, duration?, loop?, remove?)   music under the piece, cues on a scene
+animation(op:beats,    design_path, audio_id?)          the music's tempo, beats and onsets on the piece, and scene lengths that end on a beat
 ```
 
 ### `op:sequence`
@@ -157,6 +158,14 @@ A video's sound lives in the design. `audio:` holds tracks that run under the wh
 | Door | `animation(op:audio)` | `src` adds a sound (replacing the one with its `audio_id`), `audio_id` + fields changes one, `remove:true` takes one or all out, no arguments lists. Every reply is the soundtrack as it will mix, with one ascii lane per clip. |
 
 A GIF has no sound, and its export says so in `notes`.
+
+**Beats** (`animation(op:beats)`) measure the music so cuts can land on it. `src/export/beat-detect.ts` is pure math over mono PCM that ffmpeg decodes at 11 025 Hz (`src/mcp/engine/audio-analyze.ts`, cached by path, size and mtime):
+
+1. Onset strength is log spectral flux per frequency band (0–150–400–1000–2500 Hz–top), with each band getting one vote. Summed over raw bins, a kick drum spanning a handful of bass bins lost to a quiet hi-hat spread over hundreds, and a live 120 BPM test track was tracked on its off-beat ticks, 250 ms late.
+2. Tempo is the autocorrelation of that envelope, mean removed, over 60–200 BPM. A broad prior around 120 BPM picks the tempo a listener taps rather than its half or double.
+3. Beats are placed by dynamic programming (Ellis 2007).
+
+`confidence` is the correlation at the tempo: noise reads under 0.25, so `pulse` reports steady, weak or none and a track with no pulse gets no grid. The reply puts every beat on the PIECE timeline (offset and loops applied) and gives `scenes_on_beat`: for each scene, the `length_ms` that ends it on its nearest beat, each counting the scenes before it. It writes nothing; the model applies a length with `op:scene`, or keeps a cut where the story wants it.
 
 **In the editor**, an audio asset's right-click menu offers **Use as soundtrack** (`state.setAudioTracks`, undoable; a 1s fade-out by default, since a track cut dead at the end sounds broken). Play all sounds the piece through `src/editor/scene-audio.ts`: the clips of `planSound` scheduled on a WebAudio clock with offsets into decoded buffers and gain ramps for the fades, so it needs no HTTP range support and a seek sounds from the right place. Sound follows the transport's edges — play, the pause-and-play a seek makes, pause — and restarts at the current time after an edit, a finished decode or a mute switch. A file that decodes after play starts late at the position the piece has reached. The stage's sound row (`src/ui/scene-stage/scene-stage-sound.ts`) draws each clip under the scene strip on the same scale, with the plan's notes, a mute switch and each track's volume and fades.
 

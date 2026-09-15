@@ -126,6 +126,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     export_status: ['job_id'],
     scene: ['design_path', 'page_id'],
     audio: ['design_path'],
+    beats: ['design_path'],
   },
 };
 

@@ -124,4 +124,8 @@ SOUND — music and cues (mp4 and webm carry it; a GIF has none)
     and music that runs out before the piece does.
   • Sounds are summed, so a cue does not duck the music: keep music under cues
     (volume ~0.5–0.7) or the peaks hit the limiter.
+  • animation(op:beats) measures the music: bpm, every beat on the piece's
+    timeline, and for each scene the length_ms that ends it on a beat. It writes
+    nothing — cuts on the beat feel edited, but a cut belongs where the story is.
+    pulse "none" means no grid to trust: cut on the scenes' own motion instead.
 `;
