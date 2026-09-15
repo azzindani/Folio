@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { createProject, createDesign, appendPage, sealDesign, addLayers, inspectDesign } from './engine';
+import { createProject, createDesign, appendPage, sealDesign, addLayers, inspectDesign, setScene } from './engine';
 import type { Layer, DesignSpec } from '../schema/types';
 import type { ShorthandLayer } from './shorthand-parser';
 import { parseDesign } from '../schema/parser';
@@ -317,6 +317,23 @@ describe('sealDesign', () => {
     const p3 = (after.pages ?? []).find(p => p.id === 'p3');
     expect(JSON.stringify(p3)).toContain('Rewritten middle');                              // content actually replaced
     expect(p3?.label).toBe('P3');                                                          // label kept when not passed
+  });
+
+  it('replace:true keeps how the page plays as a scene — its transition and time on screen', () => {
+    const projectPath = path.join(tmpDir, 'pgscene-project');
+    createProject({ name: 'PgScene', path: projectPath });
+    createDesign({ project_path: projectPath, name: 'PgScene', type: 'carousel', width: 1080, height: 1080 });
+    const designPath = path.join(projectPath, 'designs/pgscene.design.yaml');
+    const slide = (title: string): ShorthandLayer[] => [{ type: 'sections', title, blocks: [{ kind: 'text', text: title }] }] as unknown as ShorthandLayer[];
+    appendPage({ design_path: designPath, page_id: 's1', layers_shorthand: slide('One') });
+    appendPage({ design_path: designPath, page_id: 's2', layers_shorthand: slide('Two') });
+    expect(setScene({ design_path: designPath, page_id: 's2', transition: { type: 'wipe-left', duration: 600 }, length_ms: 3800 }).success).toBe(true);
+
+    expect(appendPage({ design_path: designPath, page_id: 's2', replace: true, layers_shorthand: slide('Two, rebuilt') }).success).toBe(true);
+    const s2 = (parseYAMLDesign(designPath).pages ?? []).find(p => p.id === 's2');
+    expect(JSON.stringify(s2)).toContain('Two, rebuilt');
+    expect(s2?.transition).toMatchObject({ type: 'wipe-left', duration: 600 });
+    expect(s2?.auto_advance).toBe(3800);
   });
 
   it('same page_id WITHOUT replace still renames (back-compat) and hints at replace:true', () => {
