@@ -689,8 +689,10 @@ export function appendPage(args: {
     : `Appended page "${pageId}" — ${spec.pages.length} total`, [
     { type: 'design', path: dPath, role: 'updated' },
   ]);
-  const remaining = next_action ? next_action.remaining : 0;
-  const handover = buildHandover(remaining === 0 ? 'SEAL' : 'COMPOSE', {
+  // Only a task knows the page count; without one this said SEAL/export after page 1
+  // of 5, skipping the other pages, their motion and the seal. No plan: keep composing.
+  const done = next_action ? next_action.remaining === 0 : false;
+  const handover = buildHandover(done ? 'SEAL' : 'COMPOSE', {
     design_path: dPath, ...(args.task_path ? { task_path: args.task_path } : {}),
   }, { type: 'carousel' });
   const link = buildEditorLink(dPath, { page: replacedAt >= 0 ? replacedAt : spec.pages.length - 1 });

@@ -69,6 +69,15 @@ export function createDesign(args: { project_path: string; name: string; type?: 
     return errResult(op, (e as Error).message, `Pass a bare project name (e.g. "${args.project_path}") — the engine places it in the projects dir. Don't build absolute /home/... paths.`, progress);
   }
   const designPath = path.join(projectDir, `designs/${designId}.design.yaml`);
+  // The commonest way to arrive here twice is a retry after a lost reply: the
+  // first call worked, its answer never came back, and the model asks again.
+  // Overwriting answered that with an empty scaffold over the finished design —
+  // five pages and their motion, gone, success:true. duplicate_design has always
+  // refused an existing file; this is the sibling that was never told.
+  if (fs.existsSync(designPath)) {
+    return errResult(op, `A design named "${args.name}" already exists: ${designPath}`,
+      `Keep building it — append_page / add_layers with design_path "${designPath}" (manage_design {op:"resume"} shows where it got to) — or pass a different name for a new design.`, progress);
+  }
   const today = new Date().toISOString().split('T')[0];
 
   // Physical dimensions (mm / inches) mistaken for px — a "90×38" wine label
@@ -258,7 +267,14 @@ export function listDesigns(args: { project_path: string }): ToolResult {
   const truncated = designs.length > limit;
   progress.push(pOk(`Listed ${Math.min(designs.length, limit)} design(s)`, truncated ? `truncated at ${limit}` : ''));
   const context = buildContext(op, `Found ${designs.length} design(s) in project`);
-  const handover = buildHandover('PROJECT', { project_path: args.project_path });
+  // A project that already holds a draft is usually one a model is coming BACK
+  // to — after a lost reply or a context reset. Suggesting create_design first
+  // sent it off to start again beside (or, before create refused, over) the work.
+  const draft = [...designs].reverse().find(d => (d as { status?: unknown }).status === 'draft') as { path?: unknown; type?: unknown } | undefined;
+  const handover = typeof draft?.path === 'string'
+    ? buildHandover('DESIGN', { design_path: path.join(args.project_path, draft.path), project_path: args.project_path },
+      { type: draft.type === 'carousel' ? 'carousel' : 'poster' })
+    : buildHandover('PROJECT', { project_path: args.project_path });
   return okResult(op, { designs: designs.slice(0, limit), total: designs.length, truncated, progress, context, handover });
 }
 
