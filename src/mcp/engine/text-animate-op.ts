@@ -24,6 +24,7 @@ import { isStaggerOrder, STAGGER_ORDERS } from './motion-order';
 import { findLayer } from './split-text-op';
 import { pagesWithLayer } from '../engine-edit-tools';
 import { splitLayer, type SplitBy } from './text-split';
+import { remeasureText } from './text-remeasure';
 
 type TextAnimArgs = {
   design_path: string;
@@ -39,6 +40,8 @@ type TextAnimArgs = {
   easing?: string;
   distance?: number;
   keep_source?: boolean;
+  /** Re-place pieces split earlier with the current font widths (text-remeasure.ts); layer_id optional. */
+  remeasure?: boolean;
   page_id?: string;
   project_path?: string;
 };
@@ -57,6 +60,7 @@ function replaceLayer(layers: Layer[], id: string, withLayers: Layer[]): Layer[]
 
 export function animateText(args: TextAnimArgs): ToolResult {
   const op = 'text';
+  if (args.remeasure === true) return remeasureText(args);
   const dPath = resolveDesignPath(args.design_path, args.project_path);
   if (!fs.existsSync(dPath)) return errResult(op, `Design not found: ${dPath}`, 'Check design_path.');
   const id = String(args.layer_id ?? '');
@@ -105,7 +109,7 @@ export function animateText(args: TextAnimArgs): ToolResult {
   const claim = (base: string): string => { const got = freeLayerId(taken, base); taken.add(got); return got; };
   const created: string[] = [];
   const made: Layer[] = units.map((u, i) => {
-    const piece: Record<string, unknown> = { ...o, id: claim(`${id}_${by[0]}${i + 1}`), x: u.x, y: u.y, width: u.width, height: u.height,
+    const piece: Record<string, unknown> = { ...o, id: claim(`${id}_${by[0]}${i + 1}`), split_of: id, x: u.x, y: u.y, width: u.width, height: u.height,
       content: { type: 'plain', value: u.text }, style: pieceStyle };
     delete piece['animation'];
     created.push(String(piece['id']));
