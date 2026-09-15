@@ -1,5 +1,6 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
+import { playsAsScenes } from '../../editor/scene-player';
 import { exportDesign } from '../../export/exporter';
 import { EXPORT_SCALE_PRESETS, defaultScalePreset, getScalePreset } from '../../export/scale-presets';
 import { showToast } from '../../utils/toast';
@@ -33,6 +34,9 @@ export class ToolbarManager {
     this.state.subscribe(() => {
       const btn = this.container.querySelector<HTMLButtonElement>('.toolbar-play');
       if (btn) btn.hidden = !this.app.motionPlayer?.hasMotion();
+      // Play all belongs to a deck: two pages or more make a piece with scenes.
+      const all = this.container.querySelector<HTMLButtonElement>('.toolbar-play-all');
+      if (all) all.hidden = !playsAsScenes(this.state.get().design);
     });
   }
 
@@ -99,6 +103,8 @@ export class ToolbarManager {
         </select>
         <button class="btn btn-sm toolbar-play" data-action="play-motion" hidden
           title="Play the animation on the canvas (Space)">&#9654; Play</button>
+        <button class="btn btn-sm toolbar-play-all" data-action="play-scenes" hidden
+          title="Play every page as one piece, transitions included (Shift+Space)">&#9654; Play all</button>
         <button class="btn btn-sm" data-action="undo" title="Undo (Ctrl+Z)">&#8617;</button>
         <button class="btn btn-sm" data-action="redo" title="Redo (Ctrl+Shift+Z)">&#8618;</button>
         <div class="export-group">
@@ -147,6 +153,7 @@ export class ToolbarManager {
 
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'play-motion') { this.app.motionPlayer?.toggle(); return; }
+    if (action === 'play-scenes') { this.app.sceneStage.open({ play: true }); return; }
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
     if (action === 'catalog') { this.app.openCatalog(); return; }

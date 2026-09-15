@@ -1,4 +1,4 @@
-import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec } from '../schema/types';
+import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec, Page, PageTransition } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { addBlankPage, duplicatePage, deletePage, movePage as movePageOp } from './state-pages';
 import { debug } from '../utils/debug';
@@ -424,5 +424,20 @@ export class StateManager {
     if (!d) return;
     const len = d.pages && d.pages.length > 0 ? d.pages.length : 1;
     this.set('currentPageIndex', Math.max(0, Math.min(index, len - 1)), false);
+  }
+
+  /** How a page plays as a scene: its incoming transition (null = a cut) and its
+   *  time on screen (null = its motion plus the default hold). Undoable. */
+  setPageScene(index: number, patch: { transition?: PageTransition | null; auto_advance?: number | null }): void {
+    const d = this.state.design;
+    const pages = d?.pages;
+    if (!d || !pages || !pages[index]) return;
+    this.pushUndo();
+    const next: Page = { ...pages[index] };
+    if (patch.transition === null) delete next.transition;
+    else if (patch.transition !== undefined) next.transition = patch.transition;
+    if (patch.auto_advance === null) delete next.auto_advance;
+    else if (patch.auto_advance !== undefined) next.auto_advance = patch.auto_advance;
+    this.set('design', { ...d, pages: pages.map((p, i) => (i === index ? next : p)) }, false);
   }
 }

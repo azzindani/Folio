@@ -38,6 +38,8 @@ import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { MotionPlayer } from './motion-player';
+import { ScenePlayer } from './scene-player';
+import { SceneStage } from '../ui/scene-stage/scene-stage';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { wireMobileSheets } from './mobile-sheet';
@@ -81,6 +83,13 @@ export abstract class EditorAppBase {
    *  initializer runs before the subclass builds `state`, so it would capture
    *  `undefined` and every hasMotion() call would throw. */
   motionPlayer!: MotionPlayer;
+  private sceneStageInstance: SceneStage | null = null;
+  /** Play all: every page as one piece, transitions included. Built on first use,
+   *  since it needs `state` — the per-page player is stopped as it opens. */
+  get sceneStage(): SceneStage {
+    this.sceneStageInstance ??= new SceneStage(this.state, new ScenePlayer(this.state), () => this.motionPlayer.stop());
+    return this.sceneStageInstance;
+  }
   protected colorSchemePanel!: ColorSchemePanelManager;
   protected assetPanel?: AssetPanelManager;
   /** Project of the open server-backed design, so the asset manager opens on
