@@ -258,7 +258,9 @@ Browser export (toolbar):  src/export/exporter.ts
 
 Server-side export (MCP export_design):  src/mcp/engine-export-tools.ts
    SVG    jsdom document → renderEntry() → serialize → .svg
-   PNG    @resvg/resvg-js raster with bundled TTFs (src/mcp/fonts/, ~34 faces)
+   PNG    @resvg/resvg-js raster with bundled TTFs (src/mcp/fonts/: one STATIC file per
+          weight — resvg ignores font-weight on a variable font and drew its default
+          instance, so scripts/instance-fonts.py cuts fonts/variable/* into 300–900)
    PDF    hybrid VECTOR — resvg hi-DPI raster underlay + jsPDF selectable text
           runs with embedded fonts (clickable links via collectHrefRects)
    PPTX   one resvg-rastered slide per page in an OOXML zip
