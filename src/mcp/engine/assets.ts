@@ -16,7 +16,7 @@ import { rasterize } from '../../utils/resvg-isolate';
 // ── Types ─────────────────────────────────────────────────────
 import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-process';
 
-export type AssetKind = 'images' | 'icons' | 'fonts' | 'docs';
+export type AssetKind = 'images' | 'icons' | 'fonts' | 'docs' | 'audio';
 
 /**
  * Where a fetched asset came from and on what terms.
@@ -73,6 +73,7 @@ const EXT_KIND: Record<string, AssetKind> = {
   // built FROM these, they are never executed or rendered as markup.
   md: 'docs', markdown: 'docs', txt: 'docs', csv: 'docs', json: 'docs',
   yaml: 'docs', yml: 'docs',
+  ...AUDIO_EXT_KIND,   // a video's soundtrack and sound cues (asset-audio.ts)
 };
 const MIME_EXT: Record<string, string> = {
   'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp',
@@ -80,6 +81,7 @@ const MIME_EXT: Record<string, string> = {
   'font/ttf': 'ttf', 'font/otf': 'otf', 'font/woff2': 'woff2', 'font/woff': 'woff',
   'text/markdown': 'md', 'text/plain': 'txt', 'text/csv': 'csv',
   'application/json': 'json', 'text/yaml': 'yaml', 'application/x-yaml': 'yaml',
+  ...AUDIO_MIME_EXT,
 };
 
 /** Content-type → our extension, for bytes arriving off the wire. */
@@ -106,16 +108,19 @@ function targetKind(fileKind: AssetKind, requested?: string): AssetKind {
 // budget) and are re-exported here so every existing importer keeps working.
 export { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asset-paths';
 import { MAX_PROJECT_FOLDER_DEPTH, sanitizeFolder, parseAssetPath } from './asset-paths';
+import { AUDIO_EXT_KIND, AUDIO_MIME_EXT, probeAudioBytes } from './asset-audio';
 
 // ── Metadata extraction ───────────────────────────────────────
 export interface AssetMeta {
   width?: number; height?: number;
   dominant_colors?: string[];
   luminance?: 'dark' | 'light' | 'busy';
+  /** Audio: how long the file plays, ms. */
+  duration_ms?: number;
 }
 
 export function extractAssetMeta(buf: Buffer, ext: string): AssetMeta {
-  if (EXT_KIND[ext] === 'fonts' || EXT_KIND[ext] === 'docs') return {};
+  if (EXT_KIND[ext] === 'fonts' || EXT_KIND[ext] === 'docs' || EXT_KIND[ext] === 'audio') return {};
   if (ext === 'svg') {
     const { dims, colors } = parseSvg(buf.toString('utf8'));
     const rgbs = dedupeColors(colors).slice(0, 4);
@@ -175,7 +180,7 @@ function sampleRasterColors(buf: Buffer, ext: string): Pick<AssetMeta, 'dominant
 }
 
 // ── Manifest I/O ──────────────────────────────────────────────
-const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs'];
+const KINDS: AssetKind[] = ['images', 'icons', 'fonts', 'docs', 'audio'];
 
 export function readAssetManifest(projectDir: string): Partial<Record<AssetKind, AssetEntry[]>> {
   const file = path.join(projectDir, 'project.yaml');
@@ -318,6 +323,10 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
     }
   }
 
+  // Probed before anything is replaced: a mislabelled file must not overwrite a good one.
+  const probed = clean.kind === 'audio' ? probeAudioBytes(buf, clean.ext) : null;
+  if (probed === 'not-audio') throw new AssetError(`"${clean.name}" has no audio stream`, 415, 'Store an mp3, wav, m4a, aac, ogg, opus or flac file.');
+
   const kind = targetKind(clean.kind, args.kind);
   const folder = sanitizeFolder(args.folder);
   const dir = path.join(args.projectDir, 'assets', kind, ...(folder ? [folder] : []));
@@ -328,13 +337,14 @@ export function ingestAsset(args: IngestArgs): { entry: AssetEntry; warnings: st
   if (existed) { snapshot(abs); warnings.push(`replaced existing ${relPath}`); }
   fs.writeFileSync(abs, buf);
 
-  const meta = extractAssetMeta(buf, clean.ext);
+  const meta: AssetMeta = probed ? { duration_ms: probed.duration_ms } : extractAssetMeta(buf, clean.ext);
   const entry: AssetEntry = {
     id: clean.name.replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9-]+/g, '-'),
     path: relPath, kind, ...(folder ? { folder } : {}), bytes: buf.length,
     ...(meta.width ? { width: meta.width, height: meta.height } : {}),
     ...(meta.dominant_colors ? { dominant_colors: meta.dominant_colors } : {}),
     ...(meta.luminance ? { luminance: meta.luminance } : {}),
+    ...(meta.duration_ms ? { duration_ms: meta.duration_ms } : {}),
     ...(args.alt ? { alt: String(args.alt).slice(0, 300) } : {}),
     added: new Date().toISOString().split('T')[0],
     ...(args.provenance ? { provenance: args.provenance } : {}),

@@ -22,6 +22,9 @@ import { specAt, animationDuration } from '../../export/gif-frames';
 import { planScenes } from '../../export/scene-plan';
 import { composeSceneFrame } from '../../export/scene-compose';
 import { APPROXIMATED } from '../../export/scene-transition';
+import type { SoundTimeline } from '../../export/audio-plan';
+import type { MuxClip } from '../../export/audio-mux';
+import { hasSound, resolveSound } from './sound-resolve';
 
 const TYPES = ['svg', 'html', 'gif', 'mp4', 'webm'] as const;
 export type MotionExportType = typeof TYPES[number];
@@ -104,9 +107,11 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     const plan = planScenes(spec, { hold_ms: args.hold_ms });
     const approximated = [...new Set(plan.scenes.map(s => s.transition?.type))]
       .flatMap(t => (t && APPROXIMATED[t] ? [`${t} ${APPROXIMATED[t]}.`] : []));
+    const sound = soundFor(spec, dPath, { total_ms: args.duration ?? plan.total_ms, scenes: plan.scenes.map(s => ({ page_id: s.page_id, start_ms: s.start_ms })) }, args);
     return raster(spec, dPath, { durationMs: plan.total_ms, at: t => composeSceneFrame(spec, plan, t) }, outputPath, {
       ...base,
-      notes: [...plan.warnings, ...approximated],
+      sound: sound.clips,
+      notes: [...plan.warnings, ...approximated, ...sound.notes],
       extra: {
         scenes: plan.scenes.map(s => ({
           page_id: s.page_id, start_ms: s.start_ms, length_ms: s.length_ms,
@@ -120,9 +125,18 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
   const pageNotes = pageCount > 1 && !args.page_id
     ? [`This design has ${pageCount} pages and only the first was exported. Pass scenes:true to play every page as one piece, or page_id for another page.`]
     : [];
+  const page = spec.pages?.[pageIndex];
+  const sound = soundFor(spec, dPath, { total_ms: args.duration ?? animationDuration(layers), scenes: page ? [{ page_id: page.id, start_ms: 0 }] : [] }, args);
   return raster(spec, dPath, { durationMs: animationDuration(layers), at: t => specAt(spec, pageIndex, t) }, outputPath, {
-    ...base, notes: pageNotes,
+    ...base, sound: sound.clips, notes: [...pageNotes, ...sound.notes],
   });
+}
+
+/** The design's sound over the exported stretch. A GIF gets the clips only so its reply can say it has none. */
+function soundFor(spec: DesignSpec, dPath: string, timeline: SoundTimeline, args: ExportAnimationArgs): { clips?: MuxClip[]; notes: string[] } {
+  if (!hasSound(spec)) return { notes: [] };
+  const resolved = resolveSound(spec, dPath, timeline, args.project_path);
+  return { clips: resolved.clips, notes: args.type === 'gif' ? [] : resolved.plan.notes };
 }
 
 /**

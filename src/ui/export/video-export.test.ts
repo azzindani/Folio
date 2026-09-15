@@ -66,6 +66,18 @@ describe('exportVideo — the editor side of a server render', () => {
     expect(showToast).toHaveBeenCalledWith(expect.stringContaining('out of memory'), 'error');
   });
 
+  it('saves a file written with a warning, and shows the warning instead of "Exported"', async () => {
+    const clicks = recordClicks();
+    const io = scripted([
+      { status: 202, body: { job_id: 'exp_3' } },
+      { status: 200, body: { state: 'done', download: '/__project_files/p/exports/d.mp4', warning: 'The video was written WITHOUT its sound' } },
+    ]);
+    expect(await exportVideo({ design: 'p/d.design.yaml', type: 'mp4', scenes: true }, { fetch: io.fetch, pollMs: 0 })).toBe('d.mp4');
+    expect(clicks).toHaveLength(1);
+    expect(showToast).toHaveBeenCalledWith('d.mp4: The video was written WITHOUT its sound', 'warning');
+    expect(showToast).not.toHaveBeenCalledWith(expect.stringContaining('Exported'), 'success');
+  });
+
   it('tells a queued job from a running one, and keeps a query string on the link', () => {
     expect(progressText({ state: 'queued' })).toBe('waiting for the render ahead of it');
     expect(progressText({ state: 'running', percent: 42, eta_ms: 9100 })).toBe('rendering 42% · about 10s left');

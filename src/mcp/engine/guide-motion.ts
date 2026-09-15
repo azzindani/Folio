@@ -110,4 +110,18 @@ MULTI-SCENE PIECES — one video, many pages
     approximations, and the reply says so.
   • The reply warns when a scene is on screen for less time than its words take
     to read at 240 wpm. Whether to cut copy or hold longer is your call.
+
+SOUND — music and cues (mp4 and webm carry it; a GIF has none)
+    manage_design(op:asset_add, name:"theme.mp3", …)  → assets/audio/theme.mp3 + duration_ms
+    animation(op:audio, src:"assets/audio/theme.mp3", volume:0.6, fade_in:300, fade_out:1200)
+                                                  ← music under the whole piece
+    animation(op:audio, page_id:"p3", src:"assets/audio/whoosh.wav", start_ms:120)
+                                                  ← a cue that starts with scene p3
+    animation(op:audio)                           → the soundtrack as it will mix
+  • audio_id + fields changes one sound; remove:true takes it out.
+  • The scenes set the piece's length, not the music: a track is cut at the end —
+    give it a fade_out, or loop a short bed. The reply notes a cut with no fade
+    and music that runs out before the piece does.
+  • Sounds are summed, so a cue does not duck the music: keep music under cues
+    (volume ~0.5–0.7) or the peaks hit the limiter.
 `;

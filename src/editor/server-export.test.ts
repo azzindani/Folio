@@ -46,6 +46,12 @@ describe('editor video export route', () => {
     expect(body).toMatchObject({ state: 'done', percent: 100, bytes: 2372748, download: '/__project_files/promo/exports/folio-%E2%80%94-product-promo.mp4' });
   });
 
+  it('carries a receipt warning, so a video written without its sound does not pass as clean', async () => {
+    const silent: CallTool = async () => ({ success: true, state: 'done', output_path: `${PROJECTS}/p/exports/d.mp4`, receipt: { bytes: 900, warning: 'The video was written WITHOUT its sound' } });
+    const body = await (await exportRoute(...get('/__project_files/__export/status?job_id=exp_2'), deps(silent)))?.json();
+    expect(body).toMatchObject({ state: 'done', warning: 'The video was written WITHOUT its sound' });
+  });
+
   it('answers 502 when the render server is down, and ignores every other path', async () => {
     const dead: CallTool = async () => { throw new Error('connect ECONNREFUSED 127.0.0.1:3333'); };
     const res = await exportRoute(...post({ design: 'p/d.design.yaml', type: 'mp4' }), deps(dead));

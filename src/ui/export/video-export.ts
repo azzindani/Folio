@@ -30,7 +30,7 @@ export interface VideoExportRequest {
   fps?: number;
 }
 
-interface StatusReply { state?: string; percent?: number; eta_ms?: number; download?: string; error?: string }
+interface StatusReply { state?: string; percent?: number; eta_ms?: number; download?: string; error?: string; warning?: string }
 
 export interface VideoExportIO { fetch?: typeof fetch; pollMs?: number }
 
@@ -87,7 +87,8 @@ export async function exportVideo(req: VideoExportRequest, io: VideoExportIO = {
       if (!s.download) throw new Error('the render finished but the file is outside the projects folder');
       const name = decodeURIComponent(s.download.split('/').pop() ?? `export.${req.type}`);
       saveFromServer(s.download, name);
-      showToast(`Exported ${name}`, 'success');
+      // Written, but with something missing (a sound mix that failed): say so, not "Exported".
+      showToast(s.warning ? `${name}: ${s.warning}` : `Exported ${name}`, s.warning ? 'warning' : 'success');
       return name;
     }
   } catch (e) {
