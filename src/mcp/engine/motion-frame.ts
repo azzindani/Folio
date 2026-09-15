@@ -20,6 +20,7 @@ import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { specAt, animationDuration } from '../../export/gif-frames';
+import { cullFrame } from '../../export/frame-cull';
 import { planScenes, sceneAt } from '../../export/scene-plan';
 import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
 import { composeSceneFrame } from '../../export/scene-compose';
@@ -125,7 +126,8 @@ export function renderFrame(args: FrameArgs): ToolResult {
     const renderSpec: DesignSpec = at.pages?.length
       ? ({ ...at, layers: at.pages[0]?.layers ?? [], pages: undefined } as DesignSpec)
       : at;
-    const svg = renderToSVGString(renderSpec);
+    // Culled for resvg only — the poses below still read every layer.
+    const svg = renderToSVGString(cullFrame(renderSpec));
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
     const png = Buffer.from(new Resvg(svg, {
       fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir),
@@ -165,7 +167,7 @@ function renderSceneFrame(spec: DesignSpec, dPath: string, args: FrameArgs): Too
   const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
   try {
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
-    const svg = renderToSVGString(composeSceneFrame(spec, plan, t));
+    const svg = renderToSVGString(cullFrame(composeSceneFrame(spec, plan, t)));
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
     const png = Buffer.from(new Resvg(svg, {
       fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir),

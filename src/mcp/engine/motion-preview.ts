@@ -30,6 +30,7 @@ import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { buildEditorLink } from './editor-link';
 import { specAt, animationDuration } from '../../export/gif-frames';
+import { cullFrame } from '../../export/frame-cull';
 import { encodeGIF, type GifFrame } from '../../export/gif-encode';
 
 /** Evenly spaced sample times across a scene, first and last included. */
@@ -140,7 +141,7 @@ export function previewMotion(args: PreviewArgs): ToolResult {
   const cells: Array<{ png: Buffer; t: number }> = [];
   try {
     for (const t of times) {
-      const svg = renderToSVGString(framedSpec(spec, Math.max(0, pageIndex), t));
+      const svg = renderToSVGString(cullFrame(framedSpec(spec, Math.max(0, pageIndex), t)));
       const png = new Resvg(svg, {
         fitTo: { mode: 'width', value: cellW }, background: '#FFFFFF', font: resvgFontOption(projDir),
       }).render().asPng();
@@ -220,7 +221,7 @@ function writeLoopGif(
   const frames: GifFrame[] = [];
   try {
     for (const t of times) {
-      const svg = renderToSVGString(framedSpec(spec, pageIndex, t));
+      const svg = renderToSVGString(cullFrame(framedSpec(spec, pageIndex, t)));
       const r = new Resvg(svg, { fitTo: { mode: 'width', value: cellW }, background: '#FFFFFF', font: resvgFontOption(projDir) }).render();
       frames.push({ pixels: new Uint8ClampedArray(r.pixels), delayMs: Math.max(20, Math.round(sceneMs / times.length)) });
     }
