@@ -41,7 +41,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
 import { listAssets, listProjects, manageAssets, uploadAsset, createProjectRoute } from './server-assets';
-import { exportRoute } from './server-export';
+import { exportRoute, attachmentHeader } from './server-export';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
@@ -110,6 +110,8 @@ const MIME: Record<string, string> = {
   '.jpg':  'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.gif':  'image/gif',
+  '.mp4':  'video/mp4',
+  '.webm': 'video/webm',
   '.ico':  'image/x-icon',
   '.woff': 'font/woff',
   '.woff2':'font/woff2',
@@ -565,6 +567,8 @@ Bun.serve({
       }
       const body = fs.readFileSync(target);
       const headers: Record<string, string> = { 'Content-Type': mime(target), 'Cache-Control': 'no-store' };
+      // ?download asks the browser to save the file: the editor's video export hands its render over this way.
+      if (url.searchParams.has('download')) headers['Content-Disposition'] = attachmentHeader(path.basename(target));
       if (refresh) headers['Set-Cookie'] = refresh;
       return new Response(body, { status: 200, headers });
     }
