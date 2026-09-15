@@ -93,7 +93,7 @@ animation(op:keyframe, design_path, layer_id, keyframe) one frame
 animation(op:frame,    design_path, t, page_id?, scale?, output_path?)   PNG + resolved poses at t
 animation(op:timeline, design_path, page_id?)           Gantt: tracks, start/end, channels, scene_ms
 animation(op:clear,    design_path, layer_ids?)         remove motion
-animation(op:export,   design_path, type:svg|html|gif|mp4|webm, all_pages?, scenes?, hold_ms?, background?)
+animation(op:export,   design_path, type:svg|html|gif|mp4|webm, all_pages?, scenes?, hold_ms?, background?, fps?, scale?)
 animation(op:export_status, job_id)                     a background render's progress, then its receipt
 animation(op:scene,    design_path, page_id, transition?, length_ms?)   how a page enters + its time on screen
 animation(op:text,     design_path, layer_id, by?, preset|keyframes, stagger_ms?, order?, mask?)   text animator: split + stagger in one call

@@ -1,7 +1,6 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
 import { playsAsScenes } from '../../editor/scene-deck';
-import { exportVideo } from '../export/video-export';
 import { exportDesign } from '../../export/exporter';
 import { EXPORT_SCALE_PRESETS, defaultScalePreset, getScalePreset } from '../../export/scale-presets';
 import { showToast } from '../../utils/toast';
@@ -174,11 +173,16 @@ export class ToolbarManager {
       this.closeExportMenu();
       if (format === 'mp4' || format === 'gif') {
         const rel = this.app.serverDesignRel;
-        if (!rel) { showToast('Video renders on the server: save this design to the library first.', 'info'); return; }
-        // The render reads the file on the server, so save first — or the video misses the last edits.
-        void this.app.saveToActiveTarget().then(() => {
+        const design = this.state.get().design;
+        if (!rel || !design) { showToast('Video renders on the server: save this design to the library first.', 'info'); return; }
+        const scenes = playsAsScenes(design);
+        void import('../export/video-export-dialog').then(async ({ chooseVideoSettings, exportVideo }) => {
+          const choice = await chooseVideoSettings(format, design, scenes);
+          if (!choice) return;
+          // The render reads the file on the server, so save first — or the video misses the last edits.
+          await this.app.saveToActiveTarget();
           if (this.state.get().dirty) return;
-          return exportVideo({ design: rel, type: format, scenes: playsAsScenes(this.state.get().design) });
+          await exportVideo({ design: rel, type: format, scenes, ...choice });
         });
         return;
       }
