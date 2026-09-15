@@ -163,6 +163,42 @@ export interface AudioTrack {
   fade_out?: number;  // ms
 }
 
+// ── Captions ─────────────────────────────────────────────────
+/** On-screen text timed to the piece — a caption or subtitle line. */
+export interface CaptionCue {
+  text: string;
+  from_ms: number;
+  to_ms: number;
+}
+
+/** A caption that belongs to a scene: `at` ms after its first frame, for `duration` ms. Unset times share the scene by word count. */
+export interface SceneCaption {
+  text: string;
+  at?: number;
+  duration?: number;
+}
+
+export interface CaptionStyle {
+  position?: 'bottom' | 'top';
+  font_family?: string;
+  /** px; default 4.5% of the canvas height. */
+  font_size?: number;
+  font_weight?: number;
+  color?: string;
+  /** The box behind the text; 'none' draws no box. */
+  background?: string;
+  background_opacity?: number;
+  /** Widest a line may run, as a fraction of the canvas width (default 0.8). */
+  max_width?: number;
+  /** Distance from the canvas edge, px (default 6% of the canvas height). */
+  margin?: number;
+}
+
+export interface CaptionTrack {
+  style?: CaptionStyle;
+  cues?: CaptionCue[];
+}
+
 /** A sound that starts with its scene, `at` ms after the scene's first frame. */
 export interface AudioCue extends Omit<AudioTrack, 'id' | 'start_time'> {
   id?: string;
@@ -197,6 +233,8 @@ export interface Page {
   auto_advance?: number;
   /** Audio cues that start when this slide becomes active */
   audio_cues?: AudioCue[];
+  /** Captions timed from this scene's first frame (see CaptionTrack for the design-wide ones). */
+  captions?: SceneCaption[];
 }
 
 // ── Design Document ─────────────────────────────────────────
@@ -288,6 +326,8 @@ export interface DesignSpec {
   // Presentation / motion settings
   presentation?: PresentationSettings;
   audio?: AudioTrack[];
+  /** Captions over the piece: style, and cues timed on the piece's timeline. */
+  captions?: CaptionTrack;
   // Mode B interactive output
   _output_mode?: 'static' | 'interactive';
   state?: Record<string, StateDef>;

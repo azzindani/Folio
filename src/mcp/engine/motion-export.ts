@@ -25,6 +25,8 @@ import { APPROXIMATED } from '../../export/scene-transition';
 import type { SoundTimeline } from '../../export/audio-plan';
 import type { MuxClip } from '../../export/audio-mux';
 import { hasSound, resolveSound } from './sound-resolve';
+import { planCaptions } from '../../export/caption-plan';
+import { withCaptions } from '../../export/caption-layers';
 
 const TYPES = ['svg', 'html', 'gif', 'mp4', 'webm'] as const;
 export type MotionExportType = typeof TYPES[number];
@@ -45,6 +47,8 @@ export interface ExportAnimationArgs {
   hold_ms?: number;
   /** gif/mp4/webm: true renders as a job and replies with its id at once; false waits. Default: a job past BACKGROUND_FRAMES. */
   background?: boolean;
+  /** gif/mp4/webm: false leaves the design's captions out of the frames (default: burned in). */
+  captions?: boolean;
   project_path?: string;
 }
 
@@ -108,10 +112,11 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     const approximated = [...new Set(plan.scenes.map(s => s.transition?.type))]
       .flatMap(t => (t && APPROXIMATED[t] ? [`${t} ${APPROXIMATED[t]}.`] : []));
     const sound = soundFor(spec, dPath, { total_ms: args.duration ?? plan.total_ms, scenes: plan.scenes.map(s => ({ page_id: s.page_id, start_ms: s.start_ms })) }, args);
-    return raster(spec, dPath, { durationMs: plan.total_ms, at: t => composeSceneFrame(spec, plan, t) }, outputPath, {
+    const captions = args.captions === false ? null : planCaptions(spec, plan);
+    return raster(spec, dPath, { durationMs: plan.total_ms, at: t => withCaptions(composeSceneFrame(spec, plan, t), captions, spec.captions?.style, t) }, outputPath, {
       ...base,
       sound: sound.clips,
-      notes: [...plan.warnings, ...approximated, ...sound.notes],
+      notes: [...plan.warnings, ...approximated, ...sound.notes, ...(captions?.notes ?? [])],
       extra: {
         scenes: plan.scenes.map(s => ({
           page_id: s.page_id, start_ms: s.start_ms, length_ms: s.length_ms,
@@ -126,9 +131,11 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     ? [`This design has ${pageCount} pages and only the first was exported. Pass scenes:true to play every page as one piece, or page_id for another page.`]
     : [];
   const page = spec.pages?.[pageIndex];
-  const sound = soundFor(spec, dPath, { total_ms: args.duration ?? animationDuration(layers), scenes: page ? [{ page_id: page.id, start_ms: 0 }] : [] }, args);
-  return raster(spec, dPath, { durationMs: animationDuration(layers), at: t => specAt(spec, pageIndex, t) }, outputPath, {
-    ...base, sound: sound.clips, notes: [...pageNotes, ...sound.notes],
+  const runMs = args.duration ?? animationDuration(layers);
+  const sound = soundFor(spec, dPath, { total_ms: runMs, scenes: page ? [{ page_id: page.id, start_ms: 0 }] : [] }, args);
+  const captions = args.captions === false ? null : planCaptions(spec, { total_ms: runMs, scenes: page ? [{ page_id: page.id, start_ms: 0, length_ms: runMs }] : [] });
+  return raster(spec, dPath, { durationMs: animationDuration(layers), at: t => withCaptions(specAt(spec, pageIndex, t), captions, spec.captions?.style, t) }, outputPath, {
+    ...base, sound: sound.clips, notes: [...pageNotes, ...sound.notes, ...(captions?.notes ?? [])],
   });
 }
 
