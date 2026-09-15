@@ -37,3 +37,4 @@ export { shapeOp } from './engine/shape-ops-op';
 export { splitText } from './engine/split-text-op';
 export { animateText } from './engine/text-animate-op';
 export { wiggleMotion } from './engine/motion-wiggle-op';
+export { cameraMotion } from './engine/motion-camera-op';
