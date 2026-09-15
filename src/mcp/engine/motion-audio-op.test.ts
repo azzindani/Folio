@@ -7,6 +7,7 @@ import { spawnSync } from 'child_process';
 import type { DesignSpec } from '../../schema/types';
 import { readYAML } from './utils';
 import { audioMotion } from './motion-audio-op';
+import { setScene } from './motion-scene-op';
 import { dispatchAnimation } from '../dispatch';
 
 const hasProbe = spawnSync('ffprobe', ['-version']).error === undefined;
@@ -57,6 +58,14 @@ describe('animation(op:audio)', () => {
       expect(r.soundtrack?.[0]).toMatchObject({ to_ms: 6000, file_ms: 6000 });
       expect(r.notes?.join(' ')).toMatch(/runs out at 6\.0s/);
     }
+  });
+
+  // Live, on the GPT-6 Astra promo: scenes grew past a bed cut to the old length, and no scene reply said so.
+  it('op:scene says when a new length leaves the music short', () => {
+    expect(call({ design_path: design, src: 'assets/audio/theme.wav', loop: true, duration: 7000, fade_out: 500 }).success).toBe(true);
+    const r = setScene({ design_path: design, page_id: 's2', length_ms: 5000 }) as unknown as Reply;
+    expect(r.success).toBe(true);
+    expect(r.notes?.join(' ')).toMatch(/stops at 7\.0s because duration is 7000ms; the last 1\.0s/);
   });
 
   it('puts a cue on its scene, timed from the scene\'s first frame', () => {

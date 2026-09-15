@@ -14,6 +14,8 @@ import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult }
 import { isKnownEasing } from '../../animation/easing';
 import { planScenes, type ScenePlan } from '../../export/scene-plan';
 import { APPROXIMATED } from '../../export/scene-transition';
+import { hasSound, resolveSound } from './sound-resolve';
+import { soundTimeline } from './motion-audio-op';
 
 const TRANSITIONS: readonly PageTransitionType[] = [
   'none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'zoom-in', 'zoom-out',
@@ -110,8 +112,12 @@ export function setScene(args: SceneArgs): ToolResult {
   writeYAML(dPath, spec);
 
   const plan = planScenes(spec);
+  // The music has to reach wherever the scenes now end. Live, a bed cut to the old length went
+  // quiet 3.6 s early after the scenes grew, and no scene reply said so.
+  const soundNotes = hasSound(spec) ? resolveSound(spec, dPath, soundTimeline(spec), args.project_path).plan.notes : [];
   const notes = [
     ...plan.warnings,
+    ...soundNotes,
     ...(index === 0 && page.transition ? ['This is the first scene: there is nothing to transition from, so its transition does not play.'] : []),
     ...(page.transition && APPROXIMATED[page.transition.type] ? [`${page.transition.type} ${APPROXIMATED[page.transition.type]}.`] : []),
   ];

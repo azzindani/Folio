@@ -73,6 +73,10 @@ function placeClip(
   if (!scene && !loop && rest !== undefined && start + rest < total) {
     notes.push(`Track "${id}" runs out at ${secs(start + rest)}; the last ${secs(total - start - rest)} of the piece has no music. loop:true repeats it.`);
   }
+  // Live: a bed given duration = the piece's length went silent 3.6 s early once the scenes grew, and nothing said so.
+  if (!scene && asked !== undefined && start + length < total && (loop || rest === undefined || asked < rest)) {
+    notes.push(`Track "${id}" stops at ${secs(start + length)} because duration is ${Math.round(asked)}ms; the last ${secs(total - start - length)} of the piece has no music. Set duration to ${Math.round(total - start)}, or leave it out to play to the end.`);
+  }
   if (rest === undefined && asked === undefined && !loop) {
     notes.push(`The length of "${src}" is not known here, so "${id}" is planned to the end of the piece.`);
   }

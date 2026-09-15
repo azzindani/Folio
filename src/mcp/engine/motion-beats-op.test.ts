@@ -46,6 +46,18 @@ describe('the beat grid on the piece', () => {
     ]);
     expect(renderBeatsASCII(4000, beats, [1500])).toContain('▼');
   });
+
+  // Live, on the GPT-6 Astra promo: the nearest beat cut a stats scene under its reading time.
+  it('takes a later beat rather than cut a scene under its reading time or its motion', () => {
+    const beats = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000];
+    expect(snapLengths([
+      { page_id: 'a', start_ms: 0, length_ms: 1200, read_ms: 1150 },
+      { page_id: 'b', start_ms: 1200, length_ms: 1100, motion_ms: 1080, read_ms: 0 },
+    ], beats)).toEqual([
+      { page_id: 'a', length_ms: 1200, on_beat_ms: 1500, moved_ms: 300, longer_for: 'reading' },
+      { page_id: 'b', length_ms: 1100, on_beat_ms: 1500, moved_ms: 400, longer_for: 'motion' },
+    ]);
+  });
 });
 
 describe.skipIf(!hasFfmpeg)('animation(op:beats)', () => {
