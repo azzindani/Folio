@@ -32,6 +32,8 @@ export interface PlannedScene {
   /** When the scene's own motion finishes, ms from its start. */
   motion_ms: number;
   words: number;
+  /** Words set in a monospace face — code, identifiers, labels — which a viewer scans rather than reads. Not in read_ms. */
+  labels: number;
   /** Time to read `words` at READ_WPM. */
   read_ms: number;
   /** Transition INTO this scene; null for the first scene and for a cut. */
@@ -47,21 +49,39 @@ export interface SceneMoment {
   from?: { scene: PlannedScene; local_ms: number; progress: number };
 }
 
-/** Words of copy across a layer tree — every text layer, groups descended. */
-export function countWords(layers: Layer[]): number {
-  let words = 0;
+/** The monospace test plainTextLayout uses to widen its wrap — the same faces. */
+const MONO = /\bmono\b|monospace|courier|consolas|menlo/i;
+
+/** Tokens a viewer reads as words: they hold a letter or a digit, so "·" and "—" between labels are not words. */
+const wordCount = (text: string): number => (text.match(/\S+/g) ?? []).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+
+/**
+ * Words across a layer tree, groups descended: copy, and words set in a
+ * monospace face. Found on the promo: a scene of YAML lines and tool names
+ * "carried 41 words" against 7 words of copy, and its reading-time warning
+ * timed code as prose at 240 wpm.
+ */
+export function countCopy(layers: Layer[]): { words: number; labels: number } {
+  let words = 0, labels = 0;
   const visit = (l: Layer): void => {
     const o = l as unknown as Record<string, unknown>;
     if (l.type === 'text') {
       const content = o['content'] as { value?: unknown } | undefined;
       const text = typeof content?.value === 'string' ? content.value : typeof o['text'] === 'string' ? o['text'] : '';
-      words += (text.match(/\S+/g) ?? []).length;
+      const family = (o['style'] as { font_family?: unknown } | undefined)?.font_family;
+      if (typeof family === 'string' && MONO.test(family)) labels += wordCount(text);
+      else words += wordCount(text);
     }
     const kids = o['layers'];
     if (Array.isArray(kids)) for (const k of kids as Layer[]) visit(k);
   };
   for (const l of layers) visit(l);
-  return words;
+  return { words, labels };
+}
+
+/** Words of copy across a layer tree — text not set in a monospace face. */
+export function countWords(layers: Layer[]): number {
+  return countCopy(layers).words;
 }
 
 const secs = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
@@ -78,16 +98,17 @@ export function planScenes(spec: DesignSpec, opts: { hold_ms?: number } = {}): S
     const motion = oneShotDuration(layers);
     const auto = typeof page.auto_advance === 'number' && page.auto_advance > 0 ? page.auto_advance : undefined;
     const length = Math.max(1, auto ?? motion + hold);
-    const words = countWords(layers);
+    const { words, labels } = countCopy(layers);
     const read = Math.round((words / READ_WPM) * 60_000);
     const t = index > 0 ? page.transition : undefined;
     const transition = t && t.type !== 'none'
       ? { type: t.type, duration_ms: Math.min(length, Math.max(0, t.duration ?? DEFAULT_TRANSITION_MS)), ...(t.easing ? { easing: String(t.easing) } : {}) }
       : null;
 
-    scenes.push({ index, page_id: page.id, start_ms: cursor, length_ms: length, motion_ms: motion, words, read_ms: read, transition });
+    scenes.push({ index, page_id: page.id, start_ms: cursor, length_ms: length, motion_ms: motion, words, labels, read_ms: read, transition });
     if (words > 0 && length < read) {
-      warnings.push(`Scene "${page.id}" is on screen ${secs(length)} but carries ${words} words (~${secs(read)} to read). ` +
+      const scanned = labels > 0 ? `, plus ${labels} words of code and labels in a monospace face, which a viewer scans` : '';
+      warnings.push(`Scene "${page.id}" is on screen ${secs(length)} but carries ${words} words (~${secs(read)} to read)${scanned}. ` +
         'Lengthen it with animation(op:scene, length_ms), pass hold_ms, or cut copy.');
     }
     if (auto !== undefined && auto < motion) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planScenes, sceneAt, countWords } from './scene-plan';
+import { planScenes, sceneAt, countWords, countCopy } from './scene-plan';
 import type { DesignSpec, Layer } from '../schema/types';
 
 const rise = (id: string, delay = 0): unknown => ({
@@ -59,6 +59,16 @@ describe('planScenes', () => {
   it('counts words across groups', () => {
     const tree = [{ id: 'g', type: 'group', z: 0, layers: [text('a', 'two words'), text('b', 'and three more')] }] as unknown as Layer[];
     expect(countWords(tree)).toBe(5);
+  });
+
+  // Found on the promo: YAML lines and tool names "carried 41 words" against 7 words of copy.
+  it('times copy, not separators or monospace code and labels — and says what it left out', () => {
+    const mono = (id: string, value: string): unknown => ({ ...(text(id, value) as object), style: { font_family: 'IBM Plex Mono', font_size: 24 } });
+    const layers = [text('head', 'A design is a file.'), mono('kicker', 'SAT · 8 PM · HALL B'), mono('code', '- type: rect'), text('sep', '— · —')] as unknown as Layer[];
+    expect(countCopy(layers)).toEqual({ words: 5, labels: 7 });
+    const plan = planScenes(deck([{ id: 'spec', auto_advance: 1000, layers }]));
+    expect(plan.scenes[0]).toMatchObject({ words: 5, labels: 7, read_ms: 1250 });
+    expect(plan.warnings.join('\n')).toMatch(/carries 5 words \(~1\.3s to read\), plus 7 words of code and labels in a monospace face/);
   });
 });
 
