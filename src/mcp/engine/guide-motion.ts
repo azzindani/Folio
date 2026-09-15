@@ -40,6 +40,11 @@ WIGGLE (a parent that never sits still)
   animation(op:wiggle, layer_id, amplitude:{x?, y?, rotation?, scale?}, frequency?=2, duration?=4000, seed?)
   Wraps the layer in <id>_wiggle, a group looping seeded noise — the layer's own motion keeps
   playing underneath. The same wiggle every export; seed re-rolls it. A hand-held feel, a live badge.
+
+CAMERA (push in, pull back, pan)
+  animation(op:camera, shots:[{t:0, target:"all"}, {t:1200, target:"stat", padding:80}, {t:3000, target:"all"}])
+  Puts the page content under a __camera group and frames each shot's target to fill the canvas.
+  The page ground stays still; exclude:[ids] holds other layers still too. Call again to re-frame.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).
