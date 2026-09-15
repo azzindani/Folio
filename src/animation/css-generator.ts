@@ -142,6 +142,20 @@ export function letterSpacingBases(layers: Layer[] | undefined): Map<string, num
   return out;
 }
 
+/** The two outlines a `morph` track moves between, by id — a path's own `d` and its `morph_to`. */
+export function morphSources(layers: Layer[] | undefined): Map<string, { from: string; to: string }> {
+  const out = new Map<string, { from: string; to: string }>();
+  const visit = (ls: Layer[]): void => {
+    for (const l of ls) {
+      const o = l as unknown as { id?: unknown; d?: unknown; morph_to?: unknown; layers?: unknown };
+      if (typeof o.id === 'string' && typeof o.d === 'string' && typeof o.morph_to === 'string') out.set(o.id, { from: o.d, to: o.morph_to });
+      if (Array.isArray(o.layers)) visit(o.layers as Layer[]);
+    }
+  };
+  if (layers) visit(layers);
+  return out;
+}
+
 // ── Generate all animation CSS for a design ─────────────────
 export function generateDesignAnimationCSS(
   layerAnimations: Map<string, AnimationSpec>,
@@ -149,12 +163,13 @@ export function generateDesignAnimationCSS(
 ): string {
   const parts: string[] = [];
   const spacing = letterSpacingBases(layers);
+  const morphs = morphSources(layers);
 
   for (const [layerId, anim] of layerAnimations) {
     const css = generateLayerCSS(layerId, anim);
     if (css) parts.push(css);
 
-    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0);
+    const kf = generateKeyframeCSS(layerId, anim, spacing.get(layerId) ?? 0, morphs.get(layerId));
     if (kf) parts.push(kf);
 
     if (anim.sequence) {

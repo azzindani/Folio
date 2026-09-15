@@ -45,6 +45,12 @@ CAMERA (push in, pull back, pan)
   animation(op:camera, shots:[{t:0, target:"all"}, {t:1200, target:"stat", padding:80}, {t:3000, target:"all"}])
   Puts the page content under a __camera group and frames each shot's target to fill the canvas.
   The page ground stays still; exclude:[ids] holds other layers still too. Call again to re-frame.
+
+MORPH (one shape becomes another)
+  animation(op:morph, layer_id:"blob", to_layer:"star" | to:"<d>", duration?, delay?, easing?)
+  Resamples both outlines to the same points and writes a morph 0→1 track (channel: morph,
+  target outline in morph_to), merged onto the layer's motion. The target layer is hidden.
+  Paths only; elliptical arcs (A) are refused.
   blur  px, 16→0 is the cinematic blur-in.
   anchor (playback) is the pivot: center | top | bottom | left | right | corners.
   Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).

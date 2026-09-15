@@ -293,6 +293,16 @@ describe('skew and draw reach a sampled frame', () => {
     expect(at(1000)).toBe('1,250+');
   });
 
+  it('morphs a path toward its morph_to outline, frame by frame', () => {
+    const square = 'M 0 0 L 100 0 L 100 100 L 0 100 Z';
+    const shape = layer('shape', { type: 'path', d: square, morph_to: 'M 50 0 L 100 50 L 50 100 L 0 50 Z',
+      animation: { keyframes: [{ t: 0, morph: 0 }, { t: 1000, morph: 1 }], playback: { duration: 1000, easing: 'linear' } } });
+    const d = (t: number): string => String((layersAt([shape], t)[0] as unknown as Record<string, unknown>)['d']);
+    expect(d(0)).toBe(square); // at rest the authored outline is untouched
+    expect(d(500)).toMatch(/^M [\d.]+ [\d.]+ (L [\d.]+ [\d.]+ ){95}Z$/); // 96 resampled points
+    expect(d(1000)).not.toBe(d(500));
+  });
+
   it('ignores draw on a layer with no outline to measure', () => {
     const l = layer('words', { type: 'text', animation: anim([{ t: 0, draw: 0 }, { t: 1000, draw: 1 }]) });
     expect((layersAt([l], 500)[0] as unknown as Record<string, unknown>)['stroke_dasharray']).toBeUndefined();

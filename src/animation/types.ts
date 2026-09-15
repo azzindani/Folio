@@ -93,6 +93,11 @@ export interface Keyframe {
    * 0 counts from zero, 1 is the text as authored, format kept ("$4.2M", "1,250+").
    */
   count?: number;
+  /**
+   * Morph, 0 → 1: how far a path layer has turned into its `morph_to` outline.
+   * Both outlines are resampled to the same points, so the shape changes smoothly.
+   */
+  morph?: number;
   'fill.color'?: string;
   'stroke.color'?: string;
   /**
