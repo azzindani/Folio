@@ -18,7 +18,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn, buildContext, buildHandover, collectLayerIds, freeLayerId } from './utils';
-import { metricsForFamily, charOffsets, letterSpacingPx } from '../../utils/font-metrics';
+import { metricsForFamily, charOffsets, letterSpacingPx, numericWeight } from '../../utils/font-metrics';
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope } from './motion';
 import { pagesWithLayer } from '../engine-edit-tools';
@@ -122,7 +122,7 @@ export function splitText(args: SplitTextArgs): ToolResult {
   const fontSize = num(style['font_size']) ?? 16;
   const family = typeof style['font_family'] === 'string' ? style['font_family'] : '';
   const dirs = [fontsDir(), projectFontsDir(args.project_path ?? path.dirname(path.dirname(dPath))) ?? ''].filter(Boolean);
-  const metrics = family ? metricsForFamily(family, dirs) : null;
+  const metrics = family ? metricsForFamily(family, dirs, numericWeight(style['font_weight'])) : null;
 
   // The renderer tracks the run; measuring without it puts every piece left of
   // where the text was actually drawn, and the engine adds tracking to ALL-CAPS

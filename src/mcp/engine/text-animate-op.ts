@@ -15,7 +15,7 @@ import * as path from 'path';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn, collectLayerIds, freeLayerId } from './utils';
-import { metricsForFamily } from '../../utils/font-metrics';
+import { metricsForFamily, numericWeight } from '../../utils/font-metrics';
 import { fontsDir, projectFontsDir } from './fonts';
 import { resolveScope, commitScope, applyMotion } from './motion';
 import { setTrack } from './motion-sequence';
@@ -89,7 +89,7 @@ export function animateText(args: TextAnimArgs): ToolResult {
   const style = (o['style'] ?? {}) as Record<string, unknown>;
   const family = typeof style['font_family'] === 'string' ? style['font_family'].split(',')[0].trim().replace(/^['"]|['"]$/g, '') : 'Inter';
   const dirs = [fontsDir(), projectFontsDir(args.project_path ?? path.dirname(path.dirname(dPath))) ?? ''].filter(Boolean);
-  const { units, exact } = splitLayer(src, by, metricsForFamily(family, dirs));
+  const { units, exact } = splitLayer(src, by, metricsForFamily(family, dirs, numericWeight(style['font_weight'])));
   if (units.length === 0) return errResult(op, `"${id}" has no text to animate`, 'Give it content first.');
 
   // Each unit is placed and measured, so it must not re-align or re-anchor inside its own box.

@@ -45,6 +45,25 @@ describe('metricsForFamily', () => {
   });
 });
 
+// The bundle holds one static file per weight: resvg ignored font-weight on the variable
+// fonts, and their default instance's advances measured every weight the same.
+describe('metricsForFamily — the asked weight\'s own file', () => {
+  const BUNDLE = [path.resolve('src/mcp/fonts')];
+
+  it('answers ExtraBold with wider advances than Regular, and says which weight it read', () => {
+    const regular = metricsForFamily('Archivo', BUNDLE, 400);
+    const heavy = metricsForFamily('Archivo', BUNDLE, 800);
+    // 650 is as near SemiBold as Bold: the tie goes heavier, the same rule the PDF font pick uses.
+    expect([regular?.weight, heavy?.weight, metricsForFamily('Archivo', BUNDLE, 650)?.weight]).toEqual([400, 800, 700]);
+    expect(charOffsets('Words in.', 100, heavy).total).toBeGreaterThan(charOffsets('Words in.', 100, regular).total);
+  });
+
+  it('matches a family by file stem, so Roboto is never read from Roboto Mono', () => {
+    const roboto = metricsForFamily('Roboto', BUNDLE, 400);
+    expect(charOffsets('WWW', 100, roboto).total).toBeGreaterThan(charOffsets('iii', 100, roboto).total * 2);
+  });
+});
+
 describe('charOffsets', () => {
   it('falls back to a uniform advance and FLAGS it when there are no metrics', () => {
     const r = charOffsets('abc', 100, null);

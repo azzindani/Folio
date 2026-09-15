@@ -2,17 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { pickFont, fontFileBase64 } from './pdf-fonts';
 
 describe('pickFont', () => {
-  it('resolves a bundled variable family (case-insensitive) and flags faux-bold for heavy weights', () => {
-    const reg = pickFont('inter', 400);
-    expect(reg).not.toBeNull();
-    expect(reg!.file.toLowerCase()).toContain('inter');
-    expect(reg!.fauxBold).toBe(false);
-
-    const bold = pickFont('Inter', 800);
-    expect(bold).not.toBeNull();
-    // One variable file → no dedicated bold → synthesize it.
-    expect(bold!.fauxBold).toBe(true);
-    expect(bold!.file).toBe(reg!.file);
+  it('resolves a bundled family case-insensitively to the static file of the asked weight — no faux-bold', () => {
+    expect(pickFont('inter', 400)).toMatchObject({ file: 'Inter-Regular.ttf', fauxBold: false });
+    expect(pickFont('Inter', 800)).toMatchObject({ file: 'Inter-ExtraBold.ttf', fauxBold: false });
+    expect(pickFont('Archivo', 700)).toMatchObject({ file: 'Archivo-Bold.ttf', fauxBold: false });
   });
 
   it('picks the closest dedicated weight file for static families (no faux-bold)', () => {

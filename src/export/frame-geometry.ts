@@ -14,7 +14,7 @@ import type { Layer } from '../schema/types';
 import type { AnchorPoint } from '../animation/types';
 import { plainTextLayout } from '../renderer/layer-renderers-shared';
 import { flattenPath } from '../animation/motion-path';
-import { metricsForFamily, charOffsets } from '../utils/font-metrics';
+import { metricsForFamily, charOffsets, numericWeight } from '../utils/font-metrics';
 import { bundledFontsDir } from '../utils/bundled-fonts-dir';
 
 export interface Box { x: number; y: number; width: number; height: number }
@@ -40,13 +40,13 @@ function union(boxes: Array<Box | null>): Box | null {
  * Width of one drawn line: real advances from the bundled font when there is
  * one, the layout estimate otherwise. The flat estimate put "Wipe it in."
  * (Archivo 800, 120px) at 686px against ~530px of ink, so a wipe had uncovered
- * the whole word by its halfway frame. A variable font answers with its default
- * instance's advances, so heavy weights still measure a little narrow.
+ * the whole word by its halfway frame. The advances are the asked weight's own
+ * (one static file per weight), so an ExtraBold line measures as wide as it draws.
  */
 function lineInk(line: string, estimate: number, style: Record<string, unknown>, fontSize: number): number {
   const family = String(style['font_family'] ?? 'Inter').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
   const dir = bundledFontsDir();
-  const m = dir ? metricsForFamily(family, [dir]) : null;
+  const m = dir ? metricsForFamily(family, [dir], numericWeight(style['font_weight'])) : null;
   if (!m) return estimate;
   const spacing = typeof style['letter_spacing'] === 'number' ? style['letter_spacing'] : 0;
   const run = charOffsets(line, fontSize, m, 0.54, spacing);
