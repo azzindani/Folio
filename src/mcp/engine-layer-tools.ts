@@ -616,7 +616,7 @@ export function appendPage(args: {
   // positionless → fill bg → de-collide → re-light); pages historically only
   // de-collided, so a verbose carousel page piled at the origin (suite-079/009).
   const pf = finalizePageLayers(layers, spec.document.width, spec.document.height, resolveThemeSpec(spec));
-  for (const [n, msg] of [[pf.nulls, 'null layer(s) dropped (editor-crash guard)'], [pf.recovered, 'JSON-in-text layer(s) recovered'], [pf.placed, 'positionless layer(s) flowed into a column'], [pf.bgFilled, 'empty background(s) filled from text polarity'], [pf.reflowed, 'overlapping layer(s) reflowed'], [pf.relit, 'low-contrast layer(s) re-lit']] as [number, string][]) {
+  for (const [n, msg] of [[pf.nulls, 'null layer(s) dropped (editor-crash guard)'], [pf.recovered, 'JSON-in-text layer(s) recovered'], [pf.placeholders, `placeholder text layer(s) deleted: ${pf.placeholderText.join(', ')}`], [pf.placed, 'positionless layer(s) flowed into a column'], [pf.bgFilled, 'empty background(s) filled from text polarity'], [pf.reflowed, 'overlapping layer(s) reflowed'], [pf.relit, 'low-contrast layer(s) re-lit']] as [number, string][]) {
     if (n) progress.push(pInfo(`Page: ${n} ${msg}`, 'rescue pass'));
   }
   // Never silently append an EMPTY page when content was MEANINGFULLY supplied

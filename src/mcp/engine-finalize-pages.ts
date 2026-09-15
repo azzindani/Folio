@@ -13,7 +13,14 @@ import { decollideHandPlaced } from './engine-finalize-text';
 import { snapOffCanvasContent, ensureLayerZ, coerceLayerScalars } from './engine-finalize-geom';
 import { fixInvisibleText } from './engine-finalize-legibility';
 
-export interface PageFinalizeTotals { nulls: number; recovered: number; placed: number; bgFilled: number; reflowed: number; relit: number; snapped: number; }
+export interface PageFinalizeTotals {
+  nulls: number; recovered: number; placed: number; bgFilled: number; reflowed: number; relit: number; snapped: number;
+  /** Placeholder text layers deleted, and which (`id "text"`) — replies name them. */
+  placeholders: number; placeholderText: string[];
+}
+
+const zeroTotals = (): PageFinalizeTotals =>
+  ({ nulls: 0, recovered: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0, snapped: 0, placeholders: 0, placeholderText: [] });
 
 export function themeSpecOf(spec: DesignSpec): ThemeSpec | undefined {
   const th = spec.theme as { ref?: string; colors?: unknown } | undefined;
@@ -25,7 +32,7 @@ export function themeSpecOf(spec: DesignSpec): ThemeSpec | undefined {
  *  de-collide → snap back anything pushed off → re-light. Idempotent. Mutates in
  *  place; returns the counts. */
 export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?: ThemeSpec): PageFinalizeTotals {
-  const t: PageFinalizeTotals = { nulls: 0, recovered: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0, snapped: 0 };
+  const t = zeroTotals();
   if (!Array.isArray(layers) || !layers.length) return t;
   t.nulls = stripNullLayers(layers);
   // A layer with no numeric z passes every other check and then fails
@@ -34,7 +41,10 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
   ensureLayerZ(layers);
   coerceLayerScalars(layers);
   const rec = recoverEmbeddedLayers(layers);
-  t.recovered = rec.recovered + rec.dropped + dropPlaceholderText(layers);
+  t.recovered = rec.recovered + rec.dropped;
+  // Counted apart from the JSON recovery and named: it DELETES copy, and folded
+  // into "JSON-in-text recovered" a lost row label read as a harmless repair.
+  t.placeholders = dropPlaceholderText(layers, t.placeholderText);
   t.placed = placePositionlessLayers(layers, w, h);
   const themeBg = (theme?.colors as Record<string, unknown> | undefined)?.['background'];
   t.bgFilled = ensureBackgroundFill(layers, w, h, typeof themeBg === 'string' ? themeBg : undefined) ? 1 : 0;   // before the re-light, so it judges the real bg
@@ -54,7 +64,7 @@ export function finalizePageLayers(layers: Layer[], w: number, h: number, theme?
 
 /** Run the rescue chain over root layers + every page. Mutates spec in place. */
 export function finalizeSpecPages(spec: DesignSpec): PageFinalizeTotals {
-  const totals: PageFinalizeTotals = { nulls: 0, recovered: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0, snapped: 0 };
+  const totals = zeroTotals();
   const w = spec.document.width, h = spec.document.height, theme = themeSpecOf(spec);
   const arrays: Layer[][] = [];
   if (Array.isArray(spec.layers)) arrays.push(spec.layers);
@@ -63,7 +73,8 @@ export function finalizeSpecPages(spec: DesignSpec): PageFinalizeTotals {
     const t = finalizePageLayers(ls, w, h, theme);
     totals.nulls += t.nulls; totals.recovered += t.recovered; totals.placed += t.placed;
     totals.bgFilled += t.bgFilled; totals.reflowed += t.reflowed; totals.relit += t.relit;
-    totals.snapped += t.snapped;
+    totals.snapped += t.snapped; totals.placeholders += t.placeholders;
+    totals.placeholderText.push(...t.placeholderText);
   }
   return totals;
 }
