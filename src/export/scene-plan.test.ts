@@ -43,6 +43,19 @@ describe('planScenes', () => {
     expect(warnings).toMatch(/"cut" ends at 300ms but its motion runs to 600ms/);
   });
 
+  // Found on the promo: a 4 s wiggle on a chip stretched its scene and raised a false "cut off" warning.
+  it('lets only motion that ends decide the scene — an endless loop does not stretch it', () => {
+    const wiggle = { id: 'chip_wiggle', type: 'group', z: 3, layers: [], animation: { keyframes: [{ t: 0, x: 0 }, { t: 4000, x: 0 }], playback: { duration: 4000, loop: true } } };
+    const twice = { id: 'blink', type: 'rect', z: 4, animation: { keyframes: [{ t: 0, opacity: 0 }, { t: 500, opacity: 1 }], playback: { duration: 500, loop: true, iterations: 2 } } };
+    const plan = planScenes(deck([
+      { id: 'loops', layers: [rise('r'), wiggle] },
+      { id: 'counted', layers: [twice] },
+      { id: 'short', auto_advance: 900, layers: [rise('q'), wiggle] },
+    ]), { hold_ms: 1000 });
+    expect(plan.scenes.map(s => [s.page_id, s.motion_ms, s.length_ms])).toEqual([['loops', 600, 1600], ['counted', 1000, 2000], ['short', 600, 900]]);
+    expect(plan.warnings.join('\n')).not.toMatch(/cut off/);
+  });
+
   it('counts words across groups', () => {
     const tree = [{ id: 'g', type: 'group', z: 0, layers: [text('a', 'two words'), text('b', 'and three more')] }] as unknown as Layer[];
     expect(countWords(tree)).toBe(5);

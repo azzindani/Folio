@@ -55,6 +55,28 @@ export function animationDuration(layers: Layer[]): number {
   return total;
 }
 
+/**
+ * When a scene's motion FINISHES: the latest end of every track that ends. An
+ * endless loop (a wiggle, a float, a pulse) never finishes, so it does not push
+ * the scene longer — found on the promo, where a 4 s wiggle on a chip stretched
+ * its scene and raised a false "motion cut off" warning. A loop with a set
+ * number of iterations does end, and counts. animationDuration stays the clip
+ * length a single-page loop export needs, where a loop's cycle is the point.
+ */
+export function oneShotDuration(layers: Layer[]): number {
+  let total = 0;
+  const visit = (l: AnimatedLayer): void => {
+    const pb = l.animation?.playback;
+    const endless = pb?.loop === true && !(pb.iterations && pb.iterations > 0);
+    if (pb?.duration && !endless) total = Math.max(total, (pb.delay ?? 0) + pb.duration * (pb.loop && pb.iterations ? pb.iterations : 1));
+    const mp = (l as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
+    if (mp?.path && !mp.loop) total = Math.max(total, mp.duration ?? 2000);
+    if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
+  };
+  for (const l of layers) visit(l as AnimatedLayer);
+  return total;
+}
+
 interface MotionPath { path: string; duration?: number; loop?: boolean; easing?: string; auto_rotate?: boolean }
 
 // Flattening a path costs a parse; the flipbook asks for the same one at every
