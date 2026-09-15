@@ -40,19 +40,34 @@ export function beatsOnPiece(clip: SoundClip, fileTimes: number[], fileMs: numbe
   return out;
 }
 
-/** For each scene in order, the length that ends it on the nearest beat — each counting the changes before it. */
+export interface BeatSnap { page_id: string; length_ms: number; on_beat_ms: number; moved_ms: number; longer_for?: 'reading' | 'motion' }
+
+/**
+ * For each scene in order, the length that ends it on the nearest beat — each counting the changes
+ * before it — but never one the scene plan then warns about: not shorter than its motion or its
+ * reading time, unless it is already shorter. Live, on the GPT-6 Astra promo, the nearest beat
+ * took a stats scene under its reading time and cut the opener's camera push.
+ */
 export function snapLengths(
-  scenes: Array<{ page_id: string; start_ms: number; length_ms: number }>, beats: number[],
-): Array<{ page_id: string; length_ms: number; on_beat_ms: number; moved_ms: number }> {
+  scenes: Array<{ page_id: string; start_ms: number; length_ms: number; motion_ms?: number; read_ms?: number }>, beats: number[],
+): BeatSnap[] {
   let shift = 0;
   return scenes.map(s => {
     const start = s.start_ms + shift;
     const end = start + s.length_ms;
-    let nearest = Infinity;
-    for (const b of beats) if (b - start >= 100 && Math.abs(b - end) < Math.abs(nearest - end)) nearest = b;
-    const onBeat = Number.isFinite(nearest) ? Math.round(nearest - start) : s.length_ms;
+    const nearestFrom = (min: number): number => {
+      let nearest = Infinity;
+      for (const b of beats) if (b - start >= min && Math.abs(b - end) < Math.abs(nearest - end)) nearest = b;
+      return nearest;
+    };
+    const motion = s.motion_ms ?? 0;
+    const read = s.read_ms ?? 0;
+    const free = nearestFrom(100);
+    const kept = nearestFrom(Math.max(100, Math.min(s.length_ms, Math.max(motion, read))));
+    const onBeat = Number.isFinite(kept) ? Math.round(kept - start) : s.length_ms;
     shift += onBeat - s.length_ms;
-    return { page_id: s.page_id, length_ms: s.length_ms, on_beat_ms: onBeat, moved_ms: onBeat - s.length_ms };
+    const longer = Number.isFinite(free) && free !== kept ? (read >= motion ? 'reading' : 'motion') : undefined;
+    return { page_id: s.page_id, length_ms: s.length_ms, on_beat_ms: onBeat, moved_ms: onBeat - s.length_ms, ...(longer ? { longer_for: longer } : {}) };
   });
 }
 
@@ -115,7 +130,7 @@ export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
       next_action: {
         tool: 'animation', params: { op: 'scene', design_path: dPath, page_id: firstMove.page_id, length_ms: firstMove.on_beat_ms },
         remaining: snaps.filter(s => s.moved_ms !== 0).length,
-        hint: 'Each on_beat_ms ends that scene on its nearest beat, counting the scenes before it as changed: apply them in order with op:scene — or keep a cut where the story wants it.',
+        hint: 'Each on_beat_ms ends that scene on its nearest beat that still fits its motion and reading time (longer_for says when a later beat was taken), counting the scenes before it as changed: apply them in order with op:scene — or keep a cut where the story wants it.',
       },
     } : {}),
   });

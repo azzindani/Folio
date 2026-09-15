@@ -30,6 +30,13 @@ describe('planSound', () => {
     expect(short.notes.join(' ')).toMatch(/runs out at 6\.0s; the last 4\.0s/);
   });
 
+  it('notes a track whose duration stops it before the piece ends', () => {
+    const early = planSound(deck({ audio: [{ id: 'm', src: 'a.mp3', duration: 7000, fade_out: 800 }] }), timeline, { 'a.mp3': 60_000 });
+    expect(early.notes.join(' ')).toMatch(/stops at 7\.0s because duration is 7000ms; the last 3\.0s .*Set duration to 10000/);
+    const fits = planSound(deck({ audio: [{ id: 'm', src: 'a.mp3', duration: 10_000, fade_out: 800 }] }), timeline, { 'a.mp3': 60_000 });
+    expect(fits.notes).toEqual([]);
+  });
+
   it('a loop fills the piece, and offset starts it mid-file', () => {
     const plan = planSound(deck({ audio: [{ id: 'm', src: 'a.mp3', loop: true, offset: 1500, fade_out: 800 }] }), timeline, { 'a.mp3': 4000 });
     const clip = plan.clips[0];
