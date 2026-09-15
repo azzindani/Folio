@@ -107,6 +107,8 @@ export class KeyboardManager {
       // Motion — Space plays the scene on the canvas, the way every editor does
       // it. No-op on a design with no animation, so it never steals the key.
       { key: ' ', action: () => this.app.motionPlayer?.toggle(), description: 'Play / pause the animation' },
+      // Shift+Space plays every page as one piece, transitions included — the file the video export writes.
+      { key: ' ', shift: true, action: () => this.app.sceneStage.open({ play: true }), description: 'Play all scenes' },
       // Presentation
       { key: 'F5', action: () => this.app.presentation?.open(), description: 'Start presentation (F5)' },
       // Print

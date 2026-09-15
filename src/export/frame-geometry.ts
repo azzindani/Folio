@@ -15,7 +15,7 @@ import type { AnchorPoint } from '../animation/types';
 import { plainTextLayout } from '../renderer/layer-renderers-shared';
 import { flattenPath } from '../animation/motion-path';
 import { metricsForFamily, charOffsets } from '../utils/font-metrics';
-import { fontsDir } from '../mcp/engine/fonts';
+import { bundledFontsDir } from '../utils/bundled-fonts-dir';
 
 export interface Box { x: number; y: number; width: number; height: number }
 
@@ -45,7 +45,8 @@ function union(boxes: Array<Box | null>): Box | null {
  */
 function lineInk(line: string, estimate: number, style: Record<string, unknown>, fontSize: number): number {
   const family = String(style['font_family'] ?? 'Inter').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
-  const m = metricsForFamily(family, [fontsDir()]);
+  const dir = bundledFontsDir();
+  const m = dir ? metricsForFamily(family, [dir]) : null;
   if (!m) return estimate;
   const spacing = typeof style['letter_spacing'] === 'number' ? style['letter_spacing'] : 0;
   const run = charOffsets(line, fontSize, m, 0.54, spacing);
