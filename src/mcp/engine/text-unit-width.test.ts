@@ -24,4 +24,23 @@ describe('unitWidth', () => {
       expect(plainTextLayout(u.text, BOLD as never, { x: u.x, y: u.y, width: u.width }).lines, u.text).toHaveLength(1);
     }
   });
+
+  // Found live twice: "Every format." at -6 tracking rendered "Ever format", and
+  // "Approvals that" at -1.5 rendered "Approval tha". lineWidths subtracts negative
+  // tracking; the wrap rule does not, so both old numbers were too narrow.
+  it('keeps tight-tracked display words whole', () => {
+    const cases: [string, number, number, number][] = [
+      ['Every format.', 200, -6, 1600],
+      ['Approvals that chase themselves.', 84, -1.5, 904],
+    ];
+    for (const [value, font_size, letter_spacing, width] of cases) {
+      const style = { ...BOLD, font_size, letter_spacing };
+      const head = { id: 'h', type: 'text', x: 88, y: 158, width, content: { type: 'plain', value }, style } as unknown as Layer;
+      const { units } = splitLayer(head, 'word', metricsForFamily('Archivo', [fontsDir()]));
+      expect(units.map(u => u.text).join(' ')).toBe(value);
+      for (const u of units) {
+        expect(plainTextLayout(u.text, style as never, { x: u.x, y: u.y, width: u.width }).lines, `${u.text} @ ${font_size}px`).toHaveLength(1);
+      }
+    }
+  });
 });
