@@ -593,14 +593,13 @@ export function fontCharFactor(font?: string): number {
 // (Quicksand/Comfortaa/Varela), thin techno (Orbitron/Michroma/Audiowide), or light
 // geometrics. A structural-preset title in one of these looks far below the examples
 // bar (suite mind-map in Quicksand, timeline in Orbitron read thin and toy-like).
-// + VARIABLE sans that resvg draws at their ~400 default master (weight:800 is
-// ignored in PNG/PDF export → a weak masthead). Swapping them to a static-heavy face
-// is what actually lands the impactful title the examples bar shows. (Static serifs
-// like Playfair/Source Serif render fine and are NOT listed, so they're kept.)
-const WEAK_HEADLINE = /quicksand|orbitron|audiowide|comfortaa|michroma|aldrich|electrolize|monoton|wallpoet|syncopate|varela|nunito|josefin|space grotesk|bricolage|plus jakarta|jakarta sans|manrope|sora|outfit|lexend/i;
-// Bundled STATIC-heavy faces — resvg renders a variable font (Montserrat[wght],
-// Space Grotesk…) at its default ~400 master, so weight:800 stays thin; only a
-// statically-heavy face (Anton, Bebas) actually renders bold in PNG/PDF export.
+// Space Grotesk, Bricolage, Plus Jakarta Sans and Manrope used to be listed too, only
+// because export drew a variable font at its default master whatever the weight. The
+// bundle now holds one static file per weight (scripts/instance-fonts.py), so they
+// render as heavy as asked and a mood that picked them keeps them. (Unbundled faces
+// on the list fall back in export anyway.)
+const WEAK_HEADLINE = /quicksand|orbitron|audiowide|comfortaa|michroma|aldrich|electrolize|monoton|wallpoet|syncopate|varela|nunito|josefin|sora|outfit|lexend/i;
+// Display faces that are heavy by design, for a masthead whose mood font is weak or unset.
 const HEAVY_HEADLINE = ['Anton', 'Bebas Neue'];
 // Guarantee a structural-preset masthead reads BOLD: keep an already-strong mood face
 // (incl. serifs like Playfair), but swap a weak/thin or unset one for a heavy display

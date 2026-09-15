@@ -34,7 +34,13 @@
       "Anton-Regular.ttf"
     ],
     "Archivo": [
-      "Archivo[wdth,wght].ttf"
+      "Archivo-Black.ttf",
+      "Archivo-Bold.ttf",
+      "Archivo-ExtraBold.ttf",
+      "Archivo-Light.ttf",
+      "Archivo-Medium.ttf",
+      "Archivo-Regular.ttf",
+      "Archivo-SemiBold.ttf"
     ],
     "Audiowide": [
       "Audiowide-Regular.ttf"
@@ -43,16 +49,29 @@
       "BebasNeue-Regular.ttf"
     ],
     "Bricolage Grotesque": [
-      "BricolageGrotesque[opsz,wdth,wght].ttf"
+      "BricolageGrotesque-Bold.ttf",
+      "BricolageGrotesque-ExtraBold.ttf",
+      "BricolageGrotesque-Light.ttf",
+      "BricolageGrotesque-Medium.ttf",
+      "BricolageGrotesque-Regular.ttf",
+      "BricolageGrotesque-SemiBold.ttf"
     ],
     "DejaVu Sans": [
       "DejaVuSans.ttf"
     ],
     "EB Garamond": [
-      "EBGaramond[wght].ttf"
+      "EBGaramond-Bold.ttf",
+      "EBGaramond-ExtraBold.ttf",
+      "EBGaramond-Medium.ttf",
+      "EBGaramond-Regular.ttf",
+      "EBGaramond-SemiBold.ttf"
     ],
     "Fira Code": [
-      "FiraCode[wght].ttf"
+      "FiraCode-Bold.ttf",
+      "FiraCode-Light.ttf",
+      "FiraCode-Medium.ttf",
+      "FiraCode-Regular.ttf",
+      "FiraCode-SemiBold.ttf"
     ],
     "IBM Plex Mono": [
       "IBMPlexMono-Bold.ttf",
@@ -61,62 +80,154 @@
       "IBMPlexMono-SemiBold.ttf"
     ],
     "IBM Plex Sans": [
-      "IBMPlexSans[wdth,wght].ttf"
+      "IBMPlexSans-Bold.ttf",
+      "IBMPlexSans-Light.ttf",
+      "IBMPlexSans-Medium.ttf",
+      "IBMPlexSans-Regular.ttf",
+      "IBMPlexSans-SemiBold.ttf"
     ],
     "Inter": [
-      "Inter[opsz,wght].ttf"
+      "Inter-Black.ttf",
+      "Inter-Bold.ttf",
+      "Inter-ExtraBold.ttf",
+      "Inter-Light.ttf",
+      "Inter-Medium.ttf",
+      "Inter-Regular.ttf",
+      "Inter-SemiBold.ttf"
     ],
     "JetBrains Mono": [
-      "JetBrainsMono[wght].ttf"
+      "JetBrainsMono-Bold.ttf",
+      "JetBrainsMono-ExtraBold.ttf",
+      "JetBrainsMono-Light.ttf",
+      "JetBrainsMono-Medium.ttf",
+      "JetBrainsMono-Regular.ttf",
+      "JetBrainsMono-SemiBold.ttf"
     ],
     "Lora": [
-      "Lora[wght].ttf"
+      "Lora-Bold.ttf",
+      "Lora-Medium.ttf",
+      "Lora-Regular.ttf",
+      "Lora-SemiBold.ttf"
     ],
     "Manrope": [
-      "Manrope[wght].ttf"
+      "Manrope-Bold.ttf",
+      "Manrope-ExtraBold.ttf",
+      "Manrope-Light.ttf",
+      "Manrope-Medium.ttf",
+      "Manrope-Regular.ttf",
+      "Manrope-SemiBold.ttf"
     ],
     "Montserrat": [
-      "Montserrat[wght].ttf"
+      "Montserrat-Black.ttf",
+      "Montserrat-Bold.ttf",
+      "Montserrat-ExtraBold.ttf",
+      "Montserrat-Light.ttf",
+      "Montserrat-Medium.ttf",
+      "Montserrat-Regular.ttf",
+      "Montserrat-SemiBold.ttf"
     ],
     "Orbitron": [
-      "Orbitron[wght].ttf"
+      "Orbitron-Black.ttf",
+      "Orbitron-Bold.ttf",
+      "Orbitron-ExtraBold.ttf",
+      "Orbitron-Medium.ttf",
+      "Orbitron-Regular.ttf",
+      "Orbitron-SemiBold.ttf"
     ],
     "Playfair Display": [
-      "PlayfairDisplay[wght].ttf"
+      "PlayfairDisplay-Black.ttf",
+      "PlayfairDisplay-Bold.ttf",
+      "PlayfairDisplay-ExtraBold.ttf",
+      "PlayfairDisplay-Medium.ttf",
+      "PlayfairDisplay-Regular.ttf",
+      "PlayfairDisplay-SemiBold.ttf"
     ],
     "Plus Jakarta Sans": [
-      "PlusJakartaSans[wght].ttf"
+      "PlusJakartaSans-Bold.ttf",
+      "PlusJakartaSans-ExtraBold.ttf",
+      "PlusJakartaSans-Light.ttf",
+      "PlusJakartaSans-Medium.ttf",
+      "PlusJakartaSans-Regular.ttf",
+      "PlusJakartaSans-SemiBold.ttf"
     ],
     "Public Sans": [
-      "PublicSans[wght].ttf"
+      "PublicSans-Black.ttf",
+      "PublicSans-Bold.ttf",
+      "PublicSans-ExtraBold.ttf",
+      "PublicSans-Light.ttf",
+      "PublicSans-Medium.ttf",
+      "PublicSans-Regular.ttf",
+      "PublicSans-SemiBold.ttf"
     ],
     "Quicksand": [
-      "Quicksand[wght].ttf"
-    ],
-    "Roboto Mono": [
-      "RobotoMono[wght].ttf"
-    ],
-    "Roboto Slab": [
-      "RobotoSlab[wght].ttf"
+      "Quicksand-Bold.ttf",
+      "Quicksand-Light.ttf",
+      "Quicksand-Medium.ttf",
+      "Quicksand-Regular.ttf",
+      "Quicksand-SemiBold.ttf"
     ],
     "Roboto": [
-      "Roboto[wdth,wght].ttf"
+      "Roboto-Black.ttf",
+      "Roboto-Bold.ttf",
+      "Roboto-ExtraBold.ttf",
+      "Roboto-Light.ttf",
+      "Roboto-Medium.ttf",
+      "Roboto-Regular.ttf",
+      "Roboto-SemiBold.ttf"
+    ],
+    "Roboto Mono": [
+      "RobotoMono-Bold.ttf",
+      "RobotoMono-Light.ttf",
+      "RobotoMono-Medium.ttf",
+      "RobotoMono-Regular.ttf",
+      "RobotoMono-SemiBold.ttf"
+    ],
+    "Roboto Slab": [
+      "RobotoSlab-Black.ttf",
+      "RobotoSlab-Bold.ttf",
+      "RobotoSlab-ExtraBold.ttf",
+      "RobotoSlab-Light.ttf",
+      "RobotoSlab-Medium.ttf",
+      "RobotoSlab-Regular.ttf",
+      "RobotoSlab-SemiBold.ttf"
     ],
     "Source Code Pro": [
-      "SourceCodePro[wght].ttf"
+      "SourceCodePro-Black.ttf",
+      "SourceCodePro-Bold.ttf",
+      "SourceCodePro-ExtraBold.ttf",
+      "SourceCodePro-Light.ttf",
+      "SourceCodePro-Medium.ttf",
+      "SourceCodePro-Regular.ttf",
+      "SourceCodePro-SemiBold.ttf"
     ],
     "Source Serif 4": [
-      "SourceSerif4[opsz,wght].ttf"
+      "SourceSerif4-Black.ttf",
+      "SourceSerif4-Bold.ttf",
+      "SourceSerif4-ExtraBold.ttf",
+      "SourceSerif4-Light.ttf",
+      "SourceSerif4-Medium.ttf",
+      "SourceSerif4-Regular.ttf",
+      "SourceSerif4-SemiBold.ttf"
     ],
     "Space Grotesk": [
-      "SpaceGrotesk[wght].ttf"
+      "SpaceGrotesk-Bold.ttf",
+      "SpaceGrotesk-Light.ttf",
+      "SpaceGrotesk-Medium.ttf",
+      "SpaceGrotesk-Regular.ttf",
+      "SpaceGrotesk-SemiBold.ttf"
     ],
     "Space Mono": [
       "SpaceMono-Bold.ttf",
       "SpaceMono-Regular.ttf"
     ],
     "Work Sans": [
-      "WorkSans[wght].ttf"
+      "WorkSans-Black.ttf",
+      "WorkSans-Bold.ttf",
+      "WorkSans-ExtraBold.ttf",
+      "WorkSans-Light.ttf",
+      "WorkSans-Medium.ttf",
+      "WorkSans-Regular.ttf",
+      "WorkSans-SemiBold.ttf"
     ]
   }
 }

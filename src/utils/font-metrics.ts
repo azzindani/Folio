@@ -14,6 +14,8 @@ import * as path from 'path';
 
 export interface FontMetrics {
   unitsPerEm: number;
+  /** OS/2 usWeightClass of the file these advances came from (400 when the table is missing). */
+  weight: number;
   /** Advance width in font units for a code point, or undefined if unmapped. */
   advance(cp: number): number | undefined;
 }
@@ -97,8 +99,11 @@ export function parseFontMetrics(buf: Buffer): FontMetrics | null {
     const at = hmtx + i * 4;
     return at + 2 <= buf.length ? buf.readUInt16BE(at) : undefined;
   };
+  const os2 = t['OS/2']?.off;
+  const weight = os2 !== undefined && os2 + 6 <= buf.length ? buf.readUInt16BE(os2 + 4) || 400 : 400;
   return {
     unitsPerEm,
+    weight,
     advance: (cp: number): number | undefined => {
       const gid = cmap.get(cp);
       return gid === undefined ? undefined : advanceOf(gid);
@@ -108,27 +113,45 @@ export function parseFontMetrics(buf: Buffer): FontMetrics | null {
 
 const CACHE = new Map<string, FontMetrics | null>();
 
-/** Metrics for a family, searched across the given font directories. */
-export function metricsForFamily(family: string, dirs: string[]): FontMetrics | null {
-  const key = `${family}::${dirs.join('|')}`;
+const squash = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** A CSS font-weight as a number: 400 for normal / unset, 700 for bold. */
+export function numericWeight(v: unknown): number {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (v === 'bold' || v === 'bolder') return 700;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 400;
+}
+
+/**
+ * Metrics for a family at a weight, searched across the given font directories.
+ *
+ * The bundle holds one static file per weight (scripts/instance-fonts.py), and
+ * each weight has its own advances — ExtraBold runs wider than Regular. So the
+ * upright file whose usWeightClass is nearest the asked weight answers. A family
+ * is matched by the file's stem first ("Roboto-Bold", not "RobotoMono-Bold"),
+ * then by name containment for an uploaded file named some other way.
+ */
+export function metricsForFamily(family: string, dirs: string[], weight = 400): FontMetrics | null {
+  const key = `${family}::${weight}::${dirs.join('|')}`;
   const hit = CACHE.get(key);
   if (hit !== undefined) return hit;
 
-  const want = family.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const want = squash(family);
   let found: FontMetrics | null = null;
   for (const dir of dirs) {
     let names: string[];
     try { names = fs.readdirSync(dir); } catch { continue; }
-    // Prefer a Regular/upright face: an Italic or Bold file answers with
-    // different advances and would place every glyph slightly wrong.
-    const cands = names
-      .filter(n => /\.(ttf|otf)$/i.test(n))
-      .filter(n => n.toLowerCase().replace(/[^a-z0-9]/g, '').includes(want))
-      .sort((a, b) => Number(/italic|oblique/i.test(a)) - Number(/italic|oblique/i.test(b)));
+    const fonts = names.filter(n => /\.(ttf|otf)$/i.test(n) && !/italic|oblique/i.test(n));
+    const exact = fonts.filter(n => squash(n.split(/[-[.]/)[0] ?? '') === want);
+    const cands = exact.length ? exact : fonts.filter(n => squash(n).includes(want));
     for (const n of cands) {
       try {
         const m = parseFontMetrics(fs.readFileSync(path.join(dir, n)));
-        if (m) { found = m; break; }
+        if (!m) continue;
+        const gap = Math.abs(m.weight - weight), bestGap = found ? Math.abs(found.weight - weight) : Infinity;
+        // A tie goes heavier, as pdf-font-select and CSS matching above 500 do — never by directory order.
+        if (gap < bestGap || (gap === bestGap && found && m.weight > found.weight)) found = m;
       } catch { /* unreadable — try the next candidate */ }
     }
     if (found) break;

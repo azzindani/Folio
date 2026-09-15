@@ -14,12 +14,19 @@ export interface FontSelection {
   fauxBold: boolean;
 }
 
-const WEIGHT_ORDER: Record<string, string[]> = {
-  bold: ['bold', 'semibold', 'medium', 'regular'],
-  semibold: ['semibold', 'bold', 'medium', 'regular'],
-  medium: ['medium', 'regular', 'semibold', 'bold'],
-  regular: ['regular', 'medium', 'semibold', 'bold'],
-};
+/** Style words in a file name, longest first so "ExtraBold" is never read as "Bold". */
+const STYLE_WEIGHTS: Array<[string, number]> = [
+  ['extralight', 200], ['ultralight', 200], ['semibold', 600], ['demibold', 600], ['extrabold', 800], ['ultrabold', 800],
+  ['thin', 100], ['light', 300], ['regular', 400], ['medium', 500], ['bold', 700], ['black', 900], ['heavy', 900],
+];
+
+/** The weight a static file's name declares, or null for a name with no style word (a variable font). */
+export function fileWeight(file: string): number | null {
+  const name = file.toLowerCase().replace(/\.(ttf|otf)$/, '');
+  if (name.includes('[')) return null;
+  const hit = STYLE_WEIGHTS.find(([word]) => name.includes(word));
+  return hit ? hit[1] : null;
+}
 
 /** Case-insensitive family → manifest key (e.g. "inter" → "Inter"). */
 export function resolveFamilyKey(files: Record<string, string[]>, family: string): string | null {
@@ -31,14 +38,23 @@ export function resolveFamilyKey(files: Record<string, string[]>, family: string
   return null;
 }
 
+/**
+ * The file nearest the asked weight (a tie goes heavier, as CSS matching does above
+ * 500). Bundled families are one static file per weight (scripts/instance-fonts.py),
+ * so this is usually exact. A family with no named weights — a variable or unnamed
+ * upload — has one face for every weight; a heavy weight far above the heaviest file
+ * is not dedicated either, so the caller synthesizes bold.
+ */
 function pickWeightFile(list: string[], weight: number): { file: string; dedicated: boolean } {
-  if (list.length === 1) return { file: list[0], dedicated: false };
-  const bucket = weight >= 700 ? 'bold' : weight >= 600 ? 'semibold' : weight >= 500 ? 'medium' : 'regular';
-  for (const token of WEIGHT_ORDER[bucket]) {
-    const f = list.find(x => x.toLowerCase().includes(token));
-    if (f) return { file: f, dedicated: true };
+  const named = list.flatMap(file => { const w = fileWeight(file); return w === null ? [] : [{ file, w }]; });
+  const first = named[0];
+  if (!first) return { file: list[0], dedicated: false };
+  let best = first;
+  for (const x of named) {
+    const gap = Math.abs(x.w - weight), bestGap = Math.abs(best.w - weight);
+    if (gap < bestGap || (gap === bestGap && x.w > best.w)) best = x;
   }
-  return { file: list[0], dedicated: false };
+  return { file: best.file, dedicated: weight < 600 || best.w >= weight - 150 };
 }
 
 /** Resolve a font-family + weight to a bundled TTF, or null when the family
