@@ -152,6 +152,26 @@ function trackBeats(env: Float64Array, period: number, tightness = 100): number[
   return beats.reverse();
 }
 
+/**
+ * Move a time to the steepest energy rise within ±50 ms — the attack a listener
+ * hears as the hit. The envelope works in 23 ms hops over 93 ms frames, and live
+ * its beats sat 15–30 ms ahead of a 120 BPM kick.
+ */
+function toAttack(samples: Float32Array, sampleRate: number, ms: number): number {
+  const win = Math.max(1, Math.round(sampleRate * 0.004));
+  const from = Math.max(0, Math.round(((ms - 50) / 1000) * sampleRate));
+  const to = Math.min(samples.length - win, Math.round(((ms + 50) / 1000) * sampleRate));
+  let prev: number | null = null, steepest = 0, at = ms;
+  for (let s = from; s <= to; s += win) {
+    let e = 0;
+    for (let i = 0; i < win; i++) e += (samples[s + i] ?? 0) ** 2;
+    const level = Math.log1p((1e4 * e) / win);
+    if (prev !== null && level - prev > steepest) { steepest = level - prev; at = (s / sampleRate) * 1000; }
+    prev = level;
+  }
+  return Math.round(at);
+}
+
 export function detectBeats(samples: Float32Array, sampleRate: number): BeatMap {
   const duration_ms = Math.round((samples.length / sampleRate) * 1000);
   const env = onsetEnvelope(samples, sampleRate);
@@ -161,14 +181,14 @@ export function detectBeats(samples: Float32Array, sampleRate: number): BeatMap 
   // The flux of hop f describes the frame that starts there; its onset sits near the frame's middle.
   const centre = (FRAME / 2 / sampleRate) * 1000;
   const toMs = (hop: number): number => Math.round(hop * hopMs + centre);
-  const beats_ms = trackBeats(env, lag).map(toMs).filter(ms => ms <= duration_ms);
+  const beats_ms = trackBeats(env, lag).map(h => toAttack(samples, sampleRate, toMs(h))).filter(ms => ms <= duration_ms);
 
   let mean = 0;
   for (const v of env) mean += v;
   mean /= env.length;
   const peaks: Array<{ hop: number; v: number }> = [];
   for (let f = 1; f < env.length - 1; f++) if (env[f] > mean * 3 && env[f] >= env[f - 1] && env[f] > env[f + 1]) peaks.push({ hop: f, v: env[f] });
-  const onsets_ms = peaks.sort((a, b) => b.v - a.v).slice(0, 64).map(p => toMs(p.hop)).sort((a, b) => a - b);
+  const onsets_ms = peaks.sort((a, b) => b.v - a.v).slice(0, 64).map(p => toAttack(samples, sampleRate, toMs(p.hop))).sort((a, b) => a - b);
 
   const beat_ms = lag * hopMs;
   return { bpm: Math.round((60_000 / beat_ms) * 10) / 10, beat_ms: Math.round(beat_ms * 10) / 10, confidence: Math.round(confidence * 100) / 100, beats_ms, onsets_ms, duration_ms };

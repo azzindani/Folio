@@ -35,7 +35,7 @@ describe('detectBeats', () => {
     expect(map.confidence).toBeGreaterThan(0.3);
     const inner = map.beats_ms.filter(ms => ms > 1000 && ms < 19_000);
     expect(inner.length).toBeGreaterThan(30);
-    expect(Math.max(...inner.map(ms => nearest(ms, beats)))).toBeLessThan(40);
+    expect(Math.max(...inner.map(ms => nearest(ms, beats)))).toBeLessThan(10);
   });
 
   it('keeps a slow tempo slow instead of doubling it, and follows an offset grid', () => {
@@ -62,7 +62,7 @@ describe('detectBeats', () => {
     expect(map.bpm).toBeGreaterThan(118);
     expect(map.bpm).toBeLessThan(122);
     const inner = map.beats_ms.filter(ms => ms > 1000 && ms < 15_000);
-    expect(Math.max(...inner.map(ms => nearest(ms, kicks)))).toBeLessThan(60);
+    expect(Math.max(...inner.map(ms => nearest(ms, kicks)))).toBeLessThan(10);
   });
 
   it('lists the accents among the sharpest onsets', () => {

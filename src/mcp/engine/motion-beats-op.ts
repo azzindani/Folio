@@ -88,10 +88,14 @@ export async function beatsMotion(args: BeatsArgs): Promise<ToolResult> {
 
   const pulse = map.confidence >= 0.4 ? 'steady' : map.confidence >= 0.2 ? 'weak' : 'none';
   const fileMs = sound.durations[clip.src] ?? map.duration_ms;
-  const beats = beatsOnPiece(clip, map.beats_ms, fileMs);
+  // Snap against the music as far as it plays, not only as far as the piece now runs: live, the
+  // last scene was told to SHRINK by 694 ms because the next beat sat past the piece's current end.
+  const reach = clip.loop ? Math.max(clip.length_ms, timeline.total_ms) * 2 : Math.max(clip.length_ms, fileMs - clip.offset_ms);
+  const grid = beatsOnPiece({ ...clip, length_ms: reach }, map.beats_ms, fileMs);
+  const beats = grid.filter(b => b <= clip.start_ms + clip.length_ms);
   const onsets = beatsOnPiece(clip, map.onsets_ms, fileMs).slice(0, 64);
   const scenes = (spec.pages?.length ?? 0) >= 2 ? planScenes(spec, { hold_ms: args.hold_ms }).scenes : [];
-  const snaps = pulse === 'none' ? [] : snapLengths(scenes, beats);
+  const snaps = pulse === 'none' ? [] : snapLengths(scenes, grid);
   const firstMove = snaps.find(s => s.moved_ms !== 0);
   const notes = [
     ...(pulse === 'none' ? [`"${clip.id}" has no steady pulse (confidence ${map.confidence}), so no scene lengths are offered: cut on its onsets, or on the scenes' own motion.`] : []),

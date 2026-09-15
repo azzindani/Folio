@@ -58,7 +58,7 @@ describe.skipIf(!hasFfmpeg)('animation(op:beats)', () => {
     const page = (id: string, ms: number): Record<string, unknown> => ({ id, auto_advance: ms, layers: [{ id: `${id}-bg`, type: 'rect', z: 0, x: 0, y: 0, width: 64, height: 64, fill: '#FFFFFF' }] });
     fs.writeFileSync(design, yaml.dump({
       meta: { id: 'deck', name: 'Deck', type: 'carousel' }, document: { width: 64, height: 64 },
-      pages: [page('s1', 2300), page('s2', 2000)], audio: [{ id: 'click', src: 'assets/audio/click.wav' }],
+      pages: [page('s1', 2300), page('s2', 2350)], audio: [{ id: 'click', src: 'assets/audio/click.wav' }],
     }));
   });
   afterAll(() => { fs.rmSync(root, { recursive: true, force: true }); });
@@ -72,15 +72,17 @@ describe.skipIf(!hasFfmpeg)('animation(op:beats)', () => {
     const spacing = beats.slice(1).map((b, i) => b - (beats[i] ?? 0)).sort((a, b) => a - b);
     expect(spacing[Math.floor(spacing.length / 2)]).toBeGreaterThan(570);
     expect(spacing[Math.floor(spacing.length / 2)]).toBeLessThan(630);
-    const first = (r['scenes_on_beat'] as Array<{ page_id: string; on_beat_ms: number }>)[0];
+    const [first, last] = r['scenes_on_beat'] as Array<{ page_id: string; on_beat_ms: number }>;
     expect(first?.page_id).toBe('s1');
-    expect(Math.abs((first?.on_beat_ms ?? 0) - 2400)).toBeLessThan(50);
+    expect(Math.abs((first?.on_beat_ms ?? 0) - 2400)).toBeLessThan(15);
+    // s2 now ends at 4750: its nearest beat (4800) lies past the piece's current end, where the music still plays.
+    expect(Math.abs((last?.on_beat_ms ?? 0) - 2400)).toBeLessThan(15);
     expect(r['next_action']).toMatchObject({ tool: 'animation', params: { op: 'scene', page_id: 's1' } });
-  });
+  }, 60_000);
 
   it('says there is nothing to measure in a piece without sound', async () => {
     const silent = path.join(root, 'designs/silent.design.yaml');
     fs.writeFileSync(silent, yaml.dump({ meta: { id: 's', name: 'S', type: 'carousel' }, document: { width: 64, height: 64 }, pages: [{ id: 'p1', layers: [] }, { id: 'p2', layers: [] }] }));
     expect(await dispatchAnimation({ op: 'beats', design_path: silent })).toMatchObject({ success: false, error: 'This piece has no sound to measure.' });
-  });
+  }, 60_000);
 });
