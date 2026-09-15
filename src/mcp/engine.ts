@@ -6,7 +6,8 @@ export { enrichBrief } from './engine/enrich';
 export { browseLibrary } from './engine/library';
 export { exportLibraryGallery } from './engine/library-gallery';
 export { renameDesign, deleteDesign, moveDesign } from './engine/library-manage';
-export { assetRead, assetWrite } from './engine/assets';
+export { assetWrite } from './engine/assets';
+export { assetReadAny as assetRead } from './engine/asset-library-ops';
 // asset_add/list/delete/move route between the PROJECT store and the SHARED
 // library (by `scope`, or by a "lib/" path prefix) — see asset-library-ops.ts.
 export { assetAdd, assetList, assetDelete, assetMove, assetPromote } from './engine/asset-library-ops';
