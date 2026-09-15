@@ -180,17 +180,36 @@ describe('downloadText and downloadBlob', () => {
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
   });
 
-  it('downloadText calls createObjectURL and revokes after click', () => {
-    downloadText('<svg>hello</svg>', 'export.svg', 'image/svg+xml');
-    expect(URL.createObjectURL).toHaveBeenCalled();
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+  // Found live: a video export "failed to save". Revoking the object URL on the line
+  // after the click cancels a download the browser has not started yet.
+  it('downloadText saves through an attached link and revokes the URL only a minute later', () => {
+    vi.useFakeTimers();
+    try {
+      let attached = false;
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { attached = this.isConnected; });
+      downloadText('<svg>hello</svg>', 'export.svg', 'image/svg+xml');
+      expect(URL.createObjectURL).toHaveBeenCalled();
+      expect(attached).toBe(true);
+      expect(document.querySelector('a[download]')).toBeNull();
+      expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(60_000);
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('downloadBlob calls createObjectURL with the blob', () => {
-    const blob = new Blob(['hello'], { type: 'text/plain' });
-    downloadBlob(blob, 'file.txt');
-    expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+    vi.useFakeTimers();
+    try {
+      const blob = new Blob(['hello'], { type: 'text/plain' });
+      downloadBlob(blob, 'file.txt');
+      expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
+      vi.runAllTimers();
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -212,22 +231,27 @@ describe('exportDesign', () => {
     vi.restoreAllMocks();
   });
 
+  // Each download clicks its link and leaves the object URL alive: it is revoked a
+  // minute later, never on the next line (the downloadText test above times it).
   it('svg format downloads SVG file', async () => {
     await exportDesign(makeSpec(), { format: 'svg' });
     expect(URL.createObjectURL).toHaveBeenCalled();
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export-url');
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
   });
 
   it('html format downloads HTML file', async () => {
     await exportDesign(makeSpec(), { format: 'html' });
     expect(URL.createObjectURL).toHaveBeenCalled();
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export-url');
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
   });
 
   it('html-animated format downloads HTML file', async () => {
     await exportDesign(makeSpec(), { format: 'html-animated' });
     expect(URL.createObjectURL).toHaveBeenCalled();
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:export-url');
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
   });
 
   it('png format: succeeds when Image loads and downloads blob', async () => {

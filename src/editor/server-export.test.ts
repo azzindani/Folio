@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
-import { exportRoute, toolResultFrom, downloadUrl, type CallTool } from './server-export';
+import { exportRoute, toolResultFrom, downloadUrl, attachmentHeader, type CallTool } from './server-export';
 
 // Found by the user after Play all shipped: the editor could not export the video.
 
@@ -60,6 +60,12 @@ describe('talking to the MCP server', () => {
     expect(toolResultFrom(rpc)).toEqual({ success: true, job_id: 'exp_2' });
     expect(toolResultFrom(`event: message\ndata: ${rpc}\n\n`)).toEqual({ success: true, job_id: 'exp_2' });
     expect(toolResultFrom('{"jsonrpc":"2.0","id":1,"error":{"message":"Unauthorized"}}')).toEqual({ success: false, error: 'Unauthorized' });
+  });
+
+  it('asks the browser to save a file under its own name, em dash included', () => {
+    expect(attachmentHeader('folio-—-product-promo-960x540-20fps.gif'))
+      .toBe(`attachment; filename="folio-_-product-promo-960x540-20fps.gif"; filename*=UTF-8''folio-%E2%80%94-product-promo-960x540-20fps.gif`);
+    expect(attachmentHeader('a "quoted" name.mp4')).toContain('filename="a _quoted_ name.mp4"');
   });
 
   it('never hands out a download outside the projects folder', () => {

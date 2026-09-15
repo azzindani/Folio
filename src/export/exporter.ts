@@ -406,8 +406,13 @@ export function downloadBlob(blob: Blob, filename: string): void {
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.style.display = 'none';
+  // Attached, and revoked a minute later: revoking on the next line cancels a
+  // download the browser has not started yet (Firefox and Safari fail it outright).
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function downloadText(content: string, filename: string, mimeType: string): void {

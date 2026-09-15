@@ -61,6 +61,16 @@ export function downloadUrl(projectsDir: string, abs: string): string | null {
   return `/__project_files/${rel.split(path.sep).map(encodeURIComponent).join('/')}`;
 }
 
+/**
+ * The Content-Disposition that makes a browser SAVE a file instead of showing it.
+ * `filename` carries an ASCII fallback for old clients; `filename*` the real name —
+ * export names keep the design's own, em dashes included.
+ */
+export function attachmentHeader(fileName: string): string {
+  const ascii = fileName.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_');
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+}
+
 async function status(url: URL, deps: ExportRouteDeps, call: CallTool): Promise<Response> {
   const r = await call('animation', { op: 'export_status', job_id: url.searchParams.get('job_id') ?? '' });
   const done = r['state'] === 'done';

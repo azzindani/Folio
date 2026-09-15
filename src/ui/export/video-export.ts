@@ -4,10 +4,17 @@
  * The render is the MCP export itself (editor/server-export.ts), so a deck comes
  * out as ONE piece with its transitions, exactly as Play all shows it, and the
  * file is the same one animation(op:export) writes. This side starts the job,
- * follows it in a small progress strip, and downloads the file when it lands.
+ * follows it in a small progress strip, and hands the finished file to the
+ * browser's own download.
+ *
+ * The file is NOT pulled into the page as a Blob. That route — fetch, blob,
+ * object URL, click, revoke on the next line — reported "failed" for the user
+ * on a 4.8 MB GIF the server had rendered fine: a revoked URL cancels a download
+ * the browser has not started yet, and a video can run to tens of megabytes held
+ * twice in memory. A link to the file with ?download (Content-Disposition:
+ * attachment) lets the browser stream it to disk itself.
  */
 
-import { downloadBlob } from '../../export/exporter';
 import { showToast } from '../../utils/toast';
 
 export type VideoFormat = 'mp4' | 'gif';
@@ -48,6 +55,17 @@ export function progressText(s: StatusReply): string {
   return `rendering ${s.percent ?? 0}%${eta}`;
 }
 
+/** Hand a server file to the browser's download: an attached link, clicked, with ?download. */
+export function saveFromServer(url: string, name: string): void {
+  const a = document.createElement('a');
+  a.href = `${url}${url.includes('?') ? '&' : '?'}download=1`;
+  a.download = name;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 /** Start the server render, follow it, save the file. Resolves with the file name, or null on failure. */
 export async function exportVideo(req: VideoExportRequest, io: VideoExportIO = {}): Promise<string | null> {
   const call = io.fetch ?? ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, init));
@@ -67,11 +85,8 @@ export async function exportVideo(req: VideoExportRequest, io: VideoExportIO = {
       if (!r.ok || s.state === 'failed') throw new Error(s.error ?? `HTTP ${r.status}`);
       if (s.state !== 'done') { strip.set(progressText(s)); continue; }
       if (!s.download) throw new Error('the render finished but the file is outside the projects folder');
-      strip.set('saving');
-      const file = await call(s.download, { credentials: 'include', cache: 'no-store' });
-      if (!file.ok) throw new Error(`download failed: HTTP ${file.status}`);
       const name = decodeURIComponent(s.download.split('/').pop() ?? `export.${req.type}`);
-      downloadBlob(await file.blob(), name);
+      saveFromServer(s.download, name);
       showToast(`Exported ${name}`, 'success');
       return name;
     }
