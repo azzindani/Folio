@@ -45,23 +45,33 @@ function textOf(o: Rec): string {
 
 // Obvious throwaway placeholder strings a model leaves in an unfinished design
 // (suite-031 "Cover line 1".."Cover line 4"). Conservative — only matches text
-// that is CLEARLY a placeholder, never real copy.
-const PLACEHOLDER_RE = /^(cover\s*line\s*\d*|lorem(\s+ipsum.*)?|(your|add|enter|insert)\s+(text|title|name|headline|subtitle|content|tagline|copy)(\s+here)?|(body|heading|headline|sub-?title|title|caption|paragraph|tagline)(\s*(text|here|goes\s*here))?|text\s*(goes\s*)?here|placeholder(\s*text)?|empty|blank|untitled|todo|tbd|x+|n\/a|\[.*\]|lorem)$/i;
+// that is CLEARLY a placeholder, never real copy. A bare role word IS copy: a
+// timeline row labelled "title" was deleted from a promo video's locked page, so
+// a role word counts only with its filler ("Title text", "Headline goes here").
+const PLACEHOLDER_RE = /^(cover\s*line\s*\d*|lorem(\s+ipsum.*)?|(your|add|enter|insert)\s+(text|title|name|headline|subtitle|content|tagline|copy)(\s+here)?|(body|heading|headline|sub-?title|title|caption|paragraph|tagline)\s*(text(\s*(goes\s*)?here)?|(goes\s*)?here)|text\s*(goes\s*)?here|placeholder(\s*text)?|empty|blank|untitled|todo|tbd|x+|n\/a|\[.*\]|lorem)$/i;
 
 /** Drop text layers whose content is an obvious leftover placeholder so an
- *  unfinished template never ships with "Cover line 1" visible. Recurses groups. */
-export function dropPlaceholderText(layers: Layer[]): number {
+ *  unfinished template never ships with "Cover line 1" visible. Recurses groups,
+ *  but never into a LOCKED one — the model owns that content exactly. Each drop
+ *  is named in `dropped` (id + text) so the reply can say what disappeared. */
+export function dropPlaceholderText(layers: Layer[], dropped: string[] = []): number {
   if (!Array.isArray(layers)) return 0;
-  let dropped = 0;
+  let count = 0;
   for (let i = layers.length - 1; i >= 0; i--) {
     const l = layers[i];
     if (!l || typeof l !== 'object') continue;
     const o = l as unknown as Rec;
-    if (Array.isArray(o['layers'])) dropped += dropPlaceholderText(o['layers'] as Layer[]);
+    if (o['locked'] === true) continue;
+    if (Array.isArray(o['layers'])) count += dropPlaceholderText(o['layers'] as Layer[], dropped);
     if (o['type'] !== 'text') continue;
-    if (PLACEHOLDER_RE.test(textOf(o).trim())) { layers.splice(i, 1); dropped++; }
+    const text = textOf(o).trim();
+    if (PLACEHOLDER_RE.test(text)) {
+      layers.splice(i, 1);
+      count++;
+      dropped.push(`${String(o['id'] ?? '?')} "${text}"`);
+    }
   }
-  return dropped;
+  return count;
 }
 
 /** One parsed object (from an embedded-JSON blob) → a valid layer. Maps the flat

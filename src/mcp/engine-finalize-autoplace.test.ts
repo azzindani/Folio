@@ -36,6 +36,23 @@ describe('dropPlaceholderText', () => {
     expect(dropPlaceholderText(layers)).toBe(0);
     expect(layers).toHaveLength(4);
   });
+  // Found live: a promo video's timeline rows were labelled title/card/chart/badge,
+  // and the "title" label vanished from a LOCKED page group on append_page.
+  it('keeps a bare role word — a row labelled "title" is copy, "Title text" is filler', () => {
+    const text = (value: string, id: string): object => ({ id, type: 'text', content: { type: 'plain', value } });
+    const layers = [text('title', 'a'), text('Caption', 'b'), text('Headline', 'c'), text('Title text', 'd'), text('Headline goes here', 'e')] as unknown as Layer[];
+    expect(dropPlaceholderText(layers)).toBe(2);
+    expect(layers.map(l => l.id)).toEqual(['a', 'b', 'c']);
+  });
+  it('never reaches into a locked group, and names each layer it deletes', () => {
+    const cover = { id: 'cover', type: 'text', content: { type: 'plain', value: 'Cover line 1' } };
+    const locked = [{ id: 'page', type: 'group', locked: true, layers: [cover] }] as unknown as Layer[];
+    expect(dropPlaceholderText(locked)).toBe(0);
+    const named: string[] = [];
+    const open = [{ id: 'page', type: 'group', layers: [{ ...cover }] }] as unknown as Layer[];
+    expect(dropPlaceholderText(open, named)).toBe(1);
+    expect(named).toEqual(['cover "Cover line 1"']);
+  });
 });
 
 describe('recoverEmbeddedLayers', () => {
