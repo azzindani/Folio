@@ -518,23 +518,24 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   const spec = readYAML<DesignSpec>(dPath);
   let found = false;
   let lockedBy: string | null = null; // nearest locked ANCESTOR of the target, if any
+  let lockedAt = '';                  // the target's selector path, for the patch_design hint
 
   // Recurse into groups so children of a group (every MCP poster is ONE
   // group) are editable — matching what the editor can already do. A child
   // under a LOCKED group is reported, not silently skipped: unlocking the
   // GROUP itself stays possible because the group has no locked ancestor.
-  const patch = (layers: Layer[], lockedAncestor?: string): Layer[] =>
-    layers.map(l => {
+  const patch = (layers: Layer[], where: string, lockedAncestor?: string): Layer[] =>
+    layers.map((l, i) => {
       if (l.id === args.layer_id) {
         found = true;
-        if (lockedAncestor) { lockedBy = lockedAncestor; return l; }
+        if (lockedAncestor) { lockedBy = lockedAncestor; lockedAt = `${where}[${i}]`; return l; }
         const props = canonicalizeProps(l, args.props as Record<string, unknown>);
         return dragEndpoints(l, { ...l, ...props } as Layer, props);
       }
       const children = (l as Layer & { layers?: Layer[] }).layers;
       if (l.type === 'group' && Array.isArray(children)) {
         const nextLock = lockedAncestor ?? ((l as { locked?: unknown }).locked ? l.id : undefined);
-        return { ...l, layers: patch(children, nextLock) } as Layer;
+        return { ...l, layers: patch(children, `${where}[${i}].layers`, nextLock) } as Layer;
       }
       return l;
     });
@@ -542,19 +543,22 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   // page_id scopes the edit to ONE carousel page — without it the same id on
   // sibling pages would all be patched (carousel groups share ids).
   if (args.page_id) {
-    const page = spec.pages?.find(p => p.id === args.page_id);
+    const pageIndex = spec.pages?.findIndex(p => p.id === args.page_id) ?? -1;
+    const page = spec.pages?.[pageIndex];
     if (!page) return errResult(op, `Page not found: ${args.page_id}`, 'Use manage_design {op:"inspect"} to list page IDs.', progress);
-    if (page.layers) page.layers = patch(page.layers);
+    if (page.layers) page.layers = patch(page.layers, `pages[${pageIndex}].layers`);
   } else {
     const hits = pagesWithLayer(spec, args.layer_id);
     if (hits.length > 1) return errResult(op, `Layer id "${args.layer_id}" exists on ${hits.length} pages (${hits.join(', ')}) — refusing to patch all of them.`, 'Pass page_id to update ONE page (carousel pages share layer IDs).', progress);
-    if (spec.layers) spec.layers = patch(spec.layers);
-    if (spec.pages) for (const page of spec.pages) { if (page.layers) page.layers = patch(page.layers); }
+    if (spec.layers) spec.layers = patch(spec.layers, 'layers');
+    if (spec.pages) spec.pages.forEach((page, p) => { if (page.layers) page.layers = patch(page.layers, `pages[${p}].layers`); });
   }
   if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use manage_design {op:"inspect"} to find layer IDs — group children are listed with a parent field.', progress);
   if (lockedBy) {
+    // Name the exact selector: a generic "pages[0].layers[…]" sent a model on page 7 to the wrong page.
+    const selectors = Object.entries(args.props).map(([k, v]) => ({ path: `${lockedAt}.${k}`, value: v }));
     return errResult(op, `Layer "${args.layer_id}" is inside the LOCKED group "${lockedBy}" — not modified.`,
-      `Unlock first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}, apply your edit, then re-lock with props:{locked:true} — or change it in ONE call without unlocking: patch_design {selectors:[{path:"pages[0].layers[…].layers[…].<field>", value}]} (manage_design op:inspect lists the indexes). (locked also exempts the group from engine heal passes.)`, progress);
+      `Change it in ONE call without unlocking: patch_design {selectors:${JSON.stringify(selectors)}} — or unlock with edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}, edit, and re-lock with props:{locked:true}. (locked also exempts the group from engine heal passes.)`, progress);
   }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];

@@ -18,6 +18,7 @@ import type { NextAction } from './types';
 
 import { isConstrained } from './engine-runtime-tools';
 import { SPEC_FIELD } from './design-spec';
+import { drawnBox } from '../export/frame-geometry';
 
 /** Delete abandoned EMPTY in-progress drafts in a project's designs/ dir. A model
  *  that calls create_design, never fills it, then creates another leaves an orphan
@@ -567,9 +568,14 @@ export function inspectDesign(args: { design_path: string; page_id?: string; pro
         const authored = (l as unknown as Record<string, unknown>)[SPEC_FIELD];
         const specType = authored && typeof authored === 'object'
           ? String((authored as Record<string, unknown>)['type'] ?? 'preset') : undefined;
+        // A path or line has no x/y/width/height — its box is what it draws (d, x1..y2).
+        // Found building a video: a knot path read x:0 y:0 w:0 h:0, so a model could not see it.
+        const drawn = l.type === 'path' || l.type === 'line' || (l.type as string) === 'polyline' ? drawnBox(l) : null;
         rows.push({
-          id: l.id, type: l.type, z: l.z, x: l.x ?? 0, y: l.y ?? 0,
-          w: l.width ?? 0, h: (l as unknown as Record<string, unknown>)['height'] ?? 0,
+          id: l.id, type: l.type, z: l.z,
+          x: drawn ? Math.round(drawn.x) : l.x ?? 0, y: drawn ? Math.round(drawn.y) : l.y ?? 0,
+          w: drawn ? Math.round(drawn.width) : l.width ?? 0,
+          h: drawn ? Math.round(drawn.height) : (l as unknown as Record<string, unknown>)['height'] ?? 0,
           ...(parent ? { parent } : {}), ...(locked ? { locked: true } : {}),
           ...(specType ? { spec: specType } : {}),
         });

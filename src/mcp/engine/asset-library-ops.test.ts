@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { assetAdd, assetList, assetDelete, assetMove, assetPromote } from './asset-library-ops';
+import { assetAdd, assetList, assetDelete, assetMove, assetPromote, assetReadAny } from './asset-library-ops';
 
 const projectsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'folio-libops-'));
 process.env['FOLIO_PROJECTS_DIR'] = projectsDir;
@@ -22,6 +22,20 @@ const body = (r: unknown): Record<string, unknown> => r as Record<string, unknow
 
 beforeEach(() => fs.rmSync(libDir, { recursive: true, force: true }));
 afterAll(() => fs.rmSync(projectsDir, { recursive: true, force: true }));
+
+// Found building a video: the ChatGPT knot sat in lib/ai/logos and asset_read refused the path.
+describe('asset_read reaches the shared library', () => {
+  it('reads a library SVG as text, and still reads project files and refuses binaries', () => {
+    const dir = makeProject('reader');
+    assetAdd({ project_path: dir, name: 'knot.svg', data: uri(SVG), folder: 'ai/logos', scope: 'library' });
+    const lib = body(assetReadAny({ project_path: dir, asset_path: 'lib/ai/logos/knot.svg' }));
+    expect(lib).toMatchObject({ success: true, scope: 'library', truncated: false });
+    expect(String(lib['content'])).toContain('<rect');
+    assetAdd({ project_path: dir, name: 'local.svg', data: uri(SVG) });
+    expect(body(assetReadAny({ project_path: dir, asset_path: 'assets/images/local.svg' }))['success']).toBe(true);
+    expect(body(assetReadAny({ project_path: dir, asset_path: 'lib/ai/logos/missing.svg' }))['success']).toBe(false);
+  });
+});
 
 describe('asset ops route between the two stores', () => {
   it('asset_add defaults to the project and shares only when asked', () => {

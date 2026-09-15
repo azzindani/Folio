@@ -40,6 +40,7 @@ export interface AssetEntry {
   path: string;               // project-relative, e.g. "assets/images/team.jpg"
   kind: AssetKind;
   folder?: string;            // optional folder path inside the kind dir, may nest
+  duration_ms?: number;       // audio: how long the file plays
   bytes: number;
   width?: number;             // raster/svg pixel dims (absent for fonts)
   height?: number;
@@ -376,6 +377,15 @@ export function assetAdd(args: { project_path?: string; name?: string; data?: st
     progress.push(pOk('Asset saved', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
 
+    // A sound is not a layer: hand it to the soundtrack, not to add_layers as an image.
+    if (entry.kind === 'audio') {
+      const secs = typeof entry.duration_ms === 'number' ? ` (${(entry.duration_ms / 1000).toFixed(1)} s)` : '';
+      const soundNext: NextAction = {
+        tool: 'animation', params: { op: 'audio', design_path: '<your .design.yaml>', src: entry.path }, remaining: 0,
+        hint: `Sound stored${secs}. Put it under the whole piece with animation(op:audio, src:"${entry.path}"), or start it with a scene by adding page_id.`,
+      };
+      return okResult(op, { asset: entry, next_action: soundNext, progress, context: buildContext(op, `Added sound ${entry.path}`), handover: buildHandover('COMPOSE', { project_path: proj.dir }) });
+    }
     // Baton: a ready-to-place image layer at the asset's native aspect.
     const w = entry.width ?? 600, h = entry.height ?? 400;
     const scale = Math.min(1, 600 / Math.max(w, h));

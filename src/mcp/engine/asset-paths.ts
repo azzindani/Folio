@@ -44,7 +44,7 @@ export function sanitizeFolder(folder?: string): string {
 
 /** Split a project-relative asset path into its parts, or null if malformed. */
 export function parseAssetPath(rel: string): { kind: AssetKind; folder: string; name: string } | null {
-  const m = String(rel ?? '').replace(/^\/+/, '').match(/^assets\/(images|icons|fonts|docs)\/(.+)$/);
+  const m = String(rel ?? '').replace(/^\/+/, '').match(/^assets\/(images|icons|fonts|docs|audio)\/(.+)$/);
   if (!m) return null;
   const parts = (m[2] ?? '').split('/');
   const name = parts.pop() ?? '';

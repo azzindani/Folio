@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
-import { sanitizeAssetName, ingestAsset, AssetError } from './assets';
+import { sanitizeAssetName, ingestAsset, assetAdd, parseAssetPath, AssetError } from './assets';
 import { probeAudio } from './asset-audio';
 
 const hasProbe = spawnSync('ffprobe', ['-version']).error === undefined;
@@ -46,6 +46,16 @@ describe('audio assets', () => {
     expect(err).toBeInstanceOf(AssetError);
     expect((err as AssetError).status).toBe(415);
     expect(fs.readFileSync(stored).equals(good)).toBe(true);
+  });
+
+  // Found building the GPT-6 Astra promo: an uploaded soundtrack came back as an image layer stub.
+  it('hands a stored sound to the soundtrack, not to add_layers as an image, and its path is a real asset path', () => {
+    fs.writeFileSync(path.join(dir, 'project.yaml'), 'name: t\n');
+    const r = assetAdd({ project_path: dir, name: 'bed.wav', data: `data:audio/wav;base64,${toneWav(800).toString('base64')}` }) as unknown as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    expect(r['layer_stub']).toBeUndefined();
+    expect(r['next_action']).toMatchObject({ tool: 'animation', params: { op: 'audio', src: 'assets/audio/bed.wav' } });
+    expect(parseAssetPath('assets/audio/bed.wav')).toEqual({ kind: 'audio', folder: '', name: 'bed.wav' });
   });
 
   it('says it knows nothing, rather than guessing, when ffprobe is missing', () => {
