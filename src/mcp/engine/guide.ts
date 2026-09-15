@@ -573,8 +573,9 @@ text      id type z x y width           + content:{type:"plain",value:"..."} sty
 image     id type z x y width height src
 ellipse   id type z x y width height    + same optionals as rect
 line      id type z x1 y1 x2 y2         + stroke? stroke_width?
+path      id type z d                   + fill? stroke? fill_rule? (d = SVG path data; no x/y — M sets the start)
 group     id type z x y width height layers[]
-icon      id type z x y width height icon   (icon = lucide name e.g. "star","heart","arrow-right")
+icon      id type z x y width height name   (name = lucide icon e.g. "star","heart","arrow-right"; shorthand also takes icon:)
 component id type z x y width height ref    (ref = component ID from components/index.yaml)
 
 Notes:

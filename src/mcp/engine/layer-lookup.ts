@@ -83,7 +83,7 @@ export function lockedAncestorOf(spec: DesignSpec, layerId: string, pageId?: str
 export function lockedError(layerId: string, lockedBy: string): { error: string; hint: string } {
   return {
     error: `Layer "${layerId}" is inside the LOCKED group "${lockedBy}" — not modified.`,
-    hint: `Unlock it first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}.`,
+    hint: `Unlock it first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}} — or change the child in one call without unlocking: patch_design {selectors:[{path:"pages[0].layers[…].layers[…].<field>", value}]} (manage_design op:inspect lists the indexes).`,
   };
 }
 

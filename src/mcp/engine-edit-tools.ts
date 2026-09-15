@@ -554,7 +554,7 @@ export function updateLayer(args: { design_path: string; layer_id: string; props
   if (!found) return errResult(op, `Layer not found: ${args.layer_id}`, 'Use manage_design {op:"inspect"} to find layer IDs — group children are listed with a parent field.', progress);
   if (lockedBy) {
     return errResult(op, `Layer "${args.layer_id}" is inside the LOCKED group "${lockedBy}" — not modified.`,
-      `Unlock first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}, apply your edit, then re-lock with props:{locked:true}. (locked also exempts the group from engine heal passes.)`, progress);
+      `Unlock first: edit_layer {op:"update", layer_id:"${lockedBy}", props:{locked:false}}, apply your edit, then re-lock with props:{locked:true} — or change it in ONE call without unlocking: patch_design {selectors:[{path:"pages[0].layers[…].layers[…].<field>", value}]} (manage_design op:inspect lists the indexes). (locked also exempts the group from engine heal passes.)`, progress);
   }
 
   spec.meta.modified = new Date().toISOString().split('T')[0];
