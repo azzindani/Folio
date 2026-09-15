@@ -6,6 +6,13 @@
  * stage renders that frame through renderEntry, the canvas's own render path,
  * with the editor's composed theme — and never writes the design. The only
  * edits made from here are a scene's transition and length, through state.
+ *
+ * Frames paint inside a SHADOW ROOT. The canvas injects its animation CSS as a
+ * <style> in its inline SVG, and a style there is global to the document: its
+ * `[data-layer-id="…"]` rules grabbed the stage's layers (same ids) and replayed
+ * every entrance from zero on each repaint. Live, the stage at 21.8s showed the
+ * promo's motion scene unmorphed, unframed and half invisible; the export was
+ * right. Document styles cannot reach into a shadow tree; web fonts still do.
  */
 
 import type { StateManager } from '../../editor/state';
@@ -18,7 +25,7 @@ const TYPING = new Set(['INPUT', 'SELECT', 'TEXTAREA']);
 
 export class SceneStage {
   private overlay: HTMLElement | null = null;
-  private frame: HTMLElement | null = null;
+  private surface: ShadowRoot | null = null;
   private transport: Transport | null = null;
   private stopListening: Array<() => void> = [];
   private painted: number | null = null;
@@ -32,9 +39,9 @@ export class SceneStage {
     if (this.overlay || !this.player.plan()) return;
     // A per-page preview writes its pose into state; stop it so no posed layer leaks into a scene frame.
     this.beforeOpen();
-    const { overlay, frame } = this.buildOverlay();
+    const { overlay, surface } = this.buildOverlay();
     this.overlay = overlay;
-    this.frame = frame;
+    this.surface = surface;
     this.transport = buildTransport(this.state, this.player, () => this.close());
     overlay.appendChild(this.transport.element);
     document.body.appendChild(overlay);
@@ -58,12 +65,13 @@ export class SceneStage {
     for (const stop of this.stopListening) stop();
     this.stopListening = [];
     this.overlay.remove();
-    this.overlay = this.frame = null;
+    this.overlay = null;
+    this.surface = null;
     this.transport = null;
     this.painted = null;
   }
 
-  private buildOverlay(): { overlay: HTMLElement; frame: HTMLElement } {
+  private buildOverlay(): { overlay: HTMLElement; surface: ShadowRoot } {
     const { width, height } = this.state.get().design?.document ?? { width: 1920, height: 1080 };
     const overlay = document.createElement('div');
     overlay.className = 'scene-stage';
@@ -77,12 +85,12 @@ export class SceneStage {
     frame.style.cssText = `aspect-ratio:${width} / ${height};height:100%;max-width:100%;background:#FFFFFF;overflow:hidden;`;
     well.appendChild(frame);
     overlay.appendChild(well);
-    return { overlay, frame };
+    return { overlay, surface: frame.attachShadow({ mode: 'open' }) };
   }
 
   private paint(s: ScenePlayerSnapshot): void {
     this.transport?.update(s);
-    if (!this.frame || this.painted === s.time) return;
+    if (!this.surface || this.painted === s.time) return;
     const spec = this.player.frameAt(s.time);
     if (!spec) return;
     const { theme, palette, typePack, effectsPack } = this.state.get();
@@ -93,7 +101,8 @@ export class SceneStage {
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    this.frame.replaceChildren(svg);
+    svg.style.display = 'block';
+    this.surface.replaceChildren(svg);
     this.painted = s.time;
   }
 
