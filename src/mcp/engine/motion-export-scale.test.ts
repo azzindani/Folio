@@ -51,6 +51,15 @@ describe('animation op:export at a chosen size and fps', () => {
     expect(half['job_id']).not.toBe(full['job_id']);
     expect(half['output_path']).not.toBe(full['output_path']);
     expect(String(half['note'])).not.toContain('joined');
+    // Let both renders finish: a job still writing when afterAll removes the temp dir fails the teardown on Windows.
+    for (const id of [full['job_id'], half['job_id']]) {
+      let s = await call({ op: 'export_status', job_id: String(id) });
+      for (let i = 0; i < 400 && (s['state'] === 'queued' || s['state'] === 'running'); i++) {
+        await new Promise<void>(res => { setTimeout(res, 25); });
+        s = await call({ op: 'export_status', job_id: String(id) });
+      }
+      expect(s['state'], JSON.stringify(s)).toBe('done');
+    }
   });
 
   it('names video variants the same way', () => {
