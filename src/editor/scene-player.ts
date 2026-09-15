@@ -14,6 +14,7 @@ import type { StateManager } from './state';
 import type { DesignSpec } from '../schema/types';
 import { planScenes, sceneAt, type ScenePlan } from '../export/scene-plan';
 import { composeSceneFrame } from '../export/scene-compose';
+import { playsAsScenes } from './scene-deck';
 
 export interface SceneClock {
   now(): number;
@@ -35,10 +36,7 @@ const browserClock: SceneClock = {
   cancel: id => cancelAnimationFrame(id),
 };
 
-/** A design plays as scenes once it has two pages or more. */
-export function playsAsScenes(design: DesignSpec | null | undefined): boolean {
-  return (design?.pages?.length ?? 0) >= 2;
-}
+export { playsAsScenes };
 
 export class ScenePlayer {
   private listeners = new Set<(s: ScenePlayerSnapshot) => void>();

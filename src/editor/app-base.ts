@@ -38,8 +38,7 @@ import { AnimationPanel } from '../ui/panels/animation-panel';
 import { ImageImportHandler } from './image-import-handler';
 import { TimelinePanelManager } from '../ui/panels/timeline-panel';
 import { MotionPlayer } from './motion-player';
-import { ScenePlayer } from './scene-player';
-import { SceneStage } from '../ui/scene-stage/scene-stage';
+import type { SceneStage } from '../ui/scene-stage/scene-stage';
 import { ColorSchemePanelManager } from '../ui/panels/color-scheme-panel';
 import type { AssetPanelManager } from '../ui/panels/asset-panel';
 import { wireMobileSheets } from './mobile-sheet';
@@ -84,11 +83,15 @@ export abstract class EditorAppBase {
    *  `undefined` and every hasMotion() call would throw. */
   motionPlayer!: MotionPlayer;
   private sceneStageInstance: SceneStage | null = null;
-  /** Play all: every page as one piece, transitions included. Built on first use,
-   *  since it needs `state` — the per-page player is stopped as it opens. */
-  get sceneStage(): SceneStage {
-    this.sceneStageInstance ??= new SceneStage(this.state, new ScenePlayer(this.state), () => this.motionPlayer.stop());
-    return this.sceneStageInstance;
+  /** Play all: every page as one piece, transitions included. Loaded on first use —
+   *  the scene compositor in the main bundle broke its 500KB budget — and built once;
+   *  the per-page player stops as it opens, so no posed layer leaks into a frame. */
+  async openSceneStage(opts: { play?: boolean; fromCurrentPage?: boolean } = {}): Promise<void> {
+    if (!this.sceneStageInstance) {
+      const [{ SceneStage }, { ScenePlayer }] = await Promise.all([import('../ui/scene-stage/scene-stage'), import('./scene-player')]);
+      this.sceneStageInstance ??= new SceneStage(this.state, new ScenePlayer(this.state), () => this.motionPlayer.stop());
+    }
+    this.sceneStageInstance.open(opts);
   }
   protected colorSchemePanel!: ColorSchemePanelManager;
   protected assetPanel?: AssetPanelManager;

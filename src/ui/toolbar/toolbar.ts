@@ -1,6 +1,7 @@
 import { type StateManager, type EditorState } from '../../editor/state';
 import type { EditorApp } from '../../editor/app';
-import { playsAsScenes } from '../../editor/scene-player';
+import { playsAsScenes } from '../../editor/scene-deck';
+import { exportVideo } from '../export/video-export';
 import { exportDesign } from '../../export/exporter';
 import { EXPORT_SCALE_PRESETS, defaultScalePreset, getScalePreset } from '../../export/scale-presets';
 import { showToast } from '../../utils/toast';
@@ -118,6 +119,8 @@ export class ToolbarManager {
             <button class="export-item" data-format="pdf">PDF</button>
             <button class="export-item" data-format="html">HTML (self-contained)</button>
             <button class="export-item" data-format="html-report">Interactive Report (HTML)</button>
+            <button class="export-item" data-format="mp4" title="Rendered on the server. A deck plays every page as one video, transitions included.">MP4 video</button>
+            <button class="export-item" data-format="gif" title="Rendered on the server. A deck plays every page as one GIF, transitions included.">GIF animation</button>
             <div style="height:1px;background:var(--color-border);margin:2px 0"></div>
             <button class="export-item" data-format="batch">Batch Export…</button>
             <button class="export-item" data-format="template">Export as Template…</button>
@@ -153,7 +156,7 @@ export class ToolbarManager {
 
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'play-motion') { this.app.motionPlayer?.toggle(); return; }
-    if (action === 'play-scenes') { this.app.sceneStage.open({ play: true }); return; }
+    if (action === 'play-scenes') { void this.app.openSceneStage({ play: true }); return; }
     if (action === 'undo') { this.state.undo(); return; }
     if (action === 'redo') { this.state.redo(); return; }
     if (action === 'catalog') { this.app.openCatalog(); return; }
@@ -166,9 +169,19 @@ export class ToolbarManager {
       return;
     }
 
-    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report' | 'batch' | 'template' | undefined;
+    const format = target.dataset.format as 'svg' | 'png' | 'pdf' | 'html' | 'html-report' | 'mp4' | 'gif' | 'batch' | 'template' | undefined;
     if (format) {
       this.closeExportMenu();
+      if (format === 'mp4' || format === 'gif') {
+        const rel = this.app.serverDesignRel;
+        if (!rel) { showToast('Video renders on the server: save this design to the library first.', 'info'); return; }
+        // The render reads the file on the server, so save first — or the video misses the last edits.
+        void this.app.saveToActiveTarget().then(() => {
+          if (this.state.get().dirty) return;
+          return exportVideo({ design: rel, type: format, scenes: playsAsScenes(this.state.get().design) });
+        });
+        return;
+      }
       if (format === 'batch') {
         const { design, currentPageIndex } = this.state.get();
         if (design) batchExportDialog.open(design, currentPageIndex);
