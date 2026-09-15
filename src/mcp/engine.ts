@@ -26,7 +26,7 @@ export { saveAsComponent, listComponents } from './engine-component-tools';
 export { healDesign } from './engine-heal-tools';
 export { exportTemplate, injectTemplate, listTemplateSlots, listTemplates } from './engine-template-tools';
 export { createPresentation, exportPresentation, generateReport, bindData, exportReport, validateReportDesign } from './engine-report-tools';
-export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';
+export { setFormulaContext, debugFormula, inspectTimeline, addKeyframeToLayer, exportAnimation, exportStatus, setupRemotePresenter, setupCollab, openInEditor } from './engine-runtime-tools';
 export { applyMotion } from './engine/motion';
 export { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './engine/motion-sequence';
 export { renderFrame } from './engine/motion-frame';

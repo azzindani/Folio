@@ -16,7 +16,10 @@ MODEL
   lands exactly where the renderer drew it.
 
 CHANNELS  x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw
-          draw_start reveal tracking fill.color stroke.color
+          draw_start reveal tracking count morph fill.color stroke.color
+  blur  px, 16→0 is the cinematic blur-in.
+  anchor (playback) is the pivot: center | top | bottom | left | right | corners.
+  Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).
   draw  0→1 reveals a stroke along its length (lines, connectors, hand-drawn marks).
   draw_start  0→1 trims where the stroke BEGINS; trail it behind draw and a
         segment travels along the path (a signal on a wire, a comet on an orbit).
@@ -51,9 +54,6 @@ MORPH (one shape becomes another)
   Resamples both outlines to the same points and writes a morph 0→1 track (channel: morph,
   target outline in morph_to), merged onto the layer's motion. The target layer is hidden.
   Paths only; elliptical arcs (A) are refused.
-  blur  px, 16→0 is the cinematic blur-in.
-  anchor (playback) is the pivot: center | top | bottom | left | right | corners.
-  Per-keyframe: easing (curve LEAVING that frame), hold:true (freeze, then jump).
 
 EASING — the feel is the curve, not the distance
   ease-out-expo  UI snaps · ease-out-cubic  crisp landing · ease-out-back  pop/overshoot
@@ -86,6 +86,9 @@ RULES OF THUMB
     keyframes:[{t:0,opacity:0,y:30,easing:"ease-out-expo"},{t:500,opacity:1,y:0,hold:true},{t:2500,y:0},{t:2900,opacity:0,y:-20}]
   • Every format plays every channel. gif/mp4/webm stream frame by frame, so a
     30s scene keeps its fps (clips up to 60s; gif ≤50fps, video ≤60fps).
+  • A raster clip over 150 frames renders in the BACKGROUND: the reply is a job_id,
+    not the file. Poll animation(op:export_status, job_id) until state "done" —
+    its receipt names the file. Exporting the same file again joins the running job.
 
 MULTI-SCENE PIECES — one video, many pages
   Each PAGE is a scene with its own timeline: author it with page_id on
