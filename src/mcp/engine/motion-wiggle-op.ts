@@ -100,7 +100,7 @@ export function wiggleMotion(args: WiggleArgs): ToolResult {
     design_path: dPath, layers: found.map(l => l.id), wrappers: [...updates.keys()],
     amplitude: amp, frequency, duration_ms: duration,
     progress: [pOk(`Wiggling ${found.length} layer(s)`, 'on a wrapper group, so each layer\'s own motion keeps playing underneath')],
-    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, t: Math.round(duration / 4) }, remaining: 0,
+    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: Math.round(duration / 4) }, remaining: 0,
       hint: 'Seeded, so it is the same wiggle every export; pass seed to re-roll it. op:clear on the wrapper id stops it.' },
   }, bak);
 }

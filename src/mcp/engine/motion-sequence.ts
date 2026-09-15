@@ -140,7 +140,7 @@ export function sequenceMotion(args: SequenceArgs): ToolResult {
   return okResult(op, {
     design_path: dPath, steps: timeline, scene_ms: sceneMs, progress,
     next_action: {
-      tool: 'animation', params: { op: 'frame', design_path: dPath, t: Math.round(sceneMs / 2) }, remaining: 0,
+      tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: Math.round(sceneMs / 2) }, remaining: 0,
       hint: 'op:frame renders a still at any time so you can check a pose; op:timeline shows the tracks; op:export writes the file.',
     },
   }, bak);

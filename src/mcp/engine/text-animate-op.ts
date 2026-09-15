@@ -95,7 +95,12 @@ export function animateText(args: TextAnimArgs): ToolResult {
   // Each unit is placed and measured, so it must not re-align or re-anchor inside its own box.
   const pieceStyle: Record<string, unknown> = { ...style, ...(by === 'line' ? {} : { align: 'left', text_align: 'left' }) };
   delete pieceStyle['vertical_align'];
-  const pad = Math.round((typeof style['font_size'] === 'number' ? style['font_size'] : 16) * 0.15);
+  const fontSize = typeof style['font_size'] === 'number' ? style['font_size'] : 16;
+  const pad = Math.round(fontSize * 0.15);
+  // A line box is shorter than its ink: Archivo 800 inks 1.18em under the line top
+  // whatever the line_height, so a mask one line tall cut every g, y and p at rest.
+  // The mask is there to hide a unit before it arrives, never to crop it after.
+  const inkDepth = Math.round(fontSize * 1.3);
   const taken = collectLayerIds(scoped.scope);
   const claim = (base: string): string => { const got = freeLayerId(taken, base); taken.add(got); return got; };
   const created: string[] = [];
@@ -107,7 +112,7 @@ export function animateText(args: TextAnimArgs): ToolResult {
     if (!args.mask) return piece as unknown as Layer;
     // The mask holds still while its unit moves — type rising from under an edge.
     return { id: claim(`${id}_mask${i + 1}`), type: 'group', z: o['z'] ?? 1, clip: true,
-      x: u.x - pad, y: u.y, width: u.width + pad * 2, height: u.height, layers: [piece] } as unknown as Layer;
+      x: u.x - pad, y: u.y, width: u.width + pad * 2, height: Math.max(u.height, inkDepth), layers: [piece] } as unknown as Layer;
   });
 
   const bak = snapshot(dPath);
@@ -119,7 +124,9 @@ export function animateText(args: TextAnimArgs): ToolResult {
   const aim = { design_path: dPath, page_id: args.page_id, layer_ids: created, stagger_ms: stagger, order: args.order };
   const motion = hasFrames
     ? setTrack({ ...aim, keyframes: args.keyframes, playback: args.playback } as Parameters<typeof setTrack>[0])
-    : applyMotion({ ...aim, preset: String(args.preset), duration: args.duration, easing: args.easing, distance: args.distance });
+    // Behind a mask, a 24px rise starts with most of the unit already showing; travel
+    // the mask's own depth so each unit really comes up from under the edge.
+    : applyMotion({ ...aim, preset: String(args.preset), duration: args.duration, easing: args.easing, distance: args.distance ?? (args.mask ? inkDepth : undefined) });
   if (!motion.success) {
     if (typeof bak === 'string' && fs.existsSync(bak)) fs.copyFileSync(bak, dPath);
     return errResult(op, `The split was undone: ${String(motion['error'] ?? 'the motion was refused')}`, String(motion['hint'] ?? 'Fix the preset or keyframes and call again.'));
@@ -132,7 +139,7 @@ export function animateText(args: TextAnimArgs): ToolResult {
     measured: exact ? 'font metrics' : 'estimate',
     motion: hasFrames ? 'track' : String(args.preset), stagger_ms: stagger, ...(args.order ? { order: args.order } : {}),
     progress: [...progress, ...((motion['progress'] as ProgressItem[] | undefined) ?? [])],
-    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, t: Math.round((stagger * units.length) / 2) }, remaining: 0,
+    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: Math.round((stagger * units.length) / 2) }, remaining: 0,
       hint: 'Check a pose mid-run with op:frame; each unit is an ordinary text layer with an ordinary track.' },
   }, bak);
 }
