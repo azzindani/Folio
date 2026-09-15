@@ -102,6 +102,7 @@ animation(op:camera,   design_path, shots:[{t, target:"all"|id|ids, padding?, ea
 animation(op:morph,    design_path, layer_id, to | to_layer, keep_target?, duration?, delay?, easing?)   one path becomes another shape
 animation(op:audio,    design_path, src?, page_id?, audio_id?, volume?, fade_in?, fade_out?, start_ms?, offset_ms?, duration?, loop?, remove?)   music under the piece, cues on a scene
 animation(op:beats,    design_path, audio_id?)          the music's tempo, beats and onsets on the piece, and scene lengths that end on a beat
+animation(op:captions, design_path, page_id? + lines? | cues?, style?, clear?, format?)   words on screen, burned into every raster frame; srt/vtt on request
 ```
 
 ### `op:sequence`
@@ -166,6 +167,18 @@ A GIF has no sound, and its export says so in `notes`.
 3. Beats are placed by dynamic programming (Ellis 2007).
 
 `confidence` is the correlation at the tempo: noise reads under 0.25, so `pulse` reports steady, weak or none and a track with no pulse gets no grid. The reply puts every beat on the PIECE timeline (offset and loops applied) and gives `scenes_on_beat`: for each scene, the `length_ms` that ends it on its nearest beat, each counting the scenes before it. It writes nothing; the model applies a length with `op:scene`, or keeps a cut where the story wants it.
+
+### Captions
+
+A design's `captions:` holds a `style` and `cues` timed on the piece; a page's `captions:` holds lines timed from its scene's first frame (`at`, `duration`). Lines without times share their scene by word count, and times the model set are kept.
+
+| Piece | Where | Rule |
+|---|---|---|
+| Plan | `src/export/caption-plan.ts` | Pure. Merges piece cues and scene lines into one ordered list. An overlap is trimmed (the later caption takes the screen) and a caption past the end is cut. Notes flag a caption needing more than ~17 characters a second, one shown under 1s, and one that ends before it starts. |
+| Drawing | `src/export/caption-layers.ts` | `withCaptions(frame, plan, style, t)` adds a box and centred text above every layer (z 1 000 000), a margin in from the bottom or top. The box is sized by `plainTextLayout`, the wrap rule the renderer draws with. The export's frames (scenes and single page), `op:frame` and ScenePlayer all call it, so the caption in the file is the caption on the stage. |
+| Files | `src/export/caption-files.ts` | SubRip and WebVTT, written only when `op:captions format` asks. |
+
+The svg/html motion export does not carry captions. `op:export captions:false` leaves them out of a raster.
 
 **In the editor**, an audio asset's right-click menu offers **Use as soundtrack** (`state.setAudioTracks`, undoable; a 1s fade-out by default, since a track cut dead at the end sounds broken). Play all sounds the piece through `src/editor/scene-audio.ts`: the clips of `planSound` scheduled on a WebAudio clock with offsets into decoded buffers and gain ramps for the fades, so it needs no HTTP range support and a seek sounds from the right place. Sound follows the transport's edges — play, the pause-and-play a seek makes, pause — and restarts at the current time after an edit, a finished decode or a mute switch. A file that decodes after play starts late at the position the piece has reached. The stage's sound row (`src/ui/scene-stage/scene-stage-sound.ts`) draws each clip under the scene strip on the same scale, with the plan's notes, a mute switch and each track's volume and fades.
 

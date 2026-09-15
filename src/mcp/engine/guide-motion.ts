@@ -128,4 +128,16 @@ SOUND — music and cues (mp4 and webm carry it; a GIF has none)
     timeline, and for each scene the length_ms that ends it on a beat. It writes
     nothing — cuts on the beat feel edited, but a cut belongs where the story is.
     pulse "none" means no grid to trust: cut on the scenes' own motion instead.
+
+CAPTIONS — the words on screen (burned into gif/mp4/webm, op:frame, Play all)
+    animation(op:captions, page_id:"p2", lines:[{text:"Every format"}, {text:"from one spec", at:1800}])
+                                                  ← a scene's captions, timed from its first frame
+    animation(op:captions, cues:[{text, from_ms, to_ms}])   ← captions on the whole piece
+    animation(op:captions, style:{position:"top", font_size:56, background:"none"})
+  • Lines without times share their scene by word count; times you set are kept.
+  • The reply notes a caption over ~17 characters a second, one under 1s, and
+    overlaps (the later caption takes the screen). format:"vtt"|"srt" writes a
+    subtitle file for platforms that show their own.
+  • A caption sits in a box above every layer, a margin from the edge: leave that
+    band of each scene free of key content, or move captions to the top.
 `;

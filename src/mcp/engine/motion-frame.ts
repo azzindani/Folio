@@ -24,6 +24,8 @@ import { cullFrame } from '../../export/frame-cull';
 import { planScenes, sceneAt } from '../../export/scene-plan';
 import { FRAME_POSE, type FramePose } from '../../export/frame-pose';
 import { composeSceneFrame } from '../../export/scene-compose';
+import { planCaptions } from '../../export/caption-plan';
+import { withCaptions } from '../../export/caption-layers';
 
 type FrameArgs = {
   design_path: string;
@@ -122,7 +124,9 @@ export function renderFrame(args: FrameArgs): ToolResult {
 
   try {
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
-    const at = specAt(spec, pageIndex, t);
+    const pageId = spec.pages?.[pageIndex]?.id;
+    const captions = planCaptions(spec, { total_ms: sceneMs, scenes: pageId ? [{ page_id: pageId, start_ms: 0, length_ms: sceneMs }] : [] });
+    const at = withCaptions(specAt(spec, pageIndex, t), captions, spec.captions?.style, t);
     const renderSpec: DesignSpec = at.pages?.length
       ? ({ ...at, layers: at.pages[0]?.layers ?? [], pages: undefined } as DesignSpec)
       : at;
@@ -165,7 +169,7 @@ function renderSceneFrame(spec: DesignSpec, dPath: string, args: FrameArgs): Too
   const scale = typeof args.scale === 'number' && args.scale > 0 ? Math.min(2, args.scale) : 1;
   try {
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
-    const svg = renderToSVGString(cullFrame(composeSceneFrame(spec, plan, t)));
+    const svg = renderToSVGString(cullFrame(withCaptions(composeSceneFrame(spec, plan, t), planCaptions(spec, plan), spec.captions?.style, t)));
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
     const png = rasterize({ svg, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir) } }).png;
     if (args.output_path) {

@@ -14,6 +14,8 @@ import type { StateManager } from './state';
 import type { DesignSpec } from '../schema/types';
 import { planScenes, sceneAt, type ScenePlan } from '../export/scene-plan';
 import { composeSceneFrame } from '../export/scene-compose';
+import { planCaptions, type CaptionPlan } from '../export/caption-plan';
+import { withCaptions } from '../export/caption-layers';
 import { playsAsScenes } from './scene-deck';
 
 export interface SceneClock {
@@ -45,9 +47,10 @@ export class ScenePlayer {
   private raf = 0;
   /** Planning walks every page; a frame needs the plan several times, an edit invalidates it. */
   private cachedPlan: ScenePlan | null = null;
+  private cachedCaptions: CaptionPlan | null = null;
 
   constructor(private state: StateManager, private clock: SceneClock = browserClock) {
-    state.subscribe(() => { this.cachedPlan = null; });
+    state.subscribe(() => { this.cachedPlan = null; this.cachedCaptions = null; });
   }
 
   plan(): ScenePlan | null {
@@ -65,7 +68,10 @@ export class ScenePlayer {
   frameAt(t: number = this.t): DesignSpec | null {
     const design = this.state.get().design;
     const plan = this.plan();
-    return design && plan ? composeSceneFrame(design, plan, t) : null;
+    if (!design || !plan) return null;
+    // The export burns the same captions into its frames (withCaptions), so the stage shows them too.
+    this.cachedCaptions ??= planCaptions(design, plan);
+    return withCaptions(composeSceneFrame(design, plan, t), this.cachedCaptions, design.captions?.style, t);
   }
 
   sceneIndexAt(t: number = this.t): number {
