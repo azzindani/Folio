@@ -73,7 +73,9 @@ describe('animation(op:scene)', () => {
     });
     expect(r.success).toBe(true);
     expect(saved()[1]['transition']).toEqual({ type: 'slide-left', duration: 500 });
-  });
+    // The first import of the whole handler graph is most of this test (3.9 s alone on a loaded host):
+    // under a full parallel run it crossed the 5 s default without anything being wrong.
+  }, 20_000);
 
   it('says a transition on the first page never plays', () => {
     const r = setScene({ design_path: design, page_id: 'a', transition: 'fade' });

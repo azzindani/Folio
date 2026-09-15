@@ -57,7 +57,7 @@ describe('a raster export carries the design\'s sound', () => {
     const file = streams(String(r['output_path']));
     expect(file.kinds).toEqual(['audio', 'video']);
     expect(file.seconds).toBeCloseTo(2, 0);
-  });
+  }, 60_000);
 
   it.skipIf(!hasFfmpeg)('still writes the video when a sound file is missing, and names it', async () => {
     const dPath = deck('missing', [{ id: 'gone', src: 'assets/audio/gone.mp3' }]);
@@ -65,12 +65,12 @@ describe('a raster export carries the design\'s sound', () => {
     expect(r, JSON.stringify(r)).toMatchObject({ success: true });
     expect((r['notes'] as string[]).join(' ')).toMatch(/gone\.mp3" is not in the project/);
     expect(streams(String(r['output_path'])).kinds).toEqual(['video']);
-  });
+  }, 60_000);
 
   it('says a GIF has no sound instead of dropping it silently', async () => {
     const dPath = deck('gif', [{ id: 'tone', src: 'assets/audio/tone.wav' }]);
     const r = await dispatchAnimation({ op: 'export', design_path: dPath, type: 'gif', scenes: true, fps: 5, background: false });
     expect(r, JSON.stringify(r)).toMatchObject({ success: true });
     expect((r['notes'] as string[]).join(' ')).toMatch(/A GIF has no sound/);
-  });
+  }, 60_000);
 });

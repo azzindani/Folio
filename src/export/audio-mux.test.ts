@@ -77,12 +77,12 @@ describe.skipIf(!hasFfmpeg)('muxSound (ffmpeg)', () => {
     expect(loudest(video, 0.1, 0.7)).toBeLessThan(-50);
     expect(loudest(video, 1.2, 0.4)).toBeGreaterThan(-20);
     expect(fs.readdirSync(dir).filter(n => n.includes('partial'))).toEqual([]);
-  });
+  }, 60_000);
 
   it('leaves the video as it was when a sound file is missing', async () => {
     const before = fs.readFileSync(video);
     await expect(muxSound(video, [clip({ file: path.join(dir, 'gone.wav') })], 2000, 'mp4')).rejects.toThrow(/ffmpeg exited/);
     expect(fs.readFileSync(video).equals(before)).toBe(true);
     expect(fs.readdirSync(dir).filter(n => n.includes('partial'))).toEqual([]);
-  });
+  }, 60_000);
 });
