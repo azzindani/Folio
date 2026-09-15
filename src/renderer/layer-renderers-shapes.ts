@@ -553,8 +553,14 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
   const x = layer.x ?? 0;
   const y = layer.y ?? 0;
 
+  // Placement lives on an INNER group. The root carries only canvas-space transforms —
+  // rotate/flip from applyCommonAttributes (which SETS transform and used to overwrite
+  // this translate) and a sampled frame's pose. Found live: a spinning icon's pose ran
+  // after translate(x, y), in icon-local space, so it orbited a pivot far off its card.
   const g = createSVGElement('g');
-  g.setAttribute('transform', `translate(${x}, ${y})`);
+  const place = createSVGElement('g');
+  place.setAttribute('transform', `translate(${x}, ${y})`);
+  g.appendChild(place);
 
   // Tolerate synonyms / separators a model emits ("coffee_cup", "photo") by
   // resolving to the nearest real icon; only fall back to the placeholder when
@@ -569,7 +575,7 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
   const numName = (layer.name ?? '').trim();
   if (!inner && /^\d{1,2}$/.test(numName)) {
     const label = numName.replace(/^0+(?=\d)/, '');
-    g.appendChild(createSVGElement('circle', {
+    place.appendChild(createSVGElement('circle', {
       cx: size / 2, cy: size / 2, r: Math.max(2, size / 2 - 1),
       fill: 'none', stroke: color, 'stroke-width': '2',
     }));
@@ -579,7 +585,7 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
       'text-anchor': 'middle', 'font-family': 'Inter, system-ui, sans-serif',
     });
     num.textContent = label;
-    g.appendChild(num);
+    place.appendChild(num);
     applyCommonAttributes(g, layer);
     if (layer.effects) applyEffects(g, layer.effects, svg);
     return g;
@@ -598,7 +604,7 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
     iconSvg.setAttribute('stroke-linejoin', 'round');
     iconSvg.setAttribute('fill', 'none');
     iconSvg.innerHTML = inner;
-    g.appendChild(iconSvg);
+    place.appendChild(iconSvg);
   } else {
     // Unknown icon → a SOLID accent dot. A blind model can't see that its name
     // didn't resolve; a hollow ring at icon size read as an empty/broken slot
@@ -609,7 +615,7 @@ export function renderIcon(layer: IconLayer, svg: SVGSVGElement): SVGElement {
       cx: size / 2, cy: size / 2, r: Math.max(2, size * 0.26),
       fill: color, stroke: 'none',
     });
-    g.appendChild(dot);
+    place.appendChild(dot);
   }
 
   applyCommonAttributes(g, layer);
