@@ -27,7 +27,7 @@ import { CONTENT_PRESET_RE, isFullBleedContentPreset, dropStackedPresets, stackD
 import { spreadStackedText, dedupDuplicateText, promoteCoveredTitle, recenterHalfAnchoredText, ensureDeckPageBackgrounds, structureHandPlacedText, decollideHandPlaced, fitOverflowingHeroText, setMeasuredTextHeights, clampShorthandToCanvas, variantIndexForDesign } from './engine-finalize-text';
 import { fixInvisibleText, fixCapsTracking } from './engine-finalize-legibility';
 import { stripNullLayers, placePositionlessLayers, recoverEmbeddedLayers } from './engine-finalize-autoplace';
-import { finalizePageLayers, themeSpecOf as resolveThemeSpec } from './engine-finalize-pages';
+import { finalizePageLayers, themeSpecOf as resolveThemeSpec, pageSceneFields } from './engine-finalize-pages';
 import { VALID_LAYER_TYPES, dimError } from './engine-edit-tools';
 
 // Layer/spec predicates live in a sibling to keep this file ≤700 lines;
@@ -652,7 +652,7 @@ export function appendPage(args: {
   let replacedAt = -1;
   if (existingIdx >= 0 && args.replace) {
     const prev = spec.pages[existingIdx];
-    spec.pages[existingIdx] = { id: desiredId, label: args.label ?? prev.label, template_ref: args.template_ref, slots: args.slots, layers };
+    spec.pages[existingIdx] = { ...pageSceneFields(prev), id: desiredId, label: args.label ?? prev.label, template_ref: args.template_ref, slots: args.slots, layers };
     replacedAt = existingIdx;
     progress.push(pOk(`Replaced page "${desiredId}" in place`, `position ${existingIdx + 1} of ${spec.pages.length} — order and other pages untouched`));
   } else {

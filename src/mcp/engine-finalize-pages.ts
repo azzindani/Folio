@@ -6,7 +6,7 @@
 // the root layers, so ANY build path (incremental, bulk, or a re-seal of an old
 // file) converges on the same legible result. Every pass is idempotent — a clean
 // design is a no-op.
-import type { DesignSpec, Layer, ThemeSpec } from '../schema/types';
+import type { DesignSpec, Layer, Page, ThemeSpec } from '../schema/types';
 import { ALL_THEMES } from '../themes/all-themes';
 import { stripNullLayers, placePositionlessLayers, ensureBackgroundFill, recoverEmbeddedLayers, dropPlaceholderText } from './engine-finalize-autoplace';
 import { decollideHandPlaced } from './engine-finalize-text';
@@ -21,6 +21,22 @@ export interface PageFinalizeTotals {
 
 const zeroTotals = (): PageFinalizeTotals =>
   ({ nulls: 0, recovered: 0, placed: 0, bgFilled: 0, reflowed: 0, relit: 0, snapped: 0, placeholders: 0, placeholderText: [] });
+
+/**
+ * What a page carries besides its content: how it enters, its time on screen,
+ * its notes and sound cues. append_page(replace:true) rebuilds the content and
+ * must keep these — found live, a rebuilt scene of the promo lost its 3800ms
+ * length and played at motion + hold instead.
+ */
+export function pageSceneFields(page: Page): Pick<Page, 'transition' | 'auto_advance' | 'notes' | 'audio_cues'> {
+  const { transition, auto_advance, notes, audio_cues } = page;
+  return {
+    ...(transition ? { transition } : {}),
+    ...(auto_advance !== undefined ? { auto_advance } : {}),
+    ...(notes !== undefined ? { notes } : {}),
+    ...(audio_cues ? { audio_cues } : {}),
+  };
+}
 
 export function themeSpecOf(spec: DesignSpec): ThemeSpec | undefined {
   const th = spec.theme as { ref?: string; colors?: unknown } | undefined;
