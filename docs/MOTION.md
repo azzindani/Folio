@@ -140,6 +140,10 @@ A deck's pages play one after another as ONE gif/mp4/webm with `scenes:true` —
 The engine does not decide pacing. It counts words per scene and warns when a scene is on screen for less than they take to read at 240 wpm.
 `op:timeline` and `op:frame` take `scenes:true` too, so a transition can be checked without exporting.
 
+**In the editor**, a deck gets **Play all** in the toolbar (Shift+Space). `src/editor/scene-player.ts` plays the piece through `composeSceneFrame` and the same plan, so the stage (`src/ui/scene-stage/`) shows exactly the frame the export renders — two pages mid-transition included — and never writes the design. Its strip draws each scene at its planned length with the incoming transition hatched where it overlaps; the inspector sets a scene's transition, its duration and its time on screen (`state.setPageScene`, undoable), the editor's only transition controls. The stage and the compositor load on first use: in the main entry they broke the 500KB bundle budget. `frame-geometry.ts` finds the bundled fonts through `src/utils/bundled-fonts-dir.ts`, which imports no Node, so the pipeline bundles for the browser (it measures by estimate there); `scene-compose-browser.test.ts` fails on any Node import in that graph.
+
+**Export → MP4 video / GIF animation** in the editor saves the design, then `POST /__project_files/__export` on the editor's static server (`src/editor/server-export.ts`) forwards to `animation(op:export, background:true, scenes:<is a deck>)` on the MCP server beside it — one render queue, and the same file an MCP export writes. The editor follows `GET /__project_files/__export/status` in a progress strip and downloads the file through `/__project_files`.
+
 ---
 
 ## 4. Image processing

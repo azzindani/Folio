@@ -28,6 +28,8 @@ function setup(): { stage: SceneStage; player: ScenePlayer; setPageScene: Return
 }
 
 const $ = <T extends Element>(sel: string): T | null => document.querySelector<T>(sel);
+/** The rendered frame lives in the stage's shadow root. */
+const frameSvg = (): SVGSVGElement | null => $('.scene-stage-frame')?.shadowRoot?.querySelector('svg') ?? null;
 const key = (k: string): KeyboardEvent => new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
 
 afterEach(() => { document.body.innerHTML = ''; });
@@ -36,7 +38,7 @@ describe('SceneStage — Play all', () => {
   it('mounts a frame and a strip with one segment per scene, the transition hatched at its front', () => {
     const { stage } = setup();
     stage.open();
-    expect($('.scene-stage-frame svg')).not.toBeNull();
+    expect(frameSvg()).not.toBeNull();
     const segs = document.querySelectorAll<HTMLElement>('.scene-stage-seg');
     expect(segs).toHaveLength(2);
     expect(segs[1].innerHTML).toContain('enters with fade, 400ms');
@@ -44,11 +46,25 @@ describe('SceneStage — Play all', () => {
     stage.close();
   });
 
+  // Found live: the canvas's animation CSS sits in the document, keyed by layer id,
+  // and replayed every entrance on the stage's frames from zero at each repaint.
+  it('paints out of reach of the document CSS — the frame is in a shadow root, never in the page', () => {
+    const style = document.createElement('style');
+    style.textContent = '[data-layer-id="a_bg"] { animation: kf-a_bg 600ms both; }';
+    document.head.appendChild(style);
+    const { stage } = setup();
+    stage.open();
+    expect(document.querySelectorAll('[data-layer-id="a_bg"]')).toHaveLength(0);
+    expect(frameSvg()?.querySelector('[data-layer-id="a_bg"]')).not.toBeNull();
+    stage.close();
+    style.remove();
+  });
+
   it('shows both scenes on screen mid-transition', () => {
     const { stage, player } = setup();
     stage.open();
     player.seek(1200);
-    const svg = $('.scene-stage-frame svg')?.outerHTML ?? '';
+    const svg = frameSvg()?.outerHTML ?? '';
     expect(svg).toContain('__scene_from');
     expect(svg).toContain('__scene_to');
     stage.close();
