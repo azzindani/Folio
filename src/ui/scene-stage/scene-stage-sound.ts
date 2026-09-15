@@ -57,7 +57,7 @@ export function buildSoundRow(state: StateManager, player: ScenePlayer, audio: S
   const mute = el('button', BTN, '♪');
   mute.className = 'scene-stage-mute';
   const label = el('span', 'min-width:96px;color:#8A8A8A;font-size:12px;', 'Sound');
-  const lane = el('div', 'position:relative;flex:1 1 auto;height:20px;background:#1E1E22;border-radius:4px;overflow:hidden;');
+  const lane = el('div', 'position:relative;flex:1 1 auto;height:30px;background:#1E1E22;border-radius:4px;overflow:hidden;');
   lane.className = 'scene-stage-sound-lane';
   row.append(mute, label, lane, el('span', 'min-width:34px;'));
   const details = el('div', 'display:flex;flex-direction:column;gap:6px;color:#BDBDBD;');
@@ -76,8 +76,10 @@ export function buildSoundRow(state: StateManager, player: ScenePlayer, audio: S
     const sound = audio.plan(design, plan);
     const total = Math.max(1, plan.total_ms);
     for (const c of sound.clips) {
-      const bar = el('div', `position:absolute;top:3px;bottom:3px;left:${(c.start_ms / total) * 100}%;width:${(c.length_ms / total) * 100}%;` +
-        'background:#2F7D72;border-radius:2px;color:#E6F2F0;font-size:10px;line-height:14px;padding:0 4px;white-space:nowrap;overflow:hidden;', c.id);
+      // Tracks on the upper half, cues on the lower: live, a whoosh cue drew over the music bar and vanished into it.
+      const place = c.scene ? 'top:16px;height:12px;background:#9A6A1F;' : 'top:2px;height:12px;background:#2F7D72;';
+      const bar = el('div', `position:absolute;${place}left:${(c.start_ms / total) * 100}%;width:${(c.length_ms / total) * 100}%;min-width:3px;` +
+        'border-radius:2px;color:#F2F2F2;font-size:10px;line-height:12px;padding:0 4px;white-space:nowrap;overflow:hidden;box-sizing:border-box;', c.id);
       bar.className = 'scene-stage-sound-clip';
       bar.title = `${c.src} · ${secs(c.start_ms)}–${secs(c.start_ms + c.length_ms)}${c.cut ? ' · cut at the end of the piece' : ''}`;
       lane.appendChild(bar);
