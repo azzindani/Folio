@@ -18,6 +18,7 @@ import { renderToSVGString } from './svg-export';
 import { resvgFontOption } from './fonts';
 import { resolveImageAssets } from './asset-resolve';
 import { frameTimes } from '../../export/gif-frames';
+import { cullFrame } from '../../export/frame-cull';
 import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-stream';
 import { VideoPipe, type VideoType } from '../../export/video-encode';
 import { tryFfmpeg } from '../../export/animation-export';
@@ -93,7 +94,8 @@ export async function exportRasterMotion(
   const font = resvgFontOption(path.dirname(path.dirname(dPath)));
   // Video has no alpha: anything the design leaves transparent would encode as black.
   const renderAt = (t: number): { pixels: Buffer; width: number; height: number } => {
-    const svg = renderToSVGString(source.at(t));
+    // A clip far off the canvas aborts resvg — and with it the server. See frame-cull.ts.
+    const svg = renderToSVGString(cullFrame(source.at(t)));
     const img = new Resvg(svg, video ? { font, background: '#FFFFFF' } : { font }).render();
     return { pixels: img.pixels, width: img.width, height: img.height };
   };
