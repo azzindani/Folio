@@ -27,6 +27,8 @@ export interface RasterMotionArgs {
   type: 'gif' | VideoType;
   fps?: number;
   duration?: number;
+  /** Output size as a fraction of the canvas (exportScale clamps it to 0.1–1). */
+  scale?: number;
   project_path?: string;
   /** Qualifications the caller already knows about (scene warnings, approximations). */
   notes?: string[];
@@ -58,6 +60,27 @@ export function rasterPlan(type: RasterMotionArgs['type'], runMs: number, askedF
   const asked = askedFps ?? limits.def;
   const fps = Math.min(limits.max, Math.max(1, Math.round(asked)));
   return { fps, asked, max: limits.max, frames: frameTimes(runMs, fps).length };
+}
+
+/** The scale an export renders at: a fraction of the canvas, 0.1–1. Anything else is full size. */
+export function exportScale(raw?: number): number {
+  return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? Math.min(1, Math.max(0.1, raw)) : 1;
+}
+
+/**
+ * The file a raster export writes. A scaled or re-timed export gets its own name:
+ * background jobs join by output file, so a 960×540 GIF asked for while the
+ * full-size one renders would otherwise join it and hand back the wrong file.
+ */
+export function variantName(baseName: string, type: string, doc: { width: number; height: number }, args: { fps?: number; scale?: number }): string {
+  if (type !== 'gif' && type !== 'mp4' && type !== 'webm') return `${baseName}.${type}`;
+  const raster = type as RasterMotionArgs['type'];
+  const scale = exportScale(args.scale);
+  const even = (n: number): number => Math.max(2, Math.round(n / 2) * 2);
+  const size = scale < 1 ? `-${even(doc.width * scale)}x${even(doc.height * scale)}` : '';
+  const fps = rasterPlan(raster, 0, args.fps).fps;
+  const rate = fps !== rasterPlan(raster, 0).fps ? `-${fps}fps` : '';
+  return `${baseName}${size}${rate}.${type}`;
 }
 
 const yieldToServer = (): Promise<void> => new Promise(resolve => { setImmediate(resolve); });
@@ -95,10 +118,13 @@ export async function exportRasterMotion(
   // One renderer process for the whole clip: if resvg aborts, this export fails and the server stays up.
   const worker = new RasterWorker();
   // Video has no alpha: anything the design leaves transparent would encode as black.
+  // Rendered AT the output size, never rendered big and shrunk: half the size is a quarter of the pixels.
+  const scale = exportScale(args.scale);
+  const fit = scale < 1 ? { fitTo: { mode: 'zoom' as const, value: scale } } : {};
   const renderAt = (t: number): Promise<Raster> => {
     // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
     const svg = renderToSVGString(cullFrame(source.at(t)));
-    return worker.render({ svg, opts: video ? { font, background: '#FFFFFF' } : { font }, want: 'pixels' });
+    return worker.render({ svg, opts: video ? { font, background: '#FFFFFF', ...fit } : { font, ...fit }, want: 'pixels' });
   };
 
   const started = performance.now();

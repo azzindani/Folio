@@ -15,7 +15,7 @@ import { resolveDesignPath, readYAML, errResult, okResult } from './utils';
 import { buildAnimatedSVG, wrapAnimatedHTML } from '../../export/svg-animate';
 import { renderToSVGString } from './svg-export';
 import { resolveImageAssets } from './asset-resolve';
-import { exportRasterMotion, rasterPlan, MAX_CLIP_MS, type FrameSource, type RasterMotionArgs } from './motion-export-raster';
+import { exportRasterMotion, rasterPlan, variantName, MAX_CLIP_MS, type FrameSource, type RasterMotionArgs } from './motion-export-raster';
 import { startExportJob, BACKGROUND_FRAMES } from './export-jobs';
 import { tryFfmpeg } from '../../export/animation-export';
 import { specAt, animationDuration } from '../../export/gif-frames';
@@ -32,6 +32,8 @@ export interface ExportAnimationArgs {
   output_path?: string;
   fps?: number;
   duration?: number;
+  /** gif/mp4/webm: output size as a fraction of the canvas, 0.1–1 (default 1). */
+  scale?: number;
   page_id?: string;
   all_pages?: boolean;
   /** Play every page, in order, as one piece — each page a scene. gif/mp4/webm. */
@@ -81,7 +83,8 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
 
   const pageIndex = pageIndexFor(spec, args.page_id);
   const baseName = path.basename(dPath, '.design.yaml');
-  const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', `${baseName}.${args.type}`);
+  const fileName = variantName(baseName, args.type, spec.document, args);
+  const outputPath = args.output_path ?? path.join(path.dirname(dPath), '..', 'exports', fileName);
   const pageCount = spec.pages?.length ?? 0;
 
   if (args.type === 'svg' || args.type === 'html') {
@@ -91,7 +94,7 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     }
     return exportVectorMotion(spec, dPath, pageIndex, outputPath, args);
   }
-  const base = { type: args.type, fps: args.fps, duration: args.duration, project_path: args.project_path, background: args.background };
+  const base = { type: args.type, fps: args.fps, duration: args.duration, scale: args.scale, project_path: args.project_path, background: args.background };
 
   if (args.scenes) {
     if (pageCount === 0) {

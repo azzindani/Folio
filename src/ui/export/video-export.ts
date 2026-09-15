@@ -18,6 +18,9 @@ export interface VideoExportRequest {
   type: VideoFormat;
   /** Play every page as one piece (a deck) instead of the first page alone. */
   scenes: boolean;
+  /** Output size as a fraction of the canvas, 0.1–1. */
+  scale?: number;
+  fps?: number;
 }
 
 interface StatusReply { state?: string; percent?: number; eta_ms?: number; download?: string; error?: string }
@@ -52,7 +55,7 @@ export async function exportVideo(req: VideoExportRequest, io: VideoExportIO = {
   try {
     const started = await call('/__project_files/__export', {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ design: req.design, type: req.type, scenes: req.scenes }),
+      body: JSON.stringify({ design: req.design, type: req.type, scenes: req.scenes, scale: req.scale, fps: req.fps }),
     });
     const job = await started.json() as { job_id?: string; error?: string; hint?: string };
     if (!started.ok || !job.job_id) throw new Error([job.error, job.hint].filter(Boolean).join(' ') || `HTTP ${started.status}`);

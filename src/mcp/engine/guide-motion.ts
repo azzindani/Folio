@@ -86,6 +86,10 @@ RULES OF THUMB
     keyframes:[{t:0,opacity:0,y:30,easing:"ease-out-expo"},{t:500,opacity:1,y:0,hold:true},{t:2500,y:0},{t:2900,opacity:0,y:-20}]
   • Every format plays every channel. gif/mp4/webm stream frame by frame, so a
     30s scene keeps its fps (clips up to 60s; gif ≤50fps, video ≤60fps).
+  • Size and smoothness are yours to choose: scale 0.1–1 renders gif/mp4/webm at a
+    fraction of the canvas (0.5 → 960×540 from 1920×1080, a quarter of the pixels);
+    fps sets smoothness (a GIF at the default 12 looks stepped, 20–25 plays smooth).
+    A scaled or re-timed export writes its own file: <name>-960x540-20fps.gif.
   • A raster clip over 150 frames renders in the BACKGROUND: the reply is a job_id,
     not the file. Poll animation(op:export_status, job_id) until state "done" —
     its receipt names the file. Exporting the same file again joins the running job.

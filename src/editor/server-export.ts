@@ -88,6 +88,7 @@ async function start(req: Request, deps: ExportRouteDeps, call: CallTool): Promi
   const args: Rec = { op: 'export', design_path: abs, type: body['type'], background: true };
   if (body['scenes'] === true) args['scenes'] = true;
   if (typeof body['fps'] === 'number') args['fps'] = body['fps'];
+  if (typeof body['scale'] === 'number') args['scale'] = body['scale'];
   const r = await call('animation', args);
   if (r['success'] === false) return json(422, { error: r['error'] ?? 'The export was refused.', hint: r['hint'] });
   return json(202, { job_id: r['job_id'], state: r['state'], frames: r['frames'] });
