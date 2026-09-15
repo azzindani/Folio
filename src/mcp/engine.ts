@@ -40,3 +40,4 @@ export { wiggleMotion } from './engine/motion-wiggle-op';
 export { cameraMotion } from './engine/motion-camera-op';
 export { morphMotion } from './engine/motion-morph-op';
 export { audioMotion } from './engine/motion-audio-op';
+export { beatsMotion } from './engine/motion-beats-op';
