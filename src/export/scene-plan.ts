@@ -15,7 +15,7 @@
  */
 
 import type { DesignSpec, Layer, PageTransitionType } from '../schema/types';
-import { animationDuration } from './gif-frames';
+import { oneShotDuration } from './gif-frames';
 
 export const DEFAULT_HOLD_MS = 1500;
 export const DEFAULT_TRANSITION_MS = 400;
@@ -74,7 +74,8 @@ export function planScenes(spec: DesignSpec, opts: { hold_ms?: number } = {}): S
 
   (spec.pages ?? []).forEach((page, index) => {
     const layers = page.layers ?? [];
-    const motion = animationDuration(layers);
+    // Endless loops never finish, so only motion that ends decides when the scene's motion is done.
+    const motion = oneShotDuration(layers);
     const auto = typeof page.auto_advance === 'number' && page.auto_advance > 0 ? page.auto_advance : undefined;
     const length = Math.max(1, auto ?? motion + hold);
     const words = countWords(layers);
