@@ -100,6 +100,7 @@ animation(op:text,     design_path, layer_id, by?, preset|keyframes, stagger_ms?
 animation(op:wiggle,   design_path, layer_id|layer_ids, amplitude{x,y,rotation,scale}, frequency?, duration?, seed?)   seeded noise on a wrapper parent
 animation(op:camera,   design_path, shots:[{t, target:"all"|id|ids, padding?, easing?, hold?}], exclude?, padding?)   2D camera: each shot frames its target
 animation(op:morph,    design_path, layer_id, to | to_layer, keep_target?, duration?, delay?, easing?)   one path becomes another shape
+animation(op:audio,    design_path, src?, page_id?, audio_id?, volume?, fade_in?, fade_out?, start_ms?, offset_ms?, duration?, loop?, remove?)   music under the piece, cues on a scene
 ```
 
 ### `op:sequence`
@@ -143,6 +144,19 @@ The engine does not decide pacing. It counts words per scene and warns when a sc
 **In the editor**, a deck gets **Play all** in the toolbar (Shift+Space). `src/editor/scene-player.ts` plays the piece through `composeSceneFrame` and the same plan, so the stage (`src/ui/scene-stage/`) shows exactly the frame the export renders — two pages mid-transition included — and never writes the design. Its strip draws each scene at its planned length with the incoming transition hatched where it overlaps; the inspector sets a scene's transition, its duration and its time on screen (`state.setPageScene`, undoable), the editor's only transition controls. The stage and the compositor load on first use: in the main entry they broke the 500KB bundle budget. `frame-geometry.ts` finds the bundled fonts through `src/utils/bundled-fonts-dir.ts`, which imports no Node, so the pipeline bundles for the browser (it measures by estimate there); `scene-compose-browser.test.ts` fails on any Node import in that graph.
 
 **Export → MP4 video / GIF animation** in the editor saves the design, then `POST /__project_files/__export` on the editor's static server (`src/editor/server-export.ts`) forwards to `animation(op:export, background:true, scenes:<is a deck>)` on the MCP server beside it — one render queue, and the same file an MCP export writes. The editor follows `GET /__project_files/__export/status` in a progress strip and downloads the file through `/__project_files`.
+
+### Sound
+
+A video's sound lives in the design. `audio:` holds tracks that run under the whole piece (music); a page's `audio_cues:` hold sounds that start with that scene. Sound files are project assets under `assets/audio/` (mp3, wav, m4a, aac, ogg, opus, flac): `manage_design(op:asset_add)` stores the bytes untouched, records `duration_ms` with ffprobe, and refuses a file with no audio stream before it can replace a good one.
+
+| Piece | Where | Rule |
+|---|---|---|
+| Plan | `src/export/audio-plan.ts` | Pure and browser-safe. A track starts `start_time` ms into the piece, a cue `at` ms after its scene's first frame; `offset` skips into the file, `duration` stops it, `loop` repeats the file. Everything is cut at the piece's end: the scenes set the length, not the music. The plan NOTES what a listener would notice (music cut off with no fade, a track that runs out early, a sound that starts after the end) and decides nothing. `clipGain` = volume under linear fades. |
+| Files | `src/mcp/engine/sound-resolve.ts` | Each src is found under the image asset rules (the project, then `lib/…`, nothing outside them) and measured with ffprobe. A missing file is left out, with a note. |
+| Mix | `src/export/audio-mux.ts` | One ffmpeg pass AFTER the frames, `-c:v copy`: each clip trimmed, faded, delayed and summed (`amix normalize=0`, so a cue does not duck the music) under a peak limiter, padded to the piece. AAC 192k in mp4, Opus 128k in webm. Not inside the frame pipe: audio encodes in milliseconds while each frame takes ~150 ms, and ffmpeg's muxing queue overflows waiting for video. A failed mix keeps the rendered video and replies with a `warning` that it is silent, which the editor's toast shows. |
+| Door | `animation(op:audio)` | `src` adds a sound (replacing the one with its `audio_id`), `audio_id` + fields changes one, `remove:true` takes one or all out, no arguments lists. Every reply is the soundtrack as it will mix, with one ascii lane per clip. |
+
+A GIF has no sound, and its export says so in `notes`.
 
 ---
 

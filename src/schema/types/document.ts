@@ -153,13 +153,20 @@ export interface PageTransition {
 // ── Audio Track ──────────────────────────────────────────────
 export interface AudioTrack {
   id: string;
-  src: string;        // URL or base64 data URI
-  start_time?: number; // ms offset into the presentation timeline
-  duration?: number;
+  src: string;        // project asset path (assets/audio/…), lib/… or URL
+  start_time?: number; // ms on the piece's timeline where it starts
+  offset?: number;    // ms into the file where playback begins
+  duration?: number;  // ms it sounds (default: the rest of the file, or the piece when looping)
   volume?: number;    // 0–1
   loop?: boolean;
   fade_in?: number;   // ms
   fade_out?: number;  // ms
+}
+
+/** A sound that starts with its scene, `at` ms after the scene's first frame. */
+export interface AudioCue extends Omit<AudioTrack, 'id' | 'start_time'> {
+  id?: string;
+  at?: number;
 }
 
 // ── Presentation Settings ────────────────────────────────────
@@ -189,7 +196,7 @@ export interface Page {
   /** Per-slide auto-advance override in ms (0 = manual) */
   auto_advance?: number;
   /** Audio cues that start when this slide becomes active */
-  audio_cues?: Pick<AudioTrack, 'src' | 'volume' | 'fade_in'>[];
+  audio_cues?: AudioCue[];
 }
 
 // ── Design Document ─────────────────────────────────────────

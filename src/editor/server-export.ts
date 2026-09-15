@@ -83,6 +83,8 @@ async function status(url: URL, deps: ExportRouteDeps, call: CallTool): Promise<
     frames_done: r['frames_done'],
     frames_total: r['frames_total'],
     bytes: receipt['bytes'],
+    // A file written with something missing (a failed sound mix) must not pass as a clean export.
+    warning: receipt['warning'],
     error: r['error'],
     download: done && out ? downloadUrl(deps.projectsDir, out) : undefined,
   });

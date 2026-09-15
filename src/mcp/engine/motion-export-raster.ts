@@ -9,6 +9,7 @@
  * person would choose: clip length and a frame rate the format can play.
  */
 
+import * as fs from 'fs';
 import * as path from 'path';
 import { RasterWorker, type Raster } from '../../utils/resvg-isolate';
 import type { DesignSpec } from '../../schema/types';
@@ -22,8 +23,11 @@ import { cullFrame } from '../../export/frame-cull';
 import { GifStream, fileSink, type GifStreamStats } from '../../export/gif-stream';
 import { VideoPipe, type VideoType } from '../../export/video-encode';
 import { tryFfmpeg } from '../../export/animation-export';
+import { muxSound, type MuxClip } from '../../export/audio-mux';
 
 export interface RasterMotionArgs {
+  /** The design's sound, found and planned — mixed under an mp4/webm once the frames are encoded. */
+  sound?: MuxClip[];
   type: 'gif' | VideoType;
   fps?: number;
   duration?: number;
@@ -111,6 +115,7 @@ export async function exportRasterMotion(
 
   const { fps, asked, max } = rasterPlan(type, runMs, args.fps);
   if (fps !== asked) notes.push(`fps ${asked} is outside what a ${type} plays (1–${max}); exported at ${fps}fps.`);
+  if (!video && args.sound?.length) notes.push('A GIF has no sound, so the soundtrack is not in this file — export mp4 or webm to hear it.');
 
   const times = frameTimes(runMs, fps);
   const frameMs = runMs / times.length;
@@ -130,6 +135,8 @@ export async function exportRasterMotion(
   const started = performance.now();
   let width = 0, height = 0, bytes = 0, done = 0;
   let gifStats: GifStreamStats | null = null;
+  let soundNote = '';
+  let soundWarning = '';
 
   if (video) {
     let pipe: VideoPipe | null = null;
@@ -150,6 +157,17 @@ export async function exportRasterMotion(
       await pipe?.abort();
       return errResult(OP, `${type} export failed: ${(e as Error).message}`,
         'A render error names the layer — run diagnose_design. An ffmpeg error names the encoder.');
+    }
+    // After the frames, never inside the pipe (audio-mux.ts). A failed mix keeps the
+    // minutes of rendering and says loudly that the file is silent.
+    if (pipe && args.sound?.length) {
+      try {
+        await muxSound(outputPath, args.sound, runMs, type);
+        bytes = fs.statSync(outputPath).size;
+        soundNote = ` ${args.sound.length} sound clip(s) mixed under it (${type === 'mp4' ? 'AAC 192k' : 'Opus 128k'}).`;
+      } catch (e) {
+        soundWarning = `The video was written WITHOUT its sound: the mix failed (${(e as Error).message}). Check the files with animation(op:audio), then export again.`;
+      }
     }
   } else {
     const sink = fileSink(outputPath);
@@ -189,8 +207,9 @@ export async function exportRasterMotion(
     render_ms: Math.round(performance.now() - started),
     ...(args.extra ?? {}),
     ...(notes.length ? { notes } : {}),
+    ...(soundWarning ? { warning: soundWarning } : {}),
     note: video
-      ? `Encoded by ffmpeg as the frames rendered (${type === 'mp4' ? 'H.264, yuv420p, faststart' : 'VP9'}).`
+      ? `Encoded by ffmpeg as the frames rendered (${type === 'mp4' ? 'H.264, yuv420p, faststart' : 'VP9'}).${soundNote}`
       : 'Encoded in-process as the frames rendered: identical frames merged, later frames store only what changed.',
   });
 }

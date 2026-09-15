@@ -141,6 +141,7 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'wiggle':   return engine.wiggleMotion(a as unknown as Parameters<typeof engine.wiggleMotion>[0]);
     case 'camera':   return engine.cameraMotion(a as unknown as Parameters<typeof engine.cameraMotion>[0]);
     case 'morph':    return engine.morphMotion(a as unknown as Parameters<typeof engine.morphMotion>[0]);
+    case 'audio':    return engine.audioMotion(a as unknown as Parameters<typeof engine.audioMotion>[0]);
     case 'presets':  return engine.listMotionPresets();
     default:         return badOp('animation', a['op']);
   }

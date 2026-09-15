@@ -60,6 +60,25 @@ function within(abs: string, roots: string[]): boolean {
   return roots.some(r => abs === r || abs.startsWith(r + path.sep));
 }
 
+/**
+ * A local asset src as a file on disk — the image search order and sandbox, for
+ * files handed over by path instead of embedded (a soundtrack goes to ffmpeg).
+ * null when the src is remote, missing, or outside the project and library.
+ */
+export function resolveAssetFile(src: string, designPath: string, projectPath?: string): string | null {
+  const rel = src.trim().replace(/^file:\/\//i, '');
+  if (!rel || /^(data:|https?:|\/\/)/i.test(rel)) return null;
+  const roots = assetRoots(designPath, projectPath);
+  const candidates = assetBaseDirs(designPath, projectPath).map(d => path.resolve(d, rel));
+  const shared = isLibraryPath(rel) ? libraryAbsPath(rel) : null;
+  if (shared) candidates.push(shared);
+  for (const abs of candidates) {
+    if (!within(abs, roots)) continue;
+    try { if (fs.statSync(abs).isFile()) return abs; } catch { /* the next base dir */ }
+  }
+  return null;
+}
+
 type Resolution =
   | { kind: 'keep' }                       // already renderable (valid data: URI)
   | { kind: 'embed'; dataUri: string }     // file found → inline
