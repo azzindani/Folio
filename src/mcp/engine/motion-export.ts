@@ -15,7 +15,9 @@ import { resolveDesignPath, readYAML, errResult, okResult } from './utils';
 import { buildAnimatedSVG, wrapAnimatedHTML } from '../../export/svg-animate';
 import { renderToSVGString } from './svg-export';
 import { resolveImageAssets } from './asset-resolve';
-import { exportRasterMotion } from './motion-export-raster';
+import { exportRasterMotion, rasterPlan, MAX_CLIP_MS, type FrameSource, type RasterMotionArgs } from './motion-export-raster';
+import { startExportJob, BACKGROUND_FRAMES } from './export-jobs';
+import { tryFfmpeg } from '../../export/animation-export';
 import { specAt, animationDuration } from '../../export/gif-frames';
 import { planScenes } from '../../export/scene-plan';
 import { composeSceneFrame } from '../../export/scene-compose';
@@ -36,6 +38,8 @@ export interface ExportAnimationArgs {
   scenes?: boolean;
   /** How long each scene rests after its motion ends, ms (a page's auto_advance wins). */
   hold_ms?: number;
+  /** gif/mp4/webm: true renders as a job and replies with its id at once; false waits. Default: a job past BACKGROUND_FRAMES. */
+  background?: boolean;
   project_path?: string;
 }
 
@@ -87,7 +91,7 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     }
     return exportVectorMotion(spec, dPath, pageIndex, outputPath, args);
   }
-  const base = { type: args.type, fps: args.fps, duration: args.duration, project_path: args.project_path };
+  const base = { type: args.type, fps: args.fps, duration: args.duration, project_path: args.project_path, background: args.background };
 
   if (args.scenes) {
     if (pageCount === 0) {
@@ -97,7 +101,7 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
     const plan = planScenes(spec, { hold_ms: args.hold_ms });
     const approximated = [...new Set(plan.scenes.map(s => s.transition?.type))]
       .flatMap(t => (t && APPROXIMATED[t] ? [`${t} ${APPROXIMATED[t]}.`] : []));
-    return exportRasterMotion(spec, dPath, { durationMs: plan.total_ms, at: t => composeSceneFrame(spec, plan, t) }, outputPath, {
+    return raster(spec, dPath, { durationMs: plan.total_ms, at: t => composeSceneFrame(spec, plan, t) }, outputPath, {
       ...base,
       notes: [...plan.warnings, ...approximated],
       extra: {
@@ -113,9 +117,36 @@ export async function exportAnimation(args: ExportAnimationArgs): Promise<ToolRe
   const pageNotes = pageCount > 1 && !args.page_id
     ? [`This design has ${pageCount} pages and only the first was exported. Pass scenes:true to play every page as one piece, or page_id for another page.`]
     : [];
-  return exportRasterMotion(spec, dPath, { durationMs: animationDuration(layers), at: t => specAt(spec, pageIndex, t) }, outputPath, {
+  return raster(spec, dPath, { durationMs: animationDuration(layers), at: t => specAt(spec, pageIndex, t) }, outputPath, {
     ...base, notes: pageNotes,
   });
+}
+
+/**
+ * Render in place, or hand a long render to a background job so its reply is
+ * not lost to a client timeout. A call that fails fast — nothing animated, too
+ * long, no ffmpeg — always runs in place, so the refusal still comes straight back.
+ */
+function raster(
+  spec: DesignSpec, dPath: string, source: FrameSource, outputPath: string, rArgs: RasterMotionArgs & { background?: boolean },
+): Promise<ToolResult> {
+  const { background, ...rest } = rArgs;
+  const runMs = rest.duration ?? source.durationMs;
+  const plan = rasterPlan(rest.type, runMs, rest.fps);
+  const renderable = runMs > 0 && runMs <= MAX_CLIP_MS && (rest.type === 'gif' || tryFfmpeg());
+  if (!renderable || !(background ?? plan.frames > BACKGROUND_FRAMES)) return exportRasterMotion(spec, dPath, source, outputPath, rest);
+
+  const { job, joined } = startExportJob({ design_path: dPath, output_path: outputPath, type: rest.type, frames_total: plan.frames },
+    onFrame => exportRasterMotion(spec, dPath, source, outputPath, { ...rest, onFrame }));
+  return Promise.resolve(okResult(OP, {
+    design_path: dPath, output_path: outputPath, type: rest.type, background: true,
+    job_id: job.job_id, state: job.state, frames: job.frames_total, fps: plan.fps, duration: runMs,
+    note: joined
+      ? 'This file was already rendering, so this call joined that job instead of starting it again.'
+      : `${plan.frames} frames render in the background, so this reply is not lost to a client timeout. background:false waits for the file instead.`,
+    next_action: { tool: 'animation', params: { op: 'export_status', job_id: job.job_id }, remaining: 1,
+      hint: 'Ask op:export_status for progress; once the file is written it returns the receipt (size, frames, notes).' },
+  }));
 }
 
 /** SVG animates natively, so no encoder is needed — a real file, here, now. */
@@ -175,7 +206,8 @@ async function exportAllPages(args: ExportAnimationArgs, spec: DesignSpec, dPath
   const pageNotes: string[] = [];
   const rates: Array<{ page: string; fps: number }> = [];
   for (const [i, page] of pages.entries()) {
-    const one = await exportAnimation({ ...args, all_pages: false, page_id: page.id, output_path: path.join(dir, `${base}-p${i + 1}.${args.type}`) });
+    // In place: this loop reads each page's receipt, which a job would not have yet.
+    const one = await exportAnimation({ ...args, all_pages: false, background: false, page_id: page.id, output_path: path.join(dir, `${base}-p${i + 1}.${args.type}`) });
     const rec = one as unknown as { success?: boolean; output_path?: string; error?: string; notes?: string[]; fps?: number };
     if (rec.success && rec.output_path) {
       written.push(rec.output_path);

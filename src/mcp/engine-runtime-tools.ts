@@ -19,6 +19,7 @@ import { getClientScript } from '../export/remote-server';
 import { syncAnimationsToSpec } from './engine/animation-sync';
 // animation(op:export) lives in its own module; re-exported so existing importers keep working.
 export { exportAnimation } from './engine/motion-export';
+export { exportStatus } from './engine/export-jobs';
 
 export function setFormulaContext(args: {
   design_path: string;

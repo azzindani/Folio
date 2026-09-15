@@ -31,6 +31,8 @@ export interface RasterMotionArgs {
   notes?: string[];
   /** Extra fields for the reply (the scene list of a multi-scene export). */
   extra?: Record<string, unknown>;
+  /** Called after each frame is encoded, with the count so far — a background job's progress. */
+  onFrame?: (done: number) => void;
 }
 
 /** What gets rendered: one page's timeline, or every page played as scenes. */
@@ -48,6 +50,14 @@ export const MAX_CLIP_MS = 60_000;
 const FPS_LIMITS = { gif: { def: 12, max: 50 }, video: { def: 30, max: 60 } } as const;
 
 const OP = 'export_animation';
+
+/** The frame rate a type will actually play at, and how many frames that makes. */
+export function rasterPlan(type: RasterMotionArgs['type'], runMs: number, askedFps?: number): { fps: number; asked: number; max: number; frames: number } {
+  const limits = type !== 'gif' ? FPS_LIMITS.video : FPS_LIMITS.gif;
+  const asked = askedFps ?? limits.def;
+  const fps = Math.min(limits.max, Math.max(1, Math.round(asked)));
+  return { fps, asked, max: limits.max, frames: frameTimes(runMs, fps).length };
+}
 
 const yieldToServer = (): Promise<void> => new Promise(resolve => { setImmediate(resolve); });
 
@@ -75,10 +85,8 @@ export async function exportRasterMotion(
       'or type:"svg" for vector motion at any size.');
   }
 
-  const limits = video ? FPS_LIMITS.video : FPS_LIMITS.gif;
-  const asked = args.fps ?? limits.def;
-  const fps = Math.min(limits.max, Math.max(1, Math.round(asked)));
-  if (fps !== asked) notes.push(`fps ${asked} is outside what a ${type} plays (1–${limits.max}); exported at ${fps}fps.`);
+  const { fps, asked, max } = rasterPlan(type, runMs, args.fps);
+  if (fps !== asked) notes.push(`fps ${asked} is outside what a ${type} plays (1–${max}); exported at ${fps}fps.`);
 
   const times = frameTimes(runMs, fps);
   const frameMs = runMs / times.length;
@@ -91,7 +99,7 @@ export async function exportRasterMotion(
   };
 
   const started = performance.now();
-  let width = 0, height = 0, bytes = 0;
+  let width = 0, height = 0, bytes = 0, done = 0;
   let gifStats: GifStreamStats | null = null;
 
   if (video) {
@@ -104,6 +112,7 @@ export async function exportRasterMotion(
           pipe = new VideoPipe({ type, width, height, fps, outputPath });
         }
         await pipe.write(img.pixels);
+        args.onFrame?.(++done);
         await yieldToServer();
       }
       if (pipe) bytes = (await pipe.finish()).bytes;
@@ -123,6 +132,7 @@ export async function exportRasterMotion(
           gif = new GifStream(sink, { width, height, loopCount: 0 });
         }
         gif.add(new Uint8ClampedArray(img.pixels.buffer, img.pixels.byteOffset, img.pixels.byteLength), frameMs);
+        args.onFrame?.(++done);
         await yieldToServer();
       }
       if (gif) gifStats = gif.finish();

@@ -129,6 +129,7 @@ export function dispatchAnimation(a: Args): ToolResult | Promise<ToolResult> {
     case 'scene':    return engine.setScene(a as unknown as Parameters<typeof engine.setScene>[0]);
     case 'keyframe': return engine.addKeyframeToLayer(a as Parameters<typeof engine.addKeyframeToLayer>[0]);
     case 'export':   return engine.exportAnimation(a as unknown as Parameters<typeof engine.exportAnimation>[0]);
+    case 'export_status': return engine.exportStatus(a);
     case 'motion':   return engine.applyMotion(a as Parameters<typeof engine.applyMotion>[0]);
     case 'sequence': return engine.sequenceMotion(a as Parameters<typeof engine.sequenceMotion>[0]);
     case 'track':    return engine.setTrack(a as Parameters<typeof engine.setTrack>[0]);
