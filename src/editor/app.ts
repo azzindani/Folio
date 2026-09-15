@@ -50,7 +50,7 @@ export class EditorApp extends EditorAppBase {
   /** Path (relative to the projects dir) of the design when it was opened from
    *  the library / MCP — the target for server-backed auto-save. Null until a
    *  design is opened from or first saved into the library. */
-  private serverDesignRel: string | null = null;
+  serverDesignRel: string | null = null;
 
   constructor(container: HTMLElement) {
     super();
@@ -548,7 +548,7 @@ export class EditorApp extends EditorAppBase {
    *  server design path or an opened local file — or, for a brand-new design
    *  with no backing file yet, saves it INTO the library. Returns true when the
    *  save was handled, so the caller skips the legacy file-download fallback. */
-  private async saveToActiveTarget(): Promise<boolean> {
+  async saveToActiveTarget(): Promise<boolean> {
     const { showToast } = await import('../utils/toast');
     // Server-backed design (opened from / saved into the library).
     if (this.serverDesignRel) {

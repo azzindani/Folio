@@ -41,6 +41,7 @@ import { loadCollections, allCollections } from '../mcp/engine/library-collectio
 import { clientIp, ipAllowed, loadEditorGuards } from '../mcp/access-guard';
 // Asset ingest — same path the MCP manage_design {op:"asset_add"} uses.
 import { listAssets, listProjects, manageAssets, uploadAsset, createProjectRoute } from './server-assets';
+import { exportRoute } from './server-export';
 import { isLibraryPath, libraryAbsPath } from '../mcp/engine/asset-library';
 // Shared inline favicon so server-rendered pages get the same tab icon as the editor.
 import { FAVICON_LINK } from '../utils/favicon';
@@ -442,6 +443,10 @@ Bun.serve({
       // auto-saves here every ~30s, so an OPEN editor never lapses; once it's
       // closed, the last window runs out and the link self-expires.
       const refresh = slidingSessionCookie(presented);
+
+      // ── Video export (POST …/__export, GET …/__export/status): the MCP render queue.
+      const exported = await exportRoute(req, url, { projectsDir: PROJECTS_DIR, resolve: safeJoinProject });
+      if (exported) return exported;
 
       // ── GET /__project_files/<project>/__assets — asset listing for the
       // editor asset panel. Same manifest+disk merge the MCP asset_list op
