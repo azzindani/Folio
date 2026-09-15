@@ -60,4 +60,22 @@ describe('animation op:morph', () => {
     expect(String(overlap['error'])).toContain('overlap');
     expect(fs.readFileSync(dPath, 'utf8')).toBe(before);
   });
+
+  // Found building the GPT-6 Astra promo: delay:500 was meant as "after the entrance at 3000",
+  // the shape changed before the mark existed, and the reply gave no times to catch it.
+  it('replies with the scene time it runs, and warns when that is before the layer\'s own motion', () => {
+    const spec = yaml.load(fs.readFileSync(dPath, 'utf8')) as { layers: Array<Record<string, unknown>> };
+    const star = spec.layers[1];
+    if (star) star['animation'] = { ...fadeIn, playback: { ...fadeIn.playback, delay: 3000 } };
+    fs.writeFileSync(dPath, yaml.dump(spec));
+
+    const early = morphMotion({ design_path: dPath, layer_id: 'star', to: SQUARE, delay: 500, duration: 800 });
+    expect(early.success, JSON.stringify(early)).toBe(true);
+    expect(early).toMatchObject({ from_ms: 500, to_ms: 1300 });
+    expect(JSON.stringify(early['progress'])).toMatch(/starts at 3000ms/);
+
+    const onTime = morphMotion({ design_path: dPath, layer_id: 'blob', to: DIAMOND, delay: '700' as unknown as number, duration: 400 });
+    expect(onTime).toMatchObject({ from_ms: 700, to_ms: 1100 });
+    expect(JSON.stringify(onTime['progress'])).not.toMatch(/Starts before/);
+  });
 });

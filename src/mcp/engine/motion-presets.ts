@@ -210,9 +210,11 @@ export function buildTimeline(preset: MotionPreset, opts: MotionOptions = {}): M
       };
 
     // Counting runs the figure written in the text up from zero, in its own format.
+    // It fades in as it counts, like every entrance: without the opacity a stat sat
+    // on screen reading "~0 min" until its count began (GPT-6 Astra promo, scene 3).
     case 'count_up':
       return {
-        keyframes: [{ t: 0, count: 0 }, { t: 1, count: 1 }],
+        keyframes: [{ t: 0, count: 0, opacity: 0 }, { t: 1, count: 1, opacity: 1 }],
         loop: false, defaultDuration: 1200, defaultEasing: 'ease-out-cubic',
       };
 
