@@ -20,7 +20,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Resvg } from '@resvg/resvg-js';
+import { rasterize } from '../../utils/resvg-isolate';
 import { FAVICON_LINK } from '../../utils/favicon';
 import type { DesignSpec } from '../../schema/types';
 import type { ToolResult } from '../types';
@@ -44,7 +44,7 @@ export function renderThumb(designPath: string): Buffer | null {
       ? ({ ...spec, layers: spec.pages[0]?.layers ?? [], pages: undefined } as DesignSpec)
       : spec;
     const svg = renderToSVGString(renderSpec, undefined, undefined, undefined);
-    return Buffer.from(new Resvg(svg, { fitTo: { mode: 'width', value: 360 }, background: '#ffffff', font: resvgFontOption() }).render().asPng());
+    return rasterize({ svg, opts: { fitTo: { mode: 'width', value: 360 }, background: '#ffffff', font: resvgFontOption() } }).png;
   } catch { return null; }
 }
 

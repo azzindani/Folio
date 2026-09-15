@@ -8,7 +8,7 @@
 // paths, unbundled fonts) is simply left in the raster — never worse than the
 // old all-raster PDF.
 
-import { Resvg } from '@resvg/resvg-js';
+import { rasterize } from '../../utils/resvg-isolate';
 import { resvgFontOption } from './fonts';
 import { serializeSVGElement } from './svg-export';
 import { extractVectorTextCandidates, type VectorTextRun } from '../../export/pdf-vector-text';
@@ -52,11 +52,7 @@ export function addVectorPdfPage(
   }
 
   const stripped = serializeSVGElement(svgEl);
-  const png = Buffer.from(new Resvg(stripped, {
-    fitTo: { mode: 'zoom', value: scale },
-    background: 'rgba(255,255,255,1)',
-    font: resvgFontOption(projectDir),
-  }).render().asPng());
+  const png = rasterize({ svg: stripped, opts: { fitTo: { mode: 'zoom', value: scale }, background: 'rgba(255,255,255,1)', font: resvgFontOption(projectDir) } }).png;
 
   const wPt = page.width * PX2PT;
   const hPt = page.height * PX2PT;

@@ -4,7 +4,8 @@ import * as path from 'path';
 import type { DesignSpec, Layer, Page, ComponentSpec } from '../schema/types';
 import type { ToolResult } from './types';
 
-import { Resvg } from '@resvg/resvg-js';
+// Aliased: two export branches below name their own helper `rasterize`.
+import { rasterize as rasterizeSvg } from '../utils/resvg-isolate';
 import { jsPDF } from 'jspdf';
 import { FAVICON_LINK } from '../utils/favicon';
 import type { ProgressItem } from './types';
@@ -333,11 +334,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       const missingFonts = new Set<string>();
       const rasterize = (svgStr: string): Buffer => {
         for (const f of unbundledFonts(svgStr, projDir)) missingFonts.add(f);
-        return Buffer.from(new Resvg(svgStr, {
-          fitTo: { mode: 'zoom', value: scale },
-          background: '#FFFFFF',
-          font: resvgFontOption(projDir),
-        }).render().asPng());
+        return rasterizeSvg({ svg: svgStr, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#FFFFFF', font: resvgFontOption(projDir) } }).png;
       };
       const W = spec.document.width, H = spec.document.height;
       // WP-5.1 — promote reproducible text to NATIVE editable/selectable boxes;
@@ -389,11 +386,7 @@ export function exportDesign(args: { design_path: string; format: string; output
       // keeping the SVG viewBox aspect ratio.
       const rasterize = (svgStr: string): Buffer => {
         for (const f of unbundledFonts(svgStr, projDir)) missingFonts.add(f);
-        return Buffer.from(new Resvg(svgStr, {
-          fitTo: { mode: 'zoom', value: scale },
-          background: 'rgba(0,0,0,0)',
-          font: resvgFontOption(projDir),
-        }).render().asPng());
+        return rasterizeSvg({ svg: svgStr, opts: { fitTo: { mode: 'zoom', value: scale }, background: 'rgba(0,0,0,0)', font: resvgFontOption(projDir) } }).png;
       };
       const fontNote = (): string[] =>
         missingFonts.size
@@ -468,9 +461,8 @@ export function diagnoseDesign(args: { design_path: string; project_path?: strin
   let mark: MarkAudit | undefined;
   if (!args.page_id && looksLikeMark(spec)) {
     try {
-      const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
       const svg = renderToSVGString(spec);
-      const rendered = new Resvg(svg, { font: resvgFontOption(path.dirname(path.dirname(dPath))) }).render();
+      const rendered = rasterizeSvg({ svg, opts: { font: resvgFontOption(path.dirname(path.dirname(dPath))) }, want: 'pixels' });
       mark = auditMark({
         width: rendered.width,
         height: rendered.height,
@@ -550,9 +542,8 @@ export function renderPreview(args: { design_path: string; project_path?: string
   try {
     // Same asset resolution as export_design — preview must show the truth.
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
-    const rasterise = (svg: string, dir: string): Buffer => Buffer.from(new Resvg(svg, {
-      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(dir),
-    }).render().asPng());
+    const rasterise = (svg: string, dir: string): Buffer =>
+      rasterizeSvg({ svg, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(dir) } }).png;
 
     const allPages = spec.pages ?? [];
     if (args.changed_only && allPages.length > 1 && !args.page_id) {
@@ -598,9 +589,7 @@ export function renderPreview(args: { design_path: string; project_path?: string
     const svgStr = renderToSVGString(renderSpec, undefined, undefined, componentRegistry);
     const previewProjDir = args.project_path ?? path.dirname(path.dirname(dPath));
     const missing = unbundledFonts(svgStr, previewProjDir);
-    const png = Buffer.from(new Resvg(svgStr, {
-      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(previewProjDir),
-    }).render().asPng());
+    const png = rasterizeSvg({ svg: svgStr, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(previewProjDir) } }).png;
     const outW = Math.round((spec.document?.width ?? 0) * scale);
     const outH = Math.round((spec.document?.height ?? 0) * scale);
     const tokens = estImageTokens(outW, outH);

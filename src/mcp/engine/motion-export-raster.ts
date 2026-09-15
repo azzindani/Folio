@@ -10,7 +10,7 @@
  */
 
 import * as path from 'path';
-import { Resvg } from '@resvg/resvg-js';
+import { RasterWorker, type Raster } from '../../utils/resvg-isolate';
 import type { DesignSpec } from '../../schema/types';
 import type { ToolResult } from '../types';
 import { errResult, okResult } from './utils';
@@ -92,12 +92,13 @@ export async function exportRasterMotion(
   const times = frameTimes(runMs, fps);
   const frameMs = runMs / times.length;
   const font = resvgFontOption(path.dirname(path.dirname(dPath)));
+  // One renderer process for the whole clip: if resvg aborts, this export fails and the server stays up.
+  const worker = new RasterWorker();
   // Video has no alpha: anything the design leaves transparent would encode as black.
-  const renderAt = (t: number): { pixels: Buffer; width: number; height: number } => {
-    // A clip far off the canvas aborts resvg — and with it the server. See frame-cull.ts.
+  const renderAt = (t: number): Promise<Raster> => {
+    // A clip far off the canvas aborts resvg outright. See frame-cull.ts.
     const svg = renderToSVGString(cullFrame(source.at(t)));
-    const img = new Resvg(svg, video ? { font, background: '#FFFFFF' } : { font }).render();
-    return { pixels: img.pixels, width: img.width, height: img.height };
+    return worker.render({ svg, opts: video ? { font, background: '#FFFFFF' } : { font }, want: 'pixels' });
   };
 
   const started = performance.now();
@@ -108,7 +109,7 @@ export async function exportRasterMotion(
     let pipe: VideoPipe | null = null;
     try {
       for (const t of times) {
-        const img = renderAt(t);
+        const img = await renderAt(t);
         if (!pipe) {
           ({ width, height } = img);
           pipe = new VideoPipe({ type, width, height, fps, outputPath });
@@ -119,6 +120,7 @@ export async function exportRasterMotion(
       }
       if (pipe) bytes = (await pipe.finish()).bytes;
     } catch (e) {
+      worker.close();
       await pipe?.abort();
       return errResult(OP, `${type} export failed: ${(e as Error).message}`,
         'A render error names the layer — run diagnose_design. An ffmpeg error names the encoder.');
@@ -128,7 +130,7 @@ export async function exportRasterMotion(
     try {
       let gif: GifStream | null = null;
       for (const t of times) {
-        const img = renderAt(t);
+        const img = await renderAt(t);
         if (!gif) {
           ({ width, height } = img);
           gif = new GifStream(sink, { width, height, loopCount: 0 });
@@ -140,11 +142,13 @@ export async function exportRasterMotion(
       if (gif) gifStats = gif.finish();
       bytes = gifStats?.bytes ?? 0;
     } catch (e) {
+      worker.close();
       sink.abort();
       return errResult(OP, `Frame rendering failed: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.');
     }
   }
 
+  worker.close();
   return okResult(OP, {
     design_path: dPath,
     output_path: outputPath,
