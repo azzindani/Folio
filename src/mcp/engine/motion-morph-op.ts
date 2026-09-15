@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import type { DesignSpec, Layer } from '../../schema/types';
 import type { AnimationSpec } from '../../animation/types';
 import type { ToolResult } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk } from './utils';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pWarn } from './utils';
 import { resolveScope, commitScope } from './motion';
 import { syncAnimationsToSpec } from './animation-sync';
 import { mergeFragment, MergeError } from './motion-merge';
@@ -72,10 +72,17 @@ export function morphMotion(args: MorphArgs): ToolResult {
   }
 
   const duration = typeof args.duration === 'number' && args.duration > 0 ? args.duration : 900;
+  // Number(): a delay that reached here as a string once turned "700" + 450 into "700450".
+  const fromMs = Math.max(0, Number(args.delay ?? 0) || 0);
+  const toMs = fromMs + duration;
   const fragment = {
     keyframes: [{ t: 0, morph: 0 }, { t: duration, morph: 1 }],
-    playback: { duration, origin: 'offset', easing: args.easing ?? 'ease-in-out', ...(args.delay ? { delay: Math.max(0, args.delay) } : {}) },
+    playback: { duration, origin: 'offset', easing: args.easing ?? 'ease-in-out', ...(fromMs ? { delay: fromMs } : {}) },
   } as Parameters<typeof mergeFragment>[1];
+  // delay is on the SCENE clock, like a sequence step's at. Building the GPT-6 Astra promo,
+  // delay:500 was meant as "after the mark scales in at 3000" and the shape changed unseen.
+  const ownStart = src.animation?.keyframes?.length ? Number(src.animation.playback?.delay ?? 0) : 0;
+  const early = ownStart > fromMs;
   let animation: AnimationSpec;
   try {
     animation = mergeFragment(src.animation, fragment);
@@ -93,10 +100,12 @@ export function morphMotion(args: MorphArgs): ToolResult {
   writeYAML(dPath, spec);
 
   return okResult(op, {
-    design_path: dPath, layer: id, into: args.to_layer ?? 'the given outline', duration_ms: duration, target_hidden: hideTarget,
-    progress: [pOk(`"${id}" morphs into ${args.to_layer ? `"${args.to_layer}"` : 'the given outline'}`, `${duration}ms, merged onto its existing motion`)],
-    // Number(): a delay that reached here as a string once turned this into "700" + 450.
-    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: Math.round(Number(args.delay ?? 0) + duration / 2) }, remaining: 0,
+    design_path: dPath, layer: id, into: args.to_layer ?? 'the given outline', duration_ms: duration, from_ms: fromMs, to_ms: toMs, target_hidden: hideTarget,
+    progress: [
+      pOk(`"${id}" morphs into ${args.to_layer ? `"${args.to_layer}"` : 'the given outline'}`, `${fromMs}–${toMs}ms of the scene, merged onto its existing motion`),
+      ...(early ? [pWarn('Starts before the layer\'s own motion', `The morph starts at ${fromMs}ms but "${id}"'s motion starts at ${ownStart}ms — if that is its entrance, the shape changes while unseen. delay counts from the start of the scene: to start after the entrance, use delay ≥ ${ownStart}.`)] : []),
+    ],
+    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: Math.round(fromMs + duration / 2) }, remaining: 0,
       hint: 'Check the halfway shape with op:frame.' },
   }, bak);
 }

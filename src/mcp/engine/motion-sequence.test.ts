@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { sequenceMotion, setTrack, clearMotion, listMotionPresets } from './motion-sequence';
+import { applyMotion } from './motion';
 import { mergeFragment, MergeError, trackEnd } from './motion-merge';
 import { sceneTracks, sceneLength, renderSceneASCII } from './timeline-ascii';
 import { renderFrame } from './motion-frame';
@@ -152,6 +153,58 @@ describe('animation(op:track)', () => {
     expect(setTrack({ design_path: p, layer_id: 'a', keyframes: [{ t: 0, x: 0, easing: 'nah' }, { t: 1 }] }).error).toMatch(/easing/);
     expect(setTrack({ design_path: p, layer_id: 'a', keyframes: [{ t: 0 }, { t: 1 }], playback: { anchor: 'middle' } }).error).toMatch(/anchor/);
     expect(setTrack({ design_path: p, layer_id: 'a', keyframes: [{ t: 0 }] }).error).toMatch(/two/);
+  });
+});
+
+// Found building the GPT-6 Astra promo: op:motion and op:track wrote over motion a layer
+// already had and replied success, so a cursor and a button sat on screen from frame one.
+describe('op:motion and op:track onto motion a layer already has', () => {
+  type Item = { status: string; message: string; detail?: string };
+  const progressOf = (r: object): Item[] => (r as { progress?: Item[] }).progress ?? [];
+
+  it('op:motion folds an entrance in front of a later exit instead of erasing it', () => {
+    const p = flat();
+    expect(sequenceMotion({ design_path: p, steps: [{ preset: 'fade_out', layer_ids: ['a'], at: 2000 }] }).success).toBe(true);
+    const r = applyMotion({ design_path: p, preset: 'rise', layer_ids: ['a'] });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    const a = animOf(read(p), 'a');
+    expect(a?.keyframes?.some(k => typeof k.y === 'number')).toBe(true);
+    expect(trackEnd(a as AnimationSpec)).toBeGreaterThan(2000);
+    expect(progressOf(r).some(i => i.message === 'Merged')).toBe(true);
+  });
+
+  it('op:motion refuses a loop on a layer that already enters, and leaves the file alone', () => {
+    const p = flat();
+    expect(applyMotion({ design_path: p, preset: 'fade_in', layer_ids: ['a'] }).success).toBe(true);
+    const before = fs.readFileSync(p, 'utf8');
+    const r = applyMotion({ design_path: p, preset: 'pulse', layer_ids: ['a'] });
+    expect(r.success).toBe(false);
+    expect(r.error).toMatch(/"a"/);
+    expect(r.hint).toMatch(/clear/);
+    expect(fs.readFileSync(p, 'utf8')).toBe(before);
+  });
+
+  it('op:motion re-timing a one-shot replaces it and names what was dropped', () => {
+    const p = flat();
+    applyMotion({ design_path: p, preset: 'fade_in', layer_ids: ['a'] });
+    const r = applyMotion({ design_path: p, preset: 'rise', layer_ids: ['a'] });
+    expect(r.success).toBe(true);
+    const warn = progressOf(r).find(i => i.status === 'warn');
+    expect(warn?.message).toBe('Replaced existing motion');
+    expect(warn?.detail).toMatch(/^a \(0–\d+ms\)/);
+  });
+
+  it('op:track says which layers lost the motion they had', () => {
+    const p = flat();
+    sequenceMotion({ design_path: p, steps: [{ preset: 'fade_in', layer_ids: ['a'] }] });
+    const r = setTrack({ design_path: p, layer_ids: ['a', 'b'], keyframes: [{ t: 0, x: 0 }, { t: 600, x: -40 }] });
+    expect(r.success).toBe(true);
+    expect(r['replaced']).toEqual(['a']);
+    expect(progressOf(r).find(i => i.status === 'warn')?.detail).toMatch(/opacity too/);
+  });
+
+  it('count_up starts hidden like every other entrance instead of showing its zero early', () => {
+    expect(expandPreset('count_up', {}).keyframes?.[0]).toMatchObject({ count: 0, opacity: 0 });
   });
 });
 

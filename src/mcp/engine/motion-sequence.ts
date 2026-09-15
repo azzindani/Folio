@@ -237,7 +237,14 @@ export function setTrack(args: TrackArgs): ToolResult {
   const progress: ProgressItem[] = [pOk(`Track written on ${targets.length} layer${targets.length === 1 ? '' : 's'}`, `${frames.length} keyframes · ${playback.duration}ms${playback.loop ? ' · loop' : ''}`)];
   const missing = ids.filter(id => !targets.some(t => t.id === id));
   if (missing.length) progress.push(pWarn('Not found', missing.join(', ')));
-  return okResult(op, { design_path: dPath, layers: targets.map(l => l.id), keyframes: frames, playback, progress }, bak);
+  // A track is the whole track — building the GPT-6 Astra promo, a cursor's path erased its
+  // fade_in and the reply said nothing, so the cursor sat on screen from the first frame.
+  const replaced = targets.filter(l => (l as Layer & { animation?: AnimationSpec }).animation?.keyframes?.length).map(l => l.id);
+  if (replaced.length) {
+    progress.push(pWarn('Replaced existing motion', `${replaced.join(', ')} had motion before; op:track writes the whole track, so it is gone. ` +
+      'Put every channel in these keyframes (opacity too), or add steps with op:sequence instead.'));
+  }
+  return okResult(op, { design_path: dPath, layers: targets.map(l => l.id), keyframes: frames, playback, ...(replaced.length ? { replaced } : {}), progress }, bak);
 }
 
 // ── op:clear ─────────────────────────────────────────────────

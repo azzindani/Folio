@@ -11,8 +11,10 @@
 import * as fs from 'fs';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
-import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo } from './utils';
-import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, type MotionPreset } from './motion-presets';
+import { resolveDesignPath, snapshot, readYAML, writeYAML, errResult, okResult, pOk, pInfo, pWarn } from './utils';
+import { expandPreset, isMotionPreset, PRESET_NAMES, PRESET_NOTES, PRESET_KIND, type MotionPreset } from './motion-presets';
+import type { AnimationSpec } from '../../animation/types';
+import { mergeFragment, MergeError, trackEnd } from './motion-merge';
 import { syncAnimationsToSpec } from './animation-sync';
 import { staggerRanks, isStaggerOrder, STAGGER_ORDERS } from './motion-order';
 
@@ -169,15 +171,31 @@ export function applyMotion(args: MotionArgs): ToolResult {
   const updates = new Map<string, unknown>();
   const progress: ProgressItem[] = [];
 
-  targets.forEach((layer, i) => {
+  // One step of a sequence, so it folds onto what a layer already does the way op:sequence
+  // does. Found building the GPT-6 Astra promo: a pulse wrote over a button's fade_in and
+  // reported success. A loop cannot share a layer with a one-shot, so that is refused; a
+  // one-shot clashing in time replaces the old track (the way to re-time one) and says so.
+  const merged: string[] = [];
+  const replaced: string[] = [];
+  for (const [i, layer] of targets.entries()) {
     const expanded = expandPreset(preset, {
       duration: args.duration,
       easing: args.easing as never,
       distance: args.distance,
       delay: stagger * (ranks[i] ?? i),
     });
-    updates.set(layer.id, expanded);
-  });
+    const existing = (layer as Layer & { animation?: AnimationSpec }).animation;
+    if (!existing?.keyframes?.length) { updates.set(layer.id, expanded); continue; }
+    try {
+      updates.set(layer.id, mergeFragment(existing, expanded));
+      merged.push(layer.id);
+    } catch (e) {
+      if (!(e instanceof MergeError)) throw e;
+      if (PRESET_KIND[preset] === 'loop' || existing.playback?.loop === true) return errResult(op, `"${layer.id}": ${e.message}`, e.hint);
+      updates.set(layer.id, expanded);
+      replaced.push(`${layer.id} (${existing.playback?.delay ?? 0}–${trackEnd(existing)}ms)`);
+    }
+  }
 
   const applied = setAnimation(scope, updates);
   if (page) page.layers = applied;
@@ -194,6 +212,11 @@ export function applyMotion(args: MotionArgs): ToolResult {
   const totalMs = (args.duration ?? 0) + lastStart;
   progress.push(pOk(`Applied ${preset} to ${targets.length} layer${targets.length === 1 ? '' : 's'}`, PRESET_NOTES[preset]));
   if (stagger > 0) progress.push(pInfo('Staggered', `${stagger}ms between layers${args.order ? `, order ${args.order}` : ''}${totalMs ? ` — last one starts at ${lastStart}ms` : ''}`));
+  if (merged.length) progress.push(pInfo('Merged', `${merged.join(', ')} — folded onto the motion already there`));
+  if (replaced.length) {
+    progress.push(pWarn('Replaced existing motion', `${replaced.join(', ')} ran at the same time as this preset and is gone. ` +
+      'To keep both, give them separate times with op:sequence steps (at:ms).'));
+  }
 
   return okResult(op, {
     design_path: dPath,
