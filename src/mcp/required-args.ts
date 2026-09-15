@@ -113,7 +113,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     track: ['design_path', 'keyframes'],
     motion: ['design_path'],
     motion_path: ['design_path'],
-    text: ['design_path', 'layer_id'],
+    text: ['design_path'],
     wiggle: ['design_path', 'amplitude'],
     camera: ['design_path', 'shots'],
     morph: ['design_path', 'layer_id'],

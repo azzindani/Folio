@@ -150,6 +150,8 @@ export function splitText(args: SplitTextArgs): ToolResult {
     return {
       ...o,
       id: freeLayerId(taken, `${id}_${args.by === 'word' ? 'w' : 'c'}${i + 1}`),
+      // Marks the piece as split text, so op:text remeasure can find it without a layer_id.
+      split_of: id,
       // Sized so the renderer's own wrap rule never breaks the piece again — see text-unit-width.ts.
       x: Math.round(startX), y: y0, width: unitWidth(p.text, style, w),
       content: { type: 'plain', value: p.text },

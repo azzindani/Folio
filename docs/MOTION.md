@@ -97,6 +97,7 @@ animation(op:export,   design_path, type:svg|html|gif|mp4|webm, all_pages?, scen
 animation(op:export_status, job_id)                     a background render's progress, then its receipt
 animation(op:scene,    design_path, page_id, transition?, length_ms?)   how a page enters + its time on screen
 animation(op:text,     design_path, layer_id, by?, preset|keyframes, stagger_ms?, order?, mask?)   text animator: split + stagger in one call
+animation(op:text,     design_path, remeasure:true, layer_id?, page_id?)   re-place pieces split earlier with today's font widths (text-remeasure.ts)
 animation(op:wiggle,   design_path, layer_id|layer_ids, amplitude{x,y,rotation,scale}, frequency?, duration?, seed?)   seeded noise on a wrapper parent
 animation(op:camera,   design_path, shots:[{t, target:"all"|id|ids, padding?, easing?, hold?}], exclude?, padding?)   2D camera: each shot frames its target
 animation(op:morph,    design_path, layer_id, to | to_layer, keep_target?, duration?, delay?, easing?)   one path becomes another shape
