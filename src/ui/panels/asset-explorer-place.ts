@@ -21,7 +21,7 @@ let insertCounter = 0;
  * mean twenty notifications.
  */
 export function placeAsset(state: StateManager, a: AssetRow, quiet = false): void {
-  if (a.kind === 'fonts' || a.kind === 'docs') return;
+  if (a.kind === 'fonts' || a.kind === 'docs' || a.kind === 'audio') return;
   const design = state.get().design;
   if (!design) return;
 

@@ -158,6 +158,8 @@ A video's sound lives in the design. `audio:` holds tracks that run under the wh
 
 A GIF has no sound, and its export says so in `notes`.
 
+**In the editor**, an audio asset's right-click menu offers **Use as soundtrack** (`state.setAudioTracks`, undoable; a 1s fade-out by default, since a track cut dead at the end sounds broken). Play all sounds the piece through `src/editor/scene-audio.ts`: the clips of `planSound` scheduled on a WebAudio clock with offsets into decoded buffers and gain ramps for the fades, so it needs no HTTP range support and a seek sounds from the right place. Sound follows the transport's edges — play, the pause-and-play a seek makes, pause — and restarts at the current time after an edit, a finished decode or a mute switch. A file that decodes after play starts late at the position the piece has reached. The stage's sound row (`src/ui/scene-stage/scene-stage-sound.ts`) draws each clip under the scene strip on the same scale, with the plan's notes, a mute switch and each track's volume and fades.
+
 ---
 
 ## 4. Image processing

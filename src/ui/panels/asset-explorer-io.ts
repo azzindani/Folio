@@ -9,7 +9,7 @@
 export interface AssetRow {
   id: string;
   path: string;
-  kind: 'images' | 'icons' | 'fonts' | 'docs';
+  kind: 'images' | 'icons' | 'fonts' | 'docs' | 'audio';
   folder?: string;
   bytes: number;
   width?: number;
@@ -67,6 +67,7 @@ export function storeOf(a: AssetRow): Scope {
 export function kindForFile(name: string): AssetRow['kind'] {
   if (/\.(ttf|otf|woff2?)$/i.test(name)) return 'fonts';
   if (/\.(md|markdown|txt|csv|json|ya?ml)$/i.test(name)) return 'docs';
+  if (/\.(mp3|wav|m4a|aac|ogg|oga|opus|flac)$/i.test(name)) return 'audio';
   return 'images';
 }
 

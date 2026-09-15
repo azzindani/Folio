@@ -20,6 +20,9 @@ import type { ScenePlayer, ScenePlayerSnapshot } from '../../editor/scene-player
 import { renderEntry } from '../../renderer/render-entry';
 import { composeTheme } from '../../styles/compose';
 import { buildTransport, type Transport } from './scene-stage-controls';
+import { SceneAudio } from '../../editor/scene-audio';
+import { resolveAssetUrl } from '../../renderer/render-context';
+import { buildSoundRow, designSoundSources, type SoundRow } from './scene-stage-sound';
 
 const TYPING = new Set(['INPUT', 'SELECT', 'TEXTAREA']);
 
@@ -29,8 +32,19 @@ export class SceneStage {
   private transport: Transport | null = null;
   private stopListening: Array<() => void> = [];
   private painted: number | null = null;
+  private audio: SceneAudio;
+  private sound: SoundRow | null = null;
+  /** Whether the sound was last told to play — it follows the transport's edges, not every tick. */
+  private soundPlaying = false;
 
-  constructor(private state: StateManager, private player: ScenePlayer, private beforeOpen: () => void = () => undefined) {}
+  constructor(private state: StateManager, private player: ScenePlayer, private beforeOpen: () => void = () => undefined, audio?: SceneAudio) {
+    this.audio = audio ?? new SceneAudio({
+      context: () => new AudioContext(),
+      load: src => fetch(resolveAssetUrl(src), { credentials: 'include' })
+        .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`)))),
+      onChange: () => { this.sound?.redraw(); this.restartSound(); },
+    });
+  }
 
   get isOpen(): boolean { return this.overlay !== null; }
 
@@ -44,11 +58,19 @@ export class SceneStage {
     this.surface = surface;
     this.transport = buildTransport(this.state, this.player, () => this.close());
     overlay.appendChild(this.transport.element);
+    this.sound = buildSoundRow(this.state, this.player, this.audio, () => this.restartSound());
+    this.transport.element.appendChild(this.sound.element);
     document.body.appendChild(overlay);
+    this.audio.preload(designSoundSources(this.state.get().design));
 
     const unsubPlayer = this.player.subscribe(s => this.paint(s));
-    // An edit made on the stage (a transition, a length) must show at the same t.
-    const unsubState = this.state.subscribe(() => { this.painted = null; this.paint(this.player.snapshot()); });
+    // An edit made on the stage (a transition, a length, a volume) must show — and sound — at the same t.
+    const unsubState = this.state.subscribe(() => {
+      this.painted = null;
+      this.sound?.redraw();
+      this.restartSound();
+      this.paint(this.player.snapshot());
+    });
     const onKey = (e: KeyboardEvent): void => this.onKey(e);
     document.addEventListener('keydown', onKey, true);
     this.stopListening = [unsubPlayer, unsubState, () => document.removeEventListener('keydown', onKey, true)];
@@ -64,11 +86,34 @@ export class SceneStage {
     this.player.pause();
     for (const stop of this.stopListening) stop();
     this.stopListening = [];
+    this.audio.stop();
+    this.soundPlaying = false;
     this.overlay.remove();
     this.overlay = null;
     this.surface = null;
     this.transport = null;
+    this.sound = null;
     this.painted = null;
+  }
+
+  /** Sound follows the transport: it starts on play (and on the play a seek makes) and stops on pause. */
+  private syncSound(s: ScenePlayerSnapshot): void {
+    if (s.playing === this.soundPlaying) return;
+    this.soundPlaying = s.playing;
+    if (s.playing) this.startSound(s.time);
+    else this.audio.stop();
+  }
+
+  private startSound(t: number): void {
+    const design = this.state.get().design;
+    const plan = this.player.plan();
+    if (design && plan) this.audio.start(this.audio.plan(design, plan), t);
+  }
+
+  /** After an edit, a finished decode or a mute switch: sound again from where the piece is. */
+  private restartSound(): void {
+    if (this.overlay && this.player.playing) this.startSound(this.player.time);
+    else this.audio.stop();
   }
 
   private buildOverlay(): { overlay: HTMLElement; surface: ShadowRoot } {
@@ -89,6 +134,7 @@ export class SceneStage {
   }
 
   private paint(s: ScenePlayerSnapshot): void {
+    this.syncSound(s);
     this.transport?.update(s);
     if (!this.surface || this.painted === s.time) return;
     const spec = this.player.frameAt(s.time);

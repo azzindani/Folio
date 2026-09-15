@@ -23,20 +23,20 @@ export const TRANSITION_TYPES: PageTransitionType[] = [
   'wipe-left', 'wipe-right', 'reveal', 'zoom-in', 'zoom-out', 'flip-h', 'flip-v', 'cube-left', 'cube-right', 'morph',
 ];
 
-const BTN = 'background:#26262B;color:#F2F2F2;border:1px solid #3A3A40;border-radius:4px;min-width:34px;height:30px;font-size:13px;cursor:pointer;';
-const FIELD = 'background:#1E1E22;color:#F2F2F2;border:1px solid #3A3A40;border-radius:4px;height:26px;padding:0 6px;font-size:12px;';
+export const BTN = 'background:#26262B;color:#F2F2F2;border:1px solid #3A3A40;border-radius:4px;min-width:34px;height:30px;font-size:13px;cursor:pointer;';
+export const FIELD = 'background:#1E1E22;color:#F2F2F2;border:1px solid #3A3A40;border-radius:4px;height:26px;padding:0 6px;font-size:12px;';
 
-const secs = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
-const clampMs = (raw: string, lo: number, hi: number): number => Math.max(lo, Math.min(hi, Math.round(Number(raw) || 0)));
+export const secs = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
+export const clampMs = (raw: string, lo: number, hi: number): number => Math.max(lo, Math.min(hi, Math.round(Number(raw) || 0)));
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, css: string, text = ''): HTMLElementTagNameMap[K] {
+export function el<K extends keyof HTMLElementTagNameMap>(tag: K, css: string, text = ''): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
   e.style.cssText = css;
   if (text) e.textContent = text;
   return e;
 }
 
-function labelled(text: string, field: HTMLElement): HTMLElement {
+export function labelled(text: string, field: HTMLElement): HTMLElement {
   const l = el('label', 'display:flex;align-items:center;gap:6px;', text);
   l.appendChild(field);
   return l;

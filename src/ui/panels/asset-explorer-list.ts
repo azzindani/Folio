@@ -35,6 +35,7 @@ function art(a: AssetRow, url: string, px: number): string {
   // A font shows a type sample rather than an icon — which face it is matters
   // more than that it is a font, and Type already says FONT.
   if (a.kind === 'fonts') return `<span class="ax-art ax-art-font">Aa</span>`;
+  if (a.kind === 'audio') return `<span class="ax-art ax-art-font ax-art-audio">♪</span>`;
   return `<img class="ax-art" src="${esc(url)}" alt="" loading="lazy" draggable="false">`;
 }
 
