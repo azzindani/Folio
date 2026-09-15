@@ -204,7 +204,7 @@ export function applyMotion(args: MotionArgs): ToolResult {
     progress,
     next_action: {
       tool: 'animation',
-      params: { op: 'export', design_path: dPath, type: 'svg' },
+      params: { op: 'export', design_path: dPath, type: 'svg', ...(args.page_id ? { page_id: args.page_id } : {}) },
       remaining: 0,
       hint: 'Motion written as ordinary keyframes — animation(op:timeline) shows them, ' +
         'animation(op:keyframe) overrides any single one. Export with type:"svg" to get a real animated file.',

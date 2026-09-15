@@ -56,6 +56,18 @@ describe('animation op:camera', () => {
     expect(top()[1]?.layers?.some(l => l.id === '__camera')).toBe(false);
   });
 
+  it('holds a layer still when a re-run adds exclude, and puts it back when the list drops it', () => {
+    cameraMotion({ design_path: dPath, shots });
+    const r = cameraMotion({ design_path: dPath, shots, exclude: ['label'] });
+    expect(r.success, JSON.stringify(r)).toBe(true);
+    expect(top().map(l => l.id)).toEqual(['bg', 'label', '__camera']);
+    expect(top()[2]?.layers?.map(l => l.id)).toEqual(['__camera_pin', 'stat']);
+    cameraMotion({ design_path: dPath, shots });
+    expect(top().map(l => l.id), 'no exclude on a re-run leaves the camera as it is').toEqual(['bg', 'label', '__camera']);
+    cameraMotion({ design_path: dPath, shots, exclude: [] });
+    expect(top()[1]?.layers?.map(l => l.id)).toEqual(['__camera_pin', 'label', 'stat']);
+  });
+
   it('pushes in on the sampled frame too — the flipbook plays the camera', () => {
     cameraMotion({ design_path: dPath, shots });
     const frame = layersAt(top() as unknown as Layer[], 1000)[1] as unknown as Record<string, unknown>;

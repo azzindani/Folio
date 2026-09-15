@@ -76,11 +76,19 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   const missing = boxes.find((b): b is string => typeof b === 'string');
   if (missing) return errResult(op, missing, 'manage_design {op:"inspect"} lists the ids on this page.');
 
-  const existing = stack.find(l => l.id === CAMERA);
-  const keep = new Set(toIdList(args.exclude) ?? []);
-  const layers: Layer[] = existing ? stack : (() => {
-    const outside = stack.filter(l => keep.has(l.id) || isFullCanvasBgRect(l, W, H));
-    const inside = stack.filter(l => !outside.includes(l));
+  const existing = stack.find(l => l.id === CAMERA) as (Layer & { layers?: Layer[] }) | undefined;
+  // exclude:[] is a real answer — "nothing held still" — not the same as leaving it out.
+  const excludeIds = Array.isArray(args.exclude) || typeof args.exclude === 'string' ? toIdList(args.exclude) ?? [] : undefined;
+  const keep = new Set(excludeIds ?? []);
+  // Found live: a re-run with exclude reused the camera as it stood, so the layer
+  // it named kept moving. With exclude, the camera is taken apart and rebuilt, so
+  // what rides in it matches the list; without, its contents stay as they are.
+  const loose = existing && excludeIds
+    ? stack.flatMap(l => l === existing ? (existing.layers ?? []).filter(k => k.id !== `${CAMERA}_pin`) : [l])
+    : stack;
+  const layers: Layer[] = existing && !excludeIds ? stack : (() => {
+    const outside = loose.filter(l => keep.has(l.id) || isFullCanvasBgRect(l, W, H));
+    const inside = loose.filter(l => !outside.includes(l));
     const pin = { id: `${CAMERA}_pin`, type: 'rect', z: -1, x: 0, y: 0, width: W, height: H, fill: '#000000', opacity: 0 };
     const z = Math.max(1, ...inside.map(l => (l as Layer & { z?: number }).z ?? 1));
     return [...outside, { id: CAMERA, type: 'group', z, x: 0, y: 0, width: W, height: H, layers: [pin, ...inside] } as unknown as Layer];
@@ -104,7 +112,7 @@ export function cameraMotion(args: CameraArgs): ToolResult {
   return okResult(op, {
     design_path: dPath, camera: CAMERA, reused: !!existing, shots: frames.map(f => ({ t: f.t, scale: f.scale, x: f.x, y: f.y })),
     progress: [pOk(`${existing ? 'Re-framed' : 'Placed'} a camera over the page`, `${shots.length} shot(s); the ground stays still behind it`)],
-    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, t: shots[Math.min(1, shots.length - 1)]?.t ?? 0 }, remaining: 0,
+    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: shots[Math.min(1, shots.length - 1)]?.t ?? 0 }, remaining: 0,
       hint: 'Check a shot with op:frame. Add exclude:[ids] to hold a layer still while the camera moves.' },
   }, bak);
 }

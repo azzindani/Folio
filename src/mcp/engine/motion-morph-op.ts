@@ -95,7 +95,8 @@ export function morphMotion(args: MorphArgs): ToolResult {
   return okResult(op, {
     design_path: dPath, layer: id, into: args.to_layer ?? 'the given outline', duration_ms: duration, target_hidden: hideTarget,
     progress: [pOk(`"${id}" morphs into ${args.to_layer ? `"${args.to_layer}"` : 'the given outline'}`, `${duration}ms, merged onto its existing motion`)],
-    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, t: Math.round((args.delay ?? 0) + duration / 2) }, remaining: 0,
+    // Number(): a delay that reached here as a string once turned this into "700" + 450.
+    next_action: { tool: 'animation', params: { op: 'frame', design_path: dPath, ...(args.page_id ? { page_id: args.page_id } : {}), t: Math.round(Number(args.delay ?? 0) + duration / 2) }, remaining: 0,
       hint: 'Check the halfway shape with op:frame.' },
   }, bak);
 }
