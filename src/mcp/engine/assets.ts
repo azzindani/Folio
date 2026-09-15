@@ -11,6 +11,7 @@ import {
   okResult, errResult, buildContext, buildHandover, pOk, pInfo, pWarn,
 } from './utils';
 import { parseDimensions, parseSvg, dedupeColors, toHex, luminance as lumOf } from './reference';
+import { rasterize } from '../../utils/resvg-isolate';
 
 // ── Types ─────────────────────────────────────────────────────
 import { processAsset, hasWork, ProcessError, type ProcessSpec } from './asset-process';
@@ -137,8 +138,6 @@ export function extractAssetMeta(buf: Buffer, ext: string): AssetMeta {
 const SAMPLE = 24;
 function sampleRasterColors(buf: Buffer, ext: string): Pick<AssetMeta, 'dominant_colors' | 'luminance'> {
   try {
-    // Lazy require keeps module load cheap for callers that never ingest.
-    const { Resvg } = require('@resvg/resvg-js') as typeof import('@resvg/resvg-js');
     // Sniff the BYTES first — a PNG hand-copied as .jpg would fail a
     // mime-hinted decode and silently lose its colors (live-audit finding).
     const sniffed =
@@ -151,7 +150,8 @@ function sampleRasterColors(buf: Buffer, ext: string): Pick<AssetMeta, 'dominant
     const uri = `data:${mime};base64,${buf.toString('base64')}`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SAMPLE}" height="${SAMPLE}">` +
       `<image width="${SAMPLE}" height="${SAMPLE}" preserveAspectRatio="xMidYMid slice" href="${uri}"/></svg>`;
-    const px = new Resvg(svg, {}).render().pixels;
+    // resvg itself loads only when a render runs (resvg-isolate.ts), so module load stays cheap.
+    const px = rasterize({ svg, want: 'pixels' }).pixels;
     const buckets = new Map<string, { n: number; r: number; g: number; b: number }>();
     let lumSum = 0, opaque = 0;
     for (let i = 0; i < px.length; i += 4) {

@@ -11,7 +11,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Resvg } from '@resvg/resvg-js';
+import { rasterize } from '../../utils/resvg-isolate';
 import type { DesignSpec, Layer, Page } from '../../schema/types';
 import type { AnimationSpec } from '../../animation/types';
 import type { ToolResult, ProgressItem } from '../types';
@@ -129,9 +129,7 @@ export function renderFrame(args: FrameArgs): ToolResult {
     // Culled for resvg only — the poses below still read every layer.
     const svg = renderToSVGString(cullFrame(renderSpec));
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
-    const png = Buffer.from(new Resvg(svg, {
-      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir),
-    }).render().asPng());
+    const png = rasterize({ svg, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir) } }).png;
 
     if (args.output_path) {
       fs.mkdirSync(path.dirname(args.output_path), { recursive: true });
@@ -169,9 +167,7 @@ function renderSceneFrame(spec: DesignSpec, dPath: string, args: FrameArgs): Too
     const assetNotes = resolveImageAssets(spec, dPath, args.project_path);
     const svg = renderToSVGString(cullFrame(composeSceneFrame(spec, plan, t)));
     const projDir = args.project_path ?? path.dirname(path.dirname(dPath));
-    const png = Buffer.from(new Resvg(svg, {
-      fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir),
-    }).render().asPng());
+    const png = rasterize({ svg, opts: { fitTo: { mode: 'zoom', value: scale }, background: '#ffffff', font: resvgFontOption(projDir) } }).png;
     if (args.output_path) {
       fs.mkdirSync(path.dirname(args.output_path), { recursive: true });
       fs.writeFileSync(args.output_path, png);

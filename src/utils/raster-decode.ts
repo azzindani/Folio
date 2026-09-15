@@ -15,7 +15,7 @@
 //
 // Output is always RGBA; the pipeline stores PNG regardless, which is the
 // documented behaviour of asset_process ("store the result as a NEW png").
-import { Resvg } from '@resvg/resvg-js';
+import { rasterize } from './resvg-isolate';
 import { decodePNG, isPNG, type RasterImage } from './png-codec';
 import { parseDimensions } from '../mcp/engine/reference';
 
@@ -68,7 +68,7 @@ export function decodeRaster(buf: Buffer): RasterImage {
     + `<image href="data:${MIME[fmt]};base64,${buf.toString('base64')}" x="0" y="0" width="${dims.w}" height="${dims.h}"/></svg>`;
   let png: Buffer;
   try {
-    png = Buffer.from(new Resvg(svg, { fitTo: { mode: 'original' } }).render().asPng());
+    png = rasterize({ svg, opts: { fitTo: { mode: 'original' } } }).png;
   } catch (e) {
     throw new DecodeError(
       `This ${fmt.toUpperCase()} could not be decoded: ${(e as Error).message}`,

@@ -21,7 +21,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Resvg } from '@resvg/resvg-js';
+import { rasterize, rasterizeSync, type RasterJob } from '../../utils/resvg-isolate';
 import type { DesignSpec } from '../../schema/types';
 import type { ToolResult, ProgressItem } from '../types';
 import { resolveDesignPath, readYAML, errResult, okResult, pOk, pInfo, buildContext } from './utils';
@@ -140,13 +140,12 @@ export function previewMotion(args: PreviewArgs): ToolResult {
 
   const cells: Array<{ png: Buffer; t: number }> = [];
   try {
-    for (const t of times) {
-      const svg = renderToSVGString(cullFrame(framedSpec(spec, Math.max(0, pageIndex), t)));
-      const png = new Resvg(svg, {
-        fitTo: { mode: 'width', value: cellW }, background: '#FFFFFF', font: resvgFontOption(projDir),
-      }).render().asPng();
-      cells.push({ png: Buffer.from(png), t });
-    }
+    // One renderer process for every cell, not one per cell.
+    const shots = rasterizeSync(times.map((t): RasterJob => ({
+      svg: renderToSVGString(cullFrame(framedSpec(spec, Math.max(0, pageIndex), t))),
+      opts: { fitTo: { mode: 'width', value: cellW }, background: '#FFFFFF', font: resvgFontOption(projDir) },
+    })));
+    shots.forEach((shot, i) => cells.push({ png: shot.png, t: times[i] ?? 0 }));
   } catch (e) {
     return errResult(op, `Frame render failed: ${(e as Error).message}`, 'Run diagnose_design to find the bad layer.', progress);
   }
@@ -159,9 +158,7 @@ export function previewMotion(args: PreviewArgs): ToolResult {
   // machine and arrived unlabelled from the container, where the font set is
   // different. A filmstrip with no timecodes is a contact sheet with no
   // contact sheet.
-  const stripPng = new Resvg(filmstripSVG(cells, cellW, cellH, sceneMs), {
-    background: '#14161A', font: resvgFontOption(projDir),
-  }).render().asPng();
+  const stripPng = rasterize({ svg: filmstripSVG(cells, cellW, cellH, sceneMs), opts: { background: '#14161A', font: resvgFontOption(projDir) } }).png;
 
   const out: Record<string, unknown> = {
     design_path: dPath, scene_ms: Math.round(sceneMs), poses: cells.length,
@@ -220,10 +217,12 @@ function writeLoopGif(
   const times = previewTimes(sceneMs, n);
   const frames: GifFrame[] = [];
   try {
-    for (const t of times) {
-      const svg = renderToSVGString(cullFrame(framedSpec(spec, pageIndex, t)));
-      const r = new Resvg(svg, { fitTo: { mode: 'width', value: cellW }, background: '#FFFFFF', font: resvgFontOption(projDir) }).render();
-      frames.push({ pixels: new Uint8ClampedArray(r.pixels), delayMs: Math.max(20, Math.round(sceneMs / times.length)) });
+    const shots = rasterizeSync(times.map((t): RasterJob => ({
+      svg: renderToSVGString(cullFrame(framedSpec(spec, pageIndex, t))),
+      opts: { fitTo: { mode: 'width', value: cellW }, background: '#FFFFFF', font: resvgFontOption(projDir) }, want: 'pixels',
+    })));
+    for (const shot of shots) {
+      frames.push({ pixels: new Uint8ClampedArray(shot.pixels), delayMs: Math.max(20, Math.round(sceneMs / times.length)) });
     }
     const gif = encodeGIF(frames, { width: cellW, height: cellH, loopCount: 0 });
     const outPath = dPath.replace(/\.design\.yaml$/, '.preview.gif');
