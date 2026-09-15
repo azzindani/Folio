@@ -505,6 +505,12 @@ export class AssetPanelManager {
         deleteFolders: (fs) => void this.removeFolders(fs),
         place: () => this.placeSelection(),
         editDoc: (a) => this.writeDoc(a),
+        soundtrack: (a) => {
+          if (!this.state) return;
+          // A UI default, visible and changeable on the Play all stage: a track cut dead at the end sounds broken.
+          this.state.setAudioTracks([{ id: a.id, src: a.path, volume: 1, fade_out: 1000 }]);
+          void this.toast(`${a.path.split('/').pop() ?? a.id} plays under the piece — Play all to hear it`, 'success');
+        },
         openTab: (a) => window.open(this.io.url(a), '_blank', 'noopener'),
         cut: () => this.clip('cut'),
         copy: () => this.clip('copy'),

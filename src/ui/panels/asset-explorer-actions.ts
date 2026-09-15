@@ -18,6 +18,8 @@ export interface MenuHandlers {
   deleteFolders(folders: string[]): void;
   place(): void;
   editDoc(a: AssetRow): void;
+  /** Put a sound file under the whole piece (Play all plays it; mp4/webm carry it). */
+  soundtrack(a: AssetRow): void;
   openTab(a: AssetRow): void;
   cut(): void;
   copy(): void;
@@ -72,6 +74,7 @@ export function entryMenu(entry: Entry, ctx: MenuContext): MenuItem[] {
       ? [{ label: ctx.placeable > 1 ? `Place ${ctx.placeable} on canvas` : 'Place on canvas', run: () => on.place() }]
       : []),
     ...(a.kind === 'docs' ? [{ label: 'Edit text', run: () => on.editDoc(a) }] : []),
+    ...(a.kind === 'audio' && ctx.canPlace ? [{ label: 'Use as soundtrack', run: () => on.soundtrack(a) }] : []),
     { label: 'Open in new tab', run: () => on.openTab(a) },
     { separator: true, label: '' },
     { label: 'Cut', accel: 'Ctrl+X', run: () => on.cut() },

@@ -1,4 +1,4 @@
-import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec, Page, PageTransition } from '../schema/types';
+import type { DesignSpec, ThemeSpec, Layer, PaletteSpec, TypePackSpec, EffectsPackSpec, Page, PageTransition, AudioTrack } from '../schema/types';
 import type { AnimationSpec } from '../animation/types';
 import { addBlankPage, duplicatePage, deletePage, movePage as movePageOp } from './state-pages';
 import { debug } from '../utils/debug';
@@ -439,5 +439,15 @@ export class StateManager {
     if (patch.auto_advance === null) delete next.auto_advance;
     else if (patch.auto_advance !== undefined) next.auto_advance = patch.auto_advance;
     this.set('design', { ...d, pages: pages.map((p, i) => (i === index ? next : p)) }, false);
+  }
+
+  /** Replace the design's soundtrack (the tracks under the whole piece). Undoable; [] removes it. */
+  setAudioTracks(tracks: AudioTrack[]): void {
+    const d = this.state.design;
+    if (!d) return;
+    this.pushUndo();
+    const next: DesignSpec = { ...d };
+    if (tracks.length) next.audio = tracks; else delete next.audio;
+    this.set('design', next, false);
   }
 }

@@ -3,6 +3,7 @@ import { SceneStage } from './scene-stage';
 import { ScenePlayer, type SceneClock } from '../../editor/scene-player';
 import type { StateManager } from '../../editor/state';
 import type { DesignSpec } from '../../schema/types';
+import { SceneAudio, type SoundOutput } from '../../editor/scene-audio';
 
 const page = (id: string, fill: string, extra: object = {}): object => ({
   id, label: id.toUpperCase(), ...extra,
@@ -27,6 +28,26 @@ function setup(): { stage: SceneStage; player: ScenePlayer; setPageScene: Return
   return { stage: new SceneStage(state, player), player, setPageScene };
 }
 
+/** A deck with a 30s track under it, played through a fake audio clock that records starts and stops. */
+function setupSound(): { stage: SceneStage; player: ScenePlayer; audio: SceneAudio; setAudioTracks: ReturnType<typeof vi.fn>; starts: number[][]; stops: () => number } {
+  const setAudioTracks = vi.fn();
+  const design = { ...deck(), audio: [{ id: 'bed', src: 'assets/audio/bed.mp3', volume: 0.8, fade_out: 500 }] } as DesignSpec;
+  const state = { get: () => ({ design, currentPageIndex: 0 }), subscribe: () => () => undefined, setPageScene: vi.fn(), setAudioTracks } as unknown as StateManager;
+  const player = new ScenePlayer(state, { now: () => 0, frame: () => 1, cancel: () => undefined });
+  const starts: number[][] = [];
+  let stopped = 0;
+  const out = {
+    currentTime: 0, destination: {},
+    createGain: () => ({ gain: { setValueAtTime: () => undefined, linearRampToValueAtTime: () => undefined }, connect: () => undefined, disconnect: () => undefined }),
+    createBufferSource: () => ({ connect: () => undefined, disconnect: () => undefined, start: (...a: number[]) => { starts.push(a); }, stop: () => { stopped++; } }),
+    decodeAudioData: async () => ({ duration: 30 }),
+    resume: async () => undefined,
+  } as unknown as SoundOutput;
+  const audio = new SceneAudio({ context: () => out, load: async () => new ArrayBuffer(8) });
+  return { stage: new SceneStage(state, player, () => undefined, audio), player, audio, setAudioTracks, starts, stops: () => stopped };
+}
+
+const flush = (): Promise<void> => new Promise(res => { setTimeout(res, 0); });
 const $ = <T extends Element>(sel: string): T | null => document.querySelector<T>(sel);
 /** The rendered frame lives in the stage's shadow root. */
 const frameSvg = (): SVGSVGElement | null => $('.scene-stage-frame')?.shadowRoot?.querySelector('svg') ?? null;
@@ -94,5 +115,45 @@ describe('SceneStage — Play all', () => {
     expect($('.scene-stage')).toBeNull();
     expect(player.playing).toBe(false);
     document.removeEventListener('keydown', editorShortcut);
+  });
+
+  it('draws the soundtrack under the strip and plays it with the scenes, from wherever a seek lands', async () => {
+    const { stage, player, starts, stops } = setupSound();
+    stage.open();
+    await flush();
+    expect($<HTMLElement>('.scene-stage-sound')?.hidden).toBe(false);
+    expect($<HTMLElement>('.scene-stage-sound-clip')?.title).toContain('assets/audio/bed.mp3 · 0.0s–2.0s');
+    document.dispatchEvent(key(' '));
+    expect(starts).toEqual([[0, 0, 2]]);
+    player.seek(1500);
+    expect(starts[1]).toEqual([0, 1.5, 0.5]);
+    const before = stops();
+    document.dispatchEvent(key(' '));
+    expect(player.playing).toBe(false);
+    expect(stops()).toBeGreaterThan(before);
+    stage.close();
+  });
+
+  it('sets a track\'s volume through state, and mute silences a playing piece', async () => {
+    const { stage, player, audio, setAudioTracks, starts, stops } = setupSound();
+    stage.open();
+    await flush();
+    const volume = $<HTMLInputElement>('.scene-stage-volume');
+    if (volume) { volume.value = '40'; volume.dispatchEvent(new Event('change')); }
+    expect(setAudioTracks).toHaveBeenCalledWith([{ id: 'bed', src: 'assets/audio/bed.mp3', volume: 0.4, fade_out: 500 }]);
+    player.play();
+    const before = stops();
+    $<HTMLButtonElement>('.scene-stage-mute')?.click();
+    expect(audio.muted).toBe(true);
+    expect(stops()).toBeGreaterThan(before);
+    expect(starts).toHaveLength(1);
+    stage.close();
+  });
+
+  it('shows no sound row for a design without sound', () => {
+    const { stage } = setup();
+    stage.open();
+    expect($<HTMLElement>('.scene-stage-sound')?.hidden).toBe(true);
+    stage.close();
   });
 });
