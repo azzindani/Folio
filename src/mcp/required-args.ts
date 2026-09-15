@@ -116,6 +116,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     text: ['design_path', 'layer_id'],
     wiggle: ['design_path', 'amplitude'],
     camera: ['design_path', 'shots'],
+    morph: ['design_path', 'layer_id'],
     keyframe: ['design_path', 'layer_id', 'keyframe'],
     frame: ['design_path'],
     preview: ['design_path'],

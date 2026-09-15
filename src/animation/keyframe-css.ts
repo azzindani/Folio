@@ -16,14 +16,15 @@
 import type { AnimationSpec, Keyframe, AnchorPoint } from './types';
 import { easingToCSS, bakeEasing, resolveEasing } from './easing';
 import { revealInsetCSS, type RevealFrom } from './reveal';
+import { morphPairCached, morphPathAt } from '../engine/path-ops';
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
 /** Animated numeric channels, and what they lerp from when a frame omits them. */
-const CHANNELS = ['x', 'y', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal', 'tracking'] as const;
+const CHANNELS = ['x', 'y', 'rotation', 'opacity', 'scale', 'scale_x', 'scale_y', 'skew_x', 'skew_y', 'blur', 'draw', 'draw_start', 'reveal', 'tracking', 'morph'] as const;
 type Channel = typeof CHANNELS[number];
 const REST: Record<Channel, number> = {
-  x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, scale_x: 1, scale_y: 1, skew_x: 0, skew_y: 0, blur: 0, draw: 1, draw_start: 0, reveal: 1, tracking: 0,
+  x: 0, y: 0, rotation: 0, opacity: 1, scale: 1, scale_x: 1, scale_y: 1, skew_x: 0, skew_y: 0, blur: 0, draw: 1, draw_start: 0, reveal: 1, tracking: 0, morph: 0,
 };
 
 /** A fully resolved pose: every channel has a number, colours may be absent. */
@@ -130,7 +131,7 @@ interface Step { pct: number; decls: string[]; timing: string }
  * Turn a keyframe timeline into a real `@keyframes` rule plus the selector
  * that plays it. Returns '' for anything with fewer than two frames.
  */
-export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacingBase = 0): string {
+export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacingBase = 0, morph?: { from: string; to: string }): string {
   const frames = anim.keyframes;
   if (!frames || frames.length < 2) return '';
 
@@ -154,6 +155,9 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
   const steps: Step[] = [];
   const pctOf = (t: number): number => Math.max(0, Math.min(100, ((t - first.t) / duration) * 100));
 
+  // The morph value at each step, for the outline keyframes that run beside the pose.
+  const morphAt: number[] = [];
+
   for (let i = 0; i < sorted.length; i++) {
     const kf = sorted[i];
     const pose = poses[i];
@@ -163,6 +167,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
 
     if (isLast || css !== null) {
       steps.push({ pct: pctOf(kf.t), decls: poseDecls(pose, hasDraw, wipe, tracked), timing: css ?? 'linear' });
+      morphAt.push(pose.n.morph);
       continue;
     }
 
@@ -175,7 +180,9 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
     const baked = bakeEasing(name, 16);
     for (let k = 0; k < baked.length - 1; k++) {
       const [frac, eased] = baked[k];
-      steps.push({ pct: p0 + (p1 - p0) * frac, decls: poseDecls(lerpPose(pose, nextPose, eased), hasDraw, wipe, tracked), timing: 'linear' });
+      const between = lerpPose(pose, nextPose, eased);
+      steps.push({ pct: p0 + (p1 - p0) * frac, decls: poseDecls(between, hasDraw, wipe, tracked), timing: 'linear' });
+      morphAt.push(between.n.morph);
     }
   }
 
@@ -185,6 +192,7 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
   const direction = playback?.direction ?? 'normal';
   const delay = Math.max(0, playback?.delay ?? 0);
   const origin = anchorToOrigin(playback?.anchor);
+  const timing = `${duration}ms linear ${delay}ms ${iteration} ${direction} both`;
   // A trimmed track writes its dash pair per step; only a plain reveal needs the static dash.
   const drawDecl = hasDraw === 'dash' ? ' stroke-dasharray: 1;' : '';
 
@@ -192,13 +200,22 @@ export function generateKeyframeCSS(layerId: string, anim: AnimationSpec, spacin
     ? `[data-layer-id="${layerId}"], [data-layer-id="${layerId}"] *`
     : `[data-layer-id="${layerId}"]`;
 
+  // Morph: the outline animates as its own keyframes on the <path>. One element
+  // takes one animation list, so a path carrying the layer id runs both.
+  const pair = morph && sorted.some(k => num(k.morph) !== undefined) ? morphPairCached(morph.from, morph.to) : null;
+  const outline = pair ? [
+    `@keyframes ${name}-d { ${steps.map((s, i) => `${fmt(s.pct)}% { d: path("${morphPathAt(pair, clamp01(morphAt[i] ?? 0))}"); animation-timing-function: ${s.timing}; }`).join(' ')} }`,
+    `path[data-layer-id="${layerId}"] { animation: ${name} ${timing}, ${name}-d ${timing}; }`,
+    `[data-layer-id="${layerId}"] path { animation: ${hasDraw !== 'none' ? `${name} ${timing}, ` : ''}${name}-d ${timing}; }`,
+  ] : [];
+
   return [
     `@keyframes ${name} { ${body} }`,
-    `${selector} { transform-box: fill-box; transform-origin: ${origin};${drawDecl} ` +
-      `animation: ${name} ${duration}ms linear ${delay}ms ${iteration} ${direction} both; }`,
+    `${selector} { transform-box: fill-box; transform-origin: ${origin};${drawDecl} animation: ${name} ${timing}; }`,
     // The <text> carries its own letter-spacing attribute, which beats an
     // inherited value — Chromium held the glyphs still without this rule.
     ...(tracked !== undefined ? [`[data-layer-id="${layerId}"] text { letter-spacing: inherit; }`] : []),
+    ...outline,
   ].join('\n');
 }
 

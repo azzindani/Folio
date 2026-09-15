@@ -100,6 +100,16 @@ describe('generateKeyframeCSS v2', () => {
     expect(generateKeyframeCSS('plain', { keyframes: [{ t: 0, opacity: 0 }, { t: 1, opacity: 1 }] })).not.toContain('clip-path');
   });
 
+  it('morphs a path with d: path() keyframes on the path itself, beside its pose track', () => {
+    const anim: AnimationSpec = { keyframes: [{ t: 0, morph: 0, opacity: 0 }, { t: 800, morph: 1, opacity: 1 }], playback: { duration: 800 } };
+    const css = generateKeyframeCSS('shape', anim, 0, { from: 'M 0 0 L 100 0 L 100 100 L 0 100 Z', to: 'M 50 0 L 100 50 L 50 100 L 0 50 Z' });
+    expect(css).toContain('@keyframes kf-shape-d');
+    expect(css).toMatch(/0% \{ d: path\("M [\d.]+ [\d.]+ L/);
+    // One element takes one animation list, so the path runs its pose AND its outline.
+    expect(css).toContain('path[data-layer-id="shape"] { animation: kf-shape 800ms linear 0ms 1 normal both, kf-shape-d 800ms linear 0ms 1 normal both; }');
+    expect(generateKeyframeCSS('shape', anim)).not.toContain('kf-shape-d');
+  });
+
   it('tracks letter-spacing from the authored base on the layer, and lets its text inherit it', () => {
     const anim: AnimationSpec = { keyframes: [{ t: 0, tracking: 30 }, { t: 600, tracking: 0 }], playback: { duration: 600 } };
     const css = generateKeyframeCSS('title', anim, 4);

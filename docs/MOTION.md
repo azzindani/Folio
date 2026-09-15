@@ -36,7 +36,8 @@ layers:
 ```
 
 * **One track per layer.** `t` is ms from the track's first frame; `playback.delay` places the track in the scene.
-* **Channels:** `x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw draw_start reveal tracking count fill.color stroke.color`.
+* **Channels:** `x y opacity scale scale_x scale_y rotation skew_x skew_y blur draw draw_start reveal tracking count morph fill.color stroke.color`.
+* **`morph`** 0→1 turns a path layer into its `morph_to` outline (`animation(op:morph)` writes both). `src/engine/path-ops.ts` resamples the two outlines to the same 96 points and rotates the second to its closest start — the Blend machinery — so every frame is a pointwise lerp. The flipbook writes that `d`. The SVG route adds a `-d` `@keyframes` of `d: path()` steps on the `<path>` (a Chromium probe read the exact square→diamond midpoint), and `path[data-layer-id]` runs the pose and the outline in one animation list. Chromium and Firefox play it; Safari shows the start shape. Arcs (`A`) are refused.
 * **`count`** 0→1 is the fraction of the number written in a text layer that shows (`src/animation/count.ts`): 0 counts from zero, 1 is the text as authored, and the format is kept — prefix, suffix, decimals, thousands separators ("Save 40% today" counts only the 40). The flipbook writes the figure into each frame. The SVG route cannot change what a `<text>` says, so `src/export/count-expand.ts` turns the layer into a group of stepped variants — one per distinct figure, sampled at 30 fps with the flipbook's own `interpolateKeyframes`, capped at 120, each cut in with held keyframes — and keeps the layer's other channels on the group. The editor's live preview shows the static figure.
 * **`tracking`** is px added to a text layer's letter-spacing (After Effects' Tracking; 0 = as authored). It never re-wraps: the flipbook writes it as `tracking_offset`, which the renderer adds to the `letter-spacing` attribute while wrapping reads `style.letter_spacing` alone; CSS animates `letter-spacing` on the layer's `<g>` from the authored base (callers pass their layers so `generateDesignAnimationCSS` knows it) with `[data-layer-id] text { letter-spacing: inherit }` — without that rule Chromium kept the `<text>`'s own attribute and the glyphs never moved.
 * **`draw_start`** is the other end of `draw` (After Effects' Trim Paths start): the visible run is `draw_start → draw`, so trailing it behind `draw` makes a segment travel along a path. CSS writes a dash pair per step against `pathLength 1`; the flipbook writes the same pair against the measured length.
@@ -97,6 +98,7 @@ animation(op:scene,    design_path, page_id, transition?, length_ms?)   how a pa
 animation(op:text,     design_path, layer_id, by?, preset|keyframes, stagger_ms?, order?, mask?)   text animator: split + stagger in one call
 animation(op:wiggle,   design_path, layer_id|layer_ids, amplitude{x,y,rotation,scale}, frequency?, duration?, seed?)   seeded noise on a wrapper parent
 animation(op:camera,   design_path, shots:[{t, target:"all"|id|ids, padding?, easing?, hold?}], exclude?, padding?)   2D camera: each shot frames its target
+animation(op:morph,    design_path, layer_id, to | to_layer, keep_target?, duration?, delay?, easing?)   one path becomes another shape
 ```
 
 ### `op:sequence`

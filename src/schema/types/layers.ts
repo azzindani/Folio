@@ -146,6 +146,8 @@ export interface PathLayer extends BaseLayer {
   stroke?: Stroke;
   /** SVG fill-rule — 'evenodd' punches holes (ring/donut/gear shapes). */
   fill_rule?: 'nonzero' | 'evenodd';
+  /** The outline the `morph` channel turns this path into (0 = `d`, 1 = this). No arcs. */
+  morph_to?: string;
 }
 
 export interface PolygonLayer extends BaseLayer {
