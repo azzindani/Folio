@@ -2778,10 +2778,6 @@ button:focus:not(:focus-visible) { outline: none; }
   .mob-backdrop { background: transparent; transition: background 0.2s; }
   .sheet-dim .mob-backdrop { background: rgba(0,0,0,0.45); }
 
-  /* A row of labelled number fields does not fit across a phone: the Trails
-     checkbox hung off the right edge of the sheet. Let it wrap. */
-  .timeline-toolbar { flex-wrap: wrap; row-gap: 8px; }
-
   /* Which panel am I looking at, and how do I get out. */
   .mob-sheet-title {
     display: flex;
@@ -2929,7 +2925,11 @@ button:focus:not(:focus-visible) { outline: none; }
 .timeline-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  /* Wraps everywhere, not just on a phone: this is a row of labelled number
+     fields inside a 300px panel, and unwrapped it cut "Stagger" in half and
+     put Trails off the edge on the DESKTOP too. */
+  flex-wrap: wrap;
+  gap: 8px 6px;
   padding: 6px 8px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;

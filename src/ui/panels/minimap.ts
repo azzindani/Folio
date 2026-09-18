@@ -1,14 +1,21 @@
 import { type StateManager } from '../../editor/state';
 import { renderDesign, renderPage } from '../../renderer/renderer';
+import { composeTheme } from '../../styles/compose';
 
 /**
- * Minimap: small canvas thumbnail of the design, with a
- * viewport rectangle the user can drag to pan the canvas.
+ * Minimap: a small live thumbnail of the design, with a viewport rectangle the
+ * user can drag to pan the canvas.
+ *
+ * The thumbnail is INLINE SVG, not an SVG drawn into a <canvas> through an
+ * <img>. SVG-as-image is sandboxed from the document's fonts, so every text
+ * layer fell back to the browser's default serif — the minimap showed "Folio"
+ * in Times under a canvas showing it in Space Grotesk, on every desktop screen.
+ * The page strip already rendered inline for the same reason.
  */
 export class MinimapManager {
   private container: HTMLElement;
   private state: StateManager;
-  private canvas!: HTMLCanvasElement;
+  private surface!: HTMLDivElement;
   private vpBox!: HTMLDivElement;
   private mapW = 0;
   private mapH = 0;
@@ -18,7 +25,7 @@ export class MinimapManager {
     this.state = state;
     this.build();
     this.state.subscribe((_, keys) => {
-      if (keys.some(k => ['design', 'theme', 'currentPageIndex'].includes(k))) {
+      if (keys.some(k => ['design', 'theme', 'currentPageIndex', 'palette', 'typePack', 'effectsPack'].includes(k))) {
         this.refreshThumbnail();
       }
       if (keys.some(k => ['zoom', 'panX', 'panY', 'design'].includes(k))) {
@@ -33,11 +40,12 @@ export class MinimapManager {
       'position:relative;overflow:hidden;background:var(--color-bg);' +
       'border-top:1px solid var(--color-border);';
 
-    this.canvas = document.createElement('canvas');
+    this.surface = document.createElement('div');
+    this.surface.className = 'minimap-surface';
     // width is set in px per refresh (see refreshThumbnail); margin:auto keeps a
     // thumbnail narrower than the panel centred rather than jammed left.
-    this.canvas.style.cssText = 'display:block;margin:0 auto;image-rendering:pixelated;cursor:crosshair;';
-    this.container.appendChild(this.canvas);
+    this.surface.style.cssText = 'display:block;margin:0 auto;overflow:hidden;cursor:crosshair;';
+    this.container.appendChild(this.surface);
 
     // Viewport indicator box
     this.vpBox = document.createElement('div');
@@ -46,7 +54,7 @@ export class MinimapManager {
       'pointer-events:none;box-sizing:border-box;';
     this.container.appendChild(this.vpBox);
 
-    this.canvas.addEventListener('mousedown', this.onDrag.bind(this));
+    this.surface.addEventListener('mousedown', this.onDrag.bind(this));
     this.refreshThumbnail();
   }
 
@@ -73,43 +81,32 @@ export class MinimapManager {
 
     this.mapW = THUMB_W;
     this.mapH = THUMB_H;
-    this.canvas.width  = THUMB_W;
-    this.canvas.height = THUMB_H;
-    // Explicit px, not 100%: the whole bug above was the element being wider
-    // than the pixels drawn into it.
-    this.canvas.style.width  = `${THUMB_W}px`;
-    this.canvas.style.height = `${THUMB_H}px`;
+    // Explicit px: the old bug here was the element being wider than the
+    // pixels drawn into it.
+    this.surface.style.width  = `${THUMB_W}px`;
+    this.surface.style.height = `${THUMB_H}px`;
     this.container.style.height = `${THUMB_H + 1}px`;
 
-    // Render design to an off-screen SVG then draw on canvas via Image
+    // Composed exactly as the canvas and the page strip compose it, so the
+    // three views of one design cannot disagree about its colours or type.
+    const { palette, typePack, effectsPack } = this.state.get();
+    const composed = theme
+      ? composeTheme(theme, { palette: palette ?? undefined, typePack: typePack ?? undefined, effectsPack: effectsPack ?? undefined })
+      : undefined;
     let svg: SVGSVGElement;
     if (design.pages && design.pages.length > 0) {
       const pi = Math.min(currentPageIndex, design.pages.length - 1);
       const page = design.pages[pi];
-      svg = renderPage(page?.layers ?? [], width, height, { theme: theme ?? undefined });
+      svg = renderPage(page?.layers ?? [], width, height, { theme: composed });
     } else {
-      svg = renderDesign(design, { theme: theme ?? undefined });
+      svg = renderDesign(design, { theme: composed });
     }
-
     svg.setAttribute('width',  String(THUMB_W));
     svg.setAttribute('height', String(THUMB_H));
-
-    const svgStr = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
-    const url  = URL.createObjectURL(blob);
-
-    const img = new Image();
-    img.onload = () => {
-      const ctx = this.canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, THUMB_W, THUMB_H);
-        ctx.drawImage(img, 0, 0, THUMB_W, THUMB_H);
-      }
-      URL.revokeObjectURL(url);
-      this.updateViewportBox();
-    };
-    img.onerror = () => URL.revokeObjectURL(url);
-    img.src = url;
+    svg.style.display = 'block';
+    svg.style.pointerEvents = 'none';
+    this.surface.replaceChildren(svg);
+    this.updateViewportBox();
   }
 
   private updateViewportBox(): void {
@@ -143,7 +140,7 @@ export class MinimapManager {
 
   private onDrag(e: MouseEvent): void {
     const move = (me: MouseEvent) => {
-      const rect   = this.canvas.getBoundingClientRect();
+      const rect   = this.surface.getBoundingClientRect();
       const mx     = me.clientX - rect.left;
       const my     = me.clientY - rect.top;
       const design = this.state.get().design;
@@ -153,11 +150,16 @@ export class MinimapManager {
       const scale = this.mapW / width;
       const zoom  = this.state.get().zoom ?? 1;
 
-      // Center the viewport on click point
+      // Center the viewport on the click point — of the REAL canvas area, the
+      // same one the viewport box is drawn from. This used to guess 55% × 75%
+      // of the window, so a click landed the view somewhere else.
+      const area = document.querySelector<HTMLElement>('.canvas-area');
+      const areaW = area?.clientWidth || window.innerWidth * 0.55;
+      const areaH = area?.clientHeight || window.innerHeight * 0.75;
       const designX = mx / scale;
       const designY = my / scale;
-      const newPanX = -(designX * zoom) + (window.innerWidth  * 0.55) / 2;
-      const newPanY = -(designY * zoom) + (window.innerHeight * 0.75) / 2;
+      const newPanX = -(designX * zoom) + areaW / 2;
+      const newPanY = -(designY * zoom) + areaH / 2;
 
       this.state.batch(() => {
         this.state.set('panX', newPanX, false);
