@@ -11,7 +11,11 @@ function shell(): HTMLElement {
   app.innerHTML = `
     <div class="toolbar">
       <div class="toolbar-center">
-        <div class="mode-toggle"><button class="mode-btn" data-mode="visual">Visual</button></div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="visual">Visual</button>
+          <button class="mode-btn" data-mode="payload">Payload</button>
+          <button class="mode-btn" data-mode="preview">Preview</button>
+        </div>
         <button data-action="new-design"><span>New</span></button>
         <button data-action="add-page"><span>Add Page</span></button>
         <button class="toolbar-catalog-btn"><span>Catalog</span></button>
@@ -63,11 +67,63 @@ describe('mobile dock', () => {
     expect(dock?.querySelector('.mobile-nav')).toBeTruthy();
   });
 
-  it('labels every verb — a phone has no hover to explain an icon', () => {
+  it('labels every button — a phone has no hover to explain an icon', () => {
     const app = shell();
     wireMobileDock(app);
     const labels = [...app.querySelectorAll('.dock-verbs .dock-label')].map(n => n.textContent);
-    expect(labels).toEqual(['Undo', 'Redo', 'Play', 'Fit', 'Present', 'Export', 'More']);
+    expect(labels).toEqual(['Visual', 'Payload', 'Preview', 'Undo', 'Redo', 'Play', 'Export', 'More']);
+  });
+
+  it('puts the view switch in the dock, as one group', () => {
+    const app = shell();
+    wireMobileDock(app);
+    const group = app.querySelector('.dock-verbs > .dock-modes');
+    expect(group?.querySelectorAll('.dock-mode')).toHaveLength(3);
+  });
+
+  it('a view button fires the toolbar\'s own mode button, which stays home', () => {
+    const app = shell();
+    wireMobileDock(app);
+    const real = app.querySelector<HTMLElement>('.mode-btn[data-mode="payload"]')!;
+    const spy = vi.fn();
+    real.addEventListener('click', spy);
+    app.querySelector<HTMLElement>('[data-dock-mode="payload"]')!.click();
+    expect(spy).toHaveBeenCalledOnce();
+    // Still inside the toolbar, where ToolbarManager's delegated handler lives.
+    expect(real.closest('.toolbar-center')).toBeTruthy();
+  });
+
+  it('switching view closes whatever was open over the old one', () => {
+    const app = shell();
+    wireMobileDock(app);
+    const closeAll = vi.fn();
+    app.querySelector('.mob-backdrop')!.addEventListener('click', closeAll);
+    app.querySelector<HTMLElement>('[data-dock="more"]')!.click();
+    expect(app.querySelector('.dock-more')?.classList.contains('open')).toBe(true);
+    app.querySelector<HTMLElement>('[data-dock-mode="payload"]')!.click();
+    expect(app.querySelector('.dock-more')?.classList.contains('open')).toBe(false);
+    expect(closeAll).toHaveBeenCalledOnce();
+  });
+
+  it('any other verb dismisses the More sheet', () => {
+    const app = shell();
+    wireMobileDock(app);
+    app.querySelector<HTMLElement>('[data-dock="more"]')!.click();
+    app.querySelector<HTMLElement>('[data-dock="undo"]')!.click();
+    expect(app.querySelector('.dock-more')?.classList.contains('open')).toBe(false);
+  });
+
+  it('lights whichever view the toolbar says is active', async () => {
+    const app = shell();
+    wireMobileDock(app);
+    const pressed = (): string | undefined =>
+      app.querySelector<HTMLElement>('.dock-mode.active')?.dataset['dockMode'];
+    expect(pressed()).toBe('visual');
+    app.querySelector('.mode-btn[data-mode="visual"]')!.classList.remove('active');
+    app.querySelector('.mode-btn[data-mode="payload"]')!.classList.add('active');
+    await Promise.resolve();   // MutationObserver callbacks are microtasks
+    expect(pressed()).toBe('payload');
+    expect(app.querySelector('[data-dock-mode="payload"]')?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('fires the REAL control rather than re-implementing it', () => {
@@ -99,12 +155,22 @@ describe('mobile dock', () => {
 
   it('moves the secondary controls into the More sheet, nodes and all', () => {
     const app = shell();
-    const mode = app.querySelector('.mode-toggle');
+    const add = app.querySelector('[data-action="add-page"]');
     wireMobileDock(app);
     const body = app.querySelector('.dock-more-body');
-    expect(body?.contains(mode!)).toBe(true);
+    expect(body?.contains(add!)).toBe(true);
     // The SAME node, so every binding the toolbar put on it still fires.
-    expect(app.querySelectorAll('.mode-toggle')).toHaveLength(1);
+    expect(app.querySelectorAll('[data-action="add-page"]')).toHaveLength(1);
+  });
+
+  it('Fit and Present live in More, labelled, now the view switch has the room', () => {
+    const app = shell();
+    wireMobileDock(app);
+    for (const [sel, label] of [['#zoom-fit', 'Fit to screen'], ['#status-preview', 'Present']] as const) {
+      const el = app.querySelector<HTMLElement>(sel)!;
+      expect(el.closest('.dock-more-body')).toBeTruthy();
+      expect(el.dataset['dockLabel']).toBe(label);
+    }
   });
 
   it('mounts the sheet inside the toolbar, where the toolbar delegate can hear it', () => {
@@ -125,7 +191,7 @@ describe('mobile dock', () => {
     fakeMedia(false);
     const app = shell();
     wireMobileDock(app);
-    expect(app.querySelector('.toolbar-center > .mode-toggle')).toBeTruthy();
+    expect(app.querySelector('.toolbar-center > [data-action="new-design"]')).toBeTruthy();
     expect(app.querySelector('.dock-more-body')?.children.length).toBe(0);
   });
 

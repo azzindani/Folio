@@ -6,14 +6,26 @@
 // Export) while the bottom carried a nav bar and a status bar that OVERLAPPED
 // each other and ran off the right edge. This replaces all of it with one dock:
 //
-//   row 1 — verbs:  undo · redo · play · fit · present · export · more
+//   row 1 — [Visual | Payload | Preview] · undo · redo · play · export · more
 //   row 2 — places: Layers · Props · Tools · Panels · Find
+//
+// The view switch is in the dock, not the More sheet: which view you are in is
+// the one piece of state a phone user checks constantly, and two taps to reach
+// the YAML was one too many. Fit and Present moved to More to make the room —
+// on a phone, a pinch already fits.
 //
 // Nothing here re-implements a control. Each dock button dispatches a click on
 // the real one (the toolbar's, the status bar's, the nav's), so behaviour cannot
 // drift from the desktop's — the same delegation rule the popovers follow.
 import { PHONE_LAYOUT_MQ } from './breakpoints';
 import { chromeIcon } from './chrome-icons';
+
+/** The three views, in the order the desktop toolbar shows them. */
+const MODES: { mode: string; label: string; icon: string }[] = [
+  { mode: 'visual', label: 'Visual', icon: 'image' },
+  { mode: 'payload', label: 'Payload', icon: 'code' },
+  { mode: 'preview', label: 'Preview', icon: 'eye' },
+];
 
 interface DockAction {
   key: string;
@@ -29,14 +41,13 @@ const ACTIONS: DockAction[] = [
   { key: 'undo', sel: '[data-action="undo"]', label: 'Undo', icon: 'undo' },
   { key: 'redo', sel: '[data-action="redo"]', label: 'Redo', icon: 'redo' },
   { key: 'play', sel: '.toolbar-play', label: 'Play', icon: 'play', followsSource: true },
-  { key: 'fit', sel: '#zoom-fit', label: 'Fit', icon: 'fit' },
-  { key: 'present', sel: '#status-preview', label: 'Present', icon: 'present' },
   { key: 'export', sel: '[data-action="export"]', label: 'Export', icon: 'upload' },
 ];
 
-/** Controls that move into the More sheet, in the order they appear there. */
+/** Controls that move into the More sheet, in the order they appear there.
+ *  Not the mode switch: it stays home in the toolbar, where its delegated click
+ *  handler lives, and the dock's own three buttons fire it. */
 const MORE: string[] = [
-  '.mode-toggle',
   '[data-action="new-design"]',
   '[data-action="add-page"]',
   '.toolbar-catalog-btn',
@@ -49,6 +60,8 @@ const MORE: string[] = [
 
 /** Status-bar controls the More sheet adopts, with the label a phone needs. */
 const MORE_STATUS: { sel: string; label: string }[] = [
+  { sel: '#zoom-fit', label: 'Fit to screen' },
+  { sel: '#status-preview', label: 'Present' },
   { sel: '#toggle-grid', label: 'Grid' },
   { sel: '#toggle-snap', label: 'Snap' },
   { sel: '#canvas-resize', label: 'Resize canvas' },
@@ -57,11 +70,19 @@ const MORE_STATUS: { sel: string; label: string }[] = [
 
 function actionMarkup(a: DockAction): string {
   // Labelled, like the nav row under it: a phone has no hover, so an unlabelled
-  // icon row is a guessing game — and three of these (fit, present, export) are
-  // rectangles-with-something-in-them at 20px.
+  // icon row is a guessing game.
   return `<button class="dock-btn" type="button" data-dock="${a.key}" title="${a.label}" aria-label="${a.label}">
     <span class="dock-glyph">${chromeIcon(a.icon, 19)}</span><span class="dock-label">${a.label}</span>
   </button>`;
+}
+
+/** The view switch: three buttons in one group, so it reads as a switch and
+ *  not as three more verbs. */
+function modesMarkup(): string {
+  return `<div class="dock-modes" role="group" aria-label="View">${MODES.map(m =>
+    `<button class="dock-btn dock-mode" type="button" data-dock-mode="${m.mode}" title="${m.label}" aria-label="${m.label}" aria-pressed="false">
+      <span class="dock-glyph">${chromeIcon(m.icon, 18)}</span><span class="dock-label">${m.label}</span>
+    </button>`).join('')}</div>`;
 }
 
 /**
@@ -79,6 +100,7 @@ export function wireMobileDock(container: HTMLElement): void {
   dock.className = 'mobile-dock';
   dock.innerHTML = `
     <div class="dock-verbs">
+      ${modesMarkup()}
       ${ACTIONS.map(actionMarkup).join('')}
       <button class="dock-btn" type="button" data-dock="more" title="More" aria-label="More">
         <span class="dock-glyph">${chromeIcon('more', 19)}</span><span class="dock-label">More</span>
@@ -93,6 +115,23 @@ export function wireMobileDock(container: HTMLElement): void {
   const sheet = buildMoreSheet(container);
   wireActions(container, dock, sheet);
   followPlay(container, dock);
+  followMode(container, dock);
+}
+
+/** Light the dock's view button for whichever mode the toolbar says is active. */
+function followMode(container: HTMLElement, dock: HTMLElement): void {
+  const toggle = container.querySelector<HTMLElement>('.mode-toggle');
+  if (!toggle) return;
+  const sync = (): void => {
+    const active = toggle.querySelector<HTMLElement>('.mode-btn.active')?.dataset['mode'] ?? 'visual';
+    dock.querySelectorAll<HTMLElement>('.dock-mode').forEach(b => {
+      const on = b.dataset['dockMode'] === active;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  sync();
+  new MutationObserver(sync).observe(toggle, { attributes: true, attributeFilter: ['class'], subtree: true });
 }
 
 function findSource(container: HTMLElement, sel: string): HTMLElement | null {
@@ -102,8 +141,27 @@ function findSource(container: HTMLElement, sel: string): HTMLElement | null {
 function wireActions(container: HTMLElement, dock: HTMLElement, sheet: HTMLElement): void {
   dock.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.dock-btn');
+    // A view button fires the toolbar's own mode button — still in the toolbar,
+    // unpainted, where ToolbarManager's delegated handler hears it.
+    const mode = btn?.dataset['dockMode'];
+    if (mode) {
+      e.stopPropagation();
+      // A new view is a new screen: whatever was open over the old one (the
+      // More sheet, a Layers sheet, a popover) goes, or the YAML you just asked
+      // for arrives underneath it. The backdrop's own click is the one "close
+      // everything" every surface already listens to.
+      container.querySelector<HTMLElement>('.mob-backdrop.active')?.click();
+      findSource(container, `.mode-btn[data-mode="${mode}"]`)?.click();
+      return;
+    }
     const key = btn?.dataset['dock'];
     if (!key) return;
+    // Any other verb dismisses the More sheet; it never stays open behind the
+    // thing the verb opened (the Export sheet, the scene stage).
+    if (key !== 'more' && sheet.classList.contains('open')) {
+      sheet.classList.remove('open');
+      container.querySelector('.mob-backdrop')?.classList.remove('active');
+    }
     // The forwarded click is dispatched INSIDE this one, so both reach document
     // — and the toolbar's "close the export menu when you click outside it"
     // listener sees this outer event, whose target is a dock button, and shuts
@@ -147,7 +205,7 @@ function buildMoreSheet(container: HTMLElement): HTMLElement {
     <div class="dock-more-body"></div>`;
   // INSIDE the toolbar, not beside it. ToolbarManager delegates every click from
   // the .toolbar element, so a control moved outside it keeps its markup and
-  // loses its behaviour — the mode switch sat in the sheet doing nothing. The
+  // loses its behaviour — New, Add Page and Catalog sat there doing nothing. The
   // sheet is position:fixed, so living in the toolbar costs it no layout (the
   // tablet's ⋯ menu is mounted the same way for the same reason).
   (container.querySelector('.toolbar') ?? container).appendChild(sheet);

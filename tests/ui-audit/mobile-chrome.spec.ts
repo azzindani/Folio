@@ -9,10 +9,11 @@ import { test, expect } from '@playwright/test';
 // gated on a coarse pointer, since a narrowed desktop can reach a 28px control.
 test.use({ hasTouch: true, isMobile: true });
 
-const DOCK = ['undo', 'redo', 'fit', 'present', 'export', 'more'];
+const DOCK = ['[data-dock-mode="visual"]', '[data-dock-mode="payload"]', '[data-dock-mode="preview"]',
+  '[data-dock="undo"]', '[data-dock="redo"]', '[data-dock="export"]', '[data-dock="more"]'];
 // What the More sheet holds: the controls a phone needs occasionally.
-const SHEET = ['.mode-toggle', '[data-action="new-design"]', '[data-action="add-page"]',
-  '.toolbar-catalog-btn', '.toolbar-theme-select', '#toggle-grid', '#toggle-snap', '#canvas-resize'];
+const SHEET = ['[data-action="new-design"]', '[data-action="add-page"]', '.toolbar-catalog-btn',
+  '.toolbar-theme-select', '#zoom-fit', '#status-preview', '#toggle-grid', '#toggle-snap', '#canvas-resize'];
 
 for (const vp of [{ name: 'iphone', w: 390, h: 844 }, { name: 'android-sm', w: 360, h: 640 }]) {
   test(`every control is in the dock and on-screen at ${vp.name} (${vp.w}px)`, async ({ page }) => {
@@ -28,10 +29,10 @@ for (const vp of [{ name: 'iphone', w: 390, h: 844 }, { name: 'android-sm', w: 3
       return { found: true, ok: r.right <= window.innerWidth + 0.5 && r.left >= -0.5 && r.width > 0 && r.height > 0 };
     }, sel);
 
-    for (const key of DOCK) {
-      const r = await within(`[data-dock="${key}"]`);
-      expect(r.found, `${key} present in the dock`).toBe(true);
-      expect(r.ok, `${key} fully on-screen at ${vp.w}px`).toBe(true);
+    for (const sel of DOCK) {
+      const r = await within(sel);
+      expect(r.found, `${sel} present in the dock`).toBe(true);
+      expect(r.ok, `${sel} fully on-screen at ${vp.w}px`).toBe(true);
     }
 
     // The old build had a fixed nav bar AND a fixed status bar at the bottom,
@@ -87,8 +88,11 @@ test('rulers are off and the payload view is not painted over', async ({ page })
   // A ruler costs 40px of a 390px screen and cannot be read against a finger.
   expect(await page.locator('.ruler-v').count(), 'no rulers on a phone').toBe(0);
 
-  await page.evaluate(() => (window as any).__folio.state.set('mode', 'payload', false));
+  // Straight from the dock — one tap, the way a phone user switches views.
+  await page.locator('[data-dock-mode="payload"]').click();
   await page.waitForTimeout(800);
+  expect(await page.locator('[data-dock-mode="payload"]').getAttribute('aria-pressed'),
+    'the dock shows which view is on').toBe('true');
   const view = await page.evaluate(() => {
     const vis = (s: string) => {
       const el = document.querySelector(s) as HTMLElement | null;
@@ -145,9 +149,9 @@ pages:
       // desktop — never both, never a third.
       visiblePlays: [...document.querySelectorAll('.toolbar-play, [data-dock="play"]')].filter(shown).length,
       // The status bar's ▶ was a third one; it is Present now, and on a phone
-      // it lives in the dock under that name.
+      // it lives in the More sheet under that name.
       present: document.querySelector('#status-preview')?.getAttribute('aria-label'),
-      presentInDock: !!document.querySelector('[data-dock="present"]'),
+      presentInDock: !!document.querySelector('.dock-more #status-preview'),
     };
   });
   expect(chrome.playAll, 'no separate "Play all"').toBe(0);
