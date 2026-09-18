@@ -152,7 +152,7 @@ export interface CanvasBox { layer: Layer; box: Box; opacity: number }
  * What the composition lint measures overlaps and edges on. Hidden layers and
  * transforms it cannot read exactly are left out.
  */
-export function canvasBoxes(layers: Layer[], parent: Matrix = IDENTITY, alpha = 1, out: CanvasBox[] = []): CanvasBox[] {
+export function canvasBoxes(layers: Layer[], parent: Matrix = IDENTITY, alpha = 1, out: CanvasBox[] = [], within?: Box): CanvasBox[] {
   for (const layer of layers) {
     const o = layer as unknown as Record<string, unknown>;
     if (o['visible'] === false) continue;
@@ -160,9 +160,24 @@ export function canvasBoxes(layers: Layer[], parent: Matrix = IDENTITY, alpha = 
     if (!own) continue;
     const m = mul(parent, own);
     const a = alpha * (typeof o['opacity'] === 'number' ? Math.max(0, Math.min(1, o['opacity'])) : 1);
-    if (Array.isArray(o['layers'])) { canvasBoxes(o['layers'] as Layer[], m, a, out); continue; }
+    // What a clip (a `clip: true` window, a clip_rect wipe) hides is not on the
+    // canvas. Found live: rows scrolling inside a sheet's clip group measured at
+    // their full 1300 px and "overlapped" the sheet's header and footer.
+    const rect = clipRectFor(layer);
+    const clip = rect ? overlapBox(within, mapBox(o['clip_path_ref'] ? parent : m, rect)) : within;
+    if (clip && (clip.width <= 0 || clip.height <= 0)) continue;
+    if (Array.isArray(o['layers'])) { canvasBoxes(o['layers'] as Layer[], m, a, out, clip); continue; }
     const b = drawnBox(layer);
-    if (b) out.push({ layer, box: mapBox(m, b), opacity: a });
+    if (!b) continue;
+    const box = overlapBox(clip, mapBox(m, b));
+    if (!clip || (box.width > 0 && box.height > 0)) out.push({ layer, box, opacity: a });
   }
   return out;
+}
+
+/** The part of `b` inside `clip` (all of it without one). */
+function overlapBox(clip: Box | undefined, b: Box): Box {
+  if (!clip) return b;
+  const x = Math.max(clip.x, b.x), y = Math.max(clip.y, b.y);
+  return { x, y, width: Math.min(clip.x + clip.width, b.x + b.width) - x, height: Math.min(clip.y + clip.height, b.y + b.height) - y };
 }

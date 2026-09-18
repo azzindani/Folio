@@ -131,6 +131,7 @@ export const PER_OP: Record<string, Record<string, string[]>> = {
     storyboard: ['design_path', 'shots'],
     markers: ['design_path'],
     span: ['design_path'],
+    retime: ['design_path', 'at', 'shift_ms'],
     precomp: ['design_path', 'layer_id'],
     link: ['design_path'],
     lint: ['design_path'],
