@@ -70,10 +70,14 @@ export function wireTouchGestures(pane: HTMLElement, state: StateManager): void 
     if (longPressTimer !== undefined) { window.clearTimeout(longPressTimer); longPressTimer = undefined; }
   };
 
-  /** Canvas-local coordinates, matching how panX/panY are applied. */
+  /** Canvas-local coordinates, matching how panX/panY are applied.
+   *  The gutter is MEASURED, not assumed: a phone has no rulers (see
+   *  CanvasBase.rulersOn), so a flat RULER_SIZE put every pinch and pan 20px
+   *  out — the design crept under the fingers holding it. */
   const local = (p: Point): Point => {
     const r = pane.getBoundingClientRect();
-    return { x: p.x - r.left - RULER_SIZE, y: p.y - r.top - RULER_SIZE };
+    const gutter = pane.querySelector('.ruler-v') ? RULER_SIZE : 0;
+    return { x: p.x - r.left - gutter, y: p.y - r.top - gutter };
   };
 
   pane.addEventListener('touchstart', (e: TouchEvent) => {

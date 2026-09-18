@@ -30,6 +30,8 @@ async function layoutProbe(page: Page): Promise<{
       cols: getComputedStyle(app).gridTemplateColumns.split(/\s+/).filter(Boolean).length,
       navVisible: vis('.mobile-nav'),
       overflowVisible: vis('.toolbar-more'),
+      dockVisible: vis('.mobile-dock'),
+      dockMoreVisible: vis('[data-dock="more"]'),
       // Overlay panels are taken out of flow; a desktop panel is a grid column.
       leftPanelOverlay: lp ? getComputedStyle(lp).position === 'absolute' || getComputedStyle(lp).position === 'fixed' : false,
       toolsPanelVisible: vis('.tools-panel'),
@@ -49,6 +51,7 @@ test.describe('a narrowed desktop window keeps the desktop layout', () => {
       expect(probe.cols, 'desktop keeps its five-column grid').toBe(5);
       expect(probe.navVisible, 'the phone nav bar must not appear on a mouse device').toBe(false);
       expect(probe.overflowVisible, 'the ⋯ toolbar sheet is a touch affordance').toBe(false);
+      expect(probe.dockVisible, 'the phone dock must not appear on a mouse device').toBe(false);
       expect(probe.leftPanelOverlay, 'panels stay docked, not slide-in overlays').toBe(false);
     });
   }
@@ -67,7 +70,12 @@ test.describe('an actual touchscreen still gets the touch layout', () => {
     await openEditor(page);
     const probe = await layoutProbe(page);
     expect(probe.navVisible).toBe(true);
-    expect(probe.overflowVisible).toBe(true);
+    expect(probe.dockVisible, 'the dock is the phone chrome').toBe(true);
+    // The ⋯ sheet is the TABLET's overflow. A phone's controls are in the dock,
+    // and its "More" is the dock's — two modules relocating the same nodes is
+    // a bug, so their media queries are disjoint by construction.
+    expect(probe.overflowVisible, 'no toolbar ⋯ on a phone').toBe(false);
+    expect(probe.dockMoreVisible, 'the dock carries More instead').toBe(true);
   });
 });
 

@@ -63,6 +63,30 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
   const panelsPop = new MobilePopover(container, 'mob-pop-panels', 'Panels');
   const toolsPop = new MobilePopover(container, 'mob-pop-tools', 'Tools');
 
+  /**
+   * Name the sheet you are looking at, and give it a way out.
+   *
+   * A phone sheet shows a panel's CONTENTS with none of the chrome that says
+   * which panel it is — the desktop's rail is hidden, so Data and Scripts both
+   * read as a grey sentence in a grey box. The popovers name themselves; the
+   * sheets did not.
+   */
+  const titleBar = (panel: HTMLElement): HTMLElement => {
+    let bar = panel.querySelector<HTMLElement>('.mob-sheet-title');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'mob-sheet-title';
+      bar.innerHTML = '<span></span><button type="button" class="mob-sheet-close" aria-label="Close">✕</button>';
+      bar.querySelector('button')?.addEventListener('click', () => closeAll());
+      panel.querySelector('.mob-sheet-grip')?.after(bar);
+    }
+    return bar;
+  };
+  const setTitle = (panel: HTMLElement, text: string): void => {
+    const span = titleBar(panel).querySelector('span');
+    if (span) span.textContent = text;
+  };
+
   /** Bring the selection back above an open sheet, without touching the zoom. */
   const reveal = (): void => {
     const sheet = container.querySelector<HTMLElement>('.left-panel.mob-open, .properties-panel.mob-open');
@@ -98,16 +122,31 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
     // a FILE BROWSER: measured on an iPhone 13, peek left the grid 16px and half
     // left 131px — less than one 180px card. When you are picking an asset you
     // are looking at the list, not the canvas, and the grip drags it back down.
+    const src = container.querySelector<HTMLElement>(`.activity-bar .act-btn[data-panel="${panelId}"]`);
+    setTitle(leftPanel, nameOf(src, panelId));
     if (panelId === 'project-assets' && opts.openAssets) { open(leftPanel, navFor('layers'), 'full'); opts.openAssets(); return; }
     open(leftPanel, navFor('layers'));
-    container.querySelector<HTMLElement>(`.activity-bar .act-btn[data-panel="${panelId}"]`)?.click();
+    src?.click();
   };
 
   /** Show one of the desktop's right-panel tabs inside the right sheet. */
   const showRightTab = (tabId: string): void => {
+    const tab = container.querySelector<HTMLElement>(`.r-activity-bar .rpanel-tab[data-tab="${tabId}"]`);
+    // Switch the pane BEFORE opening, and only when it needs switching. The
+    // tab's own handler reads a click on the ALREADY-ACTIVE tab as "slide the
+    // overlay back out", so opening the sheet and then clicking the tab shut it
+    // again — and Properties is the active tab by default, which made
+    // Panels → Properties, the most obvious route in the popover, do nothing.
+    setTitle(rightPanel, nameOf(tab, tabId));
+    if (tab && !tab.classList.contains('active')) tab.click();
     open(rightPanel, navFor('props'));
-    container.querySelector<HTMLElement>(`.r-activity-bar .rpanel-tab[data-tab="${tabId}"]`)?.click();
   };
+
+  /** A control's own title, minus its keyboard hint — the phone has no keys. */
+  function nameOf(el: HTMLElement | null, fallback: string): string {
+    const raw = el?.getAttribute('title') ?? el?.getAttribute('aria-label') ?? '';
+    return raw.replace(/\s*\([^)]*\)\s*$/, '').trim() || fallback;
+  }
 
   function navFor(name: string): HTMLElement | undefined {
     return [...navBtns].find(b => b.dataset['mob'] === name);
@@ -154,7 +193,9 @@ export function wireMobileSheets(container: HTMLElement, opts: SheetOptions): vo
       if (target === 'assets') { showLeftView('project-assets'); return; }
       const panel = target === 'layers' ? leftPanel : rightPanel;
       if (panel.classList.contains('mob-open')) { closeAll(); return; }
-      if (target === 'layers') showLeftView('layers'); else open(panel, btn);
+      if (target === 'layers') { showLeftView('layers'); return; }
+      // Props opens on whichever right-hand tab is current, and says so.
+      showRightTab(container.querySelector<HTMLElement>('.r-activity-bar .rpanel-tab.active')?.dataset['tab'] ?? 'properties');
     });
   });
 
