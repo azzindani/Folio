@@ -93,6 +93,27 @@ export abstract class EditorAppBase {
    *  `undefined` and every hasMotion() call would throw. */
   motionPlayer!: MotionPlayer;
   private sceneStageInstance: SceneStage | null = null;
+  private canvasSound: import('./canvas-sound').CanvasSound | null = null;
+  private canvasSoundLoading = false;
+  /**
+   * Sound for a one-page piece on the canvas (canvas-sound.ts). Its chunk loads
+   * once a design has sound, BEFORE the first Play — the audio context has to
+   * start inside the click, and an import there would land after it.
+   */
+  protected wireCanvasSound(): void {
+    const check = (): void => {
+      if (this.canvasSound) { this.canvasSound.designChanged(); return; }
+      const d = this.state.get().design;
+      const any = (d?.audio?.length ?? 0) > 0 || (d?.pages ?? []).some(p => (p.audio_cues?.length ?? 0) > 0);
+      if (!any || this.canvasSoundLoading) return;
+      this.canvasSoundLoading = true;
+      void import('./canvas-sound')
+        .then(m => { this.canvasSound ??= new m.CanvasSound(this.state, this.motionPlayer); })
+        .catch(() => { this.canvasSoundLoading = false; });
+    };
+    this.state.subscribe((_s, keys) => { if (keys.includes('design') && !this.motionPlayer.posing) check(); });
+    check();
+  }
   /** Play all: every page as one piece, transitions included. Loaded on first use —
    *  the scene compositor in the main bundle broke its 500KB budget — and built once;
    *  the per-page player stops as it opens, so no posed layer leaks into a frame. */
