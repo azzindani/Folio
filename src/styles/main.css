@@ -2954,18 +2954,19 @@ button:focus:not(:focus-visible) { outline: none; }
 
 /* In/out handles — a windowed layer's band edges; on a layer that lives the
    whole scene they wait at the ends of its row and show on hover (always a
-   little on touch, which has no hover). */
+   little on touch, which has no hover). Tabs along the TOP edge of the row:
+   full height, the in handle sat on the keyframe at 0 — the commonest one —
+   and swallowed the click that opens its easing picker. */
 .tl-life-h {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
+  top: 1px;
+  height: 9px;
   width: 7px;
   border-radius: 2px;
   background: var(--color-accent);
   opacity: .55;
   cursor: ew-resize;
   touch-action: none;
-  z-index: 2;
 }
 .tl-life-h.tl-idle { opacity: 0; }
 .tl-track:hover .tl-life-h.tl-idle { opacity: .3; }
