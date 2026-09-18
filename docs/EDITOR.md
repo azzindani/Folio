@@ -42,8 +42,26 @@ Three ways:
 Drag-and-drop an image onto the canvas to add it as an image layer;
 **Shift+drop** imports it as a locked, 40%-dimmed **reference underlay** for
 tracing (and seeds the palette from it) — pairs with the `extract_reference`
-MCP tool. Works on desktop, tablet, and phone widths; the toolbar collapses to
-icon-only on mobile.
+MCP tool. Works on desktop, tablet, and phone widths.
+
+### 2.0 On a phone
+
+Everything you press lives at the bottom, in one **dock**
+(`src/editor/mobile-dock.ts`): a verb row — Undo · Redo · Play · Fit · Present ·
+Export · More — over the place row — Layers · Props · Tools · Panels · Find. The
+top bar is a title (the design's name), nothing pressable. **More** holds the
+occasional controls: the Visual / Payload / Preview switch, New, Add Page,
+Catalog, Library, theme, grid, snap, ruler units and canvas resize. Each dock
+button fires the real control, so the phone and the desktop cannot drift.
+
+There is one **Play**: a deck (two pages or more) plays every page on the scene
+stage, transitions and sound included; a single page plays its own keyframes on
+the canvas (`app.playPiece()`; Space does the same). The status bar's screen
+icon is **Present** — full-screen pages you click through, a different verb.
+
+Phones get no rulers, the formula bar only while something is selected, and an
+88px page strip. Sheets name the panel they hold and close from their title bar.
+A touch tablet (768–1023px) keeps its top toolbar with a ⋯ overflow instead.
 
 ### 2.1 Editor auth (static server)
 
