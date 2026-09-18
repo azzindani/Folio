@@ -62,6 +62,11 @@ the canvas (`app.playPiece()`; Space does the same). **Present** (the status
 bar's screen icon; in More on a phone) is full-screen pages you click through —
 a different verb.
 
+**Preview** runs the exported HTML report. A paged deck fits each page to the
+screen, centred, with a ‹ n / N › pager underneath — arrow keys and a horizontal
+swipe turn pages too (the pager appears whenever the report configures no
+navigation of its own).
+
 Phones get no rulers, the formula bar only while something is selected, and an
 88px page strip. Sheets name the panel they hold and close from their title bar.
 A touch tablet (768–1023px) keeps its top toolbar with a ⋯ overflow instead.
