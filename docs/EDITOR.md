@@ -57,8 +57,13 @@ canvas resize. Each dock button fires the real control, so the phone and the
 desktop cannot drift.
 
 There is one **Play**: a deck (two pages or more) plays every page on the scene
-stage, transitions and sound included; a single page plays its own keyframes on
-the canvas (`app.playPiece()`; Space does the same). **Present** (the status
+stage, transitions and sound included; a single page plays its own timeline on
+the canvas (`app.playPiece()`; Space does the same). A canvas frame is the
+export's frame: `src/editor/motion-pose.ts` (a lazy chunk) samples the page with
+the flipbook's `layersAt()` over the resolved timeline — delays, loops, precomp
+clocks, links, in/out windows (a layer outside its window is hidden), paths,
+scale, reveal, draw, morph — and `MotionPlayer` copies the changed fields into
+state in one `updateLayers()` write, putting them back on stop. **Present** (the status
 bar's screen icon; in More on a phone) is full-screen pages you click through —
 a different verb.
 
@@ -147,7 +152,7 @@ SVG-in-HTML — vector-native, pixel-perfect at any zoom.
 | **File tree** | Open `.design.yaml` / `.template.yaml` / `.component.yaml` |
 | **Assets** | Full file manager over the project store + shared library — folder tree, breadcrumb, sortable columns, details/icons views, multi-select (click · ctrl · shift · Ctrl+A), right-click menu, F2 rename, Del delete, drag files in to upload, drag rows onto a folder to move, ⛶ for a full window. Opens standalone (project picker) — no design needs to be loaded. Double-click places an image as a layer. Same store the MCP `manage_design {op:asset_*}` tools use |
 | **Page strip** | Page thumbnails — click to navigate; **+** adds a page; right-click for duplicate / move left·right / rename / delete. Paging starts from any design: adding a page to a single-page poster converts it to multi-page |
-| **Timeline** | Animation keyframe scrubber + per-layer tracks |
+| **Timeline** | Scrubber + per-layer tracks on the SCENE clock: keyframes where they play (delay and precomp clocks applied; a click on the ruler writes the keyframe in the track's own time), a band for a layer's in/out window, the stretch a track moves (dashed while it loops), a link follower's replayed keys as hollow diamonds, badges ⟲ loop · ↳ link · ⏱ clock, and a **Shots** strip of the page's markers — click one to jump. Rows cover every layer that plays in time: keyframes, a path, a window or a link |
 | **Payload (Monaco)** | VS Code's editor (lazy-loaded) over the raw YAML — inline validation, syntax highlighting, **bidirectional sync** with the canvas (300ms debounce, re-entrancy-guarded) |
 | **Command palette** | Ctrl+K or `/` — search and run any action by name |
 | **Align toolbar** | Align L/C/R · T/M/B; distribute H/V; match width/height |

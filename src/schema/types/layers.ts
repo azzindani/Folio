@@ -114,6 +114,7 @@ export interface BaseLayer {
   motion_path?: {
     path: string;        // SVG path d attribute (e.g. "M 0 0 Q 200 100 400 0")
     duration?: number;   // ms, default 2000
+    delay?: number;      // ms on the layer's clock before it sets off; a precomp clock shifts and scales it
     loop?: boolean;
     easing?: string;     // CSS easing, default 'ease-in-out'
     auto_rotate?: boolean; // rotate element along path

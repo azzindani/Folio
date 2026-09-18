@@ -81,11 +81,48 @@ export function injectStyle(svg: string, css: string): string {
   return svg.slice(0, at) + style + svg.slice(at);
 }
 
+/**
+ * The page with every motion_path on the scene clock. A path's <animateMotion>
+ * is written by the renderer from the layer itself, not from the CSS, so a path
+ * inside a precomp would set off on the precomp's local clock in the SVG and
+ * on the scene clock in the flipbook. Only the paths change; nothing else of
+ * the resolved tree is rendered.
+ */
+export function pathsOnSceneClock(spec: DesignSpec, pageIndex: number): DesignSpec {
+  const authored = pageLayers(spec, pageIndex);
+  const resolved = resolveTimeline(authored);
+  if (resolved === authored) return spec;
+  const paths = new Map<string, unknown>();
+  const index = (ls: Layer[]): void => ls.forEach(l => {
+    const o = l as unknown as Record<string, unknown>;
+    if (o['motion_path']) paths.set(l.id, o['motion_path']);
+    const kids = o['layers'];
+    if (Array.isArray(kids)) index(kids as Layer[]);
+  });
+  index(resolved);
+  if (paths.size === 0) return spec;
+  const swap = (ls: Layer[]): Layer[] => ls.map(l => {
+    const o = l as unknown as Record<string, unknown>;
+    const kids = o['layers'];
+    if (!paths.has(l.id) && !Array.isArray(kids)) return l;
+    const next: Record<string, unknown> = { ...o };
+    if (paths.has(l.id)) next['motion_path'] = paths.get(l.id);
+    if (Array.isArray(kids)) next['layers'] = swap(kids as Layer[]);
+    return next as unknown as Layer;
+  });
+  const pages = spec.pages;
+  if (pages && pages.length > 0) {
+    const idx = Math.min(Math.max(pageIndex, 0), pages.length - 1);
+    return { ...spec, pages: pages.map((p, i) => (i === idx ? { ...p, layers: swap(p.layers ?? []) } : p)) };
+  }
+  return { ...spec, layers: swap(spec.layers ?? []) };
+}
+
 /** Render one page of a design as a self-contained animated SVG. */
 export function buildAnimatedSVG(authored: DesignSpec, opts: AnimatedSVGOptions): AnimatedSVGResult {
   const pageIndex = opts.pageIndex ?? 0;
   // A counting text becomes stepped variants first — CSS cannot change what a <text> says.
-  const spec = expandCounts(authored);
+  const spec = expandCounts(pathsOnSceneClock(authored, pageIndex));
   const svg = opts.renderSVG(spec, pageIndex);
 
   // Precomp clocks, links and in/out windows onto the scene clock — the same

@@ -50,9 +50,13 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
     layer stays where it lands), in/out points for what enters and leaves, and a
     marker per shot. x/y = top-left of what the layer draws, after its scale.
   • A state is {x,y | dx,dy, scale, rotation, opacity, blur, fill.color, enter, exit,
-    hidden, duration, delay, easing} or a word: "hidden", "show", "<entrance|exit preset>".
-    The page as authored is the state before shot 1 — author the layout of the first
-    beat, hide what comes later.
+    loop, loop_ms, hidden, duration, delay, easing} or a word: "hidden", "show", "still",
+    "<entrance|exit|loop preset>". The page as authored is the state before shot 1 —
+    author the layout of the first beat, hide what comes later.
+  • A loop is how a layer RESTS: {x:600, y:300, loop:"float"} (or just "pulse") lands
+    it, then loops in whole passes, pivoting where it now is, until its next change
+    ("still" stops it in place). It stays one ordinary track; the lint reads it as
+    ambient, not as a move.
   • The reply lints the timeline: text resting on text, text off the frame, idle
     stretches, >4 things moving at once, shots shorter than their words take to read.
     Fix and call again; op:lint re-checks after hand edits.

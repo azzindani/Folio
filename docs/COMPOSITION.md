@@ -1,7 +1,7 @@
 # Continuous Composition
 
-Status: **scaffolded 2026-09-18** — all six steps built in the engine and the MCP
-surface (§6). The editor comes next. Builds on [MOTION.md](MOTION.md) (keyframe engine
+Status: **built 2026-09-18** — all six steps in the engine and the MCP surface, then
+the editor side and the open items (§6). Builds on [MOTION.md](MOTION.md) (keyframe engine
 v2, presets, ops, multi-scene export); MOTION.md §3 "Continuous composition" is the
 reference for how each piece works.
 
@@ -146,6 +146,13 @@ the whole scene in ONE `add_layers` call inside a `locked:true` group (layers of
 continuous scene overlap on purpose; the layout rescue would push them apart) →
 `op:storyboard` → `op:precomp` / `op:link` → `op:camera` shots → `op:lint`.
 
-**Open.** The editor (in/out bars, a shot strip, hiding layers outside their window
-while scrubbing); the editor's own HTML export still builds CSS from the unresolved
-tree; loops inside a storyboard need their own layer; `motion_path` ignores precomp clocks.
+**Editor + the rest (same day).** The canvas plays and scrubs the export's own frame
+(`motion-pose.ts`: `layersAt()` over the resolved tree — windows hide layers, clocks,
+links, paths, scale all show); the timeline draws rows on the scene clock with in/out
+bands, motion spans, link ghost keys and a Shots strip from the markers; the editor's
+HTML export goes through `buildAnimatedSVG`. A storyboard state can `loop` — how the
+layer rests until its next change, unrolled into its one track. `motion_path` takes a
+`delay`, follows precomp clocks and travels on its own easing in both players.
+
+**Open.** In/out bands and markers are read-only in the timeline; a looping precomp
+does not repeat a one-shot `motion_path`.

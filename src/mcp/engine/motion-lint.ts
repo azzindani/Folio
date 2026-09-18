@@ -35,7 +35,7 @@ const WPM = 240;
 function segments(layers: Layer[], followers: Set<string>): { moves: Segment[]; loops: string[] } {
   const moves: Segment[] = [];
   const loops: string[] = [];
-  const values = (k: Keyframe): string => JSON.stringify(Object.entries(k).filter(([key]) => key !== 't' && key !== 'easing' && key !== 'hold').sort());
+  const values = (k: Keyframe): string => JSON.stringify(Object.entries(k).filter(([key]) => key !== 't' && key !== 'easing' && key !== 'hold' && key !== 'ambient').sort());
   const visit = (ls: Layer[], parent: string): void => {
     for (const l of ls as Node[]) {
       const a = l.animation;
@@ -45,9 +45,11 @@ function segments(layers: Layer[], followers: Set<string>): { moves: Segment[]; 
         else {
           const sorted = [...frames].sort((p, q) => p.t - q.t);
           const base = (a?.playback?.delay ?? 0) - (sorted[0]?.t ?? 0);
+          // A loop a layer rests in (a storyboard state's `loop`) is ambient: not a move, not a break in a rest.
+          if (sorted.some(k => k.ambient)) loops.push(l.id);
           for (let i = 0; i + 1 < sorted.length; i++) {
             const p = sorted[i], q = sorted[i + 1];
-            if (!p || !q || p.hold || values(p) === values(q)) continue;
+            if (!p || !q || p.hold || p.ambient || values(p) === values(q)) continue;
             // A stagger is one gesture: siblings making the same move count as one thing moving.
             const unit = followers.has(l.id) ? '' : `${parent}|${values(p)}>${values(q)}|${q.t - p.t}`;
             moves.push({ id: l.id, unit, start: base + p.t, end: base + q.t });

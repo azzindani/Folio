@@ -4,6 +4,7 @@ import { buildAnimatedSVG } from './svg-animate';
 import { specAt, animationDuration, oneShotDuration } from './gif-frames';
 import { cullFrame } from './frame-cull';
 import { renderToSVGString } from '../mcp/engine/svg-export';
+import { pathEase, pathProgress } from '../animation/path-ease';
 
 // One continuous page: a title that leaves at 2 s, a precomp that starts at 3 s
 // at double speed, and a wrapper that follows the title 150 ms behind.
@@ -55,3 +56,36 @@ describe('continuous composition — both players read one resolved tree', () =>
     expect(svg).toContain('data-layer-id="tail"');
   });
 });
+
+describe('a motion path — the same travel in the SVG and the flipbook', () => {
+  const dot = (mp: object): object => ({ id: 'dot', type: 'rect', z: 1, x: 100, y: 100, width: 20, height: 20, fill: '#111111', motion_path: { path: 'M 0 0 L 400 0', ...mp } });
+  const withLayers = (layers: object[]): DesignSpec => ({ ...spec(), layers: layers as unknown as Layer[] });
+  const dx = (s: DesignSpec, t: number): number | undefined => {
+    const find = (ls: Layer[]): Layer | undefined => ls.map(l => (l.id === 'dot' ? l : find((l as { layers?: Layer[] }).layers ?? []))).find(Boolean);
+    return ((find(specAt(s, 0, t).layers ?? []) as unknown as Record<string, unknown>)['_frame_pose'] as { dx: number } | undefined)?.dx;
+  };
+
+  it('sets off after its delay, travels on its own easing, and holds the end', () => {
+    const s = withLayers([dot({ duration: 1000, delay: 500, easing: 'ease-out-cubic' })]);
+    const svg = renderToSVGString(s);
+    expect(svg).toContain('begin="0.500s"');
+    expect(svg).toContain('fill="freeze"');
+    expect(svg).toContain(`keyPoints="${pathEase('ease-out-cubic').points.join(';')}"`);
+    expect(dx(s, 400)).toBeUndefined();
+    expect(dx(s, 1000)).toBeCloseTo(400 * pathProgress('ease-out-cubic', 0.5), 3);
+    expect(dx(s, 1000)).toBeGreaterThan(300);                 // eased out: well past halfway at half time
+    expect(dx(s, 5000)).toBeCloseTo(400, 3);
+    expect(animationDuration(s.layers ?? [])).toBe(1500);
+  });
+
+  it('travels on a precomp clock: sets off at its start, covers the path at its speed', () => {
+    const s = withLayers([{ id: 'pc', type: 'group', z: 1, clock: { start: 1000, speed: 2 }, layers: [dot({ duration: 1000, delay: 200, easing: 'linear' })] }]);
+    expect(dx(s, 1050)).toBeUndefined();                      // 1000 + 200 / 2
+    expect(dx(s, 1350)).toBeCloseTo(200, 3);                  // halfway through 500 ms
+    expect(animationDuration(s.layers ?? [])).toBe(1600);
+    const { svg } = buildAnimatedSVG(s, { renderSVG: x => renderToSVGString(x) });
+    expect(svg).toContain('begin="1.100s"');
+    expect(svg).toContain('dur="0.500s"');
+  });
+});
+

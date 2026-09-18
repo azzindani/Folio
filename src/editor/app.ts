@@ -463,6 +463,8 @@ export class EditorApp extends EditorAppBase {
       ? BUILTIN_THEMES[themeRef]
       : (themeAny && 'colors' in themeAny ? (themeAny as ThemeSpec) : undefined);
 
+    // A pose of the old design must not be written back onto this one.
+    this.motionPlayer?.forget();
     this.state.batch(() => {
       this.state.set('design', spec);
       this.state.set('yamlSource', serializeYAML(spec));

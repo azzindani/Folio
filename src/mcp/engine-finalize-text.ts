@@ -446,7 +446,11 @@ export function decollideHandPlaced(layers: Layer[], W: number, H: number): numb
     let top = Number(r['y']);
     let floor = -Infinity;
     for (const p of placed) if (x < p.x + p.w && p.x < x + w) floor = Math.max(floor, p.bot + gap);
-    if (floor > top + 1) { top = Math.round(floor); r['y'] = top; moved++; }
+    // A group's children carry their own coordinates: moving its declared box
+    // leaves the drawing where it was, and the box — the pivot of every pose on
+    // the group — no longer matches it. It stays put and is a floor for what is below.
+    const isGroup = Array.isArray(r['layers']);
+    if (floor > top + 1 && !isGroup) { top = Math.round(floor); r['y'] = top; moved++; }
     placed.push({ x, w, bot: top + mh });
   }
   return moved;

@@ -39,26 +39,29 @@ const pathOf = (layers: Layer[]): string =>
   trailsSVG(surfaceTrails(layers, 600, 5), 1080, 1080);
 
 describe('a trail drawn while the scene plays', () => {
-  it('is identical to the one drawn at rest', () => {
+  it('is identical to the one drawn at rest', async () => {
     const { state, player } = loaded();
+    await player.ready();
     const atRest = pathOf(player.authoredLayers());
 
     player.seek(300); // mid-scene: the layer has been moved by the pose
     const posed = state.getCurrentLayers() as Layer[];
-    expect(pathOf(posed), 'reading the posed layers gives a DIFFERENT path — it crawls')
-      .not.toBe(atRest);
+    expect((posed[0] as unknown as { transform?: string }).transform, 'the pose moved the layer').toContain('translate');
+    expect((player.authoredLayers()[0] as unknown as { transform?: string }).transform).toBeUndefined();
     expect(pathOf(player.authoredLayers()), 'the trail moved with the playhead').toBe(atRest);
   });
 
-  it('is drawn at all — the freeze produced nothing mid-playback', () => {
+  it('is drawn at all — the freeze produced nothing mid-playback', async () => {
     const { player } = loaded();
+    await player.ready();
     player.seek(300);
     const svg = pathOf(player.authoredLayers());
     expect(svg).toContain('<polyline');
   });
 
-  it('stays put across the whole scene, not just one moment', () => {
+  it('stays put across the whole scene, not just one moment', async () => {
     const { player } = loaded();
+    await player.ready();
     const atRest = pathOf(player.authoredLayers());
     for (const t of [0, 150, 300, 450, 600]) {
       player.seek(t);
@@ -71,7 +74,7 @@ describe('a trail drawn while the scene plays', () => {
     expect(player.authoredLayers()).toEqual(state.getCurrentLayers());
   });
 
-  it('un-poses layers nested in a group, the shape every MCP design has', () => {
+  it('un-poses layers nested in a group, the shape every MCP design has', async () => {
     const state = new StateManager();
     state.set('design', {
       _protocol: 'design/v1',
@@ -82,6 +85,7 @@ describe('a trail drawn while the scene plays', () => {
       }],
     } as unknown as DesignSpec);
     const player = new MotionPlayer(state);
+    await player.ready();
     const atRest = pathOf(player.authoredLayers());
     expect(atRest).toContain('<polyline');
     player.seek(300);

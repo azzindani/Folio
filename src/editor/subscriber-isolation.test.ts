@@ -47,7 +47,6 @@ describe('the player is built with a real state', () => {
     // Documents WHY app.ts assigns the player in the constructor rather than
     // as a class field: a base-class field initializer runs before the
     // subclass has built `state`.
-    const orphan = new MotionPlayer(undefined as unknown as StateManager);
-    expect(() => orphan.hasMotion()).toThrow();
+    expect(() => new MotionPlayer(undefined as unknown as StateManager)).toThrow();
   });
 });

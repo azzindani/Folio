@@ -5,6 +5,10 @@ import { easingCurveSVG } from './easing-curve';
 import type { Layer } from '../../schema/types';
 import { MotionPlayer } from '../../editor/motion-player';
 import type { AnimationSpec, Keyframe } from '../../animation/types';
+import { fromSceneTime } from '../../animation/clock-time';
+import { trackHTML, markerStripHTML, markersOf, fmtMs, HEADER_W, KF_RADIUS } from './timeline-track-view';
+
+export { fmtMs };
 
 // ── Pure-function API (used by MCP engine + tests) ───────────
 
@@ -45,7 +49,18 @@ export function flattenForTimeline(layers: Layer[], depth = 0): Array<{ layer: L
   return out;
 }
 
-const hasMotion = (l: Layer): boolean => ((l.animation?.keyframes ?? []).length > 0);
+/**
+ * A layer that plays in time: it has keyframes, travels a motion path, lives
+ * in an in/out window, or follows another layer. A continuous composition's
+ * link followers and windowed titles own no keyframes and were missing from
+ * the timeline and from the player.
+ */
+export function playsInTime(l: Layer): boolean {
+  const o = l as unknown as Record<string, unknown>;
+  return (l.animation?.keyframes ?? []).length > 0 || Boolean(o['motion_path']) || Boolean(o['link'])
+    || typeof o['in'] === 'number' || typeof o['out'] === 'number';
+}
+const hasMotion = playsInTime;
 
 /**
  * What the timeline should show, given the current selection.
@@ -62,13 +77,19 @@ export function timelineRows(layers: Layer[], selectedIds: string[]): Array<{ la
   return animated.length ? animated : all.filter(r => r.depth === 0);
 }
 
-/** The scene's own length: the last keyframe of any animated layer. */
+/**
+ * The scene's own length: the last keyframe of any animated layer, or the
+ * last out point. A rough cut for before the sampler loads — the player then
+ * uses the export's own clip length (animationDuration over the resolved tree).
+ */
 export function sceneDuration(layers: Layer[], fallback = 2000): number {
   let end = 0;
   for (const { layer } of flattenForTimeline(layers ?? [])) {
     const kfs = layer.animation?.keyframes ?? [];
     const delay = Number(layer.animation?.playback?.delay ?? 0) || 0;
     for (const kf of kfs) end = Math.max(end, delay + (Number(kf.t) || 0));
+    const out = (layer as unknown as Record<string, unknown>)['out'];
+    if (typeof out === 'number' && Number.isFinite(out)) end = Math.max(end, out);
   }
   return end > 0 ? Math.ceil(end) : fallback;
 }
@@ -222,10 +243,6 @@ export function shiftKeyframes(anim: AnimationSpec, delayMs: number): AnimationS
   };
 }
 
-const TRACK_H = 32;       // px per track row
-const HEADER_W = 120;     // px left-side label area
-const KF_RADIUS = 5;      // keyframe diamond half-size
-
 export class TimelinePanelManager {
   private container: HTMLElement;
   private state: StateManager;
@@ -235,6 +252,8 @@ export class TimelinePanelManager {
   private durationPinned = false;
   private scrubMs = 0;
   private player: MotionPlayer;
+  /** Whether the last render had the resolved rows, or fell back to raw keyframe times. */
+  private drawnWithRows = false;
   /** Set by the app so the checkbox can reach the canvas. */
   onTrailsToggle?: (on: boolean) => void;
 
@@ -248,6 +267,8 @@ export class TimelinePanelManager {
     this.build();
     state.subscribe(this.onStateChange.bind(this));
     this.player.subscribe(s => {
+      // The sampler loads after the panel: redraw once, so rows move onto the scene clock.
+      if ((this.player.rows() !== null) !== this.drawnWithRows) this.render();
       this.scrubMs = s.time;
       const tc = this.container.querySelector<HTMLElement>('#tl-timecode');
       if (tc) tc.textContent = fmtMs(s.time);
@@ -259,7 +280,9 @@ export class TimelinePanelManager {
   }
 
   private onStateChange(_s: EditorState, keys: (keyof EditorState)[]): void {
-    if (keys.includes('selectedLayerIds') || keys.includes('design')) {
+    // A playback frame is written into the design; the rows it would redraw have not changed.
+    if (this.player.posing) return;
+    if (keys.includes('selectedLayerIds') || keys.includes('design') || keys.includes('currentPageIndex')) {
       this.render();
     }
   }
@@ -330,9 +353,13 @@ export class TimelinePanelManager {
     const body = this.container.querySelector<HTMLElement>('#tl-body');
     if (!body) return;
 
-    const { selectedLayerIds } = this.state.get();
-    const rows = timelineRows(this.state.getCurrentLayers(), selectedLayerIds);
+    const { selectedLayerIds, design, currentPageIndex } = this.state.get();
+    // The AUTHORED tree: while a frame is posed, the state holds that frame.
+    const authored = this.player.authoredLayers();
+    const rows = timelineRows(authored, selectedLayerIds);
     const layers = rows.map(r => r.layer);
+    const timing = this.player.rows();
+    this.drawnWithRows = timing !== null;
 
     if (layers.length === 0) {
       body.innerHTML = `<div style="padding:12px;font-size:11px;color:var(--color-text-muted)">
@@ -342,9 +369,10 @@ export class TimelinePanelManager {
 
     // Fit the ruler to the scene unless the user has typed a duration. A scene
     // written by animation(op:sequence) is routinely longer than the old 2000ms
-    // default, so play stopped a third of the way through it.
+    // default, so play stopped a third of the way through it. The player's
+    // length is the export's: windows, loops and precomp clocks included.
     if (!this.durationPinned) {
-      const scene = sceneDuration(this.state.getCurrentLayers(), this.duration);
+      const scene = this.player.duration;
       if (scene !== this.duration) {
         this.duration = scene;
         const durInput = this.container.querySelector<HTMLInputElement>('#tl-duration');
@@ -354,7 +382,8 @@ export class TimelinePanelManager {
 
     const trackAreaW = body.clientWidth - HEADER_W || 400;
 
-    body.innerHTML = rows.map(r => this.renderTrack(r.layer, trackAreaW, r.depth)).join('');
+    body.innerHTML = markerStripHTML(markersOf(design, currentPageIndex), this.duration)
+      + rows.map(r => trackHTML(r.layer, timing?.get(r.layer.id), this.duration, r.depth)).join('');
 
     // Scrubber
     body.insertAdjacentHTML('beforeend', `
@@ -370,42 +399,22 @@ export class TimelinePanelManager {
     this.bindTracks(body, layers, trackAreaW);
   }
 
-  private renderTrack(layer: Layer, trackAreaW: number, depth = 0): string {
-    const keyframes = (layer.animation?.keyframes ?? []) as Keyframe[];
-    const diamonds = keyframes.map(kf => {
-      const pct = Math.min(1, kf.t / this.duration) * trackAreaW;
-      const ease = String((kf as unknown as Record<string, unknown>)['easing'] ?? '');
-      return `<div class="tl-keyframe" data-layer-id="${layer.id}" data-t="${kf.t}" data-easing="${ease}"
-        title="${fmtMs(kf.t)}${ease ? ` · ${ease}` : ''} — click to set easing, right-click to delete"
-        style="position:absolute;left:${pct - KF_RADIUS}px;top:${TRACK_H / 2 - KF_RADIUS}px;
-               width:${KF_RADIUS * 2}px;height:${KF_RADIUS * 2}px;
-               background:${ease ? 'var(--color-text)' : 'var(--color-accent)'};border-radius:2px;transform:rotate(45deg);
-               cursor:pointer"></div>`;
-    }).join('');
-
-    return `
-      <div class="tl-track" style="display:flex;height:${TRACK_H}px;border-bottom:1px solid var(--color-border)">
-        <div style="width:${HEADER_W}px;flex-shrink:0;display:flex;align-items:center;
-                    padding:0 8px 0 ${8 + depth * 12}px;font-size:11px;color:var(--color-text);overflow:hidden;white-space:nowrap"
-             title="${layer.id}">
-          ${depth ? '<span style="opacity:.45">└ </span>' : ''}${layer.id}
-        </div>
-        <div class="tl-track-area" data-layer-id="${layer.id}"
-          style="flex:1;position:relative;cursor:crosshair;background:var(--color-surface-2)">
-          ${diamonds}
-        </div>
-      </div>`;
-  }
-
   private bindTracks(body: HTMLElement, layers: Layer[], trackAreaW: number): void {
-    // Click track area to add/select keyframe
+    // Click track area to add a keyframe — at the SCENE time clicked, written
+    // in the track's own time (its delay and any precomp clocks taken off).
     body.querySelectorAll<HTMLElement>('.tl-track-area').forEach(area => {
-      const layerId = area.dataset.layerId!;
+      const layerId = area.dataset['layerId'] ?? '';
       area.addEventListener('click', (e) => {
         const rect = area.getBoundingClientRect();
         const pct = (e.clientX - rect.left) / rect.width;
-        const t = Math.round(pct * this.duration);
-        this.addKeyframe(layerId, t, layers);
+        this.addKeyframe(layerId, this.localTime(layerId, pct * this.duration, layers), layers);
+      });
+    });
+
+    body.querySelectorAll<HTMLElement>('.tl-marker').forEach(m => {
+      m.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.scrubTo(Number(m.dataset['ms'] ?? 0));
       });
     });
 
@@ -532,6 +541,16 @@ export class TimelinePanelManager {
     }
   }
 
+  /** A scene time on a layer's ruler as the keyframe `t` to write: precomp clocks undone, then the track's delay. */
+  private localTime(layerId: string, scene: number, layers: Layer[]): number {
+    const clocks = this.player.rows()?.get(layerId)?.clocks ?? [];
+    const anim = layers.find(l => l.id === layerId)?.animation;
+    const kfs = anim?.keyframes ?? [];
+    const first = kfs.length ? Math.min(...kfs.map(k => k.t)) : 0;
+    const delay = Number(anim?.playback?.delay ?? 0) || 0;
+    return Math.max(0, Math.round(fromSceneTime(scene, clocks) - delay + first));
+  }
+
   private addKeyframe(layerId: string, t: number, layers: Layer[]): void {
     const layer = layers.find(l => l.id === layerId);
     if (!layer) return;
@@ -570,31 +589,4 @@ export class TimelinePanelManager {
     if (thumb) thumb.style.left = `${(this.scrubMs / this.duration) * 100}%`;
     this.player.seek(this.scrubMs);
   }
-
-  /**
-   * Show the pose on the CANVAS, not just on the ruler.
-   *
-   * The scrubber used to move a thumb and a timecode and change nothing else,
-   * so dragging it looked like a preview and was not one. Poses are applied
-   * with recordUndo:false — the same channel a drag uses mid-gesture — and the
-   * authored values are captured once, on the first scrub, so stopping puts
-   * the design back exactly as authored rather than baking a frame into it.
-   */
-
-
-}
-
-/**
- * A timecode, always `s.mmm`.
- *
- * Round FIRST. This only ever saw whole milliseconds from the scrub slider
- * until the player started driving it from requestAnimationFrame, which hands
- * over fractional times: 163.799999976 % 1000 padded to three characters is
- * already three, so it printed verbatim and the readout became
- * "0.163.799999976s" — two decimal points, thirteen digits, and wide enough to
- * shove the rest of the toolbar out of the panel.
- */
-export function fmtMs(ms: number): string {
-  const total = Math.max(0, Math.round(Number.isFinite(ms) ? ms : 0));
-  return `${Math.floor(total / 1000)}.${String(total % 1000).padStart(3, '0')}s`;
 }

@@ -26,6 +26,10 @@ export interface LayerState {
   'fill.color'?: string; 'stroke.color'?: string;
   hidden?: boolean;
   enter?: MotionPreset; exit?: MotionPreset;
+  /** A loop preset the layer RESTS in once it lands, until its next change. */
+  loop?: MotionPreset;
+  /** One pass of that loop, ms; default the preset's own. */
+  loop_ms?: number;
 }
 
 /** One change of state: when it starts, how long the move takes, on which curve. */
@@ -44,7 +48,7 @@ interface Pose {
   /** Channels a preset drives (draw, reveal, tracking, count, …), carried at their rest values otherwise. */
   extra: Record<string, number>;
 }
-interface Frame { t: number; pose: Pose; easing?: string; hold?: boolean }
+interface Frame { t: number; pose: Pose; easing?: string; hold?: boolean; ambient?: boolean }
 
 export interface CompiledStates {
   animation: AnimationSpec;
@@ -57,6 +61,8 @@ export interface CompiledStates {
 
 const EXTRA_REST: Record<string, number> = { draw: 1, draw_start: 0, reveal: 1, tracking: 0, count: 1, morph: 0 };
 const REST: Pose = { x: 0, y: 0, scale_x: 1, scale_y: 1, rotation: 0, opacity: 1, blur: 0, skew_x: 0, skew_y: 0, extra: { ...EXTRA_REST } };
+/** A resting loop is unrolled into keyframes; past this many passes the rest of it is cut. */
+export const MAX_LOOP_CYCLES = 120;
 const r2 = (v: number): number => Math.round(v * 100) / 100 || 0;
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
@@ -109,7 +115,7 @@ function compose(base: Pose, kf: Keyframe): Pose {
 function presetPlayback(changes: StateChange[]): { anchor: AnchorPoint; reveal_from?: RevealFrom } {
   let anchor: AnchorPoint | undefined, reveal: RevealFrom | undefined;
   for (const c of changes) {
-    const p = c.state.enter ?? c.state.exit;
+    const p = c.state.enter ?? c.state.exit ?? c.state.loop;
     if (!p) continue;
     const pb = expandPreset(p).playback;
     anchor = anchor ?? pb.anchor;
@@ -129,6 +135,52 @@ function pushPreset(frames: Frame[], t0: number, preset: MotionPreset, base: Pos
     frames.push({ t: t0 + kf.t, pose: last, ...(kf.easing || exp.playback.easing ? { easing: String(kf.easing ?? exp.playback.easing) } : {}) });
   }
   return { end: t0 + exp.playback.duration, last };
+}
+
+/**
+ * A loop the layer RESTS in, from `from` until `until`: whole passes of the
+ * preset laid over the resting pose, so it ends where it began and the next
+ * move starts from rest. Unrolled into the track rather than put on a wrapper:
+ * a wrapper's pivot stays where the layer was authored, so a pulse after a
+ * move would swell about the wrong point. Returns the passes that fit.
+ */
+function pushLoop(frames: Frame[], from: number, until: number, preset: MotionPreset, base: Pose, periodMs?: number): number {
+  const exp = expandPreset(preset, periodMs ? { duration: periodMs } : {});
+  const kfs = exp.keyframes;
+  const n = kfs.length;
+  const dur = exp.playback.duration;
+  const alt = exp.playback.direction === 'alternate';
+  const ease = (k: Keyframe | undefined): string => String(k?.easing ?? exp.playback.easing ?? 'linear');
+  // One pass: forward, then (alternate) back, each segment on the curve it had going forward.
+  const one: Array<{ t: number; kf: Keyframe; easing?: string }> = kfs.map((k, i) =>
+    ({ t: k.t, kf: k, ...(i < n - 1 ? { easing: ease(k) } : alt ? { easing: ease(kfs[n - 2]) } : {}) }));
+  if (alt) for (let i = n - 2; i >= 0; i--) { const k = kfs[i]; if (k) one.push({ t: 2 * dur - k.t, kf: k, ...(i > 0 ? { easing: ease(kfs[i - 1]) } : {}) }); }
+  const firstKf = one[0]?.kf, lastKf = one[one.length - 1]?.kf;
+  const channels = (k: Keyframe | undefined): string => JSON.stringify(Object.entries(k ?? {}).filter(([key]) => !['t', 'easing', 'hold'].includes(key)).sort());
+  // A pass that ends where it starts joins the next on one frame. A spin ends at 360°: hold it, then restart at 0 a ms later.
+  const gap = channels(firstKf) === channels(lastKf) ? 0 : 1;
+  const period = (alt ? 2 * dur : dur) + gap;
+  const cycles = n < 2 ? 0 : Math.min(MAX_LOOP_CYCLES, Math.floor((until - from + gap) / Math.max(1, period)));
+  if (cycles < 1) return 0;
+
+  const prev = frames[frames.length - 1];
+  if (prev && prev.t === from) frames.pop(); else if (prev) prev.hold = true;
+  for (let c = 0; c < cycles; c++) {
+    for (const [i, p] of one.entries()) {
+      const t = from + c * period + p.t;
+      const frame: Frame = { t, pose: compose(base, p.kf), ambient: true, ...(p.easing ? { easing: p.easing } : {}), ...(p.kf.hold ? { hold: true } : {}) };
+      const last = frames[frames.length - 1];
+      if (i === 0 && c > 0 && last && gap === 0 && last.t === t) frames[frames.length - 1] = frame;
+      else {
+        if (i === 0 && c > 0 && last) last.hold = true;
+        frames.push(frame);
+      }
+    }
+  }
+  // The frame the loop ends on starts a rest, not more of the loop.
+  const end = frames[frames.length - 1];
+  if (end) delete end.ambient;
+  return cycles;
 }
 
 /**
@@ -153,13 +205,26 @@ export function compileStates(layer: Layer, changes: StateChange[], endMs: numbe
   let visibleFrom: number | undefined = startsHidden ? undefined : 0;
   let hiddenFrom: number | undefined;
   const landings: CompiledStates['landings'] = [];
+  // A loop runs from where its state lands until the layer's next change — whole passes only.
+  let resting: { from: number; preset: MotionPreset; ms?: number; base: Pose } | null = null;
+  const settle = (until: number): void => {
+    if (!resting) return;
+    const passes = pushLoop(frames, resting.from, until, resting.preset, resting.base, resting.ms);
+    if (passes === 0) notes.push(`${id}: its "${resting.preset}" loop has no room for one whole pass before ${until}ms, so it does not play — give it room (a later next change, hold_ms, length_ms) or a shorter loop_ms.`);
+    if (passes >= MAX_LOOP_CYCLES) notes.push(`${id}: its "${resting.preset}" loop stops after ${MAX_LOOP_CYCLES} passes — use a longer loop_ms, or op:wiggle / a looping op:motion on its own layer.`);
+    resting = null;
+  };
 
   for (const c of sorted) {
+    settle(c.at);
     const lastT = frames[frames.length - 1]?.t ?? 0;
     let t0 = c.at;
     if (t0 < lastT) { notes.push(`${id}: the change at ${c.at}ms starts before the one before it ends (${lastT}ms), so it waits until then.`); t0 = lastT; }
     let to = t0;
-    if (c.state.hidden && c.at === 0 && frames.length === 1 && !c.state.enter) {
+    const onlyLoop = c.state.loop !== undefined && Object.keys(c.state).every(k => k === 'loop' || k === 'loop_ms');
+    if (onlyLoop) {
+      // Rest in a loop right where the layer is — no move first.
+    } else if (c.state.hidden && c.at === 0 && frames.length === 1 && !c.state.enter) {
       cur = landing(cur, c.state, box, anchor, notes, id);
       frames[0] = { t: 0, pose: cur };
     } else if (c.state.enter) {
@@ -184,7 +249,9 @@ export function compileStates(layer: Layer, changes: StateChange[], endMs: numbe
       cur = next;
     }
     landings.push({ at: t0, to, x: r2(cur.x), y: r2(cur.y), scale: r2(cur.scale_x), opacity: r2(cur.opacity) });
+    if (c.state.loop) resting = { from: to, preset: c.state.loop, ...(c.state.loop_ms ? { ms: c.state.loop_ms } : {}), base: cur };
   }
+  settle(endMs);
   const tail = frames[frames.length - 1];
   if (tail && endMs > tail.t) frames.push({ t: endMs, pose: cur });
   if (frames.length === 1 && tail) frames.push({ t: Math.max(1, endMs), pose: cur });
@@ -221,6 +288,7 @@ function toKeyframes(frames: Frame[]): Keyframe[] {
     if (strokes.size > 1 && fr.pose.stroke) kf['stroke.color'] = fr.pose.stroke;
     if (fr.easing) kf.easing = fr.easing;
     if (fr.hold) kf.hold = true;
+    if (fr.ambient) kf.ambient = true;
     return kf;
   });
 }

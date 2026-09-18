@@ -15,7 +15,7 @@ function segmentEasing(from: Keyframe, timelineDefault: EasingFunction): (t: num
 }
 
 /** Keys that are metadata about a keyframe, not animated values. */
-const META_KEYS = new Set(['t', 'easing', 'hold']);
+const META_KEYS = new Set(['t', 'easing', 'hold', 'ambient']);
 
 // ── Interpolation ───────────────────────────────────────────
 function lerp(a: number, b: number, t: number): number {

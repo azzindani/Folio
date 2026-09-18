@@ -29,6 +29,16 @@ describe('locked layers are exempt from the auto-rescue passes', () => {
     expect(yOf(b)).toBeGreaterThan(110);
   });
 
+  it('decollideHandPlaced never moves a group\'s box away from its children — the group is a floor instead', () => {
+    const a = txt('a', 80, 100);
+    const g = { id: 'g', type: 'group', z: 1, x: 80, y: 110, width: 600, height: 200,
+      layers: [{ id: 'k', type: 'rect', z: 1, x: 80, y: 110, width: 600, height: 200, fill: '#000' }] } as unknown as Layer;
+    const below = txt('below', 80, 250);
+    decollideHandPlaced([a, g, below], W, H);
+    expect(yOf(g)).toBe(110);                              // the declared box stays on its drawing
+    expect(yOf(below)).toBeGreaterThanOrEqual(310);         // pushed clear of the group's box
+  });
+
   it('setMeasuredTextHeights leaves a locked text box untouched', () => {
     const a = txt('a', 80, 100, { height: 40, locked: true });
     setMeasuredTextHeights([a], W);

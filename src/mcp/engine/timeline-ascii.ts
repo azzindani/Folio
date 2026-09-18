@@ -25,7 +25,7 @@ export interface SceneTrack {
   anchor?: string;
 }
 
-const META = new Set(['t', 'easing', 'hold']);
+const META = new Set(['t', 'easing', 'hold', 'ambient']);
 
 /** Flatten a layer tree into scene tracks, in document order. */
 export function sceneTracks(layers: Layer[]): SceneTrack[] {
