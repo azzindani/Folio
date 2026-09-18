@@ -51,9 +51,12 @@ test.describe('canvas touch gestures on a phone', () => {
       const st = () => (window as any).__folio.state.get();
       const before = { zoom: st().zoom, panX: st().panX };
       // Pan is measured from the pane's own origin, past the ruler gutter —
-      // the same space touch-gestures.ts works in.
+      // the same space touch-gestures.ts works in. A phone has no rulers, so
+      // the gutter is 0 there; the constant this used to add put every
+      // measurement 20px out.
+      const ruler = document.querySelector('.ruler-v') as HTMLElement | null;
       const originX = pane.getBoundingClientRect().left
-        + (document.querySelector('.ruler-v') as HTMLElement)?.getBoundingClientRect().width;
+        + (ruler?.getBoundingClientRect().width ?? 0);
       const T = (x: number, y: number, id: number) => new Touch({ identifier: id, target: pane, clientX: x, clientY: y });
       const ev = (t: string, touches: Touch[]) => pane.dispatchEvent(new TouchEvent(t, { touches, changedTouches: touches, bubbles: true, cancelable: true }));
       ev('touchstart', [T(150, 400, 1), T(250, 400, 2)]);

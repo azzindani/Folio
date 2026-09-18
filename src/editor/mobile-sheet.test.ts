@@ -216,4 +216,39 @@ describe('mobile sheets', () => {
     btn('layers').click();
     expect(app.querySelector('#mob-pop-panels')?.classList.contains('open')).toBe(false);
   });
+
+  const right = (): HTMLElement => app.querySelector<HTMLElement>('.properties-panel') as HTMLElement;
+
+  it('opens the sheet on the ALREADY-ACTIVE tab without re-clicking it', () => {
+    // The tab's own handler reads a click on the active tab as "close the
+    // overlay". Properties is active by default, so re-clicking it here left
+    // Panels → Properties — the most obvious route in the popover — opening
+    // nothing at all.
+    const tab = app.querySelector<HTMLElement>('.rpanel-tab[data-tab="properties"]') as HTMLElement;
+    const spy = vi.fn();
+    tab.addEventListener('click', spy);
+    btn('panels').click();
+    items('mob-pop-panels').find(i => i.textContent?.includes('Properties'))?.click();
+    expect(spy).not.toHaveBeenCalled();
+    expect(right().classList.contains('mob-open')).toBe(true);
+  });
+
+  it('switches the pane when the picked tab is a different one', () => {
+    const tab = app.querySelector<HTMLElement>('.rpanel-tab[data-tab="timeline"]') as HTMLElement;
+    const spy = vi.fn();
+    tab.addEventListener('click', spy);
+    btn('panels').click();
+    items('mob-pop-panels').find(i => i.textContent?.includes('Timeline'))?.click();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(right().classList.contains('mob-open')).toBe(true);
+  });
+
+  it('marks the nav for a popover that is open, not the sheet it replaced', () => {
+    btn('props').click();
+    expect(right().classList.contains('mob-open')).toBe(true);
+    btn('tools').click();
+    expect(right().classList.contains('mob-open')).toBe(false);
+    expect(btn('tools').classList.contains('active')).toBe(true);
+    expect(btn('props').classList.contains('active')).toBe(false);
+  });
 });

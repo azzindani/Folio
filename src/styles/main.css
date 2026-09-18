@@ -2778,6 +2778,35 @@ button:focus:not(:focus-visible) { outline: none; }
   .mob-backdrop { background: transparent; transition: background 0.2s; }
   .sheet-dim .mob-backdrop { background: rgba(0,0,0,0.45); }
 
+  /* A row of labelled number fields does not fit across a phone: the Trails
+     checkbox hung off the right edge of the sheet. Let it wrap. */
+  .timeline-toolbar { flex-wrap: wrap; row-gap: 8px; }
+
+  /* Which panel am I looking at, and how do I get out. */
+  .mob-sheet-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 4px 0 14px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .mob-sheet-title > span {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mob-sheet-close {
+    min-width: 44px; min-height: 40px;
+    border: none; background: none;
+    color: var(--color-text-muted); font-size: 15px;
+  }
+  /* The panel's own header would be a second title one line below this one. */
+  .left-panel.mob-open .panel-header,
+  .properties-panel.mob-open .panel-header { display: none; }
+
   /* A bigger, clearly-draggable grip: the sheet's only size control, so it
      needs a real touch area rather than a 4px hairline. */
   .mob-sheet-grip { padding: 14px 0 10px; touch-action: none; }
