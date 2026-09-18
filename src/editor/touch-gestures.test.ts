@@ -63,7 +63,20 @@ describe('canvas touch gestures', () => {
     fire(pane, 'touchmove', [touchAt(50, 200), touchAt(250, 200)]);   // 100px → 200px
     expect(state.get().zoom).toBeCloseTo(2, 5);
     // The design point under the midpoint must not drift: midpoint stayed at
-    // 150, so panX must scale about it.
+    // 150, so panX must scale about it. No ruler in this pane, so no gutter —
+    // a phone has none, which is exactly the case a flat RULER_SIZE got wrong.
+    const { panX, zoom } = state.get();
+    expect((150 - panX) / zoom).toBeCloseTo(150, 5);
+  });
+
+  it('measures the ruler gutter instead of assuming it', () => {
+    // With rulers (a tablet / desktop touchscreen) the viewport starts
+    // RULER_SIZE in, and the same pinch must anchor RULER_SIZE further left.
+    const ruler = document.createElement('canvas');
+    ruler.className = 'ruler-v';
+    pane.appendChild(ruler);
+    fire(pane, 'touchstart', [touchAt(100, 200), touchAt(200, 200)]);
+    fire(pane, 'touchmove', [touchAt(50, 200), touchAt(250, 200)]);
     const { panX, zoom } = state.get();
     const anchor = 150 - RULER_SIZE;
     expect((anchor - panX) / zoom).toBeCloseTo(anchor, 5);
