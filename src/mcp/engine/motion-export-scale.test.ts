@@ -34,7 +34,7 @@ describe('animation op:export at a chosen size and fps', () => {
     expect(r, JSON.stringify(r)).toMatchObject({ success: true, width: 80, height: 60, fps: 20, frames: 10 });
     expect(String(r['output_path']).endsWith(`exports${path.sep}d-80x60-20fps.gif`)).toBe(true);
     expect(fs.existsSync(String(r['output_path']))).toBe(true);
-  });
+  }, 30_000);
 
   it('keeps the plain name for the defaults, clamps the scale, and decodes a string from a client', async () => {
     const plain = await call({ op: 'export', design_path: dPath, type: 'gif' });
@@ -43,7 +43,7 @@ describe('animation op:export at a chosen size and fps', () => {
     expect(await call({ op: 'export', design_path: dPath, type: 'gif', scale: 0.01 })).toMatchObject({ width: 16, height: 12 });
     // A client that sends numbers as strings: the tool-call door decodes them by the registry schema.
     expect(await call(decodeJsonStringArgs('animation', { op: 'export', design_path: dPath, type: 'gif', scale: '0.5' }))).toMatchObject({ success: true, width: 80 });
-  });
+  }, 30_000); // four real GIF renders: 5s timed out on a loaded Windows runner
 
   it('never joins a running full-size render: another size is another job', async () => {
     const full = await call({ op: 'export', design_path: dPath, type: 'gif', background: true });
@@ -60,7 +60,7 @@ describe('animation op:export at a chosen size and fps', () => {
       }
       expect(s['state'], JSON.stringify(s)).toBe('done');
     }
-  });
+  }, 30_000);
 
   it('names video variants the same way', () => {
     const doc = { width: 1920, height: 1080 };
