@@ -4,6 +4,7 @@ import { bindLayers } from '../report/binder';
 import { renderNavigation } from '../report/navigation';
 import { renderToSVGStringUniversal as renderToSVGString } from './svg-string';
 import { FAVICON_LINK } from '../utils/favicon';
+import { collectSvgFonts, googleFontLinks } from './svg-fonts';
 import {
   collectInteractiveLayers,
   isInteractiveLayer,
@@ -71,13 +72,9 @@ export function assembleReportHTML(
     report?.font_body ? `--folio-font-body:'${report.font_body}',system-ui,sans-serif` : '',
   ].filter(Boolean).join(';');
 
-  const fontLink = ctx.fontFamilies.size > 0
-    ? `<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?${[...ctx.fontFamilies]
-  .map(f => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@300;400;500;600;700;900`)
-  .join('&')}&display=swap" rel="stylesheet">`
-    : '';
+  // The pages' own type, read off the SVG they rendered to — see svg-fonts.ts.
+  collectSvgFonts(sections, ctx.fontFamilies);
+  const fontLink = googleFontLinks(ctx.fontFamilies);
 
   const chartJsTag = [
     ctx.needsChartJs ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>' : '',
