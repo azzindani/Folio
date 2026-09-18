@@ -104,7 +104,7 @@ export function clockNotes(group: Layer, clock: LayerClock): string[] {
   const kids: Node[] = [];
   const walk = (ls: Layer[]): void => { for (const l of ls as Node[]) { kids.push(l); if (Array.isArray(l.layers)) walk(l.layers); } };
   walk((group as Node).layers ?? []);
-  if (!kids.some(k => k.animation?.keyframes?.length)) notes.push('Nothing inside moves yet — the clock times the tracks you add to its children.');
+  if (!kids.some(k => k.animation?.keyframes?.length || k.motion_path)) notes.push('Nothing inside moves yet — the clock times the tracks you add to its children.');
   const paths = kids.filter(k => k.motion_path && !(k.motion_path as { loop?: unknown }).loop).map(k => k.id);
   if (clock.loop && paths.length) notes.push(`${paths.join(', ')} travel a motion_path once: it follows the precomp's start and speed, but loop_ms does not repeat it (loop:true on the path does).`);
   const windows = kids.filter(k => k.in !== undefined || k.out !== undefined).map(k => k.id);
