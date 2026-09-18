@@ -57,11 +57,15 @@ CONTINUOUS COMPOSITION — one scene, many sub-sequences (a 30 s motion piece)
     it, then loops in whole passes, pivoting where it now is, until its next change
     ("still" stops it in place). It stays one ordinary track; the lint reads it as
     ambient, not as a move.
-  • The reply lints the timeline: text resting on text, text off the frame, idle
+  • The reply lints the timeline: text resting on text, text off the frame, text
+    landing under an opaque layer painted after it, idle
     stretches, >4 things moving at once, shots shorter than their words take to read.
     Fix and call again; op:lint re-checks after hand edits.
   • Times anywhere: ms, a marker ("problem+200"), a layer point ("title.out", "card.end").
     op:markers names them; op:span sets a layer's in/out points directly.
+  • A shot too short to read: op:retime at:"<next shot>-100" shift_ms:800 opens time
+    there and moves everything after it — tracks, markers, camera, sound, captions.
+    Put at in a rest (the reply names any move it stretched).
   • Sub-sequences: op:precomp gives a group its own clock (start, speed, loop_ms) —
     author its children from 0, place it at start; duplicate:{id, start, dy} re-uses it.
   • Secondary motion: op:link makes a layer follow another's track lag ms later,

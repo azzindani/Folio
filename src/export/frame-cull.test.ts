@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Resvg } from '@resvg/resvg-js';
-import { parseTransform, cullUnseenClips, cullFrame, type Matrix } from './frame-cull';
+import { parseTransform, cullUnseenClips, cullFrame, canvasBoxes, type Matrix } from './frame-cull';
 import { renderToSVGString } from '../mcp/engine/svg-export';
 import type { DesignSpec, Layer } from '../schema/types';
 
@@ -67,5 +67,14 @@ describe('cullUnseenClips', () => {
     expect(svg).not.toContain('data-layer-id="m"');
     // Unculled, this SVG aborts the whole process — so a crashed worker here IS the regression.
     expect(new Resvg(svg, { background: '#FFFFFF' }).render().width).toBe(1080);
+  });
+});
+
+describe('canvasBoxes', () => {
+  // Found live: rows scrolling inside a sheet's clip window measured at their full length.
+  it('measures a clipped child only where the clip lets it draw, and drops what the clip hides', () => {
+    const rows = [rect('in', 80, 200), rect('half', 80, 250), rect('gone', 80, 600)];
+    const boxes = canvasBoxes([mask('m', rows) as Layer]);
+    expect(boxes.map(b => [b.layer.id, Math.round(b.box.y), Math.round(b.box.height)])).toEqual([['in', 200, 80], ['half', 250, 30]]);
   });
 });
