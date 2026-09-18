@@ -12,6 +12,8 @@
 // binary search plus a lerp, the heading is the direction of the segment the
 // point lands on, and every curve type reduces to the same code. The error is
 // bounded by FLATTEN_STEPS and is far below a pixel at the sizes designs use.
+
+
 export interface PathPoint { x: number; y: number; angle: number }
 
 const FLATTEN_STEPS = 24;

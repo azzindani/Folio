@@ -52,3 +52,37 @@ describe('compileStates — a layer that moves A → B and stays', () => {
     expect(c.in).toBe(1500);
   });
 });
+
+describe('compileStates — a state that rests in a loop', () => {
+  it('pulses about where the layer LANDED, in whole passes, and is back at rest for the next move', () => {
+    const c = compileStates(card, [
+      { at: 0, state: { x: 600, y: 300, scale: 0.5, loop: 'pulse' }, duration: 500 },
+      { at: 7000, state: { dx: 0, dy: 0, scale: 1 }, duration: 400 },
+    ], 9000);
+    const a = c.animation;
+    const landed = valuesAt(a, 500);
+    // 1400 ms each way: one pass is 2800 ms, and two fit between 500 and 7000.
+    const mid = valuesAt(a, 500 + 1400);
+    expect(mid['x']).toBeCloseTo(landed['x'] as number);
+    expect(mid['scale']).toBeCloseTo(0.53);
+    expect(valuesAt(a, 500 + 5600)['scale']).toBeCloseTo(0.5);
+    expect(valuesAt(a, 6900)['scale']).toBeCloseTo(0.5);
+    expect(valuesAt(a, 7400)).toMatchObject({ x: 0, y: 0, scale: 1 });
+    expect((a.keyframes ?? []).filter(k => k.ambient).length).toBeGreaterThan(0);
+    expect(c.notes).toEqual([]);
+  });
+
+  it('spins forward every pass — a pass that ends at 360° restarts at 0 without spinning back', () => {
+    const c = compileStates(card, [{ at: 0, state: { loop: 'spin', loop_ms: 1000 } }], 3500);
+    const rot = (t: number): number => valuesAt(c.animation, t)['rotation'] as number;
+    expect(rot(500)).toBeCloseTo(180);
+    expect(rot(1400)).toBeGreaterThan(rot(1200));
+    expect(rot(1400)).toBeLessThan(180);
+    expect(rot(2600)).toBeGreaterThan(200);
+  });
+
+  it('says so when the loop has no room for one pass', () => {
+    const c = compileStates(card, [{ at: 0, state: { loop: 'float' } }, { at: 1000, state: { dx: 10 } }], 3000);
+    expect(c.notes.join(' ')).toContain('no room for one whole pass');
+  });
+});

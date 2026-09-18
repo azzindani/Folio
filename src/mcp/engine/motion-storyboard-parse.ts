@@ -4,7 +4,7 @@
  * A shot says WHEN (`at`, a time or a name) and WHERE each object is
  * (`states`). The rest — how the objects get there — is compiled by
  * motion-states.ts. Everything a model writes is checked here, so a typo in a
- * layer id or a loop preset comes back as a sentence, not a silent no-op.
+ * layer id or a preset comes back as a sentence, not a silent no-op.
  */
 
 import type { Layer } from '../../schema/types';
@@ -25,19 +25,25 @@ export interface ParsedShot {
 
 export interface ParsedStoryboard { shots: ParsedShot[]; changes: Map<string, StateChange[]>; targets: Map<string, Layer> }
 
-const NUMERIC = ['x', 'y', 'dx', 'dy', 'scale', 'scale_x', 'scale_y', 'rotation', 'opacity', 'blur', 'skew_x', 'skew_y', 'duration', 'delay'] as const;
+const NUMERIC = ['x', 'y', 'dx', 'dy', 'scale', 'scale_x', 'scale_y', 'rotation', 'opacity', 'blur', 'skew_x', 'skew_y', 'duration', 'delay', 'loop_ms'] as const;
 const DEFAULT_GAP = 3000;
+const LOOP_PRESETS = Object.entries(PRESET_KIND).filter(([, k]) => k === 'loop').map(([p]) => p);
 
-/** A state written as a word: "hidden", "show", or a preset name ("rise" enters, "fade_out" leaves). */
+/**
+ * A state written as a word: "hidden", "show", "still", or a preset name —
+ * "rise" enters, "fade_out" leaves, "float" rests where it is in a loop until
+ * the layer's next change ("still" is a change that only stops a loop).
+ */
 function wordState(word: string): LayerState | string {
   if (word === 'hidden' || word === 'hide') return { hidden: true };
   if (word === 'show' || word === 'shown') return { opacity: 1 };
+  if (word === 'still') return {};
   if (isMotionPreset(word)) {
     if (PRESET_KIND[word] === 'entrance') return { enter: word };
     if (PRESET_KIND[word] === 'exit') return { exit: word };
-    return `"${word}" is a loop — a storyboard state holds still; put a loop on its own layer with op:motion or op:wiggle.`;
+    return { loop: word };
   }
-  return `"${word}" is not a state: use an object {x, y, scale, opacity, …}, "hidden", "show", or an entrance/exit preset name.`;
+  return `"${word}" is not a state: use an object {x, y, scale, opacity, loop, …}, "hidden", "show", "still", or a preset name.`;
 }
 
 function readState(raw: unknown, where: string): { state: LayerState; duration?: number; delay?: number; easing?: string } | string {
@@ -64,6 +70,15 @@ function readState(raw: unknown, where: string): { state: LayerState; duration?:
     state[k] = o[k] as MotionPreset;
   }
   if (state.enter && state.exit) return `${where} both enters and exits — split them across two shots.`;
+  if (o['loop'] !== undefined) {
+    if (!isMotionPreset(o['loop']) || PRESET_KIND[o['loop'] as MotionPreset] !== 'loop') return `${where}.loop must be a loop preset: ${LOOP_PRESETS.join(', ')}.`;
+    if (state.exit || state.hidden) return `${where} loops while it leaves — a loop is how a layer RESTS; put it on a shot where the layer stays.`;
+    state.loop = o['loop'] as MotionPreset;
+    if (typeof o['loop_ms'] === 'number') {
+      if (o['loop_ms'] < 100) return `${where}.loop_ms must be at least 100 ms.`;
+      state.loop_ms = o['loop_ms'];
+    }
+  }
   return {
     state,
     ...(typeof o['duration'] === 'number' ? { duration: o['duration'] } : {}),
@@ -78,7 +93,7 @@ function readState(raw: unknown, where: string): { state: LayerState; duration?:
  */
 export function parseStoryboard(raw: unknown, scope: Layer[], markers: TimeMarkers): ParsedStoryboard | string {
   if (!Array.isArray(raw) || raw.length === 0) {
-    return 'shots must be a non-empty array of {id?, at, states:{<layer id>: {x?, y?, scale?, opacity?, enter?, exit?, hidden?} | "hidden" | "<preset>"}}.';
+    return 'shots must be a non-empty array of {id?, at, states:{<layer id>: {x?, y?, scale?, opacity?, enter?, exit?, loop?, hidden?} | "hidden" | "still" | "<preset>"}}.';
   }
   const known: TimeMarkers = { ...markers };
   const shots: ParsedShot[] = [];

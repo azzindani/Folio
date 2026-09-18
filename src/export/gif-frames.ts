@@ -12,6 +12,7 @@ import type { DesignSpec, Layer } from '../schema/types';
 import type { AnimationSpec, Keyframe } from '../animation/types';
 import { interpolateKeyframes } from '../animation/keyframe-engine';
 import { samplePath, type SampledPath } from '../animation/motion-path';
+import { pathProgress } from '../animation/path-ease';
 import { roundedRectPath } from '../renderer/layer-renderers-shared';
 import { clipRectFor, intersectRect } from '../renderer/clip-rect';
 import { revealRect } from '../animation/reveal';
@@ -53,7 +54,7 @@ export function animationDuration(layers: Layer[]): number {
     // design animated ONLY by a path reported duration 0 and the flipbook
     // produced a single frame of it standing still.
     const mp = (l as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
-    if (mp?.path) total = Math.max(total, mp.duration ?? 2000);
+    if (mp?.path) total = Math.max(total, (mp.delay ?? 0) + (mp.duration ?? 2000));
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
   // Precomp clocks and links change when tracks run: measure the resolved tree.
@@ -78,14 +79,14 @@ export function oneShotDuration(layers: Layer[]): number {
     const endless = pb?.loop === true && !(pb.iterations && pb.iterations > 0);
     if (pb?.duration && !endless) total = Math.max(total, (pb.delay ?? 0) + pb.duration * (pb.loop && pb.iterations ? pb.iterations : 1));
     const mp = (l as unknown as Record<string, unknown>)['motion_path'] as MotionPath | undefined;
-    if (mp?.path && !mp.loop) total = Math.max(total, mp.duration ?? 2000);
+    if (mp?.path && !mp.loop) total = Math.max(total, (mp.delay ?? 0) + (mp.duration ?? 2000));
     if (Array.isArray(l.layers)) for (const c of l.layers) visit(c as AnimatedLayer);
   };
   for (const l of resolveTimeline(layers)) visit(l as AnimatedLayer);
   return total;
 }
 
-interface MotionPath { path: string; duration?: number; loop?: boolean; easing?: string; auto_rotate?: boolean }
+interface MotionPath { path: string; duration?: number; delay?: number; loop?: boolean; easing?: string; auto_rotate?: boolean }
 
 // Flattening a path costs a parse; the flipbook asks for the same one at every
 // frame, so remember it. Keyed by the `d` string, which is what determines the
@@ -171,9 +172,12 @@ export function applyMotionPath(layer: Layer, t: number): Layer {
   if (!sp) return layer;                       // unparseable — leave it where it is
   const dur = mp.duration ?? 2000;
   if (dur <= 0) return layer;
-  const raw = t / dur;
+  // Before it sets off the path adds nothing — SMIL applies no motion before `begin`.
+  const local = t - (mp.delay ?? 0);
+  if (local < 0) return layer;
+  const raw = local / dur;
   const u = mp.loop ? raw - Math.floor(raw) : Math.min(Math.max(raw, 0), 1);
-  const p = sp.at(u);
+  const p = sp.at(pathProgress(mp.easing, u));
   const out = { ...layer } as Record<string, unknown>;
   // animateMotion TRANSLATES by the path point — the path is an offset from
   // where the layer already sits, not an absolute destination. It lands as the

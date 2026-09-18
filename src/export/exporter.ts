@@ -361,7 +361,17 @@ export async function exportToHTML(spec: DesignSpec, options: ExportOptions): Pr
   // Self-contained HTML: embed fonts AND assets, so the file renders standalone
   // (a bare exportToSVG leaves /__project_files/ hrefs that only resolve while
   // the editor is open on the same origin).
-  const svgString = await exportToSVGEmbedded(spec, options);
+  // The page's motion, exactly as the animated-SVG export writes it: per-layer
+  // tracks on the RESOLVED timeline (precomp clocks, links, in/out windows as
+  // step-end visibility), counts stepped, draw paths normalised. This built CSS
+  // only from `options.animations`, which the editor never passes — so an HTML
+  // export of an animated poster was a still, and a composition's windows and
+  // clocks could not have played anyway. Loaded on use; the editor bundle is at
+  // its budget.
+  const { buildAnimatedSVG, pathsOnSceneClock } = await import('./svg-animate');
+  const { expandCounts } = await import('./count-expand');
+  const embedded = await exportToSVGEmbedded(expandCounts(pathsOnSceneClock(spec, options.pageIndex ?? 0)), options);
+  const svgString = buildAnimatedSVG(spec, { renderSVG: () => embedded, pageIndex: options.pageIndex ?? 0 }).svg;
 
   // Layers ride along so a `tracking` track adds to each text's authored spacing.
   const animationCSS = options.animations

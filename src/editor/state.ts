@@ -258,6 +258,35 @@ export class StateManager {
     }
   }
 
+  /**
+   * Many layers in ONE tree walk and ONE notify — a playback frame poses dozens
+   * of layers, and updateLayer per layer rebuilt the tree and re-rendered every
+   * listener once for each. A field set to undefined is removed, so a pose that
+   * put a transform on a layer can take it off again. `pageIndex` targets a page
+   * other than the current one (a pose restored after the page changed).
+   */
+  updateLayers(updates: Map<string, Record<string, unknown>>, recordUndo = true, pageIndex = this.state.currentPageIndex): void {
+    if (!this.state.design || updates.size === 0) return;
+    if (recordUndo) this.pushUndo();
+    const apply = (layers: Layer[]): Layer[] =>
+      layers.map(l => {
+        const u = updates.get(l.id);
+        const kids = (l as Layer & { layers?: Layer[] }).layers;
+        if (!u && !Array.isArray(kids)) return l;
+        const next: Record<string, unknown> = { ...(l as unknown as Record<string, unknown>), ...(u ?? {}) };
+        if (u) for (const k of Object.keys(u)) if (u[k] === undefined) delete next[k];
+        if (Array.isArray(kids)) next['layers'] = apply(kids);
+        return next as unknown as Layer;
+      });
+    const design = this.state.design;
+    if (design.pages && design.pages.length > 0) {
+      const pages = design.pages.map((page, i) => (i === pageIndex && page.layers ? { ...page, layers: apply(page.layers) } : page));
+      this.set('design', { ...design, pages }, false);
+    } else if (design.layers) {
+      this.set('design', { ...design, layers: apply(design.layers) }, false);
+    }
+  }
+
   addLayer(layer: Layer): void {
     if (!this.state.design) return;
     this.pushUndo();

@@ -79,9 +79,24 @@ describe('animation op:storyboard', () => {
     expect((lint['notes'] as Array<{ kind: string }>).map(x => x.kind)).toContain('overlap');
   });
 
+  it('rests a layer in a loop between shots, and the lint does not count the loop as moves', async () => {
+    const cards = [1, 2, 3, 4, 5].map(i => `c${i}`);
+    fs.writeFileSync(dPath, yaml.dump({ ...spec(), layers: [...(spec().layers ?? []), ...cards.map((id, i) => box(id, 40 + i * 200, 40, { width: 150, height: 80 }))] }));
+    const r = await call({ op: 'storyboard', shots: [
+      // Five different loops: as moves they would be five separate things at once.
+      { id: 'a', at: 0, states: Object.fromEntries(cards.map((id, i) => [id, ['float', 'drift', 'pulse', 'wobble', 'breathe'][i]])) },
+      { id: 'b', at: 8000, states: { title: { dy: 40 } } },
+    ] });
+    expect(r.success).toBe(true);
+    const track = (find('c1')?.['animation'] as { keyframes: Array<{ ambient?: boolean }> }).keyframes;
+    expect(track.some(k => k.ambient)).toBe(true);
+    expect((r['lint'] as Array<{ kind: string }>).map(x => x.kind)).not.toContain('busy');
+  });
+
   it('names the layer, the preset and the time it cannot read', async () => {
     expect((await call({ op: 'storyboard', shots: [{ at: 0, states: { nope: 'rise' } }] })).error).toContain('no layer "nope"');
-    expect((await call({ op: 'storyboard', shots: [{ at: 0, states: { title: 'pulse' } }] })).error).toContain('is a loop');
+    expect((await call({ op: 'storyboard', shots: [{ at: 0, states: { title: { exit: 'fade_out', loop: 'pulse' } } }] })).error).toContain('loops while it leaves');
+    expect((await call({ op: 'storyboard', shots: [{ at: 0, states: { title: { loop: 'rise' } } }] })).error).toContain('must be a loop preset');
     expect((await call({ op: 'storyboard', shots: [{ at: 'later', states: { title: 'show' } }] })).error).toContain('No marker "later"');
   });
 });

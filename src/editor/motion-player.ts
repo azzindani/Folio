@@ -8,47 +8,54 @@
  * failure this codebase keeps rediscovering. So the panel and the toolbar both
  * drive this.
  *
- * It also fixes what the panel's own preview got wrong: it posed the layers of
- * `state.getCurrentLayers()`, which is TOP-LEVEL ONLY. Every MCP design is one
- * group with the motion on its children, so pressing play moved nothing at all.
+ * A frame is the EXPORT's frame (motion-pose.ts): the flipbook sampler over the
+ * resolved timeline — delays, loops, precomp clocks, links and in/out windows
+ * included — copied into editor state without recording undo. The fields it
+ * writes are captured first and put back on stop, so playing never edits.
  */
 
-import type { StateManager } from './state';
+import type { StateManager, EditorState } from './state';
 import type { Layer } from '../schema/types';
-import type { Keyframe } from '../animation/types';
-import { interpolateAtTime, poseToLayerUpdate, flattenForTimeline, sceneDuration } from '../ui/panels/timeline-panel';
+import { flattenForTimeline, sceneDuration, playsInTime } from '../ui/panels/timeline-panel';
+import type { PosePlan, Pose, RowTiming } from './motion-pose';
 
-/** The fields a pose writes, captured so the design can be put back. */
-const POSE_FIELDS = ['x', 'y', 'opacity', 'rotation', 'transform', 'effects'] as const;
+type PoseEngine = typeof import('./motion-pose');
 
 export interface PlayerSnapshot { time: number; duration: number; playing: boolean; hasMotion: boolean }
 
 export class MotionPlayer {
-  private state: StateManager;
   private listeners = new Set<(s: PlayerSnapshot) => void>();
-  private baseline: Map<string, Partial<Layer>> | null = null;
+  /** Authored values of every field a pose wrote, by layer id. */
+  private baseline: Map<string, Pose> | null = null;
+  /** The page the pose is on — put back THERE even if the user has moved on. */
+  private baselinePage = 0;
   private raf = 0;
   private t = 0;
   private isPlaying = false;
   /** Set by the timeline panel when the user types a duration. */
   private pinnedDuration: number | null = null;
+  private engine: PoseEngine | null = null;
+  private loading: Promise<PoseEngine | null> | null = null;
+  private plan: PosePlan | null = null;
+  /** True while a pose is being written: the player's own writes are not edits. */
+  private writing = false;
 
-  constructor(state: StateManager) {
-    this.state = state;
+  constructor(private state: StateManager) {
+    state.subscribe((_s, keys) => this.onState(keys));
+    void this.load();
   }
 
-  /** Every animated layer on the current surface, at any depth. */
+  /** Every layer on the current surface that plays in time, at any depth. */
   animatedLayers(): Layer[] {
-    return flattenForTimeline(this.state.getCurrentLayers() as Layer[])
-      .map(r => r.layer)
-      .filter(l => ((l.animation?.keyframes ?? []).length > 0));
+    return flattenForTimeline(this.authoredLayers()).map(r => r.layer).filter(playsInTime);
   }
 
   hasMotion(): boolean { return this.animatedLayers().length > 0; }
 
   get duration(): number {
     if (this.pinnedDuration !== null) return this.pinnedDuration;
-    return sceneDuration(this.state.getCurrentLayers() as Layer[]);
+    const planned = this.currentPlan()?.duration ?? 0;
+    return planned > 0 ? planned : sceneDuration(this.authoredLayers());
   }
 
   pinDuration(ms: number | null): void {
@@ -58,6 +65,11 @@ export class MotionPlayer {
 
   get time(): number { return this.t; }
   get playing(): boolean { return this.isPlaying; }
+  /** True while the player is writing a frame — listeners that redraw on edits can skip it. */
+  get posing(): boolean { return this.writing; }
+
+  /** Every row's time on the scene clock; null until the sampler has loaded. */
+  rows(): Map<string, RowTiming> | null { return this.currentPlan()?.rows ?? null; }
 
   subscribe(fn: (s: PlayerSnapshot) => void): () => void {
     this.listeners.add(fn);
@@ -69,9 +81,35 @@ export class MotionPlayer {
     for (const fn of this.listeners) { try { fn(snap); } catch { /* a bad listener must not stop playback */ } }
   }
 
+  /** The export's sampler, loaded once. Null when the chunk fails — play then does nothing instead of throwing. */
+  private load(): Promise<PoseEngine | null> {
+    this.loading ??= import('./motion-pose')
+      .then(m => { this.engine = m; this.plan = null; this.emit(); return m; })
+      .catch(() => { this.loading = null; return null; });
+    return this.loading;
+  }
+
+  /** Resolves once the sampler is in; false when it could not load. */
+  async ready(): Promise<boolean> { return (await this.load()) !== null; }
+
+  private currentPlan(): PosePlan | null {
+    if (!this.engine) return null;
+    this.plan ??= this.engine.buildPosePlan(this.authoredLayers());
+    return this.plan;
+  }
+
+  private onState(keys: (keyof EditorState)[]): void {
+    if (this.writing) return;
+    if (keys.includes('currentPageIndex')) { this.stop(); this.plan = null; return; }
+    if (!keys.includes('design')) return;
+    this.plan = null;
+    // An edit made while posed (a keyframe moved, a window trimmed) shows at the same moment.
+    if (this.baseline && !this.isPlaying) queueMicrotask(() => { if (this.baseline && !this.isPlaying) this.applyAt(this.t); });
+  }
+
   play(): void {
-    if (this.isPlaying) return;
-    if (!this.hasMotion()) return;
+    if (this.isPlaying || !this.hasMotion()) return;
+    if (!this.engine) { void this.load().then(e => { if (e) this.play(); }); return; }
     this.isPlaying = true;
     const started = performance.now() - this.t;
     const tick = (now: number): void => {
@@ -101,36 +139,47 @@ export class MotionPlayer {
     this.emit();
   }
 
+  /** A new design replaced the one posed: drop the pose without writing it back onto the newcomer. */
+  forget(): void {
+    this.pause();
+    this.baseline = null;
+    this.plan = null;
+    this.t = 0;
+    this.emit();
+  }
+
   seek(ms: number): void {
+    if (!this.engine) { void this.load().then(e => { if (e) this.seek(ms); }); return; }
     this.applyAt(Math.max(0, Math.min(this.duration, ms)));
   }
 
-  /** Pose every animated layer at `ms`, capturing the authored values first. */
+  /** Pose every touched layer at `ms`, capturing each one's authored fields the first time. */
   private applyAt(ms: number): void {
-    const animated = this.animatedLayers();
-    if (!animated.length) return;
+    const plan = this.currentPlan();
+    if (!this.engine || !plan || plan.touched.length === 0) return;
     this.t = ms;
-
     if (!this.baseline) {
       this.baseline = new Map();
-      for (const l of animated) {
-        const o = l as unknown as Record<string, unknown>;
-        const keep: Record<string, unknown> = {};
-        for (const f of POSE_FIELDS) keep[f] = o[f];
-        this.baseline.set(l.id, keep as unknown as Partial<Layer>);
+      this.baselinePage = this.state.get().currentPageIndex;
+    }
+    const frame = this.engine.poseFrame(plan, ms);
+    const missing = [...frame.keys()].filter(id => !this.baseline?.has(id));
+    if (missing.length) {
+      const authored = new Map(flattenForTimeline(plan.layers).map(r => [r.layer.id, r.layer as unknown as Record<string, unknown>]));
+      for (const id of missing) {
+        const l = authored.get(id);
+        const keep: Pose = {};
+        for (const f of this.engine.POSE_FIELDS) keep[f] = l?.[f];
+        this.baseline.set(id, keep);
       }
     }
-
-    const d = this.duration;
-    for (const l of animated) {
-      const base = this.baseline.get(l.id);
-      if (!base) continue;
-      const authored = { ...(l as unknown as Record<string, unknown>), ...(base as unknown as Record<string, unknown>) } as unknown as Layer;
-      const pose = interpolateAtTime((l.animation?.keyframes ?? []) as Keyframe[], ms, d);
-      const update = { ...(base as unknown as Record<string, unknown>), ...(poseToLayerUpdate(authored, pose) as unknown as Record<string, unknown>) };
-      this.state.updateLayer(l.id, update as unknown as Partial<Layer>, false);
-    }
+    this.write(frame, this.baselinePage);
     this.emit();
+  }
+
+  private write(updates: Map<string, Pose>, page: number): void {
+    this.writing = true;
+    try { this.state.updateLayers(updates, false, page); } finally { this.writing = false; }
   }
 
   /**
@@ -146,25 +195,27 @@ export class MotionPlayer {
    */
   authoredLayers(): Layer[] {
     const layers = this.state.getCurrentLayers() as Layer[];
-    if (!this.baseline) return layers;
     const base = this.baseline;
+    if (!base) return layers;
     // Spread through a plain record: Layer is a large discriminated union and
     // spreading it directly makes the checker enumerate every combination.
     const unpose = (ls: Layer[]): Layer[] => ls.map(l => {
-      const b = base.get(l.id) as Record<string, unknown> | undefined;
-      const kids = (l as Layer & { layers?: Layer[] }).layers;
+      const b = base.get(l.id);
       const o = l as unknown as Record<string, unknown>;
       const restored: Record<string, unknown> = b ? { ...o, ...b } : { ...o };
-      if (Array.isArray(kids)) restored['layers'] = unpose(kids);
+      if (b) for (const k of Object.keys(b)) if (b[k] === undefined) delete restored[k];
+      const kids = o['layers'];
+      if (Array.isArray(kids)) restored['layers'] = unpose(kids as Layer[]);
       return restored as unknown as Layer;
     });
     return unpose(layers);
   }
 
-  /** Put every posed layer back the way it was authored. */
+  /** Put every posed layer back the way it was authored, on the page it was posed on. */
   restore(): void {
     if (!this.baseline) return;
-    for (const [id, base] of this.baseline) this.state.updateLayer(id, base, false);
+    const base = this.baseline;
     this.baseline = null;
+    this.write(base, this.baselinePage);
   }
 }

@@ -108,6 +108,12 @@ export interface Keyframe {
   easing?: EasingFunction;
   /** Hold this keyframe's values until the next one, then jump — no tween. */
   hold?: boolean;
+  /**
+   * The segment from this keyframe is a loop the layer RESTS in (a storyboard
+   * state's `loop`), unrolled into the track. The players ignore it; the lint
+   * reads it as ambient motion — not a move to follow, not a break in a rest.
+   */
+  ambient?: boolean;
   [key: string]: unknown;
 }
 

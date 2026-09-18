@@ -24,6 +24,8 @@ export interface MotionPathArgs {
   layer_ids?: string[];
   path?: string;
   duration?: number;
+  /** ms before the layer sets off along the path. */
+  delay?: number;
   loop?: boolean;
   easing?: string;
   auto_rotate?: boolean;
@@ -92,6 +94,7 @@ export function setMotionPath(args: MotionPathArgs): ToolResult {
     o['motion_path'] = {
       path: args.path,
       duration: typeof args.duration === 'number' && args.duration > 0 ? args.duration : 2000,
+      ...(typeof args.delay === 'number' && args.delay > 0 ? { delay: Math.round(args.delay) } : {}),
       ...(args.loop !== undefined ? { loop: args.loop } : {}),
       ...(args.easing ? { easing: args.easing } : {}),
       ...(args.auto_rotate !== undefined ? { auto_rotate: args.auto_rotate } : {}),

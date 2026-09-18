@@ -161,6 +161,20 @@ describe('exportToHTML', () => {
     const result = await exportToHTML(makeSpec(), { format: 'html-animated', animations });
     expect(result).toContain('<!DOCTYPE html>');
   });
+
+  it('plays the per-layer motion of a composition — windows and precomp clocks included', async () => {
+    // The editor never passes `animations`; the HTML used to ship a still.
+    const spec = makeSpec();
+    const [bg, headline] = spec.layers ?? [];
+    spec.layers = [bg, { ...headline, in: 500, out: 2000 },
+      { id: 'pre', type: 'group', z: 5, x: 0, y: 0, width: 1080, height: 1080, clock: { start: 1000, speed: 2 },
+        layers: [{ id: 'dot', type: 'rect', z: 6, x: 10, y: 10, width: 20, height: 20, fill: '#fff',
+          animation: { keyframes: [{ t: 0, x: 0 }, { t: 400, x: 300 }], playback: { duration: 400, origin: 'offset' } } }] },
+    ] as unknown as DesignSpec['layers'];
+    const result = await exportToHTML(spec, { format: 'html' });
+    expect(result).toContain('life-headline');
+    expect(result).toMatch(/kf-dot[^;]*200ms[^;]*1000ms/);
+  });
 });
 
 // ── downloadText / downloadBlob ──────────────────────────────

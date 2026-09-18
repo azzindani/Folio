@@ -22,7 +22,7 @@ type Node = Layer & { animation?: AnimationSpec; layers?: Layer[]; clock?: Layer
 
 /** Channels a link follows when it names none: where the target goes and how it turns and grows. */
 export const DEFAULT_LINK_CHANNELS = ['x', 'y', 'rotation', 'scale'] as const;
-const META = new Set(['t', 'easing', 'hold']);
+const META = new Set(['t', 'easing', 'hold', 'ambient']);
 const RATIO = new Set(['scale', 'scale_x', 'scale_y', 'opacity']);
 
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
@@ -66,6 +66,12 @@ function retimeDeep(l: Node, clock: LayerClock): Node {
   const speed = (num(clock.speed) ?? 1) > 0 ? (num(clock.speed) ?? 1) : 1;
   const out: Node = { ...l };
   if (l.animation?.keyframes?.length) out.animation = retimeTrack(l.animation, start, speed, num(clock.loop));
+  // A path travels on the precomp's clock too: set off later, cover it faster. It plays once per
+  // pass it is given — a precomp's loop_ms does not repeat it (loop:true on the path does).
+  const mp = (l as unknown as Record<string, unknown>)['motion_path'] as { delay?: unknown; duration?: unknown } | undefined;
+  if (mp && typeof mp === 'object') {
+    (out as unknown as Record<string, unknown>)['motion_path'] = { ...mp, delay: start + (num(mp.delay) ?? 0) / speed, duration: (num(mp.duration) ?? 2000) / speed };
+  }
   const w = windowOf(l);
   if (w) {
     out.in = start + w.in / speed;
