@@ -25,6 +25,10 @@ export function netEnabled(): boolean {
 export function fetchTimeoutMs(): number {
   return parseInt(process.env['FOLIO_ASSET_NET_TIMEOUT'] ?? '', 10) || 15000;
 }
+/** The longest a whole download may take while bytes keep arriving (see httpBytes). */
+export function downloadCapMs(): number {
+  return parseInt(process.env['FOLIO_ASSET_NET_MAX_MS'] ?? '', 10) || 180000;
+}
 
 /** Hosts the search providers themselves live on. Not operator-configurable. */
 export const SEARCH_HOSTS = [
@@ -106,13 +110,13 @@ const MAX_HOPS = 4;
 interface HopResult { res: Response; url: URL }
 
 /** Follow redirects by hand so every hop is re-gated. */
-async function hop(start: URL, allow: string[] | undefined, accept: string): Promise<HopResult> {
+async function hop(start: URL, allow: string[] | undefined, accept: string, signal?: AbortSignal): Promise<HopResult> {
   let url = start;
   for (let i = 0; i < MAX_HOPS; i++) {
     await checkResolves(url.hostname);
     const res = await fetch(url.toString(), {
       redirect: 'manual', headers: { 'user-agent': UA, accept },
-      signal: AbortSignal.timeout(fetchTimeoutMs()),
+      signal: signal ?? AbortSignal.timeout(fetchTimeoutMs()),
     });
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
@@ -139,25 +143,50 @@ export interface BytesResult { buffer: Buffer; contentType: string; finalUrl: st
 export async function httpBytes(raw: string, maxBytes: number, allow?: string[]): Promise<BytesResult> {
   if (!netEnabled()) throw new NetError('Asset network access is disabled', 'FOLIO_ASSET_NET=off on this deployment. Upload assets with asset_add instead.');
   const url = checkUrl(raw, allow);
-  const { res, url: finalUrl } = await hop(url, allow, '*/*');
-  if (!res.ok) throw new NetError(`${finalUrl.hostname} returned HTTP ${res.status}`, 'The file may have moved — re-run the search for a fresh URL.');
-
-  const declared = parseInt(res.headers.get('content-length') ?? '', 10);
-  if (Number.isFinite(declared) && declared > maxBytes) {
-    throw new NetError(`File is ${Math.round(declared / 1024)} KiB, over the ${Math.round(maxBytes / 1024)} KiB cap`, 'Pick a smaller result, or pass max_px to downscale on the way in.');
-  }
-  const chunks: Buffer[] = [];
-  let total = 0;
-  const body = res.body;
-  if (!body) throw new NetError('Empty response body', 'Try another result.');
-  for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
-    total += chunk.length;
-    if (total > maxBytes) throw new NetError(`Download exceeded the ${Math.round(maxBytes / 1024)} KiB cap`, 'Pick a smaller result, or pass max_px to downscale on the way in.');
-    chunks.push(Buffer.from(chunk));
-  }
-  return {
-    buffer: Buffer.concat(chunks),
-    contentType: (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '',
-    finalUrl: finalUrl.toString(),
+  // The timeout is an IDLE timeout here — it restarts with every chunk — under
+  // a longer cap for the whole file. Found live: a 3.4 MB track streamed from
+  // Freesound's CDN at a steady 77 KB/s needs 45 s, and a 15 s wall clock
+  // killed it mid-stream as if the host were dead.
+  const ctl = new AbortController();
+  let why = '';
+  const stop = (msg: string) => (): void => { why = msg; ctl.abort(); };
+  let idle: ReturnType<typeof setTimeout> | undefined;
+  const arm = (): void => {
+    clearTimeout(idle);
+    idle = setTimeout(stop(`${url.hostname} sent nothing for ${Math.round(fetchTimeoutMs() / 1000)} s`), fetchTimeoutMs());
   };
+  const cap = setTimeout(stop(`Download from ${url.hostname} still running after ${Math.round(downloadCapMs() / 1000)} s`), downloadCapMs());
+  arm();
+  try {
+    const { res, url: finalUrl } = await hop(url, allow, '*/*', ctl.signal);
+    if (!res.ok) throw new NetError(`${finalUrl.hostname} returned HTTP ${res.status}`, 'The file may have moved — re-run the search for a fresh URL.');
+
+    const declared = parseInt(res.headers.get('content-length') ?? '', 10);
+    if (Number.isFinite(declared) && declared > maxBytes) {
+      throw new NetError(`File is ${Math.round(declared / 1024)} KiB, over the ${Math.round(maxBytes / 1024)} KiB cap`, 'Pick a smaller result, or pass max_px to downscale on the way in.');
+    }
+    const chunks: Buffer[] = [];
+    let total = 0;
+    const body = res.body;
+    if (!body) throw new NetError('Empty response body', 'Try another result.');
+    for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
+      // Checked here too: a body that ignores the abort must not outrun the cap.
+      if (why) throw new Error(why);
+      arm();
+      total += chunk.length;
+      if (total > maxBytes) throw new NetError(`Download exceeded the ${Math.round(maxBytes / 1024)} KiB cap`, 'Pick a smaller result, or pass max_px to downscale on the way in.');
+      chunks.push(Buffer.from(chunk));
+    }
+    return {
+      buffer: Buffer.concat(chunks),
+      contentType: (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '',
+      finalUrl: finalUrl.toString(),
+    };
+  } catch (e) {
+    if (why && !(e instanceof NetError)) throw new NetError(why, 'The host is slow right now — retry, or pick a smaller file (a shorter duration_ms, a lower resolution).');
+    throw e;
+  } finally {
+    clearTimeout(idle);
+    clearTimeout(cap);
+  }
 }

@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { httpJSON, httpBytes, NetError, defaultFetchHosts } from './asset-net';
 import { readYAML, okResult, errResult, buildContext, buildHandover, pOk, pInfo, pWarn } from './utils';
-import { ovLicenseLabel, wmText } from './asset-search';
+import { ovLicenseLabel, wmText, audioExt } from './asset-search';
 import {
   ingestAsset, requireProject, isErr, extForMime, maxAssetBytes, AssetError,
   type AssetProvenance, type IngestArgs, type AssetEntry,
@@ -24,7 +24,7 @@ export interface ResolvedAsset {
   url: string;                 // direct file URL to download
   suggestedName: string;       // slug, no extension
   ext?: string;                // when the provider is authoritative about it
-  kind?: 'images' | 'icons' | 'fonts';
+  kind?: 'images' | 'icons' | 'fonts' | 'audio';
   license?: string;
   attribution?: string;
   creator?: string;
@@ -61,6 +61,24 @@ async function resolveOpenverse(id: string): Promise<ResolvedAsset> {
   if (d.attribution) r.attribution = d.attribution;
   if (d.foreign_landing_url) r.page = d.foreign_landing_url;
   if (d.width) { r.width = d.width; r.height = d.height; }
+  return r;
+}
+
+/** A sound from Openverse's audio index — the same record shape, a different endpoint. */
+async function resolveOpenverseAudio(id: string): Promise<ResolvedAsset> {
+  const d = await httpJSON<OVDetail>(`https://api.openverse.org/v1/audio/${encodeURIComponent(id)}/`);
+  if (!d.url) throw new NetError(`Openverse has no audio file for ${id}`, 'Re-run asset_search {what:"sound"} — the id may be stale.');
+  const r: ResolvedAsset = {
+    url: d.url, kind: 'audio',
+    suggestedName: slugify(d.title ?? '', `sound-${id.slice(0, 8)}`),
+    license: ovLicenseLabel(d.license, d.license_version),
+  };
+  const ext = audioExt(d.filetype);
+  if (ext) r.ext = ext;
+  if (d.title) r.title = d.title;
+  if (d.creator) r.creator = d.creator;
+  if (d.attribution) r.attribution = d.attribution;
+  if (d.foreign_landing_url) r.page = d.foreign_landing_url;
   return r;
 }
 
@@ -207,6 +225,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
   if (!rest) throw new NetError(`Malformed ref "${raw}"`, 'Use a ref from asset_search, or url:"https://…".');
   switch (scheme) {
     case 'openverse': return { resolved: await resolveOpenverse(rest) };
+    case 'openverse-audio': return { resolved: await resolveOpenverseAudio(rest) };
     case 'wikimedia': return { resolved: await resolveWikimedia(rest) };
     case 'iconify':   return { resolved: await resolveIconify(rest, opts.icon_px ?? 512, opts.icon_color) };
     case 'font':      return { resolved: await resolveFont(rest, opts.weight) };
@@ -224,7 +243,7 @@ export async function resolveRef(ref: string, opts: { projectDir: string; icon_p
     case 'http':
       throw new NetError('Plain http:// is refused — the response could be tampered with in transit', `Use the https:// form of ${raw}.`);
     default:
-      throw new NetError(`Unknown ref scheme "${scheme}"`, 'Refs look like openverse:<id>, wikimedia:<File title>, iconify:<set>:<name>, font:<id>, or a plain https:// URL.');
+      throw new NetError(`Unknown ref scheme "${scheme}"`, 'Refs look like openverse:<id>, openverse-audio:<id>, wikimedia:<File title>, iconify:<set>:<name>, font:<id>, or a plain https:// URL.');
   }
 }
 
@@ -252,6 +271,32 @@ function libraryLayerStub(entry: AssetEntry): Record<string, unknown> {
   const w = entry.width ?? 600, h = entry.height ?? 400;
   const scale = Math.min(1, 600 / Math.max(w, h));
   return { id: entry.id, type: 'image', z: 21, pos: [120, 120, Math.round(w * scale), Math.round(h * scale)], src: entry.path, fit: 'cover' };
+}
+
+/**
+ * The credit line a licence actually DEMANDS. Openverse writes an attribution
+ * sentence for every file, CC0 and public-domain ones included ("… is marked
+ * with CC0 1.0"), and passing that on as "REQUIRED" put needless credits on
+ * finished pieces. It stays in the provenance record either way.
+ */
+export function creditDue(p?: AssetProvenance): string | undefined {
+  if (!p?.attribution) return undefined;
+  return /^(cc0|public domain)/i.test(String(p.license ?? '').trim()) ? undefined : p.attribution;
+}
+
+const secs = (e: AssetEntry): string => typeof e.duration_ms === 'number' ? ` (${(e.duration_ms / 1000).toFixed(1)} s)` : '';
+
+/** A ready-to-place layer for an image; a sound is not a layer, so it gets where it goes instead. */
+function assetStub(entry: AssetEntry): Record<string, unknown> {
+  if (entry.kind !== 'audio') return libraryLayerStub(entry);
+  return { note: `Sound stored at ${entry.path}${secs(entry)}. It plays from the timeline, not a layer: animation(op:audio, src:"${entry.path}").` };
+}
+
+/** The call that uses the asset: place the image, or put the sound on the timeline. */
+function nextStep(entry: AssetEntry, stub: Record<string, unknown>, hint: string): NextAction {
+  return entry.kind === 'audio'
+    ? { tool: 'animation', params: { op: 'audio', design_path: '<your .design.yaml>', src: entry.path }, remaining: 0, hint }
+    : { tool: 'add_layers', params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] }, remaining: 0, hint };
 }
 
 /**
@@ -284,18 +329,14 @@ export async function assetFetch(args: {
   const cached = toLibrary ? libraryBySource(sourceKey) : undefined;
   if (cached) {
     progress.push(pOk('Already in the library', `${cached.path} — no download`));
-    const stub = libraryLayerStub(cached);
+    const stub = assetStub(cached);
     return okResult(op, {
       asset: cached, deduped: true, scope: 'library',
       ...(cached.provenance ? { provenance: cached.provenance } : {}),
       layer_stub: stub,
-      next_action: {
-        tool: 'add_layers',
-        params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] },
-        remaining: 0,
-        hint: `This asset was already fetched into the shared library — reference it as "${cached.path}" from any project.${cached.provenance?.attribution ? ` Credit line REQUIRED: "${cached.provenance.attribution}".` : ''}`,
-      } satisfies NextAction,
-      ...(cached.provenance?.attribution ? { attribution_required: cached.provenance.attribution } : {}),
+      next_action: nextStep(cached, stub,
+        `This asset was already fetched into the shared library — reference it as "${cached.path}" from any project.${creditDue(cached.provenance) ? ` Credit line REQUIRED: "${creditDue(cached.provenance)}".` : ''}`),
+      ...(creditDue(cached.provenance) ? { attribution_required: creditDue(cached.provenance) } : {}),
       progress,
       context: buildContext(op, `Reused ${cached.path} from the shared library`),
       handover: buildHandover('COMPOSE', { project_path: proj.dir }),
@@ -365,7 +406,7 @@ export async function assetFetch(args: {
 
     progress.push(pOk('Fetched', `${entry.path} (${Math.round(entry.bytes / 1024)} KiB${entry.width ? `, ${entry.width}×${entry.height}` : ''})`));
     for (const w of warnings) progress.push(pWarn('Note', w));
-    if (!args.alt) progress.push(pWarn('No alt given', 'The stored alt is the provider\'s title — replace it with what the image actually shows.'));
+    if (!args.alt && entry.kind !== 'audio') progress.push(pWarn('No alt given', 'The stored alt is the provider\'s title — replace it with what the image actually shows.'));
     // The colour is baked at FETCH time (see iconColorParam): a standalone SVG
     // has nothing to inherit from, so an untinted icon is black, and on a dark
     // canvas it is invisible — a failure the reviewer could only find by paying
@@ -378,17 +419,14 @@ export async function assetFetch(args: {
         + `changed after the fact — there is no tint on an image layer. Re-fetch with icon_color:"#RRGGBB" `
         + `(your accent or text colour) if the canvas is not light.`));
     }
-    if (provenance.attribution) progress.push(pInfo('Credit required', provenance.attribution));
+    const credit = creditDue(provenance);
+    if (credit) progress.push(pInfo('Credit required', credit));
 
     const stub = entry.kind === 'fonts'
       ? { note: `Font stored at ${entry.path}. Set font:"${realFamily ?? resolved.title ?? entry.id}" on a text layer.` }
-      : libraryLayerStub(entry);
-    const next_action: NextAction = {
-      tool: 'add_layers',
-      params: { design_path: '<your .design.yaml>', layers_shorthand: [stub] },
-      remaining: 0,
-      hint: `Stored ${toLibrary ? 'in the SHARED library' : 'in this project'} — the design references "${entry.path}", nothing is fetched at render time.${toLibrary ? ' Any project can use that same path; it will not be downloaded again.' : ''}${provenance.attribution ? ` This licence REQUIRES the credit line: "${provenance.attribution}" — typeset it on the design (small, low-contrast, but present).` : ''}`,
-    };
+      : assetStub(entry);
+    const next_action = nextStep(entry, stub,
+      `Stored ${toLibrary ? 'in the SHARED library' : 'in this project'}${secs(entry)} — the design references "${entry.path}", nothing is fetched at render time.${toLibrary ? ' Any project can use that same path; it will not be downloaded again.' : ''}${credit ? ` This licence REQUIRES the credit line: "${credit}" — typeset it on the design (small, low-contrast, but present).` : ''}`);
     const absPath = toLibrary ? (libraryAbsPath(entry.path) ?? entry.path) : pathJoin(proj.dir, entry.path);
     const context = buildContext(op, `Fetched ${entry.path} from ${provenance.source}`, [{ type: 'export', path: absPath, role: 'created' }]);
     const handover = buildHandover('COMPOSE', { project_path: proj.dir });
@@ -399,7 +437,7 @@ export async function assetFetch(args: {
         font_family: realFamily,
         font_note: `In layers_shorthand write font:"${realFamily}" — EXACTLY that string, and note it is often not the name you searched for (variable families ship their static weights under the default instance's name). The key is font:, not font_family: — font_family is the verbose layer schema and is ignored by shorthand, which silently renders a fallback face. Fetch the other weights of the same family and they all group under it; then weight picks between them.`,
       } : {}),
-      ...(provenance.attribution ? { attribution_required: provenance.attribution } : {}),
+      ...(credit ? { attribution_required: credit } : {}),
       progress, context, handover,
     });
   } catch (e) {

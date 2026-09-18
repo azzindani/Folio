@@ -114,10 +114,10 @@ export function audioMotion(args: AudioArgs): ToolResult {
     const src = typeof args.src === 'string' ? args.src.trim() : '';
     if (!src || !isAudioExt(path.extname(src).slice(1))) {
       return errResult(OP, `src must name an audio file (mp3, wav, m4a, aac, ogg, opus, flac), not "${String(args.src)}".`,
-        'Store the file with manage_design(op:asset_add, name:"theme.mp3") and pass the assets/audio/… path it returns.');
+        'Find one with manage_design(op:asset_search, what:"music"|"sound") + op:asset_fetch, or store your own with op:asset_add, and pass the lib/… or assets/audio/… path it returns.');
     }
     const file = resolveAssetFile(src, dPath, args.project_path);
-    if (!file) return errResult(OP, `Sound not found: ${src}`, 'Store it with manage_design(op:asset_add) first. A src reaches this project\'s files or the shared library (lib/…), never a URL.');
+    if (!file) return errResult(OP, `Sound not found: ${src}`, 'Fetch one with manage_design(op:asset_search, what:"sound") + op:asset_fetch, or store your own with op:asset_add. A src reaches this project\'s files or the shared library (lib/…), never a URL.');
     if (probeAudio(file) === 'not-audio') return errResult(OP, `"${src}" holds no audio.`, 'Store a real audio file under that name, then call again.');
     const newId = id ?? (path.basename(src, path.extname(src)).replace(/[^a-z0-9-]+/gi, '-').toLowerCase() || 'music');
     const at = scope.findIndex((e, i) => idOf(e, i) === newId);

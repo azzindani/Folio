@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { spawnSync } from 'child_process';
 
 const jsonMock = vi.fn();
 const bytesMock = vi.fn();
@@ -322,5 +323,55 @@ describe('assetFetch — shared-library reuse', () => {
     expect(r['scope']).toBe('project');
     expect((r['asset'] as Record<string, unknown>)['path']).toBe('assets/images/scoped.png');
     expect(fs.existsSync(path.join(dir, 'assets/images/scoped.png'))).toBe(true);
+  });
+});
+
+describe('assetFetch — sound', () => {
+  const hasProbe = spawnSync('ffprobe', ['-version']).error === undefined;
+  /** A mono 16-bit PCM WAV of a 440 Hz tone. */
+  function toneWav(ms: number, rate = 8000): Buffer {
+    const n = Math.round((rate * ms) / 1000);
+    const b = Buffer.alloc(44 + n * 2);
+    b.write('RIFF', 0); b.writeUInt32LE(36 + n * 2, 4); b.write('WAVE', 8);
+    b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22);
+    b.writeUInt32LE(rate, 24); b.writeUInt32LE(rate * 2, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34);
+    b.write('data', 36); b.writeUInt32LE(n * 2, 40);
+    for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.sin((i / rate) * 2 * Math.PI * 440) * 8000), 44 + i * 2);
+    return b;
+  }
+
+  it('asks the audio endpoint for an openverse-audio ref, and reads "mp32" as mp3', async () => {
+    jsonMock.mockResolvedValue({ url: 'https://prod-1.storage.jamendo.com/?trackid=1&format=mp32', title: 'Quiet Keys', license: 'by', license_version: '4.0', filetype: 'mp32' });
+    const { resolved } = await resolveRef('openverse-audio:song-2', { projectDir: makeProject('sound-resolve') });
+    expect(String(jsonMock.mock.calls[0]?.[0])).toBe('https://api.openverse.org/v1/audio/song-2/');
+    expect(resolved).toMatchObject({ kind: 'audio', ext: 'mp3', suggestedName: 'quiet-keys', license: 'CC BY 4.0' });
+  });
+
+  it('files a fetched sound under lib/audio and hands the next step to the timeline, not a layer', async () => {
+    const dir = makeProject('sound-fetch');
+    jsonMock.mockResolvedValue({ url: 'https://cdn.freesound.org/previews/1/1-hq.wav', title: 'Soft Pop', license: 'cc0', filetype: 'wav',
+      attribution: '"Soft Pop" by kay is marked with CC0 1.0.' });
+    bytesMock.mockResolvedValue({ buffer: toneWav(600), contentType: 'audio/wav', finalUrl: 'https://cdn.freesound.org/previews/1/1-hq.wav' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse-audio:pop' }) as Record<string, unknown>;
+    expect(r['success']).toBe(true);
+    const asset = r['asset'] as Record<string, unknown>;
+    expect(asset).toMatchObject({ path: 'lib/audio/soft-pop.wav', kind: 'audio' });
+    if (hasProbe) expect(asset['duration_ms']).toBeCloseTo(600, -1);
+    expect(r['next_action']).toMatchObject({ tool: 'animation', params: { op: 'audio', src: 'lib/audio/soft-pop.wav' } });
+    expect(String((r['layer_stub'] as Record<string, unknown>)['note'])).toContain('op:audio');
+    expect(JSON.stringify(r['progress'])).not.toContain('No alt given');
+    // CC0 asks for no credit: the sentence is kept on record, never demanded.
+    expect(r['attribution_required']).toBeUndefined();
+    expect(JSON.stringify(r['progress'])).not.toContain('Credit required');
+    expect((r['provenance'] as Record<string, unknown>)['attribution']).toContain('CC0');
+  });
+
+  it.skipIf(!hasProbe)('refuses bytes with no sound in them instead of filing a silent "track"', async () => {
+    const dir = makeProject('sound-junk');
+    jsonMock.mockResolvedValue({ url: 'https://cdn.freesound.org/previews/2/2-hq.mp3', title: 'Not A Sound', license: 'cc0', filetype: 'mp3' });
+    bytesMock.mockResolvedValue({ buffer: Buffer.from('<html>moved</html>'), contentType: 'audio/mpeg', finalUrl: 'https://cdn.freesound.org/previews/2/2-hq.mp3' });
+    const r = await assetFetch({ project_path: dir, ref: 'openverse-audio:junk' });
+    expect(r.success).toBe(false);
+    expect(r.error).toContain('no audio stream');
   });
 });

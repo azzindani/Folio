@@ -1,7 +1,7 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   isPrivateAddress, hostAllowed, checkUrl, netEnabled, defaultFetchHosts,
-  SEARCH_HOSTS, NetError,
+  SEARCH_HOSTS, NetError, httpBytes,
 } from './asset-net';
 
 // These are the guards standing between "the model may fetch a URL" and a
@@ -98,5 +98,53 @@ describe('deployment switches', () => {
     expect(hosts).toContain('download.microsoft.com');
     // The provider APIs stay reachable regardless of what the operator adds.
     for (const h of SEARCH_HOSTS) expect(hosts).toContain(h);
+  });
+});
+
+describe('httpBytes — a slow download is not a dead one', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env['FOLIO_ASSET_NET_TIMEOUT'];
+    delete process.env['FOLIO_ASSET_NET_MAX_MS'];
+  });
+
+  /** A response whose body sends `n` chunks, `gap` ms apart, then (optionally) stalls. */
+  function trickle(n: number, gap: number, stall = false): void {
+    vi.stubGlobal('fetch', (_url: string, init: { signal: AbortSignal }) => {
+      let i = 0;
+      const body = new ReadableStream<Uint8Array>({
+        async pull(ctl): Promise<void> {
+          if (i === n) {
+            if (!stall) { ctl.close(); return; }
+            await new Promise<void>((_, reject) => init.signal.addEventListener('abort', () => reject(new Error('aborted'))));
+          }
+          await new Promise(r => setTimeout(r, gap));
+          i++;
+          ctl.enqueue(new Uint8Array(10));
+        },
+      });
+      return Promise.resolve(new Response(body, { status: 200, headers: { 'content-type': 'audio/mpeg' } }));
+    });
+  }
+
+  it('keeps going past the timeout while bytes keep arriving', async () => {
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '60';
+    trickle(8, 25);                                   // 200 ms in all, never 60 ms without a chunk
+    const got = await httpBytes('https://cdn.freesound.org/a.mp3', 1000);
+    expect(got.buffer.length).toBe(80);
+    expect(got.contentType).toBe('audio/mpeg');
+  });
+
+  it('gives up on a stream that goes quiet, and says which host', async () => {
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '60';
+    trickle(2, 10, true);
+    await expect(httpBytes('https://cdn.freesound.org/b.mp3', 1000)).rejects.toThrow(/cdn\.freesound\.org sent nothing/);
+  });
+
+  it('still caps the whole download', async () => {
+    process.env['FOLIO_ASSET_NET_TIMEOUT'] = '60';
+    process.env['FOLIO_ASSET_NET_MAX_MS'] = '100';
+    trickle(50, 20);
+    await expect(httpBytes('https://cdn.freesound.org/c.mp3', 10000)).rejects.toBeInstanceOf(NetError);
   });
 });

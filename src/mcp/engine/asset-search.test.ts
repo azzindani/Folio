@@ -11,7 +11,7 @@ vi.mock('./asset-net', async (orig) => {
 
 const {
   searchOpenverse, searchWikimedia, searchIconify, searchFonts,
-  runSearch, assetSearch, ovLicenseLabel, wmText, resetFontCache,
+  runSearch, assetSearch, ovLicenseLabel, wmText, resetFontCache, audioExt,
 } = await import('./asset-search');
 
 const OV = {
@@ -50,6 +50,17 @@ const FONTS = [
   { id: 'manrope', family: 'Manrope', category: 'sans-serif', weights: [400, 700], license: 'OFL-1.1', variable: true, defSubset: 'latin' },
   { id: 'lora', family: 'Lora', category: 'serif', weights: [400], license: 'OFL-1.1', defSubset: 'latin' },
 ];
+
+// Freesound previews say "mp3"; Jamendo's stream says "mp32" and is plain mp3.
+const OV_AUDIO = {
+  results: [
+    { id: 'snd-1', title: 'Deep Whoosh #1', url: 'https://cdn.freesound.org/previews/351/351256_2247456-hq.mp3',
+      duration: 3155, filetype: 'mp3', license: 'cc0', license_version: '1.0', source: 'freesound', category: null, creator: 'Kinoton' },
+    { id: 'song-2', title: 'Quiet Keys', url: 'https://prod-1.storage.jamendo.com/?trackid=1&format=mp32',
+      duration: 60000, filetype: 'mp32', license: 'by-sa', license_version: '3.0', source: 'jamendo', category: 'music',
+      attribution: '"Quiet Keys" by ann is licensed under CC BY-SA 3.0.' },
+  ],
+};
 
 beforeEach(() => { jsonMock.mockReset(); resetFontCache(); });
 
@@ -120,6 +131,15 @@ describe('providers', () => {
   });
 });
 
+describe('audio file types', () => {
+  it('reads Jamendo\'s "mp32" as the mp3 it is, and leaves the rest alone', () => {
+    expect(audioExt('mp32')).toBe('mp3');
+    expect(audioExt('MP3')).toBe('mp3');
+    expect(audioExt('flac')).toBe('flac');
+    expect(audioExt(undefined)).toBeUndefined();
+  });
+});
+
 describe('routing', () => {
   it('sends each `what` to the sources that can answer it', async () => {
     jsonMock.mockImplementation((u: string) =>
@@ -139,6 +159,20 @@ describe('routing', () => {
 
     const photo = await runSearch('photo', 'desk', 4);
     expect(new Set(photo.results.map(r => r.source))).toEqual(new Set(['openverse', 'wikimedia']));
+  });
+
+  it('asks the audio index for sound, and lists a file two music searches both found once', async () => {
+    jsonMock.mockResolvedValue(OV_AUDIO);
+    const sound = await runSearch('sound', 'whoosh', 4);
+    expect(jsonMock.mock.calls.map(c => String(c[0]))).toEqual([expect.stringContaining('/v1/audio/?q=whoosh')]);
+    expect(sound.results[0]).toMatchObject({ ref: 'openverse-audio:snd-1', kind: 'audio', duration_ms: 3155, filetype: 'mp3', note: 'freesound' });
+
+    jsonMock.mockClear();
+    const music = await runSearch('music', 'piano', 4);
+    const urls = jsonMock.mock.calls.map(c => String(c[0]));
+    expect(urls.some(u => u.includes('category=music'))).toBe(true);
+    expect(urls.some(u => u.includes('q=piano+music'))).toBe(true);
+    expect(music.results.map(r => r.ref)).toEqual(['openverse-audio:snd-1', 'openverse-audio:song-2']);
   });
 
   it('one dead provider does not empty the result set', async () => {
@@ -167,10 +201,22 @@ describe('assetSearch op', () => {
     expect(String(r['licensing'])).toContain('CREDIT LINE');
   });
 
-  it('falls back to photo for an unknown `what` rather than erroring', async () => {
+  it('falls back to photo for an unknown `what` rather than erroring — and says so', async () => {
     jsonMock.mockResolvedValue(OV);
     const r = await assetSearch({ query: 'desk', what: 'hologram' }) as Record<string, unknown>;
     expect(r['what']).toBe('photo');
+    expect(JSON.stringify(r['progress'])).toContain('what:\\"hologram\\" is not a source');
+  });
+
+  it('hears "audio" as a sound search, and points the baton at the timeline', async () => {
+    jsonMock.mockResolvedValue(OV_AUDIO);
+    const r = await assetSearch({ query: 'whoosh', what: 'audio', project_path: '/p/x' }) as Record<string, unknown>;
+    expect(r['what']).toBe('sound');
+    expect(String(jsonMock.mock.calls[0]?.[0])).toContain('/v1/audio/');
+    const next = r['next_action'] as { params: Record<string, unknown>; hint: string };
+    expect(next.params['ref']).toBe('openverse-audio:snd-1');
+    expect(next.hint).toContain('op:audio');
+    expect(JSON.stringify(r['progress'])).not.toContain('is not a source');
   });
 
   it('is disabled outright by FOLIO_ASSET_NET=off', async () => {
